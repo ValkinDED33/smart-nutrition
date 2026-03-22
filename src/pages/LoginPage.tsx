@@ -16,7 +16,7 @@ import {
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { AuthApiError, login as loginApi } from "../shared/api/auth";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 
 type FormData = {
   email: string;

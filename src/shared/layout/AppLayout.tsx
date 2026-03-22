@@ -18,7 +18,7 @@ import { logout as clearAuthState } from "../../features/auth/authSlice";
 import { resetProfile } from "../../features/profile/profileSlice";
 import { clearMeal } from "../../features/meal/mealSlice";
 import { logout as logoutSession } from "../api/auth";
-import { useLanguage } from "../i18n/I18nProvider";
+import { useLanguage } from "../language";
 
 const Layout = () => {
   const dispatch = useDispatch();

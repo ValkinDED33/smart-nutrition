@@ -3,7 +3,7 @@ import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material"
 import { ProductCard } from "./ProductCard";
 import type { MealType } from "../../shared/types/meal";
 import { mockProducts } from "../../shared/lib/mockProducts";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 interface Props {
   mealType: MealType;

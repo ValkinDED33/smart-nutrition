@@ -1,6 +1,6 @@
 import { Box, Typography, Button, Paper, Stack } from "@mui/material";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 
 const NotFoundPage = () => {
   const { t } = useLanguage();

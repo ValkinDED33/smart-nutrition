@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Box, Paper, Stack, Typography } from "@mui/material";
-import type { RootState } from "../../app/store";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { selectMealItems } from "./selectors";
+import { useLanguage } from "../../shared/language";
 
 const startOfDay = (date: Date) => {
   const copy = new Date(date);
@@ -11,7 +11,7 @@ const startOfDay = (date: Date) => {
 };
 
 export const WeeklyInsights = () => {
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
   const { language } = useLanguage();
 
   const text =

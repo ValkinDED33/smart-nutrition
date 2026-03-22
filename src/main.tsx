@@ -5,7 +5,7 @@ import App from "./App";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./app/store";
-import { I18nProvider } from "./shared/i18n/I18nProvider";
+import { LanguageProvider } from "./shared/language";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
@@ -14,9 +14,9 @@ root.render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate persistor={persistor}>
-        <I18nProvider>
+        <LanguageProvider>
           <App />
-        </I18nProvider>
+        </LanguageProvider>
       </PersistGate>
     </Provider>
   </StrictMode>

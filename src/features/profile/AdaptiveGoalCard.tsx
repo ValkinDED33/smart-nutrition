@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
+import { selectMealItems } from "../meal/selectors";
 import { setAdaptiveCalories } from "./profileSlice";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
 } from "../../shared/lib/adaptiveGoal";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 export const AdaptiveGoalCard = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -15,7 +16,7 @@ export const AdaptiveGoalCard = () => {
   const { maintenanceCalories, goal, adaptiveCalories, weightHistory } = useSelector(
     (state: RootState) => state.profile
   );
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
 
   const text =
     language === "pl"

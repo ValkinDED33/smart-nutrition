@@ -9,7 +9,7 @@ import {
   Chip,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 
 const featureKeys = ["landing.card1", "landing.card2", "landing.card3"] as const;
 
