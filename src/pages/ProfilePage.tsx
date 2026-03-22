@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import ProfileForm from "../features/profile/ProfileForm";
 import { useLanguage } from "../shared/i18n/I18nProvider";
+import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -18,17 +19,38 @@ const ProfilePage = () => {
     (state: RootState) => state.profile.dailyCalories
   );
   const mealItems = useSelector((state: RootState) => state.meal.items);
-  const { t } = useLanguage();
+  const totalMealNutrients = useSelector(
+    (state: RootState) => state.meal.totalNutrients
+  );
+  const { t, language } = useLanguage();
+
+  const diaryText =
+    language === "pl"
+      ? {
+          diary: "Dziennik jedzenia",
+          empty: "Brak wpisów.",
+          labels: {
+            breakfast: "Śniadanie",
+            lunch: "Obiad",
+            dinner: "Kolacja",
+            snack: "Przekąska",
+          },
+        }
+      : {
+          diary: "Щоденник харчування",
+          empty: "Записів поки немає.",
+          labels: {
+            breakfast: "Сніданок",
+            lunch: "Обід",
+            dinner: "Вечеря",
+            snack: "Перекус",
+          },
+        };
 
   if (!user) return <Typography>{t("profile.notFound")}</Typography>;
 
-  const totalMealCalories = mealItems.reduce((sum, item) => {
-    const calories = item.product?.nutrients?.calories ?? 0;
-    return sum + calories * (item.quantity / 100);
-  }, 0);
-
   const caloriePercent = dailyCalories
-    ? Math.min((totalMealCalories / dailyCalories) * 100, 100)
+    ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
 
   return (
@@ -84,7 +106,7 @@ const ProfilePage = () => {
           {t("profile.progress")}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 1.5 }}>
-          {totalMealCalories.toFixed(0)} / {dailyCalories} {t("common.kcal")}
+          {totalMealNutrients.calories.toFixed(0)} / {dailyCalories} {t("common.kcal")}
         </Typography>
         <LinearProgress
           variant="determinate"
@@ -92,6 +114,41 @@ const ProfilePage = () => {
           sx={{ height: 12, borderRadius: 999 }}
         />
       </Paper>
+
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 6,
+          border: "1px solid rgba(15, 23, 42, 0.08)",
+          backgroundColor: "rgba(255,255,255,0.86)",
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
+          {diaryText.diary}
+        </Typography>
+        <Stack spacing={1.2}>
+          {mealItems.length === 0 ? (
+            <Typography color="text.secondary">{diaryText.empty}</Typography>
+          ) : (
+            mealItems.slice(0, 8).map((item) => {
+              const calories = (item.product.nutrients.calories * item.quantity) / 100;
+
+              return (
+                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                  <Typography sx={{ fontWeight: 700 }}>{item.product.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {diaryText.labels[item.mealType]} - {item.quantity} {item.product.unit} -{" "}
+                    {calories.toFixed(0)} {t("common.kcal")}
+                  </Typography>
+                </Paper>
+              );
+            })
+          )}
+        </Stack>
+      </Paper>
+
+      <DailyHistoryExplorer />
 
       <ProfileForm />
     </Stack>

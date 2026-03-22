@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 
 interface Props {
   children: ReactNode;
@@ -32,13 +32,15 @@ class ErrorBoundary extends Component<Props, State> {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
+            gap: 2,
+            px: 3,
           }}
         >
-          <Typography variant="h5" gutterBottom>
-            Сталася помилка
+          <Typography variant="h5" textAlign="center">
+            Something went wrong
           </Typography>
           <Button variant="contained" onClick={this.handleReload}>
-            Перезавантажити
+            Reload app
           </Button>
         </Box>
       );

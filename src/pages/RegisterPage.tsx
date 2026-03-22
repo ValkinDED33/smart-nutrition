@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
-import { setDailyCalories, setGoal, updateWeight } from "../features/profile/profileSlice";
-import { calculateCalories } from "../shared/lib/calorieCalculator";
+import { applyProfileTargets } from "../features/profile/profileSlice";
+import { calculateProfileTargets } from "../shared/lib/profileTargets";
 import { AuthApiError, register as registerApi } from "../shared/api/auth";
 import { useLanguage } from "../shared/i18n/I18nProvider";
 
@@ -112,19 +112,15 @@ const RegisterPage = () => {
       });
 
       dispatch(setCredentials({ user, accessToken: token }));
+      const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
       dispatch(
-        setDailyCalories(
-          calculateCalories({
-            age: data.age,
-            weight: data.weight,
-            height: data.height,
-            gender: data.gender,
-            activity: data.activity,
-          })
-        )
+        applyProfileTargets({
+          goal: data.goal,
+          weight: data.weight,
+          maintenanceCalories,
+          targetCalories,
+        })
       );
-      dispatch(setGoal(data.goal));
-      dispatch(updateWeight(data.weight));
 
       navigate("/dashboard");
     } catch (error) {

@@ -31,7 +31,7 @@ export interface Nutrients {
 
 export type NutrientKey = keyof Nutrients;
 
-export type ProductSource = "USDA" | "OpenFoodFacts";
+export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
 
 export interface Product {
   id: string;
