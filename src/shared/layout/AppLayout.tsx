@@ -1,24 +1,24 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Container,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import type { RootState } from "../../app/store";
 import { logout as clearAuthState } from "../../features/auth/authSlice";
 import { resetProfile } from "../../features/profile/profileSlice";
 import { clearMeal } from "../../features/meal/mealSlice";
 import { logout as logoutSession } from "../api/auth";
 import { useLanguage } from "../i18n/I18nProvider";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Avatar,
-  Box,
-  Button,
-  Container,
-  Chip,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-} from "@mui/material";
 
 const Layout = () => {
   const dispatch = useDispatch();
@@ -53,146 +53,192 @@ const Layout = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Toolbar sx={{ minHeight: 82, gap: 2, px: 0 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center" flexGrow={1}>
-              <Box
-                sx={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: "14px",
-                  background:
-                    "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "white",
-                  fontWeight: 800,
-                }}
-              >
-                SN
-              </Box>
-
-              <Box>
-                <Typography
-                  component={Link}
-                  to="/"
+          <Toolbar
+            sx={{
+              minHeight: 82,
+              gap: 2,
+              px: 0,
+              py: 1.25,
+              alignItems: "stretch",
+              flexDirection: "column",
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={2}
+              alignItems={{ xs: "stretch", md: "center" }}
+              justifyContent="space-between"
+              sx={{ width: "100%" }}
+            >
+              <Stack direction="row" spacing={1.5} alignItems="center" flexGrow={1}>
+                <Box
                   sx={{
-                    textDecoration: "none",
-                    color: "inherit",
+                    width: 42,
+                    height: 42,
+                    borderRadius: "14px",
+                    background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "white",
                     fontWeight: 800,
-                    fontSize: { xs: 18, sm: 22 },
-                    letterSpacing: "-0.02em",
+                    flexShrink: 0,
                   }}
                 >
-                  {t("brand.name")}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "rgba(20,33,61,0.65)" }}>
-                  {t("brand.tagline")}
-                </Typography>
-              </Box>
-            </Stack>
+                  SN
+                </Box>
 
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              sx={{ display: { xs: "none", md: "flex" } }}
-            >
-              {user && (
-                <>
-                  <Button component={Link} to="/dashboard" color="inherit">
-                    {t("nav.dashboard")}
-                  </Button>
-                  <Button component={Link} to="/meal-builder" color="inherit">
-                    {t("nav.meals")}
-                  </Button>
-                  <Button component={Link} to="/profile" color="inherit">
-                    {t("nav.profile")}
-                  </Button>
-                </>
-              )}
-            </Stack>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    component={Link}
+                    to="/"
+                    sx={{
+                      display: "inline-block",
+                      textDecoration: "none",
+                      color: "inherit",
+                      fontWeight: 800,
+                      fontSize: { xs: 18, sm: 22 },
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    {t("brand.name")}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      color: "rgba(20,33,61,0.65)",
+                      whiteSpace: "normal",
+                    }}
+                  >
+                    {t("brand.tagline")}
+                  </Typography>
+                </Box>
+              </Stack>
 
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <ToggleButtonGroup
-                exclusive
-                size="small"
-                value={language}
-                onChange={(_, nextLanguage) => {
-                  if (nextLanguage) {
-                    setLanguage(nextLanguage);
-                  }
-                }}
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.9)",
-                  borderRadius: 999,
-                  "& .MuiToggleButton-root": {
-                    border: 0,
-                    px: 1.4,
-                    py: 0.6,
-                    textTransform: "none",
-                    fontWeight: 700,
-                  },
-                }}
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.25}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                justifyContent={{ xs: "stretch", md: "flex-end" }}
+                sx={{ width: { xs: "100%", md: "auto" } }}
               >
-                <ToggleButton value="uk">UA</ToggleButton>
-                <ToggleButton value="pl">PL</ToggleButton>
-              </ToggleButtonGroup>
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
+                  value={language}
+                  onChange={(_, nextLanguage) => {
+                    if (nextLanguage) {
+                      setLanguage(nextLanguage);
+                    }
+                  }}
+                  sx={{
+                    bgcolor: "rgba(255,255,255,0.9)",
+                    borderRadius: 999,
+                    alignSelf: { xs: "stretch", sm: "center" },
+                    "& .MuiToggleButton-root": {
+                      border: 0,
+                      px: 1.4,
+                      py: 0.6,
+                      textTransform: "none",
+                      fontWeight: 700,
+                    },
+                  }}
+                >
+                  <ToggleButton value="uk">UA</ToggleButton>
+                  <ToggleButton value="pl">PL</ToggleButton>
+                </ToggleButtonGroup>
 
-              {user ? (
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Chip
-                    avatar={<Avatar src={user.avatar}>{user.name[0]}</Avatar>}
-                    label={user.name}
-                    sx={{
-                      bgcolor: "rgba(255,255,255,0.9)",
-                      borderRadius: 999,
-                      fontWeight: 700,
-                    }}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={handleLogout}
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: "none",
-                      fontWeight: 700,
-                    }}
+                {user ? (
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.25}
+                    alignItems={{ xs: "stretch", sm: "center" }}
                   >
-                    {t("nav.logout")}
-                  </Button>
-                </Stack>
-              ) : (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    component={Link}
-                    to="/login"
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    {t("nav.login")}
-                  </Button>
-                  <Button
-                    component={Link}
-                    to="/register"
-                    variant="contained"
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 700,
-                      borderRadius: 999,
-                      px: 2.4,
-                      background:
-                        "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-                    }}
-                  >
-                    {t("nav.register")}
-                  </Button>
-                </Stack>
-              )}
+                    <Chip
+                      avatar={<Avatar src={user.avatar}>{user.name[0]}</Avatar>}
+                      label={user.name}
+                      sx={{
+                        bgcolor: "rgba(255,255,255,0.9)",
+                        borderRadius: 999,
+                        fontWeight: 700,
+                        maxWidth: { xs: "100%", sm: 220 },
+                        "& .MuiChip-label": {
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleLogout}
+                      sx={{
+                        borderRadius: 999,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        width: { xs: "100%", sm: "auto" },
+                      }}
+                    >
+                      {t("nav.logout")}
+                    </Button>
+                  </Stack>
+                ) : (
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <Button
+                      component={Link}
+                      to="/login"
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 700,
+                        width: { xs: "100%", sm: "auto" },
+                      }}
+                    >
+                      {t("nav.login")}
+                    </Button>
+                    <Button
+                      component={Link}
+                      to="/register"
+                      variant="contained"
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderRadius: 999,
+                        px: 2.4,
+                        width: { xs: "100%", sm: "auto" },
+                        background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                      }}
+                    >
+                      {t("nav.register")}
+                    </Button>
+                  </Stack>
+                )}
+              </Stack>
             </Stack>
+
+            {user && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ width: "100%" }}
+              >
+                <Button component={Link} to="/dashboard" color="inherit">
+                  {t("nav.dashboard")}
+                </Button>
+                <Button component={Link} to="/meal-builder" color="inherit">
+                  {t("nav.meals")}
+                </Button>
+                <Button component={Link} to="/profile" color="inherit">
+                  {t("nav.profile")}
+                </Button>
+              </Stack>
+            )}
           </Toolbar>
         </Container>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
         <Outlet />
       </Container>
     </Box>

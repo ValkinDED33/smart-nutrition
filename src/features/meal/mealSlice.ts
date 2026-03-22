@@ -1,19 +1,18 @@
-// src/features/meal/mealSlice.ts
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Product, Nutrients } from "../../shared/types/product";
-
-// MealItem хранит только продукт и количество
-export interface MealItem {
-  product: Product;
-  quantity: number; // грамм / мл
-}
+import type { Nutrients, Product } from "../../shared/types/product";
+import type {
+  MealEntry,
+  MealTemplate,
+  MealTemplateItem,
+  MealType,
+} from "../../shared/types/meal";
 
 interface MealState {
-  items: MealItem[];
+  items: MealEntry[];
+  templates: MealTemplate[];
   totalNutrients: Nutrients;
 }
 
-// Функция создания пустых нутриентов
 const createEmptyNutrients = (): Nutrients => ({
   calories: 0,
   protein: 0,
@@ -40,8 +39,34 @@ const createEmptyNutrients = (): Nutrients => ({
   phosphorus: 0,
 });
 
+const createId = (prefix: string) =>
+  globalThis.crypto?.randomUUID?.() ??
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const createMealEntry = ({
+  product,
+  quantity,
+  mealType = "snack",
+  origin = "manual",
+  eatenAt,
+}: {
+  product: Product;
+  quantity: number;
+  mealType?: MealType;
+  origin?: MealEntry["origin"];
+  eatenAt?: string;
+}): MealEntry => ({
+  id: createId("meal"),
+  product,
+  quantity,
+  mealType,
+  origin,
+  eatenAt: eatenAt ?? new Date().toISOString(),
+});
+
 const initialState: MealState = {
   items: [],
+  templates: [],
   totalNutrients: createEmptyNutrients(),
 };
 
@@ -51,44 +76,78 @@ const mealSlice = createSlice({
   reducers: {
     addProduct(
       state,
-      action: PayloadAction<{ product: Product; quantity: number }>
+      action: PayloadAction<{
+        product: Product;
+        quantity: number;
+        mealType?: MealType;
+        origin?: MealEntry["origin"];
+        eatenAt?: string;
+      }>
     ) {
-      const { product, quantity } = action.payload;
-
-      const existing = state.items.find(
-        (item) => item.product.id === product.id
-      );
-
-      if (existing) {
-        existing.quantity += quantity;
-      } else {
-        state.items.push({ product, quantity });
-      }
-
+      state.items.unshift(createMealEntry(action.payload));
       recalcTotalNutrients(state);
     },
 
-    removeProduct(state, action: PayloadAction<string>) {
-      state.items = state.items.filter(
-        (item) => item.product.id !== action.payload
+    addMealEntries(state, action: PayloadAction<MealEntry[]>) {
+      state.items = [...action.payload, ...state.items];
+      recalcTotalNutrients(state);
+    },
+
+    saveMealTemplate(
+      state,
+      action: PayloadAction<{
+        name: string;
+        mealType: MealType;
+        items: MealTemplateItem[];
+      }>
+    ) {
+      state.templates.unshift({
+        id: createId("template"),
+        name: action.payload.name,
+        mealType: action.payload.mealType,
+        items: action.payload.items,
+        createdAt: new Date().toISOString(),
+      });
+    },
+
+    applyMealTemplate(state, action: PayloadAction<string>) {
+      const template = state.templates.find((item) => item.id === action.payload);
+      if (!template) return;
+
+      const eatenAt = new Date().toISOString();
+      const entries = template.items.map((item) =>
+        createMealEntry({
+          product: item.product,
+          quantity: item.quantity,
+          mealType: template.mealType,
+          origin: "recipe",
+          eatenAt,
+        })
       );
 
+      state.items = [...entries, ...state.items];
+      recalcTotalNutrients(state);
+    },
+
+    deleteMealTemplate(state, action: PayloadAction<string>) {
+      state.templates = state.templates.filter(
+        (template) => template.id !== action.payload
+      );
+    },
+
+    removeProduct(state, action: PayloadAction<string>) {
+      state.items = state.items.filter((item) => item.id !== action.payload);
       recalcTotalNutrients(state);
     },
 
     clearMeal(state) {
       state.items = [];
+      state.templates = [];
       state.totalNutrients = createEmptyNutrients();
-    },
-
-    setMeal(state, action: PayloadAction<MealItem[]>) {
-      state.items = action.payload;
-      recalcTotalNutrients(state);
     },
   },
 });
 
-// Пересчёт суммарных нутриентов
 const recalcTotalNutrients = (state: MealState) => {
   const totals = createEmptyNutrients();
 
@@ -124,7 +183,14 @@ const recalcTotalNutrients = (state: MealState) => {
   state.totalNutrients = totals;
 };
 
-export const { addProduct, removeProduct, clearMeal, setMeal } =
-  mealSlice.actions;
+export const {
+  addProduct,
+  addMealEntries,
+  saveMealTemplate,
+  applyMealTemplate,
+  deleteMealTemplate,
+  removeProduct,
+  clearMeal,
+} = mealSlice.actions;
 
 export default mealSlice.reducer;

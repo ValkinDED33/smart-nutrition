@@ -26,21 +26,28 @@ const dictionaries = {
     "lang.uk": "Українська",
     "lang.pl": "Polski",
     "landing.eyebrow": "Планування харчування",
-    "landing.title": "Безпечна реєстрація, персональний профіль і контроль калорій в одному місці.",
-    "landing.subtitle": "Створюйте акаунт, зберігайте цілі, відстежуйте денний прогрес і керуйте харчуванням у захищеному інтерфейсі.",
+    "landing.title":
+      "Безпечна реєстрація, персональний профіль і контроль калорій в одному місці.",
+    "landing.subtitle":
+      "Створюйте акаунт, зберігайте цілі, відстежуйте денний прогрес і керуйте харчуванням у захищеному інтерфейсі.",
     "landing.primary": "Створити акаунт",
     "landing.secondary": "Увійти",
     "landing.card1.title": "Захищений доступ",
-    "landing.card1.body": "Сесія відновлюється лише для валідного користувача, а невдалі спроби входу обмежуються.",
+    "landing.card1.body":
+      "Сесія відновлюється лише для валідного користувача, а невдалі спроби входу обмежуються.",
     "landing.card2.title": "Реєстрація без помилок",
-    "landing.card2.body": "Перевіряємо унікальність email, силу пароля та коректність усіх даних ще до створення профілю.",
+    "landing.card2.body":
+      "Перевіряємо унікальність email, силу пароля та коректність усіх даних ще до створення профілю.",
     "landing.card3.title": "Дві мови",
-    "landing.card3.body": "Інтерфейс миттєво перемикається між українською та польською без перезавантаження.",
+    "landing.card3.body":
+      "Інтерфейс миттєво перемикається між українською та польською без перезавантаження.",
     "auth.demoHint": "Демо-акаунт: ivan@mail.com / StrongPass123!",
     "auth.loginTitle": "Безпечний вхід",
-    "auth.loginSubtitle": "Увійдіть у свій профіль, щоб переглянути план харчування та прогрес.",
+    "auth.loginSubtitle":
+      "Увійдіть у свій профіль, щоб переглянути план харчування та прогрес.",
     "auth.registerTitle": "Створення профілю",
-    "auth.registerSubtitle": "Реєстрація створює захищену локальну сесію та персональний профіль користувача.",
+    "auth.registerSubtitle":
+      "Реєстрація створює захищену локальну сесію та персональний профіль користувача.",
     "auth.haveAccount": "Вже маєте акаунт?",
     "auth.noAccount": "Ще немає акаунта?",
     "auth.loginLink": "Увійти",
@@ -90,7 +97,8 @@ const dictionaries = {
     "error.genericRegister": "Не вдалося завершити реєстрацію.",
     "error.genericProfile": "Не вдалося зберегти профіль.",
     "dashboard.welcome": "Вітаємо, {name}",
-    "dashboard.subtitle": "Ось ваш поточний баланс калорій та макроелементів за сьогодні.",
+    "dashboard.subtitle":
+      "Ось ваш поточний баланс калорій та макроелементів за сьогодні.",
     "dashboard.dailyGoal": "Денна ціль",
     "dashboard.consumed": "Спожито",
     "dashboard.remaining": "Залишилось",
@@ -104,7 +112,8 @@ const dictionaries = {
     "dashboard.carbs": "Вуглеводи",
     "dashboard.needLogin": "Будь ласка, увійдіть у систему.",
     "profile.title": "Профіль користувача",
-    "profile.subtitle": "Оновіть фізичні параметри та ціль, щоб рекомендації були точнішими.",
+    "profile.subtitle":
+      "Оновіть фізичні параметри та ціль, щоб рекомендації були точнішими.",
     "profile.currentStats": "Поточні параметри",
     "profile.progress": "Прогрес за калоріями",
     "profile.measurements": "Заміри",
@@ -135,24 +144,31 @@ const dictionaries = {
     "nav.register": "Rejestracja",
     "nav.logout": "Wyloguj",
     "lang.label": "Język",
-    "lang.uk": "Українська",
+    "lang.uk": "Ukraiński",
     "lang.pl": "Polski",
     "landing.eyebrow": "Planowanie żywienia",
-    "landing.title": "Bezpieczna rejestracja, profil użytkownika i kontrola kalorii w jednym miejscu.",
-    "landing.subtitle": "Twórz konto, zapisuj cele, śledź dzienny progres i zarządzaj odżywianiem w chronionym interfejsie.",
+    "landing.title":
+      "Bezpieczna rejestracja, profil użytkownika i kontrola kalorii w jednym miejscu.",
+    "landing.subtitle":
+      "Twórz konto, zapisuj cele, śledź dzienny progres i zarządzaj odżywianiem w chronionym interfejsie.",
     "landing.primary": "Załóż konto",
     "landing.secondary": "Zaloguj się",
     "landing.card1.title": "Chroniony dostęp",
-    "landing.card1.body": "Sesja jest przywracana tylko dla prawidłowego użytkownika, a nieudane logowania są ograniczane.",
+    "landing.card1.body":
+      "Sesja jest przywracana tylko dla prawidłowego użytkownika, a nieudane logowania są ograniczane.",
     "landing.card2.title": "Rejestracja bez błędów",
-    "landing.card2.body": "Sprawdzamy unikalność emaila, siłę hasła i poprawność danych jeszcze przed utworzeniem profilu.",
+    "landing.card2.body":
+      "Sprawdzamy unikalność emaila, siłę hasła i poprawność danych jeszcze przed utworzeniem profilu.",
     "landing.card3.title": "Dwa języki",
-    "landing.card3.body": "Interfejs przełącza się między ukraińskim a polskim natychmiast, bez odświeżania.",
+    "landing.card3.body":
+      "Interfejs przełącza się między ukraińskim a polskim natychmiast, bez odświeżania.",
     "auth.demoHint": "Konto demo: ivan@mail.com / StrongPass123!",
     "auth.loginTitle": "Bezpieczne logowanie",
-    "auth.loginSubtitle": "Zaloguj się do swojego profilu, aby zobaczyć plan żywienia i postępy.",
+    "auth.loginSubtitle":
+      "Zaloguj się do swojego profilu, aby zobaczyć plan żywienia i postępy.",
     "auth.registerTitle": "Tworzenie profilu",
-    "auth.registerSubtitle": "Rejestracja tworzy bezpieczną lokalną sesję i osobisty profil użytkownika.",
+    "auth.registerSubtitle":
+      "Rejestracja tworzy bezpieczną lokalną sesję i osobisty profil użytkownika.",
     "auth.haveAccount": "Masz już konto?",
     "auth.noAccount": "Nie masz jeszcze konta?",
     "auth.loginLink": "Zaloguj się",
@@ -202,7 +218,8 @@ const dictionaries = {
     "error.genericRegister": "Nie udało się zakończyć rejestracji.",
     "error.genericProfile": "Nie udało się zapisać profilu.",
     "dashboard.welcome": "Witaj, {name}",
-    "dashboard.subtitle": "Tutaj widzisz aktualny bilans kalorii i makroskładników na dziś.",
+    "dashboard.subtitle":
+      "Tutaj widzisz aktualny bilans kalorii i makroskładników na dziś.",
     "dashboard.dailyGoal": "Cel dzienny",
     "dashboard.consumed": "Spożyto",
     "dashboard.remaining": "Pozostało",
@@ -216,7 +233,8 @@ const dictionaries = {
     "dashboard.carbs": "Węglowodany",
     "dashboard.needLogin": "Najpierw się zaloguj.",
     "profile.title": "Profil użytkownika",
-    "profile.subtitle": "Zaktualizuj parametry i cel, aby rekomendacje były dokładniejsze.",
+    "profile.subtitle":
+      "Zaktualizuj parametry i cel, aby rekomendacje były dokładniejsze.",
     "profile.currentStats": "Aktualne parametry",
     "profile.progress": "Postęp kalorii",
     "profile.measurements": "Pomiary",
@@ -266,7 +284,9 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
       t: (key, vars) => {
         let text: string = dictionaries[language][key];
 
-        if (!vars) return text;
+        if (!vars) {
+          return text;
+        }
 
         Object.entries(vars).forEach(([name, value]) => {
           text = text.replace(`{${name}}`, String(value));

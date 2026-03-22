@@ -9,26 +9,17 @@ import {
   Typography,
 } from "@mui/material";
 import { useLanguage } from "../shared/i18n/I18nProvider";
+import { WeeklyInsights } from "../features/meal/WeeklyInsights";
+import { AdaptiveGoalCard } from "../features/profile/AdaptiveGoalCard";
+import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 
 const DashboardPage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const mealSummary = useSelector((state: RootState) => state.meal.items);
+  const totalMacros = useSelector((state: RootState) => state.meal.totalNutrients);
   const { t } = useLanguage();
-
-  const totalMacros = mealSummary.reduce(
-    (acc, item) => {
-      const factor = item.quantity / 100;
-      acc.calories += (item.product?.nutrients?.calories ?? 0) * factor;
-      acc.protein += (item.product?.nutrients?.protein ?? 0) * factor;
-      acc.fat += (item.product?.nutrients?.fat ?? 0) * factor;
-      acc.carbs += (item.product?.nutrients?.carbs ?? 0) * factor;
-      return acc;
-    },
-    { calories: 0, protein: 0, fat: 0, carbs: 0 }
-  );
 
   if (!user) return <Typography>{t("dashboard.needLogin")}</Typography>;
 
@@ -175,6 +166,10 @@ const DashboardPage = () => {
           </Paper>
         ))}
       </Box>
+
+      <WeeklyInsights />
+      <SmartRecommendations />
+      <AdaptiveGoalCard />
     </Stack>
   );
 };

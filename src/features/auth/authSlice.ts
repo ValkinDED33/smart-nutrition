@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
 import type { User } from "../../shared/types/user";
 import { AuthApiError, restoreSession } from "../../shared/api/auth";
@@ -6,11 +6,9 @@ import { AuthApiError, restoreSession } from "../../shared/api/auth";
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
-
   error: string | null;
 }
 
@@ -23,7 +21,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-// 🔥 refresh при старте приложения
 export const initializeAuth = createAsyncThunk<
   { accessToken: string; user: User },
   void,
@@ -32,7 +29,9 @@ export const initializeAuth = createAsyncThunk<
   try {
     const data = await restoreSession();
 
-    if (!data) return rejectWithValue(null);
+    if (!data) {
+      return rejectWithValue(null);
+    }
 
     return {
       accessToken: data.token,
@@ -57,10 +56,6 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
-    },
-    setToken(state, action: PayloadAction<string>) {
-      state.accessToken = action.payload;
-      state.isAuthenticated = true;
     },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
@@ -99,7 +94,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, setToken, setUser, setCredentials } = authSlice.actions;
+export const { logout, setUser, setCredentials } = authSlice.actions;
 export const selectAuth = (state: RootState) => state.auth;
 
 export default authSlice.reducer;

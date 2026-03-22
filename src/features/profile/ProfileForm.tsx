@@ -14,8 +14,8 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
-import { setDailyCalories, setGoal, updateWeight } from "./profileSlice";
-import { calculateCalories } from "../../shared/lib/calorieCalculator";
+import { applyProfileTargets } from "./profileSlice";
+import { calculateProfileTargets } from "../../shared/lib/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/i18n/I18nProvider";
 
@@ -83,21 +83,17 @@ const ProfileForm = () => {
         ...user,
         ...data,
       });
+      const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
 
       dispatch(setUser(updatedUser));
       dispatch(
-        setDailyCalories(
-          calculateCalories({
-            age: data.age,
-            weight: data.weight,
-            height: data.height,
-            gender: data.gender,
-            activity: data.activity,
-          })
-        )
+        applyProfileTargets({
+          goal: data.goal,
+          weight: data.weight,
+          maintenanceCalories,
+          targetCalories,
+        })
       );
-      dispatch(setGoal(data.goal));
-      dispatch(updateWeight(data.weight));
       setSuccessMessage(t("profile.saved"));
     } catch {
       setServerError(t("error.genericProfile"));
