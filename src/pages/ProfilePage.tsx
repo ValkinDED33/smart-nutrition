@@ -16,6 +16,7 @@ import {
   selectMealItems,
   selectMealTotalNutrients,
 } from "../features/meal/selectors";
+import { getProductDisplayName } from "../shared/lib/productDisplay";
 
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -138,7 +139,9 @@ const ProfilePage = () => {
 
               return (
                 <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
-                  <Typography sx={{ fontWeight: 700 }}>{item.product.name}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {getProductDisplayName(item.product, language)}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {diaryText.labels[item.mealType]} - {item.quantity} {item.product.unit} -{" "}
                     {calories.toFixed(0)} {t("common.kcal")}

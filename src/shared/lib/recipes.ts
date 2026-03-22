@@ -2,8 +2,16 @@ import { mockProducts } from "./mockProducts";
 import type { Recipe } from "../types/meal";
 import type { Product } from "../types/product";
 
+const legacyProductIds: Record<string, string> = {
+  "manual-chicken": "manual-chicken-breast",
+  "manual-turkey": "manual-turkey-breast",
+  "manual-cheese": "manual-hard-cheese",
+  "manual-nuts": "manual-almonds",
+};
+
 const requireProduct = (id: string): Product => {
-  const product = mockProducts.find((item) => item.id === id);
+  const normalizedId = legacyProductIds[id] ?? id;
+  const product = mockProducts.find((item) => item.id === normalizedId);
 
   if (!product) {
     throw new Error(`Missing product for recipe: ${id}`);

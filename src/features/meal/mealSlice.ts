@@ -6,38 +6,18 @@ import type {
   MealTemplateItem,
   MealType,
 } from "../../shared/types/meal";
+import {
+  createEmptyNutrients,
+  nutrientKeys,
+} from "../../shared/lib/nutrients";
 
 export interface MealState {
   items: MealEntry[];
   templates: MealTemplate[];
   totalNutrients: Nutrients;
+  savedProducts: Product[];
+  recentProducts: Product[];
 }
-
-export const createEmptyNutrients = (): Nutrients => ({
-  calories: 0,
-  protein: 0,
-  fat: 0,
-  saturatedFat: 0,
-  polyunsaturatedFat: 0,
-  transFat: 0,
-  cholesterol: 0,
-  carbs: 0,
-  sugars: 0,
-  fiber: 0,
-  sodium: 0,
-  potassium: 0,
-  vitaminA: 0,
-  vitaminB: 0,
-  vitaminC: 0,
-  vitaminD: 0,
-  vitaminE: 0,
-  vitaminK: 0,
-  calcium: 0,
-  iron: 0,
-  magnesium: 0,
-  zinc: 0,
-  phosphorus: 0,
-});
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -78,32 +58,14 @@ const toString = (value: unknown, fallback = "") =>
 const normalizeNutrients = (value: unknown): Nutrients => {
   const record = isRecord(value) ? value : {};
 
-  return {
-    calories: toNumber(record.calories),
-    protein: toNumber(record.protein),
-    fat: toNumber(record.fat),
-    saturatedFat: toNumber(record.saturatedFat),
-    polyunsaturatedFat: toNumber(record.polyunsaturatedFat),
-    transFat: toNumber(record.transFat),
-    cholesterol: toNumber(record.cholesterol),
-    carbs: toNumber(record.carbs),
-    sugars: toNumber(record.sugars),
-    fiber: toNumber(record.fiber),
-    sodium: toNumber(record.sodium),
-    potassium: toNumber(record.potassium),
-    vitaminA: toNumber(record.vitaminA),
-    vitaminB: toNumber(record.vitaminB),
-    vitaminC: toNumber(record.vitaminC),
-    vitaminD: toNumber(record.vitaminD),
-    vitaminE: toNumber(record.vitaminE),
-    vitaminK: toNumber(record.vitaminK),
-    calcium: toNumber(record.calcium),
-    iron: toNumber(record.iron),
-    magnesium: toNumber(record.magnesium),
-    zinc: toNumber(record.zinc),
-    phosphorus: toNumber(record.phosphorus),
-  };
+  return nutrientKeys.reduce((accumulator, key) => {
+    accumulator[key] = toNumber(record[key]);
+    return accumulator;
+  }, createEmptyNutrients());
 };
+
+const normalizeStringArray = (value: unknown) =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 
 const normalizeProduct = (value: unknown): Product => {
   const record = isRecord(value) ? value : {};
@@ -113,9 +75,24 @@ const normalizeProduct = (value: unknown): Product => {
     name: toString(record.name, "Unknown product"),
     unit: isUnit(record.unit) ? record.unit : "g",
     source: isSource(record.source) ? record.source : "Manual",
+    brand: toString(record.brand) || undefined,
+    barcode: toString(record.barcode) || undefined,
+    imageUrl: toString(record.imageUrl) || undefined,
+    facts: isRecord(record.facts)
+      ? {
+          foodGroup: toString(record.facts.foodGroup) || undefined,
+          carbohydrateTypes: normalizeStringArray(record.facts.carbohydrateTypes),
+          proteinTypes: normalizeStringArray(record.facts.proteinTypes),
+          fatTypes: normalizeStringArray(record.facts.fatTypes),
+          extraCompounds: normalizeStringArray(record.facts.extraCompounds),
+        }
+      : undefined,
     nutrients: normalizeNutrients(record.nutrients),
   };
 };
+
+const normalizeProductCollection = (value: unknown): Product[] =>
+  Array.isArray(value) ? value.map((item) => normalizeProduct(item)) : [];
 
 const normalizeMealTemplateItem = (value: unknown): MealTemplateItem | null => {
   if (!isRecord(value)) return null;
@@ -183,29 +160,9 @@ export const calculateMealTotalNutrients = (items: MealEntry[]): Nutrients => {
     const factor = item.quantity / 100;
     const n = item.product.nutrients;
 
-    totals.calories += n.calories * factor;
-    totals.protein += n.protein * factor;
-    totals.fat += n.fat * factor;
-    totals.saturatedFat += n.saturatedFat * factor;
-    totals.polyunsaturatedFat += n.polyunsaturatedFat * factor;
-    totals.transFat += n.transFat * factor;
-    totals.cholesterol += n.cholesterol * factor;
-    totals.carbs += n.carbs * factor;
-    totals.sugars += n.sugars * factor;
-    totals.fiber += n.fiber * factor;
-    totals.sodium += n.sodium * factor;
-    totals.potassium += n.potassium * factor;
-    totals.vitaminA += n.vitaminA * factor;
-    totals.vitaminB += n.vitaminB * factor;
-    totals.vitaminC += n.vitaminC * factor;
-    totals.vitaminD += n.vitaminD * factor;
-    totals.vitaminE += n.vitaminE * factor;
-    totals.vitaminK += n.vitaminK * factor;
-    totals.calcium += n.calcium * factor;
-    totals.iron += n.iron * factor;
-    totals.magnesium += n.magnesium * factor;
-    totals.zinc += n.zinc * factor;
-    totals.phosphorus += n.phosphorus * factor;
+    nutrientKeys.forEach((key) => {
+      totals[key] = (totals[key] ?? 0) + (n[key] ?? 0) * factor;
+    });
   });
 
   return totals;
@@ -215,6 +172,8 @@ export const createInitialMealState = (): MealState => ({
   items: [],
   templates: [],
   totalNutrients: createEmptyNutrients(),
+  savedProducts: [],
+  recentProducts: [],
 });
 
 export const normalizeMealState = (value: unknown): MealState => {
@@ -233,11 +192,15 @@ export const normalizeMealState = (value: unknown): MealState => {
         .map((template) => normalizeMealTemplate(template))
         .filter((template): template is MealTemplate => template !== null)
     : [];
+  const savedProducts = normalizeProductCollection(value.savedProducts);
+  const recentProducts = normalizeProductCollection(value.recentProducts);
 
   return {
     items,
     templates,
     totalNutrients: calculateMealTotalNutrients(items),
+    savedProducts,
+    recentProducts,
   };
 };
 
@@ -258,11 +221,15 @@ const mealSlice = createSlice({
       }>
     ) {
       state.items.unshift(createMealEntry(action.payload));
+      rememberProduct(state.recentProducts, action.payload.product, 16);
       recalcTotalNutrients(state);
     },
 
     addMealEntries(state, action: PayloadAction<MealEntry[]>) {
       state.items = [...action.payload, ...state.items];
+      action.payload.forEach((entry) =>
+        rememberProduct(state.recentProducts, entry.product, 16)
+      );
       recalcTotalNutrients(state);
     },
 
@@ -308,6 +275,20 @@ const mealSlice = createSlice({
       );
     },
 
+    saveProduct(state, action: PayloadAction<Product>) {
+      rememberProduct(state.savedProducts, action.payload, 24);
+    },
+
+    removeSavedProduct(state, action: PayloadAction<string>) {
+      state.savedProducts = state.savedProducts.filter(
+        (product) => createProductKey(product) !== action.payload
+      );
+    },
+
+    rememberRecentProduct(state, action: PayloadAction<Product>) {
+      rememberProduct(state.recentProducts, action.payload, 16);
+    },
+
     removeProduct(state, action: PayloadAction<string>) {
       state.items = state.items.filter((item) => item.id !== action.payload);
       recalcTotalNutrients(state);
@@ -317,9 +298,21 @@ const mealSlice = createSlice({
       state.items = [];
       state.templates = [];
       state.totalNutrients = createEmptyNutrients();
+      state.savedProducts = [];
+      state.recentProducts = [];
     },
   },
 });
+
+const createProductKey = (product: Product) =>
+  product.barcode?.trim() ||
+  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+
+const rememberProduct = (list: Product[], product: Product, limit: number) => {
+  const key = createProductKey(product);
+  const next = [product, ...list.filter((item) => createProductKey(item) !== key)];
+  list.splice(0, list.length, ...next.slice(0, limit));
+};
 
 const recalcTotalNutrients = (state: MealState) => {
   state.totalNutrients = calculateMealTotalNutrients(state.items);
@@ -331,6 +324,9 @@ export const {
   saveMealTemplate,
   applyMealTemplate,
   deleteMealTemplate,
+  saveProduct,
+  removeSavedProduct,
+  rememberRecentProduct,
   removeProduct,
   clearMeal,
 } = mealSlice.actions;

@@ -13,6 +13,7 @@ import { mockProducts } from "../../shared/lib/mockProducts";
 import type { MealType } from "../../shared/types/meal";
 import type { AppDispatch } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import { getProductDisplayName } from "../../shared/lib/productDisplay";
 
 interface Props {
   mealType: MealType;
@@ -149,7 +150,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
             >
               {mockProducts.map((product) => (
                 <MenuItem key={product.id} value={product.id}>
-                  {product.name}
+                  {getProductDisplayName(product, language)}
                 </MenuItem>
               ))}
             </TextField>

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
+import { getProductDisplayName } from "../../shared/lib/productDisplay";
 
 export const DailyHistoryExplorer = () => {
   const items = useSelector(selectMealItems);
@@ -88,7 +89,9 @@ export const DailyHistoryExplorer = () => {
             <Stack spacing={1.1}>
               {selectedEntries.map((item) => (
                 <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
-                  <Typography sx={{ fontWeight: 700 }}>{item.product.name}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {getProductDisplayName(item.product, language)}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {item.quantity} {item.product.unit} -{" "}
                     {((item.product.nutrients.calories * item.quantity) / 100).toFixed(0)} kcal

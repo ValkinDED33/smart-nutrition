@@ -14,6 +14,7 @@ import { applyMealTemplate, deleteMealTemplate, saveMealTemplate } from "./mealS
 import { selectMealItems, selectMealTemplates } from "./selectors";
 import type { MealType } from "../../shared/types/meal";
 import { useLanguage } from "../../shared/language";
+import { getProductDisplayName } from "../../shared/lib/productDisplay";
 
 interface Props {
   mealType: MealType;
@@ -126,7 +127,7 @@ export const TemplateVault = ({ mealType }: Props) => {
                       {template.items
                         .map(
                           (item) =>
-                            `${item.product.name} ${item.quantity} ${item.product.unit}`
+                            `${getProductDisplayName(item.product, language)} ${item.quantity} ${item.product.unit}`
                         )
                         .join(", ")}
                     </Typography>
