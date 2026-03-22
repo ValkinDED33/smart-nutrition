@@ -24,31 +24,8 @@ export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const templates = useSelector(selectMealTemplates);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [templateName, setTemplateName] = useState("");
-
-  const text =
-    language === "pl"
-      ? {
-          title: "Szablony posiłków",
-          subtitle:
-            "Zapisz aktualny posiłek jako szablon i odtwórz go jednym kliknięciem.",
-          placeholder: "Np. śniadanie białkowe",
-          save: "Zapisz szablon",
-          apply: "Powtórz",
-          remove: "Usuń",
-          empty: "Brak zapisanych szablonów dla tego posiłku.",
-        }
-      : {
-          title: "Шаблони прийомів їжі",
-          subtitle:
-            "Збережи поточний прийом їжі як шаблон і повторюй його одним натисканням.",
-          placeholder: "Наприклад: білковий сніданок",
-          save: "Зберегти шаблон",
-          apply: "Повторити",
-          remove: "Видалити",
-          empty: "Для цього прийому їжі шаблонів поки немає.",
-        };
 
   const currentMealEntries = useMemo(
     () => items.filter((item) => item.mealType === mealType).slice(0, 8),
@@ -87,29 +64,29 @@ export const TemplateVault = ({ mealType }: Props) => {
     >
       <Stack spacing={2}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("templates.title")}
         </Typography>
-        <Typography color="text.secondary">{text.subtitle}</Typography>
+        <Typography color="text.secondary">{t("templates.subtitle")}</Typography>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <TextField
             fullWidth
             value={templateName}
             onChange={(event) => setTemplateName(event.target.value)}
-            label={text.placeholder}
+            label={t("templates.placeholder")}
           />
           <Button
             variant="contained"
             onClick={handleSaveTemplate}
             disabled={!templateName.trim() || currentMealEntries.length === 0}
           >
-            {text.save}
+            {t("templates.save")}
           </Button>
         </Stack>
 
         <Stack spacing={1.5}>
           {currentMealTemplates.length === 0 ? (
-            <Typography color="text.secondary">{text.empty}</Typography>
+            <Typography color="text.secondary">{t("templates.empty")}</Typography>
           ) : (
             currentMealTemplates.map((template) => (
               <Card
@@ -133,13 +110,13 @@ export const TemplateVault = ({ mealType }: Props) => {
                     </Typography>
                     <Stack direction="row" spacing={1}>
                       <Button onClick={() => dispatch(applyMealTemplate(template.id))}>
-                        {text.apply}
+                        {t("templates.apply")}
                       </Button>
                       <Button
                         color="error"
                         onClick={() => dispatch(deleteMealTemplate(template.id))}
                       >
-                        {text.remove}
+                        {t("templates.remove")}
                       </Button>
                     </Stack>
                   </Stack>

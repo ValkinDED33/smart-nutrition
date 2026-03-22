@@ -4,6 +4,7 @@ import { Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
+import { getLocalDateKey } from "../../shared/lib/date";
 
 export const SmartRecommendations = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -11,34 +12,11 @@ export const SmartRecommendations = () => {
     (state: RootState) => state.profile.dailyCalories
   );
   const items = useSelector(selectMealItems);
-  const { language } = useLanguage();
+  const { t } = useLanguage();
 
-  const text =
-    language === "pl"
-      ? {
-          title: "Rekomendacje dnia",
-          empty: "Dodaj więcej wpisów, aby otrzymać spersonalizowane wskazówki.",
-          lowProtein:
-            "Białko jest jeszcze nisko. Warto dodać twaróg, jogurt grecki, jajka albo mięso.",
-          highCalories:
-            "Kalorie są już blisko limitu. Kolejny posiłek lepiej oprzeć na białku i warzywach.",
-          balanced:
-            "Bilans dnia wygląda stabilnie. Utrzymaj podobny rozkład posiłków do końca dnia.",
-        }
-      : {
-          title: "Рекомендації на день",
-          empty: "Додай більше записів, щоб отримати персональні підказки.",
-          lowProtein:
-            "Білка поки замало. Варто додати сир, грецький йогурт, яйця або м'ясо.",
-          highCalories:
-            "Калорії вже близько до ліміту. Наступний прийом їжі краще будувати на білку і овочах.",
-          balanced:
-            "Баланс дня виглядає стабільно. Тримай подібний розподіл прийомів їжі до кінця дня.",
-        };
-
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey(new Date());
   const todayTotals = items
-    .filter((item) => item.eatenAt.slice(0, 10) === todayKey)
+    .filter((item) => getLocalDateKey(item.eatenAt) === todayKey)
     .reduce(
       (accumulator, item) => {
         const factor = item.quantity / 100;
@@ -56,27 +34,19 @@ export const SmartRecommendations = () => {
     const next: string[] = [];
 
     if (todayTotals.protein < proteinTarget * 0.6) {
-      next.push(text.lowProtein);
+      next.push(t("recommendations.lowProtein"));
     }
 
     if (todayTotals.calories > dailyCalories * 0.85) {
-      next.push(text.highCalories);
+      next.push(t("recommendations.highCalories"));
     }
 
     if (next.length === 0) {
-      next.push(text.balanced);
+      next.push(t("recommendations.balanced"));
     }
 
     return next;
-  }, [
-    dailyCalories,
-    text.balanced,
-    text.highCalories,
-    text.lowProtein,
-    todayTotals.calories,
-    todayTotals.protein,
-    user,
-  ]);
+  }, [dailyCalories, t, todayTotals.calories, todayTotals.protein, user]);
 
   return (
     <Paper
@@ -90,10 +60,10 @@ export const SmartRecommendations = () => {
     >
       <Stack spacing={1.4}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("recommendations.title")}
         </Typography>
         {recommendations.length === 0 ? (
-          <Typography color="text.secondary">{text.empty}</Typography>
+          <Typography color="text.secondary">{t("recommendations.empty")}</Typography>
         ) : (
           recommendations.map((recommendation) => (
             <Typography key={recommendation} color="text.secondary">

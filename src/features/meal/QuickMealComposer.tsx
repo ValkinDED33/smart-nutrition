@@ -33,37 +33,9 @@ const createRow = (): ComposerRow => ({
   quantity: 100,
 });
 
-const copy = {
-  uk: {
-    title: "Швидкий конструктор страви",
-    subtitle:
-      "Додай одразу кілька інгредієнтів: сир, м'ясо, помідор, яйце або будь-яку іншу комбінацію.",
-    ingredient: "Інгредієнт",
-    quantity: "Кількість",
-    addRow: "Додати інгредієнт",
-    saveMeal: "Записати прийом їжі",
-    summary: "Разом",
-    kcal: "ккал",
-    remove: "Видалити",
-  },
-  pl: {
-    title: "Szybki kreator posiłku",
-    subtitle:
-      "Dodaj od razu kilka składników: ser, mięso, pomidor, jajko albo dowolną inną kombinację.",
-    ingredient: "Składnik",
-    quantity: "Ilość",
-    addRow: "Dodaj składnik",
-    saveMeal: "Zapisz posiłek",
-    summary: "Razem",
-    kcal: "kcal",
-    remove: "Usuń",
-  },
-} as const;
-
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { language } = useLanguage();
-  const text = copy[language];
+  const { language, t } = useLanguage();
   const [rows, setRows] = useState<ComposerRow[]>([
     createRow(),
     { ...createRow(), productId: mockProducts[1]?.id ?? "", quantity: 80 },
@@ -128,9 +100,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     >
       <Stack spacing={2}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("composer.title")}
         </Typography>
-        <Typography color="text.secondary">{text.subtitle}</Typography>
+        <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
         {rows.map((row, index) => (
           <Stack
@@ -142,7 +114,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
             <TextField
               select
               fullWidth
-              label={`${text.ingredient} ${index + 1}`}
+              label={`${t("composer.ingredient")} ${index + 1}`}
               value={row.productId}
               onChange={(event) =>
                 updateRow(row.id, { productId: event.target.value })
@@ -157,7 +129,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
 
             <TextField
               type="number"
-              label={text.quantity}
+              label={t("composer.quantity")}
               value={row.quantity}
               onChange={(event) =>
                 updateRow(row.id, {
@@ -173,24 +145,24 @@ export const QuickMealComposer = ({ mealType }: Props) => {
               disabled={rows.length === 1}
               sx={{ alignSelf: { xs: "flex-end", md: "center" } }}
             >
-              {text.remove}
+              {t("composer.remove")}
             </Button>
           </Stack>
         ))}
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <Button variant="outlined" onClick={addRow}>
-            {text.addRow}
+            {t("composer.addRow")}
           </Button>
           <Button variant="contained" onClick={handleSaveMeal}>
-            {text.saveMeal}
+            {t("composer.saveMeal")}
           </Button>
         </Stack>
 
         <Typography color="text.secondary">
-          {text.summary}: {totals.calories.toFixed(0)} {text.kcal} - P{" "}
-          {totals.protein.toFixed(1)} g - F {totals.fat.toFixed(1)} g - C{" "}
-          {totals.carbs.toFixed(1)} g
+          {t("composer.summary")}: {totals.calories.toFixed(0)} {t("common.kcal")} - P{" "}
+          {totals.protein.toFixed(1)} {t("common.g")} - F {totals.fat.toFixed(1)}{" "}
+          {t("common.g")} - C {totals.carbs.toFixed(1)} {t("common.g")}
         </Typography>
       </Stack>
     </Paper>

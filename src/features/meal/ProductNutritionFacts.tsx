@@ -60,26 +60,7 @@ interface Props {
 }
 
 export const ProductNutritionFacts = ({ product }: Props) => {
-  const { language } = useLanguage();
-
-  const text =
-    language === "pl"
-      ? {
-          title: "Dokładny skład produktu",
-          subtitle:
-            "Wartości są pokazywane tylko dla danych dostępnych w źródle. Ukryte pola oznaczają brak dokładnej informacji.",
-          perBase: `Na 100 ${product.unit}`,
-          profile: "Profil produktu",
-          noData: "Brak dodatkowych danych jakościowych dla tego produktu.",
-        }
-      : {
-          title: "Точний склад продукту",
-          subtitle:
-            "Показуємо лише значення, які реально є в джерелі даних. Приховані поля означають, що точної інформації немає.",
-          perBase: `На 100 ${product.unit}`,
-          profile: "Профіль продукту",
-          noData: "Для цього продукту немає додаткових якісних позначок.",
-        };
+  const { language, t } = useLanguage();
 
   const detailSections = nutritionSections
     .map((section) => ({
@@ -118,19 +99,19 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   return (
     <Stack spacing={2}>
       <Stack spacing={0.5}>
-        <Typography sx={{ fontWeight: 800 }}>{text.title}</Typography>
+        <Typography sx={{ fontWeight: 800 }}>{t("productFacts.title")}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {text.subtitle}
+          {t("productFacts.subtitle")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {text.perBase}
+          {t("productFacts.perBase", { unit: product.unit })}
         </Typography>
       </Stack>
 
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
         {factChips.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            {text.noData}
+            {t("productFacts.noData")}
           </Typography>
         ) : (
           factChips.map((label) => (

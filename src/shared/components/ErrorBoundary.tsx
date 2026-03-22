@@ -1,7 +1,14 @@
 import { Component, type ReactNode } from "react";
 import { Box, Button, Typography } from "@mui/material";
+import { useLanguage } from "../language";
 
 interface Props {
+  children: ReactNode;
+  title: string;
+  actionLabel: string;
+}
+
+interface WrapperProps {
   children: ReactNode;
 }
 
@@ -9,7 +16,7 @@ interface State {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryInner extends Component<Props, State> {
   state: State = {
     hasError: false,
   };
@@ -37,10 +44,10 @@ class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <Typography variant="h5" textAlign="center">
-            Something went wrong
+            {this.props.title}
           </Typography>
           <Button variant="contained" onClick={this.handleReload}>
-            Reload app
+            {this.props.actionLabel}
           </Button>
         </Box>
       );
@@ -49,5 +56,18 @@ class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+const ErrorBoundary = ({ children }: WrapperProps) => {
+  const { t } = useLanguage();
+
+  return (
+    <ErrorBoundaryInner
+      title={t("errorBoundary.title")}
+      actionLabel={t("errorBoundary.action")}
+    >
+      {children}
+    </ErrorBoundaryInner>
+  );
+};
 
 export default ErrorBoundary;

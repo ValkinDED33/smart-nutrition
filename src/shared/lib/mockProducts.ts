@@ -634,8 +634,51 @@ const catalog: LocalProductRecord[] = [
   }),
 ];
 
+const localizedAliasesById: Record<string, string[]> = {
+  "manual-oats": ["вівсянка", "овсянка", "płatki owsiane", "owsianka"],
+  "manual-greek-yogurt": ["грецький йогурт", "греческий йогурт", "jogurt grecki"],
+  "manual-skyr": ["скир"],
+  "manual-cottage-cheese": ["кисломолочний сир", "творог", "twaróg", "ser wiejski"],
+  "manual-hard-cheese": ["твердий сир", "сыр", "ser twardy"],
+  "manual-milk": ["молоко", "mleko"],
+  "manual-kefir": ["кефір", "кефир"],
+  "manual-egg-boiled": ["яйце", "яйцо", "jajko", "jajko gotowane"],
+  "manual-egg-fried": ["смажене яйце", "яичница", "jajko smażone"],
+  "manual-chicken-breast": ["куряче філе", "курица", "kurczak", "pierś z kurczaka"],
+  "manual-turkey-breast": ["філе індички", "индейка", "indyk", "pierś z indyka"],
+  "manual-turkey-ham": ["шинка з індички", "ветчина", "szynka z indyka"],
+  "manual-beef": ["яловичина", "говядина", "wołowina"],
+  "manual-salmon": ["лосось", "сьомга", "łosoś"],
+  "manual-tuna": ["тунець", "тунец", "tuńczyk"],
+  "manual-rice": ["рис", "ryż"],
+  "manual-buckwheat": ["гречка", "kasza gryczana"],
+  "manual-pasta": ["макарони", "макароны", "makaron"],
+  "manual-potato": ["картопля", "картофель", "ziemniak"],
+  "manual-sweet-potato": ["батат"],
+  "manual-bread": ["хліб", "хлеб", "chleb"],
+  "manual-tomato": ["помідор", "томат", "pomidor"],
+  "manual-cucumber": ["огірок", "огурец", "ogórek"],
+  "manual-avocado": ["авокадо"],
+  "manual-pepper": ["перець", "перец", "papryka"],
+  "manual-banana": ["банан"],
+  "manual-apple": ["яблуко", "яблоко", "jabłko"],
+  "manual-blueberries": ["лохина", "черника", "borówki"],
+  "manual-almonds": ["мигдаль", "миндаль", "migdały"],
+  "manual-peanut-butter": ["арахісова паста", "арахисовая паста", "masło orzechowe"],
+  "manual-olive-oil": ["оливкова олія", "оливковое масло", "oliwa"],
+  "manual-mozzarella": ["моцарела", "моцарелла"],
+  "manual-tofu": ["тофу"],
+  "manual-hummus": ["хумус"],
+  "manual-protein-bar": ["протеїновий батончик", "протеиновый батончик", "baton proteinowy"],
+};
+
 const getSearchCandidates = (record: LocalProductRecord) =>
-  [record.product.name, record.product.brand, ...record.aliases]
+  [
+    record.product.name,
+    record.product.brand,
+    ...record.aliases,
+    ...(localizedAliasesById[record.product.id] ?? []),
+  ]
     .filter(Boolean)
     .map((value) => normalizeSearchText(String(value)))
     .join(" ");
@@ -664,9 +707,8 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
       const haystack = getSearchCandidates(record);
       const matchedTokens = tokens.filter((token) => haystack.includes(token)).length;
       const startsWithQuery = haystack.startsWith(normalizedQuery) ? 3 : 0;
-      const exactAlias = record.aliases.some(
-        (alias) => normalizeSearchText(alias) === normalizedQuery
-      )
+      const exactAlias = [...record.aliases, ...(localizedAliasesById[record.product.id] ?? [])]
+        .some((alias) => normalizeSearchText(alias) === normalizedQuery)
         ? 4
         : 0;
 

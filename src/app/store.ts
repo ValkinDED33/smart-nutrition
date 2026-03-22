@@ -24,7 +24,7 @@ const rootReducer = combineReducers({
 
 const persistConfig = {
   key: "root",
-  version: 2,
+  version: 3,
   storage,
   whitelist: ["profile", "meal"],
   migrate: async (state: PersistedState): Promise<PersistedState> => {

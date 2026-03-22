@@ -21,3 +21,6 @@ export const selectSavedProducts = (state: RootState) =>
 
 export const selectRecentProducts = (state: RootState) =>
   state.meal?.recentProducts ?? EMPTY_PRODUCTS;
+
+export const selectPersonalBarcodeProducts = (state: RootState) =>
+  state.meal?.personalBarcodeProducts ?? EMPTY_PRODUCTS;

@@ -47,21 +47,6 @@ export const ProductCard = ({
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
 
-  const text =
-    language === "pl"
-      ? {
-          save: "Zapisz szybko",
-          remove: "Usuń z zapisanych",
-          details: "Pokaż skład",
-          hide: "Ukryj skład",
-        }
-      : {
-          save: "Зберегти швидко",
-          remove: "Прибрати зі збережених",
-          details: "Показати склад",
-          hide: "Сховати склад",
-        };
-
   const handleAdd = () => {
     if (qty <= 0) {
       alert(t("meal.invalidQuantity"));
@@ -152,7 +137,7 @@ export const ProductCard = ({
                 onClick={handleToggleSave}
                 sx={{ alignSelf: "stretch" }}
               >
-                {isSaved ? text.remove : text.save}
+                {isSaved ? t("productCard.remove") : t("productCard.save")}
               </Button>
             )}
           </Stack>
@@ -162,7 +147,7 @@ export const ProductCard = ({
             onClick={() => setDetailsOpen((current) => !current)}
             sx={{ alignSelf: "flex-start", px: 0.5 }}
           >
-            {detailsOpen ? text.hide : text.details}
+            {detailsOpen ? t("productCard.hide") : t("productCard.details")}
           </Button>
 
           <Collapse in={detailsOpen} timeout="auto" unmountOnExit>

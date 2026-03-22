@@ -3,41 +3,23 @@ import { useSelector } from "react-redux";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
-
-const startOfDay = (date: Date) => {
-  const copy = new Date(date);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-};
+import {
+  addDays,
+  formatLocalDateKey,
+  getLocalDateKey,
+} from "../../shared/lib/date";
 
 export const WeeklyInsights = () => {
   const items = useSelector(selectMealItems);
-  const { language } = useLanguage();
-
-  const text =
-    language === "pl"
-      ? {
-          title: "Analityka 7 dni",
-          average: "Średnio / dzień",
-          bestDay: "Najmocniejszy dzień",
-          protein: "Białko / dzień",
-          empty: "Za mało danych do analityki tygodniowej.",
-        }
-      : {
-          title: "Аналітика за 7 днів",
-          average: "Середньо / день",
-          bestDay: "Найсильніший день",
-          protein: "Білок / день",
-          empty: "Поки замало даних для тижневої аналітики.",
-        };
+  const { language, t } = useLanguage();
 
   const days = useMemo(() => {
-    const today = startOfDay(new Date());
+    const today = new Date();
+
     return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (6 - index));
-      const key = date.toISOString().slice(0, 10);
-      const entries = items.filter((item) => item.eatenAt.slice(0, 10) === key);
+      const date = addDays(today, -(6 - index));
+      const key = getLocalDateKey(date);
+      const entries = items.filter((item) => getLocalDateKey(item.eatenAt) === key);
       const totals = entries.reduce(
         (accumulator, item) => {
           const factor = item.quantity / 100;
@@ -50,7 +32,7 @@ export const WeeklyInsights = () => {
 
       return {
         key,
-        label: date.toLocaleDateString(language === "pl" ? "pl-PL" : "uk-UA", {
+        label: formatLocalDateKey(key, language, {
           weekday: "short",
           day: "numeric",
         }),
@@ -76,9 +58,9 @@ export const WeeklyInsights = () => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-          {text.title}
+          {t("weekly.title")}
         </Typography>
-        <Typography color="text.secondary">{text.empty}</Typography>
+        <Typography color="text.secondary">{t("weekly.empty")}</Typography>
       </Paper>
     );
   }
@@ -95,7 +77,7 @@ export const WeeklyInsights = () => {
     >
       <Stack spacing={2.5}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("weekly.title")}
         </Typography>
 
         <Box
@@ -106,21 +88,21 @@ export const WeeklyInsights = () => {
           }}
         >
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
-            <Typography color="text.secondary">{text.average}</Typography>
+            <Typography color="text.secondary">{t("weekly.average")}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
-              {(totalWeekCalories / 7).toFixed(0)} kcal
+              {(totalWeekCalories / 7).toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
-            <Typography color="text.secondary">{text.protein}</Typography>
+            <Typography color="text.secondary">{t("weekly.protein")}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
-              {(totalWeekProtein / 7).toFixed(1)} g
+              {(totalWeekProtein / 7).toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
-            <Typography color="text.secondary">{text.bestDay}</Typography>
+            <Typography color="text.secondary">{t("weekly.bestDay")}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
-              {bestDay?.label} - {bestDay?.calories.toFixed(0)} kcal
+              {bestDay?.label} - {bestDay?.calories.toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
         </Box>
@@ -149,7 +131,7 @@ export const WeeklyInsights = () => {
                 />
               </Box>
               <Typography sx={{ width: 84, textAlign: "right" }}>
-                {day.calories.toFixed(0)} kcal
+                {day.calories.toFixed(0)} {t("common.kcal")}
               </Typography>
             </Stack>
           ))}
