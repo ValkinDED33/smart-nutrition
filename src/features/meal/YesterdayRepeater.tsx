@@ -6,6 +6,7 @@ import { addMealEntries } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import type { MealEntry, MealType } from "../../shared/types/meal";
 import { useLanguage } from "../../shared/language";
+import { getProductDisplayName } from "../../shared/lib/productDisplay";
 
 const createEntryId = () =>
   globalThis.crypto?.randomUUID?.() ??
@@ -82,7 +83,10 @@ export const YesterdayRepeater = ({ mealType }: Props) => {
           <>
             <Typography color="text.secondary">
               {entries
-                .map((entry) => `${entry.product.name} ${entry.quantity} ${entry.product.unit}`)
+                .map(
+                  (entry) =>
+                    `${getProductDisplayName(entry.product, language)} ${entry.quantity} ${entry.product.unit}`
+                )
                 .join(", ")}
             </Typography>
             <Button variant="outlined" onClick={handleRepeat} sx={{ alignSelf: "flex-start" }}>

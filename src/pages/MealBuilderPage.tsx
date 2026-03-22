@@ -17,6 +17,7 @@ import { removeProduct } from "../features/meal/mealSlice";
 import { ProductSearch } from "../features/meal/ProductSearch";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
+import { QuickProductShelf } from "../features/meal/QuickProductShelf";
 import {
   selectMealItems,
   selectMealTotalNutrients,
@@ -25,6 +26,7 @@ import { TemplateVault } from "../features/meal/TemplateVault";
 import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
 import type { MealEntry, MealType } from "../shared/types/meal";
 import { useLanguage } from "../shared/language";
+import { getProductDisplayName } from "../shared/lib/productDisplay";
 import Loader from "../shared/components/Loader/PacmanLoader";
 
 const BarcodeScanner = lazy(() =>
@@ -179,6 +181,7 @@ const MealBuilderPage = () => {
         <Stack spacing={3}>
           <YesterdayRepeater mealType={mealType} />
           <QuickMealComposer mealType={mealType} />
+          <QuickProductShelf mealType={mealType} />
           <TemplateVault mealType={mealType} />
           <ProductSearch mealType={mealType} />
           <RecipeSection mealType={mealType} />
@@ -238,7 +241,7 @@ const MealBuilderPage = () => {
                           >
                             <Box sx={{ minWidth: 0 }}>
                               <Typography sx={{ fontWeight: 700 }}>
-                                {item.product.name}
+                                {getProductDisplayName(item.product, language)}
                               </Typography>
                               <Typography color="text.secondary" variant="body2">
                                 {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)} kcal

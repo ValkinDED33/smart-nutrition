@@ -1,15 +1,309 @@
-import type { Product, Nutrients, ProductSource } from "../types/product";
-import { fetchUSDAByBarcode } from "./usda";
+import axios from "axios";
+import type { NutrientKey, Product, ProductSource } from "../types/product";
+import { fetchUSDAByBarcode, searchUSDAProducts } from "./usda";
 import { fetchOpenFoodByBarcode } from "./openFood";
-import { mockProducts } from "../lib/mockProducts";
+import {
+  findLocalProductByBarcode,
+  getFeaturedProducts,
+  searchLocalProducts,
+} from "../lib/mockProducts";
+import { createEmptyNutrients, type NutrientUnit } from "../lib/nutrients";
 
 type RawProduct = Record<string, unknown>;
 
-const mockBarcodeLookup: Record<string, Product> = {
-  "4820000730016": mockProducts.find((product) => product.id === "manual-cheese")!,
-  "4820000730023": mockProducts.find((product) => product.id === "manual-turkey")!,
-  "4820000730030": mockProducts.find((product) => product.id === "manual-greek-yogurt")!,
-  "4820000730047": mockProducts.find((product) => product.id === "manual-egg-boiled")!,
+const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
+
+const nutrientAliases: Record<NutrientKey, string[]> = {
+  calories: ["Energy", "Calories"],
+  protein: ["Protein"],
+  fat: ["Total lipid (fat)", "Total fat"],
+  saturatedFat: ["Fatty acids, total saturated"],
+  monounsaturatedFat: ["Fatty acids, total monounsaturated"],
+  polyunsaturatedFat: ["Fatty acids, total polyunsaturated"],
+  transFat: ["Fatty acids, total trans"],
+  omega3: ["18:3 n-3", "20:5 n-3", "22:5 n-3", "22:6 n-3"],
+  omega6: ["18:2 n-6", "20:4 n-6"],
+  omega9: ["18:1 undifferentiated", "18:1 c", "20:1", "22:1"],
+  cholesterol: ["Cholesterol"],
+  carbs: ["Carbohydrate, by difference"],
+  sugars: ["Sugars, total including NLEA", "Sugars, total"],
+  fiber: ["Fiber, total dietary"],
+  starch: ["Starch"],
+  glucose: ["Glucose (dextrose)"],
+  fructose: ["Fructose"],
+  sucrose: ["Sucrose"],
+  lactose: ["Lactose"],
+  water: ["Water"],
+  sodium: ["Sodium, Na"],
+  potassium: ["Potassium, K"],
+  vitaminA: ["Vitamin A, RAE"],
+  vitaminB: ["Vitamin B"],
+  vitaminB1: ["Thiamin"],
+  vitaminB2: ["Riboflavin"],
+  vitaminB3: ["Niacin"],
+  vitaminB5: ["Pantothenic acid"],
+  vitaminB6: ["Vitamin B-6"],
+  vitaminB7: ["Biotin"],
+  vitaminB9: ["Folate, total"],
+  vitaminB12: ["Vitamin B-12"],
+  vitaminC: ["Vitamin C, total ascorbic acid"],
+  vitaminD: ["Vitamin D (D2 + D3)"],
+  vitaminE: ["Vitamin E (alpha-tocopherol)"],
+  vitaminK: ["Vitamin K (phylloquinone)"],
+  calcium: ["Calcium, Ca"],
+  iron: ["Iron, Fe"],
+  magnesium: ["Magnesium, Mg"],
+  zinc: ["Zinc, Zn"],
+  phosphorus: ["Phosphorus, P"],
+  iodine: ["Iodine, I"],
+  selenium: ["Selenium, Se"],
+  copper: ["Copper, Cu"],
+};
+
+const offKeyByNutrient: Partial<Record<NutrientKey, string>> = {
+  calories: "energy-kcal",
+  protein: "proteins",
+  fat: "fat",
+  saturatedFat: "saturated-fat",
+  monounsaturatedFat: "monounsaturated-fat",
+  polyunsaturatedFat: "polyunsaturated-fat",
+  transFat: "trans-fat",
+  omega3: "omega-3-fat",
+  omega6: "omega-6-fat",
+  omega9: "omega-9-fat",
+  cholesterol: "cholesterol",
+  carbs: "carbohydrates",
+  sugars: "sugars",
+  fiber: "fiber",
+  starch: "starch",
+  glucose: "glucose",
+  fructose: "fructose",
+  sucrose: "sucrose",
+  lactose: "lactose",
+  water: "water",
+  sodium: "sodium",
+  potassium: "potassium",
+  vitaminA: "vitamin-a",
+  vitaminB: "vitamin-b",
+  vitaminB1: "vitamin-b1",
+  vitaminB2: "vitamin-b2",
+  vitaminB3: "vitamin-b3",
+  vitaminB5: "vitamin-b5",
+  vitaminB6: "vitamin-b6",
+  vitaminB7: "vitamin-b7",
+  vitaminB9: "vitamin-b9",
+  vitaminB12: "vitamin-b12",
+  vitaminC: "vitamin-c",
+  vitaminD: "vitamin-d",
+  vitaminE: "vitamin-e",
+  vitaminK: "vitamin-k",
+  calcium: "calcium",
+  iron: "iron",
+  magnesium: "magnesium",
+  zinc: "zinc",
+  phosphorus: "phosphorus",
+  iodine: "iodine",
+  selenium: "selenium",
+  copper: "copper",
+};
+
+const uniqueProducts = (products: Product[]) => {
+  const map = new Map<string, Product>();
+
+  products.forEach((product) => {
+    const key =
+      product.barcode?.trim() ||
+      `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+
+    if (!map.has(key)) {
+      map.set(key, product);
+    }
+  });
+
+  return [...map.values()];
+};
+
+const parseNumber = (value: unknown) =>
+  typeof value === "string"
+    ? Number.parseFloat(value) || 0
+    : typeof value === "number"
+    ? value
+    : 0;
+
+const normalizeUnit = (value: string | undefined): string | undefined =>
+  value
+    ?.toLowerCase()
+    .replace("μ", "u")
+    .replace("µ", "u")
+    .replace("mcg", "ug");
+
+const convertValue = (
+  value: number,
+  fromUnit: string | undefined,
+  toUnit: NutrientUnit
+) => {
+  const normalizedFrom = normalizeUnit(fromUnit);
+  const normalizedTo = normalizeUnit(toUnit);
+
+  if (!normalizedFrom || normalizedFrom === normalizedTo) {
+    return value;
+  }
+
+  const toMilligrams = (amount: number, unit: string) => {
+    if (unit === "g") return amount * 1000;
+    if (unit === "mg") return amount;
+    if (unit === "ug") return amount / 1000;
+    return amount;
+  };
+
+  if (normalizedFrom === "kj" && normalizedTo === "kcal") {
+    return value / 4.184;
+  }
+
+  if (
+    normalizedFrom &&
+    normalizedTo &&
+    ["g", "mg", "ug"].includes(normalizedFrom) &&
+    ["g", "mg", "ug"].includes(normalizedTo)
+  ) {
+    const inMilligrams = toMilligrams(value, normalizedFrom);
+
+    if (normalizedTo === "g") return inMilligrams / 1000;
+    if (normalizedTo === "mg") return inMilligrams;
+    return inMilligrams * 1000;
+  }
+
+  return value;
+};
+
+const readUSDANutrient = (
+  data: RawProduct,
+  key: NutrientKey
+) => {
+  const aliases = nutrientAliases[key] ?? [];
+  const nutrients = Array.isArray(data.foodNutrients)
+    ? (data.foodNutrients as {
+        nutrientName?: string;
+        unitName?: string;
+        value?: number;
+      }[])
+    : [];
+
+  const targetUnit = key === "calories" ? "kcal" : nutrientTargetUnit(key);
+
+  return nutrients.reduce((sum, item) => {
+    const nutrientName = item.nutrientName?.toLowerCase() ?? "";
+    const matched = aliases.some((alias) => nutrientName.includes(alias.toLowerCase()));
+    if (!matched) return sum;
+
+    return sum + convertValue(item.value ?? 0, item.unitName, targetUnit);
+  }, 0);
+};
+
+const readOFFNutrient = (
+  nutriments: Record<string, unknown> | undefined,
+  key: NutrientKey
+) => {
+  const offKey = offKeyByNutrient[key];
+  if (!nutriments || !offKey) return 0;
+
+  const value = parseNumber(
+    nutriments[`${offKey}_100g`] ?? nutriments[offKey]
+  );
+  const unit =
+    typeof nutriments[`${offKey}_unit`] === "string"
+      ? String(nutriments[`${offKey}_unit`])
+      : key === "calories"
+      ? "kcal"
+      : nutrientTargetUnit(key);
+
+  return convertValue(value, unit, key === "calories" ? "kcal" : nutrientTargetUnit(key));
+};
+
+const nutrientTargetUnit = (key: NutrientKey): NutrientUnit => {
+  const gramKeys: NutrientKey[] = [
+    "protein",
+    "fat",
+    "saturatedFat",
+    "monounsaturatedFat",
+    "polyunsaturatedFat",
+    "transFat",
+    "omega3",
+    "omega6",
+    "omega9",
+    "carbs",
+    "sugars",
+    "fiber",
+    "starch",
+    "glucose",
+    "fructose",
+    "sucrose",
+    "lactose",
+    "water",
+  ];
+  const microgramKeys: NutrientKey[] = [
+    "vitaminA",
+    "vitaminB7",
+    "vitaminB9",
+    "vitaminB12",
+    "vitaminD",
+    "vitaminK",
+    "iodine",
+    "selenium",
+  ];
+
+  if (gramKeys.includes(key)) return "g";
+  if (microgramKeys.includes(key)) return "ug";
+  return "mg";
+};
+
+const mapToProduct = (data: RawProduct, source: ProductSource): Product => {
+  const nutriments = data.nutriments as Record<string, unknown> | undefined;
+  const nutrients = createEmptyNutrients();
+
+  (Object.keys(nutrients) as NutrientKey[]).forEach((key) => {
+    if (key === "calories") {
+      nutrients[key] =
+        source === "USDA"
+          ? readUSDANutrient(data, key)
+          : readOFFNutrient(nutriments, key) ||
+            convertValue(parseNumber(nutriments?.energy_100g), "kj", "kcal");
+      return;
+    }
+
+    nutrients[key] =
+      source === "USDA"
+        ? readUSDANutrient(data, key)
+        : readOFFNutrient(nutriments, key);
+  });
+
+  return {
+    id: String(data.fdcId ?? data._id ?? data.code ?? Date.now()),
+    name: String(data.description ?? data.product_name ?? "Unknown product"),
+    brand:
+      typeof data.brandOwner === "string"
+        ? data.brandOwner
+        : typeof data.brands === "string"
+        ? data.brands
+        : undefined,
+    barcode:
+      typeof data.gtinUpc === "string"
+        ? data.gtinUpc
+        : typeof data.code === "string"
+        ? data.code
+        : undefined,
+    imageUrl:
+      typeof data.image_front_small_url === "string"
+        ? data.image_front_small_url
+        : typeof data.image_small_url === "string"
+        ? data.image_small_url
+        : typeof data.image_url === "string"
+        ? data.image_url
+        : undefined,
+    unit: "g",
+    source,
+    nutrients,
+  };
 };
 
 export const fetchProductByBarcode = async (
@@ -21,68 +315,81 @@ export const fetchProductByBarcode = async (
     return null;
   }
 
+  const localProduct = findLocalProductByBarcode(normalizedBarcode);
+  if (localProduct) {
+    return localProduct;
+  }
+
   try {
     const [usdaResult, offResult] = await Promise.allSettled([
       fetchUSDAByBarcode(normalizedBarcode),
       fetchOpenFoodByBarcode(normalizedBarcode),
     ]);
 
-    const usda = usdaResult.status === "fulfilled" ? usdaResult.value : null;
-    if (usda) return mapToProduct(usda as RawProduct, "USDA");
-
     const off = offResult.status === "fulfilled" ? offResult.value : null;
-    if (off) return mapToProduct(off as RawProduct, "OpenFoodFacts");
+    if (off) {
+      return mapToProduct(
+        { ...off, code: normalizedBarcode } as RawProduct,
+        "OpenFoodFacts"
+      );
+    }
 
-    return mockBarcodeLookup[normalizedBarcode] ?? null;
+    const usda = usdaResult.status === "fulfilled" ? usdaResult.value : null;
+    if (usda) {
+      return mapToProduct(
+        { ...usda, gtinUpc: normalizedBarcode } as RawProduct,
+        "USDA"
+      );
+    }
+
+    return null;
   } catch (error) {
     console.error("Product lookup failed:", error);
-    return mockBarcodeLookup[normalizedBarcode] ?? null;
+    return null;
   }
 };
 
-const mapToProduct = (data: RawProduct, source: ProductSource): Product => {
-  const parseNum = (val: unknown) =>
-    typeof val === "string"
-      ? parseFloat(val) || 0
-      : typeof val === "number"
-      ? val
-      : 0;
+export const searchProducts = async (query: string): Promise<Product[]> => {
+  const normalizedQuery = query.trim();
 
-  const nutriments = data.nutriments as Record<string, unknown> | undefined;
+  if (!normalizedQuery) {
+    return getFeaturedProducts(12);
+  }
 
-  const nutrients: Nutrients = {
-    calories: parseNum(data.calories ?? nutriments?.energy_100g),
-    protein: parseNum(data.protein ?? nutriments?.proteins_100g),
-    fat: parseNum(data.fat ?? nutriments?.fat_100g),
-    saturatedFat: parseNum(data.saturatedFat ?? nutriments?.["saturated-fat_100g"]),
-    polyunsaturatedFat: parseNum(
-      data.polyunsaturatedFat ?? nutriments?.["polyunsaturated-fat_100g"]
-    ),
-    transFat: parseNum(data.transFat ?? nutriments?.["trans-fat_100g"]),
-    cholesterol: parseNum(data.cholesterol ?? nutriments?.cholesterol_100g),
-    carbs: parseNum(data.carbs ?? nutriments?.carbohydrates_100g),
-    sugars: parseNum(data.sugars ?? nutriments?.sugars_100g),
-    fiber: parseNum(data.fiber ?? nutriments?.fiber_100g),
-    sodium: parseNum(data.sodium ?? nutriments?.sodium_100g),
-    potassium: parseNum(data.potassium ?? nutriments?.potassium_100g),
-    calcium: parseNum(data.calcium ?? nutriments?.calcium_100g),
-    iron: parseNum(data.iron ?? nutriments?.iron_100g),
-    magnesium: parseNum(data.magnesium ?? nutriments?.magnesium_100g),
-    zinc: parseNum(data.zinc ?? nutriments?.zinc_100g),
-    phosphorus: parseNum(nutriments?.phosphorus_100g),
-    vitaminA: parseNum(nutriments?.["vitamin-a_100g"]),
-    vitaminB: parseNum(nutriments?.["vitamin-b_100g"]),
-    vitaminC: parseNum(nutriments?.["vitamin-c_100g"]),
-    vitaminD: parseNum(nutriments?.["vitamin-d_100g"]),
-    vitaminE: parseNum(nutriments?.["vitamin-e_100g"]),
-    vitaminK: parseNum(nutriments?.["vitamin-k_100g"]),
-  };
+  const localResults = searchLocalProducts(normalizedQuery, 12);
+  if (normalizedQuery.length < 2) {
+    return localResults;
+  }
 
-  return {
-    id: String(data.fdcId ?? data._id ?? Date.now()),
-    name: String(data.description ?? data.product_name ?? "Unknown product"),
-    unit: "g",
-    source,
-    nutrients,
-  };
+  try {
+    const [offResponse, usdaResults] = await Promise.all([
+      axios.get(OFF_SEARCH_URL, {
+        params: {
+          search_terms: normalizedQuery,
+          search_simple: 1,
+          action: "process",
+          json: 1,
+          page_size: 12,
+          fields:
+            "code,product_name,brands,nutriments,image_front_small_url,image_small_url,image_url",
+        },
+      }),
+      searchUSDAProducts(normalizedQuery),
+    ]);
+
+    const offResults = Array.isArray(offResponse.data?.products)
+      ? offResponse.data.products
+          .map((item: RawProduct) => mapToProduct(item, "OpenFoodFacts"))
+          .filter((product: Product) => product.name !== "Unknown product")
+      : [];
+
+    const usdaMapped = usdaResults
+      .map((item) => mapToProduct(item as RawProduct, "USDA"))
+      .filter((product) => product.name !== "Unknown product");
+
+    return uniqueProducts([...localResults, ...usdaMapped, ...offResults]).slice(0, 18);
+  } catch (error) {
+    console.error("Product search failed:", error);
+    return localResults;
+  }
 };

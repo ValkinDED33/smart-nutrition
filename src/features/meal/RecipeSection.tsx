@@ -12,6 +12,7 @@ import { recipes } from "../../shared/lib/recipes";
 import type { MealEntry, MealType } from "../../shared/types/meal";
 import type { AppDispatch } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import { getProductDisplayName } from "../../shared/lib/productDisplay";
 
 interface Props {
   mealType: MealType;
@@ -87,7 +88,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 {recipe.ingredients
                   .map(
                     (ingredient) =>
-                      `${ingredient.product.name} ${ingredient.quantity} ${ingredient.product.unit}`
+                      `${getProductDisplayName(ingredient.product, language)} ${ingredient.quantity} ${ingredient.product.unit}`
                   )
                   .join(", ")}
               </Typography>
