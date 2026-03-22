@@ -9,10 +9,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { RootState, AppDispatch } from "../../app/store";
+import type { AppDispatch } from "../../app/store";
 import { applyMealTemplate, deleteMealTemplate, saveMealTemplate } from "./mealSlice";
+import { selectMealItems, selectMealTemplates } from "./selectors";
 import type { MealType } from "../../shared/types/meal";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 interface Props {
   mealType: MealType;
@@ -20,8 +21,8 @@ interface Props {
 
 export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const items = useSelector((state: RootState) => state.meal.items);
-  const templates = useSelector((state: RootState) => state.meal.templates);
+  const items = useSelector(selectMealItems);
+  const templates = useSelector(selectMealTemplates);
   const { language } = useLanguage();
   const [templateName, setTemplateName] = useState("");
 

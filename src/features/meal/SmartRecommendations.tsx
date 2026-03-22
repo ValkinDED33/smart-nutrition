@@ -2,14 +2,15 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { selectMealItems } from "./selectors";
+import { useLanguage } from "../../shared/language";
 
 export const SmartRecommendations = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
   const { language } = useLanguage();
 
   const text =

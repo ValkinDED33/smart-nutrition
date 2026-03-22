@@ -259,15 +259,15 @@ const dictionaries = {
 
 type TranslationKey = keyof (typeof dictionaries)["uk"];
 
-interface I18nContextValue {
+interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }
 
-const I18nContext = createContext<I18nContextValue | null>(null);
+const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export const I18nProvider = ({ children }: { children: ReactNode }) => {
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem(STORAGE_KEY);
     return savedLanguage === "pl" ? "pl" : "uk";
@@ -277,7 +277,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(STORAGE_KEY, language);
   }, [language]);
 
-  const value = useMemo<I18nContextValue>(
+  const value = useMemo<LanguageContextValue>(
     () => ({
       language,
       setLanguage,
@@ -298,14 +298,14 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     [language]
   );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useLanguage = () => {
-  const context = useContext(I18nContext);
+  const context = useContext(LanguageContext);
 
   if (!context) {
-    throw new Error("useLanguage must be used within I18nProvider");
+    throw new Error("useLanguage must be used within LanguageProvider");
   }
 
   return context;

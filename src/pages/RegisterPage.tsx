@@ -19,7 +19,7 @@ import { setCredentials } from "../features/auth/authSlice";
 import { applyProfileTargets } from "../features/profile/profileSlice";
 import { calculateProfileTargets } from "../shared/lib/profileTargets";
 import { AuthApiError, register as registerApi } from "../shared/api/auth";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 
 type FormData = {
   name: string;

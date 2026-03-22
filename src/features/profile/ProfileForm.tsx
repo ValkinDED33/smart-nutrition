@@ -17,7 +17,7 @@ import { setUser } from "../auth/authSlice";
 import { applyProfileTargets } from "./profileSlice";
 import { calculateProfileTargets } from "../../shared/lib/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 type FormData = {
   gender: "male" | "female";

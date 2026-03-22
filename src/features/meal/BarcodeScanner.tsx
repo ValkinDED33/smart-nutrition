@@ -17,7 +17,7 @@ import type { AppDispatch } from "../../app/store";
 import { playScanSound } from "../../shared/lib/sound";
 import { fetchProductByBarcode } from "../../shared/api/products";
 import type { MealType } from "../../shared/types/meal";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 interface Props {
   mealType: MealType;

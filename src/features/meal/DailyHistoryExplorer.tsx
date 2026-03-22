@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
-import type { RootState } from "../../app/store";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { selectMealItems } from "./selectors";
+import { useLanguage } from "../../shared/language";
 
 export const DailyHistoryExplorer = () => {
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
   const { language } = useLanguage();
 
   const text =

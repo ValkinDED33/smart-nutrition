@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Paper, Stack, Typography } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { AppDispatch } from "../../app/store";
 import { addMealEntries } from "./mealSlice";
+import { selectMealItems } from "./selectors";
 import type { MealEntry, MealType } from "../../shared/types/meal";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 const createEntryId = () =>
   globalThis.crypto?.randomUUID?.() ??
@@ -22,7 +23,7 @@ interface Props {
 
 export const YesterdayRepeater = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
   const { language } = useLanguage();
 
   const text =

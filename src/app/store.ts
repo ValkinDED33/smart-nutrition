@@ -10,9 +10,10 @@ import {
   REGISTER,
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
+import type { PersistedState } from "redux-persist/es/types";
 
 import profileReducer from "../features/profile/profileSlice";
-import mealReducer from "../features/meal/mealSlice";
+import mealReducer, { normalizeMealState } from "../features/meal/mealSlice";
 import authReducer from "../features/auth/authSlice";
 
 const rootReducer = combineReducers({
@@ -23,8 +24,21 @@ const rootReducer = combineReducers({
 
 const persistConfig = {
   key: "root",
+  version: 2,
   storage,
   whitelist: ["profile", "meal"],
+  migrate: async (state: PersistedState): Promise<PersistedState> => {
+    if (!state || typeof state !== "object") {
+      return state;
+    }
+
+    const persistedState = state as PersistedState & Record<string, unknown>;
+
+    return {
+      ...persistedState,
+      meal: normalizeMealState(persistedState.meal),
+    } as PersistedState;
+  },
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

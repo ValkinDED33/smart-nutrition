@@ -12,7 +12,7 @@ import { addProduct } from "./mealSlice";
 import { mockProducts } from "../../shared/lib/mockProducts";
 import type { MealType } from "../../shared/types/meal";
 import type { AppDispatch } from "../../app/store";
-import { useLanguage } from "../../shared/i18n/I18nProvider";
+import { useLanguage } from "../../shared/language";
 
 interface Props {
   mealType: MealType;

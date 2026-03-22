@@ -17,10 +17,14 @@ import { removeProduct } from "../features/meal/mealSlice";
 import { ProductSearch } from "../features/meal/ProductSearch";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
+import {
+  selectMealItems,
+  selectMealTotalNutrients,
+} from "../features/meal/selectors";
 import { TemplateVault } from "../features/meal/TemplateVault";
 import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
 import type { MealEntry, MealType } from "../shared/types/meal";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 import Loader from "../shared/components/Loader/PacmanLoader";
 
 const BarcodeScanner = lazy(() =>
@@ -31,11 +35,11 @@ const BarcodeScanner = lazy(() =>
 
 const MealBuilderPage = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const items = useSelector((state: RootState) => state.meal.items);
+  const items = useSelector(selectMealItems);
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const totals = useSelector((state: RootState) => state.meal.totalNutrients);
+  const totals = useSelector(selectMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const { language } = useLanguage();
 

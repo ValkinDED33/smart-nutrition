@@ -10,18 +10,20 @@ import {
   Typography,
 } from "@mui/material";
 import ProfileForm from "../features/profile/ProfileForm";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
+import {
+  selectMealItems,
+  selectMealTotalNutrients,
+} from "../features/meal/selectors";
 
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const mealItems = useSelector((state: RootState) => state.meal.items);
-  const totalMealNutrients = useSelector(
-    (state: RootState) => state.meal.totalNutrients
-  );
+  const mealItems = useSelector(selectMealItems);
+  const totalMealNutrients = useSelector(selectMealTotalNutrients);
   const { t, language } = useLanguage();
 
   const diaryText =

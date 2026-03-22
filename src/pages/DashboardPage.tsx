@@ -8,8 +8,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useLanguage } from "../shared/i18n/I18nProvider";
+import { useLanguage } from "../shared/language";
 import { WeeklyInsights } from "../features/meal/WeeklyInsights";
+import { selectMealTotalNutrients } from "../features/meal/selectors";
 import { AdaptiveGoalCard } from "../features/profile/AdaptiveGoalCard";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 
@@ -18,7 +19,7 @@ const DashboardPage = () => {
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const totalMacros = useSelector((state: RootState) => state.meal.totalNutrients);
+  const totalMacros = useSelector(selectMealTotalNutrients);
   const { t } = useLanguage();
 
   if (!user) return <Typography>{t("dashboard.needLogin")}</Typography>;
