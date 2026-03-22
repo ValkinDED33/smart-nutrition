@@ -1,5 +1,3 @@
-// src/types/rawProduct.ts
-
 export interface RawUSDAProduct {
   fdcId?: string;
   description?: string;
@@ -24,5 +22,5 @@ export interface RawOFFProduct {
   image_url?: string;
 }
 
-// Унифицированный тип сырого продукта
+// Unified raw product type from supported providers.
 export type RawProduct = RawUSDAProduct | RawOFFProduct;

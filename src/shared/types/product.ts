@@ -1,5 +1,3 @@
-// src/shared/types/product.ts
-
 export interface Nutrients {
   calories: number;
   protein: number;
@@ -46,7 +44,7 @@ export interface Nutrients {
   selenium: number;
   copper: number;
 
-  // важно для безопасного перебора ключей
+  // Important for safe iteration over nutrient keys.
   [key: string]: number;
 }
 

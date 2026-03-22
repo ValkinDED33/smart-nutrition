@@ -25,7 +25,8 @@ export const recipes: Recipe[] = [
     id: "recipe-breakfast-bowl",
     title: "Протеїнова вівсянка з бананом",
     mealType: "breakfast",
-    description: "Ситний солодкий сніданок з повільними вуглеводами та білком.",
+    description:
+      "Ситний солодкий сніданок з повільними вуглеводами та білком.",
     ingredients: [
       { product: requireProduct("manual-oats"), quantity: 60 },
       { product: requireProduct("manual-greek-yogurt"), quantity: 180 },
@@ -45,7 +46,8 @@ export const recipes: Recipe[] = [
     id: "recipe-lunch-bowl",
     title: "Боул з куркою, рисом і томатами",
     mealType: "lunch",
-    description: "Класичний ПП-обід для стабільної енергії в середині дня.",
+    description:
+      "Класичний фіт-обід для стабільної енергії всередині дня.",
     ingredients: [
       { product: requireProduct("manual-chicken"), quantity: 160 },
       { product: requireProduct("manual-rice"), quantity: 180 },
@@ -66,7 +68,8 @@ export const recipes: Recipe[] = [
     id: "recipe-dinner-salmon",
     title: "Лосось з авокадо і салатом",
     mealType: "dinner",
-    description: "Легка вечеря з корисними жирами та добрим насиченням.",
+    description:
+      "Легка вечеря з корисними жирами та хорошим насиченням.",
     ingredients: [
       { product: requireProduct("manual-salmon"), quantity: 150 },
       { product: requireProduct("manual-avocado"), quantity: 70 },
@@ -87,7 +90,8 @@ export const recipes: Recipe[] = [
     id: "recipe-snack-curd",
     title: "Перекус з кисломолочним сиром і яблуком",
     mealType: "snack",
-    description: "Швидкий білковий перекус між основними прийомами їжі.",
+    description:
+      "Швидкий білковий перекус між основними прийомами їжі.",
     ingredients: [
       { product: requireProduct("manual-cottage-cheese"), quantity: 180 },
       { product: requireProduct("manual-apple"), quantity: 120 },

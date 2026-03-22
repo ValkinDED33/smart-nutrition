@@ -43,44 +43,14 @@ const MealBuilderPage = () => {
   );
   const totals = useSelector(selectMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
-  const text =
-    language === "pl"
-      ? {
-          title: "Dziennik żywienia i szybkie dodawanie posiłków",
-          subtitle:
-            "Buduj posiłki z kilku składników, skanuj produkty sklepowe i zapisuj gotowe przepisy do odpowiedniego posiłku.",
-          calories: "Kalorie dzisiaj",
-          chooseMeal: "Wybierz typ posiłku",
-          diary: "Dzisiejszy dziennik",
-          noEntries: "Brak wpisów.",
-          remove: "Usuń",
-          items: "produktów",
-          mealLabels: {
-            breakfast: "Śniadanie",
-            lunch: "Obiad",
-            dinner: "Kolacja",
-            snack: "Przekąska",
-          } as Record<MealType, string>,
-        }
-      : {
-          title: "Щоденник харчування і швидке додавання страв",
-          subtitle:
-            "Збирай прийом їжі з кількох інгредієнтів, скануй магазинні продукти і записуй готові рецепти у потрібний прийом їжі.",
-          calories: "Калорії за сьогодні",
-          chooseMeal: "Оберіть тип прийому їжі",
-          diary: "Щоденник за сьогодні",
-          noEntries: "Записів поки немає.",
-          remove: "Видалити",
-          items: "продуктів",
-          mealLabels: {
-            breakfast: "Сніданок",
-            lunch: "Обід",
-            dinner: "Вечеря",
-            snack: "Перекус",
-          } as Record<MealType, string>,
-        };
+  const mealLabels: Record<MealType, string> = {
+    breakfast: t("mealType.breakfast"),
+    lunch: t("mealType.lunch"),
+    dinner: t("mealType.dinner"),
+    snack: t("mealType.snack"),
+  };
 
   const caloriePercent = dailyCalories
     ? Math.min((totals.calories / dailyCalories) * 100, 100)
@@ -114,11 +84,12 @@ const MealBuilderPage = () => {
       >
         <Stack spacing={1.5}>
           <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 28, md: 34 } }}>
-            {text.title}
+            {t("mealBuilder.title")}
           </Typography>
-          <Typography color="text.secondary">{text.subtitle}</Typography>
+          <Typography color="text.secondary">{t("mealBuilder.subtitle")}</Typography>
           <Typography>
-            {text.calories}: {totals.calories.toFixed(0)} / {dailyCalories} kcal
+            {t("mealBuilder.calories")}: {totals.calories.toFixed(0)} / {dailyCalories}{" "}
+            {t("common.kcal")}
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -139,7 +110,7 @@ const MealBuilderPage = () => {
       >
         <Stack spacing={2}>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            {text.chooseMeal}
+            {t("mealBuilder.chooseMeal")}
           </Typography>
           <ToggleButtonGroup
             exclusive
@@ -158,7 +129,7 @@ const MealBuilderPage = () => {
               },
             }}
           >
-            {Object.entries(text.mealLabels).map(([value, label]) => (
+            {Object.entries(mealLabels).map(([value, label]) => (
               <ToggleButton key={value} value={value}>
                 {label}
               </ToggleButton>
@@ -203,7 +174,7 @@ const MealBuilderPage = () => {
           >
             <Stack spacing={2}>
               <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                {text.diary}
+                {t("mealBuilder.diary")}
               </Typography>
 
               {(Object.keys(groupedEntries) as MealType[]).map((group) => (
@@ -216,13 +187,16 @@ const MealBuilderPage = () => {
                     flexWrap="wrap"
                   >
                     <Typography sx={{ fontWeight: 800 }}>
-                      {text.mealLabels[group]}
+                      {mealLabels[group]}
                     </Typography>
-                    <Chip label={`${groupedEntries[group].length} ${text.items}`} size="small" />
+                    <Chip
+                      label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
+                      size="small"
+                    />
                   </Stack>
 
                   {groupedEntries[group].length === 0 ? (
-                    <Typography color="text.secondary">{text.noEntries}</Typography>
+                    <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
                   ) : (
                     groupedEntries[group].map((item) => {
                       const entryCalories =
@@ -244,7 +218,8 @@ const MealBuilderPage = () => {
                                 {getProductDisplayName(item.product, language)}
                               </Typography>
                               <Typography color="text.secondary" variant="body2">
-                                {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)} kcal
+                                {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
+                                {t("common.kcal")}
                               </Typography>
                             </Box>
                             <Button
@@ -252,7 +227,7 @@ const MealBuilderPage = () => {
                               onClick={() => dispatch(removeProduct(item.id))}
                               sx={{ width: { xs: "100%", sm: "auto" } }}
                             >
-                              {text.remove}
+                              {t("mealBuilder.remove")}
                             </Button>
                           </Stack>
                         </Paper>

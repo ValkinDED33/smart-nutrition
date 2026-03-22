@@ -1,5 +1,6 @@
 import type { Goal } from "../types/user";
 import type { MealEntry } from "../types/meal";
+import { addDays, getLocalDateKey } from "./date";
 
 const startOfDay = (date: Date) => {
   const copy = new Date(date);
@@ -15,15 +16,13 @@ export const applyGoalDelta = (maintenanceCalories: number, goal: Goal) => {
 
 export const calculateAverageDailyCalories = (items: MealEntry[], days = 7) => {
   const today = startOfDay(new Date());
-  const dayKeys = Array.from({ length: days }, (_, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - index);
-    return date.toISOString().slice(0, 10);
-  });
+  const dayKeys = Array.from({ length: days }, (_, index) =>
+    getLocalDateKey(addDays(today, -index))
+  );
 
   const totals = dayKeys.map((dayKey) =>
     items
-      .filter((item) => item.eatenAt.slice(0, 10) === dayKey)
+      .filter((item) => getLocalDateKey(item.eatenAt) === dayKey)
       .reduce(
         (sum, item) => sum + (item.product.nutrients.calories * item.quantity) / 100,
         0

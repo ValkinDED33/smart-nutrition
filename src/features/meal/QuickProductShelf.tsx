@@ -12,24 +12,7 @@ interface Props {
 export const QuickProductShelf = ({ mealType }: Props) => {
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
-  const { language } = useLanguage();
-
-  const text =
-    language === "pl"
-      ? {
-          title: "Szybkie produkty",
-          saved: "Zapisane produkty",
-          recent: "Ostatnio używane lub zeskanowane",
-          savedEmpty: "Zapisz kilka produktów, aby dodawać je jednym kliknięciem.",
-          recentEmpty: "Po wyszukaniu, skanowaniu lub dodaniu produkty pojawią się tutaj.",
-        }
-      : {
-          title: "Швидкі продукти",
-          saved: "Збережені продукти",
-          recent: "Нещодавно використані або відскановані",
-          savedEmpty: "Збережи кілька продуктів, щоб додавати їх одним кліком.",
-          recentEmpty: "Після пошуку, сканування або додавання продукти з'являться тут.",
-        };
+  const { t } = useLanguage();
 
   const renderGrid = (products: typeof savedProducts) => (
     <Box
@@ -66,22 +49,22 @@ export const QuickProductShelf = ({ mealType }: Props) => {
     >
       <Stack spacing={2.5}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("quickShelf.title")}
         </Typography>
 
         <Stack spacing={1.5}>
-          <Typography sx={{ fontWeight: 700 }}>{text.saved}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.saved")}</Typography>
           {savedProducts.length === 0 ? (
-            <Typography color="text.secondary">{text.savedEmpty}</Typography>
+            <Typography color="text.secondary">{t("quickShelf.savedEmpty")}</Typography>
           ) : (
             renderGrid(savedProducts.slice(0, 6))
           )}
         </Stack>
 
         <Stack spacing={1.5}>
-          <Typography sx={{ fontWeight: 700 }}>{text.recent}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.recent")}</Typography>
           {recentProducts.length === 0 ? (
-            <Typography color="text.secondary">{text.recentEmpty}</Typography>
+            <Typography color="text.secondary">{t("quickShelf.recentEmpty")}</Typography>
           ) : (
             renderGrid(recentProducts.slice(0, 6))
           )}

@@ -24,19 +24,7 @@ const createEntryId = () =>
 
 export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { language } = useLanguage();
-  const text =
-    language === "pl"
-      ? {
-          add: "Dodaj przepis do dziennika",
-          title: "Przepisy fit",
-          ingredients: "Składniki",
-        }
-      : {
-          add: "Додати рецепт у щоденник",
-          title: "Корисні рецепти",
-          ingredients: "Інгредієнти",
-        };
+  const { language, t } = useLanguage();
 
   const filteredRecipes = recipes.filter((recipe) => recipe.mealType === mealType);
 
@@ -60,7 +48,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   return (
     <Stack spacing={2}>
       <Typography variant="h6" sx={{ fontWeight: 800 }}>
-        {text.title}
+        {t("recipes.title")}
       </Typography>
       {filteredRecipes.map((recipe) => (
         <Card
@@ -74,17 +62,17 @@ export const RecipeSection = ({ mealType }: Props) => {
           <CardContent>
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={`${recipe.calories} kcal`} />
-                <Chip label={`P ${recipe.protein.toFixed(1)} g`} />
-                <Chip label={`F ${recipe.fat.toFixed(1)} g`} />
-                <Chip label={`C ${recipe.carbs.toFixed(1)} g`} />
+                <Chip label={`${recipe.calories} ${t("common.kcal")}`} />
+                <Chip label={`P ${recipe.protein.toFixed(1)} ${t("common.g")}`} />
+                <Chip label={`F ${recipe.fat.toFixed(1)} ${t("common.g")}`} />
+                <Chip label={`C ${recipe.carbs.toFixed(1)} ${t("common.g")}`} />
               </Stack>
               <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 {recipe.title}
               </Typography>
               <Typography color="text.secondary">{recipe.description}</Typography>
               <Typography variant="body2">
-                {text.ingredients}:{" "}
+                {t("recipes.ingredients")}:{" "}
                 {recipe.ingredients
                   .map(
                     (ingredient) =>
@@ -97,7 +85,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 onClick={() => handleAddRecipe(recipe.id)}
                 sx={{ alignSelf: "flex-start" }}
               >
-                {text.add}
+                {t("recipes.add")}
               </Button>
             </Stack>
           </CardContent>

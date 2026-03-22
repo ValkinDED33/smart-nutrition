@@ -1,6 +1,5 @@
 import axios from "axios";
-import type { NutrientKey, Product, ProductSource } from "../types/product";
-import { fetchUSDAByBarcode, searchUSDAProducts } from "./usda";
+import type { NutrientKey, Product } from "../types/product";
 import { fetchOpenFoodByBarcode } from "./openFood";
 import {
   findLocalProductByBarcode,
@@ -12,53 +11,6 @@ import { createEmptyNutrients, type NutrientUnit } from "../lib/nutrients";
 type RawProduct = Record<string, unknown>;
 
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
-
-const nutrientAliases: Record<NutrientKey, string[]> = {
-  calories: ["Energy", "Calories"],
-  protein: ["Protein"],
-  fat: ["Total lipid (fat)", "Total fat"],
-  saturatedFat: ["Fatty acids, total saturated"],
-  monounsaturatedFat: ["Fatty acids, total monounsaturated"],
-  polyunsaturatedFat: ["Fatty acids, total polyunsaturated"],
-  transFat: ["Fatty acids, total trans"],
-  omega3: ["18:3 n-3", "20:5 n-3", "22:5 n-3", "22:6 n-3"],
-  omega6: ["18:2 n-6", "20:4 n-6"],
-  omega9: ["18:1 undifferentiated", "18:1 c", "20:1", "22:1"],
-  cholesterol: ["Cholesterol"],
-  carbs: ["Carbohydrate, by difference"],
-  sugars: ["Sugars, total including NLEA", "Sugars, total"],
-  fiber: ["Fiber, total dietary"],
-  starch: ["Starch"],
-  glucose: ["Glucose (dextrose)"],
-  fructose: ["Fructose"],
-  sucrose: ["Sucrose"],
-  lactose: ["Lactose"],
-  water: ["Water"],
-  sodium: ["Sodium, Na"],
-  potassium: ["Potassium, K"],
-  vitaminA: ["Vitamin A, RAE"],
-  vitaminB: ["Vitamin B"],
-  vitaminB1: ["Thiamin"],
-  vitaminB2: ["Riboflavin"],
-  vitaminB3: ["Niacin"],
-  vitaminB5: ["Pantothenic acid"],
-  vitaminB6: ["Vitamin B-6"],
-  vitaminB7: ["Biotin"],
-  vitaminB9: ["Folate, total"],
-  vitaminB12: ["Vitamin B-12"],
-  vitaminC: ["Vitamin C, total ascorbic acid"],
-  vitaminD: ["Vitamin D (D2 + D3)"],
-  vitaminE: ["Vitamin E (alpha-tocopherol)"],
-  vitaminK: ["Vitamin K (phylloquinone)"],
-  calcium: ["Calcium, Ca"],
-  iron: ["Iron, Fe"],
-  magnesium: ["Magnesium, Mg"],
-  zinc: ["Zinc, Zn"],
-  phosphorus: ["Phosphorus, P"],
-  iodine: ["Iodine, I"],
-  selenium: ["Selenium, Se"],
-  copper: ["Copper, Cu"],
-};
 
 const offKeyByNutrient: Partial<Record<NutrientKey, string>> = {
   calories: "energy-kcal",
@@ -176,30 +128,6 @@ const convertValue = (
   return value;
 };
 
-const readUSDANutrient = (
-  data: RawProduct,
-  key: NutrientKey
-) => {
-  const aliases = nutrientAliases[key] ?? [];
-  const nutrients = Array.isArray(data.foodNutrients)
-    ? (data.foodNutrients as {
-        nutrientName?: string;
-        unitName?: string;
-        value?: number;
-      }[])
-    : [];
-
-  const targetUnit = key === "calories" ? "kcal" : nutrientTargetUnit(key);
-
-  return nutrients.reduce((sum, item) => {
-    const nutrientName = item.nutrientName?.toLowerCase() ?? "";
-    const matched = aliases.some((alias) => nutrientName.includes(alias.toLowerCase()));
-    if (!matched) return sum;
-
-    return sum + convertValue(item.value ?? 0, item.unitName, targetUnit);
-  }, 0);
-};
-
 const readOFFNutrient = (
   nutriments: Record<string, unknown> | undefined,
   key: NutrientKey
@@ -257,41 +185,26 @@ const nutrientTargetUnit = (key: NutrientKey): NutrientUnit => {
   return "mg";
 };
 
-const mapToProduct = (data: RawProduct, source: ProductSource): Product => {
+const mapToProduct = (data: RawProduct): Product => {
   const nutriments = data.nutriments as Record<string, unknown> | undefined;
   const nutrients = createEmptyNutrients();
 
   (Object.keys(nutrients) as NutrientKey[]).forEach((key) => {
     if (key === "calories") {
       nutrients[key] =
-        source === "USDA"
-          ? readUSDANutrient(data, key)
-          : readOFFNutrient(nutriments, key) ||
-            convertValue(parseNumber(nutriments?.energy_100g), "kj", "kcal");
+        readOFFNutrient(nutriments, key) ||
+        convertValue(parseNumber(nutriments?.energy_100g), "kj", "kcal");
       return;
     }
 
-    nutrients[key] =
-      source === "USDA"
-        ? readUSDANutrient(data, key)
-        : readOFFNutrient(nutriments, key);
+    nutrients[key] = readOFFNutrient(nutriments, key);
   });
 
   return {
-    id: String(data.fdcId ?? data._id ?? data.code ?? Date.now()),
-    name: String(data.description ?? data.product_name ?? "Unknown product"),
-    brand:
-      typeof data.brandOwner === "string"
-        ? data.brandOwner
-        : typeof data.brands === "string"
-        ? data.brands
-        : undefined,
-    barcode:
-      typeof data.gtinUpc === "string"
-        ? data.gtinUpc
-        : typeof data.code === "string"
-        ? data.code
-        : undefined,
+    id: String(data._id ?? data.code ?? Date.now()),
+    name: String(data.product_name ?? "Unknown product"),
+    brand: typeof data.brands === "string" ? data.brands : undefined,
+    barcode: typeof data.code === "string" ? data.code : undefined,
     imageUrl:
       typeof data.image_front_small_url === "string"
         ? data.image_front_small_url
@@ -301,7 +214,7 @@ const mapToProduct = (data: RawProduct, source: ProductSource): Product => {
         ? data.image_url
         : undefined,
     unit: "g",
-    source,
+    source: "OpenFoodFacts",
     nutrients,
   };
 };
@@ -321,25 +234,9 @@ export const fetchProductByBarcode = async (
   }
 
   try {
-    const [usdaResult, offResult] = await Promise.allSettled([
-      fetchUSDAByBarcode(normalizedBarcode),
-      fetchOpenFoodByBarcode(normalizedBarcode),
-    ]);
-
-    const off = offResult.status === "fulfilled" ? offResult.value : null;
+    const off = await fetchOpenFoodByBarcode(normalizedBarcode);
     if (off) {
-      return mapToProduct(
-        { ...off, code: normalizedBarcode } as RawProduct,
-        "OpenFoodFacts"
-      );
-    }
-
-    const usda = usdaResult.status === "fulfilled" ? usdaResult.value : null;
-    if (usda) {
-      return mapToProduct(
-        { ...usda, gtinUpc: normalizedBarcode } as RawProduct,
-        "USDA"
-      );
+      return mapToProduct({ ...off, code: normalizedBarcode } as RawProduct);
     }
 
     return null;
@@ -362,32 +259,25 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
   }
 
   try {
-    const [offResponse, usdaResults] = await Promise.all([
-      axios.get(OFF_SEARCH_URL, {
-        params: {
-          search_terms: normalizedQuery,
-          search_simple: 1,
-          action: "process",
-          json: 1,
-          page_size: 12,
-          fields:
-            "code,product_name,brands,nutriments,image_front_small_url,image_small_url,image_url",
-        },
-      }),
-      searchUSDAProducts(normalizedQuery),
-    ]);
+    const offResponse = await axios.get(OFF_SEARCH_URL, {
+      params: {
+        search_terms: normalizedQuery,
+        search_simple: 1,
+        action: "process",
+        json: 1,
+        page_size: 12,
+        fields:
+          "code,product_name,brands,nutriments,image_front_small_url,image_small_url,image_url",
+      },
+    });
 
     const offResults = Array.isArray(offResponse.data?.products)
       ? offResponse.data.products
-          .map((item: RawProduct) => mapToProduct(item, "OpenFoodFacts"))
+          .map((item: RawProduct) => mapToProduct(item))
           .filter((product: Product) => product.name !== "Unknown product")
       : [];
 
-    const usdaMapped = usdaResults
-      .map((item) => mapToProduct(item as RawProduct, "USDA"))
-      .filter((product) => product.name !== "Unknown product");
-
-    return uniqueProducts([...localResults, ...usdaMapped, ...offResults]).slice(0, 18);
+    return uniqueProducts([...localResults, ...offResults]).slice(0, 18);
   } catch (error) {
     console.error("Product search failed:", error);
     return localResults;

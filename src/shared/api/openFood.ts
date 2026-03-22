@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { RawProduct } from "../types/rawProduct";
 
-const OFF_API_URL = import.meta.env.VITE_OFF_API_URL;
+const OFF_API_URL = "https://world.openfoodfacts.org/api/v0/product";
 
 export const fetchOpenFoodByBarcode = async (
   barcode: string

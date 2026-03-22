@@ -17,6 +17,7 @@ import {
   selectMealTotalNutrients,
 } from "../features/meal/selectors";
 import { getProductDisplayName } from "../shared/lib/productDisplay";
+import type { MealType } from "../shared/types/meal";
 
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -27,28 +28,12 @@ const ProfilePage = () => {
   const totalMealNutrients = useSelector(selectMealTotalNutrients);
   const { t, language } = useLanguage();
 
-  const diaryText =
-    language === "pl"
-      ? {
-          diary: "Dziennik jedzenia",
-          empty: "Brak wpisów.",
-          labels: {
-            breakfast: "Śniadanie",
-            lunch: "Obiad",
-            dinner: "Kolacja",
-            snack: "Przekąska",
-          },
-        }
-      : {
-          diary: "Щоденник харчування",
-          empty: "Записів поки немає.",
-          labels: {
-            breakfast: "Сніданок",
-            lunch: "Обід",
-            dinner: "Вечеря",
-            snack: "Перекус",
-          },
-        };
+  const mealLabels: Record<MealType, string> = {
+    breakfast: t("mealType.breakfast"),
+    lunch: t("mealType.lunch"),
+    dinner: t("mealType.dinner"),
+    snack: t("mealType.snack"),
+  };
 
   if (!user) return <Typography>{t("profile.notFound")}</Typography>;
 
@@ -128,11 +113,11 @@ const ProfilePage = () => {
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
-          {diaryText.diary}
+          {t("profile.diary")}
         </Typography>
         <Stack spacing={1.2}>
           {mealItems.length === 0 ? (
-            <Typography color="text.secondary">{diaryText.empty}</Typography>
+            <Typography color="text.secondary">{t("profile.diaryEmpty")}</Typography>
           ) : (
             mealItems.slice(0, 8).map((item) => {
               const calories = (item.product.nutrients.calories * item.quantity) / 100;
@@ -143,7 +128,7 @@ const ProfilePage = () => {
                     {getProductDisplayName(item.product, language)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {diaryText.labels[item.mealType]} - {item.quantity} {item.product.unit} -{" "}
+                    {mealLabels[item.mealType]} - {item.quantity} {item.product.unit} -{" "}
                     {calories.toFixed(0)} {t("common.kcal")}
                   </Typography>
                 </Paper>

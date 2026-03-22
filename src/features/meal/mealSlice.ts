@@ -17,6 +17,7 @@ export interface MealState {
   totalNutrients: Nutrients;
   savedProducts: Product[];
   recentProducts: Product[];
+  personalBarcodeProducts: Product[];
 }
 
 const createId = (prefix: string) =>
@@ -174,6 +175,7 @@ export const createInitialMealState = (): MealState => ({
   totalNutrients: createEmptyNutrients(),
   savedProducts: [],
   recentProducts: [],
+  personalBarcodeProducts: [],
 });
 
 export const normalizeMealState = (value: unknown): MealState => {
@@ -194,6 +196,7 @@ export const normalizeMealState = (value: unknown): MealState => {
     : [];
   const savedProducts = normalizeProductCollection(value.savedProducts);
   const recentProducts = normalizeProductCollection(value.recentProducts);
+  const personalBarcodeProducts = normalizeProductCollection(value.personalBarcodeProducts);
 
   return {
     items,
@@ -201,6 +204,7 @@ export const normalizeMealState = (value: unknown): MealState => {
     totalNutrients: calculateMealTotalNutrients(items),
     savedProducts,
     recentProducts,
+    personalBarcodeProducts,
   };
 };
 
@@ -222,14 +226,16 @@ const mealSlice = createSlice({
     ) {
       state.items.unshift(createMealEntry(action.payload));
       rememberProduct(state.recentProducts, action.payload.product, 16);
+      rememberBarcodeProduct(state.personalBarcodeProducts, action.payload.product, 240);
       recalcTotalNutrients(state);
     },
 
     addMealEntries(state, action: PayloadAction<MealEntry[]>) {
       state.items = [...action.payload, ...state.items];
-      action.payload.forEach((entry) =>
-        rememberProduct(state.recentProducts, entry.product, 16)
-      );
+      action.payload.forEach((entry) => {
+        rememberProduct(state.recentProducts, entry.product, 16);
+        rememberBarcodeProduct(state.personalBarcodeProducts, entry.product, 240);
+      });
       recalcTotalNutrients(state);
     },
 
@@ -277,6 +283,7 @@ const mealSlice = createSlice({
 
     saveProduct(state, action: PayloadAction<Product>) {
       rememberProduct(state.savedProducts, action.payload, 24);
+      rememberBarcodeProduct(state.personalBarcodeProducts, action.payload, 240);
     },
 
     removeSavedProduct(state, action: PayloadAction<string>) {
@@ -287,6 +294,7 @@ const mealSlice = createSlice({
 
     rememberRecentProduct(state, action: PayloadAction<Product>) {
       rememberProduct(state.recentProducts, action.payload, 16);
+      rememberBarcodeProduct(state.personalBarcodeProducts, action.payload, 240);
     },
 
     removeProduct(state, action: PayloadAction<string>) {
@@ -300,6 +308,7 @@ const mealSlice = createSlice({
       state.totalNutrients = createEmptyNutrients();
       state.savedProducts = [];
       state.recentProducts = [];
+      state.personalBarcodeProducts = [];
     },
   },
 });
@@ -311,6 +320,21 @@ const createProductKey = (product: Product) =>
 const rememberProduct = (list: Product[], product: Product, limit: number) => {
   const key = createProductKey(product);
   const next = [product, ...list.filter((item) => createProductKey(item) !== key)];
+  list.splice(0, list.length, ...next.slice(0, limit));
+};
+
+const rememberBarcodeProduct = (list: Product[], product: Product, limit: number) => {
+  const barcodeKey = product.barcode?.replace(/\D/g, "");
+
+  if (!barcodeKey) {
+    return;
+  }
+
+  const next = [
+    product,
+    ...list.filter((item) => item.barcode?.replace(/\D/g, "") !== barcodeKey),
+  ];
+
   list.splice(0, list.length, ...next.slice(0, limit));
 };
 

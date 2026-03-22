@@ -4,28 +4,17 @@ import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import {
+  formatLocalDateKey,
+  getLocalDateKey,
+} from "../../shared/lib/date";
 
 export const DailyHistoryExplorer = () => {
   const items = useSelector(selectMealItems);
-  const { language } = useLanguage();
-
-  const text =
-    language === "pl"
-      ? {
-          title: "Historia dni",
-          subtitle: "Przeglądaj wpisy z ostatnich dni i sprawdzaj bilans kalorii.",
-          select: "Dzień",
-          empty: "Brak wpisów dla wybranego dnia.",
-        }
-      : {
-          title: "Історія за днями",
-          subtitle: "Переглядай записи за останні дні та денний баланс калорій.",
-          select: "День",
-          empty: "Для обраного дня записів немає.",
-        };
+  const { language, t } = useLanguage();
 
   const availableDays = useMemo(() => {
-    const uniqueKeys = [...new Set(items.map((item) => item.eatenAt.slice(0, 10)))];
+    const uniqueKeys = [...new Set(items.map((item) => getLocalDateKey(item.eatenAt)))];
     return uniqueKeys.sort((a, b) => b.localeCompare(a));
   }, [items]);
 
@@ -36,7 +25,7 @@ export const DailyHistoryExplorer = () => {
       : (availableDays[0] ?? "");
 
   const selectedEntries = items.filter(
-    (item) => item.eatenAt.slice(0, 10) === effectiveSelectedDay
+    (item) => getLocalDateKey(item.eatenAt) === effectiveSelectedDay
   );
 
   const totalCalories = selectedEntries.reduce(
@@ -56,20 +45,20 @@ export const DailyHistoryExplorer = () => {
     >
       <Stack spacing={2}>
         <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {text.title}
+          {t("history.title")}
         </Typography>
-        <Typography color="text.secondary">{text.subtitle}</Typography>
+        <Typography color="text.secondary">{t("history.subtitle")}</Typography>
 
         <TextField
           select
           value={effectiveSelectedDay}
           onChange={(event) => setSelectedDay(event.target.value)}
-          label={text.select}
+          label={t("history.select")}
           disabled={availableDays.length === 0}
         >
           {availableDays.map((day) => (
             <MenuItem key={day} value={day}>
-              {new Date(day).toLocaleDateString(language === "pl" ? "pl-PL" : "uk-UA", {
+              {formatLocalDateKey(day, language, {
                 weekday: "long",
                 year: "numeric",
                 month: "short",
@@ -80,11 +69,11 @@ export const DailyHistoryExplorer = () => {
         </TextField>
 
         {selectedEntries.length === 0 ? (
-          <Typography color="text.secondary">{text.empty}</Typography>
+          <Typography color="text.secondary">{t("history.empty")}</Typography>
         ) : (
           <>
             <Typography sx={{ fontWeight: 700 }}>
-              {totalCalories.toFixed(0)} kcal
+              {totalCalories.toFixed(0)} {t("common.kcal")}
             </Typography>
             <Stack spacing={1.1}>
               {selectedEntries.map((item) => (
@@ -94,7 +83,8 @@ export const DailyHistoryExplorer = () => {
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {item.quantity} {item.product.unit} -{" "}
-                    {((item.product.nutrients.calories * item.quantity) / 100).toFixed(0)} kcal
+                    {((item.product.nutrients.calories * item.quantity) / 100).toFixed(0)}{" "}
+                    {t("common.kcal")}
                   </Typography>
                 </Paper>
               ))}
