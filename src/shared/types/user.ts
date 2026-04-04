@@ -1,3 +1,5 @@
+import type { AppSnapshot } from "./appSnapshot";
+
 export type Gender = "male" | "female";
 
 export type ActivityLevel =
@@ -41,6 +43,8 @@ export interface LoginPayload {
 export interface AuthResponse {
   user: User;
   token: string;
+  refreshToken?: string;
+  snapshot?: AppSnapshot | null;
 }
 
 export type UpdateUserPayload = Partial<Omit<User, "id" | "email">>;

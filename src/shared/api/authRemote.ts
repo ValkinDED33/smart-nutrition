@@ -1,0 +1,819 @@
+import type { AuthResponse, User } from "../types/user";
+import type { AppSnapshot, AppSnapshotMeta } from "../types/appSnapshot";
+import type { MealEntry, MealTemplate } from "../types/meal";
+import type { PhotoMealAnalysis } from "../types/photo";
+import type { Product } from "../types/product";
+import { getRemoteDeviceId } from "../lib/remoteDevice";
+import {
+  clearCachedRemoteState,
+  readCachedRemoteMeta,
+  readCachedRemoteSnapshot,
+  writeCachedRemoteMeta,
+  writeCachedRemoteSnapshot,
+} from "../lib/remoteStateCache";
+import type { AuthProvider, AuthRuntimeInfo, RegisterPayload } from "./authProvider";
+import { AuthApiError } from "./authLocal";
+
+type AuthMode = "local-browser" | "remote-cloud";
+
+export interface RemoteSyncResult {
+  ok: boolean;
+  message?: string;
+  code?: string;
+  meta?: AppSnapshotMeta | null;
+}
+
+interface RemoteMutationResponse {
+  ok: true;
+  meta: AppSnapshotMeta | null;
+}
+
+class RemoteRequestError extends Error {
+  code: string;
+  status: number;
+  meta: AppSnapshotMeta | null;
+
+  constructor({
+    code,
+    message,
+    status,
+    meta = null,
+  }: {
+    code: string;
+    message: string;
+    status: number;
+    meta?: AppSnapshotMeta | null;
+  }) {
+    super(message);
+    this.code = code;
+    this.status = status;
+    this.meta = meta;
+  }
+}
+
+const AUTH_MODE_KEY = "smart-nutrition.auth-mode";
+const REMOTE_TOKEN_KEY = "smart-nutrition.remote-token";
+const REMOTE_REFRESH_TOKEN_KEY = "smart-nutrition.remote-refresh-token";
+const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
+const REMOTE_USER_KEY = "smart-nutrition.remote-user";
+
+const remoteRuntimeInfo: AuthRuntimeInfo = {
+  mode: "remote-cloud",
+  providerLabel: "Remote API account",
+  sessionLabel: "Access + refresh API session",
+  syncLabel: "Profile and meal data are restored through remote state endpoints.",
+  securityLabel:
+    "Passwords stay on the API, access tokens are short-lived, and refresh tokens renew sessions.",
+  supportsCloudSync: true,
+  supportsAccountDeletion: true,
+  supportsDataExport: true,
+  supportsSessionRevocation: true,
+};
+
+let remoteBaseProbePromise: Promise<string | null> | null = null;
+let remoteRefreshPromise: Promise<void> | null = null;
+
+const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
+
+const getStoredAuthMode = (): AuthMode =>
+  localStorage.getItem(AUTH_MODE_KEY) === "remote-cloud"
+    ? "remote-cloud"
+    : "local-browser";
+
+const setStoredAuthMode = (mode: AuthMode) => {
+  localStorage.setItem(AUTH_MODE_KEY, mode);
+};
+
+const getStoredRemoteToken = () => localStorage.getItem(REMOTE_TOKEN_KEY);
+
+const getStoredRemoteRefreshToken = () => localStorage.getItem(REMOTE_REFRESH_TOKEN_KEY);
+
+const getStoredRemoteBaseUrl = () => localStorage.getItem(REMOTE_BASE_URL_KEY);
+
+const getStoredRemoteUser = (): User | null => {
+  const raw = localStorage.getItem(REMOTE_USER_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+};
+
+const setStoredRemoteUser = (user: User) => {
+  localStorage.setItem(REMOTE_USER_KEY, JSON.stringify(user));
+};
+
+const setRemoteSession = (
+  baseUrl: string,
+  accessToken: string,
+  refreshToken?: string
+) => {
+  localStorage.setItem(REMOTE_TOKEN_KEY, accessToken);
+
+  if (refreshToken) {
+    localStorage.setItem(REMOTE_REFRESH_TOKEN_KEY, refreshToken);
+  }
+
+  localStorage.setItem(REMOTE_BASE_URL_KEY, baseUrl);
+  setStoredAuthMode("remote-cloud");
+};
+
+const clearRemoteSession = () => {
+  localStorage.removeItem(REMOTE_TOKEN_KEY);
+  localStorage.removeItem(REMOTE_REFRESH_TOKEN_KEY);
+  localStorage.removeItem(REMOTE_BASE_URL_KEY);
+  localStorage.removeItem(REMOTE_USER_KEY);
+  clearCachedRemoteState();
+  setStoredAuthMode("local-browser");
+};
+
+const readJsonResponse = async <T,>(response: Response) => {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const responseText = await response.text();
+
+  if (!responseText.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(responseText) as T;
+};
+
+const readRemoteErrorPayload = async (response: Response) => {
+  try {
+    return (await response.json()) as {
+      code?: string;
+      message?: string;
+      meta?: AppSnapshotMeta | null;
+    };
+  } catch {
+    return {
+      code: undefined,
+      message: undefined,
+      meta: null,
+    };
+  }
+};
+
+const toRemoteRequestError = async (
+  response: Response,
+  fallbackCode = "REMOTE_REQUEST_FAILED",
+  fallbackMessage = "Remote request failed."
+) => {
+  const payload = await readRemoteErrorPayload(response);
+
+  return new RemoteRequestError({
+    code: payload.code ?? fallbackCode,
+    message: payload.message ?? fallbackMessage,
+    status: response.status,
+    meta: payload.meta ?? null,
+  });
+};
+
+const toAuthApiError = (error: unknown): AuthApiError | null => {
+  if (error instanceof AuthApiError) {
+    return error;
+  }
+
+  if (error instanceof RemoteRequestError) {
+    if (error.code === "EMAIL_IN_USE") {
+      return new AuthApiError("EMAIL_IN_USE", error.message);
+    }
+
+    if (error.code === "TOO_MANY_ATTEMPTS") {
+      return new AuthApiError("TOO_MANY_ATTEMPTS", error.message);
+    }
+
+    if (error.status === 401 || error.code === "INVALID_CREDENTIALS") {
+      return new AuthApiError("INVALID_CREDENTIALS", error.message);
+    }
+
+    return null;
+  }
+
+  return null;
+};
+
+const toRemoteSyncResult = (
+  error: unknown,
+  fallbackMessage = "Cloud sync could not save the latest change."
+): RemoteSyncResult => {
+  if (error instanceof RemoteRequestError) {
+    return {
+      ok: false,
+      code: error.code,
+      message: error.message,
+      meta: error.meta,
+    };
+  }
+
+  return {
+    ok: false,
+    code: "SYNC_FAILED",
+    message: fallbackMessage,
+    meta: null,
+  };
+};
+
+const getCurrentRemoteStateVersion = () =>
+  readCachedRemoteMeta({ allowStale: true })?.updatedAt ??
+  readCachedRemoteSnapshot()?.updatedAt ??
+  null;
+
+const refreshRemoteAccessToken = async (baseUrl: string) => {
+  if (remoteRefreshPromise) {
+    return remoteRefreshPromise;
+  }
+
+  remoteRefreshPromise = (async () => {
+    const refreshToken = getStoredRemoteRefreshToken();
+
+    if (!refreshToken) {
+      clearRemoteSession();
+      throw new AuthApiError("INVALID_CREDENTIALS", "Refresh session is missing.");
+    }
+
+    const response = await fetch(`${baseUrl}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      const authError = toAuthApiError(await toRemoteRequestError(response));
+
+      if (authError) {
+        clearRemoteSession();
+        throw authError;
+      }
+
+      throw new Error("Remote refresh request failed.");
+    }
+
+    const payload = await readJsonResponse<AuthResponse>(response);
+
+    setRemoteSession(baseUrl, payload.token, payload.refreshToken);
+    setStoredRemoteUser(payload.user);
+  })().finally(() => {
+    remoteRefreshPromise = null;
+  });
+
+  return remoteRefreshPromise;
+};
+
+const getCandidateBaseUrls = () => {
+  const candidates = [getStoredRemoteBaseUrl()];
+
+  if (typeof window !== "undefined" && window.location.origin.startsWith("http")) {
+    candidates.push(`${window.location.origin}/api`);
+  }
+
+  candidates.push("http://localhost:8787/api");
+
+  return dedupe(candidates.filter((value): value is string => Boolean(value)));
+};
+
+const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
+  if (!force && remoteBaseProbePromise) {
+    return remoteBaseProbePromise;
+  }
+
+  remoteBaseProbePromise = (async () => {
+    for (const baseUrl of getCandidateBaseUrls()) {
+      try {
+        const response = await fetch(`${baseUrl}/health`, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        });
+
+        if (response.ok) {
+          return baseUrl;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  })();
+
+  return remoteBaseProbePromise;
+};
+
+const requestRemote = async <T,>(
+  path: string,
+  init: RequestInit = {},
+  {
+    requireAuth = false,
+    allowRefresh = true,
+    withSyncContext = false,
+  }: { requireAuth?: boolean; allowRefresh?: boolean; withSyncContext?: boolean } = {}
+): Promise<{ data: T; baseUrl: string }> => {
+  const baseUrl =
+    getStoredRemoteBaseUrl() ??
+    (await probeRemoteBaseUrl()) ??
+    (await probeRemoteBaseUrl(true));
+
+  if (!baseUrl) {
+    throw new Error("Remote auth server is not available.");
+  }
+
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+
+  if (!headers.has("Content-Type") && init.body) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const performRequest = async () => {
+    const nextHeaders = new Headers(headers);
+
+    if (requireAuth) {
+      const token = getStoredRemoteToken();
+
+      if (!token) {
+        throw new AuthApiError("INVALID_CREDENTIALS", "Remote session is missing.");
+      }
+
+      nextHeaders.set("Authorization", `Bearer ${token}`);
+    }
+
+    if (withSyncContext) {
+      const deviceId = getRemoteDeviceId();
+      const baseVersion = getCurrentRemoteStateVersion();
+
+      if (deviceId) {
+        nextHeaders.set("X-Device-Id", deviceId);
+      }
+
+      if (baseVersion) {
+        nextHeaders.set("X-State-Version", baseVersion);
+      }
+    }
+
+    return fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers: nextHeaders,
+    });
+  };
+
+  let response = await performRequest();
+
+  if (
+    response.status === 401 &&
+    requireAuth &&
+    allowRefresh &&
+    getStoredRemoteRefreshToken()
+  ) {
+    try {
+      await refreshRemoteAccessToken(baseUrl);
+      response = await performRequest();
+    } catch (error) {
+      const authError = toAuthApiError(error);
+
+      if (authError) {
+        clearRemoteSession();
+        throw authError;
+      }
+
+      throw error;
+    }
+  }
+
+  if (!response.ok) {
+    throw await toRemoteRequestError(response);
+  }
+
+  const data = await readJsonResponse<T>(response);
+  return { data, baseUrl };
+};
+
+export const checkRemoteBackendAvailability = async (force = false) =>
+  Boolean(await probeRemoteBaseUrl(force));
+
+export const isRemoteAuthAvailable = async () => checkRemoteBackendAvailability();
+
+export const isRemoteAuthMode = () => getStoredAuthMode() === "remote-cloud";
+
+export const getRemoteAuthRuntimeInfo = () => remoteRuntimeInfo;
+
+export const getRemoteSessionToken = () => getStoredRemoteToken();
+
+export const getRemoteBaseUrl = () => getStoredRemoteBaseUrl();
+
+export const fetchRemoteStateMeta = async ({
+  force = false,
+}: { force?: boolean } = {}): Promise<AppSnapshotMeta | null> => {
+  if (!isRemoteAuthMode()) {
+    return null;
+  }
+
+  if (!force) {
+    const cachedMeta = readCachedRemoteMeta();
+
+    if (cachedMeta) {
+      return cachedMeta;
+    }
+  }
+
+  try {
+    const { data } = await requestRemote<AppSnapshotMeta>(
+      "/state/meta",
+      { method: "GET" },
+      { requireAuth: true }
+    );
+
+    writeCachedRemoteMeta(data);
+
+    return data;
+  } catch {
+    return readCachedRemoteMeta({ allowStale: true });
+  }
+};
+
+export const fetchRemoteAppState = async ({
+  preferCache = false,
+  force = false,
+}: {
+  preferCache?: boolean;
+  force?: boolean;
+} = {}): Promise<AppSnapshot | null> => {
+  if (!isRemoteAuthMode()) {
+    return null;
+  }
+
+  if (preferCache && !force) {
+    const cachedSnapshot = readCachedRemoteSnapshot();
+
+    if (cachedSnapshot) {
+      return cachedSnapshot;
+    }
+  }
+
+  try {
+    const { data } = await requestRemote<AppSnapshot>(
+      "/state",
+      { method: "GET" },
+      { requireAuth: true }
+    );
+
+    writeCachedRemoteSnapshot(data);
+    return data;
+  } catch {
+    return preferCache ? readCachedRemoteSnapshot() : null;
+  }
+};
+
+const loadRemoteAppState = async (): Promise<AppSnapshot | null> => fetchRemoteAppState();
+
+const getRemoteMutationResult = async (
+  path: string,
+  init: RequestInit
+): Promise<RemoteSyncResult> => {
+  try {
+    const { data } = await requestRemote<RemoteMutationResponse>(path, init, {
+      requireAuth: true,
+      withSyncContext: true,
+    });
+
+    if (data.meta) {
+      writeCachedRemoteMeta(data.meta);
+    }
+
+    return {
+      ok: true,
+      meta: data.meta,
+    };
+  } catch (error) {
+    return toRemoteSyncResult(error);
+  }
+};
+
+export const pushRemoteProfileState = async (profile: unknown): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/profile-state", {
+    method: "PUT",
+    body: JSON.stringify(profile),
+  });
+};
+
+export const pushRemoteMealState = async (meal: unknown): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/meal-state", {
+    method: "PUT",
+    body: JSON.stringify(meal),
+  });
+};
+
+export const addRemoteMealEntries = async (entries: MealEntry[]): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode() || entries.length === 0) {
+    return {
+      ok: false,
+      code: "INVALID_ENTRIES",
+      message: "Meal entries are required for cloud sync.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/meal-entries", {
+    method: "POST",
+    body: JSON.stringify({ entries }),
+  });
+};
+
+export const removeRemoteMealEntry = async (entryId: string): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode() || !entryId) {
+    return {
+      ok: false,
+      code: "INVALID_ENTRY_ID",
+      message: "Meal entry id is required for cloud sync.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult(`/meal-entries/${encodeURIComponent(entryId)}`, {
+    method: "DELETE",
+  });
+};
+
+export const addRemoteMealTemplate = async (
+  template: MealTemplate
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/meal-templates", {
+    method: "POST",
+    body: JSON.stringify(template),
+  });
+};
+
+export const removeRemoteMealTemplate = async (
+  templateId: string
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode() || !templateId) {
+    return {
+      ok: false,
+      code: "INVALID_TEMPLATE_ID",
+      message: "Meal template id is required for cloud sync.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult(`/meal-templates/${encodeURIComponent(templateId)}`, {
+    method: "DELETE",
+  });
+};
+
+export const upsertRemoteMealProduct = async (
+  bucket: "saved" | "recent",
+  product: Product
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult(`/meal-products/${bucket}`, {
+    method: "POST",
+    body: JSON.stringify(product),
+  });
+};
+
+export const removeRemoteMealProduct = async (
+  bucket: "saved" | "recent",
+  productKey: string
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode() || !productKey) {
+    return {
+      ok: false,
+      code: "INVALID_PRODUCT_KEY",
+      message: "Meal product key is required for cloud sync.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult(
+    `/meal-products/${bucket}/${encodeURIComponent(productKey)}`,
+    { method: "DELETE" }
+  );
+};
+
+export const analyzeRemoteMealPhoto = async (
+  imageDataUrl: string,
+  mealType: string
+): Promise<PhotoMealAnalysis | null> => {
+  if (!isRemoteAuthMode()) {
+    return null;
+  }
+
+  try {
+    const { data } = await requestRemote<PhotoMealAnalysis>(
+      "/photo-analysis",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          imageDataUrl,
+          mealType,
+        }),
+      },
+      { requireAuth: true }
+    );
+
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
+  setRemoteSession(baseUrl, payload.token, payload.refreshToken);
+  setStoredRemoteUser(payload.user);
+  const granularSnapshot = await loadRemoteAppState();
+  const nextSnapshot = granularSnapshot ?? payload.snapshot ?? null;
+
+  if (nextSnapshot) {
+    writeCachedRemoteSnapshot(nextSnapshot);
+  }
+
+  return {
+    ...payload,
+    snapshot: nextSnapshot,
+  };
+};
+
+export const remoteAuthProvider: AuthProvider = {
+  restoreSession: async () => {
+    if (!isRemoteAuthMode() || !getStoredRemoteToken()) {
+      return null;
+    }
+
+    try {
+      const { data, baseUrl } = await requestRemote<AuthResponse>(
+        "/auth/session",
+        { method: "GET" },
+        { requireAuth: true }
+      );
+
+      return mapAuthResponse(data, baseUrl);
+    } catch (error) {
+      if (
+        error instanceof AuthApiError ||
+        (error instanceof RemoteRequestError &&
+          (error.status === 401 || error.code === "INVALID_CREDENTIALS"))
+      ) {
+        clearRemoteSession();
+        return null;
+      }
+
+      const cachedUser = getStoredRemoteUser();
+      const cachedToken = getStoredRemoteToken();
+      const cachedSnapshot = readCachedRemoteSnapshot();
+
+      if (cachedUser && cachedToken) {
+        return {
+          user: cachedUser,
+          token: cachedToken,
+          snapshot: cachedSnapshot,
+        };
+      }
+
+      return null;
+    }
+  },
+
+  logout: async () => {
+    if (isRemoteAuthMode() && getStoredRemoteToken()) {
+      try {
+        await requestRemote(
+          "/auth/logout",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              refreshToken: getStoredRemoteRefreshToken(),
+            }),
+          },
+          { requireAuth: false, allowRefresh: false }
+        );
+      } catch {
+        // local cleanup still matters even if the request fails
+      }
+    }
+
+    clearRemoteSession();
+  },
+
+  logoutEverywhere: async () => {
+    if (isRemoteAuthMode() && getStoredRemoteToken()) {
+      await requestRemote(
+        "/auth/logout-all",
+        { method: "POST" },
+        { requireAuth: true }
+      ).catch((error) => {
+        const authError = toAuthApiError(error);
+        throw authError ?? error;
+      });
+    }
+
+    clearRemoteSession();
+  },
+
+  updateStoredProfile: async (user: User) => {
+    const { data, baseUrl } = await requestRemote<User>(
+      "/auth/profile",
+      {
+        method: "PATCH",
+        body: JSON.stringify(user),
+      },
+      { requireAuth: true }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    if (getStoredRemoteToken()) {
+      localStorage.setItem(REMOTE_BASE_URL_KEY, baseUrl);
+      setStoredAuthMode("remote-cloud");
+      setStoredRemoteUser(data);
+    }
+
+    return data;
+  },
+
+  register: async (payload: RegisterPayload) => {
+    const { data, baseUrl } = await requestRemote<AuthResponse>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return mapAuthResponse(data, baseUrl);
+  },
+
+  login: async (email: string, password: string) => {
+    const { data, baseUrl } = await requestRemote<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return mapAuthResponse(data, baseUrl);
+  },
+
+  deleteAccount: async (_email: string) => {
+    void _email;
+
+    await requestRemote(
+      "/account",
+      { method: "DELETE" },
+      { requireAuth: true }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    clearRemoteSession();
+  },
+
+  getRuntimeInfo: () => remoteRuntimeInfo,
+};

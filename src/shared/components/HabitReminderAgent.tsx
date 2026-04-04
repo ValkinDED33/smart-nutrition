@@ -1,0 +1,249 @@
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../app/store";
+import type { MealType } from "../types/meal";
+import { useLanguage } from "../language";
+import { generateNutritionCoachAnalysis } from "../lib/nutritionCoach";
+
+const STORAGE_KEY = "smart-nutrition.notification-log";
+
+const formatLocalDayKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const isSameLocalDay = (value: string, currentDate: Date) => {
+  const parsed = new Date(value);
+
+  return (
+    parsed.getFullYear() === currentDate.getFullYear() &&
+    parsed.getMonth() === currentDate.getMonth() &&
+    parsed.getDate() === currentDate.getDate()
+  );
+};
+
+const parseTimeToMinutes = (value: string) => {
+  const [hours = 0, minutes = 0] = value.split(":").map(Number);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return 0;
+  }
+
+  return hours * 60 + minutes;
+};
+
+const readNotificationLog = () => {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, true>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeNotificationLog = (value: Record<string, true>) => {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+};
+
+const maybeSendNotification = (key: string, title: string, body: string) => {
+  const notificationLog = readNotificationLog();
+
+  if (notificationLog[key]) {
+    return;
+  }
+
+  notificationLog[key] = true;
+  writeNotificationLog(notificationLog);
+  new Notification(title, { body, silent: true });
+};
+
+const mealNotificationCopy: Record<MealType, { title: string; body: string }> = {
+  breakfast: {
+    title: "Breakfast check-in",
+    body: "Breakfast is still missing from today. Log it while it is fresh in memory.",
+  },
+  lunch: {
+    title: "Lunch reminder",
+    body: "Lunch is not in your diary yet. A quick log now keeps the day accurate.",
+  },
+  dinner: {
+    title: "Dinner reminder",
+    body: "Dinner is still missing from your diary. Add it before the day ends.",
+  },
+  snack: {
+    title: "Snack reminder",
+    body: "You scheduled a snack reminder. Add it or adjust the plan if you skipped it.",
+  },
+};
+
+const coachNotificationCopy = {
+  uk: {
+    title: (name: string) => `${name}: вечірній розбір`,
+    logging_low: (daysLogged: number) =>
+      `Зафіксовано лише ${daysLogged} із 7 останніх днів. Додайте пропущені записи, поки день не завершився.`,
+    protein_low: (averageProtein: number, proteinTarget: number) =>
+      `Білок просідає: у середньому ${averageProtein.toFixed(0)} г проти цілі ${proteinTarget.toFixed(0)} г. Додайте ще один білковий прийом.`,
+    fiber_low: (averageFiber: number) =>
+      `Клітковина все ще низька: у середньому ${averageFiber.toFixed(0)} г. Додайте овочі, фрукти або бобові.`,
+    calories_high: (averageCalories: number, calorieTarget: number) =>
+      `Середні калорії ${averageCalories.toFixed(0)} ккал при цілі ${calorieTarget.toFixed(0)}. Зменште найважчий прийом їжі.`,
+    calories_low: (averageCalories: number, calorieTarget: number) =>
+      `Середні калорії ${averageCalories.toFixed(0)} ккал при цілі ${calorieTarget.toFixed(0)}. Перевірте, чи не пропускаєте прийоми їжі.`,
+    meal_pattern: (averageMeals: number) =>
+      `Ритм харчування нерівний: лише ${averageMeals.toFixed(1)} повноцінних слотів їжі на день. Вирівняйте базові прийоми.`,
+    weight_trend: (weightChange: number) =>
+      `Тренд ваги ${weightChange.toFixed(1)} кг не збігається з метою. Перевірте ціль калорій на найближчий тиждень.`,
+  },
+  pl: {
+    title: (name: string) => `${name}: wieczorny przegląd`,
+    logging_low: (daysLogged: number) =>
+      `Zapisane są tylko ${daysLogged} z ostatnich 7 dni. Uzupełnij brakujące wpisy, zanim dzień się skończy.`,
+    protein_low: (averageProtein: number, proteinTarget: number) =>
+      `Białko jest za nisko: średnio ${averageProtein.toFixed(0)} g przy celu ${proteinTarget.toFixed(0)} g. Dodaj jeszcze jeden białkowy posiłek.`,
+    fiber_low: (averageFiber: number) =>
+      `Błonnik nadal jest niski: średnio ${averageFiber.toFixed(0)} g. Dodaj warzywa, owoce albo strączki.`,
+    calories_high: (averageCalories: number, calorieTarget: number) =>
+      `Średnie kalorie ${averageCalories.toFixed(0)} kcal przy celu ${calorieTarget.toFixed(0)}. Odetnij najcięższy posiłek dnia.`,
+    calories_low: (averageCalories: number, calorieTarget: number) =>
+      `Średnie kalorie ${averageCalories.toFixed(0)} kcal przy celu ${calorieTarget.toFixed(0)}. Sprawdź, czy nie pomijasz posiłków.`,
+    meal_pattern: (averageMeals: number) =>
+      `Rytm jedzenia jest nierówny: tylko ${averageMeals.toFixed(1)} pełnych slotów posiłków dziennie. Ustabilizuj bazowe posiłki.`,
+    weight_trend: (weightChange: number) =>
+      `Trend masy ${weightChange.toFixed(1)} kg nie wspiera celu. Sprawdź target kalorii na kolejny tydzień.`,
+  },
+} as const;
+
+const HabitReminderAgent = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const items = useSelector((state: RootState) => state.meal.items);
+  const totalCalories = useSelector(
+    (state: RootState) => state.meal.totalNutrients.calories
+  );
+  const {
+    dailyCalories,
+    goal,
+    dietStyle,
+    notificationsEnabled,
+    mealRemindersEnabled,
+    calorieAlertsEnabled,
+    reminderTimes,
+    weightHistory,
+    assistant,
+  } = useSelector((state: RootState) => state.profile);
+  const { language } = useLanguage();
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !user ||
+      !notificationsEnabled ||
+      !("Notification" in window) ||
+      Notification.permission !== "granted"
+    ) {
+      return;
+    }
+
+    const tick = () => {
+      const now = new Date();
+      const todayKey = formatLocalDayKey(now);
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      if (mealRemindersEnabled) {
+        (Object.keys(mealNotificationCopy) as MealType[]).forEach((mealType) => {
+          const reminderAt = reminderTimes[mealType];
+          const reminderMinutes = parseTimeToMinutes(reminderAt);
+          const hasLoggedMeal = items.some(
+            (item) => item.mealType === mealType && isSameLocalDay(item.eatenAt, now)
+          );
+
+          if (!hasLoggedMeal && nowMinutes >= reminderMinutes) {
+            const reminder = mealNotificationCopy[mealType];
+            maybeSendNotification(
+              `${todayKey}-${mealType}`,
+              reminder.title,
+              reminder.body
+            );
+          }
+        });
+      }
+
+      if (calorieAlertsEnabled && dailyCalories > 0 && nowMinutes >= 20 * 60) {
+        if (totalCalories < dailyCalories * 0.72) {
+          maybeSendNotification(
+            `${todayKey}-calories-low`,
+            "Calories are still low today",
+            "You are well below today's target. Check whether a meal is still missing."
+          );
+        } else if (totalCalories > dailyCalories * 1.12) {
+          maybeSendNotification(
+            `${todayKey}-calories-high`,
+            "Calories are already above target",
+            "You are above today's target. Review the remaining meals before adding more."
+          );
+        }
+      }
+
+      if (nowMinutes >= 19 * 60 + 30) {
+        const analysis = generateNutritionCoachAnalysis({
+          items,
+          dailyCalories,
+          goal,
+          dietStyle,
+          weight: user.weight,
+          weightHistory,
+        });
+        const focus = analysis.insights.find((insight) => insight.code !== "on_track");
+
+        if (focus) {
+          const coachCopy = coachNotificationCopy[language];
+          const messageByInsight = {
+            logging_low: coachCopy.logging_low(analysis.daysLogged),
+            protein_low: coachCopy.protein_low(analysis.averageProtein, analysis.proteinTarget),
+            fiber_low: coachCopy.fiber_low(analysis.averageFiber),
+            calories_high: coachCopy.calories_high(analysis.averageCalories, analysis.calorieTarget),
+            calories_low: coachCopy.calories_low(analysis.averageCalories, analysis.calorieTarget),
+            meal_pattern: coachCopy.meal_pattern(analysis.averageMeals),
+            weight_trend: coachCopy.weight_trend(analysis.weightChange),
+            on_track: null,
+          } as const;
+          const body = messageByInsight[focus.code];
+
+          if (body) {
+            maybeSendNotification(
+              `${todayKey}-coach-focus`,
+              coachCopy.title(assistant.name),
+              body
+            );
+          }
+        }
+      }
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 60_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    calorieAlertsEnabled,
+    dailyCalories,
+    dietStyle,
+    goal,
+    items,
+    language,
+    mealRemindersEnabled,
+    notificationsEnabled,
+    reminderTimes,
+    totalCalories,
+    user,
+    weightHistory,
+    assistant.name,
+  ]);
+
+  return null;
+};
+
+export default HabitReminderAgent;

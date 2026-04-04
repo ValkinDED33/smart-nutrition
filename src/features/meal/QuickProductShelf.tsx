@@ -4,6 +4,8 @@ import { ProductCard } from "./ProductCard";
 import { selectRecentProducts, selectSavedProducts } from "./selectors";
 import type { MealType } from "../../shared/types/meal";
 import { useLanguage } from "../../shared/language";
+import type { RootState } from "../../app/store";
+import { productMatchesPreferences } from "../../shared/lib/preferences";
 
 interface Props {
   mealType: MealType;
@@ -12,6 +14,12 @@ interface Props {
 export const QuickProductShelf = ({ mealType }: Props) => {
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
+  const preferences = useSelector((state: RootState) => ({
+    dietStyle: state.profile.dietStyle,
+    allergies: state.profile.allergies,
+    excludedIngredients: state.profile.excludedIngredients,
+    adaptiveMode: state.profile.adaptiveMode,
+  }));
   const { t } = useLanguage();
 
   const renderGrid = (products: typeof savedProducts) => (
@@ -57,7 +65,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
           {savedProducts.length === 0 ? (
             <Typography color="text.secondary">{t("quickShelf.savedEmpty")}</Typography>
           ) : (
-            renderGrid(savedProducts.slice(0, 6))
+            renderGrid(savedProducts.filter((product) => productMatchesPreferences(product, preferences)).slice(0, 6))
           )}
         </Stack>
 
@@ -66,7 +74,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
           {recentProducts.length === 0 ? (
             <Typography color="text.secondary">{t("quickShelf.recentEmpty")}</Typography>
           ) : (
-            renderGrid(recentProducts.slice(0, 6))
+            renderGrid(recentProducts.filter((product) => productMatchesPreferences(product, preferences)).slice(0, 6))
           )}
         </Stack>
       </Stack>

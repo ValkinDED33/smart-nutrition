@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, combineReducers, type AnyAction } from "@reduxjs/toolkit";
 import {
   persistStore,
   persistReducer,
@@ -12,19 +12,38 @@ import {
 import storage from "redux-persist/lib/storage";
 import type { PersistedState } from "redux-persist/es/types";
 
-import profileReducer from "../features/profile/profileSlice";
+import profileReducer, {
+  normalizeProfileState,
+} from "../features/profile/profileSlice";
 import mealReducer, { normalizeMealState } from "../features/meal/mealSlice";
 import authReducer from "../features/auth/authSlice";
+import {
+  registerRemoteSyncListeners,
+  remoteSyncListenerMiddleware,
+} from "./syncListeners";
 
-const rootReducer = combineReducers({
+const appReducer = combineReducers({
   profile: profileReducer,
   meal: mealReducer,
   auth: authReducer,
 });
 
+const RESET_APP_ACTION = "app/reset";
+
+const rootReducer = (
+  state: ReturnType<typeof appReducer> | undefined,
+  action: AnyAction
+) => {
+  if (action.type === RESET_APP_ACTION) {
+    return appReducer(undefined, action);
+  }
+
+  return appReducer(state, action);
+};
+
 const persistConfig = {
   key: "root",
-  version: 3,
+  version: 4,
   storage,
   whitelist: ["profile", "meal"],
   migrate: async (state: PersistedState): Promise<PersistedState> => {
@@ -36,6 +55,7 @@ const persistConfig = {
 
     return {
       ...persistedState,
+      profile: normalizeProfileState(persistedState.profile),
       meal: normalizeMealState(persistedState.meal),
     } as PersistedState;
   },
@@ -50,10 +70,12 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    }).prepend(remoteSyncListenerMiddleware.middleware),
 });
 
 export const persistor = persistStore(store);
+export const resetAppState = () => ({ type: RESET_APP_ACTION } as const);
+registerRemoteSyncListeners();
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

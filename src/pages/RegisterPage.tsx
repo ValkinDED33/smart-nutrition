@@ -16,10 +16,18 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
+import { replaceMealState } from "../features/meal/mealSlice";
 import { applyProfileTargets } from "../features/profile/profileSlice";
+import { replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
 import { calculateProfileTargets } from "../shared/lib/profileTargets";
-import { AuthApiError, register as registerApi } from "../shared/api/auth";
+import {
+  AuthApiError,
+  getAuthRuntimeInfo,
+  register as registerApi,
+} from "../shared/api/auth";
 import { useLanguage } from "../shared/language";
+import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 
 type FormData = {
   name: string;
@@ -37,7 +45,7 @@ type FormData = {
 const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -99,7 +107,7 @@ const RegisterPage = () => {
     setServerError(null);
 
     try {
-      const { user, token } = await registerApi({
+      const { user, token, snapshot } = await registerApi({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -111,16 +119,37 @@ const RegisterPage = () => {
         goal: data.goal,
       });
 
-      dispatch(setCredentials({ user, accessToken: token }));
-      const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
       dispatch(
-        applyProfileTargets({
-          goal: data.goal,
-          weight: data.weight,
-          maintenanceCalories,
-          targetCalories,
+        setCredentials({
+          user,
+          accessToken: token,
+          syncMode: getAuthRuntimeInfo().mode,
+          syncOutbox: getSyncOutboxMeta(),
+          cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
         })
       );
+
+      if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
+        dispatch(replaceProfileState(snapshot.profile));
+        dispatch(replaceMealState(snapshot.meal));
+      } else {
+        const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
+        dispatch(
+          applyProfileTargets({
+            goal: data.goal,
+            weight: data.weight,
+            maintenanceCalories,
+            targetCalories,
+            targetWeight: null,
+            dietStyle: "balanced",
+            allergies: [],
+            excludedIngredients: [],
+            adaptiveMode: "automatic",
+          })
+        );
+      }
+
+      dispatch(setProfileLanguage(language));
 
       navigate("/dashboard");
     } catch (error) {

@@ -1,8 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   Box,
-  Button,
   Chip,
   Divider,
   LinearProgress,
@@ -12,15 +11,16 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import type { RootState, AppDispatch } from "../app/store";
-import { removeProduct } from "../features/meal/mealSlice";
+import type { RootState } from "../app/store";
 import { ProductSearch } from "../features/meal/ProductSearch";
+import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
+import { MealEntryEditorDialog } from "../features/meal/MealEntryEditorDialog";
 import {
-  selectMealItems,
-  selectMealTotalNutrients,
+  selectTodayMealItems,
+  selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
 import { TemplateVault } from "../features/meal/TemplateVault";
 import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
@@ -36,12 +36,11 @@ const BarcodeScanner = lazy(() =>
 );
 
 const MealBuilderPage = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const items = useSelector(selectMealItems);
+  const items = useSelector(selectTodayMealItems);
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
-  const totals = useSelector(selectMealTotalNutrients);
+  const totals = useSelector(selectTodayMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const { language, t } = useLanguage();
 
@@ -154,6 +153,7 @@ const MealBuilderPage = () => {
           <QuickMealComposer mealType={mealType} />
           <QuickProductShelf mealType={mealType} />
           <TemplateVault mealType={mealType} />
+          <PhotoMealAssistant mealType={mealType} />
           <ProductSearch mealType={mealType} />
           <RecipeSection mealType={mealType} />
         </Stack>
@@ -222,13 +222,7 @@ const MealBuilderPage = () => {
                                 {t("common.kcal")}
                               </Typography>
                             </Box>
-                            <Button
-                              color="error"
-                              onClick={() => dispatch(removeProduct(item.id))}
-                              sx={{ width: { xs: "100%", sm: "auto" } }}
-                            >
-                              {t("mealBuilder.remove")}
-                            </Button>
+                            <MealEntryEditorDialog entry={item} />
                           </Stack>
                         </Paper>
                       );

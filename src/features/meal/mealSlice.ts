@@ -214,6 +214,10 @@ const mealSlice = createSlice({
   name: "meal",
   initialState,
   reducers: {
+    replaceMealState(_, action: PayloadAction<unknown>) {
+      return normalizeMealState(action.payload);
+    },
+
     addProduct(
       state,
       action: PayloadAction<{
@@ -292,6 +296,29 @@ const mealSlice = createSlice({
       );
     },
 
+    updateMealEntry(
+      state,
+      action: PayloadAction<{
+        id: string;
+        product: Product;
+        quantity: number;
+        mealType: MealType;
+      }>
+    ) {
+      const entry = state.items.find((item) => item.id === action.payload.id);
+
+      if (!entry) {
+        return;
+      }
+
+      entry.product = action.payload.product;
+      entry.quantity = action.payload.quantity;
+      entry.mealType = action.payload.mealType;
+      rememberProduct(state.recentProducts, action.payload.product, 16);
+      rememberBarcodeProduct(state.personalBarcodeProducts, action.payload.product, 240);
+      recalcTotalNutrients(state);
+    },
+
     rememberRecentProduct(state, action: PayloadAction<Product>) {
       rememberProduct(state.recentProducts, action.payload, 16);
       rememberBarcodeProduct(state.personalBarcodeProducts, action.payload, 240);
@@ -343,6 +370,7 @@ const recalcTotalNutrients = (state: MealState) => {
 };
 
 export const {
+  replaceMealState,
   addProduct,
   addMealEntries,
   saveMealTemplate,
@@ -350,6 +378,7 @@ export const {
   deleteMealTemplate,
   saveProduct,
   removeSavedProduct,
+  updateMealEntry,
   rememberRecentProduct,
   removeProduct,
   clearMeal,

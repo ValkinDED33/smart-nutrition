@@ -13,7 +13,7 @@ import { useLanguage } from "../../shared/language";
 export const AdaptiveGoalCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useLanguage();
-  const { maintenanceCalories, goal, adaptiveCalories, weightHistory } = useSelector(
+  const { maintenanceCalories, goal, adaptiveCalories, weightHistory, adaptiveMode } = useSelector(
     (state: RootState) => state.profile
   );
   const items = useSelector(selectMealItems);
@@ -56,6 +56,11 @@ export const AdaptiveGoalCard = () => {
         </Typography>
         <Typography color="text.secondary">
           {t("adaptive.average")}: {averageIntake.toFixed(0)} {t("common.kcal")}
+        </Typography>
+        <Typography color="text.secondary">
+          {adaptiveMode === "automatic"
+            ? "Automatic mode keeps the target aligned with your trend."
+            : "Manual mode waits for you to apply changes yourself."}
         </Typography>
         <Button
           variant="contained"

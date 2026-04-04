@@ -1,29 +1,44 @@
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
-import {
-  Avatar,
-  Box,
-  LinearProgress,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Avatar, Box, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { useLanguage } from "../shared/language";
 import { WeeklyInsights } from "../features/meal/WeeklyInsights";
-import { selectMealTotalNutrients } from "../features/meal/selectors";
+import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
+import { MealDayOverview } from "../features/meal/MealDayOverview";
+import { DailyMicronutrientsCard } from "../features/meal/DailyMicronutrientsCard";
 import { AdaptiveGoalCard } from "../features/profile/AdaptiveGoalCard";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
+import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
+import { selectDailyMacroProgress } from "../features/profile/selectors";
+import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
+
+const macroGoalCopy = {
+  uk: {
+    sectionTitle: "Цілі за макроелементами",
+    sectionSubtitle: "Порівнюйте фактичні білки, жири та вуглеводи зі своєю денною ціллю.",
+    target: "Ціль",
+    remaining: "Залишилось",
+  },
+  pl: {
+    sectionTitle: "Cele makroskładników",
+    sectionSubtitle: "Porównuj faktyczne białko, tłuszcze i węglowodany z celem dziennym.",
+    target: "Cel",
+    remaining: "Pozostało",
+  },
+} as const;
 
 const DashboardPage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const dailyCalories = useSelector(
-    (state: RootState) => state.profile.dailyCalories
-  );
-  const totalMacros = useSelector(selectMealTotalNutrients);
-  const { t } = useLanguage();
+  const dailyCalories = useSelector((state: RootState) => state.profile.dailyCalories);
+  const totalMacros = useSelector(selectTodayMealTotalNutrients);
+  const macroProgress = useSelector(selectDailyMacroProgress);
+  const { t, language } = useLanguage();
 
-  if (!user) return <Typography>{t("dashboard.needLogin")}</Typography>;
+  if (!user) {
+    return <Typography>{t("dashboard.needLogin")}</Typography>;
+  }
 
+  const localizedMacroCopy = macroGoalCopy[language];
   const remainingCalories = Math.max(dailyCalories - totalMacros.calories, 0);
   const progress = dailyCalories
     ? Math.min((totalMacros.calories / dailyCalories) * 100, 100)
@@ -43,10 +58,28 @@ const DashboardPage = () => {
   ];
 
   const macros = [
-    { label: t("dashboard.protein"), value: totalMacros.protein.toFixed(1) },
-    { label: t("dashboard.fat"), value: totalMacros.fat.toFixed(1) },
-    { label: t("dashboard.carbs"), value: totalMacros.carbs.toFixed(1) },
-  ];
+    {
+      label: t("dashboard.protein"),
+      current: macroProgress.protein.current,
+      target: macroProgress.protein.target,
+      progress: macroProgress.protein.progress,
+    },
+    {
+      label: t("dashboard.fat"),
+      current: macroProgress.fat.current,
+      target: macroProgress.fat.target,
+      progress: macroProgress.fat.progress,
+    },
+    {
+      label: t("dashboard.carbs"),
+      current: macroProgress.carbs.current,
+      target: macroProgress.carbs.target,
+      progress: macroProgress.carbs.progress,
+    },
+  ].map((macro) => ({
+    ...macro,
+    remaining: Math.max(macro.target - macro.current, 0),
+  }));
 
   return (
     <Stack spacing={3}>
@@ -80,9 +113,15 @@ const DashboardPage = () => {
             </Box>
           </Stack>
           <Stack spacing={0.5} sx={{ color: "rgba(255,255,255,0.82)" }}>
-            <Typography>{t("dashboard.age")}: {user.age}</Typography>
-            <Typography>{t("dashboard.weight")}: {user.weight} {t("common.kg")}</Typography>
-            <Typography>{t("dashboard.height")}: {user.height} {t("common.cm")}</Typography>
+            <Typography>
+              {t("dashboard.age")}: {user.age}
+            </Typography>
+            <Typography>
+              {t("dashboard.weight")}: {user.weight} {t("common.kg")}
+            </Typography>
+            <Typography>
+              {t("dashboard.height")}: {user.height} {t("common.cm")}
+            </Typography>
           </Stack>
         </Stack>
       </Paper>
@@ -134,41 +173,69 @@ const DashboardPage = () => {
         <Typography color="text.secondary" sx={{ mb: 1.5 }}>
           {totalMacros.calories.toFixed(0)} / {dailyCalories} {t("common.kcal")}
         </Typography>
-        <LinearProgress
-          variant="determinate"
-          value={progress}
-          sx={{ height: 12, borderRadius: 999 }}
-        />
+        <LinearProgress variant="determinate" value={progress} sx={{ height: 12, borderRadius: 999 }} />
       </Paper>
 
-      <Box
+      <Paper
+        elevation={0}
         sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-          gap: 2,
+          p: 3,
+          borderRadius: 6,
+          border: "1px solid rgba(15, 23, 42, 0.08)",
+          backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        {macros.map((macro) => (
-          <Paper
-            key={macro.label}
-            elevation={0}
+        <Stack spacing={2}>
+          <Stack spacing={0.6}>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              {localizedMacroCopy.sectionTitle}
+            </Typography>
+            <Typography color="text.secondary">{localizedMacroCopy.sectionSubtitle}</Typography>
+          </Stack>
+
+          <Box
             sx={{
-              p: 3,
-              borderRadius: 5,
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(239,246,255,0.86) 100%)",
-              border: "1px solid rgba(15, 23, 42, 0.08)",
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gap: 2,
             }}
           >
-            <Typography color="text.secondary">{macro.label}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900, mt: 0.4 }}>
-              {macro.value} {t("common.g")}
-            </Typography>
-          </Paper>
-        ))}
-      </Box>
+            {macros.map((macro) => (
+              <Paper
+                key={macro.label}
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 5,
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(239,246,255,0.86) 100%)",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                }}
+              >
+                <Typography color="text.secondary">{macro.label}</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 900, mt: 0.4 }}>
+                  {macro.current.toFixed(1)} / {macro.target.toFixed(0)} {t("common.g")}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {localizedMacroCopy.target}: {macro.target.toFixed(0)} {t("common.g")} |{" "}
+                  {localizedMacroCopy.remaining}: {macro.remaining.toFixed(1)} {t("common.g")}
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={macro.progress}
+                  sx={{ height: 8, mt: 1.2, borderRadius: 999 }}
+                />
+              </Paper>
+            ))}
+          </Box>
+        </Stack>
+      </Paper>
 
+      <DailyMicronutrientsCard />
+      <MealDayOverview />
       <WeeklyInsights />
+      <MonthlyAnalyticsCard />
+      <NutritionCoachCard />
       <SmartRecommendations />
       <AdaptiveGoalCard />
     </Stack>

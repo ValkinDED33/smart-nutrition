@@ -7,8 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { AppLanguage } from "../types/i18n";
 
-export type Language = "uk" | "pl";
+export type Language = AppLanguage;
 
 const STORAGE_KEY = "smart-nutrition.language";
 
@@ -484,16 +485,20 @@ type TranslationKey = keyof typeof uk;
 interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
+  hasExplicitChoice: boolean;
   t: (key: TranslationKey | string, vars?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem(STORAGE_KEY);
     return savedLanguage === "pl" ? "pl" : "uk";
   });
+  const [hasExplicitChoice, setHasExplicitChoice] = useState(() =>
+    Boolean(localStorage.getItem(STORAGE_KEY))
+  );
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, language);
@@ -502,7 +507,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo<LanguageContextValue>(
     () => ({
       language,
-      setLanguage,
+      setLanguage: (nextLanguage) => {
+        setHasExplicitChoice(true);
+        setLanguageState(nextLanguage);
+      },
+      hasExplicitChoice,
       t: (key, vars) => {
         let text = dictionaries[language][key as TranslationKey] ?? key;
 
@@ -517,7 +526,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         return text;
       },
     }),
-    [language]
+    [hasExplicitChoice, language]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

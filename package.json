@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server:dev": "node server/index.mjs",
+    "start": "node server/index.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
     "preview": "vite preview"
   },
   "dependencies": {

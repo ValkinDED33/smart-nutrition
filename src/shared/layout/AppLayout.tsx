@@ -13,24 +13,31 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import type { RootState } from "../../app/store";
-import { logout as clearAuthState } from "../../features/auth/authSlice";
-import { resetProfile } from "../../features/profile/profileSlice";
-import { clearMeal } from "../../features/meal/mealSlice";
+import { persistor, resetAppState, type AppDispatch, type RootState } from "../../app/store";
 import { logout as logoutSession } from "../api/auth";
 import { useLanguage } from "../language";
+import BackendOfflineBanner from "../components/BackendOfflineBanner";
+import SyncStatusChip from "../components/SyncStatusChip";
+import SyncOutboxAgent from "../components/SyncOutboxAgent";
+import SyncFeedbackSnackbar from "../components/SyncFeedbackSnackbar";
+import HabitReminderAgent from "../components/HabitReminderAgent";
+import LocalRealtimeSyncAgent from "../components/LocalRealtimeSyncAgent";
+import RemoteStatePullAgent from "../components/RemoteStatePullAgent";
+import { clearSyncOutbox } from "../lib/syncOutbox";
+import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
+import { setProfileLanguage } from "../../features/profile/profileSlice";
 
 const Layout = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { language, setLanguage, t } = useLanguage();
 
   const handleLogout = async () => {
     await logoutSession();
-    dispatch(clearAuthState());
-    dispatch(resetProfile());
-    dispatch(clearMeal());
+    clearSyncOutbox();
+    dispatch(resetAppState());
+    await persistor.flush();
     navigate("/");
   };
 
@@ -129,6 +136,7 @@ const Layout = () => {
                   onChange={(_, nextLanguage) => {
                     if (nextLanguage) {
                       setLanguage(nextLanguage);
+                      dispatch(setProfileLanguage(nextLanguage));
                     }
                   }}
                   sx={{
@@ -154,6 +162,7 @@ const Layout = () => {
                     spacing={1.25}
                     alignItems={{ xs: "stretch", sm: "center" }}
                   >
+                    <SyncStatusChip />
                     <Chip
                       avatar={<Avatar src={user.avatar}>{user.name[0]}</Avatar>}
                       label={user.name}
@@ -239,8 +248,16 @@ const Layout = () => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+        <BackendOfflineBanner />
         <Outlet />
       </Container>
+
+      <SyncFeedbackSnackbar />
+      <SyncOutboxAgent />
+      <ProfileLanguageAgent />
+      <LocalRealtimeSyncAgent />
+      <RemoteStatePullAgent />
+      <HabitReminderAgent />
     </Box>
   );
 };
