@@ -1,0 +1,15 @@
+export const createAuthRepository = (storage) => ({
+  findUserByEmail: (email) => storage.findUserByEmail(email),
+  findUserById: (userId) => storage.findUserById(userId),
+  insertUser: (user) => storage.insertUser(user),
+  updateUser: (user) => storage.updateUser(user),
+  deleteUser: (userId) => storage.deleteUser(userId),
+  createSession: (session) => storage.createSession(session),
+  findSessionByToken: (token) => storage.findSessionByToken(token),
+  deleteSessionByToken: (token) => storage.deleteSessionByToken(token),
+  deleteSessionsByUserId: (userId) => storage.deleteSessionsByUserId(userId),
+  getLoginAttempt: (email) => storage.getLoginAttempt(email),
+  upsertLoginAttempt: (attempt) => storage.upsertLoginAttempt(attempt),
+  clearLoginAttempt: (email) => storage.clearLoginAttempt(email),
+  cleanupExpiredSessions: (now) => storage.cleanupExpiredSessions(now),
+});

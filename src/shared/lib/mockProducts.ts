@@ -49,6 +49,97 @@ const normalizeSearchText = (value: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .trim();
 
+const searchPhraseExpansions: Record<string, string[]> = {
+  porridge: ["oats", "oatmeal", "овсянка", "вівсянка", "owsianka"],
+  oatmeal: ["oats", "porridge", "овсянка", "вівсянка", "owsianka"],
+  yoghurt: ["yogurt", "greek yogurt"],
+  yogurt: ["yoghurt", "greek yogurt", "skyr", "jogurt", "йогурт"],
+  "greek yoghurt": ["greek yogurt", "jogurt grecki"],
+  "protein yogurt": ["greek yogurt", "skyr", "high protein yogurt"],
+  "protein yoghurt": ["greek yogurt", "skyr", "high protein yogurt"],
+  curd: ["cottage cheese", "quark", "twarog", "творог", "кисломолочний сир"],
+  quark: ["cottage cheese", "curd", "twarog", "творог"],
+  twarog: ["cottage cheese", "quark", "curd", "творог"],
+  twarogu: ["cottage cheese", "quark", "curd", "творог"],
+};
+
+const searchTokenExpansions: Record<string, string[]> = {
+  oats: ["oatmeal", "porridge", "owsianka", "овсянка", "вівсянка"],
+  oatmeal: ["oats", "porridge", "owsianka", "овсянка", "вівсянка"],
+  porridge: ["oats", "oatmeal", "owsianka", "овсянка", "вівсянка"],
+  yogurt: ["yoghurt", "jogurt", "йогурт", "greek", "skyr"],
+  yoghurt: ["yogurt", "jogurt", "greek", "skyr"],
+  jogurt: ["yogurt", "yoghurt", "greek", "skyr"],
+  greek: ["jogurt", "yogurt"],
+  protein: ["high", "skyr"],
+  curd: ["cottage", "quark", "twarog", "творог", "сир"],
+  cottage: ["curd", "quark", "twarog", "творог"],
+  quark: ["cottage", "curd", "twarog", "творог"],
+  twarog: ["cottage", "curd", "quark", "творог"],
+};
+
+const dedupeNormalizedValues = (values: string[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  values.forEach((value) => {
+    if (!value || seen.has(value)) {
+      return;
+    }
+
+    seen.add(value);
+    result.push(value);
+  });
+
+  return result;
+};
+
+const expandSearchQueries = (normalizedQuery: string) =>
+  dedupeNormalizedValues([
+    normalizedQuery,
+    ...(searchPhraseExpansions[normalizedQuery] ?? []).map((value) =>
+      normalizeSearchText(value)
+    ),
+  ]);
+
+const expandSearchTokens = (normalizedQuery: string) => {
+  const baseQueries = expandSearchQueries(normalizedQuery);
+  const baseTokens = baseQueries.flatMap((value) => value.split(/\s+/).filter(Boolean));
+  const expandedTokens = baseTokens.flatMap((token) => {
+    const relatedTokens = searchTokenExpansions[token] ?? [];
+    return [token, ...relatedTokens.map((value) => normalizeSearchText(value))];
+  });
+
+  return dedupeNormalizedValues(expandedTokens.filter(Boolean));
+};
+
+const levenshteinDistance = (left: string, right: string) => {
+  if (left === right) return 0;
+  if (!left.length) return right.length;
+  if (!right.length) return left.length;
+
+  const matrix: number[][] = Array.from({ length: left.length + 1 }, (_, rowIndex) =>
+    Array.from({ length: right.length + 1 }, (_, columnIndex) =>
+      rowIndex === 0 ? columnIndex : columnIndex === 0 ? rowIndex : 0
+    )
+  );
+
+  for (let rowIndex = 1; rowIndex <= left.length; rowIndex += 1) {
+    for (let columnIndex = 1; columnIndex <= right.length; columnIndex += 1) {
+      const substitutionCost =
+        left[rowIndex - 1] === right[columnIndex - 1] ? 0 : 1;
+
+      matrix[rowIndex]![columnIndex] = Math.min(
+        matrix[rowIndex - 1]![columnIndex]! + 1,
+        matrix[rowIndex]![columnIndex - 1]! + 1,
+        matrix[rowIndex - 1]![columnIndex - 1]! + substitutionCost
+      );
+    }
+  }
+
+  return matrix[left.length]![right.length]!;
+};
+
 const createProduct = ({
   id,
   name,
@@ -632,6 +723,150 @@ const catalog: LocalProductRecord[] = [
       proteinTypes: ["fast"],
     },
   }),
+  createProduct({
+    id: "manual-caesar-salad-restaurant",
+    name: "Chicken Caesar salad",
+    calories: 162,
+    protein: 11,
+    fat: 10,
+    carbs: 6,
+    imageUrl: images.vegetables,
+    brand: "Restaurant",
+    aliases: ["caesar salad", "restaurant salad", "cezar", "salatka cezar", "цезар"],
+    facts: {
+      foodGroup: "restaurant",
+      proteinTypes: ["animal", "complete"],
+      fatTypes: ["unsaturated", "saturated"],
+    },
+  }),
+  createProduct({
+    id: "manual-shawarma-bowl",
+    name: "Chicken shawarma bowl",
+    calories: 178,
+    protein: 12,
+    fat: 7,
+    carbs: 16,
+    imageUrl: images.chicken,
+    brand: "Takeaway",
+    aliases: ["shawarma bowl", "kebab box", "шаверма", "шаурма", "kebab bowl"],
+    facts: {
+      foodGroup: "restaurant",
+      proteinTypes: ["animal", "complete"],
+      carbohydrateTypes: ["complex"],
+    },
+  }),
+  createProduct({
+    id: "manual-pizza-margherita",
+    name: "Pizza Margherita",
+    calories: 266,
+    protein: 11,
+    fat: 10,
+    carbs: 33,
+    imageUrl: images.bread,
+    brand: "Restaurant",
+    aliases: ["pizza", "margherita", "pizza margherita", "маргарита"],
+    facts: {
+      foodGroup: "restaurant",
+      carbohydrateTypes: ["complex"],
+      fatTypes: ["saturated", "unsaturated"],
+    },
+  }),
+  createProduct({
+    id: "manual-sushi-set",
+    name: "Salmon sushi set",
+    calories: 154,
+    protein: 8,
+    fat: 3.5,
+    carbs: 23,
+    imageUrl: images.fish,
+    brand: "Restaurant",
+    aliases: ["sushi", "salmon sushi", "ролы", "sushi set"],
+    facts: {
+      foodGroup: "restaurant",
+      proteinTypes: ["animal", "complete"],
+      carbohydrateTypes: ["complex"],
+    },
+  }),
+  createProduct({
+    id: "manual-burger-chicken",
+    name: "Grilled chicken burger",
+    calories: 231,
+    protein: 14,
+    fat: 9,
+    carbs: 23,
+    imageUrl: images.bread,
+    brand: "Fast food",
+    aliases: ["burger", "chicken burger", "бургер", "kanapka z kurczakiem"],
+    facts: {
+      foodGroup: "restaurant",
+      proteinTypes: ["animal", "complete"],
+      carbohydrateTypes: ["complex"],
+    },
+  }),
+  createProduct({
+    id: "manual-borscht-home",
+    name: "Homemade borscht",
+    calories: 49,
+    protein: 2.1,
+    fat: 1.8,
+    carbs: 6.5,
+    imageUrl: images.vegetables,
+    brand: "Homemade",
+    aliases: ["borscht", "борщ", "barszcz", "homemade soup"],
+    facts: {
+      foodGroup: "homemade",
+      carbohydrateTypes: ["fiber"],
+      extraCompounds: ["phytonutrients"],
+    },
+  }),
+  createProduct({
+    id: "manual-chicken-soup-home",
+    name: "Homemade chicken soup",
+    calories: 58,
+    protein: 4.5,
+    fat: 2.4,
+    carbs: 4.1,
+    imageUrl: images.chicken,
+    brand: "Homemade",
+    aliases: ["chicken soup", "rosol", "суп", "домашний суп", "куриный суп"],
+    facts: {
+      foodGroup: "homemade",
+      proteinTypes: ["animal", "complete"],
+      extraCompounds: ["electrolytes"],
+    },
+  }),
+  createProduct({
+    id: "manual-syrniki-home",
+    name: "Homemade syrniki",
+    calories: 188,
+    protein: 11,
+    fat: 8,
+    carbs: 18,
+    imageUrl: images.dairy,
+    brand: "Homemade",
+    aliases: ["syrniki", "сырники", "twarozki pancakes", "placuszki twarogowe"],
+    facts: {
+      foodGroup: "homemade",
+      proteinTypes: ["animal", "complete"],
+      carbohydrateTypes: ["complex"],
+    },
+  }),
+  createProduct({
+    id: "manual-greek-salad-home",
+    name: "Homemade Greek salad",
+    calories: 97,
+    protein: 3.1,
+    fat: 7.6,
+    carbs: 4.1,
+    imageUrl: images.vegetables,
+    brand: "Homemade",
+    aliases: ["greek salad", "salatka grecka", "греческий салат"],
+    facts: {
+      foodGroup: "homemade",
+      fatTypes: ["unsaturated"],
+      extraCompounds: ["phytonutrients"],
+    },
+  }),
 ];
 
 const localizedAliasesById: Record<string, string[]> = {
@@ -673,15 +908,17 @@ const localizedAliasesById: Record<string, string[]> = {
 };
 
 const getSearchCandidates = (record: LocalProductRecord) =>
-  [
+  dedupeNormalizedValues(
+    [
     record.product.name,
     record.product.brand,
     ...record.aliases,
     ...(localizedAliasesById[record.product.id] ?? []),
-  ]
-    .filter(Boolean)
-    .map((value) => normalizeSearchText(String(value)))
-    .join(" ");
+    ]
+      .filter(Boolean)
+      .map((value) => normalizeSearchText(String(value)))
+      .filter(Boolean)
+  );
 
 export const mockProducts: Product[] = catalog.map((record) => record.product);
 
@@ -700,25 +937,96 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
     return getFeaturedProducts(limit);
   }
 
-  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const exactTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const expandedQueries = expandSearchQueries(normalizedQuery);
+  const expandedTokens = expandSearchTokens(normalizedQuery);
 
   return catalog
     .map((record) => {
-      const haystack = getSearchCandidates(record);
-      const matchedTokens = tokens.filter((token) => haystack.includes(token)).length;
-      const startsWithQuery = haystack.startsWith(normalizedQuery) ? 3 : 0;
-      const exactAlias = [...record.aliases, ...(localizedAliasesById[record.product.id] ?? [])]
-        .some((alias) => normalizeSearchText(alias) === normalizedQuery)
-        ? 4
+      const candidates = getSearchCandidates(record);
+      const haystack = candidates.join(" ");
+      const haystackTokens = haystack.split(/\s+/).filter(Boolean);
+      const normalizedName = normalizeSearchText(record.product.name);
+      const exactName = normalizedName === normalizedQuery ? 12 : 0;
+      const exactCandidate = candidates.some((candidate) => candidate === normalizedQuery)
+        ? 10
         : 0;
+      const exactExpandedQuery = expandedQueries.some((expandedQuery) =>
+        candidates.some((candidate) => candidate === expandedQuery)
+      )
+        ? 7
+        : 0;
+      const startsWithName = normalizedName.startsWith(normalizedQuery) ? 8 : 0;
+      const startsWithQuery = candidates.some((candidate) =>
+        candidate.startsWith(normalizedQuery)
+      )
+        ? 6
+        : 0;
+      const includesFullQuery = haystack.includes(normalizedQuery) ? 4 : 0;
+      const exactMatchedTokens = exactTokens.reduce((score, token) => {
+        return candidates.some(
+          (candidate) =>
+            candidate === token ||
+            candidate.split(/\s+/).some((candidateToken) => candidateToken === token)
+        )
+          ? score + 3
+          : score;
+      }, 0);
+      const matchedTokens = exactTokens.reduce((score, token) => {
+        return candidates.some((candidate) => candidate.includes(token)) ? score + 2 : score;
+      }, 0);
+      const expandedMatchedTokens = expandedTokens.reduce((score, token) => {
+        if (exactTokens.includes(token)) {
+          return score;
+        }
+
+        return candidates.some((candidate) => candidate.includes(token)) ? score + 1 : score;
+      }, 0);
+      const wordPrefixScore = exactTokens.reduce((score, token) => {
+        return haystackTokens.some((candidateToken) => candidateToken.startsWith(token))
+          ? score + 2
+          : score;
+      }, 0);
+      const fuzzyScore = exactTokens.reduce((score, token) => {
+        if (haystackTokens.length === 0) {
+          return score;
+        }
+
+        const closestDistance = haystackTokens.reduce((bestDistance, candidate) => {
+          return Math.min(bestDistance, levenshteinDistance(token, candidate));
+        }, Number.POSITIVE_INFINITY);
+
+        if (closestDistance === 1) return score + 2;
+        if (closestDistance === 2 && token.length >= 5) return score + 1;
+        return score;
+      }, 0);
+      const featuredBoost = record.featured ? 0.5 : 0;
 
       return {
         product: record.product,
-        score: matchedTokens + startsWithQuery + exactAlias,
+        score:
+          exactName +
+          exactCandidate +
+          exactExpandedQuery +
+          startsWithName +
+          startsWithQuery +
+          includesFullQuery +
+          exactMatchedTokens +
+          matchedTokens +
+          expandedMatchedTokens +
+          wordPrefixScore +
+          fuzzyScore +
+          featuredBoost,
       };
     })
     .filter((record) => record.score > 0)
-    .sort((left, right) => right.score - left.score)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return left.product.name.localeCompare(right.product.name);
+    })
     .slice(0, limit)
     .map((record) => record.product);
 };

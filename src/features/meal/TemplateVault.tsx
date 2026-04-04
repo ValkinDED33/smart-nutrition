@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../../app/store";
 import { applyMealTemplate, deleteMealTemplate, saveMealTemplate } from "./mealSlice";
-import { selectMealItems, selectMealTemplates } from "./selectors";
+import { selectMealTemplates, selectTodayMealItems } from "./selectors";
 import type { MealType } from "../../shared/types/meal";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
@@ -22,7 +22,7 @@ interface Props {
 
 export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const items = useSelector(selectMealItems);
+  const items = useSelector(selectTodayMealItems);
   const templates = useSelector(selectMealTemplates);
   const { language, t } = useLanguage();
   const [templateName, setTemplateName] = useState("");

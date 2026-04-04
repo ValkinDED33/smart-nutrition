@@ -38,7 +38,7 @@ export const ProductCard = ({
   origin = "manual",
   allowSave = true,
 }: Props) => {
-  const [qty, setQty] = useState<number>(100);
+  const [qty, setQty] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
@@ -48,13 +48,15 @@ export const ProductCard = ({
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
 
   const handleAdd = () => {
-    if (qty <= 0) {
+    const quantity = Number(qty);
+
+    if (!qty || Number.isNaN(quantity) || quantity <= 0) {
       alert(t("meal.invalidQuantity"));
       return;
     }
 
-    dispatch(addProduct({ product, quantity: qty, mealType, origin }));
-    setQty(100);
+    dispatch(addProduct({ product, quantity, mealType, origin }));
+    setQty("");
   };
 
   const handleToggleSave = () => {
@@ -98,7 +100,7 @@ export const ProductCard = ({
 
           {(product.brand || product.source) && (
             <Typography variant="body2" color="text.secondary">
-              {[product.brand, product.source].filter(Boolean).join(" · ")}
+              {[product.brand, product.source].filter(Boolean).join(" / ")}
             </Typography>
           )}
 
@@ -117,8 +119,11 @@ export const ProductCard = ({
             size="small"
             type="number"
             label={`${t("meal.quantity")} (${product.unit})`}
+            placeholder="100"
             value={qty}
-            onChange={(event) => setQty(Math.max(0, Number(event.target.value)))}
+            onFocus={(event) => event.target.select()}
+            onChange={(event) => setQty(event.target.value)}
+            inputProps={{ min: 1, step: product.unit === "piece" ? 1 : 0.1 }}
           />
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: "auto" }}>

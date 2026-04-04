@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
-import { selectMealItems } from "./selectors";
+import { selectAvailableMealDays, selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
 import {
@@ -13,10 +13,7 @@ export const DailyHistoryExplorer = () => {
   const items = useSelector(selectMealItems);
   const { language, t } = useLanguage();
 
-  const availableDays = useMemo(() => {
-    const uniqueKeys = [...new Set(items.map((item) => getLocalDateKey(item.eatenAt)))];
-    return uniqueKeys.sort((a, b) => b.localeCompare(a));
-  }, [items]);
+  const availableDays = useSelector(selectAvailableMealDays);
 
   const [selectedDay, setSelectedDay] = useState("");
   const effectiveSelectedDay =

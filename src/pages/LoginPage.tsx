@@ -15,7 +15,15 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
-import { AuthApiError, login as loginApi } from "../shared/api/auth";
+import { replaceMealState } from "../features/meal/mealSlice";
+import { replaceProfileState } from "../features/profile/profileSlice";
+import {
+  AuthApiError,
+  getAuthRuntimeInfo,
+  login as loginApi,
+} from "../shared/api/auth";
+import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 
 type FormData = {
@@ -52,8 +60,8 @@ const LoginPage = () => {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: "ivan@mail.com",
-      password: "StrongPass123!",
+      email: "",
+      password: "",
     },
   });
 
@@ -62,8 +70,22 @@ const LoginPage = () => {
     setServerError(null);
 
     try {
-      const { user, token } = await loginApi(data.email, data.password);
-      dispatch(setCredentials({ user, accessToken: token }));
+      const { user, token, snapshot } = await loginApi(data.email, data.password);
+      dispatch(
+        setCredentials({
+          user,
+          accessToken: token,
+          syncMode: getAuthRuntimeInfo().mode,
+          syncOutbox: getSyncOutboxMeta(),
+          cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
+        })
+      );
+
+      if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
+        dispatch(replaceProfileState(snapshot.profile));
+        dispatch(replaceMealState(snapshot.meal));
+      }
+
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof AuthApiError) {
@@ -107,10 +129,6 @@ const LoginPage = () => {
               {t("auth.loginSubtitle")}
             </Typography>
           </Box>
-
-          <Alert severity="info" sx={{ borderRadius: 3 }}>
-            {t("auth.demoHint")}
-          </Alert>
 
           {serverError && (
             <Alert severity="error" sx={{ borderRadius: 3 }}>

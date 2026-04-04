@@ -11,6 +11,9 @@ import { createEmptyNutrients, type NutrientUnit } from "../lib/nutrients";
 type RawProduct = Record<string, unknown>;
 
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
+const BARCODE_CACHE_KEY = "smart-nutrition.barcode-cache";
+const SEARCH_CACHE_KEY = "smart-nutrition.search-cache";
+const SEARCH_CACHE_TTL_MS = 1000 * 60 * 30;
 
 const offKeyByNutrient: Partial<Record<NutrientKey, string>> = {
   calories: "energy-kcal",
@@ -73,6 +76,95 @@ const uniqueProducts = (products: Product[]) => {
   });
 
   return [...map.values()];
+};
+
+const readBarcodeCache = (): Record<string, Product> => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const raw = localStorage.getItem(BARCODE_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, Product>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const readSearchCache = (): Record<string, { savedAt: number; results: Product[] }> => {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const raw = localStorage.getItem(SEARCH_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, { savedAt: number; results: Product[] }>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeSearchCache = (
+  cache: Record<string, { savedAt: number; results: Product[] }>
+) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(cache));
+};
+
+const getCachedSearchResults = (query: string): Product[] | null => {
+  const cache = readSearchCache();
+  const entry = cache[query];
+
+  if (!entry) {
+    return null;
+  }
+
+  if (Date.now() - entry.savedAt > SEARCH_CACHE_TTL_MS) {
+    delete cache[query];
+    writeSearchCache(cache);
+    return null;
+  }
+
+  return entry.results;
+};
+
+const cacheSearchResults = (query: string, results: Product[]) => {
+  const cache = readSearchCache();
+  const nextEntries = Object.entries({
+    ...cache,
+    [query]: {
+      savedAt: Date.now(),
+      results,
+    },
+  }).slice(-80);
+
+  writeSearchCache(Object.fromEntries(nextEntries));
+};
+
+const writeBarcodeCache = (cache: Record<string, Product>) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.setItem(BARCODE_CACHE_KEY, JSON.stringify(cache));
+};
+
+const getCachedBarcodeProduct = (barcode: string): Product | null => {
+  const cache = readBarcodeCache();
+  return cache[barcode] ?? null;
+};
+
+const cacheBarcodeProduct = (barcode: string, product: Product) => {
+  const cache = readBarcodeCache();
+  const nextEntries = Object.entries({
+    ...cache,
+    [barcode]: product,
+  }).slice(-240);
+
+  writeBarcodeCache(Object.fromEntries(nextEntries));
 };
 
 const parseNumber = (value: unknown) =>
@@ -233,10 +325,17 @@ export const fetchProductByBarcode = async (
     return localProduct;
   }
 
+  const cachedProduct = getCachedBarcodeProduct(normalizedBarcode);
+  if (cachedProduct) {
+    return cachedProduct;
+  }
+
   try {
     const off = await fetchOpenFoodByBarcode(normalizedBarcode);
     if (off) {
-      return mapToProduct({ ...off, code: normalizedBarcode } as RawProduct);
+      const product = mapToProduct({ ...off, code: normalizedBarcode } as RawProduct);
+      cacheBarcodeProduct(normalizedBarcode, product);
+      return product;
     }
 
     return null;
@@ -258,6 +357,13 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
     return localResults;
   }
 
+  const cacheKey = normalizedQuery.toLowerCase();
+  const cachedResults = getCachedSearchResults(cacheKey);
+
+  if (cachedResults) {
+    return uniqueProducts([...localResults, ...cachedResults]).slice(0, 18);
+  }
+
   try {
     const offResponse = await axios.get(OFF_SEARCH_URL, {
       params: {
@@ -277,7 +383,9 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
           .filter((product: Product) => product.name !== "Unknown product")
       : [];
 
-    return uniqueProducts([...localResults, ...offResults]).slice(0, 18);
+    const mergedResults = uniqueProducts([...localResults, ...offResults]).slice(0, 18);
+    cacheSearchResults(cacheKey, mergedResults);
+    return mergedResults;
   } catch (error) {
     console.error("Product search failed:", error);
     return localResults;

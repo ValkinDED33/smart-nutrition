@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
   MenuItem,
@@ -11,9 +11,10 @@ import {
 import { addProduct } from "./mealSlice";
 import { mockProducts } from "../../shared/lib/mockProducts";
 import type { MealType } from "../../shared/types/meal";
-import type { AppDispatch } from "../../app/store";
+import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import { productMatchesPreferences } from "../../shared/lib/preferences";
 
 interface Props {
   mealType: MealType;
@@ -25,25 +26,49 @@ interface ComposerRow {
   quantity: number;
 }
 
-const createRow = (): ComposerRow => ({
+const createRow = (productId = mockProducts[0]?.id ?? ""): ComposerRow => ({
   id:
     globalThis.crypto?.randomUUID?.() ??
     `composer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  productId: mockProducts[0]?.id ?? "",
+  productId,
   quantity: 100,
 });
 
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { language, t } = useLanguage();
+  const preferences = useSelector((state: RootState) => ({
+    dietStyle: state.profile.dietStyle,
+    allergies: state.profile.allergies,
+    excludedIngredients: state.profile.excludedIngredients,
+    adaptiveMode: state.profile.adaptiveMode,
+  }));
+  const availableProducts = mockProducts.filter((product) =>
+    productMatchesPreferences(product, preferences)
+  );
   const [rows, setRows] = useState<ComposerRow[]>([
-    createRow(),
-    { ...createRow(), productId: mockProducts[1]?.id ?? "", quantity: 80 },
+    createRow(availableProducts[0]?.id ?? ""),
+    { ...createRow(availableProducts[1]?.id ?? availableProducts[0]?.id ?? ""), quantity: 80 },
   ]);
 
-  const totals = rows.reduce(
+  const normalizedRows = useMemo(
+    () =>
+      rows.map((row, index) => {
+        if (availableProducts.some((product) => product.id === row.productId)) {
+          return row;
+        }
+
+        return {
+          ...row,
+          productId: availableProducts[index]?.id ?? availableProducts[0]?.id ?? "",
+        };
+      }),
+    [availableProducts, rows]
+  );
+
+  const totals = normalizedRows.reduce(
     (accumulator, row) => {
-      const product = mockProducts.find((item) => item.id === row.productId);
+      const product = availableProducts.find((item) => item.id === row.productId);
       if (!product) return accumulator;
 
       const factor = row.quantity / 100;
@@ -67,12 +92,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   };
 
   const addRow = () => {
-    setRows((currentRows) => [...currentRows, createRow()]);
+    setRows((currentRows) => [...currentRows, createRow(availableProducts[0]?.id ?? "")]);
   };
 
   const handleSaveMeal = () => {
-    rows.forEach((row) => {
-      const product = mockProducts.find((item) => item.id === row.productId);
+    normalizedRows.forEach((row) => {
+      const product = availableProducts.find((item) => item.id === row.productId);
       if (!product || row.quantity <= 0) return;
 
       dispatch(
@@ -85,7 +110,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       );
     });
 
-    setRows([createRow()]);
+    setRows([
+      {
+        ...createRow(),
+        productId: availableProducts[0]?.id ?? "",
+      },
+    ]);
   };
 
   return (
@@ -104,7 +134,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
-        {rows.map((row, index) => (
+        {normalizedRows.map((row, index) => (
           <Stack
             key={row.id}
             direction={{ xs: "column", md: "row" }}
@@ -120,7 +150,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 updateRow(row.id, { productId: event.target.value })
               }
             >
-              {mockProducts.map((product) => (
+              {availableProducts.map((product) => (
                 <MenuItem key={product.id} value={product.id}>
                   {getProductDisplayName(product, language)}
                 </MenuItem>

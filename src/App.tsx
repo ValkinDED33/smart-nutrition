@@ -8,27 +8,75 @@ import ErrorBoundary from "./shared/components/ErrorBoundary";
 import Loader from "./shared/components/Loader/PacmanLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
+import { useLanguage } from "./shared/language";
+import LanguageSetupPage from "./pages/LanguageSetupPage";
 
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const MealBuilderPage = lazy(() => import("./pages/MealBuilderPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const loadLandingPage = () => import("./pages/LandingPage");
+const loadDashboardPage = () => import("./pages/DashboardPage");
+const loadProfilePage = () => import("./pages/ProfilePage");
+const loadMealBuilderPage = () => import("./pages/MealBuilderPage");
+const loadLoginPage = () => import("./pages/LoginPage");
+const loadRegisterPage = () => import("./pages/RegisterPage");
+const loadNotFoundPage = () => import("./pages/NotFoundPage");
+
+const LandingPage = lazy(loadLandingPage);
+const DashboardPage = lazy(loadDashboardPage);
+const ProfilePage = lazy(loadProfilePage);
+const MealBuilderPage = lazy(loadMealBuilderPage);
+const LoginPage = lazy(loadLoginPage);
+const RegisterPage = lazy(loadRegisterPage);
+const NotFoundPage = lazy(loadNotFoundPage);
 
 const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { isInitialized, isLoading } = useSelector(selectAuth);
+  const { hasExplicitChoice } = useLanguage();
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (!isInitialized || typeof window === "undefined") {
+      return;
+    }
+
+    const preloadRoutes = () => {
+      void loadDashboardPage();
+      void loadMealBuilderPage();
+      void loadProfilePage();
+    };
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (
+      typeof idleWindow.requestIdleCallback === "function" &&
+      typeof idleWindow.cancelIdleCallback === "function"
+    ) {
+      const idleId = idleWindow.requestIdleCallback(() => {
+        preloadRoutes();
+      });
+      return () => {
+        idleWindow.cancelIdleCallback?.(idleId);
+      };
+    }
+
+    const timeoutId = globalThis.setTimeout(preloadRoutes, 1200);
+    return () => {
+      globalThis.clearTimeout(timeoutId);
+    };
+  }, [isInitialized]);
+
   if (!isInitialized || isLoading) {
     return <Loader />;
+  }
+
+  if (!hasExplicitChoice) {
+    return <LanguageSetupPage />;
   }
 
   return (
