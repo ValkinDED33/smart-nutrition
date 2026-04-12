@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { promises as fs } from "node:fs";
 import {
   mkdirSync,
+  readFileSync,
   readdirSync,
   rmSync,
   statSync,
@@ -74,6 +75,16 @@ const isSource = (value) =>
   value === "OpenFoodFacts" ||
   value === "Manual" ||
   value === "Recipe";
+
+const isUserRole = (value) =>
+  value === "USER" ||
+  value === "MODERATOR" ||
+  value === "ADMIN" ||
+  value === "SUPER_ADMIN";
+
+const isProductModerationStatus = (value) =>
+  value === "pending" || value === "approved" || value === "rejected";
+const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
 
 const isRecord = (value) => typeof value === "object" && value !== null;
 
@@ -417,6 +428,9 @@ const mapUserRow = (row) => {
     goal: row.goal,
     measurements: parseJson(row.measurements_json, undefined),
     createdAt: row.created_at,
+    role: isUserRole(row.role) ? row.role : "USER",
+    twoFactorEnabled: toBoolean(row.two_factor_enabled, false),
+    twoFactorRequired: toBoolean(row.two_factor_required, false),
     passwordHash: row.password_hash,
     passwordSalt: row.password_salt,
     passwordVersion: row.password_version,
@@ -459,6 +473,64 @@ const mapLoginAttemptRow = (row) => {
   };
 };
 
+const mapAuditLogRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    actorUserId: row.actor_user_id ?? null,
+    actorRole: isUserRole(row.actor_role) ? row.actor_role : "USER",
+    action: row.action,
+    targetType: row.target_type ?? null,
+    targetId: row.target_id ?? null,
+    details: parseJson(row.details_json, null),
+    createdAt: row.created_at,
+  };
+};
+
+const mapCatalogProductRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    ownerUserId: row.owner_user_id,
+    name: row.name,
+    brand: row.brand ?? undefined,
+    barcode: row.barcode ?? undefined,
+    category: row.category ?? undefined,
+    imageUrl: row.image_url ?? undefined,
+    unit: isUnit(row.unit) ? row.unit : "g",
+    source: isSource(row.source) ? row.source : "Manual",
+    nutrients: parseJson(row.nutrients_json, {}),
+    facts: parseJson(row.facts_json, undefined),
+    status: isProductModerationStatus(row.status) ? row.status : "pending",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    approvedAt: row.approved_at ?? null,
+    approvedByUserId: row.approved_by_user_id ?? null,
+    rejectionReason: row.rejection_reason ?? null,
+    version: Math.max(Number(row.version ?? 1), 1),
+  };
+};
+
+const mapAssistantMessageRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    role: isAssistantMessageRole(row.role) ? row.role : "assistant",
+    text: row.text,
+    createdAt: row.created_at,
+  };
+};
+
 const createSchema = (database) => {
   database.exec(`
     PRAGMA foreign_keys = ON;
@@ -482,6 +554,9 @@ const createSchema = (database) => {
       goal TEXT NOT NULL,
       measurements_json TEXT,
       created_at TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'USER',
+      two_factor_enabled INTEGER NOT NULL DEFAULT 0,
+      two_factor_required INTEGER NOT NULL DEFAULT 0,
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
       password_version TEXT NOT NULL
@@ -583,7 +658,64 @@ const createSchema = (database) => {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id TEXT PRIMARY KEY,
+      actor_user_id TEXT,
+      actor_role TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id TEXT,
+      details_json TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS catalog_products (
+      id TEXT PRIMARY KEY,
+      owner_user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      brand TEXT,
+      barcode TEXT,
+      category TEXT,
+      image_url TEXT,
+      unit TEXT NOT NULL DEFAULT 'g',
+      source TEXT NOT NULL DEFAULT 'Manual',
+      nutrients_json TEXT NOT NULL,
+      facts_json TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      approved_at TEXT,
+      approved_by_user_id TEXT,
+      rejection_reason TEXT,
+      version INTEGER NOT NULL DEFAULT 1,
+      FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (approved_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS catalog_product_versions (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      editor_user_id TEXT,
+      note TEXT,
+      snapshot_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (product_id) REFERENCES catalog_products(id) ON DELETE CASCADE,
+      FOREIGN KEY (editor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS assistant_messages (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
     CREATE INDEX IF NOT EXISTS idx_profile_weight_history_user ON profile_weight_history(user_id, sort_index);
@@ -591,6 +723,13 @@ const createSchema = (database) => {
     CREATE INDEX IF NOT EXISTS idx_meal_templates_user ON meal_templates(user_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_template_items_template ON meal_template_items(template_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_product_collections_user ON meal_product_collections(user_id, bucket_type, sort_index);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_catalog_products_status ON catalog_products(status, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_catalog_products_owner ON catalog_products(owner_user_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_catalog_products_barcode ON catalog_products(barcode);
+    CREATE INDEX IF NOT EXISTS idx_catalog_product_versions_product ON catalog_product_versions(product_id, version DESC);
+    CREATE INDEX IF NOT EXISTS idx_assistant_messages_user ON assistant_messages(user_id, created_at DESC);
   `);
 };
 
@@ -652,10 +791,13 @@ const importLegacyUsers = (database, users) => {
       goal,
       measurements_json,
       created_at,
+      role,
+      two_factor_enabled,
+      two_factor_required,
       password_hash,
       password_salt,
       password_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   users.forEach((user) => {
@@ -672,6 +814,9 @@ const importLegacyUsers = (database, users) => {
       user.goal ?? "maintain",
       user.measurements ? JSON.stringify(user.measurements) : null,
       user.createdAt ?? new Date().toISOString(),
+      isUserRole(user.role) ? user.role : "USER",
+      toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
+      toBoolean(user.twoFactorRequired, false) ? 1 : 0,
       user.passwordHash ?? "",
       user.passwordSalt ?? "",
       user.passwordVersion ?? "pbkdf2-sha256"
@@ -1220,6 +1365,9 @@ export const createSqliteStorage = async ({
 
   const database = new DatabaseSync(sqlitePath);
   createSchema(database);
+  ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
+  ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "profile_states", "diet_style", "TEXT NOT NULL DEFAULT 'balanced'");
   ensureColumn(database, "profile_states", "allergies_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(
@@ -1334,6 +1482,185 @@ export const createSqliteStorage = async ({
   const getResolvedUser = (userId) =>
     mapUserRow(database.prepare("SELECT * FROM users WHERE id = ? LIMIT 1").get(userId));
 
+  const createCatalogProductVersion = ({
+    id,
+    productId,
+    version,
+    editorUserId = null,
+    note = null,
+    snapshot,
+    createdAt,
+  }) => {
+    database
+      .prepare(
+        `
+          INSERT INTO catalog_product_versions (
+            id,
+            product_id,
+            version,
+            editor_user_id,
+            note,
+            snapshot_json,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        id,
+        productId,
+        version,
+        editorUserId,
+        note,
+        serializeJson(snapshot),
+        createdAt
+      );
+  };
+
+  const listAssistantMessagesByUserId = (userId, limit = 16) =>
+    database
+      .prepare(
+        `
+          SELECT *
+          FROM assistant_messages
+          WHERE user_id = ?
+          ORDER BY created_at DESC
+          LIMIT ?
+        `
+      )
+      .all(userId, Math.max(Number(limit) || 0, 1))
+      .map(mapAssistantMessageRow)
+      .filter(Boolean)
+      .reverse();
+
+  const insertAssistantMessage = ({ id, userId, role, text, createdAt }) => {
+    database
+      .prepare(
+        `
+          INSERT INTO assistant_messages (
+            id,
+            user_id,
+            role,
+            text,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        id,
+        userId,
+        isAssistantMessageRole(role) ? role : "assistant",
+        String(text ?? ""),
+        createdAt
+      );
+  };
+
+  const deleteAssistantMessagesByUserId = (userId) => {
+    database.prepare("DELETE FROM assistant_messages WHERE user_id = ?").run(userId);
+  };
+
+  const pruneAssistantMessagesByUserId = (userId, keepLast = 16) => {
+    database
+      .prepare(
+        `
+          DELETE FROM assistant_messages
+          WHERE user_id = ?
+            AND id NOT IN (
+              SELECT id
+              FROM assistant_messages
+              WHERE user_id = ?
+              ORDER BY created_at DESC
+              LIMIT ?
+            )
+        `
+      )
+      .run(userId, userId, Math.max(Number(keepLast) || 0, 1));
+  };
+
+  const matchesCatalogSearch = (product, search) => {
+    const normalizedSearch = String(search ?? "").trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    return normalizedSearch
+      .split(/\s+/)
+      .every((token) =>
+        `${product.name} ${product.brand ?? ""} ${product.barcode ?? ""} ${product.category ?? ""}`
+          .toLowerCase()
+          .includes(token)
+      );
+  };
+
+  const listCatalogProductsInternal = ({
+    viewerUserId = null,
+    includeUnapproved = false,
+    ownerUserId = null,
+    statuses = [],
+    search = "",
+    limit = 60,
+  } = {}) => {
+    const normalizedStatuses = Array.isArray(statuses)
+      ? statuses.filter(isProductModerationStatus)
+      : [];
+    const rows = database
+      .prepare("SELECT * FROM catalog_products ORDER BY updated_at DESC, created_at DESC")
+      .all();
+
+    return rows
+      .map(mapCatalogProductRow)
+      .filter(Boolean)
+      .filter((product) => {
+        if (ownerUserId && product.ownerUserId !== ownerUserId) {
+          return false;
+        }
+
+        if (
+          !includeUnapproved &&
+          product.status !== "approved" &&
+          product.ownerUserId !== viewerUserId
+        ) {
+          return false;
+        }
+
+        if (normalizedStatuses.length > 0 && !normalizedStatuses.includes(product.status)) {
+          return false;
+        }
+
+        return matchesCatalogSearch(product, search);
+      })
+      .slice(0, Math.max(Number(limit) || 0, 1));
+  };
+
+  const findCatalogDuplicateCandidatesInternal = ({
+    name,
+    barcode = "",
+    excludeProductId = null,
+    limit = 5,
+  }) => {
+    const normalizedName = String(name ?? "").trim().toLowerCase();
+    const normalizedBarcode = String(barcode ?? "").replace(/\D/g, "");
+
+    if (!normalizedName && !normalizedBarcode) {
+      return [];
+    }
+
+    return listCatalogProductsInternal({
+      includeUnapproved: true,
+      statuses: ["pending", "approved", "rejected"],
+      limit: 250,
+    })
+      .filter((product) => product.id !== excludeProductId)
+      .filter((product) => {
+        const productBarcode = String(product.barcode ?? "").replace(/\D/g, "");
+        return (
+          (normalizedBarcode && productBarcode && productBarcode === normalizedBarcode) ||
+          product.name.trim().toLowerCase() === normalizedName
+        );
+      })
+      .slice(0, Math.max(Number(limit) || 0, 1));
+  };
+
   const commitMealState = (userId, resolvedUser, nextMealState) => {
     const normalizedMeal = replaceMealStateRows(database, userId, nextMealState);
     const updatedAt = new Date().toISOString();
@@ -1348,6 +1675,55 @@ export const createSqliteStorage = async ({
   const removeUserBackups = (userId) => {
     backupWriteTracker.delete(userId);
     rmSync(path.join(backupDir, userId), { recursive: true, force: true });
+  };
+
+  const getUserBackupEntries = (userId) => {
+    const userBackupDir = path.join(backupDir, userId);
+
+    try {
+      return readdirSync(userBackupDir, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+        .map((entry) => {
+          const fullPath = path.join(userBackupDir, entry.name);
+          const fileStats = statSync(fullPath);
+          const parsed = parseJson(readFileSync(fullPath, "utf8"), null);
+
+          return {
+            id: entry.name,
+            name: entry.name,
+            reason:
+              typeof parsed?.reason === "string" && parsed.reason.trim().length > 0
+                ? parsed.reason
+                : "snapshot",
+            updatedAt:
+              typeof parsed?.updatedAt === "string" && parsed.updatedAt.trim().length > 0
+                ? parsed.updatedAt
+                : new Date(fileStats.mtimeMs).toISOString(),
+            sizeBytes: fileStats.size,
+            fullPath,
+          };
+        })
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    } catch {
+      return [];
+    }
+  };
+
+  const readUserBackupPayload = (userId, backupId = undefined) => {
+    const backups = getUserBackupEntries(userId);
+    const selectedBackup =
+      typeof backupId === "string" && backupId.trim().length > 0
+        ? backups.find((backup) => backup.id === backupId.trim())
+        : backups[0];
+
+    if (!selectedBackup) {
+      return null;
+    }
+
+    return {
+      ...selectedBackup,
+      payload: parseJson(readFileSync(selectedBackup.fullPath, "utf8"), null),
+    };
   };
 
   const normalizeSyncContext = (syncContext = undefined) => ({
@@ -1470,6 +1846,18 @@ export const createSqliteStorage = async ({
         database.prepare("SELECT * FROM users WHERE id = ? LIMIT 1").get(userId)
       ),
 
+    hasUserWithRole: (role) => {
+      if (!isUserRole(role)) {
+        return false;
+      }
+
+      const row = database
+        .prepare("SELECT COUNT(*) AS count FROM users WHERE role = ?")
+        .get(role);
+
+      return Number(row?.count ?? 0) > 0;
+    },
+
     insertUser: (user) => {
       database
         .prepare(
@@ -1487,10 +1875,13 @@ export const createSqliteStorage = async ({
               goal,
               measurements_json,
               created_at,
+              role,
+              two_factor_enabled,
+              two_factor_required,
               password_hash,
               password_salt,
               password_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
         )
         .run(
@@ -1506,6 +1897,9 @@ export const createSqliteStorage = async ({
           user.goal,
           user.measurements ? JSON.stringify(user.measurements) : null,
           user.createdAt,
+          isUserRole(user.role) ? user.role : "USER",
+          toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
+          toBoolean(user.twoFactorRequired, false) ? 1 : 0,
           user.passwordHash,
           user.passwordSalt,
           user.passwordVersion
@@ -1513,6 +1907,13 @@ export const createSqliteStorage = async ({
 
       return user;
     },
+
+    listUsers: () =>
+      database
+        .prepare("SELECT * FROM users ORDER BY created_at ASC")
+        .all()
+        .map(mapUserRow)
+        .filter(Boolean),
 
     updateUser: (user) => {
       database
@@ -1548,10 +1949,268 @@ export const createSqliteStorage = async ({
       return user;
     },
 
+    updateUserRole: ({ userId, role, twoFactorRequired = undefined, twoFactorEnabled = undefined }) => {
+      const existingUser = getResolvedUser(userId);
+
+      if (!existingUser) {
+        return null;
+      }
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET
+              role = ?,
+              two_factor_required = ?,
+              two_factor_enabled = ?
+            WHERE id = ?
+          `
+        )
+        .run(
+          isUserRole(role) ? role : existingUser.role,
+          twoFactorRequired === undefined
+            ? existingUser.twoFactorRequired ? 1 : 0
+            : twoFactorRequired
+              ? 1
+              : 0,
+          twoFactorEnabled === undefined
+            ? existingUser.twoFactorEnabled ? 1 : 0
+            : twoFactorEnabled
+              ? 1
+              : 0,
+          userId
+        );
+
+      return getResolvedUser(userId);
+    },
+
+    promoteUserByEmailToSuperAdmin: (email) => {
+      const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+      if (!normalizedEmail) {
+        return null;
+      }
+
+      const user = mapUserRow(
+        database.prepare("SELECT * FROM users WHERE email = ? LIMIT 1").get(normalizedEmail)
+      );
+
+      if (!user || user.role === "SUPER_ADMIN") {
+        return user;
+      }
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET role = 'SUPER_ADMIN',
+                two_factor_required = 1
+            WHERE email = ?
+          `
+        )
+        .run(normalizedEmail);
+
+      return mapUserRow(
+        database.prepare("SELECT * FROM users WHERE email = ? LIMIT 1").get(normalizedEmail)
+      );
+    },
+
     deleteUser: (userId) => {
       database.prepare("DELETE FROM users WHERE id = ?").run(userId);
       removeUserBackups(userId);
     },
+
+    listUserBackups: (userId) =>
+      getUserBackupEntries(userId).map(({ fullPath, ...backup }) => backup),
+
+    readUserBackup: (userId, backupId = undefined) => {
+      const backup = readUserBackupPayload(userId, backupId);
+
+      if (!backup) {
+        return null;
+      }
+
+      const { fullPath, ...payload } = backup;
+      void fullPath;
+      return payload;
+    },
+
+    createAuditLog: ({
+      id,
+      actorUserId = null,
+      actorRole = "USER",
+      action,
+      targetType = null,
+      targetId = null,
+      details = null,
+      createdAt,
+    }) => {
+      database
+        .prepare(
+          `
+            INSERT INTO audit_logs (
+              id,
+              actor_user_id,
+              actor_role,
+              action,
+              target_type,
+              target_id,
+              details_json,
+              created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          id,
+          actorUserId,
+          isUserRole(actorRole) ? actorRole : "USER",
+          action,
+          targetType,
+          targetId,
+          serializeJson(details),
+          createdAt
+        );
+    },
+
+    listAuditLogs: (limit = 60) =>
+      database
+        .prepare("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT ?")
+        .all(Math.max(Number(limit) || 0, 1))
+        .map(mapAuditLogRow)
+        .filter(Boolean),
+
+    listAssistantMessagesByUserId,
+
+    insertAssistantMessage,
+
+    deleteAssistantMessagesByUserId,
+
+    pruneAssistantMessagesByUserId,
+
+    countCatalogProductsByOwnerSince: (userId, sinceIso) => {
+      const row = database
+        .prepare(
+          `
+            SELECT COUNT(*) AS count
+            FROM catalog_products
+            WHERE owner_user_id = ? AND created_at >= ?
+          `
+        )
+        .get(userId, sinceIso);
+
+      return Number(row?.count ?? 0);
+    },
+
+    findCatalogProductById: (productId) =>
+      mapCatalogProductRow(
+        database.prepare("SELECT * FROM catalog_products WHERE id = ? LIMIT 1").get(productId)
+      ),
+
+    listCatalogProducts: (options = {}) => listCatalogProductsInternal(options),
+
+    findCatalogDuplicateCandidates: (options = {}) =>
+      findCatalogDuplicateCandidatesInternal(options),
+
+    insertCatalogProduct: (product) => {
+      database
+        .prepare(
+          `
+            INSERT INTO catalog_products (
+              id,
+              owner_user_id,
+              name,
+              brand,
+              barcode,
+              category,
+              image_url,
+              unit,
+              source,
+              nutrients_json,
+              facts_json,
+              status,
+              created_at,
+              updated_at,
+              approved_at,
+              approved_by_user_id,
+              rejection_reason,
+              version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `
+        )
+        .run(
+          product.id,
+          product.ownerUserId,
+          product.name,
+          product.brand ?? null,
+          product.barcode ?? null,
+          product.category ?? null,
+          product.imageUrl ?? null,
+          isUnit(product.unit) ? product.unit : "g",
+          isSource(product.source) ? product.source : "Manual",
+          serializeJson(product.nutrients ?? {}),
+          serializeJson(product.facts ?? null),
+          isProductModerationStatus(product.status) ? product.status : "pending",
+          product.createdAt,
+          product.updatedAt,
+          product.approvedAt ?? null,
+          product.approvedByUserId ?? null,
+          product.rejectionReason ?? null,
+          Math.max(Number(product.version ?? 1), 1)
+        );
+
+      return product;
+    },
+
+    updateCatalogProduct: (product) => {
+      database
+        .prepare(
+          `
+            UPDATE catalog_products
+            SET
+              name = ?,
+              brand = ?,
+              barcode = ?,
+              category = ?,
+              image_url = ?,
+              unit = ?,
+              source = ?,
+              nutrients_json = ?,
+              facts_json = ?,
+              status = ?,
+              updated_at = ?,
+              approved_at = ?,
+              approved_by_user_id = ?,
+              rejection_reason = ?,
+              version = ?
+            WHERE id = ?
+          `
+        )
+        .run(
+          product.name,
+          product.brand ?? null,
+          product.barcode ?? null,
+          product.category ?? null,
+          product.imageUrl ?? null,
+          isUnit(product.unit) ? product.unit : "g",
+          isSource(product.source) ? product.source : "Manual",
+          serializeJson(product.nutrients ?? {}),
+          serializeJson(product.facts ?? null),
+          isProductModerationStatus(product.status) ? product.status : "pending",
+          product.updatedAt,
+          product.approvedAt ?? null,
+          product.approvedByUserId ?? null,
+          product.rejectionReason ?? null,
+          Math.max(Number(product.version ?? 1), 1),
+          product.id
+        );
+
+      return mapCatalogProductRow(
+        database.prepare("SELECT * FROM catalog_products WHERE id = ? LIMIT 1").get(product.id)
+      );
+    },
+
+    createCatalogProductVersion,
 
     createSession: ({ token, userId, expiresAt }) => {
       database

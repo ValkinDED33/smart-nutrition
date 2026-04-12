@@ -5,6 +5,7 @@ import type {
   MotivationState,
   MotivationTask,
 } from "../types/profile";
+import type { AppLanguage } from "../types/i18n";
 import type { Goal } from "../types/user";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -320,3 +321,152 @@ export const applyPaidDayState = (
 
 export const resetMotivationState = (goal: Goal = "maintain") =>
   createDefaultMotivationState(goal);
+
+const goalLabelByLanguage = {
+  uk: {
+    cut: "схуднення",
+    maintain: "підтримка",
+    bulk: "набір маси",
+  },
+  pl: {
+    cut: "redukcja",
+    maintain: "utrzymanie",
+    bulk: "masa",
+  },
+} as const;
+
+const taskCopyByLanguage = {
+  uk: {
+    "check-in": {
+      title: "Звіртесь із днем",
+      description: "Відкрийте план і визначте, що сьогодні найважливіше.",
+    },
+    nutrition: (goal: Goal) => ({
+      title: `Підтримайте мету: ${goalLabelByLanguage.uk[goal]}`,
+      description: "Закрийте одну харчову дію, яка прямо підтримує вашу поточну мету.",
+    }),
+    reflection: {
+      title: "Закрийте день короткою рефлексією",
+      description: "Перегляньте прогрес і зафіксуйте одну маленьку правку на завтра.",
+    },
+  },
+  pl: {
+    "check-in": {
+      title: "Zrób krótki check-in dnia",
+      description: "Otwórz plan i zdecyduj, co dziś ma największe znaczenie.",
+    },
+    nutrition: (goal: Goal) => ({
+      title: `Wesprzyj cel: ${goalLabelByLanguage.pl[goal]}`,
+      description: "Domknij jedno działanie żywieniowe, które realnie wspiera obecny cel.",
+    }),
+    reflection: {
+      title: "Zamknij dzień krótką refleksją",
+      description: "Sprawdź progres i zapisz jedną małą korektę na jutro.",
+    },
+  },
+} as const;
+
+const achievementCopyByLanguage = {
+  uk: {
+    "first-step": {
+      title: "Перший крок",
+      description: "Закрийте своє перше мотиваційне завдання.",
+    },
+    momentum: {
+      title: "Імпульс",
+      description: "Закрийте 5 мотиваційних завдань.",
+    },
+    century: {
+      title: "Сотня",
+      description: "Наберіть 100 балів.",
+    },
+    "steady-run": {
+      title: "Стабільний ритм",
+      description: "Закрийте 15 мотиваційних завдань.",
+    },
+  },
+  pl: {
+    "first-step": {
+      title: "Pierwszy krok",
+      description: "Zamknij swoje pierwsze zadanie motywacyjne.",
+    },
+    momentum: {
+      title: "Momentum",
+      description: "Zamknij 5 zadań motywacyjnych.",
+    },
+    century: {
+      title: "Setka",
+      description: "Zdobądź 100 punktów.",
+    },
+    "steady-run": {
+      title: "Stabilny rytm",
+      description: "Zamknij 15 zadań motywacyjnych.",
+    },
+  },
+} as const;
+
+const resolveTaskKey = (taskId: string) => {
+  if (taskId.endsWith("-check-in")) {
+    return "check-in";
+  }
+
+  if (taskId.endsWith("-nutrition")) {
+    return "nutrition";
+  }
+
+  if (taskId.endsWith("-reflection")) {
+    return "reflection";
+  }
+
+  return null;
+};
+
+export const getLocalizedMotivationTaskCopy = ({
+  language,
+  taskId,
+  goal,
+  fallbackTitle,
+  fallbackDescription = "",
+}: {
+  language: AppLanguage;
+  taskId: string;
+  goal: Goal;
+  fallbackTitle: string;
+  fallbackDescription?: string;
+}) => {
+  const taskKey = resolveTaskKey(taskId);
+
+  if (!taskKey) {
+    return {
+      title: fallbackTitle,
+      description: fallbackDescription,
+    };
+  }
+
+  if (taskKey === "nutrition") {
+    return taskCopyByLanguage[language].nutrition(goal);
+  }
+
+  return taskCopyByLanguage[language][taskKey];
+};
+
+export const getLocalizedAchievementCopy = ({
+  language,
+  achievementId,
+  fallbackTitle,
+  fallbackDescription = "",
+}: {
+  language: AppLanguage;
+  achievementId: string;
+  fallbackTitle: string;
+  fallbackDescription?: string;
+}) => {
+  return (
+    achievementCopyByLanguage[language][
+      achievementId as keyof (typeof achievementCopyByLanguage)[typeof language]
+    ] ?? {
+      title: fallbackTitle,
+      description: fallbackDescription,
+    }
+  );
+};

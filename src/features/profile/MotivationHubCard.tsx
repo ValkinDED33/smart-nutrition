@@ -26,74 +26,80 @@ import {
   calculatePaidDayOffCost,
   canUseFreeDay,
   canUsePaidDay,
+  getLocalizedAchievementCopy,
+  getLocalizedMotivationTaskCopy,
 } from "../../shared/lib/motivation";
 
 const copyByLanguage = {
   uk: {
-    title: "Motivation hub",
+    title: "Центр мотивації",
     subtitle:
-      "Tasks, points, rest-day strategy, and steady progress now live inside your profile.",
-    points: "Points",
-    level: "Level",
-    completed: "Completed tasks",
-    freeDay: "Weekly day off",
-    paidDay: "Paid day off",
-    freeReady: "Available now",
-    freeLocked: "Will unlock 7 days after the last use",
-    paidReady: "Can be bought this month",
-    paidLocked: "Already used this month",
-    complete: "Complete",
-    skipped: "Protected by day off",
-    done: "Done",
-    useFreeDay: "Use weekly day off",
-    buyPaidDay: "Buy monthly day off",
-    reset: "Reset progress",
-    confirmFreeTitle: "Use weekly day off?",
-    confirmPaidTitle: "Buy and use a monthly day off?",
-    confirmResetTitle: "Reset motivation progress?",
+      "Завдання, бали, стратегія day off і прогрес тепер зібрані в одному профільному блоці.",
+    points: "Бали",
+    level: "Рівень",
+    completed: "Закрито завдань",
+    freeDay: "Щотижневий day off",
+    paidDay: "Платний day off",
+    freeReady: "Уже доступний",
+    freeLocked: "Відкриється через 7 днів після останнього використання",
+    paidReady: "Можна купити цього місяця",
+    paidLocked: "Уже використано цього місяця",
+    complete: "Закрити",
+    skipped: "Захищено day off",
+    done: "Готово",
+    useFreeDay: "Використати щотижневий day off",
+    buyPaidDay: "Купити місячний day off",
+    reset: "Скинути прогрес",
+    confirmFreeTitle: "Використати щотижневий day off?",
+    confirmPaidTitle: "Купити й використати місячний day off?",
+    confirmResetTitle: "Скинути мотиваційний прогрес?",
     confirmBody:
-      "This will protect today's open tasks instead of failing them. Are you sure?",
-    confirmPaidBody: "Points will be deducted before the day off is used.",
+      "Відкриті завдання за сьогодні не будуть провалені, а захистяться day off. Підтвердити?",
+    confirmPaidBody: "Перед використанням day off буде списано бали.",
     confirmResetBody:
-      "Points, history, and achievements will be cleared. Nutrition data stays safe.",
-    cancel: "Cancel",
-    confirm: "Yes",
-    achievements: "Achievements",
-    recentHistory: "Recent history",
-    emptyHistory: "No motivation actions yet.",
+      "Бали, історія та досягнення очистяться. Дані харчування залишаться без змін.",
+    cancel: "Скасувати",
+    confirm: "Так",
+    achievements: "Досягнення",
+    recentHistory: "Останні дії",
+    emptyHistory: "Поки що немає мотиваційних дій.",
+    pointsSuffix: "балів",
+    paidCostHint: "Вартість платного day off",
   },
   pl: {
-    title: "Motivation hub",
+    title: "Centrum motywacji",
     subtitle:
-      "Tasks, points, rest-day strategy, and steady progress now live inside your profile.",
-    points: "Points",
-    level: "Level",
-    completed: "Completed tasks",
-    freeDay: "Weekly day off",
-    paidDay: "Paid day off",
-    freeReady: "Available now",
-    freeLocked: "Will unlock 7 days after the last use",
-    paidReady: "Can be bought this month",
-    paidLocked: "Already used this month",
-    complete: "Complete",
-    skipped: "Protected by day off",
-    done: "Done",
-    useFreeDay: "Use weekly day off",
-    buyPaidDay: "Buy monthly day off",
-    reset: "Reset progress",
-    confirmFreeTitle: "Use weekly day off?",
-    confirmPaidTitle: "Buy and use a monthly day off?",
-    confirmResetTitle: "Reset motivation progress?",
+      "Zadania, punkty, strategia day off i stały progres są teraz zebrane w jednym miejscu profilu.",
+    points: "Punkty",
+    level: "Poziom",
+    completed: "Zamknięte zadania",
+    freeDay: "Tygodniowy day off",
+    paidDay: "Płatny day off",
+    freeReady: "Już dostępny",
+    freeLocked: "Odblokuje się 7 dni po ostatnim użyciu",
+    paidReady: "Można kupić w tym miesiącu",
+    paidLocked: "Już użyty w tym miesiącu",
+    complete: "Zamknij",
+    skipped: "Chronione przez day off",
+    done: "Gotowe",
+    useFreeDay: "Użyj tygodniowego day off",
+    buyPaidDay: "Kup miesięczny day off",
+    reset: "Resetuj progres",
+    confirmFreeTitle: "Użyć tygodniowego day off?",
+    confirmPaidTitle: "Kupić i użyć miesięcznego day off?",
+    confirmResetTitle: "Zresetować progres motywacji?",
     confirmBody:
-      "This will protect today's open tasks instead of failing them. Are you sure?",
-    confirmPaidBody: "Points will be deducted before the day off is used.",
+      "Otwarte zadania z dziś zostaną ochronione przez day off zamiast zaliczyć porażkę. Potwierdzasz?",
+    confirmPaidBody: "Punkty zostaną odjęte przed użyciem day off.",
     confirmResetBody:
-      "Points, history, and achievements will be cleared. Nutrition data stays safe.",
-    cancel: "Cancel",
-    confirm: "Yes",
-    achievements: "Achievements",
-    recentHistory: "Recent history",
-    emptyHistory: "No motivation actions yet.",
+      "Punkty, historia i osiągnięcia zostaną wyczyszczone. Dane żywieniowe pozostaną bez zmian.",
+    cancel: "Anuluj",
+    confirm: "Tak",
+    achievements: "Osiągnięcia",
+    recentHistory: "Ostatnie działania",
+    emptyHistory: "Nie ma jeszcze działań motywacyjnych.",
+    pointsSuffix: "pkt",
+    paidCostHint: "Koszt płatnego day off",
   },
 } as const;
 
@@ -101,7 +107,7 @@ type PendingAction = "free" | "paid" | "reset" | null;
 
 export const MotivationHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { motivation } = useSelector((state: RootState) => state.profile);
+  const { motivation, goal } = useSelector((state: RootState) => state.profile);
   const { language } = useLanguage();
   const copy = copyByLanguage[language];
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
@@ -117,6 +123,7 @@ export const MotivationHubCard = () => {
   const freeDayAvailable = canUseFreeDay(motivation.freeDayLastUsedAt);
   const paidDayAvailable = canUsePaidDay(motivation.paidDayLastUsedMonth);
   const levelProgress = ((motivation.points % 120) / 120) * 100;
+  const locale = language === "uk" ? "uk-UA" : "pl-PL";
 
   const handleConfirm = () => {
     if (pendingAction === "free") {
@@ -191,6 +198,13 @@ export const MotivationHubCard = () => {
           {motivation.activeTasks.map((task) => {
             const isDone = Boolean(task.completedAt);
             const isSkipped = Boolean(task.skippedWithDayOffAt);
+            const localizedTask = getLocalizedMotivationTaskCopy({
+              language,
+              taskId: task.id,
+              goal,
+              fallbackTitle: task.title,
+              fallbackDescription: task.description,
+            });
 
             return (
               <Paper
@@ -209,10 +223,12 @@ export const MotivationHubCard = () => {
                   justifyContent="space-between"
                 >
                   <Stack spacing={0.6}>
-                    <Typography sx={{ fontWeight: 800 }}>{task.title}</Typography>
-                    <Typography color="text.secondary">{task.description}</Typography>
+                    <Typography sx={{ fontWeight: 800 }}>{localizedTask.title}</Typography>
+                    <Typography color="text.secondary">
+                      {localizedTask.description}
+                    </Typography>
                     <Chip
-                      label={`${task.points} pts`}
+                      label={`${task.points} ${copy.pointsSuffix}`}
                       size="small"
                       sx={{ alignSelf: "flex-start" }}
                     />
@@ -258,7 +274,7 @@ export const MotivationHubCard = () => {
             onClick={() => setPendingAction("paid")}
             sx={{ textTransform: "none", borderRadius: 999 }}
           >
-            {copy.buyPaidDay} ({paidDayCost} pts)
+            {copy.buyPaidDay} ({paidDayCost} {copy.pointsSuffix})
           </Button>
           <Button
             color="error"
@@ -272,7 +288,7 @@ export const MotivationHubCard = () => {
 
         {motivation.points < paidDayCost && (
           <Alert severity="info">
-            {copy.paidDay}: {paidDayCost} pts
+            {copy.paidCostHint}: {paidDayCost} {copy.pointsSuffix}
           </Alert>
         )}
 
@@ -280,23 +296,36 @@ export const MotivationHubCard = () => {
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
             {copy.achievements}
           </Typography>
-          {motivation.achievements.map((achievement) => (
-            <Stack key={achievement.id} spacing={0.6}>
+          {motivation.achievements.map((achievement) => {
+            const localizedAchievement = getLocalizedAchievementCopy({
+              language,
+              achievementId: achievement.id,
+              fallbackTitle: achievement.title,
+              fallbackDescription: achievement.description,
+            });
+
+            return (
+              <Stack key={achievement.id} spacing={0.6}>
               <Stack direction="row" justifyContent="space-between" spacing={2}>
-                <Typography sx={{ fontWeight: 700 }}>{achievement.title}</Typography>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {localizedAchievement.title}
+                </Typography>
                 <Typography color="text.secondary">
                   {achievement.progress}/{achievement.target}
                 </Typography>
               </Stack>
-              <Typography color="text.secondary">{achievement.description}</Typography>
+              <Typography color="text.secondary">
+                {localizedAchievement.description}
+              </Typography>
               <LinearProgress
                 variant="determinate"
                 value={(achievement.progress / achievement.target) * 100}
                 color={achievement.unlockedAt ? "success" : "primary"}
                 sx={{ height: 8, borderRadius: 999 }}
               />
-            </Stack>
-          ))}
+              </Stack>
+            );
+          })}
         </Stack>
 
         <Stack spacing={1}>
@@ -306,30 +335,41 @@ export const MotivationHubCard = () => {
           {motivation.history.length === 0 ? (
             <Typography color="text.secondary">{copy.emptyHistory}</Typography>
           ) : (
-            motivation.history.slice(0, 5).map((item) => (
-              <Paper
-                key={`${item.taskId}-${item.completedAt}`}
-                elevation={0}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 4,
-                  border: "1px solid rgba(15, 23, 42, 0.06)",
-                  backgroundColor: "rgba(248,250,252,0.85)",
-                }}
-              >
-                <Stack direction="row" justifyContent="space-between" spacing={2}>
-                  <Typography sx={{ fontWeight: 700 }}>{item.title}</Typography>
+            motivation.history.slice(0, 5).map((item) => {
+              const localizedTask = getLocalizedMotivationTaskCopy({
+                language,
+                taskId: item.taskId,
+                goal,
+                fallbackTitle: item.title,
+              });
+
+              return (
+                <Paper
+                  key={`${item.taskId}-${item.completedAt}`}
+                  elevation={0}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 4,
+                    border: "1px solid rgba(15, 23, 42, 0.06)",
+                    backgroundColor: "rgba(248,250,252,0.85)",
+                  }}
+                >
+                  <Stack direction="row" justifyContent="space-between" spacing={2}>
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {localizedTask.title}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {item.skipped ? 0 : item.pointsEarned} {copy.pointsSuffix}
+                    </Typography>
+                  </Stack>
                   <Typography color="text.secondary">
-                    {item.skipped ? 0 : item.pointsEarned} pts
+                    {item.skipped
+                      ? copy.skipped
+                      : new Date(item.completedAt).toLocaleString(locale)}
                   </Typography>
-                </Stack>
-                <Typography color="text.secondary">
-                  {item.skipped
-                    ? `${copyByLanguage[language].skipped}`
-                    : new Date(item.completedAt).toLocaleString()}
-                </Typography>
-              </Paper>
-            ))
+                </Paper>
+              );
+            })
           )}
         </Stack>
       </Stack>

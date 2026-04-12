@@ -1,4 +1,5 @@
 import type { AuthResponse, User } from "../types/user";
+import type { AppSnapshot } from "../types/appSnapshot";
 
 export interface RegisterPayload {
   name: string;
@@ -22,6 +23,26 @@ export interface AuthRuntimeInfo {
   supportsAccountDeletion: boolean;
   supportsDataExport: boolean;
   supportsSessionRevocation: boolean;
+}
+
+export interface AccountBackupSummary {
+  id: string;
+  name: string;
+  reason: string;
+  updatedAt: string;
+  sizeBytes: number;
+}
+
+export interface AccountBackupPayload extends AccountBackupSummary {
+  payload: unknown;
+}
+
+export interface AccountExportPayload {
+  exportedAt: string;
+  mode: "local-browser" | "remote-cloud";
+  user: User;
+  snapshot: AppSnapshot | null;
+  backups: AccountBackupSummary[];
 }
 
 export interface AuthProvider {

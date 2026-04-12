@@ -35,4 +35,33 @@ describe("createServerConfig", () => {
     expect(config.serveStatic).toBe(false);
     expect(config.warnings).toHaveLength(0);
   });
+
+  it("rejects partial assistant runtime configuration", () => {
+    expect(() =>
+      createServerConfig({
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_ASSISTANT_API_KEY: "secret",
+      })
+    ).toThrow(/SMART_NUTRITION_ASSISTANT_API_KEY/);
+  });
+
+  it("accepts assistant runtime configuration", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_ASSISTANT_API_KEY: "secret",
+      SMART_NUTRITION_ASSISTANT_MODEL: "gpt-4.1-mini",
+      SMART_NUTRITION_ASSISTANT_BASE_URL: "https://api.openai.com/v1/",
+      SMART_NUTRITION_ASSISTANT_API_PATH: "chat/completions",
+      SMART_NUTRITION_ASSISTANT_TEMPERATURE: "0.6",
+      SMART_NUTRITION_ASSISTANT_MEMORY_LIMIT: "20",
+      SMART_NUTRITION_ASSISTANT_TIMEOUT_MS: "15000",
+    });
+
+    expect(config.assistantRuntimeConfigured).toBe(true);
+    expect(config.assistantBaseUrl).toBe("https://api.openai.com/v1");
+    expect(config.assistantApiPath).toBe("/chat/completions");
+    expect(config.assistantTemperature).toBe(0.6);
+    expect(config.assistantMemoryMessageLimit).toBe(20);
+    expect(config.assistantTimeoutMs).toBe(15000);
+  });
 });

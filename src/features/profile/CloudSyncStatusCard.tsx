@@ -10,50 +10,53 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { pullLatestCloudSnapshot, retryCloudSync } from "../auth/authSlice";
-import { getAuthRuntimeInfo } from "../../shared/api/auth";
 import {
   formatRemoteDeviceSuffix,
   getRemoteDeviceId,
   resolveRemoteWriterOwnership,
 } from "../../shared/lib/remoteDevice";
+import {
+  formatQueuedSyncMessage,
+  translateSyncErrorMessage,
+} from "../../shared/lib/syncMessaging";
 import { useLanguage } from "../../shared/language";
 
 const syncStatusCopy = {
   uk: {
-    title: "Cloud sync status",
+    title: "Статус хмарної синхронізації",
     subtitle:
-      "See where your nutrition data is stored and retry sync immediately if the server did not confirm the last change.",
-    localMode: "Browser only",
-    remoteMode: "Remote API",
+      "Перевіряйте, де зберігаються дані про харчування, і одразу повторюйте синхронізацію, якщо сервер не підтвердив останню зміну.",
+    localMode: "Лише браузер",
+    remoteMode: "Хмарний API",
     localInfo:
-      "This account is currently local-only. Data stays in this browser on this device.",
+      "Цей акаунт зараз працює лише локально. Дані залишаються в цьому браузері на цьому пристрої.",
     remoteInfo:
-      "This account is connected to the backend. Profile and meal changes sync in the background and newer cloud snapshots are pulled automatically.",
-    statusLabel: "Status",
-    lastSyncLabel: "Last confirmed sync",
-    localStatus: "Local only",
-    syncingStatus: "Syncing now",
-    syncedStatus: "Cloud OK",
-    errorStatus: "Needs retry",
-    retryAction: "Retry sync",
-    syncingAction: "Syncing...",
-    syncNowAction: "Sync now",
-    pullLatestAction: "Use cloud version",
-    pullShadowAction: "Pull latest cloud data",
-    writerLabel: "Last cloud writer",
-    writerCurrent: "This device",
-    writerOther: "Another device",
-    writerUnknown: "Unknown",
-    pendingChangesLabel: "Pending local changes",
-    queuedSinceLabel: "Queued since",
-    unknownTime: "Not synced yet",
+      "Цей акаунт підключений до бекенда. Зміни профілю та прийомів їжі синхронізуються у фоні, а новіші хмарні знімки підтягуються автоматично.",
+    statusLabel: "Статус",
+    lastSyncLabel: "Остання підтверджена синхронізація",
+    localStatus: "Локально",
+    syncingStatus: "Синхронізація триває",
+    syncedStatus: "Хмара в нормі",
+    errorStatus: "Потрібен повтор",
+    retryAction: "Повторити синхронізацію",
+    syncingAction: "Синхронізуємо...",
+    syncNowAction: "Синхронізувати зараз",
+    pullLatestAction: "Використати версію з хмари",
+    pullShadowAction: "Підтягнути останні хмарні дані",
+    writerLabel: "Останній запис у хмару",
+    writerCurrent: "Цей пристрій",
+    writerOther: "Інший пристрій",
+    writerUnknown: "Невідомо",
+    pendingChangesLabel: "Локальні зміни в черзі",
+    queuedSinceLabel: "У черзі з",
+    unknownTime: "Ще не синхронізовано",
   },
   pl: {
     title: "Status synchronizacji",
     subtitle:
-      "Sprawdz, gdzie sa zapisane dane o jedzeniu i ponow synchronizacje od razu, jesli serwer nie potwierdzil ostatniej zmiany.",
+      "Sprawdz, gdzie sa zapisane dane o jedzeniu i od razu ponow synchronizacje, jesli serwer nie potwierdzil ostatniej zmiany.",
     localMode: "Tylko przegladarka",
-    remoteMode: "Remote API",
+    remoteMode: "Chmura API",
     localInfo:
       "To konto dziala lokalnie. Dane zostaja tylko w tej przegladarce na tym urzadzeniu.",
     remoteInfo:
@@ -61,10 +64,10 @@ const syncStatusCopy = {
     statusLabel: "Status",
     lastSyncLabel: "Ostatnia potwierdzona synchronizacja",
     localStatus: "Tylko lokalnie",
-    syncingStatus: "Trwa sync",
+    syncingStatus: "Trwa synchronizacja",
     syncedStatus: "Chmura OK",
-    errorStatus: "Wymaga retry",
-    retryAction: "Powtorz sync",
+    errorStatus: "Wymaga ponowienia",
+    retryAction: "Powtorz synchronizacje",
     syncingAction: "Synchronizuje...",
     syncNowAction: "Synchronizuj teraz",
     pullLatestAction: "Uzyj wersji z chmury",
@@ -104,7 +107,6 @@ export const CloudSyncStatusCard = () => {
     useSelector((state: RootState) => state.auth);
   const { language } = useLanguage();
   const copy = syncStatusCopy[language];
-  const runtime = getAuthRuntimeInfo();
 
   if (!user) {
     return null;
@@ -113,6 +115,7 @@ export const CloudSyncStatusCard = () => {
   const isRemote = syncMode === "remote-cloud";
   const isSyncing = syncStatus === "syncing";
   const hasConflict = Boolean(syncError?.includes("another device"));
+  const translatedSyncError = translateSyncErrorMessage(syncError, language);
   const currentDeviceId = getRemoteDeviceId();
   const writerOwnership = resolveRemoteWriterOwnership(
     currentDeviceId,
@@ -197,11 +200,11 @@ export const CloudSyncStatusCard = () => {
         >
           {isRemote
             ? syncOutbox.pendingChanges > 0
-              ? `${syncError ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
+              ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, language) ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
                   syncOutbox.firstQueuedAt,
                   language
                 )}.`
-              : syncError ?? copy.remoteInfo
+              : translatedSyncError ?? copy.remoteInfo
             : copy.localInfo}
         </Alert>
 
@@ -242,7 +245,6 @@ export const CloudSyncStatusCard = () => {
             </Button>
           )}
 
-          <Chip label={runtime.providerLabel} variant="outlined" />
         </Stack>
       </Stack>
     </Paper>

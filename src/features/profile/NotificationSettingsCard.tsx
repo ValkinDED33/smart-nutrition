@@ -17,21 +17,27 @@ import { updateNotificationPreferences } from "./profileSlice";
 
 const notificationCopy = {
   uk: {
-    title: "Notifications & habits",
+    title: "Сповіщення та звички",
     subtitle:
-      "Set gentle meal reminders and calorie alerts. The browser only sends them when you keep this app available.",
-    unsupported: "This browser does not support notifications.",
-    permissionDefault: "Notifications are not enabled yet.",
-    permissionGranted: "Browser notifications are enabled.",
-    permissionDenied: "Notifications are blocked in this browser. Allow them in browser settings first.",
-    enableAction: "Enable browser notifications",
-    notificationsEnabled: "Use browser notifications",
-    mealRemindersEnabled: "Meal reminders",
-    calorieAlertsEnabled: "Calorie alerts",
-    breakfast: "Breakfast reminder",
-    lunch: "Lunch reminder",
-    dinner: "Dinner reminder",
-    snack: "Snack reminder",
+      "Налаштуйте делікатні нагадування про прийоми їжі та калорійні алерти. Браузер надсилатиме їх лише коли цей застосунок доступний.",
+    unsupported: "Цей браузер не підтримує сповіщення.",
+    permissionDefault: "Сповіщення ще не ввімкнені.",
+    permissionGranted: "Сповіщення браузера ввімкнені.",
+    permissionDenied: "Сповіщення заблоковані в браузері. Спочатку дозвольте їх у налаштуваннях браузера.",
+    enableAction: "Увімкнути сповіщення браузера",
+    notificationsEnabled: "Використовувати сповіщення браузера",
+    mealRemindersEnabled: "Нагадування про їжу",
+    calorieAlertsEnabled: "Калорійні алерти",
+    breakfast: "Нагадування про сніданок",
+    lunch: "Нагадування про обід",
+    dinner: "Нагадування про вечерю",
+    snack: "Нагадування про перекус",
+    browserReady: "Браузер готовий",
+    blocked: "Заблоковано",
+    unsupportedChip: "Не підтримується",
+    permissionNeeded: "Потрібен дозвіл",
+    enabled: "Увімкнено",
+    muted: "Без звуку",
   },
   pl: {
     title: "Powiadomienia i nawyki",
@@ -41,14 +47,20 @@ const notificationCopy = {
     permissionDefault: "Powiadomienia nie sa jeszcze wlaczone.",
     permissionGranted: "Powiadomienia przegladarki sa wlaczone.",
     permissionDenied: "Powiadomienia sa zablokowane w przegladarce. Najpierw odblokuj je w ustawieniach.",
-    enableAction: "Wlacz powiadomienia",
+    enableAction: "Wlacz powiadomienia przegladarki",
     notificationsEnabled: "Uzywaj powiadomien przegladarki",
     mealRemindersEnabled: "Przypomnienia o posilkach",
     calorieAlertsEnabled: "Alerty kaloryczne",
     breakfast: "Przypomnienie o sniadaniu",
-    lunch: "Przypomnienie o lunchu",
+    lunch: "Przypomnienie o obiedzie",
     dinner: "Przypomnienie o kolacji",
     snack: "Przypomnienie o przekasce",
+    browserReady: "Przegladarka gotowa",
+    blocked: "Zablokowane",
+    unsupportedChip: "Brak wsparcia",
+    permissionNeeded: "Potrzebna zgoda",
+    enabled: "Wlaczone",
+    muted: "Wyciszone",
   },
 } as const;
 
@@ -137,18 +149,19 @@ export const NotificationSettingsCard = () => {
           <Chip
             label={
               permission === "granted"
-                ? "Browser ready"
+                ? copy.browserReady
                 : permission === "denied"
-                  ? "Blocked"
+                  ? copy.blocked
                   : permission === "unsupported"
-                    ? "Unsupported"
-                    : "Permission needed"
+                    ? copy.unsupportedChip
+                    : copy.permissionNeeded
             }
             color={permission === "granted" ? "success" : "default"}
           />
           <Chip
-            label={notificationsEnabled ? "Enabled" : "Muted"}
+            label={notificationsEnabled ? copy.enabled : copy.muted}
             variant={notificationsEnabled ? "filled" : "outlined"}
+            color={notificationsEnabled ? "success" : "default"}
           />
         </Stack>
 

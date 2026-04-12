@@ -11,7 +11,14 @@ import {
   writeCachedRemoteMeta,
   writeCachedRemoteSnapshot,
 } from "../lib/remoteStateCache";
-import type { AuthProvider, AuthRuntimeInfo, RegisterPayload } from "./authProvider";
+import type {
+  AccountBackupPayload,
+  AccountBackupSummary,
+  AccountExportPayload,
+  AuthProvider,
+  AuthRuntimeInfo,
+  RegisterPayload,
+} from "./authProvider";
 import { AuthApiError } from "./authLocal";
 
 type AuthMode = "local-browser" | "remote-cloud";
@@ -26,6 +33,10 @@ export interface RemoteSyncResult {
 interface RemoteMutationResponse {
   ok: true;
   meta: AppSnapshotMeta | null;
+}
+
+interface RemoteBackupListResponse {
+  items: AccountBackupSummary[];
 }
 
 class RemoteRequestError extends Error {
@@ -660,6 +671,42 @@ export const analyzeRemoteMealPhoto = async (
   } catch {
     return null;
   }
+};
+
+export const fetchRemoteAccountExport = async (): Promise<AccountExportPayload> => {
+  const { data } = await requestRemote<AccountExportPayload>(
+    "/account/export",
+    { method: "GET" },
+    { requireAuth: true }
+  );
+
+  if (data.snapshot) {
+    writeCachedRemoteSnapshot(data.snapshot);
+  }
+
+  return data;
+};
+
+export const listRemoteAccountBackups = async (): Promise<AccountBackupSummary[]> => {
+  const { data } = await requestRemote<RemoteBackupListResponse>(
+    "/account/backups",
+    { method: "GET" },
+    { requireAuth: true }
+  );
+
+  return Array.isArray(data.items) ? data.items : [];
+};
+
+export const fetchRemoteAccountBackup = async (
+  backupId: string
+): Promise<AccountBackupPayload> => {
+  const { data } = await requestRemote<AccountBackupPayload>(
+    `/account/backups/${encodeURIComponent(backupId)}`,
+    { method: "GET" },
+    { requireAuth: true }
+  );
+
+  return data;
 };
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {

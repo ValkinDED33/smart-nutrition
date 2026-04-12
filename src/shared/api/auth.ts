@@ -4,6 +4,8 @@ import {
   analyzeRemoteMealPhoto,
   addRemoteMealTemplate,
   checkRemoteBackendAvailability,
+  fetchRemoteAccountBackup,
+  fetchRemoteAccountExport,
   fetchRemoteAppState,
   fetchRemoteStateMeta,
   getRemoteBaseUrl,
@@ -11,6 +13,7 @@ import {
   getRemoteSessionToken,
   isRemoteAuthAvailable,
   isRemoteAuthMode,
+  listRemoteAccountBackups,
   removeRemoteMealEntry,
   removeRemoteMealProduct,
   removeRemoteMealTemplate,
@@ -21,7 +24,13 @@ import {
   upsertRemoteMealProduct,
 } from "./authRemote";
 
-export type { RegisterPayload, AuthRuntimeInfo } from "./authProvider";
+export type {
+  RegisterPayload,
+  AuthRuntimeInfo,
+  AccountBackupPayload,
+  AccountBackupSummary,
+  AccountExportPayload,
+} from "./authProvider";
 export type { RemoteSyncResult };
 export { AuthApiError };
 export const restoreSession = async () => {
@@ -88,3 +97,6 @@ export const getRemoteSnapshotMeta = fetchRemoteStateMeta;
 export const analyzeMealPhoto = analyzeRemoteMealPhoto;
 export const getRemoteAuthBaseUrl = getRemoteBaseUrl;
 export const getRemoteAuthToken = getRemoteSessionToken;
+export const exportRemoteAccountData = fetchRemoteAccountExport;
+export const getRemoteAccountBackups = listRemoteAccountBackups;
+export const getRemoteAccountBackup = fetchRemoteAccountBackup;

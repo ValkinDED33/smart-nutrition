@@ -9,6 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { addProduct } from "./mealSlice";
+import { selectFavoriteProductIds } from "./selectors";
 import { mockProducts } from "../../shared/lib/mockProducts";
 import type { MealType } from "../../shared/types/meal";
 import type { AppDispatch, RootState } from "../../app/store";
@@ -23,7 +24,7 @@ interface Props {
 interface ComposerRow {
   id: string;
   productId: string;
-  quantity: number;
+  quantity: number | "";
 }
 
 const createRow = (productId = mockProducts[0]?.id ?? ""): ComposerRow => ({
@@ -37,6 +38,7 @@ const createRow = (productId = mockProducts[0]?.id ?? ""): ComposerRow => ({
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { language, t } = useLanguage();
+  const favorites = useSelector(selectFavoriteProductIds);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -71,7 +73,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       const product = availableProducts.find((item) => item.id === row.productId);
       if (!product) return accumulator;
 
-      const factor = row.quantity / 100;
+      const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
+      const factor = quantity / 100;
       accumulator.calories += product.nutrients.calories * factor;
       accumulator.protein += product.nutrients.protein * factor;
       accumulator.fat += product.nutrients.fat * factor;
@@ -98,12 +101,13 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const handleSaveMeal = () => {
     normalizedRows.forEach((row) => {
       const product = availableProducts.find((item) => item.id === row.productId);
-      if (!product || row.quantity <= 0) return;
+      const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
+      if (!product || quantity <= 0) return;
 
       dispatch(
         addProduct({
           product,
-          quantity: row.quantity,
+          quantity,
           mealType,
           origin: "manual",
         })
@@ -150,22 +154,30 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 updateRow(row.id, { productId: event.target.value })
               }
             >
-              {availableProducts.map((product) => (
-                <MenuItem key={product.id} value={product.id}>
-                  {getProductDisplayName(product, language)}
-                </MenuItem>
-              ))}
+              {availableProducts.map((product) => {
+                const isFavorited = favorites.has(
+                  product.barcode?.trim() ||
+                  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
+                );
+                return (
+                  <MenuItem key={product.id} value={product.id}>
+                    {isFavorited ? "⭐ " : ""}
+                    {getProductDisplayName(product, language)}
+                  </MenuItem>
+                );
+              })}
             </TextField>
 
             <TextField
               type="number"
               label={t("composer.quantity")}
               value={row.quantity}
-              onChange={(event) =>
+              onChange={(event) => {
+                const value = event.target.value;
                 updateRow(row.id, {
-                  quantity: Math.max(0, Number(event.target.value)),
-                })
-              }
+                  quantity: value === "" ? "" : Math.max(0, Number(value)),
+                });
+              }}
               sx={{ minWidth: { md: 160 } }}
             />
 

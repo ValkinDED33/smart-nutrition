@@ -9,6 +9,8 @@ const createAuthServiceFixture = () => {
     insertUser: vi.fn(),
     updateUser: vi.fn(),
     deleteUser: vi.fn(),
+    listUserBackups: vi.fn(() => []),
+    readUserBackup: vi.fn(() => null),
     createSession: vi.fn(),
     findSessionByToken: vi.fn(),
     deleteSessionByToken: vi.fn(),
@@ -94,5 +96,39 @@ describe("authService", () => {
     service.logoutAll({ id: "user-42" });
 
     expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith("user-42");
+  });
+
+  it("exports account data with snapshot and backup summaries", () => {
+    const { authRepository, stateRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-7",
+      email: "user@example.com",
+      name: "Example User",
+      avatar: undefined,
+      age: 28,
+      weight: 68,
+      height: 172,
+      gender: "female",
+      activity: "light",
+      goal: "cut",
+      measurements: undefined,
+      createdAt: new Date().toISOString(),
+      role: "USER",
+    };
+    const snapshot = {
+      profile: { dailyCalories: 1800 },
+      meal: { items: [] },
+      updatedAt: new Date().toISOString(),
+    };
+    const backups = [{ id: "backup-1.json", reason: "snapshot", updatedAt: new Date().toISOString() }];
+
+    stateRepository.getSnapshotByUserId.mockReturnValue(snapshot);
+    authRepository.listUserBackups.mockReturnValue(backups);
+
+    const result = service.exportAccountData(currentUser);
+
+    expect(result.user.email).toBe(currentUser.email);
+    expect(result.snapshot).toEqual(snapshot);
+    expect(result.backups).toEqual(backups);
   });
 });

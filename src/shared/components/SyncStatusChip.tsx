@@ -2,35 +2,41 @@ import { useEffect, useState } from "react";
 import { Chip, Tooltip } from "@mui/material";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
+import {
+  formatQueuedSyncMessage,
+  translateSyncErrorMessage,
+} from "../lib/syncMessaging";
 import { useLanguage } from "../language";
 
 const syncCopy = {
   uk: {
-    localOnlyLabel: "Local only",
-    localOnlyHint: "Data stays in this browser on this device.",
-    syncingLabel: "Cloud syncing",
-    syncingHint: "Saving your latest changes to the cloud.",
-    syncedLabel: "Cloud OK",
-    syncedRelative: "{time} ago",
-    syncedHint: "Last cloud save: {time}",
-    errorLabel: "Sync issue",
-    errorHint: "Recent changes are waiting for a successful cloud sync.",
-    unknownTime: "just now",
-    oneMinute: "1 min",
-    minutes: "{count} min",
-    oneHour: "1 h",
-    hours: "{count} h",
+    localOnlyLabel: "Локально",
+    localOnlyHint: "Дані залишаються в цьому браузері на цьому пристрої.",
+    syncingLabel: "Йде синхронізація",
+    syncingHint: "Останні зміни зберігаються в хмару.",
+    syncedLabel: "Хмара OK",
+    syncedRelative: "{time} тому",
+    syncedHint: "Останній запис у хмару: {time}",
+    errorLabel: "Проблема синхронізації",
+    errorHint: "Останні зміни очікують успішної синхронізації з хмарою.",
+    queuedSuffix: "у черзі: {count}",
+    unknownTime: "щойно",
+    oneMinute: "1 хв",
+    minutes: "{count} хв",
+    oneHour: "1 год",
+    hours: "{count} год",
   },
   pl: {
     localOnlyLabel: "Tylko lokalnie",
     localOnlyHint: "Dane zostaja tylko w tej przegladarce na tym urzadzeniu.",
-    syncingLabel: "Trwa sync",
+    syncingLabel: "Trwa synchronizacja",
     syncingHint: "Zapisuje ostatnie zmiany do chmury.",
     syncedLabel: "Chmura OK",
     syncedRelative: "{time} temu",
     syncedHint: "Ostatni zapis do chmury: {time}",
-    errorLabel: "Blad sync",
+    errorLabel: "Blad synchronizacji",
     errorHint: "Ostatnie zmiany czekaja na udana synchronizacje z chmura.",
+    queuedSuffix: "w kolejce: {count}",
     unknownTime: "przed chwila",
     oneMinute: "1 min",
     minutes: "{count} min",
@@ -125,6 +131,7 @@ const SyncStatusChip = () => {
   const formattedTime = formatAbsoluteSyncTime(lastSyncedAt, language);
   const relativeTime = formatRelativeSyncAge(lastSyncedAt, language, now);
   const isRemote = syncMode === "remote-cloud";
+  const translatedSyncError = translateSyncErrorMessage(syncError, language);
 
   const label = !isRemote
     ? copy.localOnlyLabel
@@ -140,8 +147,8 @@ const SyncStatusChip = () => {
       ? copy.syncingHint
       : syncStatus === "error"
         ? syncOutbox.pendingChanges > 0
-          ? `${syncError ?? copy.errorHint} (${syncOutbox.pendingChanges} queued)`
-          : syncError ?? copy.errorHint
+          ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, language) ?? copy.errorHint} (${copy.queuedSuffix.replace("{count}", String(syncOutbox.pendingChanges))})`
+          : translatedSyncError ?? copy.errorHint
         : copy.syncedHint.replace("{time}", formattedTime);
 
   return (

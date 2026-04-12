@@ -147,6 +147,7 @@ const RegisterPage = () => {
             adaptiveMode: "automatic",
           })
         );
+        // Assistant is initialized with default values via createDefaultAssistantCustomization()
       }
 
       dispatch(setProfileLanguage(language));

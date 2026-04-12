@@ -2,7 +2,12 @@ import http from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { serverConfig } from "./config.mjs";
-import { AuthApiError, StateApiError } from "./lib/domain.mjs";
+import {
+  AssistantApiError,
+  AuthApiError,
+  PlatformApiError,
+  StateApiError,
+} from "./lib/domain.mjs";
 import {
   readJsonBody,
   sendError,
@@ -10,23 +15,38 @@ import {
   sendNoContent,
   setCorsHeaders,
 } from "./lib/http.mjs";
+import { createAssistantRepository } from "./repositories/assistantRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
+import { createPlatformRepository } from "./repositories/platformRepository.mjs";
 import { createStateRepository } from "./repositories/stateRepository.mjs";
+import { createAssistantService } from "./services/assistantService.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
+import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
 import { createSqliteStorage } from "./storage/sqlite.mjs";
 
 const storage = await createSqliteStorage(serverConfig);
+const assistantRepository = createAssistantRepository(storage);
 const authRepository = createAuthRepository(storage);
+const platformRepository = createPlatformRepository(storage);
 const stateRepository = createStateRepository(storage);
+const assistantService = createAssistantService({
+  assistantRepository,
+  config: serverConfig,
+});
 const authService = createAuthService({
   authRepository,
   stateRepository,
   config: serverConfig,
 });
+const platformService = createPlatformService({
+  platformRepository,
+  config: serverConfig,
+});
 const stateService = createStateService({ stateRepository });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
+platformService.bootstrapAccessControl();
 const stateStreams = new Map();
 const staticRoot = path.resolve(serverConfig.staticDir);
 
@@ -74,7 +94,9 @@ const normalizeRouteLabel = (pathname) =>
   pathname
     .replace(/^\/api\/meal-entries\/[^/]+$/, "/api/meal-entries/:id")
     .replace(/^\/api\/meal-templates\/[^/]+$/, "/api/meal-templates/:id")
-    .replace(/^\/api\/meal-products\/(saved|recent)\/[^/]+$/, "/api/meal-products/$1/:id");
+    .replace(/^\/api\/meal-products\/(saved|recent)\/[^/]+$/, "/api/meal-products/$1/:id")
+    .replace(/^\/api\/admin\/foods\/submissions\/[^/]+$/, "/api/admin/foods/submissions/:id")
+    .replace(/^\/api\/admin\/users\/[^/]+\/role$/, "/api/admin/users/:id/role");
 
 const getClientAddress = (request) =>
   String(request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown")
@@ -278,6 +300,9 @@ const routeRequest = async (request, response) => {
   const mealProductMatch = pathname.match(
     /^\/api\/meal-products\/(saved|recent)(?:\/([^/]+))?$/
   );
+  const accountBackupMatch = pathname.match(/^\/api\/account\/backups\/([^/]+)$/);
+  const adminFoodSubmissionMatch = pathname.match(/^\/api\/admin\/foods\/submissions\/([^/]+)$/);
+  const adminUserRoleMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/role$/);
 
   try {
     if (pathname === "/api/health" && request.method === "GET") {
@@ -295,6 +320,12 @@ const routeRequest = async (request, response) => {
           windowMs: serverConfig.requestLimitWindowMs,
         },
         warnings: serverConfig.warnings,
+        assistant: {
+          configured: serverConfig.assistantRuntimeConfigured,
+          model: serverConfig.assistantModel,
+          baseUrl: serverConfig.assistantBaseUrl,
+          memoryMessageLimit: serverConfig.assistantMemoryMessageLimit,
+        },
       });
       return;
     }
@@ -385,6 +416,11 @@ const routeRequest = async (request, response) => {
     if (pathname === "/api/auth/logout-all" && request.method === "POST") {
       authService.logoutAll(auth.user);
       sendNoContent(response);
+      return;
+    }
+
+    if (pathname === "/api/access" && request.method === "GET") {
+      sendJson(response, 200, platformService.getAccessOverview(auth.user));
       return;
     }
 
@@ -498,9 +534,136 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (pathname === "/api/assistant-runtime" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(response, 200, await assistantService.askQuestion(auth.user, body));
+      return;
+    }
+
+    if (pathname === "/api/assistant-runtime/history" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: assistantService.getConversationHistory(
+          auth.user,
+          url.searchParams.get("limit") ?? undefined
+        ),
+      });
+      return;
+    }
+
+    if (pathname === "/api/assistant-runtime/history" && request.method === "DELETE") {
+      assistantService.clearConversationHistory(auth.user);
+      sendNoContent(response);
+      return;
+    }
+
+    if (pathname === "/api/foods" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listVisibleCatalogProducts(auth.user, {
+          status: url.searchParams.get("status"),
+          search: url.searchParams.get("search") ?? "",
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/foods/submissions" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listOwnCatalogProducts(auth.user, {
+          status: url.searchParams.get("status"),
+          search: url.searchParams.get("search") ?? "",
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/foods/submissions" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(response, 201, platformService.submitCatalogProduct(auth.user, body));
+      return;
+    }
+
+    if (pathname === "/api/admin/foods/submissions" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listModerationQueue(auth.user, {
+          status: url.searchParams.get("status"),
+          search: url.searchParams.get("search") ?? "",
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
+    if (adminFoodSubmissionMatch && request.method === "PATCH") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(
+        response,
+        200,
+        platformService.reviewCatalogProduct(
+          auth.user,
+          decodeURIComponent(adminFoodSubmissionMatch[1]),
+          body
+        )
+      );
+      return;
+    }
+
+    if (pathname === "/api/admin/audit-logs" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listAuditLogs(auth.user, {
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/admin/users" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listUsers(auth.user),
+      });
+      return;
+    }
+
+    if (adminUserRoleMatch && request.method === "PATCH") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(
+        response,
+        200,
+        platformService.updateUserRole(
+          auth.user,
+          decodeURIComponent(adminUserRoleMatch[1]),
+          body
+        )
+      );
+      return;
+    }
+
     if (pathname === "/api/account" && request.method === "DELETE") {
       authService.deleteAccount(auth.user);
       sendNoContent(response);
+      return;
+    }
+
+    if (pathname === "/api/account/export" && request.method === "GET") {
+      sendJson(response, 200, authService.exportAccountData(auth.user));
+      return;
+    }
+
+    if (pathname === "/api/account/backups" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: authService.listAccountBackups(auth.user),
+      });
+      return;
+    }
+
+    if (accountBackupMatch && request.method === "GET") {
+      const backupId = decodeURIComponent(accountBackupMatch[1]);
+      response.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${backupId.replace(/"/g, "")}"`
+      );
+      sendJson(response, 200, authService.readAccountBackup(auth.user, backupId));
       return;
     }
 
@@ -512,8 +675,42 @@ const routeRequest = async (request, response) => {
   } catch (error) {
     if (error instanceof AuthApiError) {
       const statusCode =
-        error.code === "EMAIL_IN_USE" ? 409 : error.code === "TOO_MANY_ATTEMPTS" ? 429 : 401;
+        error.code === "EMAIL_IN_USE"
+          ? 409
+          : error.code === "TOO_MANY_ATTEMPTS"
+            ? 429
+            : error.code === "BACKUP_NOT_FOUND"
+              ? 404
+            : error.code === "FORBIDDEN"
+              ? 403
+              : 401;
       sendError(response, statusCode, error.code, error.message);
+      return;
+    }
+
+    if (error instanceof PlatformApiError) {
+      const statusCode =
+        error.code === "FORBIDDEN" || error.code === "ROLE_CHANGE_NOT_ALLOWED"
+          ? 403
+          : error.code === "FOOD_NOT_FOUND" || error.code === "USER_NOT_FOUND"
+            ? 404
+            : error.code === "SUBMISSION_LIMIT_REACHED"
+              ? 429
+              : error.code === "INVALID_ROLE" || error.code === "INVALID_FOOD_SUBMISSION"
+                ? 400
+                : 409;
+      sendError(response, statusCode, error.code, error.message, error.details);
+      return;
+    }
+
+    if (error instanceof AssistantApiError) {
+      const statusCode =
+        error.code === "ASSISTANT_RUNTIME_UNAVAILABLE"
+          ? 503
+          : error.code === "ASSISTANT_RUNTIME_FAILED"
+            ? 502
+            : 400;
+      sendError(response, statusCode, error.code, error.message, error.details);
       return;
     }
 

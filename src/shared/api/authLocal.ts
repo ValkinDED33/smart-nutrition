@@ -162,6 +162,9 @@ const toPublicUser = (storedUser: StoredUserRecord): User => ({
   gender: storedUser.gender,
   activity: storedUser.activity,
   goal: storedUser.goal,
+  role: storedUser.role ?? "USER",
+  twoFactorEnabled: storedUser.twoFactorEnabled ?? false,
+  twoFactorRequired: storedUser.twoFactorRequired ?? false,
   measurements: storedUser.measurements,
 });
 
@@ -328,6 +331,9 @@ export const localAuthProvider: AuthProvider = {
       gender: userData.gender,
       activity: userData.activity,
       goal: userData.goal,
+      role: "USER",
+      twoFactorEnabled: false,
+      twoFactorRequired: false,
       createdAt: new Date().toISOString(),
       ...passwordRecord,
     };

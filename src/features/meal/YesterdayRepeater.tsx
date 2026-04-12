@@ -1,83 +1,49 @@
-import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Paper, Stack, Typography } from "@mui/material";
-import type { AppDispatch } from "../../app/store";
+import { Button, Stack } from "@mui/material";
 import { addMealEntries } from "./mealSlice";
 import { selectMealItems } from "./selectors";
-import type { MealEntry, MealType } from "../../shared/types/meal";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
-import { addDays, getLocalDateKey } from "../../shared/lib/date";
+import { getLocalDateKey } from "../../shared/lib/date";
+import type { AppDispatch } from "../../app/store";
 
-const createEntryId = () =>
+const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
-  `repeat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-const yesterdayKey = () => getLocalDateKey(addDays(new Date(), -1));
-
-interface Props {
-  mealType: MealType;
-}
-
-export const YesterdayRepeater = ({ mealType }: Props) => {
+export const YesterdayRepeater = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
 
-  const entries = useMemo(
-    () =>
-      items.filter(
-        (item) =>
-          item.mealType === mealType &&
-          getLocalDateKey(item.eatenAt) === yesterdayKey()
-      ),
-    [items, mealType]
-  );
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = getLocalDateKey(yesterday);
 
-  const handleRepeat = () => {
-    const now = new Date().toISOString();
-    const repeatedEntries: MealEntry[] = entries.map((entry) => ({
-      ...entry,
-      id: createEntryId(),
-      eatenAt: now,
+  const yesterdayItems = items.filter((item) => getLocalDateKey(item.eatenAt) === yesterdayKey);
+  const hasYesterdayData = yesterdayItems.length > 0;
+
+  const handleRepeatYesterday = () => {
+    if (!hasYesterdayData) return;
+
+    const newEntries = yesterdayItems.map((item) => ({
+      ...item,
+      id: createId("meal"),
+      eatenAt: new Date().toISOString(),
     }));
 
-    dispatch(addMealEntries(repeatedEntries));
+    dispatch(addMealEntries(newEntries));
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: 5,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
-      }}
-    >
-      <Stack spacing={1.5}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
-          {t("yesterday.title")}
-        </Typography>
-        <Typography color="text.secondary">{t("yesterday.subtitle")}</Typography>
-        {entries.length === 0 ? (
-          <Typography color="text.secondary">{t("yesterday.empty")}</Typography>
-        ) : (
-          <>
-            <Typography color="text.secondary">
-              {entries
-                .map(
-                  (entry) =>
-                    `${getProductDisplayName(entry.product, language)} ${entry.quantity} ${entry.product.unit}`
-                )
-                .join(", ")}
-            </Typography>
-            <Button variant="outlined" onClick={handleRepeat} sx={{ alignSelf: "flex-start" }}>
-              {t("yesterday.action")}
-            </Button>
-          </>
-        )}
-      </Stack>
-    </Paper>
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+      <Button
+        variant="outlined"
+        onClick={handleRepeatYesterday}
+        disabled={!hasYesterdayData}
+        fullWidth
+      >
+        {t("meal.repeatYesterday")}
+      </Button>
+    </Stack>
   );
 };

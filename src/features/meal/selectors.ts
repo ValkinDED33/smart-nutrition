@@ -41,3 +41,21 @@ export const selectRecentProducts = (state: RootState) =>
 
 export const selectPersonalBarcodeProducts = (state: RootState) =>
   state.meal?.personalBarcodeProducts ?? EMPTY_PRODUCTS;
+
+const createProductKey = (product: { name: string; brand?: string; barcode?: string }) =>
+  product.barcode?.trim() ||
+  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+
+export const selectFavoriteProductIds = createSelector([selectSavedProducts], (products) => {
+  return new Set(products.map(createProductKey));
+});
+
+export const selectIsProductFavorited = (product: { name: string; brand?: string; barcode?: string }) =>
+  createSelector([selectFavoriteProductIds], (favorites) => {
+    return favorites.has(createProductKey(product));
+  });
+
+export const selectMealsByDate = (dateKey: string) =>
+  createSelector([selectMealItems], (items) => {
+    return items.filter((item) => getLocalDateKey(item.eatenAt) === dateKey);
+  });

@@ -59,24 +59,47 @@ const maybeSendNotification = (key: string, title: string, body: string) => {
   new Notification(title, { body, silent: true });
 };
 
-const mealNotificationCopy: Record<MealType, { title: string; body: string }> = {
-  breakfast: {
-    title: "Breakfast check-in",
-    body: "Breakfast is still missing from today. Log it while it is fresh in memory.",
+const mealNotificationCopy = {
+  uk: {
+    breakfast: {
+      title: "Чек-ін по сніданку",
+      body: "Сніданок ще не зафіксований. Додайте його, поки деталі свіжі в пам'яті.",
+    },
+    lunch: {
+      title: "Нагадування про обід",
+      body: "Обід ще не в щоденнику. Швидкий запис зараз збереже точність дня.",
+    },
+    dinner: {
+      title: "Нагадування про вечерю",
+      body: "Вечеря ще не записана. Додайте її до завершення дня.",
+    },
+    snack: {
+      title: "Нагадування про перекус",
+      body: "Для перекусу настав час нагадування. Додайте його або скоригуйте план, якщо пропустили.",
+    },
   },
-  lunch: {
-    title: "Lunch reminder",
-    body: "Lunch is not in your diary yet. A quick log now keeps the day accurate.",
+  pl: {
+    breakfast: {
+      title: "Check-in śniadania",
+      body: "Śniadanie nie jest jeszcze zapisane. Dodaj je, póki szczegóły są świeże.",
+    },
+    lunch: {
+      title: "Przypomnienie o obiedzie",
+      body: "Obiad nie trafił jeszcze do dziennika. Szybki wpis teraz utrzyma dokładność dnia.",
+    },
+    dinner: {
+      title: "Przypomnienie o kolacji",
+      body: "Kolacja nie jest jeszcze zapisana. Dodaj ją przed końcem dnia.",
+    },
+    snack: {
+      title: "Przypomnienie o przekąsce",
+      body: "Nadszedł czas przypomnienia o przekąsce. Dodaj ją albo popraw plan, jeśli ją pomijasz.",
+    },
   },
-  dinner: {
-    title: "Dinner reminder",
-    body: "Dinner is still missing from your diary. Add it before the day ends.",
-  },
-  snack: {
-    title: "Snack reminder",
-    body: "You scheduled a snack reminder. Add it or adjust the plan if you skipped it.",
-  },
-};
+} as const satisfies Record<
+  "uk" | "pl",
+  Record<MealType, { title: string; body: string }>
+>;
 
 const coachNotificationCopy = {
   uk: {
@@ -84,7 +107,7 @@ const coachNotificationCopy = {
     logging_low: (daysLogged: number) =>
       `Зафіксовано лише ${daysLogged} із 7 останніх днів. Додайте пропущені записи, поки день не завершився.`,
     protein_low: (averageProtein: number, proteinTarget: number) =>
-      `Білок просідає: у середньому ${averageProtein.toFixed(0)} г проти цілі ${proteinTarget.toFixed(0)} г. Додайте ще один білковий прийом.`,
+      `Білок просідає: у середньому ${averageProtein.toFixed(0)} г при цілі ${proteinTarget.toFixed(0)} г. Додайте ще один білковий прийом.`,
     fiber_low: (averageFiber: number) =>
       `Клітковина все ще низька: у середньому ${averageFiber.toFixed(0)} г. Додайте овочі, фрукти або бобові.`,
     calories_high: (averageCalories: number, calorieTarget: number) =>
@@ -95,6 +118,12 @@ const coachNotificationCopy = {
       `Ритм харчування нерівний: лише ${averageMeals.toFixed(1)} повноцінних слотів їжі на день. Вирівняйте базові прийоми.`,
     weight_trend: (weightChange: number) =>
       `Тренд ваги ${weightChange.toFixed(1)} кг не збігається з метою. Перевірте ціль калорій на найближчий тиждень.`,
+    caloriesLowTitle: "Сьогодні калорій ще замало",
+    caloriesLowBody:
+      "Ви помітно нижче денної цілі. Перевірте, чи не лишився пропущений прийом їжі.",
+    caloriesHighTitle: "Сьогодні калорії вже вище цілі",
+    caloriesHighBody:
+      "Ви вже вище денної цілі. Перегляньте решту прийомів перед тим, як додавати ще щось.",
   },
   pl: {
     title: (name: string) => `${name}: wieczorny przegląd`,
@@ -112,6 +141,12 @@ const coachNotificationCopy = {
       `Rytm jedzenia jest nierówny: tylko ${averageMeals.toFixed(1)} pełnych slotów posiłków dziennie. Ustabilizuj bazowe posiłki.`,
     weight_trend: (weightChange: number) =>
       `Trend masy ${weightChange.toFixed(1)} kg nie wspiera celu. Sprawdź target kalorii na kolejny tydzień.`,
+    caloriesLowTitle: "Kalorie są dziś jeszcze za nisko",
+    caloriesLowBody:
+      "Jesteś wyraźnie poniżej dziennego celu. Sprawdź, czy nie brakuje któregoś posiłku.",
+    caloriesHighTitle: "Kalorie są dziś już ponad celem",
+    caloriesHighBody:
+      "Jesteś już ponad dziennym celem. Przejrzyj pozostałe posiłki, zanim dodasz kolejne.",
   },
 } as const;
 
@@ -149,9 +184,11 @@ const HabitReminderAgent = () => {
       const now = new Date();
       const todayKey = formatLocalDayKey(now);
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const localizedMealCopy = mealNotificationCopy[language];
+      const coachCopy = coachNotificationCopy[language];
 
       if (mealRemindersEnabled) {
-        (Object.keys(mealNotificationCopy) as MealType[]).forEach((mealType) => {
+        (Object.keys(localizedMealCopy) as MealType[]).forEach((mealType) => {
           const reminderAt = reminderTimes[mealType];
           const reminderMinutes = parseTimeToMinutes(reminderAt);
           const hasLoggedMeal = items.some(
@@ -159,7 +196,7 @@ const HabitReminderAgent = () => {
           );
 
           if (!hasLoggedMeal && nowMinutes >= reminderMinutes) {
-            const reminder = mealNotificationCopy[mealType];
+            const reminder = localizedMealCopy[mealType];
             maybeSendNotification(
               `${todayKey}-${mealType}`,
               reminder.title,
@@ -173,14 +210,14 @@ const HabitReminderAgent = () => {
         if (totalCalories < dailyCalories * 0.72) {
           maybeSendNotification(
             `${todayKey}-calories-low`,
-            "Calories are still low today",
-            "You are well below today's target. Check whether a meal is still missing."
+            coachCopy.caloriesLowTitle,
+            coachCopy.caloriesLowBody
           );
         } else if (totalCalories > dailyCalories * 1.12) {
           maybeSendNotification(
             `${todayKey}-calories-high`,
-            "Calories are already above target",
-            "You are above today's target. Review the remaining meals before adding more."
+            coachCopy.caloriesHighTitle,
+            coachCopy.caloriesHighBody
           );
         }
       }
@@ -197,7 +234,6 @@ const HabitReminderAgent = () => {
         const focus = analysis.insights.find((insight) => insight.code !== "on_track");
 
         if (focus) {
-          const coachCopy = coachNotificationCopy[language];
           const messageByInsight = {
             logging_low: coachCopy.logging_low(analysis.daysLogged),
             protein_low: coachCopy.protein_low(analysis.averageProtein, analysis.proteinTarget),
@@ -228,6 +264,7 @@ const HabitReminderAgent = () => {
       window.clearInterval(intervalId);
     };
   }, [
+    assistant.name,
     calorieAlertsEnabled,
     dailyCalories,
     dietStyle,
@@ -240,7 +277,6 @@ const HabitReminderAgent = () => {
     totalCalories,
     user,
     weightHistory,
-    assistant.name,
   ]);
 
   return null;

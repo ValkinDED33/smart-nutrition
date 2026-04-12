@@ -5,12 +5,14 @@ import { useLanguage } from "../shared/language";
 import { WeeklyInsights } from "../features/meal/WeeklyInsights";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import { MealDayOverview } from "../features/meal/MealDayOverview";
+import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
 import { DailyMicronutrientsCard } from "../features/meal/DailyMicronutrientsCard";
 import { AdaptiveGoalCard } from "../features/profile/AdaptiveGoalCard";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
 import { selectDailyMacroProgress } from "../features/profile/selectors";
 import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
+import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
 
 const macroGoalCopy = {
   uk: {
@@ -232,9 +234,11 @@ const DashboardPage = () => {
       </Paper>
 
       <DailyMicronutrientsCard />
+      <YesterdayRepeater />
       <MealDayOverview />
       <WeeklyInsights />
       <MonthlyAnalyticsCard />
+      <AssistantRuntimeCard />
       <NutritionCoachCard />
       <SmartRecommendations />
       <AdaptiveGoalCard />
