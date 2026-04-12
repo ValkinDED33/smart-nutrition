@@ -14,6 +14,26 @@ import {
 } from "../lib/domain.mjs";
 
 export const createAuthService = ({ authRepository, stateRepository, config }) => {
+  const writeAuditLog = ({
+    actorUserId = null,
+    actorRole = "USER",
+    action,
+    targetType = null,
+    targetId = null,
+    details = null,
+  }) => {
+    authRepository.createAuditLog?.({
+      id: createId("audit"),
+      actorUserId,
+      actorRole,
+      action,
+      targetType,
+      targetId,
+      details,
+      createdAt: new Date().toISOString(),
+    });
+  };
+
   const buildAuthResponse = (user, accessToken, refreshToken = undefined) => ({
     user: toPublicUser(user),
     token: accessToken,
@@ -152,6 +172,10 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     });
   };
 
+  if (config.superAdminEmail) {
+    authRepository.promoteUserByEmailToSuperAdmin?.(config.superAdminEmail);
+  }
+
   return {
     authenticateToken,
     authenticateRequest,
@@ -174,6 +198,11 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
       }
 
+      const shouldBootstrapSuperAdmin =
+        Boolean(config.superAdminEmail) &&
+        email === config.superAdminEmail &&
+        !authRepository.hasUserWithRole?.("SUPER_ADMIN");
+      const role = shouldBootstrapSuperAdmin ? "SUPER_ADMIN" : "USER";
       const passwordRecord = createPasswordRecord(
         String(body.password || ""),
         config.passwordIterations
@@ -192,6 +221,9 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         goal: body.goal || "maintain",
         measurements: body.measurements,
         createdAt: new Date().toISOString(),
+        role,
+        twoFactorEnabled: false,
+        twoFactorRequired: role === "ADMIN" || role === "SUPER_ADMIN",
         ...passwordRecord,
       };
 
@@ -203,6 +235,17 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       });
 
       const refreshSession = createRefreshSession(user.id);
+      writeAuditLog({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "auth.registered",
+        targetType: "user",
+        targetId: user.id,
+        details: {
+          email: user.email,
+          role: user.role,
+        },
+      });
       return buildAuthResponse(user, createAccessToken(user.id), refreshSession.token);
     },
 
@@ -221,6 +264,13 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
 
       clearLoginAttempts(email);
       const refreshSession = createRefreshSession(user.id);
+      writeAuditLog({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "auth.logged_in",
+        targetType: "session",
+        targetId: refreshSession.token,
+      });
       return buildAuthResponse(user, createAccessToken(user.id), refreshSession.token);
     },
 
@@ -256,6 +306,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     logout: (request, body = {}) => {
       const token = getBearerToken(request);
       const refreshToken = String(body?.refreshToken || "");
+      const auth = authenticateRequest(request);
 
       if (refreshToken) {
         authRepository.deleteSessionByToken(refreshToken);
@@ -264,10 +315,27 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       if (token && verifySessionToken(token, config.jwtSecret)?.kind === "legacy") {
         authRepository.deleteSessionByToken(token);
       }
+
+      if (auth?.user) {
+        writeAuditLog({
+          actorUserId: auth.user.id,
+          actorRole: auth.user.role,
+          action: "auth.logged_out",
+          targetType: "user",
+          targetId: auth.user.id,
+        });
+      }
     },
 
     logoutAll: (currentUser) => {
       authRepository.deleteSessionsByUserId(currentUser.id);
+      writeAuditLog({
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: "auth.logged_out_all",
+        targetType: "user",
+        targetId: currentUser.id,
+      });
     },
 
     updateUserProfile: (requestBody, currentUser) => {
@@ -284,13 +352,52 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         measurements: requestBody.measurements ?? currentUser.measurements,
       });
 
+      writeAuditLog({
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: "auth.profile_updated",
+        targetType: "user",
+        targetId: currentUser.id,
+      });
       return toPublicUser(updatedUser);
     },
 
     deleteAccount: (currentUser) => {
+      if (currentUser.role === "SUPER_ADMIN") {
+        throw new AuthApiError("FORBIDDEN", "The super admin account cannot be deleted.");
+      }
+
+      writeAuditLog({
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: "auth.account_deleted",
+        targetType: "user",
+        targetId: currentUser.id,
+      });
       authRepository.deleteSessionsByUserId(currentUser.id);
       authRepository.deleteUser(currentUser.id);
       clearLoginAttempts(currentUser.email);
+    },
+
+    exportAccountData: (currentUser) => ({
+      exportedAt: new Date().toISOString(),
+      mode: "remote-cloud",
+      user: toPublicUser(currentUser),
+      snapshot: stateRepository.getSnapshotByUserId(currentUser.id, currentUser),
+      backups: authRepository.listUserBackups?.(currentUser.id) ?? [],
+    }),
+
+    listAccountBackups: (currentUser) =>
+      authRepository.listUserBackups?.(currentUser.id) ?? [],
+
+    readAccountBackup: (currentUser, backupId = undefined) => {
+      const backup = authRepository.readUserBackup?.(currentUser.id, backupId) ?? null;
+
+      if (!backup) {
+        throw new AuthApiError("BACKUP_NOT_FOUND", "Backup not found.");
+      }
+
+      return backup;
     },
   };
 };

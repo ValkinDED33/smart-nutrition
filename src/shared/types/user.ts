@@ -11,6 +11,8 @@ export type ActivityLevel =
 
 export type Goal = "cut" | "maintain" | "bulk";
 
+export type UserRole = "USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+
 export interface User {
   id: string;
   name: string;
@@ -22,6 +24,9 @@ export interface User {
   gender: Gender;
   activity: ActivityLevel;
   goal: Goal;
+  role: UserRole;
+  twoFactorEnabled?: boolean;
+  twoFactorRequired?: boolean;
   measurements?: {
     waist?: number;
     hip?: number;

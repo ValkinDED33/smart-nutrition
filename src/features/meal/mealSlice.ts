@@ -337,6 +337,20 @@ const mealSlice = createSlice({
       state.recentProducts = [];
       state.personalBarcodeProducts = [];
     },
+
+    toggleFavoritProduct(state, action: PayloadAction<Product>) {
+      const isFavorited = state.savedProducts.some(
+        (p) => createProductKey(p) === createProductKey(action.payload)
+      );
+
+      if (isFavorited) {
+        state.savedProducts = state.savedProducts.filter(
+          (p) => createProductKey(p) !== createProductKey(action.payload)
+        );
+      } else {
+        rememberProduct(state.savedProducts, action.payload, 24);
+      }
+    },
   },
 });
 
@@ -382,6 +396,7 @@ export const {
   rememberRecentProduct,
   removeProduct,
   clearMeal,
+  toggleFavoritProduct,
 } = mealSlice.actions;
 
 export default mealSlice.reducer;

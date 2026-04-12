@@ -68,6 +68,7 @@ export interface Product {
   nutrients: Nutrients;
   brand?: string;
   barcode?: string;
+  category?: string;
   imageUrl?: string;
   facts?: ProductFacts;
 }

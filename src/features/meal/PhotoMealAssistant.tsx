@@ -26,6 +26,7 @@ import {
   rescalePhotoMealAnalysis,
   scalePhotoMealAnalysis,
 } from "../../shared/lib/photoDraft";
+import { useLanguage } from "../../shared/language";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -72,20 +73,120 @@ type DraftPhotoItem = {
   usesManualEstimate: boolean;
 };
 
-const portionCopy: Record<PhotoPortionSize, { label: string; helper: string }> = {
-  light: {
-    label: "Light",
-    helper: "Smaller plate or snack-size serving",
+const portionCopy = {
+  uk: {
+    light: {
+      label: "Легка",
+      helper: "Невелика тарілка або порція-снек",
+    },
+    regular: {
+      label: "Звична",
+      helper: "Стандартна одиночна порція",
+    },
+    large: {
+      label: "Велика",
+      helper: "Ресторанна або подвоєна порція",
+    },
   },
-  regular: {
-    label: "Regular",
-    helper: "Most standard single-meal portions",
+  pl: {
+    light: {
+      label: "Lekka",
+      helper: "Mniejszy talerz albo porcja snackowa",
+    },
+    regular: {
+      label: "Standardowa",
+      helper: "Typowa pojedyncza porcja",
+    },
+    large: {
+      label: "Duża",
+      helper: "Porcja restauracyjna albo podwójna",
+    },
   },
-  large: {
-    label: "Large",
-    helper: "Restaurant-size or double-side serving",
+} as const satisfies Record<
+  "uk" | "pl",
+  Record<PhotoPortionSize, { label: string; helper: string }>
+>;
+
+const copyByLanguage = {
+  uk: {
+    title: "Фото-чернетка страви",
+    subtitle:
+      "Завантажте фото страви. Ця збірка зберігає зображення як візуальну підказку і готує низьковпевнену чернетку, яку ви перевіряєте вручну перед додаванням у щоденник.",
+    choosePhoto: "Обрати фото",
+    createDraft: "Створити чернетку",
+    creatingDraft: "Створюю чернетку...",
+    estimatedCalories: "Оцінені калорії",
+    estimatedWeight: "Оцінена вага",
+    portionHint: "Підказка по порції",
+    mealPreview: "Прев'ю страви",
+    draftDishName: "Назва чернетки страви",
+    confidence: "Впевненість",
+    portions: "Порцій",
+    reviewedItems: "перевірених інгредієнтів",
+    foodName: "Назва продукту",
+    itemConfidence: "Точність позиції",
+    manualEstimate: "Ручна оцінка",
+    catalogMatch: "Збіг із каталогом",
+    remove: "Прибрати",
+    quantity: "Кількість (г)",
+    entryCalories: "Калорії позиції",
+    duplicate: "Дублювати",
+    nutritionPer100g: "Харчова цінність на 100 г",
+    kcal: "Ккал",
+    protein: "Білок",
+    fat: "Жир",
+    carbs: "Вуглеводи",
+    catalogMatches: "Збіги з каталогом",
+    addMissingFood: "Додати відсутній продукт вручну",
+    addToDiary: "Додати перевірені продукти в щоденник",
+    manualItemName: "Ручна позиція",
+    manualReason: "Додано вручну для корекції чернетки.",
+    photoLoadError: "Фото не вдалося завантажити. Спробуйте інше зображення.",
+    photoMissing: "Спершу оберіть фото страви.",
+    remoteFallback:
+      "Віддалена photo draft-нода недоступна. Замість неї створено безкоштовну локальну чернетку для ручової перевірки.",
+    itemCount: (count: number) => `${count} перевірених позицій`,
   },
-};
+  pl: {
+    title: "Szkic posiłku ze zdjęcia",
+    subtitle:
+      "Wgraj zdjęcie posiłku. Ta wersja traktuje obraz jako wizualny punkt odniesienia i przygotowuje szkic o niskiej pewności, który ręcznie sprawdzasz przed dodaniem do dziennika.",
+    choosePhoto: "Wybierz zdjęcie",
+    createDraft: "Utwórz szkic",
+    creatingDraft: "Tworzę szkic...",
+    estimatedCalories: "Szacowane kalorie",
+    estimatedWeight: "Szacowana waga",
+    portionHint: "Podpowiedź porcji",
+    mealPreview: "Podgląd posiłku",
+    draftDishName: "Nazwa szkicu dania",
+    confidence: "Pewność",
+    portions: "Porcje",
+    reviewedItems: "sprawdzonych składników",
+    foodName: "Nazwa produktu",
+    itemConfidence: "Pewność pozycji",
+    manualEstimate: "Ręczny szacunek",
+    catalogMatch: "Dopasowanie z katalogu",
+    remove: "Usuń",
+    quantity: "Ilość (g)",
+    entryCalories: "Kalorie pozycji",
+    duplicate: "Duplikuj",
+    nutritionPer100g: "Wartości odżywcze na 100 g",
+    kcal: "Kcal",
+    protein: "Białko",
+    fat: "Tłuszcz",
+    carbs: "Węglowodany",
+    catalogMatches: "Dopasowania z katalogu",
+    addMissingFood: "Dodaj brakujący produkt ręcznie",
+    addToDiary: "Dodaj sprawdzone produkty do dziennika",
+    manualItemName: "Pozycja ręczna",
+    manualReason: "Dodano ręcznie, aby poprawić szkic.",
+    photoLoadError: "Nie udało się wczytać zdjęcia. Spróbuj innego obrazu.",
+    photoMissing: "Najpierw wybierz zdjęcie posiłku.",
+    remoteFallback:
+      "Zdalny draft zdjęcia jest niedostępny. Zamiast niego utworzono darmowy lokalny szkic do ręcznej korekty.",
+    itemCount: (count: number) => `${count} sprawdzonych pozycji`,
+  },
+} as const;
 
 type Props = {
   mealType: MealType;
@@ -98,6 +199,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     allergies: state.profile.allergies,
     excludedIngredients: state.profile.excludedIngredients,
   }));
+  const { language } = useLanguage();
+  const copy = copyByLanguage[language];
+  const localizedPortionCopy = portionCopy[language];
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
@@ -156,7 +261,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
   const createBlankDraftItem = (): DraftPhotoItem => ({
     id: createId("photo-entry"),
-    product: createManualProduct("Manual item", previewUrl, {
+    product: createManualProduct(copy.manualItemName, previewUrl, {
       calories: 0,
       protein: 0,
       fat: 0,
@@ -164,7 +269,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     }),
     quantity: 100,
     confidence: 0.05,
-    reason: "Added manually to correct the draft.",
+    reason: copy.manualReason,
     alternatives: [],
     usesManualEstimate: true,
   });
@@ -183,13 +288,13 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       setImageDataUrl(nextDataUrl);
       setPreviewUrl(nextDataUrl);
     } catch {
-      setError("The photo could not be loaded. Try another image.");
+      setError(copy.photoLoadError);
     }
   };
 
   const handleAnalyze = async () => {
     if (!imageDataUrl) {
-      setError("Choose a meal photo first.");
+      setError(copy.photoMissing);
       return;
     }
 
@@ -207,15 +312,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       const scaledResult = scalePhotoMealAnalysis(result, portionSize);
 
       if (isCloudSyncActive() && result === fallbackResult) {
-        setError(
-          "Remote photo draft is unavailable. A free local review draft was created instead."
-        );
+        setError(copy.remoteFallback);
       }
 
       setAnalysis(scaledResult);
-      setDraftItems(
-        scaledResult.items.map((item) => createDraftItem(item, previewUrl))
-      );
+      setDraftItems(scaledResult.items.map((item) => createDraftItem(item, previewUrl)));
     } finally {
       setLoading(false);
     }
@@ -275,12 +376,9 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       <Stack spacing={2}>
         <Stack spacing={0.8}>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            Photo meal draft
+            {copy.title}
           </Typography>
-          <Typography color="text.secondary">
-            Upload a meal photo. This build keeps the image as a visual reference and prepares
-            a low-confidence draft that you review manually before adding it to your diary.
-          </Typography>
+          <Typography color="text.secondary">{copy.subtitle}</Typography>
         </Stack>
 
         {error && <Alert severity="warning">{error}</Alert>}
@@ -291,7 +389,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             variant="outlined"
             sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
           >
-            Choose photo
+            {copy.choosePhoto}
             <input
               hidden
               accept="image/*"
@@ -315,17 +413,17 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
               background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
             }}
           >
-            {loading ? "Creating draft..." : "Create draft"}
+            {loading ? copy.creatingDraft : copy.createDraft}
           </Button>
           {analysis && (
             <>
               <Chip
-                label={`Estimated calories: ${totalEstimatedCalories.toFixed(0)} kcal`}
+                label={`${copy.estimatedCalories}: ${totalEstimatedCalories.toFixed(0)} kcal`}
                 color="success"
                 variant="outlined"
               />
               <Chip
-                label={`Estimated weight: ${totalEstimatedWeight.toFixed(0)} g`}
+                label={`${copy.estimatedWeight}: ${totalEstimatedWeight.toFixed(0)} g`}
                 variant="outlined"
               />
             </>
@@ -333,15 +431,15 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         </Stack>
 
         <Stack spacing={1}>
-          <Typography sx={{ fontWeight: 700 }}>Portion hint</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{copy.portionHint}</Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            {(Object.keys(portionCopy) as PhotoPortionSize[]).map((size) => (
+            {(Object.keys(localizedPortionCopy) as PhotoPortionSize[]).map((size) => (
               <Chip
                 key={size}
                 clickable
                 color={portionSize === size ? "primary" : "default"}
                 variant={portionSize === size ? "filled" : "outlined"}
-                label={`${portionCopy[size].label}: ${portionCopy[size].helper}`}
+                label={`${localizedPortionCopy[size].label}: ${localizedPortionCopy[size].helper}`}
                 onClick={() => handlePortionSizeChange(size)}
               />
             ))}
@@ -352,7 +450,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           <Box
             component="img"
             src={previewUrl}
-            alt="Meal preview"
+            alt={copy.mealPreview}
             sx={{
               width: "100%",
               maxHeight: 280,
@@ -366,7 +464,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         {analysis && (
           <Stack spacing={1.5}>
             <TextField
-              label="Draft dish name"
+              label={copy.draftDishName}
               value={analysis.dishName}
               onChange={(event) => {
                 const nextDishName = event.target.value;
@@ -378,11 +476,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Chip label={analysis.dishName} />
               <Chip
-                label={`Confidence ${(averageConfidence * 100).toFixed(0)}%`}
+                label={`${copy.confidence} ${(averageConfidence * 100).toFixed(0)}%`}
                 color={analysis.confidence >= 0.75 ? "success" : "warning"}
               />
-              <Chip label={`Portions ${analysis.estimatedPortions.toFixed(1)}`} />
-              <Chip label={`${draftItems.length} reviewed items`} />
+              <Chip label={`${copy.portions} ${analysis.estimatedPortions.toFixed(1)}`} />
+              <Chip label={copy.itemCount(draftItems.length)} />
             </Stack>
             <Typography color="text.secondary">{analysis.summary}</Typography>
             {analysis.cautions.length > 0 && (
@@ -398,36 +496,40 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                     direction={{ xs: "column", md: "row" }}
                     spacing={1}
                     justifyContent="space-between"
-                    >
-                      <Stack spacing={0.7}>
-                        <TextField
-                          label="Food name"
-                          value={item.product.name}
-                          onChange={(event) => {
-                            const nextName = event.target.value;
-                            updateDraftItem(item.id, (draftItem) => {
-                              const alternatives = searchLocalProducts(nextName, 3);
-                              return {
-                                ...draftItem,
-                                product: {
-                                  ...draftItem.product,
-                                  name: nextName,
-                                },
-                                alternatives,
-                                usesManualEstimate: alternatives.length === 0,
-                              };
-                            });
-                          }}
-                        />
-                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                          <Chip
-                            size="small"
-                          label={`Item ${(item.confidence * 100).toFixed(0)}%`}
+                  >
+                    <Stack spacing={0.7}>
+                      <TextField
+                        label={copy.foodName}
+                        value={item.product.name}
+                        onChange={(event) => {
+                          const nextName = event.target.value;
+                          updateDraftItem(item.id, (draftItem) => {
+                            const alternatives = searchLocalProducts(nextName, 3);
+                            return {
+                              ...draftItem,
+                              product: {
+                                ...draftItem.product,
+                                name: nextName,
+                              },
+                              alternatives,
+                              usesManualEstimate: alternatives.length === 0,
+                            };
+                          });
+                        }}
+                      />
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Chip
+                          size="small"
+                          label={`${copy.itemConfidence} ${(item.confidence * 100).toFixed(0)}%`}
                           color={item.confidence >= 0.75 ? "success" : "warning"}
                         />
                         <Chip
                           size="small"
-                          label={item.usesManualEstimate ? "Manual estimate" : "Catalog match"}
+                          label={
+                            item.usesManualEstimate
+                              ? copy.manualEstimate
+                              : copy.catalogMatch
+                          }
                         />
                       </Stack>
                     </Stack>
@@ -442,7 +544,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                       }}
                       sx={{ alignSelf: "flex-start", textTransform: "none" }}
                     >
-                      Remove
+                      {copy.remove}
                     </Button>
                   </Stack>
 
@@ -453,7 +555,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
                     <TextField
                       type="number"
-                      label="Quantity (g)"
+                      label={copy.quantity}
                       value={item.quantity}
                       onChange={(event) => {
                         const nextQuantity = Number(event.target.value) || 0;
@@ -465,7 +567,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                       inputProps={{ min: 1, step: 5 }}
                     />
                     <Chip
-                      label={`Entry ${(item.product.nutrients.calories * item.quantity / 100).toFixed(0)} kcal`}
+                      label={`${copy.entryCalories} ${(
+                        (item.product.nutrients.calories * item.quantity) /
+                        100
+                      ).toFixed(0)} kcal`}
                       variant="outlined"
                       sx={{ alignSelf: "center" }}
                     />
@@ -500,13 +605,13 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                         });
                       }}
                     >
-                      Duplicate
+                      {copy.duplicate}
                     </Button>
                   </Stack>
 
                   <Divider />
 
-                  <Typography sx={{ fontWeight: 700 }}>Nutrition per 100 g</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>{copy.nutritionPer100g}</Typography>
                   <Box
                     sx={{
                       display: "grid",
@@ -515,10 +620,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                     }}
                   >
                     {[
-                      { key: "calories", label: "Kcal", step: 1 },
-                      { key: "protein", label: "Protein", step: 0.5 },
-                      { key: "fat", label: "Fat", step: 0.5 },
-                      { key: "carbs", label: "Carbs", step: 0.5 },
+                      { key: "calories", label: copy.kcal, step: 1 },
+                      { key: "protein", label: copy.protein, step: 0.5 },
+                      { key: "fat", label: copy.fat, step: 0.5 },
+                      { key: "carbs", label: copy.carbs, step: 0.5 },
                     ].map((field) => (
                       <TextField
                         key={`${item.id}-${field.key}`}
@@ -546,26 +651,26 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
                   {item.alternatives.length > 1 && (
                     <Stack spacing={1}>
-                      <Typography sx={{ fontWeight: 700 }}>Catalog matches</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>{copy.catalogMatches}</Typography>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      {item.alternatives.map((alternative) => (
-                        <Chip
-                          key={`${item.id}-${alternative.id}`}
-                          clickable
-                          label={alternative.name}
-                          variant={
-                            alternative.id === item.product.id ? "filled" : "outlined"
-                          }
-                          onClick={() => {
-                            updateDraftItem(item.id, (draftItem) => ({
-                              ...draftItem,
-                              product: alternative,
-                              usesManualEstimate: false,
-                            }));
-                          }}
-                        />
-                      ))}
-                    </Stack>
+                        {item.alternatives.map((alternative) => (
+                          <Chip
+                            key={`${item.id}-${alternative.id}`}
+                            clickable
+                            label={alternative.name}
+                            variant={
+                              alternative.id === item.product.id ? "filled" : "outlined"
+                            }
+                            onClick={() => {
+                              updateDraftItem(item.id, (draftItem) => ({
+                                ...draftItem,
+                                product: alternative,
+                                usesManualEstimate: false,
+                              }));
+                            }}
+                          />
+                        ))}
+                      </Stack>
                     </Stack>
                   )}
                 </Stack>
@@ -579,7 +684,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
               }}
               sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
             >
-              Add missing food manually
+              {copy.addMissingFood}
             </Button>
 
             <Button
@@ -594,7 +699,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              Add reviewed foods to diary
+              {copy.addToDiary}
             </Button>
           </Stack>
         )}

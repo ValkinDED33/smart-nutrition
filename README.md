@@ -12,6 +12,7 @@ The current codebase is a strong frontend MVP with:
 - meal logging, recipes, templates, saved foods, and grouped meal history
 - barcode scanning with Open Food Facts and local fallback data
 - free photo meal draft mode with mandatory manual review
+- dashboard assistant runtime with quick questions, follow-up chips, remote AI fallback, and persistent cloud conversation memory
 - weight trend view, daily overviews, and recommendation cards
 - avatar presets plus custom avatar upload with automatic resize/compression
 - account export and delete-account controls
@@ -25,6 +26,7 @@ The current codebase is a strong frontend MVP with:
 The main roadmap for taking this project from MVP to "best possible" nutrition tracker lives here:
 
 - [ROADMAP.md](./ROADMAP.md)
+- [PRODUCT_ARCHITECTURE_BLUEPRINT.md](./PRODUCT_ARCHITECTURE_BLUEPRINT.md)
 
 That roadmap covers:
 
@@ -34,6 +36,7 @@ That roadmap covers:
 - stronger recommendation engine
 - photo logging with confidence and manual correction
 - notifications, integrations, and scalability work
+- target modular architecture for the expanded nutrition + AI + community product
 
 ## Getting started
 
@@ -68,6 +71,13 @@ Set at least:
 - `NODE_ENV`
 - `SMART_NUTRITION_DB_PATH` if you do not want the default SQLite location
 
+Optional assistant runtime upgrade:
+
+- `SMART_NUTRITION_ASSISTANT_API_KEY`
+- `SMART_NUTRITION_ASSISTANT_MODEL`
+- `SMART_NUTRITION_ASSISTANT_BASE_URL`
+- `SMART_NUTRITION_ASSISTANT_API_PATH`
+
 ## Docker
 
 The repository now includes a single-container deployment baseline:
@@ -96,10 +106,12 @@ npm run test
 
 ## Notes
 
-- The current build does not require any paid API keys.
+- The current build does not require any paid API keys for the default local-preview flow.
 - Open Food Facts works directly from the browser and does not require `.env`.
 - Product lookup is Europe-first: local products first, then Open Food Facts.
 - Photo logging is now a free draft/review flow rather than paid AI vision recognition.
+- Assistant Runtime now uses a provider layer with honest fallback: local contextual answers stay available, and a remote AI runtime can be enabled through the backend without rewriting the UI.
+- When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/assistant-runtime`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
 - If the backend on `http://localhost:8787` is available, the app prefers remote auth and cloud snapshots automatically.
 - If the backend on `http://localhost:8787` is available, the app prefers remote auth and syncs profile/meal state through dedicated backend endpoints automatically.
 - Remote mode now keeps a cached cloud snapshot/meta locally, so session restore and cloud status stay responsive even through short backend interruptions.
@@ -110,4 +122,5 @@ npm run test
 - The backend now uses SQLite at `server/data/smart-nutrition.sqlite` and can migrate data from the old `server/data/db.json` format if that file exists locally.
 - Server state is no longer stored only as one snapshot blob: profile and meal data are also persisted in normalized SQLite tables and exposed through `/api/profile-state` and `/api/meal-state`.
 - Auth now sits behind a provider layer, so backend/cloud auth can replace the local provider without rewriting the pages.
-- The roadmap priority is to move next toward backend auth, cloud sync, and production data safety.
+- Assistant runtime now also sits behind a provider layer: local contextual answers stay available, while remote AI can be enabled with persisted cloud memory when configured.
+- The roadmap priority is now to move next toward proactive coaching, production-grade photo recognition, and cloud hardening.

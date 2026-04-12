@@ -94,9 +94,12 @@ export const ProductCard = ({
       />
       <CardContent sx={{ height: "100%" }}>
         <Stack spacing={1.2} sx={{ height: "100%" }}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            {displayName}
-          </Typography>
+          <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              {displayName}
+            </Typography>
+            {isSaved && <Typography sx={{ fontSize: "1.2rem" }}>⭐</Typography>}
+          </Stack>
 
           {(product.brand || product.source) && (
             <Typography variant="body2" color="text.secondary">
@@ -142,7 +145,7 @@ export const ProductCard = ({
                 onClick={handleToggleSave}
                 sx={{ alignSelf: "stretch" }}
               >
-                {isSaved ? t("productCard.remove") : t("productCard.save")}
+                {isSaved ? "⭐ " + t("productCard.remove") : "☆ " + t("productCard.save")}
               </Button>
             )}
           </Stack>

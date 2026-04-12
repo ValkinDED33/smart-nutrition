@@ -62,6 +62,22 @@ export class AuthApiError extends Error {
   }
 }
 
+export class PlatformApiError extends Error {
+  constructor(code, message, details = undefined) {
+    super(message);
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export class AssistantApiError extends Error {
+  constructor(code, message, details = undefined) {
+    super(message);
+    this.code = code;
+    this.details = details;
+  }
+}
+
 export class StateApiError extends Error {
   constructor(code, message, details = undefined) {
     super(message);
@@ -69,6 +85,20 @@ export class StateApiError extends Error {
     this.details = details;
   }
 }
+
+export const userRoles = ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"];
+
+export const isUserRole = (value) => userRoles.includes(value);
+
+const roleRank = {
+  USER: 0,
+  MODERATOR: 1,
+  ADMIN: 2,
+  SUPER_ADMIN: 3,
+};
+
+export const hasRoleAtLeast = (role, minimumRole) =>
+  roleRank[role] >= roleRank[minimumRole];
 
 const base64UrlEncode = (value) => Buffer.from(value).toString("base64url");
 
@@ -353,4 +383,7 @@ export const toPublicUser = (user) => ({
   activity: user.activity,
   goal: user.goal,
   measurements: user.measurements,
+  role: isUserRole(user.role) ? user.role : "USER",
+  twoFactorEnabled: Boolean(user.twoFactorEnabled),
+  twoFactorRequired: Boolean(user.twoFactorRequired),
 });

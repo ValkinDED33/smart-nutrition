@@ -12,10 +12,10 @@ import { selectMealItems } from "./selectors";
 
 const coachCopy = {
   uk: {
-    title: "Nutrition Coach",
+    title: "Харчовий коуч",
     subtitle: (name: string) =>
-      `${name} переглянув останні 7 днів і визначив, що найбільше впливає на результат прямо зараз.`,
-    score: "Coach score",
+      `${name} переглянув останні 7 днів і підсвітив, що зараз найсильніше впливає на результат.`,
+    score: "Оцінка коуча",
     focus: "Головний фокус",
     nextAction: "Наступна дія",
     stats: {
@@ -34,38 +34,38 @@ const coachCopy = {
       logging_low: {
         title: "Логування ще нестабільне",
         detail: (analysis: NutritionCoachAnalysis) =>
-          `Зафіксовано лише ${analysis.daysLogged} із 7 останніх днів. Поки даних мало, рекомендації будуть менш точними.`,
-        action: "Закрийте мінімум 4 повні дні харчового щоденника цього тижня.",
+          `Зафіксовано лише ${analysis.daysLogged} із 7 останніх днів. Поки даних мало, рекомендації менш точні.`,
+        action: "Закрийте щонайменше 4 повні дні щоденника цього тижня.",
       },
       protein_low: {
         title: "Білка замало для поточної мети",
         detail: (analysis: NutritionCoachAnalysis) =>
-          `У середньому ${analysis.averageProtein.toFixed(0)} г білка проти цілі ${analysis.proteinTarget.toFixed(0)} г.`,
+          `У середньому ${analysis.averageProtein.toFixed(0)} г білка при цілі ${analysis.proteinTarget.toFixed(0)} г.`,
         action: "Додайте ще один чіткий білковий прийом їжі або перекус щодня.",
       },
       fiber_low: {
         title: "Клітковина просідає",
         detail: (analysis: NutritionCoachAnalysis) =>
-          `У середньому ${analysis.averageFiber.toFixed(0)} г клітковини проти базової цілі ${analysis.fiberTarget} г.`,
+          `У середньому ${analysis.averageFiber.toFixed(0)} г клітковини при базовій цілі ${analysis.fiberTarget} г.`,
         action: "Підніміть овочі, бобові, фрукти або цільні зерна в одному з прийомів їжі.",
       },
       calories_high: {
         title: "Середні калорії вище цілі",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Тижневий середній рівень ${analysis.averageCalories.toFixed(0)} ккал при цілі ${analysis.calorieTarget.toFixed(0)} ккал.`,
-        action: "Почніть з корекції одного найкалорійнішого прийому їжі, а не всього дня одразу.",
+        action: "Почніть із корекції одного найкалорійнішого прийому їжі, а не всього дня одразу.",
       },
       calories_low: {
         title: "Середні калорії нижче цілі",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Тижневий середній рівень ${analysis.averageCalories.toFixed(0)} ккал при цілі ${analysis.calorieTarget.toFixed(0)} ккал.`,
-        action: "Додайте стабільний прийом їжі або один щільний перекус у найслабший час дня.",
+        action: "Додайте стабільний прийом їжі або один щільніший перекус у найслабший час дня.",
       },
       meal_pattern: {
         title: "Ритм прийомів їжі нерівний",
         detail: (analysis: NutritionCoachAnalysis) =>
           `У середньому лише ${analysis.averageMeals.toFixed(1)} повноцінних слотів їжі на день із логами.`,
-        action: "Вирівняйте хоча б 3 харчові точки: сніданок, обід і вечерю.",
+        action: "Вирівняйте хоча б 3 базові точки: сніданок, обід і вечерю.",
       },
       weight_trend: {
         title: "Тренд ваги не підтримує ціль",
@@ -82,10 +82,10 @@ const coachCopy = {
     },
   },
   pl: {
-    title: "Nutrition Coach",
+    title: "Coach żywieniowy",
     subtitle: (name: string) =>
       `${name} przejrzał ostatnie 7 dni i wskazał, co teraz najmocniej wpływa na wynik.`,
-    score: "Coach score",
+    score: "Ocena coacha",
     focus: "Główny fokus",
     nextAction: "Następny krok",
     stats: {
@@ -309,3 +309,5 @@ export const NutritionCoachCard = () => {
     </Paper>
   );
 };
+
+export default NutritionCoachCard;

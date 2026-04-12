@@ -1,5 +1,6 @@
 import type { Product } from "../types/product";
 import { createEmptyNutrients } from "./nutrients";
+import { fuzzySearchProducts } from "./fuzzySearch";
 
 interface LocalProductRecord {
   product: Product;
@@ -910,15 +911,73 @@ const localizedAliasesById: Record<string, string[]> = {
 const getSearchCandidates = (record: LocalProductRecord) =>
   dedupeNormalizedValues(
     [
-    record.product.name,
-    record.product.brand,
-    ...record.aliases,
-    ...(localizedAliasesById[record.product.id] ?? []),
+      record.product.name,
+      record.product.brand,
+      ...record.aliases,
+      ...(localizedAliasesById[record.product.id] ?? []),
     ]
       .filter(Boolean)
       .map((value) => normalizeSearchText(String(value)))
       .filter(Boolean)
   );
+
+const semanticProteinTokens = new Set([
+  "protein",
+  "proteins",
+  "proteinowy",
+  "proteinova",
+  "proteinyi",
+  "proteiin",
+  "bilok",
+  "białko",
+  "bialko",
+  "белок",
+  "білок",
+]);
+
+const createTokenGroups = (tokens: string[]) =>
+  tokens.map((token) =>
+    dedupeNormalizedValues([
+      token,
+      ...(searchTokenExpansions[token] ?? []).map((value) => normalizeSearchText(value)),
+    ])
+  );
+
+const recordMatchesIntentToken = (
+  record: LocalProductRecord,
+  candidates: string[],
+  haystackTokens: string[],
+  token: string
+) => {
+  if (
+    candidates.some(
+      (candidate) =>
+        candidate === token ||
+        candidate.includes(token) ||
+        candidate.split(/\s+/).some((candidateToken) => candidateToken === token)
+    )
+  ) {
+    return true;
+  }
+
+  if (semanticProteinTokens.has(token)) {
+    return record.product.nutrients.protein >= 8;
+  }
+
+  if (token === "greek") {
+    return (
+      record.product.facts?.foodGroup === "dairy" &&
+      haystackTokens.some(
+        (candidateToken) =>
+          candidateToken === "yogurt" ||
+          candidateToken === "yoghurt" ||
+          candidateToken === "jogurt"
+      )
+    );
+  }
+
+  return false;
+};
 
 export const mockProducts: Product[] = catalog.map((record) => record.product);
 
@@ -940,6 +999,22 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
   const exactTokens = normalizedQuery.split(/\s+/).filter(Boolean);
   const expandedQueries = expandSearchQueries(normalizedQuery);
   const expandedTokens = expandSearchTokens(normalizedQuery);
+  const tokenGroups = createTokenGroups(exactTokens);
+  const fuzzyScoreById = new Map(
+    fuzzySearchProducts(
+      query,
+      catalog.map((record) => ({
+        id: record.product.id,
+        name: getSearchCandidates(record).join(" "),
+        brand: record.product.brand,
+      })),
+      limit * 4
+    ).map((result, index) => [
+      result.item.id,
+      result.score / 4 + Math.max(0, 4 - index),
+    ])
+  );
+  const queryWantsProtein = expandedTokens.some((token) => semanticProteinTokens.has(token));
 
   return catalog
     .map((record) => {
@@ -947,6 +1022,9 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
       const haystack = candidates.join(" ");
       const haystackTokens = haystack.split(/\s+/).filter(Boolean);
       const normalizedName = normalizeSearchText(record.product.name);
+      const matchedIntentGroups = tokenGroups.filter((group) =>
+        group.some((token) => recordMatchesIntentToken(record, candidates, haystackTokens, token))
+      ).length;
       const exactName = normalizedName === normalizedQuery ? 12 : 0;
       const exactCandidate = candidates.some((candidate) => candidate === normalizedQuery)
         ? 10
@@ -1000,11 +1078,23 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
         if (closestDistance === 2 && token.length >= 5) return score + 1;
         return score;
       }, 0);
+      const intentCoverageScore = matchedIntentGroups * 4;
+      const fullIntentBonus =
+        tokenGroups.length > 1 && matchedIntentGroups === tokenGroups.length ? 6 : 0;
+      const proteinSpecificityBoost =
+        queryWantsProtein &&
+        matchedIntentGroups > 0 &&
+        record.product.nutrients.protein > 0
+          ? (record.product.nutrients.protein / Math.max(record.product.nutrients.calories, 1)) *
+            120
+          : 0;
       const featuredBoost = record.featured ? 0.5 : 0;
+      const blendedFuzzyScore = fuzzyScoreById.get(record.product.id) ?? 0;
 
       return {
         product: record.product,
         score:
+          blendedFuzzyScore +
           exactName +
           exactCandidate +
           exactExpandedQuery +
@@ -1016,6 +1106,9 @@ export const searchLocalProducts = (query: string, limit = 18): Product[] => {
           expandedMatchedTokens +
           wordPrefixScore +
           fuzzyScore +
+          intentCoverageScore +
+          fullIntentBonus +
+          proteinSpecificityBoost +
           featuredBoost,
       };
     })

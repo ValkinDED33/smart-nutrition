@@ -7,8 +7,8 @@ import { useLanguage } from "../language";
 
 const snackbarCopy = {
   uk: {
-    retrySuccess: "Cloud sync completed successfully.",
-    outboxFlushed: "Queued local changes have been synced.",
+    retrySuccess: "Хмарна синхронізація завершилася успішно.",
+    outboxFlushed: "Зміни з локальної черги синхронізовано.",
   },
   pl: {
     retrySuccess: "Synchronizacja z chmura zakonczona pomyslnie.",

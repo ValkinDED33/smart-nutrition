@@ -26,12 +26,12 @@ The current project already has a strong MVP foundation:
 
 Main blockers that still prevent a "best possible" product:
 
-- auth is browser-only, not production secure
-- no cloud sync or cross-device data layer
-- no fuzzy search or restaurant/home-dish knowledge layer
-- no photo recognition pipeline
-- no reminders / notifications / habits engine
-- no production integrations, backups, or account deletion flow
+- remote auth and cloud sync exist, but still need production hardening and observability
+- fuzzy search exists, but product intelligence still needs broader restaurant/home-dish knowledge
+- photo logging is still a draft/manual-review flow, not production recognition
+- reminders and habit nudges exist, but orchestration is still lightweight
+- assistant runtime now supports remote AI and memory, but proactive coaching and cloud hardening are still missing
+- external integrations such as Google Fit / Apple Health are still missing
 
 ## Requirement matrix
 
@@ -42,15 +42,16 @@ Main blockers that still prevent a "best possible" product:
 | Core food logging | Good MVP | Inline edit-anything flow, fewer taps, restaurant and homemade dish shortcuts | P1 |
 | Calories and macros | Good | Needs stronger validation and easier correction UX | P1 |
 | Micronutrients | Partial | Needs richer daily/weekly micronutrient reporting and deficiency flags | P1 |
-| Product search | Partial | Fuzzy search, typo tolerance, synonyms, restaurant coverage, home dish taxonomy | P1 |
+| Product search | Good MVP | Expand restaurant coverage, home dish taxonomy, and richer ranking logic | P1 |
 | Barcode scanning | Good MVP | Offline cache, better EU coverage, source confidence, faster retry UX | P1 |
 | Recipes and meal plans | Partial | Real goal-based plans, recipe import, plan recommendations | P2 |
 | Analytics | Partial | Month view, deviation analysis, cleaner charts, progress dashboards | P1 |
 | Recommendations | Basic rules-based | Goal-aware scoring engine with specific corrective suggestions | P1 |
-| Photo logging | Missing | Vision pipeline, confidence score, editable estimate, portion correction | P2 |
-| Notifications | Missing | Reminders, habit nudges, under/over target alerts, preferences | P2 |
-| Security and account data | Missing for production | JWT/OAuth, backend auth, account deletion, backups, audit-safe storage | P0 |
-| Sync | Missing | Cloud database, real-time sync, multi-device consistency | P0 |
+| Photo logging | Draft/manual-review flow | Production-grade recognition, confidence score, editable estimate, portion correction | P2 |
+| Notifications | Basic reminders and nudges | Rich orchestration, better preference logic, and smarter timing | P2 |
+| Security and account data | Production baseline | Hardening, stronger auth paths, audit-safe storage, observability | P0 |
+| Sync | Cloud sync MVP | Real-time consistency hardening, better conflict handling, stronger resilience | P0 |
+| Assistant runtime | Local runtime plus remote AI fallback and persisted cloud memory | Stronger proactive coaching, richer nudges, and production telemetry | P0 |
 | Integrations | Missing | Apple Health, Google Fit, wearable activity import, API connectors | P2 |
 | Scalability | Missing | API-first backend, observability, queue jobs, caching, rate limiting | P0 |
 
@@ -154,13 +155,11 @@ The long-term target should be:
 
 ## Immediate next build order
 
-1. Backend auth + cloud data model
-2. Account deletion + secure storage
-3. Fuzzy search and restaurant/home dish coverage
-4. Monthly analytics and deviation dashboard
-5. Recommendation engine upgrade
-6. Photo logging pipeline with confidence and manual correction
-7. Notifications and integrations
+1. Observability and cloud hardening
+2. Production photo recognition pipeline
+3. Stronger product intelligence and restaurant/home-dish coverage
+4. Richer reminders, nudges, and proactive coaching
+5. Google Fit / Apple Health integrations
 
 ## Definition of done for the "best possible" target
 

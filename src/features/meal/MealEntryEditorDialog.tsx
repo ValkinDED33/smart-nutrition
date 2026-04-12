@@ -21,6 +21,7 @@ import { selectRecentProducts, selectSavedProducts } from "./selectors";
 import { productMatchesPreferences } from "../../shared/lib/preferences";
 import { removeProduct, updateMealEntry } from "./mealSlice";
 import { useLanguage } from "../../shared/language";
+import { searchLocalProducts } from "../../shared/lib/mockProducts";
 
 interface Props {
   entry: MealEntry;
@@ -30,9 +31,37 @@ const createProductKey = (product: Product) =>
   product.barcode?.trim() ||
   `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
 
+const editorCopy = {
+  uk: {
+    edit: "Редагувати",
+    editTitle: "Редагування запису",
+    mealType: "Тип прийому їжі",
+    replaceProduct: "Замінити продукт",
+    replacePlaceholder: "Пошук за назвою, брендом або аліасом",
+    selected: "Обрано",
+    select: "Використати",
+    cancel: "Скасувати",
+    save: "Зберегти",
+    noMatches: "Не знайдено відповідних локальних або віддалених продуктів.",
+  },
+  pl: {
+    edit: "Edytuj",
+    editTitle: "Edycja wpisu",
+    mealType: "Typ posiłku",
+    replaceProduct: "Zamień produkt",
+    replacePlaceholder: "Szukaj po nazwie, marce lub aliasie",
+    selected: "Wybrano",
+    select: "Użyj",
+    cancel: "Anuluj",
+    save: "Zapisz",
+    noMatches: "Nie znaleziono pasujących produktów lokalnych ani zdalnych.",
+  },
+} as const;
+
 export const MealEntryEditorDialog = ({ entry }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { language, t } = useLanguage();
+  const copy = editorCopy[language];
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const preferences = useSelector((state: RootState) => ({
@@ -44,7 +73,7 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [quantity, setQuantity] = useState(entry.quantity);
+  const [quantity, setQuantity] = useState<number | "">(entry.quantity);
   const [mealType, setMealType] = useState<MealType>(entry.mealType);
   const [selectedProduct, setSelectedProduct] = useState<Product>(entry.product);
 
@@ -84,11 +113,27 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
     snack: t("mealType.snack"),
   };
 
+  const localSearchResults = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [];
+    }
+
+    return searchLocalProducts(searchQuery, 10).filter((product) =>
+      productMatchesPreferences(product, preferences)
+    );
+  }, [preferences, searchQuery]);
+
   const candidateProducts = useMemo(() => {
     const merged = new Map<string, Product>();
     const searchableResults = searchQuery.trim() ? searchResults : [];
 
-    [entry.product, ...recentProducts, ...savedProducts, ...searchableResults].forEach((product) => {
+    [
+      entry.product,
+      ...localSearchResults,
+      ...recentProducts,
+      ...savedProducts,
+      ...searchableResults,
+    ].forEach((product) => {
       if (!productMatchesPreferences(product, preferences)) {
         return;
       }
@@ -101,10 +146,18 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
     });
 
     return [...merged.values()].slice(0, 8);
-  }, [entry.product, preferences, recentProducts, savedProducts, searchQuery, searchResults]);
+  }, [
+    entry.product,
+    localSearchResults,
+    preferences,
+    recentProducts,
+    savedProducts,
+    searchQuery,
+    searchResults,
+  ]);
 
   const handleSave = () => {
-    if (quantity <= 0) {
+    if (!quantity || quantity <= 0) {
       return;
     }
 
@@ -112,7 +165,7 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
       updateMealEntry({
         id: entry.id,
         product: selectedProduct,
-        quantity,
+        quantity: typeof quantity === "string" ? 1 : quantity,
         mealType,
       })
     );
@@ -124,14 +177,14 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
   return (
     <>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-        <Button onClick={handleOpen}>Edit</Button>
+        <Button onClick={handleOpen}>{copy.edit}</Button>
         <Button color="error" onClick={() => dispatch(removeProduct(entry.id))}>
           {t("mealBuilder.remove")}
         </Button>
       </Stack>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit meal entry</DialogTitle>
+        <DialogTitle>{copy.editTitle}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 3 }}>
@@ -149,13 +202,16 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
               type="number"
               label={`${t("meal.quantity")} (${selectedProduct.unit})`}
               value={quantity}
-              onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))}
+              onChange={(event) => {
+                const value = event.target.value;
+                setQuantity(value === "" ? "" : Math.max(1, Number(value) || 1));
+              }}
               inputProps={{ min: 1, step: selectedProduct.unit === "piece" ? 1 : 0.1 }}
             />
 
             <TextField
               select
-              label="Meal type"
+              label={copy.mealType}
               value={mealType}
               onChange={(event) => setMealType(event.target.value as MealType)}
             >
@@ -167,60 +223,64 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
             </TextField>
 
             <TextField
-              label="Replace product"
+              label={copy.replaceProduct}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search by name or brand"
+              placeholder={copy.replacePlaceholder}
             />
 
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 700 }}>
-                Selected: {getProductDisplayName(selectedProduct, language)}
+                {copy.selected}: {getProductDisplayName(selectedProduct, language)}
               </Typography>
-              {candidateProducts.map((product) => {
-                const active = createProductKey(product) === createProductKey(selectedProduct);
+              {candidateProducts.length === 0 ? (
+                <Typography color="text.secondary">{copy.noMatches}</Typography>
+              ) : (
+                candidateProducts.map((product) => {
+                  const active = createProductKey(product) === createProductKey(selectedProduct);
 
-                return (
-                  <Paper
-                    key={createProductKey(product)}
-                    variant="outlined"
-                    sx={{
-                      p: 1.25,
-                      borderRadius: 3,
-                      borderColor: active ? "primary.main" : "rgba(15, 23, 42, 0.12)",
-                    }}
-                  >
-                    <Stack
-                      direction={{ xs: "column", sm: "row" }}
-                      spacing={1}
-                      justifyContent="space-between"
-                      alignItems={{ xs: "flex-start", sm: "center" }}
+                  return (
+                    <Paper
+                      key={createProductKey(product)}
+                      variant="outlined"
+                      sx={{
+                        p: 1.25,
+                        borderRadius: 3,
+                        borderColor: active ? "primary.main" : "rgba(15, 23, 42, 0.12)",
+                      }}
                     >
-                      <Stack spacing={0.3}>
-                        <Typography sx={{ fontWeight: 700 }}>
-                          {getProductDisplayName(product, language)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {product.nutrients.calories.toFixed(0)} {t("common.kcal")} / {product.unit}
-                        </Typography>
-                      </Stack>
-                      <Button
-                        variant={active ? "contained" : "outlined"}
-                        onClick={() => setSelectedProduct(product)}
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "flex-start", sm: "center" }}
                       >
-                        {active ? "Selected" : "Use"}
-                      </Button>
-                    </Stack>
-                  </Paper>
-                );
-              })}
+                        <Stack spacing={0.3}>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            {getProductDisplayName(product, language)}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {product.nutrients.calories.toFixed(0)} {t("common.kcal")} / {product.unit}
+                          </Typography>
+                        </Stack>
+                        <Button
+                          variant={active ? "contained" : "outlined"}
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          {active ? copy.selected : copy.select}
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  );
+                })
+              )}
             </Stack>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>{copy.cancel}</Button>
           <Button variant="contained" onClick={handleSave}>
-            Save
+            {copy.save}
           </Button>
         </DialogActions>
       </Dialog>

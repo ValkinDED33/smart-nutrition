@@ -14,10 +14,10 @@ import type { MealType } from "../../shared/types/meal";
 
 const copyByLanguage = {
   uk: {
-    title: "Behavior personalization",
+    title: "Персоналізація звичок",
     subtitle: (name: string) =>
-      `${name} переглянув ваші патерни логування та підготував персональні часові підказки й фокус на звички.`,
-    score: "Behavior score",
+      `${name} переглянув ваші патерни логування та підготував персональні часові підказки і фокус на звички.`,
+    score: "Оцінка ритму",
     activeDays: "Активних днів",
     currentStreak: "Поточна серія",
     bestStreak: "Найкраща серія",
@@ -25,9 +25,11 @@ const copyByLanguage = {
     weakest: "Найслабша звичка",
     averageTime: "Середній час",
     reminder: "Поточне нагадування",
-    suggested: "Рекомендоване",
+    suggested: "Рекомендований час",
     apply: "Застосувати розумний розклад",
     noSuggestion: "Ще замало даних для нової рекомендації",
+    consistency: "стабільність",
+    minutes: "хв",
     statuses: {
       strong: "Ритм сильний",
       steady: "Ритм формується",
@@ -38,7 +40,7 @@ const copyByLanguage = {
     title: "Personalizacja zachowań",
     subtitle: (name: string) =>
       `${name} przeanalizował Twoje wzorce logowania i przygotował osobiste podpowiedzi czasowe oraz fokus na nawyki.`,
-    score: "Behavior score",
+    score: "Ocena rytmu",
     activeDays: "Aktywne dni",
     currentStreak: "Aktualna seria",
     bestStreak: "Najlepsza seria",
@@ -46,9 +48,11 @@ const copyByLanguage = {
     weakest: "Najsłabszy nawyk",
     averageTime: "Średnia pora",
     reminder: "Obecne przypomnienie",
-    suggested: "Rekomendacja",
+    suggested: "Rekomendowany czas",
     apply: "Zastosuj inteligentny harmonogram",
     noSuggestion: "Za mało danych na nową rekomendację",
+    consistency: "stabilność",
+    minutes: "min",
     statuses: {
       strong: "Rytm jest mocny",
       steady: "Rytm się buduje",
@@ -173,12 +177,18 @@ export const BehaviorPersonalizationCard = () => {
                   </Typography>
                   <Typography color="text.secondary">
                     {copy.suggested}: {analysis.suggestedReminderTimes[mealType]}
-                    {habit.hasSuggestion ? ` (${shiftPrefix}${shift} min)` : ""}
+                    {habit.hasSuggestion ? ` (${shiftPrefix}${shift} ${copy.minutes})` : ""}
                   </Typography>
                   <Chip
                     size="small"
-                    label={`${Math.round(habit.consistency * 100)}% consistency`}
-                    color={habit.consistency >= 0.75 ? "success" : habit.consistency >= 0.45 ? "info" : "warning"}
+                    label={`${Math.round(habit.consistency * 100)}% ${copy.consistency}`}
+                    color={
+                      habit.consistency >= 0.75
+                        ? "success"
+                        : habit.consistency >= 0.45
+                          ? "info"
+                          : "warning"
+                    }
                     sx={{ alignSelf: "flex-start" }}
                   />
                 </Stack>
@@ -211,3 +221,5 @@ export const BehaviorPersonalizationCard = () => {
     </Paper>
   );
 };
+
+export default BehaviorPersonalizationCard;

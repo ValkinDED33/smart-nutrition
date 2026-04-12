@@ -149,7 +149,7 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={3}>
-          <YesterdayRepeater mealType={mealType} />
+          <YesterdayRepeater />
           <QuickMealComposer mealType={mealType} />
           <QuickProductShelf mealType={mealType} />
           <TemplateVault mealType={mealType} />
