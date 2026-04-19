@@ -21,6 +21,7 @@ import SyncStatusChip from "../components/SyncStatusChip";
 import SyncOutboxAgent from "../components/SyncOutboxAgent";
 import SyncFeedbackSnackbar from "../components/SyncFeedbackSnackbar";
 import HabitReminderAgent from "../components/HabitReminderAgent";
+import { ContextAssistantWidget } from "../components/ContextAssistantWidget";
 import LocalRealtimeSyncAgent from "../components/LocalRealtimeSyncAgent";
 import RemoteStatePullAgent from "../components/RemoteStatePullAgent";
 import { clearSyncOutbox } from "../lib/syncOutbox";
@@ -258,6 +259,7 @@ const Layout = () => {
       <LocalRealtimeSyncAgent />
       <RemoteStatePullAgent />
       <HabitReminderAgent />
+      <ContextAssistantWidget />
     </Box>
   );
 };

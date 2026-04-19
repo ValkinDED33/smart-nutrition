@@ -17,6 +17,7 @@ import { CloudSyncStatusCard } from "../features/profile/CloudSyncStatusCard";
 import MotivationHubCard from "../features/profile/MotivationHubCard";
 import AssistantCustomizationCard from "../features/profile/AssistantCustomizationCard";
 import { BehaviorPersonalizationCard } from "../features/profile/BehaviorPersonalizationCard";
+import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
 import { useLanguage } from "../shared/language";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
@@ -286,6 +287,8 @@ const ProfilePage = () => {
       </Box>
 
       <WeightTrendCard />
+
+      <MeasurementsCheckInCard />
 
       <BehaviorPersonalizationCard />
 

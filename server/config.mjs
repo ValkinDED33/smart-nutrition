@@ -466,6 +466,13 @@ export const createServerConfig = (env = process.env) => {
     "SMART_NUTRITION_REFRESH_TTL_MS",
     errors
   );
+  const passwordResetTokenTtlMs = readPositiveInteger(
+    env.SMART_NUTRITION_PASSWORD_RESET_TTL_MS,
+    1000 * 60 * 60,
+    "SMART_NUTRITION_PASSWORD_RESET_TTL_MS",
+    errors,
+    { min: 60_000 }
+  );
   const backupIntervalMs = readPositiveInteger(
     env.SMART_NUTRITION_BACKUP_INTERVAL_MS,
     1000 * 60 * 10,
@@ -612,6 +619,7 @@ export const createServerConfig = (env = process.env) => {
     port,
     accessTokenTtlMs,
     refreshTokenTtlMs,
+    passwordResetTokenTtlMs,
     maxLoginAttempts: 5,
     loginLockMs: 1000 * 60 * 5,
     passwordIterations,

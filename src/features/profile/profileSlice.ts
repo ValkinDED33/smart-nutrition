@@ -24,11 +24,13 @@ import type {
   AssistantTone,
   AchievementProgress,
   DietStyle,
+  MeasurementHistoryItem,
   MotivationHistoryItem,
   MotivationState,
   MotivationTask,
   MotivationTaskCategory,
   ReminderTimes,
+  WeeklyCheckInState,
 } from "../../shared/types/profile";
 import type { AppLanguage } from "../../shared/types/i18n";
 
@@ -41,6 +43,8 @@ export interface ProfileState {
   dailyCalories: number;
   goal: Goal;
   weightHistory: WeightHistoryItem[];
+  measurementHistory: MeasurementHistoryItem[];
+  weeklyCheckIn: WeeklyCheckInState;
   maintenanceCalories: number;
   adaptiveCalories: number | null;
   targetWeight: number | null;
@@ -142,6 +146,49 @@ const normalizeWeightHistory = (value: unknown): WeightHistoryItem[] =>
         })
         .filter((item): item is WeightHistoryItem => item !== null)
     : [];
+
+const createDefaultWeeklyCheckInState = (): WeeklyCheckInState => ({
+  enabled: true,
+  remindIntervalDays: 7,
+  lastRecordedAt: null,
+});
+
+const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.reduce<MeasurementHistoryItem[]>((history, item) => {
+    if (!isRecord(item)) {
+      return history;
+    }
+
+    history.push({
+      date:
+        typeof item.date === "string" && item.date.trim().length > 0
+          ? item.date
+          : new Date().toISOString(),
+      weight: toNumber(item.weight),
+      waist: toNullableNumber(item.waist) ?? undefined,
+      hip: toNullableNumber(item.hip) ?? undefined,
+      chest: toNullableNumber(item.chest) ?? undefined,
+    });
+
+    return history;
+  }, []);
+};
+
+const normalizeWeeklyCheckIn = (value: unknown): WeeklyCheckInState => {
+  const fallback = createDefaultWeeklyCheckInState();
+  const record = isRecord(value) ? value : {};
+
+  return {
+    enabled:
+      typeof record.enabled === "boolean" ? record.enabled : fallback.enabled,
+    remindIntervalDays: Math.max(toNumber(record.remindIntervalDays, 7), 1),
+    lastRecordedAt: toNullableIsoDate(record.lastRecordedAt),
+  };
+};
 
 const normalizeMotivationTasks = (value: unknown): MotivationTask[] =>
   Array.isArray(value)
@@ -267,6 +314,8 @@ export const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
   weightHistory: [],
+  measurementHistory: [],
+  weeklyCheckIn: createDefaultWeeklyCheckInState(),
   maintenanceCalories: 0,
   adaptiveCalories: null,
   targetWeight: null,
@@ -289,6 +338,8 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     dailyCalories: toNumber(value.dailyCalories),
     goal: isGoal(value.goal) ? value.goal : "maintain",
     weightHistory: normalizeWeightHistory(value.weightHistory),
+    measurementHistory: normalizeMeasurementHistory(value.measurementHistory),
+    weeklyCheckIn: normalizeWeeklyCheckIn(value.weeklyCheckIn),
     maintenanceCalories: toNumber(value.maintenanceCalories),
     adaptiveCalories: toNullableNumber(value.adaptiveCalories),
     targetWeight: toNullableNumber(value.targetWeight),
@@ -357,6 +408,32 @@ const profileSlice = createSlice({
         date: new Date().toISOString(),
         weight: action.payload,
       });
+    },
+
+    recordMeasurementCheckIn(
+      state,
+      action: PayloadAction<{
+        weight: number;
+        waist?: number;
+        hip?: number;
+        chest?: number;
+        recordedAt?: string;
+      }>
+    ) {
+      const recordedAt = action.payload.recordedAt ?? new Date().toISOString();
+
+      state.weightHistory.push({
+        date: recordedAt,
+        weight: action.payload.weight,
+      });
+      state.measurementHistory.unshift({
+        date: recordedAt,
+        weight: action.payload.weight,
+        waist: action.payload.waist,
+        hip: action.payload.hip,
+        chest: action.payload.chest,
+      });
+      state.weeklyCheckIn.lastRecordedAt = recordedAt;
     },
 
     applyProfileTargets(state, action: PayloadAction<ProfileTargetsPayload>) {
@@ -480,6 +557,8 @@ const profileSlice = createSlice({
       state.dailyCalories = 0;
       state.goal = "maintain";
       state.weightHistory = [];
+      state.measurementHistory = [];
+      state.weeklyCheckIn = createDefaultWeeklyCheckInState();
       state.maintenanceCalories = 0;
       state.adaptiveCalories = null;
       state.targetWeight = null;
@@ -506,6 +585,7 @@ export const {
   setAdaptiveCalories,
   setGoal,
   updateWeight,
+  recordMeasurementCheckIn,
   applyProfileTargets,
   updateNotificationPreferences,
   setProfileLanguage,

@@ -13,6 +13,7 @@ import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
 import { selectDailyMacroProgress } from "../features/profile/selectors";
 import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
 import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
+import { WaterTracker } from "../features/water/WaterTracker";
 
 const macroGoalCopy = {
   uk: {
@@ -232,6 +233,8 @@ const DashboardPage = () => {
           </Box>
         </Stack>
       </Paper>
+
+      <WaterTracker />
 
       <DailyMicronutrientsCard />
       <YesterdayRepeater />

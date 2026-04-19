@@ -45,6 +45,20 @@ export interface AssistantCustomization {
   humorEnabled: boolean;
 }
 
+export interface MeasurementHistoryItem {
+  date: string;
+  weight: number;
+  waist?: number;
+  hip?: number;
+  chest?: number;
+}
+
+export interface WeeklyCheckInState {
+  enabled: boolean;
+  remindIntervalDays: number;
+  lastRecordedAt: string | null;
+}
+
 export interface MotivationTask {
   id: string;
   title: string;

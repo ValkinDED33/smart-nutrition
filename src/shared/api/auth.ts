@@ -30,6 +30,8 @@ export type {
   AccountBackupPayload,
   AccountBackupSummary,
   AccountExportPayload,
+  PasswordResetRequestResult,
+  PasswordResetResult,
 } from "./authProvider";
 export type { RemoteSyncResult };
 export { AuthApiError };
@@ -71,6 +73,16 @@ export const login = async (email: string, password: string) =>
   (await isRemoteAuthAvailable())
     ? remoteAuthProvider.login(email, password)
     : localAuthProvider.login(email, password);
+
+export const requestPasswordReset = async (email: string) =>
+  (await isRemoteAuthAvailable())
+    ? remoteAuthProvider.requestPasswordReset(email)
+    : localAuthProvider.requestPasswordReset(email);
+
+export const resetPassword = async (token: string, password: string) =>
+  (await isRemoteAuthAvailable())
+    ? remoteAuthProvider.resetPassword(token, password)
+    : localAuthProvider.resetPassword(token, password);
 
 export const deleteAccount = (email: string) =>
   isRemoteAuthMode()

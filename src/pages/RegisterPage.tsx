@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  InputAdornment,
   MenuItem,
   Paper,
   Stack,
@@ -27,6 +28,13 @@ import {
 } from "../shared/api/auth";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
+import {
+  clearRegisterDraftHint,
+  readAuthIdentityHint,
+  writeAuthIdentityHint,
+  writeRegisterDraftHint,
+} from "../shared/lib/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 
 type FormData = {
@@ -42,12 +50,27 @@ type FormData = {
   goal: "cut" | "maintain" | "bulk";
 };
 
+const registerPageCopy = {
+  uk: {
+    showPassword: "РџРѕРєР°Р·Р°С‚Рё РїР°СЂРѕР»СЊ",
+    hidePassword: "РЎС…РѕРІР°С‚Рё РїР°СЂРѕР»СЊ",
+  },
+  pl: {
+    showPassword: "PokaЕј hasЕ‚o",
+    hidePassword: "Ukryj hasЕ‚o",
+  },
+} as const;
+
 const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const identityHint = useMemo(() => readAuthIdentityHint(), []);
+  const copy = registerPageCopy[language];
 
   const schema = useMemo(
     () =>
@@ -88,11 +111,16 @@ const RegisterPage = () => {
 
   const {
     register,
+    getValues,
     handleSubmit,
+    reset,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      name: identityHint.name ?? "",
+      email: identityHint.email ?? "",
       gender: "male",
       activity: "moderate",
       goal: "maintain",
@@ -101,6 +129,30 @@ const RegisterPage = () => {
       height: 175,
     },
   });
+
+  const watchedName = watch("name");
+  const watchedEmail = watch("email");
+
+  useEffect(() => {
+    if (!identityHint.name && !identityHint.email) {
+      return;
+    }
+
+    const currentValues = getValues();
+
+    reset({
+      ...currentValues,
+      name: currentValues.name || identityHint.name || "",
+      email: currentValues.email || identityHint.email || "",
+    });
+  }, [getValues, identityHint.email, identityHint.name, reset]);
+
+  useEffect(() => {
+    writeRegisterDraftHint({
+      name: watchedName,
+      email: watchedEmail,
+    });
+  }, [watchedEmail, watchedName]);
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true);
@@ -118,6 +170,11 @@ const RegisterPage = () => {
         activity: data.activity,
         goal: data.goal,
       });
+      writeAuthIdentityHint({
+        name: user.name,
+        email: user.email,
+      });
+      clearRegisterDraftHint();
 
       dispatch(
         setCredentials({
@@ -220,18 +277,44 @@ const RegisterPage = () => {
               <TextField
                 fullWidth
                 label={t("form.password")}
-                type="password"
+                type={passwordVisible ? "text" : "password"}
                 {...register("password")}
                 error={Boolean(errors.password)}
                 helperText={errors.password?.message}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <PasswordVisibilityButton
+                        visible={passwordVisible}
+                        onToggle={() => setPasswordVisible((current) => !current)}
+                        showLabel={copy.showPassword}
+                        hideLabel={copy.hidePassword}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
               />
               <TextField
                 fullWidth
                 label={t("form.confirmPassword")}
-                type="password"
+                type={confirmPasswordVisible ? "text" : "password"}
                 {...register("confirmPassword")}
                 error={Boolean(errors.confirmPassword)}
                 helperText={errors.confirmPassword?.message}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <PasswordVisibilityButton
+                        visible={confirmPasswordVisible}
+                        onToggle={() =>
+                          setConfirmPasswordVisible((current) => !current)
+                        }
+                        showLabel={copy.showPassword}
+                        hideLabel={copy.hidePassword}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Stack>
 

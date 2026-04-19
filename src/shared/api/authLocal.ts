@@ -21,7 +21,12 @@ interface FailedAttemptRecord {
 }
 
 export class AuthApiError extends Error {
-  code: "EMAIL_IN_USE" | "INVALID_CREDENTIALS" | "TOO_MANY_ATTEMPTS";
+  code:
+    | "EMAIL_IN_USE"
+    | "INVALID_CREDENTIALS"
+    | "TOO_MANY_ATTEMPTS"
+    | "INVALID_RESET_TOKEN"
+    | "WEAK_PASSWORD";
 
   constructor(code: AuthApiError["code"], message: string) {
     super(message);
@@ -32,12 +37,23 @@ export class AuthApiError extends Error {
 const USERS_KEY = "smart-nutrition.users";
 const SESSION_KEY = "smart-nutrition.session";
 const ATTEMPTS_KEY = "smart-nutrition.login-attempts";
+const RESET_TOKENS_KEY = "smart-nutrition.password-reset-tokens";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MS = 1000 * 60 * 5;
 const LEGACY_DEMO_USER_ID = "demo-user";
 const PASSWORD_ITERATIONS = 120_000;
 const textEncoder = new TextEncoder();
+const strongPasswordPattern =
+  /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
+
+interface PasswordResetTokenRecord {
+  email: string;
+  token: string;
+  expiresAt: number;
+  createdAt: string;
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -111,6 +127,18 @@ const saveUsers = (users: StoredUserRecord[]) => {
   writeJson(USERS_KEY, users);
 };
 
+const getPasswordResetTokens = () =>
+  readJson<PasswordResetTokenRecord[]>(RESET_TOKENS_KEY, []).filter(
+    (token) => token.expiresAt > Date.now()
+  );
+
+const savePasswordResetTokens = (tokens: PasswordResetTokenRecord[]) => {
+  writeJson(
+    RESET_TOKENS_KEY,
+    tokens.filter((token) => token.expiresAt > Date.now())
+  );
+};
+
 const getAttempts = () => readJson<Record<string, FailedAttemptRecord>>(ATTEMPTS_KEY, {});
 
 const setAttempts = (attempts: Record<string, FailedAttemptRecord>) => {
@@ -121,6 +149,15 @@ const clearAttempts = (email: string) => {
   const attempts = getAttempts();
   delete attempts[email];
   setAttempts(attempts);
+};
+
+const assertStrongPassword = (password: string) => {
+  if (!strongPasswordPattern.test(password)) {
+    throw new AuthApiError(
+      "WEAK_PASSWORD",
+      "Password must be at least 10 characters and include upper, lower, digit, and symbol."
+    );
+  }
 };
 
 const registerFailedAttempt = (email: string) => {
@@ -318,6 +355,8 @@ export const localAuthProvider: AuthProvider = {
       throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
     }
 
+    assertStrongPassword(userData.password);
+
     const passwordRecord = await createPasswordRecord(userData.password);
 
     const storedUser: StoredUserRecord = {
@@ -378,6 +417,89 @@ export const localAuthProvider: AuthProvider = {
     return {
       user: toPublicUser(user),
       token: session.token,
+    };
+  },
+
+  requestPasswordReset: async (emailInput: string) => {
+    await sleep(250);
+
+    const email = normalizeEmail(emailInput);
+    const user = ensureUsers().find((item) => item.email === email);
+
+    if (!user) {
+      return {
+        ok: true as const,
+        message:
+          "If an account with that email exists, a password reset link has been prepared.",
+        delivery: "preview" as const,
+      };
+    }
+
+    const token = createToken();
+    const nextTokens = getPasswordResetTokens().filter((item) => item.email !== email);
+
+    nextTokens.push({
+      email,
+      token,
+      expiresAt: Date.now() + PASSWORD_RESET_TTL_MS,
+      createdAt: new Date().toISOString(),
+    });
+
+    savePasswordResetTokens(nextTokens);
+
+    return {
+      ok: true as const,
+      message:
+        "If an account with that email exists, a password reset link has been prepared.",
+      delivery: "preview" as const,
+      previewToken: token,
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS).toISOString(),
+    };
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    await sleep(250);
+
+    assertStrongPassword(password);
+
+    const activeTokens = getPasswordResetTokens();
+    const resetToken = activeTokens.find((item) => item.token === token);
+
+    if (!resetToken) {
+      throw new AuthApiError(
+        "INVALID_RESET_TOKEN",
+        "Password reset token is invalid or expired."
+      );
+    }
+
+    const users = ensureUsers();
+    const user = users.find((item) => item.email === resetToken.email);
+
+    if (!user) {
+      throw new AuthApiError(
+        "INVALID_RESET_TOKEN",
+        "Password reset token is invalid or expired."
+      );
+    }
+
+    const passwordRecord = await createPasswordRecord(password);
+    saveUsers(
+      users.map((item) =>
+        item.email === user.email ? { ...item, ...passwordRecord } : item
+      )
+    );
+    savePasswordResetTokens(activeTokens.filter((item) => item.email !== user.email));
+    clearAttempts(user.email);
+
+    const session = getSession();
+
+    if (session?.email === user.email) {
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    return {
+      ok: true as const,
+      message: "Password has been updated. You can log in with the new password.",
     };
   },
 

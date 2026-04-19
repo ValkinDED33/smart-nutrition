@@ -1,11 +1,14 @@
 import {
+  assertPasswordPolicy,
   AuthApiError,
   createId,
   createInitialMealState,
+  createOpaqueToken,
   createInitialProfileState,
   createPasswordRecord,
   createSessionToken,
   getBearerToken,
+  hashOneTimeToken,
   normalizeEmail,
   sanitizeName,
   toPublicUser,
@@ -15,6 +18,8 @@ import {
 
 export const createAuthService = ({ authRepository, stateRepository, config }) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
+  const passwordResetRequestMessage =
+    "If an account with that email exists, a password reset link has been prepared.";
 
   const writeAuditLog = ({
     actorUserId = null,
@@ -44,6 +49,17 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
   });
 
   const getUserById = (userId) => authRepository.findUserById(userId);
+
+  const buildPasswordResetResponse = ({
+    previewToken = undefined,
+    expiresAt = undefined,
+  } = {}) => ({
+    ok: true,
+    message: passwordResetRequestMessage,
+    delivery: config.isProduction ? "email" : "preview",
+    previewToken,
+    expiresAt,
+  });
 
   const createAccessToken = (user) =>
     createSessionToken({
@@ -195,6 +211,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
 
     cleanupExpiredSessions: () => {
       authRepository.cleanupExpiredSessions();
+      authRepository.cleanupExpiredPasswordResetTokens?.();
     },
 
     getHealthInfo: () => ({
@@ -210,6 +227,8 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       if (!email || authRepository.findUserByEmail(email)) {
         throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
       }
+
+      assertPasswordPolicy(String(body.password || ""));
 
       const shouldBootstrapSuperAdmin =
         Boolean(config.superAdminEmail) &&
@@ -261,6 +280,101 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         },
       });
       return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
+    },
+
+    requestPasswordReset: (body) => {
+      const email = normalizeEmail(body?.email);
+
+      if (!email) {
+        return buildPasswordResetResponse();
+      }
+
+      const user = authRepository.findUserByEmail(email);
+
+      if (!user) {
+        return buildPasswordResetResponse();
+      }
+
+      authRepository.deletePasswordResetTokensByUserId?.(user.id);
+
+      const rawToken = createOpaqueToken(32);
+      const expiresAt = Date.now() + config.passwordResetTokenTtlMs;
+
+      authRepository.createPasswordResetToken?.({
+        id: createId("pw-reset"),
+        userId: user.id,
+        tokenHash: hashOneTimeToken(rawToken, config.jwtSecret),
+        expiresAt,
+        createdAt: new Date().toISOString(),
+      });
+
+      writeAuditLog({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "auth.password_reset_requested",
+        targetType: "user",
+        targetId: user.id,
+      });
+
+      return buildPasswordResetResponse({
+        previewToken: config.isProduction ? undefined : rawToken,
+        expiresAt: config.isProduction ? undefined : new Date(expiresAt).toISOString(),
+      });
+    },
+
+    resetPassword: (body) => {
+      const token = String(body?.token || "").trim();
+      const password = String(body?.password || "");
+
+      if (!token) {
+        throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
+      }
+
+      assertPasswordPolicy(password);
+
+      const tokenHash = hashOneTimeToken(token, config.jwtSecret);
+      const resetToken = authRepository.findPasswordResetTokenByHash?.(tokenHash);
+
+      if (
+        !resetToken ||
+        resetToken.consumedAt ||
+        resetToken.expiresAt <= Date.now()
+      ) {
+        throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
+      }
+
+      const user = authRepository.findUserById(resetToken.userId);
+
+      if (!user) {
+        throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
+      }
+
+      const consumedAt = new Date().toISOString();
+      authRepository.markPasswordResetTokenConsumed?.(tokenHash, consumedAt);
+
+      const passwordRecord = createPasswordRecord(password, config.passwordIterations);
+
+      authRepository.updateUserPassword?.({
+        userId: user.id,
+        ...passwordRecord,
+      });
+      authRepository.incrementUserTokenVersion?.(user.id);
+      authRepository.deleteSessionsByUserId(user.id);
+      authRepository.deletePasswordResetTokensByUserId?.(user.id);
+      clearLoginAttempts(user.email);
+
+      writeAuditLog({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: "auth.password_reset_completed",
+        targetType: "user",
+        targetId: user.id,
+      });
+
+      return {
+        ok: true,
+        message: "Password has been updated. You can log in with the new password.",
+      };
     },
 
     login: (body) => {

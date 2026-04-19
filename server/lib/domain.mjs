@@ -116,6 +116,27 @@ export const sanitizeName = (name) => String(name || "").trim().replace(/\s+/g, 
 
 export const createId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 
+export const createOpaqueToken = (bytes = 32) =>
+  crypto.randomBytes(bytes).toString("base64url");
+
+export const hashOneTimeToken = (token, secret) =>
+  crypto.createHash("sha256").update(`${secret}:${String(token ?? "")}`).digest("hex");
+
+const strongPasswordPattern =
+  /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
+
+export const isStrongPassword = (password) =>
+  strongPasswordPattern.test(String(password ?? ""));
+
+export const assertPasswordPolicy = (password) => {
+  if (!isStrongPassword(password)) {
+    throw new AuthApiError(
+      "WEAK_PASSWORD",
+      "Password must be at least 10 characters and include upper, lower, digit, and symbol."
+    );
+  }
+};
+
 export const createSessionToken = ({
   userId,
   expiresAt,
@@ -270,6 +291,12 @@ export const createInitialProfileState = (userInput) => {
         weight: userInput.weight,
       },
     ],
+    measurementHistory: [],
+    weeklyCheckIn: {
+      enabled: true,
+      remindIntervalDays: 7,
+      lastRecordedAt: null,
+    },
     maintenanceCalories,
     adaptiveCalories: targetCalories,
     targetWeight: null,

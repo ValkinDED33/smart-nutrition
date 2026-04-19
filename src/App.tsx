@@ -17,6 +17,8 @@ const loadProfilePage = () => import("./pages/ProfilePage");
 const loadMealBuilderPage = () => import("./pages/MealBuilderPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
+const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
+const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
 
 const LandingPage = lazy(loadLandingPage);
@@ -25,6 +27,8 @@ const ProfilePage = lazy(loadProfilePage);
 const MealBuilderPage = lazy(loadMealBuilderPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
+const ForgotPasswordPage = lazy(loadForgotPasswordPage);
+const ResetPasswordPage = lazy(loadResetPasswordPage);
 const NotFoundPage = lazy(loadNotFoundPage);
 
 const RouteFallback = () => <Loader fullScreen={false} size={80} />;
@@ -106,6 +110,22 @@ function App() {
                 element={
                   <PublicRoute>
                     <RegisterPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <PublicRoute>
+                    <ForgotPasswordPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <PublicRoute>
+                    <ResetPasswordPage />
                   </PublicRoute>
                 }
               />

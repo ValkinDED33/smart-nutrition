@@ -270,11 +270,47 @@ const normalizeProfileState = (value, user) => {
         })
         .filter(Boolean)
     : fallback.weightHistory;
+  const measurementHistory = Array.isArray(record.measurementHistory)
+    ? record.measurementHistory
+        .map((item) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          return {
+            date:
+              typeof item.date === "string" && item.date.trim().length > 0
+                ? item.date
+                : new Date().toISOString(),
+            weight: toNumber(item.weight, user.weight),
+            waist: toNullablePositiveNumber(item.waist) ?? undefined,
+            hip: toNullablePositiveNumber(item.hip) ?? undefined,
+            chest: toNullablePositiveNumber(item.chest) ?? undefined,
+          };
+        })
+        .filter(Boolean)
+    : fallback.measurementHistory;
+  const weeklyCheckInRecord = isRecord(record.weeklyCheckIn) ? record.weeklyCheckIn : {};
 
   return {
     dailyCalories: toNumber(record.dailyCalories, fallback.dailyCalories),
     goal: isGoal(record.goal) ? record.goal : fallback.goal,
     weightHistory: weightHistory.length > 0 ? weightHistory : fallback.weightHistory,
+    measurementHistory,
+    weeklyCheckIn: {
+      enabled:
+        typeof weeklyCheckInRecord.enabled === "boolean"
+          ? weeklyCheckInRecord.enabled
+          : fallback.weeklyCheckIn.enabled,
+      remindIntervalDays: Math.max(
+        toNumber(weeklyCheckInRecord.remindIntervalDays, fallback.weeklyCheckIn.remindIntervalDays),
+        1
+      ),
+      lastRecordedAt:
+        weeklyCheckInRecord.lastRecordedAt === null || isIsoDate(weeklyCheckInRecord.lastRecordedAt)
+          ? weeklyCheckInRecord.lastRecordedAt
+          : fallback.weeklyCheckIn.lastRecordedAt,
+    },
     maintenanceCalories: toNumber(record.maintenanceCalories, fallback.maintenanceCalories),
     adaptiveCalories:
       record.adaptiveCalories === null || record.adaptiveCalories === undefined
@@ -450,6 +486,21 @@ const mapSessionRow = (row) => {
   };
 };
 
+const mapPasswordResetTokenRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    tokenHash: row.token_hash,
+    expiresAt: Number(row.expires_at),
+    consumedAt: row.consumed_at ?? null,
+    createdAt: row.created_at,
+  };
+};
+
 const mapSnapshotRow = (row) => {
   if (!row) {
     return null;
@@ -572,6 +623,16 @@ const createSchema = (database) => {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at INTEGER NOT NULL,
+      consumed_at TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS snapshots (
       user_id TEXT PRIMARY KEY,
       profile_json TEXT,
@@ -603,6 +664,8 @@ const createSchema = (database) => {
       calorie_alerts_enabled INTEGER NOT NULL DEFAULT 1,
       reminder_times_json TEXT NOT NULL DEFAULT '{"breakfast":"08:30","lunch":"13:00","dinner":"19:00","snack":"16:30"}',
       language_preference TEXT NOT NULL DEFAULT 'uk',
+      measurement_history_json TEXT NOT NULL DEFAULT '[]',
+      weekly_check_in_json TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}',
       motivation_json TEXT NOT NULL DEFAULT '{"points":0,"level":1,"completedTasks":0,"activeTasks":[],"history":[],"achievements":[],"lastTaskRefreshDate":null,"freeDayLastUsedAt":null,"paidDayLastUsedAt":null,"paidDayLastUsedMonth":null}',
       assistant_json TEXT NOT NULL DEFAULT '{"name":"Nova","role":"assistant","tone":"gentle","humorEnabled":true}',
       updated_at TEXT NOT NULL,
@@ -724,6 +787,8 @@ const createIndexes = (database) => {
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
     CREATE INDEX IF NOT EXISTS idx_profile_weight_history_user ON profile_weight_history(user_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_entries_user ON meal_entries(user_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_templates_user ON meal_templates(user_id, sort_index);
@@ -904,10 +969,12 @@ const replaceProfileStateRows = (
           calorie_alerts_enabled,
           reminder_times_json,
           language_preference,
+          measurement_history_json,
+          weekly_check_in_json,
           motivation_json,
           assistant_json,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           daily_calories = excluded.daily_calories,
           goal = excluded.goal,
@@ -924,6 +991,8 @@ const replaceProfileStateRows = (
           calorie_alerts_enabled = excluded.calorie_alerts_enabled,
           reminder_times_json = excluded.reminder_times_json,
           language_preference = excluded.language_preference,
+          measurement_history_json = excluded.measurement_history_json,
+          weekly_check_in_json = excluded.weekly_check_in_json,
           motivation_json = excluded.motivation_json,
           assistant_json = excluded.assistant_json,
           updated_at = excluded.updated_at
@@ -946,6 +1015,8 @@ const replaceProfileStateRows = (
       normalized.calorieAlertsEnabled ? 1 : 0,
       serializeJson(normalized.reminderTimes),
       normalized.languagePreference,
+      serializeJson(normalized.measurementHistory),
+      serializeJson(normalized.weeklyCheckIn),
       serializeJson(normalized.motivation),
       serializeJson(normalized.assistant),
       updatedAt
@@ -1122,6 +1193,11 @@ const buildProfileStateFromRows = (database, userId, user = null) => {
       createInitialProfileState(user).reminderTimes
     ),
     languagePreference: isAppLanguage(row.language_preference) ? row.language_preference : "uk",
+    measurementHistory: parseJson(row.measurement_history_json, []),
+    weeklyCheckIn: parseJson(
+      row.weekly_check_in_json,
+      createInitialProfileState(user).weeklyCheckIn
+    ),
     motivation: normalizeMotivationState(
       parseJson(row.motivation_json, {}),
       createInitialProfileState(user).motivation
@@ -1420,6 +1496,18 @@ export const createSqliteStorage = async ({
     "profile_states",
     "language_preference",
     "TEXT NOT NULL DEFAULT 'uk'"
+  );
+  ensureColumn(
+    database,
+    "profile_states",
+    "measurement_history_json",
+    "TEXT NOT NULL DEFAULT '[]'"
+  );
+  ensureColumn(
+    database,
+    "profile_states",
+    "weekly_check_in_json",
+    `TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}'`
   );
   ensureColumn(
     database,
@@ -1846,6 +1934,17 @@ export const createSqliteStorage = async ({
       database.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now);
     },
 
+    cleanupExpiredPasswordResetTokens: (now = Date.now()) => {
+      database
+        .prepare(
+          `
+            DELETE FROM password_reset_tokens
+            WHERE expires_at <= ? OR consumed_at IS NOT NULL
+          `
+        )
+        .run(now);
+    },
+
     findUserByEmail: (email) =>
       mapUserRow(
         database.prepare("SELECT * FROM users WHERE email = ? LIMIT 1").get(email)
@@ -1959,6 +2058,23 @@ export const createSqliteStorage = async ({
         );
 
       return user;
+    },
+
+    updateUserPassword: ({ userId, passwordHash, passwordSalt, passwordVersion }) => {
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET
+              password_hash = ?,
+              password_salt = ?,
+              password_version = ?
+            WHERE id = ?
+          `
+        )
+        .run(passwordHash, passwordSalt, passwordVersion, userId);
+
+      return getResolvedUser(userId);
     },
 
     incrementUserTokenVersion: (userId) => {
@@ -2265,6 +2381,61 @@ export const createSqliteStorage = async ({
 
     deleteSessionsByUserId: (userId) => {
       database.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+    },
+
+    createPasswordResetToken: ({ id, userId, tokenHash, expiresAt, createdAt }) => {
+      database
+        .prepare(
+          `
+            INSERT INTO password_reset_tokens (
+              id,
+              user_id,
+              token_hash,
+              expires_at,
+              consumed_at,
+              created_at
+            ) VALUES (?, ?, ?, ?, NULL, ?)
+          `
+        )
+        .run(id, userId, tokenHash, expiresAt, createdAt);
+
+      return {
+        id,
+        userId,
+        tokenHash,
+        expiresAt,
+        consumedAt: null,
+        createdAt,
+      };
+    },
+
+    findPasswordResetTokenByHash: (tokenHash) =>
+      mapPasswordResetTokenRow(
+        database
+          .prepare("SELECT * FROM password_reset_tokens WHERE token_hash = ? LIMIT 1")
+          .get(tokenHash)
+      ),
+
+    markPasswordResetTokenConsumed: (tokenHash, consumedAt) => {
+      database
+        .prepare(
+          `
+            UPDATE password_reset_tokens
+            SET consumed_at = ?
+            WHERE token_hash = ? AND consumed_at IS NULL
+          `
+        )
+        .run(consumedAt, tokenHash);
+
+      return mapPasswordResetTokenRow(
+        database
+          .prepare("SELECT * FROM password_reset_tokens WHERE token_hash = ? LIMIT 1")
+          .get(tokenHash)
+      );
+    },
+
+    deletePasswordResetTokensByUserId: (userId) => {
+      database.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
     },
 
     getSnapshotByUserId: (userId, user = null) => {

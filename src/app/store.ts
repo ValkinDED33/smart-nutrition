@@ -16,6 +16,7 @@ import profileReducer, {
   normalizeProfileState,
 } from "../features/profile/profileSlice";
 import mealReducer, { normalizeMealState } from "../features/meal/mealSlice";
+import waterReducer, { normalizeWaterState } from "../features/water/waterSlice";
 import authReducer from "../features/auth/authSlice";
 import {
   registerRemoteSyncListeners,
@@ -25,6 +26,7 @@ import {
 const appReducer = combineReducers({
   profile: profileReducer,
   meal: mealReducer,
+  water: waterReducer,
   auth: authReducer,
 });
 
@@ -43,9 +45,9 @@ const rootReducer = (
 
 const persistConfig = {
   key: "root",
-  version: 4,
+  version: 5,
   storage,
-  whitelist: ["profile", "meal"],
+  whitelist: ["profile", "meal", "water"],
   migrate: async (state: PersistedState): Promise<PersistedState> => {
     if (!state || typeof state !== "object") {
       return state;
@@ -57,6 +59,7 @@ const persistConfig = {
       ...persistedState,
       profile: normalizeProfileState(persistedState.profile),
       meal: normalizeMealState(persistedState.meal),
+      water: normalizeWaterState(persistedState.water),
     } as PersistedState;
   },
 };

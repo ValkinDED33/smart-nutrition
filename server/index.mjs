@@ -344,6 +344,18 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (pathname === "/api/auth/forgot-password" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(response, 200, authService.requestPasswordReset(body));
+      return;
+    }
+
+    if (pathname === "/api/auth/reset-password" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(response, 200, authService.resetPassword(body));
+      return;
+    }
+
     if (pathname === "/api/auth/session" && request.method === "GET") {
       const session = authService.restoreSession(request);
 
@@ -677,6 +689,8 @@ const routeRequest = async (request, response) => {
           ? 409
           : error.code === "TOO_MANY_ATTEMPTS"
             ? 429
+            : error.code === "INVALID_RESET_TOKEN" || error.code === "WEAK_PASSWORD"
+              ? 400
             : error.code === "BACKUP_NOT_FOUND"
               ? 404
             : error.code === "FORBIDDEN"

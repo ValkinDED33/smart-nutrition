@@ -8,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  InputAdornment,
   Paper,
   Stack,
   TextField,
@@ -23,6 +24,8 @@ import {
   login as loginApi,
 } from "../shared/api/auth";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
+import { readAuthIdentityHint, writeAuthIdentityHint } from "../shared/lib/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 
@@ -31,12 +34,28 @@ type FormData = {
   password: string;
 };
 
+const authPageCopy = {
+  uk: {
+    forgotPassword: "Р—Р°Р±СѓР»Рё РїР°СЂРѕР»СЊ?",
+    showPassword: "РџРѕРєР°Р·Р°С‚Рё РїР°СЂРѕР»СЊ",
+    hidePassword: "РЎС…РѕРІР°С‚Рё РїР°СЂРѕР»СЊ",
+  },
+  pl: {
+    forgotPassword: "ZapomniaЕ‚eЕ› hasЕ‚a?",
+    showPassword: "PokaЕј hasЕ‚o",
+    hidePassword: "Ukryj hasЕ‚o",
+  },
+} as const;
+
 const LoginPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const identityHint = useMemo(() => readAuthIdentityHint(), []);
+  const copy = authPageCopy[language];
 
   const schema = useMemo(
     () =>
@@ -60,7 +79,7 @@ const LoginPage = () => {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: "",
+      email: identityHint.email ?? "",
       password: "",
     },
   });
@@ -71,6 +90,10 @@ const LoginPage = () => {
 
     try {
       const { user, token, snapshot } = await loginApi(data.email, data.password);
+      writeAuthIdentityHint({
+        name: user.name,
+        email: user.email,
+      });
       dispatch(
         setCredentials({
           user,
@@ -148,12 +171,38 @@ const LoginPage = () => {
 
             <TextField
               label={t("form.password")}
-              type="password"
+              type={passwordVisible ? "text" : "password"}
               fullWidth
               {...register("password")}
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <PasswordVisibilityButton
+                      visible={passwordVisible}
+                      onToggle={() => setPasswordVisible((current) => !current)}
+                      showLabel={copy.showPassword}
+                      hideLabel={copy.hidePassword}
+                    />
+                  </InputAdornment>
+                ),
+              }}
             />
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Typography
+                component={Link}
+                to="/forgot-password"
+                sx={{
+                  color: "#0f766e",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                }}
+              >
+                {copy.forgotPassword}
+              </Typography>
+            </Box>
 
             <Button
               type="submit"

@@ -8,6 +8,7 @@ const createAuthServiceFixture = () => {
     findUserById: vi.fn(),
     insertUser: vi.fn(),
     updateUser: vi.fn(),
+    updateUserPassword: vi.fn(),
     deleteUser: vi.fn(),
     listUserBackups: vi.fn(() => []),
     readUserBackup: vi.fn(() => null),
@@ -15,11 +16,16 @@ const createAuthServiceFixture = () => {
     findSessionByToken: vi.fn(),
     deleteSessionByToken: vi.fn(),
     deleteSessionsByUserId: vi.fn(),
+    createPasswordResetToken: vi.fn(),
+    findPasswordResetTokenByHash: vi.fn(),
+    markPasswordResetTokenConsumed: vi.fn(),
+    deletePasswordResetTokensByUserId: vi.fn(),
     incrementUserTokenVersion: vi.fn(),
     getLoginAttempt: vi.fn(),
     upsertLoginAttempt: vi.fn(),
     clearLoginAttempt: vi.fn(),
     cleanupExpiredSessions: vi.fn(),
+    cleanupExpiredPasswordResetTokens: vi.fn(),
   };
   const stateRepository = {
     getSnapshotByUserId: vi.fn(() => null),
@@ -32,6 +38,8 @@ const createAuthServiceFixture = () => {
     maxLoginAttempts: 5,
     loginLockMs: 300000,
     passwordIterations: 180000,
+    passwordResetTokenTtlMs: 3600000,
+    isProduction: false,
   };
 
   return {
@@ -132,6 +140,67 @@ describe("authService", () => {
     authRepository.findUserById.mockReturnValue(user);
 
     expect(service.authenticateToken(accessToken)).toBeNull();
+  });
+
+  it("creates a password reset preview token for an existing user", () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-12",
+      email: "reset@example.com",
+      name: "Reset User",
+      role: "USER",
+    };
+
+    authRepository.findUserByEmail.mockReturnValue(user);
+
+    const result = service.requestPasswordReset({ email: user.email });
+
+    expect(authRepository.deletePasswordResetTokensByUserId).toHaveBeenCalledWith(user.id);
+    expect(authRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(true);
+    expect(result.previewToken).toBeTruthy();
+  });
+
+  it("resets the password, revokes sessions, and bumps token version", () => {
+    const { authRepository, config, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-18",
+      email: "renew@example.com",
+      name: "Renew User",
+      role: "USER",
+      passwordHash: "old",
+      passwordSalt: "salt",
+      passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 0,
+    };
+    const rawToken = "preview-token";
+    const resetToken = {
+      id: "pw-reset-1",
+      userId: user.id,
+      tokenHash: "hash",
+      expiresAt: Date.now() + 10_000,
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    authRepository.findPasswordResetTokenByHash.mockReturnValue(resetToken);
+    authRepository.findUserById.mockReturnValue(user);
+    authRepository.markPasswordResetTokenConsumed.mockReturnValue({
+      ...resetToken,
+      consumedAt: new Date().toISOString(),
+    });
+
+    const result = service.resetPassword({
+      token: rawToken,
+      password: "StrongPass123!",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(authRepository.updateUserPassword).toHaveBeenCalledTimes(1);
+    expect(authRepository.incrementUserTokenVersion).toHaveBeenCalledWith(user.id);
+    expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith(user.id);
+    expect(authRepository.deletePasswordResetTokensByUserId).toHaveBeenCalledWith(user.id);
+    expect(authRepository.clearLoginAttempt).toHaveBeenCalledWith(user.email);
   });
 
   it("exports account data with snapshot and backup summaries", () => {
