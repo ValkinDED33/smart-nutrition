@@ -17,6 +17,8 @@ import type {
   AccountExportPayload,
   AuthProvider,
   AuthRuntimeInfo,
+  PasswordResetRequestResult,
+  PasswordResetResult,
   RegisterPayload,
 } from "./authProvider";
 import { AuthApiError } from "./authLocal";
@@ -200,6 +202,14 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
 
     if (error.code === "TOO_MANY_ATTEMPTS") {
       return new AuthApiError("TOO_MANY_ATTEMPTS", error.message);
+    }
+
+    if (error.code === "INVALID_RESET_TOKEN") {
+      return new AuthApiError("INVALID_RESET_TOKEN", error.message);
+    }
+
+    if (error.code === "WEAK_PASSWORD") {
+      return new AuthApiError("WEAK_PASSWORD", error.message);
     }
 
     if (error.status === 401 || error.code === "INVALID_CREDENTIALS") {
@@ -845,6 +855,33 @@ export const remoteAuthProvider: AuthProvider = {
     });
 
     return mapAuthResponse(data, baseUrl);
+  },
+
+  requestPasswordReset: async (email: string) => {
+    const { data } = await requestRemote<PasswordResetRequestResult>(
+      "/auth/forgot-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return data;
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const { data } = await requestRemote<PasswordResetResult>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    }).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return data;
   },
 
   deleteAccount: async (_email: string) => {

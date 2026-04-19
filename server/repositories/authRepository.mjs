@@ -4,6 +4,7 @@ export const createAuthRepository = (storage) => ({
   hasUserWithRole: (role) => storage.hasUserWithRole(role),
   insertUser: (user) => storage.insertUser(user),
   updateUser: (user) => storage.updateUser(user),
+  updateUserPassword: (payload) => storage.updateUserPassword(payload),
   updateUserRole: (payload) => storage.updateUserRole(payload),
   listUsers: () => storage.listUsers(),
   promoteUserByEmailToSuperAdmin: (email) => storage.promoteUserByEmailToSuperAdmin(email),
@@ -16,9 +17,15 @@ export const createAuthRepository = (storage) => ({
   findSessionByToken: (token) => storage.findSessionByToken(token),
   deleteSessionByToken: (token) => storage.deleteSessionByToken(token),
   deleteSessionsByUserId: (userId) => storage.deleteSessionsByUserId(userId),
+  createPasswordResetToken: (token) => storage.createPasswordResetToken(token),
+  findPasswordResetTokenByHash: (tokenHash) => storage.findPasswordResetTokenByHash(tokenHash),
+  markPasswordResetTokenConsumed: (tokenHash, consumedAt) =>
+    storage.markPasswordResetTokenConsumed(tokenHash, consumedAt),
+  deletePasswordResetTokensByUserId: (userId) => storage.deletePasswordResetTokensByUserId(userId),
   incrementUserTokenVersion: (userId) => storage.incrementUserTokenVersion(userId),
   getLoginAttempt: (email) => storage.getLoginAttempt(email),
   upsertLoginAttempt: (attempt) => storage.upsertLoginAttempt(attempt),
   clearLoginAttempt: (email) => storage.clearLoginAttempt(email),
   cleanupExpiredSessions: (now) => storage.cleanupExpiredSessions(now),
+  cleanupExpiredPasswordResetTokens: (now) => storage.cleanupExpiredPasswordResetTokens(now),
 });

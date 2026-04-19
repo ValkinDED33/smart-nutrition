@@ -1,8 +1,13 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Box, Paper, Stack, Typography } from "@mui/material";
+import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import {
+  calculateBmi,
+  detectWeightPlateau,
+  getBmiStatus,
+} from "../../shared/lib/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 
 const weightTrendCopy = {
@@ -14,6 +19,13 @@ const weightTrendCopy = {
     totalDelta: "Total delta",
     recentDelta: "Recent delta",
     checkIns: "Check-ins",
+    bmi: "BMI",
+    plateau: "Plateau",
+    underweight: "Underweight",
+    normal: "Normal",
+    overweight: "Overweight",
+    obesity: "Obesity",
+    plateauHint: (weeks: number) => `Weight is mostly flat for about ${weeks} weeks.`,
   },
   pl: {
     title: "Weight trend",
@@ -23,11 +35,19 @@ const weightTrendCopy = {
     totalDelta: "Total delta",
     recentDelta: "Recent delta",
     checkIns: "Check-ins",
+    bmi: "BMI",
+    plateau: "Plateau",
+    underweight: "Underweight",
+    normal: "Normal",
+    overweight: "Overweight",
+    obesity: "Obesity",
+    plateauHint: (weeks: number) => `Weight is mostly flat for about ${weeks} weeks.`,
   },
 } as const;
 
 export const WeightTrendCard = () => {
   const { weightHistory } = useSelector((state: RootState) => state.profile);
+  const user = useSelector((state: RootState) => state.auth.user);
   const { language } = useLanguage();
   const copy = weightTrendCopy[language];
 
@@ -54,6 +74,10 @@ export const WeightTrendCard = () => {
   const totalDelta = entries.length > 1 ? latestWeight - (entries[0]?.weight ?? latestWeight) : 0;
   const recentAnchor = entries.length > 3 ? entries[entries.length - 4]?.weight ?? latestWeight : entries[0]?.weight ?? latestWeight;
   const recentDelta = latestWeight - recentAnchor;
+  const bmi = calculateBmi(latestWeight || user?.weight || 0, user?.height || 0);
+  const bmiStatus = getBmiStatus(bmi);
+  const plateau = detectWeightPlateau(weightHistory);
+  const bmiStatusLabel = copy[bmiStatus];
 
   return (
     <Paper
@@ -87,6 +111,19 @@ export const WeightTrendCard = () => {
             <Typography component="span" color="text.secondary">
               {copy.checkIns}: {entries.length}
             </Typography>
+            <Chip
+              label={`${copy.bmi}: ${bmi.toFixed(1)} • ${bmiStatusLabel}`}
+              size="small"
+              color={bmiStatus === "normal" ? "success" : bmiStatus === "overweight" ? "warning" : "default"}
+            />
+            {plateau.hasPlateau && (
+              <Chip
+                label={`${copy.plateau}: ${copy.plateauHint(plateau.weeksStable || 2)}`}
+                size="small"
+                variant="outlined"
+                color="warning"
+              />
+            )}
           </Stack>
         )}
 

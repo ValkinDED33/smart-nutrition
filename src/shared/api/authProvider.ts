@@ -45,6 +45,19 @@ export interface AccountExportPayload {
   backups: AccountBackupSummary[];
 }
 
+export interface PasswordResetRequestResult {
+  ok: true;
+  message: string;
+  delivery: "email" | "preview";
+  previewToken?: string;
+  expiresAt?: string;
+}
+
+export interface PasswordResetResult {
+  ok: true;
+  message: string;
+}
+
 export interface AuthProvider {
   restoreSession: () => Promise<AuthResponse | null>;
   logout: () => Promise<void>;
@@ -52,6 +65,8 @@ export interface AuthProvider {
   updateStoredProfile: (user: User) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   login: (email: string, password: string) => Promise<AuthResponse>;
+  requestPasswordReset: (email: string) => Promise<PasswordResetRequestResult>;
+  resetPassword: (token: string, password: string) => Promise<PasswordResetResult>;
   deleteAccount: (email: string) => Promise<void>;
   getRuntimeInfo: () => AuthRuntimeInfo;
 }

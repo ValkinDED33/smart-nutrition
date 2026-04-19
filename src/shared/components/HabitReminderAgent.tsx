@@ -1,9 +1,11 @@
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import type { MealType } from "../types/meal";
 import { useLanguage } from "../language";
+import { getDaysSince } from "../lib/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "../lib/nutritionCoach";
+import { syncWaterDay } from "../../features/water/waterSlice";
 
 const STORAGE_KEY = "smart-nutrition.notification-log";
 
@@ -150,7 +152,23 @@ const coachNotificationCopy = {
   },
 } as const;
 
+const wellbeingNotificationCopy = {
+  uk: {
+    waterTitle: "Р’РѕРґР° СЃСЊРѕРіРѕРґРЅС– РЅРёР¶С‡Рµ РЅРѕСЂРјРё",
+    waterBody: "Р’Рё РІРёРїРёР»Рё РјРµРЅС€Рµ РїР»Р°РЅСѓ. Р”РѕРґР°Р№С‚Рµ С‰Рµ РІРѕРґРё, С‰РѕР± РЅР°Р±Р»РёР·РёС‚РёСЃСЏ РґРѕ С†С–Р»С–.",
+    checkInTitle: "РџРѕСЂР° РѕРЅРѕРІРёС‚Рё РІР°РіСѓ С– Р·Р°РјС–СЂРё",
+    checkInBody: "Щотижневий check-in вже на часі. Оновіть вагу, талію або інші об’єми.",
+  },
+  pl: {
+    waterTitle: "Woda jest dziЕ› poniЕјej normy",
+    waterBody: "Wypito mniej niЕј plan. Dodaj jeszcze trochД™ wody, aby zbliЕјyД‡ siД™ do celu.",
+    checkInTitle: "Czas odЕ›wieЕјyД‡ wagД™ i pomiary",
+    checkInBody: "Weekly check-in jest juЕј na czasie. Zapisz wagД™ i obwody.",
+  },
+} as const;
+
 const HabitReminderAgent = () => {
+  const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
   const items = useSelector((state: RootState) => state.meal.items);
   const totalCalories = useSelector(
@@ -165,9 +183,15 @@ const HabitReminderAgent = () => {
     calorieAlertsEnabled,
     reminderTimes,
     weightHistory,
+    weeklyCheckIn,
     assistant,
   } = useSelector((state: RootState) => state.profile);
+  const water = useSelector((state: RootState) => state.water);
   const { language } = useLanguage();
+
+  useEffect(() => {
+    dispatch(syncWaterDay());
+  }, [dispatch]);
 
   useEffect(() => {
     if (
@@ -186,6 +210,9 @@ const HabitReminderAgent = () => {
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
       const localizedMealCopy = mealNotificationCopy[language];
       const coachCopy = coachNotificationCopy[language];
+      const wellbeingCopy = wellbeingNotificationCopy[language];
+      const waterConsumedToday =
+        water.lastLoggedOn === todayKey ? water.consumedMl : 0;
 
       if (mealRemindersEnabled) {
         (Object.keys(localizedMealCopy) as MealType[]).forEach((mealType) => {
@@ -220,6 +247,28 @@ const HabitReminderAgent = () => {
             coachCopy.caloriesHighBody
           );
         }
+      }
+
+      if (nowMinutes >= 18 * 60 && water.dailyTargetMl > 0) {
+        if (waterConsumedToday < water.dailyTargetMl * 0.6) {
+          maybeSendNotification(
+            `${todayKey}-water-low`,
+            wellbeingCopy.waterTitle,
+            wellbeingCopy.waterBody
+          );
+        }
+      }
+
+      if (
+        weeklyCheckIn.enabled &&
+        nowMinutes >= 9 * 60 &&
+        getDaysSince(weeklyCheckIn.lastRecordedAt) >= weeklyCheckIn.remindIntervalDays
+      ) {
+        maybeSendNotification(
+          `${todayKey}-weekly-check-in`,
+          wellbeingCopy.checkInTitle,
+          wellbeingCopy.checkInBody
+        );
       }
 
       if (nowMinutes >= 19 * 60 + 30) {
@@ -276,6 +325,12 @@ const HabitReminderAgent = () => {
     reminderTimes,
     totalCalories,
     user,
+    water.consumedMl,
+    water.dailyTargetMl,
+    water.lastLoggedOn,
+    weeklyCheckIn.enabled,
+    weeklyCheckIn.lastRecordedAt,
+    weeklyCheckIn.remindIntervalDays,
     weightHistory,
   ]);
 

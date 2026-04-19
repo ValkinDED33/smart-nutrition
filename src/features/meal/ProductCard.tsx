@@ -69,6 +69,14 @@ export const ProductCard = ({
   };
 
   const nutrients = product.nutrients;
+  const parsedQuantity = Number(qty);
+  const trackedQuantity =
+    !Number.isNaN(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 100;
+  const quantityFactor = trackedQuantity / 100;
+  const estimatedCalories = nutrients.calories * quantityFactor;
+  const estimatedProtein = nutrients.protein * quantityFactor;
+  const estimatedFat = nutrients.fat * quantityFactor;
+  const estimatedCarbs = nutrients.carbs * quantityFactor;
 
   return (
     <Card
@@ -128,6 +136,24 @@ export const ProductCard = ({
             onChange={(event) => setQty(event.target.value)}
             inputProps={{ min: 1, step: product.unit === "piece" ? 1 : 0.1 }}
           />
+
+          <Box
+            sx={{
+              p: 1.2,
+              borderRadius: 3,
+              backgroundColor: "rgba(248,250,252,0.92)",
+              border: "1px solid rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {trackedQuantity} {product.unit}: {estimatedCalories.toFixed(0)} {t("common.kcal")}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t("dashboard.protein")}: {estimatedProtein.toFixed(1)} {t("common.g")} /{" "}
+              {t("dashboard.fat")}: {estimatedFat.toFixed(1)} {t("common.g")} /{" "}
+              {t("dashboard.carbs")}: {estimatedCarbs.toFixed(1)} {t("common.g")}
+            </Typography>
+          </Box>
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: "auto" }}>
             <Button
