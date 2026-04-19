@@ -4,11 +4,11 @@
  * Orchestrates domain, data, and state layers
  */
 
-import type { MealEntry, Product } from '@domain/meal';
-import { validateMealEntry, isValidQuantity } from '@domain/meal';
-import { MealRules } from '@domain/meal';
-import type { IMealRepository } from '@data/meal';
-import type { UserProfile } from '@domain/meal';
+import type { MealEntry, Product } from "@domain/meal";
+import { validateMealEntry, isValidQuantity } from "@domain/meal";
+import { MealRules } from "@domain/meal";
+import { LocalMealRepository, type IMealRepository } from "@data/meal";
+import type { UserProfile } from "@domain/meal";
 
 export interface AddMealCommand {
   product: Product;
@@ -26,7 +26,7 @@ export interface Result<T> {
 
 export class AddMealUseCase {
   constructor(
-    private repository: IMealRepository,
+    private repository: IMealRepository = new LocalMealRepository(),
     private generateId: () => string = () => crypto.randomUUID?.() || `meal-${Date.now()}`
   ) {}
 
@@ -63,12 +63,12 @@ export class AddMealUseCase {
     // 4. Check duplicates
     if (MealRules.looksLikeDuplicate(
       {
-        id: 'temp',
+        id: "temp",
         product: command.product,
         quantity: command.quantity,
         mealType: command.mealType,
         eatenAt: new Date(),
-        origin: 'manual',
+        origin: "manual",
       },
       command.currentMeals
     )) {
@@ -95,8 +95,8 @@ export class AddMealUseCase {
     try {
       const saved = await this.repository.createMeal(entry);
       return this.ok(saved);
-    } catch (error) {
-      return this.fail(['Failed to save meal']);
+    } catch {
+      return this.fail(["Failed to save meal"]);
     }
   }
 

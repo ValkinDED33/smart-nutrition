@@ -15,11 +15,13 @@ import {
   sendNoContent,
   setCorsHeaders,
 } from "./lib/http.mjs";
-import { createAssistantRepository } from "./repositories/assistantRepository.mjs";
+import { createAiController } from "./controllers/ai.controller.mjs";
+import { createAiRepository } from "./repositories/aiRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
 import { createPlatformRepository } from "./repositories/platformRepository.mjs";
 import { createStateRepository } from "./repositories/stateRepository.mjs";
-import { createAssistantService } from "./services/assistantService.mjs";
+import { createApiRouter } from "./routes/index.mjs";
+import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
@@ -27,12 +29,12 @@ import { createStateService } from "./services/stateService.mjs";
 import { createSqliteStorage } from "./storage/sqlite.mjs";
 
 const storage = await createSqliteStorage(serverConfig);
-const assistantRepository = createAssistantRepository(storage);
+const aiRepository = createAiRepository(storage);
 const authRepository = createAuthRepository(storage);
 const platformRepository = createPlatformRepository(storage);
 const stateRepository = createStateRepository(storage);
-const assistantService = createAssistantService({
-  assistantRepository,
+const aiService = createAiService({
+  aiRepository,
   config: serverConfig,
 });
 const authService = createAuthService({
@@ -46,6 +48,11 @@ const platformService = createPlatformService({
 });
 const stateService = createStateService({ stateRepository });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
+const aiController = createAiController({
+  aiService,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+});
+const apiRouter = createApiRouter({ aiController });
 platformService.bootstrapAccessControl();
 const stateStreams = new Map();
 const staticRoot = path.resolve(serverConfig.staticDir);
@@ -320,12 +327,7 @@ const routeRequest = async (request, response) => {
           windowMs: serverConfig.requestLimitWindowMs,
         },
         warnings: serverConfig.warnings,
-        assistant: {
-          configured: serverConfig.assistantRuntimeConfigured,
-          model: serverConfig.assistantModel,
-          baseUrl: serverConfig.assistantBaseUrl,
-          memoryMessageLimit: serverConfig.assistantMemoryMessageLimit,
-        },
+        ai: aiService.getRuntimeStatus(),
       });
       return;
     }
@@ -396,6 +398,12 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (!pathname.startsWith("/api/")) {
+      if (await tryServeStatic(request, response, pathname)) {
+        return;
+      }
+    }
+
     const auth = authService.authenticateRequest(request);
 
     if (
@@ -404,6 +412,18 @@ const routeRequest = async (request, response) => {
       !auth
     ) {
       sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
+      return;
+    }
+
+    if (
+      await apiRouter({
+        request,
+        response,
+        pathname,
+        url,
+        auth,
+      })
+    ) {
       return;
     }
 
@@ -531,28 +551,6 @@ const routeRequest = async (request, response) => {
           body
         )
       );
-      return;
-    }
-
-    if (pathname === "/api/assistant-runtime" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, await assistantService.askQuestion(auth.user, body));
-      return;
-    }
-
-    if (pathname === "/api/assistant-runtime/history" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: assistantService.getConversationHistory(
-          auth.user,
-          url.searchParams.get("limit") ?? undefined
-        ),
-      });
-      return;
-    }
-
-    if (pathname === "/api/assistant-runtime/history" && request.method === "DELETE") {
-      assistantService.clearConversationHistory(auth.user);
-      sendNoContent(response);
       return;
     }
 

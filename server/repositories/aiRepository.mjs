@@ -1,4 +1,4 @@
-export const createAssistantRepository = (storage) => ({
+export const createAiRepository = (storage) => ({
   listConversationMessages: (userId, limit) =>
     storage.listAssistantMessagesByUserId(userId, limit),
   insertConversationMessage: (message) => storage.insertAssistantMessage(message),

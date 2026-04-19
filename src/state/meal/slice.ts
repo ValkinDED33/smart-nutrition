@@ -53,7 +53,12 @@ export const mealSlice = createSlice({
     ) {
       const index = state.items.findIndex((item) => item.id === action.payload.id);
       if (index !== -1) {
-        state.items[index] = { ...state.items[index], ...action.payload.updates };
+        const currentItem = state.items[index];
+        if (!currentItem) {
+          return;
+        }
+
+        state.items[index] = { ...currentItem, ...action.payload.updates };
       }
     },
 

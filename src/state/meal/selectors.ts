@@ -4,17 +4,26 @@
  * Use domain functions here for powerful selectors
  */
 
-import { createSelector } from '@reduxjs/toolkit';
-import type { RootState } from '@app/store';
+import { createSelector } from "@reduxjs/toolkit";
+import type { RootState } from "@app/store";
 import {
   calculateMealTotalNutrients,
   groupEntriesByMealType,
   filterEntriesByDate,
-} from '@domain/meal';
+} from "@domain/meal";
+import type { MealEntry } from "@domain/meal";
 
-const selectMealItems = (state: RootState) => state.meal?.items || [];
-const selectMealLoading = (state: RootState) => state.meal?.loading || false;
-const selectMealError = (state: RootState) => state.meal?.error || null;
+type ExperimentalMealSlice = {
+  items?: MealEntry[];
+  loading?: boolean;
+  error?: string | null;
+};
+
+const selectMealSlice = (state: RootState): ExperimentalMealSlice =>
+  state.meal as unknown as ExperimentalMealSlice;
+const selectMealItems = (state: RootState) => selectMealSlice(state).items ?? [];
+const selectMealLoading = (state: RootState) => selectMealSlice(state).loading ?? false;
+const selectMealError = (state: RootState) => selectMealSlice(state).error ?? null;
 
 /**
  * Select meals by date
@@ -26,7 +35,7 @@ export const selectMealsByDate = (dateKey: string) =>
  * Select today's meals
  */
 export const selectTodayMeals = createSelector([selectMealItems], (items) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().slice(0, 10);
   return filterEntriesByDate(items, today);
 });
 

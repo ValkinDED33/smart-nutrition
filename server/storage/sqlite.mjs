@@ -713,7 +713,11 @@ const createSchema = (database) => {
       created_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+  `);
+};
 
+const createIndexes = (database) => {
+  database.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
@@ -1424,6 +1428,7 @@ export const createSqliteStorage = async ({
     "assistant_json",
     "TEXT NOT NULL DEFAULT '{\"name\":\"Nova\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true}'"
   );
+  createIndexes(database);
   setMeta(database, "storage_engine", "sqlite");
   setMeta(database, "storage_path", sqlitePath);
   await migrateLegacyJsonIfNeeded(database, legacyJsonPath);
