@@ -1,8 +1,10 @@
 /**
  * Data Layer - Cache
- * 
+ *
  * Generic cache interface and implementations
  */
+
+import type { MealEntry } from "@domain/meal";
 
 export interface ICache<T> {
   get(key: string): T | null;
@@ -51,22 +53,22 @@ export class MemoryCache<T> implements ICache<T> {
  * Meal-specific cache with optimization
  */
 export class MealCache {
-  private dailyCache: Map<string, any> = new Map();
-  private rangeCache: Map<string, any> = new Map();
+  private dailyCache = new Map<string, MealEntry[]>();
+  private rangeCache = new Map<string, MealEntry[]>();
 
-  getDailyMeals(dateKey: string): any | null {
-    return this.dailyCache.get(dateKey) || null;
+  getDailyMeals(dateKey: string): MealEntry[] | null {
+    return this.dailyCache.get(dateKey) ?? null;
   }
 
-  setDailyMeals(dateKey: string, meals: any): void {
+  setDailyMeals(dateKey: string, meals: MealEntry[]): void {
     this.dailyCache.set(dateKey, meals);
   }
 
-  getRangeMeals(startKey: string, endKey: string): any | null {
-    return this.rangeCache.get(`${startKey}:${endKey}`) || null;
+  getRangeMeals(startKey: string, endKey: string): MealEntry[] | null {
+    return this.rangeCache.get(`${startKey}:${endKey}`) ?? null;
   }
 
-  setRangeMeals(startKey: string, endKey: string, meals: any): void {
+  setRangeMeals(startKey: string, endKey: string, meals: MealEntry[]): void {
     this.rangeCache.set(`${startKey}:${endKey}`, meals);
   }
 

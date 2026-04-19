@@ -4,7 +4,9 @@
  * Interface and implementations for data persistence
  */
 
-import type { MealEntry } from '@domain/meal';
+import type { MealEntry } from "@domain/meal";
+
+const toDateKey = (value: Date) => value.toISOString().slice(0, 10);
 
 export interface IMealRepository {
   // Query
@@ -27,7 +29,7 @@ export class LocalMealRepository implements IMealRepository {
   async getMeals(dateKey: string): Promise<MealEntry[]> {
     return this.meals.filter((m) => {
       const entryDate = new Date(m.eatenAt);
-      const entryDateKey = entryDate.toISOString().split('T')[0];
+      const entryDateKey = toDateKey(entryDate);
       return entryDateKey === dateKey;
     });
   }
@@ -52,7 +54,12 @@ export class LocalMealRepository implements IMealRepository {
     const index = this.meals.findIndex((m) => m.id === id);
     if (index === -1) throw new Error(`Meal ${id} not found`);
 
-    const updated = { ...this.meals[index], ...updates };
+    const currentMeal = this.meals[index];
+    if (!currentMeal) {
+      throw new Error(`Meal ${id} not found`);
+    }
+
+    const updated: MealEntry = { ...currentMeal, ...updates };
     this.meals[index] = updated;
     return updated;
   }

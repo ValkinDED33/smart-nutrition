@@ -111,7 +111,9 @@ npm run test
 - Product lookup is Europe-first: local products first, then Open Food Facts.
 - Photo logging is now a free draft/review flow rather than paid AI vision recognition.
 - Assistant Runtime now uses a provider layer with honest fallback: local contextual answers stay available, and a remote AI runtime can be enabled through the backend without rewriting the UI.
-- When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/assistant-runtime`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
+- When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/ai`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
+- The assistant backend now supports a provider chain with automatic fallback between Groq, Google AI Studio, OpenRouter, and other OpenAI-compatible runtimes when multiple credentials are configured.
+- `/api/health` now exposes per-provider assistant runtime status, including failure cooldown state for flaky providers.
 - If the backend on `http://localhost:8787` is available, the app prefers remote auth and cloud snapshots automatically.
 - If the backend on `http://localhost:8787` is available, the app prefers remote auth and syncs profile/meal state through dedicated backend endpoints automatically.
 - Remote mode now keeps a cached cloud snapshot/meta locally, so session restore and cloud status stay responsive even through short backend interruptions.

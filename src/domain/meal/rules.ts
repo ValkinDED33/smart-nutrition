@@ -4,8 +4,7 @@
  * Business rules and policies
  */
 
-import type { MealEntry, UserProfile } from './types';
-import { calculateMealTotalNutrients } from './calculations';
+import type { MealEntry, UserProfile } from "./types";
 
 /**
  * MealRules - contains business rules for meal operations

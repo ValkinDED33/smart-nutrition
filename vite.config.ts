@@ -1,8 +1,26 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const fromRoot = (target: string) => path.resolve(projectRoot, target);
+
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      "@domain": fromRoot("src/domain"),
+      "@data": fromRoot("src/data"),
+      "@integration": fromRoot("src/integration"),
+      "@state": fromRoot("src/state"),
+      "@features": fromRoot("src/features"),
+      "@shared": fromRoot("src/shared"),
+      "@app": fromRoot("src/app"),
+      "@pages": fromRoot("src/pages"),
+      "@routes": fromRoot("src/routes"),
+    },
+  },
   server: {
     proxy: {
       "/api": {

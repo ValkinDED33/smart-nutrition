@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server:dev": "node server/index.mjs",
-    "start": "node server/index.mjs",
-    "build": "tsc -b && vite build",
+    "server:dev": "node --env-file-if-exists=.env server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "build": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit && vite build",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
     "preview": "vite preview"

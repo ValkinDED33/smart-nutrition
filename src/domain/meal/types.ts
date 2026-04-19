@@ -17,11 +17,11 @@ export interface Nutrients {
   protein: number;
   fat: number;
   carbs: number;
-  fiber?: number;
-  sugar?: number;
-  sodium?: number;
-  calcium?: number;
-  iron?: number;
+  fiber: number;
+  sugar: number;
+  sodium: number;
+  calcium: number;
+  iron: number;
 }
 
 /**

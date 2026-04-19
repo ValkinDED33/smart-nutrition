@@ -4,20 +4,20 @@ import type {
   AssistantRuntimeResponse,
 } from "../../types/assistant";
 
-export interface AssistantRuntimeProvider {
+export interface AssistantRuntimeGateway {
   askQuestion: (
     input: AssistantQuestionInput
   ) => Promise<AssistantRuntimeResponse>;
 }
 
-export const createAssistantRuntimeProvider = (
-  askQuestion: AssistantRuntimeProvider["askQuestion"] = askAssistantQuestion
-): AssistantRuntimeProvider => ({
+export const createAssistantRuntimeGateway = (
+  askQuestion: AssistantRuntimeGateway["askQuestion"] = askAssistantQuestion
+): AssistantRuntimeGateway => ({
   askQuestion,
 });
 
-export const assistantRuntimeProvider = createAssistantRuntimeProvider();
+export const assistantRuntimeGateway = createAssistantRuntimeGateway();
 
 export const askAssistantRuntimeQuestion = (
   input: AssistantQuestionInput
-) => assistantRuntimeProvider.askQuestion(input);
+) => assistantRuntimeGateway.askQuestion(input);

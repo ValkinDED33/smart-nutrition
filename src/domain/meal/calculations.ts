@@ -5,7 +5,9 @@
  * No side effects, no dependencies on framework
  */
 
-import type { MealEntry, Nutrients, MacroProgress, MealTypeValue } from './types';
+import type { MealEntry, Nutrients, MacroProgress, MealTypeValue } from "./types";
+
+const toDateKey = (value: Date) => value.toISOString().slice(0, 10);
 
 /**
  * Calculate total nutrients from meal entries
@@ -112,7 +114,7 @@ export function filterEntriesByDate(
 ): MealEntry[] {
   return items.filter((item) => {
     const entryDate = new Date(item.eatenAt);
-    const entryDateKey = entryDate.toISOString().split('T')[0];
+    const entryDateKey = toDateKey(entryDate);
     return entryDateKey === dateKey;
   });
 }
@@ -131,7 +133,7 @@ export function calculateDailySummaries(
   current.setHours(0, 0, 0, 0);
 
   while (current <= endDate) {
-    const dateKey = current.toISOString().split('T')[0];
+    const dateKey = toDateKey(current);
     const dayEntries = filterEntriesByDate(items, dateKey);
     summaries[dateKey] = calculateMealTotalNutrients(dayEntries);
     current.setDate(current.getDate() + 1);

@@ -6,8 +6,8 @@ import {
 } from "./assistantMemory";
 import {
   askAssistantRuntimeQuestion,
-  assistantRuntimeProvider,
-} from "./assistantProvider";
+  assistantRuntimeGateway,
+} from "./assistantGateway";
 import {
   buildAssistantWelcomeMessage,
   buildLocalAssistantReply,
@@ -16,13 +16,13 @@ import {
 } from "./assistantRules";
 import type { AssistantQuestionInput, AssistantRuntimeContext } from "../../types/assistant";
 import type { AssistantRuntimeMemoryStore } from "./assistantMemory";
-import type { AssistantRuntimeProvider } from "./assistantProvider";
+import type { AssistantRuntimeGateway } from "./assistantGateway";
 import type { AssistantChatMessage, AssistantContextSource } from "./assistantTypes";
 
 export type { AssistantChatMessage, AssistantContextSource } from "./assistantTypes";
 
 export interface AssistantRuntimeDependencies {
-  provider?: AssistantRuntimeProvider;
+  provider?: AssistantRuntimeGateway;
   memory?: AssistantRuntimeMemoryStore;
 }
 
@@ -38,7 +38,7 @@ export interface AssistantRuntime {
 }
 
 export const createAssistantRuntime = ({
-  provider = assistantRuntimeProvider,
+  provider = assistantRuntimeGateway,
   memory = assistantRuntimeMemory,
 }: AssistantRuntimeDependencies = {}): AssistantRuntime => ({
   createContext: createAssistantRuntimeContext,
