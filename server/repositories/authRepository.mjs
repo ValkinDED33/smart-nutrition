@@ -16,6 +16,7 @@ export const createAuthRepository = (storage) => ({
   findSessionByToken: (token) => storage.findSessionByToken(token),
   deleteSessionByToken: (token) => storage.deleteSessionByToken(token),
   deleteSessionsByUserId: (userId) => storage.deleteSessionsByUserId(userId),
+  incrementUserTokenVersion: (userId) => storage.incrementUserTokenVersion(userId),
   getLoginAttempt: (email) => storage.getLoginAttempt(email),
   upsertLoginAttempt: (attempt) => storage.upsertLoginAttempt(attempt),
   clearLoginAttempt: (email) => storage.clearLoginAttempt(email),

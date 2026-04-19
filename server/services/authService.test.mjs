@@ -15,6 +15,7 @@ const createAuthServiceFixture = () => {
     findSessionByToken: vi.fn(),
     deleteSessionByToken: vi.fn(),
     deleteSessionsByUserId: vi.fn(),
+    incrementUserTokenVersion: vi.fn(),
     getLoginAttempt: vi.fn(),
     upsertLoginAttempt: vi.fn(),
     clearLoginAttempt: vi.fn(),
@@ -63,6 +64,7 @@ describe("authService", () => {
       passwordHash: "hash",
       passwordSalt: "salt",
       passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 0,
       createdAt: new Date().toISOString(),
     };
     const expiresAt = Date.now() + 60_000;
@@ -71,6 +73,7 @@ describe("authService", () => {
       expiresAt,
       secret: config.jwtSecret,
       kind: "refresh",
+      tokenVersion: user.tokenVersion,
     });
 
     authRepository.findSessionByToken.mockReturnValue({
@@ -93,9 +96,42 @@ describe("authService", () => {
   it("revokes all sessions for the current user", () => {
     const { authRepository, service } = createAuthServiceFixture();
 
-    service.logoutAll({ id: "user-42" });
+    service.logoutAll({ id: "user-42", role: "USER", tokenVersion: 0 });
 
+    expect(authRepository.incrementUserTokenVersion).toHaveBeenCalledWith("user-42");
     expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith("user-42");
+  });
+
+  it("rejects access tokens when the stored token version changes", () => {
+    const { authRepository, config, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-9",
+      email: "stale@example.com",
+      name: "Stale Session",
+      avatar: undefined,
+      age: 29,
+      weight: 75,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      measurements: undefined,
+      passwordHash: "hash",
+      passwordSalt: "salt",
+      passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 2,
+      createdAt: new Date().toISOString(),
+    };
+    const accessToken = createSessionToken({
+      userId: user.id,
+      expiresAt: Date.now() + 60_000,
+      secret: config.jwtSecret,
+      tokenVersion: 1,
+    });
+
+    authRepository.findUserById.mockReturnValue(user);
+
+    expect(service.authenticateToken(accessToken)).toBeNull();
   });
 
   it("exports account data with snapshot and backup summaries", () => {

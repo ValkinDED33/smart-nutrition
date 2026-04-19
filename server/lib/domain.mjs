@@ -116,7 +116,13 @@ export const sanitizeName = (name) => String(name || "").trim().replace(/\s+/g, 
 
 export const createId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 
-export const createSessionToken = ({ userId, expiresAt, secret, kind = "access" }) => {
+export const createSessionToken = ({
+  userId,
+  expiresAt,
+  secret,
+  kind = "access",
+  tokenVersion = 0,
+}) => {
   const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = base64UrlEncode(
     JSON.stringify({
@@ -124,6 +130,7 @@ export const createSessionToken = ({ userId, expiresAt, secret, kind = "access" 
       exp: Math.floor(expiresAt / 1000),
       iat: Math.floor(Date.now() / 1000),
       kind,
+      ver: Math.max(Number(tokenVersion) || 0, 0),
     })
   );
   const signature = crypto
@@ -179,6 +186,10 @@ export const verifySessionToken = (token, secret) => {
       parsedPayload.kind === "access"
         ? parsedPayload.kind
         : "legacy",
+    tokenVersion:
+      Number.isInteger(parsedPayload.ver) && parsedPayload.ver >= 0
+        ? parsedPayload.ver
+        : 0,
   };
 };
 

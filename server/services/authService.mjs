@@ -14,6 +14,8 @@ import {
 } from "../lib/domain.mjs";
 
 export const createAuthService = ({ authRepository, stateRepository, config }) => {
+  const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
+
   const writeAuditLog = ({
     actorUserId = null,
     actorRole = "USER",
@@ -43,24 +45,26 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
 
   const getUserById = (userId) => authRepository.findUserById(userId);
 
-  const createAccessToken = (userId) =>
+  const createAccessToken = (user) =>
     createSessionToken({
-      userId,
+      userId: user.id,
       expiresAt: Date.now() + config.accessTokenTtlMs,
       secret: config.jwtSecret,
       kind: "access",
+      tokenVersion: getTokenVersion(user),
     });
 
-  const createRefreshSession = (userId) => {
+  const createRefreshSession = (user) => {
     const expiresAt = Date.now() + config.refreshTokenTtlMs;
     const session = {
       token: createSessionToken({
-        userId,
+        userId: user.id,
         expiresAt,
         secret: config.jwtSecret,
         kind: "refresh",
+        tokenVersion: getTokenVersion(user),
       }),
-      userId,
+      userId: user.id,
       expiresAt,
     };
 
@@ -105,6 +109,11 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       return null;
     }
 
+    if (verifiedToken.tokenVersion !== getTokenVersion(user)) {
+      authRepository.deleteSessionByToken(token);
+      return null;
+    }
+
     return { token, session, user };
   };
 
@@ -134,6 +143,10 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     const user = getUserById(verifiedToken.userId);
 
     if (!user) {
+      return null;
+    }
+
+    if (verifiedToken.tokenVersion !== getTokenVersion(user)) {
       return null;
     }
 
@@ -224,6 +237,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         role,
         twoFactorEnabled: false,
         twoFactorRequired: role === "ADMIN" || role === "SUPER_ADMIN",
+        tokenVersion: 0,
         ...passwordRecord,
       };
 
@@ -234,7 +248,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         updatedAt: new Date().toISOString(),
       });
 
-      const refreshSession = createRefreshSession(user.id);
+      const refreshSession = createRefreshSession(user);
       writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
@@ -246,7 +260,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
           role: user.role,
         },
       });
-      return buildAuthResponse(user, createAccessToken(user.id), refreshSession.token);
+      return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
     },
 
     login: (body) => {
@@ -263,7 +277,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       }
 
       clearLoginAttempts(email);
-      const refreshSession = createRefreshSession(user.id);
+      const refreshSession = createRefreshSession(user);
       writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
@@ -271,7 +285,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         targetType: "session",
         targetId: refreshSession.token,
       });
-      return buildAuthResponse(user, createAccessToken(user.id), refreshSession.token);
+      return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
     },
 
     restoreSession: (request) => {
@@ -294,11 +308,11 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       }
 
       authRepository.deleteSessionByToken(refreshToken);
-      const nextRefreshSession = createRefreshSession(auth.user.id);
+      const nextRefreshSession = createRefreshSession(auth.user);
 
       return buildAuthResponse(
         auth.user,
-        createAccessToken(auth.user.id),
+        createAccessToken(auth.user),
         nextRefreshSession.token
       );
     },
@@ -328,6 +342,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     },
 
     logoutAll: (currentUser) => {
+      authRepository.incrementUserTokenVersion?.(currentUser.id);
       authRepository.deleteSessionsByUserId(currentUser.id);
       writeAuditLog({
         actorUserId: currentUser.id,
