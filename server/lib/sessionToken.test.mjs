@@ -17,6 +17,7 @@ describe("session token helpers", () => {
       userId: "user-123",
       expiresAt: Math.floor(expiresAt / 1000) * 1000,
       kind: "access",
+      tokenVersion: 0,
     });
   });
 
@@ -44,6 +45,25 @@ describe("session token helpers", () => {
       userId: "user-123",
       expiresAt: Math.floor(expiresAt / 1000) * 1000,
       kind: "refresh",
+      tokenVersion: 0,
+    });
+  });
+
+  it("preserves token version in the signed payload", () => {
+    const secret = "unit-test-secret";
+    const expiresAt = Date.now() + 60_000;
+    const token = createSessionToken({
+      userId: "user-123",
+      expiresAt,
+      secret,
+      tokenVersion: 3,
+    });
+
+    expect(verifySessionToken(token, secret)).toEqual({
+      userId: "user-123",
+      expiresAt: Math.floor(expiresAt / 1000) * 1000,
+      kind: "access",
+      tokenVersion: 3,
     });
   });
 });

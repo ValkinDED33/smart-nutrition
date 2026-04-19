@@ -431,6 +431,7 @@ const mapUserRow = (row) => {
     role: isUserRole(row.role) ? row.role : "USER",
     twoFactorEnabled: toBoolean(row.two_factor_enabled, false),
     twoFactorRequired: toBoolean(row.two_factor_required, false),
+    tokenVersion: Math.max(toNumber(row.token_version, 0), 0),
     passwordHash: row.password_hash,
     passwordSalt: row.password_salt,
     passwordVersion: row.password_version,
@@ -557,6 +558,7 @@ const createSchema = (database) => {
       role TEXT NOT NULL DEFAULT 'USER',
       two_factor_enabled INTEGER NOT NULL DEFAULT 0,
       two_factor_required INTEGER NOT NULL DEFAULT 0,
+      token_version INTEGER NOT NULL DEFAULT 0,
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
       password_version TEXT NOT NULL
@@ -798,10 +800,11 @@ const importLegacyUsers = (database, users) => {
       role,
       two_factor_enabled,
       two_factor_required,
+      token_version,
       password_hash,
       password_salt,
       password_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   users.forEach((user) => {
@@ -821,6 +824,7 @@ const importLegacyUsers = (database, users) => {
       isUserRole(user.role) ? user.role : "USER",
       toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
       toBoolean(user.twoFactorRequired, false) ? 1 : 0,
+      Math.max(Number(user.tokenVersion ?? 0) || 0, 0),
       user.passwordHash ?? "",
       user.passwordSalt ?? "",
       user.passwordVersion ?? "pbkdf2-sha256"
@@ -1372,6 +1376,7 @@ export const createSqliteStorage = async ({
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
   ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(database, "users", "token_version", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "profile_states", "diet_style", "TEXT NOT NULL DEFAULT 'balanced'");
   ensureColumn(database, "profile_states", "allergies_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(
@@ -1883,10 +1888,11 @@ export const createSqliteStorage = async ({
               role,
               two_factor_enabled,
               two_factor_required,
+              token_version,
               password_hash,
               password_salt,
               password_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
         )
         .run(
@@ -1905,6 +1911,7 @@ export const createSqliteStorage = async ({
           isUserRole(user.role) ? user.role : "USER",
           toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
           toBoolean(user.twoFactorRequired, false) ? 1 : 0,
+          Math.max(Number(user.tokenVersion ?? 0) || 0, 0),
           user.passwordHash,
           user.passwordSalt,
           user.passwordVersion
@@ -1952,6 +1959,26 @@ export const createSqliteStorage = async ({
         );
 
       return user;
+    },
+
+    incrementUserTokenVersion: (userId) => {
+      const existingUser = getResolvedUser(userId);
+
+      if (!existingUser) {
+        return null;
+      }
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET token_version = COALESCE(token_version, 0) + 1
+            WHERE id = ?
+          `
+        )
+        .run(userId);
+
+      return getResolvedUser(userId);
     },
 
     updateUserRole: ({ userId, role, twoFactorRequired = undefined, twoFactorEnabled = undefined }) => {

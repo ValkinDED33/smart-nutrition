@@ -20,6 +20,11 @@ const RemoteStatePullAgent = () => {
   );
   const pullInFlightRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pendingChangesRef = useRef(syncOutbox.pendingChanges);
+  const lastSyncedAtRef = useRef(lastSyncedAt);
+
+  pendingChangesRef.current = syncOutbox.pendingChanges;
+  lastSyncedAtRef.current = lastSyncedAt;
 
   useEffect(() => {
     if (!user || syncMode !== "remote-cloud") {
@@ -27,7 +32,7 @@ const RemoteStatePullAgent = () => {
     }
 
     const maybePull = async () => {
-      if (pullInFlightRef.current || syncOutbox.pendingChanges > 0) {
+      if (pullInFlightRef.current || pendingChangesRef.current > 0) {
         return;
       }
 
@@ -37,15 +42,28 @@ const RemoteStatePullAgent = () => {
         const meta = await getRemoteSnapshotMeta({ force: true });
         dispatch(setCloudMeta(meta));
         const remoteTimestamp = meta?.updatedAt ? Date.parse(meta.updatedAt) : 0;
-        const localTimestamp = lastSyncedAt ? Date.parse(lastSyncedAt) : 0;
+        const localTimestamp = lastSyncedAtRef.current ? Date.parse(lastSyncedAtRef.current) : 0;
 
-        if (!remoteTimestamp || remoteTimestamp <= localTimestamp) {
+        if (
+          pendingChangesRef.current > 0 ||
+          !remoteTimestamp ||
+          remoteTimestamp <= localTimestamp
+        ) {
           return;
         }
 
         const snapshot = await pullRemoteAppSnapshot({ force: true });
 
-        if (!snapshot) {
+        const latestLocalTimestamp = lastSyncedAtRef.current
+          ? Date.parse(lastSyncedAtRef.current)
+          : 0;
+        const snapshotTimestamp = snapshot?.updatedAt ? Date.parse(snapshot.updatedAt) : 0;
+
+        if (
+          pendingChangesRef.current > 0 ||
+          !snapshot ||
+          (snapshotTimestamp > 0 && snapshotTimestamp <= latestLocalTimestamp)
+        ) {
           return;
         }
 
@@ -105,7 +123,7 @@ const RemoteStatePullAgent = () => {
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
-  }, [dispatch, lastSyncedAt, syncMode, syncOutbox.pendingChanges, user]);
+  }, [dispatch, syncMode, user]);
 
   return null;
 };
