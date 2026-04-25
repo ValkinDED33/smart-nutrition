@@ -41,6 +41,24 @@ const normalizeOptionalEmail = (value) => {
   return email || null;
 };
 
+const readBooleanFlag = (value, fallback = false) => {
+  const normalized = toTrimmedString(value).toLowerCase();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+};
+
 const readPositiveInteger = (value, fallback, name, errors, { min = 1 } = {}) => {
   if (value === undefined || value === null || value === "") {
     return fallback;
@@ -558,6 +576,48 @@ export const createServerConfig = (env = process.env) => {
     "SMART_NUTRITION_PRODUCT_SUBMISSION_DAILY_LIMIT",
     errors
   );
+  const appBaseUrl = normalizeBaseUrl(
+    env.SMART_NUTRITION_APP_BASE_URL,
+    serveStatic ? `http://localhost:${port}` : "http://localhost:5173"
+  );
+  const smtpUrl = toTrimmedString(env.SMART_NUTRITION_SMTP_URL) || null;
+  const smtpHost = toTrimmedString(env.SMART_NUTRITION_SMTP_HOST) || null;
+  const smtpPort = readPositiveInteger(
+    env.SMART_NUTRITION_SMTP_PORT,
+    587,
+    "SMART_NUTRITION_SMTP_PORT",
+    errors
+  );
+  const smtpSecure = readBooleanFlag(env.SMART_NUTRITION_SMTP_SECURE, false);
+  const smtpUser = toTrimmedString(env.SMART_NUTRITION_SMTP_USER) || null;
+  const smtpPass = toTrimmedString(env.SMART_NUTRITION_SMTP_PASS) || null;
+  const emailFromAddress =
+    normalizeOptionalEmail(env.SMART_NUTRITION_EMAIL_FROM) ??
+    normalizeOptionalEmail(env.SMART_NUTRITION_SMTP_USER) ??
+    null;
+  const emailFromName =
+    toTrimmedString(env.SMART_NUTRITION_EMAIL_FROM_NAME, "Smart Nutrition") ||
+    "Smart Nutrition";
+
+  if (!smtpUrl && smtpHost && Boolean(smtpUser) !== Boolean(smtpPass)) {
+    errors.push(
+      "SMART_NUTRITION_SMTP_USER and SMART_NUTRITION_SMTP_PASS must either both be set or both be omitted."
+    );
+  }
+
+  if (!smtpUrl && !smtpHost && (smtpUser || smtpPass)) {
+    warnings.push(
+      "SMTP credentials are set without SMART_NUTRITION_SMTP_HOST. Email delivery stays disabled until a host is configured."
+    );
+  }
+
+  if ((smtpUrl || smtpHost) && !emailFromAddress) {
+    warnings.push(
+      "Email delivery is configured without SMART_NUTRITION_EMAIL_FROM. Falling back to the SMTP user when possible."
+    );
+  }
+
+  const emailTransportConfigured = Boolean(emailFromAddress && (smtpUrl || smtpHost));
   const explicitAssistantApiKey =
     toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null;
   const explicitAssistantModel =
@@ -635,6 +695,20 @@ export const createServerConfig = (env = process.env) => {
     maxBackupFilesPerUser,
     requestLimitWindowMs,
     requestLimitMax,
+    authAccessCookieName: "smart-nutrition-access",
+    authRefreshCookieName: "smart-nutrition-refresh",
+    authCookieSameSite: "Lax",
+    authCookieSecure: isProduction,
+    appBaseUrl,
+    emailFromAddress,
+    emailFromName,
+    emailTransportConfigured,
+    smtpUrl,
+    smtpHost,
+    smtpPort,
+    smtpSecure,
+    smtpUser,
+    smtpPass,
     assistantApiKey,
     assistantModel,
     assistantBaseUrl,

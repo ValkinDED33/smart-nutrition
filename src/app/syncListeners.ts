@@ -10,6 +10,7 @@ import {
   saveRemoteMealProduct,
   syncRemoteMealState,
   syncRemoteProfileState,
+  syncRemoteWaterState,
 } from "../shared/api/auth";
 import {
   hydrateSyncOutbox,
@@ -42,6 +43,15 @@ import {
   updateWeight,
   type ProfileState,
 } from "../features/profile/profileSlice";
+import {
+  incrementWater,
+  resetWaterTracker,
+  setWaterConsumed,
+  setWaterGlassSize,
+  setWaterTarget,
+  syncWaterTargetFromWeight,
+  type WaterState,
+} from "../features/water/waterSlice";
 import { clearSyncOutbox, enqueueSyncOutbox } from "../shared/lib/syncOutbox";
 import {
   calculateAdaptiveCalorieTarget,
@@ -54,6 +64,7 @@ import { broadcastTabSnapshot } from "../shared/lib/tabRealtimeSync";
 type SyncState = {
   profile: ProfileState;
   meal: MealState;
+  water: WaterState;
   auth: {
     user: {
       id: string;
@@ -76,6 +87,7 @@ const broadcastCurrentTabState = (state: SyncState) => {
     userId: state.auth.user.id,
     profile: state.profile,
     meal: state.meal,
+    water: state.water,
   });
 };
 
@@ -140,6 +152,7 @@ const runCloudSync = async (
         buildAppSnapshot({
           profile: state.profile,
           meal: state.meal,
+          water: state.water,
           meta: result.meta,
         })
       );
@@ -187,6 +200,27 @@ export const registerRemoteSyncListeners = () => {
 
       const state = getStateSnapshot(listenerApi.getState());
       await runCloudSync(listenerApi, () => syncRemoteProfileState(state.profile));
+    },
+  });
+
+  remoteSyncListenerMiddleware.startListening({
+    matcher: isAnyOf(
+      setWaterTarget,
+      syncWaterTargetFromWeight,
+      setWaterGlassSize,
+      setWaterConsumed,
+      incrementWater,
+      resetWaterTracker
+    ),
+    effect: async (_, listenerApi) => {
+      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
+
+      if (!isCloudSyncActive()) {
+        return;
+      }
+
+      const state = getStateSnapshot(listenerApi.getState());
+      await runCloudSync(listenerApi, () => syncRemoteWaterState(state.water));
     },
   });
 

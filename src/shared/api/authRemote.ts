@@ -11,6 +11,11 @@ import {
   writeCachedRemoteMeta,
   writeCachedRemoteSnapshot,
 } from "../lib/remoteStateCache";
+import {
+  getClientStorageItem,
+  removeClientStorageItem,
+  setClientStorageItem,
+} from "../lib/clientPersistence";
 import type {
   AccountBackupPayload,
   AccountBackupSummary,
@@ -65,18 +70,16 @@ class RemoteRequestError extends Error {
 }
 
 const AUTH_MODE_KEY = "smart-nutrition.auth-mode";
-const REMOTE_TOKEN_KEY = "smart-nutrition.remote-token";
-const REMOTE_REFRESH_TOKEN_KEY = "smart-nutrition.remote-refresh-token";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const REMOTE_USER_KEY = "smart-nutrition.remote-user";
 
 const remoteRuntimeInfo: AuthRuntimeInfo = {
   mode: "remote-cloud",
   providerLabel: "Remote API account",
-  sessionLabel: "Access + refresh API session",
-  syncLabel: "Profile and meal data are restored through remote state endpoints.",
+  sessionLabel: "Secure cookie session",
+  syncLabel: "Profile, meal, and offline changes are synchronized through remote state endpoints.",
   securityLabel:
-    "Passwords stay on the API, access tokens are short-lived, and refresh tokens renew sessions.",
+    "Authentication relies on httpOnly cookie sessions, so tokens are never exposed to client-side JavaScript.",
   supportsCloudSync: true,
   supportsAccountDeletion: true,
   supportsDataExport: true,
@@ -89,22 +92,18 @@ let remoteRefreshPromise: Promise<void> | null = null;
 const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
 
 const getStoredAuthMode = (): AuthMode =>
-  localStorage.getItem(AUTH_MODE_KEY) === "remote-cloud"
+  getClientStorageItem(AUTH_MODE_KEY) === "remote-cloud"
     ? "remote-cloud"
     : "local-browser";
 
 const setStoredAuthMode = (mode: AuthMode) => {
-  localStorage.setItem(AUTH_MODE_KEY, mode);
+  setClientStorageItem(AUTH_MODE_KEY, mode);
 };
 
-const getStoredRemoteToken = () => localStorage.getItem(REMOTE_TOKEN_KEY);
-
-const getStoredRemoteRefreshToken = () => localStorage.getItem(REMOTE_REFRESH_TOKEN_KEY);
-
-const getStoredRemoteBaseUrl = () => localStorage.getItem(REMOTE_BASE_URL_KEY);
+const getStoredRemoteBaseUrl = () => getClientStorageItem(REMOTE_BASE_URL_KEY);
 
 const getStoredRemoteUser = (): User | null => {
-  const raw = localStorage.getItem(REMOTE_USER_KEY);
+  const raw = getClientStorageItem(REMOTE_USER_KEY);
 
   if (!raw) {
     return null;
@@ -118,29 +117,18 @@ const getStoredRemoteUser = (): User | null => {
 };
 
 const setStoredRemoteUser = (user: User) => {
-  localStorage.setItem(REMOTE_USER_KEY, JSON.stringify(user));
+  setClientStorageItem(REMOTE_USER_KEY, JSON.stringify(user));
 };
 
-const setRemoteSession = (
-  baseUrl: string,
-  accessToken: string,
-  refreshToken?: string
-) => {
-  localStorage.setItem(REMOTE_TOKEN_KEY, accessToken);
-
-  if (refreshToken) {
-    localStorage.setItem(REMOTE_REFRESH_TOKEN_KEY, refreshToken);
-  }
-
-  localStorage.setItem(REMOTE_BASE_URL_KEY, baseUrl);
+const setRemoteSession = (baseUrl: string, user: User) => {
+  setClientStorageItem(REMOTE_BASE_URL_KEY, baseUrl);
+  setStoredRemoteUser(user);
   setStoredAuthMode("remote-cloud");
 };
 
 const clearRemoteSession = () => {
-  localStorage.removeItem(REMOTE_TOKEN_KEY);
-  localStorage.removeItem(REMOTE_REFRESH_TOKEN_KEY);
-  localStorage.removeItem(REMOTE_BASE_URL_KEY);
-  localStorage.removeItem(REMOTE_USER_KEY);
+  removeClientStorageItem(REMOTE_BASE_URL_KEY);
+  removeClientStorageItem(REMOTE_USER_KEY);
   clearCachedRemoteState();
   setStoredAuthMode("local-browser");
 };
@@ -208,6 +196,10 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
       return new AuthApiError("INVALID_RESET_TOKEN", error.message);
     }
 
+    if (error.code === "EMAIL_DELIVERY_UNAVAILABLE") {
+      return new AuthApiError("EMAIL_DELIVERY_UNAVAILABLE", error.message);
+    }
+
     if (error.code === "WEAK_PASSWORD") {
       return new AuthApiError("WEAK_PASSWORD", error.message);
     }
@@ -254,20 +246,12 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
   }
 
   remoteRefreshPromise = (async () => {
-    const refreshToken = getStoredRemoteRefreshToken();
-
-    if (!refreshToken) {
-      clearRemoteSession();
-      throw new AuthApiError("INVALID_CREDENTIALS", "Refresh session is missing.");
-    }
-
     const response = await fetch(`${baseUrl}/auth/refresh`, {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ refreshToken }),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -282,9 +266,11 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
     }
 
     const payload = await readJsonResponse<AuthResponse>(response);
+    setRemoteSession(baseUrl, payload.user);
 
-    setRemoteSession(baseUrl, payload.token, payload.refreshToken);
-    setStoredRemoteUser(payload.user);
+    if (payload.snapshot) {
+      writeCachedRemoteSnapshot(payload.snapshot);
+    }
   })().finally(() => {
     remoteRefreshPromise = null;
   });
@@ -315,6 +301,7 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
         const response = await fetch(`${baseUrl}/health`, {
           method: "GET",
           headers: { Accept: "application/json" },
+          credentials: "include",
         });
 
         if (response.ok) {
@@ -359,16 +346,6 @@ const requestRemote = async <T,>(
   const performRequest = async () => {
     const nextHeaders = new Headers(headers);
 
-    if (requireAuth) {
-      const token = getStoredRemoteToken();
-
-      if (!token) {
-        throw new AuthApiError("INVALID_CREDENTIALS", "Remote session is missing.");
-      }
-
-      nextHeaders.set("Authorization", `Bearer ${token}`);
-    }
-
     if (withSyncContext) {
       const deviceId = getRemoteDeviceId();
       const baseVersion = getCurrentRemoteStateVersion();
@@ -385,17 +362,13 @@ const requestRemote = async <T,>(
     return fetch(`${baseUrl}${path}`, {
       ...init,
       headers: nextHeaders,
+      credentials: "include",
     });
   };
 
   let response = await performRequest();
 
-  if (
-    response.status === 401 &&
-    requireAuth &&
-    allowRefresh &&
-    getStoredRemoteRefreshToken()
-  ) {
+  if (response.status === 401 && requireAuth && allowRefresh) {
     try {
       await refreshRemoteAccessToken(baseUrl);
       response = await performRequest();
@@ -419,16 +392,31 @@ const requestRemote = async <T,>(
   return { data, baseUrl };
 };
 
+const getOfflineSessionPayload = (): AuthResponse | null => {
+  const cachedUser = getStoredRemoteUser();
+
+  if (!cachedUser) {
+    return null;
+  }
+
+  return {
+    user: cachedUser,
+    token: "cookie-session",
+    snapshot: readCachedRemoteSnapshot(),
+  };
+};
+
 export const checkRemoteBackendAvailability = async (force = false) =>
   Boolean(await probeRemoteBaseUrl(force));
 
 export const isRemoteAuthAvailable = async () => checkRemoteBackendAvailability();
 
-export const isRemoteAuthMode = () => getStoredAuthMode() === "remote-cloud";
+export const isRemoteAuthMode = () =>
+  getStoredAuthMode() === "remote-cloud" && Boolean(getStoredRemoteUser());
 
 export const getRemoteAuthRuntimeInfo = () => remoteRuntimeInfo;
 
-export const getRemoteSessionToken = () => getStoredRemoteToken();
+export const getRemoteSessionToken = () => null;
 
 export const getRemoteBaseUrl = () => getStoredRemoteBaseUrl();
 
@@ -549,6 +537,22 @@ export const pushRemoteMealState = async (meal: unknown): Promise<RemoteSyncResu
   return getRemoteMutationResult("/meal-state", {
     method: "PUT",
     body: JSON.stringify(meal),
+  });
+};
+
+export const pushRemoteWaterState = async (water: unknown): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/water-state", {
+    method: "PUT",
+    body: JSON.stringify(water),
   });
 };
 
@@ -720,8 +724,7 @@ export const fetchRemoteAccountBackup = async (
 };
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
-  setRemoteSession(baseUrl, payload.token, payload.refreshToken);
-  setStoredRemoteUser(payload.user);
+  setRemoteSession(baseUrl, payload.user);
   const granularSnapshot = await loadRemoteAppState();
   const nextSnapshot = granularSnapshot ?? payload.snapshot ?? null;
 
@@ -731,13 +734,15 @@ const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
 
   return {
     ...payload,
+    token: "cookie-session",
+    refreshToken: undefined,
     snapshot: nextSnapshot,
   };
 };
 
 export const remoteAuthProvider: AuthProvider = {
   restoreSession: async () => {
-    if (!isRemoteAuthMode() || !getStoredRemoteToken()) {
+    if (!isRemoteAuthMode() && !getStoredRemoteBaseUrl()) {
       return null;
     }
 
@@ -759,32 +764,17 @@ export const remoteAuthProvider: AuthProvider = {
         return null;
       }
 
-      const cachedUser = getStoredRemoteUser();
-      const cachedToken = getStoredRemoteToken();
-      const cachedSnapshot = readCachedRemoteSnapshot();
-
-      if (cachedUser && cachedToken) {
-        return {
-          user: cachedUser,
-          token: cachedToken,
-          snapshot: cachedSnapshot,
-        };
-      }
-
-      return null;
+      return getOfflineSessionPayload();
     }
   },
 
   logout: async () => {
-    if (isRemoteAuthMode() && getStoredRemoteToken()) {
+    if (getStoredRemoteBaseUrl()) {
       try {
         await requestRemote(
           "/auth/logout",
           {
             method: "POST",
-            body: JSON.stringify({
-              refreshToken: getStoredRemoteRefreshToken(),
-            }),
           },
           { requireAuth: false, allowRefresh: false }
         );
@@ -797,7 +787,7 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   logoutEverywhere: async () => {
-    if (isRemoteAuthMode() && getStoredRemoteToken()) {
+    if (getStoredRemoteBaseUrl()) {
       await requestRemote(
         "/auth/logout-all",
         { method: "POST" },
@@ -824,11 +814,7 @@ export const remoteAuthProvider: AuthProvider = {
       throw authError ?? error;
     });
 
-    if (getStoredRemoteToken()) {
-      localStorage.setItem(REMOTE_BASE_URL_KEY, baseUrl);
-      setStoredAuthMode("remote-cloud");
-      setStoredRemoteUser(data);
-    }
+    setRemoteSession(baseUrl, data);
 
     return data;
   },

@@ -47,7 +47,7 @@ export interface LoginPayload {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  token?: string;
   refreshToken?: string;
   snapshot?: AppSnapshot | null;
 }

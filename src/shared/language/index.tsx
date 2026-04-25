@@ -8,6 +8,10 @@ import {
   type ReactNode,
 } from "react";
 import type { AppLanguage } from "../types/i18n";
+import {
+  getClientStorageItem,
+  setClientStorageItem,
+} from "../lib/clientPersistence";
 
 export type Language = AppLanguage;
 
@@ -497,15 +501,15 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const savedLanguage = localStorage.getItem(STORAGE_KEY);
+    const savedLanguage = getClientStorageItem(STORAGE_KEY);
     return savedLanguage === "pl" ? "pl" : "uk";
   });
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() =>
-    Boolean(localStorage.getItem(STORAGE_KEY))
+    Boolean(getClientStorageItem(STORAGE_KEY))
   );
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, language);
+    setClientStorageItem(STORAGE_KEY, language);
   }, [language]);
 
   const value = useMemo<LanguageContextValue>(

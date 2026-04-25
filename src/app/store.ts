@@ -9,7 +9,6 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import type { PersistedState } from "redux-persist/es/types";
 
 import profileReducer, {
@@ -18,16 +17,23 @@ import profileReducer, {
 import mealReducer, { normalizeMealState } from "../features/meal/mealSlice";
 import waterReducer, { normalizeWaterState } from "../features/water/waterSlice";
 import authReducer from "../features/auth/authSlice";
+import fridgeReducer, { normalizeFridgeState } from "../features/fridge/fridgeSlice";
+import communityReducer, {
+  normalizeCommunityState,
+} from "../features/community/communitySlice";
 import {
   registerRemoteSyncListeners,
   remoteSyncListenerMiddleware,
 } from "./syncListeners";
+import persistStorage from "./persistStorage";
 
 const appReducer = combineReducers({
   profile: profileReducer,
   meal: mealReducer,
   water: waterReducer,
   auth: authReducer,
+  fridge: fridgeReducer,
+  community: communityReducer,
 });
 
 const RESET_APP_ACTION = "app/reset";
@@ -45,9 +51,9 @@ const rootReducer = (
 
 const persistConfig = {
   key: "root",
-  version: 5,
-  storage,
-  whitelist: ["profile", "meal", "water"],
+  version: 6,
+  storage: persistStorage,
+  whitelist: ["profile", "meal", "water", "fridge", "community"],
   migrate: async (state: PersistedState): Promise<PersistedState> => {
     if (!state || typeof state !== "object") {
       return state;
@@ -60,6 +66,8 @@ const persistConfig = {
       profile: normalizeProfileState(persistedState.profile),
       meal: normalizeMealState(persistedState.meal),
       water: normalizeWaterState(persistedState.water),
+      fridge: normalizeFridgeState(persistedState.fridge),
+      community: normalizeCommunityState(persistedState.community),
     } as PersistedState;
   },
 };

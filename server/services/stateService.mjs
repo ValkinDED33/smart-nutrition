@@ -42,6 +42,9 @@ const requireMealProductBucket = (bucket) => {
   return bucket;
 };
 
+const requireWaterState = (value) =>
+  requireRecord(value, "INVALID_WATER_STATE", "Water state payload is required.");
+
 export const createStateService = ({ stateRepository }) => ({
   getSnapshot: (user) => stateRepository.getSnapshotByUserId(user.id, user),
 
@@ -51,6 +54,7 @@ export const createStateService = ({ stateRepository }) => ({
     stateRepository.upsertSnapshot(user.id, {
       profile: snapshot?.profile ?? null,
       meal: snapshot?.meal ?? null,
+      water: snapshot?.water ?? null,
       updatedAt: new Date().toISOString(),
     }, syncContext),
 
@@ -63,6 +67,11 @@ export const createStateService = ({ stateRepository }) => ({
 
   saveMealState: (user, mealState, syncContext = undefined) =>
     stateRepository.upsertMealState(user.id, mealState, syncContext),
+
+  getWaterState: (user) => stateRepository.getWaterStateByUserId(user.id),
+
+  saveWaterState: (user, waterState, syncContext = undefined) =>
+    stateRepository.upsertWaterState(user.id, requireWaterState(waterState), syncContext),
 
   addMealEntries: (user, requestBody, syncContext = undefined) =>
     stateRepository.addMealEntries(user.id, requireEntries(requestBody?.entries), syncContext),

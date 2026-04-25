@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "./app/store";
 import { initializeAuth, selectAuth } from "./features/auth/authSlice";
@@ -12,9 +12,11 @@ import { useLanguage } from "./shared/language";
 import LanguageSetupPage from "./pages/LanguageSetupPage";
 
 const loadLandingPage = () => import("./pages/LandingPage");
-const loadDashboardPage = () => import("./pages/DashboardPage");
+const loadHomePage = () => import("./pages/HomePage");
 const loadProfilePage = () => import("./pages/ProfilePage");
-const loadMealBuilderPage = () => import("./pages/MealBuilderPage");
+const loadMealsPage = () => import("./pages/MealsPage");
+const loadAiCompanionPage = () => import("./pages/AiCompanionPage");
+const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
 const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
@@ -22,9 +24,11 @@ const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
 
 const LandingPage = lazy(loadLandingPage);
-const DashboardPage = lazy(loadDashboardPage);
+const HomePage = lazy(loadHomePage);
 const ProfilePage = lazy(loadProfilePage);
-const MealBuilderPage = lazy(loadMealBuilderPage);
+const MealsPage = lazy(loadMealsPage);
+const AiCompanionPage = lazy(loadAiCompanionPage);
+const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
 const ForgotPasswordPage = lazy(loadForgotPasswordPage);
@@ -48,8 +52,10 @@ function App() {
     }
 
     const preloadRoutes = () => {
-      void loadDashboardPage();
-      void loadMealBuilderPage();
+      void loadHomePage();
+      void loadMealsPage();
+      void loadAiCompanionPage();
+      void loadProgressPage();
       void loadProfilePage();
     };
     const idleWindow = window as Window & {
@@ -130,18 +136,34 @@ function App() {
                 }
               />
               <Route
-                path="/dashboard"
+                path="/home"
                 element={
                   <ProtectedRoute>
-                    <DashboardPage />
+                    <HomePage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/meal-builder"
+                path="/meals"
                 element={
                   <ProtectedRoute>
-                    <MealBuilderPage />
+                    <MealsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai"
+                element={
+                  <ProtectedRoute>
+                    <AiCompanionPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/progress"
+                element={
+                  <ProtectedRoute>
+                    <ProgressPage />
                   </ProtectedRoute>
                 }
               />
@@ -153,6 +175,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+              <Route path="/meal-builder" element={<Navigate to="/meals" replace />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

@@ -1,4 +1,3 @@
-import { localAuthProvider, AuthApiError } from "./authLocal";
 import {
   addRemoteMealEntries,
   analyzeRemoteMealPhoto,
@@ -13,6 +12,7 @@ import {
   getRemoteSessionToken,
   isRemoteAuthAvailable,
   isRemoteAuthMode,
+  pushRemoteWaterState,
   listRemoteAccountBackups,
   removeRemoteMealEntry,
   removeRemoteMealProduct,
@@ -23,6 +23,7 @@ import {
   type RemoteSyncResult,
   upsertRemoteMealProduct,
 } from "./authRemote";
+import { AuthApiError } from "./authLocal";
 
 export type {
   RegisterPayload,
@@ -35,68 +36,52 @@ export type {
 } from "./authProvider";
 export type { RemoteSyncResult };
 export { AuthApiError };
-export const restoreSession = async () => {
-  if (isRemoteAuthMode()) {
-    const remoteSession = await remoteAuthProvider.restoreSession();
-
-    if (remoteSession) {
-      return remoteSession;
-    }
+const assertRemoteBackendAvailable = async () => {
+  if (!(await isRemoteAuthAvailable())) {
+    throw new Error("Secure backend is unavailable.");
   }
-
-  return localAuthProvider.restoreSession();
 };
 
-export const logout = () =>
-  isRemoteAuthMode() ? remoteAuthProvider.logout() : localAuthProvider.logout();
+export const restoreSession = () => remoteAuthProvider.restoreSession();
 
-export const logoutEverywhere = () =>
-  isRemoteAuthMode()
-    ? remoteAuthProvider.logoutEverywhere()
-    : localAuthProvider.logoutEverywhere();
+export const logout = () => remoteAuthProvider.logout();
 
-export const updateStoredProfile = async (
-  user: Parameters<typeof localAuthProvider.updateStoredProfile>[0]
-) =>
-  isRemoteAuthMode()
-    ? remoteAuthProvider.updateStoredProfile(user)
-    : localAuthProvider.updateStoredProfile(user);
+export const logoutEverywhere = () => remoteAuthProvider.logoutEverywhere();
+
+export const updateStoredProfile = (
+  user: Parameters<typeof remoteAuthProvider.updateStoredProfile>[0]
+) => remoteAuthProvider.updateStoredProfile(user);
 
 export const register = async (
-  payload: Parameters<typeof localAuthProvider.register>[0]
-) =>
-  (await isRemoteAuthAvailable())
-    ? remoteAuthProvider.register(payload)
-    : localAuthProvider.register(payload);
+  payload: Parameters<typeof remoteAuthProvider.register>[0]
+) => {
+  await assertRemoteBackendAvailable();
+  return remoteAuthProvider.register(payload);
+};
 
-export const login = async (email: string, password: string) =>
-  (await isRemoteAuthAvailable())
-    ? remoteAuthProvider.login(email, password)
-    : localAuthProvider.login(email, password);
+export const login = async (email: string, password: string) => {
+  await assertRemoteBackendAvailable();
+  return remoteAuthProvider.login(email, password);
+};
 
-export const requestPasswordReset = async (email: string) =>
-  (await isRemoteAuthAvailable())
-    ? remoteAuthProvider.requestPasswordReset(email)
-    : localAuthProvider.requestPasswordReset(email);
+export const requestPasswordReset = async (email: string) => {
+  await assertRemoteBackendAvailable();
+  return remoteAuthProvider.requestPasswordReset(email);
+};
 
-export const resetPassword = async (token: string, password: string) =>
-  (await isRemoteAuthAvailable())
-    ? remoteAuthProvider.resetPassword(token, password)
-    : localAuthProvider.resetPassword(token, password);
+export const resetPassword = async (token: string, password: string) => {
+  await assertRemoteBackendAvailable();
+  return remoteAuthProvider.resetPassword(token, password);
+};
 
-export const deleteAccount = (email: string) =>
-  isRemoteAuthMode()
-    ? remoteAuthProvider.deleteAccount(email)
-    : localAuthProvider.deleteAccount(email);
+export const deleteAccount = (email: string) => remoteAuthProvider.deleteAccount(email);
 
-export const getAuthRuntimeInfo = () =>
-  isRemoteAuthMode()
-    ? getRemoteAuthRuntimeInfo()
-    : localAuthProvider.getRuntimeInfo();
+export const getAuthRuntimeInfo = () => getRemoteAuthRuntimeInfo();
 
 export const isCloudSyncActive = () => isRemoteAuthMode();
 export const syncRemoteProfileState = pushRemoteProfileState;
 export const syncRemoteMealState = pushRemoteMealState;
+export const syncRemoteWaterState = pushRemoteWaterState;
 export const createRemoteMealEntries = addRemoteMealEntries;
 export const deleteRemoteMealEntry = removeRemoteMealEntry;
 export const createRemoteMealTemplate = addRemoteMealTemplate;

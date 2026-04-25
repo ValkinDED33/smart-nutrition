@@ -9,7 +9,9 @@ import {
   StateApiError,
 } from "./lib/domain.mjs";
 import {
+  clearCookie,
   readJsonBody,
+  setCookie,
   sendError,
   sendJson,
   sendNoContent,
@@ -23,6 +25,7 @@ import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
+import { createEmailService } from "./services/emailService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
@@ -33,6 +36,9 @@ const aiRepository = createAiRepository(storage);
 const authRepository = createAuthRepository(storage);
 const platformRepository = createPlatformRepository(storage);
 const stateRepository = createStateRepository(storage);
+const emailService = createEmailService({
+  config: serverConfig,
+});
 const aiService = createAiService({
   aiRepository,
   config: serverConfig,
@@ -40,6 +46,7 @@ const aiService = createAiService({
 const authService = createAuthService({
   authRepository,
   stateRepository,
+  emailService,
   config: serverConfig,
 });
 const platformService = createPlatformService({
@@ -56,6 +63,49 @@ const apiRouter = createApiRouter({ aiController });
 platformService.bootstrapAccessControl();
 const stateStreams = new Map();
 const staticRoot = path.resolve(serverConfig.staticDir);
+
+const clearAuthCookies = (response) => {
+  clearCookie(response, {
+    name: serverConfig.authAccessCookieName,
+    sameSite: serverConfig.authCookieSameSite,
+    secure: serverConfig.authCookieSecure,
+  });
+  clearCookie(response, {
+    name: serverConfig.authRefreshCookieName,
+    sameSite: serverConfig.authCookieSameSite,
+    secure: serverConfig.authCookieSecure,
+  });
+};
+
+const applyAuthCookies = (response, payload) => {
+  if (payload?.token) {
+    setCookie(response, {
+      name: serverConfig.authAccessCookieName,
+      value: payload.token,
+      maxAge: Math.floor(serverConfig.accessTokenTtlMs / 1000),
+      sameSite: serverConfig.authCookieSameSite,
+      secure: serverConfig.authCookieSecure,
+    });
+  }
+
+  if (payload?.refreshToken) {
+    setCookie(response, {
+      name: serverConfig.authRefreshCookieName,
+      value: payload.refreshToken,
+      maxAge: Math.floor(serverConfig.refreshTokenTtlMs / 1000),
+      sameSite: serverConfig.authCookieSameSite,
+      secure: serverConfig.authCookieSecure,
+    });
+  }
+};
+
+const sendAuthSession = (response, statusCode, payload) => {
+  applyAuthCookies(response, payload);
+  sendJson(response, statusCode, {
+    user: payload.user,
+    snapshot: payload.snapshot ?? null,
+  });
+};
 
 const fileExists = async (filePath) => {
   try {
@@ -327,6 +377,7 @@ const routeRequest = async (request, response) => {
           windowMs: serverConfig.requestLimitWindowMs,
         },
         warnings: serverConfig.warnings,
+        email: emailService.getStatus(),
         ai: aiService.getRuntimeStatus(),
       });
       return;
@@ -334,19 +385,19 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/register" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 201, authService.register(body));
+      sendAuthSession(response, 201, authService.register(body));
       return;
     }
 
     if (pathname === "/api/auth/login" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, authService.login(body));
+      sendAuthSession(response, 200, authService.login(body));
       return;
     }
 
     if (pathname === "/api/auth/forgot-password" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, authService.requestPasswordReset(body));
+      sendJson(response, 200, await authService.requestPasswordReset(body));
       return;
     }
 
@@ -364,19 +415,18 @@ const routeRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, session);
+      sendAuthSession(response, 200, session);
       return;
     }
 
     if (pathname === "/api/auth/refresh" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, authService.refreshSession(body));
+      sendAuthSession(response, 200, authService.refreshSession(request, body));
       return;
     }
 
     if (pathname === "/api/state/stream" && request.method === "GET") {
-      const tokenFromQuery = url.searchParams.get("token");
-      const auth = authService.authenticateToken(tokenFromQuery);
+      const auth = authService.authenticateRequest(request);
 
       if (!auth) {
         sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
@@ -406,6 +456,7 @@ const routeRequest = async (request, response) => {
     if (pathname === "/api/auth/logout" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
       authService.logout(request, body);
+      clearAuthCookies(response);
       sendNoContent(response);
       return;
     }
@@ -447,6 +498,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/logout-all" && request.method === "POST") {
       authService.logoutAll(auth.user);
+      clearAuthCookies(response);
       sendNoContent(response);
       return;
     }
@@ -495,6 +547,19 @@ const routeRequest = async (request, response) => {
     if (pathname === "/api/meal-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
       stateService.saveMealState(auth.user, body, getSyncContext(request));
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      return;
+    }
+
+    if (pathname === "/api/water-state" && request.method === "GET") {
+      sendJson(response, 200, stateService.getWaterState(auth.user));
+      return;
+    }
+
+    if (pathname === "/api/water-state" && request.method === "PUT") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      stateService.saveWaterState(auth.user, body, getSyncContext(request));
       broadcastStateMeta(auth.user, stateService);
       sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
       return;
@@ -651,6 +716,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/account" && request.method === "DELETE") {
       authService.deleteAccount(auth.user);
+      clearAuthCookies(response);
       sendNoContent(response);
       return;
     }
@@ -689,6 +755,8 @@ const routeRequest = async (request, response) => {
           ? 409
           : error.code === "TOO_MANY_ATTEMPTS"
             ? 429
+            : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
+              ? 503
             : error.code === "INVALID_RESET_TOKEN" || error.code === "WEAK_PASSWORD"
               ? 400
             : error.code === "BACKUP_NOT_FOUND"

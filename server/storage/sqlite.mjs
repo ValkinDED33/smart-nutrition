@@ -13,6 +13,7 @@ import {
   calculateMealTotalNutrients,
   createInitialMealState,
   createInitialProfileState,
+  createInitialWaterState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -446,6 +447,22 @@ const normalizeMealState = (value) => {
   };
 };
 
+const normalizeWaterState = (value) => {
+  const fallback = createInitialWaterState();
+  const record = isRecord(value) ? value : {};
+
+  return {
+    dailyTargetMl: Math.max(toNumber(record.dailyTargetMl, fallback.dailyTargetMl), 250),
+    consumedMl: Math.max(toNumber(record.consumedMl, fallback.consumedMl), 0),
+    glassSizeMl: Math.max(toNumber(record.glassSizeMl, fallback.glassSizeMl), 100),
+    lastLoggedOn:
+      typeof record.lastLoggedOn === "string" && record.lastLoggedOn.trim().length > 0
+        ? record.lastLoggedOn
+        : fallback.lastLoggedOn,
+    targetMode: record.targetMode === "manual" ? "manual" : "automatic",
+  };
+};
+
 const mapUserRow = (row) => {
   if (!row) {
     return null;
@@ -509,6 +526,7 @@ const mapSnapshotRow = (row) => {
   return {
     profile: parseJson(row.profile_json, null),
     meal: parseJson(row.meal_json, null),
+    water: parseJson(row.water_json, null),
     updatedAt: row.updated_at,
   };
 };
@@ -637,6 +655,7 @@ const createSchema = (database) => {
       user_id TEXT PRIMARY KEY,
       profile_json TEXT,
       meal_json TEXT,
+      water_json TEXT,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -1314,15 +1333,24 @@ const buildMealStateFromRows = (database, userId) => {
   };
 };
 
+const buildWaterStateFromRows = (database, userId) => {
+  const row = database
+    .prepare("SELECT water_json FROM snapshots WHERE user_id = ? LIMIT 1")
+    .get(userId);
+
+  return normalizeWaterState(parseJson(row?.water_json, null));
+};
+
 const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().toISOString()) => {
   database
     .prepare(
       `
-        INSERT INTO snapshots (user_id, profile_json, meal_json, updated_at)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO snapshots (user_id, profile_json, meal_json, water_json, updated_at)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           profile_json = excluded.profile_json,
           meal_json = excluded.meal_json,
+          water_json = excluded.water_json,
           updated_at = excluded.updated_at
       `
     )
@@ -1330,6 +1358,7 @@ const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().
       userId,
       serializeJson(snapshot?.profile ?? null),
       serializeJson(snapshot?.meal ?? null),
+      serializeJson(snapshot?.water ?? null),
       updatedAt
     );
 };
@@ -1405,6 +1434,7 @@ const migrateNormalizedStateIfNeeded = (database) => {
         ) ?? {
           profile: createInitialProfileState(user),
           meal: createInitialMealState(),
+          water: createInitialWaterState(),
         };
 
       const normalizedProfile = replaceProfileStateRows(
@@ -1416,15 +1446,16 @@ const migrateNormalizedStateIfNeeded = (database) => {
       );
       const normalizedMeal = replaceMealStateRows(database, user.id, snapshot.meal);
 
-      upsertSnapshotCache(
-        database,
-        user.id,
-        {
-          profile: normalizedProfile,
-          meal: normalizedMeal,
-        },
-        snapshot.updatedAt
-      );
+        upsertSnapshotCache(
+          database,
+          user.id,
+          {
+            profile: normalizedProfile,
+            meal: normalizedMeal,
+            water: normalizeWaterState(snapshot.water),
+          },
+          snapshot.updatedAt
+        );
     });
 
     database.exec("COMMIT");
@@ -1449,6 +1480,7 @@ export const createSqliteStorage = async ({
 
   const database = new DatabaseSync(sqlitePath);
   createSchema(database);
+  ensureColumn(database, "snapshots", "water_json", "TEXT");
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
   ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
@@ -1765,6 +1797,7 @@ export const createSqliteStorage = async ({
     const snapshot = {
       profile: buildProfileStateFromRows(database, userId, resolvedUser),
       meal: normalizedMeal,
+      water: buildWaterStateFromRows(database, userId),
     };
     upsertSnapshotCache(database, userId, snapshot, updatedAt);
     return { normalizedMeal, snapshot, updatedAt };
@@ -1841,12 +1874,14 @@ export const createSqliteStorage = async ({
       .get(userId);
     const profileUpdatedAt = getUserMeta(database, userId, "profile-updated-at");
     const mealUpdatedAt = getUserMeta(database, userId, "meal-updated-at");
+    const waterUpdatedAt = getUserMeta(database, userId, "water-updated-at");
     const lastWriterDeviceId = getUserMeta(database, userId, "last-writer-device-id");
 
     return {
       updatedAt: row?.updated_at ?? null,
       profileUpdatedAt: profileUpdatedAt ?? row?.updated_at ?? null,
       mealUpdatedAt: mealUpdatedAt ?? row?.updated_at ?? null,
+      waterUpdatedAt: waterUpdatedAt ?? row?.updated_at ?? null,
       backupEnabled: true,
       lastWriterDeviceId: lastWriterDeviceId ?? null,
     };
@@ -1878,11 +1913,13 @@ export const createSqliteStorage = async ({
       updatedAt,
       profileUpdatedAt = undefined,
       mealUpdatedAt = undefined,
+      waterUpdatedAt = undefined,
       deviceId = undefined,
     }
   ) => {
     setUserMeta(database, userId, "profile-updated-at", profileUpdatedAt);
     setUserMeta(database, userId, "meal-updated-at", mealUpdatedAt);
+    setUserMeta(database, userId, "water-updated-at", waterUpdatedAt);
     setUserMeta(database, userId, "last-writer-device-id", deviceId);
     setUserMeta(database, userId, "last-snapshot-updated-at", updatedAt);
   };
@@ -2452,9 +2489,11 @@ export const createSqliteStorage = async ({
       return {
         profile: buildProfileStateFromRows(database, userId, resolvedUser),
         meal: buildMealStateFromRows(database, userId),
+        water: buildWaterStateFromRows(database, userId),
         updatedAt: meta.updatedAt,
         profileUpdatedAt: meta.profileUpdatedAt,
         mealUpdatedAt: meta.mealUpdatedAt,
+        waterUpdatedAt: meta.waterUpdatedAt,
         backupEnabled: meta.backupEnabled,
         lastWriterDeviceId: meta.lastWriterDeviceId,
       };
@@ -2492,6 +2531,7 @@ export const createSqliteStorage = async ({
           {
             profile: normalizedProfile,
             meal: normalizedMeal,
+            water: normalizeWaterState(snapshot?.water),
           },
           updatedAt
         );
@@ -2499,6 +2539,7 @@ export const createSqliteStorage = async ({
           updatedAt,
           profileUpdatedAt: updatedAt,
           mealUpdatedAt: updatedAt,
+          waterUpdatedAt: updatedAt,
           deviceId: normalizedSyncContext.deviceId,
         });
         database.exec("COMMIT");
@@ -2507,6 +2548,7 @@ export const createSqliteStorage = async ({
           {
             profile: normalizedProfile,
             meal: normalizedMeal,
+            water: normalizeWaterState(snapshot?.water),
           },
           "snapshot",
           updatedAt
@@ -2553,6 +2595,7 @@ export const createSqliteStorage = async ({
         const snapshot = {
           profile: normalizedProfile,
           meal: buildMealStateFromRows(database, userId),
+          water: buildWaterStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -2587,6 +2630,7 @@ export const createSqliteStorage = async ({
         const snapshot = {
           profile: buildProfileStateFromRows(database, userId, resolvedUser),
           meal: normalizedMeal,
+          water: buildWaterStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -2597,6 +2641,41 @@ export const createSqliteStorage = async ({
         database.exec("COMMIT");
         writeBackupSnapshot(userId, snapshot, "meal-state", updatedAt);
         return normalizedMeal;
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    },
+
+    getWaterStateByUserId: (userId) => buildWaterStateFromRows(database, userId),
+
+    upsertWaterState: (userId, waterState, syncContext = undefined) => {
+      const resolvedUser = getResolvedUser(userId);
+
+      if (!resolvedUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = assertNoStateConflict(userId, syncContext);
+      database.exec("BEGIN");
+
+      try {
+        const normalizedWater = normalizeWaterState(waterState);
+        const updatedAt = new Date().toISOString();
+        const snapshot = {
+          profile: buildProfileStateFromRows(database, userId, resolvedUser),
+          meal: buildMealStateFromRows(database, userId),
+          water: normalizedWater,
+        };
+        upsertSnapshotCache(database, userId, snapshot, updatedAt);
+        updateSnapshotMeta(userId, {
+          updatedAt,
+          waterUpdatedAt: updatedAt,
+          deviceId: normalizedSyncContext.deviceId,
+        });
+        database.exec("COMMIT");
+        writeBackupSnapshot(userId, snapshot, "water-state", updatedAt);
+        return normalizedWater;
       } catch (error) {
         database.exec("ROLLBACK");
         throw error;

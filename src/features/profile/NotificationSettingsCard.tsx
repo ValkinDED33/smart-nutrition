@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
@@ -42,24 +42,24 @@ const notificationCopy = {
   pl: {
     title: "Powiadomienia i nawyki",
     subtitle:
-      "Ustaw lagodne przypomnienia o posilkach i alerty kaloryczne. Przegladarka wysyla je tylko wtedy, gdy ta aplikacja pozostaje dostepna.",
-    unsupported: "Ta przegladarka nie obsluguje powiadomien.",
-    permissionDefault: "Powiadomienia nie sa jeszcze wlaczone.",
-    permissionGranted: "Powiadomienia przegladarki sa wlaczone.",
-    permissionDenied: "Powiadomienia sa zablokowane w przegladarce. Najpierw odblokuj je w ustawieniach.",
-    enableAction: "Wlacz powiadomienia przegladarki",
-    notificationsEnabled: "Uzywaj powiadomien przegladarki",
-    mealRemindersEnabled: "Przypomnienia o posilkach",
+      "Ustaw łagodne przypomnienia o posiłkach i alerty kaloryczne. Przeglądarka wysyła je tylko wtedy, gdy ta aplikacja pozostaje dostępna.",
+    unsupported: "Ta przeglądarka nie obsługuje powiadomień.",
+    permissionDefault: "Powiadomienia nie są jeszcze włączone.",
+    permissionGranted: "Powiadomienia przeglądarki są włączone.",
+    permissionDenied: "Powiadomienia są zablokowane w przeglądarce. Najpierw odblokuj je w ustawieniach.",
+    enableAction: "Włącz powiadomienia przeglądarki",
+    notificationsEnabled: "Używaj powiadomień przeglądarki",
+    mealRemindersEnabled: "Przypomnienia o posiłkach",
     calorieAlertsEnabled: "Alerty kaloryczne",
-    breakfast: "Przypomnienie o sniadaniu",
+    breakfast: "Przypomnienie o śniadaniu",
     lunch: "Przypomnienie o obiedzie",
     dinner: "Przypomnienie o kolacji",
-    snack: "Przypomnienie o przekasce",
-    browserReady: "Przegladarka gotowa",
+    snack: "Przypomnienie o przekąsce",
+    browserReady: "Przeglądarka gotowa",
     blocked: "Zablokowane",
     unsupportedChip: "Brak wsparcia",
     permissionNeeded: "Potrzebna zgoda",
-    enabled: "Wlaczone",
+    enabled: "Włączone",
     muted: "Wyciszone",
   },
 } as const;
@@ -81,6 +81,25 @@ export const NotificationSettingsCard = () => {
       : "unsupported"
   );
   const copy = notificationCopy[language];
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    const syncPermission = () => {
+      setPermission(Notification.permission);
+    };
+
+    syncPermission();
+    window.addEventListener("focus", syncPermission);
+    document.addEventListener("visibilitychange", syncPermission);
+
+    return () => {
+      window.removeEventListener("focus", syncPermission);
+      document.removeEventListener("visibilitychange", syncPermission);
+    };
+  }, []);
 
   const requestPermission = async () => {
     if (typeof window === "undefined" || !("Notification" in window)) {

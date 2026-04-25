@@ -7,18 +7,18 @@ import { useLanguage } from "../language";
 
 const bannerCopy = {
   uk: {
-    offline: "You are offline. Changes stay on this device until the connection returns.",
+    offline: "Ви офлайн. Зміни залишаються на цьому пристрої, поки з'єднання не повернеться.",
     backendDown:
-      "Cloud API is currently unavailable. Recent changes stay local and will sync again when the server is back.",
-    retry: "Check again",
-    checking: "Checking...",
+      "Хмарний API зараз недоступний. Останні зміни залишаються локально і синхронізуються, коли сервер повернеться.",
+    retry: "Перевірити ще раз",
+    checking: "Перевіряємо...",
   },
   pl: {
     offline:
-      "Brak polaczenia z internetem. Zmiany zostaja na tym urzadzeniu, dopoki polaczenie nie wroci.",
+      "Brak połączenia z internetem. Zmiany zostają na tym urządzeniu, dopóki połączenie nie wróci.",
     backendDown:
-      "Cloud API jest teraz niedostepne. Ostatnie zmiany zostaja lokalnie i zsynchronizuja sie po powrocie serwera.",
-    retry: "Sprawdz ponownie",
+      "Cloud API jest teraz niedostępne. Ostatnie zmiany zostają lokalnie i zsynchronizują się po powrocie serwera.",
+    retry: "Sprawdź ponownie",
     checking: "Sprawdzam...",
   },
 } as const;

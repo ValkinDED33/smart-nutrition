@@ -9,6 +9,9 @@ export const createStateRepository = (storage) => ({
   getMealStateByUserId: (userId) => storage.getMealStateByUserId(userId),
   upsertMealState: (userId, mealState, syncContext) =>
     storage.upsertMealState(userId, mealState, syncContext),
+  getWaterStateByUserId: (userId) => storage.getWaterStateByUserId(userId),
+  upsertWaterState: (userId, waterState, syncContext) =>
+    storage.upsertWaterState(userId, waterState, syncContext),
   addMealEntries: (userId, entries, syncContext) =>
     storage.addMealEntries(userId, entries, syncContext),
   removeMealEntry: (userId, entryId, syncContext) =>

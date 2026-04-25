@@ -1,5 +1,9 @@
 import axios from "axios";
 import type { NutrientKey, Product } from "../types/product";
+import {
+  getClientStorageItem,
+  setClientStorageItem,
+} from "../lib/clientPersistence";
 import { fetchOpenFoodByBarcode } from "./openFood";
 import {
   findLocalProductByBarcode,
@@ -84,7 +88,7 @@ const readBarcodeCache = (): Record<string, Product> => {
   }
 
   try {
-    const raw = localStorage.getItem(BARCODE_CACHE_KEY);
+    const raw = getClientStorageItem(BARCODE_CACHE_KEY);
     return raw ? (JSON.parse(raw) as Record<string, Product>) : {};
   } catch {
     return {};
@@ -97,7 +101,7 @@ const readSearchCache = (): Record<string, { savedAt: number; results: Product[]
   }
 
   try {
-    const raw = localStorage.getItem(SEARCH_CACHE_KEY);
+    const raw = getClientStorageItem(SEARCH_CACHE_KEY);
     return raw ? (JSON.parse(raw) as Record<string, { savedAt: number; results: Product[] }>) : {};
   } catch {
     return {};
@@ -111,7 +115,7 @@ const writeSearchCache = (
     return;
   }
 
-  localStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(cache));
+  setClientStorageItem(SEARCH_CACHE_KEY, JSON.stringify(cache));
 };
 
 const getCachedSearchResults = (query: string): Product[] | null => {
@@ -149,7 +153,7 @@ const writeBarcodeCache = (cache: Record<string, Product>) => {
     return;
   }
 
-  localStorage.setItem(BARCODE_CACHE_KEY, JSON.stringify(cache));
+  setClientStorageItem(BARCODE_CACHE_KEY, JSON.stringify(cache));
 };
 
 const getCachedBarcodeProduct = (barcode: string): Product | null => {

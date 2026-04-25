@@ -1,5 +1,10 @@
 import type { User } from "../types/user";
 import { getDefaultAvatar } from "../lib/avatar";
+import {
+  getClientStorageItem,
+  removeClientStorageItem,
+  setClientStorageItem,
+} from "../lib/clientPersistence";
 import type { AuthProvider, AuthRuntimeInfo, RegisterPayload } from "./authProvider";
 
 interface StoredUserRecord extends User {
@@ -26,6 +31,7 @@ export class AuthApiError extends Error {
     | "INVALID_CREDENTIALS"
     | "TOO_MANY_ATTEMPTS"
     | "INVALID_RESET_TOKEN"
+    | "EMAIL_DELIVERY_UNAVAILABLE"
     | "WEAK_PASSWORD";
 
   constructor(code: AuthApiError["code"], message: string) {
@@ -97,7 +103,7 @@ const decodeBase64 = (value: string) => {
 };
 
 const readJson = <T,>(key: string, fallback: T): T => {
-  const raw = localStorage.getItem(key);
+  const raw = getClientStorageItem(key);
 
   if (!raw) return fallback;
 
@@ -109,7 +115,7 @@ const readJson = <T,>(key: string, fallback: T): T => {
 };
 
 const writeJson = (key: string, value: unknown) => {
-  localStorage.setItem(key, JSON.stringify(value));
+  setClientStorageItem(key, JSON.stringify(value));
 };
 
 const ensureUsers = () => {
@@ -305,14 +311,14 @@ export const localAuthProvider: AuthProvider = {
     if (!session) return null;
 
     if (session.expiresAt <= Date.now()) {
-      localStorage.removeItem(SESSION_KEY);
+      removeClientStorageItem(SESSION_KEY);
       throw new AuthApiError("INVALID_CREDENTIALS", "Session expired.");
     }
 
     const user = ensureUsers().find((item) => item.email === session.email);
 
     if (!user) {
-      localStorage.removeItem(SESSION_KEY);
+      removeClientStorageItem(SESSION_KEY);
       return null;
     }
 
@@ -324,12 +330,12 @@ export const localAuthProvider: AuthProvider = {
 
   logout: async () => {
     await sleep(50);
-    localStorage.removeItem(SESSION_KEY);
+    removeClientStorageItem(SESSION_KEY);
   },
 
   logoutEverywhere: async () => {
     await sleep(50);
-    localStorage.removeItem(SESSION_KEY);
+    removeClientStorageItem(SESSION_KEY);
   },
 
   updateStoredProfile: async (user: User) => {
@@ -494,7 +500,7 @@ export const localAuthProvider: AuthProvider = {
     const session = getSession();
 
     if (session?.email === user.email) {
-      localStorage.removeItem(SESSION_KEY);
+      removeClientStorageItem(SESSION_KEY);
     }
 
     return {
@@ -515,7 +521,7 @@ export const localAuthProvider: AuthProvider = {
     const session = getSession();
 
     if (session?.email === email) {
-      localStorage.removeItem(SESSION_KEY);
+      removeClientStorageItem(SESSION_KEY);
     }
   },
 

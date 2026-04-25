@@ -1,5 +1,10 @@
 import type { AppSnapshot, AppSnapshotMeta } from "../types/appSnapshot";
 import { getSnapshotMetaFromSnapshot } from "./appSnapshot";
+import {
+  getClientStorageItem,
+  removeClientStorageItem,
+  setClientStorageItem,
+} from "./clientPersistence";
 
 export interface StorageLike {
   getItem: (key: string) => string | null;
@@ -19,8 +24,11 @@ const META_CACHE_TTL_MS = 15_000;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const getDefaultStorage = (): StorageLike | null =>
-  typeof localStorage === "undefined" ? null : localStorage;
+const getDefaultStorage = (): StorageLike => ({
+  getItem: getClientStorageItem,
+  setItem: setClientStorageItem,
+  removeItem: removeClientStorageItem,
+});
 
 const parseEnvelope = <T,>(raw: string | null): CachedEnvelope<T> | null => {
   if (!raw) {

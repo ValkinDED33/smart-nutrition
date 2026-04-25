@@ -20,52 +20,53 @@ import {
   setWaterConsumed,
   setWaterGlassSize,
   setWaterTarget,
+  syncWaterTargetFromWeight,
   syncWaterDay,
 } from "./waterSlice";
 import { useLanguage } from "../../shared/language";
 
 const waterCopy = {
   uk: {
-    title: "Р’РѕРґР° Р·Р° РґРµРЅСЊ",
+    title: "Вода за день",
     subtitle:
-      "РљРѕРЅС‚СЂРѕР»СЋР№С‚Рµ РЅРѕСЂРјСѓ, Р·Р°Р»РёС€РѕРє С– РѕР±'С”Рј РєРѕР¶РЅРѕРіРѕ СЃС‚Р°РєР°РЅР°.",
-    drank: "Р’РёРїРёС‚Рѕ",
-    remaining: "Р—Р°Р»РёС€РёР»РѕСЃСЏ",
-    target: "РќРѕСЂРјР° РЅР° РґРµРЅСЊ",
-    glassSize: "РћР±'С”Рј СЃС‚Р°РєР°РЅР°",
-    statusUnder: "РњРµРЅС€Рµ РЅРѕСЂРјРё",
-    statusOnTrack: "Р’ РЅРѕСЂРјС–",
-    statusAbove: "Р’РёС‰Рµ РЅРѕСЂРјРё",
-    progress: "Р’РёРїРёС‚Рѕ {current} Р» Р· {target} Р»",
-    remainingLabel: "Р—Р°Р»РёС€РёР»РѕСЃСЏ {value} РјР»",
-    customAmount: "РќРµС†С–Р»РёР№ СЃС‚Р°РєР°РЅ",
-    addGlass: "Р”РѕРґР°С‚Рё СЃС‚Р°РєР°РЅ",
-    removeGlass: "Р—РЅСЏС‚Рё 250 РјР»",
-    partialTitle: "РЎРєС–Р»СЊРєРё РІРёРїРёС‚Рѕ?",
-    partialHint: "Р’РєР°Р¶С–С‚СЊ РѕР±'С”Рј РґР»СЏ С†СЊРѕРіРѕ СЃС‚Р°РєР°РЅР°.",
-    amount: "РћР±'С”Рј (РјР»)",
-    save: "Р—Р±РµСЂРµРіС‚Рё",
-    cancel: "РЎРєР°СЃСѓРІР°С‚Рё",
+      "Контролюйте норму, залишок і об'єм кожного стакана.",
+    drank: "Випито",
+    remaining: "Залишилося",
+    target: "Норма на день",
+    glassSize: "Об'єм стакана",
+    statusUnder: "Менше норми",
+    statusOnTrack: "В нормі",
+    statusAbove: "Вище норми",
+    progress: "Випито {current} л з {target} л",
+    remainingLabel: "Залишилося {value} мл",
+    customAmount: "Нецілий стакан",
+    addGlass: "Додати стакан",
+    removeGlass: "Зняти 250 мл",
+    partialTitle: "Скільки випито?",
+    partialHint: "Вкажіть об'єм для цього стакана.",
+    amount: "Об'єм (мл)",
+    save: "Зберегти",
+    cancel: "Скасувати",
   },
   pl: {
-    title: "Woda na dziЕ„",
+    title: "Woda na dzień",
     subtitle:
-      "Kontroluj dziennД… normД™, pozostaЕ‚o i objД™toЕ›Д‡ kaЕјdej szklanki.",
+      "Kontroluj dzienną normę, pozostało i objętość każdej szklanki.",
     drank: "Wypito",
-    remaining: "PozostaЕ‚o",
-    target: "Norma na dzieЕ„",
-    glassSize: "ObjД™toЕ›Д‡ szklanki",
-    statusUnder: "PoniЕјej normy",
+    remaining: "Pozostało",
+    target: "Norma na dzień",
+    glassSize: "Objętość szklanki",
+    statusUnder: "Poniżej normy",
     statusOnTrack: "W normie",
-    statusAbove: "PowyЕјej normy",
+    statusAbove: "Powyżej normy",
     progress: "Wypito {current} l z {target} l",
-    remainingLabel: "PozostaЕ‚o {value} ml",
-    customAmount: "NiepeЕ‚na szklanka",
-    addGlass: "Dodaj szklankД™",
+    remainingLabel: "Pozostało {value} ml",
+    customAmount: "Niepełna szklanka",
+    addGlass: "Dodaj szklankę",
     removeGlass: "Odejmij 250 ml",
     partialTitle: "Ile wypito?",
-    partialHint: "Ustaw objД™toЕ›Д‡ dla tej szklanki.",
-    amount: "ObjД™toЕ›Д‡ (ml)",
+    partialHint: "Ustaw objętość dla tej szklanki.",
+    amount: "Objętość (ml)",
     save: "Zapisz",
     cancel: "Anuluj",
   },
@@ -76,6 +77,11 @@ const formatLiters = (valueMl: number) => (valueMl / 1000).toFixed(1);
 export const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
+  const latestWeightHistoryWeight = useSelector((state: RootState) =>
+    state.profile.weightHistory.at(-1)?.weight
+  );
+  const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
+  const latestWeight = latestWeightHistoryWeight ?? authWeight ?? 0;
   const { language } = useLanguage();
   const copy = waterCopy[language];
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
@@ -84,6 +90,10 @@ export const WaterTracker = () => {
   useEffect(() => {
     dispatch(syncWaterDay());
   }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(syncWaterTargetFromWeight(latestWeight));
+  }, [dispatch, latestWeight]);
 
   const glassCount = Math.max(Math.ceil(water.dailyTargetMl / water.glassSizeMl), 6);
   const remainingMl = Math.max(water.dailyTargetMl - water.consumedMl, 0);
@@ -248,6 +258,14 @@ export const WaterTracker = () => {
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Chip label={`${copy.drank}: ${water.consumedMl} ml`} color="info" />
               <Chip label={`${copy.remaining}: ${remainingMl} ml`} variant="outlined" />
+              <Chip
+                label={
+                  water.targetMode === "automatic"
+                    ? `Auto ${Math.round(latestWeight * 30)}-${Math.round(latestWeight * 35)} ml`
+                    : "Manual target"
+                }
+                variant="outlined"
+              />
               <Chip
                 label={status}
                 color={status === copy.statusAbove ? "warning" : status === copy.statusOnTrack ? "success" : "default"}

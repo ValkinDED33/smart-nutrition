@@ -23,6 +23,7 @@ describe("remoteStateCache", () => {
     cache.writeSnapshot({
       profile: { calories: 2200 },
       meal: { items: [] },
+      water: { consumedMl: 1200 },
       updatedAt: "2026-04-03T10:00:00.000Z",
       profileUpdatedAt: "2026-04-03T09:58:00.000Z",
       mealUpdatedAt: "2026-04-03T10:00:00.000Z",
@@ -35,6 +36,7 @@ describe("remoteStateCache", () => {
       updatedAt: "2026-04-03T10:00:00.000Z",
       profileUpdatedAt: "2026-04-03T09:58:00.000Z",
       mealUpdatedAt: "2026-04-03T10:00:00.000Z",
+      waterUpdatedAt: null,
       lastWriterDeviceId: "device-a",
       backupEnabled: true,
     });
@@ -66,6 +68,7 @@ describe("remoteStateCache", () => {
     cache.writeSnapshot({
       profile: { calories: 2200 },
       meal: { items: [] },
+      water: { consumedMl: 0 },
       updatedAt: "2026-04-03T10:00:00.000Z",
     });
 

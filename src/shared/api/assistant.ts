@@ -10,7 +10,6 @@ import {
 } from "../types/assistant";
 import {
   getRemoteAuthBaseUrl,
-  getRemoteAuthToken,
   isCloudSyncActive,
 } from "./auth";
 
@@ -96,9 +95,8 @@ export const askAssistantQuestion = async (
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
-  const token = getRemoteAuthToken();
 
-  if (!baseUrl || !token) {
+  if (!baseUrl) {
     return buildFallback();
   }
 
@@ -108,8 +106,8 @@ export const askAssistantQuestion = async (
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({
         question: input.question,
         quickQuestionId: input.quickQuestionId ?? null,
@@ -135,9 +133,8 @@ export const getAssistantConversationHistory = async (): Promise<
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
-  const token = getRemoteAuthToken();
 
-  if (!baseUrl || !token) {
+  if (!baseUrl) {
     return [];
   }
 
@@ -145,8 +142,8 @@ export const getAssistantConversationHistory = async (): Promise<
     method: "GET",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -162,9 +159,8 @@ export const clearAssistantConversationHistory = async () => {
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
-  const token = getRemoteAuthToken();
 
-  if (!baseUrl || !token) {
+  if (!baseUrl) {
     return true;
   }
 
@@ -172,8 +168,8 @@ export const clearAssistantConversationHistory = async () => {
     method: "DELETE",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   if (!response.ok) {

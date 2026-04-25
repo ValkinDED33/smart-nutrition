@@ -6,9 +6,12 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./app/store";
 import { LanguageProvider } from "./shared/language";
+import { initializeClientPersistence } from "./shared/lib/clientPersistence";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
+
+await initializeClientPersistence();
 
 root.render(
   <StrictMode>
