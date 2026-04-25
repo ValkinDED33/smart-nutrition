@@ -18,6 +18,7 @@ import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
 import { replaceProfileState } from "../features/profile/profileSlice";
+import { replaceWaterState } from "../features/water/waterSlice";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
@@ -36,14 +37,14 @@ type FormData = {
 
 const authPageCopy = {
   uk: {
-    forgotPassword: "Р—Р°Р±СѓР»Рё РїР°СЂРѕР»СЊ?",
-    showPassword: "РџРѕРєР°Р·Р°С‚Рё РїР°СЂРѕР»СЊ",
-    hidePassword: "РЎС…РѕРІР°С‚Рё РїР°СЂРѕР»СЊ",
+    forgotPassword: "Забули пароль?",
+    showPassword: "Показати пароль",
+    hidePassword: "Сховати пароль",
   },
   pl: {
-    forgotPassword: "ZapomniaЕ‚eЕ› hasЕ‚a?",
-    showPassword: "PokaЕј hasЕ‚o",
-    hidePassword: "Ukryj hasЕ‚o",
+    forgotPassword: "Zapomniałeś hasła?",
+    showPassword: "Pokaż hasło",
+    hidePassword: "Ukryj hasło",
   },
 } as const;
 
@@ -89,7 +90,7 @@ const LoginPage = () => {
     setServerError(null);
 
     try {
-      const { user, token, snapshot } = await loginApi(data.email, data.password);
+      const { user, snapshot } = await loginApi(data.email, data.password);
       writeAuthIdentityHint({
         name: user.name,
         email: user.email,
@@ -97,7 +98,6 @@ const LoginPage = () => {
       dispatch(
         setCredentials({
           user,
-          accessToken: token,
           syncMode: getAuthRuntimeInfo().mode,
           syncOutbox: getSyncOutboxMeta(),
           cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
@@ -107,9 +107,10 @@ const LoginPage = () => {
       if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
         dispatch(replaceProfileState(snapshot.profile));
         dispatch(replaceMealState(snapshot.meal));
+        dispatch(replaceWaterState(snapshot.water));
       }
 
-      navigate("/dashboard");
+      navigate("/home");
     } catch (error) {
       if (error instanceof AuthApiError) {
         if (error.code === "TOO_MANY_ATTEMPTS") {

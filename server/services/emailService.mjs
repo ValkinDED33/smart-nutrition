@@ -1,56 +1,138 @@
-import crypto from 'crypto';
-import { db } from './db'; // Placeholder for database module
+import nodemailer from "nodemailer";
 
-class EmailService {
-    // Generate secure verification token
-    static generateToken() {
-        return crypto.randomBytes(32).toString('hex');
-    }
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
-    // Store verification token with expiration
-    static async storeVerificationToken(email, token) {
-        const expiration = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-        await db.query('INSERT INTO verification_tokens (email, token, expiration) VALUES (?, ?, ?)', [email, token, expiration]);
-    }
+const createTransport = (config) => {
+  if (!config.emailTransportConfigured) {
+    return null;
+  }
 
-    // Store password reset token with expiration
-    static async storeResetToken(email, token) {
-        const expiration = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        await db.query('INSERT INTO password_reset_tokens (email, token, expiration) VALUES (?, ?, ?)', [email, token, expiration]);
-    }
+  if (config.smtpUrl) {
+    return nodemailer.createTransport(config.smtpUrl);
+  }
 
-    // Verify token validity and expiration
-    static async verifyToken(token, type) {
-        const table = type === 'verification' ? 'verification_tokens' : 'password_reset_tokens';
-        const result = await db.query(`SELECT * FROM ${table} WHERE token = ?`, [token]);
-        if (result.length === 0 || new Date() > new Date(result[0].expiration)) {
-            throw new Error('Token is invalid or has expired.');
-        }
-        return result[0];
-    }
+  return nodemailer.createTransport({
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpSecure,
+    auth:
+      config.smtpUser && config.smtpPass
+        ? {
+            user: config.smtpUser,
+            pass: config.smtpPass,
+          }
+        : undefined,
+  });
+};
 
-    // Mark email as verified
-    static async markEmailVerified(email) {
-        await db.query('UPDATE users SET verified = ? WHERE email = ?', [true, email]);
-    }
+const buildResetSubject = () => "Reset your Smart Nutrition password";
 
-    // Send placeholder verification email
-    static async sendVerificationEmail(email, token) {
-        console.log(`Sending verification email to ${email} with token ${token}.`);
-        // Implement real SMTP sending logic here
-    }
+const buildResetText = ({ appBaseUrl, name, resetUrl, expiresAt }) => {
+  const displayName = String(name ?? "").trim() || "there";
 
-    // Send placeholder password reset email
-    static async sendResetEmail(email, token) {
-        console.log(`Sending password reset email to ${email} with token ${token}.`);
-        // Implement real SMTP sending logic here
-    }
+  return [
+    `Hi ${displayName},`,
+    "",
+    "We received a request to reset your Smart Nutrition password.",
+    "Use the secure link below to choose a new password:",
+    resetUrl,
+    "",
+    `This link expires at ${new Date(expiresAt).toUTCString()}.`,
+    "",
+    "If you did not request this reset, you can safely ignore this email.",
+    "",
+    `App: ${appBaseUrl}`,
+  ].join("\n");
+};
 
-    // Clean up expired tokens
-    static async cleanupExpiredTokens() {
-        await db.query('DELETE FROM verification_tokens WHERE expiration < NOW()');
-        await db.query('DELETE FROM password_reset_tokens WHERE expiration < NOW()');
-    }
-}
+const buildResetHtml = ({ name, resetUrl, expiresAt }) => {
+  const displayName = escapeHtml(String(name ?? "").trim() || "there");
+  const safeUrl = escapeHtml(resetUrl);
+  const expiresLabel = escapeHtml(new Date(expiresAt).toUTCString());
 
-export default EmailService;
+  return `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f8fafc;color:#0f172a;font-family:Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,23,42,0.08);border-radius:20px;padding:32px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;color:#0f766e;text-transform:uppercase;">Smart Nutrition</p>
+      <h1 style="margin:0 0 16px;font-size:28px;line-height:1.15;">Reset your password</h1>
+      <p style="margin:0 0 16px;line-height:1.7;">Hi ${displayName},</p>
+      <p style="margin:0 0 20px;line-height:1.7;">We received a request to reset your Smart Nutrition password. Use the secure button below to choose a new password.</p>
+      <p style="margin:0 0 20px;">
+        <a href="${safeUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:linear-gradient(135deg,#0f766e 0%,#65a30d 100%);color:#ffffff;text-decoration:none;font-weight:700;">Set a new password</a>
+      </p>
+      <p style="margin:0 0 12px;line-height:1.7;">If the button does not open, copy and paste this link into your browser:</p>
+      <p style="margin:0 0 20px;word-break:break-all;line-height:1.7;"><a href="${safeUrl}" style="color:#2563eb;">${safeUrl}</a></p>
+      <p style="margin:0 0 12px;line-height:1.7;">This link expires at <strong>${expiresLabel}</strong>.</p>
+      <p style="margin:0;line-height:1.7;color:#475569;">If you did not request this reset, you can safely ignore this email.</p>
+    </div>
+  </body>
+</html>`;
+};
+
+export const createEmailService = ({ config, logger = console }) => {
+  const transporter = createTransport(config);
+  const from = config.emailFromAddress
+    ? `"${config.emailFromName}" <${config.emailFromAddress}>`
+    : null;
+
+  return {
+    isConfigured: () => Boolean(transporter && from),
+
+    getStatus: () => ({
+      configured: Boolean(transporter && from),
+      fromAddress: config.emailFromAddress ?? null,
+      fromName: config.emailFromName,
+    }),
+
+    sendPasswordResetEmail: async ({ to, name, resetUrl, expiresAt }) => {
+      if (!transporter || !from) {
+        return {
+          ok: false,
+          code: "EMAIL_NOT_CONFIGURED",
+        };
+      }
+
+      try {
+        const info = await transporter.sendMail({
+          from,
+          to,
+          subject: buildResetSubject(),
+          text: buildResetText({
+            appBaseUrl: config.appBaseUrl,
+            name,
+            resetUrl,
+            expiresAt,
+          }),
+          html: buildResetHtml({
+            name,
+            resetUrl,
+            expiresAt,
+          }),
+        });
+
+        logger.info?.(
+          `[email] password reset sent to ${to} (${info.messageId ?? "no-message-id"})`
+        );
+
+        return {
+          ok: true,
+          messageId: info.messageId ?? null,
+        };
+      } catch (error) {
+        logger.error?.("[email] password reset delivery failed", error);
+
+        return {
+          ok: false,
+          code: "EMAIL_SEND_FAILED",
+        };
+      }
+    },
+  };
+};

@@ -5,10 +5,10 @@ import { buildAppSnapshot } from "../lib/appSnapshot";
 import { writeCachedRemoteSnapshot } from "../lib/remoteStateCache";
 import { replaceMealState } from "../../features/meal/mealSlice";
 import { replaceProfileState } from "../../features/profile/profileSlice";
+import { replaceWaterState } from "../../features/water/waterSlice";
 import { markSyncSuccess, setCloudMeta } from "../../features/auth/authSlice";
 import {
   getRemoteAuthBaseUrl,
-  getRemoteAuthToken,
   getRemoteSnapshotMeta,
   pullRemoteAppSnapshot,
 } from "../api/auth";
@@ -69,10 +69,12 @@ const RemoteStatePullAgent = () => {
 
         dispatch(replaceProfileState(snapshot.profile));
         dispatch(replaceMealState(snapshot.meal));
+        dispatch(replaceWaterState(snapshot.water));
         writeCachedRemoteSnapshot(
           buildAppSnapshot({
             profile: snapshot.profile,
             meal: snapshot.meal,
+            water: snapshot.water,
             meta,
           })
         );
@@ -89,12 +91,10 @@ const RemoteStatePullAgent = () => {
     document.addEventListener("visibilitychange", maybePull);
 
     const baseUrl = getRemoteAuthBaseUrl();
-    const token = getRemoteAuthToken();
-
-    if (baseUrl && token) {
-      const eventSource = new EventSource(
-        `${baseUrl}/state/stream?token=${encodeURIComponent(token)}`
-      );
+    if (baseUrl) {
+      const eventSource = new EventSource(`${baseUrl}/state/stream`, {
+        withCredentials: true,
+      });
       eventSourceRef.current = eventSource;
 
       eventSource.addEventListener("state-updated", () => {

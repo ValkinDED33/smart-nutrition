@@ -11,6 +11,7 @@ import {
   type RemoteSyncResult,
   syncRemoteMealState,
   syncRemoteProfileState,
+  syncRemoteWaterState,
 } from "../../shared/api/auth";
 import { buildAppSnapshot, getSnapshotMetaFromSnapshot } from "../../shared/lib/appSnapshot";
 import {
@@ -26,13 +27,13 @@ import {
 } from "../../shared/lib/syncOutbox";
 import { replaceProfileState } from "../profile/profileSlice";
 import { replaceMealState } from "../meal/mealSlice";
+import { replaceWaterState } from "../water/waterSlice";
 
 export type SyncMode = "local-browser" | "remote-cloud";
 export type SyncStatus = "local-only" | "syncing" | "synced" | "error";
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
@@ -84,6 +85,7 @@ const cacheCurrentRemoteSnapshot = (
   const snapshot = buildAppSnapshot({
     profile: state.profile,
     meal: state.meal,
+    water: state.water,
     meta,
   });
 
@@ -96,7 +98,6 @@ const cacheCurrentRemoteSnapshot = (
 
 const initialState: AuthState = {
   user: null,
-  accessToken: null,
   isAuthenticated: false,
   isLoading: false,
   isInitialized: false,
@@ -112,7 +113,6 @@ const initialState: AuthState = {
 
 export const initializeAuth = createAsyncThunk<
   {
-    accessToken: string;
     user: User;
     syncMode: SyncMode;
     syncOutbox: SyncOutboxMeta;
@@ -132,6 +132,7 @@ export const initializeAuth = createAsyncThunk<
     if (data.snapshot && syncOutbox.pendingChanges === 0) {
       dispatch(replaceProfileState(data.snapshot.profile));
       dispatch(replaceMealState(data.snapshot.meal));
+      dispatch(replaceWaterState(data.snapshot.water));
     }
 
     const cloudMeta = getSnapshotMetaFromSnapshot(data.snapshot) ?? readCachedRemoteMeta({ allowStale: true });
@@ -141,7 +142,6 @@ export const initializeAuth = createAsyncThunk<
     }
 
     return {
-      accessToken: data.token,
       user: data.user,
       syncMode: getAuthRuntimeInfo().mode,
       syncOutbox,
@@ -158,19 +158,24 @@ export const initializeAuth = createAsyncThunk<
 });
 
 const pushCurrentStateToCloud = async (state: RootState) => {
-  const [profileSynced, mealSynced] = await Promise.all([
+  const [profileSynced, mealSynced, waterSynced] = await Promise.all([
     syncRemoteProfileState(state.profile),
     syncRemoteMealState(state.meal),
+    syncRemoteWaterState(state.water),
   ]);
 
-  if (profileSynced.ok && mealSynced.ok) {
+  if (profileSynced.ok && mealSynced.ok && waterSynced.ok) {
     return {
       ok: true,
-      meta: mealSynced.meta ?? profileSynced.meta ?? null,
+      meta: waterSynced.meta ?? mealSynced.meta ?? profileSynced.meta ?? null,
     } satisfies RemoteSyncResult;
   }
 
-  return mealSynced.ok ? profileSynced : mealSynced;
+  if (!profileSynced.ok) {
+    return profileSynced;
+  }
+
+  return mealSynced.ok ? waterSynced : mealSynced;
 };
 
 export const retryCloudSync = createAsyncThunk<
@@ -265,6 +270,7 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
 
     dispatch(replaceProfileState(snapshot.profile));
     dispatch(replaceMealState(snapshot.meal));
+    dispatch(replaceWaterState(snapshot.water));
     writeCachedRemoteSnapshot(snapshot);
 
     const syncOutbox = payload?.discardQueuedChanges
@@ -295,7 +301,6 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout(state) {
-      state.accessToken = null;
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -314,14 +319,12 @@ const authSlice = createSlice({
     setCredentials(
       state,
       action: PayloadAction<{
-        accessToken: string;
         user: User;
         syncMode: SyncMode;
         syncOutbox: SyncOutboxMeta;
         cloudMeta?: AppSnapshotMeta | null;
       }>
     ) {
-      state.accessToken = action.payload.accessToken;
       state.user = action.payload.user;
       state.isAuthenticated = true;
       state.error = null;
@@ -405,7 +408,6 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
-        state.accessToken = action.payload.accessToken;
         state.user = action.payload.user;
         state.isAuthenticated = true;
         state.isLoading = false;
@@ -435,7 +437,6 @@ const authSlice = createSlice({
         const syncMode = getAuthRuntimeInfo().mode;
         const syncOutbox = getSyncOutboxMeta();
 
-        state.accessToken = null;
         state.user = null;
         state.isAuthenticated = false;
         state.isLoading = false;

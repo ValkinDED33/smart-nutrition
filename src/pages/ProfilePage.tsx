@@ -22,6 +22,8 @@ import { useLanguage } from "../shared/language";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import { MealDayOverview } from "../features/meal/MealDayOverview";
+import { CommunityHubCard } from "../features/community/CommunityHubCard";
+import { AdminCenterCard } from "../features/platform/AdminCenterCard";
 import {
   selectDailyMacroProgress,
   selectDailyMacroTargets,
@@ -362,6 +364,10 @@ const ProfilePage = () => {
       <MotivationHubCard />
 
       <AssistantCustomizationCard />
+
+      <CommunityHubCard />
+
+      <AdminCenterCard />
 
       <Paper
         elevation={0}

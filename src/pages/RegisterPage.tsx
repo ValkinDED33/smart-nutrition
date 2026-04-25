@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,6 @@ import {
   Box,
   Button,
   InputAdornment,
-  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -18,8 +17,8 @@ import {
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
-import { applyProfileTargets } from "../features/profile/profileSlice";
-import { replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
+import { applyProfileTargets, replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
+import { replaceWaterState } from "../features/water/waterSlice";
 import { calculateProfileTargets } from "../shared/lib/profileTargets";
 import {
   AuthApiError,
@@ -29,12 +28,6 @@ import {
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
-import {
-  clearRegisterDraftHint,
-  readAuthIdentityHint,
-  writeAuthIdentityHint,
-  writeRegisterDraftHint,
-} from "../shared/lib/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 
 type FormData = {
@@ -42,22 +35,27 @@ type FormData = {
   email: string;
   password: string;
   confirmPassword: string;
-  age: number;
-  weight: number;
-  height: number;
-  gender: "male" | "female";
-  activity: "sedentary" | "light" | "moderate" | "active" | "very_active";
-  goal: "cut" | "maintain" | "bulk";
+};
+
+const defaultProfileBootstrap = {
+  age: 25,
+  weight: 70,
+  height: 175,
+  gender: "male" as const,
+  activity: "moderate" as const,
+  goal: "maintain" as const,
 };
 
 const registerPageCopy = {
   uk: {
-    showPassword: "РџРѕРєР°Р·Р°С‚Рё РїР°СЂРѕР»СЊ",
-    hidePassword: "РЎС…РѕРІР°С‚Рё РїР°СЂРѕР»СЊ",
+    showPassword: "Показати пароль",
+    hidePassword: "Сховати пароль",
+    note: "Базовий профіль створиться відразу, а вагу, зріст і цілі ви доповните вже в профілі.",
   },
   pl: {
-    showPassword: "PokaЕј hasЕ‚o",
-    hidePassword: "Ukryj hasЕ‚o",
+    showPassword: "Pokaż hasło",
+    hidePassword: "Ukryj hasło",
+    note: "Podstawowy profil utworzy się od razu, a wagę, wzrost i cele uzupełnisz już w profilu.",
   },
 } as const;
 
@@ -69,7 +67,6 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const identityHint = useMemo(() => readAuthIdentityHint(), []);
   const copy = registerPageCopy[language];
 
   const schema = useMemo(
@@ -89,18 +86,6 @@ const RegisterPage = () => {
               t("validation.passwordSymbol")
             ),
           confirmPassword: z.string(),
-          age: z.number().min(10, t("validation.ageMin")),
-          weight: z.number().min(30, t("validation.weightMin")),
-          height: z.number().min(120, t("validation.heightMin")),
-          gender: z.enum(["male", "female"]),
-          activity: z.enum([
-            "sedentary",
-            "light",
-            "moderate",
-            "active",
-            "very_active",
-          ]),
-          goal: z.enum(["cut", "maintain", "bulk"]),
         })
         .refine((data) => data.password === data.confirmPassword, {
           path: ["confirmPassword"],
@@ -111,75 +96,33 @@ const RegisterPage = () => {
 
   const {
     register,
-    getValues,
     handleSubmit,
-    reset,
-    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: identityHint.name ?? "",
-      email: identityHint.email ?? "",
-      gender: "male",
-      activity: "moderate",
-      goal: "maintain",
-      age: 25,
-      weight: 70,
-      height: 175,
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
   });
-
-  const watchedName = watch("name");
-  const watchedEmail = watch("email");
-
-  useEffect(() => {
-    if (!identityHint.name && !identityHint.email) {
-      return;
-    }
-
-    const currentValues = getValues();
-
-    reset({
-      ...currentValues,
-      name: currentValues.name || identityHint.name || "",
-      email: currentValues.email || identityHint.email || "",
-    });
-  }, [getValues, identityHint.email, identityHint.name, reset]);
-
-  useEffect(() => {
-    writeRegisterDraftHint({
-      name: watchedName,
-      email: watchedEmail,
-    });
-  }, [watchedEmail, watchedName]);
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true);
     setServerError(null);
 
     try {
-      const { user, token, snapshot } = await registerApi({
+      const { user, snapshot } = await registerApi({
+        ...defaultProfileBootstrap,
         name: data.name,
         email: data.email,
         password: data.password,
-        age: data.age,
-        weight: data.weight,
-        height: data.height,
-        gender: data.gender,
-        activity: data.activity,
-        goal: data.goal,
       });
-      writeAuthIdentityHint({
-        name: user.name,
-        email: user.email,
-      });
-      clearRegisterDraftHint();
 
       dispatch(
         setCredentials({
           user,
-          accessToken: token,
           syncMode: getAuthRuntimeInfo().mode,
           syncOutbox: getSyncOutboxMeta(),
           cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
@@ -189,12 +132,15 @@ const RegisterPage = () => {
       if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
         dispatch(replaceProfileState(snapshot.profile));
         dispatch(replaceMealState(snapshot.meal));
+        dispatch(replaceWaterState(snapshot.water));
       } else {
-        const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
+        const { maintenanceCalories, targetCalories } = calculateProfileTargets(
+          defaultProfileBootstrap
+        );
         dispatch(
           applyProfileTargets({
-            goal: data.goal,
-            weight: data.weight,
+            goal: defaultProfileBootstrap.goal,
+            weight: defaultProfileBootstrap.weight,
             maintenanceCalories,
             targetCalories,
             targetWeight: null,
@@ -204,12 +150,10 @@ const RegisterPage = () => {
             adaptiveMode: "automatic",
           })
         );
-        // Assistant is initialized with default values via createDefaultAssistantCustomization()
       }
 
       dispatch(setProfileLanguage(language));
-
-      navigate("/dashboard");
+      navigate("/profile");
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
         setServerError(t("error.emailInUse"));
@@ -222,20 +166,20 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{ display: "grid", placeItems: "center", minHeight: "75vh" }}>
+    <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>
       <Paper
         elevation={0}
         sx={{
           width: "100%",
-          maxWidth: 740,
-          p: { xs: 3, md: 4.5 },
+          maxWidth: 520,
+          p: { xs: 3, md: 4 },
           borderRadius: 7,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           background:
             "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,250,252,0.92) 100%)",
         }}
       >
-        <Stack spacing={3}>
+        <Stack spacing={2.5}>
           <Box>
             <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
               {t("brand.name")}
@@ -243,8 +187,8 @@ const RegisterPage = () => {
             <Typography variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
               {t("auth.registerTitle")}
             </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {t("auth.registerSubtitle")}
+            <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+              {copy.note}
             </Typography>
           </Box>
 
@@ -255,142 +199,64 @@ const RegisterPage = () => {
           )}
 
           <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-              <TextField
-                fullWidth
-                label={t("form.name")}
-                {...register("name")}
-                error={Boolean(errors.name)}
-                helperText={errors.name?.message}
-              />
-              <TextField
-                fullWidth
-                label={t("form.email")}
-                type="email"
-                {...register("email")}
-                error={Boolean(errors.email)}
-                helperText={errors.email?.message}
-              />
-            </Stack>
+            <TextField
+              fullWidth
+              label={t("form.name")}
+              {...register("name")}
+              error={Boolean(errors.name)}
+              helperText={errors.name?.message}
+            />
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-              <TextField
-                fullWidth
-                label={t("form.password")}
-                type={passwordVisible ? "text" : "password"}
-                {...register("password")}
-                error={Boolean(errors.password)}
-                helperText={errors.password?.message}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <PasswordVisibilityButton
-                        visible={passwordVisible}
-                        onToggle={() => setPasswordVisible((current) => !current)}
-                        showLabel={copy.showPassword}
-                        hideLabel={copy.hidePassword}
-                      />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label={t("form.confirmPassword")}
-                type={confirmPasswordVisible ? "text" : "password"}
-                {...register("confirmPassword")}
-                error={Boolean(errors.confirmPassword)}
-                helperText={errors.confirmPassword?.message}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <PasswordVisibilityButton
-                        visible={confirmPasswordVisible}
-                        onToggle={() =>
-                          setConfirmPasswordVisible((current) => !current)
-                        }
-                        showLabel={copy.showPassword}
-                        hideLabel={copy.hidePassword}
-                      />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Stack>
+            <TextField
+              fullWidth
+              label={t("form.email")}
+              type="email"
+              {...register("email")}
+              error={Boolean(errors.email)}
+              helperText={errors.email?.message}
+            />
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-              <TextField
-                fullWidth
-                label={t("form.age")}
-                type="number"
-                {...register("age", { valueAsNumber: true })}
-                error={Boolean(errors.age)}
-                helperText={errors.age?.message}
-              />
-              <TextField
-                fullWidth
-                label={t("form.weight")}
-                type="number"
-                {...register("weight", { valueAsNumber: true })}
-                error={Boolean(errors.weight)}
-                helperText={errors.weight?.message}
-              />
-              <TextField
-                fullWidth
-                label={t("form.height")}
-                type="number"
-                {...register("height", { valueAsNumber: true })}
-                error={Boolean(errors.height)}
-                helperText={errors.height?.message}
-              />
-            </Stack>
+            <TextField
+              fullWidth
+              label={t("form.password")}
+              type={passwordVisible ? "text" : "password"}
+              {...register("password")}
+              error={Boolean(errors.password)}
+              helperText={errors.password?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <PasswordVisibilityButton
+                      visible={passwordVisible}
+                      onToggle={() => setPasswordVisible((current) => !current)}
+                      showLabel={copy.showPassword}
+                      hideLabel={copy.hidePassword}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-              <TextField
-                select
-                fullWidth
-                label={t("form.gender")}
-                defaultValue="male"
-                {...register("gender")}
-                error={Boolean(errors.gender)}
-                helperText={errors.gender?.message}
-              >
-                <MenuItem value="male">{t("option.gender.male")}</MenuItem>
-                <MenuItem value="female">{t("option.gender.female")}</MenuItem>
-              </TextField>
-
-              <TextField
-                select
-                fullWidth
-                label={t("form.activity")}
-                defaultValue="moderate"
-                {...register("activity")}
-                error={Boolean(errors.activity)}
-                helperText={errors.activity?.message}
-              >
-                <MenuItem value="sedentary">{t("option.activity.sedentary")}</MenuItem>
-                <MenuItem value="light">{t("option.activity.light")}</MenuItem>
-                <MenuItem value="moderate">{t("option.activity.moderate")}</MenuItem>
-                <MenuItem value="active">{t("option.activity.active")}</MenuItem>
-                <MenuItem value="very_active">
-                  {t("option.activity.very_active")}
-                </MenuItem>
-              </TextField>
-
-              <TextField
-                select
-                fullWidth
-                label={t("form.goal")}
-                defaultValue="maintain"
-                {...register("goal")}
-                error={Boolean(errors.goal)}
-                helperText={errors.goal?.message}
-              >
-                <MenuItem value="cut">{t("option.goal.cut")}</MenuItem>
-                <MenuItem value="maintain">{t("option.goal.maintain")}</MenuItem>
-                <MenuItem value="bulk">{t("option.goal.bulk")}</MenuItem>
-              </TextField>
-            </Stack>
+            <TextField
+              fullWidth
+              label={t("form.confirmPassword")}
+              type={confirmPasswordVisible ? "text" : "password"}
+              {...register("confirmPassword")}
+              error={Boolean(errors.confirmPassword)}
+              helperText={errors.confirmPassword?.message}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <PasswordVisibilityButton
+                      visible={confirmPasswordVisible}
+                      onToggle={() => setConfirmPasswordVisible((current) => !current)}
+                      showLabel={copy.showPassword}
+                      hideLabel={copy.hidePassword}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
 
             <Button
               type="submit"
@@ -398,7 +264,6 @@ const RegisterPage = () => {
               size="large"
               disabled={submitting}
               sx={{
-                mt: 1,
                 py: 1.5,
                 borderRadius: 999,
                 textTransform: "none",

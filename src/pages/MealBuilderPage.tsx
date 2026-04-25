@@ -17,6 +17,8 @@ import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
+import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
+import { CatalogContributionCard } from "../features/platform/CatalogContributionCard";
 import { MealEntryEditorDialog } from "../features/meal/MealEntryEditorDialog";
 import {
   selectTodayMealItems,
@@ -152,9 +154,11 @@ const MealBuilderPage = () => {
           <YesterdayRepeater />
           <QuickMealComposer mealType={mealType} />
           <QuickProductShelf mealType={mealType} />
+          <FridgeRecipePlanner mealType={mealType} />
           <TemplateVault mealType={mealType} />
           <PhotoMealAssistant mealType={mealType} />
           <ProductSearch mealType={mealType} />
+          <CatalogContributionCard />
           <RecipeSection mealType={mealType} />
         </Stack>
 

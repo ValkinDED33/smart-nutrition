@@ -31,6 +31,9 @@ const createAuthServiceFixture = () => {
     getSnapshotByUserId: vi.fn(() => null),
     upsertSnapshot: vi.fn(),
   };
+  const emailService = {
+    sendPasswordResetEmail: vi.fn(async () => ({ ok: false, code: "EMAIL_NOT_CONFIGURED" })),
+  };
   const config = {
     accessTokenTtlMs: 900000,
     refreshTokenTtlMs: 604800000,
@@ -40,15 +43,18 @@ const createAuthServiceFixture = () => {
     passwordIterations: 180000,
     passwordResetTokenTtlMs: 3600000,
     isProduction: false,
+    appBaseUrl: "http://localhost:5173",
   };
 
   return {
     authRepository,
     stateRepository,
+    emailService,
     config,
     service: createAuthService({
       authRepository,
       stateRepository,
+      emailService,
       config,
     }),
   };
@@ -91,7 +97,7 @@ describe("authService", () => {
     });
     authRepository.findUserById.mockReturnValue(user);
 
-    const result = service.refreshSession({ refreshToken });
+    const result = service.refreshSession({ headers: {} }, { refreshToken });
 
     expect(authRepository.deleteSessionByToken).toHaveBeenCalledWith(refreshToken);
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
@@ -142,8 +148,8 @@ describe("authService", () => {
     expect(service.authenticateToken(accessToken)).toBeNull();
   });
 
-  it("creates a password reset preview token for an existing user", () => {
-    const { authRepository, service } = createAuthServiceFixture();
+  it("creates a password reset preview token for an existing user", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture();
     const user = {
       id: "user-12",
       email: "reset@example.com",
@@ -153,12 +159,36 @@ describe("authService", () => {
 
     authRepository.findUserByEmail.mockReturnValue(user);
 
-    const result = service.requestPasswordReset({ email: user.email });
+    const result = await service.requestPasswordReset({ email: user.email });
 
     expect(authRepository.deletePasswordResetTokensByUserId).toHaveBeenCalledWith(user.id);
     expect(authRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
+    expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
     expect(result.ok).toBe(true);
+    expect(result.delivery).toBe("preview");
     expect(result.previewToken).toBeTruthy();
+  });
+
+  it("returns email delivery mode when the mailer succeeds", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-13",
+      email: "mail@example.com",
+      name: "Mail User",
+      role: "USER",
+    };
+
+    authRepository.findUserByEmail.mockReturnValue(user);
+    emailService.sendPasswordResetEmail.mockResolvedValue({
+      ok: true,
+      messageId: "msg-1",
+    });
+
+    const result = await service.requestPasswordReset({ email: user.email });
+
+    expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+    expect(result.delivery).toBe("email");
+    expect(result.previewToken).toBeUndefined();
   });
 
   it("resets the password, revokes sessions, and bumps token version", () => {

@@ -1,3 +1,9 @@
+import {
+  getClientStorageItem,
+  removeClientStorageItem,
+  setClientStorageItem,
+} from "./clientPersistence";
+
 export interface SyncOutboxMeta {
   pendingChanges: number;
   firstQueuedAt: string | null;
@@ -18,24 +24,16 @@ export const createEmptySyncOutboxMeta = (): SyncOutboxMeta => ({
 });
 
 const writeSyncOutboxMeta = (meta: SyncOutboxMeta) => {
-  if (typeof localStorage === "undefined") {
-    return;
-  }
-
   if (meta.pendingChanges <= 0) {
-    localStorage.removeItem(STORAGE_KEY);
+    removeClientStorageItem(STORAGE_KEY);
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(meta));
+  setClientStorageItem(STORAGE_KEY, JSON.stringify(meta));
 };
 
 export const getSyncOutboxMeta = (): SyncOutboxMeta => {
-  if (typeof localStorage === "undefined") {
-    return createEmptySyncOutboxMeta();
-  }
-
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = getClientStorageItem(STORAGE_KEY);
 
   if (!raw) {
     return createEmptySyncOutboxMeta();

@@ -8,52 +8,52 @@ import { useLanguage } from "../language";
 
 const widgetCopy = {
   uk: {
-    help: "РџРѕСЂР°РґР°",
-    close: "РЎС…РѕРІР°С‚Рё",
-    open: "Р’С–РґРєСЂРёС‚Рё РїРѕСЂР°РґСѓ",
+    help: "Порада",
+    close: "Сховати",
+    open: "Відкрити пораду",
     setup: {
-      title: "Р‘Р°С‡Сѓ, РІРё С‰Рµ РЅР° СЃС‚Р°СЂС‚С–",
+      title: "Бачу, ви ще на старті",
       body: "Хочете, допоможу швидко налаштувати цілі та стартові заміри?",
-      action: "Р’С–РґРєСЂРёС‚Рё РїСЂРѕС„С–Р»СЊ",
+      action: "Відкрити профіль",
     },
     plateau: {
-      title: "РЎС…РѕР¶Рµ РЅР° plateau",
-      body: "Р’Р°РіР° РјР°Р№Р¶Рµ РЅРµ Р·РјС–РЅСЋС”С‚СЊСЃСЏ РєС–Р»СЊРєР° С‚РёР¶РЅС–РІ. Р¦Рµ РЅРѕСЂРјР°Р»СЊРЅРѕ. РҐРѕС‡РµС‚Рµ РїРµСЂРµРіР»СЏРЅСѓС‚Рё РїСЂРѕРіСЂРµСЃ С– РІР°СЂС–Р°РЅС‚Рё?",
-      action: "РџРѕРґРёРІРёС‚РёСЃСЏ Р·Р°РјС–СЂРё",
+      title: "Схоже на plateau",
+      body: "Вага майже не змінюється кілька тижнів. Це нормально. Хочете переглянути прогрес і варіанти?",
+      action: "Подивитися заміри",
     },
     water: {
-      title: "Р’РѕРґР° СЃСЊРѕРіРѕРґРЅС– РїСЂРѕСЃС–Р»Р°",
-      body: "Р’Рё РІРёРїРёР»Рё РјРµРЅС€Рµ РЅРѕСЂРјРё. РҐРѕС‡РµС‚Рµ РґРѕРєРёРЅСѓС‚Рё РІРѕРґСѓ РІ С‚СЂРµРєРµСЂ?",
-      action: "Р’С–РґРєСЂРёС‚Рё РІРѕРґСѓ",
+      title: "Вода сьогодні просіла",
+      body: "Ви випили менше норми. Хочете докинути воду в трекер?",
+      action: "Відкрити воду",
     },
     checkIn: {
-      title: "Р§Р°СЃ РѕРЅРѕРІРёС‚Рё РІР°РіСѓ",
-      body: "РџРѕСЂР° Р·Р°РїРёСЃР°С‚Рё РЅРѕРІРёР№ weekly check-in С– Р·Р°РјС–СЂРё.",
-      action: "Р—Р°РїРёСЃР°С‚Рё check-in",
+      title: "Час оновити вагу",
+      body: "Пора записати новий weekly check-in і заміри.",
+      action: "Записати check-in",
     },
   },
   pl: {
-    help: "PodpowiedЕє",
+    help: "Podpowiedź",
     close: "Ukryj",
-    open: "OtwГіrz podpowiedЕє",
+    open: "Otwórz podpowiedź",
     setup: {
-      title: "WidoczД™, Ејe dopiero startujesz",
-      body: "Chcesz, Ејebym pomГіgЕ‚ szybko ustawiД‡ cele i pierwsze pomiary?",
-      action: "OtwГіrz profil",
+      title: "Widzę, że dopiero startujesz",
+      body: "Chcesz, żebym pomógł szybko ustawić cele i pierwsze pomiary?",
+      action: "Otwórz profil",
     },
     plateau: {
-      title: "To wyglД…da na plateau",
-      body: "Waga prawie siД™ nie zmienia od kilku tygodni. To normalne. Chcesz przejrzeД‡ progres i opcje?",
+      title: "To wygląda na plateau",
+      body: "Waga prawie się nie zmienia od kilku tygodni. To normalne. Chcesz przejrzeć progres i opcje?",
       action: "Zobacz pomiary",
     },
     water: {
-      title: "Woda dziЕ› jest za nisko",
-      body: "Wypito mniej niЕј plan. Chcesz szybko uzupeЕ‚niД‡ wodД™ w trackerze?",
-      action: "OtwГіrz wodД™",
+      title: "Woda dziś jest za nisko",
+      body: "Wypito mniej niż plan. Chcesz szybko uzupełnić wodę w trackerze?",
+      action: "Otwórz wodę",
     },
     checkIn: {
-      title: "Czas odЕ›wieЕјyД‡ wagД™",
-      body: "To dobry moment, aby dodaД‡ nowy weekly check-in i pomiary.",
+      title: "Czas odświeżyć wagę",
+      body: "To dobry moment, aby dodać nowy weekly check-in i pomiary.",
       action: "Dodaj check-in",
     },
   },
@@ -112,7 +112,7 @@ export const ContextAssistantWidget = () => {
       return {
         id: "water",
         ...copy.water,
-        onAction: () => navigate("/dashboard"),
+        onAction: () => navigate("/progress"),
       };
     }
 
@@ -130,7 +130,10 @@ export const ContextAssistantWidget = () => {
       sx={{
         position: "fixed",
         right: { xs: 16, md: 24 },
-        bottom: { xs: 16, md: 24 },
+        bottom: {
+          xs: "calc(env(safe-area-inset-bottom, 0px) + 96px)",
+          md: 24,
+        },
         zIndex: 1200,
         display: "grid",
         gap: 1.2,

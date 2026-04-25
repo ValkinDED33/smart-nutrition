@@ -57,36 +57,36 @@ const factLabels: Record<
 
 const benefitCopy = {
   fruit: {
-    uk: "Р”Р°С” Р»РµРіРєРёР№ РѕР±'С”Рј СЂР°С†С–РѕРЅСѓ, РєР»С–С‚РєРѕРІРёРЅСѓ С‚Р° РјС–РєСЂРѕРЅСѓС‚СЂС–С”РЅС‚Рё.",
-    pl: "Daje lekki wolumen dnia, bЕ‚onnik i mikroskЕ‚adniki.",
+    uk: "Дає легкий об'єм раціону, клітковину та мікронутрієнти.",
+    pl: "Daje lekki wolumen dnia, błonnik i mikroskładniki.",
   },
   vegetable: {
-    uk: "Р”РѕРїРѕРјР°РіР°С” РЅР°СЃРёС‡РµРЅРЅСЋ Р±РµР· Р·Р°Р№РІРёС… РєР°Р»РѕСЂС–Р№ С– РїС–РґСЃРёР»СЋС” С‰РѕРґРµРЅРЅРёР№ РјС–РєСЂРѕРїСЂРѕС„С–Р»СЊ.",
-    pl: "Wspiera sytoЕ›Д‡ bez nadmiaru kalorii i wzmacnia dzienny profil mikro.",
+    uk: "Допомагає насиченню без зайвих калорій і підсилює щоденний мікропрофіль.",
+    pl: "Wspiera sytość bez nadmiaru kalorii i wzmacnia dzienny profil mikro.",
   },
   dairy: {
-    uk: "Р”РѕР±СЂРµ РїС–РґС…РѕРґРёС‚СЊ РґР»СЏ Р±С–Р»РєР°, РєР°Р»СЊС†С–СЋ С‚Р° Р·СЂСѓС‡РЅРѕРіРѕ РїРµСЂРµРєСѓСЃСѓ.",
-    pl: "Dobrze wspiera biaЕ‚ko, wapЕ„ i wygodny szybki posiЕ‚ek.",
+    uk: "Добре підходить для білка, кальцію та зручного перекусу.",
+    pl: "Dobrze wspiera białko, wapń i wygodny szybki posiłek.",
   },
   grain: {
-    uk: "Р”Р°С” СЃС‚Р°Р±С–Р»СЊРЅСѓ РµРЅРµСЂРіС–СЋ С‚Р° РјРѕР¶Рµ РїС–РґС‚СЂРёРјСѓРІР°С‚Рё СЃРёС‚С–СЃС‚СЊ.",
-    pl: "Daje stabilniejszД… energiД™ i moЕјe wspieraД‡ sytoЕ›Д‡.",
+    uk: "Дає стабільнішу енергію та може підтримувати ситість.",
+    pl: "Daje stabilniejszą energię i może wspierać sytość.",
   },
   protein: {
-    uk: "РљРѕСЂРёСЃРЅРёР№ РґР»СЏ СЃРёС‚РѕСЃС‚С–, РІС–РґРЅРѕРІР»РµРЅРЅСЏ С‚Р° Р·Р±РµСЂРµР¶РµРЅРЅСЏ Рј'СЏР·РѕРІРѕС— РјР°СЃРё.",
-    pl: "Wspiera sytoЕ›Д‡, regeneracjД™ i utrzymanie masy miД™Е›niowej.",
+    uk: "Корисний для ситості, відновлення та збереження м'язової маси.",
+    pl: "Wspiera sytość, regenerację i utrzymanie masy mięśniowej.",
   },
   legume: {
-    uk: "Р”Р°С” РєР»С–С‚РєРѕРІРёРЅСѓ С‚Р° СЂРѕСЃР»РёРЅРЅРёР№ Р±С–Р»РѕРє РґР»СЏ СЃРёС‚РѕСЃС‚С–.",
-    pl: "Dostarcza bЕ‚onnika i biaЕ‚ka roЕ›linnego dla sytoЕ›ci.",
+    uk: "Дає клітковину та рослинний білок для ситості.",
+    pl: "Dostarcza błonnika i białka roślinnego dla sytości.",
   },
   nuts: {
-    uk: "Р”Р°С” РєРѕРЅС†РµРЅС‚СЂРѕРІР°РЅС– Р¶РёСЂРё С‚Р° РјС–РєСЂРѕРµР»РµРјРµРЅС‚Рё, С‚РѕРјСѓ РїРѕСЂС†С–СЋ РєСЂР°С‰Рµ РєРѕРЅС‚СЂРѕР»СЋРІР°С‚Рё.",
-    pl: "Daje skoncentrowane tЕ‚uszcze i mikroelementy, wiД™c warto pilnowaД‡ porcji.",
+    uk: "Дає концентровані жири та мікроелементи, тому порцію краще контролювати.",
+    pl: "Daje skoncentrowane tłuszcze i mikroelementy, więc warto pilnować porcji.",
   },
   oil: {
-    uk: "РџС–РґСЃРёР»СЋС” СЃРјР°Рє С– РґРѕРґР°С” Р¶РёСЂРё, Р°Р»Рµ РєР°Р»РѕСЂС–С— РЅР°СЂРѕСЃС‚Р°СЋС‚СЊ С€РІРёРґРєРѕ.",
-    pl: "Wspiera smak i dostarcza tЕ‚uszczu, ale kalorie rosnД… szybko.",
+    uk: "Підсилює смак і додає жири, але калорії зростають швидко.",
+    pl: "Wspiera smak i dostarcza tłuszczu, ale kalorie rosną szybko.",
   },
 } as const;
 
@@ -138,8 +138,8 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const benefitSummary =
     (categoryKey ? benefitCopy[categoryKey as keyof typeof benefitCopy]?.[language] : null) ??
     (language === "uk"
-      ? "Р”РёРІС–С‚СЊСЃСЏ РЅР° Р‘Р–РЈ, РјС–РєСЂРѕРµР»РµРјРµРЅС‚Рё С‚Р° РїРѕСЂС†С–СЋ, С‰РѕР± РєСЂР°С‰Рµ РІР±СѓРґСѓРІР°С‚Рё РїСЂРѕРґСѓРєС‚ Сѓ СЃРІС–Р№ РґРµРЅСЊ."
-      : "Patrz na makro, mikro i porcjД™, aby lepiej wbudowaД‡ produkt w swГіj dzieЕ„.");
+      ? "Дивіться на БЖУ, мікроелементи та порцію, щоб краще вписати продукт у свій день."
+      : "Patrz na makro, mikro i porcję, aby lepiej wbudować produkt w swój dzień.");
 
   return (
     <Stack spacing={2}>

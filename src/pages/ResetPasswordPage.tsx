@@ -24,35 +24,35 @@ type FormData = {
 
 const resetPasswordCopy = {
   uk: {
-    title: "РќРѕРІРёР№ РїР°СЂРѕР»СЊ",
+    title: "Новий пароль",
     subtitle:
-      "Р’СЃС‚Р°РЅРѕРІС–С‚СЊ РЅРѕРІРёР№ РїР°СЂРѕР»СЊ. РџРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ СЃРєРёРґР°РЅРЅСЏ РѕРґРЅРѕСЂР°Р·РѕРІРµ С– РјР°С” РѕР±РјРµР¶РµРЅРёР№ С‡Р°СЃ РґС–С—.",
-    submit: "Р—Р±РµСЂРµРіС‚Рё РЅРѕРІРёР№ РїР°СЂРѕР»СЊ",
-    saving: "Р—Р±РµСЂС–РіР°СЋ...",
+      "Встановіть новий пароль. Посилання для скидання одноразове і має обмежений час дії.",
+    submit: "Зберегти новий пароль",
+    saving: "Зберігаю...",
     invalidToken:
-      "РџРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ СЃРєРёРґР°РЅРЅСЏ РЅРµРґС–Р№СЃРЅРµ Р°Р±Рѕ РІР¶Рµ РїСЂРѕСЃС‚СЂРѕС‡РµРЅРµ.",
+      "Посилання для скидання недійсне або вже прострочене.",
     weakPassword:
-      "РџР°СЂРѕР»СЊ РјР°С” РјС–СЃС‚РёС‚Рё С‰РѕРЅР°Р№РјРµРЅС€Рµ 10 СЃРёРјРІРѕР»С–РІ, РІРµР»РёРєСѓ, РјР°Р»Сѓ Р»С–С‚РµСЂСѓ, С†РёС„СЂСѓ С‚Р° СЃРёРјРІРѕР».",
+      "Пароль має містити щонайменше 10 символів, велику, малу літеру, цифру та символ.",
     missingToken:
-      "РўСѓС‚ РЅРµРјР°С” reset-С‚РѕРєРµРЅР°. Р’С–РґРєСЂРёР№С‚Рµ СЃС‚РѕСЂС–РЅРєСѓ Р· РїРѕСЃРёР»Р°РЅРЅСЏ Р· Р»РёСЃС‚Р° Р°Р±Рѕ preview.",
-    backToLogin: "РџРµСЂРµР№С‚Рё РґРѕ РІС…РѕРґСѓ",
-    showPassword: "РџРѕРєР°Р·Р°С‚Рё РїР°СЂРѕР»СЊ",
-    hidePassword: "РЎС…РѕРІР°С‚Рё РїР°СЂРѕР»СЊ",
+      "Тут немає reset-токена. Відкрийте сторінку з посилання з листа або preview.",
+    backToLogin: "Перейти до входу",
+    showPassword: "Показати пароль",
+    hidePassword: "Сховати пароль",
   },
   pl: {
-    title: "Nowe hasЕ‚o",
+    title: "Nowe hasło",
     subtitle:
-      "Ustaw nowe hasЕ‚o. Link resetu jest jednorazowy i ma ograniczony czas waЕјnoЕ›ci.",
-    submit: "Zapisz nowe hasЕ‚o",
-    saving: "ZapisujД™...",
-    invalidToken: "Link resetu jest nieprawidЕ‚owy albo juЕј wygasЕ‚.",
+      "Ustaw nowe hasło. Link resetu jest jednorazowy i ma ograniczony czas ważności.",
+    submit: "Zapisz nowe hasło",
+    saving: "Zapisuję...",
+    invalidToken: "Link resetu jest nieprawidłowy albo już wygasł.",
     weakPassword:
-      "HasЕ‚o musi mieД‡ co najmniej 10 znakГіw, wielkД…, maЕ‚Д… literД™, cyfrД™ i symbol.",
+      "Hasło musi mieć co najmniej 10 znaków, wielką, małą literę, cyfrę i symbol.",
     missingToken:
-      "Brakuje tokenu resetu. OtwГіrz stronД™ z linku z maila albo preview.",
-    backToLogin: "PrzejdЕє do logowania",
-    showPassword: "PokaЕј hasЕ‚o",
-    hidePassword: "Ukryj hasЕ‚o",
+      "Brakuje tokenu resetu. Otwórz stronę z linku z maila albo preview.",
+    backToLogin: "Przejdź do logowania",
+    showPassword: "Pokaż hasło",
+    hidePassword: "Ukryj hasło",
   },
 } as const;
 

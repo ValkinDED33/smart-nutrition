@@ -26,30 +26,34 @@ type FormData = {
 
 const forgotPasswordCopy = {
   uk: {
-    title: "Р’С–РґРЅРѕРІР»РµРЅРЅСЏ РїР°СЂРѕР»СЏ",
+    title: "Відновлення пароля",
     subtitle:
-      "Р’РІРµРґС–С‚СЊ email Р°РєР°СѓРЅС‚Р°, С– РјРё РїС–РґРіРѕС‚СѓС”РјРѕ РїРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ СЃРєРёРґР°РЅРЅСЏ РїР°СЂРѕР»СЏ.",
-    submit: "РќР°РґС–СЃР»Р°С‚Рё РїРѕСЃРёР»Р°РЅРЅСЏ",
-    sending: "Р“РѕС‚СѓСЋ РїРѕСЃРёР»Р°РЅРЅСЏ...",
-    previewTitle: "РџРѕРїРµСЂРµРґРЅС–Р№ РїРµСЂРµРіР»СЏРґ РїРѕСЃРёР»Р°РЅРЅСЏ",
+      "Введіть email акаунта, і ми підготуємо посилання для скидання пароля.",
+    submit: "Надіслати посилання",
+    sending: "Готую посилання...",
+    previewTitle: "Попередній перегляд посилання",
     previewHint:
       "У цій збірці email-доставка ще не налаштована. Нижче показано чесний preview reset-посилання.",
-    backToLogin: "РџРѕРІРµСЂРЅСѓС‚РёСЃСЏ РґРѕ РІС…РѕРґСѓ",
-    genericError: "РќРµ РІРґР°Р»РѕСЃСЏ РїС–РґРіРѕС‚СѓРІР°С‚Рё РїРѕСЃРёР»Р°РЅРЅСЏ.",
-    openResetLink: "Р’С–РґРєСЂРёС‚Рё СЃРєРёРґР°РЅРЅСЏ",
+    backToLogin: "Повернутися до входу",
+    genericError: "Не вдалося підготувати посилання.",
+    deliveryUnavailable:
+      "На сервері ще не налаштована email-доставка для скидання пароля.",
+    openResetLink: "Відкрити скидання",
   },
   pl: {
-    title: "Reset hasЕ‚a",
+    title: "Reset hasła",
     subtitle:
-      "Podaj email konta, a przygotujemy link do ustawienia nowego hasЕ‚a.",
-    submit: "WyЕ›lij link resetu",
-    sending: "PrzygotowujД™ link...",
-    previewTitle: "PodglД…d linku resetu",
+      "Podaj email konta, a przygotujemy link do ustawienia nowego hasła.",
+    submit: "Wyślij link resetu",
+    sending: "Przygotowuję link...",
+    previewTitle: "Podgląd linku resetu",
     previewHint:
-      "W tej konfiguracji wysyЕ‚ka email nie jest jeszcze podpiД™ta. PoniЕјej pokazujemy uczciwy preview linku resetu.",
-    backToLogin: "WrГіД‡ do logowania",
-    genericError: "Nie udaЕ‚o siД™ przygotowaД‡ linku resetu.",
-    openResetLink: "OtwГіrz reset hasЕ‚a",
+      "W tej konfiguracji wysyłka email nie jest jeszcze podpięta. Poniżej pokazujemy uczciwy preview linku resetu.",
+    backToLogin: "Wróć do logowania",
+    genericError: "Nie udało się przygotować linku resetu.",
+    deliveryUnavailable:
+      "Na serwerze nie skonfigurowano jeszcze wysyłki email dla resetu hasła.",
+    openResetLink: "Otwórz reset hasła",
   },
 } as const;
 
@@ -90,7 +94,11 @@ const ForgotPasswordPage = () => {
       setResult(nextResult);
     } catch (error) {
       if (error instanceof AuthApiError) {
-        setServerError(error.message);
+        setServerError(
+          error.code === "EMAIL_DELIVERY_UNAVAILABLE"
+            ? copy.deliveryUnavailable
+            : error.message
+        );
       } else {
         setServerError(copy.genericError);
       }

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../app/store";
 import { replaceMealState } from "../../features/meal/mealSlice";
 import { replaceProfileState } from "../../features/profile/profileSlice";
+import { replaceWaterState } from "../../features/water/waterSlice";
 import { subscribeToTabSnapshots } from "../lib/tabRealtimeSync";
 
 const LocalRealtimeSyncAgent = () => {
@@ -32,6 +33,7 @@ const LocalRealtimeSyncAgent = () => {
       latestAppliedAtRef.current = snapshot.updatedAt;
       dispatch(replaceProfileState(snapshot.profile));
       dispatch(replaceMealState(snapshot.meal));
+      dispatch(replaceWaterState(snapshot.water));
     });
   }, [dispatch, user]);
 

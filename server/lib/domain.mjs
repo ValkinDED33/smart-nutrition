@@ -224,6 +224,31 @@ export const getBearerToken = (request) => {
   return header.slice(7).trim();
 };
 
+export const readCookieValue = (request, name) => {
+  const rawHeader = request.headers.cookie;
+
+  if (typeof rawHeader !== "string" || !rawHeader.trim()) {
+    return null;
+  }
+
+  const prefix = `${encodeURIComponent(name)}=`;
+
+  const matchedCookie = rawHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(prefix));
+
+  if (!matchedCookie) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(matchedCookie.slice(prefix.length));
+  } catch {
+    return matchedCookie.slice(prefix.length);
+  }
+};
+
 export const derivePasswordHash = (password, salt, iterations) =>
   crypto.pbkdf2Sync(password, salt, iterations, 32, "sha256").toString("base64");
 
@@ -407,6 +432,14 @@ export const createInitialMealState = () => ({
   savedProducts: [],
   recentProducts: [],
   personalBarcodeProducts: [],
+});
+
+export const createInitialWaterState = () => ({
+  dailyTargetMl: 2000,
+  consumedMl: 0,
+  glassSizeMl: 250,
+  lastLoggedOn: new Date().toISOString().slice(0, 10),
+  targetMode: "automatic",
 });
 
 export const toPublicUser = (user) => ({

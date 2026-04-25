@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
   Box,
@@ -6,10 +7,27 @@ import {
   Chip,
   Paper,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import type { MealType } from "../../shared/types/meal";
+import type { AppDispatch, RootState } from "../../app/store";
+import { analyzeMealPhoto } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
+import { createFreePhotoAnalysis } from "../../shared/lib/freePhotoAnalysis";
+import { createEmptyNutrients } from "../../shared/lib/nutrients";
+import {
+  rescalePhotoMealAnalysis,
+  scalePhotoMealAnalysis,
+} from "../../shared/lib/photoDraft";
+import type { MealEntry, MealType } from "../../shared/types/meal";
+import type {
+  PhotoMealAnalysis,
+  PhotoMealSuggestion,
+  PhotoPortionSize,
+} from "../../shared/types/photo";
+import type { Product } from "../../shared/types/product";
+import { addMealEntries } from "./mealSlice";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -20,30 +38,119 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const createId = (prefix: string) =>
+  globalThis.crypto?.randomUUID?.() ??
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const roundMacro = (value: number) => Math.round(value * 10) / 10;
+
+const calculateSuggestionCalories = (suggestion: PhotoMealSuggestion) =>
+  Math.round(
+    (suggestion.estimatedNutritionPer100g.calories * suggestion.quantityGrams) / 100
+  );
+
+const createPhotoProduct = (
+  suggestion: PhotoMealSuggestion,
+  previewUrl: string | null
+): Product => {
+  const nutrients = createEmptyNutrients();
+
+  nutrients.calories = suggestion.estimatedNutritionPer100g.calories;
+  nutrients.protein = suggestion.estimatedNutritionPer100g.protein;
+  nutrients.fat = suggestion.estimatedNutritionPer100g.fat;
+  nutrients.carbs = suggestion.estimatedNutritionPer100g.carbs;
+
+  return {
+    id: createId("photo-product"),
+    name: suggestion.name,
+    unit: "g",
+    source: "Manual",
+    imageUrl: previewUrl ?? undefined,
+    nutrients,
+  };
+};
+
+const createDraftEntries = (
+  analysis: PhotoMealAnalysis,
+  mealType: MealType,
+  previewUrl: string | null
+): MealEntry[] => {
+  const eatenAt = new Date().toISOString();
+
+  return analysis.items.map((suggestion) => ({
+    id: createId("photo-entry"),
+    product: createPhotoProduct(suggestion, previewUrl),
+    quantity: Math.max(Math.round(suggestion.quantityGrams), 5),
+    mealType,
+    eatenAt,
+    origin: "manual",
+  }));
+};
+
 const photoCopy = {
   uk: {
-    title: "Р¤РѕС‚Рѕ СЃС‚СЂР°РІРё",
+    title: "Фото страви",
     subtitle:
-      "Р—Р°РІР°РЅС‚Р°Р¶С‚Рµ С„РѕС‚Рѕ С„Р°Р№Р»РѕРј. РљР°РјРµСЂСѓ РґР»СЏ С†СЊРѕРіРѕ Р±Р»РѕРєСѓ РЅРµ РІРёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ.",
-    upload: "Р—Р°РІР°РЅС‚Р°Р¶РёС‚Рё С„РѕС‚Рѕ СЃС‚СЂР°РІРё",
-    uploaded: "Р¤РѕС‚Рѕ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРѕ",
-    recognizing: "Р РѕР·РїС–Р·РЅР°С”РјРѕ СЃС‚СЂР°РІСѓ...",
+      "Завантажте фото файлом. Система спробує підготувати чернетку складу, а ви перед збереженням швидко перевірите інгредієнти.",
+    upload: "Завантажити фото страви",
+    uploaded: "Фото завантажено",
+    recognizing: "Аналізуємо фото...",
+    readError: "Не вдалося прочитати фото. Спробуйте інший файл.",
+    analysisError:
+      "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
     manualFallback:
-      "РђРІС‚РѕРІРёР·РЅР°С‡РµРЅРЅСЏ СЃС‚СЂР°РІРё С‰Рµ РІ СЂРѕР·СЂРѕР±С†С–. Р’Рё РјРѕР¶РµС‚Рµ РІРІРµСЃС‚Рё СЃС‚СЂР°РІСѓ РІСЂСѓС‡РЅСѓ С‡РµСЂРµР· РїРѕС€СѓРє РїСЂРѕРґСѓРєС‚С–РІ Р°Р±Рѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РЅРёР¶С‡Рµ.",
-    readError: "РќРµ РІРґР°Р»РѕСЃСЏ РїСЂРѕС‡РёС‚Р°С‚Рё С„РѕС‚Рѕ. РЎРїСЂРѕР±СѓР№С‚Рµ С–РЅС€РёР№ С„Р°Р№Р».",
-    previewAlt: "РџСЂРµРІ'СЋ С„РѕС‚Рѕ СЃС‚СЂР°РІРё",
+      "Хмарний аналіз недоступний, тому ми підготували локальну чернетку за типом прийому їжі та вашими вподобаннями.",
+    cloudDraft:
+      "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
+    previewAlt: "Прев'ю фото страви",
+    detected: "Чернетка розпізнавання",
+    portions: "Порція",
+    portionLight: "Легка",
+    portionRegular: "Стандарт",
+    portionLarge: "Велика",
+    portionsValue: "{value} порції",
+    confidence: "Впевненість",
+    manualReview: "Потрібна ручна перевірка",
+    macros: "Орієнтовні макро за фото",
+    suggestions: "Що додамо в щоденник",
+    empty: "Підказки не сформувалися. Скористайтеся ручним додаванням нижче.",
+    addDraft: "Додати всі підказки",
+    added: "Чернетку додано до щоденника.",
+    itemCalories: "{value} ккал",
+    itemMacros: "Б {protein} г • Ж {fat} г • В {carbs} г",
+    grams: "{value} г",
   },
   pl: {
-    title: "ZdjД™cie posiЕ‚ku",
+    title: "Zdjęcie posiłku",
     subtitle:
-      "Wgraj zdjД™cie plikiem. Kamera nie jest uЕјywana w tym bloku.",
-    upload: "Wgraj zdjД™cie posiЕ‚ku",
-    uploaded: "ZdjД™cie wgrane",
-    recognizing: "Rozpoznajemy posiЕ‚ek...",
+      "Wgraj zdjęcie plikiem. System spróbuje przygotować roboczą listę składników, a Ty szybko sprawdzisz ją przed zapisaniem.",
+    upload: "Wgraj zdjęcie posiłku",
+    uploaded: "Zdjęcie wgrane",
+    recognizing: "Analizujemy zdjęcie...",
+    readError: "Nie udało się odczytać zdjęcia. Spróbuj innego pliku.",
+    analysisError:
+      "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
     manualFallback:
-      "Autoidentyfikacja posiЕ‚ku jest jeszcze w przygotowaniu. MoЕјesz wpisaД‡ go rД™cznie przez wyszukiwarkД™ produktГіw albo kreator poniЕјej.",
-    readError: "Nie udaЕ‚o siД™ odczytaД‡ zdjД™cia. SprГіbuj innego pliku.",
-    previewAlt: "PodglД…d zdjД™cia posiЕ‚ku",
+      "Analiza chmurowa jest teraz niedostępna, więc przygotowaliśmy lokalny szkic na podstawie typu posiłku i Twoich preferencji.",
+    cloudDraft:
+      "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
+    previewAlt: "Podgląd zdjęcia posiłku",
+    detected: "Szkic rozpoznania",
+    portions: "Porcja",
+    portionLight: "Lekka",
+    portionRegular: "Standard",
+    portionLarge: "Duża",
+    portionsValue: "{value} porcji",
+    confidence: "Pewność",
+    manualReview: "Wymaga ręcznego sprawdzenia",
+    macros: "Szacowane makro ze zdjęcia",
+    suggestions: "Co trafi do dziennika",
+    empty: "Nie udało się zbudować podpowiedzi. Skorzystaj z ręcznego dodawania poniżej.",
+    addDraft: "Dodaj wszystkie podpowiedzi",
+    added: "Szkic został dodany do dziennika.",
+    itemCalories: "{value} kcal",
+    itemMacros: "B {protein} g • T {fat} g • W {carbs} g",
+    grams: "{value} g",
   },
 } as const;
 
@@ -52,27 +159,40 @@ type Props = {
 };
 
 export const PhotoMealAssistant = ({ mealType }: Props) => {
-  void mealType;
-
-  const { language } = useLanguage();
+  const dispatch = useDispatch<AppDispatch>();
+  const profilePreferences = useSelector((state: RootState) => ({
+    dietStyle: state.profile.dietStyle,
+    allergies: state.profile.allergies,
+    excludedIngredients: state.profile.excludedIngredients,
+  }));
+  const { language, t } = useLanguage();
   const copy = photoCopy[language];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
+  const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");
+  const [analysisMode, setAnalysisMode] = useState<"cloud" | "local-draft" | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isRecognizing) {
-      return;
+  const totals = useMemo(() => {
+    if (!analysis) {
+      return null;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      setIsRecognizing(false);
-    }, 1400);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [isRecognizing]);
+    return analysis.items.reduce(
+      (accumulator, item) => ({
+        calories: accumulator.calories + calculateSuggestionCalories(item),
+        protein:
+          accumulator.protein +
+          (item.estimatedNutritionPer100g.protein * item.quantityGrams) / 100,
+        fat: accumulator.fat + (item.estimatedNutritionPer100g.fat * item.quantityGrams) / 100,
+        carbs:
+          accumulator.carbs + (item.estimatedNutritionPer100g.carbs * item.quantityGrams) / 100,
+      }),
+      { calories: 0, protein: 0, fat: 0, carbs: 0 }
+    );
+  }, [analysis]);
 
   const handleFileChange = async (file: File | null) => {
     if (!file) {
@@ -80,14 +200,64 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     }
 
     setError(null);
+    setFeedback(null);
+    setAnalysis(null);
+    setAnalysisMode(null);
 
     try {
       const dataUrl = await readFileAsDataUrl(file);
+
       setPreviewUrl(dataUrl);
       setIsRecognizing(true);
+
+      try {
+        const remoteAnalysis = await analyzeMealPhoto(dataUrl, mealType);
+        const nextMode = remoteAnalysis ? "cloud" : "local-draft";
+        const nextAnalysis = scalePhotoMealAnalysis(
+          remoteAnalysis ??
+            createFreePhotoAnalysis({
+              mealType,
+              preferences: profilePreferences,
+            }),
+          "regular"
+        );
+
+        setPortionSize("regular");
+        setAnalysis(nextAnalysis);
+        setAnalysisMode(nextMode);
+      } catch {
+        setError(copy.analysisError);
+      }
     } catch {
       setError(copy.readError);
+    } finally {
+      setIsRecognizing(false);
     }
+  };
+
+  const handlePortionChange = (_: MouseEvent<HTMLElement>, value: PhotoPortionSize | null) => {
+    if (!value || !analysis || value === portionSize) {
+      return;
+    }
+
+    setAnalysis(rescalePhotoMealAnalysis(analysis, portionSize, value));
+    setPortionSize(value);
+  };
+
+  const handleAddDraft = () => {
+    if (!analysis) {
+      return;
+    }
+
+    const entries = createDraftEntries(analysis, mealType, previewUrl);
+
+    if (entries.length === 0) {
+      setError(copy.analysisError);
+      return;
+    }
+
+    dispatch(addMealEntries(entries));
+    setFeedback(copy.added);
   };
 
   return (
@@ -109,6 +279,13 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         </Stack>
 
         {error && <Alert severity="warning">{error}</Alert>}
+        {feedback && <Alert severity="success">{feedback}</Alert>}
+        {analysisMode === "local-draft" && !error && analysis && (
+          <Alert severity="info">{copy.manualFallback}</Alert>
+        )}
+        {analysisMode === "cloud" && !error && analysis && (
+          <Alert severity="success">{copy.cloudDraft}</Alert>
+        )}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="flex-start">
           <Button
@@ -128,7 +305,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             />
           </Button>
           {previewUrl && <Chip label={copy.uploaded} color="success" variant="outlined" />}
-          {previewUrl && isRecognizing && <Chip label={copy.recognizing} color="info" />}
+          {isRecognizing && <Chip label={copy.recognizing} color="info" />}
         </Stack>
 
         {previewUrl && (
@@ -138,7 +315,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             alt={copy.previewAlt}
             sx={{
               width: "100%",
-              maxHeight: 300,
+              maxHeight: 320,
               objectFit: "cover",
               borderRadius: 4,
               border: "1px solid rgba(15,23,42,0.08)",
@@ -146,8 +323,173 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           />
         )}
 
-        {previewUrl && !isRecognizing && (
-          <Alert severity="info">{copy.manualFallback}</Alert>
+        {analysis && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 4,
+              borderColor: "rgba(15, 23, 42, 0.08)",
+              background:
+                "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={1.5}
+                justifyContent="space-between"
+              >
+                <Stack spacing={0.7}>
+                  <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                    {copy.detected}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 800 }}>{analysis.dishName}</Typography>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Chip
+                      label={`${copy.confidence}: ${(analysis.confidence * 100).toFixed(0)}%`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      label={t("mealType." + mealType)}
+                      size="small"
+                      variant="outlined"
+                    />
+                    {analysis.manualReviewRequired && (
+                      <Chip
+                        label={copy.manualReview}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                      />
+                    )}
+                  </Stack>
+                </Stack>
+
+                <Stack spacing={0.8} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {copy.portions}:{" "}
+                    {copy.portionsValue.replace(
+                      "{value}",
+                      analysis.estimatedPortions.toFixed(1)
+                    )}
+                  </Typography>
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={portionSize}
+                    onChange={handlePortionChange}
+                    sx={{ flexWrap: "wrap" }}
+                  >
+                    <ToggleButton value="light">{copy.portionLight}</ToggleButton>
+                    <ToggleButton value="regular">{copy.portionRegular}</ToggleButton>
+                    <ToggleButton value="large">{copy.portionLarge}</ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+              </Stack>
+
+              {totals && (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 3,
+                    borderColor: "rgba(15, 23, 42, 0.06)",
+                    backgroundColor: "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  <Stack spacing={0.5}>
+                    <Typography sx={{ fontWeight: 700 }}>{copy.macros}</Typography>
+                    <Typography color="text.secondary">
+                      {copy.itemCalories.replace("{value}", String(Math.round(totals.calories)))}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {copy.itemMacros
+                        .replace("{protein}", String(roundMacro(totals.protein)))
+                        .replace("{fat}", String(roundMacro(totals.fat)))
+                        .replace("{carbs}", String(roundMacro(totals.carbs)))}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              )}
+
+              <Stack spacing={1.2}>
+                <Typography sx={{ fontWeight: 700 }}>{copy.suggestions}</Typography>
+                {analysis.items.length === 0 ? (
+                  <Alert severity="warning">{copy.empty}</Alert>
+                ) : (
+                  analysis.items.map((item) => (
+                    <Paper
+                      key={`${item.name}-${item.quantityGrams}`}
+                      variant="outlined"
+                      sx={{ p: 1.5, borderRadius: 3 }}
+                    >
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        spacing={1}
+                      >
+                        <Stack spacing={0.4} sx={{ minWidth: 0 }}>
+                          <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {copy.grams.replace(
+                              "{value}",
+                              String(Math.round(item.quantityGrams))
+                            )}{" "}
+                            •{" "}
+                            {copy.itemMacros
+                              .replace(
+                                "{protein}",
+                                String(roundMacro((item.estimatedNutritionPer100g.protein * item.quantityGrams) / 100))
+                              )
+                              .replace(
+                                "{fat}",
+                                String(roundMacro((item.estimatedNutritionPer100g.fat * item.quantityGrams) / 100))
+                              )
+                              .replace(
+                                "{carbs}",
+                                String(roundMacro((item.estimatedNutritionPer100g.carbs * item.quantityGrams) / 100))
+                              )}
+                          </Typography>
+                        </Stack>
+                        <Stack spacing={0.5} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
+                          <Chip
+                            label={copy.itemCalories.replace(
+                              "{value}",
+                              String(calculateSuggestionCalories(item))
+                            )}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {`${copy.confidence}: ${(item.confidence * 100).toFixed(0)}%`}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                    </Paper>
+                  ))
+                )}
+              </Stack>
+
+              <Button
+                variant="contained"
+                onClick={handleAddDraft}
+                disabled={analysis.items.length === 0}
+                sx={{
+                  alignSelf: "flex-start",
+                  borderRadius: 999,
+                  textTransform: "none",
+                  fontWeight: 800,
+                  background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                }}
+              >
+                {copy.addDraft}
+              </Button>
+            </Stack>
+          </Paper>
         )}
       </Stack>
     </Paper>

@@ -5,9 +5,11 @@ import {
   createInitialMealState,
   createOpaqueToken,
   createInitialProfileState,
+  createInitialWaterState,
   createPasswordRecord,
   createSessionToken,
   getBearerToken,
+  readCookieValue,
   hashOneTimeToken,
   normalizeEmail,
   sanitizeName,
@@ -16,7 +18,12 @@ import {
   verifyPassword,
 } from "../lib/domain.mjs";
 
-export const createAuthService = ({ authRepository, stateRepository, config }) => {
+export const createAuthService = ({
+  authRepository,
+  stateRepository,
+  emailService,
+  config,
+}) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
   const passwordResetRequestMessage =
     "If an account with that email exists, a password reset link has been prepared.";
@@ -47,16 +54,19 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     refreshToken,
     snapshot: stateRepository.getSnapshotByUserId(user.id, user),
   });
+  const getDefaultPasswordResetDelivery = () =>
+    config.isProduction || emailService?.isConfigured?.() ? "email" : "preview";
 
   const getUserById = (userId) => authRepository.findUserById(userId);
 
   const buildPasswordResetResponse = ({
+    delivery = getDefaultPasswordResetDelivery(),
     previewToken = undefined,
     expiresAt = undefined,
   } = {}) => ({
     ok: true,
     message: passwordResetRequestMessage,
-    delivery: config.isProduction ? "email" : "preview",
+    delivery,
     previewToken,
     expiresAt,
   });
@@ -169,7 +179,17 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     return { token, user, session: null };
   };
 
-  const authenticateRequest = (request) => authenticateToken(getBearerToken(request));
+  const getAccessTokenFromRequest = (request) =>
+    getBearerToken(request) ?? readCookieValue(request, config.authAccessCookieName);
+
+  const getRefreshTokenFromRequest = (request, body = undefined) =>
+    String(
+      body?.refreshToken ??
+        readCookieValue(request, config.authRefreshCookieName) ??
+        ""
+    );
+
+  const authenticateRequest = (request) => authenticateToken(getAccessTokenFromRequest(request));
 
   const clearLoginAttempts = (email) => {
     authRepository.clearLoginAttempt(email);
@@ -218,7 +238,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       ok: true,
       mode: "remote-cloud",
       provider: "smart-nutrition-sqlite-api",
-      auth: "access-refresh-tokens",
+      auth: "httpOnly-cookie-session",
     }),
 
     register: (body) => {
@@ -264,6 +284,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       stateRepository.upsertSnapshot(user.id, {
         profile: createInitialProfileState(user),
         meal: createInitialMealState(),
+        water: createInitialWaterState(),
         updatedAt: new Date().toISOString(),
       });
 
@@ -282,7 +303,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
       return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
     },
 
-    requestPasswordReset: (body) => {
+    requestPasswordReset: async (body) => {
       const email = normalizeEmail(body?.email);
 
       if (!email) {
@@ -299,6 +320,7 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
 
       const rawToken = createOpaqueToken(32);
       const expiresAt = Date.now() + config.passwordResetTokenTtlMs;
+      const resetUrl = `${config.appBaseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
       authRepository.createPasswordResetToken?.({
         id: createId("pw-reset"),
@@ -316,9 +338,30 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         targetId: user.id,
       });
 
+      const emailResult = await emailService?.sendPasswordResetEmail?.({
+        to: user.email,
+        name: user.name,
+        resetUrl,
+        expiresAt,
+      });
+
+      if (emailResult?.ok) {
+        return buildPasswordResetResponse({
+          delivery: "email",
+        });
+      }
+
+      if (config.isProduction) {
+        throw new AuthApiError(
+          "EMAIL_DELIVERY_UNAVAILABLE",
+          "Password reset email delivery is not configured on this server."
+        );
+      }
+
       return buildPasswordResetResponse({
-        previewToken: config.isProduction ? undefined : rawToken,
-        expiresAt: config.isProduction ? undefined : new Date(expiresAt).toISOString(),
+        delivery: "preview",
+        previewToken: rawToken,
+        expiresAt: new Date(expiresAt).toISOString(),
       });
     },
 
@@ -413,8 +456,8 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
         : null;
     },
 
-    refreshSession: (body) => {
-      const refreshToken = String(body?.refreshToken || "");
+    refreshSession: (request, body) => {
+      const refreshToken = getRefreshTokenFromRequest(request, body);
       const auth = authenticateRefreshToken(refreshToken);
 
       if (!auth) {
@@ -432,8 +475,8 @@ export const createAuthService = ({ authRepository, stateRepository, config }) =
     },
 
     logout: (request, body = {}) => {
-      const token = getBearerToken(request);
-      const refreshToken = String(body?.refreshToken || "");
+      const token = getAccessTokenFromRequest(request);
+      const refreshToken = getRefreshTokenFromRequest(request, body);
       const auth = authenticateRequest(request);
 
       if (refreshToken) {

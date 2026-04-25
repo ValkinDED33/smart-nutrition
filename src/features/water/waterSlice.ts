@@ -5,6 +5,7 @@ export interface WaterState {
   consumedMl: number;
   glassSizeMl: number;
   lastLoggedOn: string | null;
+  targetMode: "automatic" | "manual";
 }
 
 const createLocalDayKey = (date = new Date()) => {
@@ -24,6 +25,9 @@ const clampToZero = (value: unknown) => {
   return Number.isFinite(nextValue) && nextValue > 0 ? nextValue : 0;
 };
 
+const calculateRecommendedTarget = (weightKg: number) =>
+  Math.max(Math.round(weightKg * 33), 250);
+
 const getTodayWaterState = (state: WaterState) => {
   const today = createLocalDayKey();
 
@@ -38,6 +42,7 @@ export const createInitialWaterState = (): WaterState => ({
   consumedMl: 0,
   glassSizeMl: 250,
   lastLoggedOn: createLocalDayKey(),
+  targetMode: "automatic",
 });
 
 export const normalizeWaterState = (value: unknown): WaterState => {
@@ -54,6 +59,7 @@ export const normalizeWaterState = (value: unknown): WaterState => {
       typeof record.lastLoggedOn === "string" && record.lastLoggedOn.trim().length > 0
         ? record.lastLoggedOn
         : createLocalDayKey(),
+    targetMode: record.targetMode === "manual" ? "manual" : "automatic",
   };
 };
 
@@ -73,6 +79,24 @@ const waterSlice = createSlice({
     setWaterTarget(state, action: PayloadAction<number>) {
       getTodayWaterState(state);
       state.dailyTargetMl = Math.max(Math.round(action.payload), 250);
+      state.consumedMl = Math.min(state.consumedMl, state.dailyTargetMl + state.glassSizeMl * 4);
+      state.targetMode = "manual";
+    },
+
+    syncWaterTargetFromWeight(state, action: PayloadAction<number | null | undefined>) {
+      getTodayWaterState(state);
+
+      if (state.targetMode !== "automatic") {
+        return;
+      }
+
+      const weight = Number(action.payload ?? 0);
+
+      if (!Number.isFinite(weight) || weight <= 0) {
+        return;
+      }
+
+      state.dailyTargetMl = calculateRecommendedTarget(weight);
       state.consumedMl = Math.min(state.consumedMl, state.dailyTargetMl + state.glassSizeMl * 4);
     },
 
@@ -102,6 +126,7 @@ export const {
   replaceWaterState,
   syncWaterDay,
   setWaterTarget,
+  syncWaterTargetFromWeight,
   setWaterGlassSize,
   setWaterConsumed,
   incrementWater,
