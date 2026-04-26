@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createStateService } from "./stateService.mjs";
 
 describe("stateService", () => {
-  it("persists water when saving a full snapshot", () => {
+  it("persists water, fridge, and community when saving a full snapshot", () => {
     const stateRepository = {
       getSnapshotByUserId: vi.fn(),
       getSnapshotMetaByUserId: vi.fn(),
@@ -13,6 +13,10 @@ describe("stateService", () => {
       upsertMealState: vi.fn(),
       getWaterStateByUserId: vi.fn(),
       upsertWaterState: vi.fn(),
+      getFridgeStateByUserId: vi.fn(),
+      upsertFridgeState: vi.fn(),
+      getCommunityStateByUserId: vi.fn(),
+      upsertCommunityState: vi.fn(),
       addMealEntries: vi.fn(),
       removeMealEntry: vi.fn(),
       addMealTemplate: vi.fn(),
@@ -26,6 +30,8 @@ describe("stateService", () => {
       profile: { dailyCalories: 2100 },
       meal: { items: [] },
       water: { consumedMl: 1250, dailyTargetMl: 2300 },
+      fridge: { items: [{ id: "fridge-1" }] },
+      community: { score: 180, posts: [{ id: "post-1" }] },
     };
 
     service.saveSnapshot(user, snapshot);
@@ -37,6 +43,8 @@ describe("stateService", () => {
         profile: snapshot.profile,
         meal: snapshot.meal,
         water: snapshot.water,
+        fridge: snapshot.fridge,
+        community: snapshot.community,
       }),
       undefined
     );

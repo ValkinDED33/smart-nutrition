@@ -8,6 +8,8 @@ import {
   getRemoteBackendAvailability,
   pullRemoteAppSnapshot,
   restoreSession,
+  syncRemoteCommunityState,
+  syncRemoteFridgeState,
   type RemoteSyncResult,
   syncRemoteMealState,
   syncRemoteProfileState,
@@ -25,6 +27,8 @@ import {
   getSyncOutboxMeta,
   type SyncOutboxMeta,
 } from "../../shared/lib/syncOutbox";
+import { replaceCommunityState } from "../community/communitySlice";
+import { replaceFridgeState } from "../fridge/fridgeSlice";
 import { replaceProfileState } from "../profile/profileSlice";
 import { replaceMealState } from "../meal/mealSlice";
 import { replaceWaterState } from "../water/waterSlice";
@@ -76,18 +80,20 @@ const getCloudMetaForMode = (mode: SyncMode, snapshotMeta: AppSnapshotMeta | nul
 const getSyncErrorMessage = (result: RemoteSyncResult) =>
   result.code === "STATE_CONFLICT"
     ? "Cloud data changed on another device. Use the latest cloud version before retrying."
-    : result.message ?? "Cloud sync could not save the latest profile and meal data.";
+    : result.message ?? "Cloud sync could not save the latest app data.";
 
 const cacheCurrentRemoteSnapshot = (
   state: RootState,
   meta: AppSnapshotMeta | null | undefined
 ) => {
-  const snapshot = buildAppSnapshot({
-    profile: state.profile,
-    meal: state.meal,
-    water: state.water,
-    meta,
-  });
+    const snapshot = buildAppSnapshot({
+      profile: state.profile,
+      meal: state.meal,
+      water: state.water,
+      fridge: state.fridge,
+      community: state.community,
+      meta,
+    });
 
   writeCachedRemoteSnapshot(snapshot);
 
@@ -133,6 +139,8 @@ export const initializeAuth = createAsyncThunk<
       dispatch(replaceProfileState(data.snapshot.profile));
       dispatch(replaceMealState(data.snapshot.meal));
       dispatch(replaceWaterState(data.snapshot.water));
+      dispatch(replaceFridgeState(data.snapshot.fridge));
+      dispatch(replaceCommunityState(data.snapshot.community));
     }
 
     const cloudMeta = getSnapshotMetaFromSnapshot(data.snapshot) ?? readCachedRemoteMeta({ allowStale: true });
@@ -158,16 +166,30 @@ export const initializeAuth = createAsyncThunk<
 });
 
 const pushCurrentStateToCloud = async (state: RootState) => {
-  const [profileSynced, mealSynced, waterSynced] = await Promise.all([
+  const [profileSynced, mealSynced, waterSynced, fridgeSynced, communitySynced] = await Promise.all([
     syncRemoteProfileState(state.profile),
     syncRemoteMealState(state.meal),
     syncRemoteWaterState(state.water),
+    syncRemoteFridgeState(state.fridge),
+    syncRemoteCommunityState(state.community),
   ]);
 
-  if (profileSynced.ok && mealSynced.ok && waterSynced.ok) {
+  if (
+    profileSynced.ok &&
+    mealSynced.ok &&
+    waterSynced.ok &&
+    fridgeSynced.ok &&
+    communitySynced.ok
+  ) {
     return {
       ok: true,
-      meta: waterSynced.meta ?? mealSynced.meta ?? profileSynced.meta ?? null,
+      meta:
+        communitySynced.meta ??
+        fridgeSynced.meta ??
+        waterSynced.meta ??
+        mealSynced.meta ??
+        profileSynced.meta ??
+        null,
     } satisfies RemoteSyncResult;
   }
 
@@ -175,7 +197,19 @@ const pushCurrentStateToCloud = async (state: RootState) => {
     return profileSynced;
   }
 
-  return mealSynced.ok ? waterSynced : mealSynced;
+  if (!mealSynced.ok) {
+    return mealSynced;
+  }
+
+  if (!waterSynced.ok) {
+    return waterSynced;
+  }
+
+  if (!fridgeSynced.ok) {
+    return fridgeSynced;
+  }
+
+  return communitySynced;
 };
 
 export const retryCloudSync = createAsyncThunk<
@@ -271,6 +305,8 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
     dispatch(replaceProfileState(snapshot.profile));
     dispatch(replaceMealState(snapshot.meal));
     dispatch(replaceWaterState(snapshot.water));
+    dispatch(replaceFridgeState(snapshot.fridge));
+    dispatch(replaceCommunityState(snapshot.community));
     writeCachedRemoteSnapshot(snapshot);
 
     const syncOutbox = payload?.discardQueuedChanges
@@ -477,7 +513,7 @@ const authSlice = createSlice({
 
         state.syncStatus = "error";
         state.syncError =
-          action.payload ?? "Cloud sync could not save the latest profile and meal data.";
+          action.payload ?? "Cloud sync could not save the latest app data.";
       })
       .addCase(flushSyncOutbox.pending, (state) => {
         if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {

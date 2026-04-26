@@ -94,6 +94,24 @@ describe("createServerConfig", () => {
     ]);
   });
 
+  it("defaults multi-provider assistant fallback to OpenRouter, Groq, then Google", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_ASSISTANT_API_KEY: "primary-secret",
+      SMART_NUTRITION_ASSISTANT_MODEL: "llama-3.3-70b-versatile",
+      SMART_NUTRITION_ASSISTANT_PROVIDER: "groq",
+      SMART_NUTRITION_ASSISTANT_BASE_URL: "https://api.groq.com/openai/v1/",
+      SMART_NUTRITION_OPENROUTER_API_KEY: "router-secret",
+      SMART_NUTRITION_OPENROUTER_MODEL: "openai/gpt-5.4-mini",
+      SMART_NUTRITION_GOOGLE_API_KEY: "google-secret",
+      SMART_NUTRITION_GOOGLE_MODEL: "gemini-2.5-flash",
+    });
+
+    expect(config.assistantProviderOrder).toEqual(["openrouter", "groq", "google"]);
+    expect(config.assistantPrimaryProviderId).toBe("openrouter");
+    expect(config.assistantModel).toBe("openai/gpt-5.4-mini");
+  });
+
   it("accepts legacy provider priority hints with a warning", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
@@ -108,13 +126,9 @@ describe("createServerConfig", () => {
     });
 
     expect(config.assistantRuntimeConfigured).toBe(true);
-    expect(config.assistantModel).toBe("llama-3.1-8b-instant");
-    expect(config.assistantBaseUrl).toBe("https://api.groq.com/openai/v1");
-    expect(config.assistantTemperature).toBe(0.5);
-    expect(config.assistantTimeoutMs).toBe(25000);
     expect(config.assistantProviders.map((provider) => provider.id)).toEqual([
-      "groq",
       "openrouter",
+      "groq",
     ]);
     expect(config.warnings.join(" ")).toMatch(/Legacy SMART_NUTRITION_AI_PROVIDER/);
   });

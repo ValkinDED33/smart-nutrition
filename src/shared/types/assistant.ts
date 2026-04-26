@@ -62,6 +62,37 @@ export interface AssistantConversationMessage {
   createdAt?: string;
 }
 
+export interface AssistantRuntimeStatusProvider {
+  id: string;
+  label: string;
+  model: string | null;
+  baseUrl: string | null;
+  priority: number;
+  primary: boolean;
+  coolingDown: boolean;
+  coolingDownUntil: string | null;
+  lastAttemptedAt: string | null;
+  lastSuccessAt: string | null;
+  lastFailureAt: string | null;
+  consecutiveFailures: number;
+  lastError: string | null;
+  lastErrorCode: string | null;
+  lastErrorStatus: number | null;
+}
+
+export interface AssistantRuntimeStatus {
+  configured: boolean;
+  providerCount: number;
+  fallbackEnabled: boolean;
+  model: string | null;
+  baseUrl: string | null;
+  primaryProviderId: string | null;
+  primaryProviderLabel: string | null;
+  memoryMessageLimit: number;
+  retryCooldownMs: number;
+  providers: AssistantRuntimeStatusProvider[];
+}
+
 export const assistantQuickQuestionIds: AssistantQuickQuestionId[] = [
   "day_status",
   "protein_help",

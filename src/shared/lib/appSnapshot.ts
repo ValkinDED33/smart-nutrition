@@ -21,16 +21,22 @@ export const buildAppSnapshot = ({
   profile,
   meal,
   water,
+  fridge,
+  community,
   meta,
 }: {
   profile: unknown | null;
   meal: unknown | null;
   water: unknown | null;
+  fridge: unknown | null;
+  community: unknown | null;
   meta?: AppSnapshotMeta | null;
 }): AppSnapshot => ({
   profile,
   meal,
   water,
+  fridge,
+  community,
   updatedAt: meta?.updatedAt ?? null,
   profileUpdatedAt: meta?.profileUpdatedAt ?? meta?.updatedAt ?? null,
   mealUpdatedAt: meta?.mealUpdatedAt ?? meta?.updatedAt ?? null,

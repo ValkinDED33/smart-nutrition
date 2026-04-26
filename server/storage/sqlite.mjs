@@ -10,6 +10,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 import {
+  createInitialCommunityState,
+  createInitialFridgeState,
   calculateMealTotalNutrients,
   createInitialMealState,
   createInitialProfileState,
@@ -88,6 +90,21 @@ const isProductModerationStatus = (value) =>
 const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
 
 const isRecord = (value) => typeof value === "object" && value !== null;
+const isCommunityPostType = (value) =>
+  value === "recipe" || value === "article" || value === "experience";
+const isCommunityFriendStatus = (value) => value === "online" || value === "offline";
+
+const normalizeText = (value, fallback = "") =>
+  String(value ?? fallback)
+    .trim()
+    .replace(/\s+/g, " ");
+
+const normalizeToken = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 
 const normalizeReminderTimes = (value, fallback) => {
   const record = isRecord(value) ? value : {};
@@ -114,6 +131,12 @@ const normalizeAssistantCustomization = (value, fallback) => {
     tone: isAssistantTone(record.tone) ? record.tone : fallback.tone,
     humorEnabled:
       typeof record.humorEnabled === "boolean" ? record.humorEnabled : fallback.humorEnabled,
+    widgetEnabled:
+      typeof record.widgetEnabled === "boolean" ? record.widgetEnabled : fallback.widgetEnabled,
+    proactiveHintsEnabled:
+      typeof record.proactiveHintsEnabled === "boolean"
+        ? record.proactiveHintsEnabled
+        : fallback.proactiveHintsEnabled,
   };
 };
 
@@ -463,6 +486,154 @@ const normalizeWaterState = (value) => {
   };
 };
 
+const normalizeFridgeState = (value) => {
+  const fallback = createInitialFridgeState();
+  const record = isRecord(value) ? value : {};
+
+  return {
+    items: Array.isArray(record.items)
+      ? record.items
+          .map((item, index) => {
+            if (!isRecord(item) || !isRecord(item.product)) {
+              return null;
+            }
+
+            return {
+              id:
+                typeof item.id === "string" && item.id.trim().length > 0
+                  ? item.id
+                  : `fridge-item-${index}-${Date.now()}`,
+              product: normalizeProduct(item.product, `fridge-product-${index}`),
+              quantity: Math.max(toNumber(item.quantity, 100), 1),
+              createdAt:
+                typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                  ? item.createdAt
+                  : new Date().toISOString(),
+            };
+          })
+          .filter(Boolean)
+      : fallback.items,
+  };
+};
+
+const normalizeCommunityState = (value) => {
+  const fallback = createInitialCommunityState();
+  const record = isRecord(value) ? value : {};
+
+  const friends = Array.isArray(record.friends)
+    ? record.friends
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const name = normalizeText(item.name);
+
+          if (!name) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-friend-${index}-${Date.now()}`,
+            name,
+            handle: normalizeText(
+              item.handle,
+              `@${normalizeToken(name).replace(/\s+/g, "") || "friend"}`
+            ),
+            status: isCommunityFriendStatus(item.status) ? item.status : "offline",
+            lastActiveAt:
+              typeof item.lastActiveAt === "string" && item.lastActiveAt.trim().length > 0
+                ? item.lastActiveAt
+                : new Date().toISOString(),
+          };
+        })
+        .filter(Boolean)
+    : fallback.friends;
+
+  const messages = Array.isArray(record.messages)
+    ? record.messages
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const text = normalizeText(item.text);
+          const friendId = normalizeText(item.friendId);
+
+          if (!text || !friendId) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-message-${index}-${Date.now()}`,
+            friendId,
+            author: item.author === "friend" ? "friend" : "self",
+            text,
+            createdAt:
+              typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                ? item.createdAt
+                : new Date().toISOString(),
+          };
+        })
+        .filter(Boolean)
+    : fallback.messages;
+
+  const posts = Array.isArray(record.posts)
+    ? record.posts
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const title = normalizeText(item.title);
+          const body = normalizeText(item.body);
+
+          if (!title || !body) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-post-${index}-${Date.now()}`,
+            type: isCommunityPostType(item.type) ? item.type : "experience",
+            title,
+            body,
+            ingredients: Array.isArray(item.ingredients)
+              ? item.ingredients
+                  .map((ingredient) => normalizeText(ingredient))
+                  .filter(Boolean)
+                  .slice(0, 12)
+              : [],
+            authorName: normalizeText(item.authorName, "Smart Nutrition"),
+            createdAt:
+              typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                ? item.createdAt
+                : new Date().toISOString(),
+            likes: Math.max(toNumber(item.likes, 0), 0),
+          };
+        })
+        .filter(Boolean)
+    : fallback.posts;
+
+  return {
+    friends,
+    messages,
+    posts,
+    favoritePostIds: Array.isArray(record.favoritePostIds)
+      ? record.favoritePostIds.map((item) => normalizeText(item)).filter(Boolean)
+      : fallback.favoritePostIds,
+    score: Math.max(toNumber(record.score, fallback.score), 0),
+  };
+};
+
 const mapUserRow = (row) => {
   if (!row) {
     return null;
@@ -527,6 +698,8 @@ const mapSnapshotRow = (row) => {
     profile: parseJson(row.profile_json, null),
     meal: parseJson(row.meal_json, null),
     water: parseJson(row.water_json, null),
+    fridge: parseJson(row.fridge_json, null),
+    community: parseJson(row.community_json, null),
     updatedAt: row.updated_at,
   };
 };
@@ -656,6 +829,8 @@ const createSchema = (database) => {
       profile_json TEXT,
       meal_json TEXT,
       water_json TEXT,
+      fridge_json TEXT,
+      community_json TEXT,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -686,7 +861,7 @@ const createSchema = (database) => {
       measurement_history_json TEXT NOT NULL DEFAULT '[]',
       weekly_check_in_json TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}',
       motivation_json TEXT NOT NULL DEFAULT '{"points":0,"level":1,"completedTasks":0,"activeTasks":[],"history":[],"achievements":[],"lastTaskRefreshDate":null,"freeDayLastUsedAt":null,"paidDayLastUsedAt":null,"paidDayLastUsedMonth":null}',
-      assistant_json TEXT NOT NULL DEFAULT '{"name":"Nova","role":"assistant","tone":"gentle","humorEnabled":true}',
+      assistant_json TEXT NOT NULL DEFAULT '{"name":"Nova","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true}',
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -934,8 +1109,16 @@ const importLegacySessions = (database, sessions) => {
 
 const importLegacySnapshots = (database, snapshots) => {
   const statement = database.prepare(`
-    INSERT OR REPLACE INTO snapshots (user_id, profile_json, meal_json, updated_at)
-    VALUES (?, ?, ?, ?)
+    INSERT OR REPLACE INTO snapshots (
+      user_id,
+      profile_json,
+      meal_json,
+      water_json,
+      fridge_json,
+      community_json,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   Object.entries(snapshots).forEach(([userId, snapshot]) => {
@@ -943,6 +1126,9 @@ const importLegacySnapshots = (database, snapshots) => {
       userId,
       serializeJson(snapshot?.profile ?? null),
       serializeJson(snapshot?.meal ?? null),
+      serializeJson(snapshot?.water ?? null),
+      serializeJson(snapshot?.fridge ?? null),
+      serializeJson(snapshot?.community ?? null),
       snapshot?.updatedAt ?? new Date().toISOString()
     );
   });
@@ -1341,16 +1527,42 @@ const buildWaterStateFromRows = (database, userId) => {
   return normalizeWaterState(parseJson(row?.water_json, null));
 };
 
+const buildFridgeStateFromRows = (database, userId) => {
+  const row = database
+    .prepare("SELECT fridge_json FROM snapshots WHERE user_id = ? LIMIT 1")
+    .get(userId);
+
+  return normalizeFridgeState(parseJson(row?.fridge_json, null));
+};
+
+const buildCommunityStateFromRows = (database, userId) => {
+  const row = database
+    .prepare("SELECT community_json FROM snapshots WHERE user_id = ? LIMIT 1")
+    .get(userId);
+
+  return normalizeCommunityState(parseJson(row?.community_json, null));
+};
+
 const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().toISOString()) => {
   database
     .prepare(
       `
-        INSERT INTO snapshots (user_id, profile_json, meal_json, water_json, updated_at)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO snapshots (
+          user_id,
+          profile_json,
+          meal_json,
+          water_json,
+          fridge_json,
+          community_json,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           profile_json = excluded.profile_json,
           meal_json = excluded.meal_json,
           water_json = excluded.water_json,
+          fridge_json = excluded.fridge_json,
+          community_json = excluded.community_json,
           updated_at = excluded.updated_at
       `
     )
@@ -1359,6 +1571,8 @@ const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().
       serializeJson(snapshot?.profile ?? null),
       serializeJson(snapshot?.meal ?? null),
       serializeJson(snapshot?.water ?? null),
+      serializeJson(snapshot?.fridge ?? null),
+      serializeJson(snapshot?.community ?? null),
       updatedAt
     );
 };
@@ -1481,6 +1695,8 @@ export const createSqliteStorage = async ({
   const database = new DatabaseSync(sqlitePath);
   createSchema(database);
   ensureColumn(database, "snapshots", "water_json", "TEXT");
+  ensureColumn(database, "snapshots", "fridge_json", "TEXT");
+  ensureColumn(database, "snapshots", "community_json", "TEXT");
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
   ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
@@ -1551,7 +1767,7 @@ export const createSqliteStorage = async ({
     database,
     "profile_states",
     "assistant_json",
-    "TEXT NOT NULL DEFAULT '{\"name\":\"Nova\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true}'"
+      "TEXT NOT NULL DEFAULT '{\"name\":\"Nova\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true,\"widgetEnabled\":true,\"proactiveHintsEnabled\":true}'"
   );
   createIndexes(database);
   setMeta(database, "storage_engine", "sqlite");
@@ -1798,6 +2014,8 @@ export const createSqliteStorage = async ({
       profile: buildProfileStateFromRows(database, userId, resolvedUser),
       meal: normalizedMeal,
       water: buildWaterStateFromRows(database, userId),
+      fridge: buildFridgeStateFromRows(database, userId),
+      community: buildCommunityStateFromRows(database, userId),
     };
     upsertSnapshotCache(database, userId, snapshot, updatedAt);
     return { normalizedMeal, snapshot, updatedAt };
@@ -2490,6 +2708,8 @@ export const createSqliteStorage = async ({
         profile: buildProfileStateFromRows(database, userId, resolvedUser),
         meal: buildMealStateFromRows(database, userId),
         water: buildWaterStateFromRows(database, userId),
+        fridge: buildFridgeStateFromRows(database, userId),
+        community: buildCommunityStateFromRows(database, userId),
         updatedAt: meta.updatedAt,
         profileUpdatedAt: meta.profileUpdatedAt,
         mealUpdatedAt: meta.mealUpdatedAt,
@@ -2532,6 +2752,8 @@ export const createSqliteStorage = async ({
             profile: normalizedProfile,
             meal: normalizedMeal,
             water: normalizeWaterState(snapshot?.water),
+            fridge: normalizeFridgeState(snapshot?.fridge),
+            community: normalizeCommunityState(snapshot?.community),
           },
           updatedAt
         );
@@ -2549,6 +2771,8 @@ export const createSqliteStorage = async ({
             profile: normalizedProfile,
             meal: normalizedMeal,
             water: normalizeWaterState(snapshot?.water),
+            fridge: normalizeFridgeState(snapshot?.fridge),
+            community: normalizeCommunityState(snapshot?.community),
           },
           "snapshot",
           updatedAt
@@ -2596,6 +2820,8 @@ export const createSqliteStorage = async ({
           profile: normalizedProfile,
           meal: buildMealStateFromRows(database, userId),
           water: buildWaterStateFromRows(database, userId),
+          fridge: buildFridgeStateFromRows(database, userId),
+          community: buildCommunityStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -2631,6 +2857,8 @@ export const createSqliteStorage = async ({
           profile: buildProfileStateFromRows(database, userId, resolvedUser),
           meal: normalizedMeal,
           water: buildWaterStateFromRows(database, userId),
+          fridge: buildFridgeStateFromRows(database, userId),
+          community: buildCommunityStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -2666,6 +2894,8 @@ export const createSqliteStorage = async ({
           profile: buildProfileStateFromRows(database, userId, resolvedUser),
           meal: buildMealStateFromRows(database, userId),
           water: normalizedWater,
+          fridge: buildFridgeStateFromRows(database, userId),
+          community: buildCommunityStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -2676,6 +2906,78 @@ export const createSqliteStorage = async ({
         database.exec("COMMIT");
         writeBackupSnapshot(userId, snapshot, "water-state", updatedAt);
         return normalizedWater;
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    },
+
+    getFridgeStateByUserId: (userId) => buildFridgeStateFromRows(database, userId),
+
+    upsertFridgeState: (userId, fridgeState, syncContext = undefined) => {
+      const resolvedUser = getResolvedUser(userId);
+
+      if (!resolvedUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = assertNoStateConflict(userId, syncContext);
+      database.exec("BEGIN");
+
+      try {
+        const normalizedFridge = normalizeFridgeState(fridgeState);
+        const updatedAt = new Date().toISOString();
+        const snapshot = {
+          profile: buildProfileStateFromRows(database, userId, resolvedUser),
+          meal: buildMealStateFromRows(database, userId),
+          water: buildWaterStateFromRows(database, userId),
+          fridge: normalizedFridge,
+          community: buildCommunityStateFromRows(database, userId),
+        };
+        upsertSnapshotCache(database, userId, snapshot, updatedAt);
+        updateSnapshotMeta(userId, {
+          updatedAt,
+          deviceId: normalizedSyncContext.deviceId,
+        });
+        database.exec("COMMIT");
+        writeBackupSnapshot(userId, snapshot, "fridge-state", updatedAt);
+        return normalizedFridge;
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    },
+
+    getCommunityStateByUserId: (userId) => buildCommunityStateFromRows(database, userId),
+
+    upsertCommunityState: (userId, communityState, syncContext = undefined) => {
+      const resolvedUser = getResolvedUser(userId);
+
+      if (!resolvedUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = assertNoStateConflict(userId, syncContext);
+      database.exec("BEGIN");
+
+      try {
+        const normalizedCommunity = normalizeCommunityState(communityState);
+        const updatedAt = new Date().toISOString();
+        const snapshot = {
+          profile: buildProfileStateFromRows(database, userId, resolvedUser),
+          meal: buildMealStateFromRows(database, userId),
+          water: buildWaterStateFromRows(database, userId),
+          fridge: buildFridgeStateFromRows(database, userId),
+          community: normalizedCommunity,
+        };
+        upsertSnapshotCache(database, userId, snapshot, updatedAt);
+        updateSnapshotMeta(userId, {
+          updatedAt,
+          deviceId: normalizedSyncContext.deviceId,
+        });
+        database.exec("COMMIT");
+        writeBackupSnapshot(userId, snapshot, "community-state", updatedAt);
+        return normalizedCommunity;
       } catch (error) {
         database.exec("ROLLBACK");
         throw error;

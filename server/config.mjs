@@ -166,6 +166,14 @@ const normalizeAssistantProviderId = (value) => {
 const getAssistantProviderLabel = (providerId) =>
   assistantProviderLabels[providerId] ?? assistantProviderLabels.custom;
 
+const defaultAssistantProviderPriority = [
+  "openrouter",
+  "groq",
+  "google",
+  "openai",
+  "custom",
+];
+
 const inferAssistantProviderId = (baseUrl) => {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl, "https://api.openai.com/v1").toLowerCase();
 
@@ -424,14 +432,22 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
   const configuredProviderIds = [...configuredProviders.keys()];
   const orderedProviderIds = [];
   const seenProviderIds = new Set();
-  const providerOrderHints = [
-    ...parseAssistantProviderOrder(env.SMART_NUTRITION_ASSISTANT_PROVIDER_ORDER, warnings),
-    explicitPair.apiKey && explicitPair.model
-      ? explicitAssistantProviderId ?? inferAssistantProviderId(explicitAssistantBaseUrl)
-      : null,
-    legacyProviderId,
-    ...configuredProviderIds,
+  const explicitProviderOrder = parseAssistantProviderOrder(
+    env.SMART_NUTRITION_ASSISTANT_PROVIDER_ORDER,
+    warnings
+  );
+  const defaultOrderedProviderIds = [
+    ...defaultAssistantProviderPriority.filter((providerId) =>
+      configuredProviders.has(providerId)
+    ),
+    ...configuredProviderIds.filter(
+      (providerId) => !defaultAssistantProviderPriority.includes(providerId)
+    ),
   ];
+  const providerOrderHints =
+    explicitProviderOrder.length > 0
+      ? [...explicitProviderOrder, ...defaultOrderedProviderIds]
+      : defaultOrderedProviderIds;
 
   providerOrderHints.forEach((providerId) => {
     if (!providerId || seenProviderIds.has(providerId) || !configuredProviders.has(providerId)) {

@@ -12,6 +12,8 @@ import {
   getRemoteSessionToken,
   isRemoteAuthAvailable,
   isRemoteAuthMode,
+  pushRemoteCommunityState,
+  pushRemoteFridgeState,
   pushRemoteWaterState,
   listRemoteAccountBackups,
   removeRemoteMealEntry,
@@ -82,6 +84,8 @@ export const isCloudSyncActive = () => isRemoteAuthMode();
 export const syncRemoteProfileState = pushRemoteProfileState;
 export const syncRemoteMealState = pushRemoteMealState;
 export const syncRemoteWaterState = pushRemoteWaterState;
+export const syncRemoteFridgeState = pushRemoteFridgeState;
+export const syncRemoteCommunityState = pushRemoteCommunityState;
 export const createRemoteMealEntries = addRemoteMealEntries;
 export const deleteRemoteMealEntry = removeRemoteMealEntry;
 export const createRemoteMealTemplate = addRemoteMealTemplate;

@@ -12,6 +12,12 @@ export const createStateRepository = (storage) => ({
   getWaterStateByUserId: (userId) => storage.getWaterStateByUserId(userId),
   upsertWaterState: (userId, waterState, syncContext) =>
     storage.upsertWaterState(userId, waterState, syncContext),
+  getFridgeStateByUserId: (userId) => storage.getFridgeStateByUserId(userId),
+  upsertFridgeState: (userId, fridgeState, syncContext) =>
+    storage.upsertFridgeState(userId, fridgeState, syncContext),
+  getCommunityStateByUserId: (userId) => storage.getCommunityStateByUserId(userId),
+  upsertCommunityState: (userId, communityState, syncContext) =>
+    storage.upsertCommunityState(userId, communityState, syncContext),
   addMealEntries: (userId, entries, syncContext) =>
     storage.addMealEntries(userId, entries, syncContext),
   removeMealEntry: (userId, entryId, syncContext) =>

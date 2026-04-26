@@ -43,6 +43,8 @@ export interface AssistantCustomization {
   role: AssistantRole;
   tone: AssistantTone;
   humorEnabled: boolean;
+  widgetEnabled: boolean;
+  proactiveHintsEnabled: boolean;
 }
 
 export interface MeasurementHistoryItem {

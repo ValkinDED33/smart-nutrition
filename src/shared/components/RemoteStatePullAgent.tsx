@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../app/store";
 import { buildAppSnapshot } from "../lib/appSnapshot";
 import { writeCachedRemoteSnapshot } from "../lib/remoteStateCache";
+import { replaceCommunityState } from "../../features/community/communitySlice";
+import { replaceFridgeState } from "../../features/fridge/fridgeSlice";
 import { replaceMealState } from "../../features/meal/mealSlice";
 import { replaceProfileState } from "../../features/profile/profileSlice";
 import { replaceWaterState } from "../../features/water/waterSlice";
@@ -70,11 +72,15 @@ const RemoteStatePullAgent = () => {
         dispatch(replaceProfileState(snapshot.profile));
         dispatch(replaceMealState(snapshot.meal));
         dispatch(replaceWaterState(snapshot.water));
+        dispatch(replaceFridgeState(snapshot.fridge));
+        dispatch(replaceCommunityState(snapshot.community));
         writeCachedRemoteSnapshot(
           buildAppSnapshot({
             profile: snapshot.profile,
             meal: snapshot.meal,
             water: snapshot.water,
+            fridge: snapshot.fridge,
+            community: snapshot.community,
             meta,
           })
         );

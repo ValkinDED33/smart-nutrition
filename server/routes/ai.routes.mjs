@@ -2,6 +2,11 @@ const AI_PATH = "/api/ai";
 
 export const createAiRoutes = ({ aiController }) => [
   {
+    method: "GET",
+    pathname: `${AI_PATH}/status`,
+    handler: aiController.getRuntimeStatus,
+  },
+  {
     method: "POST",
     pathname: AI_PATH,
     handler: aiController.askQuestion,

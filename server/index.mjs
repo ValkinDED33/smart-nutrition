@@ -565,6 +565,32 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (pathname === "/api/fridge-state" && request.method === "GET") {
+      sendJson(response, 200, stateService.getFridgeState(auth.user));
+      return;
+    }
+
+    if (pathname === "/api/fridge-state" && request.method === "PUT") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      stateService.saveFridgeState(auth.user, body, getSyncContext(request));
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      return;
+    }
+
+    if (pathname === "/api/community-state" && request.method === "GET") {
+      sendJson(response, 200, stateService.getCommunityState(auth.user));
+      return;
+    }
+
+    if (pathname === "/api/community-state" && request.method === "PUT") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      stateService.saveCommunityState(auth.user, body, getSyncContext(request));
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      return;
+    }
+
     if (pathname === "/api/meal-entries" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
       stateService.addMealEntries(auth.user, body, getSyncContext(request));

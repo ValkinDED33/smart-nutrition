@@ -24,6 +24,8 @@ describe("remoteStateCache", () => {
       profile: { calories: 2200 },
       meal: { items: [] },
       water: { consumedMl: 1200 },
+      fridge: { items: [] },
+      community: { posts: [] },
       updatedAt: "2026-04-03T10:00:00.000Z",
       profileUpdatedAt: "2026-04-03T09:58:00.000Z",
       mealUpdatedAt: "2026-04-03T10:00:00.000Z",
@@ -69,6 +71,8 @@ describe("remoteStateCache", () => {
       profile: { calories: 2200 },
       meal: { items: [] },
       water: { consumedMl: 0 },
+      fridge: { items: [] },
+      community: { posts: [] },
       updatedAt: "2026-04-03T10:00:00.000Z",
     });
 
