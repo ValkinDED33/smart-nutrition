@@ -77,7 +77,8 @@ const remoteRuntimeInfo: AuthRuntimeInfo = {
   mode: "remote-cloud",
   providerLabel: "Remote API account",
   sessionLabel: "Secure cookie session",
-  syncLabel: "Profile, meal, and offline changes are synchronized through remote state endpoints.",
+  syncLabel:
+    "Profile, meal, water, fridge, and community changes are synchronized through remote state endpoints.",
   securityLabel:
     "Authentication relies on httpOnly cookie sessions, so tokens are never exposed to client-side JavaScript.",
   supportsCloudSync: true,
@@ -553,6 +554,40 @@ export const pushRemoteWaterState = async (water: unknown): Promise<RemoteSyncRe
   return getRemoteMutationResult("/water-state", {
     method: "PUT",
     body: JSON.stringify(water),
+  });
+};
+
+export const pushRemoteFridgeState = async (fridge: unknown): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/fridge-state", {
+    method: "PUT",
+    body: JSON.stringify(fridge),
+  });
+};
+
+export const pushRemoteCommunityState = async (
+  community: unknown
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/community-state", {
+    method: "PUT",
+    body: JSON.stringify(community),
   });
 };
 

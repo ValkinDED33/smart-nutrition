@@ -21,6 +21,8 @@ const assistantCopy = {
     role: "Роль",
     tone: "Тон",
     humor: "Легкий гумор",
+    widget: "Плаваючий Clippy",
+    proactiveHints: "Контекстні підказки",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
@@ -36,6 +38,8 @@ const assistantCopy = {
     role: "Rola",
     tone: "Ton",
     humor: "Lekki humor",
+    widget: "Pływający Clippy",
+    proactiveHints: "Podpowiedzi kontekstowe",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
@@ -121,6 +125,31 @@ export const AssistantCustomizationCard = () => {
             />
           }
           label={copy.humor}
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={assistant.widgetEnabled}
+              onChange={(_, checked) =>
+                dispatch(setAssistantCustomization({ widgetEnabled: checked }))
+              }
+            />
+          }
+          label={copy.widget}
+        />
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={assistant.proactiveHintsEnabled}
+              disabled={!assistant.widgetEnabled}
+              onChange={(_, checked) =>
+                dispatch(setAssistantCustomization({ proactiveHintsEnabled: checked }))
+              }
+            />
+          }
+          label={copy.proactiveHints}
         />
       </Stack>
     </Paper>

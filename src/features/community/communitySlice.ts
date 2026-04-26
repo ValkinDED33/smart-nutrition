@@ -231,6 +231,9 @@ const communitySlice = createSlice({
   name: "community",
   initialState,
   reducers: {
+    replaceCommunityState(_, action: PayloadAction<unknown>) {
+      return normalizeCommunityState(action.payload);
+    },
     addFriend(state, action: PayloadAction<{ name: string }>) {
       const name = normalizeText(action.payload.name);
 
@@ -327,6 +330,7 @@ const communitySlice = createSlice({
 });
 
 export const {
+  replaceCommunityState,
   addFriend,
   sendDirectMessage,
   publishCommunityPost,

@@ -40,7 +40,7 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { isInitialized, isLoading } = useSelector(selectAuth);
-  const { hasExplicitChoice } = useLanguage();
+  const { hasExplicitChoice, hasCompletedOnboarding } = useLanguage();
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -85,7 +85,7 @@ function App() {
     return <Loader />;
   }
 
-  if (!hasExplicitChoice) {
+  if (!hasExplicitChoice || !hasCompletedOnboarding) {
     return <LanguageSetupPage />;
   }
 

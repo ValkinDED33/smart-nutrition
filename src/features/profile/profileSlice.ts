@@ -307,6 +307,12 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
     tone: isAssistantTone(value.tone) ? value.tone : fallback.tone,
     humorEnabled:
       typeof value.humorEnabled === "boolean" ? value.humorEnabled : fallback.humorEnabled,
+    widgetEnabled:
+      typeof value.widgetEnabled === "boolean" ? value.widgetEnabled : fallback.widgetEnabled,
+    proactiveHintsEnabled:
+      typeof value.proactiveHintsEnabled === "boolean"
+        ? value.proactiveHintsEnabled
+        : fallback.proactiveHintsEnabled,
   };
 };
 

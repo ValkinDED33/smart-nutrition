@@ -2,7 +2,6 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -16,6 +15,7 @@ import {
 export type Language = AppLanguage;
 
 const STORAGE_KEY = "smart-nutrition.language";
+const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";
 
 const uk = {
   "brand.name": "Smart Nutrition",
@@ -494,23 +494,20 @@ interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
   hasExplicitChoice: boolean;
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => void;
   t: (key: TranslationKey | string, vars?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const savedLanguage = getClientStorageItem(STORAGE_KEY);
-    return savedLanguage === "pl" ? "pl" : "uk";
-  });
-  const [hasExplicitChoice, setHasExplicitChoice] = useState(() =>
-    Boolean(getClientStorageItem(STORAGE_KEY))
+  const savedLanguage = getClientStorageItem(STORAGE_KEY);
+  const [language, setLanguageState] = useState<Language>(savedLanguage === "pl" ? "pl" : "uk");
+  const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(
+    () => getClientStorageItem(ONBOARDING_STORAGE_KEY) === "true"
   );
-
-  useEffect(() => {
-    setClientStorageItem(STORAGE_KEY, language);
-  }, [language]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
@@ -518,8 +515,16 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       setLanguage: (nextLanguage) => {
         setHasExplicitChoice(true);
         setLanguageState(nextLanguage);
+        setClientStorageItem(STORAGE_KEY, nextLanguage);
       },
       hasExplicitChoice,
+      hasCompletedOnboarding,
+      completeOnboarding: () => {
+        setHasExplicitChoice(true);
+        setHasCompletedOnboarding(true);
+        setClientStorageItem(STORAGE_KEY, language);
+        setClientStorageItem(ONBOARDING_STORAGE_KEY, "true");
+      },
       t: (key, vars) => {
         let text = dictionaries[language][key as TranslationKey] ?? key;
 
@@ -534,7 +539,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         return text;
       },
     }),
-    [hasExplicitChoice, language]
+    [hasCompletedOnboarding, hasExplicitChoice, language]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

@@ -44,6 +44,10 @@ const requireMealProductBucket = (bucket) => {
 
 const requireWaterState = (value) =>
   requireRecord(value, "INVALID_WATER_STATE", "Water state payload is required.");
+const requireFridgeState = (value) =>
+  requireRecord(value, "INVALID_FRIDGE_STATE", "Fridge state payload is required.");
+const requireCommunityState = (value) =>
+  requireRecord(value, "INVALID_COMMUNITY_STATE", "Community state payload is required.");
 
 export const createStateService = ({ stateRepository }) => ({
   getSnapshot: (user) => stateRepository.getSnapshotByUserId(user.id, user),
@@ -55,6 +59,8 @@ export const createStateService = ({ stateRepository }) => ({
       profile: snapshot?.profile ?? null,
       meal: snapshot?.meal ?? null,
       water: snapshot?.water ?? null,
+      fridge: snapshot?.fridge ?? null,
+      community: snapshot?.community ?? null,
       updatedAt: new Date().toISOString(),
     }, syncContext),
 
@@ -72,6 +78,24 @@ export const createStateService = ({ stateRepository }) => ({
 
   saveWaterState: (user, waterState, syncContext = undefined) =>
     stateRepository.upsertWaterState(user.id, requireWaterState(waterState), syncContext),
+
+  getFridgeState: (user) => stateRepository.getFridgeStateByUserId(user.id),
+
+  saveFridgeState: (user, fridgeState, syncContext = undefined) =>
+    stateRepository.upsertFridgeState(
+      user.id,
+      requireFridgeState(fridgeState),
+      syncContext
+    ),
+
+  getCommunityState: (user) => stateRepository.getCommunityStateByUserId(user.id),
+
+  saveCommunityState: (user, communityState, syncContext = undefined) =>
+    stateRepository.upsertCommunityState(
+      user.id,
+      requireCommunityState(communityState),
+      syncContext
+    ),
 
   addMealEntries: (user, requestBody, syncContext = undefined) =>
     stateRepository.addMealEntries(user.id, requireEntries(requestBody?.entries), syncContext),

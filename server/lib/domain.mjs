@@ -421,6 +421,8 @@ export const createInitialProfileState = (userInput) => {
       role: "assistant",
       tone: "gentle",
       humorEnabled: true,
+      widgetEnabled: true,
+      proactiveHintsEnabled: true,
     },
   };
 };
@@ -440,6 +442,79 @@ export const createInitialWaterState = () => ({
   glassSizeMl: 250,
   lastLoggedOn: new Date().toISOString().slice(0, 10),
   targetMode: "automatic",
+});
+
+export const createInitialFridgeState = () => ({
+  items: [],
+});
+
+export const createInitialCommunityState = () => ({
+  friends: [
+    {
+      id: "friend-anna",
+      name: "Anna",
+      handle: "@anna.fit",
+      status: "online",
+      lastActiveAt: "2026-04-25T18:30:00.000Z",
+    },
+    {
+      id: "friend-oleh",
+      name: "Oleh",
+      handle: "@oleh.mealprep",
+      status: "offline",
+      lastActiveAt: "2026-04-24T21:10:00.000Z",
+    },
+  ],
+  messages: [
+    {
+      id: "message-1",
+      friendId: "friend-anna",
+      author: "friend",
+      text: "Собрала белковый завтрак на завтра. Хочешь рецепт?",
+      createdAt: "2026-04-25T18:31:00.000Z",
+    },
+    {
+      id: "message-2",
+      friendId: "friend-anna",
+      author: "self",
+      text: "Да, пришли, пожалуйста.",
+      createdAt: "2026-04-25T18:34:00.000Z",
+    },
+  ],
+  posts: [
+    {
+      id: "post-1",
+      type: "recipe",
+      title: "High-protein breakfast jar",
+      body: "Greek yogurt, oats, banana, and chia. Simple prep for busy mornings.",
+      ingredients: ["Greek yogurt", "oats", "banana", "chia"],
+      authorName: "Anna",
+      createdAt: "2026-04-25T08:10:00.000Z",
+      likes: 14,
+    },
+    {
+      id: "post-2",
+      type: "experience",
+      title: "How I broke a hydration slump",
+      body: "I switched to 250 ml checkpoints and water finally became easier to track.",
+      ingredients: [],
+      authorName: "Marta",
+      createdAt: "2026-04-24T11:45:00.000Z",
+      likes: 9,
+    },
+    {
+      id: "post-3",
+      type: "article",
+      title: "Plateau week checklist",
+      body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
+      ingredients: [],
+      authorName: "Coach Denis",
+      createdAt: "2026-04-23T09:00:00.000Z",
+      likes: 18,
+    },
+  ],
+  favoritePostIds: ["post-1"],
+  score: 180,
 });
 
 export const toPublicUser = (user) => ({

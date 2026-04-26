@@ -11,4 +11,6 @@ export interface AppSnapshot extends AppSnapshotMeta {
   profile: unknown | null;
   meal: unknown | null;
   water: unknown | null;
+  fridge: unknown | null;
+  community: unknown | null;
 }

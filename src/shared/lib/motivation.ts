@@ -25,6 +25,8 @@ export const createDefaultAssistantCustomization = (): AssistantCustomization =>
   role: "assistant",
   tone: "gentle",
   humorEnabled: true,
+  widgetEnabled: true,
+  proactiveHintsEnabled: true,
 });
 
 export const createDefaultAchievements = (): AchievementProgress[] => [

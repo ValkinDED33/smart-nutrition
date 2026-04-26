@@ -54,6 +54,9 @@ const fridgeSlice = createSlice({
   name: "fridge",
   initialState,
   reducers: {
+    replaceFridgeState(_, action: PayloadAction<unknown>) {
+      return normalizeFridgeState(action.payload);
+    },
     upsertFridgeItem(
       state,
       action: PayloadAction<{ product: Product; quantity?: number }>
@@ -95,7 +98,12 @@ const fridgeSlice = createSlice({
   },
 });
 
-export const { upsertFridgeItem, updateFridgeItemQuantity, removeFridgeItem } =
+export const {
+  replaceFridgeState,
+  upsertFridgeItem,
+  updateFridgeItemQuantity,
+  removeFridgeItem,
+} =
   fridgeSlice.actions;
 
 export default fridgeSlice.reducer;

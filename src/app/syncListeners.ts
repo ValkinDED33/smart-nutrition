@@ -6,6 +6,8 @@ import {
   deleteRemoteMealProduct,
   deleteRemoteMealTemplate,
   isCloudSyncActive,
+  syncRemoteCommunityState,
+  syncRemoteFridgeState,
   type RemoteSyncResult,
   saveRemoteMealProduct,
   syncRemoteMealState,
@@ -19,6 +21,18 @@ import {
   markSyncStarted,
   markSyncSuccess,
 } from "../features/auth/authSlice";
+import {
+  addFriend,
+  likeCommunityPost,
+  publishCommunityPost,
+  sendDirectMessage,
+  toggleFavoritePost,
+} from "../features/community/communitySlice";
+import {
+  removeFridgeItem,
+  updateFridgeItemQuantity,
+  upsertFridgeItem,
+} from "../features/fridge/fridgeSlice";
 import {
   addMealEntries,
   addProduct,
@@ -65,6 +79,8 @@ type SyncState = {
   profile: ProfileState;
   meal: MealState;
   water: WaterState;
+  fridge: unknown;
+  community: unknown;
   auth: {
     user: {
       id: string;
@@ -153,6 +169,8 @@ const runCloudSync = async (
           profile: state.profile,
           meal: state.meal,
           water: state.water,
+          fridge: state.fridge,
+          community: state.community,
           meta: result.meta,
         })
       );
@@ -221,6 +239,36 @@ export const registerRemoteSyncListeners = () => {
 
       const state = getStateSnapshot(listenerApi.getState());
       await runCloudSync(listenerApi, () => syncRemoteWaterState(state.water));
+    },
+  });
+
+  remoteSyncListenerMiddleware.startListening({
+    matcher: isAnyOf(upsertFridgeItem, updateFridgeItemQuantity, removeFridgeItem),
+    effect: async (_, listenerApi) => {
+      if (!isCloudSyncActive()) {
+        return;
+      }
+
+      const state = getStateSnapshot(listenerApi.getState());
+      await runCloudSync(listenerApi, () => syncRemoteFridgeState(state.fridge));
+    },
+  });
+
+  remoteSyncListenerMiddleware.startListening({
+    matcher: isAnyOf(
+      addFriend,
+      sendDirectMessage,
+      publishCommunityPost,
+      toggleFavoritePost,
+      likeCommunityPost
+    ),
+    effect: async (_, listenerApi) => {
+      if (!isCloudSyncActive()) {
+        return;
+      }
+
+      const state = getStateSnapshot(listenerApi.getState());
+      await runCloudSync(listenerApi, () => syncRemoteCommunityState(state.community));
     },
   });
 
