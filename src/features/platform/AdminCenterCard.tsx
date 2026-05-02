@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   MenuItem,
@@ -215,10 +216,37 @@ export const AdminCenterCard = () => {
               queue.map((item) => (
                 <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
                   <Stack spacing={1}>
-                    <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
-                    <Typography color="text.secondary">
-                      {item.category ?? item.brand ?? "Manual"}
-                    </Typography>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1.2}
+                      alignItems={{ xs: "stretch", sm: "center" }}
+                    >
+                      {item.imageUrl ? (
+                        <Box
+                          component="img"
+                          src={item.imageUrl}
+                          alt={item.name}
+                          sx={{
+                            width: { xs: "100%", sm: 96 },
+                            height: 72,
+                            objectFit: "cover",
+                            borderRadius: 2,
+                            border: "1px solid rgba(15, 23, 42, 0.12)",
+                          }}
+                        />
+                      ) : null}
+                      <Stack spacing={0.4}>
+                        <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
+                        <Typography color="text.secondary">
+                          {item.category ?? item.brand ?? "Manual"}
+                        </Typography>
+                        {item.barcode ? (
+                          <Typography color="text.secondary" variant="body2">
+                            {item.barcode}
+                          </Typography>
+                        ) : null}
+                      </Stack>
+                    </Stack>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Chip label={`${item.nutrients.calories} kcal`} size="small" />
                       <Chip label={`P ${item.nutrients.protein}`} size="small" />

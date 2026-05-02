@@ -16,6 +16,9 @@ export type AssistantRuntimeMode = "local-preview" | "remote-cloud";
 export type AssistantQuickQuestionId =
   | "day_status"
   | "protein_help"
+  | "water_help"
+  | "weight_help"
+  | "next_meal"
   | "coach_focus"
   | "motivation_focus";
 
@@ -32,6 +35,11 @@ export interface AssistantRuntimeContext {
   fatConsumed: number;
   carbsConsumed: number;
   mealEntriesToday: number;
+  waterConsumedMl: number;
+  waterTargetMl: number;
+  latestWeight: number;
+  weightChangeKg: number;
+  weeklyCheckInDue: boolean;
   assistantName: string;
   assistantRole: AssistantRole;
   assistantTone: AssistantTone;
@@ -96,6 +104,9 @@ export interface AssistantRuntimeStatus {
 export const assistantQuickQuestionIds: AssistantQuickQuestionId[] = [
   "day_status",
   "protein_help",
+  "water_help",
+  "weight_help",
+  "next_meal",
   "coach_focus",
   "motivation_focus",
 ];

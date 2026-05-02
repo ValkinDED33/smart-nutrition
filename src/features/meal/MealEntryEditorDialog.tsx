@@ -22,6 +22,10 @@ import { productMatchesPreferences } from "../../shared/lib/preferences";
 import { removeProduct, updateMealEntry } from "./mealSlice";
 import { useLanguage } from "../../shared/language";
 import { searchLocalProducts } from "../../shared/lib/mockProducts";
+import {
+  formatProductPortion,
+  getProductPortionPresets,
+} from "../../shared/lib/productPortions";
 
 interface Props {
   entry: MealEntry;
@@ -42,6 +46,7 @@ const editorCopy = {
     select: "Використати",
     cancel: "Скасувати",
     save: "Зберегти",
+    quickPortions: "Швидкі порції",
     noMatches: "Не знайдено відповідних локальних або віддалених продуктів.",
   },
   pl: {
@@ -54,6 +59,7 @@ const editorCopy = {
     select: "Użyj",
     cancel: "Anuluj",
     save: "Zapisz",
+    quickPortions: "Szybkie porcje",
     noMatches: "Nie znaleziono pasujących produktów lokalnych ani zdalnych.",
   },
 } as const;
@@ -76,6 +82,7 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
   const [quantity, setQuantity] = useState<number | "">(entry.quantity);
   const [mealType, setMealType] = useState<MealType>(entry.mealType);
   const [selectedProduct, setSelectedProduct] = useState<Product>(entry.product);
+  const portionPresets = getProductPortionPresets(selectedProduct.unit);
 
   useEffect(() => {
     if (!open || !searchQuery.trim()) {
@@ -208,6 +215,24 @@ export const MealEntryEditorDialog = ({ entry }: Props) => {
               }}
               inputProps={{ min: 1, step: selectedProduct.unit === "piece" ? 1 : 0.1 }}
             />
+
+            <Stack spacing={1}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {copy.quickPortions}
+              </Typography>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {portionPresets.map((preset) => (
+                  <Button
+                    key={preset}
+                    size="small"
+                    variant={quantity === preset ? "contained" : "outlined"}
+                    onClick={() => setQuantity(preset)}
+                  >
+                    {formatProductPortion(preset, selectedProduct.unit)}
+                  </Button>
+                ))}
+              </Stack>
+            </Stack>
 
             <TextField
               select

@@ -41,6 +41,26 @@ const normalizeOptionalEmail = (value) => {
   return email || null;
 };
 
+const normalizeOrigin = (value) => {
+  const nextValue = toTrimmedString(value);
+
+  if (!nextValue) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(nextValue);
+
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return null;
+    }
+
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+};
+
 const readBooleanFlag = (value, fallback = false) => {
   const normalized = toTrimmedString(value).toLowerCase();
 
@@ -476,6 +496,34 @@ const readNumberInRange = (value, fallback, name, errors, { min = 0, max = 1 } =
   return parsed;
 };
 
+const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings) => {
+  const configuredOrigins = String(envValue ?? "")
+    .split(",")
+    .map((value) => normalizeOrigin(value))
+    .filter((value) => Boolean(value));
+
+  if (String(envValue ?? "").trim()) {
+    const rawOrigins = String(envValue)
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    if (configuredOrigins.length !== rawOrigins.length) {
+      warnings.push(
+        "SMART_NUTRITION_CORS_ORIGINS contains one or more invalid origins. Only valid http/https origins are used."
+      );
+    }
+  }
+
+  if (configuredOrigins.length > 0) {
+    return [...new Set(configuredOrigins)];
+  }
+
+  const appOrigin = normalizeOrigin(appBaseUrl);
+
+  return appOrigin ? [appOrigin] : [];
+};
+
 export const createServerConfig = (env = process.env) => {
   const errors = [];
   const warnings = [];
@@ -595,6 +643,11 @@ export const createServerConfig = (env = process.env) => {
   const appBaseUrl = normalizeBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
     serveStatic ? `http://localhost:${port}` : "http://localhost:5173"
+  );
+  const allowedCorsOrigins = resolveAllowedCorsOrigins(
+    env.SMART_NUTRITION_CORS_ORIGINS,
+    appBaseUrl,
+    warnings
   );
   const smtpUrl = toTrimmedString(env.SMART_NUTRITION_SMTP_URL) || null;
   const smtpHost = toTrimmedString(env.SMART_NUTRITION_SMTP_HOST) || null;
@@ -716,6 +769,7 @@ export const createServerConfig = (env = process.env) => {
     authCookieSameSite: "Lax",
     authCookieSecure: isProduction,
     appBaseUrl,
+    allowedCorsOrigins,
     emailFromAddress,
     emailFromName,
     emailTransportConfigured,

@@ -7,6 +7,8 @@ import {
   AlertTitle,
   Box,
   Button,
+  Chip,
+  MenuItem,
   Paper,
   Snackbar,
   Stack,
@@ -27,6 +29,14 @@ import { addProduct, rememberRecentProduct, saveProduct } from "./mealSlice";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
 import { createEmptyNutrients } from "../../shared/lib/nutrients";
+import {
+  PlatformApiError,
+  submitCatalogSubmission,
+} from "../../shared/api/platform";
+import {
+  getKnownProductCategoryOptions,
+  getProductCategoryLabel,
+} from "../../shared/lib/productCategory";
 
 interface Props {
   mealType: MealType;
@@ -37,15 +47,32 @@ type LookupState = "idle" | "success" | "not_found" | "error";
 type ManualDraft = {
   name: string;
   brand: string;
+  category: string;
+  imageUrl: string;
   calories: number;
   protein: number;
   fat: number;
   carbs: number;
 };
 
+type CatalogNotice = {
+  severity: "success" | "warning";
+  text: string;
+};
+
+type TorchMediaTrackCapabilities = MediaTrackCapabilities & {
+  torch?: boolean;
+};
+
+type TorchMediaTrackConstraintSet = MediaTrackConstraintSet & {
+  torch?: boolean;
+};
+
 const createManualDraft = (): ManualDraft => ({
   name: "",
   brand: "",
+  category: "",
+  imageUrl: "",
   calories: 0,
   protein: 0,
   fat: 0,
@@ -71,6 +98,12 @@ const scannerCopy = {
     cameraIdle: "Після запуску сканера тут з'явиться камера.",
     cameraFailed:
       "Не вдалося запустити камеру. Перевірте доступ до камери або скористайтеся ручним пошуком.",
+    lowLightTitle: "Погане світло?",
+    lowLightBody:
+      "Підсвітіть упаковку, протріть камеру і тримайте код рівно в рамці. Якщо телефон підтримує ліхтарик, увімкніть його нижче.",
+    torchOn: "Увімкнути світло",
+    torchOff: "Вимкнути світло",
+    torchUnavailable: "Ліхтарик недоступний у цьому браузері.",
     fallbackTitle: "Товар не знайдено автоматично",
     fallbackBody:
       "Спробуйте пошук у браузері або заповніть базові макроси вручну, щоб усе одно додати продукт.",
@@ -88,14 +121,24 @@ const scannerCopy = {
     manualTitle: "Швидке ручне додавання",
     manualName: "Назва продукту",
     manualBrand: "Бренд",
+    manualCategory: "Категорія",
+    manualCategoryEmpty: "Без категорії",
+    manualImageUrl: "Фото / URL упаковки",
+    manualPhoto: "Додати фото упаковки",
     manualCalories: "Ккал на 100 г",
     manualProtein: "Білок на 100 г",
     manualFat: "Жири на 100 г",
     manualCarbs: "Вуглеводи на 100 г",
     manualAdd: "Створити і додати",
     manualAdded: "Ручний продукт додано",
+    catalogQueued: "Продукт також надіслано в загальну базу на модерацію.",
+    catalogSkipped:
+      "Локально продукт збережено, але загальна база зараз недоступна.",
     manualNameRequired: "Вкажіть назву продукту",
     detectedCode: "Розпізнаний код",
+    scanHistory: "Історія сканів",
+    scanHistoryEmpty: "Після сканування продукти з'являться тут.",
+    useHistoryItem: "Використати",
   },
   pl: {
     title: "Skaner kodów kreskowych",
@@ -115,6 +158,12 @@ const scannerCopy = {
     cameraIdle: "Po uruchomieniu skanera pojawi się tutaj podgląd kamery.",
     cameraFailed:
       "Nie udało się uruchomić kamery. Sprawdź dostęp do kamery albo skorzystaj z wyszukiwania ręcznego.",
+    lowLightTitle: "Słabe światło?",
+    lowLightBody:
+      "Doświetl opakowanie, przetrzyj kamerę i trzymaj kod równo w ramce. Jeśli telefon obsługuje latarkę, włącz ją poniżej.",
+    torchOn: "Włącz światło",
+    torchOff: "Wyłącz światło",
+    torchUnavailable: "Latarka nie jest dostępna w tej przeglądarce.",
     fallbackTitle: "Produkt nie został znaleziony automatycznie",
     fallbackBody:
       "Spróbuj wyszukiwania w przeglądarce albo wpisz podstawowe makro ręcznie, żeby mimo wszystko dodać produkt.",
@@ -132,14 +181,24 @@ const scannerCopy = {
     manualTitle: "Szybkie dodanie ręczne",
     manualName: "Nazwa produktu",
     manualBrand: "Marka",
+    manualCategory: "Kategoria",
+    manualCategoryEmpty: "Bez kategorii",
+    manualImageUrl: "Zdjęcie / URL opakowania",
+    manualPhoto: "Dodaj zdjęcie opakowania",
     manualCalories: "Kcal na 100 g",
     manualProtein: "Białko na 100 g",
     manualFat: "Tłuszcz na 100 g",
     manualCarbs: "Węglowodany na 100 g",
     manualAdd: "Utwórz i dodaj",
     manualAdded: "Ręczny produkt został dodany",
+    catalogQueued: "Produkt wysłano też do wspólnej bazy do moderacji.",
+    catalogSkipped:
+      "Produkt zapisano lokalnie, ale wspólna baza jest teraz niedostępna.",
     manualNameRequired: "Podaj nazwę produktu",
     detectedCode: "Rozpoznany kod",
+    scanHistory: "Historia skanów",
+    scanHistoryEmpty: "Po skanowaniu produkty pojawią się tutaj.",
+    useHistoryItem: "Użyj",
   },
 } as const;
 
@@ -166,8 +225,33 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualDraft, setManualDraft] = useState<ManualDraft>(createManualDraft);
+  const [catalogNotice, setCatalogNotice] = useState<CatalogNotice | null>(null);
+  const [torchAvailable, setTorchAvailable] = useState(false);
+  const [torchEnabled, setTorchEnabled] = useState(false);
   const { language } = useLanguage();
   const copy = scannerCopy[language];
+  const categoryOptions = useMemo(
+    () => getKnownProductCategoryOptions(language),
+    [language]
+  );
+
+  const scanHistory = useMemo(() => {
+    const seen = new Set<string>();
+
+    return personalBarcodeProducts
+      .filter((product) => Boolean(product.barcode?.replace(/\D/g, "")))
+      .filter((product) => {
+        const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+
+        if (!barcode || seen.has(barcode)) {
+          return false;
+        }
+
+        seen.add(barcode);
+        return true;
+      })
+      .slice(0, 6);
+  }, [personalBarcodeProducts]);
 
   const googleSearchUrl = useMemo(() => {
     const normalizedBarcode = barcodeInput.replace(/\D/g, "");
@@ -240,10 +324,53 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     isProcessingRef.current = false;
   }, [clearCooldown]);
 
+  const getVideoTrack = useCallback(() => {
+    const stream = videoRef.current?.srcObject;
+
+    if (!(stream instanceof MediaStream)) {
+      return null;
+    }
+
+    return stream.getVideoTracks()[0] ?? null;
+  }, []);
+
+  const refreshTorchAvailability = useCallback(() => {
+    const track = getVideoTrack();
+    const capabilities = track?.getCapabilities?.() as
+      | TorchMediaTrackCapabilities
+      | undefined;
+
+    setTorchAvailable(Boolean(capabilities?.torch));
+  }, [getVideoTrack]);
+
+  const toggleTorch = useCallback(async () => {
+    const track = getVideoTrack();
+
+    if (!track) {
+      return;
+    }
+
+    const nextEnabled = !torchEnabled;
+
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: nextEnabled } as TorchMediaTrackConstraintSet],
+      });
+      setTorchEnabled(nextEnabled);
+      setTorchAvailable(true);
+    } catch (error) {
+      console.error(error);
+      setTorchAvailable(false);
+      setTorchEnabled(false);
+    }
+  }, [getVideoTrack, torchEnabled]);
+
   const stopScanner = useCallback(() => {
     resetScanLock();
     controlsRef.current?.stop();
     controlsRef.current = null;
+    setTorchAvailable(false);
+    setTorchEnabled(false);
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -256,6 +383,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setLookupState("idle");
     setFoundProduct(null);
     setShowManualForm(false);
+    setCatalogNotice(null);
   }, []);
 
   const handleLookup = useCallback(
@@ -342,7 +470,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     const codeReader = new BrowserMultiFormatReader();
 
     codeReader
-      .decodeFromVideoDevice(undefined, videoElement, async (result) => {
+      .decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
+        videoElement,
+        async (result) => {
         if (disposed || !result || isProcessingRef.current) {
           return;
         }
@@ -368,8 +506,9 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           lastScanRef.current = null;
           isProcessingRef.current = false;
           cooldownRef.current = null;
-        }, 1800);
-      })
+        }, 900);
+      }
+      )
       .then((controls) => {
         if (disposed) {
           controls.stop();
@@ -377,6 +516,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         }
 
         controlsRef.current = controls;
+        window.setTimeout(refreshTorchAvailability, 250);
       })
       .catch((error) => {
         if (disposed) {
@@ -398,7 +538,14 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       controlsRef.current = null;
       videoElement.srcObject = null;
     };
-  }, [clearCooldown, copy.cameraFailed, handleLookup, resetScanLock, scanning]);
+  }, [
+    clearCooldown,
+    copy.cameraFailed,
+    handleLookup,
+    refreshTorchAvailability,
+    resetScanLock,
+    scanning,
+  ]);
 
   const handleStartScanner = () => {
     setMessage(null);
@@ -418,7 +565,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const handleManualChange =
     (field: keyof ManualDraft) => (event: React.ChangeEvent<HTMLInputElement>) => {
       const nextValue =
-        field === "name" || field === "brand"
+        field === "name" ||
+        field === "brand" ||
+        field === "category" ||
+        field === "imageUrl"
           ? event.target.value
           : Math.max(0, Number(event.target.value) || 0);
 
@@ -427,6 +577,22 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         [field]: nextValue,
       }));
     };
+
+  const handleManualPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        setManualDraft((current) => ({ ...current, imageUrl: reader.result as string }));
+      }
+    });
+    reader.readAsDataURL(file);
+  };
 
   const handleCreateManualProduct = () => {
     const name = manualDraft.name.trim();
@@ -437,6 +603,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       return;
     }
 
+    setCatalogNotice(null);
     const nutrients = createEmptyNutrients();
     nutrients.calories = manualDraft.calories;
     nutrients.protein = manualDraft.protein;
@@ -444,6 +611,9 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     nutrients.carbs = manualDraft.carbs;
 
     const normalizedBarcode = barcodeInput.replace(/\D/g, "");
+    const category = manualDraft.category.trim();
+    const imageUrl = manualDraft.imageUrl.trim();
+    const catalogImageUrl = /^https?:\/\//i.test(imageUrl) ? imageUrl : undefined;
     const product: Product = {
       id:
         globalThis.crypto?.randomUUID?.() ??
@@ -451,6 +621,9 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       name,
       brand: manualDraft.brand.trim() || undefined,
       barcode: normalizedBarcode || undefined,
+      category: category || undefined,
+      imageUrl: imageUrl || undefined,
+      facts: category ? { foodGroup: category } : undefined,
       unit: "g",
       source: "Manual",
       nutrients,
@@ -473,6 +646,32 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setMessage(`${copy.manualAdded}: ${name}`);
     setManualDraft(createManualDraft());
     stopScanner();
+
+    void submitCatalogSubmission({
+      name,
+      brand: product.brand,
+      barcode: normalizedBarcode || undefined,
+      category: category || undefined,
+      imageUrl: catalogImageUrl,
+      calories: manualDraft.calories,
+      protein: manualDraft.protein,
+      fat: manualDraft.fat,
+      carbs: manualDraft.carbs,
+      unit: "g",
+    })
+      .then(() => {
+        setCatalogNotice({ severity: "success", text: copy.catalogQueued });
+      })
+      .catch((error) => {
+        console.error(error);
+        setCatalogNotice({
+          severity: "warning",
+          text:
+            error instanceof PlatformApiError
+              ? error.message
+              : copy.catalogSkipped,
+        });
+      });
   };
 
   const showFallback = (lookupState === "not_found" || lookupState === "error") && barcodeInput;
@@ -530,18 +729,38 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         </Stack>
 
         {scanning ? (
-          <video
-            ref={videoRef}
-            style={{
-              width: "100%",
-              borderRadius: 16,
-              background: "#000",
-              minHeight: 220,
+          <Box
+            sx={{
+              position: "relative",
+              overflow: "hidden",
+              borderRadius: 4,
+              backgroundColor: "#000",
+              minHeight: 240,
             }}
-            autoPlay
-            muted
-            playsInline
-          />
+          >
+            <video
+              ref={videoRef}
+              style={{
+                display: "block",
+                width: "100%",
+                minHeight: 240,
+                objectFit: "cover",
+              }}
+              autoPlay
+              muted
+              playsInline
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                inset: { xs: 24, sm: 36 },
+                border: "2px solid rgba(255,255,255,0.88)",
+                borderRadius: 3,
+                boxShadow: "0 0 0 999px rgba(0,0,0,0.28)",
+                pointerEvents: "none",
+              }}
+            />
+          </Box>
         ) : (
           <Box
             sx={{
@@ -559,6 +778,30 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             <Typography color="text.secondary">{copy.cameraIdle}</Typography>
           </Box>
         )}
+
+        {scanning ? (
+          <Alert severity="info">
+            <AlertTitle>{copy.lowLightTitle}</AlertTitle>
+            <Stack spacing={1}>
+              <Typography variant="body2">{copy.lowLightBody}</Typography>
+              {torchAvailable ? (
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    void toggleTorch();
+                  }}
+                  sx={{ alignSelf: "flex-start" }}
+                >
+                  {torchEnabled ? copy.torchOff : copy.torchOn}
+                </Button>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  {copy.torchUnavailable}
+                </Typography>
+              )}
+            </Stack>
+          </Alert>
+        ) : null}
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           {!scanning ? (
@@ -580,6 +823,64 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             </Button>
           )}
         </Box>
+
+        <Stack spacing={1}>
+          <Typography sx={{ fontWeight: 800 }}>{copy.scanHistory}</Typography>
+          {scanHistory.length === 0 ? (
+            <Typography color="text.secondary" variant="body2">
+              {copy.scanHistoryEmpty}
+            </Typography>
+          ) : (
+            <Stack spacing={1}>
+              {scanHistory.map((product) => {
+                const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+                const category = product.category ?? product.facts?.foodGroup;
+
+                return (
+                  <Paper
+                    key={barcode}
+                    variant="outlined"
+                    sx={{ p: 1.25, borderRadius: 3 }}
+                  >
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1}
+                      justifyContent="space-between"
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                    >
+                      <Stack spacing={0.4}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {getProductDisplayName(product, language)}
+                        </Typography>
+                        <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                          <Chip label={barcode} size="small" />
+                          {category ? (
+                            <Chip
+                              label={getProductCategoryLabel(category, language)}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ) : null}
+                        </Stack>
+                      </Stack>
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setBarcodeInput(barcode);
+                          setFoundProduct(product);
+                          setLookupState("success");
+                          dispatch(rememberRecentProduct(product));
+                        }}
+                      >
+                        {copy.useHistoryItem}
+                      </Button>
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          )}
+        </Stack>
 
         {showFallback ? (
           <Alert severity={lookupState === "error" ? "error" : "warning"}>
@@ -659,6 +960,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           </Alert>
         ) : null}
 
+        {catalogNotice ? (
+          <Alert severity={catalogNotice.severity}>{catalogNotice.text}</Alert>
+        ) : null}
+
         {showManualForm ? (
           <Paper
             variant="outlined"
@@ -683,6 +988,57 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 value={manualDraft.brand}
                 onChange={handleManualChange("brand")}
               />
+              <TextField
+                fullWidth
+                select
+                label={copy.manualCategory}
+                value={manualDraft.category}
+                onChange={handleManualChange("category")}
+              >
+                <MenuItem value="">{copy.manualCategoryEmpty}</MenuItem>
+                {categoryOptions.map((option) => (
+                  <MenuItem key={option.key} value={option.key}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                fullWidth
+                label={copy.manualImageUrl}
+                value={manualDraft.imageUrl}
+                onChange={handleManualChange("imageUrl")}
+              />
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+                >
+                  {copy.manualPhoto}
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleManualPhotoChange}
+                  />
+                </Button>
+                {manualDraft.imageUrl ? (
+                  <Box
+                    component="img"
+                    src={manualDraft.imageUrl}
+                    alt={manualDraft.name || copy.manualImageUrl}
+                    sx={{
+                      width: { xs: "100%", sm: 136 },
+                      height: 92,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                      border: "1px solid rgba(15, 23, 42, 0.12)",
+                    }}
+                  />
+                ) : null}
+              </Stack>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <TextField

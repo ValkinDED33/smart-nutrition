@@ -16,6 +16,8 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
+import { replaceCommunityState } from "../features/community/communitySlice";
+import { replaceFridgeState } from "../features/fridge/fridgeSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
 import { applyProfileTargets, replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
 import { replaceWaterState } from "../features/water/waterSlice";
@@ -133,6 +135,8 @@ const RegisterPage = () => {
         dispatch(replaceProfileState(snapshot.profile));
         dispatch(replaceMealState(snapshot.meal));
         dispatch(replaceWaterState(snapshot.water));
+        dispatch(replaceFridgeState(snapshot.fridge));
+        dispatch(replaceCommunityState(snapshot.community));
       } else {
         const { maintenanceCalories, targetCalories } = calculateProfileTargets(
           defaultProfileBootstrap

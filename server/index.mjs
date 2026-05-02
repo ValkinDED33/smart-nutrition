@@ -323,7 +323,7 @@ const broadcastStateMeta = (user, stateService) => {
 };
 
 const routeRequest = async (request, response) => {
-  setCorsHeaders(request, response);
+  setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);
 
   if (!request.url) {
     sendError(response, 400, "INVALID_REQUEST", "Request URL is missing.");

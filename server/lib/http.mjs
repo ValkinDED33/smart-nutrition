@@ -1,14 +1,20 @@
-export const setCorsHeaders = (request, response) => {
+export const isCorsOriginAllowed = (origin, allowedOrigins = []) =>
+  Boolean(origin) && allowedOrigins.includes(origin);
+
+export const setCorsHeaders = (request, response, allowedOrigins = []) => {
   const origin = request.headers.origin;
 
-  response.setHeader("Access-Control-Allow-Origin", origin || "*");
   response.setHeader("Vary", "Origin");
-  response.setHeader("Access-Control-Allow-Credentials", "true");
   response.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, X-Device-Id, X-State-Version"
   );
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+
+  if (isCorsOriginAllowed(origin, allowedOrigins)) {
+    response.setHeader("Access-Control-Allow-Origin", origin);
+    response.setHeader("Access-Control-Allow-Credentials", "true");
+  }
 };
 
 const serializeCookie = ({

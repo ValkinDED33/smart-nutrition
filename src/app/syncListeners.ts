@@ -23,8 +23,12 @@ import {
 } from "../features/auth/authSlice";
 import {
   addFriend,
+  commentCommunityPost,
   likeCommunityPost,
+  likeProgressCard,
   publishCommunityPost,
+  publishProgressCard,
+  sendCommunityMessage,
   sendDirectMessage,
   toggleFavoritePost,
 } from "../features/community/communitySlice";
@@ -49,12 +53,18 @@ import {
 } from "../features/meal/mealSlice";
 import {
   applyProfileTargets,
+  activatePremiumPlan,
+  addProgressPhoto,
+  cancelPremiumSubscription,
   setAdaptiveCalories,
   setDailyCalories,
   setGoal,
   setMaintenanceCalories,
+  recordMeasurementCheckIn,
+  removeProgressPhoto,
   updateNotificationPreferences,
   updateWeight,
+  startPremiumTrial,
   type ProfileState,
 } from "../features/profile/profileSlice";
 import {
@@ -62,6 +72,7 @@ import {
   resetWaterTracker,
   setWaterConsumed,
   setWaterGlassSize,
+  setWaterReminders,
   setWaterTarget,
   syncWaterTargetFromWeight,
   type WaterState,
@@ -205,8 +216,14 @@ export const registerRemoteSyncListeners = () => {
       setMaintenanceCalories,
       setGoal,
       updateWeight,
+      recordMeasurementCheckIn,
+      addProgressPhoto,
+      removeProgressPhoto,
       applyProfileTargets,
-      updateNotificationPreferences
+      updateNotificationPreferences,
+      startPremiumTrial,
+      activatePremiumPlan,
+      cancelPremiumSubscription
     ),
     effect: async (_, listenerApi) => {
       maybeApplyAutomaticAdaptiveTarget(listenerApi);
@@ -226,6 +243,7 @@ export const registerRemoteSyncListeners = () => {
       setWaterTarget,
       syncWaterTargetFromWeight,
       setWaterGlassSize,
+      setWaterReminders,
       setWaterConsumed,
       incrementWater,
       resetWaterTracker
@@ -257,10 +275,14 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     matcher: isAnyOf(
       addFriend,
+      sendCommunityMessage,
       sendDirectMessage,
       publishCommunityPost,
+      commentCommunityPost,
+      publishProgressCard,
       toggleFavoritePost,
-      likeCommunityPost
+      likeCommunityPost,
+      likeProgressCard
     ),
     effect: async (_, listenerApi) => {
       if (!isCloudSyncActive()) {

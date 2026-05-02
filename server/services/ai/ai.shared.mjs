@@ -30,18 +30,27 @@ const buildContextBlock = (context) =>
     `- Fat today: ${Math.round(context.fatConsumed)} g`,
     `- Carbs today: ${Math.round(context.carbsConsumed)} g`,
     `- Logged meal entries today: ${context.mealEntriesToday}`,
+    `- Water today: ${Math.round(context.waterConsumedMl)} / ${Math.round(context.waterTargetMl)} ml`,
+    `- Latest weight: ${context.latestWeight.toFixed(1)} kg`,
+    `- Weight trend change: ${context.weightChangeKg.toFixed(1)} kg`,
+    `- Weekly body check-in due: ${context.weeklyCheckInDue ? "yes" : "no"}`,
     `- Assistant role/tone: ${context.assistantRole} / ${context.assistantTone}`,
     `- Humor enabled: ${context.humorEnabled ? "yes" : "no"}`,
     `- Coach insight: ${context.coachPrimaryInsight}`,
     `- Coach score: ${context.coach.score}/100`,
     `- Coach weekly averages: ${Math.round(context.coach.averageCalories)} kcal, ${Math.round(
       context.coach.averageProtein
-    )} g protein, ${Math.round(context.coach.averageFiber)} g fiber, ${context.coach.averageMeals.toFixed(
+    )} g protein, ${Math.round(context.coach.averageWater)} ml water, ${Math.round(
+      context.coach.averageFiber
+    )} g fiber, ${context.coach.averageMeals.toFixed(
       1
     )} meals`,
     `- Coach targets: ${Math.round(context.coach.calorieTarget)} kcal, ${Math.round(
       context.coach.proteinTarget
-    )} g protein, ${Math.round(context.coach.fiberTarget)} g fiber`,
+    )} g protein, ${Math.round(context.coach.waterTarget)} ml water, ${Math.round(
+      context.coach.fiberTarget
+    )} g fiber`,
+    `- Breakfast skipped days: ${context.coach.breakfastSkippedDays}`,
     `- Weight change: ${context.coach.weightChange.toFixed(1)} kg`,
     `- Motivation: ${context.motivation.points} points, level ${context.motivation.level}, ${context.motivation.completedTasks} completed tasks, ${context.motivation.openTasks} open tasks`,
   ].join("\n");

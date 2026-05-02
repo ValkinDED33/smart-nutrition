@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Chip,
+  Divider,
   MenuItem,
   Paper,
   Stack,
@@ -17,9 +18,13 @@ import type { CommunityPostType } from "../../shared/types/community";
 import { useLanguage } from "../../shared/language";
 import {
   addFriend,
+  commentCommunityPost,
   findDuplicateCommunityPost,
   likeCommunityPost,
+  likeProgressCard,
   publishCommunityPost,
+  publishProgressCard,
+  sendCommunityMessage,
   sendDirectMessage,
   toggleFavoritePost,
 } from "./communitySlice";
@@ -33,6 +38,7 @@ const communityCopy = {
       friends: "Друзі",
       chat: "Чат",
       forum: "Форум",
+      progress: "Прогрес",
     },
     level: "Рівень",
     points: "Очки",
@@ -44,6 +50,10 @@ const communityCopy = {
     lastActive: "Остання активність",
     noFriends: "Ще немає друзів. Додайте перший контакт.",
     selectFriend: "Оберіть друга, щоб побачити діалог.",
+    globalChat: "Загальний чат",
+    privateChat: "Приватний чат",
+    noRoomMessages: "У загальному чаті поки тихо.",
+    typeCommunityMessage: "Повідомлення в загальний чат",
     typeMessage: "Напишіть повідомлення",
     send: "Надіслати",
     postType: "Тип публікації",
@@ -51,6 +61,18 @@ const communityCopy = {
     bodyField: "Текст",
     ingredientsField: "Інгредієнти через кому",
     publish: "Опублікувати",
+    comments: "Коментарі",
+    addComment: "Коментувати",
+    typeComment: "Напишіть коментар",
+    shareProgress: "Поділитися прогресом",
+    metricLabel: "Метрика",
+    metricValue: "Значення",
+    progressCaption: "Короткий опис",
+    progressFeed: "Картки прогресу",
+    noProgressCards: "Карток прогресу поки немає.",
+    like: "Like",
+    save: "Save",
+    unsave: "Unsave",
     duplicate:
       "Схожа публікація вже є. Спробуйте оновити заголовок або склад, щоб уникнути дублювання.",
     emptyPosts: "Публікацій поки немає.",
@@ -68,6 +90,7 @@ const communityCopy = {
       friends: "Znajomi",
       chat: "Czat",
       forum: "Forum",
+      progress: "Postęp",
     },
     level: "Poziom",
     points: "Punkty",
@@ -79,6 +102,10 @@ const communityCopy = {
     lastActive: "Ostatnia aktywność",
     noFriends: "Nie masz jeszcze znajomych. Dodaj pierwszy kontakt.",
     selectFriend: "Wybierz znajomego, aby zobaczyć rozmowę.",
+    globalChat: "Czat ogólny",
+    privateChat: "Czat prywatny",
+    noRoomMessages: "Na czacie ogólnym jest jeszcze cicho.",
+    typeCommunityMessage: "Wiadomość na czat ogólny",
     typeMessage: "Napisz wiadomość",
     send: "Wyślij",
     postType: "Typ publikacji",
@@ -86,6 +113,18 @@ const communityCopy = {
     bodyField: "Treść",
     ingredientsField: "Składniki po przecinku",
     publish: "Opublikuj",
+    comments: "Komentarze",
+    addComment: "Skomentuj",
+    typeComment: "Napisz komentarz",
+    shareProgress: "Udostępnij postęp",
+    metricLabel: "Metryka",
+    metricValue: "Wartość",
+    progressCaption: "Krótki opis",
+    progressFeed: "Karty postępu",
+    noProgressCards: "Brak kart postępu.",
+    like: "Like",
+    save: "Save",
+    unsave: "Unsave",
     duplicate:
       "Podobna publikacja już istnieje. Zmień tytuł albo skład, aby uniknąć duplikatu.",
     emptyPosts: "Brak publikacji.",
@@ -97,7 +136,7 @@ const communityCopy = {
   },
 } as const;
 
-type TabValue = "friends" | "chat" | "forum";
+type TabValue = "friends" | "chat" | "forum" | "progress";
 
 const formatDateTime = (value: string, language: "uk" | "pl") =>
   new Date(value).toLocaleString(language === "pl" ? "pl-PL" : "uk-UA", {
@@ -116,14 +155,20 @@ export const CommunityHubCard = () => {
   const [selectedFriendId, setSelectedFriendId] = useState(
     community.friends[0]?.id ?? ""
   );
+  const [roomMessageDraft, setRoomMessageDraft] = useState("");
   const [messageDraft, setMessageDraft] = useState("");
   const [postType, setPostType] = useState<CommunityPostType>("recipe");
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [postIngredients, setPostIngredients] = useState("");
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [progressMetricLabel, setProgressMetricLabel] = useState("");
+  const [progressMetricValue, setProgressMetricValue] = useState("");
+  const [progressCaption, setProgressCaption] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   const level = Math.max(1, Math.floor(community.score / 120) + 1);
+  const authorName = user?.name ?? "You";
   const selectedFriend =
     community.friends.find((item) => item.id === selectedFriendId) ?? null;
   const conversation = useMemo(
@@ -168,6 +213,48 @@ export const CommunityHubCard = () => {
     setDuplicateWarning(null);
   };
 
+  const sendRoomMessage = () => {
+    if (!roomMessageDraft.trim()) {
+      return;
+    }
+
+    dispatch(sendCommunityMessage({ text: roomMessageDraft, authorName }));
+    setRoomMessageDraft("");
+  };
+
+  const publishComment = (postId: string) => {
+    const text = commentDrafts[postId] ?? "";
+
+    if (!text.trim()) {
+      return;
+    }
+
+    dispatch(commentCommunityPost({ postId, text, authorName }));
+    setCommentDrafts((drafts) => ({ ...drafts, [postId]: "" }));
+  };
+
+  const shareProgressCard = () => {
+    if (
+      !progressMetricLabel.trim() ||
+      !progressMetricValue.trim() ||
+      !progressCaption.trim()
+    ) {
+      return;
+    }
+
+    dispatch(
+      publishProgressCard({
+        authorName,
+        metricLabel: progressMetricLabel,
+        metricValue: progressMetricValue,
+        caption: progressCaption,
+      })
+    );
+    setProgressMetricLabel("");
+    setProgressMetricValue("");
+    setProgressCaption("");
+  };
+
   return (
     <Paper
       elevation={0}
@@ -201,6 +288,7 @@ export const CommunityHubCard = () => {
           <Tab value="friends" label={copy.tabs.friends} />
           <Tab value="chat" label={copy.tabs.chat} />
           <Tab value="forum" label={copy.tabs.forum} />
+          <Tab value="progress" label={copy.tabs.progress} />
         </Tabs>
 
         {tab === "friends" && (
@@ -270,6 +358,42 @@ export const CommunityHubCard = () => {
 
         {tab === "chat" && (
           <Stack spacing={1.5}>
+            <Typography sx={{ fontWeight: 800 }}>{copy.globalChat}</Typography>
+            {community.roomMessages.length === 0 ? (
+              <Alert severity="info">{copy.noRoomMessages}</Alert>
+            ) : (
+              <Stack spacing={1}>
+                {community.roomMessages.map((message) => (
+                  <Paper key={message.id} variant="outlined" sx={{ p: 1.3, borderRadius: 2 }}>
+                    <Stack spacing={0.4}>
+                      <Typography sx={{ fontWeight: 700 }}>{message.authorName}</Typography>
+                      <Typography>{message.text}</Typography>
+                      <Typography color="text.secondary" variant="caption">
+                        {formatDateTime(message.createdAt, language)}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+              <TextField
+                fullWidth
+                label={copy.typeCommunityMessage}
+                value={roomMessageDraft}
+                onChange={(event) => setRoomMessageDraft(event.target.value)}
+              />
+              <Button
+                variant="contained"
+                onClick={sendRoomMessage}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                {copy.send}
+              </Button>
+            </Stack>
+
+            <Divider />
+            <Typography sx={{ fontWeight: 800 }}>{copy.privateChat}</Typography>
             {selectedFriend ? (
               <>
                 <Typography sx={{ fontWeight: 700 }}>{selectedFriend.name}</Typography>
@@ -375,31 +499,146 @@ export const CommunityHubCard = () => {
             ) : (
               community.posts.map((post) => {
                 const saved = community.favoritePostIds.includes(post.id);
+                const comments = community.comments.filter(
+                  (comment) => comment.postId === post.id
+                );
 
                 return (
-                  <Paper key={post.id} variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+                  <Paper key={post.id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <Stack spacing={1}>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                         <Chip label={copy.types[post.type]} size="small" />
                         <Chip label={`${post.likes} likes`} variant="outlined" size="small" />
+                        <Chip label={post.authorName} variant="outlined" size="small" />
                       </Stack>
                       <Typography sx={{ fontWeight: 800 }}>{post.title}</Typography>
                       <Typography color="text.secondary">{post.body}</Typography>
+                      <Typography color="text.secondary" variant="caption">
+                        {formatDateTime(post.createdAt, language)}
+                      </Typography>
                       {post.ingredients.length > 0 && (
                         <Typography variant="body2">
                           {post.ingredients.join(", ")}
                         </Typography>
                       )}
                       <Stack direction="row" spacing={1}>
-                        <Button onClick={() => dispatch(likeCommunityPost(post.id))}>Like</Button>
+                        <Button onClick={() => dispatch(likeCommunityPost(post.id))}>
+                          {copy.like}
+                        </Button>
                         <Button onClick={() => dispatch(toggleFavoritePost(post.id))}>
-                          {saved ? "Unsave" : "Save"}
+                          {saved ? copy.unsave : copy.save}
+                        </Button>
+                      </Stack>
+                      <Divider />
+                      <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                        {copy.comments}
+                      </Typography>
+                      {comments.map((comment) => (
+                        <Paper
+                          key={comment.id}
+                          variant="outlined"
+                          sx={{ p: 1.2, borderRadius: 2, backgroundColor: "rgba(248,250,252,0.8)" }}
+                        >
+                          <Stack spacing={0.3}>
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                              {comment.authorName}
+                            </Typography>
+                            <Typography variant="body2">{comment.text}</Typography>
+                          </Stack>
+                        </Paper>
+                      ))}
+                      <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label={copy.typeComment}
+                          value={commentDrafts[post.id] ?? ""}
+                          onChange={(event) =>
+                            setCommentDrafts((drafts) => ({
+                              ...drafts,
+                              [post.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <Button
+                          onClick={() => publishComment(post.id)}
+                          sx={{ textTransform: "none", fontWeight: 700 }}
+                        >
+                          {copy.addComment}
                         </Button>
                       </Stack>
                     </Stack>
                   </Paper>
                 );
               })
+            )}
+          </Stack>
+        )}
+
+        {tab === "progress" && (
+          <Stack spacing={1.5}>
+            <Typography sx={{ fontWeight: 800 }}>{copy.shareProgress}</Typography>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+              <TextField
+                fullWidth
+                label={copy.metricLabel}
+                value={progressMetricLabel}
+                onChange={(event) => setProgressMetricLabel(event.target.value)}
+              />
+              <TextField
+                fullWidth
+                label={copy.metricValue}
+                value={progressMetricValue}
+                onChange={(event) => setProgressMetricValue(event.target.value)}
+              />
+            </Stack>
+            <TextField
+              fullWidth
+              multiline
+              minRows={2}
+              label={copy.progressCaption}
+              value={progressCaption}
+              onChange={(event) => setProgressCaption(event.target.value)}
+            />
+            <Button
+              variant="contained"
+              onClick={shareProgressCard}
+              sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
+            >
+              {copy.shareProgress}
+            </Button>
+
+            <Divider />
+            <Typography sx={{ fontWeight: 800 }}>{copy.progressFeed}</Typography>
+            {community.progressCards.length === 0 ? (
+              <Alert severity="info">{copy.noProgressCards}</Alert>
+            ) : (
+              community.progressCards.map((card) => (
+                <Paper key={card.id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Chip label={card.authorName} size="small" />
+                      <Chip label={`${card.likes} likes`} variant="outlined" size="small" />
+                    </Stack>
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                      <Chip color="success" label={card.metricLabel} />
+                      <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                        {card.metricValue}
+                      </Typography>
+                    </Stack>
+                    <Typography color="text.secondary">{card.caption}</Typography>
+                    <Typography color="text.secondary" variant="caption">
+                      {formatDateTime(card.createdAt, language)}
+                    </Typography>
+                    <Button
+                      onClick={() => dispatch(likeProgressCard(card.id))}
+                      sx={{ alignSelf: "flex-start" }}
+                    >
+                      {copy.like}
+                    </Button>
+                  </Stack>
+                </Paper>
+              ))
             )}
           </Stack>
         )}

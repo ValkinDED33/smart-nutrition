@@ -2,6 +2,8 @@ import {
   assertPasswordPolicy,
   AuthApiError,
   createId,
+  createInitialCommunityState,
+  createInitialFridgeState,
   createInitialMealState,
   createOpaqueToken,
   createInitialProfileState,
@@ -285,6 +287,8 @@ export const createAuthService = ({
         profile: createInitialProfileState(user),
         meal: createInitialMealState(),
         water: createInitialWaterState(),
+        fridge: createInitialFridgeState(),
+        community: createInitialCommunityState(),
         updatedAt: new Date().toISOString(),
       });
 

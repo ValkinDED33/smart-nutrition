@@ -41,6 +41,7 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { isInitialized, isLoading } = useSelector(selectAuth);
   const { hasExplicitChoice, hasCompletedOnboarding } = useLanguage();
+  const shouldShowOnboarding = !hasExplicitChoice || !hasCompletedOnboarding;
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -85,10 +86,6 @@ function App() {
     return <Loader />;
   }
 
-  if (!hasExplicitChoice || !hasCompletedOnboarding) {
-    return <LanguageSetupPage />;
-  }
-
   return (
     <ErrorBoundary>
       <BrowserRouter>
@@ -98,9 +95,13 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <PublicRoute>
-                    <LandingPage />
-                  </PublicRoute>
+                  shouldShowOnboarding ? (
+                    <LanguageSetupPage />
+                  ) : (
+                    <PublicRoute>
+                      <LandingPage />
+                    </PublicRoute>
+                  )
                 }
               />
               <Route
@@ -139,7 +140,7 @@ function App() {
                 path="/home"
                 element={
                   <ProtectedRoute>
-                    <HomePage />
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <HomePage />}
                   </ProtectedRoute>
                 }
               />
@@ -147,7 +148,7 @@ function App() {
                 path="/meals"
                 element={
                   <ProtectedRoute>
-                    <MealsPage />
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <MealsPage />}
                   </ProtectedRoute>
                 }
               />
@@ -155,7 +156,7 @@ function App() {
                 path="/ai"
                 element={
                   <ProtectedRoute>
-                    <AiCompanionPage />
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <AiCompanionPage />}
                   </ProtectedRoute>
                 }
               />
@@ -163,7 +164,7 @@ function App() {
                 path="/progress"
                 element={
                   <ProtectedRoute>
-                    <ProgressPage />
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <ProgressPage />}
                   </ProtectedRoute>
                 }
               />
@@ -171,13 +172,16 @@ function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    <ProfilePage />
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <ProfilePage />}
                   </ProtectedRoute>
                 }
               />
               <Route path="/dashboard" element={<Navigate to="/home" replace />} />
               <Route path="/meal-builder" element={<Navigate to="/meals" replace />} />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route
+                path="*"
+                element={shouldShowOnboarding ? <LanguageSetupPage /> : <NotFoundPage />}
+              />
             </Route>
           </Routes>
         </Suspense>

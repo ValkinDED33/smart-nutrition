@@ -1,4 +1,5 @@
 import type { ProfileState } from "../../../features/profile/profileSlice";
+import type { WaterState } from "../../../features/water/waterSlice";
 import type {
   AssistantConversationMessage,
   AssistantRuntimeContext,
@@ -17,8 +18,15 @@ export interface AssistantContextSource {
   user: User | null;
   profile: Pick<
     ProfileState,
-    "goal" | "dietStyle" | "dailyCalories" | "motivation" | "assistant"
+    | "goal"
+    | "dietStyle"
+    | "dailyCalories"
+    | "motivation"
+    | "assistant"
+    | "weightHistory"
+    | "weeklyCheckIn"
   >;
+  water: Pick<WaterState, "consumedMl" | "dailyTargetMl" | "lastLoggedOn">;
   todayTotals: Pick<
     AssistantRuntimeContext,
     "caloriesConsumed" | "fatConsumed" | "carbsConsumed" | "proteinConsumed"

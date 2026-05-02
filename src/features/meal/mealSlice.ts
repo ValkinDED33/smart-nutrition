@@ -78,6 +78,7 @@ const normalizeProduct = (value: unknown): Product => {
     source: isSource(record.source) ? record.source : "Manual",
     brand: toString(record.brand) || undefined,
     barcode: toString(record.barcode) || undefined,
+    category: toString(record.category) || undefined,
     imageUrl: toString(record.imageUrl) || undefined,
     facts: isRecord(record.facts)
       ? {

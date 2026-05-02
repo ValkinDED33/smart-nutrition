@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Chip,
+  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -15,6 +16,7 @@ import {
   submitCatalogSubmission,
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
+import { getKnownProductCategoryOptions } from "../../shared/lib/productCategory";
 
 const catalogCopy = {
   uk: {
@@ -24,6 +26,8 @@ const catalogCopy = {
     name: "Назва",
     category: "Категорія",
     brand: "Бренд",
+    barcode: "Штрихкод",
+    imageUrl: "Фото / URL упаковки",
     calories: "Калорії",
     protein: "Білки",
     fat: "Жири",
@@ -47,6 +51,8 @@ const catalogCopy = {
     name: "Nazwa",
     category: "Kategoria",
     brand: "Marka",
+    barcode: "Kod kreskowy",
+    imageUrl: "Zdjęcie / URL opakowania",
     calories: "Kalorie",
     protein: "Białko",
     fat: "Tłuszcz",
@@ -69,6 +75,8 @@ const initialForm = {
   name: "",
   category: "",
   brand: "",
+  barcode: "",
+  imageUrl: "",
   calories: "",
   protein: "",
   fat: "",
@@ -78,6 +86,10 @@ const initialForm = {
 export const CatalogContributionCard = () => {
   const { language } = useLanguage();
   const copy = catalogCopy[language];
+  const categoryOptions = useMemo(
+    () => getKnownProductCategoryOptions(language),
+    [language]
+  );
   const [form, setForm] = useState(initialForm);
   const [submissions, setSubmissions] = useState<CatalogProductItem[]>([]);
   const [duplicates, setDuplicates] = useState<CatalogProductItem[]>([]);
@@ -130,6 +142,8 @@ export const CatalogContributionCard = () => {
         name: form.name.trim(),
         category: form.category.trim() || undefined,
         brand: form.brand.trim() || undefined,
+        barcode: form.barcode.replace(/\D/g, "") || undefined,
+        imageUrl: form.imageUrl.trim() || undefined,
         calories: Number(form.calories),
         protein: Number(form.protein),
         fat: Number(form.fat),
@@ -181,17 +195,50 @@ export const CatalogContributionCard = () => {
           />
           <TextField
             fullWidth
+            select
             label={copy.category}
             value={form.category}
             onChange={(event) =>
               setForm((current) => ({ ...current, category: event.target.value }))
             }
-          />
+          >
+            <MenuItem value="">Manual</MenuItem>
+            {categoryOptions.map((option) => (
+              <MenuItem key={option.key} value={option.key}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             fullWidth
             label={copy.brand}
             value={form.brand}
             onChange={(event) => setForm((current) => ({ ...current, brand: event.target.value }))}
+          />
+        </Stack>
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+          <TextField
+            fullWidth
+            label={copy.barcode}
+            value={form.barcode}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, barcode: event.target.value }))
+            }
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            label={copy.imageUrl}
+            value={form.imageUrl}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, imageUrl: event.target.value }))
+            }
           />
         </Stack>
 

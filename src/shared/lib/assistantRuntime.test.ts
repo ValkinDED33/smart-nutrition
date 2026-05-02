@@ -18,6 +18,11 @@ const createContext = (): AssistantRuntimeContext => ({
   fatConsumed: 48,
   carbsConsumed: 152,
   mealEntriesToday: 3,
+  waterConsumedMl: 900,
+  waterTargetMl: 2200,
+  latestWeight: 81,
+  weightChangeKg: -0.4,
+  weeklyCheckInDue: false,
   assistantName: "Nova",
   assistantRole: "assistant",
   assistantTone: "gentle",
@@ -61,10 +66,13 @@ const createContext = (): AssistantRuntimeContext => ({
     daysLogged: 5,
     averageCalories: 1920,
     averageProtein: 91,
+    averageWater: 1400,
     averageFiber: 18,
     averageMeals: 2.8,
+    breakfastSkippedDays: 1,
     calorieTarget: 2000,
     proteinTarget: 128,
+    waterTarget: 2200,
     fiberTarget: 25,
     weightChange: -0.4,
     insights: [{ code: "protein_low", severity: "warning", priority: 95 }],
@@ -100,5 +108,23 @@ describe("assistantRuntime", () => {
 
     expect(response.text).toContain("punkt");
     expect(response.followUpQuestionIds).toContain("coach_focus");
+  });
+
+  it("answers hydration and next-meal questions from current context", () => {
+    const water = buildLocalAssistantReply({
+      question: "Co z wodą?",
+      context: createContext(),
+      quickQuestionId: "water_help",
+    });
+    const nextMeal = buildLocalAssistantReply({
+      question: "Co zjeść teraz?",
+      context: createContext(),
+      quickQuestionId: "next_meal",
+    });
+
+    expect(water.text).toContain("900");
+    expect(water.followUpQuestionIds).toContain("weight_help");
+    expect(nextMeal.text).toContain("białka");
+    expect(nextMeal.followUpQuestionIds).toContain("protein_help");
   });
 });

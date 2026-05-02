@@ -110,6 +110,10 @@ const coachNotificationCopy = {
       `Зафіксовано лише ${daysLogged} із 7 останніх днів. Додайте пропущені записи, поки день не завершився.`,
     protein_low: (averageProtein: number, proteinTarget: number) =>
       `Білок просідає: у середньому ${averageProtein.toFixed(0)} г при цілі ${proteinTarget.toFixed(0)} г. Додайте ще один білковий прийом.`,
+    water_low: (averageWater: number, waterTarget: number) =>
+      `Вода просідає: у середньому ${averageWater.toFixed(0)} мл при цілі ${waterTarget.toFixed(0)} мл. Закрийте одну порцію зараз.`,
+    breakfast_skipped: (skippedDays: number) =>
+      `Сніданок пропущено ${skippedDays} раз(и) у днях із логами. Підготуйте простий перший прийом на завтра.`,
     fiber_low: (averageFiber: number) =>
       `Клітковина все ще низька: у середньому ${averageFiber.toFixed(0)} г. Додайте овочі, фрукти або бобові.`,
     calories_high: (averageCalories: number, calorieTarget: number) =>
@@ -133,6 +137,10 @@ const coachNotificationCopy = {
       `Zapisane są tylko ${daysLogged} z ostatnich 7 dni. Uzupełnij brakujące wpisy, zanim dzień się skończy.`,
     protein_low: (averageProtein: number, proteinTarget: number) =>
       `Białko jest za nisko: średnio ${averageProtein.toFixed(0)} g przy celu ${proteinTarget.toFixed(0)} g. Dodaj jeszcze jeden białkowy posiłek.`,
+    water_low: (averageWater: number, waterTarget: number) =>
+      `Woda jest za nisko: średnio ${averageWater.toFixed(0)} ml przy celu ${waterTarget.toFixed(0)} ml. Zamknij jedną porcję teraz.`,
+    breakfast_skipped: (skippedDays: number) =>
+      `Śniadanie wypadło ${skippedDays} razy w dniach z logami. Przygotuj prosty pierwszy posiłek na jutro.`,
     fiber_low: (averageFiber: number) =>
       `Błonnik nadal jest niski: średnio ${averageFiber.toFixed(0)} g. Dodaj warzywa, owoce albo strączki.`,
     calories_high: (averageCalories: number, calorieTarget: number) =>
@@ -154,16 +162,20 @@ const coachNotificationCopy = {
 
 const wellbeingNotificationCopy = {
   uk: {
-    waterTitle: "Р’РѕРґР° СЃСЊРѕРіРѕРґРЅС– РЅРёР¶С‡Рµ РЅРѕСЂРјРё",
-    waterBody: "Р’Рё РІРёРїРёР»Рё РјРµРЅС€Рµ РїР»Р°РЅСѓ. Р”РѕРґР°Р№С‚Рµ С‰Рµ РІРѕРґРё, С‰РѕР± РЅР°Р±Р»РёР·РёС‚РёСЃСЏ РґРѕ С†С–Р»С–.",
-    checkInTitle: "РџРѕСЂР° РѕРЅРѕРІРёС‚Рё РІР°РіСѓ С– Р·Р°РјС–СЂРё",
+    dailyTitle: (name: string) => `${name}: план на день`,
+    dailyBody: "Один точний запис, одна порція води і один білковий прийом вже роблять день керованим.",
+    waterTitle: "Вода сьогодні нижче норми",
+    waterBody: "Ви випили менше плану. Додайте ще води, щоб наблизитися до цілі.",
+    checkInTitle: "Пора оновити вагу і заміри",
     checkInBody: "Щотижневий check-in вже на часі. Оновіть вагу, талію або інші об’єми.",
   },
   pl: {
-    waterTitle: "Woda jest dziЕ› poniЕјej normy",
-    waterBody: "Wypito mniej niЕј plan. Dodaj jeszcze trochД™ wody, aby zbliЕјyД‡ siД™ do celu.",
-    checkInTitle: "Czas odЕ›wieЕјyД‡ wagД™ i pomiary",
-    checkInBody: "Weekly check-in jest juЕј na czasie. Zapisz wagД™ i obwody.",
+    dailyTitle: (name: string) => `${name}: plan na dziś`,
+    dailyBody: "Jeden dokładny wpis, jedna porcja wody i jeden białkowy posiłek już porządkują dzień.",
+    waterTitle: "Woda jest dziś poniżej normy",
+    waterBody: "Wypito mniej niż plan. Dodaj jeszcze trochę wody, aby zbliżyć się do celu.",
+    checkInTitle: "Czas odświeżyć wagę i pomiary",
+    checkInBody: "Weekly check-in jest już na czasie. Zapisz wagę i obwody.",
   },
 } as const;
 
@@ -213,6 +225,14 @@ const HabitReminderAgent = () => {
       const wellbeingCopy = wellbeingNotificationCopy[language];
       const waterConsumedToday =
         water.lastLoggedOn === todayKey ? water.consumedMl : 0;
+
+      if (nowMinutes >= 10 * 60) {
+        maybeSendNotification(
+          `${todayKey}-daily-motivation`,
+          wellbeingCopy.dailyTitle(assistant.name),
+          wellbeingCopy.dailyBody
+        );
+      }
 
       if (mealRemindersEnabled) {
         (Object.keys(localizedMealCopy) as MealType[]).forEach((mealType) => {
@@ -279,6 +299,7 @@ const HabitReminderAgent = () => {
           dietStyle,
           weight: user.weight,
           weightHistory,
+          waterHistory: water.history,
         });
         const focus = analysis.insights.find((insight) => insight.code !== "on_track");
 
@@ -286,6 +307,8 @@ const HabitReminderAgent = () => {
           const messageByInsight = {
             logging_low: coachCopy.logging_low(analysis.daysLogged),
             protein_low: coachCopy.protein_low(analysis.averageProtein, analysis.proteinTarget),
+            water_low: coachCopy.water_low(analysis.averageWater, analysis.waterTarget),
+            breakfast_skipped: coachCopy.breakfast_skipped(analysis.breakfastSkippedDays),
             fiber_low: coachCopy.fiber_low(analysis.averageFiber),
             calories_high: coachCopy.calories_high(analysis.averageCalories, analysis.calorieTarget),
             calories_low: coachCopy.calories_low(analysis.averageCalories, analysis.calorieTarget),
@@ -327,6 +350,7 @@ const HabitReminderAgent = () => {
     user,
     water.consumedMl,
     water.dailyTargetMl,
+    water.history,
     water.lastLoggedOn,
     weeklyCheckIn.enabled,
     weeklyCheckIn.lastRecordedAt,

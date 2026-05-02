@@ -18,6 +18,9 @@ import MotivationHubCard from "../features/profile/MotivationHubCard";
 import AssistantCustomizationCard from "../features/profile/AssistantCustomizationCard";
 import { BehaviorPersonalizationCard } from "../features/profile/BehaviorPersonalizationCard";
 import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
+import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
+import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
+import { PremiumAccessCard } from "../features/profile/PremiumAccessCard";
 import { useLanguage } from "../shared/language";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
@@ -290,7 +293,11 @@ const ProfilePage = () => {
 
       <WeightTrendCard />
 
+      <BodyWeeklyReportCard />
+
       <MeasurementsCheckInCard />
+
+      <BodyProgressPhotosCard />
 
       <BehaviorPersonalizationCard />
 
@@ -364,6 +371,8 @@ const ProfilePage = () => {
       <MotivationHubCard />
 
       <AssistantCustomizationCard />
+
+      <PremiumAccessCard />
 
       <CommunityHubCard />
 

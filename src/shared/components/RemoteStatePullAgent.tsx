@@ -13,6 +13,7 @@ import {
   getRemoteAuthBaseUrl,
   getRemoteSnapshotMeta,
   pullRemoteAppSnapshot,
+  refreshRemoteAccessSession,
 } from "../api/auth";
 
 const RemoteStatePullAgent = () => {
@@ -22,6 +23,7 @@ const RemoteStatePullAgent = () => {
   );
   const pullInFlightRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const pendingChangesRef = useRef(syncOutbox.pendingChanges);
   const lastSyncedAtRef = useRef(lastSyncedAt);
 
@@ -91,16 +93,26 @@ const RemoteStatePullAgent = () => {
       }
     };
 
-    void maybePull();
-    window.addEventListener("online", maybePull);
-    window.addEventListener("focus", maybePull);
-    document.addEventListener("visibilitychange", maybePull);
+    const clearReconnectTimeout = () => {
+      if (reconnectTimeoutRef.current !== null) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
 
-    const baseUrl = getRemoteAuthBaseUrl();
-    if (baseUrl) {
+    const connectStream = () => {
+      clearReconnectTimeout();
+
+      const baseUrl = getRemoteAuthBaseUrl();
+
+      if (!baseUrl) {
+        return;
+      }
+
       const eventSource = new EventSource(`${baseUrl}/state/stream`, {
         withCredentials: true,
       });
+
       eventSourceRef.current = eventSource;
 
       eventSource.addEventListener("state-updated", () => {
@@ -113,9 +125,27 @@ const RemoteStatePullAgent = () => {
 
       eventSource.onerror = () => {
         eventSource.close();
-        eventSourceRef.current = null;
+
+        if (eventSourceRef.current === eventSource) {
+          eventSourceRef.current = null;
+        }
+
+        clearReconnectTimeout();
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          void (async () => {
+            await refreshRemoteAccessSession();
+            connectStream();
+          })();
+        }, 2_000);
       };
-    }
+    };
+
+    void maybePull();
+    window.addEventListener("online", maybePull);
+    window.addEventListener("focus", maybePull);
+    document.addEventListener("visibilitychange", maybePull);
+
+    connectStream();
 
     const intervalId = window.setInterval(() => {
       void maybePull();
@@ -126,6 +156,7 @@ const RemoteStatePullAgent = () => {
       window.removeEventListener("focus", maybePull);
       document.removeEventListener("visibilitychange", maybePull);
       window.clearInterval(intervalId);
+      clearReconnectTimeout();
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };

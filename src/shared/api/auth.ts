@@ -21,6 +21,7 @@ import {
   removeRemoteMealTemplate,
   pushRemoteMealState,
   pushRemoteProfileState,
+  refreshRemoteSession,
   remoteAuthProvider,
   type RemoteSyncResult,
   upsertRemoteMealProduct,
@@ -98,6 +99,7 @@ export const getRemoteSnapshotMeta = fetchRemoteStateMeta;
 export const analyzeMealPhoto = analyzeRemoteMealPhoto;
 export const getRemoteAuthBaseUrl = getRemoteBaseUrl;
 export const getRemoteAuthToken = getRemoteSessionToken;
+export const refreshRemoteAccessSession = refreshRemoteSession;
 export const exportRemoteAccountData = fetchRemoteAccountExport;
 export const getRemoteAccountBackups = listRemoteAccountBackups;
 export const getRemoteAccountBackup = fetchRemoteAccountBackup;

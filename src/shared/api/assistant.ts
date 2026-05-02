@@ -1,6 +1,7 @@
 import type {
   AssistantQuestionInput,
   AssistantConversationMessage,
+  AssistantQuickQuestionId,
   AssistantRuntimeResponse,
   AssistantRuntimeStatus,
   AssistantRuntimeStatusProvider,
@@ -14,9 +15,103 @@ import {
   getRemoteAuthBaseUrl,
   isCloudSyncActive,
 } from "./auth";
+import {
+  getClientStorageItem,
+  removeClientStorageItem,
+  setClientStorageItem,
+} from "../lib/clientPersistence";
 
 const AI_PATH = "/ai";
 const AI_STATUS_PATH = "/ai/status";
+const LOCAL_HISTORY_KEY = "smart-nutrition.assistant-history";
+const LOCAL_HISTORY_LIMIT = 30;
+
+const createLocalMessageId = (prefix: string) =>
+  globalThis.crypto?.randomUUID?.() ??
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const parseLocalHistory = (): AssistantConversationMessage[] => {
+  const raw = getClientStorageItem(LOCAL_HISTORY_KEY);
+
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Array<Partial<AssistantConversationMessage>>;
+
+    return Array.isArray(parsed)
+      ? parsed
+          .map((item): AssistantConversationMessage | null => {
+            if (
+              typeof item.id !== "string" ||
+              !isAssistantMessageRole(item.role) ||
+              typeof item.text !== "string" ||
+              !item.text.trim()
+            ) {
+              return null;
+            }
+
+            return {
+              id: item.id,
+              role: item.role,
+              text: item.text.trim(),
+              mode: item.mode === "remote-cloud" ? "remote-cloud" : "local-preview",
+              followUpQuestionIds: Array.isArray(item.followUpQuestionIds)
+                ? item.followUpQuestionIds.filter(isAssistantQuickQuestionId)
+                : undefined,
+              createdAt:
+                typeof item.createdAt === "string" && item.createdAt.trim()
+                  ? item.createdAt
+                  : undefined,
+            };
+          })
+          .filter((item): item is AssistantConversationMessage => item !== null)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeLocalHistory = (items: AssistantConversationMessage[]) => {
+  setClientStorageItem(
+    LOCAL_HISTORY_KEY,
+    JSON.stringify(items.slice(-LOCAL_HISTORY_LIMIT))
+  );
+};
+
+const appendLocalHistory = ({
+  question,
+  response,
+  quickQuestionId,
+}: {
+  question: string;
+  response: AssistantRuntimeResponse;
+  quickQuestionId?: AssistantQuickQuestionId | null;
+}) => {
+  const createdAt = new Date().toISOString();
+  const history = parseLocalHistory();
+
+  writeLocalHistory([
+    ...history,
+    {
+      id: createLocalMessageId("assistant-user"),
+      role: "user",
+      text: question,
+      createdAt,
+    },
+    {
+      id: createLocalMessageId("assistant-local"),
+      role: "assistant",
+      text: response.text,
+      mode: "local-preview",
+      followUpQuestionIds: response.followUpQuestionIds,
+      createdAt: new Date(Date.now() + 1).toISOString(),
+    },
+  ]);
+
+  void quickQuestionId;
+};
 
 const parseAiResponse = async (
   response: Response
@@ -91,7 +186,15 @@ const parseAiHistory = async (
 export const askAssistantQuestion = async (
   input: AssistantQuestionInput
 ): Promise<AssistantRuntimeResponse> => {
-  const buildFallback = () => buildLocalAssistantReply(input);
+  const buildFallback = () => {
+    const response = buildLocalAssistantReply(input);
+    appendLocalHistory({
+      question: input.question,
+      response,
+      quickQuestionId: input.quickQuestionId,
+    });
+    return response;
+  };
 
   if (!isCloudSyncActive()) {
     return buildFallback();
@@ -132,13 +235,13 @@ export const getAssistantConversationHistory = async (): Promise<
   AssistantConversationMessage[]
 > => {
   if (!isCloudSyncActive()) {
-    return [];
+    return parseLocalHistory();
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
 
   if (!baseUrl) {
-    return [];
+    return parseLocalHistory();
   }
 
   const response = await fetch(`${baseUrl}${AI_PATH}`, {
@@ -158,12 +261,14 @@ export const getAssistantConversationHistory = async (): Promise<
 
 export const clearAssistantConversationHistory = async () => {
   if (!isCloudSyncActive()) {
+    removeClientStorageItem(LOCAL_HISTORY_KEY);
     return true;
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
 
   if (!baseUrl) {
+    removeClientStorageItem(LOCAL_HISTORY_KEY);
     return true;
   }
 

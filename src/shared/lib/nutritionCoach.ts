@@ -12,6 +12,8 @@ export type NutritionCoachStatus = "strong" | "steady" | "attention";
 export type NutritionCoachInsightCode =
   | "logging_low"
   | "protein_low"
+  | "water_low"
+  | "breakfast_skipped"
   | "fiber_low"
   | "calories_high"
   | "calories_low"
@@ -32,9 +34,12 @@ export interface NutritionCoachAnalysis {
   averageCalories: number;
   averageProtein: number;
   averageFiber: number;
+  averageWater: number;
   averageMeals: number;
+  breakfastSkippedDays: number;
   calorieTarget: number;
   proteinTarget: number;
+  waterTarget: number;
   fiberTarget: number;
   weightChange: number;
   insights: NutritionCoachInsight[];
@@ -52,6 +57,11 @@ type NutritionCoachInput = {
   dietStyle: DietStyle;
   weight: number;
   weightHistory: WeightHistoryPoint[];
+  waterHistory?: Array<{
+    date: string;
+    consumedMl: number;
+    targetMl: number;
+  }>;
 };
 
 type DayStats = {
@@ -103,6 +113,9 @@ const buildInsights = ({
   proteinTarget,
   goal,
   weightChange,
+  averageWater,
+  waterTarget,
+  breakfastSkippedDays,
 }: Omit<NutritionCoachAnalysis, "score" | "status" | "fiberTarget" | "insights"> & {
   goal: Goal;
 }) => {
@@ -114,6 +127,14 @@ const buildInsights = ({
 
   if (daysLogged >= 2 && averageProtein < proteinTarget * 0.85) {
     next.push({ code: "protein_low", severity: "warning", priority: 95 });
+  }
+
+  if (waterTarget > 0 && averageWater < waterTarget * 0.72) {
+    next.push({ code: "water_low", severity: "info", priority: 84 });
+  }
+
+  if (daysLogged >= 3 && breakfastSkippedDays >= 2) {
+    next.push({ code: "breakfast_skipped", severity: "info", priority: 78 });
   }
 
   if (daysLogged >= 2 && averageFiber < FIBER_TARGET * 0.72) {
@@ -167,6 +188,8 @@ const calculateCoachScore = ({
   proteinTarget,
   goal,
   weightChange,
+  averageWater,
+  waterTarget,
 }: Omit<NutritionCoachAnalysis, "score" | "status" | "fiberTarget" | "insights"> & {
   goal: Goal;
 }) => {
@@ -182,6 +205,8 @@ const calculateCoachScore = ({
         ) * 20
       : 0;
   const mealScore = Math.min((averageMeals / 3) * 10, 10);
+  const waterScore =
+    waterTarget > 0 ? Math.min((averageWater / waterTarget) * 10, 10) : 0;
 
   const trendScore =
     goal === "cut"
@@ -196,7 +221,18 @@ const calculateCoachScore = ({
           ? 10
           : 5;
 
-  return Math.round(loggingScore + proteinScore + fiberScore + calorieScore + mealScore + trendScore);
+  return Math.min(
+    Math.round(
+      loggingScore +
+        proteinScore +
+        fiberScore +
+        calorieScore +
+        mealScore +
+        waterScore +
+        trendScore
+    ),
+    100
+  );
 };
 
 export const generateNutritionCoachAnalysis = ({
@@ -206,6 +242,7 @@ export const generateNutritionCoachAnalysis = ({
   dietStyle,
   weight,
   weightHistory,
+  waterHistory = [],
 }: NutritionCoachInput): NutritionCoachAnalysis => {
   const dayKeys = buildCoachWindowKeys();
   const dayStats = new Map<string, DayStats>(
@@ -234,6 +271,14 @@ export const generateNutritionCoachAnalysis = ({
   const averageProtein = calculateAverage(filledDays.map((stats) => stats.protein));
   const averageFiber = calculateAverage(filledDays.map((stats) => stats.fiber));
   const averageMeals = calculateAverage(filledDays.map((stats) => stats.mealTypes.size));
+  const breakfastSkippedDays = filledDays.filter(
+    (stats) => !stats.mealTypes.has("breakfast")
+  ).length;
+  const waterWindow = waterHistory.filter((entry) => dayStats.has(entry.date));
+  const averageWater = calculateAverage(waterWindow.map((entry) => entry.consumedMl));
+  const waterTarget = calculateAverage(
+    waterWindow.filter((entry) => entry.targetMl > 0).map((entry) => entry.targetMl)
+  );
   const weightChange = calculateWeightChange(weightHistory);
   const calorieTarget = Math.max(dailyCalories, 0);
   const proteinTarget = calculateMacroTargets({
@@ -248,9 +293,12 @@ export const generateNutritionCoachAnalysis = ({
     averageCalories,
     averageProtein,
     averageFiber,
+    averageWater,
     averageMeals,
+    breakfastSkippedDays,
     calorieTarget,
     proteinTarget,
+    waterTarget,
     goal,
     weightChange,
   });
@@ -262,9 +310,12 @@ export const generateNutritionCoachAnalysis = ({
     averageCalories,
     averageProtein,
     averageFiber,
+    averageWater,
     averageMeals,
+    breakfastSkippedDays,
     calorieTarget,
     proteinTarget,
+    waterTarget,
     fiberTarget: FIBER_TARGET,
     weightChange,
     insights: buildInsights({
@@ -272,9 +323,12 @@ export const generateNutritionCoachAnalysis = ({
       averageCalories,
       averageProtein,
       averageFiber,
+      averageWater,
       averageMeals,
+      breakfastSkippedDays,
       calorieTarget,
       proteinTarget,
+      waterTarget,
       goal,
       weightChange,
     }),

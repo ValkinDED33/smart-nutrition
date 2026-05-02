@@ -13,6 +13,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { persistor, resetAppState, type AppDispatch, type RootState } from "../../app/store";
@@ -29,6 +30,7 @@ import RemoteStatePullAgent from "../components/RemoteStatePullAgent";
 import { clearSyncOutbox } from "../lib/syncOutbox";
 import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
 import { setProfileLanguage } from "../../features/profile/profileSlice";
+import { useAppColorMode } from "../theme/colorMode";
 
 const mobileTabs = [
   { value: "/home", label: "Home", icon: "🏠" },
@@ -44,6 +46,7 @@ const Layout = () => {
   const location = useLocation();
   const user = useSelector((state: RootState) => state.auth.user);
   const { language, setLanguage, t } = useLanguage();
+  const { isDarkMode, mode, toggleMode } = useAppColorMode();
 
   const handleLogout = async () => {
     await logoutSession();
@@ -60,8 +63,9 @@ const Layout = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, rgba(30,136,229,0.18), transparent 24%), radial-gradient(circle at top right, rgba(34,197,94,0.18), transparent 30%), linear-gradient(180deg, #f8fafc 0%, #eefaf4 100%)",
+        background: isDarkMode
+          ? "radial-gradient(circle at top left, rgba(20,184,166,0.14), transparent 24%), radial-gradient(circle at top right, rgba(132,204,22,0.1), transparent 30%), linear-gradient(180deg, #020617 0%, #0f172a 100%)"
+          : "radial-gradient(circle at top left, rgba(30,136,229,0.18), transparent 24%), radial-gradient(circle at top right, rgba(34,197,94,0.18), transparent 30%), linear-gradient(180deg, #f8fafc 0%, #eefaf4 100%)",
       }}
     >
       <AppBar
@@ -69,9 +73,13 @@ const Layout = () => {
         elevation={0}
         sx={{
           backdropFilter: "blur(18px)",
-          backgroundColor: "rgba(248, 250, 252, 0.82)",
-          color: "#14213d",
-          borderBottom: "1px solid rgba(20, 33, 61, 0.08)",
+          backgroundColor: isDarkMode
+            ? "rgba(2, 6, 23, 0.82)"
+            : "rgba(248, 250, 252, 0.82)",
+          color: isDarkMode ? "#e5eef7" : "#14213d",
+          borderBottom: isDarkMode
+            ? "1px solid rgba(148, 163, 184, 0.16)"
+            : "1px solid rgba(20, 33, 61, 0.08)",
         }}
       >
         <Container maxWidth="md">
@@ -102,18 +110,45 @@ const Layout = () => {
                     color: "inherit",
                     fontWeight: 900,
                     fontSize: { xs: 18, sm: 20 },
-                    letterSpacing: "-0.02em",
+                    letterSpacing: 0,
                   }}
                 >
                   {t("brand.name")}
                 </Typography>
-                <Typography variant="caption" sx={{ display: "block", color: "rgba(20,33,61,0.65)" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    color: isDarkMode
+                      ? "rgba(226,232,240,0.68)"
+                      : "rgba(20,33,61,0.65)",
+                  }}
+                >
                   {t("brand.tagline")}
                 </Typography>
               </Box>
             </Stack>
 
             <Stack direction="row" spacing={1} alignItems="center">
+              <Tooltip title={mode === "dark" ? "Light mode" : "Dark mode"}>
+                <Button
+                  onClick={toggleMode}
+                  variant="outlined"
+                  size="small"
+                  aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  sx={{
+                    minWidth: 48,
+                    px: 1.2,
+                    color: isDarkMode ? "#e5eef7" : "#0f766e",
+                    borderColor: isDarkMode
+                      ? "rgba(148, 163, 184, 0.32)"
+                      : "rgba(15, 118, 110, 0.24)",
+                  }}
+                >
+                  {mode === "dark" ? "Light" : "Dark"}
+                </Button>
+              </Tooltip>
+
               <ToggleButtonGroup
                 exclusive
                 size="small"
@@ -125,7 +160,9 @@ const Layout = () => {
                   }
                 }}
                 sx={{
-                  bgcolor: "rgba(255,255,255,0.9)",
+                  bgcolor: isDarkMode
+                    ? "rgba(15, 23, 42, 0.9)"
+                    : "rgba(255,255,255,0.9)",
                   borderRadius: 999,
                   "& .MuiToggleButton-root": {
                     border: 0,
@@ -197,6 +234,10 @@ const Layout = () => {
             border: "1px solid rgba(20, 33, 61, 0.08)",
             backdropFilter: "blur(18px)",
             backgroundColor: "rgba(255,255,255,0.88)",
+            ...(isDarkMode && {
+              backgroundColor: "rgba(15, 23, 42, 0.9)",
+              borderColor: "rgba(148, 163, 184, 0.18)",
+            }),
           }}
         >
           <BottomNavigation
@@ -241,6 +282,9 @@ const Layout = () => {
             textTransform: "none",
             fontWeight: 800,
             color: "#0f766e",
+            ...(isDarkMode && {
+              color: "#5eead4",
+            }),
           }}
         >
           {t("nav.logout")}

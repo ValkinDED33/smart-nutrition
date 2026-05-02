@@ -178,6 +178,40 @@ const parseNumber = (value: unknown) =>
     ? value
     : 0;
 
+const parseStringArray = (value: unknown) =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+
+const normalizeCategoryTag = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/^en:/, "")
+    .replace(/[_/]+/g, "-")
+    .trim();
+
+const readProductCategory = (data: RawProduct) => {
+  const categoryTag = parseStringArray(data.categories_tags)
+    .map(normalizeCategoryTag)
+    .find(Boolean);
+
+  if (categoryTag) {
+    return categoryTag;
+  }
+
+  if (typeof data.pnns_groups_2 === "string" && data.pnns_groups_2 !== "unknown") {
+    return normalizeCategoryTag(data.pnns_groups_2);
+  }
+
+  if (typeof data.pnns_groups_1 === "string" && data.pnns_groups_1 !== "unknown") {
+    return normalizeCategoryTag(data.pnns_groups_1);
+  }
+
+  return typeof data.categories === "string"
+    ? normalizeCategoryTag(data.categories.split(",")[0] ?? "")
+    : undefined;
+};
+
 const normalizeUnit = (value: string | undefined): string | undefined =>
   value
     ?.toLowerCase()
@@ -311,6 +345,7 @@ const mapToProduct = (data: RawProduct): Product => {
         : undefined,
     unit: "g",
     source: "OpenFoodFacts",
+    category: readProductCategory(data),
     nutrients,
   };
 };
@@ -377,7 +412,7 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
         json: 1,
         page_size: 12,
         fields:
-          "code,product_name,brands,nutriments,image_front_small_url,image_small_url,image_url",
+          "code,product_name,brands,nutriments,image_front_small_url,image_small_url,image_url,categories,categories_tags,pnns_groups_1,pnns_groups_2",
       },
     });
 

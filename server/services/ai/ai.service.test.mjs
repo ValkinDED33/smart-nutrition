@@ -90,6 +90,11 @@ describe("ai.service", () => {
         fatConsumed: 50,
         carbsConsumed: 160,
         mealEntriesToday: 3,
+        waterConsumedMl: 1000,
+        waterTargetMl: 2200,
+        latestWeight: 78,
+        weightChangeKg: -0.4,
+        weeklyCheckInDue: false,
         assistantName: "Nova",
         assistantRole: "assistant",
         assistantTone: "gentle",
@@ -101,10 +106,13 @@ describe("ai.service", () => {
           daysLogged: 5,
           averageCalories: 1900,
           averageProtein: 95,
+          averageWater: 1500,
           averageFiber: 18,
           averageMeals: 2.8,
+          breakfastSkippedDays: 1,
           calorieTarget: 2000,
           proteinTarget: 120,
+          waterTarget: 2200,
           fiberTarget: 25,
           weightChange: -0.4,
         },
@@ -120,7 +128,7 @@ describe("ai.service", () => {
     expect(result.mode).toBe("remote-cloud");
     expect(result.text).toContain("protein");
     expect(result.providerLabel).toBe("OpenAI");
-    expect(result.followUpQuestionIds).toEqual(["protein_help", "coach_focus"]);
+    expect(result.followUpQuestionIds).toEqual(["protein_help", "water_help"]);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(512);
     expect(aiRepository.insertConversationMessage).toHaveBeenCalledTimes(2);
     expect(aiRepository.pruneConversationMessages).toHaveBeenCalledWith(currentUser.id, 16);

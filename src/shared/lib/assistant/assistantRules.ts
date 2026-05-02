@@ -9,20 +9,28 @@ import type {
 
 type CalorieState = "over" | "tight" | "open" | "wide";
 type ProteinState = "low" | "close" | "hit";
+type WaterState = "low" | "close" | "hit";
+type WeightState = "due" | "plateau" | "moving";
 type LoggingState = "empty" | "light" | "solid";
 type PrimaryFocus =
   | "log_day"
   | "recover"
   | "protein"
+  | "water"
+  | "weight"
   | "protect_budget"
   | "coach"
   | "maintain";
 
 type AssistantSignals = {
   proteinGap: number;
+  waterGapMl: number;
+  waterProgress: number;
   openTasks: number;
   calorieState: CalorieState;
   proteinState: ProteinState;
+  waterState: WaterState;
+  weightState: WeightState;
   loggingState: LoggingState;
   primaryFocus: PrimaryFocus;
 };
@@ -97,6 +105,9 @@ const formatRounded = (value: number) => Math.max(Math.round(value), 0);
 const getProteinGap = (context: AssistantRuntimeContext) =>
   Math.max(context.proteinTarget - context.proteinConsumed, 0);
 
+const getWaterGap = (context: AssistantRuntimeContext) =>
+  Math.max(context.waterTargetMl - context.waterConsumedMl, 0);
+
 const getOpenTaskCount = (context: AssistantRuntimeContext) =>
   context.motivation.activeTasks.filter(
     (task) => !task.completedAt && !task.skippedWithDayOffAt
@@ -119,15 +130,59 @@ const detectIntent = ({
       "protein",
       "bialk",
       "belk",
-      "co zjesc",
-      "meal idea",
-      "next meal",
-      "what should i eat",
-      "що їсти",
       "білок",
     ])
   ) {
     return "protein_help";
+  }
+
+  if (
+    matches([
+      "water",
+      "hydration",
+      "drink",
+      "woda",
+      "pic",
+      "nawod",
+      "вода",
+      "пити",
+      "гідрата",
+    ])
+  ) {
+    return "water_help";
+  }
+
+  if (
+    matches([
+      "weight",
+      "bmi",
+      "plateau",
+      "check-in",
+      "check in",
+      "waga",
+      "masa",
+      "waż",
+      "вага",
+      "плато",
+      "зваж",
+    ])
+  ) {
+    return "weight_help";
+  }
+
+  if (
+    matches([
+      "eat now",
+      "what to eat",
+      "next meal",
+      "co zjesc",
+      "posilek",
+      "що з'їсти",
+      "що їсти",
+      "наступний прийом",
+    ])
+  ) {
+    return "next_meal";
   }
 
   if (
@@ -181,6 +236,18 @@ const deriveSignals = (context: AssistantRuntimeContext): AssistantSignals => {
           : "wide";
   const proteinState: ProteinState =
     proteinGap <= 8 ? "hit" : proteinGap <= 18 ? "close" : "low";
+  const waterGapMl = getWaterGap(context);
+  const waterProgress =
+    context.waterTargetMl > 0
+      ? Math.min(context.waterConsumedMl / context.waterTargetMl, 1)
+      : 0;
+  const waterState: WaterState =
+    waterProgress >= 0.95 ? "hit" : waterProgress >= 0.7 ? "close" : "low";
+  const weightState: WeightState = context.weeklyCheckInDue
+    ? "due"
+    : Math.abs(context.weightChangeKg) <= 0.4 && context.coach.daysLogged >= 5
+      ? "plateau"
+      : "moving";
   const loggingState: LoggingState =
     context.mealEntriesToday === 0
       ? "empty"
@@ -196,6 +263,10 @@ const deriveSignals = (context: AssistantRuntimeContext): AssistantSignals => {
     primaryFocus = "recover";
   } else if (proteinState !== "hit") {
     primaryFocus = "protein";
+  } else if (waterState === "low") {
+    primaryFocus = "water";
+  } else if (weightState === "due") {
+    primaryFocus = "weight";
   } else if (calorieState === "tight") {
     primaryFocus = "protect_budget";
   } else if (context.coach.score < 60) {
@@ -204,9 +275,13 @@ const deriveSignals = (context: AssistantRuntimeContext): AssistantSignals => {
 
   return {
     proteinGap,
+    waterGapMl,
+    waterProgress,
     openTasks,
     calorieState,
     proteinState,
+    waterState,
+    weightState,
     loggingState,
     primaryFocus,
   };
@@ -322,6 +397,11 @@ const getPriorityLine = (
       protein: `Priorytet teraz to domknięcie białka, bo brakuje jeszcze około ${formatRounded(
         signals.proteinGap
       )} g.`,
+      water: `Priorytet teraz to woda: brakuje jeszcze około ${formatRounded(
+        signals.waterGapMl
+      )} ml do celu.`,
+      weight:
+        "Priorytet teraz to check-in wagi i pomiarów, bo trend potrzebuje świeżych danych.",
       protect_budget:
         "Priorytet teraz to nie rozbić małego budżetu kalorii przypadkowymi przekąskami.",
       coach:
@@ -341,6 +421,11 @@ const getPriorityLine = (
     protein: `Пріоритет зараз — добрати білок, бо бракує ще близько ${formatRounded(
       signals.proteinGap
     )} г.`,
+    water: `Пріоритет зараз — вода: бракує ще близько ${formatRounded(
+      signals.waterGapMl
+    )} мл до цілі.`,
+    weight:
+      "Пріоритет зараз — оновити вагу й заміри, бо тренду потрібні свіжі дані.",
     protect_budget:
       "Пріоритет зараз — не розсипати невеликий залишок калорій на випадкові перекуси.",
     coach:
@@ -363,6 +448,8 @@ const getActionLine = (
       log_day: `${lead} dopisz brakujący posiłek albo przekąskę, a dopiero potem oceniaj resztę dnia.`,
       recover: `${lead} do końca dnia trzymaj lekki, sycący posiłek z białkiem i warzywami, a jutro wróć do normalnego celu bez karania się.`,
       protein: `${lead} zrób jeden konkretny ruch białkowy, na przykład ${ideas}.`,
+      water: `${lead} wypij teraz jedną porcję wody 250-300 ml i wróć do trackera po kolejną porcję za 60-90 minut.`,
+      weight: `${lead} zapisz wagę i podstawowe obwody dzisiaj, a decyzje o kaloriach oprzyj na trendzie, nie na jednym odczycie.`,
       protect_budget: `${lead} trzymaj się jednego kontrolowanego posiłku i nie otwieraj już dnia na przypadkowe kalorie.`,
       coach: `${lead} wybierz jedną powtarzalną zasadę na dziś i jutro, zamiast poprawiać wszystko naraz.`,
       maintain: `${lead} po prostu powtórz ten sam działający schemat przy kolejnym posiłku.`,
@@ -375,12 +462,113 @@ const getActionLine = (
     log_day: `${lead} дозапишіть пропущений прийом або перекус, а вже потім оцінюйте решту дня.`,
     recover: `${lead} до кінця дня тримайте легкий ситний прийом з білком та овочами, а завтра поверніться до звичної цілі без покарання себе.`,
     protein: `${lead} зробіть один чіткий білковий хід, наприклад ${ideas}.`,
+    water: `${lead} випийте зараз одну порцію води 250-300 мл і поверніться до трекера за наступною порцією через 60-90 хвилин.`,
+    weight: `${lead} запишіть вагу й базові об'єми сьогодні, а рішення по калоріях тримайте на тренді, не на одному числі.`,
     protect_budget: `${lead} тримайтеся одного контрольованого прийому і не відкривайте день на випадкові калорії.`,
     coach: `${lead} виберіть одну повторювану звичку на сьогодні й завтра, замість намагатися виправити все одразу.`,
     maintain: `${lead} просто повторіть той самий робочий шаблон на наступний прийом їжі.`,
   } as const;
 
   return byFocus[signals.primaryFocus];
+};
+
+const getWaterLine = (
+  context: AssistantRuntimeContext,
+  signals: AssistantSignals
+) => {
+  if (context.language === "pl") {
+    if (signals.waterState === "hit") {
+      return `Woda jest domknięta: ${formatRounded(context.waterConsumedMl)}/${formatRounded(
+        context.waterTargetMl
+      )} ml. Teraz utrzymaj spokojne tempo, bez nadrabiania na siłę.`;
+    }
+
+    return `Woda jest na ${Math.round(signals.waterProgress * 100)}% celu: ${formatRounded(
+      context.waterConsumedMl
+    )}/${formatRounded(context.waterTargetMl)} ml. Najprostszy ruch to 250-300 ml teraz i kolejna porcja później.`;
+  }
+
+  if (signals.waterState === "hit") {
+    return `Вода закрита: ${formatRounded(context.waterConsumedMl)}/${formatRounded(
+      context.waterTargetMl
+    )} мл. Далі просто тримайте спокійний темп без насильного добирання.`;
+  }
+
+  return `Вода зараз на ${Math.round(signals.waterProgress * 100)}% цілі: ${formatRounded(
+    context.waterConsumedMl
+  )}/${formatRounded(context.waterTargetMl)} мл. Найпростіший хід — 250-300 мл зараз і ще одна порція пізніше.`;
+};
+
+const getWeightLine = (
+  context: AssistantRuntimeContext,
+  signals: AssistantSignals
+) => {
+  if (context.language === "pl") {
+    if (signals.weightState === "due") {
+      return "Weekly check-in jest już na czasie: zapisz wagę, talię/brzuch/klatkę i potraktuj pojedynczy odczyt jako część trendu.";
+    }
+
+    if (signals.weightState === "plateau") {
+      return `Trend wygląda stabilnie: zmiana wynosi ${context.weightChangeKg.toFixed(
+        1
+      )} kg. Najpierw sprawdź regularność logowania, białko i wodę, dopiero potem zmieniaj kalorie.`;
+    }
+
+    return `Ostatnia zapisana waga to ${context.latestWeight.toFixed(
+      1
+    )} kg, a zmiana trendu wynosi ${context.weightChangeKg.toFixed(
+      1
+    )} kg. Trzymaj decyzje na średniej, nie na jednym dniu.`;
+  }
+
+  if (signals.weightState === "due") {
+    return "Weekly check-in уже на часі: запишіть вагу, талію/живіт/груди і сприймайте одне число як частину тренду.";
+  }
+
+  if (signals.weightState === "plateau") {
+    return `Тренд виглядає стабільним: зміна ${context.weightChangeKg.toFixed(
+      1
+    )} кг. Спершу перевірте регулярність логування, білок і воду, а вже потім змінюйте калорії.`;
+  }
+
+  return `Остання записана вага: ${context.latestWeight.toFixed(
+    1
+  )} кг, зміна тренду: ${context.weightChangeKg.toFixed(
+    1
+  )} кг. Тримайте рішення на середньому тренді, не на одному дні.`;
+};
+
+const getNextMealLine = (
+  context: AssistantRuntimeContext,
+  signals: AssistantSignals
+) => {
+  const ideas = joinIdeas(context, signals);
+
+  if (context.language === "pl") {
+    if (signals.calorieState === "over") {
+      return `Teraz najlepszy będzie lekki, białkowy posiłek bez dokładania ciężkich dodatków: ${ideas}.`;
+    }
+
+    if (signals.proteinState !== "hit") {
+      return `Najlepiej zjeść coś, co domknie białko: ${ideas}.`;
+    }
+
+    return signals.calorieState === "wide"
+      ? `Masz jeszcze przestrzeń w kaloriach, więc wybierz pełniejszy posiłek: ${ideas}.`
+      : `Masz umiarkowany budżet, więc wybierz prosty posiłek i nie dokładaj losowych przekąsek: ${ideas}.`;
+  }
+
+  if (signals.calorieState === "over") {
+    return `Зараз найкраще підійде легкий білковий прийом без важких додатків: ${ideas}.`;
+  }
+
+  if (signals.proteinState !== "hit") {
+    return `Найкраще з'їсти щось, що закриє білок: ${ideas}.`;
+  }
+
+  return signals.calorieState === "wide"
+    ? `У вас ще є місце по калоріях, тож оберіть повніший прийом: ${ideas}.`
+    : `Бюджет помірний, тож оберіть простий прийом і не додавайте випадкові перекуси: ${ideas}.`;
 };
 
 const getCoachSnapshot = (context: AssistantRuntimeContext) => {
@@ -390,6 +578,10 @@ const getCoachSnapshot = (context: AssistantRuntimeContext) => {
       protein_low: `Największy hamulec tygodnia to białko: średnio ${formatRounded(
         context.coach.averageProtein
       )} g przy celu ${formatRounded(context.coach.proteinTarget)} g.`,
+      water_low: `Największy hamulec tygodnia to woda: średnio ${formatRounded(
+        context.coach.averageWater
+      )} ml przy celu ${formatRounded(context.coach.waterTarget)} ml.`,
+      breakfast_skipped: `Największy hamulec tygodnia to start dnia: śniadanie wypadło ${context.coach.breakfastSkippedDays} razy w dniach z logami.`,
       fiber_low: `Największy hamulec tygodnia to błonnik: średnio ${formatRounded(
         context.coach.averageFiber
       )} g i to nadal za mało.`,
@@ -416,6 +608,10 @@ const getCoachSnapshot = (context: AssistantRuntimeContext) => {
     protein_low: `Головний тижневий гальмівний фактор — білок: у середньому ${formatRounded(
       context.coach.averageProtein
     )} г при цілі ${formatRounded(context.coach.proteinTarget)} г.`,
+    water_low: `Головний тижневий гальмівний фактор — вода: у середньому ${formatRounded(
+      context.coach.averageWater
+    )} мл при цілі ${formatRounded(context.coach.waterTarget)} мл.`,
+    breakfast_skipped: `Головний тижневий гальмівний фактор — старт дня: сніданок пропущено ${context.coach.breakfastSkippedDays} раз(и) у днях із логами.`,
     fiber_low: `Головний тижневий гальмівний фактор — клітковина: у середньому ${formatRounded(
       context.coach.averageFiber
     )} г і це ще замало.`,
@@ -444,6 +640,10 @@ const getCoachLever = (context: AssistantRuntimeContext) => {
         "Reguła tygodnia: najpierw domykaj wpisy, a dopiero potem oceniaj jakość dnia.",
       protein_low:
         "Reguła tygodnia: pierwszy większy posiłek oprzyj o 25-35 g białka, żeby nie gonić wyniku wieczorem.",
+      water_low:
+        "Reguła tygodnia: zamknij dwie porcje wody wcześniej w ciągu dnia, zamiast nadrabiać wszystko wieczorem.",
+      breakfast_skipped:
+        "Reguła tygodnia: ustaw prosty pierwszy posiłek, żeby nie zaczynać dnia od nadrabiania.",
       fiber_low:
         "Reguła tygodnia: dodaj jeden stały element z błonnikiem każdego dnia.",
       calories_high:
@@ -466,6 +666,10 @@ const getCoachLever = (context: AssistantRuntimeContext) => {
       "Правило тижня: спершу закривайте логування, а вже потім оцінюйте якість дня.",
     protein_low:
       "Правило тижня: перший великий прийом їжі прив’язуйте до 25-35 г білка, щоб не доганяти ввечері.",
+    water_low:
+      "Правило тижня: закривайте дві порції води раніше протягом дня, а не наздоганяйте все ввечері.",
+    breakfast_skipped:
+      "Правило тижня: поставте простий перший прийом їжі, щоб не починати день із наздоганяння.",
     fiber_low: "Правило тижня: додайте один стабільний елемент із клітковиною щодня.",
     calories_high:
       "Правило тижня: вирівнюйте один прийом їжі на день, а не намагайтеся карати себе за весь день.",
@@ -527,16 +731,24 @@ const getFollowUps = (
   switch (intent) {
     case "day_status":
       return signals.primaryFocus === "protein"
-        ? ["protein_help", "coach_focus"]
+        ? ["protein_help", "next_meal"]
         : signals.primaryFocus === "recover"
-          ? ["coach_focus", "motivation_focus"]
-          : ["protein_help", "motivation_focus"];
+          ? ["next_meal", "coach_focus"]
+          : signals.primaryFocus === "water"
+            ? ["water_help", "next_meal"]
+            : ["protein_help", "water_help"];
     case "protein_help":
-      return ["day_status", "coach_focus"];
+      return ["next_meal", "day_status"];
+    case "water_help":
+      return ["day_status", "weight_help"];
+    case "weight_help":
+      return ["coach_focus", "water_help"];
+    case "next_meal":
+      return ["protein_help", "day_status"];
     case "coach_focus":
       return signals.proteinState !== "hit"
         ? ["protein_help", "day_status"]
-        : ["motivation_focus", "day_status"];
+        : ["weight_help", "motivation_focus"];
     case "motivation_focus":
       return signals.primaryFocus === "protein"
         ? ["protein_help", "coach_focus"]
@@ -676,9 +888,37 @@ export const buildLocalAssistantReply = ({
                 ? "Оскільки бюджет калорій уже вузький, тримайтеся легкого білка без важких додатків."
                 : "Якщо калорій ще достатньо, краще закрити це повноцінним прийомом, а не кількома хаотичними перекусами.",
             getLightHumorLine(context, signals),
-          ]
-            .filter(Boolean)
-            .join(" "),
+            ]
+              .filter(Boolean)
+              .join(" "),
+    water_help: [
+      getWaterLine(context, signals),
+      context.language === "pl"
+        ? "Woda nie zastępuje posiłku, ale często stabilizuje apetyt i jakość decyzji wieczorem."
+        : "Вода не замінює їжу, але часто стабілізує апетит і якість вечірніх рішень.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    weight_help: [
+      getWeightLine(context, signals),
+      context.language === "pl"
+        ? "Jeśli trend stoi, nie tnij od razu kalorii: najpierw sprawdź dokładność wpisów, białko, wodę i weekly check-in."
+        : "Якщо тренд стоїть, не ріжте калорії одразу: спершу перевірте точність записів, білок, воду і weekly check-in.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    next_meal: [
+      getNextMealLine(context, signals),
+      context.language === "pl"
+        ? `Aktualnie zostało około ${formatRounded(
+            context.caloriesRemaining
+          )} kcal i ${formatRounded(signals.proteinGap)} g białka do celu.`
+        : `Зараз лишилось близько ${formatRounded(
+            context.caloriesRemaining
+          )} ккал і ${formatRounded(signals.proteinGap)} г білка до цілі.`,
+    ]
+      .filter(Boolean)
+      .join(" "),
     coach_focus: [
       context.language === "pl"
         ? `Status tygodnia: ${context.coach.score}/100.`

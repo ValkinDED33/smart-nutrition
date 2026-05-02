@@ -22,6 +22,10 @@ import { useLanguage } from "../../shared/language";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { productMatchesPreferences } from "../../shared/lib/preferences";
 import type { RootState } from "../../app/store";
+import {
+  getProductCategoryKey,
+  getProductCategoryLabel,
+} from "../../shared/lib/productCategory";
 
 interface Props {
   mealType: MealType;
@@ -57,6 +61,7 @@ export const ProductSearch = ({ mealType }: Props) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -165,6 +170,38 @@ export const ProductSearch = ({ mealType }: Props) => {
     );
   }, [normalizedQuery, personalBarcodeProducts, preferences, rankedLocalResults, results]);
 
+  const availableCategories = useMemo(() => {
+    const categoryMap = new Map<string, string>();
+
+    displayResults.forEach((product) => {
+      const categoryKey = getProductCategoryKey(product);
+
+      if (!categoryMap.has(categoryKey)) {
+        categoryMap.set(categoryKey, getProductCategoryLabel(categoryKey, language));
+      }
+    });
+
+    return [...categoryMap.entries()].sort((left, right) =>
+      left[1].localeCompare(right[1], language)
+    );
+  }, [displayResults, language]);
+
+  const activeCategoryFilter =
+    categoryFilter === "all" ||
+    availableCategories.some(([categoryKey]) => categoryKey === categoryFilter)
+      ? categoryFilter
+      : "all";
+
+  const filteredResults = useMemo(() => {
+    if (activeCategoryFilter === "all") {
+      return displayResults;
+    }
+
+    return displayResults.filter(
+      (product) => getProductCategoryKey(product) === activeCategoryFilter
+    );
+  }, [activeCategoryFilter, displayResults]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -255,6 +292,31 @@ export const ProductSearch = ({ mealType }: Props) => {
           </Typography>
         )}
 
+        {availableCategories.length > 1 && (
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 700 }}>{t("productSearch.categories")}</Typography>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Chip
+                label={t("productSearch.allCategories")}
+                clickable
+                color={activeCategoryFilter === "all" ? "primary" : "default"}
+                variant={activeCategoryFilter === "all" ? "filled" : "outlined"}
+                onClick={() => setCategoryFilter("all")}
+              />
+              {availableCategories.map(([categoryKey, label]) => (
+                <Chip
+                  key={categoryKey}
+                  label={label}
+                  clickable
+                  color={activeCategoryFilter === categoryKey ? "primary" : "default"}
+                  variant={activeCategoryFilter === categoryKey ? "filled" : "outlined"}
+                  onClick={() => setCategoryFilter(categoryKey)}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        )}
+
         {isLoading ? (
           <Stack direction="row" spacing={1} alignItems="center">
             <CircularProgress size={18} />
@@ -262,7 +324,7 @@ export const ProductSearch = ({ mealType }: Props) => {
           </Stack>
         ) : null}
 
-        {displayResults.length === 0 ? (
+        {filteredResults.length === 0 ? (
           <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
         ) : (
           <Box
@@ -276,7 +338,7 @@ export const ProductSearch = ({ mealType }: Props) => {
               gap: 2,
             }}
           >
-            {displayResults.map((product) => (
+            {filteredResults.map((product) => (
               <ProductCard
                 key={product.barcode?.trim() || product.id}
                 product={product}

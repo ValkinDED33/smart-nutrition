@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { useLanguage } from "../shared/language";
@@ -95,6 +96,7 @@ const onboardingCopy = {
 
 const LanguageSetupPage = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { language, setLanguage, completeOnboarding, hasExplicitChoice } = useLanguage();
   const [step, setStep] = useState<OnboardingStep>(hasExplicitChoice ? "intro" : "language");
   const copy = onboardingCopy[language];
@@ -108,11 +110,8 @@ const LanguageSetupPage = () => {
   };
 
   const openAuth = (path: "/register" | "/login") => {
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", path);
-    }
-
     completeOnboarding();
+    navigate(path, { replace: true });
   };
 
   return (

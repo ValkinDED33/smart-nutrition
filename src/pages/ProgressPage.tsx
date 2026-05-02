@@ -1,5 +1,7 @@
 import { Stack, Typography } from "@mui/material";
 import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
+import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
+import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
 import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
 import { WeightTrendCard } from "../features/profile/WeightTrendCard";
 import { WaterTracker } from "../features/water/WaterTracker";
@@ -14,9 +16,11 @@ const ProgressPage = () => {
         Track weight, hydration, calories, and weekly body changes in one place.
       </Typography>
       <WeightTrendCard />
+      <BodyWeeklyReportCard />
       <WaterTracker />
       <MonthlyAnalyticsCard />
       <MeasurementsCheckInCard />
+      <BodyProgressPhotosCard />
     </Stack>
   );
 };

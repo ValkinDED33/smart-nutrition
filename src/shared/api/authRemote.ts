@@ -279,6 +279,24 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
   return remoteRefreshPromise;
 };
 
+export const refreshRemoteSession = async () => {
+  const baseUrl =
+    getStoredRemoteBaseUrl() ??
+    (await probeRemoteBaseUrl()) ??
+    (await probeRemoteBaseUrl(true));
+
+  if (!baseUrl) {
+    return false;
+  }
+
+  try {
+    await refreshRemoteAccessToken(baseUrl);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const getCandidateBaseUrls = () => {
   const candidates = [getStoredRemoteBaseUrl()];
 

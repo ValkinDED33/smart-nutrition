@@ -3,6 +3,13 @@ export interface WeightPoint {
   weight: number;
 }
 
+export interface MeasurementPoint extends WeightPoint {
+  waist?: number;
+  abdomen?: number;
+  hip?: number;
+  chest?: number;
+}
+
 export type BmiStatus = "underweight" | "normal" | "overweight" | "obesity";
 
 export const calculateBmi = (weightKg: number, heightCm: number) => {
@@ -100,6 +107,62 @@ export const detectWeightPlateau = (
     hasPlateau: Math.abs(deltaKg) <= thresholdKg && daysCovered >= 14,
     deltaKg,
     weeksStable: Math.max(Math.floor(daysCovered / 7), 0),
+  };
+};
+
+export const getMeasurementDelta = (
+  measurementHistory: MeasurementPoint[],
+  key: "waist" | "abdomen" | "hip" | "chest"
+) => {
+  const entries = [...measurementHistory]
+    .filter((entry) => Number.isFinite(entry[key] ?? Number.NaN))
+    .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+
+  const latest = entries.at(-1);
+  const previous = entries.length > 1 ? entries.at(-2) : undefined;
+
+  if (!latest || !previous) {
+    return {
+      current: latest?.[key] ?? null,
+      delta: null,
+    };
+  }
+
+  return {
+    current: latest[key] ?? null,
+    delta: (latest[key] ?? 0) - (previous[key] ?? 0),
+  };
+};
+
+export const createWeeklyBodyReport = ({
+  weightHistory,
+  measurementHistory,
+  heightCm,
+}: {
+  weightHistory: WeightPoint[];
+  measurementHistory: MeasurementPoint[];
+  heightCm: number;
+}) => {
+  const sortedWeights = [...weightHistory]
+    .filter((entry) => Number.isFinite(entry.weight) && entry.date)
+    .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
+  const latestWeight = sortedWeights.at(-1)?.weight ?? 0;
+  const previousWeight =
+    sortedWeights.length > 1 ? sortedWeights.at(-2)?.weight ?? latestWeight : latestWeight;
+  const bmi = calculateBmi(latestWeight, heightCm);
+  const plateau = detectWeightPlateau(sortedWeights);
+
+  return {
+    latestWeight,
+    weeklyWeightDelta: latestWeight - previousWeight,
+    bmi,
+    bmiStatus: getBmiStatus(bmi),
+    plateau,
+    waist: getMeasurementDelta(measurementHistory, "waist"),
+    abdomen: getMeasurementDelta(measurementHistory, "abdomen"),
+    hip: getMeasurementDelta(measurementHistory, "hip"),
+    chest: getMeasurementDelta(measurementHistory, "chest"),
+    checkIns: measurementHistory.length,
   };
 };
 

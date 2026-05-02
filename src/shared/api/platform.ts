@@ -31,7 +31,7 @@ const requestPlatform = async <T>(
     );
   }
 
-  const response = await fetch(`${baseUrl}${pathname}`, {
+  const response = await fetch(buildPlatformUrl(baseUrl, pathname), {
     ...options,
     credentials: "include",
     headers: {
@@ -54,6 +54,16 @@ const requestPlatform = async <T>(
   }
 
   return payload;
+};
+
+const buildPlatformUrl = (baseUrl: string, pathname: string) => {
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  const normalizedPathname = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  const pathForBase = /\/api$/i.test(normalizedBaseUrl)
+    ? normalizedPathname.replace(/^\/api(?=\/|$)/i, "") || "/"
+    : normalizedPathname;
+
+  return `${normalizedBaseUrl}${pathForBase}`;
 };
 
 export const getPlatformAccessOverview = () =>
