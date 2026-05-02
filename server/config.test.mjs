@@ -173,4 +173,20 @@ describe("createServerConfig", () => {
       "https://admin.smartnutrition.test",
     ]);
   });
+
+  it("allows local Vite origins in development", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_SERVE_STATIC: "true",
+      SMART_NUTRITION_API_PORT: "8787",
+    });
+
+    expect(config.allowedCorsOrigins).toEqual(
+      expect.arrayContaining([
+        "http://localhost:8787",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+      ])
+    );
+  });
 });

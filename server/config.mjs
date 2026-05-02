@@ -496,7 +496,7 @@ const readNumberInRange = (value, fallback, name, errors, { min = 0, max = 1 } =
   return parsed;
 };
 
-const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings) => {
+const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProduction }) => {
   const configuredOrigins = String(envValue ?? "")
     .split(",")
     .map((value) => normalizeOrigin(value))
@@ -520,8 +520,18 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings) => {
   }
 
   const appOrigin = normalizeOrigin(appBaseUrl);
+  const origins = appOrigin ? [appOrigin] : [];
 
-  return appOrigin ? [appOrigin] : [];
+  if (!isProduction) {
+    origins.push(
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:5174",
+      "http://127.0.0.1:5174"
+    );
+  }
+
+  return [...new Set(origins)];
 };
 
 export const createServerConfig = (env = process.env) => {
@@ -647,7 +657,8 @@ export const createServerConfig = (env = process.env) => {
   const allowedCorsOrigins = resolveAllowedCorsOrigins(
     env.SMART_NUTRITION_CORS_ORIGINS,
     appBaseUrl,
-    warnings
+    warnings,
+    { isProduction }
   );
   const smtpUrl = toTrimmedString(env.SMART_NUTRITION_SMTP_URL) || null;
   const smtpHost = toTrimmedString(env.SMART_NUTRITION_SMTP_HOST) || null;
