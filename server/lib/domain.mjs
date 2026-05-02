@@ -433,6 +433,13 @@ export const createInitialProfileState = (userInput) => {
       widgetEnabled: true,
       proactiveHintsEnabled: true,
     },
+    personalDetails: {
+      bloodGroup: "unknown",
+      eyeColor: "unknown",
+      relationshipStatus: "prefer_not",
+      supportSystem: "self",
+      petCompanion: "none",
+    },
   };
 };
 

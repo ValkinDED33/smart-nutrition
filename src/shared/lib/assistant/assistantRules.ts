@@ -350,6 +350,70 @@ const getLightHumorLine = (
     : "Без напруги: тут не потрібен ідеальний день, потрібен один влучний хід.";
 };
 
+const getPersonalContactLine = (context: AssistantRuntimeContext) => {
+  const { relationshipStatus, supportSystem, petCompanion } = context.personalDetails;
+
+  if (context.language === "pl") {
+    const supportLine =
+      supportSystem === "partner_supports"
+        ? "Można oprzeć małe kroki o wsparcie partnera/partnerki, bez robienia z tego presji."
+        : supportSystem === "partner_neutral"
+          ? "Lepiej dawać Ci samodzielne kroki, które nie wymagają zgody ani udziału drugiej osoby."
+          : supportSystem === "family_friends"
+            ? "Dobrze działają u Ciebie proste kroki, które można powiedzieć bliskim jednym zdaniem."
+            : supportSystem === "low_support"
+              ? "Będę trzymać ton bardziej wspierający, bo przy niskim wsparciu liczy się spokojna stabilność."
+              : supportSystem === "self"
+                ? "Będę podawać kroki tak, żeby dało się je zrobić samodzielnie."
+                : "";
+    const relationshipLine =
+      relationshipStatus === "single"
+        ? "Nie będę zakładać wsparcia drugiej osoby."
+        : relationshipStatus === "married" || relationshipStatus === "dating"
+          ? "Jeśli to pomaga, można wplatać mikro-rytuały z drugą osobą."
+          : "";
+    const petLine =
+      petCompanion === "dog"
+        ? "Przy psie można podpinać wodę albo krótki ruch pod spacer."
+        : petCompanion === "cat"
+          ? "Przy kocie najlepiej budować spokojne domowe rytuały bez pośpiechu."
+          : petCompanion === "cat_and_dog"
+            ? "Przy zwierzakach dobrze działają krótkie rytuały wokół spaceru lub domowej pauzy."
+            : "";
+
+    return [supportLine, relationshipLine, petLine].filter(Boolean).join(" ");
+  }
+
+  const supportLine =
+    supportSystem === "partner_supports"
+      ? "Можна опирати маленькі кроки на підтримку другої половинки, без перетворення цього на тиск."
+      : supportSystem === "partner_neutral"
+        ? "Краще давати вам автономні кроки, які не потребують участі другої людини."
+        : supportSystem === "family_friends"
+          ? "Для вас добре працюють прості кроки, які легко пояснити близьким одним реченням."
+          : supportSystem === "low_support"
+            ? "Я триматиму тон м’якшим і підтримуючим, бо при низькій підтримці важлива спокійна стабільність."
+            : supportSystem === "self"
+              ? "Я даватиму кроки так, щоб їх можна було зробити самостійно."
+              : "";
+  const relationshipLine =
+    relationshipStatus === "single"
+      ? "Не буду припускати підтримку другої людини."
+      : relationshipStatus === "married" || relationshipStatus === "dating"
+        ? "Якщо це допомагає, можна вплітати маленькі ритуали з другою половинкою."
+        : "";
+  const petLine =
+    petCompanion === "dog"
+      ? "Якщо поруч собака, воду або короткий рух можна прив’язувати до прогулянки."
+      : petCompanion === "cat"
+        ? "Якщо поруч кіт, краще будувати спокійні домашні ритуали без поспіху."
+        : petCompanion === "cat_and_dog"
+          ? "Якщо поруч є тварини, добре працюють короткі ритуали навколо прогулянки або домашньої паузи."
+          : "";
+
+  return [supportLine, relationshipLine, petLine].filter(Boolean).join(" ");
+};
+
 const getSnapshotLine = (context: AssistantRuntimeContext) => {
   if (context.language === "pl") {
     const calories =
@@ -785,13 +849,14 @@ export const buildAssistantWelcomeMessage = (
   context: AssistantRuntimeContext
 ): AssistantRuntimeResponse => {
   const signals = deriveSignals(context);
+  const contactLine = getPersonalContactLine(context);
   const text =
     context.language === "pl"
-      ? `${context.assistantName} jest gotowy. ${getSnapshotLine(context)} ${getPriorityLine(
+      ? `${context.assistantName} jest gotowy. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} Mogę szybko rozłożyć dzień, białko, fokus tygodnia i motywację na podstawie bieżących danych.`
-      : `${context.assistantName} вже на місці. ${getSnapshotLine(context)} ${getPriorityLine(
+      : `${context.assistantName} вже на місці. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} Можу швидко розкласти день, білок, тижневий фокус і мотивацію по ваших поточних даних.`;
@@ -829,6 +894,7 @@ export const buildLocalAssistantReply = ({
 
   const textByIntent = {
     day_status: [
+      getPersonalContactLine(context),
       getSnapshotLine(context),
       getPriorityLine(context, signals),
       getActionLine(context, signals),
@@ -934,6 +1000,7 @@ export const buildLocalAssistantReply = ({
       .filter(Boolean)
       .join(" "),
     motivation_focus: [
+      getPersonalContactLine(context),
       context.language === "pl"
         ? `Po stronie motywacji masz teraz ${context.motivation.points} punktów, poziom ${context.motivation.level} i ${signals.openTasks} otwartych zadań.`
         : `По мотивації зараз: ${context.motivation.points} балів, рівень ${context.motivation.level}, відкритих задач ${signals.openTasks}.`,

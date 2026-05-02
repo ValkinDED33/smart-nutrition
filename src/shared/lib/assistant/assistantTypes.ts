@@ -23,6 +23,7 @@ export interface AssistantContextSource {
     | "dailyCalories"
     | "motivation"
     | "assistant"
+    | "personalDetails"
     | "weightHistory"
     | "weeklyCheckIn"
   >;

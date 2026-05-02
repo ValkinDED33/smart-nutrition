@@ -51,6 +51,11 @@ const profileCopy = {
     allergiesLabel: "Алергії",
     exclusionsLabel: "Виключено",
     languageLabel: "Мова",
+    bloodGroupLabel: "Група крові",
+    eyeColorLabel: "Очі",
+    relationshipLabel: "Статус",
+    supportLabel: "Підтримка",
+    petLabel: "Поруч",
     adaptiveAuto: "Адаптивні калорії оновлюються автоматично.",
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
     macroTitle: "Цілі за макроелементами",
@@ -73,6 +78,11 @@ const profileCopy = {
     allergiesLabel: "Alergie",
     exclusionsLabel: "Wykluczone",
     languageLabel: "Język",
+    bloodGroupLabel: "Grupa krwi",
+    eyeColorLabel: "Oczy",
+    relationshipLabel: "Status",
+    supportLabel: "Wsparcie",
+    petLabel: "Obok",
     adaptiveAuto: "Adaptacyjne kalorie aktualizują się automatycznie.",
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
     macroTitle: "Cele makroskładników",
@@ -99,6 +109,52 @@ const dietStyleLabels = {
   },
 } as const;
 
+const personalDetailLabels = {
+  bloodGroup: {
+    unknown: "—",
+    o_positive: "O+",
+    o_negative: "O-",
+    a_positive: "A+",
+    a_negative: "A-",
+    b_positive: "B+",
+    b_negative: "B-",
+    ab_positive: "AB+",
+    ab_negative: "AB-",
+  },
+  eyeColor: {
+    unknown: "—",
+    brown: "карі",
+    blue: "голубі",
+    green: "зелені",
+    gray: "сірі",
+    hazel: "горіхові",
+    amber: "бурштинові",
+    other: "інші",
+  },
+  relationshipStatus: {
+    single: "сам/сама",
+    dating: "у стосунках",
+    married: "шлюб",
+    complicated: "складно",
+    prefer_not: "—",
+  },
+  supportSystem: {
+    self: "сам/сама",
+    partner_supports: "партнер підтримує",
+    partner_neutral: "партнер нейтральний",
+    family_friends: "близькі",
+    low_support: "мало підтримки",
+    prefer_not: "—",
+  },
+  petCompanion: {
+    none: "—",
+    cat: "кіт",
+    dog: "собака",
+    cat_and_dog: "кіт і собака",
+    other: "питомец",
+  },
+} as const;
+
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const {
@@ -110,6 +166,7 @@ const ProfilePage = () => {
     excludedIngredients,
     adaptiveMode,
     languagePreference,
+    personalDetails,
   } = useSelector(
     (state: RootState) => state.profile
   );
@@ -190,6 +247,21 @@ const ProfilePage = () => {
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
             <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
+            <Chip
+              label={`${copy.bloodGroupLabel}: ${personalDetailLabels.bloodGroup[personalDetails.bloodGroup]}`}
+            />
+            <Chip
+              label={`${copy.eyeColorLabel}: ${personalDetailLabels.eyeColor[personalDetails.eyeColor]}`}
+            />
+            <Chip
+              label={`${copy.relationshipLabel}: ${personalDetailLabels.relationshipStatus[personalDetails.relationshipStatus]}`}
+            />
+            <Chip
+              label={`${copy.supportLabel}: ${personalDetailLabels.supportSystem[personalDetails.supportSystem]}`}
+            />
+            <Chip
+              label={`${copy.petLabel}: ${personalDetailLabels.petCompanion[personalDetails.petCompanion]}`}
+            />
             {hasTargetWeight && (
               <Chip
                 label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
@@ -198,6 +270,8 @@ const ProfilePage = () => {
           </Stack>
         </Stack>
       </Paper>
+
+      <ProfileForm />
 
       <Box
         sx={{
@@ -416,8 +490,6 @@ const ProfilePage = () => {
       <MealDayOverview />
 
       <DailyHistoryExplorer />
-
-      <ProfileForm />
 
       <NotificationSettingsCard />
 

@@ -12,6 +12,7 @@ import reducer, {
   cancelPremiumSubscription,
   normalizeProfileState,
   startPremiumTrial,
+  updatePersonalDetails,
 } from "./profileSlice";
 
 const createSelectorState = ({
@@ -122,6 +123,47 @@ describe("profileSlice progress photos", () => {
     );
 
     expect(state.progressPhotos).toHaveLength(1);
+  });
+});
+
+describe("profileSlice personal details", () => {
+  it("normalizes assistant personalization details", () => {
+    let state = reducer(
+      undefined,
+      updatePersonalDetails({
+        bloodGroup: "a_positive",
+        eyeColor: "green",
+        relationshipStatus: "married",
+        supportSystem: "partner_supports",
+        petCompanion: "cat",
+      })
+    );
+
+    expect(state.personalDetails).toMatchObject({
+      bloodGroup: "a_positive",
+      eyeColor: "green",
+      relationshipStatus: "married",
+      supportSystem: "partner_supports",
+      petCompanion: "cat",
+    });
+
+    state = normalizeProfileState({
+      personalDetails: {
+        bloodGroup: "bad",
+        eyeColor: "blue",
+        relationshipStatus: "bad",
+        supportSystem: "low_support",
+        petCompanion: "dog",
+      },
+    });
+
+    expect(state.personalDetails).toMatchObject({
+      bloodGroup: "unknown",
+      eyeColor: "blue",
+      relationshipStatus: "prefer_not",
+      supportSystem: "low_support",
+      petCompanion: "dog",
+    });
   });
 });
 

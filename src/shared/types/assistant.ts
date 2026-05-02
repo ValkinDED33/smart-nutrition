@@ -4,6 +4,7 @@ import type {
   AssistantTone,
   DietStyle,
   MotivationState,
+  PersonalProfileDetails,
 } from "./profile";
 import type {
   NutritionCoachAnalysis,
@@ -44,6 +45,7 @@ export interface AssistantRuntimeContext {
   assistantRole: AssistantRole;
   assistantTone: AssistantTone;
   humorEnabled: boolean;
+  personalDetails: PersonalProfileDetails;
   motivation: MotivationState;
   coach: NutritionCoachAnalysis;
   coachPrimaryInsight: NutritionCoachInsightCode;

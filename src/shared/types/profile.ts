@@ -12,6 +12,39 @@ export type AssistantTone = "gentle" | "playful" | "focused";
 export type MotivationTaskCategory = "nutrition" | "consistency" | "reflection";
 export type PremiumPlanId = "free" | "pro" | "coach";
 export type PremiumStatus = "inactive" | "trial" | "active" | "cancelled";
+export type BloodGroup =
+  | "unknown"
+  | "o_positive"
+  | "o_negative"
+  | "a_positive"
+  | "a_negative"
+  | "b_positive"
+  | "b_negative"
+  | "ab_positive"
+  | "ab_negative";
+export type EyeColor =
+  | "unknown"
+  | "brown"
+  | "blue"
+  | "green"
+  | "gray"
+  | "hazel"
+  | "amber"
+  | "other";
+export type RelationshipStatus =
+  | "single"
+  | "dating"
+  | "married"
+  | "complicated"
+  | "prefer_not";
+export type SupportSystem =
+  | "self"
+  | "partner_supports"
+  | "partner_neutral"
+  | "family_friends"
+  | "low_support"
+  | "prefer_not";
+export type PetCompanion = "none" | "cat" | "dog" | "cat_and_dog" | "other";
 
 export interface MacroTargets {
   protein: number;
@@ -47,6 +80,14 @@ export interface AssistantCustomization {
   humorEnabled: boolean;
   widgetEnabled: boolean;
   proactiveHintsEnabled: boolean;
+}
+
+export interface PersonalProfileDetails {
+  bloodGroup: BloodGroup;
+  eyeColor: EyeColor;
+  relationshipStatus: RelationshipStatus;
+  supportSystem: SupportSystem;
+  petCompanion: PetCompanion;
 }
 
 export interface MeasurementHistoryItem {

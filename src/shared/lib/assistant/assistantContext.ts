@@ -62,6 +62,7 @@ export const createAssistantRuntimeContext = ({
     assistantRole: profile.assistant.role,
     assistantTone: profile.assistant.tone,
     humorEnabled: profile.assistant.humorEnabled,
+    personalDetails: profile.personalDetails,
     motivation: profile.motivation,
     coach,
     coachPrimaryInsight: coachPrimaryInsight ?? coach.insights[0]?.code ?? "on_track",
