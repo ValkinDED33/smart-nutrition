@@ -93,6 +93,31 @@ The container:
 - exposes the app and API on port `8787`
 - persists SQLite data in a named Docker volume
 
+## Vercel frontend + separate backend
+
+Vercel hosts only the static frontend for this project. Registration, login, sync,
+password reset, admin tools, and AI endpoints still need the Node backend running
+on a public URL.
+
+Set the frontend build variable on Vercel to the public backend API, not localhost:
+
+```env
+VITE_SMART_NUTRITION_API_BASE_URL=https://your-api.example.com/api
+```
+
+Set the matching backend variables on the API host:
+
+```env
+NODE_ENV=production
+SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition-nine.vercel.app
+SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition-nine.vercel.app
+SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None
+SMART_NUTRITION_AUTH_COOKIE_SECURE=true
+```
+
+Never deploy a frontend build with `VITE_SMART_NUTRITION_API_BASE_URL` pointing
+to `localhost`; from a deployed site that means the visitor's own computer.
+
 ## Scripts
 
 ```bash

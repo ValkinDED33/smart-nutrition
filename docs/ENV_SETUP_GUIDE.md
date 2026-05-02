@@ -33,6 +33,27 @@ SMART_NUTRITION_API_PORT=8787
 
 Если запускаешь production, обязательно поставь свой длинный `SMART_NUTRITION_JWT_SECRET`.
 
+Для Vercel-фронтенда и отдельного backend-домена не используй `localhost` в
+frontend build env. На Vercel поставь:
+
+```env
+VITE_SMART_NUTRITION_API_BASE_URL=https://your-api.example.com/api
+```
+
+На backend-хосте поставь:
+
+```env
+NODE_ENV=production
+SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition-nine.vercel.app
+SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition-nine.vercel.app
+SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None
+SMART_NUTRITION_AUTH_COOKIE_SECURE=true
+```
+
+Если backend и frontend обслуживаются одним Node-процессом из `dist`, отдельный
+`VITE_SMART_NUTRITION_API_BASE_URL` можно оставить пустым: приложение само
+проверит `/api` на текущем origin.
+
 ## Шаг 3: Если нужен облачный ассистент, добавь `SMART_NUTRITION_ASSISTANT_*`
 
 Для включения backend assistant runtime нужны как минимум:

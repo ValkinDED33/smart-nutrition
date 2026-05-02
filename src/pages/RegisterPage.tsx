@@ -161,6 +161,11 @@ const RegisterPage = () => {
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
         setServerError(t("error.emailInUse"));
+      } else if (
+        error instanceof AuthApiError &&
+        error.code === "BACKEND_UNAVAILABLE"
+      ) {
+        setServerError(t("error.backendUnavailable"));
       } else {
         setServerError(t("error.genericRegister"));
       }

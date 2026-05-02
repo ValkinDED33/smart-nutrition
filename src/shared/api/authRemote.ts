@@ -90,22 +90,61 @@ const remoteRuntimeInfo: AuthRuntimeInfo = {
 let remoteBaseProbePromise: Promise<string | null> | null = null;
 let remoteRefreshPromise: Promise<void> | null = null;
 
+const loopbackHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
 const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
 
-const normalizeRemoteBaseUrl = (value: unknown) =>
-  typeof value === "string" && value.trim().length > 0
-    ? value.trim().replace(/\/+$/, "")
-    : null;
+const normalizeRemoteBaseUrl = (value: unknown) => {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
 
-const getConfiguredRemoteBaseUrl = () =>
-  normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL);
+  try {
+    const parsedUrl = new URL(value.trim());
+
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return null;
+    }
+
+    parsedUrl.hash = "";
+    parsedUrl.search = "";
+
+    return parsedUrl.toString().replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
+};
 
 const isLocalBrowserHost = () => {
   if (typeof window === "undefined") {
     return false;
   }
 
-  return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  return loopbackHostnames.has(window.location.hostname);
+};
+
+const isLoopbackBaseUrl = (value: string) => {
+  try {
+    const { hostname } = new URL(value);
+    return loopbackHostnames.has(hostname);
+  } catch {
+    return false;
+  }
+};
+
+export const canUseRemoteBaseUrlInCurrentBrowser = (value: string) =>
+  isLocalBrowserHost() || !isLoopbackBaseUrl(value);
+
+const getConfiguredRemoteBaseUrl = () => {
+  const configuredBaseUrl = normalizeRemoteBaseUrl(
+    import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL
+  );
+
+  if (!configuredBaseUrl || !canUseRemoteBaseUrlInCurrentBrowser(configuredBaseUrl)) {
+    return null;
+  }
+
+  return configuredBaseUrl;
 };
 
 const shouldProbeSameOriginApi = () => {
@@ -125,15 +164,6 @@ const setStoredAuthMode = (mode: AuthMode) => {
   setClientStorageItem(AUTH_MODE_KEY, mode);
 };
 
-const isLoopbackBaseUrl = (value: string) => {
-  try {
-    const { hostname } = new URL(value);
-    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
-  } catch {
-    return false;
-  }
-};
-
 const getStoredRemoteBaseUrl = () => {
   const storedBaseUrl = normalizeRemoteBaseUrl(getClientStorageItem(REMOTE_BASE_URL_KEY));
 
@@ -141,7 +171,7 @@ const getStoredRemoteBaseUrl = () => {
     return null;
   }
 
-  if (!isLocalBrowserHost() && isLoopbackBaseUrl(storedBaseUrl)) {
+  if (!canUseRemoteBaseUrlInCurrentBrowser(storedBaseUrl)) {
     return null;
   }
 
@@ -349,12 +379,16 @@ const getCandidateBaseUrls = () => {
     candidates.push(`${window.location.origin}/api`);
   }
 
-  if (isLocalBrowserHost()) {
-    candidates.push("http://localhost:8787/api");
-  }
-
   return dedupe(candidates.filter((value): value is string => Boolean(value)));
 };
+
+const isRemoteHealthPayload = (value: unknown) =>
+  typeof value === "object" &&
+  value !== null &&
+  "ok" in value &&
+  (value as { ok?: unknown }).ok === true &&
+  "provider" in value &&
+  (value as { provider?: unknown }).provider === "smart-nutrition-sqlite-api";
 
 const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
   if (!force && remoteBaseProbePromise) {
@@ -370,7 +404,7 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
           credentials: "include",
         });
 
-        if (response.ok) {
+        if (response.ok && isRemoteHealthPayload(await readJsonResponse<unknown>(response))) {
           return baseUrl;
         }
       } catch {
@@ -381,7 +415,13 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
     return null;
   })();
 
-  return remoteBaseProbePromise;
+  const baseUrl = await remoteBaseProbePromise;
+
+  if (!baseUrl) {
+    remoteBaseProbePromise = null;
+  }
+
+  return baseUrl;
 };
 
 const requestRemote = async <T,>(

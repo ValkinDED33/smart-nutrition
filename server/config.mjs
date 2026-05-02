@@ -61,6 +61,28 @@ const normalizeOrigin = (value) => {
   }
 };
 
+const normalizeCookieSameSite = (value, fallback, warnings) => {
+  const normalized = toTrimmedString(value, fallback).toLowerCase();
+
+  if (normalized === "strict") {
+    return "Strict";
+  }
+
+  if (normalized === "lax") {
+    return "Lax";
+  }
+
+  if (normalized === "none") {
+    return "None";
+  }
+
+  warnings.push(
+    "SMART_NUTRITION_AUTH_COOKIE_SAME_SITE must be Strict, Lax, or None. Falling back to the default."
+  );
+
+  return fallback;
+};
+
 const readBooleanFlag = (value, fallback = false) => {
   const normalized = toTrimmedString(value).toLowerCase();
 
@@ -654,6 +676,22 @@ export const createServerConfig = (env = process.env) => {
     env.SMART_NUTRITION_APP_BASE_URL,
     serveStatic ? `http://localhost:${port}` : "http://localhost:5173"
   );
+  const authCookieSameSite = normalizeCookieSameSite(
+    env.SMART_NUTRITION_AUTH_COOKIE_SAME_SITE,
+    isProduction ? "None" : "Lax",
+    warnings
+  );
+  const authCookieSecure = readBooleanFlag(
+    env.SMART_NUTRITION_AUTH_COOKIE_SECURE,
+    isProduction
+  );
+
+  if (authCookieSameSite === "None" && !authCookieSecure) {
+    errors.push(
+      "SMART_NUTRITION_AUTH_COOKIE_SECURE must be true when SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None."
+    );
+  }
+
   const allowedCorsOrigins = resolveAllowedCorsOrigins(
     env.SMART_NUTRITION_CORS_ORIGINS,
     appBaseUrl,
@@ -777,8 +815,8 @@ export const createServerConfig = (env = process.env) => {
     requestLimitMax,
     authAccessCookieName: "smart-nutrition-access",
     authRefreshCookieName: "smart-nutrition-refresh",
-    authCookieSameSite: "Lax",
-    authCookieSecure: isProduction,
+    authCookieSameSite,
+    authCookieSecure,
     appBaseUrl,
     allowedCorsOrigins,
     emailFromAddress,

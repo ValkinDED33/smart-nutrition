@@ -119,6 +119,8 @@ const LoginPage = () => {
       if (error instanceof AuthApiError) {
         if (error.code === "TOO_MANY_ATTEMPTS") {
           setServerError(t("error.tooManyAttempts"));
+        } else if (error.code === "BACKEND_UNAVAILABLE") {
+          setServerError(t("error.backendUnavailable"));
         } else {
           setServerError(t("error.invalidCredentials"));
         }
