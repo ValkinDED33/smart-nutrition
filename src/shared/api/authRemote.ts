@@ -92,6 +92,30 @@ let remoteRefreshPromise: Promise<void> | null = null;
 
 const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
 
+const normalizeRemoteBaseUrl = (value: unknown) =>
+  typeof value === "string" && value.trim().length > 0
+    ? value.trim().replace(/\/+$/, "")
+    : null;
+
+const getConfiguredRemoteBaseUrl = () =>
+  normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL);
+
+const isLocalBrowserHost = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+};
+
+const shouldProbeSameOriginApi = () => {
+  if (typeof window === "undefined" || !window.location.origin.startsWith("http")) {
+    return false;
+  }
+
+  return isLocalBrowserHost() || !window.location.hostname.endsWith(".vercel.app");
+};
+
 const getStoredAuthMode = (): AuthMode =>
   getClientStorageItem(AUTH_MODE_KEY) === "remote-cloud"
     ? "remote-cloud"
@@ -101,7 +125,28 @@ const setStoredAuthMode = (mode: AuthMode) => {
   setClientStorageItem(AUTH_MODE_KEY, mode);
 };
 
-const getStoredRemoteBaseUrl = () => getClientStorageItem(REMOTE_BASE_URL_KEY);
+const isLoopbackBaseUrl = (value: string) => {
+  try {
+    const { hostname } = new URL(value);
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
+const getStoredRemoteBaseUrl = () => {
+  const storedBaseUrl = normalizeRemoteBaseUrl(getClientStorageItem(REMOTE_BASE_URL_KEY));
+
+  if (!storedBaseUrl) {
+    return null;
+  }
+
+  if (!isLocalBrowserHost() && isLoopbackBaseUrl(storedBaseUrl)) {
+    return null;
+  }
+
+  return storedBaseUrl;
+};
 
 const getStoredRemoteUser = (): User | null => {
   const raw = getClientStorageItem(REMOTE_USER_KEY);
@@ -298,13 +343,15 @@ export const refreshRemoteSession = async () => {
 };
 
 const getCandidateBaseUrls = () => {
-  const candidates = [getStoredRemoteBaseUrl()];
+  const candidates = [getStoredRemoteBaseUrl(), getConfiguredRemoteBaseUrl()];
 
-  if (typeof window !== "undefined" && window.location.origin.startsWith("http")) {
+  if (shouldProbeSameOriginApi()) {
     candidates.push(`${window.location.origin}/api`);
   }
 
-  candidates.push("http://localhost:8787/api");
+  if (isLocalBrowserHost()) {
+    candidates.push("http://localhost:8787/api");
+  }
 
   return dedupe(candidates.filter((value): value is string => Boolean(value)));
 };
