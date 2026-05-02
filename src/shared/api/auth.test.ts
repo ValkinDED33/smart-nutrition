@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getAuthRuntimeInfo, login, logout, register } from "./auth";
+import { AuthApiError, getAuthRuntimeInfo, login, logout, register } from "./auth";
 
 const password = "StrongPass1!";
 
@@ -46,5 +46,16 @@ describe("auth provider selection", () => {
 
     expect(loginSession.user.email).toBe(email);
     expect(getAuthRuntimeInfo().mode).toBe("local-browser");
+  });
+
+  it("validates local registration profile fields before storing an account", async () => {
+    await expect(
+      register({
+        ...createRegisterPayload("invalid-local-profile@example.com"),
+        weight: 500,
+      })
+    ).rejects.toMatchObject<AuthApiError>({
+      code: "INVALID_PROFILE",
+    });
   });
 });

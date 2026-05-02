@@ -21,6 +21,12 @@ export const QuickProductShelf = ({ mealType }: Props) => {
     adaptiveMode: state.profile.adaptiveMode,
   }));
   const { t } = useLanguage();
+  const filteredSavedProducts = savedProducts
+    .filter((product) => productMatchesPreferences(product, preferences))
+    .slice(0, 6);
+  const filteredRecentProducts = recentProducts
+    .filter((product) => productMatchesPreferences(product, preferences))
+    .slice(0, 6);
 
   const renderGrid = (products: typeof savedProducts) => (
     <Box
@@ -50,7 +56,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 5,
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -62,19 +68,19 @@ export const QuickProductShelf = ({ mealType }: Props) => {
 
         <Stack spacing={1.5}>
           <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.saved")}</Typography>
-          {savedProducts.length === 0 ? (
+          {filteredSavedProducts.length === 0 ? (
             <Typography color="text.secondary">{t("quickShelf.savedEmpty")}</Typography>
           ) : (
-            renderGrid(savedProducts.filter((product) => productMatchesPreferences(product, preferences)).slice(0, 6))
+            renderGrid(filteredSavedProducts)
           )}
         </Stack>
 
         <Stack spacing={1.5}>
           <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.recent")}</Typography>
-          {recentProducts.length === 0 ? (
+          {filteredRecentProducts.length === 0 ? (
             <Typography color="text.secondary">{t("quickShelf.recentEmpty")}</Typography>
           ) : (
-            renderGrid(recentProducts.filter((product) => productMatchesPreferences(product, preferences)).slice(0, 6))
+            renderGrid(filteredRecentProducts)
           )}
         </Stack>
       </Stack>

@@ -1,10 +1,47 @@
 import { describe, expect, it } from "vitest";
+import type { RootState } from "../../app/store";
+import { calculateMacroTargets } from "../../shared/lib/macroTargets";
+import type { User } from "../../shared/types/user";
+import {
+  selectCurrentWeight,
+  selectDailyMacroTargets,
+} from "./selectors";
 import reducer, {
   activatePremiumPlan,
   cancelPremiumSubscription,
   normalizeProfileState,
   startPremiumTrial,
 } from "./profileSlice";
+
+const createSelectorState = ({
+  weightHistory = [],
+  userWeight = 80,
+}: {
+  weightHistory?: Array<{ date: string; weight: number }>;
+  userWeight?: number;
+}) =>
+  ({
+    auth: {
+      user: {
+        id: "test-user",
+        name: "Test User",
+        email: "test@example.com",
+        age: 30,
+        weight: userWeight,
+        height: 175,
+        gender: "male",
+        activity: "moderate",
+        goal: "cut",
+        role: "USER",
+      } satisfies User,
+    },
+    profile: {
+      dailyCalories: 2100,
+      goal: "cut",
+      dietStyle: "balanced",
+      weightHistory,
+    },
+  }) as unknown as RootState;
 
 describe("profileSlice premium", () => {
   it("normalizes invalid free active subscriptions back to inactive free", () => {
@@ -57,5 +94,35 @@ describe("profileSlice premium", () => {
       status: "cancelled",
       cancelledAt: "2026-05-03T10:00:00.000Z",
     });
+  });
+});
+
+describe("profile selectors", () => {
+  it("uses the latest weight check-in before the account weight", () => {
+    const state = createSelectorState({
+      userWeight: 80,
+      weightHistory: [
+        { date: "2026-05-01T10:00:00.000Z", weight: 77.8 },
+        { date: "2026-05-02T10:00:00.000Z", weight: 75.4 },
+      ],
+    });
+
+    expect(selectCurrentWeight(state)).toBe(75.4);
+  });
+
+  it("calculates macro targets from the latest check-in weight", () => {
+    const state = createSelectorState({
+      userWeight: 80,
+      weightHistory: [{ date: "2026-05-02T10:00:00.000Z", weight: 75 }],
+    });
+
+    expect(selectDailyMacroTargets(state)).toEqual(
+      calculateMacroTargets({
+        calories: 2100,
+        weight: 75,
+        goal: "cut",
+        dietStyle: "balanced",
+      })
+    );
   });
 });

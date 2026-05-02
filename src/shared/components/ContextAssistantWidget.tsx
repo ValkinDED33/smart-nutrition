@@ -340,7 +340,7 @@ export const ContextAssistantWidget = () => {
             md: 24,
           },
           zIndex: 1200,
-          display: "grid",
+          display: { xs: "none", md: "grid" },
           gap: 1.2,
           justifyItems: "end",
         }}
@@ -349,6 +349,7 @@ export const ContextAssistantWidget = () => {
           <Paper
             elevation={8}
             sx={{
+              display: { xs: "none", xl: "block" },
               width: { xs: 280, sm: 340 },
               p: 2,
               borderRadius: 4,

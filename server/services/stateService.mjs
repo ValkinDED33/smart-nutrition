@@ -44,35 +44,54 @@ const requireMealProductBucket = (bucket) => {
 
 const requireWaterState = (value) =>
   requireRecord(value, "INVALID_WATER_STATE", "Water state payload is required.");
+const requireProfileState = (value) =>
+  requireRecord(value, "INVALID_PROFILE_STATE", "Profile state payload is required.");
+const requireMealState = (value) =>
+  requireRecord(value, "INVALID_MEAL_STATE", "Meal state payload is required.");
 const requireFridgeState = (value) =>
   requireRecord(value, "INVALID_FRIDGE_STATE", "Fridge state payload is required.");
 const requireCommunityState = (value) =>
   requireRecord(value, "INVALID_COMMUNITY_STATE", "Community state payload is required.");
+
+const requireSnapshot = (value) => {
+  const snapshot = requireRecord(value, "INVALID_STATE", "Full state snapshot is required.");
+
+  return {
+    profile: requireProfileState(snapshot.profile),
+    meal: requireMealState(snapshot.meal),
+    water: requireWaterState(snapshot.water),
+    fridge: requireFridgeState(snapshot.fridge),
+    community: requireCommunityState(snapshot.community),
+  };
+};
 
 export const createStateService = ({ stateRepository }) => ({
   getSnapshot: (user) => stateRepository.getSnapshotByUserId(user.id, user),
 
   getSnapshotMeta: (user) => stateRepository.getSnapshotMetaByUserId(user.id),
 
-  saveSnapshot: (user, snapshot, syncContext = undefined) =>
-    stateRepository.upsertSnapshot(user.id, {
-      profile: snapshot?.profile ?? null,
-      meal: snapshot?.meal ?? null,
-      water: snapshot?.water ?? null,
-      fridge: snapshot?.fridge ?? null,
-      community: snapshot?.community ?? null,
+  saveSnapshot: (user, snapshot, syncContext = undefined) => {
+    const nextSnapshot = requireSnapshot(snapshot);
+
+    return stateRepository.upsertSnapshot(user.id, {
+      ...nextSnapshot,
       updatedAt: new Date().toISOString(),
-    }, syncContext),
+    }, syncContext);
+  },
 
   getProfileState: (user) => stateRepository.getProfileStateByUserId(user.id, user),
 
   saveProfileState: (user, profileState, syncContext = undefined) =>
-    stateRepository.upsertProfileState(user.id, profileState, syncContext),
+    stateRepository.upsertProfileState(
+      user.id,
+      requireProfileState(profileState),
+      syncContext
+    ),
 
   getMealState: (user) => stateRepository.getMealStateByUserId(user.id),
 
   saveMealState: (user, mealState, syncContext = undefined) =>
-    stateRepository.upsertMealState(user.id, mealState, syncContext),
+    stateRepository.upsertMealState(user.id, requireMealState(mealState), syncContext),
 
   getWaterState: (user) => stateRepository.getWaterStateByUserId(user.id),
 

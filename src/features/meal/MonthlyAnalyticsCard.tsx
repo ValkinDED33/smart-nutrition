@@ -91,6 +91,7 @@ export const MonthlyAnalyticsCard = () => {
   const { language, t } = useLanguage();
   const copy = monthlyCopy[language];
 
+  const currentWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const macroTargets = useMemo(() => {
     if (!user) {
       return { protein: 0, fat: 0, carbs: 0 };
@@ -98,11 +99,11 @@ export const MonthlyAnalyticsCard = () => {
 
     return calculateMacroTargets({
       calories: profile.dailyCalories,
-      weight: user.weight,
+      weight: currentWeight,
       goal: profile.goal,
       dietStyle: profile.dietStyle,
     });
-  }, [profile.dailyCalories, profile.dietStyle, profile.goal, user]);
+  }, [currentWeight, profile.dailyCalories, profile.dietStyle, profile.goal, user]);
 
   const days = useMemo(() => {
     const today = new Date();
@@ -157,8 +158,8 @@ export const MonthlyAnalyticsCard = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
@@ -202,8 +203,8 @@ export const MonthlyAnalyticsCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -226,25 +227,25 @@ export const MonthlyAnalyticsCard = () => {
             gap: 1.5,
           }}
         >
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageCalories}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
               {averageCalories.toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageProtein}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
               {averageProtein.toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.adherence}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
               {adherenceRate.toFixed(0)}%
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.streak}</Typography>
             <Typography variant="h5" sx={{ fontWeight: 900 }}>
               {loggingStreak} {copy.days}
@@ -261,7 +262,10 @@ export const MonthlyAnalyticsCard = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(10, minmax(0, 1fr))",
+              gridTemplateColumns: {
+                xs: "repeat(5, minmax(0, 1fr))",
+                sm: "repeat(10, minmax(0, 1fr))",
+              },
               gap: 1,
             }}
           >
@@ -270,7 +274,7 @@ export const MonthlyAnalyticsCard = () => {
                 key={day.key}
                 sx={{
                   minHeight: 46,
-                  borderRadius: 3,
+                  borderRadius: 1,
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   backgroundColor: getCalorieColor(day.calorieRatio),
                   p: 0.75,
@@ -304,7 +308,7 @@ export const MonthlyAnalyticsCard = () => {
             gap: 1.5,
           }}
         >
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.surplus}</Typography>
             {strongestSurplus ? (
               <>
@@ -320,7 +324,7 @@ export const MonthlyAnalyticsCard = () => {
               <Typography color="text.secondary">{copy.noSurplus}</Typography>
             )}
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.deficit}</Typography>
             {deepestDeficit ? (
               <>
@@ -352,79 +356,87 @@ export const MonthlyAnalyticsCard = () => {
           </Stack>
           <Box
             sx={{
-              display: "grid",
-              gridTemplateColumns: "minmax(72px, auto) repeat(3, minmax(0, 1fr))",
-              gap: 1,
-              alignItems: "stretch",
+              overflowX: "auto",
+              pb: 0.5,
             }}
           >
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-              {copy.dayLabel}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-              {copy.protein}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-              {copy.fat}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-              {copy.carbs}
-            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "minmax(76px, auto) repeat(3, minmax(82px, 1fr))",
+                gap: 1,
+                alignItems: "stretch",
+                minWidth: { xs: 420, sm: "auto" },
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                {copy.dayLabel}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                {copy.protein}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                {copy.fat}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                {copy.carbs}
+              </Typography>
 
-            {recentMacroDays.map((day) => (
-              <Box key={day.key} sx={{ display: "contents" }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1,
-                    borderRadius: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {day.label}
-                  </Typography>
-                </Paper>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1,
-                    borderRadius: 3,
-                    backgroundColor: getMacroColor(day.proteinRatio),
-                  }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {day.protein.toFixed(0)} {t("common.g")}
-                  </Typography>
-                </Paper>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1,
-                    borderRadius: 3,
-                    backgroundColor: getMacroColor(day.fatRatio),
-                  }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {day.fat.toFixed(0)} {t("common.g")}
-                  </Typography>
-                </Paper>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1,
-                    borderRadius: 3,
-                    backgroundColor: getMacroColor(day.carbsRatio),
-                  }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {day.carbs.toFixed(0)} {t("common.g")}
-                  </Typography>
-                </Paper>
-              </Box>
-            ))}
+              {recentMacroDays.map((day) => (
+                <Box key={day.key} sx={{ display: "contents" }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                      {day.label}
+                    </Typography>
+                  </Paper>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      backgroundColor: getMacroColor(day.proteinRatio),
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                      {day.protein.toFixed(0)} {t("common.g")}
+                    </Typography>
+                  </Paper>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      backgroundColor: getMacroColor(day.fatRatio),
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                      {day.fat.toFixed(0)} {t("common.g")}
+                    </Typography>
+                  </Paper>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      backgroundColor: getMacroColor(day.carbsRatio),
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                      {day.carbs.toFixed(0)} {t("common.g")}
+                    </Typography>
+                  </Paper>
+                </Box>
+              ))}
+            </Box>
           </Box>
         </Stack>
       </Stack>

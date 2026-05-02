@@ -48,6 +48,7 @@ export const ProductCard = ({
   allowSave = true,
 }: Props) => {
   const [qty, setQty] = useState("");
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
@@ -59,16 +60,27 @@ export const ProductCard = ({
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
 
-  const handleAdd = () => {
-    const quantity = Number(qty);
-
-    if (!qty || Number.isNaN(quantity) || quantity <= 0) {
-      alert(t("meal.invalidQuantity"));
+  const handleAddQuantity = (quantity: number, clearInput = true) => {
+    if (Number.isNaN(quantity) || quantity <= 0) {
+      setQuantityError(t("meal.invalidQuantity"));
       return;
     }
 
     dispatch(addProduct({ product, quantity, mealType, origin }));
-    setQty("");
+    setQuantityError(null);
+
+    if (clearInput) {
+      setQty("");
+    }
+  };
+
+  const handleAdd = () => {
+    if (!qty.trim()) {
+      setQuantityError(t("meal.invalidQuantity"));
+      return;
+    }
+
+    handleAddQuantity(Number(qty));
   };
 
   const handleToggleSave = () => {
@@ -95,7 +107,7 @@ export const ProductCard = ({
       sx={{
         minWidth: 0,
         height: "100%",
-        borderRadius: 5,
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         boxShadow: "none",
       }}
@@ -150,8 +162,13 @@ export const ProductCard = ({
             label={`${t("meal.quantity")} (${product.unit})`}
             placeholder="100"
             value={qty}
+            error={Boolean(quantityError)}
+            helperText={quantityError}
             onFocus={(event) => event.target.select()}
-            onChange={(event) => setQty(event.target.value)}
+            onChange={(event) => {
+              setQty(event.target.value);
+              setQuantityError(null);
+            }}
             inputProps={{ min: 1, step: product.unit === "piece" ? 1 : 0.1 }}
           />
 
@@ -165,7 +182,10 @@ export const ProductCard = ({
                   key={preset}
                   size="small"
                   variant={parsedQuantity === preset ? "contained" : "outlined"}
-                  onClick={() => setQty(String(preset))}
+                  onClick={() => {
+                    setQty(String(preset));
+                    setQuantityError(null);
+                  }}
                   sx={{ minWidth: 54 }}
                 >
                   {formatProductPortion(preset, product.unit)}
@@ -177,7 +197,7 @@ export const ProductCard = ({
           <Box
             sx={{
               p: 1.2,
-              borderRadius: 3,
+              borderRadius: 1,
               backgroundColor: "rgba(248,250,252,0.92)",
               border: "1px solid rgba(15, 23, 42, 0.06)",
             }}
@@ -191,6 +211,20 @@ export const ProductCard = ({
               {t("dashboard.carbs")}: {estimatedCarbs.toFixed(1)} {t("common.g")}
             </Typography>
           </Box>
+
+          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+            {portionPresets.slice(0, 3).map((preset) => (
+              <Button
+                key={`quick-add-${preset}`}
+                size="small"
+                variant="outlined"
+                onClick={() => handleAddQuantity(preset, false)}
+                sx={{ minWidth: 76 }}
+              >
+                +{formatProductPortion(preset, product.unit)}
+              </Button>
+            ))}
+          </Stack>
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: "auto" }}>
             <Button

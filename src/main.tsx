@@ -7,6 +7,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./app/store";
 import { LanguageProvider } from "./shared/language";
 import { initializeClientPersistence } from "./shared/lib/clientPersistence";
+import { registerServiceWorker } from "./shared/lib/registerServiceWorker";
 import { AppThemeProvider } from "./shared/theme/AppThemeProvider";
 
 const container = document.getElementById("root")!;
@@ -27,3 +28,5 @@ root.render(
     </Provider>
   </StrictMode>
 );
+
+registerServiceWorker();

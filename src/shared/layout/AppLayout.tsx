@@ -40,6 +40,14 @@ const mobileTabs = [
   { value: "/profile", label: "Profile", icon: "👤" },
 ];
 
+const desktopTabs = [
+  { value: "/home", label: "Dashboard" },
+  { value: "/meals", label: "Food" },
+  { value: "/progress", label: "Progress" },
+  { value: "/ai", label: "AI Coach" },
+  { value: "/profile", label: "Profile" },
+];
+
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -58,6 +66,7 @@ const Layout = () => {
 
   const activeTab =
     mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? "/home";
+  const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
 
   return (
     <Box
@@ -82,7 +91,7 @@ const Layout = () => {
             : "1px solid rgba(20, 33, 61, 0.08)",
         }}
       >
-        <Container maxWidth="md">
+        <Container maxWidth="xl">
           <Toolbar sx={{ minHeight: 72, px: 0, gap: 1.5, justifyContent: "space-between" }}>
             <Stack direction="row" spacing={1.2} alignItems="center" minWidth={0}>
               <Box
@@ -100,7 +109,7 @@ const Layout = () => {
               >
                 SN
               </Box>
-              <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
                 <Typography
                   component={Link}
                   to={user ? "/home" : "/"}
@@ -129,7 +138,54 @@ const Layout = () => {
               </Box>
             </Stack>
 
-            <Stack direction="row" spacing={1} alignItems="center">
+            {user && (
+              <Stack
+                component="nav"
+                direction="row"
+                spacing={0.5}
+                alignItems="center"
+                sx={{ display: { xs: "none", md: "flex" } }}
+              >
+                {desktopTabs.map((tab) => {
+                  const selected = location.pathname.startsWith(tab.value);
+
+                  return (
+                    <Button
+                      key={tab.value}
+                      component={Link}
+                      to={tab.value}
+                      variant={selected ? "contained" : "text"}
+                      size="small"
+                      sx={{
+                        px: 1.6,
+                        color: selected
+                          ? "#ffffff"
+                          : isDarkMode
+                            ? "#cbd5e1"
+                            : "#334155",
+                        bgcolor: selected ? "#0f766e" : "transparent",
+                        "&:hover": {
+                          bgcolor: selected
+                            ? "#115e59"
+                            : isDarkMode
+                              ? "rgba(148, 163, 184, 0.12)"
+                              : "rgba(15, 118, 110, 0.08)",
+                        },
+                      }}
+                    >
+                      {tab.label}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            )}
+
+            <Stack
+              direction="row"
+              spacing={{ xs: 0.5, sm: 1 }}
+              alignItems="center"
+              sx={{ flexShrink: 0 }}
+            >
               <Tooltip title={mode === "dark" ? "Light mode" : "Dark mode"}>
                 <Button
                   onClick={toggleMode}
@@ -137,15 +193,20 @@ const Layout = () => {
                   size="small"
                   aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
                   sx={{
-                    minWidth: 48,
-                    px: 1.2,
+                    minWidth: { xs: 40, sm: 48 },
+                    px: { xs: 1, sm: 1.2 },
                     color: isDarkMode ? "#e5eef7" : "#0f766e",
                     borderColor: isDarkMode
                       ? "rgba(148, 163, 184, 0.32)"
                       : "rgba(15, 118, 110, 0.24)",
                   }}
                 >
-                  {mode === "dark" ? "Light" : "Dark"}
+                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                    {mode === "dark" ? "Light" : "Dark"}
+                  </Box>
+                  <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                    {mode === "dark" ? "☀" : "☾"}
+                  </Box>
                 </Button>
               </Tooltip>
 
@@ -179,13 +240,29 @@ const Layout = () => {
 
               {user ? (
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <SyncStatusChip />
+                  <Box sx={{ display: { xs: "none", lg: "block" } }}>
+                    <SyncStatusChip />
+                  </Box>
                   <Avatar src={user.avatar} sx={{ width: 36, height: 36 }}>
                     {user.name[0]}
                   </Avatar>
+                  <Button
+                    onClick={handleLogout}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      display: { xs: "none", sm: "inline-flex" },
+                      color: isDarkMode ? "#5eead4" : "#0f766e",
+                      borderColor: isDarkMode
+                        ? "rgba(94, 234, 212, 0.28)"
+                        : "rgba(15, 118, 110, 0.24)",
+                    }}
+                  >
+                    {t("nav.logout")}
+                  </Button>
                 </Stack>
               ) : (
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{ display: { xs: "none", sm: "flex" } }}>
                   <Button component={Link} to="/login" sx={{ textTransform: "none", fontWeight: 800 }}>
                     {t("nav.login")}
                   </Button>
@@ -210,10 +287,11 @@ const Layout = () => {
       </AppBar>
 
       <Container
-        maxWidth="md"
+        maxWidth={contentMaxWidth}
         sx={{
-          py: { xs: 2, md: 4 },
-          pb: user ? { xs: 12, md: 14 } : { xs: 3, md: 5 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 2, md: location.pathname === "/" ? 3 : 4 },
+          pb: user ? { xs: 16, md: 5 } : { xs: 3, md: 5 },
         }}
       >
         <BackendOfflineBanner />
@@ -224,10 +302,11 @@ const Layout = () => {
         <Paper
           elevation={0}
           sx={{
+            display: { xs: "block", md: "none" },
             position: "fixed",
             left: 12,
             right: 12,
-            bottom: 12,
+            bottom: "max(12px, env(safe-area-inset-bottom, 0px))",
             zIndex: 1200,
             borderRadius: 999,
             overflow: "hidden",
@@ -269,26 +348,6 @@ const Layout = () => {
             ))}
           </BottomNavigation>
         </Paper>
-      )}
-
-      {user && (
-        <Button
-          onClick={handleLogout}
-          sx={{
-            position: "fixed",
-            top: 86,
-            right: 16,
-            zIndex: 1100,
-            textTransform: "none",
-            fontWeight: 800,
-            color: "#0f766e",
-            ...(isDarkMode && {
-              color: "#5eead4",
-            }),
-          }}
-        >
-          {t("nav.logout")}
-        </Button>
       )}
 
       <SyncFeedbackSnackbar />
