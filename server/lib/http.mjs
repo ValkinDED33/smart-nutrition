@@ -103,7 +103,9 @@ export const sendNoContent = (response, statusCode = 204) => {
 
 export const sendError = (response, statusCode, code, message, details = undefined) => {
   sendJson(response, statusCode, {
+    success: false,
     code,
+    error: message,
     message,
     ...(details && typeof details === "object" ? details : {}),
   });

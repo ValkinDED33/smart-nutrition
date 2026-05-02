@@ -665,6 +665,11 @@ export const createServerConfig = (env = process.env) => {
       env.SMART_NUTRITION_DB_PATH,
       path.join(DATA_DIR, "smart-nutrition.sqlite")
     );
+  const backupDir =
+    normalizeRuntimePath(
+      env.SMART_NUTRITION_BACKUP_DIR,
+      path.join(DATA_DIR, "backups")
+    );
   const superAdminEmail = normalizeOptionalEmail(env.SMART_NUTRITION_SUPER_ADMIN_EMAIL);
   const productSubmissionDailyLimit = readPositiveInteger(
     env.SMART_NUTRITION_PRODUCT_SUBMISSION_DAILY_LIMIT,
@@ -808,7 +813,7 @@ export const createServerConfig = (env = process.env) => {
     jwtSecret,
     superAdminEmail,
     productSubmissionDailyLimit,
-    backupDir: path.join(DATA_DIR, "backups"),
+    backupDir,
     backupIntervalMs,
     maxBackupFilesPerUser,
     requestLimitWindowMs,

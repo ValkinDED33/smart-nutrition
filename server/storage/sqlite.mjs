@@ -1912,6 +1912,7 @@ export const createSqliteStorage = async ({
   maxBackupFilesPerUser,
 }) => {
   await fs.mkdir(dataDir, { recursive: true });
+  await fs.mkdir(path.dirname(sqlitePath), { recursive: true });
   await fs.mkdir(backupDir, { recursive: true });
 
   const database = new DatabaseSync(sqlitePath);
