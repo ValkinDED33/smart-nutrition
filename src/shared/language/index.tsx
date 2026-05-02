@@ -96,6 +96,8 @@ const uk = {
   "error.tooManyAttempts":
     "Забагато невдалих спроб. Спробуйте пізніше.",
   "error.sessionExpired": "Сесія завершилась. Увійдіть повторно.",
+  "error.backendUnavailable":
+    "Cloud backend недоступний. Перевірте адресу API або спробуйте ще раз пізніше.",
   "error.genericLogin": "Не вдалося виконати вхід.",
   "error.genericRegister": "Не вдалося завершити реєстрацію.",
   "error.genericProfile": "Не вдалося зберегти профіль.",
@@ -334,6 +336,8 @@ const pl: Record<keyof typeof uk, string> = {
   "error.tooManyAttempts":
     "Za dużo nieudanych prób. Spróbuj ponownie później.",
   "error.sessionExpired": "Sesja wygasła. Zaloguj się ponownie.",
+  "error.backendUnavailable":
+    "Backend cloud jest niedostępny. Sprawdź adres API albo spróbuj ponownie później.",
   "error.genericLogin": "Nie udało się zalogować.",
   "error.genericRegister": "Nie udało się zakończyć rejestracji.",
   "error.genericProfile": "Nie udało się zapisać profilu.",

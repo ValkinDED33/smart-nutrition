@@ -32,7 +32,8 @@ export class AuthApiError extends Error {
     | "TOO_MANY_ATTEMPTS"
     | "INVALID_RESET_TOKEN"
     | "EMAIL_DELIVERY_UNAVAILABLE"
-    | "WEAK_PASSWORD";
+    | "WEAK_PASSWORD"
+    | "BACKEND_UNAVAILABLE";
 
   constructor(code: AuthApiError["code"], message: string) {
     super(message);

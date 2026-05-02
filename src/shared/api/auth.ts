@@ -41,7 +41,10 @@ export type { RemoteSyncResult };
 export { AuthApiError };
 const assertRemoteBackendAvailable = async () => {
   if (!(await isRemoteAuthAvailable())) {
-    throw new Error("Secure backend is unavailable.");
+    throw new AuthApiError(
+      "BACKEND_UNAVAILABLE",
+      "Secure backend is unavailable."
+    );
   }
 };
 

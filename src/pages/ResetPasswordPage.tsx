@@ -117,6 +117,8 @@ const ResetPasswordPage = () => {
           setServerError(copy.invalidToken);
         } else if (error.code === "WEAK_PASSWORD") {
           setServerError(copy.weakPassword);
+        } else if (error.code === "BACKEND_UNAVAILABLE") {
+          setServerError(t("error.backendUnavailable"));
         } else {
           setServerError(error.message);
         }

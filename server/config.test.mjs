@@ -35,8 +35,32 @@ describe("createServerConfig", () => {
     expect(config.isProduction).toBe(true);
     expect(config.port).toBe(9090);
     expect(config.serveStatic).toBe(false);
+    expect(config.authCookieSameSite).toBe("None");
+    expect(config.authCookieSecure).toBe(true);
     expect(config.allowedCorsOrigins).toEqual(["https://app.smartnutrition.test"]);
     expect(config.warnings).toHaveLength(0);
+  });
+
+  it("allows explicit local cookie settings for local production-style containers", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: "Lax",
+      SMART_NUTRITION_AUTH_COOKIE_SECURE: "false",
+    });
+
+    expect(config.authCookieSameSite).toBe("Lax");
+    expect(config.authCookieSecure).toBe(false);
+  });
+
+  it("rejects SameSite=None cookies without Secure", () => {
+    expect(() =>
+      createServerConfig({
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: "None",
+        SMART_NUTRITION_AUTH_COOKIE_SECURE: "false",
+      })
+    ).toThrow(/SMART_NUTRITION_AUTH_COOKIE_SECURE/);
   });
 
   it("rejects partial assistant runtime configuration", () => {
