@@ -563,7 +563,7 @@ export const createServerConfig = (env = process.env) => {
   const isProduction = nodeEnv === "production";
 
   const port = readPositiveInteger(
-    env.SMART_NUTRITION_API_PORT,
+    env.SMART_NUTRITION_API_PORT ?? env.PORT,
     8787,
     "SMART_NUTRITION_API_PORT",
     errors
