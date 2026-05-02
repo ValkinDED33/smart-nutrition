@@ -41,6 +41,18 @@ describe("createServerConfig", () => {
     expect(config.warnings).toHaveLength(0);
   });
 
+  it("uses the platform PORT when SMART_NUTRITION_API_PORT is not set", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      PORT: "10000",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_SERVE_STATIC: "false",
+      SMART_NUTRITION_APP_BASE_URL: "https://app.smartnutrition.test",
+    });
+
+    expect(config.port).toBe(10000);
+  });
+
   it("allows explicit local cookie settings for local production-style containers", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
