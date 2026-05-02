@@ -315,9 +315,10 @@ export const createInitialProfileState = (userInput) => {
         date: new Date().toISOString(),
         weight: userInput.weight,
       },
-    ],
-    measurementHistory: [],
-    weeklyCheckIn: {
+      ],
+      measurementHistory: [],
+      progressPhotos: [],
+      weeklyCheckIn: {
       enabled: true,
       remindIntervalDays: 7,
       lastRecordedAt: null,
@@ -416,6 +417,14 @@ export const createInitialProfileState = (userInput) => {
       paidDayLastUsedAt: null,
       paidDayLastUsedMonth: null,
     },
+    premium: {
+      plan: "free",
+      status: "inactive",
+      startedAt: null,
+      trialEndsAt: null,
+      renewsAt: null,
+      cancelledAt: null,
+    },
     assistant: {
       name: "Nova",
       role: "assistant",
@@ -442,6 +451,21 @@ export const createInitialWaterState = () => ({
   glassSizeMl: 250,
   lastLoggedOn: new Date().toISOString().slice(0, 10),
   targetMode: "automatic",
+  history: [
+    {
+      date: new Date().toISOString().slice(0, 10),
+      consumedMl: 0,
+      targetMl: 2000,
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  reminders: {
+    enabled: false,
+    intervalMinutes: 120,
+    startTime: "09:00",
+    endTime: "21:00",
+    lastReminderAt: null,
+  },
 });
 
 export const createInitialFridgeState = () => ({
@@ -481,6 +505,20 @@ export const createInitialCommunityState = () => ({
       createdAt: "2026-04-25T18:34:00.000Z",
     },
   ],
+  roomMessages: [
+    {
+      id: "room-message-1",
+      authorName: "Marta",
+      text: "Сегодня делаю лёгкий ужин и держу воду по 250 мл чекпоинтами.",
+      createdAt: "2026-04-25T17:20:00.000Z",
+    },
+    {
+      id: "room-message-2",
+      authorName: "Coach Denis",
+      text: "Если вес стоит, сначала смотрим среднюю неделю, воду и точность логирования.",
+      createdAt: "2026-04-25T17:28:00.000Z",
+    },
+  ],
   posts: [
     {
       id: "post-1",
@@ -511,6 +549,35 @@ export const createInitialCommunityState = () => ({
       authorName: "Coach Denis",
       createdAt: "2026-04-23T09:00:00.000Z",
       likes: 18,
+    },
+  ],
+  comments: [
+    {
+      id: "comment-1",
+      postId: "post-1",
+      authorName: "Oleh",
+      text: "Добавил ягоды вместо банана, тоже отлично зашло.",
+      createdAt: "2026-04-25T09:05:00.000Z",
+    },
+  ],
+  progressCards: [
+    {
+      id: "progress-1",
+      authorName: "Anna",
+      metricLabel: "Weight",
+      metricValue: "-2.4 kg",
+      caption: "Три недели без жёстких запретов, просто стабильный белок и вода.",
+      createdAt: "2026-04-25T12:00:00.000Z",
+      likes: 16,
+    },
+    {
+      id: "progress-2",
+      authorName: "Marta",
+      metricLabel: "Water streak",
+      metricValue: "7 days",
+      caption: "250 мл стаканы наконец сделали привычку понятной.",
+      createdAt: "2026-04-24T18:40:00.000Z",
+      likes: 11,
     },
   ],
   favoritePostIds: ["post-1"],

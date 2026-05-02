@@ -29,6 +29,9 @@ import type {
   MotivationState,
   MotivationTask,
   MotivationTaskCategory,
+  PremiumPlanId,
+  PremiumSubscriptionState,
+  ProgressPhotoHistoryItem,
   ReminderTimes,
   WeeklyCheckInState,
 } from "../../shared/types/profile";
@@ -44,6 +47,7 @@ export interface ProfileState {
   goal: Goal;
   weightHistory: WeightHistoryItem[];
   measurementHistory: MeasurementHistoryItem[];
+  progressPhotos: ProgressPhotoHistoryItem[];
   weeklyCheckIn: WeeklyCheckInState;
   maintenanceCalories: number;
   adaptiveCalories: number | null;
@@ -60,6 +64,7 @@ export interface ProfileState {
   languagePreference: AppLanguage;
   motivation: MotivationState;
   assistant: AssistantCustomization;
+  premium: PremiumSubscriptionState;
 }
 
 interface ProfileTargetsPayload {
@@ -110,6 +115,18 @@ const isIsoDate = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0 && !Number.isNaN(Date.parse(value));
 const toNullableIsoDate = (value: unknown): string | null =>
   value === null ? null : isIsoDate(value) ? value : null;
+const isPremiumPlan = (value: unknown): value is PremiumPlanId =>
+  value === "free" || value === "pro" || value === "coach";
+const isPremiumStatus = (
+  value: unknown
+): value is PremiumSubscriptionState["status"] =>
+  value === "inactive" || value === "trial" || value === "active" || value === "cancelled";
+
+const addDaysIso = (date: Date, days: number) => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate.toISOString();
+};
 
 const normalizeStringArray = (value: unknown) =>
   Array.isArray(value)
@@ -153,6 +170,15 @@ const createDefaultWeeklyCheckInState = (): WeeklyCheckInState => ({
   lastRecordedAt: null,
 });
 
+const createDefaultPremiumSubscription = (): PremiumSubscriptionState => ({
+  plan: "free",
+  status: "inactive",
+  startedAt: null,
+  trialEndsAt: null,
+  renewsAt: null,
+  cancelledAt: null,
+});
+
 const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -170,11 +196,48 @@ const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] =
           : new Date().toISOString(),
       weight: toNumber(item.weight),
       waist: toNullableNumber(item.waist) ?? undefined,
+      abdomen: toNullableNumber(item.abdomen) ?? undefined,
       hip: toNullableNumber(item.hip) ?? undefined,
       chest: toNullableNumber(item.chest) ?? undefined,
     });
 
     return history;
+  }, []);
+};
+
+const normalizeProgressPhotos = (value: unknown): ProgressPhotoHistoryItem[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.reduce<ProgressPhotoHistoryItem[]>((photos, item, index) => {
+    if (!isRecord(item)) {
+      return photos;
+    }
+
+    const imageDataUrl =
+      typeof item.imageDataUrl === "string" && item.imageDataUrl.startsWith("data:image/")
+        ? item.imageDataUrl
+        : null;
+
+    if (!imageDataUrl) {
+      return photos;
+    }
+
+    photos.push({
+      id:
+        typeof item.id === "string" && item.id.trim().length > 0
+          ? item.id
+          : `progress-photo-${index}-${Date.now()}`,
+      date: isIsoDate(item.date) ? item.date : new Date().toISOString(),
+      imageDataUrl,
+      note:
+        typeof item.note === "string" && item.note.trim().length > 0
+          ? item.note.trim().slice(0, 160)
+          : undefined,
+    });
+
+    return photos;
   }, []);
 };
 
@@ -187,6 +250,26 @@ const normalizeWeeklyCheckIn = (value: unknown): WeeklyCheckInState => {
       typeof record.enabled === "boolean" ? record.enabled : fallback.enabled,
     remindIntervalDays: Math.max(toNumber(record.remindIntervalDays, 7), 1),
     lastRecordedAt: toNullableIsoDate(record.lastRecordedAt),
+  };
+};
+
+const normalizePremiumSubscription = (value: unknown): PremiumSubscriptionState => {
+  const fallback = createDefaultPremiumSubscription();
+  const record = isRecord(value) ? value : {};
+  const plan = isPremiumPlan(record.plan) ? record.plan : fallback.plan;
+  const status = isPremiumStatus(record.status) ? record.status : fallback.status;
+
+  if (plan === "free" && (status === "trial" || status === "active")) {
+    return fallback;
+  }
+
+  return {
+    plan,
+    status,
+    startedAt: toNullableIsoDate(record.startedAt),
+    trialEndsAt: toNullableIsoDate(record.trialEndsAt),
+    renewsAt: toNullableIsoDate(record.renewsAt),
+    cancelledAt: toNullableIsoDate(record.cancelledAt),
   };
 };
 
@@ -321,6 +404,7 @@ export const createInitialProfileState = (): ProfileState => ({
   goal: "maintain",
   weightHistory: [],
   measurementHistory: [],
+  progressPhotos: [],
   weeklyCheckIn: createDefaultWeeklyCheckInState(),
   maintenanceCalories: 0,
   adaptiveCalories: null,
@@ -331,6 +415,7 @@ export const createInitialProfileState = (): ProfileState => ({
   languagePreference: "uk",
   motivation: createDefaultMotivationState(),
   assistant: createDefaultAssistantCustomization(),
+  premium: createDefaultPremiumSubscription(),
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -345,6 +430,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     goal: isGoal(value.goal) ? value.goal : "maintain",
     weightHistory: normalizeWeightHistory(value.weightHistory),
     measurementHistory: normalizeMeasurementHistory(value.measurementHistory),
+    progressPhotos: normalizeProgressPhotos(value.progressPhotos),
     weeklyCheckIn: normalizeWeeklyCheckIn(value.weeklyCheckIn),
     maintenanceCalories: toNumber(value.maintenanceCalories),
     adaptiveCalories: toNullableNumber(value.adaptiveCalories),
@@ -375,6 +461,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
       isGoal(value.goal) ? value.goal : "maintain"
     ),
     assistant: normalizeAssistantCustomization(value.assistant),
+    premium: normalizePremiumSubscription(value.premium),
   };
 };
 
@@ -421,6 +508,7 @@ const profileSlice = createSlice({
       action: PayloadAction<{
         weight: number;
         waist?: number;
+        abdomen?: number;
         hip?: number;
         chest?: number;
         recordedAt?: string;
@@ -436,10 +524,45 @@ const profileSlice = createSlice({
         date: recordedAt,
         weight: action.payload.weight,
         waist: action.payload.waist,
+        abdomen: action.payload.abdomen,
         hip: action.payload.hip,
         chest: action.payload.chest,
       });
       state.weeklyCheckIn.lastRecordedAt = recordedAt;
+    },
+
+    addProgressPhoto(
+      state,
+      action: PayloadAction<{
+        imageDataUrl: string;
+        note?: string;
+        recordedAt?: string;
+      }>
+    ) {
+      if (!action.payload.imageDataUrl.startsWith("data:image/")) {
+        return;
+      }
+
+      const id =
+        globalThis.crypto?.randomUUID?.() ??
+        `progress-photo-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      state.progressPhotos.unshift({
+        id,
+        date: action.payload.recordedAt ?? new Date().toISOString(),
+        imageDataUrl: action.payload.imageDataUrl,
+        note:
+          action.payload.note && action.payload.note.trim().length > 0
+            ? action.payload.note.trim().slice(0, 160)
+            : undefined,
+      });
+      state.progressPhotos = state.progressPhotos.slice(0, 12);
+    },
+
+    removeProgressPhoto(state, action: PayloadAction<string>) {
+      state.progressPhotos = state.progressPhotos.filter(
+        (photo) => photo.id !== action.payload
+      );
     },
 
     applyProfileTargets(state, action: PayloadAction<ProfileTargetsPayload>) {
@@ -555,6 +678,60 @@ const profileSlice = createSlice({
       state.motivation = applyPaidDayState(state.motivation, cost, usedAt);
     },
 
+    startPremiumTrial(state, action: PayloadAction<{ startedAt?: string } | undefined>) {
+      const startedAt = action.payload?.startedAt ?? new Date().toISOString();
+      const startDate = new Date(startedAt);
+      const safeStartDate = Number.isNaN(startDate.getTime()) ? new Date() : startDate;
+
+      state.premium = {
+        plan: "pro",
+        status: "trial",
+        startedAt: safeStartDate.toISOString(),
+        trialEndsAt: addDaysIso(safeStartDate, 7),
+        renewsAt: addDaysIso(safeStartDate, 7),
+        cancelledAt: null,
+      };
+    },
+
+    activatePremiumPlan(
+      state,
+      action: PayloadAction<{
+        plan: Exclude<PremiumPlanId, "free">;
+        activatedAt?: string;
+      }>
+    ) {
+      const activatedAt = action.payload.activatedAt ?? new Date().toISOString();
+      const startDate = new Date(activatedAt);
+      const safeStartDate = Number.isNaN(startDate.getTime()) ? new Date() : startDate;
+
+      state.premium = {
+        plan: action.payload.plan,
+        status: "active",
+        startedAt: safeStartDate.toISOString(),
+        trialEndsAt: null,
+        renewsAt: addDaysIso(safeStartDate, 30),
+        cancelledAt: null,
+      };
+    },
+
+    cancelPremiumSubscription(
+      state,
+      action: PayloadAction<{ cancelledAt?: string } | undefined>
+    ) {
+      const cancelledAt = action.payload?.cancelledAt ?? new Date().toISOString();
+      const cancelDate = new Date(cancelledAt);
+      const safeCancelDate = Number.isNaN(cancelDate.getTime()) ? new Date() : cancelDate;
+
+      state.premium = {
+        plan: "free",
+        status: "cancelled",
+        startedAt: state.premium.startedAt,
+        trialEndsAt: null,
+        renewsAt: null,
+        cancelledAt: safeCancelDate.toISOString(),
+      };
+    },
+
     resetMotivationProgress(state) {
       state.motivation = resetMotivationState(state.goal);
     },
@@ -564,6 +741,7 @@ const profileSlice = createSlice({
       state.goal = "maintain";
       state.weightHistory = [];
       state.measurementHistory = [];
+      state.progressPhotos = [];
       state.weeklyCheckIn = createDefaultWeeklyCheckInState();
       state.maintenanceCalories = 0;
       state.adaptiveCalories = null;
@@ -580,6 +758,7 @@ const profileSlice = createSlice({
       state.languagePreference = "uk";
       state.motivation = createDefaultMotivationState();
       state.assistant = createDefaultAssistantCustomization();
+      state.premium = createDefaultPremiumSubscription();
     },
   },
 });
@@ -592,6 +771,8 @@ export const {
   setGoal,
   updateWeight,
   recordMeasurementCheckIn,
+  addProgressPhoto,
+  removeProgressPhoto,
   applyProfileTargets,
   updateNotificationPreferences,
   setProfileLanguage,
@@ -600,6 +781,9 @@ export const {
   completeMotivationTask,
   activateWeeklyDayOff,
   buyMonthlyDayOff,
+  startPremiumTrial,
+  activatePremiumPlan,
+  cancelPremiumSubscription,
   resetMotivationProgress,
   resetProfile,
 } = profileSlice.actions;

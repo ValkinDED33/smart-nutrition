@@ -10,6 +10,8 @@ export type AdaptiveMode = "automatic" | "manual";
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused";
 export type MotivationTaskCategory = "nutrition" | "consistency" | "reflection";
+export type PremiumPlanId = "free" | "pro" | "coach";
+export type PremiumStatus = "inactive" | "trial" | "active" | "cancelled";
 
 export interface MacroTargets {
   protein: number;
@@ -51,14 +53,31 @@ export interface MeasurementHistoryItem {
   date: string;
   weight: number;
   waist?: number;
+  abdomen?: number;
   hip?: number;
   chest?: number;
+}
+
+export interface ProgressPhotoHistoryItem {
+  id: string;
+  date: string;
+  imageDataUrl: string;
+  note?: string;
 }
 
 export interface WeeklyCheckInState {
   enabled: boolean;
   remindIntervalDays: number;
   lastRecordedAt: string | null;
+}
+
+export interface PremiumSubscriptionState {
+  plan: PremiumPlanId;
+  status: PremiumStatus;
+  startedAt: string | null;
+  trialEndsAt: string | null;
+  renewsAt: string | null;
+  cancelledAt: string | null;
 }
 
 export interface MotivationTask {

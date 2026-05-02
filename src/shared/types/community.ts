@@ -17,6 +17,21 @@ export interface CommunityMessage {
   createdAt: string;
 }
 
+export interface CommunityRoomMessage {
+  id: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface CommunityPostComment {
+  id: string;
+  postId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface CommunityPost {
   id: string;
   type: CommunityPostType;
@@ -24,6 +39,16 @@ export interface CommunityPost {
   body: string;
   ingredients: string[];
   authorName: string;
+  createdAt: string;
+  likes: number;
+}
+
+export interface CommunityProgressCard {
+  id: string;
+  authorName: string;
+  metricLabel: string;
+  metricValue: string;
+  caption: string;
   createdAt: string;
   likes: number;
 }

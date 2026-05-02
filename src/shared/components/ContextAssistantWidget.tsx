@@ -6,6 +6,7 @@ import type { RootState } from "../../app/store";
 import { AssistantRuntimeCard } from "../../features/assistant/AssistantRuntimeCard";
 import { detectWeightPlateau, getDaysSince } from "../lib/bodyMetrics";
 import { useLanguage } from "../language";
+import { AssistantAvatar } from "./AssistantAvatar";
 
 const widgetCopy = {
   uk: {
@@ -216,14 +217,11 @@ export const ContextAssistantWidget = () => {
             border: "none",
             borderRadius: "50%",
             cursor: "pointer",
-            color: "white",
-            fontWeight: 900,
-            fontSize: 24,
-            background: "linear-gradient(135deg, #0f766e 0%, #2563eb 100%)",
-            boxShadow: "0 18px 36px rgba(15, 118, 110, 0.28)",
+            p: 0,
+            background: "transparent",
           }}
         >
-          {profile.assistant.name[0]}
+          <AssistantAvatar name={profile.assistant.name} />
         </Box>
       </Box>
 
@@ -251,12 +249,17 @@ export const ContextAssistantWidget = () => {
               alignItems={{ xs: "flex-start", sm: "center" }}
             >
               <Stack spacing={0.4}>
-                <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                  {copy.drawerTitle}
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                  {profile.assistant.name}
-                </Typography>
+                <Stack direction="row" spacing={1.2} alignItems="center">
+                  <AssistantAvatar name={profile.assistant.name} size={48} />
+                  <Stack spacing={0.2}>
+                    <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                      {copy.drawerTitle}
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                      {profile.assistant.name}
+                    </Typography>
+                  </Stack>
+                </Stack>
                 <Typography color="text.secondary">{copy.drawerSubtitle}</Typography>
               </Stack>
 

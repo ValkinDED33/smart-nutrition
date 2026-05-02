@@ -3,9 +3,12 @@ import { callAiProvider } from "./providers/index.mjs";
 import { normalizeText } from "./ai.shared.mjs";
 
 const assistantFollowUps = {
-  day_status: ["protein_help", "coach_focus"],
-  protein_help: ["day_status", "coach_focus"],
-  coach_focus: ["protein_help", "motivation_focus"],
+  day_status: ["protein_help", "water_help"],
+  protein_help: ["next_meal", "day_status"],
+  water_help: ["day_status", "weight_help"],
+  weight_help: ["coach_focus", "water_help"],
+  next_meal: ["protein_help", "day_status"],
+  coach_focus: ["protein_help", "weight_help"],
   motivation_focus: ["coach_focus", "day_status"],
 };
 
@@ -19,6 +22,9 @@ const toFiniteNumber = (value, fallback = 0) => {
 const normalizeQuickQuestionId = (value) =>
   value === "day_status" ||
   value === "protein_help" ||
+  value === "water_help" ||
+  value === "weight_help" ||
+  value === "next_meal" ||
   value === "coach_focus" ||
   value === "motivation_focus"
     ? value
@@ -54,6 +60,11 @@ const normalizeContext = (payload, currentUser) => {
     fatConsumed: toFiniteNumber(record.fatConsumed),
     carbsConsumed: toFiniteNumber(record.carbsConsumed),
     mealEntriesToday: Math.max(Math.round(toFiniteNumber(record.mealEntriesToday)), 0),
+    waterConsumedMl: Math.max(Math.round(toFiniteNumber(record.waterConsumedMl)), 0),
+    waterTargetMl: Math.max(Math.round(toFiniteNumber(record.waterTargetMl)), 0),
+    latestWeight: toFiniteNumber(record.latestWeight, currentUser.weight ?? 0),
+    weightChangeKg: toFiniteNumber(record.weightChangeKg),
+    weeklyCheckInDue: Boolean(record.weeklyCheckInDue),
     assistantName: normalizeText(record.assistantName, {
       maxLength: 40,
       fallback: "Nova",
@@ -77,10 +88,13 @@ const normalizeContext = (payload, currentUser) => {
       daysLogged: Math.max(Math.round(toFiniteNumber(coach.daysLogged)), 0),
       averageCalories: toFiniteNumber(coach.averageCalories),
       averageProtein: toFiniteNumber(coach.averageProtein),
+      averageWater: toFiniteNumber(coach.averageWater),
       averageFiber: toFiniteNumber(coach.averageFiber),
       averageMeals: toFiniteNumber(coach.averageMeals),
+      breakfastSkippedDays: Math.max(Math.round(toFiniteNumber(coach.breakfastSkippedDays)), 0),
       calorieTarget: toFiniteNumber(coach.calorieTarget),
       proteinTarget: toFiniteNumber(coach.proteinTarget),
+      waterTarget: toFiniteNumber(coach.waterTarget),
       fiberTarget: toFiniteNumber(coach.fiberTarget),
       weightChange: toFiniteNumber(coach.weightChange),
     },
@@ -461,7 +475,7 @@ export const createAiService = ({ aiRepository, config }) => {
         providerLabel: aiReply.provider.label,
         followUpQuestionIds: quickQuestionId
           ? assistantFollowUps[quickQuestionId]
-          : ["day_status", "protein_help", "coach_focus"],
+          : ["day_status", "protein_help", "water_help"],
       };
     },
   };

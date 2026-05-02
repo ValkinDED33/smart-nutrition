@@ -253,6 +253,10 @@ const renderArtwork = (kind: ArtworkKind, palette: Palette) => {
 };
 
 export const getProductArtwork = (product: Product) => {
+  if (product.imageUrl?.trim()) {
+    return product.imageUrl.trim();
+  }
+
   const palette = pickPalette(product);
   const kind = pickArtworkKind(product);
   const label = escapeXml(product.name.slice(0, 22));

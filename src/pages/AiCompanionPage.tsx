@@ -4,6 +4,7 @@ import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
 import type { RootState } from "../app/store";
 import { getAssistantRuntimeStatus } from "../shared/api/assistant";
+import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
 import type { AssistantRuntimeStatus } from "../shared/types/assistant";
 
@@ -25,8 +26,8 @@ const aiCopy = {
     featuresTitle: "Що він вміє",
     features: [
       "рада по калоріях, білку і наступному прийому їжі",
-      "пояснення BMI, plateau і weekly check-in",
-      "контекстні підказки по воді, замірах і дисципліні",
+      "підказки по воді, вазі, BMI, plateau і weekly check-in",
+      "щоденні мотиваційні повідомлення та історія діалогу",
     ],
     primary: "Основний",
     backup: "Резерв",
@@ -48,8 +49,8 @@ const aiCopy = {
     featuresTitle: "Co potrafi",
     features: [
       "rada dotycząca kalorii, białka i kolejnego posiłku",
-      "wyjaśnienie BMI, plateau i weekly check-in",
-      "kontekstowe podpowiedzi o wodzie, pomiarach i dyscyplinie",
+      "podpowiedzi o wodzie, wadze, BMI, plateau i weekly check-in",
+      "codzienne wiadomości motywacyjne i historia rozmowy",
     ],
     primary: "Główny",
     backup: "Zapasowy",
@@ -91,18 +92,21 @@ const AiCompanionPage = () => {
             "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(15,118,110,0.92) 100%)",
         }}
       >
-        <Stack spacing={1.2}>
-          <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
-            {assistant.name}
-          </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 900 }}>
-            {copy.title}
-          </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.84)" }}>{copy.subtitle}</Typography>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={assistant.role} />
-            <Chip label={assistant.tone} />
-            <Chip label={copy.assistantSettings} />
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
+          <AssistantAvatar name={assistant.name} size={76} />
+          <Stack spacing={1.2}>
+            <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
+              {assistant.name}
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: 900 }}>
+              {copy.title}
+            </Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.84)" }}>{copy.subtitle}</Typography>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Chip label={assistant.role} />
+              <Chip label={assistant.tone} />
+              <Chip label={copy.assistantSettings} />
+            </Stack>
           </Stack>
         </Stack>
       </Paper>

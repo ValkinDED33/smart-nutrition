@@ -29,6 +29,7 @@ export interface User {
   twoFactorRequired?: boolean;
   measurements?: {
     waist?: number;
+    abdomen?: number;
     hip?: number;
     chest?: number;
   };

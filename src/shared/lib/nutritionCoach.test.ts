@@ -104,4 +104,34 @@ describe("generateNutritionCoachAnalysis", () => {
 
     expect(analysis.insights.map((insight) => insight.code)).toContain("calories_high");
   });
+
+  it("flags low water and skipped breakfast patterns", () => {
+    const items = Array.from({ length: 4 }, (_, index) => [
+      createEntry({ daysAgo: index, mealType: "lunch", calories: 700, protein: 42, fiber: 8 }),
+      createEntry({ daysAgo: index, mealType: "dinner", calories: 750, protein: 44, fiber: 8 }),
+    ]).flat();
+    const waterHistory = Array.from({ length: 4 }, (_, index) => {
+      const date = addDays(new Date(), -index).toISOString().slice(0, 10);
+
+      return {
+        date,
+        consumedMl: 900,
+        targetMl: 2200,
+      };
+    });
+
+    const analysis = generateNutritionCoachAnalysis({
+      items,
+      dailyCalories: 2100,
+      goal: "maintain",
+      dietStyle: "balanced",
+      weight: 75,
+      weightHistory: [],
+      waterHistory,
+    });
+
+    expect(analysis.insights.map((insight) => insight.code)).toContain("water_low");
+    expect(analysis.insights.map((insight) => insight.code)).toContain("breakfast_skipped");
+    expect(analysis.breakfastSkippedDays).toBe(4);
+  });
 });

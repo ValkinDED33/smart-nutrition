@@ -29,11 +29,13 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_ACCESS_TTL_MS: "900000",
       SMART_NUTRITION_REFRESH_TTL_MS: "604800000",
       SMART_NUTRITION_SERVE_STATIC: "false",
+      SMART_NUTRITION_APP_BASE_URL: "https://app.smartnutrition.test",
     });
 
     expect(config.isProduction).toBe(true);
     expect(config.port).toBe(9090);
     expect(config.serveStatic).toBe(false);
+    expect(config.allowedCorsOrigins).toEqual(["https://app.smartnutrition.test"]);
     expect(config.warnings).toHaveLength(0);
   });
 
@@ -156,5 +158,19 @@ describe("createServerConfig", () => {
       path.join(config.projectRoot, "server", "data", "smart-nutrition.sqlite")
     );
     expect(config.staticDir).toBe(path.join(config.projectRoot, "dist"));
+  });
+
+  it("accepts an explicit CORS allowlist", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_APP_BASE_URL: "https://app.smartnutrition.test",
+      SMART_NUTRITION_CORS_ORIGINS:
+        "https://app.smartnutrition.test, https://admin.smartnutrition.test",
+    });
+
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://app.smartnutrition.test",
+      "https://admin.smartnutrition.test",
+    ]);
   });
 });

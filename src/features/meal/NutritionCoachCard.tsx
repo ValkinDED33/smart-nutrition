@@ -22,8 +22,10 @@ const coachCopy = {
       daysLogged: "Днів із логами",
       avgCalories: "Сер. калорії",
       avgProtein: "Сер. білок",
+      avgWater: "Сер. вода",
       avgFiber: "Сер. клітковина",
       meals: "Сер. прийоми їжі",
+      skippedBreakfast: "Пропущені сніданки",
     },
     status: {
       strong: "Тиждень сильний",
@@ -42,6 +44,18 @@ const coachCopy = {
         detail: (analysis: NutritionCoachAnalysis) =>
           `У середньому ${analysis.averageProtein.toFixed(0)} г білка при цілі ${analysis.proteinTarget.toFixed(0)} г.`,
         action: "Додайте ще один чіткий білковий прийом їжі або перекус щодня.",
+      },
+      water_low: {
+        title: "Води замало для стабільного дня",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `У середньому ${analysis.averageWater.toFixed(0)} мл при цілі ${analysis.waterTarget.toFixed(0)} мл.`,
+        action: "Поставте 2-3 контрольні порції води до вечора і закривайте їх у трекері.",
+      },
+      breakfast_skipped: {
+        title: "Сніданок часто пропущений",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `За останні 7 днів сніданок пропущено ${analysis.breakfastSkippedDays} раз(и) у днях із логами.`,
+        action: "Підготуйте простий перший прийом із білком, щоб не наздоганяти день ввечері.",
       },
       fiber_low: {
         title: "Клітковина просідає",
@@ -92,8 +106,10 @@ const coachCopy = {
       daysLogged: "Dni z logami",
       avgCalories: "Śr. kalorie",
       avgProtein: "Śr. białko",
+      avgWater: "Śr. woda",
       avgFiber: "Śr. błonnik",
       meals: "Śr. posiłki",
+      skippedBreakfast: "Pominięte śniadania",
     },
     status: {
       strong: "Mocny tydzień",
@@ -112,6 +128,18 @@ const coachCopy = {
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnio ${analysis.averageProtein.toFixed(0)} g białka przy celu ${analysis.proteinTarget.toFixed(0)} g.`,
         action: "Dodaj jeden wyraźnie białkowy posiłek albo przekąskę każdego dnia.",
+      },
+      water_low: {
+        title: "Wody jest za mało dla stabilnego dnia",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Średnio ${analysis.averageWater.toFixed(0)} ml przy celu ${analysis.waterTarget.toFixed(0)} ml.`,
+        action: "Ustaw 2-3 kontrolne porcje wody do wieczora i domykaj je w trackerze.",
+      },
+      breakfast_skipped: {
+        title: "Śniadanie często wypada",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `W ostatnich 7 dniach śniadanie pominięto ${analysis.breakfastSkippedDays} razy w dniach z logami.`,
+        action: "Przygotuj prosty pierwszy posiłek z białkiem, żeby nie nadrabiać dnia wieczorem.",
       },
       fiber_low: {
         title: "Błonnik wypada zbyt nisko",
@@ -180,6 +208,7 @@ export const NutritionCoachCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const items = useSelector(selectMealItems);
   const profile = useSelector((state: RootState) => state.profile);
+  const waterHistory = useSelector((state: RootState) => state.water.history);
   const { language } = useLanguage();
 
   if (!user) {
@@ -194,6 +223,7 @@ export const NutritionCoachCard = () => {
     dietStyle: profile.dietStyle,
     weight: user.weight,
     weightHistory: profile.weightHistory,
+    waterHistory,
   });
 
   const primaryInsight = analysis.insights[0] ?? {
@@ -238,7 +268,13 @@ export const NutritionCoachCard = () => {
           <Chip label={`${copy.stats.daysLogged}: ${analysis.daysLogged}/7`} />
           <Chip label={`${copy.stats.avgCalories}: ${analysis.averageCalories.toFixed(0)} kcal`} />
           <Chip label={`${copy.stats.avgProtein}: ${analysis.averageProtein.toFixed(0)} g`} />
+          {analysis.waterTarget > 0 && (
+            <Chip label={`${copy.stats.avgWater}: ${analysis.averageWater.toFixed(0)} ml`} />
+          )}
           <Chip label={`${copy.stats.avgFiber}: ${analysis.averageFiber.toFixed(0)} g`} />
+          {analysis.breakfastSkippedDays > 0 && (
+            <Chip label={`${copy.stats.skippedBreakfast}: ${analysis.breakfastSkippedDays}`} />
+          )}
         </Stack>
 
         <Paper
@@ -302,7 +338,8 @@ export const NutritionCoachCard = () => {
           {copy.stats.daysLogged}: {analysis.daysLogged}/7 | {copy.stats.avgCalories}:{" "}
           {analysis.averageCalories.toFixed(0)} kcal | {copy.stats.avgProtein}:{" "}
           {analysis.averageProtein.toFixed(0)} g | {copy.stats.avgFiber}:{" "}
-          {analysis.averageFiber.toFixed(0)} g | {copy.stats.meals}:{" "}
+          {analysis.averageFiber.toFixed(0)} g | {copy.stats.avgWater}:{" "}
+          {analysis.averageWater.toFixed(0)} ml | {copy.stats.meals}:{" "}
           {formatAverageMeals(analysis.averageMeals)}
         </Typography>
       </Stack>

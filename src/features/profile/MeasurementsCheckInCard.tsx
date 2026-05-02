@@ -24,6 +24,7 @@ import { recordMeasurementCheckIn } from "./profileSlice";
 type FormData = {
   weight: number;
   waist?: number;
+  abdomen?: number;
   hip?: number;
   chest?: number;
 };
@@ -39,6 +40,7 @@ const checkInCopy = {
     submit: "Зберегти check-in",
     saving: "Зберігаю...",
     waist: "Талія (см)",
+    abdomen: "Живіт (см)",
     hip: "Стегна (см)",
     chest: "Груди (см)",
     history: "Останні записи",
@@ -56,6 +58,7 @@ const checkInCopy = {
     submit: "Zapisz check-in",
     saving: "Zapisuję...",
     waist: "Talia (cm)",
+    abdomen: "Brzuch (cm)",
     hip: "Biodra (cm)",
     chest: "Klatka (cm)",
     history: "Ostatnie wpisy",
@@ -82,6 +85,7 @@ export const MeasurementsCheckInCard = () => {
       z.object({
         weight: z.number().min(30, t("validation.weightMin")),
         waist: z.number().min(30).max(250).optional(),
+        abdomen: z.number().min(30).max(250).optional(),
         hip: z.number().min(30).max(250).optional(),
         chest: z.number().min(30).max(250).optional(),
       }),
@@ -97,6 +101,7 @@ export const MeasurementsCheckInCard = () => {
     defaultValues: {
       weight: user?.weight ?? 70,
       waist: user?.measurements?.waist,
+      abdomen: user?.measurements?.abdomen,
       hip: user?.measurements?.hip,
       chest: user?.measurements?.chest,
     },
@@ -124,6 +129,7 @@ export const MeasurementsCheckInCard = () => {
         weight: data.weight,
         measurements: {
           waist: data.waist,
+          abdomen: data.abdomen,
           hip: data.hip,
           chest: data.chest,
         },
@@ -134,6 +140,7 @@ export const MeasurementsCheckInCard = () => {
         recordMeasurementCheckIn({
           weight: data.weight,
           waist: data.waist,
+          abdomen: data.abdomen,
           hip: data.hip,
           chest: data.chest,
         })
@@ -207,6 +214,16 @@ export const MeasurementsCheckInCard = () => {
               error={Boolean(errors.waist)}
               helperText={errors.waist?.message}
             />
+            <TextField
+              type="number"
+              fullWidth
+              label={copy.abdomen}
+              {...register("abdomen", {
+                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+              })}
+              error={Boolean(errors.abdomen)}
+              helperText={errors.abdomen?.message}
+            />
           </Stack>
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
@@ -275,6 +292,7 @@ export const MeasurementsCheckInCard = () => {
                     <Typography color="text.secondary" variant="body2">
                       {[
                         entry.waist ? `${copy.waist}: ${entry.waist}` : null,
+                        entry.abdomen ? `${copy.abdomen}: ${entry.abdomen}` : null,
                         entry.hip ? `${copy.hip}: ${entry.hip}` : null,
                         entry.chest ? `${copy.chest}: ${entry.chest}` : null,
                       ]

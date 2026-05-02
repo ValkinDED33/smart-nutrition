@@ -16,6 +16,10 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
 import { productMatchesPreferences } from "../../shared/lib/preferences";
+import {
+  formatProductPortion,
+  getProductPortionPresets,
+} from "../../shared/lib/productPortions";
 
 interface Props {
   mealType: MealType;
@@ -138,59 +142,86 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
-        {normalizedRows.map((row, index) => (
-          <Stack
-            key={row.id}
-            direction={{ xs: "column", md: "row" }}
-            spacing={1.5}
-            alignItems={{ xs: "stretch", md: "center" }}
-          >
-            <TextField
-              select
-              fullWidth
-              label={`${t("composer.ingredient")} ${index + 1}`}
-              value={row.productId}
-              onChange={(event) =>
-                updateRow(row.id, { productId: event.target.value })
-              }
-            >
-              {availableProducts.map((product) => {
-                const isFavorited = favorites.has(
-                  product.barcode?.trim() ||
-                  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
-                );
-                return (
-                  <MenuItem key={product.id} value={product.id}>
-                    {isFavorited ? "⭐ " : ""}
-                    {getProductDisplayName(product, language)}
-                  </MenuItem>
-                );
-              })}
-            </TextField>
+        {normalizedRows.map((row, index) => {
+          const selectedProduct = availableProducts.find(
+            (product) => product.id === row.productId
+          );
+          const portionPresets = getProductPortionPresets(selectedProduct?.unit ?? "g");
 
-            <TextField
-              type="number"
-              label={t("composer.quantity")}
-              value={row.quantity}
-              onChange={(event) => {
-                const value = event.target.value;
-                updateRow(row.id, {
-                  quantity: value === "" ? "" : Math.max(0, Number(value)),
-                });
-              }}
-              sx={{ minWidth: { md: 160 } }}
-            />
-
-            <Button
-              color="error"
-              onClick={() => removeRow(row.id)}
-              disabled={rows.length === 1}
-              sx={{ alignSelf: { xs: "flex-end", md: "center" } }}
+          return (
+            <Stack
+              key={row.id}
+              direction={{ xs: "column", md: "row" }}
+              spacing={1.5}
+              alignItems={{ xs: "stretch", md: "center" }}
             >
-              {t("composer.remove")}
-            </Button>
-          </Stack>
-        ))}
+              <TextField
+                select
+                fullWidth
+                label={`${t("composer.ingredient")} ${index + 1}`}
+                value={row.productId}
+                onChange={(event) =>
+                  updateRow(row.id, { productId: event.target.value })
+                }
+              >
+                {availableProducts.map((product) => {
+                  const isFavorited = favorites.has(
+                    product.barcode?.trim() ||
+                    `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
+                  );
+                  return (
+                    <MenuItem key={product.id} value={product.id}>
+                      {isFavorited ? "⭐ " : ""}
+                      {getProductDisplayName(product, language)}
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
+
+              <TextField
+                type="number"
+                label={t("composer.quantity")}
+                value={row.quantity}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  updateRow(row.id, {
+                    quantity: value === "" ? "" : Math.max(0, Number(value)),
+                  });
+                }}
+                sx={{ minWidth: { md: 140 } }}
+              />
+
+              <Stack
+                direction="row"
+                spacing={0.75}
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ minWidth: { md: 220 } }}
+              >
+                {portionPresets.map((preset) => (
+                  <Button
+                    key={preset}
+                    size="small"
+                    variant={row.quantity === preset ? "contained" : "outlined"}
+                    onClick={() => updateRow(row.id, { quantity: preset })}
+                    sx={{ minWidth: 48 }}
+                  >
+                    {formatProductPortion(preset, selectedProduct?.unit ?? "g")}
+                  </Button>
+                ))}
+              </Stack>
+
+              <Button
+                color="error"
+                onClick={() => removeRow(row.id)}
+                disabled={rows.length === 1}
+                sx={{ alignSelf: { xs: "flex-end", md: "center" } }}
+              >
+                {t("composer.remove")}
+              </Button>
+            </Stack>
+          );
+        })}
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <Button variant="outlined" onClick={addRow}>

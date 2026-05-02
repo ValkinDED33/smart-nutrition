@@ -7,6 +7,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { persistor, store } from "./app/store";
 import { LanguageProvider } from "./shared/language";
 import { initializeClientPersistence } from "./shared/lib/clientPersistence";
+import { AppThemeProvider } from "./shared/theme/AppThemeProvider";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
@@ -17,9 +18,11 @@ root.render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate persistor={persistor}>
-        <LanguageProvider>
-          <App />
-        </LanguageProvider>
+        <AppThemeProvider>
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
+        </AppThemeProvider>
       </PersistGate>
     </Provider>
   </StrictMode>

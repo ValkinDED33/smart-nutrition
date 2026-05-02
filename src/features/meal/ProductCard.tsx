@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Collapse,
   Divider,
   Stack,
@@ -20,6 +21,14 @@ import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
 import { getProductArtwork } from "../../shared/lib/productArtwork";
 import { ProductNutritionFacts } from "./ProductNutritionFacts";
+import {
+  getProductCategoryKey,
+  getProductCategoryLabel,
+} from "../../shared/lib/productCategory";
+import {
+  formatProductPortion,
+  getProductPortionPresets,
+} from "../../shared/lib/productPortions";
 
 interface Props {
   product: Product;
@@ -44,6 +53,9 @@ export const ProductCard = ({
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
   const { t, language } = useLanguage();
   const displayName = getProductDisplayName(product, language);
+  const categoryKey = getProductCategoryKey(product);
+  const categoryLabel = getProductCategoryLabel(categoryKey, language);
+  const portionPresets = getProductPortionPresets(product.unit);
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
 
@@ -109,6 +121,12 @@ export const ProductCard = ({
             {isSaved && <Typography sx={{ fontSize: "1.2rem" }}>⭐</Typography>}
           </Stack>
 
+          <Chip
+            label={categoryLabel}
+            size="small"
+            sx={{ alignSelf: "flex-start", fontWeight: 700 }}
+          />
+
           {(product.brand || product.source) && (
             <Typography variant="body2" color="text.secondary">
               {[product.brand, product.source].filter(Boolean).join(" / ")}
@@ -136,6 +154,25 @@ export const ProductCard = ({
             onChange={(event) => setQty(event.target.value)}
             inputProps={{ min: 1, step: product.unit === "piece" ? 1 : 0.1 }}
           />
+
+          <Stack spacing={0.8}>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {t("productCard.quickPortions")}
+            </Typography>
+            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+              {portionPresets.map((preset) => (
+                <Button
+                  key={preset}
+                  size="small"
+                  variant={parsedQuantity === preset ? "contained" : "outlined"}
+                  onClick={() => setQty(String(preset))}
+                  sx={{ minWidth: 54 }}
+                >
+                  {formatProductPortion(preset, product.unit)}
+                </Button>
+              ))}
+            </Stack>
+          </Stack>
 
           <Box
             sx={{

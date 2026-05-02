@@ -4,9 +4,11 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Paper,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -113,7 +115,11 @@ const photoCopy = {
     manualReview: "Потрібна ручна перевірка",
     macros: "Орієнтовні макро за фото",
     suggestions: "Що додамо в щоденник",
+    selected: "Обрано",
+    itemName: "Назва",
+    itemGrams: "Грами",
     empty: "Підказки не сформувалися. Скористайтеся ручним додаванням нижче.",
+    nothingSelected: "Оберіть хоча б один пункт із чернетки.",
     addDraft: "Додати всі підказки",
     added: "Чернетку додано до щоденника.",
     itemCalories: "{value} ккал",
@@ -145,7 +151,11 @@ const photoCopy = {
     manualReview: "Wymaga ręcznego sprawdzenia",
     macros: "Szacowane makro ze zdjęcia",
     suggestions: "Co trafi do dziennika",
+    selected: "Wybrane",
+    itemName: "Nazwa",
+    itemGrams: "Gramy",
     empty: "Nie udało się zbudować podpowiedzi. Skorzystaj z ręcznego dodawania poniżej.",
+    nothingSelected: "Wybierz przynajmniej jedną pozycję ze szkicu.",
     addDraft: "Dodaj wszystkie podpowiedzi",
     added: "Szkic został dodany do dziennika.",
     itemCalories: "{value} kcal",
@@ -171,6 +181,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
   const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");
   const [analysisMode, setAnalysisMode] = useState<"cloud" | "local-draft" | null>(null);
+  const [selectedItemIndexes, setSelectedItemIndexes] = useState<number[]>([]);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -224,6 +235,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
         setPortionSize("regular");
         setAnalysis(nextAnalysis);
+        setSelectedItemIndexes(nextAnalysis.items.map((_, index) => index));
         setAnalysisMode(nextMode);
       } catch {
         setError(copy.analysisError);
@@ -244,12 +256,61 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setPortionSize(value);
   };
 
+  const handleToggleSuggestion = (index: number) => {
+    setSelectedItemIndexes((current) =>
+      current.includes(index)
+        ? current.filter((item) => item !== index)
+        : [...current, index].sort((left, right) => left - right)
+    );
+  };
+
+  const handleSuggestionChange = (
+    index: number,
+    update: Partial<Pick<PhotoMealSuggestion, "name" | "quantityGrams">>
+  ) => {
+    if (!analysis) {
+      return;
+    }
+
+    setAnalysis({
+      ...analysis,
+      items: analysis.items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              ...update,
+              quantityGrams:
+                update.quantityGrams === undefined
+                  ? item.quantityGrams
+                  : Math.max(Math.round(update.quantityGrams), 5),
+            }
+          : item
+      ),
+    });
+  };
+
   const handleAddDraft = () => {
     if (!analysis) {
       return;
     }
 
-    const entries = createDraftEntries(analysis, mealType, previewUrl);
+    const selectedItems = analysis.items.filter((_, index) =>
+      selectedItemIndexes.includes(index)
+    );
+
+    if (selectedItems.length === 0) {
+      setError(copy.nothingSelected);
+      return;
+    }
+
+    const entries = createDraftEntries(
+      {
+        ...analysis,
+        items: selectedItems,
+      },
+      mealType,
+      previewUrl
+    );
 
     if (entries.length === 0) {
       setError(copy.analysisError);
@@ -417,12 +478,17 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
               <Stack spacing={1.2}>
                 <Typography sx={{ fontWeight: 700 }}>{copy.suggestions}</Typography>
+                <Chip
+                  label={`${copy.selected}: ${selectedItemIndexes.length}/${analysis.items.length}`}
+                  size="small"
+                  sx={{ alignSelf: "flex-start" }}
+                />
                 {analysis.items.length === 0 ? (
                   <Alert severity="warning">{copy.empty}</Alert>
                 ) : (
-                  analysis.items.map((item) => (
+                  analysis.items.map((item, index) => (
                     <Paper
-                      key={`${item.name}-${item.quantityGrams}`}
+                      key={`${item.name}-${index}`}
                       variant="outlined"
                       sx={{ p: 1.5, borderRadius: 3 }}
                     >
@@ -431,8 +497,37 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                         justifyContent="space-between"
                         spacing={1}
                       >
-                        <Stack spacing={0.4} sx={{ minWidth: 0 }}>
-                          <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+                          <Checkbox
+                            checked={selectedItemIndexes.includes(index)}
+                            onChange={() => handleToggleSuggestion(index)}
+                            sx={{ alignSelf: "flex-start", p: 0.5 }}
+                          />
+                          <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+                            <TextField
+                              size="small"
+                              label={copy.itemName}
+                              value={item.name}
+                              onChange={(event) =>
+                                handleSuggestionChange(index, {
+                                  name: event.target.value.slice(0, 80),
+                                })
+                              }
+                              fullWidth
+                            />
+                            <TextField
+                              size="small"
+                              type="number"
+                              label={copy.itemGrams}
+                              value={Math.round(item.quantityGrams)}
+                              inputProps={{ min: 5, step: 5 }}
+                              onChange={(event) =>
+                                handleSuggestionChange(index, {
+                                  quantityGrams: Number(event.target.value),
+                                })
+                              }
+                              sx={{ maxWidth: 180 }}
+                            />
                           <Typography variant="body2" color="text.secondary">
                             {copy.grams.replace(
                               "{value}",
@@ -453,6 +548,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                                 String(roundMacro((item.estimatedNutritionPer100g.carbs * item.quantityGrams) / 100))
                               )}
                           </Typography>
+                          </Stack>
                         </Stack>
                         <Stack spacing={0.5} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
                           <Chip

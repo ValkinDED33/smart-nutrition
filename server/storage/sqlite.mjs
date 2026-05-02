@@ -59,6 +59,9 @@ const isAppLanguage = (value) => value === "uk" || value === "pl";
 const isAssistantRole = (value) =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value) => value === "gentle" || value === "playful" || value === "focused";
+const isPremiumPlan = (value) => value === "free" || value === "pro" || value === "coach";
+const isPremiumStatus = (value) =>
+  value === "inactive" || value === "trial" || value === "active" || value === "cancelled";
 const isTaskCategory = (value) =>
   value === "nutrition" || value === "consistency" || value === "reflection";
 const isReminderTime = (value) =>
@@ -137,6 +140,37 @@ const normalizeAssistantCustomization = (value, fallback) => {
       typeof record.proactiveHintsEnabled === "boolean"
         ? record.proactiveHintsEnabled
         : fallback.proactiveHintsEnabled,
+  };
+};
+
+const normalizePremiumSubscription = (value, fallback) => {
+  const record = isRecord(value) ? value : {};
+  const plan = isPremiumPlan(record.plan) ? record.plan : fallback.plan;
+  const status = isPremiumStatus(record.status) ? record.status : fallback.status;
+
+  if (plan === "free" && (status === "trial" || status === "active")) {
+    return fallback;
+  }
+
+  return {
+    plan,
+    status,
+    startedAt:
+      record.startedAt === null || isIsoDate(record.startedAt)
+        ? record.startedAt
+        : fallback.startedAt,
+    trialEndsAt:
+      record.trialEndsAt === null || isIsoDate(record.trialEndsAt)
+        ? record.trialEndsAt
+        : fallback.trialEndsAt,
+    renewsAt:
+      record.renewsAt === null || isIsoDate(record.renewsAt)
+        ? record.renewsAt
+        : fallback.renewsAt,
+    cancelledAt:
+      record.cancelledAt === null || isIsoDate(record.cancelledAt)
+        ? record.cancelledAt
+        : fallback.cancelledAt,
   };
 };
 
@@ -266,6 +300,10 @@ const normalizeProduct = (value, fallbackIdPrefix = "product") => {
       typeof record.barcode === "string" && record.barcode.trim().length > 0
         ? record.barcode
         : undefined,
+    category:
+      typeof record.category === "string" && record.category.trim().length > 0
+        ? record.category
+        : undefined,
     imageUrl:
       typeof record.imageUrl === "string" && record.imageUrl.trim().length > 0
         ? record.imageUrl
@@ -308,12 +346,47 @@ const normalizeProfileState = (value, user) => {
                 : new Date().toISOString(),
             weight: toNumber(item.weight, user.weight),
             waist: toNullablePositiveNumber(item.waist) ?? undefined,
+            abdomen: toNullablePositiveNumber(item.abdomen) ?? undefined,
             hip: toNullablePositiveNumber(item.hip) ?? undefined,
             chest: toNullablePositiveNumber(item.chest) ?? undefined,
           };
         })
         .filter(Boolean)
     : fallback.measurementHistory;
+  const progressPhotos = Array.isArray(record.progressPhotos)
+    ? record.progressPhotos
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const imageDataUrl =
+            typeof item.imageDataUrl === "string" && item.imageDataUrl.startsWith("data:image/")
+              ? item.imageDataUrl
+              : null;
+
+          if (!imageDataUrl) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `progress-photo-${index}-${Date.now()}`,
+            date:
+              typeof item.date === "string" && item.date.trim().length > 0
+                ? item.date
+                : new Date().toISOString(),
+            imageDataUrl,
+            note:
+              typeof item.note === "string" && item.note.trim().length > 0
+                ? item.note.trim().slice(0, 160)
+                : undefined,
+          };
+        })
+        .filter(Boolean)
+    : fallback.progressPhotos;
   const weeklyCheckInRecord = isRecord(record.weeklyCheckIn) ? record.weeklyCheckIn : {};
 
   return {
@@ -321,6 +394,7 @@ const normalizeProfileState = (value, user) => {
     goal: isGoal(record.goal) ? record.goal : fallback.goal,
     weightHistory: weightHistory.length > 0 ? weightHistory : fallback.weightHistory,
     measurementHistory,
+    progressPhotos,
     weeklyCheckIn: {
       enabled:
         typeof weeklyCheckInRecord.enabled === "boolean"
@@ -369,6 +443,7 @@ const normalizeProfileState = (value, user) => {
       ? record.languagePreference
       : fallback.languagePreference,
     motivation: normalizeMotivationState(record.motivation, fallback.motivation),
+    premium: normalizePremiumSubscription(record.premium, fallback.premium),
     assistant: normalizeAssistantCustomization(record.assistant, fallback.assistant),
   };
 };
@@ -470,6 +545,49 @@ const normalizeMealState = (value) => {
   };
 };
 
+const isWaterTimeString = (value) =>
+  typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+
+const normalizeWaterHistory = (value, fallback) =>
+  Array.isArray(value)
+    ? value
+        .map((item) => {
+          const record = isRecord(item) ? item : {};
+          const date = typeof record.date === "string" ? record.date : "";
+
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return null;
+          }
+
+          return {
+            date,
+            consumedMl: Math.max(toNumber(record.consumedMl, 0), 0),
+            targetMl: Math.max(toNumber(record.targetMl, fallback.dailyTargetMl), 250),
+            updatedAt:
+              typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0
+                ? record.updatedAt
+                : new Date().toISOString(),
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 30)
+    : fallback.history;
+
+const normalizeWaterReminders = (value, fallback) => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    enabled: Boolean(record.enabled),
+    intervalMinutes: Math.max(toNumber(record.intervalMinutes, fallback.intervalMinutes), 30),
+    startTime: isWaterTimeString(record.startTime) ? record.startTime : fallback.startTime,
+    endTime: isWaterTimeString(record.endTime) ? record.endTime : fallback.endTime,
+    lastReminderAt:
+      typeof record.lastReminderAt === "string" && record.lastReminderAt.trim().length > 0
+        ? record.lastReminderAt
+        : null,
+  };
+};
+
 const normalizeWaterState = (value) => {
   const fallback = createInitialWaterState();
   const record = isRecord(value) ? value : {};
@@ -483,6 +601,8 @@ const normalizeWaterState = (value) => {
         ? record.lastLoggedOn
         : fallback.lastLoggedOn,
     targetMode: record.targetMode === "manual" ? "manual" : "automatic",
+    history: normalizeWaterHistory(record.history, fallback),
+    reminders: normalizeWaterReminders(record.reminders, fallback.reminders),
   };
 };
 
@@ -584,6 +704,35 @@ const normalizeCommunityState = (value) => {
         .filter(Boolean)
     : fallback.messages;
 
+  const roomMessages = Array.isArray(record.roomMessages)
+    ? record.roomMessages
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const text = normalizeText(item.text);
+
+          if (!text) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-room-message-${index}-${Date.now()}`,
+            authorName: normalizeText(item.authorName, "Smart User"),
+            text,
+            createdAt:
+              typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                ? item.createdAt
+                : new Date().toISOString(),
+          };
+        })
+        .filter(Boolean)
+    : fallback.roomMessages;
+
   const posts = Array.isArray(record.posts)
     ? record.posts
         .map((item, index) => {
@@ -623,10 +772,78 @@ const normalizeCommunityState = (value) => {
         .filter(Boolean)
     : fallback.posts;
 
+  const comments = Array.isArray(record.comments)
+    ? record.comments
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const postId = normalizeText(item.postId);
+          const text = normalizeText(item.text);
+
+          if (!postId || !text) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-comment-${index}-${Date.now()}`,
+            postId,
+            authorName: normalizeText(item.authorName, "Smart User"),
+            text,
+            createdAt:
+              typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                ? item.createdAt
+                : new Date().toISOString(),
+          };
+        })
+        .filter(Boolean)
+    : fallback.comments;
+
+  const progressCards = Array.isArray(record.progressCards)
+    ? record.progressCards
+        .map((item, index) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const metricLabel = normalizeText(item.metricLabel);
+          const metricValue = normalizeText(item.metricValue);
+          const caption = normalizeText(item.caption);
+
+          if (!metricLabel || !metricValue || !caption) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id
+                : `community-progress-${index}-${Date.now()}`,
+            authorName: normalizeText(item.authorName, "Smart User"),
+            metricLabel,
+            metricValue,
+            caption,
+            createdAt:
+              typeof item.createdAt === "string" && item.createdAt.trim().length > 0
+                ? item.createdAt
+                : new Date().toISOString(),
+            likes: Math.max(toNumber(item.likes, 0), 0),
+          };
+        })
+        .filter(Boolean)
+    : fallback.progressCards;
+
   return {
     friends,
     messages,
+    roomMessages,
     posts,
+    comments,
+    progressCards,
     favoritePostIds: Array.isArray(record.favoritePostIds)
       ? record.favoritePostIds.map((item) => normalizeText(item)).filter(Boolean)
       : fallback.favoritePostIds,
@@ -859,6 +1076,7 @@ const createSchema = (database) => {
       reminder_times_json TEXT NOT NULL DEFAULT '{"breakfast":"08:30","lunch":"13:00","dinner":"19:00","snack":"16:30"}',
       language_preference TEXT NOT NULL DEFAULT 'uk',
       measurement_history_json TEXT NOT NULL DEFAULT '[]',
+      progress_photos_json TEXT NOT NULL DEFAULT '[]',
       weekly_check_in_json TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}',
       motivation_json TEXT NOT NULL DEFAULT '{"points":0,"level":1,"completedTasks":0,"activeTasks":[],"history":[],"achievements":[],"lastTaskRefreshDate":null,"freeDayLastUsedAt":null,"paidDayLastUsedAt":null,"paidDayLastUsedMonth":null}',
       assistant_json TEXT NOT NULL DEFAULT '{"name":"Nova","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true}',
@@ -1175,11 +1393,12 @@ const replaceProfileStateRows = (
           reminder_times_json,
           language_preference,
           measurement_history_json,
+          progress_photos_json,
           weekly_check_in_json,
           motivation_json,
           assistant_json,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           daily_calories = excluded.daily_calories,
           goal = excluded.goal,
@@ -1197,6 +1416,7 @@ const replaceProfileStateRows = (
           reminder_times_json = excluded.reminder_times_json,
           language_preference = excluded.language_preference,
           measurement_history_json = excluded.measurement_history_json,
+          progress_photos_json = excluded.progress_photos_json,
           weekly_check_in_json = excluded.weekly_check_in_json,
           motivation_json = excluded.motivation_json,
           assistant_json = excluded.assistant_json,
@@ -1221,6 +1441,7 @@ const replaceProfileStateRows = (
       serializeJson(normalized.reminderTimes),
       normalized.languagePreference,
       serializeJson(normalized.measurementHistory),
+      serializeJson(normalized.progressPhotos),
       serializeJson(normalized.weeklyCheckIn),
       serializeJson(normalized.motivation),
       serializeJson(normalized.assistant),
@@ -1399,6 +1620,7 @@ const buildProfileStateFromRows = (database, userId, user = null) => {
     ),
     languagePreference: isAppLanguage(row.language_preference) ? row.language_preference : "uk",
     measurementHistory: parseJson(row.measurement_history_json, []),
+    progressPhotos: parseJson(row.progress_photos_json, []),
     weeklyCheckIn: parseJson(
       row.weekly_check_in_json,
       createInitialProfileState(user).weeklyCheckIn
@@ -1749,6 +1971,12 @@ export const createSqliteStorage = async ({
     database,
     "profile_states",
     "measurement_history_json",
+    "TEXT NOT NULL DEFAULT '[]'"
+  );
+  ensureColumn(
+    database,
+    "profile_states",
+    "progress_photos_json",
     "TEXT NOT NULL DEFAULT '[]'"
   );
   ensureColumn(

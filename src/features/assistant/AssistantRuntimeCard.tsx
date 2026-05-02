@@ -73,6 +73,9 @@ const cardCopy = {
     quickQuestions: {
       day_status: "Як виглядає день?",
       protein_help: "Що з білком?",
+      water_help: "Що з водою?",
+      weight_help: "Що з вагою?",
+      next_meal: "Що з'їсти зараз?",
       coach_focus: "Який зараз focus коуча?",
       motivation_focus: "Що з мотивацією?",
     } satisfies Record<AssistantQuickQuestionId, string>,
@@ -94,6 +97,9 @@ const cardCopy = {
     quickQuestions: {
       day_status: "Jak wygląda dzień?",
       protein_help: "Co z białkiem?",
+      water_help: "Co z wodą?",
+      weight_help: "Co z wagą?",
+      next_meal: "Co zjeść teraz?",
       coach_focus: "Jaki jest fokus coacha?",
       motivation_focus: "Co z motywacją?",
     } satisfies Record<AssistantQuickQuestionId, string>,
@@ -105,6 +111,7 @@ const cardCopy = {
 export const AssistantRuntimeCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
+  const water = useSelector((state: RootState) => state.water);
   const items = useSelector(selectMealItems);
   const todayItems = useSelector(selectTodayMealItems);
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
@@ -125,6 +132,7 @@ export const AssistantRuntimeCard = () => {
         dietStyle: profile.dietStyle,
         weight: user?.weight ?? 0,
         weightHistory: profile.weightHistory,
+        waterHistory: water.history,
       }),
     [
       items,
@@ -133,6 +141,7 @@ export const AssistantRuntimeCard = () => {
       profile.goal,
       profile.weightHistory,
       user?.weight,
+      water.history,
     ]
   );
 
@@ -144,6 +153,7 @@ export const AssistantRuntimeCard = () => {
         language,
         user,
         profile,
+        water,
         todayTotals: {
           caloriesConsumed: todayTotals.calories,
           proteinConsumed: todayTotals.protein,
@@ -164,6 +174,7 @@ export const AssistantRuntimeCard = () => {
       todayItems.length,
       todayTotals,
       user,
+      water,
     ]
   );
   const getWelcomeMessage = useEffectEvent(() => createWelcomeMessage(context));
