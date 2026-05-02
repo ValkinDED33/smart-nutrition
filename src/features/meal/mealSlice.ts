@@ -48,41 +48,89 @@ const isSource = (value: unknown): value is Product["source"] =>
 const toNumber = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
+const clampNumber = (value: number, min = 0, max = 100000) =>
+  Math.min(Math.max(value, min), max);
+
 const toPositiveNumber = (value: unknown, fallback: number) => {
   const next = toNumber(value);
-  return next > 0 ? next : fallback;
+  return next > 0 ? clampNumber(next, 0.1, 100000) : fallback;
 };
 
-const toString = (value: unknown, fallback = "") =>
-  typeof value === "string" ? value : fallback;
+const toString = (value: unknown, fallback = "", maxLength = 160) =>
+  (typeof value === "string" ? value : fallback)
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
+
+const MAX_PRODUCT_IMAGE_DATA_URL_LENGTH = 1_700_000;
+const SAFE_PRODUCT_IMAGE_DATA_URL_PATTERN =
+  /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
+
+const normalizeImageUrl = (value: unknown) => {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const nextValue = value.trim();
+
+  if (!nextValue) {
+    return "";
+  }
+
+  if (nextValue.length > MAX_PRODUCT_IMAGE_DATA_URL_LENGTH) {
+    return "";
+  }
+
+  if (
+    SAFE_PRODUCT_IMAGE_DATA_URL_PATTERN.test(nextValue)
+  ) {
+    return nextValue;
+  }
+
+  if (nextValue.length > 500) {
+    return "";
+  }
+
+  try {
+    const url = new URL(nextValue);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+};
 
 const normalizeNutrients = (value: unknown): Nutrients => {
   const record = isRecord(value) ? value : {};
 
   return nutrientKeys.reduce((accumulator, key) => {
-    accumulator[key] = toNumber(record[key]);
+    accumulator[key] = clampNumber(toNumber(record[key]));
     return accumulator;
   }, createEmptyNutrients());
 };
 
 const normalizeStringArray = (value: unknown) =>
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  Array.isArray(value)
+    ? value
+        .map((item) => toString(item, "", 80))
+        .filter(Boolean)
+        .slice(0, 16)
+    : [];
 
 const normalizeProduct = (value: unknown): Product => {
   const record = isRecord(value) ? value : {};
 
   return {
-    id: toString(record.id, createId("product")),
-    name: toString(record.name, "Unknown product"),
+    id: toString(record.id, createId("product"), 96),
+    name: toString(record.name, "Unknown product", 160),
     unit: isUnit(record.unit) ? record.unit : "g",
     source: isSource(record.source) ? record.source : "Manual",
-    brand: toString(record.brand) || undefined,
-    barcode: toString(record.barcode) || undefined,
-    category: toString(record.category) || undefined,
-    imageUrl: toString(record.imageUrl) || undefined,
+    brand: toString(record.brand, "", 120) || undefined,
+    barcode: toString(record.barcode, "", 64) || undefined,
+    category: toString(record.category, "", 120) || undefined,
+    imageUrl: normalizeImageUrl(record.imageUrl) || undefined,
     facts: isRecord(record.facts)
       ? {
-          foodGroup: toString(record.facts.foodGroup) || undefined,
+          foodGroup: toString(record.facts.foodGroup, "", 120) || undefined,
           carbohydrateTypes: normalizeStringArray(record.facts.carbohydrateTypes),
           proteinTypes: normalizeStringArray(record.facts.proteinTypes),
           fatTypes: normalizeStringArray(record.facts.fatTypes),
@@ -109,11 +157,11 @@ const normalizeMealEntry = (value: unknown): MealEntry | null => {
   if (!isRecord(value)) return null;
 
   return {
-    id: toString(value.id, createId("meal")),
+    id: toString(value.id, createId("meal"), 96),
     product: normalizeProduct(value.product),
     quantity: toPositiveNumber(value.quantity, 100),
     mealType: isMealType(value.mealType) ? value.mealType : "snack",
-    eatenAt: toString(value.eatenAt, new Date().toISOString()),
+    eatenAt: toString(value.eatenAt, new Date().toISOString(), 40),
     origin: isOrigin(value.origin) ? value.origin : "manual",
   };
 };
@@ -122,10 +170,10 @@ const normalizeMealTemplate = (value: unknown): MealTemplate | null => {
   if (!isRecord(value)) return null;
 
   return {
-    id: toString(value.id, createId("template")),
-    name: toString(value.name, "Meal template"),
+    id: toString(value.id, createId("template"), 96),
+    name: toString(value.name, "Meal template", 120),
     mealType: isMealType(value.mealType) ? value.mealType : "snack",
-    createdAt: toString(value.createdAt, new Date().toISOString()),
+    createdAt: toString(value.createdAt, new Date().toISOString(), 40),
     items: Array.isArray(value.items)
       ? value.items
           .map((item) => normalizeMealTemplateItem(item))

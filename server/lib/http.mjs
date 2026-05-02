@@ -1,8 +1,20 @@
 export const isCorsOriginAllowed = (origin, allowedOrigins = []) =>
   Boolean(origin) && allowedOrigins.includes(origin);
 
-export const setCorsHeaders = (request, response, allowedOrigins = []) => {
+const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+const readRequestOrigin = (request) => {
   const origin = request.headers.origin;
+
+  if (Array.isArray(origin)) {
+    return String(origin[0] ?? "").trim();
+  }
+
+  return String(origin ?? "").trim();
+};
+
+export const setCorsHeaders = (request, response, allowedOrigins = []) => {
+  const origin = readRequestOrigin(request);
 
   response.setHeader("Vary", "Origin");
   response.setHeader(
@@ -15,6 +27,15 @@ export const setCorsHeaders = (request, response, allowedOrigins = []) => {
     response.setHeader("Access-Control-Allow-Origin", origin);
     response.setHeader("Access-Control-Allow-Credentials", "true");
   }
+};
+
+export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
+  if (!mutationMethods.has(request.method ?? "")) {
+    return false;
+  }
+
+  const origin = readRequestOrigin(request);
+  return Boolean(origin) && !isCorsOriginAllowed(origin, allowedOrigins);
 };
 
 export const setSecurityHeaders = (response) => {

@@ -79,6 +79,43 @@ const createManualDraft = (): ManualDraft => ({
   carbs: 0,
 });
 
+const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
+const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
+const SUPPORTED_MANUAL_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
+
+const normalizeCatalogImageUrl = (value: string) => {
+  const nextValue = value.trim();
+
+  if (!nextValue || nextValue.length > 500) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(nextValue);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const normalizeManualImageUrl = (value: string) => {
+  const nextValue = value.trim();
+
+  if (!nextValue) {
+    return "";
+  }
+
+  if (
+    nextValue.length <= MAX_MANUAL_IMAGE_DATA_URL_LENGTH &&
+    SAFE_IMAGE_DATA_URL_PATTERN.test(nextValue)
+  ) {
+    return nextValue;
+  }
+
+  return normalizeCatalogImageUrl(nextValue) ?? "";
+};
+
 const scannerCopy = {
   uk: {
     title: "Сканер штрихкодів",
@@ -125,6 +162,8 @@ const scannerCopy = {
     manualCategoryEmpty: "Без категорії",
     manualImageUrl: "Фото / URL упаковки",
     manualPhoto: "Додати фото упаковки",
+    manualPhotoTooLarge: "Фото завелике. Виберіть файл до 1.2 MB.",
+    manualPhotoInvalid: "Підтримуються тільки JPEG, PNG або WebP.",
     manualCalories: "Ккал на 100 г",
     manualProtein: "Білок на 100 г",
     manualFat: "Жири на 100 г",
@@ -185,6 +224,8 @@ const scannerCopy = {
     manualCategoryEmpty: "Bez kategorii",
     manualImageUrl: "Zdjęcie / URL opakowania",
     manualPhoto: "Dodaj zdjęcie opakowania",
+    manualPhotoTooLarge: "Zdjęcie jest zbyt duże. Wybierz plik do 1.2 MB.",
+    manualPhotoInvalid: "Obsługiwane są tylko JPEG, PNG albo WebP.",
     manualCalories: "Kcal na 100 g",
     manualProtein: "Białko na 100 g",
     manualFat: "Tłuszcz na 100 g",
@@ -580,16 +621,39 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
   const handleManualPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
 
     if (!file) {
       return;
     }
 
+    if (!SUPPORTED_MANUAL_PHOTO_TYPES.has(file.type) || file.size > MAX_MANUAL_PHOTO_BYTES) {
+      setMessage(
+        file.size > MAX_MANUAL_PHOTO_BYTES
+          ? copy.manualPhotoTooLarge
+          : copy.manualPhotoInvalid
+      );
+      playScanErrorSound();
+      return;
+    }
+
     const reader = new FileReader();
     reader.addEventListener("load", () => {
-      if (typeof reader.result === "string") {
+      if (
+        typeof reader.result === "string" &&
+        reader.result.length <= MAX_MANUAL_IMAGE_DATA_URL_LENGTH &&
+        SAFE_IMAGE_DATA_URL_PATTERN.test(reader.result)
+      ) {
         setManualDraft((current) => ({ ...current, imageUrl: reader.result as string }));
+        return;
       }
+
+      setMessage(copy.manualPhotoInvalid);
+      playScanErrorSound();
+    });
+    reader.addEventListener("error", () => {
+      setMessage(copy.manualPhotoInvalid);
+      playScanErrorSound();
     });
     reader.readAsDataURL(file);
   };
@@ -612,8 +676,8 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
     const normalizedBarcode = barcodeInput.replace(/\D/g, "");
     const category = manualDraft.category.trim();
-    const imageUrl = manualDraft.imageUrl.trim();
-    const catalogImageUrl = /^https?:\/\//i.test(imageUrl) ? imageUrl : undefined;
+    const imageUrl = normalizeManualImageUrl(manualDraft.imageUrl);
+    const catalogImageUrl = normalizeCatalogImageUrl(imageUrl);
     const product: Product = {
       id:
         globalThis.crypto?.randomUUID?.() ??
@@ -675,6 +739,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   };
 
   const showFallback = (lookupState === "not_found" || lookupState === "error") && barcodeInput;
+  const manualImagePreviewUrl = normalizeManualImageUrl(manualDraft.imageUrl);
 
   return (
     <Paper
@@ -1019,15 +1084,15 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   <input
                     hidden
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     capture="environment"
                     onChange={handleManualPhotoChange}
                   />
                 </Button>
-                {manualDraft.imageUrl ? (
+                {manualImagePreviewUrl ? (
                   <Box
                     component="img"
-                    src={manualDraft.imageUrl}
+                    src={manualImagePreviewUrl}
                     alt={manualDraft.name || copy.manualImageUrl}
                     sx={{
                       width: { xs: "100%", sm: 136 },

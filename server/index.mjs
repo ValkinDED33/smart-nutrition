@@ -15,6 +15,7 @@ import {
   sendError,
   sendJson,
   sendNoContent,
+  isUnsafeCrossSiteMutation,
   setCorsHeaders,
   setSecurityHeaders,
 } from "./lib/http.mjs";
@@ -192,6 +193,16 @@ const isInsideDirectory = (rootDir, candidatePath) => {
 const getContentType = (filePath) =>
   mimeTypes.get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
 
+const toAttachmentFilename = (value, fallback = "smart-nutrition-backup.json") => {
+  const filename = String(value ?? "")
+    .replace(/[\r\n\\/:"*?<>|]+/g, "_")
+    .replace(/[^\w. -]+/g, "_")
+    .trim()
+    .slice(0, 120);
+
+  return filename || fallback;
+};
+
 const sendStaticFile = async (request, response, filePath) => {
   const body = await fs.readFile(filePath);
   const isAsset = filePath.includes(`${path.sep}assets${path.sep}`);
@@ -355,6 +366,12 @@ const routeRequest = async (request, response) => {
   }
 
   const { pathname } = url;
+
+  if (isUnsafeCrossSiteMutation(request, serverConfig.allowedCorsOrigins)) {
+    sendError(response, 403, "CSRF_BLOCKED", "Request origin is not allowed.");
+    return;
+  }
+
   const rateLimit =
     pathname === "/api/health" ? null : consumeRateLimit(request);
 
@@ -779,11 +796,13 @@ const routeRequest = async (request, response) => {
 
     if (accountBackupMatch && request.method === "GET") {
       const backupId = decodeURIComponent(accountBackupMatch[1]);
+      const backupPayload = authService.readAccountBackup(auth.user, backupId);
+
       response.setHeader(
         "Content-Disposition",
-        `attachment; filename="${backupId.replace(/"/g, "")}"`
+        `attachment; filename="${toAttachmentFilename(backupId)}"`
       );
-      sendJson(response, 200, authService.readAccountBackup(auth.user, backupId));
+      sendJson(response, 200, backupPayload);
       return;
     }
 

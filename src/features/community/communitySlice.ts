@@ -24,10 +24,11 @@ const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-const normalizeText = (value: unknown, fallback = "") =>
+const normalizeText = (value: unknown, fallback = "", maxLength = 280) =>
   String(value ?? fallback)
     .trim()
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
 
 const normalizeIngredients = (ingredients: unknown) =>
   Array.isArray(ingredients)
@@ -50,15 +51,15 @@ const normalizePost = (value: unknown): CommunityPost | null => {
   }
 
   const item = value as Partial<CommunityPost>;
-  const title = normalizeText(item.title);
-  const body = normalizeText(item.body);
+  const title = normalizeText(item.title, "", 120);
+  const body = normalizeText(item.body, "", 1200);
 
   if (!title || !body) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-post")),
+    id: normalizeText(item.id, createId("community-post"), 96),
     type:
       item.type === "recipe" || item.type === "article" || item.type === "experience"
         ? item.type
@@ -66,8 +67,8 @@ const normalizePost = (value: unknown): CommunityPost | null => {
     title,
     body,
     ingredients: normalizeIngredients(item.ingredients),
-    authorName: normalizeText(item.authorName, "Smart Nutrition"),
-    createdAt: normalizeText(item.createdAt, new Date().toISOString()),
+    authorName: normalizeText(item.authorName, "Smart Nutrition", 80),
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
     likes: Number.isFinite(Number(item.likes)) ? Math.max(Number(item.likes), 0) : 0,
   };
 };
@@ -78,18 +79,18 @@ const normalizeFriend = (value: unknown): CommunityFriend | null => {
   }
 
   const item = value as Partial<CommunityFriend>;
-  const name = normalizeText(item.name);
+  const name = normalizeText(item.name, "", 80);
 
   if (!name) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-friend")),
+    id: normalizeText(item.id, createId("community-friend"), 96),
     name,
-    handle: normalizeText(item.handle, `@${name.toLowerCase().replace(/\s+/g, "")}`),
+    handle: normalizeText(item.handle, `@${name.toLowerCase().replace(/\s+/g, "")}`, 80),
     status: item.status === "online" ? "online" : "offline",
-    lastActiveAt: normalizeText(item.lastActiveAt, new Date().toISOString()),
+    lastActiveAt: normalizeText(item.lastActiveAt, new Date().toISOString(), 40),
   };
 };
 
@@ -99,19 +100,19 @@ const normalizeMessage = (value: unknown): CommunityMessage | null => {
   }
 
   const item = value as Partial<CommunityMessage>;
-  const text = normalizeText(item.text);
-  const friendId = normalizeText(item.friendId);
+  const text = normalizeText(item.text, "", 600);
+  const friendId = normalizeText(item.friendId, "", 96);
 
   if (!text || !friendId) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-message")),
+    id: normalizeText(item.id, createId("community-message"), 96),
     friendId,
     author: item.author === "friend" ? "friend" : "self",
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString()),
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
   };
 };
 
@@ -121,17 +122,17 @@ const normalizeRoomMessage = (value: unknown): CommunityRoomMessage | null => {
   }
 
   const item = value as Partial<CommunityRoomMessage>;
-  const text = normalizeText(item.text);
+  const text = normalizeText(item.text, "", 600);
 
   if (!text) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-room-message")),
-    authorName: normalizeText(item.authorName, "Smart User"),
+    id: normalizeText(item.id, createId("community-room-message"), 96),
+    authorName: normalizeText(item.authorName, "Smart User", 80),
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString()),
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
   };
 };
 
@@ -141,19 +142,19 @@ const normalizeComment = (value: unknown): CommunityPostComment | null => {
   }
 
   const item = value as Partial<CommunityPostComment>;
-  const postId = normalizeText(item.postId);
-  const text = normalizeText(item.text);
+  const postId = normalizeText(item.postId, "", 96);
+  const text = normalizeText(item.text, "", 600);
 
   if (!postId || !text) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-comment")),
+    id: normalizeText(item.id, createId("community-comment"), 96),
     postId,
-    authorName: normalizeText(item.authorName, "Smart User"),
+    authorName: normalizeText(item.authorName, "Smart User", 80),
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString()),
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
   };
 };
 
@@ -163,21 +164,21 @@ const normalizeProgressCard = (value: unknown): CommunityProgressCard | null => 
   }
 
   const item = value as Partial<CommunityProgressCard>;
-  const metricLabel = normalizeText(item.metricLabel);
-  const metricValue = normalizeText(item.metricValue);
-  const caption = normalizeText(item.caption);
+  const metricLabel = normalizeText(item.metricLabel, "", 80);
+  const metricValue = normalizeText(item.metricValue, "", 80);
+  const caption = normalizeText(item.caption, "", 600);
 
   if (!metricLabel || !metricValue || !caption) {
     return null;
   }
 
   return {
-    id: normalizeText(item.id, createId("community-progress")),
-    authorName: normalizeText(item.authorName, "Smart User"),
+    id: normalizeText(item.id, createId("community-progress"), 96),
+    authorName: normalizeText(item.authorName, "Smart User", 80),
     metricLabel,
     metricValue,
     caption,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString()),
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
     likes: Number.isFinite(Number(item.likes)) ? Math.max(Number(item.likes), 0) : 0,
   };
 };
@@ -329,26 +330,37 @@ export const normalizeCommunityState = (value: unknown): CommunityState => {
   return {
     friends: Array.isArray(state.friends)
       ? (state.friends.map(normalizeFriend).filter(Boolean) as CommunityFriend[])
+          .slice(0, 100)
       : initialState.friends,
     messages: Array.isArray(state.messages)
       ? (state.messages.map(normalizeMessage).filter(Boolean) as CommunityMessage[])
+          .slice(0, 500)
       : initialState.messages,
     roomMessages: Array.isArray(state.roomMessages)
       ? (state.roomMessages.map(normalizeRoomMessage).filter(Boolean) as CommunityRoomMessage[])
+          .slice(0, 300)
       : initialState.roomMessages,
     posts: Array.isArray(state.posts)
       ? (state.posts.map(normalizePost).filter(Boolean) as CommunityPost[])
+          .slice(0, 200)
       : initialState.posts,
     comments: Array.isArray(state.comments)
       ? (state.comments.map(normalizeComment).filter(Boolean) as CommunityPostComment[])
+          .slice(0, 1000)
       : initialState.comments,
     progressCards: Array.isArray(state.progressCards)
       ? (state.progressCards.map(normalizeProgressCard).filter(Boolean) as CommunityProgressCard[])
+          .slice(0, 200)
       : initialState.progressCards,
     favoritePostIds: Array.isArray(state.favoritePostIds)
-      ? state.favoritePostIds.map((item) => normalizeText(item)).filter(Boolean)
+      ? state.favoritePostIds
+          .map((item) => normalizeText(item, "", 96))
+          .filter(Boolean)
+          .slice(0, 500)
       : initialState.favoritePostIds,
-    score: Number.isFinite(Number(state.score)) ? Math.max(Number(state.score), 0) : initialState.score,
+    score: Number.isFinite(Number(state.score))
+      ? Math.min(Math.max(Number(state.score), 0), 1000000)
+      : initialState.score,
   };
 };
 
@@ -360,7 +372,7 @@ const communitySlice = createSlice({
       return normalizeCommunityState(action.payload);
     },
     addFriend(state, action: PayloadAction<{ name: string }>) {
-      const name = normalizeText(action.payload.name);
+      const name = normalizeText(action.payload.name, "", 80);
 
       if (!name) {
         return;
@@ -379,8 +391,8 @@ const communitySlice = createSlice({
       state,
       action: PayloadAction<{ friendId: string; text: string }>
     ) {
-      const friendId = normalizeText(action.payload.friendId);
-      const text = normalizeText(action.payload.text);
+      const friendId = normalizeText(action.payload.friendId, "", 96);
+      const text = normalizeText(action.payload.text, "", 600);
 
       if (!friendId || !text) {
         return;
@@ -399,7 +411,7 @@ const communitySlice = createSlice({
       state,
       action: PayloadAction<{ text: string; authorName: string }>
     ) {
-      const text = normalizeText(action.payload.text);
+      const text = normalizeText(action.payload.text, "", 600);
 
       if (!text) {
         return;
@@ -407,7 +419,7 @@ const communitySlice = createSlice({
 
       state.roomMessages.push({
         id: createId("community-room-message"),
-        authorName: normalizeText(action.payload.authorName, "You"),
+        authorName: normalizeText(action.payload.authorName, "You", 80),
         text,
         createdAt: new Date().toISOString(),
       });
@@ -423,8 +435,8 @@ const communitySlice = createSlice({
         ingredients?: string[];
       }>
     ) {
-      const title = normalizeText(action.payload.title);
-      const body = normalizeText(action.payload.body);
+      const title = normalizeText(action.payload.title, "", 120);
+      const body = normalizeText(action.payload.body, "", 1200);
 
       if (!title || !body) {
         return;
@@ -436,7 +448,7 @@ const communitySlice = createSlice({
         title,
         body,
         ingredients: normalizeIngredients(action.payload.ingredients),
-        authorName: normalizeText(action.payload.authorName, "You"),
+        authorName: normalizeText(action.payload.authorName, "You", 80),
         createdAt: new Date().toISOString(),
         likes: 0,
       });
@@ -446,8 +458,8 @@ const communitySlice = createSlice({
       state,
       action: PayloadAction<{ postId: string; text: string; authorName: string }>
     ) {
-      const postId = normalizeText(action.payload.postId);
-      const text = normalizeText(action.payload.text);
+      const postId = normalizeText(action.payload.postId, "", 96);
+      const text = normalizeText(action.payload.text, "", 600);
 
       if (!postId || !text || !state.posts.some((item) => item.id === postId)) {
         return;
@@ -456,7 +468,7 @@ const communitySlice = createSlice({
       state.comments.push({
         id: createId("community-comment"),
         postId,
-        authorName: normalizeText(action.payload.authorName, "You"),
+        authorName: normalizeText(action.payload.authorName, "You", 80),
         text,
         createdAt: new Date().toISOString(),
       });
@@ -471,9 +483,9 @@ const communitySlice = createSlice({
         caption: string;
       }>
     ) {
-      const metricLabel = normalizeText(action.payload.metricLabel);
-      const metricValue = normalizeText(action.payload.metricValue);
-      const caption = normalizeText(action.payload.caption);
+      const metricLabel = normalizeText(action.payload.metricLabel, "", 80);
+      const metricValue = normalizeText(action.payload.metricValue, "", 80);
+      const caption = normalizeText(action.payload.caption, "", 600);
 
       if (!metricLabel || !metricValue || !caption) {
         return;
@@ -481,7 +493,7 @@ const communitySlice = createSlice({
 
       state.progressCards.unshift({
         id: createId("community-progress"),
-        authorName: normalizeText(action.payload.authorName, "You"),
+        authorName: normalizeText(action.payload.authorName, "You", 80),
         metricLabel,
         metricValue,
         caption,
@@ -491,7 +503,7 @@ const communitySlice = createSlice({
       state.score += 20;
     },
     toggleFavoritePost(state, action: PayloadAction<string>) {
-      const postId = normalizeText(action.payload);
+      const postId = normalizeText(action.payload, "", 96);
 
       if (!postId) {
         return;

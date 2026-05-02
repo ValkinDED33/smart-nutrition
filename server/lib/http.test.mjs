@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sendError, setSecurityHeaders } from "./http.mjs";
+import { isUnsafeCrossSiteMutation, sendError, setSecurityHeaders } from "./http.mjs";
 
 class MemoryResponse {
   statusCode = 200;
@@ -46,5 +46,37 @@ describe("http response helpers", () => {
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",
     });
+  });
+
+  it("detects disallowed cross-site mutations", () => {
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: "https://evil.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(true);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: "https://app.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "GET",
+          headers: { origin: "https://evil.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
   });
 });

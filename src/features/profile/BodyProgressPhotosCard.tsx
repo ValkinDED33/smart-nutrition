@@ -15,6 +15,7 @@ import { useLanguage } from "../../shared/language";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
 
 const MAX_PHOTO_BYTES = 1_200_000;
+const SUPPORTED_PROGRESS_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const progressPhotoCopy = {
   uk: {
@@ -79,7 +80,7 @@ export const BodyProgressPhotosCard = () => {
       return;
     }
 
-    if (!file.type.startsWith("image/") || file.size > MAX_PHOTO_BYTES) {
+    if (!SUPPORTED_PROGRESS_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
       setPreview(null);
       setError(file.size > MAX_PHOTO_BYTES ? copy.tooLarge : copy.invalid);
       return;
@@ -87,7 +88,10 @@ export const BodyProgressPhotosCard = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result !== "string" || !reader.result.startsWith("data:image/")) {
+      if (
+        typeof reader.result !== "string" ||
+        !/^data:image\/(?:jpeg|jpg|png|webp);base64,/i.test(reader.result)
+      ) {
         setError(copy.invalid);
         return;
       }
@@ -141,7 +145,7 @@ export const BodyProgressPhotosCard = () => {
               <Box
                 component="input"
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handlePhotoChange}
                 sx={{ display: "none" }}
               />
