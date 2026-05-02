@@ -187,13 +187,26 @@ describe("createServerConfig", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
       SMART_NUTRITION_DB_PATH: "/app/server/data/smart-nutrition.sqlite",
+      SMART_NUTRITION_BACKUP_DIR: "/app/server/data/backups",
       SMART_NUTRITION_STATIC_DIR: "/app/dist",
     });
 
     expect(config.sqlitePath).toBe(
       path.join(config.projectRoot, "server", "data", "smart-nutrition.sqlite")
     );
+    expect(config.backupDir).toBe(path.join(config.projectRoot, "server", "data", "backups"));
     expect(config.staticDir).toBe(path.join(config.projectRoot, "dist"));
+  });
+
+  it("keeps public platform paths absolute for persistent disks", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_DB_PATH: "/var/data/smart-nutrition.sqlite",
+      SMART_NUTRITION_BACKUP_DIR: "/var/data/backups",
+    });
+
+    expect(config.sqlitePath).toBe("/var/data/smart-nutrition.sqlite");
+    expect(config.backupDir).toBe("/var/data/backups");
   });
 
   it("accepts an explicit CORS allowlist", () => {
