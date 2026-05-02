@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createSessionToken } from "../lib/domain.mjs";
 import { createAuthService } from "./authService.mjs";
 
-const createAuthServiceFixture = () => {
+const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
   const authRepository = {
     findUserByEmail: vi.fn(),
     findUserById: vi.fn(),
@@ -44,6 +44,7 @@ const createAuthServiceFixture = () => {
     passwordResetTokenTtlMs: 3600000,
     isProduction: false,
     appBaseUrl: "http://localhost:5173",
+    ...configOverrides,
   };
 
   return {
@@ -189,6 +190,75 @@ describe("authService", () => {
     expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
     expect(result.delivery).toBe("email");
     expect(result.previewToken).toBeUndefined();
+  });
+
+  it("does not expose password reset delivery failures in production", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+    });
+    const user = {
+      id: "user-prod-reset",
+      email: "prod-reset@example.com",
+      name: "Prod Reset User",
+      role: "USER",
+    };
+
+    authRepository.findUserByEmail.mockReturnValue(user);
+    emailService.sendPasswordResetEmail.mockResolvedValue({
+      ok: false,
+      code: "EMAIL_NOT_CONFIGURED",
+    });
+
+    const result = await service.requestPasswordReset({ email: user.email });
+
+    expect(result).toMatchObject({
+      ok: true,
+      delivery: "email",
+    });
+    expect(result.previewToken).toBeUndefined();
+  });
+
+  it("rejects invalid registration profile fields server-side", () => {
+    const { service } = createAuthServiceFixture();
+
+    expect(() =>
+      service.register({
+        name: "A",
+        email: "invalid-profile@example.com",
+        password: "StrongPass123!",
+        age: 8,
+        weight: 20,
+        height: 80,
+        gender: "robot",
+        activity: "hovering",
+        goal: "teleport",
+      })
+    ).toThrow(/valid email|Name|Age|Weight|Height|Gender|Activity|Goal/);
+  });
+
+  it("rejects invalid profile updates server-side", () => {
+    const { service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile",
+      email: "profile@example.com",
+      name: "Profile User",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+    };
+
+    expect(() =>
+      service.updateUserProfile(
+        {
+          weight: 500,
+        },
+        currentUser
+      )
+    ).toThrow(/Weight/);
   });
 
   it("resets the password, revokes sessions, and bumps token version", () => {

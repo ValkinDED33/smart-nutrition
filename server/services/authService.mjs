@@ -29,6 +29,141 @@ export const createAuthService = ({
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
   const passwordResetRequestMessage =
     "If an account with that email exists, a password reset link has been prepared.";
+  const validEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validActivityLevels = new Set([
+    "sedentary",
+    "light",
+    "moderate",
+    "active",
+    "very_active",
+  ]);
+  const validGoals = new Set(["cut", "maintain", "bulk"]);
+  const validGenders = new Set(["male", "female"]);
+
+  const hasOwn = (value, key) =>
+    Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
+
+  const assertValidEmail = (email) => {
+    if (!validEmailPattern.test(email)) {
+      throw new AuthApiError("INVALID_PROFILE", "A valid email address is required.");
+    }
+  };
+
+  const readName = (value) => {
+    const name = sanitizeName(value);
+
+    if (name.length < 2 || name.length > 80) {
+      throw new AuthApiError("INVALID_PROFILE", "Name must be between 2 and 80 characters.");
+    }
+
+    return name;
+  };
+
+  const readBoundedNumber = (value, fieldName, { min, max }) => {
+    const numberValue = Number(value);
+
+    if (!Number.isFinite(numberValue) || numberValue < min || numberValue > max) {
+      throw new AuthApiError(
+        "INVALID_PROFILE",
+        `${fieldName} must be a number between ${min} and ${max}.`
+      );
+    }
+
+    return numberValue;
+  };
+
+  const readEnumValue = (value, allowedValues, fallback, fieldName) => {
+    const nextValue = String(value ?? fallback);
+
+    if (!allowedValues.has(nextValue)) {
+      throw new AuthApiError("INVALID_PROFILE", `${fieldName} is not supported.`);
+    }
+
+    return nextValue;
+  };
+
+  const readAvatar = (value) => {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+
+    const avatar = String(value).trim();
+    const allowedAvatarPattern = /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp|svg\+xml)[;,])/i;
+
+    if (avatar.length > 512 * 1024 || !allowedAvatarPattern.test(avatar)) {
+      throw new AuthApiError("INVALID_PROFILE", "Avatar must be a safe image URL.");
+    }
+
+    return avatar;
+  };
+
+  const readMeasurements = (value) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value !== "object" || Array.isArray(value)) {
+      throw new AuthApiError("INVALID_PROFILE", "Measurements must be an object.");
+    }
+
+    const nextMeasurements = {};
+
+    [
+      ["waist", 30, 250],
+      ["abdomen", 30, 280],
+      ["hip", 30, 280],
+      ["chest", 30, 280],
+    ].forEach(([field, min, max]) => {
+      if (!hasOwn(value, field) || value[field] === undefined || value[field] === null || value[field] === "") {
+        return;
+      }
+
+      nextMeasurements[field] = readBoundedNumber(value[field], field, { min, max });
+    });
+
+    return Object.keys(nextMeasurements).length > 0 ? nextMeasurements : undefined;
+  };
+
+  const readProfileInput = (body, fallback = {}) => ({
+    name: readName(hasOwn(body, "name") ? body.name : fallback.name),
+    avatar: readAvatar(hasOwn(body, "avatar") ? body.avatar : fallback.avatar),
+    age: readBoundedNumber(
+      hasOwn(body, "age") ? body.age : fallback.age,
+      "Age",
+      { min: 10, max: 120 }
+    ),
+    weight: readBoundedNumber(
+      hasOwn(body, "weight") ? body.weight : fallback.weight,
+      "Weight",
+      { min: 30, max: 300 }
+    ),
+    height: readBoundedNumber(
+      hasOwn(body, "height") ? body.height : fallback.height,
+      "Height",
+      { min: 120, max: 250 }
+    ),
+    gender: readEnumValue(
+      hasOwn(body, "gender") ? body.gender : fallback.gender,
+      validGenders,
+      "male",
+      "Gender"
+    ),
+    activity: readEnumValue(
+      hasOwn(body, "activity") ? body.activity : fallback.activity,
+      validActivityLevels,
+      "moderate",
+      "Activity level"
+    ),
+    goal: readEnumValue(
+      hasOwn(body, "goal") ? body.goal : fallback.goal,
+      validGoals,
+      "maintain",
+      "Goal"
+    ),
+    measurements: readMeasurements(
+      hasOwn(body, "measurements") ? body.measurements : fallback.measurements
+    ),
+  });
 
   const writeAuditLog = ({
     actorUserId = null,
@@ -246,11 +381,14 @@ export const createAuthService = ({
     register: (body) => {
       const email = normalizeEmail(body.email);
 
-      if (!email || authRepository.findUserByEmail(email)) {
+      assertValidEmail(email);
+
+      if (authRepository.findUserByEmail(email)) {
         throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
       }
 
       assertPasswordPolicy(String(body.password || ""));
+      const profileInput = readProfileInput(body);
 
       const shouldBootstrapSuperAdmin =
         Boolean(config.superAdminEmail) &&
@@ -264,16 +402,8 @@ export const createAuthService = ({
 
       const user = {
         id: createId("user"),
-        name: sanitizeName(body.name),
+        ...profileInput,
         email,
-        avatar: body.avatar,
-        age: Number(body.age || 0),
-        weight: Number(body.weight || 0),
-        height: Number(body.height || 0),
-        gender: body.gender === "female" ? "female" : "male",
-        activity: body.activity || "moderate",
-        goal: body.goal || "maintain",
-        measurements: body.measurements,
         createdAt: new Date().toISOString(),
         role,
         twoFactorEnabled: false,
@@ -356,10 +486,9 @@ export const createAuthService = ({
       }
 
       if (config.isProduction) {
-        throw new AuthApiError(
-          "EMAIL_DELIVERY_UNAVAILABLE",
-          "Password reset email delivery is not configured on this server."
-        );
+        return buildPasswordResetResponse({
+          delivery: "email",
+        });
       }
 
       return buildPasswordResetResponse({
@@ -515,17 +644,10 @@ export const createAuthService = ({
     },
 
     updateUserProfile: (requestBody, currentUser) => {
+      const profileInput = readProfileInput(requestBody, currentUser);
       const updatedUser = authRepository.updateUser({
         ...currentUser,
-        name: sanitizeName(requestBody.name ?? currentUser.name),
-        avatar: requestBody.avatar ?? currentUser.avatar,
-        age: Number(requestBody.age ?? currentUser.age),
-        weight: Number(requestBody.weight ?? currentUser.weight),
-        height: Number(requestBody.height ?? currentUser.height),
-        gender: requestBody.gender === "female" ? "female" : "male",
-        activity: requestBody.activity ?? currentUser.activity,
-        goal: requestBody.goal ?? currentUser.goal,
-        measurements: requestBody.measurements ?? currentUser.measurements,
+        ...profileInput,
       });
 
       writeAuditLog({

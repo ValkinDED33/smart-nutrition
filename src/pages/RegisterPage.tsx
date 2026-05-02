@@ -8,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   InputAdornment,
   Paper,
   Stack,
@@ -166,6 +167,11 @@ const RegisterPage = () => {
         error.code === "BACKEND_UNAVAILABLE"
       ) {
         setServerError(t("error.backendUnavailable"));
+      } else if (
+        error instanceof AuthApiError &&
+        error.code === "WEAK_PASSWORD"
+      ) {
+        setServerError(t("validation.passwordMin"));
       } else {
         setServerError(t("error.genericRegister"));
       }
@@ -272,6 +278,9 @@ const RegisterPage = () => {
               variant="contained"
               size="large"
               disabled={submitting}
+              startIcon={
+                submitting ? <CircularProgress size={18} color="inherit" /> : undefined
+              }
               sx={{
                 py: 1.5,
                 borderRadius: 999,
@@ -280,7 +289,7 @@ const RegisterPage = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {t("auth.submitRegister")}
+              {submitting ? t("auth.creatingAccount") : t("auth.submitRegister")}
             </Button>
           </Stack>
 

@@ -77,18 +77,20 @@ const MealBuilderPage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2.5, md: 3 },
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        <Stack spacing={1.5}>
-          <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 28, md: 34 } }}>
+        <Stack spacing={{ xs: 1, md: 1.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 26, md: 34 } }}>
             {t("mealBuilder.title")}
           </Typography>
-          <Typography color="text.secondary">{t("mealBuilder.subtitle")}</Typography>
-          <Typography>
+          <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
+            {t("mealBuilder.subtitle")}
+          </Typography>
+          <Typography variant="body2">
             {t("mealBuilder.calories")}: {totals.calories.toFixed(0)} / {dailyCalories}{" "}
             {t("common.kcal")}
           </Typography>
@@ -103,14 +105,14 @@ const MealBuilderPage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 2,
-          borderRadius: 6,
+          p: { xs: 1.5, md: 2 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        <Stack spacing={2}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Stack spacing={{ xs: 1.25, md: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: 18, md: 20 } }}>
             {t("mealBuilder.chooseMeal")}
           </Typography>
           <ToggleButtonGroup
@@ -124,8 +126,10 @@ const MealBuilderPage = () => {
               gap: 1,
               "& .MuiToggleButton-root": {
                 flexGrow: 1,
-                borderRadius: 3,
+                borderRadius: 1,
                 minWidth: { xs: "calc(50% - 4px)", sm: 140 },
+                py: { xs: 0.9, sm: 1 },
+                fontSize: { xs: 14, sm: 15 },
                 textTransform: "none",
               },
             }}
@@ -151,29 +155,27 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={3}>
-          <YesterdayRepeater />
-          <QuickMealComposer mealType={mealType} />
+          <ProductSearch mealType={mealType} />
           <QuickProductShelf mealType={mealType} />
-          <FridgeRecipePlanner mealType={mealType} />
+          <QuickMealComposer mealType={mealType} />
+          <YesterdayRepeater />
           <TemplateVault mealType={mealType} />
           <PhotoMealAssistant mealType={mealType} />
-          <ProductSearch mealType={mealType} />
           <CatalogContributionCard />
+          <FridgeRecipePlanner mealType={mealType} />
           <RecipeSection mealType={mealType} />
         </Stack>
 
         <Stack spacing={3}>
-          <Suspense fallback={<Loader fullScreen={false} size={70} />}>
-            <BarcodeScanner mealType={mealType} />
-          </Suspense>
-
           <Paper
             elevation={0}
             sx={{
               p: 3,
-              borderRadius: 5,
+              borderRadius: 1,
               border: "1px solid rgba(15, 23, 42, 0.08)",
               backgroundColor: "rgba(255,255,255,0.86)",
+              position: { lg: "sticky" },
+              top: { lg: 96 },
             }}
           >
             <Stack spacing={2}>
@@ -210,7 +212,7 @@ const MealBuilderPage = () => {
                         <Paper
                           key={item.id}
                           variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 4 }}
+                          sx={{ p: 1.5, borderRadius: 1 }}
                         >
                           <Stack
                             direction={{ xs: "column", sm: "row" }}
@@ -238,6 +240,10 @@ const MealBuilderPage = () => {
               ))}
             </Stack>
           </Paper>
+
+          <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+            <BarcodeScanner mealType={mealType} />
+          </Suspense>
         </Stack>
       </Box>
     </Stack>

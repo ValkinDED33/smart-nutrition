@@ -40,6 +40,58 @@ const readFileAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const supportedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const maxRawPhotoBytes = 12 * 1024 * 1024;
+const maxPhotoPreviewSide = 1280;
+
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+    image.src = src;
+  });
+
+const resizePhotoDataUrl = async (dataUrl: string) => {
+  if (typeof document === "undefined") {
+    return dataUrl;
+  }
+
+  const image = await loadImage(dataUrl);
+  const scale = Math.min(
+    1,
+    maxPhotoPreviewSide / Math.max(image.naturalWidth, image.naturalHeight, 1)
+  );
+  const width = Math.max(Math.round(image.naturalWidth * scale), 1);
+  const height = Math.max(Math.round(image.naturalHeight * scale), 1);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return dataUrl;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(image, 0, 0, width, height);
+
+  return canvas.toDataURL("image/jpeg", 0.86);
+};
+
+const readPhotoFileAsDataUrl = async (file: File) => {
+  if (!supportedPhotoTypes.has(file.type)) {
+    throw new Error("UNSUPPORTED_PHOTO_TYPE");
+  }
+
+  if (file.size > maxRawPhotoBytes) {
+    throw new Error("PHOTO_TOO_LARGE");
+  }
+
+  const dataUrl = await readFileAsDataUrl(file);
+  return resizePhotoDataUrl(dataUrl);
+};
+
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -98,6 +150,8 @@ const photoCopy = {
     uploaded: "Фото завантажено",
     recognizing: "Аналізуємо фото...",
     readError: "Не вдалося прочитати фото. Спробуйте інший файл.",
+    invalidType: "Підтримуються JPG, PNG або WebP.",
+    tooLarge: "Фото завелике. Оберіть файл до 12 MB.",
     analysisError:
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
     manualFallback:
@@ -105,6 +159,7 @@ const photoCopy = {
     cloudDraft:
       "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
     previewAlt: "Прев'ю фото страви",
+    removePhoto: "Прибрати фото",
     detected: "Чернетка розпізнавання",
     portions: "Порція",
     portionLight: "Легка",
@@ -134,6 +189,8 @@ const photoCopy = {
     uploaded: "Zdjęcie wgrane",
     recognizing: "Analizujemy zdjęcie...",
     readError: "Nie udało się odczytać zdjęcia. Spróbuj innego pliku.",
+    invalidType: "Obsługiwane są JPG, PNG albo WebP.",
+    tooLarge: "Zdjęcie jest za duże. Wybierz plik do 12 MB.",
     analysisError:
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
     manualFallback:
@@ -141,6 +198,7 @@ const photoCopy = {
     cloudDraft:
       "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
     previewAlt: "Podgląd zdjęcia posiłku",
+    removePhoto: "Usuń zdjęcie",
     detected: "Szkic rozpoznania",
     portions: "Porcja",
     portionLight: "Lekka",
@@ -216,7 +274,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setAnalysisMode(null);
 
     try {
-      const dataUrl = await readFileAsDataUrl(file);
+      const dataUrl = await readPhotoFileAsDataUrl(file);
 
       setPreviewUrl(dataUrl);
       setIsRecognizing(true);
@@ -240,11 +298,27 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       } catch {
         setError(copy.analysisError);
       }
-    } catch {
-      setError(copy.readError);
+    } catch (readError) {
+      const message =
+        readError instanceof Error && readError.message === "UNSUPPORTED_PHOTO_TYPE"
+          ? copy.invalidType
+          : readError instanceof Error && readError.message === "PHOTO_TOO_LARGE"
+            ? copy.tooLarge
+            : copy.readError;
+
+      setError(message);
     } finally {
       setIsRecognizing(false);
     }
+  };
+
+  const handleRemovePhoto = () => {
+    setPreviewUrl(null);
+    setAnalysis(null);
+    setAnalysisMode(null);
+    setSelectedItemIndexes([]);
+    setError(null);
+    setFeedback(null);
   };
 
   const handlePortionChange = (_: MouseEvent<HTMLElement>, value: PhotoPortionSize | null) => {
@@ -325,8 +399,8 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -352,12 +426,12 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           <Button
             component="label"
             variant="outlined"
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
           >
             {copy.upload}
             <input
               hidden
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               type="file"
               onChange={(event) => {
                 void handleFileChange(event.target.files?.[0] ?? null);
@@ -365,6 +439,15 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
               }}
             />
           </Button>
+          {previewUrl && (
+            <Button
+              variant="text"
+              onClick={handleRemovePhoto}
+              sx={{ textTransform: "none", fontWeight: 700 }}
+            >
+              {copy.removePhoto}
+            </Button>
+          )}
           {previewUrl && <Chip label={copy.uploaded} color="success" variant="outlined" />}
           {isRecognizing && <Chip label={copy.recognizing} color="info" />}
         </Stack>
@@ -378,7 +461,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
               width: "100%",
               maxHeight: 320,
               objectFit: "cover",
-              borderRadius: 4,
+              borderRadius: 1,
               border: "1px solid rgba(15,23,42,0.08)",
             }}
           />
@@ -389,7 +472,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             variant="outlined"
             sx={{
               p: 2,
-              borderRadius: 4,
+              borderRadius: 1,
               borderColor: "rgba(15, 23, 42, 0.08)",
               background:
                 "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",
@@ -456,7 +539,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   variant="outlined"
                   sx={{
                     p: 1.5,
-                    borderRadius: 3,
+                    borderRadius: 1,
                     borderColor: "rgba(15, 23, 42, 0.06)",
                     backgroundColor: "rgba(255,255,255,0.8)",
                   }}
@@ -490,7 +573,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                     <Paper
                       key={`${item.name}-${index}`}
                       variant="outlined"
-                      sx={{ p: 1.5, borderRadius: 3 }}
+                      sx={{ p: 1.5, borderRadius: 1 }}
                     >
                       <Stack
                         direction={{ xs: "column", sm: "row" }}

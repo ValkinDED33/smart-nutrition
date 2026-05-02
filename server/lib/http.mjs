@@ -17,6 +17,12 @@ export const setCorsHeaders = (request, response, allowedOrigins = []) => {
   }
 };
 
+export const setSecurityHeaders = (response) => {
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+};
+
 const serializeCookie = ({
   name,
   value,

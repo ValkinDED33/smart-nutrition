@@ -28,6 +28,7 @@ import { MealDayOverview } from "../features/meal/MealDayOverview";
 import { CommunityHubCard } from "../features/community/CommunityHubCard";
 import { AdminCenterCard } from "../features/platform/AdminCenterCard";
 import {
+  selectCurrentWeight,
   selectDailyMacroProgress,
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
@@ -113,6 +114,7 @@ const ProfilePage = () => {
     (state: RootState) => state.profile
   );
   const totalMealNutrients = useSelector(selectTodayMealTotalNutrients);
+  const currentWeight = useSelector(selectCurrentWeight);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, language } = useLanguage();
@@ -124,7 +126,6 @@ const ProfilePage = () => {
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
-  const currentWeight = user.weight;
   const hasTargetWeight = typeof targetWeight === "number" && Number.isFinite(targetWeight);
   const progressStart = targetWeightStart ?? currentWeight;
   const effectiveTargetWeight = hasTargetWeight ? targetWeight : currentWeight;
@@ -159,7 +160,7 @@ const ProfilePage = () => {
         elevation={0}
         sx={{
           p: { xs: 3, md: 4 },
-          borderRadius: 7,
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           background:
             "linear-gradient(135deg, rgba(15,118,110,0.12) 0%, rgba(101,163,13,0.14) 100%)",
@@ -185,9 +186,9 @@ const ProfilePage = () => {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
-            <Chip label={`${t("dashboard.weight")}: ${user.weight} ${t("common.kg")}`} />
+            <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
             {hasTargetWeight && (
               <Chip
@@ -208,8 +209,8 @@ const ProfilePage = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            borderRadius: 6,
+            p: { xs: 2, md: 3 },
+            borderRadius: 1,
             border: "1px solid rgba(15, 23, 42, 0.08)",
             backgroundColor: "rgba(255,255,255,0.86)",
           }}
@@ -230,8 +231,8 @@ const ProfilePage = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            borderRadius: 6,
+            p: { xs: 2, md: 3 },
+            borderRadius: 1,
             border: "1px solid rgba(15, 23, 42, 0.08)",
             backgroundColor: "rgba(255,255,255,0.86)",
           }}
@@ -304,8 +305,8 @@ const ProfilePage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
@@ -347,7 +348,7 @@ const ProfilePage = () => {
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 4,
+                  borderRadius: 1,
                   borderColor: "rgba(15, 23, 42, 0.08)",
                 }}
               >
@@ -381,8 +382,8 @@ const ProfilePage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}

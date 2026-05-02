@@ -59,8 +59,8 @@ export const AssistantCustomizationCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}

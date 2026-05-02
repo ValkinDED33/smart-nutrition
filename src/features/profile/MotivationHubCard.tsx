@@ -155,8 +155,8 @@ export const MotivationHubCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -212,7 +212,7 @@ export const MotivationHubCard = () => {
                 elevation={0}
                 sx={{
                   p: 2,
-                  borderRadius: 4,
+                  borderRadius: 1,
                   border: "1px solid rgba(15, 23, 42, 0.08)",
                   backgroundColor: "rgba(248,250,252,0.9)",
                 }}
@@ -349,7 +349,7 @@ export const MotivationHubCard = () => {
                   elevation={0}
                   sx={{
                     p: 1.5,
-                    borderRadius: 4,
+                    borderRadius: 1,
                     border: "1px solid rgba(15, 23, 42, 0.06)",
                     backgroundColor: "rgba(248,250,252,0.85)",
                   }}

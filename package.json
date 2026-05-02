@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "server:dev": "node --env-file-if-exists=.env server/index.mjs",
+    "server:check": "node --env-file-if-exists=.env server/production-check.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "build": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit && vite build",
     "lint": "eslint .",

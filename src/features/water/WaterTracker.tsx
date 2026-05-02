@@ -342,8 +342,8 @@ export const WaterTracker = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -359,12 +359,19 @@ export const WaterTracker = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "220px minmax(0, 1fr)" },
-            gap: 3,
+            gridTemplateColumns: { xs: "1fr", md: "180px minmax(0, 1fr)" },
+            gap: { xs: 2, md: 3 },
             alignItems: "center",
           }}
         >
-          <Box sx={{ position: "relative", width: 180, height: 180, mx: "auto" }}>
+          <Box
+            sx={{
+              position: "relative",
+              width: { xs: 156, sm: 180 },
+              height: { xs: 156, sm: 180 },
+              mx: "auto",
+            }}
+          >
             <Box
               sx={{
                 position: "absolute",
@@ -485,7 +492,10 @@ export const WaterTracker = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: `repeat(${Math.min(glassCount, 4)}, minmax(0, 1fr))`,
+            gridTemplateColumns: {
+              xs: "repeat(4, minmax(0, 1fr))",
+              sm: "repeat(auto-fit, minmax(76px, 1fr))",
+            },
             gap: 1.2,
           }}
         >
@@ -497,8 +507,8 @@ export const WaterTracker = () => {
               onClick={() => handleGlassClick(glass.index, glass.fill)}
               sx={{
                 p: 0,
-                minHeight: 112,
-                borderRadius: 4,
+                minHeight: { xs: 96, sm: 112 },
+                borderRadius: 1,
                 border: "1px solid rgba(125,211,252,0.42)",
                 backgroundColor: "rgba(239,246,255,0.72)",
                 cursor: "pointer",
@@ -563,7 +573,7 @@ export const WaterTracker = () => {
           </Button>
         </Stack>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.5}>
             <Typography sx={{ fontWeight: 800 }}>{copy.remindersTitle}</Typography>
             <FormControlLabel
@@ -624,7 +634,7 @@ export const WaterTracker = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.5}>
             <Typography sx={{ fontWeight: 800 }}>{copy.analyticsTitle}</Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -688,7 +698,7 @@ export const WaterTracker = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.2}>
             <Typography sx={{ fontWeight: 800 }}>{copy.historyTitle}</Typography>
             {weeklyRecords
