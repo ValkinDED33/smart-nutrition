@@ -1,12 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Drawer, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Drawer, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { AssistantRuntimeCard } from "../../features/assistant/AssistantRuntimeCard";
+import { selectTodayMealTotalNutrients } from "../../features/meal/selectors";
 import { detectWeightPlateau, getDaysSince } from "../lib/bodyMetrics";
 import { useLanguage } from "../language";
-import { AssistantAvatar } from "./AssistantAvatar";
+import { AssistantAvatar, type AssistantAvatarMood } from "./AssistantAvatar";
 
 const widgetCopy = {
   uk: {
@@ -17,6 +18,16 @@ const widgetCopy = {
     fullPage: "Повний екран AI",
     drawerTitle: "Clippy 2.0",
     drawerSubtitle: "Швидкий контекстний діалог прямо поверх поточного екрана.",
+    level: "Рівень",
+    points: "XP",
+    moods: {
+      idle: "Поруч",
+      happy: "Ритм є",
+      coach: "Coach mode",
+      concerned: "Мʼякий контроль",
+      sleepy: "Чекаю поруч",
+      celebrate: "Прогрес",
+    },
     setup: {
       title: "Бачу, ви ще на старті",
       body: "Хочете, допоможу швидко налаштувати цілі та стартові заміри?",
@@ -37,6 +48,21 @@ const widgetCopy = {
       body: "Пора записати новий weekly check-in і заміри.",
       action: "Записати check-in",
     },
+    caloriesHigh: {
+      title: "Калорії вже вище плану",
+      body: "Не катастрофа. Просто зробимо решту дня легшою і без різких рішень.",
+      action: "Відкрити щоденник",
+    },
+    caloriesLow: {
+      title: "День ще недоїдає",
+      body: "Схоже, калорій замало. Додамо простий прийом їжі без стресу?",
+      action: "Додати їжу",
+    },
+    progressGood: {
+      title: "Гарний ритм сьогодні",
+      body: "Ви тримаєте день у керованій зоні. Це саме той маленький прогрес, який накопичується.",
+      action: "Подивитися прогрес",
+    },
   },
   pl: {
     help: "Podpowiedź",
@@ -46,6 +72,16 @@ const widgetCopy = {
     fullPage: "Pełny ekran AI",
     drawerTitle: "Clippy 2.0",
     drawerSubtitle: "Szybki kontekstowy dialog bez wychodzenia z aktualnego ekranu.",
+    level: "Poziom",
+    points: "XP",
+    moods: {
+      idle: "Jestem obok",
+      happy: "Rytm jest",
+      coach: "Coach mode",
+      concerned: "Łagodna kontrola",
+      sleepy: "Czekam obok",
+      celebrate: "Progres",
+    },
     setup: {
       title: "Widzę, że dopiero startujesz",
       body: "Chcesz, żebym pomógł szybko ustawić cele i pierwsze pomiary?",
@@ -66,26 +102,118 @@ const widgetCopy = {
       body: "To dobry moment, aby dodać nowy weekly check-in i pomiary.",
       action: "Dodaj check-in",
     },
+    caloriesHigh: {
+      title: "Kalorie są już ponad plan",
+      body: "To nie katastrofa. Po prostu ustawimy resztę dnia spokojniej, bez ostrych skrętów.",
+      action: "Otwórz dziennik",
+    },
+    caloriesLow: {
+      title: "Dzień jest jeszcze niedojedzony",
+      body: "Wygląda na to, że kalorii jest za mało. Dodamy prosty posiłek bez stresu?",
+      action: "Dodaj jedzenie",
+    },
+    progressGood: {
+      title: "Dobry rytm dzisiaj",
+      body: "Trzymasz dzień w kontrolowanej strefie. To właśnie mały progres, który się sumuje.",
+      action: "Zobacz progres",
+    },
   },
 } as const;
+
+const IDLE_TIMEOUT_MS = 75_000;
+
+const clamp = (value: number, min = -1, max = 1) =>
+  Math.max(min, Math.min(max, value));
+
+interface AssistantTip {
+  id: string;
+  title: string;
+  body: string;
+  action: string;
+  mood: AssistantAvatarMood;
+  onAction: () => void;
+}
 
 export const ContextAssistantWidget = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const water = useSelector((state: RootState) => state.water);
+  const todayTotals = useSelector(selectTodayMealTotalNutrients);
   const { language } = useLanguage();
   const copy = widgetCopy[language];
   const [dismissedTipId, setDismissedTipId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [isIdle, setIsIdle] = useState(false);
+  const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
 
-  const currentTip = useMemo(() => {
+  useEffect(() => {
+    if (!user || !profile.assistant.widgetEnabled) {
+      return;
+    }
+
+    let idleTimer: number | undefined;
+    let animationFrame: number | undefined;
+    let pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    const resetIdleTimer = () => {
+      if (idleTimer !== undefined) {
+        window.clearTimeout(idleTimer);
+      }
+
+      setIsIdle(false);
+      idleTimer = window.setTimeout(() => setIsIdle(true), IDLE_TIMEOUT_MS);
+    };
+
+    const updateLookOffset = () => {
+      animationFrame = undefined;
+      setLookOffset({
+        x: clamp((pointer.x / Math.max(window.innerWidth, 1) - 0.5) * 2),
+        y: clamp((pointer.y / Math.max(window.innerHeight, 1) - 0.5) * 2),
+      });
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      pointer = { x: event.clientX, y: event.clientY };
+      resetIdleTimer();
+
+      if (animationFrame === undefined) {
+        animationFrame = window.requestAnimationFrame(updateLookOffset);
+      }
+    };
+
+    const handleActivity = () => resetIdleTimer();
+
+    resetIdleTimer();
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("keydown", handleActivity);
+    window.addEventListener("scroll", handleActivity, { passive: true });
+    window.addEventListener("touchstart", handleActivity, { passive: true });
+
+    return () => {
+      if (idleTimer !== undefined) {
+        window.clearTimeout(idleTimer);
+      }
+      if (animationFrame !== undefined) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("keydown", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+    };
+  }, [profile.assistant.widgetEnabled, user]);
+
+  const currentTip = useMemo<AssistantTip | null>(() => {
     if (!user) {
       return null;
     }
 
     const plateau = detectWeightPlateau(profile.weightHistory);
     const hours = new Date().getHours();
+    const calorieTarget = Math.max(profile.dailyCalories, 0);
+    const calorieRatio =
+      calorieTarget > 0 ? todayTotals.calories / calorieTarget : 0;
     const waterIsLow =
       hours >= 16 &&
       water.dailyTargetMl > 0 &&
@@ -99,6 +227,7 @@ export const ContextAssistantWidget = () => {
       return {
         id: "setup",
         ...copy.setup,
+        mood: "coach",
         onAction: () => navigate("/profile"),
       };
     }
@@ -107,7 +236,17 @@ export const ContextAssistantWidget = () => {
       return {
         id: "check-in",
         ...copy.checkIn,
+        mood: "coach",
         onAction: () => navigate("/profile"),
+      };
+    }
+
+    if (calorieTarget > 0 && todayTotals.calories > calorieTarget * 1.08) {
+      return {
+        id: "calories-high",
+        ...copy.caloriesHigh,
+        mood: "concerned",
+        onAction: () => navigate("/meals"),
       };
     }
 
@@ -115,6 +254,7 @@ export const ContextAssistantWidget = () => {
       return {
         id: "plateau",
         ...copy.plateau,
+        mood: "concerned",
         onAction: () => navigate("/profile"),
       };
     }
@@ -123,20 +263,69 @@ export const ContextAssistantWidget = () => {
       return {
         id: "water",
         ...copy.water,
+        mood: "coach",
+        onAction: () => navigate("/progress"),
+      };
+    }
+
+    if (
+      calorieTarget > 0 &&
+      hours >= 19 &&
+      todayTotals.calories > 0 &&
+      calorieRatio < 0.62
+    ) {
+      return {
+        id: "calories-low",
+        ...copy.caloriesLow,
+        mood: "coach",
+        onAction: () => navigate("/meals"),
+      };
+    }
+
+    if (
+      calorieTarget > 0 &&
+      hours >= 12 &&
+      todayTotals.calories > 0 &&
+      calorieRatio >= 0.42 &&
+      calorieRatio <= 1.02
+    ) {
+      return {
+        id: "progress-good",
+        ...copy.progressGood,
+        mood: "celebrate",
         onAction: () => navigate("/progress"),
       };
     }
 
     return null;
-  }, [copy.checkIn, copy.plateau, copy.setup, copy.water, navigate, profile, user, water]);
+  }, [
+    copy.caloriesHigh,
+    copy.caloriesLow,
+    copy.checkIn,
+    copy.plateau,
+    copy.progressGood,
+    copy.setup,
+    copy.water,
+    navigate,
+    profile,
+    todayTotals.calories,
+    user,
+    water,
+  ]);
 
   if (!user || !profile.assistant.widgetEnabled) {
     return null;
   }
 
+  const assistantMood: AssistantAvatarMood = panelOpen
+    ? "coach"
+    : isIdle
+      ? "sleepy"
+      : currentTip?.mood ?? "happy";
   const showTipCard =
     profile.assistant.proactiveHintsEnabled &&
     Boolean(currentTip) &&
+    !isIdle &&
     !panelOpen &&
     dismissedTipId !== currentTip?.id;
 
@@ -169,11 +358,37 @@ export const ContextAssistantWidget = () => {
             }}
           >
             <Stack spacing={1.2}>
-              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                {copy.help}
-              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                justifyContent="space-between"
+                useFlexGap
+              >
+                <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                  {copy.help}
+                </Typography>
+                <Chip
+                  size="small"
+                  label={copy.moods[currentTip.mood]}
+                  color={currentTip.mood === "concerned" ? "warning" : "success"}
+                  variant="outlined"
+                />
+              </Stack>
               <Typography sx={{ fontWeight: 800 }}>{currentTip.title}</Typography>
               <Typography color="text.secondary">{currentTip.body}</Typography>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                <Chip
+                  size="small"
+                  label={`${copy.level}: ${profile.motivation.level}`}
+                  variant="outlined"
+                />
+                <Chip
+                  size="small"
+                  label={`${copy.points}: ${profile.motivation.points}`}
+                  variant="outlined"
+                />
+              </Stack>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <Button
                   variant="contained"
@@ -221,7 +436,12 @@ export const ContextAssistantWidget = () => {
             background: "transparent",
           }}
         >
-          <AssistantAvatar name={profile.assistant.name} />
+          <AssistantAvatar
+            name={profile.assistant.name}
+            mood={assistantMood}
+            lookOffset={lookOffset}
+            active={Boolean(currentTip) && !panelOpen && !isIdle}
+          />
         </Box>
       </Box>
 
@@ -250,7 +470,13 @@ export const ContextAssistantWidget = () => {
             >
               <Stack spacing={0.4}>
                 <Stack direction="row" spacing={1.2} alignItems="center">
-                  <AssistantAvatar name={profile.assistant.name} size={48} />
+                  <AssistantAvatar
+                    name={profile.assistant.name}
+                    size={48}
+                    mood="coach"
+                    lookOffset={lookOffset}
+                    active={panelOpen}
+                  />
                   <Stack spacing={0.2}>
                     <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
                       {copy.drawerTitle}
