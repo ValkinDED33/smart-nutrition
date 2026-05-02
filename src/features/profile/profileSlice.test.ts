@@ -7,6 +7,7 @@ import {
   selectDailyMacroTargets,
 } from "./selectors";
 import reducer, {
+  addProgressPhoto,
   activatePremiumPlan,
   cancelPremiumSubscription,
   normalizeProfileState,
@@ -94,6 +95,33 @@ describe("profileSlice premium", () => {
       status: "cancelled",
       cancelledAt: "2026-05-03T10:00:00.000Z",
     });
+  });
+});
+
+describe("profileSlice progress photos", () => {
+  it("accepts only bounded raster image data URLs", () => {
+    let state = reducer(
+      undefined,
+      addProgressPhoto({ imageDataUrl: "data:image/svg+xml;base64,PHN2Zy8+" })
+    );
+
+    expect(state.progressPhotos).toHaveLength(0);
+
+    state = reducer(
+      state,
+      addProgressPhoto({
+        imageDataUrl: `data:image/png;base64,${"a".repeat(1_700_000)}`,
+      })
+    );
+
+    expect(state.progressPhotos).toHaveLength(0);
+
+    state = reducer(
+      state,
+      addProgressPhoto({ imageDataUrl: "data:image/webp;base64,aaaa" })
+    );
+
+    expect(state.progressPhotos).toHaveLength(1);
   });
 });
 

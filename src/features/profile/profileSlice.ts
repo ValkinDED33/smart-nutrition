@@ -91,6 +91,15 @@ const toNumber = (value: unknown, fallback = 0) =>
 const toNullableNumber = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 
+const MAX_PROGRESS_PHOTO_DATA_URL_LENGTH = 1_700_000;
+const SAFE_PROGRESS_PHOTO_DATA_URL_PATTERN =
+  /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
+
+const isSafeProgressPhotoDataUrl = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.length <= MAX_PROGRESS_PHOTO_DATA_URL_LENGTH &&
+  SAFE_PROGRESS_PHOTO_DATA_URL_PATTERN.test(value);
+
 const isDietStyle = (value: unknown): value is DietStyle =>
   value === "balanced" ||
   value === "vegetarian" ||
@@ -215,10 +224,9 @@ const normalizeProgressPhotos = (value: unknown): ProgressPhotoHistoryItem[] => 
       return photos;
     }
 
-    const imageDataUrl =
-      typeof item.imageDataUrl === "string" && item.imageDataUrl.startsWith("data:image/")
-        ? item.imageDataUrl
-        : null;
+    const imageDataUrl = isSafeProgressPhotoDataUrl(item.imageDataUrl)
+      ? item.imageDataUrl
+      : null;
 
     if (!imageDataUrl) {
       return photos;
@@ -539,7 +547,7 @@ const profileSlice = createSlice({
         recordedAt?: string;
       }>
     ) {
-      if (!action.payload.imageDataUrl.startsWith("data:image/")) {
+      if (!isSafeProgressPhotoDataUrl(action.payload.imageDataUrl)) {
         return;
       }
 

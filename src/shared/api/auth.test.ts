@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AuthApiError, getAuthRuntimeInfo, login, logout, register } from "./auth";
+import { getAuthRuntimeInfo, login, logout, register } from "./auth";
 
 const password = "StrongPass1!";
 
@@ -54,7 +54,7 @@ describe("auth provider selection", () => {
         ...createRegisterPayload("invalid-local-profile@example.com"),
         weight: 500,
       })
-    ).rejects.toMatchObject<AuthApiError>({
+    ).rejects.toMatchObject({
       code: "INVALID_PROFILE",
     });
   });
