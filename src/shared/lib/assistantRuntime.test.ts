@@ -27,6 +27,13 @@ const createContext = (): AssistantRuntimeContext => ({
   assistantRole: "assistant",
   assistantTone: "gentle",
   humorEnabled: true,
+  personalDetails: {
+    bloodGroup: "unknown",
+    eyeColor: "unknown",
+    relationshipStatus: "single",
+    supportSystem: "self",
+    petCompanion: "dog",
+  },
   motivation: {
     points: 65,
     level: 1,

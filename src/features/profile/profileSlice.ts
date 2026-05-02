@@ -23,16 +23,22 @@ import type {
   AssistantRole,
   AssistantTone,
   AchievementProgress,
+  BloodGroup,
   DietStyle,
+  EyeColor,
   MeasurementHistoryItem,
   MotivationHistoryItem,
   MotivationState,
   MotivationTask,
   MotivationTaskCategory,
+  PersonalProfileDetails,
+  PetCompanion,
   PremiumPlanId,
   PremiumSubscriptionState,
   ProgressPhotoHistoryItem,
+  RelationshipStatus,
   ReminderTimes,
+  SupportSystem,
   WeeklyCheckInState,
 } from "../../shared/types/profile";
 import type { AppLanguage } from "../../shared/types/i18n";
@@ -65,6 +71,7 @@ export interface ProfileState {
   motivation: MotivationState;
   assistant: AssistantCustomization;
   premium: PremiumSubscriptionState;
+  personalDetails: PersonalProfileDetails;
 }
 
 interface ProfileTargetsPayload {
@@ -117,6 +124,44 @@ const isAssistantTone = (value: unknown): value is AssistantTone =>
   value === "gentle" || value === "playful" || value === "focused";
 const isTaskCategory = (value: unknown): value is MotivationTaskCategory =>
   value === "nutrition" || value === "consistency" || value === "reflection";
+const isBloodGroup = (value: unknown): value is BloodGroup =>
+  value === "unknown" ||
+  value === "o_positive" ||
+  value === "o_negative" ||
+  value === "a_positive" ||
+  value === "a_negative" ||
+  value === "b_positive" ||
+  value === "b_negative" ||
+  value === "ab_positive" ||
+  value === "ab_negative";
+const isEyeColor = (value: unknown): value is EyeColor =>
+  value === "unknown" ||
+  value === "brown" ||
+  value === "blue" ||
+  value === "green" ||
+  value === "gray" ||
+  value === "hazel" ||
+  value === "amber" ||
+  value === "other";
+const isRelationshipStatus = (value: unknown): value is RelationshipStatus =>
+  value === "single" ||
+  value === "dating" ||
+  value === "married" ||
+  value === "complicated" ||
+  value === "prefer_not";
+const isSupportSystem = (value: unknown): value is SupportSystem =>
+  value === "self" ||
+  value === "partner_supports" ||
+  value === "partner_neutral" ||
+  value === "family_friends" ||
+  value === "low_support" ||
+  value === "prefer_not";
+const isPetCompanion = (value: unknown): value is PetCompanion =>
+  value === "none" ||
+  value === "cat" ||
+  value === "dog" ||
+  value === "cat_and_dog" ||
+  value === "other";
 
 const isReminderTime = (value: unknown): value is string =>
   typeof value === "string" && /^([01]\d|2[0-3]):([0-5]\d)$/.test(value.trim());
@@ -186,6 +231,14 @@ const createDefaultPremiumSubscription = (): PremiumSubscriptionState => ({
   trialEndsAt: null,
   renewsAt: null,
   cancelledAt: null,
+});
+
+const createDefaultPersonalDetails = (): PersonalProfileDetails => ({
+  bloodGroup: "unknown",
+  eyeColor: "unknown",
+  relationshipStatus: "prefer_not",
+  supportSystem: "self",
+  petCompanion: "none",
 });
 
 const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] => {
@@ -407,6 +460,25 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
   };
 };
 
+const normalizePersonalDetails = (value: unknown): PersonalProfileDetails => {
+  const fallback = createDefaultPersonalDetails();
+  const record = isRecord(value) ? value : {};
+
+  return {
+    bloodGroup: isBloodGroup(record.bloodGroup) ? record.bloodGroup : fallback.bloodGroup,
+    eyeColor: isEyeColor(record.eyeColor) ? record.eyeColor : fallback.eyeColor,
+    relationshipStatus: isRelationshipStatus(record.relationshipStatus)
+      ? record.relationshipStatus
+      : fallback.relationshipStatus,
+    supportSystem: isSupportSystem(record.supportSystem)
+      ? record.supportSystem
+      : fallback.supportSystem,
+    petCompanion: isPetCompanion(record.petCompanion)
+      ? record.petCompanion
+      : fallback.petCompanion,
+  };
+};
+
 export const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
@@ -424,6 +496,7 @@ export const createInitialProfileState = (): ProfileState => ({
   motivation: createDefaultMotivationState(),
   assistant: createDefaultAssistantCustomization(),
   premium: createDefaultPremiumSubscription(),
+  personalDetails: createDefaultPersonalDetails(),
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -470,6 +543,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     ),
     assistant: normalizeAssistantCustomization(value.assistant),
     premium: normalizePremiumSubscription(value.premium),
+    personalDetails: normalizePersonalDetails(value.personalDetails),
   };
 };
 
@@ -641,6 +715,16 @@ const profileSlice = createSlice({
       });
     },
 
+    updatePersonalDetails(
+      state,
+      action: PayloadAction<Partial<PersonalProfileDetails>>
+    ) {
+      state.personalDetails = normalizePersonalDetails({
+        ...state.personalDetails,
+        ...action.payload,
+      });
+    },
+
     refreshMotivationTasks(state, action: PayloadAction<string | undefined>) {
       state.motivation = refreshMotivationState(
         state.motivation,
@@ -767,6 +851,7 @@ const profileSlice = createSlice({
       state.motivation = createDefaultMotivationState();
       state.assistant = createDefaultAssistantCustomization();
       state.premium = createDefaultPremiumSubscription();
+      state.personalDetails = createDefaultPersonalDetails();
     },
   },
 });
@@ -785,6 +870,7 @@ export const {
   updateNotificationPreferences,
   setProfileLanguage,
   setAssistantCustomization,
+  updatePersonalDetails,
   refreshMotivationTasks,
   completeMotivationTask,
   activateWeeklyDayOff,
