@@ -35,10 +35,18 @@ const suggestionCopy = {
   uk: {
     title: "Швидкі підказки",
     hint: "Натисніть підказку, щоб швидко підставити запит.",
+    searchLabel: "Пошук їжі",
+    quickTitle: "Популярне для швидкого старту",
+    results: "Знайдено",
+    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
   pl: {
     title: "Szybkie podpowiedzi",
     hint: "Kliknij podpowiedź, aby szybko uzupełnić wyszukiwanie.",
+    searchLabel: "Szukaj jedzenia",
+    quickTitle: "Popularne na szybki start",
+    results: "Znaleziono",
+    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
 } as const;
 
@@ -239,8 +247,8 @@ export const ProductSearch = ({ mealType }: Props) => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 5,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -256,7 +264,9 @@ export const ProductSearch = ({ mealType }: Props) => {
             fullWidth
             value={query}
             onChange={(event) => handleQueryChange(event.target.value)}
-            label={t("productSearch.placeholder")}
+            label={copy.searchLabel}
+            placeholder={t("productSearch.placeholder")}
+            autoComplete="off"
           />
           <Button
             variant="outlined"
@@ -266,6 +276,22 @@ export const ProductSearch = ({ mealType }: Props) => {
             {t("productSearch.clear")}
           </Button>
         </Stack>
+
+        {!normalizedQuery && (
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 700 }}>{copy.quickTitle}</Typography>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {copy.presets.map((preset) => (
+                <Chip
+                  key={preset}
+                  label={preset}
+                  clickable
+                  onClick={() => handleQueryChange(preset)}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        )}
 
         {autocompleteSuggestions.length > 0 && (
           <Stack spacing={1}>
@@ -327,26 +353,31 @@ export const ProductSearch = ({ mealType }: Props) => {
         {filteredResults.length === 0 ? (
           <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
         ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-                xl: "repeat(3, minmax(0, 1fr))",
-              },
-              gap: 2,
-            }}
-          >
-            {filteredResults.map((product) => (
-              <ProductCard
-                key={product.barcode?.trim() || product.id}
-                product={product}
-                mealType={mealType}
-                origin="manual"
-              />
-            ))}
-          </Box>
+          <Stack spacing={1.5}>
+            <Typography color="text.secondary" variant="body2">
+              {copy.results}: {filteredResults.length}
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0, 1fr))",
+                  xl: "repeat(3, minmax(0, 1fr))",
+                },
+                gap: 2,
+              }}
+            >
+              {filteredResults.map((product) => (
+                <ProductCard
+                  key={product.barcode?.trim() || product.id}
+                  product={product}
+                  mealType={mealType}
+                  origin="manual"
+                />
+              ))}
+            </Box>
+          </Stack>
         )}
       </Stack>
     </Paper>

@@ -172,7 +172,7 @@ function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <ProfilePage />}
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />

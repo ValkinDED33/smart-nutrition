@@ -30,6 +30,57 @@ const normalizeQuickQuestionId = (value) =>
     ? value
     : null;
 
+const normalizePersonalDetails = (value) => {
+  const record = isRecord(value) ? value : {};
+  const readOption = (nextValue, allowedValues, fallback) =>
+    allowedValues.includes(nextValue) ? nextValue : fallback;
+
+  return {
+    bloodGroup: readOption(
+      record.bloodGroup,
+      [
+        "unknown",
+        "o_positive",
+        "o_negative",
+        "a_positive",
+        "a_negative",
+        "b_positive",
+        "b_negative",
+        "ab_positive",
+        "ab_negative",
+      ],
+      "unknown"
+    ),
+    eyeColor: readOption(
+      record.eyeColor,
+      ["unknown", "brown", "blue", "green", "gray", "hazel", "amber", "other"],
+      "unknown"
+    ),
+    relationshipStatus: readOption(
+      record.relationshipStatus,
+      ["single", "dating", "married", "complicated", "prefer_not"],
+      "prefer_not"
+    ),
+    supportSystem: readOption(
+      record.supportSystem,
+      [
+        "self",
+        "partner_supports",
+        "partner_neutral",
+        "family_friends",
+        "low_support",
+        "prefer_not",
+      ],
+      "self"
+    ),
+    petCompanion: readOption(
+      record.petCompanion,
+      ["none", "cat", "dog", "cat_and_dog", "other"],
+      "none"
+    ),
+  };
+};
+
 const countOpenTasks = (motivation) =>
   Array.isArray(motivation?.activeTasks)
     ? motivation.activeTasks.filter(
@@ -78,6 +129,7 @@ const normalizeContext = (payload, currentUser) => {
       fallback: "gentle",
     }),
     humorEnabled: Boolean(record.humorEnabled),
+    personalDetails: normalizePersonalDetails(record.personalDetails),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
       fallback: "on_track",

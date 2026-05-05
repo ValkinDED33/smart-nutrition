@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sendError } from "./http.mjs";
+import { isUnsafeCrossSiteMutation, sendError, setSecurityHeaders } from "./http.mjs";
 
 class MemoryResponse {
   statusCode = 200;
@@ -9,6 +9,10 @@ class MemoryResponse {
   writeHead(statusCode, headers = {}) {
     this.statusCode = statusCode;
     this.headers = { ...this.headers, ...headers };
+  }
+
+  setHeader(name, value) {
+    this.headers[name] = value;
   }
 
   end(body = "") {
@@ -30,5 +34,49 @@ describe("http response helpers", () => {
       error: "Request body must be valid JSON.",
       message: "Request body must be valid JSON.",
     });
+  });
+
+  it("applies baseline security headers", () => {
+    const response = new MemoryResponse();
+
+    setSecurityHeaders(response);
+
+    expect(response.headers).toMatchObject({
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+    });
+  });
+
+  it("detects disallowed cross-site mutations", () => {
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: "https://evil.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(true);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: "https://app.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "GET",
+          headers: { origin: "https://evil.example" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
   });
 });

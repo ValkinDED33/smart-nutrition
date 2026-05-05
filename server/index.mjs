@@ -15,7 +15,9 @@ import {
   sendError,
   sendJson,
   sendNoContent,
+  isUnsafeCrossSiteMutation,
   setCorsHeaders,
+  setSecurityHeaders,
 } from "./lib/http.mjs";
 import { createAiController } from "./controllers/ai.controller.mjs";
 import { createAiRepository } from "./repositories/aiRepository.mjs";
@@ -136,6 +138,7 @@ const mimeTypes = new Map([
   [".js", "text/javascript; charset=utf-8"],
   [".css", "text/css; charset=utf-8"],
   [".json", "application/json; charset=utf-8"],
+  [".webmanifest", "application/manifest+json; charset=utf-8"],
   [".svg", "image/svg+xml"],
   [".png", "image/png"],
   [".jpg", "image/jpeg"],
@@ -163,6 +166,16 @@ const getClientAddress = (request) =>
 const readSingleHeader = (value) =>
   Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
 
+const getRequestUrl = (request) => {
+  try {
+    return new URL(request.url ?? "/", `http://${request.headers.host || "localhost"}`);
+  } catch {
+    return null;
+  }
+};
+
+const getRequestPathname = (request) => getRequestUrl(request)?.pathname ?? "/";
+
 const getSyncContext = (request) => ({
   deviceId: readSingleHeader(request.headers["x-device-id"]) || null,
   baseVersion: readSingleHeader(request.headers["x-state-version"]) || null,
@@ -179,6 +192,16 @@ const isInsideDirectory = (rootDir, candidatePath) => {
 
 const getContentType = (filePath) =>
   mimeTypes.get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
+
+const toAttachmentFilename = (value, fallback = "smart-nutrition-backup.json") => {
+  const filename = String(value ?? "")
+    .replace(/[\r\n\\/:"*?<>|]+/g, "_")
+    .replace(/[^\w. -]+/g, "_")
+    .trim()
+    .slice(0, 120);
+
+  return filename || fallback;
+};
 
 const sendStaticFile = async (request, response, filePath) => {
   const body = await fs.readFile(filePath);
@@ -323,6 +346,7 @@ const broadcastStateMeta = (user, stateService) => {
 };
 
 const routeRequest = async (request, response) => {
+  setSecurityHeaders(response);
   setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);
 
   if (!request.url) {
@@ -335,8 +359,19 @@ const routeRequest = async (request, response) => {
     return;
   }
 
-  const url = new URL(request.url, `http://${request.headers.host}`);
+  const url = getRequestUrl(request);
+  if (!url) {
+    sendError(response, 400, "INVALID_URL", "Request URL is invalid.");
+    return;
+  }
+
   const { pathname } = url;
+
+  if (isUnsafeCrossSiteMutation(request, serverConfig.allowedCorsOrigins)) {
+    sendError(response, 403, "CSRF_BLOCKED", "Request origin is not allowed.");
+    return;
+  }
+
   const rateLimit =
     pathname === "/api/health" ? null : consumeRateLimit(request);
 
@@ -761,11 +796,13 @@ const routeRequest = async (request, response) => {
 
     if (accountBackupMatch && request.method === "GET") {
       const backupId = decodeURIComponent(accountBackupMatch[1]);
+      const backupPayload = authService.readAccountBackup(auth.user, backupId);
+
       response.setHeader(
         "Content-Disposition",
-        `attachment; filename="${backupId.replace(/"/g, "")}"`
+        `attachment; filename="${toAttachmentFilename(backupId)}"`
       );
-      sendJson(response, 200, authService.readAccountBackup(auth.user, backupId));
+      sendJson(response, 200, backupPayload);
       return;
     }
 
@@ -777,7 +814,9 @@ const routeRequest = async (request, response) => {
   } catch (error) {
     if (error instanceof AuthApiError) {
       const statusCode =
-        error.code === "EMAIL_IN_USE"
+        error.code === "INVALID_PROFILE"
+          ? 400
+          : error.code === "EMAIL_IN_USE"
           ? 409
           : error.code === "TOO_MANY_ATTEMPTS"
             ? 429
@@ -850,9 +889,7 @@ const routeRequest = async (request, response) => {
 
 const server = http.createServer((request, response) => {
   const startedAt = Date.now();
-  const routeLabel = normalizeRouteLabel(
-    new URL(request.url ?? "/", `http://${request.headers.host || "localhost"}`).pathname
-  );
+  const routeLabel = normalizeRouteLabel(getRequestPathname(request));
 
   requestMetrics.totalRequests += 1;
   requestMetrics.activeRequests += 1;

@@ -280,6 +280,10 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
       return new AuthApiError("WEAK_PASSWORD", error.message);
     }
 
+    if (error.code === "INVALID_PROFILE") {
+      return new AuthApiError("INVALID_PROFILE", error.message);
+    }
+
     if (error.status === 401 || error.code === "INVALID_CREDENTIALS") {
       return new AuthApiError("INVALID_CREDENTIALS", error.message);
     }

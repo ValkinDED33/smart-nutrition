@@ -1,0 +1,20 @@
+{
+  "name": "Smart Nutrition",
+  "short_name": "Smart Nutrition",
+  "description": "AI nutrition planner with calories, water, weight and meal tracking.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eefaf4",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "food"]
+}

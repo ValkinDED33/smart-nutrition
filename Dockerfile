@@ -1,8 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
 COPY . .
 RUN npm run build
@@ -14,8 +14,8 @@ ENV NODE_ENV=production
 ENV SMART_NUTRITION_SERVE_STATIC=true
 ENV SMART_NUTRITION_STATIC_DIR=/app/dist
 
-COPY package.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
 
 COPY server ./server
 COPY --from=build /app/dist ./dist

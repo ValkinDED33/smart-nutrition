@@ -34,6 +34,30 @@ describe("communitySlice", () => {
     expect(state.progressCards[0]?.likes).toBe(2);
   });
 
+  it("caps synced social text, collections, and score", () => {
+    const state = normalizeCommunityState({
+      friends: Array.from({ length: 150 }, (_, index) => ({
+        id: `friend-${index}`,
+        name: "A".repeat(200),
+      })),
+      messages: [],
+      roomMessages: [{ text: "M".repeat(900), authorName: "B".repeat(120) }],
+      posts: [{ title: "T".repeat(300), body: "Body", type: "recipe" }],
+      comments: [],
+      progressCards: [],
+      favoritePostIds: ["x".repeat(200)],
+      score: 999999999,
+    });
+
+    expect(state.friends).toHaveLength(100);
+    expect(state.friends[0]?.name).toHaveLength(80);
+    expect(state.roomMessages[0]?.text).toHaveLength(600);
+    expect(state.roomMessages[0]?.authorName).toHaveLength(80);
+    expect(state.posts[0]?.title).toHaveLength(120);
+    expect(state.favoritePostIds[0]).toHaveLength(96);
+    expect(state.score).toBe(1000000);
+  });
+
   it("adds chat messages, post comments, and progress card likes", () => {
     let state = reducer(
       undefined,

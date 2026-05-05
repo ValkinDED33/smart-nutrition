@@ -3,12 +3,20 @@ import type { RootState } from "../../app/store";
 import { calculateMacroTargets } from "../../shared/lib/macroTargets";
 import { selectTodayMealTotalNutrients } from "../meal/selectors";
 
+export const selectCurrentWeight = createSelector(
+  [
+    (state: RootState) => state.profile.weightHistory,
+    (state: RootState) => state.auth.user?.weight ?? 0,
+  ],
+  (weightHistory, accountWeight) => weightHistory.at(-1)?.weight ?? accountWeight
+);
+
 export const selectDailyMacroTargets = createSelector(
   [
     (state: RootState) => state.profile.dailyCalories,
     (state: RootState) => state.profile.goal,
     (state: RootState) => state.profile.dietStyle,
-    (state: RootState) => state.auth.user?.weight ?? 0,
+    selectCurrentWeight,
   ],
   (dailyCalories, goal, dietStyle, weight) =>
     calculateMacroTargets({

@@ -28,6 +28,48 @@ const toFiniteNumber = (value, fallback = 0) => {
   return Number.isFinite(nextValue) ? nextValue : fallback;
 };
 
+const clampNumber = (value, { min = 0, max = 100000 } = {}) =>
+  Math.min(Math.max(value, min), max);
+
+const readListLimit = (value, { fallback = 48, max = 120 } = {}) => {
+  const nextValue = Math.trunc(Number(value));
+
+  if (!Number.isFinite(nextValue)) {
+    return fallback;
+  }
+
+  return clampNumber(nextValue, { min: 1, max });
+};
+
+const normalizeSearchQuery = (value) => normalizeText(value, { maxLength: 120 });
+
+const normalizeImageUrl = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const nextValue = value.trim();
+
+  if (!nextValue || nextValue.length > 512000) {
+    return null;
+  }
+
+  if (/^data:image\/(?:jpeg|jpg|png|webp);base64,/i.test(nextValue)) {
+    return nextValue;
+  }
+
+  if (nextValue.length > 500) {
+    return null;
+  }
+
+  try {
+    const url = new URL(nextValue);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
 const createPermissions = (role) => ({
   moderateContent: hasRoleAtLeast(role, "MODERATOR"),
   reviewReports: hasRoleAtLeast(role, "MODERATOR"),
@@ -87,10 +129,10 @@ const buildCatalogNutrients = (payload, existingNutrients = {}) => {
     );
   }
 
-  nextNutrients.calories = Math.max(calories, 0);
-  nextNutrients.protein = Math.max(protein, 0);
-  nextNutrients.fat = Math.max(fat, 0);
-  nextNutrients.carbs = Math.max(carbs, 0);
+  nextNutrients.calories = clampNumber(calories);
+  nextNutrients.protein = clampNumber(protein);
+  nextNutrients.fat = clampNumber(fat);
+  nextNutrients.carbs = clampNumber(carbs);
 
   return nextNutrients;
 };
@@ -111,7 +153,7 @@ const buildCatalogProduct = (payload, currentUser) => {
     brand: normalizeOptionalText(payload?.brand, 120),
     barcode: normalizeOptionalText(payload?.barcode, 64),
     category: normalizeOptionalText(payload?.category, 120),
-    imageUrl: normalizeOptionalText(payload?.imageUrl ?? payload?.photo, 500),
+    imageUrl: normalizeImageUrl(payload?.imageUrl ?? payload?.photo),
     unit: isUnit(payload?.unit) ? payload.unit : "g",
     source: "Manual",
     nutrients: buildCatalogNutrients(payload),
@@ -180,8 +222,8 @@ export const createPlatformService = ({ platformRepository, config }) => {
         viewerUserId: currentUser.id,
         includeUnapproved: false,
         statuses: normalizeStatusFilters(query.status),
-        search: query.search ?? "",
-        limit: Number(query.limit ?? 48),
+        search: normalizeSearchQuery(query.search),
+        limit: readListLimit(query.limit),
       }),
 
     listOwnCatalogProducts: (currentUser, query = {}) =>
@@ -190,8 +232,8 @@ export const createPlatformService = ({ platformRepository, config }) => {
         includeUnapproved: true,
         ownerUserId: currentUser.id,
         statuses: normalizeStatusFilters(query.status),
-        search: query.search ?? "",
-        limit: Number(query.limit ?? 48),
+        search: normalizeSearchQuery(query.search),
+        limit: readListLimit(query.limit),
       }),
 
     submitCatalogProduct: (currentUser, payload) => {
@@ -242,16 +284,14 @@ export const createPlatformService = ({ platformRepository, config }) => {
 
     listModerationQueue: (currentUser, query = {}) => {
       assertModerationAccess(currentUser);
+      const statuses = normalizeStatusFilters(query.status);
 
       return platformRepository.listCatalogProducts({
         viewerUserId: currentUser.id,
         includeUnapproved: true,
-        statuses:
-          normalizeStatusFilters(query.status).length > 0
-            ? normalizeStatusFilters(query.status)
-            : ["pending", "approved", "rejected"],
-        search: query.search ?? "",
-        limit: Number(query.limit ?? 80),
+        statuses: statuses.length > 0 ? statuses : ["pending", "approved", "rejected"],
+        search: normalizeSearchQuery(query.search),
+        limit: readListLimit(query.limit, { fallback: 80, max: 160 }),
       });
     },
 
@@ -272,9 +312,8 @@ export const createPlatformService = ({ platformRepository, config }) => {
         brand: normalizeOptionalText(payload?.brand ?? existingProduct.brand, 120),
         barcode: normalizeOptionalText(payload?.barcode ?? existingProduct.barcode, 64),
         category: normalizeOptionalText(payload?.category ?? existingProduct.category, 120),
-        imageUrl: normalizeOptionalText(
-          payload?.imageUrl ?? payload?.photo ?? existingProduct.imageUrl,
-          500
+        imageUrl: normalizeImageUrl(
+          payload?.imageUrl ?? payload?.photo ?? existingProduct.imageUrl
         ),
         unit: isUnit(payload?.unit) ? payload.unit : existingProduct.unit,
         source: existingProduct.source,
@@ -322,7 +361,9 @@ export const createPlatformService = ({ platformRepository, config }) => {
     listAuditLogs: (currentUser, query = {}) => {
       assertAdminAccess(currentUser);
 
-      return platformRepository.listAuditLogs(Number(query.limit ?? 80));
+      return platformRepository.listAuditLogs(
+        readListLimit(query.limit, { fallback: 80, max: 200 })
+      );
     },
 
     listUsers: (currentUser) => {

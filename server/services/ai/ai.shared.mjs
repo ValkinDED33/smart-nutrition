@@ -14,6 +14,8 @@ const buildSystemPrompt = (context) =>
     "Be warm, concise, and practical.",
     "Use only the current nutrition context and the conversation memory provided below.",
     "Do not invent calories, macros, diagnoses, or certainty.",
+    "Use relationship, support, and pet context only to adapt tone and practical contact style.",
+    "Do not make medical or nutrition claims from blood group or eye color.",
     "If the logged data looks incomplete, say so directly.",
     "Prefer 2-5 short sentences or a very short bullet list when it helps.",
   ].join(" ");
@@ -36,6 +38,11 @@ const buildContextBlock = (context) =>
     `- Weekly body check-in due: ${context.weeklyCheckInDue ? "yes" : "no"}`,
     `- Assistant role/tone: ${context.assistantRole} / ${context.assistantTone}`,
     `- Humor enabled: ${context.humorEnabled ? "yes" : "no"}`,
+    `- Blood group: ${context.personalDetails?.bloodGroup ?? "unknown"}`,
+    `- Eye color: ${context.personalDetails?.eyeColor ?? "unknown"}`,
+    `- Relationship status: ${context.personalDetails?.relationshipStatus ?? "prefer_not"}`,
+    `- Support system: ${context.personalDetails?.supportSystem ?? "self"}`,
+    `- Pet companion: ${context.personalDetails?.petCompanion ?? "none"}`,
     `- Coach insight: ${context.coachPrimaryInsight}`,
     `- Coach score: ${context.coach.score}/100`,
     `- Coach weekly averages: ${Math.round(context.coach.averageCalories)} kcal, ${Math.round(

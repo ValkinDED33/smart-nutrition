@@ -1,6 +1,7 @@
 const DB_NAME = "smart-nutrition-client";
 const STORE_NAME = "kv";
 const LEGACY_KEY_PREFIX = "smart-nutrition.";
+const INDEXED_DB_OPEN_TIMEOUT_MS = 1200;
 
 const memoryStore = new Map<string, string>();
 let initialized = false;
@@ -23,7 +24,30 @@ const openDatabase = () => {
     }
 
     try {
+      let settled = false;
+      let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+      const finish = (database: IDBDatabase | null) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+
+        if (timeoutId) {
+          globalThis.clearTimeout(timeoutId);
+        }
+
+        if (!database) {
+          databasePromise = null;
+        }
+
+        resolve(database);
+      };
       const request = indexedDB.open(DB_NAME, 1);
+
+      timeoutId = globalThis.setTimeout(() => {
+        finish(null);
+      }, INDEXED_DB_OPEN_TIMEOUT_MS);
 
       request.onupgradeneeded = () => {
         const database = request.result;
@@ -34,11 +58,15 @@ const openDatabase = () => {
       };
 
       request.onsuccess = () => {
-        resolve(request.result);
+        finish(request.result);
       };
 
       request.onerror = () => {
-        resolve(null);
+        finish(null);
+      };
+
+      request.onblocked = () => {
+        finish(null);
       };
     } catch {
       resolve(null);

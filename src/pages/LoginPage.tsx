@@ -8,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   InputAdornment,
   Paper,
   Stack,
@@ -64,13 +65,7 @@ const LoginPage = () => {
     () =>
       z.object({
         email: z.string().email(t("validation.invalidEmail")),
-        password: z
-          .string()
-          .min(10, t("validation.passwordMin"))
-          .regex(/[A-Z]/, t("validation.passwordUpper"))
-          .regex(/[a-z]/, t("validation.passwordLower"))
-          .regex(/\d/, t("validation.passwordDigit"))
-          .regex(/[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]/, t("validation.passwordSymbol")),
+        password: z.string().min(1, t("validation.passwordRequired")),
       }),
     [t]
   );
@@ -216,6 +211,9 @@ const LoginPage = () => {
               variant="contained"
               size="large"
               disabled={submitting}
+              startIcon={
+                submitting ? <CircularProgress size={18} color="inherit" /> : undefined
+              }
               sx={{
                 mt: 1,
                 py: 1.5,
@@ -225,7 +223,7 @@ const LoginPage = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {t("auth.submitLogin")}
+              {submitting ? t("auth.signingIn") : t("auth.submitLogin")}
             </Button>
           </Stack>
 

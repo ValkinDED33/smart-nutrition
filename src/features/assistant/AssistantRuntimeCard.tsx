@@ -305,8 +305,8 @@ export const AssistantRuntimeCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        borderRadius: 6,
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
@@ -377,7 +377,7 @@ export const AssistantRuntimeCard = () => {
                 variant="outlined"
                 sx={{
                   p: 1.5,
-                  borderRadius: 4,
+                  borderRadius: 1,
                   alignSelf: message.role === "user" ? "flex-end" : "stretch",
                   maxWidth: message.role === "user" ? { xs: "100%", md: "78%" } : "100%",
                   borderColor:

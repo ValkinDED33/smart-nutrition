@@ -1,6 +1,8 @@
 import { StateApiError } from "../lib/domain.mjs";
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const maxPhotoDataUrlLength = 1_700_000;
+const safePhotoDataUrlPattern = /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
 
 const normalizeDietStyle = (value) => {
   if (
@@ -546,10 +548,13 @@ export const createPhotoAnalysisService = () => ({
       typeof requestBody?.imageDataUrl === "string" ? requestBody.imageDataUrl.trim() : "";
     const mealType = normalizeMealType(requestBody?.mealType);
 
-    if (!imageDataUrl.startsWith("data:image/")) {
+    if (
+      imageDataUrl.length > maxPhotoDataUrlLength ||
+      !safePhotoDataUrlPattern.test(imageDataUrl)
+    ) {
       throw new StateApiError(
         "INVALID_PHOTO_PAYLOAD",
-        "Photo analysis requires an image data URL."
+        "Photo analysis requires a JPEG, PNG, or WebP image data URL under 1.7 MB."
       );
     }
 

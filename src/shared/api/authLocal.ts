@@ -33,6 +33,7 @@ export class AuthApiError extends Error {
     | "INVALID_RESET_TOKEN"
     | "EMAIL_DELIVERY_UNAVAILABLE"
     | "WEAK_PASSWORD"
+    | "INVALID_PROFILE"
     | "BACKEND_UNAVAILABLE";
 
   constructor(code: AuthApiError["code"], message: string) {
@@ -54,6 +55,16 @@ const PASSWORD_ITERATIONS = 120_000;
 const textEncoder = new TextEncoder();
 const strongPasswordPattern =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const validActivityLevels = new Set([
+  "sedentary",
+  "light",
+  "moderate",
+  "active",
+  "very_active",
+]);
+const validGoals = new Set(["cut", "maintain", "bulk"]);
+const validGenders = new Set(["male", "female"]);
 
 interface PasswordResetTokenRecord {
   email: string;
@@ -67,6 +78,55 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 const sanitizeName = (name: string) => name.trim().replace(/\s+/g, " ");
+
+const assertValidEmail = (email: string) => {
+  if (!emailPattern.test(email)) {
+    throw new AuthApiError("INVALID_PROFILE", "A valid email address is required.");
+  }
+};
+
+const assertValidName = (name: string) => {
+  if (name.length < 2 || name.length > 80) {
+    throw new AuthApiError("INVALID_PROFILE", "Name must be between 2 and 80 characters.");
+  }
+};
+
+const assertBoundedNumber = (
+  value: number,
+  fieldName: string,
+  { min, max }: { min: number; max: number }
+) => {
+  if (!Number.isFinite(value) || value < min || value > max) {
+    throw new AuthApiError(
+      "INVALID_PROFILE",
+      `${fieldName} must be a number between ${min} and ${max}.`
+    );
+  }
+};
+
+const assertEnumValue = (
+  value: string,
+  allowedValues: Set<string>,
+  fieldName: string
+) => {
+  if (!allowedValues.has(value)) {
+    throw new AuthApiError("INVALID_PROFILE", `${fieldName} is not supported.`);
+  }
+};
+
+const assertValidRegisterPayload = (userData: RegisterPayload) => {
+  const email = normalizeEmail(userData.email);
+  const name = sanitizeName(userData.name);
+
+  assertValidEmail(email);
+  assertValidName(name);
+  assertBoundedNumber(Number(userData.age), "Age", { min: 10, max: 120 });
+  assertBoundedNumber(Number(userData.weight), "Weight", { min: 30, max: 300 });
+  assertBoundedNumber(Number(userData.height), "Height", { min: 120, max: 250 });
+  assertEnumValue(userData.gender, validGenders, "Gender");
+  assertEnumValue(userData.activity, validActivityLevels, "Activity level");
+  assertEnumValue(userData.goal, validGoals, "Goal");
+};
 
 const legacyHashPassword = (password: string) =>
   Array.from(password).reduce((hash, char) => {
@@ -357,6 +417,7 @@ export const localAuthProvider: AuthProvider = {
 
     const users = ensureUsers();
     const email = normalizeEmail(userData.email);
+    assertValidRegisterPayload(userData);
 
     if (users.some((user) => user.email === email)) {
       throw new AuthApiError("EMAIL_IN_USE", "User already exists.");

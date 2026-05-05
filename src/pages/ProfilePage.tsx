@@ -28,6 +28,7 @@ import { MealDayOverview } from "../features/meal/MealDayOverview";
 import { CommunityHubCard } from "../features/community/CommunityHubCard";
 import { AdminCenterCard } from "../features/platform/AdminCenterCard";
 import {
+  selectCurrentWeight,
   selectDailyMacroProgress,
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
@@ -50,6 +51,11 @@ const profileCopy = {
     allergiesLabel: "Алергії",
     exclusionsLabel: "Виключено",
     languageLabel: "Мова",
+    bloodGroupLabel: "Група крові",
+    eyeColorLabel: "Очі",
+    relationshipLabel: "Статус",
+    supportLabel: "Підтримка",
+    petLabel: "Поруч",
     adaptiveAuto: "Адаптивні калорії оновлюються автоматично.",
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
     macroTitle: "Цілі за макроелементами",
@@ -72,6 +78,11 @@ const profileCopy = {
     allergiesLabel: "Alergie",
     exclusionsLabel: "Wykluczone",
     languageLabel: "Język",
+    bloodGroupLabel: "Grupa krwi",
+    eyeColorLabel: "Oczy",
+    relationshipLabel: "Status",
+    supportLabel: "Wsparcie",
+    petLabel: "Obok",
     adaptiveAuto: "Adaptacyjne kalorie aktualizują się automatycznie.",
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
     macroTitle: "Cele makroskładników",
@@ -98,6 +109,52 @@ const dietStyleLabels = {
   },
 } as const;
 
+const personalDetailLabels = {
+  bloodGroup: {
+    unknown: "—",
+    o_positive: "O+",
+    o_negative: "O-",
+    a_positive: "A+",
+    a_negative: "A-",
+    b_positive: "B+",
+    b_negative: "B-",
+    ab_positive: "AB+",
+    ab_negative: "AB-",
+  },
+  eyeColor: {
+    unknown: "—",
+    brown: "карі",
+    blue: "голубі",
+    green: "зелені",
+    gray: "сірі",
+    hazel: "горіхові",
+    amber: "бурштинові",
+    other: "інші",
+  },
+  relationshipStatus: {
+    single: "сам/сама",
+    dating: "у стосунках",
+    married: "шлюб",
+    complicated: "складно",
+    prefer_not: "—",
+  },
+  supportSystem: {
+    self: "сам/сама",
+    partner_supports: "партнер підтримує",
+    partner_neutral: "партнер нейтральний",
+    family_friends: "близькі",
+    low_support: "мало підтримки",
+    prefer_not: "—",
+  },
+  petCompanion: {
+    none: "—",
+    cat: "кіт",
+    dog: "собака",
+    cat_and_dog: "кіт і собака",
+    other: "питомец",
+  },
+} as const;
+
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const {
@@ -109,10 +166,12 @@ const ProfilePage = () => {
     excludedIngredients,
     adaptiveMode,
     languagePreference,
+    personalDetails,
   } = useSelector(
     (state: RootState) => state.profile
   );
   const totalMealNutrients = useSelector(selectTodayMealTotalNutrients);
+  const currentWeight = useSelector(selectCurrentWeight);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, language } = useLanguage();
@@ -124,7 +183,6 @@ const ProfilePage = () => {
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
-  const currentWeight = user.weight;
   const hasTargetWeight = typeof targetWeight === "number" && Number.isFinite(targetWeight);
   const progressStart = targetWeightStart ?? currentWeight;
   const effectiveTargetWeight = hasTargetWeight ? targetWeight : currentWeight;
@@ -159,7 +217,7 @@ const ProfilePage = () => {
         elevation={0}
         sx={{
           p: { xs: 3, md: 4 },
-          borderRadius: 7,
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           background:
             "linear-gradient(135deg, rgba(15,118,110,0.12) 0%, rgba(101,163,13,0.14) 100%)",
@@ -185,10 +243,25 @@ const ProfilePage = () => {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
-            <Chip label={`${t("dashboard.weight")}: ${user.weight} ${t("common.kg")}`} />
+            <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
+            <Chip
+              label={`${copy.bloodGroupLabel}: ${personalDetailLabels.bloodGroup[personalDetails.bloodGroup]}`}
+            />
+            <Chip
+              label={`${copy.eyeColorLabel}: ${personalDetailLabels.eyeColor[personalDetails.eyeColor]}`}
+            />
+            <Chip
+              label={`${copy.relationshipLabel}: ${personalDetailLabels.relationshipStatus[personalDetails.relationshipStatus]}`}
+            />
+            <Chip
+              label={`${copy.supportLabel}: ${personalDetailLabels.supportSystem[personalDetails.supportSystem]}`}
+            />
+            <Chip
+              label={`${copy.petLabel}: ${personalDetailLabels.petCompanion[personalDetails.petCompanion]}`}
+            />
             {hasTargetWeight && (
               <Chip
                 label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
@@ -197,6 +270,8 @@ const ProfilePage = () => {
           </Stack>
         </Stack>
       </Paper>
+
+      <ProfileForm />
 
       <Box
         sx={{
@@ -208,8 +283,8 @@ const ProfilePage = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            borderRadius: 6,
+            p: { xs: 2, md: 3 },
+            borderRadius: 1,
             border: "1px solid rgba(15, 23, 42, 0.08)",
             backgroundColor: "rgba(255,255,255,0.86)",
           }}
@@ -230,8 +305,8 @@ const ProfilePage = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            borderRadius: 6,
+            p: { xs: 2, md: 3 },
+            borderRadius: 1,
             border: "1px solid rgba(15, 23, 42, 0.08)",
             backgroundColor: "rgba(255,255,255,0.86)",
           }}
@@ -304,8 +379,8 @@ const ProfilePage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
@@ -347,7 +422,7 @@ const ProfilePage = () => {
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 4,
+                  borderRadius: 1,
                   borderColor: "rgba(15, 23, 42, 0.08)",
                 }}
               >
@@ -381,8 +456,8 @@ const ProfilePage = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          borderRadius: 6,
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
@@ -415,8 +490,6 @@ const ProfilePage = () => {
       <MealDayOverview />
 
       <DailyHistoryExplorer />
-
-      <ProfileForm />
 
       <NotificationSettingsCard />
 

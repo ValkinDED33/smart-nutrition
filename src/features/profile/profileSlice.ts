@@ -23,16 +23,22 @@ import type {
   AssistantRole,
   AssistantTone,
   AchievementProgress,
+  BloodGroup,
   DietStyle,
+  EyeColor,
   MeasurementHistoryItem,
   MotivationHistoryItem,
   MotivationState,
   MotivationTask,
   MotivationTaskCategory,
+  PersonalProfileDetails,
+  PetCompanion,
   PremiumPlanId,
   PremiumSubscriptionState,
   ProgressPhotoHistoryItem,
+  RelationshipStatus,
   ReminderTimes,
+  SupportSystem,
   WeeklyCheckInState,
 } from "../../shared/types/profile";
 import type { AppLanguage } from "../../shared/types/i18n";
@@ -65,6 +71,7 @@ export interface ProfileState {
   motivation: MotivationState;
   assistant: AssistantCustomization;
   premium: PremiumSubscriptionState;
+  personalDetails: PersonalProfileDetails;
 }
 
 interface ProfileTargetsPayload {
@@ -91,6 +98,15 @@ const toNumber = (value: unknown, fallback = 0) =>
 const toNullableNumber = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 
+const MAX_PROGRESS_PHOTO_DATA_URL_LENGTH = 1_700_000;
+const SAFE_PROGRESS_PHOTO_DATA_URL_PATTERN =
+  /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
+
+const isSafeProgressPhotoDataUrl = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.length <= MAX_PROGRESS_PHOTO_DATA_URL_LENGTH &&
+  SAFE_PROGRESS_PHOTO_DATA_URL_PATTERN.test(value);
+
 const isDietStyle = (value: unknown): value is DietStyle =>
   value === "balanced" ||
   value === "vegetarian" ||
@@ -108,6 +124,44 @@ const isAssistantTone = (value: unknown): value is AssistantTone =>
   value === "gentle" || value === "playful" || value === "focused";
 const isTaskCategory = (value: unknown): value is MotivationTaskCategory =>
   value === "nutrition" || value === "consistency" || value === "reflection";
+const isBloodGroup = (value: unknown): value is BloodGroup =>
+  value === "unknown" ||
+  value === "o_positive" ||
+  value === "o_negative" ||
+  value === "a_positive" ||
+  value === "a_negative" ||
+  value === "b_positive" ||
+  value === "b_negative" ||
+  value === "ab_positive" ||
+  value === "ab_negative";
+const isEyeColor = (value: unknown): value is EyeColor =>
+  value === "unknown" ||
+  value === "brown" ||
+  value === "blue" ||
+  value === "green" ||
+  value === "gray" ||
+  value === "hazel" ||
+  value === "amber" ||
+  value === "other";
+const isRelationshipStatus = (value: unknown): value is RelationshipStatus =>
+  value === "single" ||
+  value === "dating" ||
+  value === "married" ||
+  value === "complicated" ||
+  value === "prefer_not";
+const isSupportSystem = (value: unknown): value is SupportSystem =>
+  value === "self" ||
+  value === "partner_supports" ||
+  value === "partner_neutral" ||
+  value === "family_friends" ||
+  value === "low_support" ||
+  value === "prefer_not";
+const isPetCompanion = (value: unknown): value is PetCompanion =>
+  value === "none" ||
+  value === "cat" ||
+  value === "dog" ||
+  value === "cat_and_dog" ||
+  value === "other";
 
 const isReminderTime = (value: unknown): value is string =>
   typeof value === "string" && /^([01]\d|2[0-3]):([0-5]\d)$/.test(value.trim());
@@ -179,6 +233,14 @@ const createDefaultPremiumSubscription = (): PremiumSubscriptionState => ({
   cancelledAt: null,
 });
 
+const createDefaultPersonalDetails = (): PersonalProfileDetails => ({
+  bloodGroup: "unknown",
+  eyeColor: "unknown",
+  relationshipStatus: "prefer_not",
+  supportSystem: "self",
+  petCompanion: "none",
+});
+
 const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -215,10 +277,9 @@ const normalizeProgressPhotos = (value: unknown): ProgressPhotoHistoryItem[] => 
       return photos;
     }
 
-    const imageDataUrl =
-      typeof item.imageDataUrl === "string" && item.imageDataUrl.startsWith("data:image/")
-        ? item.imageDataUrl
-        : null;
+    const imageDataUrl = isSafeProgressPhotoDataUrl(item.imageDataUrl)
+      ? item.imageDataUrl
+      : null;
 
     if (!imageDataUrl) {
       return photos;
@@ -399,6 +460,25 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
   };
 };
 
+const normalizePersonalDetails = (value: unknown): PersonalProfileDetails => {
+  const fallback = createDefaultPersonalDetails();
+  const record = isRecord(value) ? value : {};
+
+  return {
+    bloodGroup: isBloodGroup(record.bloodGroup) ? record.bloodGroup : fallback.bloodGroup,
+    eyeColor: isEyeColor(record.eyeColor) ? record.eyeColor : fallback.eyeColor,
+    relationshipStatus: isRelationshipStatus(record.relationshipStatus)
+      ? record.relationshipStatus
+      : fallback.relationshipStatus,
+    supportSystem: isSupportSystem(record.supportSystem)
+      ? record.supportSystem
+      : fallback.supportSystem,
+    petCompanion: isPetCompanion(record.petCompanion)
+      ? record.petCompanion
+      : fallback.petCompanion,
+  };
+};
+
 export const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
@@ -416,6 +496,7 @@ export const createInitialProfileState = (): ProfileState => ({
   motivation: createDefaultMotivationState(),
   assistant: createDefaultAssistantCustomization(),
   premium: createDefaultPremiumSubscription(),
+  personalDetails: createDefaultPersonalDetails(),
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -462,6 +543,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     ),
     assistant: normalizeAssistantCustomization(value.assistant),
     premium: normalizePremiumSubscription(value.premium),
+    personalDetails: normalizePersonalDetails(value.personalDetails),
   };
 };
 
@@ -539,7 +621,7 @@ const profileSlice = createSlice({
         recordedAt?: string;
       }>
     ) {
-      if (!action.payload.imageDataUrl.startsWith("data:image/")) {
+      if (!isSafeProgressPhotoDataUrl(action.payload.imageDataUrl)) {
         return;
       }
 
@@ -629,6 +711,16 @@ const profileSlice = createSlice({
     ) {
       state.assistant = normalizeAssistantCustomization({
         ...state.assistant,
+        ...action.payload,
+      });
+    },
+
+    updatePersonalDetails(
+      state,
+      action: PayloadAction<Partial<PersonalProfileDetails>>
+    ) {
+      state.personalDetails = normalizePersonalDetails({
+        ...state.personalDetails,
         ...action.payload,
       });
     },
@@ -759,6 +851,7 @@ const profileSlice = createSlice({
       state.motivation = createDefaultMotivationState();
       state.assistant = createDefaultAssistantCustomization();
       state.premium = createDefaultPremiumSubscription();
+      state.personalDetails = createDefaultPersonalDetails();
     },
   },
 });
@@ -777,6 +870,7 @@ export const {
   updateNotificationPreferences,
   setProfileLanguage,
   setAssistantCustomization,
+  updatePersonalDetails,
   refreshMotivationTasks,
   completeMotivationTask,
   activateWeeklyDayOff,

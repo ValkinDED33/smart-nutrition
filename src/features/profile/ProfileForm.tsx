@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
-import { applyProfileTargets } from "./profileSlice";
+import { applyProfileTargets, updatePersonalDetails } from "./profileSlice";
 import { calculateProfileTargets } from "../../shared/lib/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
@@ -30,6 +30,13 @@ import {
   parsePreferenceList,
 } from "../../shared/lib/preferences";
 import type { AdaptiveMode, DietStyle } from "../../shared/types/profile";
+import type {
+  BloodGroup,
+  EyeColor,
+  PetCompanion,
+  RelationshipStatus,
+  SupportSystem,
+} from "../../shared/types/profile";
 
 type FormData = {
   gender: "male" | "female";
@@ -43,10 +50,19 @@ type FormData = {
   allergies: string;
   excludedIngredients: string;
   adaptiveMode: AdaptiveMode;
+  bloodGroup: BloodGroup;
+  eyeColor: EyeColor;
+  relationshipStatus: RelationshipStatus;
+  supportSystem: SupportSystem;
+  petCompanion: PetCompanion;
 };
 
 const profileCopy = {
   uk: {
+    sectionBasics: "Основні дані",
+    sectionPersonal: "Контекст для помічника",
+    personalSubtitle:
+      "Ці дані допомагають Nova краще підібрати тон, підтримку й спосіб контакту. Група крові та колір очей не використовуються для медичних або харчових висновків.",
     targetWeightLabel: "Target weight (kg)",
     targetWeightHint: "Optional: add a goal to unlock the progress scale.",
     targetWeightMax: "Enter a realistic target weight up to 300 kg.",
@@ -65,8 +81,17 @@ const profileCopy = {
     adaptiveModeLabel: "Adaptive calories",
     adaptiveAuto: "Automatic recalculation",
     adaptiveManual: "Manual only",
+    bloodGroupLabel: "Група крові",
+    eyeColorLabel: "Колір очей",
+    relationshipLabel: "Статус",
+    supportLabel: "Підтримка",
+    petLabel: "Поруч є",
   },
   pl: {
+    sectionBasics: "Dane podstawowe",
+    sectionPersonal: "Kontekst dla asystenta",
+    personalSubtitle:
+      "Te dane pomagają Nova dobrać ton, wsparcie i sposób kontaktu. Grupa krwi i kolor oczu nie są używane do wniosków medycznych ani żywieniowych.",
     targetWeightLabel: "Target weight (kg)",
     targetWeightHint: "Optional: add a goal to unlock the progress scale.",
     targetWeightMax: "Enter a realistic target weight up to 300 kg.",
@@ -85,6 +110,11 @@ const profileCopy = {
     adaptiveModeLabel: "Adaptive calories",
     adaptiveAuto: "Automatic recalculation",
     adaptiveManual: "Manual only",
+    bloodGroupLabel: "Grupa krwi",
+    eyeColorLabel: "Kolor oczu",
+    relationshipLabel: "Status",
+    supportLabel: "Wsparcie",
+    petLabel: "Kto jest obok",
   },
 } as const;
 
@@ -97,12 +127,65 @@ const dietStyleLabels: Record<DietStyle, string> = {
   gluten_free: "Gluten free",
 };
 
+const bloodGroupLabels: Record<BloodGroup, string> = {
+  unknown: "Не указано",
+  o_positive: "O+",
+  o_negative: "O-",
+  a_positive: "A+",
+  a_negative: "A-",
+  b_positive: "B+",
+  b_negative: "B-",
+  ab_positive: "AB+",
+  ab_negative: "AB-",
+};
+
+const eyeColorLabels: Record<EyeColor, string> = {
+  unknown: "Не указано",
+  brown: "Карие",
+  blue: "Голубые",
+  green: "Зелёные",
+  gray: "Серые",
+  hazel: "Ореховые",
+  amber: "Янтарные",
+  other: "Другой",
+};
+
+const relationshipLabels: Record<RelationshipStatus, string> = {
+  single: "Холостой / не замужем",
+  dating: "В отношениях",
+  married: "Женат / замужем",
+  complicated: "Сложно",
+  prefer_not: "Не указывать",
+};
+
+const supportLabels: Record<SupportSystem, string> = {
+  self: "Справляюсь сам/а",
+  partner_supports: "Вторая половинка поддерживает",
+  partner_neutral: "Вторая половинка нейтральна",
+  family_friends: "Поддерживают близкие",
+  low_support: "Поддержки мало",
+  prefer_not: "Не указывать",
+};
+
+const petLabels: Record<PetCompanion, string> = {
+  none: "Без питомца",
+  cat: "Кот",
+  dog: "Собака",
+  cat_and_dog: "Кот и собака",
+  other: "Другой питомец",
+};
+
 const ProfileForm = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { targetWeight, dietStyle, allergies, excludedIngredients, adaptiveMode } = useSelector(
-    (state: RootState) => state.profile
-  );
+  const {
+    targetWeight,
+    dietStyle,
+    allergies,
+    excludedIngredients,
+    adaptiveMode,
+    personalDetails,
+  } = useSelector((state: RootState) => state.profile);
   const { t, language } = useLanguage();
   const copy = profileCopy[language];
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -145,6 +228,43 @@ const ProfileForm = () => {
         allergies: z.string(),
         excludedIngredients: z.string(),
         adaptiveMode: z.enum(["automatic", "manual"]),
+        bloodGroup: z.enum([
+          "unknown",
+          "o_positive",
+          "o_negative",
+          "a_positive",
+          "a_negative",
+          "b_positive",
+          "b_negative",
+          "ab_positive",
+          "ab_negative",
+        ]),
+        eyeColor: z.enum([
+          "unknown",
+          "brown",
+          "blue",
+          "green",
+          "gray",
+          "hazel",
+          "amber",
+          "other",
+        ]),
+        relationshipStatus: z.enum([
+          "single",
+          "dating",
+          "married",
+          "complicated",
+          "prefer_not",
+        ]),
+        supportSystem: z.enum([
+          "self",
+          "partner_supports",
+          "partner_neutral",
+          "family_friends",
+          "low_support",
+          "prefer_not",
+        ]),
+        petCompanion: z.enum(["none", "cat", "dog", "cat_and_dog", "other"]),
       }),
     [copy.targetWeightMax, t]
   );
@@ -167,6 +287,11 @@ const ProfileForm = () => {
       allergies: formatPreferenceList(allergies),
       excludedIngredients: formatPreferenceList(excludedIngredients),
       adaptiveMode,
+      bloodGroup: personalDetails.bloodGroup,
+      eyeColor: personalDetails.eyeColor,
+      relationshipStatus: personalDetails.relationshipStatus,
+      supportSystem: personalDetails.supportSystem,
+      petCompanion: personalDetails.petCompanion,
     },
   });
 
@@ -198,7 +323,15 @@ const ProfileForm = () => {
     setAvatarError(null);
 
     try {
-      const { targetWeight: nextTargetWeight, ...userProfileData } = data;
+      const {
+        targetWeight: nextTargetWeight,
+        bloodGroup,
+        eyeColor,
+        relationshipStatus,
+        supportSystem,
+        petCompanion,
+        ...userProfileData
+      } = data;
       const updatedUser = await updateStoredProfile({
         ...user,
         ...userProfileData,
@@ -218,6 +351,15 @@ const ProfileForm = () => {
           allergies: parsePreferenceList(data.allergies),
           excludedIngredients: parsePreferenceList(data.excludedIngredients),
           adaptiveMode: data.adaptiveMode,
+        })
+      );
+      dispatch(
+        updatePersonalDetails({
+          bloodGroup,
+          eyeColor,
+          relationshipStatus,
+          supportSystem,
+          petCompanion,
         })
       );
       setSuccessMessage(t("profile.saved"));
@@ -323,6 +465,10 @@ const ProfileForm = () => {
           </Stack>
         </Paper>
 
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          {copy.sectionBasics}
+        </Typography>
+
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField
             select
@@ -369,6 +515,108 @@ const ProfileForm = () => {
             <MenuItem value="bulk">{t("option.goal.bulk")}</MenuItem>
           </TextField>
         </Stack>
+
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2.25,
+            borderRadius: 5,
+            backgroundColor: "rgba(248,250,252,0.86)",
+          }}
+        >
+          <Stack spacing={2}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                {copy.sectionPersonal}
+              </Typography>
+              <Typography color="text.secondary">{copy.personalSubtitle}</Typography>
+            </Stack>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <TextField
+                select
+                fullWidth
+                label={copy.bloodGroupLabel}
+                defaultValue={personalDetails.bloodGroup}
+                {...register("bloodGroup")}
+                error={Boolean(errors.bloodGroup)}
+                helperText={errors.bloodGroup?.message}
+              >
+                {Object.entries(bloodGroupLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label={copy.eyeColorLabel}
+                defaultValue={personalDetails.eyeColor}
+                {...register("eyeColor")}
+                error={Boolean(errors.eyeColor)}
+                helperText={errors.eyeColor?.message}
+              >
+                {Object.entries(eyeColorLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <TextField
+                select
+                fullWidth
+                label={copy.relationshipLabel}
+                defaultValue={personalDetails.relationshipStatus}
+                {...register("relationshipStatus")}
+                error={Boolean(errors.relationshipStatus)}
+                helperText={errors.relationshipStatus?.message}
+              >
+                {Object.entries(relationshipLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label={copy.supportLabel}
+                defaultValue={personalDetails.supportSystem}
+                {...register("supportSystem")}
+                error={Boolean(errors.supportSystem)}
+                helperText={errors.supportSystem?.message}
+              >
+                {Object.entries(supportLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label={copy.petLabel}
+                defaultValue={personalDetails.petCompanion}
+                {...register("petCompanion")}
+                error={Boolean(errors.petCompanion)}
+                helperText={errors.petCompanion?.message}
+              >
+                {Object.entries(petLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          </Stack>
+        </Paper>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField
