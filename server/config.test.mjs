@@ -223,6 +223,30 @@ describe("createServerConfig", () => {
     ]);
   });
 
+  it("keeps the public Vercel origin available for production Render defaults", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+    });
+
+    expect(config.allowedCorsOrigins).toContain(
+      "https://smart-nutrition-topaz.vercel.app"
+    );
+  });
+
+  it("adds the public Vercel origin when a legacy frontend origin is configured", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_CORS_ORIGINS: "https://smart-nutrition-nine.vercel.app",
+    });
+
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://smart-nutrition-nine.vercel.app",
+      "https://smart-nutrition-topaz.vercel.app",
+    ]);
+  });
+
   it("allows local Vite origins in development", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),

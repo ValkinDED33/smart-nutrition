@@ -37,15 +37,15 @@ SMART_NUTRITION_API_PORT=8787
 frontend build env. На Vercel поставь:
 
 ```env
-VITE_SMART_NUTRITION_API_BASE_URL=https://your-api.example.com/api
+VITE_SMART_NUTRITION_API_BASE_URL=https://smart-nutrition-sk5r.onrender.com/api
 ```
 
 На backend-хосте поставь:
 
 ```env
 NODE_ENV=production
-SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition-nine.vercel.app
-SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition-nine.vercel.app
+SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition-topaz.vercel.app
+SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition-topaz.vercel.app
 SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None
 SMART_NUTRITION_AUTH_COOKIE_SECURE=true
 ```

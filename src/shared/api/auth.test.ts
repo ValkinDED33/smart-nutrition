@@ -31,8 +31,8 @@ describe("auth provider selection", () => {
   it("falls back to local browser auth when a deployed app has no usable cloud API", async () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-nine.vercel.app",
-        origin: "https://smart-nutrition-nine.vercel.app",
+        hostname: "smart-nutrition-preview.vercel.app",
+        origin: "https://smart-nutrition-preview.vercel.app",
       },
     });
     const fetchMock = vi.fn();

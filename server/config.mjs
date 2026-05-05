@@ -5,6 +5,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DATA_DIR = path.join(__dirname, "data");
 const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
+const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
+const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -523,6 +525,22 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
     .split(",")
     .map((value) => normalizeOrigin(value))
     .filter((value) => Boolean(value));
+  const appOrigin = normalizeOrigin(appBaseUrl);
+  const isLocalAppOrigin =
+    appOrigin?.startsWith("http://localhost") ||
+    appOrigin?.startsWith("http://127.0.0.1");
+  const shouldIncludePublicFrontendOrigin =
+    isProduction &&
+    (appOrigin === PUBLIC_FRONTEND_ORIGIN ||
+      isLocalAppOrigin ||
+      configuredOrigins.includes(PUBLIC_FRONTEND_ORIGIN) ||
+      LEGACY_FRONTEND_ORIGINS.some(
+        (origin) => origin === appOrigin || configuredOrigins.includes(origin)
+      ));
+  const includePublicFrontendOrigin = (origins) =>
+    shouldIncludePublicFrontendOrigin
+      ? [...new Set([...origins, PUBLIC_FRONTEND_ORIGIN])]
+      : [...new Set(origins)];
 
   if (String(envValue ?? "").trim()) {
     const rawOrigins = String(envValue)
@@ -538,10 +556,9 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   }
 
   if (configuredOrigins.length > 0) {
-    return [...new Set(configuredOrigins)];
+    return includePublicFrontendOrigin(configuredOrigins);
   }
 
-  const appOrigin = normalizeOrigin(appBaseUrl);
   const origins = appOrigin ? [appOrigin] : [];
 
   if (!isProduction) {
@@ -553,7 +570,7 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
     );
   }
 
-  return [...new Set(origins)];
+  return includePublicFrontendOrigin(origins);
 };
 
 export const createServerConfig = (env = process.env) => {

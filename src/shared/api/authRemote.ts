@@ -77,6 +77,8 @@ class RemoteRequestError extends Error {
 const AUTH_MODE_KEY = "smart-nutrition.auth-mode";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const REMOTE_USER_KEY = "smart-nutrition.remote-user";
+const PUBLIC_REMOTE_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
+const PUBLIC_FRONTEND_HOSTNAMES = new Set(["smart-nutrition-topaz.vercel.app"]);
 
 const remoteRuntimeInfo: AuthRuntimeInfo = {
   mode: "remote-cloud",
@@ -140,10 +142,20 @@ const isLoopbackBaseUrl = (value: string) => {
 export const canUseRemoteBaseUrlInCurrentBrowser = (value: string) =>
   isLocalBrowserHost() || !isLoopbackBaseUrl(value);
 
+const getPublicDeploymentRemoteBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return PUBLIC_FRONTEND_HOSTNAMES.has(window.location.hostname)
+    ? PUBLIC_REMOTE_API_BASE_URL
+    : null;
+};
+
 const getConfiguredRemoteBaseUrl = () => {
-  const configuredBaseUrl = normalizeRemoteBaseUrl(
-    import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL
-  );
+  const configuredBaseUrl =
+    normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL) ??
+    normalizeRemoteBaseUrl(getPublicDeploymentRemoteBaseUrl());
 
   if (!configuredBaseUrl || !canUseRemoteBaseUrlInCurrentBrowser(configuredBaseUrl)) {
     return null;

@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { canUseRemoteBaseUrlInCurrentBrowser } from "./authRemote";
+import {
+  canUseRemoteBaseUrlInCurrentBrowser,
+  checkRemoteBackendAvailability,
+} from "./authRemote";
 
 describe("remote API base URL guards", () => {
   afterEach(() => {
@@ -9,7 +12,8 @@ describe("remote API base URL guards", () => {
   it("rejects loopback API URLs from deployed browser origins", () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-nine.vercel.app",
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
       },
     });
 
@@ -30,10 +34,36 @@ describe("remote API base URL guards", () => {
   it("allows public HTTPS API URLs from deployed browser origins", () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-nine.vercel.app",
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
       },
     });
 
     expect(canUseRemoteBaseUrlInCurrentBrowser("https://api.smart-nutrition.app/api")).toBe(true);
+  });
+
+  it("probes the Render API for the public Vercel deployment when no build env is set", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          provider: "smart-nutrition-sqlite-api",
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      expect.any(Object)
+    );
   });
 });
