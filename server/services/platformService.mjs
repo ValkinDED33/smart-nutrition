@@ -76,6 +76,8 @@ const createPermissions = (role) => ({
   reviewCatalog: hasRoleAtLeast(role, "MODERATOR"),
   manageModerators: hasRoleAtLeast(role, "ADMIN"),
   manageAdmins: hasRoleAtLeast(role, "SUPER_ADMIN"),
+  banUsers: hasRoleAtLeast(role, "ADMIN"),
+  manageSystem: hasRoleAtLeast(role, "ADMIN"),
   viewAuditLogs: hasRoleAtLeast(role, "ADMIN"),
   accessAdminCenter: hasRoleAtLeast(role, "MODERATOR"),
 });
@@ -235,6 +237,16 @@ export const createPlatformService = ({ platformRepository, config }) => {
         search: normalizeSearchQuery(query.search),
         limit: readListLimit(query.limit),
       }),
+
+    findCatalogDuplicates: (currentUser, query = {}) =>
+      platformRepository.findCatalogDuplicateCandidates({
+        name: normalizeSearchQuery(query.name ?? query.search),
+        barcode: normalizeSearchQuery(query.barcode),
+        limit: readListLimit(query.limit, { fallback: 6, max: 12 }),
+      }).filter(
+        (product) =>
+          product.status === "approved" || product.ownerUserId === currentUser.id
+      ),
 
     submitCatalogProduct: (currentUser, payload) => {
       const dayStart = new Date();
@@ -426,6 +438,56 @@ export const createPlatformService = ({ platformRepository, config }) => {
         details: createAuditDetails({
           previousRole: targetUser.role,
           nextRole,
+        }),
+      });
+
+      return {
+        ...toPublicUser(updatedUser),
+        createdAt: updatedUser.createdAt,
+      };
+    },
+
+    updateUserBan: (currentUser, targetUserId, payload) => {
+      assertAdminAccess(currentUser);
+
+      const targetUser = platformRepository.findUserById(targetUserId);
+
+      if (!targetUser) {
+        throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
+      }
+
+      if (targetUser.role === "SUPER_ADMIN" || targetUser.id === currentUser.id) {
+        throw new PlatformApiError(
+          "ROLE_CHANGE_NOT_ALLOWED",
+          "This account cannot be banned from the admin center."
+        );
+      }
+
+      if (currentUser.role === "ADMIN" && targetUser.role === "ADMIN") {
+        throw new PlatformApiError(
+          "ROLE_CHANGE_NOT_ALLOWED",
+          "Admins cannot ban other admins."
+        );
+      }
+
+      const shouldBan = Boolean(payload?.banned);
+      const reason = shouldBan
+        ? normalizeOptionalText(payload?.reason ?? "Admin action", 240) ?? "Admin action"
+        : null;
+      const updatedUser = platformRepository.updateUserBan({
+        userId: targetUserId,
+        bannedAt: shouldBan ? new Date().toISOString() : null,
+        bannedReason: reason,
+      });
+
+      writeAuditLog({
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: shouldBan ? "access.user_banned" : "access.user_unbanned",
+        targetType: "user",
+        targetId: targetUserId,
+        details: createAuditDetails({
+          reason,
         }),
       });
 

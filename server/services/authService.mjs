@@ -29,7 +29,10 @@ export const createAuthService = ({
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
   const passwordResetRequestMessage =
     "If an account with that email exists, a password reset link has been prepared.";
+  const registrationVerificationMessage =
+    "Registration confirmation code has been prepared.";
   const validEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const validPhonePattern = /^[+\d][\d\s().-]{6,24}$/;
   const validActivityLevels = new Set([
     "sedentary",
     "light",
@@ -47,6 +50,41 @@ export const createAuthService = ({
     if (!validEmailPattern.test(email)) {
       throw new AuthApiError("INVALID_PROFILE", "A valid email address is required.");
     }
+  };
+
+  const normalizeVerificationChannel = (value) => (value === "sms" ? "sms" : "email");
+
+  const readPhone = (value) =>
+    String(value ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
+
+  const assertValidPhone = (phone) => {
+    if (!validPhonePattern.test(phone)) {
+      throw new AuthApiError(
+        "INVALID_PROFILE",
+        "A valid phone number is required for SMS verification."
+      );
+    }
+  };
+
+  const isRegistrationVerified = (user) =>
+    user?.emailVerified !== false || Boolean(user?.phoneVerified);
+
+  const isUserBanned = (user) => Boolean(user?.bannedAt);
+
+  const createVerificationCode = () =>
+    String(Math.floor(100000 + Math.random() * 900000));
+
+  const maskEmail = (email) => {
+    const [name = "", domain = ""] = String(email ?? "").split("@");
+    const visibleName = name.length <= 2 ? `${name[0] ?? "*"}*` : `${name.slice(0, 2)}***`;
+    return `${visibleName}@${domain}`;
+  };
+
+  const maskPhone = (phone) => {
+    const compact = String(phone ?? "").replace(/\s+/g, "");
+    return compact.length <= 4 ? "****" : `${compact.slice(0, 2)}***${compact.slice(-2)}`;
   };
 
   const readName = (value) => {
@@ -208,6 +246,70 @@ export const createAuthService = ({
     expiresAt,
   });
 
+  const buildRegistrationVerificationResponse = ({
+    email,
+    channel,
+    target,
+    delivery,
+    previewCode = undefined,
+    expiresAt,
+  }) => ({
+    ok: true,
+    requiresVerification: true,
+    email,
+    channel,
+    maskedTarget: channel === "sms" ? maskPhone(target) : maskEmail(email),
+    delivery,
+    message: registrationVerificationMessage,
+    previewCode,
+    expiresAt: new Date(expiresAt).toISOString(),
+  });
+
+  const createRegistrationVerification = async (user, channel, target) => {
+    authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
+
+    const code = createVerificationCode();
+    const expiresAt =
+      Date.now() + (config.registrationVerificationTokenTtlMs ?? 1000 * 60 * 15);
+    const codeHash = hashOneTimeToken(`${user.email}:${code}`, config.jwtSecret);
+
+    authRepository.createRegistrationVerificationToken?.({
+      id: createId("registration-code"),
+      userId: user.id,
+      channel,
+      target,
+      codeHash,
+      expiresAt,
+      createdAt: new Date().toISOString(),
+    });
+
+    const emailResult =
+      channel === "email"
+        ? await emailService?.sendRegistrationVerificationEmail?.({
+            to: user.email,
+            name: user.name,
+            code,
+            expiresAt,
+          })
+        : null;
+
+    const delivery =
+      channel === "email" && emailResult?.ok
+        ? "email"
+        : channel === "sms" && config.isProduction
+          ? "sms"
+          : "preview";
+
+    return buildRegistrationVerificationResponse({
+      email: user.email,
+      channel,
+      target,
+      delivery,
+      previewCode: delivery === "preview" ? code : undefined,
+      expiresAt,
+    });
+  };
+
   const createAccessToken = (user) =>
     createSessionToken({
       userId: user.id,
@@ -272,6 +374,11 @@ export const createAuthService = ({
       return null;
     }
 
+    if (isUserBanned(user) || !isRegistrationVerified(user)) {
+      authRepository.deleteSessionByToken(token);
+      return null;
+    }
+
     if (verifiedToken.tokenVersion !== getTokenVersion(user)) {
       authRepository.deleteSessionByToken(token);
       return null;
@@ -306,6 +413,10 @@ export const createAuthService = ({
     const user = getUserById(verifiedToken.userId);
 
     if (!user) {
+      return null;
+    }
+
+    if (isUserBanned(user) || !isRegistrationVerified(user)) {
       return null;
     }
 
@@ -369,6 +480,7 @@ export const createAuthService = ({
     cleanupExpiredSessions: () => {
       authRepository.cleanupExpiredSessions();
       authRepository.cleanupExpiredPasswordResetTokens?.();
+      authRepository.cleanupExpiredRegistrationVerificationTokens?.();
     },
 
     getHealthInfo: () => ({
@@ -378,10 +490,16 @@ export const createAuthService = ({
       auth: "httpOnly-cookie-session",
     }),
 
-    register: (body) => {
+    register: async (body) => {
       const email = normalizeEmail(body.email);
+      const verificationChannel = normalizeVerificationChannel(body.verificationChannel);
+      const phone = verificationChannel === "sms" ? readPhone(body.phone) : null;
 
       assertValidEmail(email);
+
+      if (verificationChannel === "sms") {
+        assertValidPhone(phone);
+      }
 
       if (authRepository.findUserByEmail(email)) {
         throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
@@ -404,8 +522,14 @@ export const createAuthService = ({
         id: createId("user"),
         ...profileInput,
         email,
+        emailVerified: false,
+        phone,
+        phoneVerified: false,
+        verificationChannel,
         createdAt: new Date().toISOString(),
         role,
+        bannedAt: null,
+        bannedReason: null,
         twoFactorEnabled: false,
         twoFactorRequired: role === "ADMIN" || role === "SUPER_ADMIN",
         tokenVersion: 0,
@@ -422,7 +546,6 @@ export const createAuthService = ({
         updatedAt: new Date().toISOString(),
       });
 
-      const refreshSession = createRefreshSession(user);
       writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
@@ -432,9 +555,121 @@ export const createAuthService = ({
         details: {
           email: user.email,
           role: user.role,
+          verificationChannel,
         },
       });
-      return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
+      return createRegistrationVerification(
+        user,
+        verificationChannel,
+        verificationChannel === "sms" ? phone : email
+      );
+    },
+
+    verifyRegistration: (body) => {
+      const email = normalizeEmail(body?.email);
+      const code = String(body?.code ?? "").trim();
+
+      if (!email || !code) {
+        throw new AuthApiError(
+          "INVALID_VERIFICATION_CODE",
+          "Registration confirmation code is invalid or expired."
+        );
+      }
+
+      const user = authRepository.findUserByEmail(email);
+
+      if (!user) {
+        throw new AuthApiError(
+          "INVALID_VERIFICATION_CODE",
+          "Registration confirmation code is invalid or expired."
+        );
+      }
+
+      if (isUserBanned(user)) {
+        throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+      }
+
+      const codeHash = hashOneTimeToken(`${email}:${code}`, config.jwtSecret);
+      const verificationToken =
+        authRepository.findRegistrationVerificationTokenByHash?.(codeHash);
+
+      if (
+        !verificationToken ||
+        verificationToken.userId !== user.id ||
+        verificationToken.consumedAt ||
+        verificationToken.expiresAt <= Date.now()
+      ) {
+        throw new AuthApiError(
+          "INVALID_VERIFICATION_CODE",
+          "Registration confirmation code is invalid or expired."
+        );
+      }
+
+      const consumedAt = new Date().toISOString();
+      authRepository.markRegistrationVerificationTokenConsumed?.(codeHash, consumedAt);
+      const verifiedUser =
+        authRepository.markUserRegistrationVerified?.({
+          userId: user.id,
+          channel: verificationToken.channel,
+        }) ?? user;
+      authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
+      clearLoginAttempts(email);
+
+      const refreshSession = createRefreshSession(verifiedUser);
+      writeAuditLog({
+        actorUserId: verifiedUser.id,
+        actorRole: verifiedUser.role,
+        action: "auth.registration_verified",
+        targetType: "user",
+        targetId: verifiedUser.id,
+        details: {
+          channel: verificationToken.channel,
+        },
+      });
+
+      return buildAuthResponse(
+        verifiedUser,
+        createAccessToken(verifiedUser),
+        refreshSession.token
+      );
+    },
+
+    resendRegistrationVerification: async (body) => {
+      const email = normalizeEmail(body?.email);
+      const user = authRepository.findUserByEmail(email);
+
+      if (!user || isRegistrationVerified(user)) {
+        throw new AuthApiError(
+          "INVALID_VERIFICATION_CODE",
+          "Registration confirmation is not available for this account."
+        );
+      }
+
+      if (isUserBanned(user)) {
+        throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+      }
+
+      const verificationChannel = normalizeVerificationChannel(
+        body?.channel ?? user.verificationChannel
+      );
+      const phone = verificationChannel === "sms" ? readPhone(body?.phone ?? user.phone) : null;
+
+      if (verificationChannel === "sms") {
+        assertValidPhone(phone);
+      }
+
+      const updatedUser =
+        authRepository.updateUserVerificationTarget?.({
+          userId: user.id,
+          channel: verificationChannel,
+          phone,
+        }) ?? user;
+
+      return createRegistrationVerification(
+        updatedUser,
+        verificationChannel,
+        verificationChannel === "sms" ? phone : updatedUser.email
+      );
     },
 
     requestPasswordReset: async (body) => {
@@ -564,6 +799,17 @@ export const createAuthService = ({
       if (!user || !verifyPassword(user, password, config.passwordIterations)) {
         registerFailedAttempt(email);
         throw new AuthApiError("INVALID_CREDENTIALS", "Invalid email or password.");
+      }
+
+      if (isUserBanned(user)) {
+        throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+      }
+
+      if (!isRegistrationVerified(user)) {
+        throw new AuthApiError(
+          "REGISTRATION_NOT_VERIFIED",
+          "Registration confirmation is required before login."
+        );
       }
 
       clearLoginAttempts(email);

@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getAuthRuntimeInfo, login, logout, register } from "./auth";
+import {
+  getAuthRuntimeInfo,
+  login,
+  logout,
+  register,
+  verifyRegistration,
+} from "./auth";
 
 const password = "StrongPass1!";
 
@@ -33,7 +39,18 @@ describe("auth provider selection", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const email = `local-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
-    const registeredSession = await register(createRegisterPayload(email));
+    const registration = await register(createRegisterPayload(email));
+
+    expect(registration).toMatchObject({
+      requiresVerification: true,
+      email,
+    });
+    expect("previewCode" in registration ? registration.previewCode : undefined).toBeTruthy();
+
+    const registeredSession = await verifyRegistration({
+      email,
+      code: "previewCode" in registration ? registration.previewCode ?? "" : "",
+    });
 
     expect(registeredSession.user.email).toBe(email);
     expect(getAuthRuntimeInfo().mode).toBe("local-browser");

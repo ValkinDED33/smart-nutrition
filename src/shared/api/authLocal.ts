@@ -1,4 +1,8 @@
-import type { User } from "../types/user";
+import type {
+  RegistrationVerificationPending,
+  User,
+  VerificationChannel,
+} from "../types/user";
 import { getDefaultAvatar } from "../lib/avatar";
 import {
   getClientStorageItem,
@@ -11,6 +15,12 @@ interface StoredUserRecord extends User {
   passwordHash: string;
   passwordSalt?: string;
   passwordVersion?: "legacy32" | "pbkdf2-sha256";
+  emailVerified?: boolean;
+  phone?: string;
+  phoneVerified?: boolean;
+  verificationChannel?: VerificationChannel;
+  bannedAt?: string | null;
+  bannedReason?: string | null;
   createdAt: string;
 }
 
@@ -25,6 +35,15 @@ interface FailedAttemptRecord {
   lockUntil: number | null;
 }
 
+interface RegistrationVerificationTokenRecord {
+  email: string;
+  channel: VerificationChannel;
+  target: string;
+  codeHash: string;
+  expiresAt: number;
+  createdAt: string;
+}
+
 export class AuthApiError extends Error {
   code:
     | "EMAIL_IN_USE"
@@ -32,6 +51,9 @@ export class AuthApiError extends Error {
     | "TOO_MANY_ATTEMPTS"
     | "INVALID_RESET_TOKEN"
     | "EMAIL_DELIVERY_UNAVAILABLE"
+    | "INVALID_VERIFICATION_CODE"
+    | "REGISTRATION_NOT_VERIFIED"
+    | "ACCOUNT_BANNED"
     | "WEAK_PASSWORD"
     | "INVALID_PROFILE"
     | "BACKEND_UNAVAILABLE";
@@ -46,8 +68,11 @@ const USERS_KEY = "smart-nutrition.users";
 const SESSION_KEY = "smart-nutrition.session";
 const ATTEMPTS_KEY = "smart-nutrition.login-attempts";
 const RESET_TOKENS_KEY = "smart-nutrition.password-reset-tokens";
+const REGISTRATION_VERIFICATION_TOKENS_KEY =
+  "smart-nutrition.registration-verification-tokens";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
+const REGISTRATION_VERIFICATION_TTL_MS = 1000 * 60 * 15;
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_MS = 1000 * 60 * 5;
 const LEGACY_DEMO_USER_ID = "demo-user";
@@ -56,6 +81,7 @@ const textEncoder = new TextEncoder();
 const strongPasswordPattern =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^[+\d][\d\s().-]{6,24}$/;
 const validActivityLevels = new Set([
   "sedentary",
   "light",
@@ -79,9 +105,24 @@ const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 const sanitizeName = (name: string) => name.trim().replace(/\s+/g, " ");
 
+const normalizeVerificationChannel = (
+  channel: unknown
+): VerificationChannel => (channel === "sms" ? "sms" : "email");
+
+const normalizePhone = (phone: unknown) =>
+  String(phone ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+
 const assertValidEmail = (email: string) => {
   if (!emailPattern.test(email)) {
     throw new AuthApiError("INVALID_PROFILE", "A valid email address is required.");
+  }
+};
+
+const assertValidPhone = (phone: string) => {
+  if (!phonePattern.test(phone)) {
+    throw new AuthApiError("INVALID_PROFILE", "A valid phone number is required for SMS verification.");
   }
 };
 
@@ -126,6 +167,10 @@ const assertValidRegisterPayload = (userData: RegisterPayload) => {
   assertEnumValue(userData.gender, validGenders, "Gender");
   assertEnumValue(userData.activity, validActivityLevels, "Activity level");
   assertEnumValue(userData.goal, validGoals, "Goal");
+
+  if (normalizeVerificationChannel(userData.verificationChannel) === "sms") {
+    assertValidPhone(normalizePhone(userData.phone));
+  }
 };
 
 const legacyHashPassword = (password: string) =>
@@ -206,6 +251,116 @@ const savePasswordResetTokens = (tokens: PasswordResetTokenRecord[]) => {
   );
 };
 
+const getRegistrationVerificationTokens = () =>
+  readJson<RegistrationVerificationTokenRecord[]>(
+    REGISTRATION_VERIFICATION_TOKENS_KEY,
+    []
+  ).filter((token) => token.expiresAt > Date.now());
+
+const saveRegistrationVerificationTokens = (
+  tokens: RegistrationVerificationTokenRecord[]
+) => {
+  writeJson(
+    REGISTRATION_VERIFICATION_TOKENS_KEY,
+    tokens.filter((token) => token.expiresAt > Date.now())
+  );
+};
+
+const deleteRegistrationVerificationTokensByEmail = (email: string) => {
+  saveRegistrationVerificationTokens(
+    getRegistrationVerificationTokens().filter((token) => token.email !== email)
+  );
+};
+
+const createVerificationCode = () => {
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(bytes);
+    return String(100000 + (bytes[0]! % 900000));
+  }
+
+  return String(Math.floor(100000 + Math.random() * 900000));
+};
+
+const hashVerificationCode = (email: string, code: string) =>
+  String(legacyHashPassword(`${normalizeEmail(email)}:${code.trim()}`));
+
+const maskEmail = (email: string) => {
+  const [name = "", domain = ""] = email.split("@");
+  const visibleName = name.length <= 2 ? `${name[0] ?? "*"}*` : `${name.slice(0, 2)}***`;
+  return `${visibleName}@${domain}`;
+};
+
+const maskPhone = (phone: string) => {
+  const compact = phone.replace(/\s+/g, "");
+  if (compact.length <= 4) {
+    return "****";
+  }
+  return `${compact.slice(0, 2)}***${compact.slice(-2)}`;
+};
+
+const buildVerificationPendingResponse = ({
+  email,
+  channel,
+  target,
+  code,
+  expiresAt,
+}: {
+  email: string;
+  channel: VerificationChannel;
+  target: string;
+  code: string;
+  expiresAt: number;
+}): RegistrationVerificationPending => ({
+  ok: true,
+  requiresVerification: true,
+  email,
+  channel,
+  maskedTarget: channel === "sms" ? maskPhone(target) : maskEmail(email),
+  delivery: "preview",
+  message:
+    channel === "sms"
+      ? "Registration confirmation code has been prepared for SMS delivery."
+      : "Registration confirmation code has been prepared for email delivery.",
+  previewCode: code,
+  expiresAt: new Date(expiresAt).toISOString(),
+});
+
+const createRegistrationVerification = ({
+  email,
+  channel,
+  target,
+}: {
+  email: string;
+  channel: VerificationChannel;
+  target: string;
+}) => {
+  const code = createVerificationCode();
+  const expiresAt = Date.now() + REGISTRATION_VERIFICATION_TTL_MS;
+  const nextTokens = getRegistrationVerificationTokens().filter(
+    (token) => token.email !== email
+  );
+
+  nextTokens.push({
+    email,
+    channel,
+    target,
+    codeHash: hashVerificationCode(email, code),
+    expiresAt,
+    createdAt: new Date().toISOString(),
+  });
+
+  saveRegistrationVerificationTokens(nextTokens);
+
+  return buildVerificationPendingResponse({
+    email,
+    channel,
+    target,
+    code,
+    expiresAt,
+  });
+};
+
 const getAttempts = () => readJson<Record<string, FailedAttemptRecord>>(ATTEMPTS_KEY, {});
 
 const setAttempts = (attempts: Record<string, FailedAttemptRecord>) => {
@@ -259,6 +414,10 @@ const toPublicUser = (storedUser: StoredUserRecord): User => ({
   id: storedUser.id,
   name: storedUser.name,
   email: storedUser.email,
+  emailVerified: storedUser.emailVerified ?? true,
+  phone: storedUser.phone,
+  phoneVerified: storedUser.phoneVerified ?? false,
+  verificationChannel: storedUser.verificationChannel ?? "email",
   avatar: storedUser.avatar,
   age: storedUser.age,
   weight: storedUser.weight,
@@ -267,10 +426,16 @@ const toPublicUser = (storedUser: StoredUserRecord): User => ({
   activity: storedUser.activity,
   goal: storedUser.goal,
   role: storedUser.role ?? "USER",
+  isBanned: Boolean(storedUser.bannedAt),
+  bannedAt: storedUser.bannedAt ?? null,
+  bannedReason: storedUser.bannedReason ?? null,
   twoFactorEnabled: storedUser.twoFactorEnabled ?? false,
   twoFactorRequired: storedUser.twoFactorRequired ?? false,
   measurements: storedUser.measurements,
 });
+
+const isRegistrationVerified = (storedUser: StoredUserRecord) =>
+  Boolean(storedUser.emailVerified ?? true) || Boolean(storedUser.phoneVerified);
 
 const createSession = (email: string) => {
   const session: SessionRecord = {
@@ -383,6 +548,11 @@ export const localAuthProvider: AuthProvider = {
       return null;
     }
 
+    if (user.bannedAt || !isRegistrationVerified(user)) {
+      removeClientStorageItem(SESSION_KEY);
+      return null;
+    }
+
     return {
       user: toPublicUser(user),
       token: session.token,
@@ -417,6 +587,9 @@ export const localAuthProvider: AuthProvider = {
 
     const users = ensureUsers();
     const email = normalizeEmail(userData.email);
+    const verificationChannel = normalizeVerificationChannel(userData.verificationChannel);
+    const phone =
+      verificationChannel === "sms" ? normalizePhone(userData.phone) : undefined;
     assertValidRegisterPayload(userData);
 
     if (users.some((user) => user.email === email)) {
@@ -439,6 +612,12 @@ export const localAuthProvider: AuthProvider = {
       activity: userData.activity,
       goal: userData.goal,
       role: "USER",
+      emailVerified: false,
+      phone,
+      phoneVerified: false,
+      verificationChannel,
+      bannedAt: null,
+      bannedReason: null,
       twoFactorEnabled: false,
       twoFactorRequired: false,
       createdAt: new Date().toISOString(),
@@ -447,12 +626,101 @@ export const localAuthProvider: AuthProvider = {
 
     saveUsers([...users, storedUser]);
 
+    return createRegistrationVerification({
+      email,
+      channel: verificationChannel,
+      target: verificationChannel === "sms" ? phone ?? "" : email,
+    });
+  },
+
+  verifyRegistration: async ({ email: emailInput, code }) => {
+    await sleep(250);
+
+    const email = normalizeEmail(emailInput);
+    const tokenHash = hashVerificationCode(email, code);
+    const activeTokens = getRegistrationVerificationTokens();
+    const verificationToken = activeTokens.find(
+      (item) => item.email === email && item.codeHash === tokenHash
+    );
+
+    if (!verificationToken) {
+      throw new AuthApiError(
+        "INVALID_VERIFICATION_CODE",
+        "Registration confirmation code is invalid or expired."
+      );
+    }
+
+    const users = ensureUsers();
+    const user = users.find((item) => item.email === email);
+
+    if (!user) {
+      throw new AuthApiError(
+        "INVALID_VERIFICATION_CODE",
+        "Registration confirmation code is invalid or expired."
+      );
+    }
+
+    if (user.bannedAt) {
+      throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+    }
+
+    const verifiedUser: StoredUserRecord = {
+      ...user,
+      emailVerified:
+        verificationToken.channel === "email" ? true : user.emailVerified ?? false,
+      phoneVerified:
+        verificationToken.channel === "sms" ? true : user.phoneVerified ?? false,
+      verificationChannel: verificationToken.channel,
+    };
+
+    saveUsers(users.map((item) => (item.email === email ? verifiedUser : item)));
+    deleteRegistrationVerificationTokensByEmail(email);
+
     const session = createSession(email);
 
     return {
-      user: toPublicUser(storedUser),
+      user: toPublicUser(verifiedUser),
       token: session.token,
     };
+  },
+
+  resendRegistrationVerification: async ({ email: emailInput, channel, phone }) => {
+    await sleep(250);
+
+    const email = normalizeEmail(emailInput);
+    const users = ensureUsers();
+    const user = users.find((item) => item.email === email);
+
+    if (!user || isRegistrationVerified(user)) {
+      throw new AuthApiError(
+        "INVALID_VERIFICATION_CODE",
+        "Registration confirmation is not available for this account."
+      );
+    }
+
+    const verificationChannel = normalizeVerificationChannel(
+      channel ?? user.verificationChannel
+    );
+    const nextPhone =
+      verificationChannel === "sms" ? normalizePhone(phone ?? user.phone) : user.phone;
+
+    if (verificationChannel === "sms") {
+      assertValidPhone(nextPhone ?? "");
+    }
+
+    const updatedUser: StoredUserRecord = {
+      ...user,
+      phone: nextPhone,
+      verificationChannel,
+    };
+
+    saveUsers(users.map((item) => (item.email === email ? updatedUser : item)));
+
+    return createRegistrationVerification({
+      email,
+      channel: verificationChannel,
+      target: verificationChannel === "sms" ? nextPhone ?? "" : email,
+    });
   },
 
   login: async (emailInput: string, password: string) => {
@@ -469,6 +737,17 @@ export const localAuthProvider: AuthProvider = {
       throw new AuthApiError(
         "INVALID_CREDENTIALS",
         "Invalid email or password."
+      );
+    }
+
+    if (user.bannedAt) {
+      throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+    }
+
+    if (!isRegistrationVerified(user)) {
+      throw new AuthApiError(
+        "REGISTRATION_NOT_VERIFIED",
+        "Registration confirmation is required before login."
       );
     }
 

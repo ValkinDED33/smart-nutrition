@@ -12,11 +12,16 @@ export type ActivityLevel =
 export type Goal = "cut" | "maintain" | "bulk";
 
 export type UserRole = "USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+export type VerificationChannel = "email" | "sms";
 
 export interface User {
   id: string;
   name: string;
   email: string;
+  emailVerified?: boolean;
+  phone?: string;
+  phoneVerified?: boolean;
+  verificationChannel?: VerificationChannel;
   avatar?: string;
   age: number;
   weight: number;
@@ -25,6 +30,9 @@ export interface User {
   activity: ActivityLevel;
   goal: Goal;
   role: UserRole;
+  isBanned?: boolean;
+  bannedAt?: string | null;
+  bannedReason?: string | null;
   twoFactorEnabled?: boolean;
   twoFactorRequired?: boolean;
   measurements?: {
@@ -51,6 +59,18 @@ export interface AuthResponse {
   token?: string;
   refreshToken?: string;
   snapshot?: AppSnapshot | null;
+}
+
+export interface RegistrationVerificationPending {
+  ok: true;
+  requiresVerification: true;
+  email: string;
+  channel: VerificationChannel;
+  maskedTarget: string;
+  delivery: VerificationChannel | "preview";
+  message: string;
+  previewCode?: string;
+  expiresAt?: string;
 }
 
 export type UpdateUserPayload = Partial<Omit<User, "id" | "email">>;

@@ -19,11 +19,14 @@ import { useLanguage } from "../../shared/language";
 import {
   addFriend,
   commentCommunityPost,
+  deleteCommunityPostAsSpam,
   findDuplicateCommunityPost,
   likeCommunityPost,
   likeProgressCard,
+  mergeCommunityPosts,
   publishCommunityPost,
   publishProgressCard,
+  reviewCommunityPost,
   sendCommunityMessage,
   sendDirectMessage,
   toggleFavoritePost,
@@ -61,6 +64,23 @@ const communityCopy = {
     bodyField: "Текст",
     ingredientsField: "Інгредієнти через кому",
     publish: "Опублікувати",
+    queued: "Надіслано на перевірку",
+    forumViews: {
+      popular: "Популярне",
+      new: "Нове",
+      recipes: "Рецепти",
+      discussion: "Обговорення",
+    },
+    status: {
+      pending: "На перевірці",
+      approved: "Опубліковано",
+      rejected: "Відхилено",
+    },
+    moderation: "Модерація форуму",
+    approve: "Схвалити",
+    reject: "Відхилити",
+    deleteSpam: "Видалити спам",
+    mergeDuplicate: "Об'єднати дубль",
     comments: "Коментарі",
     addComment: "Коментувати",
     typeComment: "Напишіть коментар",
@@ -74,12 +94,13 @@ const communityCopy = {
     save: "Save",
     unsave: "Unsave",
     duplicate:
-      "Схожа публікація вже є. Спробуйте оновити заголовок або склад, щоб уникнути дублювання.",
+      "Схожа публікація вже є. Відправлю на перевірку з позначкою дубля.",
     emptyPosts: "Публікацій поки немає.",
     types: {
       recipe: "Рецепт",
-      article: "Стаття",
+      advice: "Порада",
       experience: "Досвід",
+      discussion: "Обговорення",
     },
   },
   pl: {
@@ -113,6 +134,23 @@ const communityCopy = {
     bodyField: "Treść",
     ingredientsField: "Składniki po przecinku",
     publish: "Opublikuj",
+    queued: "Wysłano do moderacji",
+    forumViews: {
+      popular: "Popularne",
+      new: "Nowe",
+      recipes: "Przepisy",
+      discussion: "Dyskusje",
+    },
+    status: {
+      pending: "W moderacji",
+      approved: "Opublikowano",
+      rejected: "Odrzucono",
+    },
+    moderation: "Moderacja forum",
+    approve: "Zatwierdź",
+    reject: "Odrzuć",
+    deleteSpam: "Usuń spam",
+    mergeDuplicate: "Scal duplikat",
     comments: "Komentarze",
     addComment: "Skomentuj",
     typeComment: "Napisz komentarz",
@@ -126,17 +164,19 @@ const communityCopy = {
     save: "Save",
     unsave: "Unsave",
     duplicate:
-      "Podobna publikacja już istnieje. Zmień tytuł albo skład, aby uniknąć duplikatu.",
+      "Podobna publikacja już istnieje. Wyślę ją do moderacji z oznaczeniem duplikatu.",
     emptyPosts: "Brak publikacji.",
     types: {
       recipe: "Przepis",
-      article: "Artykuł",
+      advice: "Porada",
       experience: "Doświadczenie",
+      discussion: "Dyskusja",
     },
   },
 } as const;
 
 type TabValue = "friends" | "chat" | "forum" | "progress";
+type ForumView = "popular" | "new" | "recipes" | "discussion";
 
 const formatDateTime = (value: string, language: "uk" | "pl") =>
   new Date(value).toLocaleString(language === "pl" ? "pl-PL" : "uk-UA", {
@@ -151,6 +191,7 @@ export const CommunityHubCard = () => {
   const { language } = useLanguage();
   const copy = communityCopy[language];
   const [tab, setTab] = useState<TabValue>("friends");
+  const [forumView, setForumView] = useState<ForumView>("popular");
   const [friendName, setFriendName] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState(
     community.friends[0]?.id ?? ""
@@ -169,6 +210,7 @@ export const CommunityHubCard = () => {
 
   const level = Math.max(1, Math.floor(community.score / 120) + 1);
   const authorName = user?.name ?? "You";
+  const isModerator = user?.role === "MODERATOR" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const selectedFriend =
     community.friends.find((item) => item.id === selectedFriendId) ?? null;
   const conversation = useMemo(
@@ -178,6 +220,37 @@ export const CommunityHubCard = () => {
         : [],
     [community.messages, selectedFriendId]
   );
+  const moderationQueue = useMemo(
+    () => community.posts.filter((post) => post.status === "pending"),
+    [community.posts]
+  );
+  const visiblePosts = useMemo(() => {
+    const posts = community.posts.filter(
+      (post) =>
+        post.status === "approved" ||
+        post.authorId === user?.id ||
+        (isModerator && post.status !== "rejected")
+    );
+    const filtered = posts.filter((post) => {
+      if (forumView === "recipes") {
+        return post.type === "recipe";
+      }
+
+      if (forumView === "discussion") {
+        return post.type === "discussion" || post.type === "experience";
+      }
+
+      return true;
+    });
+
+    return [...filtered].sort((left, right) => {
+      if (forumView === "popular") {
+        return right.likes - left.likes;
+      }
+
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+    });
+  }, [community.posts, forumView, isModerator, user?.id]);
 
   const publishPost = () => {
     const ingredients = postIngredients
@@ -191,7 +264,6 @@ export const CommunityHubCard = () => {
 
     if (duplicate) {
       setDuplicateWarning(copy.duplicate);
-      return;
     }
 
     if (!user || !postTitle.trim() || !postBody.trim()) {
@@ -203,6 +275,7 @@ export const CommunityHubCard = () => {
         type: postType,
         title: postTitle,
         body: postBody,
+        authorId: user.id,
         authorName: user.name,
         ingredients,
       })
@@ -210,7 +283,7 @@ export const CommunityHubCard = () => {
     setPostTitle("");
     setPostBody("");
     setPostIngredients("");
-    setDuplicateWarning(null);
+    setDuplicateWarning(copy.queued);
   };
 
   const sendRoomMessage = () => {
@@ -460,8 +533,9 @@ export const CommunityHubCard = () => {
               onChange={(event) => setPostType(event.target.value as CommunityPostType)}
             >
               <MenuItem value="recipe">{copy.types.recipe}</MenuItem>
-              <MenuItem value="article">{copy.types.article}</MenuItem>
+              <MenuItem value="advice">{copy.types.advice}</MenuItem>
               <MenuItem value="experience">{copy.types.experience}</MenuItem>
+              <MenuItem value="discussion">{copy.types.discussion}</MenuItem>
             </TextField>
             <TextField
               fullWidth
@@ -494,20 +568,135 @@ export const CommunityHubCard = () => {
               {copy.publish}
             </Button>
 
-            {community.posts.length === 0 ? (
+            {isModerator && moderationQueue.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
+                <Stack spacing={1.2}>
+                  <Typography sx={{ fontWeight: 800 }}>{copy.moderation}</Typography>
+                  {moderationQueue.map((post) => {
+                    const duplicateTarget = community.posts.find(
+                      (candidate) =>
+                        candidate.id !== post.id &&
+                        candidate.status === "approved" &&
+                        candidate.title.trim().toLowerCase() ===
+                          post.title.trim().toLowerCase()
+                    );
+
+                    return (
+                      <Paper key={post.id} variant="outlined" sx={{ p: 1.2, borderRadius: 2 }}>
+                        <Stack spacing={0.8}>
+                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                            <Chip label={copy.types[post.type]} size="small" />
+                            <Chip label={copy.status[post.status]} color="warning" size="small" />
+                          </Stack>
+                          <Typography sx={{ fontWeight: 800 }}>{post.title}</Typography>
+                          <Typography color="text.secondary">{post.body}</Typography>
+                          {post.moderationReason && (
+                            <Alert severity="warning">{post.moderationReason}</Alert>
+                          )}
+                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                            <Button
+                              onClick={() =>
+                                dispatch(
+                                  reviewCommunityPost({
+                                    postId: post.id,
+                                    decision: "approve",
+                                    moderatorName: authorName,
+                                  })
+                                )
+                              }
+                            >
+                              {copy.approve}
+                            </Button>
+                            <Button
+                              color="error"
+                              onClick={() =>
+                                dispatch(
+                                  reviewCommunityPost({
+                                    postId: post.id,
+                                    decision: "reject",
+                                    moderatorName: authorName,
+                                    reason: "Rejected by moderator.",
+                                  })
+                                )
+                              }
+                            >
+                              {copy.reject}
+                            </Button>
+                            <Button
+                              color="error"
+                              onClick={() =>
+                                dispatch(
+                                  deleteCommunityPostAsSpam({
+                                    postId: post.id,
+                                    moderatorName: authorName,
+                                  })
+                                )
+                              }
+                            >
+                              {copy.deleteSpam}
+                            </Button>
+                            {duplicateTarget && (
+                              <Button
+                                onClick={() =>
+                                  dispatch(
+                                    mergeCommunityPosts({
+                                      sourcePostId: post.id,
+                                      targetPostId: duplicateTarget.id,
+                                      moderatorName: authorName,
+                                    })
+                                  )
+                                }
+                              >
+                                {copy.mergeDuplicate}
+                              </Button>
+                            )}
+                          </Stack>
+                        </Stack>
+                      </Paper>
+                    );
+                  })}
+                </Stack>
+              </Paper>
+            )}
+
+            <Tabs
+              value={forumView}
+              onChange={(_, value: ForumView) => setForumView(value)}
+              variant="scrollable"
+              allowScrollButtonsMobile
+            >
+              <Tab value="popular" label={copy.forumViews.popular} />
+              <Tab value="new" label={copy.forumViews.new} />
+              <Tab value="recipes" label={copy.forumViews.recipes} />
+              <Tab value="discussion" label={copy.forumViews.discussion} />
+            </Tabs>
+
+            {visiblePosts.length === 0 ? (
               <Alert severity="info">{copy.emptyPosts}</Alert>
             ) : (
-              community.posts.map((post) => {
+              visiblePosts.map((post) => {
                 const saved = community.favoritePostIds.includes(post.id);
                 const comments = community.comments.filter(
                   (comment) => comment.postId === post.id
                 );
+                const canInteract = post.status === "approved";
 
                 return (
                   <Paper key={post.id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <Stack spacing={1}>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                         <Chip label={copy.types[post.type]} size="small" />
+                        <Chip
+                          label={copy.status[post.status]}
+                          color={
+                            post.status === "approved"
+                              ? "success"
+                              : post.status === "rejected"
+                                ? "error"
+                                : "warning"
+                          }
+                          size="small"
+                        />
                         <Chip label={`${post.likes} likes`} variant="outlined" size="small" />
                         <Chip label={post.authorName} variant="outlined" size="small" />
                       </Stack>
@@ -521,52 +710,61 @@ export const CommunityHubCard = () => {
                           {post.ingredients.join(", ")}
                         </Typography>
                       )}
-                      <Stack direction="row" spacing={1}>
-                        <Button onClick={() => dispatch(likeCommunityPost(post.id))}>
-                          {copy.like}
-                        </Button>
-                        <Button onClick={() => dispatch(toggleFavoritePost(post.id))}>
-                          {saved ? copy.unsave : copy.save}
-                        </Button>
-                      </Stack>
-                      <Divider />
-                      <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                        {copy.comments}
-                      </Typography>
-                      {comments.map((comment) => (
-                        <Paper
-                          key={comment.id}
-                          variant="outlined"
-                          sx={{ p: 1.2, borderRadius: 2, backgroundColor: "rgba(248,250,252,0.8)" }}
-                        >
-                          <Stack spacing={0.3}>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                              {comment.authorName}
-                            </Typography>
-                            <Typography variant="body2">{comment.text}</Typography>
+                      {post.moderationReason && post.status !== "approved" && (
+                        <Alert severity={post.status === "rejected" ? "error" : "warning"}>
+                          {post.moderationReason}
+                        </Alert>
+                      )}
+                      {canInteract && (
+                        <>
+                          <Stack direction="row" spacing={1}>
+                            <Button onClick={() => dispatch(likeCommunityPost(post.id))}>
+                              {copy.like}
+                            </Button>
+                            <Button onClick={() => dispatch(toggleFavoritePost(post.id))}>
+                              {saved ? copy.unsave : copy.save}
+                            </Button>
                           </Stack>
-                        </Paper>
-                      ))}
-                      <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label={copy.typeComment}
-                          value={commentDrafts[post.id] ?? ""}
-                          onChange={(event) =>
-                            setCommentDrafts((drafts) => ({
-                              ...drafts,
-                              [post.id]: event.target.value,
-                            }))
-                          }
-                        />
-                        <Button
-                          onClick={() => publishComment(post.id)}
-                          sx={{ textTransform: "none", fontWeight: 700 }}
-                        >
-                          {copy.addComment}
-                        </Button>
-                      </Stack>
+                          <Divider />
+                          <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                            {copy.comments}
+                          </Typography>
+                          {comments.map((comment) => (
+                            <Paper
+                              key={comment.id}
+                              variant="outlined"
+                              sx={{ p: 1.2, borderRadius: 2, backgroundColor: "rgba(248,250,252,0.8)" }}
+                            >
+                              <Stack spacing={0.3}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                  {comment.authorName}
+                                </Typography>
+                                <Typography variant="body2">{comment.text}</Typography>
+                              </Stack>
+                            </Paper>
+                          ))}
+                          <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              label={copy.typeComment}
+                              value={commentDrafts[post.id] ?? ""}
+                              onChange={(event) =>
+                                setCommentDrafts((drafts) => ({
+                                  ...drafts,
+                                  [post.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <Button
+                              onClick={() => publishComment(post.id)}
+                              sx={{ textTransform: "none", fontWeight: 700 }}
+                            >
+                              {copy.addComment}
+                            </Button>
+                          </Stack>
+                        </>
+                      )}
                     </Stack>
                   </Paper>
                 );

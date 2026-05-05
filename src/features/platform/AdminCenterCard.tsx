@@ -27,6 +27,7 @@ import {
   listAuditLogs,
   listModerationQueue,
   reviewCatalogSubmission,
+  updateAdminUserBan,
   updateAdminUserRole,
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
@@ -50,6 +51,9 @@ const adminCopy = {
     reject: "Відхилити",
     role: "Роль",
     applyRole: "Застосувати",
+    ban: "Заблокувати",
+    unban: "Розблокувати",
+    banned: "Заблоковано",
     twoFactor: "2FA",
     required: "Потрібно",
     optional: "Опційно",
@@ -71,6 +75,9 @@ const adminCopy = {
     reject: "Odrzuć",
     role: "Rola",
     applyRole: "Zastosuj",
+    ban: "Zablokuj",
+    unban: "Odblokuj",
+    banned: "Zablokowane",
     twoFactor: "2FA",
     required: "Wymagane",
     optional: "Opcjonalne",
@@ -310,6 +317,9 @@ export const AdminCenterCard = () => {
                     </Typography>
                   </Stack>
                   <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+                    {user.isBanned && (
+                      <Chip color="error" label={copy.banned} sx={{ alignSelf: "center" }} />
+                    )}
                     <TextField
                       select
                       size="small"
@@ -350,6 +360,26 @@ export const AdminCenterCard = () => {
                     >
                       {copy.applyRole}
                     </Button>
+                    {access?.permissions.banUsers && (
+                      <Button
+                        color={user.isBanned ? "success" : "error"}
+                        disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
+                        onClick={() => {
+                          void updateAdminUserBan(user.id, {
+                            banned: !user.isBanned,
+                            reason: "Admin moderation action",
+                          }).then((updatedUser) => {
+                            setUsers((current) =>
+                              current.map((entry) =>
+                                entry.id === updatedUser.id ? updatedUser : entry
+                              )
+                            );
+                          });
+                        }}
+                      >
+                        {user.isBanned ? copy.unban : copy.ban}
+                      </Button>
+                    )}
                   </Stack>
                 </Stack>
               </Paper>

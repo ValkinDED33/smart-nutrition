@@ -43,11 +43,15 @@ const authPageCopy = {
     forgotPassword: "Забули пароль?",
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
+    notVerified: "Підтвердіть реєстрацію кодом з email або SMS перед входом.",
+    banned: "Акаунт заблоковано адміністратором.",
   },
   pl: {
     forgotPassword: "Zapomniałeś hasła?",
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
+    notVerified: "Potwierdź rejestrację kodem z emaila albo SMS przed logowaniem.",
+    banned: "Konto zostało zablokowane przez administratora.",
   },
 } as const;
 
@@ -114,6 +118,10 @@ const LoginPage = () => {
       if (error instanceof AuthApiError) {
         if (error.code === "TOO_MANY_ATTEMPTS") {
           setServerError(t("error.tooManyAttempts"));
+        } else if (error.code === "REGISTRATION_NOT_VERIFIED") {
+          setServerError(copy.notVerified);
+        } else if (error.code === "ACCOUNT_BANNED") {
+          setServerError(copy.banned);
         } else if (error.code === "BACKEND_UNAVAILABLE") {
           setServerError(t("error.backendUnavailable"));
         } else {

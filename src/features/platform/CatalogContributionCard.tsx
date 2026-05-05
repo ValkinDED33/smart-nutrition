@@ -12,6 +12,7 @@ import {
 import type { CatalogProductItem } from "../../shared/types/platform";
 import {
   PlatformApiError,
+  findCatalogDuplicateCandidates,
   listOwnCatalogSubmissions,
   submitCatalogSubmission,
 } from "../../shared/api/platform";
@@ -35,6 +36,8 @@ const catalogCopy = {
     submit: "Надіслати на модерацію",
     ownSubmissions: "Мої відправки",
     duplicates: "Можливі дублікати",
+    duplicateAssistant:
+      "це блюдо вже є. Краще використати готове або перевірити дубль перед створенням нового.",
     submitted: "Продукт відправлено.",
     backendUnavailable:
       "Cloud backend недоступний, тому каталог і модерація зараз працювати не зможуть.",
@@ -60,6 +63,8 @@ const catalogCopy = {
     submit: "Wyślij do moderacji",
     ownSubmissions: "Moje zgłoszenia",
     duplicates: "Możliwe duplikaty",
+    duplicateAssistant:
+      "to danie już istnieje. Lepiej użyć gotowego wpisu albo sprawdzić duplikat przed utworzeniem nowego.",
     submitted: "Produkt został wysłany.",
     backendUnavailable:
       "Backend cloud jest niedostępny, więc katalog i moderacja nie będą teraz działać.",
@@ -115,6 +120,38 @@ export const CatalogContributionCard = () => {
   useEffect(() => {
     void loadSubmissions();
   }, [loadSubmissions]);
+
+  useEffect(() => {
+    const name = form.name.trim();
+
+    if (name.length < 3) {
+      setDuplicates([]);
+      return undefined;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void findCatalogDuplicateCandidates({
+        name,
+        barcode: form.barcode.replace(/\D/g, ""),
+      })
+        .then((items) => {
+          if (active) {
+            setDuplicates(items);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setDuplicates([]);
+          }
+        });
+    }, 280);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [form.barcode, form.name]);
 
   const canSubmit = useMemo(
     () =>
@@ -293,6 +330,7 @@ export const CatalogContributionCard = () => {
         {duplicates.length > 0 && (
           <Stack spacing={1}>
             <Typography sx={{ fontWeight: 700 }}>{copy.duplicates}</Typography>
+            <Alert severity="info">{copy.duplicateAssistant}</Alert>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               {duplicates.map((item) => (
                 <Chip key={item.id} label={item.name} variant="outlined" />

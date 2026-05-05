@@ -33,6 +33,43 @@ const createTransport = (config) => {
 
 const buildResetSubject = () => "Reset your Smart Nutrition password";
 
+const buildVerificationSubject = () => "Confirm your Smart Nutrition registration";
+
+const buildVerificationText = ({ name, code, expiresAt }) => {
+  const displayName = String(name ?? "").trim() || "there";
+
+  return [
+    `Hi ${displayName},`,
+    "",
+    "Use this code to confirm your Smart Nutrition registration:",
+    code,
+    "",
+    `This code expires at ${new Date(expiresAt).toUTCString()}.`,
+    "",
+    "If you did not create this account, you can ignore this message.",
+  ].join("\n");
+};
+
+const buildVerificationHtml = ({ name, code, expiresAt }) => {
+  const displayName = escapeHtml(String(name ?? "").trim() || "there");
+  const safeCode = escapeHtml(code);
+  const expiresLabel = escapeHtml(new Date(expiresAt).toUTCString());
+
+  return `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f8fafc;color:#0f172a;font-family:Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,23,42,0.08);border-radius:20px;padding:32px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;color:#0f766e;text-transform:uppercase;">Smart Nutrition</p>
+      <h1 style="margin:0 0 16px;font-size:28px;line-height:1.15;">Confirm registration</h1>
+      <p style="margin:0 0 16px;line-height:1.7;">Hi ${displayName},</p>
+      <p style="margin:0 0 20px;line-height:1.7;">Enter this code in the app to finish creating your account.</p>
+      <p style="margin:0 0 20px;font-size:32px;letter-spacing:0.18em;font-weight:800;color:#0f766e;">${safeCode}</p>
+      <p style="margin:0;line-height:1.7;color:#475569;">This code expires at <strong>${expiresLabel}</strong>.</p>
+    </div>
+  </body>
+</html>`;
+};
+
 const buildResetText = ({ appBaseUrl, name, resetUrl, expiresAt }) => {
   const displayName = String(name ?? "").trim() || "there";
 
@@ -127,6 +164,41 @@ export const createEmailService = ({ config, logger = console }) => {
         };
       } catch (error) {
         logger.error?.("[email] password reset delivery failed", error);
+
+        return {
+          ok: false,
+          code: "EMAIL_SEND_FAILED",
+        };
+      }
+    },
+
+    sendRegistrationVerificationEmail: async ({ to, name, code, expiresAt }) => {
+      if (!transporter || !from) {
+        return {
+          ok: false,
+          code: "EMAIL_NOT_CONFIGURED",
+        };
+      }
+
+      try {
+        const info = await transporter.sendMail({
+          from,
+          to,
+          subject: buildVerificationSubject(),
+          text: buildVerificationText({ name, code, expiresAt }),
+          html: buildVerificationHtml({ name, code, expiresAt }),
+        });
+
+        logger.info?.(
+          `[email] registration verification sent to ${to} (${info.messageId ?? "no-message-id"})`
+        );
+
+        return {
+          ok: true,
+          messageId: info.messageId ?? null,
+        };
+      } catch (error) {
+        logger.error?.("[email] registration verification delivery failed", error);
 
         return {
           ok: false,

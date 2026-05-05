@@ -2,6 +2,7 @@ export const createPlatformRepository = (storage) => ({
   findUserById: (userId) => storage.findUserById(userId),
   listUsers: () => storage.listUsers(),
   updateUserRole: (payload) => storage.updateUserRole(payload),
+  updateUserBan: (payload) => storage.updateUserBan(payload),
   hasUserWithRole: (role) => storage.hasUserWithRole(role),
   promoteUserByEmailToSuperAdmin: (email) => storage.promoteUserByEmailToSuperAdmin(email),
   createAuditLog: (entry) => storage.createAuditLog(entry),

@@ -1,10 +1,19 @@
-import type { AuthResponse, User } from "../types/user";
+import type {
+  AuthResponse,
+  RegistrationVerificationPending,
+  User,
+  VerificationChannel,
+} from "../types/user";
 import type { AppSnapshot } from "../types/appSnapshot";
+
+export type { RegistrationVerificationPending, VerificationChannel } from "../types/user";
 
 export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
+  verificationChannel?: VerificationChannel;
+  phone?: string;
   age: number;
   weight: number;
   height: number;
@@ -58,12 +67,29 @@ export interface PasswordResetResult {
   message: string;
 }
 
+export interface RegistrationVerificationPayload {
+  email: string;
+  code: string;
+}
+
+export interface RegistrationVerificationResendPayload {
+  email: string;
+  channel?: VerificationChannel;
+  phone?: string;
+}
+
+export type RegistrationResult = AuthResponse | RegistrationVerificationPending;
+
 export interface AuthProvider {
   restoreSession: () => Promise<AuthResponse | null>;
   logout: () => Promise<void>;
   logoutEverywhere: () => Promise<void>;
   updateStoredProfile: (user: User) => Promise<User>;
-  register: (payload: RegisterPayload) => Promise<AuthResponse>;
+  register: (payload: RegisterPayload) => Promise<RegistrationResult>;
+  verifyRegistration: (payload: RegistrationVerificationPayload) => Promise<AuthResponse>;
+  resendRegistrationVerification: (
+    payload: RegistrationVerificationResendPayload
+  ) => Promise<RegistrationVerificationPending>;
   login: (email: string, password: string) => Promise<AuthResponse>;
   requestPasswordReset: (email: string) => Promise<PasswordResetRequestResult>;
   resetPassword: (token: string, password: string) => Promise<PasswordResetResult>;

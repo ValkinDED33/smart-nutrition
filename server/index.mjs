@@ -156,7 +156,8 @@ const normalizeRouteLabel = (pathname) =>
     .replace(/^\/api\/meal-templates\/[^/]+$/, "/api/meal-templates/:id")
     .replace(/^\/api\/meal-products\/(saved|recent)\/[^/]+$/, "/api/meal-products/$1/:id")
     .replace(/^\/api\/admin\/foods\/submissions\/[^/]+$/, "/api/admin/foods/submissions/:id")
-    .replace(/^\/api\/admin\/users\/[^/]+\/role$/, "/api/admin/users/:id/role");
+    .replace(/^\/api\/admin\/users\/[^/]+\/role$/, "/api/admin/users/:id/role")
+    .replace(/^\/api\/admin\/users\/[^/]+\/ban$/, "/api/admin/users/:id/ban");
 
 const getClientAddress = (request) =>
   String(request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown")
@@ -395,6 +396,7 @@ const routeRequest = async (request, response) => {
   const accountBackupMatch = pathname.match(/^\/api\/account\/backups\/([^/]+)$/);
   const adminFoodSubmissionMatch = pathname.match(/^\/api\/admin\/foods\/submissions\/([^/]+)$/);
   const adminUserRoleMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/role$/);
+  const adminUserBanMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/ban$/);
 
   try {
     if (pathname === "/api/health" && request.method === "GET") {
@@ -420,7 +422,19 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/register" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 201, authService.register(body));
+      sendJson(response, 201, await authService.register(body));
+      return;
+    }
+
+    if (pathname === "/api/auth/verify-registration" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendAuthSession(response, 200, authService.verifyRegistration(body));
+      return;
+    }
+
+    if (pathname === "/api/auth/resend-verification" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(response, 200, await authService.resendRegistrationVerification(body));
       return;
     }
 
@@ -714,6 +728,17 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (pathname === "/api/foods/duplicates" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.findCatalogDuplicates(auth.user, {
+          name: url.searchParams.get("name") ?? "",
+          barcode: url.searchParams.get("barcode") ?? "",
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
     if (pathname === "/api/foods/submissions" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
       sendJson(response, 201, platformService.submitCatalogProduct(auth.user, body));
@@ -775,6 +800,20 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (adminUserBanMatch && request.method === "PATCH") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      sendJson(
+        response,
+        200,
+        platformService.updateUserBan(
+          auth.user,
+          decodeURIComponent(adminUserBanMatch[1]),
+          body
+        )
+      );
+      return;
+    }
+
     if (pathname === "/api/account" && request.method === "DELETE") {
       authService.deleteAccount(auth.user);
       clearAuthCookies(response);
@@ -818,6 +857,12 @@ const routeRequest = async (request, response) => {
           ? 400
           : error.code === "EMAIL_IN_USE"
           ? 409
+          : error.code === "INVALID_VERIFICATION_CODE"
+            ? 400
+            : error.code === "REGISTRATION_NOT_VERIFIED"
+              ? 403
+              : error.code === "ACCOUNT_BANNED"
+                ? 403
           : error.code === "TOO_MANY_ATTEMPTS"
             ? 429
             : error.code === "EMAIL_DELIVERY_UNAVAILABLE"

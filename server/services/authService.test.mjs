@@ -221,7 +221,7 @@ describe("authService", () => {
   it("rejects invalid registration profile fields server-side", () => {
     const { service } = createAuthServiceFixture();
 
-    expect(() =>
+    return expect(
       service.register({
         name: "A",
         email: "invalid-profile@example.com",
@@ -233,7 +233,7 @@ describe("authService", () => {
         activity: "hovering",
         goal: "teleport",
       })
-    ).toThrow(/valid email|Name|Age|Weight|Height|Gender|Activity|Goal/);
+    ).rejects.toThrow(/valid email|Name|Age|Weight|Height|Gender|Activity|Goal/);
   });
 
   it("rejects invalid profile updates server-side", () => {

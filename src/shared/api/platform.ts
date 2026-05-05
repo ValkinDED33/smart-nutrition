@@ -72,6 +72,28 @@ export const getPlatformAccessOverview = () =>
 export const listOwnCatalogSubmissions = async () =>
   (await requestPlatform<{ items: CatalogProductItem[] }>("/api/foods/submissions")).items;
 
+export const findCatalogDuplicateCandidates = async ({
+  name,
+  barcode = "",
+  limit = 6,
+}: {
+  name: string;
+  barcode?: string;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams({
+    name,
+    barcode,
+    limit: String(limit),
+  });
+
+  return (
+    await requestPlatform<{ items: CatalogProductItem[] }>(
+      `/api/foods/duplicates?${params.toString()}`
+    )
+  ).items;
+};
+
 export const submitCatalogSubmission = (
   payload: CatalogProductSubmissionPayload
 ) =>
@@ -107,6 +129,15 @@ export const updateAdminUserRole = (
   requestPlatform<AdminUserSummary>(`/api/admin/users/${encodeURIComponent(userId)}/role`, {
     method: "PATCH",
     body: JSON.stringify({ role }),
+  });
+
+export const updateAdminUserBan = (
+  userId: string,
+  payload: { banned: boolean; reason?: string }
+) =>
+  requestPlatform<AdminUserSummary>(`/api/admin/users/${encodeURIComponent(userId)}/ban`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 
 export const listAuditLogs = async () =>

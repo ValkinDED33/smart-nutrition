@@ -587,6 +587,13 @@ export const createServerConfig = (env = process.env) => {
     errors,
     { min: 60_000 }
   );
+  const registrationVerificationTokenTtlMs = readPositiveInteger(
+    env.SMART_NUTRITION_REGISTRATION_VERIFICATION_TTL_MS,
+    1000 * 60 * 15,
+    "SMART_NUTRITION_REGISTRATION_VERIFICATION_TTL_MS",
+    errors,
+    { min: 60_000 }
+  );
   const backupIntervalMs = readPositiveInteger(
     env.SMART_NUTRITION_BACKUP_INTERVAL_MS,
     1000 * 60 * 10,
@@ -806,6 +813,7 @@ export const createServerConfig = (env = process.env) => {
     maxLoginAttempts: 5,
     loginLockMs: 1000 * 60 * 5,
     passwordIterations,
+    registrationVerificationTokenTtlMs,
     bodyLimitBytes,
     dataDir: DATA_DIR,
     sqlitePath,

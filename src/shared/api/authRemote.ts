@@ -1,4 +1,8 @@
-import type { AuthResponse, User } from "../types/user";
+import type {
+  AuthResponse,
+  RegistrationVerificationPending,
+  User,
+} from "../types/user";
 import type { AppSnapshot, AppSnapshotMeta } from "../types/appSnapshot";
 import type { MealEntry, MealTemplate } from "../types/meal";
 import type { PhotoMealAnalysis } from "../types/photo";
@@ -25,6 +29,7 @@ import type {
   PasswordResetRequestResult,
   PasswordResetResult,
   RegisterPayload,
+  RegistrationResult,
 } from "./authProvider";
 import { AuthApiError } from "./authLocal";
 
@@ -202,12 +207,23 @@ const setRemoteSession = (baseUrl: string, user: User) => {
   setStoredAuthMode("remote-cloud");
 };
 
+const rememberRemoteBaseUrl = (baseUrl: string) => {
+  setClientStorageItem(REMOTE_BASE_URL_KEY, baseUrl);
+};
+
 const clearRemoteSession = () => {
   removeClientStorageItem(REMOTE_BASE_URL_KEY);
   removeClientStorageItem(REMOTE_USER_KEY);
   clearCachedRemoteState();
   setStoredAuthMode("local-browser");
 };
+
+const isRegistrationVerificationPending = (
+  value: unknown
+): value is RegistrationVerificationPending =>
+  typeof value === "object" &&
+  value !== null &&
+  (value as { requiresVerification?: unknown }).requiresVerification === true;
 
 const readJsonResponse = async <T,>(response: Response) => {
   if (response.status === 204) {
@@ -274,6 +290,18 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
 
     if (error.code === "EMAIL_DELIVERY_UNAVAILABLE") {
       return new AuthApiError("EMAIL_DELIVERY_UNAVAILABLE", error.message);
+    }
+
+    if (error.code === "INVALID_VERIFICATION_CODE") {
+      return new AuthApiError("INVALID_VERIFICATION_CODE", error.message);
+    }
+
+    if (error.code === "REGISTRATION_NOT_VERIFIED") {
+      return new AuthApiError("REGISTRATION_NOT_VERIFIED", error.message);
+    }
+
+    if (error.code === "ACCOUNT_BANNED") {
+      return new AuthApiError("ACCOUNT_BANNED", error.message);
     }
 
     if (error.code === "WEAK_PASSWORD") {
@@ -964,7 +992,7 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   register: async (payload: RegisterPayload) => {
-    const { data, baseUrl } = await requestRemote<AuthResponse>("/auth/register", {
+    const { data, baseUrl } = await requestRemote<RegistrationResult>("/auth/register", {
       method: "POST",
       body: JSON.stringify(payload),
     }).catch((error) => {
@@ -972,7 +1000,43 @@ export const remoteAuthProvider: AuthProvider = {
       throw authError ?? error;
     });
 
+    if (isRegistrationVerificationPending(data)) {
+      rememberRemoteBaseUrl(baseUrl);
+      return data;
+    }
+
     return mapAuthResponse(data, baseUrl);
+  },
+
+  verifyRegistration: async (payload) => {
+    const { data, baseUrl } = await requestRemote<AuthResponse>(
+      "/auth/verify-registration",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return mapAuthResponse(data, baseUrl);
+  },
+
+  resendRegistrationVerification: async (payload) => {
+    const { data, baseUrl } = await requestRemote<RegistrationVerificationPending>(
+      "/auth/resend-verification",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    rememberRemoteBaseUrl(baseUrl);
+    return data;
   },
 
   login: async (email: string, password: string) => {

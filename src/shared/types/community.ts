@@ -1,5 +1,6 @@
 export type CommunityFriendStatus = "online" | "offline";
-export type CommunityPostType = "recipe" | "article" | "experience";
+export type CommunityPostType = "recipe" | "advice" | "experience" | "discussion";
+export type CommunityContentStatus = "pending" | "approved" | "rejected";
 
 export interface CommunityFriend {
   id: string;
@@ -38,7 +39,13 @@ export interface CommunityPost {
   title: string;
   body: string;
   ingredients: string[];
+  authorId?: string;
   authorName: string;
+  status: CommunityContentStatus;
+  moderationReason?: string | null;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+  publishedAt?: string | null;
   createdAt: string;
   likes: number;
 }

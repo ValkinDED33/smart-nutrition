@@ -26,7 +26,11 @@ import {
   upsertRemoteMealProduct,
 } from "./authRemote";
 import { AuthApiError, localAuthProvider } from "./authLocal";
-import type { AuthProvider } from "./authProvider";
+import type {
+  AuthProvider,
+  RegistrationVerificationPayload,
+  RegistrationVerificationResendPayload,
+} from "./authProvider";
 
 export type {
   RegisterPayload,
@@ -36,6 +40,10 @@ export type {
   AccountExportPayload,
   PasswordResetRequestResult,
   PasswordResetResult,
+  RegistrationResult,
+  RegistrationVerificationPayload,
+  RegistrationVerificationPending,
+  RegistrationVerificationResendPayload,
 } from "./authProvider";
 export type { RemoteSyncResult };
 export { AuthApiError };
@@ -105,6 +113,20 @@ export const register = async (
 ) => {
   const provider = await getAvailableAuthProvider();
   return provider.register(payload);
+};
+
+export const verifyRegistration = async (
+  payload: RegistrationVerificationPayload
+) => {
+  const provider = await getAvailableAuthProvider();
+  return provider.verifyRegistration(payload);
+};
+
+export const resendRegistrationVerification = async (
+  payload: RegistrationVerificationResendPayload
+) => {
+  const provider = await getAvailableAuthProvider();
+  return provider.resendRegistrationVerification(payload);
 };
 
 export const login = async (email: string, password: string) => {

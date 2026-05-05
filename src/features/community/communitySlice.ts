@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {
   CommunityFriend,
+  CommunityContentStatus,
   CommunityMessage,
   CommunityPost,
   CommunityPostComment,
@@ -38,6 +39,19 @@ const normalizeIngredients = (ingredients: unknown) =>
         .slice(0, 12)
     : [];
 
+const normalizePostType = (type: unknown): CommunityPostType => {
+  if (type === "recipe" || type === "advice" || type === "experience" || type === "discussion") {
+    return type;
+  }
+
+  return type === "article" ? "advice" : "experience";
+};
+
+const normalizeStatus = (status: unknown): CommunityContentStatus =>
+  status === "pending" || status === "approved" || status === "rejected"
+    ? status
+    : "approved";
+
 const normalizeToken = (value: string) =>
   value
     .trim()
@@ -60,14 +74,17 @@ const normalizePost = (value: unknown): CommunityPost | null => {
 
   return {
     id: normalizeText(item.id, createId("community-post"), 96),
-    type:
-      item.type === "recipe" || item.type === "article" || item.type === "experience"
-        ? item.type
-        : "experience",
+    type: normalizePostType(item.type),
     title,
     body,
     ingredients: normalizeIngredients(item.ingredients),
+    authorId: normalizeText(item.authorId, "", 96) || undefined,
     authorName: normalizeText(item.authorName, "Smart Nutrition", 80),
+    status: normalizeStatus(item.status),
+    moderationReason: normalizeText(item.moderationReason, "", 240) || null,
+    reviewedAt: normalizeText(item.reviewedAt, "", 40) || null,
+    reviewedBy: normalizeText(item.reviewedBy, "", 80) || null,
+    publishedAt: normalizeText(item.publishedAt, "", 40) || null,
     createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
     likes: Number.isFinite(Number(item.likes)) ? Math.max(Number(item.likes), 0) : 0,
   };
@@ -238,6 +255,11 @@ const initialState: CommunityState = {
       body: "Greek yogurt, oats, banana, and chia. Simple prep for busy mornings.",
       ingredients: ["Greek yogurt", "oats", "banana", "chia"],
       authorName: "Anna",
+      status: "approved",
+      moderationReason: null,
+      reviewedAt: "2026-04-25T08:12:00.000Z",
+      reviewedBy: "Coach Denis",
+      publishedAt: "2026-04-25T08:12:00.000Z",
       createdAt: "2026-04-25T08:10:00.000Z",
       likes: 14,
     },
@@ -248,16 +270,26 @@ const initialState: CommunityState = {
       body: "I switched to 250 ml checkpoints and water finally became easier to track.",
       ingredients: [],
       authorName: "Marta",
+      status: "approved",
+      moderationReason: null,
+      reviewedAt: "2026-04-24T11:48:00.000Z",
+      reviewedBy: "Coach Denis",
+      publishedAt: "2026-04-24T11:48:00.000Z",
       createdAt: "2026-04-24T11:45:00.000Z",
       likes: 9,
     },
     {
       id: "post-3",
-      type: "article",
+      type: "advice",
       title: "Plateau week checklist",
       body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
       ingredients: [],
       authorName: "Coach Denis",
+      status: "approved",
+      moderationReason: null,
+      reviewedAt: "2026-04-23T09:03:00.000Z",
+      reviewedBy: "Admin",
+      publishedAt: "2026-04-23T09:03:00.000Z",
       createdAt: "2026-04-23T09:00:00.000Z",
       likes: 18,
     },
@@ -304,6 +336,10 @@ export const findDuplicateCommunityPost = (
 
   return (
     posts.find((post) => {
+      if (post.status === "rejected") {
+        return false;
+      }
+
       if (normalizeToken(post.title) === normalizedTitle) {
         return true;
       }
@@ -318,6 +354,57 @@ export const findDuplicateCommunityPost = (
       return overlap >= Math.min(2, normalizedIngredients.length);
     }) ?? null
   );
+};
+
+const spamSignals = [
+  "http://",
+  "https://",
+  "buy now",
+  "casino",
+  "crypto",
+  "free money",
+  "telegram",
+  "whatsapp",
+];
+
+const analyzePostDraft = (
+  posts: CommunityPost[],
+  draft: { title: string; body: string; ingredients?: string[] }
+) => {
+  const title = normalizeText(draft.title, "", 120);
+  const body = normalizeText(draft.body, "", 1200);
+  const fullText = normalizeToken(`${title} ${body}`);
+  const duplicate = findDuplicateCommunityPost(posts, draft);
+
+  if (spamSignals.some((signal) => fullText.includes(signal))) {
+    return {
+      status: "rejected" as const,
+      reason: "Spam-like content was detected.",
+      duplicate,
+    };
+  }
+
+  if (body.length < 24 || title.split(/\s+/).filter(Boolean).length < 2) {
+    return {
+      status: "rejected" as const,
+      reason: "Post needs a clearer title and meaningful content.",
+      duplicate,
+    };
+  }
+
+  if (duplicate) {
+    return {
+      status: "pending" as const,
+      reason: `Possible duplicate of "${duplicate.title}".`,
+      duplicate,
+    };
+  }
+
+  return {
+    status: "pending" as const,
+    reason: null,
+    duplicate: null,
+  };
 };
 
 export const normalizeCommunityState = (value: unknown): CommunityState => {
@@ -431,6 +518,7 @@ const communitySlice = createSlice({
         type: CommunityPostType;
         title: string;
         body: string;
+        authorId?: string;
         authorName: string;
         ingredients?: string[];
       }>
@@ -442,17 +530,30 @@ const communitySlice = createSlice({
         return;
       }
 
-      state.posts.unshift({
-        id: createId("community-post"),
-        type: action.payload.type,
+      const ingredients = normalizeIngredients(action.payload.ingredients);
+      const moderation = analyzePostDraft(state.posts, {
         title,
         body,
-        ingredients: normalizeIngredients(action.payload.ingredients),
+        ingredients,
+      });
+
+      state.posts.unshift({
+        id: createId("community-post"),
+        type: normalizePostType(action.payload.type),
+        title,
+        body,
+        ingredients,
+        authorId: normalizeText(action.payload.authorId, "", 96) || undefined,
         authorName: normalizeText(action.payload.authorName, "You", 80),
+        status: moderation.status,
+        moderationReason: moderation.reason,
+        reviewedAt: moderation.status === "rejected" ? new Date().toISOString() : null,
+        reviewedBy: moderation.status === "rejected" ? "Auto moderation" : null,
+        publishedAt: null,
         createdAt: new Date().toISOString(),
         likes: 0,
       });
-      state.score += 25;
+      state.score += moderation.status === "rejected" ? 2 : 15;
     },
     commentCommunityPost(
       state,
@@ -461,7 +562,11 @@ const communitySlice = createSlice({
       const postId = normalizeText(action.payload.postId, "", 96);
       const text = normalizeText(action.payload.text, "", 600);
 
-      if (!postId || !text || !state.posts.some((item) => item.id === postId)) {
+      if (
+        !postId ||
+        !text ||
+        !state.posts.some((item) => item.id === postId && item.status === "approved")
+      ) {
         return;
       }
 
@@ -502,10 +607,92 @@ const communitySlice = createSlice({
       });
       state.score += 20;
     },
+    reviewCommunityPost(
+      state,
+      action: PayloadAction<{
+        postId: string;
+        decision: "approve" | "reject";
+        moderatorName: string;
+        reason?: string;
+      }>
+    ) {
+      const post = state.posts.find((item) => item.id === action.payload.postId);
+
+      if (!post) {
+        return;
+      }
+
+      const now = new Date().toISOString();
+      post.status = action.payload.decision === "approve" ? "approved" : "rejected";
+      post.reviewedAt = now;
+      post.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
+      post.publishedAt = post.status === "approved" ? now : null;
+      post.moderationReason =
+        post.status === "rejected"
+          ? normalizeText(action.payload.reason, "Rejected by moderator.", 240)
+          : null;
+    },
+    deleteCommunityPostAsSpam(
+      state,
+      action: PayloadAction<{ postId: string; moderatorName: string }>
+    ) {
+      const post = state.posts.find((item) => item.id === action.payload.postId);
+
+      if (!post) {
+        return;
+      }
+
+      post.status = "rejected";
+      post.reviewedAt = new Date().toISOString();
+      post.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
+      post.moderationReason = "Deleted as spam.";
+      post.publishedAt = null;
+      state.favoritePostIds = state.favoritePostIds.filter((id) => id !== post.id);
+      state.comments = state.comments.filter((comment) => comment.postId !== post.id);
+    },
+    mergeCommunityPosts(
+      state,
+      action: PayloadAction<{
+        sourcePostId: string;
+        targetPostId: string;
+        moderatorName: string;
+      }>
+    ) {
+      const source = state.posts.find((item) => item.id === action.payload.sourcePostId);
+      const target = state.posts.find((item) => item.id === action.payload.targetPostId);
+
+      if (!source || !target || source.id === target.id) {
+        return;
+      }
+
+      target.likes += source.likes;
+      target.ingredients = [
+        ...new Set([...target.ingredients, ...source.ingredients]),
+      ].slice(0, 12);
+      state.comments.forEach((comment) => {
+        if (comment.postId === source.id) {
+          comment.postId = target.id;
+        }
+      });
+      source.status = "rejected";
+      source.reviewedAt = new Date().toISOString();
+      source.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
+      source.moderationReason = `Merged into "${target.title}".`;
+      source.publishedAt = null;
+      state.favoritePostIds = [
+        ...new Set(
+          state.favoritePostIds.map((id) => (id === source.id ? target.id : id))
+        ),
+      ];
+    },
     toggleFavoritePost(state, action: PayloadAction<string>) {
       const postId = normalizeText(action.payload, "", 96);
 
       if (!postId) {
+        return;
+      }
+
+      if (!state.posts.some((item) => item.id === postId && item.status === "approved")) {
         return;
       }
 
@@ -520,7 +707,9 @@ const communitySlice = createSlice({
       state.score += 5;
     },
     likeCommunityPost(state, action: PayloadAction<string>) {
-      const post = state.posts.find((item) => item.id === action.payload);
+      const post = state.posts.find(
+        (item) => item.id === action.payload && item.status === "approved"
+      );
 
       if (!post) {
         return;
@@ -550,6 +739,9 @@ export const {
   publishCommunityPost,
   commentCommunityPost,
   publishProgressCard,
+  reviewCommunityPost,
+  deleteCommunityPostAsSpam,
+  mergeCommunityPosts,
   toggleFavoritePost,
   likeCommunityPost,
   likeProgressCard,

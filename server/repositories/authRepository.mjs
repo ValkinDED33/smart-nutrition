@@ -22,10 +22,22 @@ export const createAuthRepository = (storage) => ({
   markPasswordResetTokenConsumed: (tokenHash, consumedAt) =>
     storage.markPasswordResetTokenConsumed(tokenHash, consumedAt),
   deletePasswordResetTokensByUserId: (userId) => storage.deletePasswordResetTokensByUserId(userId),
+  createRegistrationVerificationToken: (token) =>
+    storage.createRegistrationVerificationToken(token),
+  findRegistrationVerificationTokenByHash: (codeHash) =>
+    storage.findRegistrationVerificationTokenByHash(codeHash),
+  markRegistrationVerificationTokenConsumed: (codeHash, consumedAt) =>
+    storage.markRegistrationVerificationTokenConsumed(codeHash, consumedAt),
+  deleteRegistrationVerificationTokensByUserId: (userId) =>
+    storage.deleteRegistrationVerificationTokensByUserId(userId),
+  markUserRegistrationVerified: (payload) => storage.markUserRegistrationVerified(payload),
+  updateUserVerificationTarget: (payload) => storage.updateUserVerificationTarget(payload),
   incrementUserTokenVersion: (userId) => storage.incrementUserTokenVersion(userId),
   getLoginAttempt: (email) => storage.getLoginAttempt(email),
   upsertLoginAttempt: (attempt) => storage.upsertLoginAttempt(attempt),
   clearLoginAttempt: (email) => storage.clearLoginAttempt(email),
   cleanupExpiredSessions: (now) => storage.cleanupExpiredSessions(now),
   cleanupExpiredPasswordResetTokens: (now) => storage.cleanupExpiredPasswordResetTokens(now),
+  cleanupExpiredRegistrationVerificationTokens: (now) =>
+    storage.cleanupExpiredRegistrationVerificationTokens(now),
 });

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Box,
+  Alert,
   Button,
   Chip,
   CircularProgress,
@@ -30,6 +31,8 @@ import {
   createProductKey,
   normalizeBarcode,
 } from "./productIdentity";
+import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
+import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 
 interface Props {
   mealType: MealType;
@@ -42,6 +45,9 @@ const suggestionCopy = {
     searchLabel: "Пошук їжі",
     quickTitle: "Популярне для швидкого старту",
     results: "Знайдено",
+    duplicateTitle: "Асистент бази",
+    duplicateAdvice:
+      "это блюдо уже есть. Если создать новое, ты добавил дубликат; лучше использовать готовое.",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
   pl: {
@@ -50,6 +56,9 @@ const suggestionCopy = {
     searchLabel: "Szukaj jedzenia",
     quickTitle: "Popularne na szybki start",
     results: "Znaleziono",
+    duplicateTitle: "Asystent bazy",
+    duplicateAdvice:
+      "это блюдо уже есть. Jeśli utworzysz nowe, dodasz duplikat; lepiej użyć gotowego wpisu.",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
 } as const;
@@ -179,6 +188,26 @@ export const ProductSearch = ({ mealType }: Props) => {
       productMatchesPreferences(product, preferences)
     );
   }, [normalizedQuery, personalBarcodeProducts, preferences, rankedLocalResults, results]);
+
+  const duplicateAdvice = useMemo(() => {
+    if (normalizedQuery.length < 3) {
+      return [];
+    }
+
+    const merged = new Map<string, Product>();
+
+    [...personalBarcodeProducts, ...rankedLocalResults, ...results].forEach((product) => {
+      const key = createProductKey(product);
+
+      if (!merged.has(key)) {
+        merged.set(key, product);
+      }
+    });
+
+    return fuzzySearchProducts(normalizedQuery, [...merged.values()], 3).filter(
+      (match) => match.score >= 70
+    );
+  }, [normalizedQuery, personalBarcodeProducts, rankedLocalResults, results]);
 
   const availableCategories = useMemo(() => {
     const categoryMap = new Map<string, string>();
@@ -312,6 +341,29 @@ export const ProductSearch = ({ mealType }: Props) => {
               ))}
             </Stack>
           </Stack>
+        )}
+
+        {duplicateAdvice.length > 0 && (
+          <Alert
+            severity="info"
+            icon={<AssistantAvatar name="Nova" size={34} mood="coach" active />}
+            sx={{ alignItems: "center" }}
+          >
+            <Stack spacing={0.8}>
+              <Typography sx={{ fontWeight: 800 }}>{copy.duplicateTitle}</Typography>
+              <Typography>{copy.duplicateAdvice}</Typography>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {duplicateAdvice.map(({ item }) => (
+                  <Chip
+                    key={createProductKey(item)}
+                    label={formatSuggestionLabel(item)}
+                    clickable
+                    onClick={() => handleQueryChange(formatSuggestionLabel(item))}
+                  />
+                ))}
+              </Stack>
+            </Stack>
+          </Alert>
         )}
 
         {!normalizedQuery && (

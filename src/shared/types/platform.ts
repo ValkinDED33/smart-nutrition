@@ -13,6 +13,8 @@ export interface AccessOverview {
     reviewCatalog: boolean;
     manageModerators: boolean;
     manageAdmins: boolean;
+    banUsers: boolean;
+    manageSystem: boolean;
     viewAuditLogs: boolean;
     accessAdminCenter: boolean;
   };

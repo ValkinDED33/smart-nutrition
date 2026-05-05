@@ -87,6 +87,7 @@ const isUserRole = (value) =>
   value === "MODERATOR" ||
   value === "ADMIN" ||
   value === "SUPER_ADMIN";
+const isVerificationChannel = (value) => value === "email" || value === "sms";
 
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
@@ -94,7 +95,11 @@ const isAssistantMessageRole = (value) => value === "user" || value === "assista
 
 const isRecord = (value) => typeof value === "object" && value !== null;
 const isCommunityPostType = (value) =>
-  value === "recipe" || value === "article" || value === "experience";
+  value === "recipe" || value === "advice" || value === "experience" || value === "discussion";
+const normalizeCommunityPostType = (value) =>
+  isCommunityPostType(value) ? value : value === "article" ? "advice" : "experience";
+const isCommunityContentStatus = (value) =>
+  value === "pending" || value === "approved" || value === "rejected";
 const isCommunityFriendStatus = (value) => value === "online" || value === "offline";
 
 const normalizeText = (value, fallback = "") =>
@@ -752,7 +757,7 @@ const normalizeCommunityState = (value) => {
               typeof item.id === "string" && item.id.trim().length > 0
                 ? item.id
                 : `community-post-${index}-${Date.now()}`,
-            type: isCommunityPostType(item.type) ? item.type : "experience",
+            type: normalizeCommunityPostType(item.type),
             title,
             body,
             ingredients: Array.isArray(item.ingredients)
@@ -761,7 +766,13 @@ const normalizeCommunityState = (value) => {
                   .filter(Boolean)
                   .slice(0, 12)
               : [],
+            authorId: normalizeText(item.authorId, "") || undefined,
             authorName: normalizeText(item.authorName, "Smart Nutrition"),
+            status: isCommunityContentStatus(item.status) ? item.status : "approved",
+            moderationReason: normalizeText(item.moderationReason, "") || null,
+            reviewedAt: normalizeText(item.reviewedAt, "") || null,
+            reviewedBy: normalizeText(item.reviewedBy, "") || null,
+            publishedAt: normalizeText(item.publishedAt, "") || null,
             createdAt:
               typeof item.createdAt === "string" && item.createdAt.trim().length > 0
                 ? item.createdAt
@@ -860,6 +871,12 @@ const mapUserRow = (row) => {
     id: row.id,
     email: row.email,
     name: row.name,
+    emailVerified: toBoolean(row.email_verified, true),
+    phone: row.phone ?? undefined,
+    phoneVerified: toBoolean(row.phone_verified, false),
+    verificationChannel: isVerificationChannel(row.verification_channel)
+      ? row.verification_channel
+      : "email",
     avatar: row.avatar ?? undefined,
     age: Number(row.age),
     weight: Number(row.weight),
@@ -870,6 +887,8 @@ const mapUserRow = (row) => {
     measurements: parseJson(row.measurements_json, undefined),
     createdAt: row.created_at,
     role: isUserRole(row.role) ? row.role : "USER",
+    bannedAt: row.banned_at ?? null,
+    bannedReason: row.banned_reason ?? null,
     twoFactorEnabled: toBoolean(row.two_factor_enabled, false),
     twoFactorRequired: toBoolean(row.two_factor_required, false),
     tokenVersion: Math.max(toNumber(row.token_version, 0), 0),
@@ -900,6 +919,23 @@ const mapPasswordResetTokenRow = (row) => {
     id: row.id,
     userId: row.user_id,
     tokenHash: row.token_hash,
+    expiresAt: Number(row.expires_at),
+    consumedAt: row.consumed_at ?? null,
+    createdAt: row.created_at,
+  };
+};
+
+const mapRegistrationVerificationTokenRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    channel: isVerificationChannel(row.channel) ? row.channel : "email",
+    target: row.target,
+    codeHash: row.code_hash,
     expiresAt: Number(row.expires_at),
     consumedAt: row.consumed_at ?? null,
     createdAt: row.created_at,
@@ -1005,6 +1041,10 @@ const createSchema = (database) => {
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
+      email_verified INTEGER NOT NULL DEFAULT 1,
+      phone TEXT,
+      phone_verified INTEGER NOT NULL DEFAULT 0,
+      verification_channel TEXT NOT NULL DEFAULT 'email',
       avatar TEXT,
       age REAL NOT NULL,
       weight REAL NOT NULL,
@@ -1015,6 +1055,8 @@ const createSchema = (database) => {
       measurements_json TEXT,
       created_at TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'USER',
+      banned_at TEXT,
+      banned_reason TEXT,
       two_factor_enabled INTEGER NOT NULL DEFAULT 0,
       two_factor_required INTEGER NOT NULL DEFAULT 0,
       token_version INTEGER NOT NULL DEFAULT 0,
@@ -1035,6 +1077,18 @@ const createSchema = (database) => {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       token_hash TEXT NOT NULL UNIQUE,
+      expires_at INTEGER NOT NULL,
+      consumed_at TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS registration_verification_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      target TEXT NOT NULL,
+      code_hash TEXT NOT NULL UNIQUE,
       expires_at INTEGER NOT NULL,
       consumed_at TEXT,
       created_at TEXT NOT NULL,
@@ -1197,10 +1251,13 @@ const createIndexes = (database) => {
   database.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    CREATE INDEX IF NOT EXISTS idx_users_banned_at ON users(banned_at);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_registration_verification_tokens_user ON registration_verification_tokens(user_id, expires_at);
+    CREATE INDEX IF NOT EXISTS idx_registration_verification_tokens_expires ON registration_verification_tokens(expires_at);
     CREATE INDEX IF NOT EXISTS idx_profile_weight_history_user ON profile_weight_history(user_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_entries_user ON meal_entries(user_id, sort_index);
     CREATE INDEX IF NOT EXISTS idx_meal_templates_user ON meal_templates(user_id, sort_index);
@@ -1265,6 +1322,10 @@ const importLegacyUsers = (database, users) => {
       id,
       email,
       name,
+      email_verified,
+      phone,
+      phone_verified,
+      verification_channel,
       avatar,
       age,
       weight,
@@ -1275,13 +1336,15 @@ const importLegacyUsers = (database, users) => {
       measurements_json,
       created_at,
       role,
+      banned_at,
+      banned_reason,
       two_factor_enabled,
       two_factor_required,
       token_version,
       password_hash,
       password_salt,
       password_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   users.forEach((user) => {
@@ -1289,6 +1352,10 @@ const importLegacyUsers = (database, users) => {
       user.id,
       user.email,
       user.name,
+      toBoolean(user.emailVerified, true) ? 1 : 0,
+      user.phone ?? null,
+      toBoolean(user.phoneVerified, false) ? 1 : 0,
+      isVerificationChannel(user.verificationChannel) ? user.verificationChannel : "email",
       user.avatar ?? null,
       Number(user.age ?? 0),
       Number(user.weight ?? 0),
@@ -1299,6 +1366,8 @@ const importLegacyUsers = (database, users) => {
       user.measurements ? JSON.stringify(user.measurements) : null,
       user.createdAt ?? new Date().toISOString(),
       isUserRole(user.role) ? user.role : "USER",
+      user.bannedAt ?? null,
+      user.bannedReason ?? null,
       toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
       toBoolean(user.twoFactorRequired, false) ? 1 : 0,
       Math.max(Number(user.tokenVersion ?? 0) || 0, 0),
@@ -1920,7 +1989,13 @@ export const createSqliteStorage = async ({
   ensureColumn(database, "snapshots", "water_json", "TEXT");
   ensureColumn(database, "snapshots", "fridge_json", "TEXT");
   ensureColumn(database, "snapshots", "community_json", "TEXT");
+  ensureColumn(database, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1");
+  ensureColumn(database, "users", "phone", "TEXT");
+  ensureColumn(database, "users", "phone_verified", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(database, "users", "verification_channel", "TEXT NOT NULL DEFAULT 'email'");
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
+  ensureColumn(database, "users", "banned_at", "TEXT");
+  ensureColumn(database, "users", "banned_reason", "TEXT");
   ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "token_version", "INTEGER NOT NULL DEFAULT 0");
@@ -2213,8 +2288,12 @@ export const createSqliteStorage = async ({
     excludeProductId = null,
     limit = 5,
   }) => {
-    const normalizedName = String(name ?? "").trim().toLowerCase();
+    const normalizedName = normalizeToken(name);
     const normalizedBarcode = String(barcode ?? "").replace(/\D/g, "");
+    const queryTokens = normalizedName
+      .replace(/[^\p{Letter}\p{Number}\s]+/gu, " ")
+      .split(/\s+/)
+      .filter(Boolean);
 
     if (!normalizedName && !normalizedBarcode) {
       return [];
@@ -2228,9 +2307,20 @@ export const createSqliteStorage = async ({
       .filter((product) => product.id !== excludeProductId)
       .filter((product) => {
         const productBarcode = String(product.barcode ?? "").replace(/\D/g, "");
+        const productName = normalizeToken(product.name);
+        const productTokens = productName
+          .replace(/[^\p{Letter}\p{Number}\s]+/gu, " ")
+          .split(/\s+/)
+          .filter(Boolean);
+        const overlap = queryTokens.filter((token) => productTokens.includes(token)).length;
+        const tokenThreshold = Math.min(2, queryTokens.length, productTokens.length);
+
         return (
           (normalizedBarcode && productBarcode && productBarcode === normalizedBarcode) ||
-          product.name.trim().toLowerCase() === normalizedName
+          productName === normalizedName ||
+          (normalizedName.length >= 4 &&
+            (productName.includes(normalizedName) || normalizedName.includes(productName))) ||
+          (tokenThreshold > 0 && overlap >= tokenThreshold)
         );
       })
       .slice(0, Math.max(Number(limit) || 0, 1));
@@ -2459,6 +2549,10 @@ export const createSqliteStorage = async ({
               id,
               email,
               name,
+              email_verified,
+              phone,
+              phone_verified,
+              verification_channel,
               avatar,
               age,
               weight,
@@ -2469,19 +2563,25 @@ export const createSqliteStorage = async ({
               measurements_json,
               created_at,
               role,
+              banned_at,
+              banned_reason,
               two_factor_enabled,
               two_factor_required,
               token_version,
               password_hash,
               password_salt,
               password_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
         )
         .run(
           user.id,
           user.email,
           user.name,
+          toBoolean(user.emailVerified, true) ? 1 : 0,
+          user.phone ?? null,
+          toBoolean(user.phoneVerified, false) ? 1 : 0,
+          isVerificationChannel(user.verificationChannel) ? user.verificationChannel : "email",
           user.avatar ?? null,
           user.age,
           user.weight,
@@ -2492,6 +2592,8 @@ export const createSqliteStorage = async ({
           user.measurements ? JSON.stringify(user.measurements) : null,
           user.createdAt,
           isUserRole(user.role) ? user.role : "USER",
+          user.bannedAt ?? null,
+          user.bannedReason ?? null,
           toBoolean(user.twoFactorEnabled, false) ? 1 : 0,
           toBoolean(user.twoFactorRequired, false) ? 1 : 0,
           Math.max(Number(user.tokenVersion ?? 0) || 0, 0),
@@ -2920,6 +3022,157 @@ export const createSqliteStorage = async ({
 
     deletePasswordResetTokensByUserId: (userId) => {
       database.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(userId);
+    },
+
+    createRegistrationVerificationToken: ({
+      id,
+      userId,
+      channel,
+      target,
+      codeHash,
+      expiresAt,
+      createdAt,
+    }) => {
+      database
+        .prepare(
+          `
+            INSERT INTO registration_verification_tokens (
+              id,
+              user_id,
+              channel,
+              target,
+              code_hash,
+              expires_at,
+              consumed_at,
+              created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?)
+          `
+        )
+        .run(
+          id,
+          userId,
+          isVerificationChannel(channel) ? channel : "email",
+          target,
+          codeHash,
+          expiresAt,
+          createdAt
+        );
+
+      return {
+        id,
+        userId,
+        channel: isVerificationChannel(channel) ? channel : "email",
+        target,
+        codeHash,
+        expiresAt,
+        consumedAt: null,
+        createdAt,
+      };
+    },
+
+    findRegistrationVerificationTokenByHash: (codeHash) =>
+      mapRegistrationVerificationTokenRow(
+        database
+          .prepare(
+            "SELECT * FROM registration_verification_tokens WHERE code_hash = ? LIMIT 1"
+          )
+          .get(codeHash)
+      ),
+
+    markRegistrationVerificationTokenConsumed: (codeHash, consumedAt) => {
+      database
+        .prepare(
+          `
+            UPDATE registration_verification_tokens
+            SET consumed_at = ?
+            WHERE code_hash = ? AND consumed_at IS NULL
+          `
+        )
+        .run(consumedAt, codeHash);
+
+      return mapRegistrationVerificationTokenRow(
+        database
+          .prepare(
+            "SELECT * FROM registration_verification_tokens WHERE code_hash = ? LIMIT 1"
+          )
+          .get(codeHash)
+      );
+    },
+
+    deleteRegistrationVerificationTokensByUserId: (userId) => {
+      database
+        .prepare("DELETE FROM registration_verification_tokens WHERE user_id = ?")
+        .run(userId);
+    },
+
+    cleanupExpiredRegistrationVerificationTokens: (now = Date.now()) => {
+      database
+        .prepare("DELETE FROM registration_verification_tokens WHERE expires_at <= ?")
+        .run(now);
+    },
+
+    markUserRegistrationVerified: ({ userId, channel }) => {
+      const existingUser = getResolvedUser(userId);
+
+      if (!existingUser) {
+        return null;
+      }
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET
+              email_verified = ?,
+              phone_verified = ?,
+              verification_channel = ?
+            WHERE id = ?
+          `
+        )
+        .run(
+          channel === "email" ? 1 : existingUser.emailVerified ? 1 : 0,
+          channel === "sms" ? 1 : existingUser.phoneVerified ? 1 : 0,
+          isVerificationChannel(channel) ? channel : existingUser.verificationChannel,
+          userId
+        );
+
+      return getResolvedUser(userId);
+    },
+
+    updateUserVerificationTarget: ({ userId, channel, phone }) => {
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET
+              phone = ?,
+              verification_channel = ?
+            WHERE id = ?
+          `
+        )
+        .run(
+          phone ?? null,
+          isVerificationChannel(channel) ? channel : "email",
+          userId
+        );
+
+      return getResolvedUser(userId);
+    },
+
+    updateUserBan: ({ userId, bannedAt = null, bannedReason = null }) => {
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET
+              banned_at = ?,
+              banned_reason = ?
+            WHERE id = ?
+          `
+        )
+        .run(bannedAt, bannedReason, userId);
+
+      return getResolvedUser(userId);
     },
 
     getSnapshotByUserId: (userId, user = null) => {
