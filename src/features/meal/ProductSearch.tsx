@@ -26,6 +26,10 @@ import {
   getProductCategoryKey,
   getProductCategoryLabel,
 } from "../../shared/lib/productCategory";
+import {
+  createProductKey,
+  normalizeBarcode,
+} from "./productIdentity";
 
 interface Props {
   mealType: MealType;
@@ -97,7 +101,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     }
 
     const queryLower = normalizedQuery.toLowerCase();
-    const normalizedBarcodeQuery = normalizedQuery.replace(/\D/g, "");
+    const normalizedBarcodeQuery = normalizeBarcode(normalizedQuery);
     const suggestions = new Map<string, string>();
 
     const addSuggestion = (value: string) => {
@@ -119,7 +123,7 @@ export const ProductSearch = ({ mealType }: Props) => {
       .filter((product) => {
         const name = product.name.toLowerCase();
         const brand = product.brand?.toLowerCase() ?? "";
-        const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+        const barcode = normalizeBarcode(product.barcode ?? "");
 
         return (
           name.includes(queryLower) ||
@@ -147,11 +151,11 @@ export const ProductSearch = ({ mealType }: Props) => {
     }
 
     const queryLower = normalizedQuery.toLowerCase();
-    const normalizedBarcodeQuery = normalizedQuery.replace(/\D/g, "");
+    const normalizedBarcodeQuery = normalizeBarcode(normalizedQuery);
     const localMatches = personalBarcodeProducts.filter((product) => {
       const name = product.name.toLowerCase();
       const brand = product.brand?.toLowerCase() ?? "";
-      const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+      const barcode = normalizeBarcode(product.barcode ?? "");
 
       return (
         name.includes(queryLower) ||
@@ -164,9 +168,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     const merged = new Map<string, Product>();
 
     [...localMatches, ...rankedLocalResults, ...results].forEach((product) => {
-      const key =
-        product.barcode?.trim() ||
-        `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+      const key = createProductKey(product);
 
       if (!merged.has(key)) {
         merged.set(key, product);

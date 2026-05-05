@@ -6,10 +6,6 @@ import {
   Stack,
   Typography,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   MenuItem,
 } from "@mui/material";
@@ -54,7 +50,7 @@ const overviewCopy = {
 
 type OverviewCopy = (typeof overviewCopy)[keyof typeof overviewCopy];
 
-const InlineEditDialog = ({
+const InlineEditPanel = ({
   item,
   open,
   onClose,
@@ -85,14 +81,22 @@ const InlineEditDialog = ({
     }
   };
 
-  if (!item) return null;
+  if (!open || !item) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>
-        {copy.editTitle}: {getProductDisplayName(item.product, language)}
-      </DialogTitle>
-      <DialogContent sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        borderRadius: 2,
+        borderColor: "rgba(15, 118, 110, 0.28)",
+        backgroundColor: "rgba(240,253,250,0.55)",
+      }}
+    >
+      <Stack spacing={2}>
+        <Typography sx={{ fontWeight: 800 }}>
+          {copy.editTitle}: {getProductDisplayName(item.product, language)}
+        </Typography>
         <TextField
           type="number"
           label={`${t("meal.quantity")} (${item.product.unit})`}
@@ -117,8 +121,7 @@ const InlineEditDialog = ({
             </MenuItem>
           ))}
         </TextField>
-      </DialogContent>
-      <DialogActions>
+      <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
         <Button onClick={onDelete} color="error" variant="text">
           {copy.delete}
         </Button>
@@ -132,8 +135,9 @@ const InlineEditDialog = ({
         >
           {copy.save}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </Stack>
+      </Stack>
+    </Paper>
   );
 };
 
@@ -144,7 +148,7 @@ export const MealDayOverview = () => {
   const copy = overviewCopy[language];
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [editingItem, setEditingItem] = useState<MealEntry | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showEditPanel, setShowEditPanel] = useState(false);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -198,7 +202,7 @@ export const MealDayOverview = () => {
 
   const handleEditClick = (item: MealEntry) => {
     setEditingItem(item);
-    setShowEditDialog(true);
+    setShowEditPanel(true);
   };
 
   const handleDeleteClick = (item: MealEntry) => {
@@ -215,7 +219,7 @@ export const MealDayOverview = () => {
           mealType,
         })
       );
-      setShowEditDialog(false);
+      setShowEditPanel(false);
       setEditingItem(null);
     }
   };
@@ -379,19 +383,19 @@ export const MealDayOverview = () => {
         </Stack>
       </Paper>
 
-      <InlineEditDialog
+      <InlineEditPanel
         key={editingItem?.id ?? "empty"}
         item={editingItem}
-        open={showEditDialog}
+        open={showEditPanel}
         onClose={() => {
-          setShowEditDialog(false);
+          setShowEditPanel(false);
           setEditingItem(null);
         }}
         onSave={handleSaveEdit}
         onDelete={() => {
           if (editingItem) {
             handleDeleteClick(editingItem);
-            setShowEditDialog(false);
+            setShowEditPanel(false);
             setEditingItem(null);
           }
         }}

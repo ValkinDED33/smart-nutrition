@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Chip, Drawer, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import { AssistantRuntimeCard } from "../../features/assistant/AssistantRuntimeCard";
 import { selectTodayMealTotalNutrients } from "../../features/meal/selectors";
 import { detectWeightPlateau, getDaysSince } from "../lib/bodyMetrics";
 import { useLanguage } from "../language";
@@ -14,10 +13,7 @@ const widgetCopy = {
     help: "Порада",
     close: "Сховати",
     open: "Відкрити companion",
-    openChat: "Міні-чат",
-    fullPage: "Повний екран AI",
-    drawerTitle: "Clippy 2.0",
-    drawerSubtitle: "Швидкий контекстний діалог прямо поверх поточного екрана.",
+    openChat: "Відкрити AI",
     level: "Рівень",
     points: "XP",
     moods: {
@@ -68,10 +64,7 @@ const widgetCopy = {
     help: "Podpowiedź",
     close: "Ukryj",
     open: "Otwórz companion",
-    openChat: "Mini-chat",
-    fullPage: "Pełny ekran AI",
-    drawerTitle: "Clippy 2.0",
-    drawerSubtitle: "Szybki kontekstowy dialog bez wychodzenia z aktualnego ekranu.",
+    openChat: "Otwórz AI",
     level: "Poziom",
     points: "XP",
     moods: {
@@ -143,7 +136,6 @@ export const ContextAssistantWidget = () => {
   const { language } = useLanguage();
   const copy = widgetCopy[language];
   const [dismissedTipId, setDismissedTipId] = useState<string | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
   const [isIdle, setIsIdle] = useState(false);
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
 
@@ -317,16 +309,13 @@ export const ContextAssistantWidget = () => {
     return null;
   }
 
-  const assistantMood: AssistantAvatarMood = panelOpen
-    ? "coach"
-    : isIdle
-      ? "sleepy"
-      : currentTip?.mood ?? "happy";
+  const assistantMood: AssistantAvatarMood = isIdle
+    ? "sleepy"
+    : currentTip?.mood ?? "happy";
   const showTipCard =
     profile.assistant.proactiveHintsEnabled &&
     Boolean(currentTip) &&
     !isIdle &&
-    !panelOpen &&
     dismissedTipId !== currentTip?.id;
 
   return (
@@ -405,7 +394,7 @@ export const ContextAssistantWidget = () => {
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={() => setPanelOpen(true)}
+                  onClick={() => navigate("/ai")}
                   sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
                 >
                   {copy.openChat}
@@ -425,8 +414,8 @@ export const ContextAssistantWidget = () => {
         <Box
           component="button"
           type="button"
-          onClick={() => setPanelOpen((current) => !current)}
-          aria-label={panelOpen ? copy.close : copy.open}
+          onClick={() => navigate("/ai")}
+          aria-label={copy.open}
           sx={{
             width: 64,
             height: 64,
@@ -441,80 +430,10 @@ export const ContextAssistantWidget = () => {
             name={profile.assistant.name}
             mood={assistantMood}
             lookOffset={lookOffset}
-            active={Boolean(currentTip) && !panelOpen && !isIdle}
+            active={Boolean(currentTip) && !isIdle}
           />
         </Box>
       </Box>
-
-      <Drawer
-        anchor="bottom"
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        ModalProps={{ keepMounted: true }}
-        PaperProps={{
-          sx: {
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            maxHeight: "88vh",
-            background:
-              "linear-gradient(180deg, rgba(248,250,252,0.98) 0%, rgba(255,255,255,0.98) 100%)",
-          },
-        }}
-      >
-        <Box sx={{ p: { xs: 2, md: 3 }, overflowY: "auto" }}>
-          <Stack spacing={2}>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-            >
-              <Stack spacing={0.4}>
-                <Stack direction="row" spacing={1.2} alignItems="center">
-                  <AssistantAvatar
-                    name={profile.assistant.name}
-                    size={48}
-                    mood="coach"
-                    lookOffset={lookOffset}
-                    active={panelOpen}
-                  />
-                  <Stack spacing={0.2}>
-                    <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                      {copy.drawerTitle}
-                    </Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                      {profile.assistant.name}
-                    </Typography>
-                  </Stack>
-                </Stack>
-                <Typography color="text.secondary">{copy.drawerSubtitle}</Typography>
-              </Stack>
-
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setPanelOpen(false);
-                    navigate("/ai");
-                  }}
-                  sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
-                >
-                  {copy.fullPage}
-                </Button>
-                <Button
-                  variant="text"
-                  onClick={() => setPanelOpen(false)}
-                  sx={{ textTransform: "none", fontWeight: 700 }}
-                >
-                  {copy.close}
-                </Button>
-              </Stack>
-            </Stack>
-
-            <AssistantRuntimeCard />
-          </Stack>
-        </Box>
-      </Drawer>
     </>
   );
 };

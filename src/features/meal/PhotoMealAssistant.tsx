@@ -296,7 +296,19 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         setSelectedItemIndexes(nextAnalysis.items.map((_, index) => index));
         setAnalysisMode(nextMode);
       } catch {
-        setError(copy.analysisError);
+        const fallbackAnalysis = scalePhotoMealAnalysis(
+          createFreePhotoAnalysis({
+            mealType,
+            preferences: profilePreferences,
+          }),
+          "regular"
+        );
+
+        setPortionSize("regular");
+        setAnalysis(fallbackAnalysis);
+        setSelectedItemIndexes(fallbackAnalysis.items.map((_, index) => index));
+        setAnalysisMode("local-draft");
+        setError(null);
       }
     } catch (readError) {
       const message =
@@ -432,6 +444,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             <input
               hidden
               accept="image/jpeg,image/png,image/webp"
+              capture="environment"
               type="file"
               onChange={(event) => {
                 void handleFileChange(event.target.files?.[0] ?? null);

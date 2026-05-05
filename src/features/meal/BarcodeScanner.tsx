@@ -10,7 +10,6 @@ import {
   Chip,
   MenuItem,
   Paper,
-  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -28,7 +27,6 @@ import { ProductCard } from "./ProductCard";
 import { addProduct, rememberRecentProduct, saveProduct } from "./mealSlice";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
-import { createEmptyNutrients } from "../../shared/lib/nutrients";
 import {
   PlatformApiError,
   submitCatalogSubmission,
@@ -37,6 +35,19 @@ import {
   getKnownProductCategoryOptions,
   getProductCategoryLabel,
 } from "../../shared/lib/productCategory";
+import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
+import {
+  MAX_MANUAL_PHOTO_BYTES,
+  createBarcodeSearchUrls,
+  createManualBarcodeProduct,
+  createManualDraft,
+  isSafeManualImageDataUrl,
+  isSupportedManualPhotoFile,
+  normalizeBarcode,
+  normalizeManualImageUrl,
+  type CatalogNotice,
+  type ManualDraft,
+} from "./barcodeScannerModel";
 
 interface Props {
   mealType: MealType;
@@ -44,76 +55,12 @@ interface Props {
 
 type LookupState = "idle" | "success" | "not_found" | "error";
 
-type ManualDraft = {
-  name: string;
-  brand: string;
-  category: string;
-  imageUrl: string;
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-};
-
-type CatalogNotice = {
-  severity: "success" | "warning";
-  text: string;
-};
-
 type TorchMediaTrackCapabilities = MediaTrackCapabilities & {
   torch?: boolean;
 };
 
 type TorchMediaTrackConstraintSet = MediaTrackConstraintSet & {
   torch?: boolean;
-};
-
-const createManualDraft = (): ManualDraft => ({
-  name: "",
-  brand: "",
-  category: "",
-  imageUrl: "",
-  calories: 0,
-  protein: 0,
-  fat: 0,
-  carbs: 0,
-});
-
-const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
-const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
-const SUPPORTED_MANUAL_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const SAFE_IMAGE_DATA_URL_PATTERN = /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
-
-const normalizeCatalogImageUrl = (value: string) => {
-  const nextValue = value.trim();
-
-  if (!nextValue || nextValue.length > 500) {
-    return undefined;
-  }
-
-  try {
-    const url = new URL(nextValue);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const normalizeManualImageUrl = (value: string) => {
-  const nextValue = value.trim();
-
-  if (!nextValue) {
-    return "";
-  }
-
-  if (
-    nextValue.length <= MAX_MANUAL_IMAGE_DATA_URL_LENGTH &&
-    SAFE_IMAGE_DATA_URL_PATTERN.test(nextValue)
-  ) {
-    return nextValue;
-  }
-
-  return normalizeCatalogImageUrl(nextValue) ?? "";
 };
 
 const scannerCopy = {
@@ -276,13 +223,15 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     [language]
   );
 
+  useAutoDismiss(Boolean(message), 2800, () => setMessage(null));
+
   const scanHistory = useMemo(() => {
     const seen = new Set<string>();
 
     return personalBarcodeProducts
-      .filter((product) => Boolean(product.barcode?.replace(/\D/g, "")))
+      .filter((product) => Boolean(normalizeBarcode(product.barcode ?? "")))
       .filter((product) => {
-        const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+        const barcode = normalizeBarcode(product.barcode ?? "");
 
         if (!barcode || seen.has(barcode)) {
           return false;
@@ -294,57 +243,18 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       .slice(0, 6);
   }, [personalBarcodeProducts]);
 
-  const googleSearchUrl = useMemo(() => {
-    const normalizedBarcode = barcodeInput.replace(/\D/g, "");
-    if (!normalizedBarcode) {
-      return "#";
-    }
-
-    return `https://www.google.com/search?q=${encodeURIComponent(
-      `${normalizedBarcode} nutrition facts`
-    )}`;
-  }, [barcodeInput]);
-
-  const openFoodFactsUrl = useMemo(() => {
-    const normalizedBarcode = barcodeInput.replace(/\D/g, "");
-    if (!normalizedBarcode) {
-      return "#";
-    }
-
-    return `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
-      normalizedBarcode
-    )}&search_simple=1&action=process`;
-  }, [barcodeInput]);
-
-  const auchanSearchUrl = useMemo(() => {
-    const normalizedBarcode = barcodeInput.replace(/\D/g, "");
-    if (!normalizedBarcode) {
-      return "#";
-    }
-
-    return `https://www.google.com/search?q=${encodeURIComponent(
-      `site:zakupy.auchan.pl ${normalizedBarcode}`
-    )}`;
-  }, [barcodeInput]);
-
-  const biedronkaSearchUrl = useMemo(() => {
-    const normalizedBarcode = barcodeInput.replace(/\D/g, "");
-    if (!normalizedBarcode) {
-      return "#";
-    }
-
-    return `https://www.google.com/search?q=${encodeURIComponent(
-      `site:zakupy.biedronka.pl ${normalizedBarcode}`
-    )}`;
-  }, [barcodeInput]);
+  const barcodeSearchUrls = useMemo(
+    () => createBarcodeSearchUrls(barcodeInput),
+    [barcodeInput]
+  );
 
   const findKnownProductByBarcode = useCallback(
     (barcode: string) =>
       (personalBarcodeProducts.find(
-        (product) => product.barcode?.replace(/\D/g, "") === barcode
+        (product) => normalizeBarcode(product.barcode ?? "") === barcode
       ) ??
         knownProducts.find(
-          (product) => product.barcode?.replace(/\D/g, "") === barcode
+          (product) => normalizeBarcode(product.barcode ?? "") === barcode
         ) ??
         null),
     [knownProducts, personalBarcodeProducts]
@@ -429,7 +339,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
   const handleLookup = useCallback(
     async (rawBarcode: string, autoAdd = false) => {
-      const normalizedBarcode = rawBarcode.replace(/\D/g, "");
+      const normalizedBarcode = normalizeBarcode(rawBarcode);
 
       if (!normalizedBarcode) {
         setLookupState("not_found");
@@ -627,7 +537,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       return;
     }
 
-    if (!SUPPORTED_MANUAL_PHOTO_TYPES.has(file.type) || file.size > MAX_MANUAL_PHOTO_BYTES) {
+    if (!isSupportedManualPhotoFile(file)) {
       setMessage(
         file.size > MAX_MANUAL_PHOTO_BYTES
           ? copy.manualPhotoTooLarge
@@ -641,8 +551,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     reader.addEventListener("load", () => {
       if (
         typeof reader.result === "string" &&
-        reader.result.length <= MAX_MANUAL_IMAGE_DATA_URL_LENGTH &&
-        SAFE_IMAGE_DATA_URL_PATTERN.test(reader.result)
+        isSafeManualImageDataUrl(reader.result)
       ) {
         setManualDraft((current) => ({ ...current, imageUrl: reader.result as string }));
         return;
@@ -668,30 +577,15 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     }
 
     setCatalogNotice(null);
-    const nutrients = createEmptyNutrients();
-    nutrients.calories = manualDraft.calories;
-    nutrients.protein = manualDraft.protein;
-    nutrients.fat = manualDraft.fat;
-    nutrients.carbs = manualDraft.carbs;
-
-    const normalizedBarcode = barcodeInput.replace(/\D/g, "");
-    const category = manualDraft.category.trim();
-    const imageUrl = normalizeManualImageUrl(manualDraft.imageUrl);
-    const catalogImageUrl = normalizeCatalogImageUrl(imageUrl);
-    const product: Product = {
+    const normalizedBarcodeForId = normalizeBarcode(barcodeInput);
+    const manualProduct = createManualBarcodeProduct({
+      barcodeInput,
+      draft: manualDraft,
       id:
         globalThis.crypto?.randomUUID?.() ??
-        `manual-barcode-${normalizedBarcode || Date.now()}`,
-      name,
-      brand: manualDraft.brand.trim() || undefined,
-      barcode: normalizedBarcode || undefined,
-      category: category || undefined,
-      imageUrl: imageUrl || undefined,
-      facts: category ? { foodGroup: category } : undefined,
-      unit: "g",
-      source: "Manual",
-      nutrients,
-    };
+        `manual-barcode-${normalizedBarcodeForId || Date.now()}`,
+    });
+    const { catalogImageUrl, category, normalizedBarcode, product } = manualProduct;
 
     setFoundProduct(product);
     setLookupState("success");
@@ -898,7 +792,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           ) : (
             <Stack spacing={1}>
               {scanHistory.map((product) => {
-                const barcode = product.barcode?.replace(/\D/g, "") ?? "";
+                const barcode = normalizeBarcode(product.barcode ?? "");
                 const category = product.category ?? product.facts?.foodGroup;
 
                 return (
@@ -969,7 +863,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 <Button
                   variant="outlined"
                   component="a"
-                  href={googleSearchUrl}
+                  href={barcodeSearchUrls.google}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -978,7 +872,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 <Button
                   variant="outlined"
                   component="a"
-                  href={openFoodFactsUrl}
+                  href={barcodeSearchUrls.openFoodFacts}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -999,7 +893,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 <Button
                   variant="outlined"
                   component="a"
-                  href={auchanSearchUrl}
+                  href={barcodeSearchUrls.auchan}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -1008,7 +902,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 <Button
                   variant="outlined"
                   component="a"
-                  href={biedronkaSearchUrl}
+                  href={barcodeSearchUrls.biedronka}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -1152,22 +1046,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
           </Stack>
         ) : null}
-      </Stack>
 
-      <Snackbar
-        open={Boolean(message)}
-        autoHideDuration={2800}
-        onClose={() => setMessage(null)}
-      >
-        <Alert
-          onClose={() => setMessage(null)}
-          severity={lookupState === "error" ? "error" : "info"}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {message}
-        </Alert>
-      </Snackbar>
+        {message ? (
+          <Alert
+            onClose={() => setMessage(null)}
+            severity={lookupState === "error" ? "error" : "info"}
+            variant="filled"
+          >
+            {message}
+          </Alert>
+        ) : null}
+      </Stack>
     </Paper>
   );
 };

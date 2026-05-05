@@ -5,24 +5,23 @@
  * Easily extensible for new providers
  */
 
-export interface AIProviderConfig {
-  apiKey: string;
-  model: string;
-  baseUrl: string;
-  timeout: number;
-}
-
-export interface AIMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
-export interface AIResponse {
-  content: string;
-  model: string;
-  provider: string;
-  tokensUsed?: number;
-}
+/**
+ * @typedef {Object} AIProviderConfig
+ * @property {string} apiKey
+ * @property {string} model
+ * @property {string} baseUrl
+ * @property {number} timeout
+ *
+ * @typedef {Object} AIMessage
+ * @property {'user' | 'assistant' | 'system'} role
+ * @property {string} content
+ *
+ * @typedef {Object} AIResponse
+ * @property {string} content
+ * @property {string} model
+ * @property {string} provider
+ * @property {number=} tokensUsed
+ */
 
 export class OpenRouterClient {
   constructor(config) {

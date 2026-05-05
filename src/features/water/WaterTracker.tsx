@@ -5,15 +5,10 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   LinearProgress,
   MenuItem,
   Paper,
-  Snackbar,
   Stack,
   Switch,
   TextField,
@@ -31,6 +26,16 @@ import {
   markWaterReminderShown,
 } from "./waterSlice";
 import { useLanguage } from "../../shared/language";
+import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
+import {
+  createWaterGlassSlots,
+  createWeeklyWaterRecords,
+  formatWaterLiters,
+  getEditableWaterSlot,
+  getQuickWaterAmounts,
+  isWithinReminderWindow,
+  normalizeWaterSlotAmount,
+} from "./waterModel";
 
 const waterCopy = {
   uk: {
@@ -109,39 +114,6 @@ const waterCopy = {
   },
 } as const;
 
-const formatLiters = (valueMl: number) => (valueMl / 1000).toFixed(1);
-
-const createLocalDayKey = (date = new Date()) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const getDayKeyOffset = (daysAgo: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
-  return createLocalDayKey(date);
-};
-
-const minutesFromTime = (value: string) => {
-  const [hours = "0", minutes = "0"] = value.split(":");
-  return Number(hours) * 60 + Number(minutes);
-};
-
-const isWithinReminderWindow = (startTime: string, endTime: string) => {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const startMinutes = minutesFromTime(startTime);
-  const endMinutes = minutesFromTime(endTime);
-
-  if (startMinutes <= endMinutes) {
-    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
-  }
-
-  return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
-};
-
 export const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
@@ -156,6 +128,8 @@ export const WaterTracker = () => {
   const [partialAmountMl, setPartialAmountMl] = useState<number>(water.glassSizeMl);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
 
+  useAutoDismiss(Boolean(reminderMessage), 5000, () => setReminderMessage(null));
+
   useEffect(() => {
     dispatch(syncWaterDay());
   }, [dispatch]);
@@ -164,7 +138,6 @@ export const WaterTracker = () => {
     dispatch(syncWaterTargetFromWeight(latestWeight));
   }, [dispatch, latestWeight]);
 
-  const glassCount = Math.max(Math.ceil(water.dailyTargetMl / water.glassSizeMl), 6);
   const remainingMl = Math.max(water.dailyTargetMl - water.consumedMl, 0);
   const progress = water.dailyTargetMl
     ? Math.min((water.consumedMl / water.dailyTargetMl) * 100, 100)
@@ -176,26 +149,18 @@ export const WaterTracker = () => {
         ? copy.statusOnTrack
         : copy.statusAbove;
   const quickAmounts = useMemo(
-    () => [...new Set([100, 150, water.glassSizeMl])].sort((left, right) => left - right),
+    () => getQuickWaterAmounts(water.glassSizeMl),
     [water.glassSizeMl]
   );
-  const weeklyRecords = useMemo(() => {
-    const historyByDate = new Map(water.history.map((entry) => [entry.date, entry]));
-    const todayKey = createLocalDayKey();
-
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = getDayKeyOffset(6 - index);
-      const historyEntry = historyByDate.get(date);
-      const consumedMl = date === todayKey ? water.consumedMl : historyEntry?.consumedMl ?? 0;
-      const targetMl = date === todayKey ? water.dailyTargetMl : historyEntry?.targetMl ?? water.dailyTargetMl;
-
-      return {
-        date,
-        consumedMl,
-        targetMl,
-      };
-    });
-  }, [water.consumedMl, water.dailyTargetMl, water.history]);
+  const weeklyRecords = useMemo(
+    () =>
+      createWeeklyWaterRecords({
+        history: water.history,
+        consumedMl: water.consumedMl,
+        dailyTargetMl: water.dailyTargetMl,
+      }),
+    [water.consumedMl, water.dailyTargetMl, water.history]
+  );
   const weeklyTotalMl = weeklyRecords.reduce(
     (total, item) => total + item.consumedMl,
     0
@@ -268,21 +233,12 @@ export const WaterTracker = () => {
 
   const glasses = useMemo(
     () =>
-      Array.from({ length: glassCount }, (_, index) => {
-        const slotStart = index * water.glassSizeMl;
-        const fill = Math.min(
-          Math.max((water.consumedMl - slotStart) / water.glassSizeMl, 0),
-          1
-        );
-
-        return {
-          index,
-          slotStart,
-          slotEnd: slotStart + water.glassSizeMl,
-          fill,
-        };
-      }),
-    [glassCount, water.consumedMl, water.glassSizeMl]
+      createWaterGlassSlots(
+        water.consumedMl,
+        water.dailyTargetMl,
+        water.glassSizeMl
+      ),
+    [water.consumedMl, water.dailyTargetMl, water.glassSizeMl]
   );
 
   const handleGlassClick = (index: number, fill: number) => {
@@ -303,16 +259,15 @@ export const WaterTracker = () => {
     dispatch(setWaterConsumed(slotEnd));
   };
 
-  const openPartialDialog = () => {
-    const nextIndex = Math.min(
-      Math.floor(water.consumedMl / water.glassSizeMl),
-      glassCount - 1
+  const openPartialPanel = () => {
+    const editableSlot = getEditableWaterSlot(
+      water.consumedMl,
+      water.glassSizeMl,
+      glasses.length
     );
-    const slotStart = nextIndex * water.glassSizeMl;
-    const currentAmount = Math.max(water.consumedMl - slotStart, 0);
 
-    setEditingSlot(nextIndex);
-    setPartialAmountMl(currentAmount > 0 ? Math.round(currentAmount) : water.glassSizeMl);
+    setEditingSlot(editableSlot.index);
+    setPartialAmountMl(editableSlot.amountMl);
   };
 
   const handleReminderToggle = async (enabled: boolean) => {
@@ -329,8 +284,8 @@ export const WaterTracker = () => {
     }
 
     const slotStart = editingSlot * water.glassSizeMl;
-    const normalizedAmount = Math.min(
-      Math.max(Math.round(partialAmountMl), 0),
+    const normalizedAmount = normalizeWaterSlotAmount(
+      partialAmountMl,
       water.glassSizeMl
     );
 
@@ -355,6 +310,12 @@ export const WaterTracker = () => {
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
         </Stack>
+
+        {reminderMessage ? (
+          <Alert severity="info" variant="filled" onClose={() => setReminderMessage(null)}>
+            {reminderMessage}
+          </Alert>
+        ) : null}
 
         <Box
           sx={{
@@ -418,8 +379,8 @@ export const WaterTracker = () => {
           <Stack spacing={1.5}>
             <Typography sx={{ fontWeight: 700 }}>
               {copy.progress
-                .replace("{current}", formatLiters(water.consumedMl))
-                .replace("{target}", formatLiters(water.dailyTargetMl))}
+                .replace("{current}", formatWaterLiters(water.consumedMl))
+                .replace("{target}", formatWaterLiters(water.dailyTargetMl))}
             </Typography>
             <Typography color="text.secondary">
               {copy.remainingLabel.replace("{value}", remainingMl.toFixed(0))}
@@ -559,7 +520,7 @@ export const WaterTracker = () => {
           </Button>
           <Button
             variant="outlined"
-            onClick={openPartialDialog}
+            onClick={openPartialPanel}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
           >
             {copy.customAmount}
@@ -572,6 +533,55 @@ export const WaterTracker = () => {
             {copy.removeGlass}
           </Button>
         </Stack>
+
+        {editingSlot !== null && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 1,
+              borderColor: "rgba(14, 165, 233, 0.32)",
+              backgroundColor: "rgba(240,249,255,0.78)",
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack spacing={0.4}>
+                <Typography sx={{ fontWeight: 900 }}>{copy.partialTitle}</Typography>
+                <Typography color="text.secondary">{copy.partialHint}</Typography>
+              </Stack>
+              <TextField
+                type="number"
+                label={copy.amount}
+                value={partialAmountMl}
+                onChange={(event) => setPartialAmountMl(Number(event.target.value) || 0)}
+                inputProps={{ min: 0, max: water.glassSizeMl, step: 10 }}
+              />
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {quickAmounts.map((amount) => (
+                  <Button
+                    key={amount}
+                    size="small"
+                    variant={partialAmountMl === amount ? "contained" : "outlined"}
+                    onClick={() => setPartialAmountMl(amount)}
+                  >
+                    {amount} ml
+                  </Button>
+                ))}
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={(Math.min(partialAmountMl, water.glassSizeMl) / water.glassSizeMl) * 100}
+                sx={{ height: 10, borderRadius: 999 }}
+              />
+              <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
+                <Button onClick={() => setEditingSlot(null)}>{copy.cancel}</Button>
+                <Button onClick={savePartialGlass} variant="contained">
+                  {copy.save}
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+        )}
 
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.5}>
@@ -723,65 +733,6 @@ export const WaterTracker = () => {
           </Stack>
         </Paper>
       </Stack>
-
-      <Dialog
-        open={editingSlot !== null}
-        onClose={() => setEditingSlot(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>{copy.partialTitle}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <Typography color="text.secondary">{copy.partialHint}</Typography>
-            <TextField
-              type="number"
-              label={copy.amount}
-              value={partialAmountMl}
-              onChange={(event) => setPartialAmountMl(Number(event.target.value) || 0)}
-              inputProps={{ min: 0, max: water.glassSizeMl, step: 10 }}
-            />
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              {quickAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  size="small"
-                  variant={partialAmountMl === amount ? "contained" : "outlined"}
-                  onClick={() => setPartialAmountMl(amount)}
-                >
-                  {amount} ml
-                </Button>
-              ))}
-            </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={(Math.min(partialAmountMl, water.glassSizeMl) / water.glassSizeMl) * 100}
-              sx={{ height: 10, borderRadius: 999 }}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEditingSlot(null)}>{copy.cancel}</Button>
-          <Button onClick={savePartialGlass} variant="contained">
-            {copy.save}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={Boolean(reminderMessage)}
-        autoHideDuration={5000}
-        onClose={() => setReminderMessage(null)}
-      >
-        <Alert
-          severity="info"
-          variant="filled"
-          onClose={() => setReminderMessage(null)}
-          sx={{ width: "100%" }}
-        >
-          {reminderMessage}
-        </Alert>
-      </Snackbar>
     </Paper>
   );
 };

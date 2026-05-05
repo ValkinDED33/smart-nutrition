@@ -10,6 +10,7 @@ import {
   createEmptyNutrients,
   nutrientKeys,
 } from "../../shared/lib/nutrients";
+import { createProductKey, normalizeBarcode } from "./productIdentity";
 
 export interface MealState {
   items: MealEntry[];
@@ -403,10 +404,6 @@ const mealSlice = createSlice({
   },
 });
 
-const createProductKey = (product: Product) =>
-  product.barcode?.trim() ||
-  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
-
 const rememberProduct = (list: Product[], product: Product, limit: number) => {
   const key = createProductKey(product);
   const next = [product, ...list.filter((item) => createProductKey(item) !== key)];
@@ -414,7 +411,7 @@ const rememberProduct = (list: Product[], product: Product, limit: number) => {
 };
 
 const rememberBarcodeProduct = (list: Product[], product: Product, limit: number) => {
-  const barcodeKey = product.barcode?.replace(/\D/g, "");
+  const barcodeKey = normalizeBarcode(product.barcode ?? "");
 
   if (!barcodeKey) {
     return;
@@ -422,7 +419,7 @@ const rememberBarcodeProduct = (list: Product[], product: Product, limit: number
 
   const next = [
     product,
-    ...list.filter((item) => item.barcode?.replace(/\D/g, "") !== barcodeKey),
+    ...list.filter((item) => normalizeBarcode(item.barcode ?? "") !== barcodeKey),
   ];
 
   list.splice(0, list.length, ...next.slice(0, limit));

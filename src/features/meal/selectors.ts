@@ -4,6 +4,7 @@ import {
   calculateMealTotalNutrients,
 } from "./mealSlice";
 import { getLocalDateKey } from "../../shared/lib/date";
+import { createProductKey } from "./productIdentity";
 
 const EMPTY_ITEMS: RootState["meal"]["items"] = [];
 const EMPTY_TEMPLATES: RootState["meal"]["templates"] = [];
@@ -41,10 +42,6 @@ export const selectRecentProducts = (state: RootState) =>
 
 export const selectPersonalBarcodeProducts = (state: RootState) =>
   state.meal?.personalBarcodeProducts ?? EMPTY_PRODUCTS;
-
-const createProductKey = (product: { name: string; brand?: string; barcode?: string }) =>
-  product.barcode?.trim() ||
-  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
 
 export const selectFavoriteProductIds = createSelector([selectSavedProducts], (products) => {
   return new Set(products.map(createProductKey));

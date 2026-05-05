@@ -22,7 +22,7 @@ import { useLanguage } from "../language";
 import BackendOfflineBanner from "../components/BackendOfflineBanner";
 import SyncStatusChip from "../components/SyncStatusChip";
 import SyncOutboxAgent from "../components/SyncOutboxAgent";
-import SyncFeedbackSnackbar from "../components/SyncFeedbackSnackbar";
+import SyncFeedbackAlert from "../components/SyncFeedbackAlert";
 import HabitReminderAgent from "../components/HabitReminderAgent";
 import { ContextAssistantWidget } from "../components/ContextAssistantWidget";
 import LocalRealtimeSyncAgent from "../components/LocalRealtimeSyncAgent";
@@ -295,6 +295,7 @@ const Layout = () => {
         }}
       >
         <BackendOfflineBanner />
+        <SyncFeedbackAlert />
         <Outlet />
       </Container>
 
@@ -350,7 +351,6 @@ const Layout = () => {
         </Paper>
       )}
 
-      <SyncFeedbackSnackbar />
       <SyncOutboxAgent />
       <ProfileLanguageAgent />
       <LocalRealtimeSyncAgent />

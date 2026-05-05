@@ -6,11 +6,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Paper,
   Stack,
   Typography,
@@ -425,28 +420,38 @@ export const AccountDataCard = () => {
             </Button>
           )}
         </Stack>
-      </Stack>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{copy.confirmTitle}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{copy.confirmBody}</DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: "none" }}>
-            {copy.confirmCancel}
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDeleteAccount}
-            disabled={deleting}
-            sx={{ textTransform: "none", fontWeight: 800 }}
+        {confirmOpen && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              borderColor: "error.light",
+              backgroundColor: "rgba(254,242,242,0.72)",
+            }}
           >
-            {deleting ? copy.deleteBusy : copy.confirmDelete}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Stack spacing={1.5}>
+              <Typography sx={{ fontWeight: 900 }}>{copy.confirmTitle}</Typography>
+              <Typography color="text.secondary">{copy.confirmBody}</Typography>
+              <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
+                <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: "none" }}>
+                  {copy.confirmCancel}
+                </Button>
+                <Button
+                  color="error"
+                  variant="contained"
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  sx={{ textTransform: "none", fontWeight: 800 }}
+                >
+                  {deleting ? copy.deleteBusy : copy.confirmDelete}
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+        )}
+      </Stack>
     </Paper>
   );
 };

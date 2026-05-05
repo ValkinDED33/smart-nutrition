@@ -4,10 +4,6 @@ import {
   Alert,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   LinearProgress,
   Paper,
   Stack,
@@ -372,20 +368,30 @@ export const MotivationHubCard = () => {
             })
           )}
         </Stack>
-      </Stack>
 
-      <Dialog open={pendingAction !== null} onClose={() => setPendingAction(null)}>
-        <DialogTitle>{confirmTitle}</DialogTitle>
-        <DialogContent>
-          <Typography>{confirmBody}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPendingAction(null)}>{copy.cancel}</Button>
-          <Button onClick={handleConfirm} variant="contained">
-            {copy.confirm}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {pendingAction !== null && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 1,
+              borderColor: "rgba(234, 179, 8, 0.45)",
+              backgroundColor: "rgba(254,252,232,0.8)",
+            }}
+          >
+            <Stack spacing={1.5}>
+              <Typography sx={{ fontWeight: 900 }}>{confirmTitle}</Typography>
+              <Typography color="text.secondary">{confirmBody}</Typography>
+              <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
+                <Button onClick={() => setPendingAction(null)}>{copy.cancel}</Button>
+                <Button onClick={handleConfirm} variant="contained">
+                  {copy.confirm}
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+        )}
+      </Stack>
     </Paper>
   );
 };
