@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,9 +8,53 @@ const DATA_DIR = path.join(__dirname, "data");
 const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
 const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
+const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
+const SECRET_FILE_ENV_NAMES = [
+  "SMART_NUTRITION_JWT_SECRET",
+  "SMART_NUTRITION_ASSISTANT_API_KEY",
+  "SMART_NUTRITION_OPENROUTER_API_KEY",
+  "SMART_NUTRITION_GROQ_API_KEY",
+  "SMART_NUTRITION_GOOGLE_API_KEY",
+  "SMART_NUTRITION_SMTP_PASS",
+];
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
+
+const readSecretFileValue = (secretFileDir, name) => {
+  const secretPath = path.join(secretFileDir, name);
+
+  try {
+    if (!existsSync(secretPath)) {
+      return null;
+    }
+
+    return readFileSync(secretPath, "utf8").trim() || null;
+  } catch {
+    return null;
+  }
+};
+
+const hydrateSecretFileEnv = (env) => {
+  const hydratedEnv = { ...env };
+  const secretFileDir =
+    toTrimmedString(env.SMART_NUTRITION_SECRET_FILE_DIR, DEFAULT_SECRET_FILE_DIR) ||
+    DEFAULT_SECRET_FILE_DIR;
+
+  SECRET_FILE_ENV_NAMES.forEach((name) => {
+    if (toTrimmedString(hydratedEnv[name])) {
+      return;
+    }
+
+    const secretValue = readSecretFileValue(secretFileDir, name);
+
+    if (secretValue) {
+      hydratedEnv[name] = secretValue;
+    }
+  });
+
+  return hydratedEnv;
+};
 
 const normalizeBaseUrl = (value, fallback) =>
   (toTrimmedString(value, fallback) || fallback).replace(/\/+$/, "");
@@ -124,6 +169,13 @@ const assistantProviderLabels = {
   groq: "Groq",
   google: "Google AI Studio",
   custom: "Custom OpenAI-compatible",
+};
+
+const assistantProviderDefaultModels = {
+  openai: "gpt-4.1-mini",
+  openrouter: "openai/gpt-5.4-mini",
+  groq: "llama-3.3-70b-versatile",
+  google: "gemini-2.5-flash",
 };
 
 const getAssistantApiKeyWarning = (providerId, apiKeyName, apiKey) => {
@@ -292,9 +344,20 @@ const createAssistantProviderConfig = ({
   title,
 });
 
-const readProviderPair = (env, errors, apiKeyName, modelName) => {
+const readProviderPair = (
+  env,
+  errors,
+  apiKeyName,
+  modelName,
+  { defaultModel = null, warnings = null } = {}
+) => {
   const apiKey = toTrimmedString(env[apiKeyName]) || null;
-  const model = toTrimmedString(env[modelName]) || null;
+  let model = toTrimmedString(env[modelName]) || null;
+
+  if (apiKey && !model && defaultModel) {
+    model = defaultModel;
+    warnings?.push?.(`${modelName} is not set. Using default model ${defaultModel}.`);
+  }
 
   if (Boolean(apiKey) !== Boolean(model)) {
     errors.push(`${apiKeyName} and ${modelName} must either both be set or both be omitted.`);
@@ -335,12 +398,6 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
     );
   }
 
-  const explicitPair = readProviderPair(
-    env,
-    errors,
-    "SMART_NUTRITION_ASSISTANT_API_KEY",
-    "SMART_NUTRITION_ASSISTANT_MODEL"
-  );
   const explicitAssistantBaseUrl = normalizeBaseUrl(
     env.SMART_NUTRITION_ASSISTANT_BASE_URL,
     "https://api.openai.com/v1"
@@ -363,10 +420,21 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
     errors,
     { min: 1_000 }
   );
+  const explicitProviderId =
+    explicitAssistantProviderId ?? inferAssistantProviderId(explicitAssistantBaseUrl);
+  const explicitPair = readProviderPair(
+    env,
+    errors,
+    "SMART_NUTRITION_ASSISTANT_API_KEY",
+    "SMART_NUTRITION_ASSISTANT_MODEL",
+    {
+      defaultModel: assistantProviderDefaultModels[explicitProviderId] ?? null,
+      warnings,
+    }
+  );
 
   if (explicitPair.apiKey && explicitPair.model) {
-    const providerId =
-      explicitAssistantProviderId ?? inferAssistantProviderId(explicitAssistantBaseUrl);
+    const providerId = explicitProviderId;
     const apiKeyWarning = getAssistantApiKeyWarning(
       providerId,
       "SMART_NUTRITION_ASSISTANT_API_KEY",
@@ -407,6 +475,7 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
       modelName: "SMART_NUTRITION_OPENROUTER_MODEL",
       baseUrlName: "SMART_NUTRITION_OPENROUTER_BASE_URL",
       defaultBaseUrl: "https://openrouter.ai/api/v1",
+      defaultModel: assistantProviderDefaultModels.openrouter,
       timeoutName: "SMART_NUTRITION_OPENROUTER_TIMEOUT_MS",
       httpReferer: toTrimmedString(env.SMART_NUTRITION_OPENROUTER_HTTP_REFERER) || null,
       title:
@@ -419,6 +488,7 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
       modelName: "SMART_NUTRITION_GROQ_MODEL",
       baseUrlName: "SMART_NUTRITION_GROQ_BASE_URL",
       defaultBaseUrl: "https://api.groq.com/openai/v1",
+      defaultModel: assistantProviderDefaultModels.groq,
       timeoutName: "SMART_NUTRITION_GROQ_TIMEOUT_MS",
       httpReferer: null,
       title: null,
@@ -429,6 +499,7 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
       modelName: "SMART_NUTRITION_GOOGLE_MODEL",
       baseUrlName: "SMART_NUTRITION_GOOGLE_BASE_URL",
       defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      defaultModel: assistantProviderDefaultModels.google,
       timeoutName: "SMART_NUTRITION_GOOGLE_TIMEOUT_MS",
       httpReferer: null,
       title: null,
@@ -436,7 +507,10 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
   ];
 
   legacyProviderDefinitions.forEach((definition) => {
-    const pair = readProviderPair(env, errors, definition.apiKeyName, definition.modelName);
+    const pair = readProviderPair(env, errors, definition.apiKeyName, definition.modelName, {
+      defaultModel: definition.defaultModel,
+      warnings,
+    });
 
     if (!pair.apiKey || !pair.model || configuredProviders.has(definition.providerId)) {
       return;
@@ -573,7 +647,8 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   return includePublicFrontendOrigin(origins);
 };
 
-export const createServerConfig = (env = process.env) => {
+export const createServerConfig = (rawEnv = process.env) => {
+  const env = hydrateSecretFileEnv(rawEnv);
   const errors = [];
   const warnings = [];
   const nodeEnv = toTrimmedString(env.NODE_ENV, "development") || "development";

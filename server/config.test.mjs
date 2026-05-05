@@ -1,3 +1,5 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createServerConfig } from "./config.mjs";
@@ -75,11 +77,11 @@ describe("createServerConfig", () => {
     ).toThrow(/SMART_NUTRITION_AUTH_COOKIE_SECURE/);
   });
 
-  it("rejects partial assistant runtime configuration", () => {
+  it("rejects assistant model configuration without an API key", () => {
     expect(() =>
       createServerConfig({
         SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
-        SMART_NUTRITION_ASSISTANT_API_KEY: "secret",
+        SMART_NUTRITION_ASSISTANT_MODEL: "gpt-4.1-mini",
       })
     ).toThrow(/SMART_NUTRITION_ASSISTANT_API_KEY/);
   });
@@ -130,6 +132,33 @@ describe("createServerConfig", () => {
       "groq",
       "google",
     ]);
+  });
+
+  it("reads Render secret files for assistant provider keys", () => {
+    const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
+
+    try {
+      writeFileSync(
+        path.join(secretFileDir, "SMART_NUTRITION_GROQ_API_KEY"),
+        `gsk_${"x".repeat(48)}`
+      );
+
+      const config = createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_SECRET_FILE_DIR: secretFileDir,
+      });
+
+      expect(config.assistantRuntimeConfigured).toBe(true);
+      expect(config.assistantProviderOrder).toEqual(["groq"]);
+      expect(config.assistantPrimaryProviderId).toBe("groq");
+      expect(config.assistantModel).toBe("llama-3.3-70b-versatile");
+      expect(config.warnings.join(" ")).toContain(
+        "SMART_NUTRITION_GROQ_MODEL is not set"
+      );
+    } finally {
+      rmSync(secretFileDir, { recursive: true, force: true });
+    }
   });
 
   it("defaults multi-provider assistant fallback to OpenRouter, Groq, then Google", () => {
