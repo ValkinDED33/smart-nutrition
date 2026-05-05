@@ -161,6 +161,50 @@ describe("createServerConfig", () => {
     }
   });
 
+  it("prefers the three provider-specific Render secret files over the generic assistant key", () => {
+    const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
+
+    try {
+      writeFileSync(
+        path.join(secretFileDir, "SMART_NUTRITION_ASSISTANT_API_KEY"),
+        `gsk_${"unused".repeat(8)}`
+      );
+      writeFileSync(
+        path.join(secretFileDir, "SMART_NUTRITION_OPENROUTER_API_KEY"),
+        `sk-or-${"x".repeat(48)}`
+      );
+      writeFileSync(
+        path.join(secretFileDir, "SMART_NUTRITION_GROQ_API_KEY"),
+        `gsk_${"x".repeat(48)}`
+      );
+      writeFileSync(
+        path.join(secretFileDir, "SMART_NUTRITION_GOOGLE_API_KEY"),
+        `AIza${"x".repeat(48)}`
+      );
+
+      const config = createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_SECRET_FILE_DIR: secretFileDir,
+        SMART_NUTRITION_ASSISTANT_PROVIDER_ORDER: "openrouter,groq,google",
+      });
+
+      expect(config.assistantRuntimeConfigured).toBe(true);
+      expect(config.assistantProviderOrder).toEqual(["openrouter", "groq", "google"]);
+      expect(config.assistantProviders.map((provider) => provider.id)).toEqual([
+        "openrouter",
+        "groq",
+        "google",
+      ]);
+      expect(config.warnings.join(" ")).toContain(
+        "SMART_NUTRITION_ASSISTANT_API_KEY is ignored"
+      );
+      expect(config.warnings.join(" ")).not.toContain("OpenAI key");
+    } finally {
+      rmSync(secretFileDir, { recursive: true, force: true });
+    }
+  });
+
   it("defaults multi-provider assistant fallback to OpenRouter, Groq, then Google", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),

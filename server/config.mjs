@@ -422,18 +422,39 @@ const resolveConfiguredAssistantProviders = (env, errors, warnings) => {
   );
   const explicitProviderId =
     explicitAssistantProviderId ?? inferAssistantProviderId(explicitAssistantBaseUrl);
-  const explicitPair = readProviderPair(
-    env,
-    errors,
-    "SMART_NUTRITION_ASSISTANT_API_KEY",
-    "SMART_NUTRITION_ASSISTANT_MODEL",
-    {
-      defaultModel: assistantProviderDefaultModels[explicitProviderId] ?? null,
-      warnings,
-    }
-  );
+  const hasProviderSpecificAssistantKey = [
+    "SMART_NUTRITION_OPENROUTER_API_KEY",
+    "SMART_NUTRITION_GROQ_API_KEY",
+    "SMART_NUTRITION_GOOGLE_API_KEY",
+  ].some((name) => Boolean(toTrimmedString(env[name])));
+  const shouldConsiderExplicitAssistantPair =
+    !hasProviderSpecificAssistantKey ||
+    Boolean(toTrimmedString(env.SMART_NUTRITION_ASSISTANT_PROVIDER));
+  const explicitPair = shouldConsiderExplicitAssistantPair
+    ? readProviderPair(
+        env,
+        errors,
+        "SMART_NUTRITION_ASSISTANT_API_KEY",
+        "SMART_NUTRITION_ASSISTANT_MODEL",
+        {
+          defaultModel: assistantProviderDefaultModels[explicitProviderId] ?? null,
+          warnings,
+        }
+      )
+    : {
+        apiKey: toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null,
+        model: toTrimmedString(env.SMART_NUTRITION_ASSISTANT_MODEL) || null,
+      };
+  const shouldUseExplicitAssistantPair =
+    shouldConsiderExplicitAssistantPair && explicitPair.apiKey && explicitPair.model;
 
-  if (explicitPair.apiKey && explicitPair.model) {
+  if (explicitPair.apiKey && !shouldUseExplicitAssistantPair) {
+    warnings.push(
+      "SMART_NUTRITION_ASSISTANT_API_KEY is ignored because provider-specific assistant API keys are configured."
+    );
+  }
+
+  if (shouldUseExplicitAssistantPair) {
     const providerId = explicitProviderId;
     const apiKeyWarning = getAssistantApiKeyWarning(
       providerId,
