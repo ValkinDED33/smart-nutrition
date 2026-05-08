@@ -165,7 +165,7 @@ export const MeasurementsCheckInCard = () => {
     >
       <Stack spacing={2.2}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>

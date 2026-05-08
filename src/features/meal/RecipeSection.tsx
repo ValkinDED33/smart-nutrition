@@ -241,7 +241,7 @@ export const RecipeSection = ({ mealType }: Props) => {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+      <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
         {t("recipes.title")}
       </Typography>
       <Paper
@@ -377,7 +377,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 <Chip label={`F ${recipe.fat.toFixed(1)} ${t("common.g")}`} />
                 <Chip label={`C ${recipe.carbs.toFixed(1)} ${t("common.g")}`} />
               </Stack>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
                 {recipe.title}
               </Typography>
               <Typography color="text.secondary">{recipe.description}</Typography>

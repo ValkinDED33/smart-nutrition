@@ -107,7 +107,7 @@ const DashboardPage = () => {
               {user.name[0]}
             </Avatar>
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 900 }}>
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
                 {t("dashboard.welcome", { name: user.name })}
               </Typography>
               <Typography sx={{ color: "rgba(255,255,255,0.78)", maxWidth: 540 }}>
@@ -154,7 +154,7 @@ const DashboardPage = () => {
             <Typography color="text.secondary" sx={{ mb: 0.6 }}>
               {item.label}
             </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {item.value}
             </Typography>
           </Paper>
@@ -170,7 +170,7 @@ const DashboardPage = () => {
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
           {t("meal.progress")}
         </Typography>
         <Typography color="text.secondary" sx={{ mb: 1.5 }}>
@@ -190,7 +190,7 @@ const DashboardPage = () => {
       >
         <Stack spacing={2}>
           <Stack spacing={0.6}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {localizedMacroCopy.sectionTitle}
             </Typography>
             <Typography color="text.secondary">{localizedMacroCopy.sectionSubtitle}</Typography>
@@ -216,7 +216,7 @@ const DashboardPage = () => {
                 }}
               >
                 <Typography color="text.secondary">{macro.label}</Typography>
-                <Typography variant="h5" sx={{ fontWeight: 900, mt: 0.4 }}>
+                <Typography component="p" variant="h5" sx={{ fontWeight: 900, mt: 0.4 }}>
                   {macro.current.toFixed(1)} / {macro.target.toFixed(0)} {t("common.g")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

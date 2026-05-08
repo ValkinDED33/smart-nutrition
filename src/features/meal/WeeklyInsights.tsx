@@ -57,7 +57,7 @@ export const WeeklyInsights = () => {
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
           {t("weekly.title")}
         </Typography>
         <Typography color="text.secondary">{t("weekly.empty")}</Typography>
@@ -76,7 +76,7 @@ export const WeeklyInsights = () => {
       }}
     >
       <Stack spacing={2.5}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("weekly.title")}
         </Typography>
 
@@ -89,19 +89,19 @@ export const WeeklyInsights = () => {
         >
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
             <Typography color="text.secondary">{t("weekly.average")}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {(totalWeekCalories / 7).toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
             <Typography color="text.secondary">{t("weekly.protein")}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {(totalWeekProtein / 7).toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
             <Typography color="text.secondary">{t("weekly.bestDay")}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {bestDay?.label} - {bestDay?.calories.toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>

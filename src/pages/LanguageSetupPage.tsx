@@ -131,7 +131,7 @@ const LanguageSetupPage = () => {
             <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
               {copy.brand}
             </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 900, mt: 1 }}>
+            <Typography component="h1" variant="h3" sx={{ fontWeight: 900, mt: 1 }}>
               {copy.eyebrow}
             </Typography>
             <Typography color="text.secondary" sx={{ mt: 1.5, lineHeight: 1.8 }}>
@@ -180,7 +180,7 @@ const LanguageSetupPage = () => {
           {step === "language" ? (
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                <Typography component="h2" variant="h4" sx={{ fontWeight: 900 }}>
                   {copy.languageTitle}
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1.2, lineHeight: 1.75 }}>
@@ -246,7 +246,7 @@ const LanguageSetupPage = () => {
           {step === "intro" ? (
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                <Typography component="h2" variant="h4" sx={{ fontWeight: 900 }}>
                   {copy.introTitle}
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1.2, lineHeight: 1.75 }}>
@@ -314,7 +314,7 @@ const LanguageSetupPage = () => {
           {step === "auth" ? (
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                <Typography component="h2" variant="h4" sx={{ fontWeight: 900 }}>
                   {copy.authTitle}
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 1.2, lineHeight: 1.75 }}>

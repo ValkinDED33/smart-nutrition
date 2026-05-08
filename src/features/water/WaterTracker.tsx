@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
+import { AssistantAvatar, type AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
 import {
   incrementWater,
   setWaterConsumed,
@@ -36,6 +37,11 @@ import {
   isWithinReminderWindow,
   normalizeWaterSlotAmount,
 } from "./waterModel";
+import {
+  playAchievementSound,
+  playGentleClickSound,
+  playWaterLogSound,
+} from "../../shared/lib/sound";
 
 const waterCopy = {
   uk: {
@@ -61,6 +67,13 @@ const waterCopy = {
     goalDays: "Днів у нормі",
     bestDay: "Найкращий день",
     remindersTitle: "Нагадування пити воду",
+    aiTitle: "Реакція companion",
+    aiLow:
+      "Вода поки відстає. Давайте закриємо один маленький стакан без драматизації.",
+    aiMid:
+      "Темп хороший. Ще трохи води, і день відчуватиметься легше.",
+    aiDone:
+      "Норма води закрита. Я святкую тихо, але дуже щиро.",
     remindersEnabled: "Увімкнути нагадування",
     reminderInterval: "Інтервал",
     reminderStart: "Початок",
@@ -98,6 +111,13 @@ const waterCopy = {
     goalDays: "Dni w normie",
     bestDay: "Najlepszy dzień",
     remindersTitle: "Przypomnienia o wodzie",
+    aiTitle: "Reakcja companion",
+    aiLow:
+      "Woda jest jeszcze z tyłu. Domknijmy jedną małą szklankę bez presji.",
+    aiMid:
+      "Tempo jest dobre. Jeszcze trochę wody i dzień będzie lżejszy.",
+    aiDone:
+      "Norma wody zamknięta. Świętuję cicho, ale bardzo szczerze.",
     remindersEnabled: "Włącz przypomnienia",
     reminderInterval: "Interwał",
     reminderStart: "Początek",
@@ -120,6 +140,7 @@ export const WaterTracker = () => {
   const latestWeightHistoryWeight = useSelector((state: RootState) =>
     state.profile.weightHistory.at(-1)?.weight
   );
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
   const latestWeight = latestWeightHistoryWeight ?? authWeight ?? 0;
   const { language } = useLanguage();
@@ -152,6 +173,10 @@ export const WaterTracker = () => {
     () => getQuickWaterAmounts(water.glassSizeMl),
     [water.glassSizeMl]
   );
+  const assistantMood: AssistantAvatarMood =
+    progress >= 100 ? "celebrate" : progress >= 55 ? "happy" : "coach";
+  const assistantReaction =
+    progress >= 100 ? copy.aiDone : progress >= 55 ? copy.aiMid : copy.aiLow;
   const weeklyRecords = useMemo(
     () =>
       createWeeklyWaterRecords({
@@ -241,12 +266,39 @@ export const WaterTracker = () => {
     [water.consumedMl, water.dailyTargetMl, water.glassSizeMl]
   );
 
+  const playWaterFeedback = (nextConsumedMl: number, previousConsumedMl = water.consumedMl) => {
+    if (nextConsumedMl > previousConsumedMl) {
+      if (
+        previousConsumedMl < water.dailyTargetMl &&
+        nextConsumedMl >= water.dailyTargetMl
+      ) {
+        playAchievementSound();
+        return;
+      }
+
+      playWaterLogSound();
+      return;
+    }
+
+    playGentleClickSound();
+  };
+
+  const setWaterAmount = (amountMl: number) => {
+    playWaterFeedback(amountMl);
+    dispatch(setWaterConsumed(amountMl));
+  };
+
+  const addWaterAmount = (amountMl: number) => {
+    playWaterFeedback(Math.max(water.consumedMl + amountMl, 0));
+    dispatch(incrementWater(amountMl));
+  };
+
   const handleGlassClick = (index: number, fill: number) => {
     const slotStart = index * water.glassSizeMl;
     const slotEnd = slotStart + water.glassSizeMl;
 
     if (fill === 1) {
-      dispatch(setWaterConsumed(slotStart));
+      setWaterAmount(slotStart);
       return;
     }
 
@@ -256,7 +308,7 @@ export const WaterTracker = () => {
       return;
     }
 
-    dispatch(setWaterConsumed(slotEnd));
+    setWaterAmount(slotEnd);
   };
 
   const openPartialPanel = () => {
@@ -289,7 +341,7 @@ export const WaterTracker = () => {
       water.glassSizeMl
     );
 
-    dispatch(setWaterConsumed(slotStart + normalizedAmount));
+    setWaterAmount(slotStart + normalizedAmount);
     setEditingSlot(null);
   };
 
@@ -305,7 +357,7 @@ export const WaterTracker = () => {
     >
       <Stack spacing={2.5}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
@@ -366,7 +418,7 @@ export const WaterTracker = () => {
               }}
             >
               <Stack spacing={0.4}>
-                <Typography variant="h4" sx={{ fontWeight: 900 }}>
+                <Typography component="p" variant="h4" sx={{ fontWeight: 900 }}>
                   {Math.round(progress)}%
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -406,6 +458,32 @@ export const WaterTracker = () => {
                 color={status === copy.statusAbove ? "warning" : status === copy.statusOnTrack ? "success" : "default"}
               />
             </Stack>
+
+            <Paper
+              elevation={0}
+              sx={{
+                p: 1.5,
+                borderRadius: 1,
+                border: "1px solid rgba(14,165,233,0.18)",
+                bgcolor: "rgba(236,254,255,0.72)",
+              }}
+            >
+              <Stack direction="row" spacing={1.3} alignItems="center">
+                <AssistantAvatar
+                  name={assistant.name}
+                  variant={assistant.companionKind}
+                  mood={assistantMood}
+                  active={progress >= 55}
+                  size={56}
+                />
+                <Stack spacing={0.3}>
+                  <Typography sx={{ fontWeight: 900 }}>{copy.aiTitle}</Typography>
+                  <Typography color="text.secondary" sx={{ lineHeight: 1.55 }}>
+                    {assistantReaction}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Paper>
           </Stack>
         </Box>
 
@@ -441,7 +519,7 @@ export const WaterTracker = () => {
               <Button
                 key={amount}
                 variant={amount === water.glassSizeMl ? "contained" : "outlined"}
-                onClick={() => dispatch(incrementWater(amount))}
+                onClick={() => addWaterAmount(amount)}
                 sx={{ minWidth: 82 }}
               >
                 +{amount} ml
@@ -508,7 +586,7 @@ export const WaterTracker = () => {
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button
             variant="contained"
-            onClick={() => dispatch(incrementWater(water.glassSizeMl))}
+            onClick={() => addWaterAmount(water.glassSizeMl)}
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -527,7 +605,7 @@ export const WaterTracker = () => {
           </Button>
           <Button
             variant="text"
-            onClick={() => dispatch(incrementWater(-water.glassSizeMl))}
+            onClick={() => addWaterAmount(-water.glassSizeMl)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {copy.removeGlass}

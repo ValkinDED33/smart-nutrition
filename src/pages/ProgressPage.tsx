@@ -29,6 +29,7 @@ const ProgressPage = () => {
     <Stack spacing={2.5}>
       <Stack spacing={0.8}>
         <Typography
+          component="h1"
           variant="h4"
           sx={{ fontWeight: 900, fontSize: { xs: 32, md: 40 } }}
         >

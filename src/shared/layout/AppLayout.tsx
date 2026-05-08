@@ -141,6 +141,7 @@ const Layout = () => {
             {user && (
               <Stack
                 component="nav"
+                aria-label="Primary navigation"
                 direction="row"
                 spacing={0.5}
                 alignItems="center"
@@ -287,6 +288,7 @@ const Layout = () => {
       </AppBar>
 
       <Container
+        component="main"
         maxWidth={contentMaxWidth}
         sx={{
           px: { xs: 2, sm: 3 },
@@ -301,6 +303,8 @@ const Layout = () => {
 
       {user && (
         <Paper
+          component="nav"
+          aria-label="Mobile navigation"
           elevation={0}
           sx={{
             display: { xs: "block", md: "none" },
@@ -321,6 +325,7 @@ const Layout = () => {
           }}
         >
           <BottomNavigation
+            aria-label="Mobile primary navigation"
             showLabels
             value={activeTab}
             onChange={(_, nextValue) => {

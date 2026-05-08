@@ -21,12 +21,13 @@ const NotFoundPage = () => {
       >
         <Stack spacing={2} alignItems="center">
           <Typography
+            component="p"
             variant="h1"
             sx={{ fontWeight: 900, lineHeight: 1, color: "#0f766e" }}
           >
             404
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800 }}>
+          <Typography component="h1" variant="h4" sx={{ fontWeight: 800 }}>
             {t("notFound.title")}
           </Typography>
           <Typography color="text.secondary" sx={{ maxWidth: 420 }}>

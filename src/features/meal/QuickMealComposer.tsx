@@ -137,7 +137,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       }}
     >
       <Stack spacing={2}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("composer.title")}
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>

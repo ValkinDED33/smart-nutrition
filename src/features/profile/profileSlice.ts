@@ -20,6 +20,7 @@ import {
 import type {
   AdaptiveMode,
   AssistantCustomization,
+  AssistantCompanionKind,
   AssistantRole,
   AssistantTone,
   AchievementProgress,
@@ -122,6 +123,12 @@ const isAssistantRole = (value: unknown): value is AssistantRole =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value: unknown): value is AssistantTone =>
   value === "gentle" || value === "playful" || value === "focused";
+const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKind =>
+  value === "cat" ||
+  value === "dog" ||
+  value === "capybara" ||
+  value === "dragon" ||
+  value === "robot";
 const isTaskCategory = (value: unknown): value is MotivationTaskCategory =>
   value === "nutrition" || value === "consistency" || value === "reflection";
 const isBloodGroup = (value: unknown): value is BloodGroup =>
@@ -447,6 +454,9 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
       typeof value.name === "string" && value.name.trim().length > 0
         ? value.name.trim().slice(0, 32)
         : fallback.name,
+    companionKind: isAssistantCompanionKind(value.companionKind)
+      ? value.companionKind
+      : fallback.companionKind,
     role: isAssistantRole(value.role) ? value.role : fallback.role,
     tone: isAssistantTone(value.tone) ? value.tone : fallback.tone,
     humorEnabled:

@@ -16,6 +16,7 @@ import { AccountDataCard } from "../features/profile/AccountDataCard";
 import { CloudSyncStatusCard } from "../features/profile/CloudSyncStatusCard";
 import MotivationHubCard from "../features/profile/MotivationHubCard";
 import AssistantCustomizationCard from "../features/profile/AssistantCustomizationCard";
+import CompanionShopCard from "../features/profile/CompanionShopCard";
 import { BehaviorPersonalizationCard } from "../features/profile/BehaviorPersonalizationCard";
 import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
 import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
@@ -56,6 +57,7 @@ const profileCopy = {
     relationshipLabel: "Статус",
     supportLabel: "Підтримка",
     petLabel: "Поруч",
+    roleLabel: "Роль",
     adaptiveAuto: "Адаптивні калорії оновлюються автоматично.",
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
     macroTitle: "Цілі за макроелементами",
@@ -83,10 +85,30 @@ const profileCopy = {
     relationshipLabel: "Status",
     supportLabel: "Wsparcie",
     petLabel: "Obok",
+    roleLabel: "Rola",
     adaptiveAuto: "Adaptacyjne kalorie aktualizują się automatycznie.",
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
     macroTitle: "Cele makroskładników",
     macroSubtitle: "Dzienne cele białka, tłuszczów i węglowodanów wyliczone z kalorii, masy ciała i celu.",
+  },
+} as const;
+
+const roleLabels = {
+  uk: {
+    USER: "User",
+    VERIFIED_USER: "Verified User",
+    NUTRITIONIST: "Nutritionist",
+    MODERATOR: "Moderator",
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
+  },
+  pl: {
+    USER: "User",
+    VERIFIED_USER: "Verified User",
+    NUTRITIONIST: "Nutritionist",
+    MODERATOR: "Moderator",
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
   },
 } as const;
 
@@ -234,7 +256,7 @@ const ProfilePage = () => {
               {user.name[0]}
             </Avatar>
             <Box>
-              <Typography variant="h4" sx={{ fontWeight: 900 }}>
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
                 {t("profile.title")}
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>
@@ -244,6 +266,11 @@ const ProfilePage = () => {
           </Stack>
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip
+              label={`${copy.roleLabel}: ${roleLabels[language][user.role]}`}
+              color={user.role === "USER" ? "default" : "primary"}
+              variant={user.role === "USER" ? "outlined" : "filled"}
+            />
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
             <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
@@ -289,7 +316,7 @@ const ProfilePage = () => {
             backgroundColor: "rgba(255,255,255,0.86)",
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
             {t("profile.progress")}
           </Typography>
           <Typography color="text.secondary" sx={{ mb: 1.5 }}>
@@ -312,7 +339,7 @@ const ProfilePage = () => {
           }}
         >
           <Stack spacing={1.6}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.weightGoal}
             </Typography>
             <Typography color="text.secondary">{copy.weightGoalSubtitle}</Typography>
@@ -386,7 +413,7 @@ const ProfilePage = () => {
         }}
       >
         <Stack spacing={1.4}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.macroTitle}
           </Typography>
           <Typography color="text.secondary">{copy.macroSubtitle}</Typography>
@@ -447,6 +474,8 @@ const ProfilePage = () => {
 
       <AssistantCustomizationCard />
 
+      <CompanionShopCard />
+
       <PremiumAccessCard />
 
       <CommunityHubCard />
@@ -463,7 +492,7 @@ const ProfilePage = () => {
         }}
       >
         <Stack spacing={1.5}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.preferencesTitle}
           </Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">

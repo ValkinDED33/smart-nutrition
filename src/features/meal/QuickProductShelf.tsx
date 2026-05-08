@@ -62,7 +62,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
       }}
     >
       <Stack spacing={2.5}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("quickShelf.title")}
         </Typography>
 

@@ -301,7 +301,7 @@ export const AccountDataCard = () => {
     >
       <Stack spacing={2.5}>
         <Box>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 0.8 }}>

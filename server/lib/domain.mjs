@@ -86,15 +86,24 @@ export class StateApiError extends Error {
   }
 }
 
-export const userRoles = ["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"];
+export const userRoles = [
+  "USER",
+  "VERIFIED_USER",
+  "NUTRITIONIST",
+  "MODERATOR",
+  "ADMIN",
+  "SUPER_ADMIN",
+];
 
 export const isUserRole = (value) => userRoles.includes(value);
 
 const roleRank = {
   USER: 0,
-  MODERATOR: 1,
-  ADMIN: 2,
-  SUPER_ADMIN: 3,
+  VERIFIED_USER: 1,
+  NUTRITIONIST: 2,
+  MODERATOR: 3,
+  ADMIN: 4,
+  SUPER_ADMIN: 5,
 };
 
 export const hasRoleAtLeast = (role, minimumRole) =>
@@ -427,6 +436,7 @@ export const createInitialProfileState = (userInput) => {
     },
     assistant: {
       name: "Nova",
+      companionKind: "robot",
       role: "assistant",
       tone: "gentle",
       humorEnabled: true,

@@ -82,3 +82,19 @@ export const playScanErrorSound = () =>
     { frequency: 310, durationMs: 120, type: "sawtooth", gain: 0.05 },
     { frequency: 220, durationMs: 180, type: "sawtooth", gain: 0.045 },
   ]);
+
+export const playGentleClickSound = () =>
+  void playSequence([{ frequency: 520, durationMs: 45, type: "sine", gain: 0.025 }]);
+
+export const playWaterLogSound = () =>
+  void playSequence([
+    { frequency: 420, durationMs: 55, type: "sine", gain: 0.035 },
+    { frequency: 660, durationMs: 70, type: "triangle", gain: 0.04 },
+  ]);
+
+export const playAchievementSound = () =>
+  void playSequence([
+    { frequency: 660, durationMs: 65, type: "triangle", gain: 0.045 },
+    { frequency: 880, durationMs: 85, type: "triangle", gain: 0.05 },
+    { frequency: 1180, durationMs: 115, type: "sine", gain: 0.045 },
+  ]);

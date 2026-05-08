@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import type { AssistantCompanionKind } from "../types/profile";
 
 export type AssistantAvatarMood =
   | "idle"
@@ -11,6 +12,7 @@ export type AssistantAvatarMood =
 interface AssistantAvatarProps {
   name: string;
   size?: number;
+  variant?: AssistantCompanionKind;
   mood?: AssistantAvatarMood;
   lookOffset?: {
     x: number;
@@ -36,9 +38,45 @@ const moodGradients: Record<AssistantAvatarMood, string> = {
     "radial-gradient(circle at 35% 26%, rgba(255,255,255,0.48), transparent 25%), linear-gradient(135deg, #16a34a 0%, #f59e0b 48%, #2563eb 100%)",
 };
 
+const companionAccent: Record<
+  AssistantCompanionKind,
+  {
+    face: string;
+    detail: string;
+    shadow: string;
+  }
+> = {
+  cat: {
+    face: "linear-gradient(135deg, #f97316 0%, #f59e0b 52%, #0f766e 100%)",
+    detail: "#fed7aa",
+    shadow: "0 18px 36px rgba(249, 115, 22, 0.24)",
+  },
+  dog: {
+    face: "linear-gradient(135deg, #a16207 0%, #f59e0b 50%, #2563eb 100%)",
+    detail: "#fde68a",
+    shadow: "0 18px 36px rgba(161, 98, 7, 0.24)",
+  },
+  capybara: {
+    face: "linear-gradient(135deg, #92400e 0%, #d97706 52%, #0f766e 100%)",
+    detail: "#fef3c7",
+    shadow: "0 18px 36px rgba(146, 64, 14, 0.22)",
+  },
+  dragon: {
+    face: "linear-gradient(135deg, #16a34a 0%, #2563eb 54%, #7c3aed 100%)",
+    detail: "#bbf7d0",
+    shadow: "0 18px 36px rgba(22, 163, 74, 0.24)",
+  },
+  robot: {
+    face: "linear-gradient(135deg, #0f766e 0%, #2563eb 58%, #65a30d 100%)",
+    detail: "#dbeafe",
+    shadow: "0 18px 36px rgba(15, 118, 110, 0.28)",
+  },
+};
+
 export const AssistantAvatar = ({
   name,
   size = 64,
+  variant = "robot",
   mood = "idle",
   lookOffset = { x: 0, y: 0 },
   active = false,
@@ -52,6 +90,10 @@ export const AssistantAvatar = ({
   const isConcerned = mood === "concerned";
   const isCelebrating = mood === "celebrate";
   const lineWidth = Math.max(Math.round(size * 0.035), 2);
+  const companion = companionAccent[variant];
+  const shouldUseMoodGradient = mood === "sleepy" || mood === "concerned";
+  const earSize = Math.max(Math.round(size * 0.22), 10);
+  const hornSize = Math.max(Math.round(size * 0.16), 8);
 
   return (
     <Box
@@ -66,12 +108,12 @@ export const AssistantAvatar = ({
         color: "white",
         fontWeight: 900,
         fontSize: Math.max(Math.round(size * 0.22), 12),
-        background: moodGradients[mood],
+        background: shouldUseMoodGradient ? moodGradients[mood] : companion.face,
         boxShadow:
           mood === "concerned"
             ? "0 18px 36px rgba(234, 88, 12, 0.22)"
-            : "0 18px 36px rgba(15, 118, 110, 0.28)",
-        overflow: "hidden",
+            : companion.shadow,
+        overflow: "visible",
         transformOrigin: "50% 80%",
         animation:
           active || isCelebrating
@@ -109,6 +151,107 @@ export const AssistantAvatar = ({
         },
       }}
     >
+      {(variant === "cat" || variant === "dog" || variant === "capybara") && (
+        <>
+          <Box
+            sx={{
+              position: "absolute",
+              top: variant === "capybara" ? Math.round(size * 0.08) : -Math.round(size * 0.02),
+              left: Math.round(size * 0.12),
+              width: earSize,
+              height: variant === "dog" ? Math.round(size * 0.3) : earSize,
+              borderRadius:
+                variant === "cat"
+                  ? "70% 30% 55% 45%"
+                  : variant === "dog"
+                    ? "60% 60% 70% 70%"
+                    : "50%",
+              background: companion.detail,
+              border: "1px solid rgba(255,255,255,0.34)",
+              transform: variant === "cat" ? "rotate(-28deg)" : "rotate(-12deg)",
+              opacity: 0.9,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: variant === "capybara" ? Math.round(size * 0.08) : -Math.round(size * 0.02),
+              right: Math.round(size * 0.12),
+              width: earSize,
+              height: variant === "dog" ? Math.round(size * 0.3) : earSize,
+              borderRadius:
+                variant === "cat"
+                  ? "30% 70% 45% 55%"
+                  : variant === "dog"
+                    ? "60% 60% 70% 70%"
+                    : "50%",
+              background: companion.detail,
+              border: "1px solid rgba(255,255,255,0.34)",
+              transform: variant === "cat" ? "rotate(28deg)" : "rotate(12deg)",
+              opacity: 0.9,
+            }}
+          />
+        </>
+      )}
+
+      {variant === "dragon" && (
+        <>
+          <Box
+            sx={{
+              position: "absolute",
+              top: Math.round(size * 0.02),
+              left: Math.round(size * 0.24),
+              width: hornSize,
+              height: hornSize,
+              borderRadius: "70% 30% 70% 30%",
+              background: companion.detail,
+              transform: "rotate(-28deg)",
+              border: "1px solid rgba(255,255,255,0.42)",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: Math.round(size * 0.02),
+              right: Math.round(size * 0.24),
+              width: hornSize,
+              height: hornSize,
+              borderRadius: "30% 70% 30% 70%",
+              background: companion.detail,
+              transform: "rotate(28deg)",
+              border: "1px solid rgba(255,255,255,0.42)",
+            }}
+          />
+        </>
+      )}
+
+      {variant === "robot" && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: -Math.round(size * 0.02),
+            left: "50%",
+            width: Math.max(Math.round(size * 0.04), 2),
+            height: Math.max(Math.round(size * 0.18), 9),
+            borderRadius: 999,
+            backgroundColor: "rgba(255,255,255,0.72)",
+            transform: "translateX(-50%)",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: -Math.max(Math.round(size * 0.04), 2),
+              left: "50%",
+              width: Math.max(Math.round(size * 0.09), 5),
+              height: Math.max(Math.round(size * 0.09), 5),
+              borderRadius: "50%",
+              backgroundColor: companion.detail,
+              transform: "translateX(-50%)",
+              boxShadow: "0 0 12px rgba(219,234,254,0.72)",
+            },
+          }}
+        />
+      )}
+
       <Box
         sx={{
           position: "absolute",

@@ -169,6 +169,13 @@ const shouldProbeSameOriginApi = () => {
     return false;
   }
 
+  if (
+    isLocalBrowserHost() &&
+    (window.location.port === "5173" || window.location.port === "5174")
+  ) {
+    return false;
+  }
+
   return isLocalBrowserHost() || !window.location.hostname.endsWith(".vercel.app");
 };
 

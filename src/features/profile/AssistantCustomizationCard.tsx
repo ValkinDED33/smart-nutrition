@@ -11,6 +11,8 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { setAssistantCustomization } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
+import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import type { AssistantCompanionKind } from "../../shared/types/profile";
 
 const assistantCopy = {
   uk: {
@@ -18,6 +20,7 @@ const assistantCopy = {
     subtitle:
       "Налаштуйте, як асистент має звертатися до вас і яким тоном підтримувати вас у щоденній роботі.",
     name: "Ім'я асистента",
+    companion: "Персонаж",
     role: "Роль",
     tone: "Тон",
     humor: "Легкий гумор",
@@ -29,12 +32,20 @@ const assistantCopy = {
     toneGentle: "М'який",
     tonePlayful: "Грайливий",
     toneFocused: "Зібраний",
+    companions: {
+      cat: "Кіт",
+      dog: "Собака",
+      capybara: "Капібара",
+      dragon: "Дракон",
+      robot: "Робот",
+    },
   },
   pl: {
     title: "Styl asystenta",
     subtitle:
       "Ustaw, jak asystent ma się do Ciebie zwracać i jakim tonem wspierać Cię na co dzień.",
     name: "Imię asystenta",
+    companion: "Postać",
     role: "Rola",
     tone: "Ton",
     humor: "Lekki humor",
@@ -46,8 +57,23 @@ const assistantCopy = {
     toneGentle: "Spokojny",
     tonePlayful: "Swobodny",
     toneFocused: "Skupiony",
+    companions: {
+      cat: "Kot",
+      dog: "Pies",
+      capybara: "Kapibara",
+      dragon: "Smok",
+      robot: "Robot",
+    },
   },
 } as const;
+
+const companionKinds: AssistantCompanionKind[] = [
+  "cat",
+  "dog",
+  "capybara",
+  "dragon",
+  "robot",
+];
 
 export const AssistantCustomizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -78,6 +104,26 @@ export const AssistantCustomizationCard = () => {
         />
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <TextField
+            select
+            fullWidth
+            label={copy.companion}
+            value={assistant.companionKind}
+            onChange={(event) =>
+              dispatch(
+                setAssistantCustomization({
+                  companionKind: event.target.value as AssistantCompanionKind,
+                })
+              )
+            }
+          >
+            {companionKinds.map((kind) => (
+              <MenuItem key={kind} value={kind}>
+                {copy.companions[kind]}
+              </MenuItem>
+            ))}
+          </TextField>
+
           <TextField
             select
             fullWidth
@@ -113,6 +159,18 @@ export const AssistantCustomizationCard = () => {
             <MenuItem value="playful">{copy.tonePlayful}</MenuItem>
             <MenuItem value="focused">{copy.toneFocused}</MenuItem>
           </TextField>
+        </Stack>
+
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <AssistantAvatar
+            name={assistant.name}
+            variant={assistant.companionKind}
+            mood="happy"
+            active
+          />
+          <Typography color="text.secondary">
+            {copy.companions[assistant.companionKind]} · {assistant.name}
+          </Typography>
         </Stack>
 
         <FormControlLabel
@@ -158,7 +216,7 @@ export const AssistantCustomizationCard = () => {
 
 const BoxHeader = ({ title, subtitle }: { title: string; subtitle: string }) => (
   <Stack spacing={0.8}>
-    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+    <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
       {title}
     </Typography>
     <Typography color="text.secondary">{subtitle}</Typography>

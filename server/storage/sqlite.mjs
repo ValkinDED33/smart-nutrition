@@ -84,6 +84,8 @@ const isSource = (value) =>
 
 const isUserRole = (value) =>
   value === "USER" ||
+  value === "VERIFIED_USER" ||
+  value === "NUTRITIONIST" ||
   value === "MODERATOR" ||
   value === "ADMIN" ||
   value === "SUPER_ADMIN";

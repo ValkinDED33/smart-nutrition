@@ -132,7 +132,7 @@ const ForgotPasswordPage = () => {
             <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
               {t("brand.name")}
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+            <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
               {copy.title}
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>

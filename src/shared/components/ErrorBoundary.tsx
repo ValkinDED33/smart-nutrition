@@ -43,7 +43,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
             px: 3,
           }}
         >
-          <Typography variant="h5" textAlign="center">
+          <Typography component="h1" variant="h5" textAlign="center">
             {this.props.title}
           </Typography>
           <Button variant="contained" onClick={this.handleReload}>

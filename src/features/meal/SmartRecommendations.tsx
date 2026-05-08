@@ -365,7 +365,7 @@ export const SmartRecommendations = () => {
       }}
     >
       <Stack spacing={1.4}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("recommendations.title")}
         </Typography>
         {recommendations.length === 0 ? (

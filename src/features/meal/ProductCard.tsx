@@ -127,7 +127,7 @@ export const ProductCard = ({
       <CardContent sx={{ height: "100%" }}>
         <Stack spacing={1.2} sx={{ height: "100%" }}>
           <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
               {displayName}
             </Typography>
             {isSaved && <Typography sx={{ fontSize: "1.2rem" }}>⭐</Typography>}

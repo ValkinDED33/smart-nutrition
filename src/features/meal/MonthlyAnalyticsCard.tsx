@@ -164,7 +164,7 @@ export const MonthlyAnalyticsCard = () => {
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
           {copy.title}
         </Typography>
         <Typography color="text.secondary">{copy.noData}</Typography>
@@ -211,7 +211,7 @@ export const MonthlyAnalyticsCard = () => {
     >
       <Stack spacing={2.5}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
@@ -229,25 +229,25 @@ export const MonthlyAnalyticsCard = () => {
         >
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageCalories}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {averageCalories.toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageProtein}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {averageProtein.toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.adherence}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {adherenceRate.toFixed(0)}%
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.streak}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {loggingStreak} {copy.days}
             </Typography>
           </Paper>

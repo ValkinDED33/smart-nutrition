@@ -146,7 +146,11 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={{ xs: 1, md: 1.5 }}>
-          <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 26, md: 34 } }}>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{ fontWeight: 900, fontSize: { xs: 26, md: 34 } }}
+          >
             {t("mealBuilder.title")}
           </Typography>
           <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
@@ -181,7 +185,7 @@ const MealBuilderPage = () => {
             alignItems={{ xs: "flex-start", md: "center" }}
           >
             <Stack spacing={0.4}>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
                 {copy.inputTitle}
               </Typography>
               <Typography color="text.secondary">{copy.inputSubtitle}</Typography>
@@ -245,7 +249,11 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={{ xs: 1.25, md: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: 18, md: 20 } }}>
+          <Typography
+            component="h2"
+            variant="h6"
+            sx={{ fontWeight: 800, fontSize: { xs: 18, md: 20 } }}
+          >
             {t("mealBuilder.chooseMeal")}
           </Typography>
           <ToggleButtonGroup
@@ -318,7 +326,7 @@ const MealBuilderPage = () => {
             }}
           >
             <Stack spacing={2}>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
                 {t("mealBuilder.diary")}
               </Typography>
 
@@ -393,7 +401,7 @@ const MealBuilderPage = () => {
       >
         <Stack spacing={2}>
           <Stack spacing={0.4}>
-            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
               {copy.advancedTitle}
             </Typography>
             <Typography color="text.secondary">{copy.advancedSubtitle}</Typography>

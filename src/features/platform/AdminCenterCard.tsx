@@ -20,6 +20,7 @@ import type {
   AuditLogEntry,
   CatalogProductItem,
 } from "../../shared/types/platform";
+import type { UserRole } from "../../shared/types/user";
 import {
   PlatformApiError,
   getPlatformAccessOverview,
@@ -32,7 +33,7 @@ import {
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
 
-type AdminTab = "queue" | "users" | "audit";
+type AdminTab = "queue" | "users" | "audit" | "system";
 
 const adminCopy = {
   uk: {
@@ -45,7 +46,21 @@ const adminCopy = {
       queue: "Модерація",
       users: "Користувачі",
       audit: "Аудит",
+      system: "Система",
     },
+    systemTitle: "Операційний центр",
+    systemSubtitle:
+      "Аналітика, reports, content management, AI controls і системні логи в одному місці.",
+    analytics: "Analytics",
+    reports: "Reports",
+    content: "Content",
+    aiControls: "AI controls",
+    systemLogs: "System logs",
+    activeUsers: "Користувачі",
+    publicProducts: "Продукти на перевірці",
+    openReports: "Скарги",
+    aiPolicy: "AI відповідає як wellness companion, без медичних діагнозів і з м'якими попередженнями.",
+    logsReady: "Події ролей, модерації та блокувань вже пишуться в audit log.",
     pendingEmpty: "Черга модерації зараз порожня.",
     approve: "Підтвердити",
     reject: "Відхилити",
@@ -69,7 +84,21 @@ const adminCopy = {
       queue: "Moderacja",
       users: "Użytkownicy",
       audit: "Audyt",
+      system: "System",
     },
+    systemTitle: "Centrum operacyjne",
+    systemSubtitle:
+      "Analityka, reports, content management, AI controls i logi systemowe w jednym miejscu.",
+    analytics: "Analytics",
+    reports: "Reports",
+    content: "Content",
+    aiControls: "AI controls",
+    systemLogs: "System logs",
+    activeUsers: "Użytkownicy",
+    publicProducts: "Produkty do sprawdzenia",
+    openReports: "Zgłoszenia",
+    aiPolicy: "AI odpowiada jak wellness companion, bez diagnoz medycznych i z łagodnymi ostrzeżeniami.",
+    logsReady: "Zdarzenia ról, moderacji i blokad są już zapisywane w audit logu.",
     pendingEmpty: "Kolejka moderacji jest teraz pusta.",
     approve: "Zatwierdź",
     reject: "Odrzuć",
@@ -101,7 +130,7 @@ export const AdminCenterCard = () => {
   const [queue, setQueue] = useState<CatalogProductItem[]>([]);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, "USER" | "MODERATOR" | "ADMIN">>({});
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, Exclude<UserRole, "SUPER_ADMIN">>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -133,8 +162,13 @@ export const AdminCenterCard = () => {
             setUsers(userItems);
             setRoleDrafts(
               Object.fromEntries(
-                userItems.map((item) => [item.id, item.role as "USER" | "MODERATOR" | "ADMIN"])
-              )
+                userItems
+                  .filter((item) => item.role !== "SUPER_ADMIN")
+                  .map((item) => [
+                    item.id,
+                    item.role as Exclude<UserRole, "SUPER_ADMIN">,
+                  ])
+              ) as Record<string, Exclude<UserRole, "SUPER_ADMIN">>
             );
           }
         }
@@ -164,27 +198,28 @@ export const AdminCenterCard = () => {
     };
   }, [backendUnavailableMessage]);
 
-  if (!currentUser || currentUser.role === "USER") {
+  if (!currentUser || currentUser.role === "USER" || currentUser.role === "VERIFIED_USER") {
     return null;
   }
 
   const allowedRoles = access?.permissions.manageAdmins
-    ? (["USER", "MODERATOR", "ADMIN"] as const)
-    : (["USER", "MODERATOR"] as const);
+    ? (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR", "ADMIN"] as const)
+    : (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR"] as const);
+  const latestAudit = audit[0];
 
   return (
     <Paper
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
     >
       <Stack spacing={2}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
@@ -213,6 +248,7 @@ export const AdminCenterCard = () => {
             <Tab value="users" label={copy.tabs.users} />
           )}
           {access?.permissions.viewAuditLogs && <Tab value="audit" label={copy.tabs.audit} />}
+          {access?.permissions.manageSystem && <Tab value="system" label={copy.tabs.system} />}
         </Tabs>
 
         {tab === "queue" && (
@@ -221,7 +257,7 @@ export const AdminCenterCard = () => {
               <Alert severity="info">{copy.pendingEmpty}</Alert>
             ) : (
               queue.map((item) => (
-                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                   <Stack spacing={1}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -303,7 +339,7 @@ export const AdminCenterCard = () => {
         {tab === "users" && (access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
           <Stack spacing={1.2}>
             {users.map((user) => (
-              <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+              <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   spacing={1.2}
@@ -329,7 +365,7 @@ export const AdminCenterCard = () => {
                       onChange={(event) =>
                         setRoleDrafts((current) => ({
                           ...current,
-                          [user.id]: event.target.value as "USER" | "MODERATOR" | "ADMIN",
+                          [user.id]: event.target.value as Exclude<UserRole, "SUPER_ADMIN">,
                         }))
                       }
                       sx={{ minWidth: 180 }}
@@ -393,7 +429,7 @@ export const AdminCenterCard = () => {
               <Alert severity="info">{copy.noAudit}</Alert>
             ) : (
               audit.map((item) => (
-                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                   <Stack spacing={0.4}>
                     <Typography sx={{ fontWeight: 700 }}>{item.action}</Typography>
                     <Typography color="text.secondary" variant="body2">
@@ -403,6 +439,66 @@ export const AdminCenterCard = () => {
                 </Paper>
               ))
             )}
+          </Stack>
+        )}
+
+        {tab === "system" && access?.permissions.manageSystem && (
+          <Stack spacing={1.2}>
+            <Stack spacing={0.4}>
+              <Typography sx={{ fontWeight: 900 }}>{copy.systemTitle}</Typography>
+              <Typography color="text.secondary">{copy.systemSubtitle}</Typography>
+            </Stack>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                gap: 1.2,
+              }}
+            >
+              {[
+                {
+                  title: copy.analytics,
+                  value: `${users.length}`,
+                  hint: copy.activeUsers,
+                },
+                {
+                  title: copy.reports,
+                  value: "0",
+                  hint: copy.openReports,
+                },
+                {
+                  title: copy.content,
+                  value: `${queue.length}`,
+                  hint: copy.publicProducts,
+                },
+                {
+                  title: copy.aiControls,
+                  value: "ON",
+                  hint: copy.aiPolicy,
+                },
+              ].map((item) => (
+                <Paper key={item.title} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                  <Stack spacing={0.5}>
+                    <Typography color="text.secondary">{item.title}</Typography>
+                    <Typography sx={{ fontWeight: 900, fontSize: 24 }}>{item.value}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {item.hint}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              ))}
+            </Box>
+            <Alert severity="info">{copy.logsReady}</Alert>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+              <Stack spacing={0.4}>
+                <Typography sx={{ fontWeight: 900 }}>{copy.systemLogs}</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  {latestAudit
+                    ? `${latestAudit.action} - ${formatDateTime(latestAudit.createdAt, language)}`
+                    : copy.noAudit}
+                </Typography>
+              </Stack>
+            </Paper>
           </Stack>
         )}
       </Stack>

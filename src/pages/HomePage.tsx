@@ -17,8 +17,12 @@ import {
 } from "../features/meal/selectors";
 import { incrementWater } from "../features/water/waterSlice";
 import { useLanguage } from "../shared/language";
-import { selectDailyMacroProgress } from "../features/profile/selectors";
+import {
+  selectCurrentWeight,
+  selectDailyMacroProgress,
+} from "../features/profile/selectors";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { LearningHubCard } from "../features/education/LearningHubCard";
 
 type MealActionMode = "photo" | "search" | "barcode";
 
@@ -47,12 +51,21 @@ const homeCopy = {
       },
     } satisfies Record<MealActionMode, { title: string; body: string }>,
     dayStatus: "День зараз",
+    wellness: "Wellness стан",
     calories: "Калорії",
     eaten: "З'їдено",
     left: "Залишилось",
     water: "Вода",
     protein: "Білок",
     macros: "БЖВ",
+    weight: "Вага",
+    streak: "Серія",
+    mood: "Настрій",
+    level: "Рівень",
+    calmMood: "спокійний",
+    focusedMood: "зібраний",
+    recoveryMood: "відновлення",
+    days: "днів",
     todayFood: "Їжа сьогодні",
     assistant: "Companion поруч",
     nextStep: "Наступна дія",
@@ -93,12 +106,21 @@ const homeCopy = {
       },
     } satisfies Record<MealActionMode, { title: string; body: string }>,
     dayStatus: "Dzień teraz",
+    wellness: "Stan wellness",
     calories: "Kalorie",
     eaten: "Zjedzono",
     left: "Zostało",
     water: "Woda",
     protein: "Białko",
     macros: "BTW",
+    weight: "Waga",
+    streak: "Seria",
+    mood: "Nastrój",
+    level: "Poziom",
+    calmMood: "spokojny",
+    focusedMood: "skupiony",
+    recoveryMood: "regeneracja",
+    days: "dni",
     todayFood: "Jedzenie dzisiaj",
     assistant: "Companion obok",
     nextStep: "Kolejna akcja",
@@ -123,10 +145,12 @@ const HomePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dailyCalories = useSelector((state: RootState) => state.profile.dailyCalories);
   const water = useSelector((state: RootState) => state.water);
+  const motivation = useSelector((state: RootState) => state.profile.motivation);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const totals = useSelector(selectTodayMealTotalNutrients);
   const todayItems = useSelector(selectTodayMealItems);
   const macroProgress = useSelector(selectDailyMacroProgress);
+  const currentWeight = useSelector(selectCurrentWeight);
   const { language, t } = useLanguage();
   const copy = homeCopy[language];
   const calorieProgress = dailyCalories
@@ -163,6 +187,23 @@ const HomePage = () => {
       color: "#2563eb",
     },
   ];
+
+  const streakDays = useMemo(() => {
+    const completedDays = new Set(
+      motivation.history
+        .filter((item) => !item.skipped)
+        .map((item) => item.completedAt.slice(0, 10))
+    );
+    let streak = 0;
+    const cursor = new Date();
+
+    while (completedDays.has(cursor.toISOString().slice(0, 10))) {
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streak;
+  }, [motivation.history]);
 
   const assistantAdvice = useMemo(() => {
     if (todayItems.length === 0) {
@@ -213,6 +254,13 @@ const HomePage = () => {
     waterProgress,
   ]);
 
+  const moodLabel =
+    calorieProgress > 105 || waterProgress < 35
+      ? copy.recoveryMood
+      : proteinProgress >= 70 && waterProgress >= 70
+        ? copy.focusedMood
+        : copy.calmMood;
+
   if (!user) {
     return <Typography>{t("dashboard.needLogin")}</Typography>;
   }
@@ -254,6 +302,7 @@ const HomePage = () => {
               Smart Nutrition
             </Typography>
             <Typography
+              component="h1"
               variant="h3"
               sx={{
                 fontWeight: 900,
@@ -294,6 +343,7 @@ const HomePage = () => {
             <Stack direction="row" spacing={1.4} alignItems="center">
               <AssistantAvatar
                 name={assistant.name}
+                variant={assistant.companionKind}
                 size={58}
                 mood={todayItems.length === 0 ? "coach" : "happy"}
                 active
@@ -326,7 +376,7 @@ const HomePage = () => {
             alignItems={{ xs: "flex-start", md: "center" }}
           >
             <Stack spacing={0.4}>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
                 {copy.quickActions}
               </Typography>
               <Typography color="text.secondary">{copy.actionHint}</Typography>
@@ -417,7 +467,7 @@ const HomePage = () => {
               alignItems="center"
             >
               <Stack spacing={0.4}>
-                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
                   {copy.dayStatus}
                 </Typography>
                 <Typography color="text.secondary">
@@ -484,7 +534,7 @@ const HomePage = () => {
           }}
         >
           <Stack spacing={2}>
-            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
               {copy.macros}
             </Typography>
             <Box
@@ -543,6 +593,62 @@ const HomePage = () => {
           backgroundColor: "rgba(255,255,255,0.9)",
         }}
       >
+        <Stack spacing={1.5}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+            {copy.wellness}
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(4, minmax(0, 1fr))",
+              },
+              gap: 1.2,
+            }}
+          >
+            {[
+              {
+                label: copy.weight,
+                value: `${currentWeight.toFixed(1)} ${t("common.kg")}`,
+              },
+              {
+                label: copy.streak,
+                value: `${streakDays} ${copy.days}`,
+              },
+              {
+                label: copy.mood,
+                value: moodLabel,
+              },
+              {
+                label: copy.level,
+                value: String(motivation.level),
+              },
+            ].map((item) => (
+              <Paper
+                key={item.label}
+                variant="outlined"
+                sx={{ p: 1.5, borderRadius: 1, minHeight: 86 }}
+              >
+                <Typography color="text.secondary">{item.label}</Typography>
+                <Typography sx={{ mt: 0.5, fontWeight: 900, fontSize: 20 }}>
+                  {item.value}
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
+        </Stack>
+      </Paper>
+
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 2.5 },
+          borderRadius: 1,
+          border: "1px solid rgba(15, 23, 42, 0.08)",
+          backgroundColor: "rgba(255,255,255,0.9)",
+        }}
+      >
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={1.5}
@@ -550,7 +656,7 @@ const HomePage = () => {
           alignItems={{ xs: "flex-start", md: "center" }}
         >
           <Stack spacing={0.5}>
-            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
               {copy.nextStep}
             </Typography>
             <Typography color="text.secondary">{assistantAdvice}</Typography>
@@ -573,6 +679,8 @@ const HomePage = () => {
           </Stack>
         </Stack>
       </Paper>
+
+      <LearningHubCard />
     </Stack>
   );
 };

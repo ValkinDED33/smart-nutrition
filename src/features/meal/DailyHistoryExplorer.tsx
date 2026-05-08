@@ -41,7 +41,7 @@ export const DailyHistoryExplorer = () => {
       }}
     >
       <Stack spacing={2}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("history.title")}
         </Typography>
         <Typography color="text.secondary">{t("history.subtitle")}</Typography>

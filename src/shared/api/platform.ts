@@ -6,6 +6,7 @@ import type {
   CatalogProductSubmissionPayload,
   CatalogSubmissionResponse,
 } from "../types/platform";
+import type { UserRole } from "../types/user";
 import { getRemoteAuthBaseUrl } from "./auth";
 
 export class PlatformApiError extends Error {
@@ -124,7 +125,7 @@ export const listAdminUsers = async () =>
 
 export const updateAdminUserRole = (
   userId: string,
-  role: "USER" | "MODERATOR" | "ADMIN"
+  role: Exclude<UserRole, "SUPER_ADMIN">
 ) =>
   requestPlatform<AdminUserSummary>(`/api/admin/users/${encodeURIComponent(userId)}/role`, {
     method: "PATCH",

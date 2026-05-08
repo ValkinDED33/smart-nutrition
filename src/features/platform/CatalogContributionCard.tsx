@@ -207,14 +207,14 @@ export const CatalogContributionCard = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
+        borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
     >
       <Stack spacing={2}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
@@ -342,7 +342,7 @@ export const CatalogContributionCard = () => {
         <Stack spacing={1}>
           <Typography sx={{ fontWeight: 700 }}>{copy.ownSubmissions}</Typography>
           {submissions.map((item) => (
-            <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+            <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
               <Stack direction="row" spacing={1} justifyContent="space-between" useFlexGap flexWrap="wrap">
                 <Stack spacing={0.4}>
                   <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>

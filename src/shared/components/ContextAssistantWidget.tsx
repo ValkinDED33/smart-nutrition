@@ -428,6 +428,7 @@ export const ContextAssistantWidget = () => {
         >
           <AssistantAvatar
             name={profile.assistant.name}
+            variant={profile.assistant.companionKind}
             mood={assistantMood}
             lookOffset={lookOffset}
             active={Boolean(currentTip) && !isIdle}

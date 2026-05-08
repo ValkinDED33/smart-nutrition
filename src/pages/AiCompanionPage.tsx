@@ -201,14 +201,15 @@ const AiCompanionPage = () => {
           background:
             "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(15,118,110,0.92) 100%)",
         }}
-      >
+        >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
-          <AssistantAvatar name={assistant.name} size={76} />
+          <AssistantAvatar name={assistant.name} variant={assistant.companionKind} size={76} />
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
             <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
               {assistant.name}
             </Typography>
             <Typography
+              component="h1"
               variant="h4"
               sx={{ fontWeight: 900, fontSize: { xs: 38, md: 42 } }}
             >
@@ -267,7 +268,7 @@ const AiCompanionPage = () => {
           }}
         >
           <Stack spacing={2}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.focusTitle}
             </Typography>
             <Box
@@ -329,7 +330,7 @@ const AiCompanionPage = () => {
       >
         <Stack spacing={2}>
           <Stack spacing={0.7}>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.runtimeTitle}
             </Typography>
             <Typography color="text.secondary">{copy.runtimeSubtitle}</Typography>
@@ -402,7 +403,7 @@ const AiCompanionPage = () => {
         }}
       >
         <Stack spacing={1.2}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.featuresTitle}
           </Typography>
           {copy.features.map((item) => (

@@ -71,19 +71,19 @@ const normalizeImageUrl = (value) => {
 };
 
 const createPermissions = (role) => ({
-  moderateContent: hasRoleAtLeast(role, "MODERATOR"),
+  moderateContent: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
   reviewReports: hasRoleAtLeast(role, "MODERATOR"),
-  reviewCatalog: hasRoleAtLeast(role, "MODERATOR"),
+  reviewCatalog: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
   manageModerators: hasRoleAtLeast(role, "ADMIN"),
   manageAdmins: hasRoleAtLeast(role, "SUPER_ADMIN"),
   banUsers: hasRoleAtLeast(role, "ADMIN"),
   manageSystem: hasRoleAtLeast(role, "ADMIN"),
   viewAuditLogs: hasRoleAtLeast(role, "ADMIN"),
-  accessAdminCenter: hasRoleAtLeast(role, "MODERATOR"),
+  accessAdminCenter: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
 });
 
 const assertModerationAccess = (user) => {
-  if (!hasRoleAtLeast(user.role, "MODERATOR")) {
+  if (user.role !== "NUTRITIONIST" && !hasRoleAtLeast(user.role, "MODERATOR")) {
     throw new PlatformApiError("FORBIDDEN", "Moderator access is required.");
   }
 };
@@ -393,7 +393,10 @@ export const createPlatformService = ({ platformRepository, config }) => {
       const nextRole = payload?.role;
 
       if (!isUserRole(nextRole) || nextRole === "SUPER_ADMIN") {
-        throw new PlatformApiError("INVALID_ROLE", "Role must be USER, MODERATOR, or ADMIN.");
+        throw new PlatformApiError(
+          "INVALID_ROLE",
+          "Role must be USER, VERIFIED_USER, NUTRITIONIST, MODERATOR, or ADMIN."
+        );
       }
 
       const targetUser = platformRepository.findUserById(targetUserId);

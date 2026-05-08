@@ -9,7 +9,9 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   InputAdornment,
+  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -22,7 +24,12 @@ import { setCredentials } from "../features/auth/authSlice";
 import { replaceCommunityState } from "../features/community/communitySlice";
 import { replaceFridgeState } from "../features/fridge/fridgeSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
-import { applyProfileTargets, replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
+import {
+  applyProfileTargets,
+  replaceProfileState,
+  setAssistantCustomization,
+  setProfileLanguage,
+} from "../features/profile/profileSlice";
 import { replaceWaterState } from "../features/water/waterSlice";
 import { calculateProfileTargets } from "../shared/lib/profileTargets";
 import {
@@ -35,8 +42,10 @@ import {
 } from "../shared/api/auth";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
+import type { AssistantCompanionKind } from "../shared/types/profile";
 
 type FormData = {
   name: string;
@@ -45,6 +54,14 @@ type FormData = {
   confirmPassword: string;
   verificationChannel: "email" | "sms";
   phone: string;
+  age: number;
+  weight: number;
+  height: number;
+  gender: "male" | "female";
+  activity: "sedentary" | "light" | "moderate" | "active" | "very_active";
+  goal: "cut" | "maintain" | "bulk";
+  assistantName: string;
+  companionKind: AssistantCompanionKind;
 };
 
 const defaultProfileBootstrap = {
@@ -56,11 +73,35 @@ const defaultProfileBootstrap = {
   goal: "maintain" as const,
 };
 
+type RegistrationSetup = Pick<FormData, "assistantName" | "companionKind">;
+
+const companionKinds: AssistantCompanionKind[] = [
+  "cat",
+  "dog",
+  "capybara",
+  "dragon",
+  "robot",
+];
+
 const registerPageCopy = {
   uk: {
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
     note: "Оберіть, куди надіслати код підтвердження. Профіль відкриється після перевірки.",
+    profileTitle: "Стартові дані для AI",
+    profileBody:
+      "Ці параметри одразу дадуть норму калорій, води і перші підказки companion.",
+    assistantTitle: "Оберіть свого companion",
+    assistantBody:
+      "Цей персонаж буде вітати вас, дивитися за курсором, реагувати на воду, білок і прогрес.",
+    assistantName: "Ім'я companion",
+    companionLabels: {
+      cat: "Кіт",
+      dog: "Собака",
+      capybara: "Капібара",
+      dragon: "Дракон",
+      robot: "Робот",
+    },
     channel: "Підтвердження",
     emailChannel: "Email",
     smsChannel: "SMS",
@@ -77,6 +118,20 @@ const registerPageCopy = {
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
     note: "Wybierz, gdzie wysłać kod potwierdzający. Profil otworzy się po weryfikacji.",
+    profileTitle: "Dane startowe dla AI",
+    profileBody:
+      "Te parametry od razu ustawiają kalorie, wodę i pierwsze podpowiedzi companion.",
+    assistantTitle: "Wybierz swojego companion",
+    assistantBody:
+      "Ta postać będzie Cię witać, patrzeć za kursorem i reagować na wodę, białko oraz progres.",
+    assistantName: "Imię companion",
+    companionLabels: {
+      cat: "Kot",
+      dog: "Pies",
+      capybara: "Kapibara",
+      dragon: "Smok",
+      robot: "Robot",
+    },
     channel: "Potwierdzenie",
     emailChannel: "Email",
     smsChannel: "SMS",
@@ -110,6 +165,7 @@ const RegisterPage = () => {
   const [verifying, setVerifying] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [registrationSetup, setRegistrationSetup] = useState<RegistrationSetup | null>(null);
   const copy = registerPageCopy[language];
 
   const schema = useMemo(
@@ -131,6 +187,14 @@ const RegisterPage = () => {
           confirmPassword: z.string(),
           verificationChannel: z.enum(["email", "sms"]),
           phone: z.string(),
+          age: z.number().min(10, t("validation.ageMin")).max(120),
+          weight: z.number().min(30, t("validation.weightMin")).max(300),
+          height: z.number().min(120, t("validation.heightMin")).max(250),
+          gender: z.enum(["male", "female"]),
+          activity: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
+          goal: z.enum(["cut", "maintain", "bulk"]),
+          assistantName: z.string().trim().min(2, t("validation.nameMin")).max(32),
+          companionKind: z.enum(["cat", "dog", "capybara", "dragon", "robot"]),
         })
         .refine(
           (data) =>
@@ -163,14 +227,23 @@ const RegisterPage = () => {
       confirmPassword: "",
       verificationChannel: "email",
       phone: "",
+      ...defaultProfileBootstrap,
+      assistantName: "Nova",
+      companionKind: "robot",
     },
   });
   const verificationChannel = watch("verificationChannel");
+  const gender = watch("gender");
+  const companionKind = watch("companionKind");
+  const assistantName = watch("assistantName");
 
-  const applyAuthenticatedSession = ({
-    user,
-    snapshot,
-  }: Awaited<ReturnType<typeof verifyRegistration>>) => {
+  const applyAuthenticatedSession = (
+    {
+      user,
+      snapshot,
+    }: Awaited<ReturnType<typeof verifyRegistration>>,
+    setup: RegistrationSetup | null
+  ) => {
     dispatch(
       setCredentials({
         user,
@@ -187,13 +260,21 @@ const RegisterPage = () => {
       dispatch(replaceFridgeState(snapshot.fridge));
       dispatch(replaceCommunityState(snapshot.community));
     } else {
+      const profileBootstrap = {
+        age: user.age,
+        weight: user.weight,
+        height: user.height,
+        gender: user.gender,
+        activity: user.activity,
+        goal: user.goal,
+      };
       const { maintenanceCalories, targetCalories } = calculateProfileTargets(
-        defaultProfileBootstrap
+        profileBootstrap
       );
       dispatch(
         applyProfileTargets({
-          goal: defaultProfileBootstrap.goal,
-          weight: defaultProfileBootstrap.weight,
+          goal: profileBootstrap.goal,
+          weight: profileBootstrap.weight,
           maintenanceCalories,
           targetCalories,
           targetWeight: null,
@@ -206,19 +287,38 @@ const RegisterPage = () => {
     }
 
     dispatch(setProfileLanguage(language));
+
+    if (setup) {
+      dispatch(
+        setAssistantCustomization({
+          name: setup.assistantName,
+          companionKind: setup.companionKind,
+        })
+      );
+    }
   };
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true);
     setServerError(null);
     setPendingVerification(null);
+    const nextRegistrationSetup: RegistrationSetup = {
+      assistantName: data.assistantName.trim(),
+      companionKind: data.companionKind,
+    };
+    setRegistrationSetup(nextRegistrationSetup);
 
     try {
       const response = await registerApi({
-        ...defaultProfileBootstrap,
         name: data.name,
         email: data.email,
         password: data.password,
+        age: data.age,
+        weight: data.weight,
+        height: data.height,
+        gender: data.gender,
+        activity: data.activity,
+        goal: data.goal,
         verificationChannel: data.verificationChannel,
         phone: data.verificationChannel === "sms" ? data.phone : undefined,
       });
@@ -229,7 +329,7 @@ const RegisterPage = () => {
         return;
       }
 
-      applyAuthenticatedSession(response);
+      applyAuthenticatedSession(response, nextRegistrationSetup);
       navigate("/profile");
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
@@ -281,7 +381,7 @@ const RegisterPage = () => {
         email: pendingVerification.email,
         code: verificationCode,
       });
-      applyAuthenticatedSession(response);
+      applyAuthenticatedSession(response, registrationSetup);
       navigate("/profile");
     } catch (error) {
       handleVerificationError(error);
@@ -331,7 +431,7 @@ const RegisterPage = () => {
             <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
               {t("brand.name")}
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+            <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
               {t("auth.registerTitle")}
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
@@ -414,7 +514,7 @@ const RegisterPage = () => {
             />
 
             <Stack spacing={1}>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+              <Typography component="h2" variant="body2" sx={{ fontWeight: 800 }}>
                 {copy.channel}
               </Typography>
               <ToggleButtonGroup
@@ -450,6 +550,189 @@ const RegisterPage = () => {
                 }}
               />
             )}
+
+            <Divider />
+
+            <Stack spacing={1}>
+              <Typography component="h2" variant="body2" sx={{ fontWeight: 800 }}>
+                {copy.profileTitle}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                {copy.profileBody}
+              </Typography>
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                fullWidth
+                label={t("form.age")}
+                type="number"
+                {...register("age", { valueAsNumber: true })}
+                error={Boolean(errors.age)}
+                helperText={errors.age?.message}
+                slotProps={{
+                  htmlInput: {
+                    min: 10,
+                    max: 120,
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label={t("form.height")}
+                type="number"
+                {...register("height", { valueAsNumber: true })}
+                error={Boolean(errors.height)}
+                helperText={errors.height?.message}
+                slotProps={{
+                  htmlInput: {
+                    min: 120,
+                    max: 250,
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                label={t("form.weight")}
+                type="number"
+                {...register("weight", { valueAsNumber: true })}
+                error={Boolean(errors.weight)}
+                helperText={errors.weight?.message}
+                slotProps={{
+                  htmlInput: {
+                    min: 30,
+                    max: 300,
+                    step: 0.1,
+                  },
+                }}
+              />
+            </Stack>
+
+            <Stack spacing={1}>
+              <Typography component="h2" variant="body2" sx={{ fontWeight: 800 }}>
+                {t("form.gender")}
+              </Typography>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
+                value={gender}
+                onChange={(_, nextGender: "male" | "female" | null) => {
+                  if (nextGender) {
+                    setValue("gender", nextGender, { shouldValidate: true });
+                  }
+                }}
+                size="small"
+              >
+                <ToggleButton value="male">{t("option.gender.male")}</ToggleButton>
+                <ToggleButton value="female">{t("option.gender.female")}</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                select
+                fullWidth
+                label={t("form.activity")}
+                defaultValue={defaultProfileBootstrap.activity}
+                {...register("activity")}
+                error={Boolean(errors.activity)}
+                helperText={errors.activity?.message}
+              >
+                <MenuItem value="sedentary">{t("option.activity.sedentary")}</MenuItem>
+                <MenuItem value="light">{t("option.activity.light")}</MenuItem>
+                <MenuItem value="moderate">{t("option.activity.moderate")}</MenuItem>
+                <MenuItem value="active">{t("option.activity.active")}</MenuItem>
+                <MenuItem value="very_active">{t("option.activity.very_active")}</MenuItem>
+              </TextField>
+              <TextField
+                select
+                fullWidth
+                label={t("form.goal")}
+                defaultValue={defaultProfileBootstrap.goal}
+                {...register("goal")}
+                error={Boolean(errors.goal)}
+                helperText={errors.goal?.message}
+              >
+                <MenuItem value="cut">{t("option.goal.cut")}</MenuItem>
+                <MenuItem value="maintain">{t("option.goal.maintain")}</MenuItem>
+                <MenuItem value="bulk">{t("option.goal.bulk")}</MenuItem>
+              </TextField>
+            </Stack>
+
+            <Divider />
+
+            <Stack spacing={1}>
+              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                {copy.assistantTitle}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                {copy.assistantBody}
+              </Typography>
+            </Stack>
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+              <Box sx={{ flexShrink: 0 }}>
+                <AssistantAvatar
+                  name={assistantName}
+                  variant={companionKind}
+                  mood="happy"
+                  active
+                  size={82}
+                />
+              </Box>
+              <TextField
+                fullWidth
+                label={copy.assistantName}
+                {...register("assistantName")}
+                error={Boolean(errors.assistantName)}
+                helperText={errors.assistantName?.message}
+                inputProps={{ maxLength: 32 }}
+              />
+            </Stack>
+
+            <ToggleButtonGroup
+              exclusive
+              fullWidth
+              value={companionKind}
+              onChange={(_, nextKind: AssistantCompanionKind | null) => {
+                if (nextKind) {
+                  setValue("companionKind", nextKind, { shouldValidate: true });
+                }
+              }}
+              size="small"
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, minmax(0, 1fr))",
+                  sm: "repeat(5, minmax(0, 1fr))",
+                },
+                gap: 1,
+                "& .MuiToggleButtonGroup-grouped": {
+                  border: "1px solid rgba(15,23,42,0.12)",
+                  borderRadius: 1,
+                  m: 0,
+                },
+              }}
+            >
+              {companionKinds.map((kind) => (
+                <ToggleButton
+                  key={kind}
+                  value={kind}
+                  sx={{
+                    minHeight: 74,
+                    px: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.7,
+                  }}
+                >
+                  <AssistantAvatar name={assistantName} variant={kind} size={34} mood="idle" />
+                  <Typography variant="caption" sx={{ fontWeight: 800 }}>
+                    {copy.companionLabels[kind]}
+                  </Typography>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
 
             <TextField
               fullWidth

@@ -7,6 +7,7 @@ export type DietStyle =
   | "gluten_free";
 
 export type AdaptiveMode = "automatic" | "manual";
+export type AssistantCompanionKind = "cat" | "dog" | "capybara" | "dragon" | "robot";
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused";
 export type MotivationTaskCategory = "nutrition" | "consistency" | "reflection";
@@ -75,6 +76,7 @@ export interface NutritionPreferences {
 
 export interface AssistantCustomization {
   name: string;
+  companionKind: AssistantCompanionKind;
   role: AssistantRole;
   tone: AssistantTone;
   humorEnabled: boolean;

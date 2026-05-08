@@ -63,7 +63,7 @@ export const TemplateVault = ({ mealType }: Props) => {
       }}
     >
       <Stack spacing={2}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("templates.title")}
         </Typography>
         <Typography color="text.secondary">{t("templates.subtitle")}</Typography>

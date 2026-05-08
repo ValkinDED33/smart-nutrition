@@ -1,7 +1,7 @@
 {
   "name": "Smart Nutrition",
   "short_name": "Smart Nutrition",
-  "description": "AI nutrition planner with calories, water, weight and meal tracking.",
+  "description": "AI wellness companion with meals, water, protein, habits, progress analytics and community.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

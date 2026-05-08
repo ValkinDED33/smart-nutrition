@@ -646,7 +646,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       }}
     >
       <Stack spacing={2}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {copy.title}
         </Typography>
 

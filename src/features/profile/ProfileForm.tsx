@@ -381,7 +381,7 @@ const ProfileForm = () => {
       }}
     >
       <Stack spacing={2.5} component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("profile.title")}
         </Typography>
 

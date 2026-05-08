@@ -285,7 +285,7 @@ export const ProductSearch = ({ mealType }: Props) => {
       }}
     >
       <Stack spacing={2}>
-        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("productSearch.title")}
         </Typography>
         <Typography color="text.secondary">{t("productSearch.subtitle")}</Typography>

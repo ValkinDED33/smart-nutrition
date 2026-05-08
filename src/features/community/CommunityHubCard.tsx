@@ -210,7 +210,11 @@ export const CommunityHubCard = () => {
 
   const level = Math.max(1, Math.floor(community.score / 120) + 1);
   const authorName = user?.name ?? "You";
-  const isModerator = user?.role === "MODERATOR" || user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  const isModerator =
+    user?.role === "NUTRITIONIST" ||
+    user?.role === "MODERATOR" ||
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN";
   const selectedFriend =
     community.friends.find((item) => item.id === selectedFriendId) ?? null;
   const conversation = useMemo(
@@ -340,7 +344,7 @@ export const CommunityHubCard = () => {
     >
       <Stack spacing={2}>
         <Stack spacing={0.6}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
@@ -820,7 +824,7 @@ export const CommunityHubCard = () => {
                     </Stack>
                     <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
                       <Chip color="success" label={card.metricLabel} />
-                      <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                      <Typography component="p" variant="h6" sx={{ fontWeight: 900 }}>
                         {card.metricValue}
                       </Typography>
                     </Stack>

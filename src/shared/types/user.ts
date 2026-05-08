@@ -11,7 +11,13 @@ export type ActivityLevel =
 
 export type Goal = "cut" | "maintain" | "bulk";
 
-export type UserRole = "USER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN";
+export type UserRole =
+  | "USER"
+  | "VERIFIED_USER"
+  | "NUTRITIONIST"
+  | "MODERATOR"
+  | "ADMIN"
+  | "SUPER_ADMIN";
 export type VerificationChannel = "email" | "sms";
 
 export interface User {
