@@ -7,7 +7,10 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const fromRoot = (target: string) => path.resolve(projectRoot, target);
 
 export default defineConfig({
+  base: "/",
+
   plugins: [react()],
+
   resolve: {
     alias: {
       "@domain": fromRoot("src/domain"),
@@ -21,6 +24,7 @@ export default defineConfig({
       "@routes": fromRoot("src/routes"),
     },
   },
+
   server: {
     proxy: {
       "/api": {
@@ -29,12 +33,14 @@ export default defineConfig({
       },
     },
   },
+
   build: {
     rollupOptions: {
       output: {
         entryFileNames: "assets/[name].js",
         chunkFileNames: "assets/[name].js",
         assetFileNames: "assets/[name][extname]",
+
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, "/");
 

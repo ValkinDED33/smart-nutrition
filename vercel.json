@@ -5,7 +5,7 @@
       "destination": "/favicon.svg"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
