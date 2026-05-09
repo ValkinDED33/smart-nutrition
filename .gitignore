@@ -31,3 +31,6 @@ server/data/backups/*
 *.njsproj
 *.sln
 *.sw?
+dist/
+dist/
+dist/
