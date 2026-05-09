@@ -1,41 +1,38 @@
 {
   "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
 
-    /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
+
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
+
+    "baseUrl": "./src",
     "paths": {
-      "@domain/*": ["src/domain/*"],
-      "@data/*": ["src/data/*"],
-      "@integration/*": ["src/integration/*"],
-      "@state/*": ["src/state/*"],
-      "@features/*": ["src/features/*"],
-      "@shared/*": ["src/shared/*"],
-      "@app/*": ["src/app/*"],
-      "@pages/*": ["src/pages/*"],
-      "@routes/*": ["src/routes/*"]
+      "@domain/*": ["domain/*"],
+      "@data/*": ["data/*"],
+      "@integration/*": ["integration/*"],
+      "@state/*": ["state/*"],
+      "@features/*": ["features/*"],
+      "@shared/*": ["shared/*"],
+      "@app/*": ["app/*"],
+      "@pages/*": ["pages/*"],
+      "@routes/*": ["routes/*"]
     },
 
-    /* Strict checks */
     "strict": true,
+    "skipLibCheck": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src", "vite-env.d.ts"]
+  "include": ["src", "vite-env.d.ts"],
+  "exclude": ["node_modules", "dist"]
 }
