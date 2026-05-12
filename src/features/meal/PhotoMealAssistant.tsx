@@ -1,5 +1,6 @@
 import { useMemo, useState, type MouseEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import imageCompression from "browser-image-compression";
 import {
   Alert,
   Box,
@@ -43,41 +44,7 @@ const readFileAsDataUrl = (file: File) =>
 const supportedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxRawPhotoBytes = 12 * 1024 * 1024;
 const maxPhotoPreviewSide = 1280;
-
-const loadImage = (src: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
-    image.src = src;
-  });
-
-const resizePhotoDataUrl = async (dataUrl: string) => {
-  if (typeof document === "undefined") {
-    return dataUrl;
-  }
-
-  const image = await loadImage(dataUrl);
-  const scale = Math.min(
-    1,
-    maxPhotoPreviewSide / Math.max(image.naturalWidth, image.naturalHeight, 1)
-  );
-  const width = Math.max(Math.round(image.naturalWidth * scale), 1);
-  const height = Math.max(Math.round(image.naturalHeight * scale), 1);
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    return dataUrl;
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-  context.drawImage(image, 0, 0, width, height);
-
-  return canvas.toDataURL("image/jpeg", 0.86);
-};
+const maxCompressedPhotoMb = 1.2;
 
 const readPhotoFileAsDataUrl = async (file: File) => {
   if (!supportedPhotoTypes.has(file.type)) {
@@ -88,8 +55,16 @@ const readPhotoFileAsDataUrl = async (file: File) => {
     throw new Error("PHOTO_TOO_LARGE");
   }
 
-  const dataUrl = await readFileAsDataUrl(file);
-  return resizePhotoDataUrl(dataUrl);
+  const compressedFile = await imageCompression(file, {
+    alwaysKeepResolution: false,
+    fileType: "image/jpeg",
+    initialQuality: 0.86,
+    maxSizeMB: maxCompressedPhotoMb,
+    maxWidthOrHeight: maxPhotoPreviewSide,
+    useWebWorker: true,
+  });
+
+  return readFileAsDataUrl(compressedFile);
 };
 
 const createId = (prefix: string) =>

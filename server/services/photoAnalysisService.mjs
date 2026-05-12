@@ -1,8 +1,10 @@
+import sharp from "sharp";
 import { StateApiError } from "../lib/domain.mjs";
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const maxPhotoDataUrlLength = 1_700_000;
 const safePhotoDataUrlPattern = /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
+const photoDataUrlPattern = /^data:image\/(?:jpeg|jpg|png|webp);base64,(?<payload>[a-z0-9+/=]+)$/i;
 
 const normalizeDietStyle = (value) => {
   if (
@@ -542,6 +544,49 @@ const removeBlockedItems = (items, blockedTokens) => {
 const getMealLabel = (mealType) =>
   mealType.charAt(0).toUpperCase() + mealType.slice(1);
 
+const normalizePhotoPayload = async (imageDataUrl) => {
+  const match = imageDataUrl.match(photoDataUrlPattern);
+  const payload = match?.groups?.payload;
+
+  if (!payload) {
+    throw new StateApiError(
+      "INVALID_PHOTO_PAYLOAD",
+      "Photo analysis requires a valid image data URL."
+    );
+  }
+
+  try {
+    const imageBuffer = Buffer.from(payload, "base64");
+    const image = sharp(imageBuffer, { limitInputPixels: 18_000_000 }).rotate();
+    const metadata = await image.metadata();
+
+    if (!metadata.width || !metadata.height) {
+      throw new Error("IMAGE_METADATA_UNAVAILABLE");
+    }
+
+    const normalizedBuffer = await image
+      .resize({
+        width: 1024,
+        height: 1024,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toBuffer();
+
+    return {
+      width: metadata.width,
+      height: metadata.height,
+      normalizedBytes: normalizedBuffer.byteLength,
+    };
+  } catch {
+    throw new StateApiError(
+      "INVALID_PHOTO_PAYLOAD",
+      "Photo analysis requires a readable JPEG, PNG, or WebP image."
+    );
+  }
+};
+
 export const createPhotoAnalysisService = () => ({
   analyzePhoto: async (profileState, requestBody) => {
     const imageDataUrl =
@@ -557,6 +602,8 @@ export const createPhotoAnalysisService = () => ({
         "Photo analysis requires a JPEG, PNG, or WebP image data URL under 1.7 MB."
       );
     }
+
+    const photoMeta = await normalizePhotoPayload(imageDataUrl);
 
     const dietStyle = normalizeDietStyle(profileState?.dietStyle);
     const blockedTokens = buildBlockedTokens(profileState);
@@ -582,6 +629,7 @@ export const createPhotoAnalysisService = () => ({
         "Adjust quantities or replace foods before saving to the diary.",
       ],
       manualReviewRequired: true,
+      image: photoMeta,
       items,
     };
   },

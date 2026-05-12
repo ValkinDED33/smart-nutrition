@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { animated, useSpring } from "@react-spring/web";
+import confetti from "canvas-confetti";
+import useSound from "use-sound";
 import {
   Alert,
   Box,
@@ -40,7 +43,9 @@ import {
 import {
   playAchievementSound,
   playGentleClickSound,
+  playHowlerBlip,
   playWaterLogSound,
+  uiTickSoundDataUrl,
 } from "../../shared/lib/sound";
 
 const waterCopy = {
@@ -148,6 +153,7 @@ export const WaterTracker = () => {
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [partialAmountMl, setPartialAmountMl] = useState<number>(water.glassSizeMl);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
+  const [playTapSound] = useSound(uiTickSoundDataUrl, { volume: 0.18 });
 
   useAutoDismiss(Boolean(reminderMessage), 5000, () => setReminderMessage(null));
 
@@ -163,6 +169,10 @@ export const WaterTracker = () => {
   const progress = water.dailyTargetMl
     ? Math.min((water.consumedMl / water.dailyTargetMl) * 100, 100)
     : 0;
+  const animatedProgress = useSpring({
+    progress,
+    config: { tension: 170, friction: 22 },
+  });
   const status =
     water.consumedMl < water.dailyTargetMl
       ? copy.statusUnder
@@ -267,12 +277,21 @@ export const WaterTracker = () => {
   );
 
   const playWaterFeedback = (nextConsumedMl: number, previousConsumedMl = water.consumedMl) => {
+    playTapSound();
+    playHowlerBlip();
+
     if (nextConsumedMl > previousConsumedMl) {
       if (
         previousConsumedMl < water.dailyTargetMl &&
         nextConsumedMl >= water.dailyTargetMl
       ) {
         playAchievementSound();
+        void confetti({
+          particleCount: 90,
+          spread: 62,
+          origin: { y: 0.68 },
+          colors: ["#0ea5e9", "#22c55e", "#14b8a6", "#facc15"],
+        });
         return;
       }
 
@@ -396,13 +415,19 @@ export const WaterTracker = () => {
               }}
             />
             <Box
+              component={animated.div}
+              style={{
+                background: animatedProgress.progress.to(
+                  (value) =>
+                    `conic-gradient(#0ea5e9 0deg, #22c55e ${
+                      value * 3.6
+                    }deg, rgba(226,232,240,0.72) ${value * 3.6}deg)`
+                ),
+              }}
               sx={{
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                background: `conic-gradient(#0ea5e9 0deg, #22c55e ${
-                  progress * 3.6
-                }deg, rgba(226,232,240,0.72) ${progress * 3.6}deg)`,
               }}
             />
             <Box
@@ -419,7 +444,9 @@ export const WaterTracker = () => {
             >
               <Stack spacing={0.4}>
                 <Typography component="p" variant="h4" sx={{ fontWeight: 900 }}>
-                  {Math.round(progress)}%
+                  <animated.span>
+                    {animatedProgress.progress.to((value) => `${Math.round(value)}%`)}
+                  </animated.span>
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {status}

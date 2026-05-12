@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Cookies from "js-cookie";
 import type { AppLanguage } from "../types/i18n";
 import {
   getClientStorageItem,
@@ -16,6 +17,7 @@ export type Language = AppLanguage;
 
 const STORAGE_KEY = "smart-nutrition.language";
 const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";
+const LANGUAGE_COOKIE_KEY = "sn-language";
 
 const uk = {
   "brand.name": "Smart Nutrition",
@@ -518,7 +520,7 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const savedLanguage = getClientStorageItem(STORAGE_KEY);
+  const savedLanguage = getClientStorageItem(STORAGE_KEY) ?? Cookies.get(LANGUAGE_COOKIE_KEY);
   const [language, setLanguageState] = useState<Language>(savedLanguage === "pl" ? "pl" : "uk");
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(
@@ -532,6 +534,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setHasExplicitChoice(true);
         setLanguageState(nextLanguage);
         setClientStorageItem(STORAGE_KEY, nextLanguage);
+        Cookies.set(LANGUAGE_COOKIE_KEY, nextLanguage, {
+          sameSite: "lax",
+          expires: 365,
+        });
       },
       hasExplicitChoice,
       hasCompletedOnboarding,
@@ -540,6 +546,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setHasCompletedOnboarding(true);
         setClientStorageItem(STORAGE_KEY, language);
         setClientStorageItem(ONBOARDING_STORAGE_KEY, "true");
+        Cookies.set(LANGUAGE_COOKIE_KEY, language, {
+          sameSite: "lax",
+          expires: 365,
+        });
       },
       t: (key, vars) => {
         let text = dictionaries[language][key as TranslationKey] ?? key;

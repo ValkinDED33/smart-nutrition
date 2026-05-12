@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "./app/store";
@@ -88,6 +89,12 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <Helmet titleTemplate="%s | Smart Nutrition" defaultTitle="Smart Nutrition">
+        <meta
+          name="description"
+          content="Smart Nutrition tracks meals, water, progress, and AI coaching in one responsive app."
+        />
+      </Helmet>
       <BrowserRouter>
         <Suspense fallback={<RouteFallback />}>
           <Routes>

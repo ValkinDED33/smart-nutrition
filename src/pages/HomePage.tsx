@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import CountUp from "react-countup";
+import { toast } from "sonner";
 import {
   Box,
   Button,
@@ -70,6 +72,7 @@ const homeCopy = {
     assistant: "Companion поруч",
     nextStep: "Наступна дія",
     waterDone: "Норма води закрита.",
+    waterLogged: "Воду додано.",
     noFood: "Їжі ще немає. Почніть з фото, пошуку або штрихкоду.",
     entries: "{value} записів",
     aiStart:
@@ -125,6 +128,7 @@ const homeCopy = {
     assistant: "Companion obok",
     nextStep: "Kolejna akcja",
     waterDone: "Norma wody zamknięta.",
+    waterLogged: "Dodano wodę.",
     noFood: "Nie ma jeszcze jedzenia. Zacznij od zdjęcia, wyszukiwania albo kodu.",
     entries: "{value} wpisów",
     aiStart:
@@ -276,6 +280,12 @@ const HomePage = () => {
     }
 
     dispatch(incrementWater(water.glassSizeMl));
+    toast.success(copy.waterLogged);
+  };
+
+  const handleAddWater = () => {
+    dispatch(incrementWater(water.glassSizeMl));
+    toast.success(copy.waterLogged);
   };
 
   return (
@@ -317,12 +327,22 @@ const HomePage = () => {
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Chip
-                label={`${copy.left}: ${remainingCalories.toFixed(0)} ${t("common.kcal")}`}
+                label={
+                  <span>
+                    {copy.left}:{" "}
+                    <CountUp end={remainingCalories} duration={0.7} decimals={0} />{" "}
+                    {t("common.kcal")}
+                  </span>
+                }
                 sx={{ color: "white", borderColor: "rgba(255,255,255,0.28)" }}
                 variant="outlined"
               />
               <Chip
-                label={`${copy.water}: ${remainingWaterMl} ml`}
+                label={
+                  <span>
+                    {copy.water}: <CountUp end={remainingWaterMl} duration={0.7} /> ml
+                  </span>
+                }
                 sx={{ color: "white", borderColor: "rgba(255,255,255,0.28)" }}
                 variant="outlined"
               />
@@ -503,13 +523,20 @@ const HomePage = () => {
               <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 <Typography color="text.secondary">{copy.calories}</Typography>
                 <Typography sx={{ fontWeight: 900 }}>
-                  {remainingCalories.toFixed(0)} {t("common.kcal")}
+                  <CountUp end={remainingCalories} duration={0.65} decimals={0} />{" "}
+                  {t("common.kcal")}
                 </Typography>
               </Paper>
               <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 <Typography color="text.secondary">{copy.water}</Typography>
                 <Typography sx={{ fontWeight: 900 }}>
-                  {remainingWaterMl > 0 ? `${remainingWaterMl} ml` : copy.waterDone}
+                  {remainingWaterMl > 0 ? (
+                    <>
+                      <CountUp end={remainingWaterMl} duration={0.65} /> ml
+                    </>
+                  ) : (
+                    copy.waterDone
+                  )}
                 </Typography>
               </Paper>
               <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
@@ -664,7 +691,7 @@ const HomePage = () => {
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Button
               variant="outlined"
-              onClick={() => dispatch(incrementWater(water.glassSizeMl))}
+              onClick={handleAddWater}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               +{water.glassSizeMl} ml

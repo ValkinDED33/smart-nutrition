@@ -1,4 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Lottie from "lottie-react";
+import ReactMarkdown from "react-markdown";
+import { useSwipeable } from "react-swipeable";
+import rehypeHighlight from "rehype-highlight";
+import remarkGfm from "remark-gfm";
 import {
   Box,
   Chip,
@@ -194,14 +199,99 @@ const learningCopy = {
   },
 } as const;
 
+const wellnessPulseAnimation = {
+  v: "5.7.4",
+  fr: 30,
+  ip: 0,
+  op: 90,
+  w: 180,
+  h: 120,
+  nm: "wellness-pulse",
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: "pulse-ring",
+      sr: 1,
+      ks: {
+        o: { a: 1, k: [{ t: 0, s: [38] }, { t: 45, s: [100] }, { t: 90, s: [38] }] },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [90, 60, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 1, k: [{ t: 0, s: [82, 82, 100] }, { t: 45, s: [118, 118, 100] }, { t: 90, s: [82, 82, 100] }] },
+      },
+      shapes: [
+        {
+          ty: "el",
+          p: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [76, 76] },
+        },
+        {
+          ty: "st",
+          c: { a: 0, k: [0.0588, 0.4627, 0.4314, 1] },
+          o: { a: 0, k: 100 },
+          w: { a: 0, k: 5 },
+        },
+      ],
+    },
+    {
+      ddd: 0,
+      ind: 2,
+      ty: 4,
+      nm: "core",
+      sr: 1,
+      ks: {
+        o: { a: 0, k: 100 },
+        r: { a: 0, k: 0 },
+        p: { a: 0, k: [90, 60, 0] },
+        a: { a: 0, k: [0, 0, 0] },
+        s: { a: 1, k: [{ t: 0, s: [92, 92, 100] }, { t: 45, s: [104, 104, 100] }, { t: 90, s: [92, 92, 100] }] },
+      },
+      shapes: [
+        {
+          ty: "el",
+          p: { a: 0, k: [0, 0] },
+          s: { a: 0, k: [52, 52] },
+        },
+        {
+          ty: "fl",
+          c: { a: 0, k: [0.396, 0.639, 0.051, 1] },
+          o: { a: 0, k: 92 },
+        },
+      ],
+    },
+  ],
+};
+
 export const LearningHubCard = () => {
   const { language } = useLanguage();
   const copy = learningCopy[language];
   const [topicIndex, setTopicIndex] = useState(0);
   const activeTopic = copy.topics[topicIndex] ?? copy.topics[0];
+  const articleMarkdown = useMemo(
+    () =>
+      [
+        activeTopic.insight,
+        "",
+        `**${copy.aiLabel}:** ${activeTopic.ai}`,
+        "",
+        activeTopic.tags.map((tag) => `- ${tag}`).join("\n"),
+      ].join("\n"),
+    [activeTopic.ai, activeTopic.insight, activeTopic.tags, copy.aiLabel]
+  );
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () =>
+      setTopicIndex((current) => Math.min(current + 1, copy.topics.length - 1)),
+    onSwipedRight: () => setTopicIndex((current) => Math.max(current - 1, 0)),
+    trackMouse: true,
+  });
 
   return (
     <Paper
+      {...swipeHandlers}
       elevation={0}
       sx={{
         p: { xs: 2, md: 2.5 },
@@ -254,7 +344,6 @@ export const LearningHubCard = () => {
               <Typography component="h3" variant="h5" sx={{ fontWeight: 900 }}>
                 {activeTopic.title}
               </Typography>
-              <Typography color="text.secondary">{activeTopic.insight}</Typography>
               <Paper
                 variant="outlined"
                 sx={{
@@ -264,8 +353,34 @@ export const LearningHubCard = () => {
                   backgroundColor: "rgba(240,253,250,0.7)",
                 }}
               >
-                <Typography sx={{ fontWeight: 900, mb: 0.5 }}>{copy.aiLabel}</Typography>
-                <Typography color="text.secondary">{activeTopic.ai}</Typography>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight]}
+                  components={{
+                    p: ({ children }) => (
+                      <Typography color="text.secondary" sx={{ mb: 0.8, lineHeight: 1.65 }}>
+                        {children}
+                      </Typography>
+                    ),
+                    strong: ({ children }) => (
+                      <Typography component="span" sx={{ fontWeight: 900, color: "#0f766e" }}>
+                        {children}
+                      </Typography>
+                    ),
+                    ul: ({ children }) => (
+                      <Box component="ul" sx={{ my: 0, pl: 2.3 }}>
+                        {children}
+                      </Box>
+                    ),
+                    li: ({ children }) => (
+                      <Typography component="li" color="text.secondary">
+                        {children}
+                      </Typography>
+                    ),
+                  }}
+                >
+                  {articleMarkdown}
+                </ReactMarkdown>
               </Paper>
             </Stack>
           </Paper>
@@ -280,7 +395,12 @@ export const LearningHubCard = () => {
             }}
           >
             <Stack spacing={1.5}>
-              <Typography sx={{ fontWeight: 900 }}>{copy.infographic}</Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box sx={{ width: 72, height: 52, overflow: "hidden" }}>
+                  <Lottie animationData={wellnessPulseAnimation} loop autoplay />
+                </Box>
+                <Typography sx={{ fontWeight: 900 }}>{copy.infographic}</Typography>
+              </Stack>
               {[100, activeTopic.score, Math.max(activeTopic.score - 18, 24)].map(
                 (value, index) => (
                   <Stack key={`${activeTopic.key}-${index}`} spacing={0.6}>

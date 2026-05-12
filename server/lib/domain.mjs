@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { decodeJwt, decodeProtectedHeader } from "jose";
 
 const activityMultiplier = {
   sedentary: 1.2,
@@ -111,14 +112,6 @@ export const hasRoleAtLeast = (role, minimumRole) =>
 
 const base64UrlEncode = (value) => Buffer.from(value).toString("base64url");
 
-const parseBase64UrlJson = (value) => {
-  try {
-    return JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-  } catch {
-    return null;
-  }
-};
-
 export const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 export const sanitizeName = (name) => String(name || "").trim().replace(/\s+/g, " ");
@@ -183,6 +176,17 @@ export const verifySessionToken = (token, secret) => {
   }
 
   const [header, payload, signature] = parts;
+
+  try {
+    const protectedHeader = decodeProtectedHeader(token);
+
+    if (protectedHeader.alg !== "HS256" || protectedHeader.typ !== "JWT") {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
   const expectedSignature = crypto
     .createHmac("sha256", secret)
     .update(`${header}.${payload}`)
@@ -198,7 +202,13 @@ export const verifySessionToken = (token, secret) => {
     return null;
   }
 
-  const parsedPayload = parseBase64UrlJson(payload);
+  let parsedPayload;
+
+  try {
+    parsedPayload = decodeJwt(token);
+  } catch {
+    return null;
+  }
 
   if (
     !parsedPayload ||

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TypeAnimation } from "react-type-animation";
 import {
   Box,
   Button,
@@ -395,7 +396,12 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
           maxWidth: 760,
         }}
       >
-        {copy.title}
+        <TypeAnimation
+          key={copy.title}
+          sequence={[copy.title]}
+          speed={62}
+          cursor={false}
+        />
       </Typography>
       <Typography
         sx={{

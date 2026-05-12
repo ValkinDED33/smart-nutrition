@@ -81,6 +81,61 @@ export default defineConfig({
             return "scanner-vendor";
           }
 
+          if (
+            normalizedId.includes("/node_modules/lottie-react/") ||
+            normalizedId.includes("/node_modules/lottie-web/")
+          ) {
+            return "lottie-vendor";
+          }
+
+          if (normalizedId.includes("/node_modules/recharts/")) {
+            return "charts-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/framer-motion/") ||
+            normalizedId.includes("/node_modules/@react-spring/") ||
+            normalizedId.includes("/node_modules/react-countup/") ||
+            normalizedId.includes("/node_modules/react-type-animation/")
+          ) {
+            return "motion-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/react-markdown/") ||
+            normalizedId.includes("/node_modules/remark-gfm/") ||
+            normalizedId.includes("/node_modules/rehype-highlight/") ||
+            normalizedId.includes("/node_modules/mdast-util-") ||
+            normalizedId.includes("/node_modules/micromark") ||
+            normalizedId.includes("/node_modules/unified/") ||
+            normalizedId.includes("/node_modules/vfile/")
+          ) {
+            return "markdown-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/browser-image-compression/") ||
+            normalizedId.includes("/node_modules/react-easy-crop/") ||
+            normalizedId.includes("/node_modules/canvas-confetti/") ||
+            normalizedId.includes("/node_modules/howler/") ||
+            normalizedId.includes("/node_modules/use-sound/")
+          ) {
+            return "media-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/@dnd-kit/") ||
+            normalizedId.includes("/node_modules/fuse.js/") ||
+            normalizedId.includes("/node_modules/react-virtuoso/") ||
+            normalizedId.includes("/node_modules/react-swipeable/") ||
+            normalizedId.includes("/node_modules/react-use/") ||
+            normalizedId.includes("/node_modules/screenfull/") ||
+            normalizedId.includes("/node_modules/copy-to-clipboard/") ||
+            normalizedId.includes("/node_modules/zustand/")
+          ) {
+            return "interaction-vendor";
+          }
+
           return undefined;
         },
       },

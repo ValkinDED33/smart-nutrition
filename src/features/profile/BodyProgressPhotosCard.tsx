@@ -1,10 +1,13 @@
 import { type ChangeEvent, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import imageCompression from "browser-image-compression";
+import Cropper, { type Area } from "react-easy-crop";
 import {
   Alert,
   Box,
   Button,
   Paper,
+  Slider,
   Stack,
   TextField,
   Typography,
@@ -14,8 +17,57 @@ import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
 
-const MAX_PHOTO_BYTES = 1_200_000;
+const MAX_PHOTO_BYTES = 8_000_000;
+const MAX_COMPRESSED_PHOTO_MB = 1.2;
 const SUPPORTED_PROGRESS_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("FILE_READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
+
+const createImage = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+    image.src = src;
+  });
+
+const cropImageToDataUrl = async (imageSrc: string, area: Area | null) => {
+  if (!area || typeof document === "undefined") {
+    return imageSrc;
+  }
+
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return imageSrc;
+  }
+
+  canvas.width = Math.max(Math.round(area.width), 1);
+  canvas.height = Math.max(Math.round(area.height), 1);
+  context.drawImage(
+    image,
+    area.x,
+    area.y,
+    area.width,
+    area.height,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  return canvas.toDataURL("image/jpeg", 0.88);
+};
 
 const progressPhotoCopy = {
   uk: {
@@ -25,12 +77,15 @@ const progressPhotoCopy = {
     replace: "Замінити фото",
     note: "Нотатка",
     save: "Зберегти фото",
+    crop: "Кадрувати",
+    applyCrop: "Застосувати кадр",
+    zoom: "Масштаб",
     preview: "Preview",
     latest: "Останнє фото",
     previous: "Попереднє",
     history: "Історія фото",
     empty: "Фото прогресу ще не додані.",
-    tooLarge: "Фото завелике. Виберіть файл до 1.2 MB.",
+    tooLarge: "Фото завелике. Виберіть файл до 8 MB.",
     invalid: "Не вдалося прочитати фото.",
     remove: "Видалити",
   },
@@ -41,12 +96,15 @@ const progressPhotoCopy = {
     replace: "Zmień zdjęcie",
     note: "Notatka",
     save: "Zapisz zdjęcie",
+    crop: "Kadruj",
+    applyCrop: "Zastosuj kadr",
+    zoom: "Zoom",
     preview: "Preview",
     latest: "Najnowsze zdjęcie",
     previous: "Poprzednie",
     history: "Historia zdjęć",
     empty: "Nie dodano jeszcze zdjęć progresu.",
-    tooLarge: "Zdjęcie jest zbyt duże. Wybierz plik do 1.2 MB.",
+    tooLarge: "Zdjęcie jest zbyt duże. Wybierz plik do 8 MB.",
     invalid: "Nie udało się odczytać zdjęcia.",
     remove: "Usuń",
   },
@@ -57,7 +115,11 @@ export const BodyProgressPhotosCard = () => {
   const photos = useSelector((state: RootState) => state.profile.progressPhotos);
   const { language } = useLanguage();
   const copy = progressPhotoCopy[language];
+  const [rawPreview, setRawPreview] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [zoom, setZoom] = useState(1);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +133,7 @@ export const BodyProgressPhotosCard = () => {
   const latest = sortedPhotos[0];
   const previous = sortedPhotos[1];
 
-  const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     setError(null);
@@ -81,35 +143,55 @@ export const BodyProgressPhotosCard = () => {
     }
 
     if (!SUPPORTED_PROGRESS_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
+      setRawPreview(null);
       setPreview(null);
       setError(file.size > MAX_PHOTO_BYTES ? copy.tooLarge : copy.invalid);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (
-        typeof reader.result !== "string" ||
-        !/^data:image\/(?:jpeg|jpg|png|webp);base64,/i.test(reader.result)
-      ) {
+    try {
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: MAX_COMPRESSED_PHOTO_MB,
+        maxWidthOrHeight: 1600,
+        useWebWorker: true,
+      });
+      const dataUrl = await readFileAsDataUrl(compressedFile);
+
+      if (!/^data:image\/(?:jpeg|jpg|png|webp);base64,/i.test(dataUrl)) {
         setError(copy.invalid);
         return;
       }
 
-      setPreview(reader.result);
-    };
-    reader.onerror = () => {
+      setRawPreview(dataUrl);
+      setPreview(null);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    } catch {
       setError(copy.invalid);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
-  const handleSave = () => {
-    if (!preview) {
+  const handleApplyCrop = async () => {
+    if (!rawPreview) {
       return;
     }
 
-    dispatch(addProgressPhoto({ imageDataUrl: preview, note }));
+    try {
+      setPreview(await cropImageToDataUrl(rawPreview, croppedAreaPixels));
+    } catch {
+      setError(copy.invalid);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!preview && !rawPreview) {
+      return;
+    }
+
+    const imageDataUrl = preview ?? (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
+
+    dispatch(addProgressPhoto({ imageDataUrl, note }));
+    setRawPreview(null);
     setPreview(null);
     setNote("");
   };
@@ -141,7 +223,7 @@ export const BodyProgressPhotosCard = () => {
               component="label"
               sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
             >
-              {preview ? copy.replace : copy.upload}
+              {rawPreview || preview ? copy.replace : copy.upload}
               <Box
                 component="input"
                 type="file"
@@ -158,10 +240,44 @@ export const BodyProgressPhotosCard = () => {
               minRows={2}
               fullWidth
             />
+            {rawPreview && !preview && (
+              <Stack spacing={1}>
+                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  {copy.zoom}
+                </Typography>
+                <Slider
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(_, value) => setZoom(Array.isArray(value) ? value[0] ?? 1 : value)}
+                />
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    void handleApplyCrop();
+                  }}
+                  sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+                >
+                  {copy.applyCrop}
+                </Button>
+              </Stack>
+            )}
+            {rawPreview && preview && (
+              <Button
+                variant="text"
+                onClick={() => setPreview(null)}
+                sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+              >
+                {copy.crop}
+              </Button>
+            )}
             <Button
               variant="contained"
-              disabled={!preview}
-              onClick={handleSave}
+              disabled={!preview && !rawPreview}
+              onClick={() => {
+                void handleSave();
+              }}
               sx={{
                 alignSelf: "flex-start",
                 textTransform: "none",
@@ -193,6 +309,18 @@ export const BodyProgressPhotosCard = () => {
                 alt={copy.preview}
                 sx={{ width: "100%", height: 260, objectFit: "cover" }}
               />
+            ) : rawPreview ? (
+              <Box sx={{ position: "relative", width: "100%", height: 260 }}>
+                <Cropper
+                  image={rawPreview}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={4 / 5}
+                  onCropChange={setCrop}
+                  onCropComplete={(_, area) => setCroppedAreaPixels(area)}
+                  onZoomChange={setZoom}
+                />
+              </Box>
             ) : (
               <Typography color="text.secondary">{copy.preview}</Typography>
             )}

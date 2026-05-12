@@ -1,6 +1,15 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import {
@@ -132,38 +141,50 @@ export const WeightTrendCard = () => {
         ) : (
           <Box
             sx={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${entries.length}, minmax(0, 1fr))`,
-              gap: 1.25,
-              alignItems: "end",
-              minHeight: 220,
+              width: "100%",
+              height: 260,
             }}
           >
-            {entries.map((entry) => {
-              const barHeight = 40 + ((entry.weight - minWeight) / range) * 120;
+            <ResponsiveContainer>
+              <AreaChart
+                data={entries}
+                margin={{ top: 10, right: 12, bottom: 0, left: -18 }}
+              >
+                <defs>
+                  <linearGradient id="weightTrendFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#0f766e" stopOpacity={0.32} />
+                    <stop offset="100%" stopColor="#65a30d" stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(148,163,184,0.22)" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                <YAxis
+                  width={56}
+                  domain={[minWeight - range * 0.12, maxWeight + range * 0.12]}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value: number) => value.toFixed(1)}
+                />
+                <Tooltip
+                  formatter={(value) => {
+                    const numericValue =
+                      typeof value === "number" ? value : Number(value ?? 0);
 
-              return (
-                <Stack key={`${entry.date}-${entry.weight}`} spacing={0.8} alignItems="center">
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {entry.weight.toFixed(1)} kg
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: "100%",
-                      maxWidth: 42,
-                      height: barHeight,
-                      borderRadius: "18px 18px 6px 6px",
-                      background:
-                        "linear-gradient(180deg, rgba(15,118,110,0.92) 0%, rgba(101,163,13,0.92) 100%)",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25)",
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {entry.label}
-                  </Typography>
-                </Stack>
-              );
-            })}
+                    return [`${numericValue.toFixed(1)} kg`, copy.latest];
+                  }}
+                  labelStyle={{ color: "#0f172a", fontWeight: 800 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="weight"
+                  stroke="#0f766e"
+                  strokeWidth={3}
+                  fill="url(#weightTrendFill)"
+                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
+                  activeDot={{ r: 6 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </Box>
         )}
       </Stack>

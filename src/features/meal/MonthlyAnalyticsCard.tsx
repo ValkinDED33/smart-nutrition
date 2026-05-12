@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
+import CountUp from "react-countup";
 import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { selectMealItems } from "./selectors";
@@ -230,25 +231,27 @@ export const MonthlyAnalyticsCard = () => {
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageCalories}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {averageCalories.toFixed(0)} {t("common.kcal")}
+              <CountUp end={averageCalories} duration={0.7} decimals={0} />{" "}
+              {t("common.kcal")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.averageProtein}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {averageProtein.toFixed(1)} {t("common.g")}
+              <CountUp end={averageProtein} duration={0.7} decimals={1} />{" "}
+              {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.adherence}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {adherenceRate.toFixed(0)}%
+              <CountUp end={adherenceRate} duration={0.7} decimals={0} />%
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
             <Typography color="text.secondary">{copy.streak}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {loggingStreak} {copy.days}
+              <CountUp end={loggingStreak} duration={0.7} /> {copy.days}
             </Typography>
           </Paper>
         </Box>

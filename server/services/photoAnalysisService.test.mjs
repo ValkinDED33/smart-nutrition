@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createPhotoAnalysisService } from "./photoAnalysisService.mjs";
 
+const tinyPng =
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADklEQVR4nGP4DwYMEAoAU7oL9ZisIGcAAAAASUVORK5CYII=";
+
 describe("photoAnalysisService", () => {
   it("accepts only bounded raster photo data URLs", async () => {
     const service = createPhotoAnalysisService();
@@ -23,9 +26,13 @@ describe("photoAnalysisService", () => {
     await expect(
       service.analyzePhoto(
         { dietStyle: "balanced" },
-        { imageDataUrl: "data:image/jpeg;base64,aaaa", mealType: "breakfast" }
+        { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "breakfast" }
       )
     ).resolves.toMatchObject({
+      image: {
+        width: 2,
+        height: 2,
+      },
       manualReviewRequired: true,
     });
   });

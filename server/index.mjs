@@ -1,6 +1,7 @@
 import http from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { RateLimiterMemory } from "rate-limiter-flexible";
 import { serverConfig } from "./config.mjs";
 import {
   AssistantApiError,
@@ -132,7 +133,11 @@ const requestMetrics = {
   routes: new Map(),
 };
 
-const requestLimitState = new Map();
+const requestLimiter = new RateLimiterMemory({
+  keyPrefix: "smart-nutrition-api",
+  points: serverConfig.requestLimitMax,
+  duration: Math.max(Math.ceil(serverConfig.requestLimitWindowMs / 1000), 1),
+});
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -259,28 +264,26 @@ const tryServeStatic = async (request, response, pathname) => {
   return false;
 };
 
-const consumeRateLimit = (request) => {
+const consumeRateLimit = async (request) => {
   const clientAddress = getClientAddress(request);
-  const now = Date.now();
-  const current =
-    requestLimitState.get(clientAddress) ?? {
-      count: 0,
-      resetAt: now + serverConfig.requestLimitWindowMs,
+
+  try {
+    const rateLimitResult = await requestLimiter.consume(clientAddress);
+
+    return {
+      allowed: true,
+      remaining: Math.max(rateLimitResult.remainingPoints, 0),
+      resetAt: Date.now() + rateLimitResult.msBeforeNext,
     };
-
-  if (current.resetAt <= now) {
-    current.count = 0;
-    current.resetAt = now + serverConfig.requestLimitWindowMs;
+  } catch (rateLimitResult) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt:
+        Date.now() +
+        Number(rateLimitResult?.msBeforeNext ?? serverConfig.requestLimitWindowMs),
+    };
   }
-
-  current.count += 1;
-  requestLimitState.set(clientAddress, current);
-
-  return {
-    allowed: current.count <= serverConfig.requestLimitMax,
-    remaining: Math.max(serverConfig.requestLimitMax - current.count, 0),
-    resetAt: current.resetAt,
-  };
 };
 
 const getMetricsSnapshot = () => {
@@ -374,7 +377,7 @@ const routeRequest = async (request, response) => {
   }
 
   const rateLimit =
-    pathname === "/api/health" ? null : consumeRateLimit(request);
+    pathname === "/api/health" ? null : await consumeRateLimit(request);
 
   if (rateLimit && !rateLimit.allowed) {
     response.setHeader("Retry-After", String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)));

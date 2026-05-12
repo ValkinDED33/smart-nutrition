@@ -1,5 +1,7 @@
+import Fuse from "fuse.js";
+
 /**
- * Fuzzy search with Levenshtein distance, synonyms, and multi-language support
+ * Fuzzy search with Fuse ranking, Levenshtein distance, synonyms, and multi-language support.
  */
 
 const levenshteinDistance = (left: string, right: string): number => {
@@ -100,6 +102,22 @@ export function fuzzySearchProducts<T extends { id: string; name: string; brand?
 
   const normalized = normalizeText(query);
   const expandedTokens = expandSearchTokens(normalized);
+  const fuse = new Fuse(products, {
+    includeScore: true,
+    ignoreLocation: true,
+    minMatchCharLength: 2,
+    threshold: 0.42,
+    keys: [
+      { name: "name", weight: 0.82 },
+      { name: "brand", weight: 0.18 },
+    ],
+  });
+  const fuseScoreById = new Map(
+    fuse.search(query).map((result) => [
+      result.item.id,
+      Math.round((1 - (result.score ?? 1)) * 55),
+    ])
+  );
 
   const results: Array<{ item: T; score: number; reason: string }> = [];
 
@@ -157,6 +175,8 @@ export function fuzzySearchProducts<T extends { id: string; name: string; brand?
         });
       });
     }
+
+    score = Math.max(score, fuseScoreById.get(product.id) ?? 0);
 
     if (score > 0) {
       results.push({ item: product, score, reason: 'match' });

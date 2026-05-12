@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import hotToast from "react-hot-toast";
 import {
   Box,
   Button,
@@ -67,6 +68,7 @@ export const ProductCard = ({
     }
 
     dispatch(addProduct({ product, quantity, mealType, origin }));
+    hotToast.success(`${displayName}: +${formatProductPortion(quantity, product.unit)}`);
     setQuantityError(null);
 
     if (clearInput) {
@@ -86,10 +88,12 @@ export const ProductCard = ({
   const handleToggleSave = () => {
     if (isSaved) {
       dispatch(removeSavedProduct(savedKey));
+      hotToast.success(t("productCard.remove"));
       return;
     }
 
     dispatch(saveProduct(product));
+    hotToast.success(t("productCard.save"));
   };
 
   const nutrients = product.nutrients;

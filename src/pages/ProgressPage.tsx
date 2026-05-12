@@ -3,6 +3,7 @@ import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
 import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
 import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
 import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
+import { ProgressActionBar } from "../features/profile/ProgressActionBar";
 import { QuickWeightCheckInCard } from "../features/profile/QuickWeightCheckInCard";
 import { WeightTrendCard } from "../features/profile/WeightTrendCard";
 import { WaterTracker } from "../features/water/WaterTracker";
@@ -37,6 +38,8 @@ const ProgressPage = () => {
         </Typography>
         <Typography color="text.secondary">{copy.subtitle}</Typography>
       </Stack>
+
+      <ProgressActionBar />
 
       <Box
         sx={{

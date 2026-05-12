@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Virtuoso } from "react-virtuoso";
 import { selectAvailableMealDays, selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "../../shared/lib/productDisplay";
@@ -72,9 +73,17 @@ export const DailyHistoryExplorer = () => {
             <Typography sx={{ fontWeight: 700 }}>
               {totalCalories.toFixed(0)} {t("common.kcal")}
             </Typography>
-            <Stack spacing={1.1}>
-              {selectedEntries.map((item) => (
-                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+            <Virtuoso
+              style={{
+                height: Math.min(Math.max(selectedEntries.length * 94, 120), 420),
+              }}
+              data={selectedEntries}
+              itemContent={(_, item) => (
+                <Paper
+                  key={item.id}
+                  variant="outlined"
+                  sx={{ p: 1.5, mb: 1.1, borderRadius: 1 }}
+                >
                   <Typography sx={{ fontWeight: 700 }}>
                     {getProductDisplayName(item.product, language)}
                   </Typography>
@@ -84,8 +93,8 @@ export const DailyHistoryExplorer = () => {
                     {t("common.kcal")}
                   </Typography>
                 </Paper>
-              ))}
-            </Stack>
+              )}
+            />
           </>
         )}
       </Stack>

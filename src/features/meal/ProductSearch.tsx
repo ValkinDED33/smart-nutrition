@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { useDebounce } from "react-use";
 import {
   Box,
   Alert,
@@ -33,6 +36,7 @@ import {
 } from "./productIdentity";
 import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { useMealSearchStore } from "../../shared/state/useMealSearchStore";
 
 interface Props {
   mealType: MealType;
@@ -44,6 +48,8 @@ const suggestionCopy = {
     hint: "Натисніть підказку, щоб швидко підставити запит.",
     searchLabel: "Пошук їжі",
     quickTitle: "Популярне для швидкого старту",
+    recentTitle: "Останні пошуки",
+    clearRecent: "Очистити історію",
     results: "Знайдено",
     duplicateTitle: "Асистент бази",
     duplicateAdvice:
@@ -55,6 +61,8 @@ const suggestionCopy = {
     hint: "Kliknij podpowiedź, aby szybko uzupełnić wyszukiwanie.",
     searchLabel: "Szukaj jedzenia",
     quickTitle: "Popularne na szybki start",
+    recentTitle: "Ostatnie wyszukiwania",
+    clearRecent: "Wyczyść historię",
     results: "Znaleziono",
     duplicateTitle: "Asystent bazy",
     duplicateAdvice:
@@ -80,9 +88,14 @@ const formatSuggestionLabel = (product: Product) => {
 
 export const ProductSearch = ({ mealType }: Props) => {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const {
+    categoryFilter,
+    clearRecentQueries,
+    recentQueries,
+    rememberQuery,
+    setCategoryFilter,
+  } = useMealSearchStore();
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -93,6 +106,27 @@ export const ProductSearch = ({ mealType }: Props) => {
   const { language, t } = useLanguage();
   const normalizedQuery = query.trim();
   const copy = suggestionCopy[language];
+
+  useDebounce(
+    () => {
+      setDebouncedQuery(normalizedQuery);
+    },
+    250,
+    [normalizedQuery]
+  );
+
+  const productQuery = useQuery({
+    queryKey: ["product-search", debouncedQuery],
+    queryFn: () => searchProducts(debouncedQuery),
+    enabled: debouncedQuery.length > 0,
+  });
+
+  const results = useMemo(() => productQuery.data ?? [], [productQuery.data]);
+  const isLoading =
+    normalizedQuery.length > 0 &&
+    (normalizedQuery !== debouncedQuery ||
+      productQuery.isLoading ||
+      productQuery.isFetching);
 
   const rankedLocalResults = useMemo(() => {
     if (!normalizedQuery) {
@@ -242,36 +276,18 @@ export const ProductSearch = ({ mealType }: Props) => {
   }, [activeCategoryFilter, displayResults]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    if (!normalizedQuery) {
-      return undefined;
+    if (debouncedQuery && results.length > 0) {
+      rememberQuery(debouncedQuery);
     }
-
-    const timer = window.setTimeout(async () => {
-      const nextResults = await searchProducts(normalizedQuery);
-
-      if (!cancelled) {
-        setResults(nextResults);
-        setIsLoading(false);
-      }
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [normalizedQuery]);
+  }, [debouncedQuery, rememberQuery, results.length]);
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
-    setIsLoading(value.trim().length > 0);
   };
 
   const handleClear = () => {
     setQuery("");
-    setResults([]);
-    setIsLoading(false);
+    setDebouncedQuery("");
   };
 
   return (
@@ -318,6 +334,33 @@ export const ProductSearch = ({ mealType }: Props) => {
                   label={preset}
                   clickable
                   onClick={() => handleQueryChange(preset)}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        )}
+
+        {!normalizedQuery && recentQueries.length > 0 && (
+          <Stack spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography sx={{ fontWeight: 700 }}>{copy.recentTitle}</Typography>
+              <Button size="small" onClick={clearRecentQueries}>
+                {copy.clearRecent}
+              </Button>
+            </Stack>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {recentQueries.map((recentQuery) => (
+                <Chip
+                  key={recentQuery}
+                  label={recentQuery}
+                  clickable
+                  onClick={() => handleQueryChange(recentQuery)}
+                  variant="outlined"
                 />
               ))}
             </Stack>
@@ -423,12 +466,18 @@ export const ProductSearch = ({ mealType }: Props) => {
               }}
             >
               {filteredResults.map((product) => (
-                <ProductCard
+                <motion.div
                   key={product.barcode?.trim() || product.id}
-                  product={product}
-                  mealType={mealType}
-                  origin="manual"
-                />
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22 }}
+                >
+                  <ProductCard
+                    product={product}
+                    mealType={mealType}
+                    origin="manual"
+                  />
+                </motion.div>
               ))}
             </Box>
           </Stack>
