@@ -24,6 +24,12 @@ describe("photoAnalysisService", () => {
     });
 
     await expect(
+      service.analyzePhoto({}, { imageDataUrl: `data:image/jpeg;base64,${tinyPng}` })
+    ).rejects.toMatchObject({
+      code: "INVALID_PHOTO_PAYLOAD",
+    });
+
+    await expect(
       service.analyzePhoto(
         { dietStyle: "balanced" },
         { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "breakfast" }
@@ -32,6 +38,8 @@ describe("photoAnalysisService", () => {
       image: {
         width: 2,
         height: 2,
+        originalFormat: "png",
+        normalizedFormat: "jpeg",
       },
       manualReviewRequired: true,
     });

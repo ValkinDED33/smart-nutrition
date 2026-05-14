@@ -3,8 +3,16 @@ import { StateApiError } from "../lib/domain.mjs";
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const maxPhotoDataUrlLength = 1_700_000;
+const maxPhotoDimension = 4_096;
 const safePhotoDataUrlPattern = /^data:image\/(?:jpeg|jpg|png|webp);base64,/i;
-const photoDataUrlPattern = /^data:image\/(?:jpeg|jpg|png|webp);base64,(?<payload>[a-z0-9+/=]+)$/i;
+const photoDataUrlPattern =
+  /^data:image\/(?<mime>jpeg|jpg|png|webp);base64,(?<payload>[a-z0-9+/=]+)$/i;
+const allowedImageFormats = new Set(["jpeg", "png", "webp"]);
+
+const normalizeImageMimeFormat = (value) => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "jpg" ? "jpeg" : normalized;
+};
 
 const normalizeDietStyle = (value) => {
   if (
@@ -546,6 +554,7 @@ const getMealLabel = (mealType) =>
 
 const normalizePhotoPayload = async (imageDataUrl) => {
   const match = imageDataUrl.match(photoDataUrlPattern);
+  const declaredFormat = normalizeImageMimeFormat(match?.groups?.mime);
   const payload = match?.groups?.payload;
 
   if (!payload) {
@@ -559,9 +568,24 @@ const normalizePhotoPayload = async (imageDataUrl) => {
     const imageBuffer = Buffer.from(payload, "base64");
     const image = sharp(imageBuffer, { limitInputPixels: 18_000_000 }).rotate();
     const metadata = await image.metadata();
+    const detectedFormat = normalizeImageMimeFormat(metadata.format);
 
     if (!metadata.width || !metadata.height) {
       throw new Error("IMAGE_METADATA_UNAVAILABLE");
+    }
+
+    if (!allowedImageFormats.has(detectedFormat) || detectedFormat !== declaredFormat) {
+      throw new StateApiError(
+        "INVALID_PHOTO_PAYLOAD",
+        "Photo MIME type does not match the image payload."
+      );
+    }
+
+    if (metadata.width > maxPhotoDimension || metadata.height > maxPhotoDimension) {
+      throw new StateApiError(
+        "INVALID_PHOTO_PAYLOAD",
+        "Photo dimensions are too large for analysis."
+      );
     }
 
     const normalizedBuffer = await image
@@ -577,9 +601,15 @@ const normalizePhotoPayload = async (imageDataUrl) => {
     return {
       width: metadata.width,
       height: metadata.height,
+      originalFormat: detectedFormat,
+      normalizedFormat: "jpeg",
       normalizedBytes: normalizedBuffer.byteLength,
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof StateApiError) {
+      throw error;
+    }
+
     throw new StateApiError(
       "INVALID_PHOTO_PAYLOAD",
       "Photo analysis requires a readable JPEG, PNG, or WebP image."

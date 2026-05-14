@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isUnsafeCrossSiteMutation, sendError, setSecurityHeaders } from "./http.mjs";
+import { Readable } from "node:stream";
+import {
+  isUnsafeCrossSiteMutation,
+  readJsonBody,
+  sendError,
+  setSecurityHeaders,
+} from "./http.mjs";
 
 class MemoryResponse {
   statusCode = 200;
@@ -42,10 +48,29 @@ describe("http response helpers", () => {
     setSecurityHeaders(response);
 
     expect(response.headers).toMatchObject({
+      "Content-Security-Policy": expect.stringContaining("default-src 'self'"),
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
+      "Strict-Transport-Security": "max-age=15552000; includeSubDomains",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",
     });
+  });
+
+  it("rejects non-json request bodies before parsing", async () => {
+    const request = Readable.from([Buffer.from("hello")]);
+    request.headers = { "content-type": "text/plain" };
+    request.destroy = () => {};
+
+    await expect(readJsonBody(request, 1024)).rejects.toThrow("UNSUPPORTED_MEDIA_TYPE");
+  });
+
+  it("accepts explicit json request bodies", async () => {
+    const request = Readable.from([Buffer.from(JSON.stringify({ ok: true }))]);
+    request.headers = { "content-type": "application/json; charset=utf-8" };
+
+    await expect(readJsonBody(request, 1024)).resolves.toEqual({ ok: true });
   });
 
   it("detects disallowed cross-site mutations", () => {

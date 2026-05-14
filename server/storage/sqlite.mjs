@@ -94,6 +94,8 @@ const isVerificationChannel = (value) => value === "email" || value === "sms";
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
 const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
+const isAiUsageEventType = (value) =>
+  value === "completed" || value === "blocked" || value === "failed";
 
 const isRecord = (value) => typeof value === "object" && value !== null;
 const isCommunityPostType = (value) =>
@@ -1029,6 +1031,34 @@ const mapAssistantMessageRow = (row) => {
   };
 };
 
+const mapAiUsageEventRow = (row) => {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    route: row.route,
+    eventType: isAiUsageEventType(row.event_type) ? row.event_type : "completed",
+    promptTokens: Math.max(Number(row.prompt_tokens ?? 0), 0),
+    completionTokens: Math.max(Number(row.completion_tokens ?? 0), 0),
+    totalTokens: Math.max(Number(row.total_tokens ?? 0), 0),
+    estimatedCostUsd: Math.max(Number(row.estimated_cost_usd ?? 0), 0),
+    providerId: row.provider_id ?? null,
+    blockedReason: row.blocked_reason ?? null,
+    createdAt: row.created_at,
+  };
+};
+
+const mapAiUsageSummaryRow = (row) => ({
+  requestCount: Math.max(Number(row?.request_count ?? 0), 0),
+  promptTokens: Math.max(Number(row?.prompt_tokens ?? 0), 0),
+  completionTokens: Math.max(Number(row?.completion_tokens ?? 0), 0),
+  totalTokens: Math.max(Number(row?.total_tokens ?? 0), 0),
+  estimatedCostUsd: Math.max(Number(row?.estimated_cost_usd ?? 0), 0),
+});
+
 const createSchema = (database) => {
   database.exec(`
     PRAGMA foreign_keys = ON;
@@ -1246,6 +1276,21 @@ const createSchema = (database) => {
       created_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS ai_usage_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      route TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      prompt_tokens INTEGER NOT NULL DEFAULT 0,
+      completion_tokens INTEGER NOT NULL DEFAULT 0,
+      total_tokens INTEGER NOT NULL DEFAULT 0,
+      estimated_cost_usd REAL NOT NULL DEFAULT 0,
+      provider_id TEXT,
+      blocked_reason TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 };
 
@@ -1272,6 +1317,8 @@ const createIndexes = (database) => {
     CREATE INDEX IF NOT EXISTS idx_catalog_products_barcode ON catalog_products(barcode);
     CREATE INDEX IF NOT EXISTS idx_catalog_product_versions_product ON catalog_product_versions(product_id, version DESC);
     CREATE INDEX IF NOT EXISTS idx_assistant_messages_user ON assistant_messages(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_created ON ai_usage_events(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_ai_usage_events_route_created ON ai_usage_events(route, created_at DESC);
   `);
 };
 
@@ -2228,6 +2275,104 @@ export const createSqliteStorage = async ({
       .run(userId, userId, Math.max(Number(keepLast) || 0, 1));
   };
 
+  const insertAiUsageEvent = ({
+    id,
+    userId,
+    route,
+    eventType,
+    promptTokens = 0,
+    completionTokens = 0,
+    totalTokens = 0,
+    estimatedCostUsd = 0,
+    providerId = null,
+    blockedReason = null,
+    createdAt,
+  }) => {
+    const normalizedPromptTokens = Math.max(Math.round(Number(promptTokens) || 0), 0);
+    const normalizedCompletionTokens = Math.max(Math.round(Number(completionTokens) || 0), 0);
+    const normalizedTotalTokens = Math.max(
+      Math.round(Number(totalTokens) || normalizedPromptTokens + normalizedCompletionTokens),
+      0
+    );
+
+    database
+      .prepare(
+        `
+          INSERT INTO ai_usage_events (
+            id,
+            user_id,
+            route,
+            event_type,
+            prompt_tokens,
+            completion_tokens,
+            total_tokens,
+            estimated_cost_usd,
+            provider_id,
+            blocked_reason,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+      )
+      .run(
+        id,
+        userId,
+        String(route ?? "ai"),
+        isAiUsageEventType(eventType) ? eventType : "completed",
+        normalizedPromptTokens,
+        normalizedCompletionTokens,
+        normalizedTotalTokens,
+        Math.max(Number(estimatedCostUsd) || 0, 0),
+        providerId,
+        blockedReason,
+        createdAt
+      );
+  };
+
+  const getAiUsageSummary = ({ userId, sinceIso, route = null }) => {
+    const routeFilter = typeof route === "string" && route.trim() ? route.trim() : null;
+
+    return mapAiUsageSummaryRow(
+      database
+        .prepare(
+          `
+            SELECT
+              COUNT(*) AS request_count,
+              COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+              COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+              COALESCE(SUM(total_tokens), 0) AS total_tokens,
+              COALESCE(SUM(estimated_cost_usd), 0) AS estimated_cost_usd
+            FROM ai_usage_events
+            WHERE user_id = ?
+              AND created_at >= ?
+              AND (? IS NULL OR route = ?)
+          `
+        )
+        .get(userId, sinceIso, routeFilter, routeFilter)
+    );
+  };
+
+  const findLatestAiUsageEvent = ({ userId, route = null, eventType = null }) => {
+    const routeFilter = typeof route === "string" && route.trim() ? route.trim() : null;
+    const eventTypeFilter =
+      typeof eventType === "string" && eventType.trim() ? eventType.trim() : null;
+
+    return mapAiUsageEventRow(
+      database
+        .prepare(
+          `
+            SELECT *
+            FROM ai_usage_events
+            WHERE user_id = ?
+              AND (? IS NULL OR route = ?)
+              AND (? IS NULL OR event_type = ?)
+            ORDER BY created_at DESC
+            LIMIT 1
+          `
+        )
+        .get(userId, routeFilter, routeFilter, eventTypeFilter, eventTypeFilter)
+    );
+  };
+
   const matchesCatalogSearch = (product, search) => {
     const normalizedSearch = String(search ?? "").trim().toLowerCase();
 
@@ -2823,6 +2968,12 @@ export const createSqliteStorage = async ({
     deleteAssistantMessagesByUserId,
 
     pruneAssistantMessagesByUserId,
+
+    insertAiUsageEvent,
+
+    getAiUsageSummary,
+
+    findLatestAiUsageEvent,
 
     countCatalogProductsByOwnerSince: (userId, sinceIso) => {
       const row = database

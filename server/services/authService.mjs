@@ -27,6 +27,7 @@ export const createAuthService = ({
   config,
 }) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
+  const getRefreshTokenHash = (token) => hashOneTimeToken(token, config.jwtSecret);
   const passwordResetRequestMessage =
     "If an account with that email exists, a password reset link has been prepared.";
   const registrationVerificationMessage =
@@ -321,20 +322,36 @@ export const createAuthService = ({
 
   const createRefreshSession = (user) => {
     const expiresAt = Date.now() + config.refreshTokenTtlMs;
+    const token = createSessionToken({
+      userId: user.id,
+      expiresAt,
+      secret: config.jwtSecret,
+      kind: "refresh",
+      tokenVersion: getTokenVersion(user),
+    });
+    const tokenHash = getRefreshTokenHash(token);
     const session = {
-      token: createSessionToken({
-        userId: user.id,
-        expiresAt,
-        secret: config.jwtSecret,
-        kind: "refresh",
-        tokenVersion: getTokenVersion(user),
-      }),
+      token,
+      tokenHash,
       userId: user.id,
       expiresAt,
     };
 
-    authRepository.createSession(session);
+    authRepository.createSession({
+      token: tokenHash,
+      userId: user.id,
+      expiresAt,
+    });
     return session;
+  };
+
+  const deleteRefreshTokenSession = (token) => {
+    if (!token) {
+      return;
+    }
+
+    authRepository.deleteSessionByToken(getRefreshTokenHash(token));
+    authRepository.deleteSessionByToken(token);
   };
 
   const authenticateRefreshToken = (token) => {
@@ -352,7 +369,12 @@ export const createAuthService = ({
       return null;
     }
 
-    const session = authRepository.findSessionByToken(token);
+    const tokenHash = getRefreshTokenHash(token);
+    let session = authRepository.findSessionByToken(tokenHash);
+
+    if (!session) {
+      session = authRepository.findSessionByToken(token);
+    }
 
     if (!session) {
       return null;
@@ -363,28 +385,28 @@ export const createAuthService = ({
       verifiedToken.expiresAt <= Date.now() ||
       verifiedToken.userId !== session.userId
     ) {
-      authRepository.deleteSessionByToken(token);
+      deleteRefreshTokenSession(token);
       return null;
     }
 
     const user = authRepository.findUserById(session.userId);
 
     if (!user) {
-      authRepository.deleteSessionByToken(token);
+      deleteRefreshTokenSession(token);
       return null;
     }
 
     if (isUserBanned(user) || !isRegistrationVerified(user)) {
-      authRepository.deleteSessionByToken(token);
+      deleteRefreshTokenSession(token);
       return null;
     }
 
     if (verifiedToken.tokenVersion !== getTokenVersion(user)) {
-      authRepository.deleteSessionByToken(token);
+      deleteRefreshTokenSession(token);
       return null;
     }
 
-    return { token, session, user };
+    return { token, tokenHash, session, user };
   };
 
   const authenticateToken = (token) => {
@@ -819,7 +841,7 @@ export const createAuthService = ({
         actorRole: user.role,
         action: "auth.logged_in",
         targetType: "session",
-        targetId: refreshSession.token,
+        targetId: refreshSession.tokenHash,
       });
       return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
     },
@@ -843,7 +865,7 @@ export const createAuthService = ({
         throw new AuthApiError("INVALID_CREDENTIALS", "Refresh session expired.");
       }
 
-      authRepository.deleteSessionByToken(refreshToken);
+      deleteRefreshTokenSession(refreshToken);
       const nextRefreshSession = createRefreshSession(auth.user);
 
       return buildAuthResponse(
@@ -859,11 +881,11 @@ export const createAuthService = ({
       const auth = authenticateRequest(request);
 
       if (refreshToken) {
-        authRepository.deleteSessionByToken(refreshToken);
+        deleteRefreshTokenSession(refreshToken);
       }
 
       if (token && verifySessionToken(token, config.jwtSecret)?.kind === "legacy") {
-        authRepository.deleteSessionByToken(token);
+        deleteRefreshTokenSession(token);
       }
 
       if (auth?.user) {

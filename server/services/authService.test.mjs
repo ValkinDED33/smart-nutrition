@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSessionToken } from "../lib/domain.mjs";
+import { createSessionToken, hashOneTimeToken } from "../lib/domain.mjs";
 import { createAuthService } from "./authService.mjs";
 
 const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
@@ -90,9 +90,10 @@ describe("authService", () => {
       kind: "refresh",
       tokenVersion: user.tokenVersion,
     });
+    const refreshTokenHash = hashOneTimeToken(refreshToken, config.jwtSecret);
 
     authRepository.findSessionByToken.mockReturnValue({
-      token: refreshToken,
+      token: refreshTokenHash,
       userId: user.id,
       expiresAt,
     });
@@ -100,8 +101,10 @@ describe("authService", () => {
 
     const result = service.refreshSession({ headers: {} }, { refreshToken });
 
-    expect(authRepository.deleteSessionByToken).toHaveBeenCalledWith(refreshToken);
+    expect(authRepository.findSessionByToken).toHaveBeenCalledWith(refreshTokenHash);
+    expect(authRepository.deleteSessionByToken).toHaveBeenCalledWith(refreshTokenHash);
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
+    expect(authRepository.createSession.mock.calls[0][0].token).not.toContain(".");
     expect(result.refreshToken).toBeTruthy();
     expect(result.refreshToken).not.toBe(refreshToken);
     expect(result.token).toBeTruthy();

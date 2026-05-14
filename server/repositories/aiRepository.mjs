@@ -5,4 +5,8 @@ export const createAiRepository = (storage) => ({
   clearConversationMessages: (userId) => storage.deleteAssistantMessagesByUserId(userId),
   pruneConversationMessages: (userId, keepLast) =>
     storage.pruneAssistantMessagesByUserId(userId, keepLast),
+  insertUsageEvent: (event) => storage.insertAiUsageEvent(event),
+  getUsageSummary: (query) => storage.getAiUsageSummary(query),
+  findLatestUsageEvent: (query) => storage.findLatestAiUsageEvent(query),
+  createAuditLog: (entry) => storage.createAuditLog(entry),
 });

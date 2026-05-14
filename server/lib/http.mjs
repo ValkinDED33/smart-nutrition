@@ -39,8 +39,32 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
 };
 
 export const setSecurityHeaders = (response) => {
+  response.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "connect-src 'self' https: wss:",
+      "worker-src 'self'",
+      "manifest-src 'self'",
+    ].join("; ")
+  );
+  response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  response.setHeader("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
+  response.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
   response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("X-DNS-Prefetch-Control", "off");
+  response.setHeader("X-Download-Options", "noopen");
   response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 };
 
@@ -138,12 +162,45 @@ export const sendError = (response, statusCode, code, message, details = undefin
   });
 };
 
+const readHeaderValue = (value) =>
+  Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
+
+const isJsonContentType = (contentType) => {
+  const mimeType = String(contentType ?? "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+
+  return mimeType === "application/json" || mimeType.endsWith("+json");
+};
+
 export const readJsonBody = async (request, bodyLimitBytes) =>
   new Promise((resolve, reject) => {
     const chunks = [];
     let totalLength = 0;
+    let contentTypeChecked = false;
+
+    const assertJsonContentType = () => {
+      if (contentTypeChecked) {
+        return true;
+      }
+
+      contentTypeChecked = true;
+
+      if (isJsonContentType(readHeaderValue(request.headers["content-type"]))) {
+        return true;
+      }
+
+      reject(new Error("UNSUPPORTED_MEDIA_TYPE"));
+      request.destroy();
+      return false;
+    };
 
     request.on("data", (chunk) => {
+      if (chunk.length > 0 && !assertJsonContentType()) {
+        return;
+      }
+
       totalLength += chunk.length;
 
       if (totalLength > bodyLimitBytes) {

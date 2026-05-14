@@ -19,6 +19,100 @@ const toFiniteNumber = (value, fallback = 0) => {
   return Number.isFinite(nextValue) ? nextValue : fallback;
 };
 
+const AI_USAGE_ROUTE = "ai.ask";
+
+const emptyUsageSummary = {
+  requestCount: 0,
+  promptTokens: 0,
+  completionTokens: 0,
+  totalTokens: 0,
+  estimatedCostUsd: 0,
+};
+
+const toNonNegativeInteger = (value, fallback = 0) => {
+  const nextValue = Number(value);
+  return Number.isFinite(nextValue) ? Math.max(Math.round(nextValue), 0) : fallback;
+};
+
+const toPositiveInteger = (value, fallback) => {
+  const nextValue = Number(value);
+  return Number.isFinite(nextValue) && nextValue > 0 ? Math.round(nextValue) : fallback;
+};
+
+const toNonNegativeNumber = (value, fallback = 0) => {
+  const nextValue = Number(value);
+  return Number.isFinite(nextValue) && nextValue >= 0 ? nextValue : fallback;
+};
+
+const normalizeUsageSummary = (value) => ({
+  requestCount: toNonNegativeInteger(value?.requestCount),
+  promptTokens: toNonNegativeInteger(value?.promptTokens),
+  completionTokens: toNonNegativeInteger(value?.completionTokens),
+  totalTokens: toNonNegativeInteger(value?.totalTokens),
+  estimatedCostUsd: toNonNegativeNumber(value?.estimatedCostUsd),
+});
+
+const getAiGuardConfig = (config) => ({
+  dailyRequestLimit: toPositiveInteger(config.aiDailyRequestLimit, 40),
+  monthlyRequestLimit: toPositiveInteger(config.aiMonthlyRequestLimit, 600),
+  dailyTokenLimit: toPositiveInteger(config.aiDailyTokenLimit, 60_000),
+  monthlyTokenLimit: toPositiveInteger(config.aiMonthlyTokenLimit, 800_000),
+  requestCooldownMs: toNonNegativeInteger(config.aiRequestCooldownMs, 6_000),
+  estimatedUsdPer1kTokens: toNonNegativeNumber(config.aiEstimatedUsdPer1kTokens, 0.002),
+});
+
+const getUtcWindowStartIso = (windowName) => {
+  const value = new Date();
+
+  value.setUTCHours(0, 0, 0, 0);
+
+  if (windowName === "month") {
+    value.setUTCDate(1);
+  }
+
+  return value.toISOString();
+};
+
+const assistantAbusePatterns = [
+  {
+    reason: "prompt_injection",
+    pattern: /\b(ignore|disregard|forget|override)\b[\s\S]{0,120}\b(previous|system|developer|instructions?)\b/i,
+  },
+  {
+    reason: "secret_exfiltration",
+    pattern: /\b(system prompt|developer message|api key|jwt secret|environment variables?|credentials?|secrets?)\b/i,
+  },
+  {
+    reason: "jailbreak",
+    pattern: /\b(jailbreak|dan mode|bypass (?:the )?(?:safety|policy|guardrails?))\b/i,
+  },
+];
+
+const detectAssistantAbuse = (question) => {
+  const normalizedQuestion = String(question ?? "");
+  return assistantAbusePatterns.find((item) => item.pattern.test(normalizedQuestion)) ?? null;
+};
+
+const estimateTokens = (value) => {
+  const text = String(value ?? "").trim();
+  return text ? Math.max(Math.ceil(text.length / 4), 1) : 0;
+};
+
+const estimatePromptTokens = ({ question, quickQuestionId, context, history }) =>
+  estimateTokens(
+    JSON.stringify({
+      question,
+      quickQuestionId,
+      context,
+      history: Array.isArray(history)
+        ? history.map((message) => ({
+            role: message?.role,
+            text: message?.text,
+          }))
+        : [],
+    })
+  );
+
 const normalizeQuickQuestionId = (value) =>
   value === "day_status" ||
   value === "protein_help" ||
@@ -287,6 +381,7 @@ export const createAiService = ({ aiRepository, config }) => {
     configuredProviders.map((provider) => [provider.id, createProviderState()])
   );
   const retryCooldownMs = Math.max(Number(config.assistantRetryCooldownMs) || 0, 0);
+  const aiGuard = getAiGuardConfig(config);
 
   const getHistoryLimit = (limit) =>
     Math.min(
@@ -342,6 +437,205 @@ export const createAiService = ({ aiRepository, config }) => {
     return state.lastFailureAtMs + retryCooldownMs > now;
   };
 
+  const calculateEstimatedCostUsd = (totalTokens) =>
+    Number(((toNonNegativeInteger(totalTokens) / 1000) * aiGuard.estimatedUsdPer1kTokens).toFixed(6));
+
+  const getUsageSummary = async (currentUser, windowName) => {
+    if (!aiRepository.getUsageSummary) {
+      return emptyUsageSummary;
+    }
+
+    return normalizeUsageSummary(
+      await aiRepository.getUsageSummary({
+        userId: currentUser.id,
+        sinceIso: getUtcWindowStartIso(windowName),
+        route: AI_USAGE_ROUTE,
+      })
+    );
+  };
+
+  const recordAiUsageEvent = async (
+    currentUser,
+    {
+      eventType,
+      promptTokens = 0,
+      completionTokens = 0,
+      providerId = null,
+      blockedReason = null,
+      details = {},
+    }
+  ) => {
+    const createdAt = new Date().toISOString();
+    const usageEventId = createId("ai-usage");
+    const normalizedPromptTokens = toNonNegativeInteger(promptTokens);
+    const normalizedCompletionTokens = toNonNegativeInteger(completionTokens);
+    const totalTokens = normalizedPromptTokens + normalizedCompletionTokens;
+    const estimatedCostUsd = calculateEstimatedCostUsd(totalTokens);
+
+    await aiRepository.insertUsageEvent?.({
+      id: usageEventId,
+      userId: currentUser.id,
+      route: AI_USAGE_ROUTE,
+      eventType,
+      promptTokens: normalizedPromptTokens,
+      completionTokens: normalizedCompletionTokens,
+      totalTokens,
+      estimatedCostUsd,
+      providerId,
+      blockedReason,
+      createdAt,
+    });
+
+    await aiRepository.createAuditLog?.({
+      id: createId("audit"),
+      actorUserId: currentUser.id,
+      actorRole: currentUser.role ?? "USER",
+      action: `ai.request.${eventType}`,
+      targetType: "ai_usage_event",
+      targetId: usageEventId,
+      details: {
+        route: AI_USAGE_ROUTE,
+        providerId,
+        promptTokens: normalizedPromptTokens,
+        completionTokens: normalizedCompletionTokens,
+        totalTokens,
+        estimatedCostUsd,
+        blockedReason,
+        ...details,
+      },
+      createdAt,
+    });
+  };
+
+  const rejectAiRequest = async ({
+    currentUser,
+    code,
+    message,
+    reason,
+    promptTokens,
+    details = {},
+  }) => {
+    await recordAiUsageEvent(currentUser, {
+      eventType: "blocked",
+      promptTokens,
+      blockedReason: reason,
+      details: {
+        code,
+        ...details,
+      },
+    });
+
+    throw new AssistantApiError(code, message, {
+      reason,
+      ...details,
+    });
+  };
+
+  const enforceAiGuard = async ({ currentUser, question, promptTokens }) => {
+    const abuseMatch = detectAssistantAbuse(question);
+
+    if (abuseMatch) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_REQUEST_BLOCKED",
+        message: "Assistant request was blocked by the safety policy.",
+        reason: abuseMatch.reason,
+        promptTokens,
+      });
+    }
+
+    const latestCompletedEvent = await aiRepository.findLatestUsageEvent?.({
+      userId: currentUser.id,
+      route: AI_USAGE_ROUTE,
+      eventType: "completed",
+    });
+    const latestCompletedAtMs = latestCompletedEvent?.createdAt
+      ? Date.parse(latestCompletedEvent.createdAt)
+      : Number.NaN;
+    const retryAfterMs =
+      Number.isFinite(latestCompletedAtMs) && aiGuard.requestCooldownMs > 0
+        ? latestCompletedAtMs + aiGuard.requestCooldownMs - Date.now()
+        : 0;
+
+    if (retryAfterMs > 0) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_COOLDOWN",
+        message: "Please wait before sending another assistant request.",
+        reason: "cooldown",
+        promptTokens,
+        details: {
+          retryAfterMs: Math.ceil(retryAfterMs),
+        },
+      });
+    }
+
+    const dailyUsage = await getUsageSummary(currentUser, "day");
+    const monthlyUsage = await getUsageSummary(currentUser, "month");
+
+    if (dailyUsage.requestCount >= aiGuard.dailyRequestLimit) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_QUOTA_EXCEEDED",
+        message: "Daily assistant request quota exceeded.",
+        reason: "daily_request_limit",
+        promptTokens,
+        details: {
+          limit: aiGuard.dailyRequestLimit,
+          used: dailyUsage.requestCount,
+          window: "day",
+        },
+      });
+    }
+
+    if (monthlyUsage.requestCount >= aiGuard.monthlyRequestLimit) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_QUOTA_EXCEEDED",
+        message: "Monthly assistant request quota exceeded.",
+        reason: "monthly_request_limit",
+        promptTokens,
+        details: {
+          limit: aiGuard.monthlyRequestLimit,
+          used: monthlyUsage.requestCount,
+          window: "month",
+        },
+      });
+    }
+
+    if (dailyUsage.totalTokens + promptTokens > aiGuard.dailyTokenLimit) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_QUOTA_EXCEEDED",
+        message: "Daily assistant token budget exceeded.",
+        reason: "daily_token_limit",
+        promptTokens,
+        details: {
+          limit: aiGuard.dailyTokenLimit,
+          used: dailyUsage.totalTokens,
+          requested: promptTokens,
+          window: "day",
+        },
+      });
+    }
+
+    if (monthlyUsage.totalTokens + promptTokens > aiGuard.monthlyTokenLimit) {
+      await rejectAiRequest({
+        currentUser,
+        code: "ASSISTANT_QUOTA_EXCEEDED",
+        message: "Monthly assistant token budget exceeded.",
+        reason: "monthly_token_limit",
+        promptTokens,
+        details: {
+          limit: aiGuard.monthlyTokenLimit,
+          used: monthlyUsage.totalTokens,
+          requested: promptTokens,
+          window: "month",
+        },
+      });
+    }
+  };
+
   const getProviderAttemptOrder = () => {
     const now = Date.now();
     const readyProviders = [];
@@ -368,6 +662,15 @@ export const createAiService = ({ aiRepository, config }) => {
     primaryProviderLabel: configuredProviders[0]?.label ?? null,
     memoryMessageLimit: config.assistantMemoryMessageLimit,
     retryCooldownMs,
+    abuseProtection: {
+      route: AI_USAGE_ROUTE,
+      requestCooldownMs: aiGuard.requestCooldownMs,
+      dailyRequestLimit: aiGuard.dailyRequestLimit,
+      monthlyRequestLimit: aiGuard.monthlyRequestLimit,
+      dailyTokenLimit: aiGuard.dailyTokenLimit,
+      monthlyTokenLimit: aiGuard.monthlyTokenLimit,
+      estimatedUsdPer1kTokens: aiGuard.estimatedUsdPer1kTokens,
+    },
     providers: configuredProviders.map((provider, index) => {
       const state = getProviderState(provider.id);
       const coolingDownUntilMs =
@@ -492,12 +795,39 @@ export const createAiService = ({ aiRepository, config }) => {
         currentUser.id,
         config.assistantMemoryMessageLimit
       );
-      const aiReply = await callRemoteAi({
+      const promptTokens = estimatePromptTokens({
         question,
         quickQuestionId,
         context,
         history,
       });
+
+      await enforceAiGuard({
+        currentUser,
+        question,
+        promptTokens,
+      });
+
+      let aiReply;
+
+      try {
+        aiReply = await callRemoteAi({
+          question,
+          quickQuestionId,
+          context,
+          history,
+        });
+      } catch (error) {
+        await recordAiUsageEvent(currentUser, {
+          eventType: "failed",
+          promptTokens,
+          blockedReason:
+            error instanceof AssistantApiError ? error.code : "ASSISTANT_RUNTIME_FAILED",
+        });
+        throw error;
+      }
+
+      const completionTokens = estimateTokens(aiReply.text);
       const userMessageCreatedAt = new Date().toISOString();
       const assistantMessageCreatedAt = new Date(Date.now() + 1).toISOString();
 
@@ -519,6 +849,12 @@ export const createAiService = ({ aiRepository, config }) => {
         currentUser.id,
         config.assistantMemoryMessageLimit
       );
+      await recordAiUsageEvent(currentUser, {
+        eventType: "completed",
+        promptTokens,
+        completionTokens,
+        providerId: aiReply.provider.id,
+      });
 
       return {
         text: aiReply.text,

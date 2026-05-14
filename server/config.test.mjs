@@ -97,6 +97,12 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_ASSISTANT_TEMPERATURE: "0.6",
       SMART_NUTRITION_ASSISTANT_MEMORY_LIMIT: "20",
       SMART_NUTRITION_ASSISTANT_TIMEOUT_MS: "15000",
+      SMART_NUTRITION_AI_RATE_LIMIT_MAX: "12",
+      SMART_NUTRITION_AI_DAILY_REQUEST_LIMIT: "25",
+      SMART_NUTRITION_AI_MONTHLY_REQUEST_LIMIT: "300",
+      SMART_NUTRITION_AI_DAILY_TOKEN_LIMIT: "50000",
+      SMART_NUTRITION_AI_MONTHLY_TOKEN_LIMIT: "500000",
+      SMART_NUTRITION_AI_REQUEST_COOLDOWN_MS: "5000",
     });
 
     expect(config.assistantRuntimeConfigured).toBe(true);
@@ -107,6 +113,12 @@ describe("createServerConfig", () => {
     expect(config.assistantTimeoutMs).toBe(15000);
     expect(config.assistantProviderOrder).toEqual(["openai"]);
     expect(config.assistantProviders).toHaveLength(1);
+    expect(config.aiRateLimitMax).toBe(12);
+    expect(config.aiDailyRequestLimit).toBe(25);
+    expect(config.aiMonthlyRequestLimit).toBe(300);
+    expect(config.aiDailyTokenLimit).toBe(50000);
+    expect(config.aiMonthlyTokenLimit).toBe(500000);
+    expect(config.aiRequestCooldownMs).toBe(5000);
   });
 
   it("accepts multi-provider assistant configuration with explicit primary order", () => {

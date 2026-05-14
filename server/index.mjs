@@ -138,6 +138,11 @@ const requestLimiter = new RateLimiterMemory({
   points: serverConfig.requestLimitMax,
   duration: Math.max(Math.ceil(serverConfig.requestLimitWindowMs / 1000), 1),
 });
+const aiRequestLimiter = new RateLimiterMemory({
+  keyPrefix: "smart-nutrition-ai",
+  points: serverConfig.aiRateLimitMax,
+  duration: Math.max(Math.ceil(serverConfig.aiRateLimitWindowMs / 1000), 1),
+});
 const mimeTypes = new Map([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -286,6 +291,31 @@ const consumeRateLimit = async (request) => {
   }
 };
 
+const consumeAiRateLimit = async (request, pathname) => {
+  const clientAddress = getClientAddress(request);
+  const limiterKey = `${clientAddress}:${pathname}`;
+
+  try {
+    const rateLimitResult = await aiRequestLimiter.consume(limiterKey);
+
+    return {
+      allowed: true,
+      remaining: Math.max(rateLimitResult.remainingPoints, 0),
+      resetAt: Date.now() + rateLimitResult.msBeforeNext,
+    };
+  } catch (rateLimitResult) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt:
+        Date.now() +
+        Number(rateLimitResult?.msBeforeNext ?? serverConfig.aiRateLimitWindowMs),
+    };
+  }
+};
+
+const isAiMutationRoute = (pathname, method) => pathname === "/api/ai" && method === "POST";
+
 const getMetricsSnapshot = () => {
   const topRoutes = [...requestMetrics.routes.entries()]
     .sort((left, right) => right[1].count - left[1].count)
@@ -389,6 +419,23 @@ const routeRequest = async (request, response) => {
     response.setHeader("X-RateLimit-Remaining", String(rateLimit.remaining));
   }
 
+  const aiRateLimit = isAiMutationRoute(pathname, request.method)
+    ? await consumeAiRateLimit(request, pathname)
+    : null;
+
+  if (aiRateLimit && !aiRateLimit.allowed) {
+    response.setHeader(
+      "Retry-After",
+      String(Math.ceil((aiRateLimit.resetAt - Date.now()) / 1000))
+    );
+    sendError(response, 429, "AI_RATE_LIMITED", "Too many AI requests. Please slow down.");
+    return;
+  }
+
+  if (aiRateLimit) {
+    response.setHeader("X-AI-RateLimit-Remaining", String(aiRateLimit.remaining));
+  }
+
   authService.cleanupExpiredSessions();
 
   const mealEntryMatch = pathname.match(/^\/api\/meal-entries\/([^/]+)$/);
@@ -415,6 +462,8 @@ const routeRequest = async (request, response) => {
         limits: {
           requestsPerWindow: serverConfig.requestLimitMax,
           windowMs: serverConfig.requestLimitWindowMs,
+          aiRequestsPerWindow: serverConfig.aiRateLimitMax,
+          aiWindowMs: serverConfig.aiRateLimitWindowMs,
         },
         warnings: serverConfig.warnings,
         email: emailService.getStatus(),
@@ -902,7 +951,18 @@ const routeRequest = async (request, response) => {
           ? 503
           : error.code === "ASSISTANT_RUNTIME_FAILED"
             ? 502
+            : error.code === "ASSISTANT_COOLDOWN" ||
+                error.code === "ASSISTANT_QUOTA_EXCEEDED"
+              ? 429
+              : error.code === "ASSISTANT_REQUEST_BLOCKED"
+                ? 403
             : 400;
+      if (Number.isFinite(Number(error.details?.retryAfterMs))) {
+        response.setHeader(
+          "Retry-After",
+          String(Math.ceil(Number(error.details.retryAfterMs) / 1000))
+        );
+      }
       sendError(response, statusCode, error.code, error.message, error.details);
       return;
     }
@@ -927,6 +987,16 @@ const routeRequest = async (request, response) => {
 
     if (error instanceof Error && error.message === "BODY_TOO_LARGE") {
       sendError(response, 413, "BODY_TOO_LARGE", "Request body is too large.");
+      return;
+    }
+
+    if (error instanceof Error && error.message === "UNSUPPORTED_MEDIA_TYPE") {
+      sendError(
+        response,
+        415,
+        "UNSUPPORTED_MEDIA_TYPE",
+        "JSON requests must use Content-Type: application/json."
+      );
       return;
     }
 

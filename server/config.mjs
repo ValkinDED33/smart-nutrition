@@ -907,6 +907,55 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 1_000 }
   );
+  const aiRateLimitWindowMs = readPositiveInteger(
+    env.SMART_NUTRITION_AI_RATE_LIMIT_WINDOW_MS,
+    60_000,
+    "SMART_NUTRITION_AI_RATE_LIMIT_WINDOW_MS",
+    errors
+  );
+  const aiRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AI_RATE_LIMIT_MAX,
+    20,
+    "SMART_NUTRITION_AI_RATE_LIMIT_MAX",
+    errors
+  );
+  const aiDailyRequestLimit = readPositiveInteger(
+    env.SMART_NUTRITION_AI_DAILY_REQUEST_LIMIT,
+    40,
+    "SMART_NUTRITION_AI_DAILY_REQUEST_LIMIT",
+    errors
+  );
+  const aiMonthlyRequestLimit = readPositiveInteger(
+    env.SMART_NUTRITION_AI_MONTHLY_REQUEST_LIMIT,
+    600,
+    "SMART_NUTRITION_AI_MONTHLY_REQUEST_LIMIT",
+    errors
+  );
+  const aiDailyTokenLimit = readPositiveInteger(
+    env.SMART_NUTRITION_AI_DAILY_TOKEN_LIMIT,
+    60_000,
+    "SMART_NUTRITION_AI_DAILY_TOKEN_LIMIT",
+    errors
+  );
+  const aiMonthlyTokenLimit = readPositiveInteger(
+    env.SMART_NUTRITION_AI_MONTHLY_TOKEN_LIMIT,
+    800_000,
+    "SMART_NUTRITION_AI_MONTHLY_TOKEN_LIMIT",
+    errors
+  );
+  const aiRequestCooldownMs = readPositiveInteger(
+    env.SMART_NUTRITION_AI_REQUEST_COOLDOWN_MS,
+    6_000,
+    "SMART_NUTRITION_AI_REQUEST_COOLDOWN_MS",
+    errors
+  );
+  const aiEstimatedUsdPer1kTokens = readNumberInRange(
+    env.SMART_NUTRITION_AI_ESTIMATED_USD_PER_1K_TOKENS,
+    0.002,
+    "SMART_NUTRITION_AI_ESTIMATED_USD_PER_1K_TOKENS",
+    errors,
+    { min: 0, max: 100 }
+  );
 
   const assistantRuntimeConfigured = assistantProviders.length > 0;
 
@@ -962,6 +1011,14 @@ export const createServerConfig = (rawEnv = process.env) => {
     assistantMemoryMessageLimit,
     assistantTimeoutMs,
     assistantRetryCooldownMs,
+    aiRateLimitWindowMs,
+    aiRateLimitMax,
+    aiDailyRequestLimit,
+    aiMonthlyRequestLimit,
+    aiDailyTokenLimit,
+    aiMonthlyTokenLimit,
+    aiRequestCooldownMs,
+    aiEstimatedUsdPer1kTokens,
     assistantRuntimeConfigured,
     assistantProviderOrder: assistantProviders.map((provider) => provider.id),
     assistantPrimaryProviderId: primaryAssistantProvider?.id ?? null,
