@@ -1,0 +1,18 @@
+services:
+  smart-nutrition:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    environment:
+      SMART_NUTRITION_SERVE_STATIC: "true"
+      SMART_NUTRITION_STATIC_DIR: /app/dist
+      SMART_NUTRITION_DB_PATH: /app/server/data/smart-nutrition.sqlite
+    volumes:
+      - smart_nutrition_data:/app/server/data
+
+volumes:
+  smart_nutrition_data:

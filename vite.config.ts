@@ -94,6 +94,7 @@ export default defineConfig({
 
           if (
             normalizedId.includes("/node_modules/framer-motion/") ||
+            normalizedId.includes("/node_modules/motion/") ||
             normalizedId.includes("/node_modules/@react-spring/") ||
             normalizedId.includes("/node_modules/react-countup/") ||
             normalizedId.includes("/node_modules/react-type-animation/")
@@ -134,6 +135,40 @@ export default defineConfig({
             normalizedId.includes("/node_modules/zustand/")
           ) {
             return "interaction-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/three/") ||
+            normalizedId.includes("/node_modules/@react-three/") ||
+            normalizedId.includes("/node_modules/@tsparticles/") ||
+            normalizedId.includes("/node_modules/matter-js/")
+          ) {
+            return "visual-runtime-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/@elevenlabs/") ||
+            normalizedId.includes("/node_modules/@ricky0123/") ||
+            normalizedId.includes("/node_modules/onnxruntime-web/") ||
+            normalizedId.includes("/node_modules/langchain/") ||
+            normalizedId.includes("/node_modules/@langchain/")
+          ) {
+            return "ai-runtime-vendor";
+          }
+
+          if (normalizedId.includes("/node_modules/@capacitor/")) {
+            return "capacitor-vendor";
+          }
+
+          if (
+            normalizedId.includes("/node_modules/firebase/") ||
+            normalizedId.includes("/node_modules/@firebase/")
+          ) {
+            return "firebase-vendor";
+          }
+
+          if (normalizedId.includes("/node_modules/posthog-js/")) {
+            return "analytics-vendor";
           }
 
           return undefined;

@@ -9,6 +9,9 @@
     "server:check": "node --env-file-if-exists=.env server/production-check.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "cap:copy": "capacitor copy",
+    "cap:doctor": "capacitor doctor",
+    "cap:sync": "capacitor sync",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
     "preview": "vite preview"

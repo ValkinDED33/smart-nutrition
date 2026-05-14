@@ -2,10 +2,13 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+import { createInstance, type i18n as I18nInstance } from "i18next";
+import { I18nextProvider, initReactI18next } from "react-i18next";
 import Cookies from "js-cookie";
 import type { AppLanguage } from "../types/i18n";
 import {
@@ -508,6 +511,27 @@ const dictionaries = { uk, pl } as const;
 
 type TranslationKey = keyof typeof uk;
 
+const createLanguageI18nInstance = (language: Language): I18nInstance => {
+  const i18n = createInstance();
+
+  void i18n.use(initReactI18next).init({
+    resources: {
+      uk: { translation: dictionaries.uk },
+      pl: { translation: dictionaries.pl },
+    },
+    lng: language,
+    fallbackLng: "uk",
+    initAsync: false,
+    interpolation: {
+      escapeValue: false,
+      prefix: "{",
+      suffix: "}",
+    },
+  });
+
+  return i18n;
+};
+
 interface LanguageContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
@@ -521,11 +545,19 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const savedLanguage = getClientStorageItem(STORAGE_KEY) ?? Cookies.get(LANGUAGE_COOKIE_KEY);
-  const [language, setLanguageState] = useState<Language>(savedLanguage === "pl" ? "pl" : "uk");
+  const initialLanguage: Language = savedLanguage === "pl" ? "pl" : "uk";
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(
     () => getClientStorageItem(ONBOARDING_STORAGE_KEY) === "true"
   );
+  const [i18n] = useState(() => createLanguageI18nInstance(initialLanguage));
+
+  useEffect(() => {
+    if (i18n.language !== language) {
+      void i18n.changeLanguage(language);
+    }
+  }, [i18n, language]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
@@ -533,6 +565,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       setLanguage: (nextLanguage) => {
         setHasExplicitChoice(true);
         setLanguageState(nextLanguage);
+        void i18n.changeLanguage(nextLanguage);
         setClientStorageItem(STORAGE_KEY, nextLanguage);
         Cookies.set(LANGUAGE_COOKIE_KEY, nextLanguage, {
           sameSite: "lax",
@@ -552,23 +585,17 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         });
       },
       t: (key, vars) => {
-        let text = dictionaries[language][key as TranslationKey] ?? key;
-
-        if (!vars) {
-          return text;
-        }
-
-        Object.entries(vars).forEach(([name, value]) => {
-          text = text.replace(`{${name}}`, String(value));
-        });
-
-        return text;
+        return String(i18n.t(key, vars));
       },
     }),
-    [hasCompletedOnboarding, hasExplicitChoice, language]
+    [hasCompletedOnboarding, hasExplicitChoice, i18n, language]
   );
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  return (
+    <I18nextProvider i18n={i18n}>
+      <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
+    </I18nextProvider>
+  );
 };
 
 export const useLanguage = () => {

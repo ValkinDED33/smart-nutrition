@@ -15,11 +15,13 @@ import { registerServiceWorker } from "./shared/lib/registerServiceWorker";
 import { AppThemeProvider } from "./shared/theme/AppThemeProvider";
 import { SmoothScrollAgent } from "./shared/components/SmoothScrollAgent";
 import { queryClient } from "./shared/query/client";
+import { initializeRuntimeIntegrations } from "./integration/runtime/native";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
 
 await initializeClientPersistence();
+void initializeRuntimeIntegrations();
 
 root.render(
   <StrictMode>
