@@ -401,9 +401,7 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
     });
 
-    expect(config.allowedCorsOrigins).toContain(
-      "https://smart-nutrition-topaz.vercel.app"
-    );
+    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-topaz.vercel.app"]);
   });
 
   it("adds the public Vercel origin when a legacy frontend origin is configured", () => {

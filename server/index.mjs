@@ -384,6 +384,7 @@ const getMetricsSnapshot = () => {
 
 const getPublicStorageStatus = (engineInfo = {}) => ({
   engine: engineInfo.engine ?? "unknown",
+  ...(engineInfo.schemaVersion ? { schemaVersion: engineInfo.schemaVersion } : {}),
   ...(engineInfo.database ? { database: engineInfo.database } : {}),
   ...(typeof engineInfo.ssl === "boolean" ? { ssl: engineInfo.ssl } : {}),
 });

@@ -904,9 +904,14 @@ export const createServerConfig = (rawEnv = process.env) => {
     "SMART_NUTRITION_PRODUCT_SUBMISSION_DAILY_LIMIT",
     errors
   );
+  const defaultAppBaseUrl = isProduction
+    ? PUBLIC_FRONTEND_ORIGIN
+    : serveStatic
+      ? `http://localhost:${port}`
+      : "http://localhost:5173";
   const appBaseUrl = normalizeBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
-    serveStatic ? `http://localhost:${port}` : "http://localhost:5173"
+    defaultAppBaseUrl
   );
   const authCookieSameSite = normalizeCookieSameSite(
     env.SMART_NUTRITION_AUTH_COOKIE_SAME_SITE,

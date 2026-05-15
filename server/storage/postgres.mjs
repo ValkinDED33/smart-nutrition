@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import {
   mkdirSync,
@@ -382,175 +383,287 @@ const mapAiUsageSummaryRow = (row) => ({
   estimatedCostUsd: Math.max(Number(row?.estimated_cost_usd ?? 0), 0),
 });
 
-const runMigrations = async (pool) => {
+const POSTGRES_MIGRATION_LOCK_NAMESPACE = 2026;
+const POSTGRES_MIGRATION_LOCK_ID = 515;
+
+export const POSTGRES_SCHEMA_MIGRATIONS = [
+  {
+    id: "202605150001",
+    name: "initial_postgres_schema",
+    sql: `
+      CREATE TABLE IF NOT EXISTS smart_nutrition_meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+        phone TEXT,
+        phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
+        verification_channel TEXT NOT NULL DEFAULT 'email',
+        avatar TEXT,
+        age DOUBLE PRECISION NOT NULL,
+        weight DOUBLE PRECISION NOT NULL,
+        height DOUBLE PRECISION NOT NULL,
+        gender TEXT NOT NULL,
+        activity TEXT NOT NULL,
+        goal TEXT NOT NULL,
+        measurements_json JSONB,
+        created_at TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'USER',
+        banned_at TEXT,
+        banned_reason TEXT,
+        two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        two_factor_required BOOLEAN NOT NULL DEFAULT FALSE,
+        token_version INTEGER NOT NULL DEFAULT 0,
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        password_version TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at BIGINT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        expires_at BIGINT NOT NULL,
+        consumed_at TEXT,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS registration_verification_tokens (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        channel TEXT NOT NULL DEFAULT 'email',
+        target TEXT NOT NULL,
+        code_hash TEXT NOT NULL UNIQUE,
+        expires_at BIGINT NOT NULL,
+        consumed_at TEXT,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS snapshots (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        profile_json JSONB NOT NULL,
+        meal_json JSONB NOT NULL,
+        water_json JSONB NOT NULL,
+        fridge_json JSONB NOT NULL,
+        community_json JSONB NOT NULL,
+        updated_at TEXT NOT NULL,
+        profile_updated_at TEXT,
+        meal_updated_at TEXT,
+        water_updated_at TEXT,
+        backup_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        last_writer_device_id TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS login_attempts (
+        email TEXT PRIMARY KEY,
+        count INTEGER NOT NULL,
+        lock_until BIGINT
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id TEXT PRIMARY KEY,
+        actor_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        actor_role TEXT NOT NULL DEFAULT 'USER',
+        action TEXT NOT NULL,
+        target_type TEXT,
+        target_id TEXT,
+        details_json JSONB,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS catalog_products (
+        id TEXT PRIMARY KEY,
+        owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        brand TEXT,
+        barcode TEXT,
+        category TEXT,
+        image_url TEXT,
+        unit TEXT NOT NULL DEFAULT 'g',
+        source TEXT NOT NULL DEFAULT 'Manual',
+        nutrients_json JSONB NOT NULL,
+        facts_json JSONB,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        approved_at TEXT,
+        approved_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        rejection_reason TEXT,
+        version INTEGER NOT NULL DEFAULT 1
+      );
+
+      CREATE TABLE IF NOT EXISTS catalog_product_versions (
+        id TEXT PRIMARY KEY,
+        product_id TEXT NOT NULL REFERENCES catalog_products(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        editor_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+        note TEXT,
+        snapshot_json JSONB NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS assistant_messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        text TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_usage_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        route TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        prompt_tokens INTEGER NOT NULL DEFAULT 0,
+        completion_tokens INTEGER NOT NULL DEFAULT 0,
+        total_tokens INTEGER NOT NULL DEFAULT 0,
+        estimated_cost_usd DOUBLE PRECISION NOT NULL DEFAULT 0,
+        provider_id TEXT,
+        blocked_reason TEXT,
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+      CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
+      CREATE INDEX IF NOT EXISTS idx_registration_verification_tokens_user ON registration_verification_tokens(user_id, expires_at);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_catalog_products_status ON catalog_products(status, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_catalog_products_owner ON catalog_products(owner_user_id, updated_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_catalog_products_barcode ON catalog_products(barcode);
+      CREATE INDEX IF NOT EXISTS idx_assistant_messages_user ON assistant_messages(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_created ON ai_usage_events(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_events_route_created ON ai_usage_events(route, created_at DESC);
+    `,
+  },
+  {
+    id: "202605150002",
+    name: "production_read_indexes",
+    sql: `
+      CREATE INDEX IF NOT EXISTS idx_users_banned_at ON users(banned_at);
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_registration_verification_tokens_expires ON registration_verification_tokens(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_catalog_product_versions_product ON catalog_product_versions(product_id, version DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_route_created ON ai_usage_events(user_id, route, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_event_created ON ai_usage_events(user_id, event_type, created_at DESC);
+    `,
+  },
+];
+
+export const POSTGRES_SCHEMA_VERSION =
+  POSTGRES_SCHEMA_MIGRATIONS[POSTGRES_SCHEMA_MIGRATIONS.length - 1]?.id ?? "unknown";
+
+const normalizeMigrationSql = (sql) => sql.replace(/\r\n/g, "\n").trim();
+
+const calculateMigrationChecksum = (sql) =>
+  crypto.createHash("sha256").update(normalizeMigrationSql(sql)).digest("hex");
+
+const bootstrapPostgresMigrationTables = async (pool) => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS smart_nutrition_meta (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS schema_migrations (
       id TEXT PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
-      email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      phone TEXT,
-      phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
-      verification_channel TEXT NOT NULL DEFAULT 'email',
-      avatar TEXT,
-      age DOUBLE PRECISION NOT NULL,
-      weight DOUBLE PRECISION NOT NULL,
-      height DOUBLE PRECISION NOT NULL,
-      gender TEXT NOT NULL,
-      activity TEXT NOT NULL,
-      goal TEXT NOT NULL,
-      measurements_json JSONB,
-      created_at TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'USER',
-      banned_at TEXT,
-      banned_reason TEXT,
-      two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-      two_factor_required BOOLEAN NOT NULL DEFAULT FALSE,
-      token_version INTEGER NOT NULL DEFAULT 0,
-      password_hash TEXT NOT NULL,
-      password_salt TEXT NOT NULL,
-      password_version TEXT NOT NULL
+      checksum TEXT NOT NULL,
+      applied_at TEXT NOT NULL
     );
-
-    CREATE TABLE IF NOT EXISTS sessions (
-      token TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      expires_at BIGINT NOT NULL,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS password_reset_tokens (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      token_hash TEXT NOT NULL UNIQUE,
-      expires_at BIGINT NOT NULL,
-      consumed_at TEXT,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS registration_verification_tokens (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      channel TEXT NOT NULL DEFAULT 'email',
-      target TEXT NOT NULL,
-      code_hash TEXT NOT NULL UNIQUE,
-      expires_at BIGINT NOT NULL,
-      consumed_at TEXT,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS snapshots (
-      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      profile_json JSONB NOT NULL,
-      meal_json JSONB NOT NULL,
-      water_json JSONB NOT NULL,
-      fridge_json JSONB NOT NULL,
-      community_json JSONB NOT NULL,
-      updated_at TEXT NOT NULL,
-      profile_updated_at TEXT,
-      meal_updated_at TEXT,
-      water_updated_at TEXT,
-      backup_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-      last_writer_device_id TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS login_attempts (
-      email TEXT PRIMARY KEY,
-      count INTEGER NOT NULL,
-      lock_until BIGINT
-    );
-
-    CREATE TABLE IF NOT EXISTS audit_logs (
-      id TEXT PRIMARY KEY,
-      actor_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-      actor_role TEXT NOT NULL DEFAULT 'USER',
-      action TEXT NOT NULL,
-      target_type TEXT,
-      target_id TEXT,
-      details_json JSONB,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS catalog_products (
-      id TEXT PRIMARY KEY,
-      owner_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      brand TEXT,
-      barcode TEXT,
-      category TEXT,
-      image_url TEXT,
-      unit TEXT NOT NULL DEFAULT 'g',
-      source TEXT NOT NULL DEFAULT 'Manual',
-      nutrients_json JSONB NOT NULL,
-      facts_json JSONB,
-      status TEXT NOT NULL DEFAULT 'pending',
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      approved_at TEXT,
-      approved_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-      rejection_reason TEXT,
-      version INTEGER NOT NULL DEFAULT 1
-    );
-
-    CREATE TABLE IF NOT EXISTS catalog_product_versions (
-      id TEXT PRIMARY KEY,
-      product_id TEXT NOT NULL REFERENCES catalog_products(id) ON DELETE CASCADE,
-      version INTEGER NOT NULL,
-      editor_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-      note TEXT,
-      snapshot_json JSONB NOT NULL,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS assistant_messages (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      role TEXT NOT NULL,
-      text TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS ai_usage_events (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      route TEXT NOT NULL,
-      event_type TEXT NOT NULL,
-      prompt_tokens INTEGER NOT NULL DEFAULT 0,
-      completion_tokens INTEGER NOT NULL DEFAULT 0,
-      total_tokens INTEGER NOT NULL DEFAULT 0,
-      estimated_cost_usd DOUBLE PRECISION NOT NULL DEFAULT 0,
-      provider_id TEXT,
-      blocked_reason TEXT,
-      created_at TEXT NOT NULL
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-    CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-    CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
-    CREATE INDEX IF NOT EXISTS idx_registration_verification_tokens_user ON registration_verification_tokens(user_id, expires_at);
-    CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_catalog_products_status ON catalog_products(status, updated_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_catalog_products_owner ON catalog_products(owner_user_id, updated_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_catalog_products_barcode ON catalog_products(barcode);
-    CREATE INDEX IF NOT EXISTS idx_assistant_messages_user ON assistant_messages(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_created ON ai_usage_events(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_events_route_created ON ai_usage_events(route, created_at DESC);
   `);
+};
 
+const setPostgresMetaValue = async (pool, key, value) => {
   await pool.query(
     `
       INSERT INTO smart_nutrition_meta (key, value)
-      VALUES ('storage_engine', 'postgres')
+      VALUES ($1, $2)
       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value
-    `
+    `,
+    [key, value]
   );
+};
+
+const applyPostgresMigration = async (pool, migration) => {
+  const checksum = calculateMigrationChecksum(migration.sql);
+  const existing = await pool.query("SELECT checksum FROM schema_migrations WHERE id = $1", [
+    migration.id,
+  ]);
+  const existingChecksum = existing.rows[0]?.checksum ?? null;
+
+  if (existingChecksum) {
+    if (existingChecksum !== checksum) {
+      throw new Error(
+        `PostgreSQL migration ${migration.id} checksum mismatch. Refusing to continue.`
+      );
+    }
+
+    return;
+  }
+
+  await pool.query("BEGIN");
+
+  try {
+    await pool.query(migration.sql);
+    await pool.query(
+      `
+        INSERT INTO schema_migrations (id, name, checksum, applied_at)
+        VALUES ($1, $2, $3, $4)
+      `,
+      [migration.id, migration.name, checksum, new Date().toISOString()]
+    );
+    await setPostgresMetaValue(pool, "schema_version", migration.id);
+    await pool.query("COMMIT");
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    throw error;
+  }
+};
+
+const withPostgresMigrationLock = async (pool, task) => {
+  await pool.query("SELECT pg_advisory_lock($1, $2)", [
+    POSTGRES_MIGRATION_LOCK_NAMESPACE,
+    POSTGRES_MIGRATION_LOCK_ID,
+  ]);
+
+  try {
+    return await task();
+  } finally {
+    await pool.query("SELECT pg_advisory_unlock($1, $2)", [
+      POSTGRES_MIGRATION_LOCK_NAMESPACE,
+      POSTGRES_MIGRATION_LOCK_ID,
+    ]);
+  }
+};
+
+export const runPostgresMigrations = async (pool) => {
+  await bootstrapPostgresMigrationTables(pool);
+
+  await withPostgresMigrationLock(pool, async () => {
+    for (const migration of POSTGRES_SCHEMA_MIGRATIONS) {
+      await applyPostgresMigration(pool, migration);
+    }
+
+    await setPostgresMetaValue(pool, "storage_engine", "postgres");
+    await setPostgresMetaValue(pool, "schema_version", POSTGRES_SCHEMA_VERSION);
+  });
 };
 
 const getPublicPostgresInfo = (databaseUrl) => {
@@ -589,7 +702,7 @@ export const createPostgresStorage = async ({
     ssl: postgresSsl ? { rejectUnauthorized: false } : undefined,
   });
 
-  await runMigrations(pool);
+  await runPostgresMigrations(pool);
 
   const backupWriteTracker = new Map();
 
@@ -986,6 +1099,7 @@ export const createPostgresStorage = async ({
   return {
     getEngineInfo: () => ({
       engine: "postgres",
+      schemaVersion: POSTGRES_SCHEMA_VERSION,
       ...publicPostgresInfo,
       ssl: Boolean(postgresSsl),
       backupDir,

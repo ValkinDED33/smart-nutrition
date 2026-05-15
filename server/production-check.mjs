@@ -1,4 +1,5 @@
 import { createServerConfig } from "./config.mjs";
+import { POSTGRES_SCHEMA_VERSION } from "./storage/postgres.mjs";
 
 const statusIcon = (ok) => (ok ? "OK " : "ERR");
 
@@ -17,6 +18,19 @@ const printCheck = (check) => {
 
   if (check.detail) {
     console.log(`    ${check.detail}`);
+  }
+};
+
+const isLocalDatabaseUrl = (databaseUrl) => {
+  if (!databaseUrl) {
+    return false;
+  }
+
+  try {
+    const parsedUrl = new URL(databaseUrl);
+    return ["localhost", "127.0.0.1", "::1"].includes(parsedUrl.hostname);
+  } catch {
+    return false;
   }
 };
 
@@ -61,15 +75,22 @@ const run = () => {
     }),
     createCheck({
       id: "database",
-      label: "Durable database is configured",
-      ok:
-        config.databaseProvider === "postgres"
-          ? Boolean(config.postgresUrl)
-          : Boolean(config.sqlitePath),
+      label: "PostgreSQL production database is configured",
+      ok: config.databaseProvider === "postgres" && Boolean(config.postgresUrl),
       detail:
         config.databaseProvider === "postgres"
-          ? `PostgreSQL provider enabled, SSL=${config.postgresSsl}`
-          : `SQLite fallback: ${config.sqlitePath}`,
+          ? `PostgreSQL provider enabled, schema version ${POSTGRES_SCHEMA_VERSION}`
+          : `Current provider: ${config.databaseProvider}. Use SMART_NUTRITION_DATABASE_PROVIDER=postgres for production.`,
+    }),
+    createCheck({
+      id: "postgres-ssl",
+      label: "PostgreSQL SSL is enabled for remote production databases",
+      ok:
+        config.databaseProvider !== "postgres" ||
+        !config.postgresUrl ||
+        isLocalDatabaseUrl(config.postgresUrl) ||
+        config.postgresSsl,
+      detail: `SSL=${config.postgresSsl}, local=${isLocalDatabaseUrl(config.postgresUrl)}`,
     }),
     createCheck({
       id: "backups",
@@ -93,6 +114,15 @@ const run = () => {
         ? `From: ${config.emailFromName} <${config.emailFromAddress}>`
         : "SMTP env must be configured so production password reset emails can be delivered.",
       required: true,
+    }),
+    createCheck({
+      id: "super-admin-seed",
+      label: "Super admin bootstrap email is configured",
+      ok: Boolean(config.superAdminEmail),
+      detail: config.superAdminEmail
+        ? `Bootstrap email: ${config.superAdminEmail}`
+        : "Set SMART_NUTRITION_SUPER_ADMIN_EMAIL so the first matching registered account becomes SUPER_ADMIN.",
+      required: false,
     }),
     createCheck({
       id: "mango-sms",
