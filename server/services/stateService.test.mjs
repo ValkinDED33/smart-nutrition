@@ -24,7 +24,7 @@ const createStateRepositoryFixture = () => ({
 });
 
 describe("stateService", () => {
-  it("persists water, fridge, and community when saving a full snapshot", () => {
+  it("persists water, fridge, and community when saving a full snapshot", async () => {
     const stateRepository = createStateRepositoryFixture();
     const service = createStateService({ stateRepository });
     const user = { id: "user-1" };
@@ -36,7 +36,7 @@ describe("stateService", () => {
       community: { score: 180, posts: [{ id: "post-1" }] },
     };
 
-    service.saveSnapshot(user, snapshot);
+    await service.saveSnapshot(user, snapshot);
 
     expect(stateRepository.upsertSnapshot).toHaveBeenCalledTimes(1);
     expect(stateRepository.upsertSnapshot).toHaveBeenCalledWith(
@@ -52,11 +52,11 @@ describe("stateService", () => {
     );
   });
 
-  it("rejects incomplete full snapshots instead of normalizing them into empty state", () => {
+  it("rejects incomplete full snapshots instead of normalizing them into empty state", async () => {
     const stateRepository = createStateRepositoryFixture();
     const service = createStateService({ stateRepository });
 
-    expect(() =>
+    await expect(
       service.saveSnapshot(
         { id: "user-1" },
         {
@@ -64,17 +64,17 @@ describe("stateService", () => {
           meal: { items: [] },
         }
       )
-    ).toThrow(/Water state payload is required/);
+    ).rejects.toThrow(/Water state payload is required/);
     expect(stateRepository.upsertSnapshot).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid granular profile and meal payloads", () => {
+  it("rejects invalid granular profile and meal payloads", async () => {
     const stateRepository = createStateRepositoryFixture();
     const service = createStateService({ stateRepository });
     const user = { id: "user-1" };
 
-    expect(() => service.saveProfileState(user, null)).toThrow(/Profile state/);
-    expect(() => service.saveMealState(user, [])).toThrow(/Meal state/);
+    await expect(service.saveProfileState(user, null)).rejects.toThrow(/Profile state/);
+    await expect(service.saveMealState(user, [])).rejects.toThrow(/Meal state/);
     expect(stateRepository.upsertProfileState).not.toHaveBeenCalled();
     expect(stateRepository.upsertMealState).not.toHaveBeenCalled();
   });

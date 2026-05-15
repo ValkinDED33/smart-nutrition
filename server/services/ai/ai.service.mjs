@@ -661,6 +661,7 @@ export const createAiService = ({ aiRepository, config }) => {
     primaryProviderId: configuredProviders[0]?.id ?? null,
     primaryProviderLabel: configuredProviders[0]?.label ?? null,
     memoryMessageLimit: config.assistantMemoryMessageLimit,
+    dataProvider: config.aiDataProvider ?? "primary",
     retryCooldownMs,
     abuseProtection: {
       route: AI_USAGE_ROUTE,
@@ -763,11 +764,11 @@ export const createAiService = ({ aiRepository, config }) => {
   };
 
   return {
-    getConversationHistory: (currentUser, limit = undefined) =>
+    getConversationHistory: async (currentUser, limit = undefined) =>
       aiRepository.listConversationMessages(currentUser.id, getHistoryLimit(limit)),
 
-    clearConversationHistory: (currentUser) => {
-      aiRepository.clearConversationMessages(currentUser.id);
+    clearConversationHistory: async (currentUser) => {
+      await aiRepository.clearConversationMessages(currentUser.id);
     },
 
     getRuntimeStatus,
@@ -791,7 +792,7 @@ export const createAiService = ({ aiRepository, config }) => {
 
       const quickQuestionId = normalizeQuickQuestionId(payload?.quickQuestionId);
       const context = normalizeContext(payload?.context, currentUser);
-      const history = aiRepository.listConversationMessages(
+      const history = await aiRepository.listConversationMessages(
         currentUser.id,
         config.assistantMemoryMessageLimit
       );
@@ -831,21 +832,21 @@ export const createAiService = ({ aiRepository, config }) => {
       const userMessageCreatedAt = new Date().toISOString();
       const assistantMessageCreatedAt = new Date(Date.now() + 1).toISOString();
 
-      aiRepository.insertConversationMessage({
+      await aiRepository.insertConversationMessage({
         id: createId("assistant-msg"),
         userId: currentUser.id,
         role: "user",
         text: question,
         createdAt: userMessageCreatedAt,
       });
-      aiRepository.insertConversationMessage({
+      await aiRepository.insertConversationMessage({
         id: createId("assistant-msg"),
         userId: currentUser.id,
         role: "assistant",
         text: aiReply.text,
         createdAt: assistantMessageCreatedAt,
       });
-      aiRepository.pruneConversationMessages(
+      await aiRepository.pruneConversationMessages(
         currentUser.id,
         config.assistantMemoryMessageLimit
       );

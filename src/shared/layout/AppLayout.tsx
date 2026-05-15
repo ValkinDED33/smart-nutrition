@@ -4,6 +4,7 @@ import {
   Bot,
   Droplets,
   Home,
+  ShieldCheck,
   TrendingUp,
   Utensils,
   UserRound,
@@ -77,6 +78,17 @@ const Layout = () => {
   const activeTab =
     mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? "/home";
   const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
+  const canAccessAdmin =
+    user &&
+    ["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(user.role);
+  const visibleDesktopTabs = canAccessAdmin
+    ? [...desktopTabs, { value: "/admin", label: "Admin" }]
+    : desktopTabs;
+  const visibleMobileTabs = canAccessAdmin
+    ? [...mobileTabs, { value: "/admin", label: "Admin", icon: ShieldCheck }]
+    : mobileTabs;
+  const activeMobileTab =
+    visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? activeTab;
 
   return (
     <Box
@@ -157,7 +169,7 @@ const Layout = () => {
                 alignItems="center"
                 sx={{ display: { xs: "none", md: "flex" } }}
               >
-                {desktopTabs.map((tab) => {
+                {visibleDesktopTabs.map((tab) => {
                   const selected = location.pathname.startsWith(tab.value);
 
                   return (
@@ -337,7 +349,7 @@ const Layout = () => {
           <BottomNavigation
             aria-label="Mobile primary navigation"
             showLabels
-            value={activeTab}
+            value={activeMobileTab}
             onChange={(_, nextValue) => {
               if (typeof nextValue === "string") {
                 navigate(nextValue);
@@ -354,7 +366,7 @@ const Layout = () => {
               },
             }}
           >
-            {mobileTabs.map((tab) => {
+            {visibleMobileTabs.map((tab) => {
               const Icon = tab.icon;
 
               return (

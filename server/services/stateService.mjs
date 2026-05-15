@@ -66,11 +66,11 @@ const requireSnapshot = (value) => {
 };
 
 export const createStateService = ({ stateRepository }) => ({
-  getSnapshot: (user) => stateRepository.getSnapshotByUserId(user.id, user),
+  getSnapshot: async (user) => stateRepository.getSnapshotByUserId(user.id, user),
 
-  getSnapshotMeta: (user) => stateRepository.getSnapshotMetaByUserId(user.id),
+  getSnapshotMeta: async (user) => stateRepository.getSnapshotMetaByUserId(user.id),
 
-  saveSnapshot: (user, snapshot, syncContext = undefined) => {
+  saveSnapshot: async (user, snapshot, syncContext = undefined) => {
     const nextSnapshot = requireSnapshot(snapshot);
 
     return stateRepository.upsertSnapshot(user.id, {
@@ -79,61 +79,61 @@ export const createStateService = ({ stateRepository }) => ({
     }, syncContext);
   },
 
-  getProfileState: (user) => stateRepository.getProfileStateByUserId(user.id, user),
+  getProfileState: async (user) => stateRepository.getProfileStateByUserId(user.id, user),
 
-  saveProfileState: (user, profileState, syncContext = undefined) =>
+  saveProfileState: async (user, profileState, syncContext = undefined) =>
     stateRepository.upsertProfileState(
       user.id,
       requireProfileState(profileState),
       syncContext
     ),
 
-  getMealState: (user) => stateRepository.getMealStateByUserId(user.id),
+  getMealState: async (user) => stateRepository.getMealStateByUserId(user.id),
 
-  saveMealState: (user, mealState, syncContext = undefined) =>
+  saveMealState: async (user, mealState, syncContext = undefined) =>
     stateRepository.upsertMealState(user.id, requireMealState(mealState), syncContext),
 
-  getWaterState: (user) => stateRepository.getWaterStateByUserId(user.id),
+  getWaterState: async (user) => stateRepository.getWaterStateByUserId(user.id),
 
-  saveWaterState: (user, waterState, syncContext = undefined) =>
+  saveWaterState: async (user, waterState, syncContext = undefined) =>
     stateRepository.upsertWaterState(user.id, requireWaterState(waterState), syncContext),
 
-  getFridgeState: (user) => stateRepository.getFridgeStateByUserId(user.id),
+  getFridgeState: async (user) => stateRepository.getFridgeStateByUserId(user.id),
 
-  saveFridgeState: (user, fridgeState, syncContext = undefined) =>
+  saveFridgeState: async (user, fridgeState, syncContext = undefined) =>
     stateRepository.upsertFridgeState(
       user.id,
       requireFridgeState(fridgeState),
       syncContext
     ),
 
-  getCommunityState: (user) => stateRepository.getCommunityStateByUserId(user.id),
+  getCommunityState: async (user) => stateRepository.getCommunityStateByUserId(user.id),
 
-  saveCommunityState: (user, communityState, syncContext = undefined) =>
+  saveCommunityState: async (user, communityState, syncContext = undefined) =>
     stateRepository.upsertCommunityState(
       user.id,
       requireCommunityState(communityState),
       syncContext
     ),
 
-  addMealEntries: (user, requestBody, syncContext = undefined) =>
+  addMealEntries: async (user, requestBody, syncContext = undefined) =>
     stateRepository.addMealEntries(user.id, requireEntries(requestBody?.entries), syncContext),
 
-  removeMealEntry: (user, entryId, syncContext = undefined) =>
+  removeMealEntry: async (user, entryId, syncContext = undefined) =>
     stateRepository.removeMealEntry(
       user.id,
       requireNonEmptyString(entryId, "INVALID_MEAL_ENTRY_ID", "Meal entry id is required."),
       syncContext
     ),
 
-  addMealTemplate: (user, template, syncContext = undefined) =>
+  addMealTemplate: async (user, template, syncContext = undefined) =>
     stateRepository.addMealTemplate(
       user.id,
       requireRecord(template, "INVALID_MEAL_TEMPLATE", "Meal template payload is required."),
       syncContext
     ),
 
-  deleteMealTemplate: (user, templateId, syncContext = undefined) =>
+  deleteMealTemplate: async (user, templateId, syncContext = undefined) =>
     stateRepository.deleteMealTemplate(
       user.id,
       requireNonEmptyString(
@@ -144,7 +144,7 @@ export const createStateService = ({ stateRepository }) => ({
       syncContext
     ),
 
-  upsertMealProduct: (user, bucket, product, syncContext = undefined) =>
+  upsertMealProduct: async (user, bucket, product, syncContext = undefined) =>
     stateRepository.upsertMealProduct(
       user.id,
       requireMealProductBucket(bucket),
@@ -152,7 +152,7 @@ export const createStateService = ({ stateRepository }) => ({
       syncContext
     ),
 
-  removeMealProduct: (user, bucket, productKey, syncContext = undefined) =>
+  removeMealProduct: async (user, bucket, productKey, syncContext = undefined) =>
     stateRepository.removeMealProduct(
       user.id,
       requireMealProductBucket(bucket),

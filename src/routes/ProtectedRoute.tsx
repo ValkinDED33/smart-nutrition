@@ -3,12 +3,14 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import type { RootState } from "../app/store";
 import PacmanLoader from "../shared/components/Loader/PacmanLoader";
+import type { UserRole } from "../shared/types/user";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  roles?: UserRole[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, roles }: ProtectedRouteProps) => {
   const { user, isLoading, isInitialized } = useSelector(
     (state: RootState) => state.auth
   );
@@ -19,6 +21,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;

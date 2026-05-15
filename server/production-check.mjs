@@ -61,9 +61,15 @@ const run = () => {
     }),
     createCheck({
       id: "database",
-      label: "Database path is configured",
-      ok: Boolean(config.sqlitePath),
-      detail: `SMART_NUTRITION_DB_PATH: ${config.sqlitePath}`,
+      label: "Durable database is configured",
+      ok:
+        config.databaseProvider === "postgres"
+          ? Boolean(config.postgresUrl)
+          : Boolean(config.sqlitePath),
+      detail:
+        config.databaseProvider === "postgres"
+          ? `PostgreSQL provider enabled, SSL=${config.postgresSsl}`
+          : `SQLite fallback: ${config.sqlitePath}`,
     }),
     createCheck({
       id: "backups",

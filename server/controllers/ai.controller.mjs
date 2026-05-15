@@ -10,17 +10,17 @@ export const createAiController = ({ aiService, bodyLimitBytes }) => ({
     sendJson(response, 200, await aiService.askQuestion(auth.user, body));
   },
 
-  getConversationHistory: ({ response, auth, url }) => {
+  getConversationHistory: async ({ response, auth, url }) => {
     sendJson(response, 200, {
-      items: aiService.getConversationHistory(
+      items: await aiService.getConversationHistory(
         auth.user,
         url.searchParams.get("limit") ?? undefined
       ),
     });
   },
 
-  clearConversationHistory: ({ response, auth }) => {
-    aiService.clearConversationHistory(auth.user);
+  clearConversationHistory: async ({ response, auth }) => {
+    await aiService.clearConversationHistory(auth.user);
     sendNoContent(response);
   },
 });

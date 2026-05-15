@@ -38,10 +38,10 @@ const admin = {
 };
 
 describe("platformService", () => {
-  it("clamps public catalog query limits and trims search", () => {
+  it("clamps public catalog query limits and trims search", async () => {
     const { platformRepository, service } = createPlatformFixture();
 
-    service.listVisibleCatalogProducts(user, {
+    await service.listVisibleCatalogProducts(user, {
       limit: "99999",
       search: "  high   protein   breakfast  ",
     });
@@ -54,11 +54,11 @@ describe("platformService", () => {
     );
   });
 
-  it("clamps moderation and audit limits server-side", () => {
+  it("clamps moderation and audit limits server-side", async () => {
     const { platformRepository, service } = createPlatformFixture();
 
-    service.listModerationQueue(moderator, { limit: "99999" });
-    service.listAuditLogs(admin, { limit: "99999" });
+    await service.listModerationQueue(moderator, { limit: "99999" });
+    await service.listAuditLogs(admin, { limit: "99999" });
 
     expect(platformRepository.listCatalogProducts).toHaveBeenCalledWith(
       expect.objectContaining({ limit: 160 })
@@ -66,10 +66,10 @@ describe("platformService", () => {
     expect(platformRepository.listAuditLogs).toHaveBeenCalledWith(200);
   });
 
-  it("drops unsafe catalog image URLs and caps nutrient values", () => {
+  it("drops unsafe catalog image URLs and caps nutrient values", async () => {
     const { platformRepository, service } = createPlatformFixture();
 
-    const result = service.submitCatalogProduct(user, {
+    const result = await service.submitCatalogProduct(user, {
       name: "Protein bowl",
       imageUrl: "javascript:alert(1)",
       calories: 99999999,

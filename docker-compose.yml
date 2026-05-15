@@ -1,8 +1,37 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: smart_nutrition
+      POSTGRES_USER: smart_nutrition
+      POSTGRES_PASSWORD: smart_nutrition_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - smart_nutrition_postgres:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - smart_nutrition_mongo:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - smart_nutrition_redis:/data
+
   smart-nutrition:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - mongo
+      - redis
     ports:
       - "8787:8787"
     env_file:
@@ -10,9 +39,19 @@ services:
     environment:
       SMART_NUTRITION_SERVE_STATIC: "true"
       SMART_NUTRITION_STATIC_DIR: /app/dist
+      SMART_NUTRITION_DATABASE_PROVIDER: postgres
+      SMART_NUTRITION_DATABASE_URL: postgres://smart_nutrition:smart_nutrition_dev@postgres:5432/smart_nutrition
+      SMART_NUTRITION_DATABASE_SSL: "false"
+      SMART_NUTRITION_AI_DATA_PROVIDER: mongodb
+      SMART_NUTRITION_MONGODB_URI: mongodb://mongo:27017
+      SMART_NUTRITION_MONGODB_DB: smart_nutrition
+      SMART_NUTRITION_REDIS_URL: redis://redis:6379
       SMART_NUTRITION_DB_PATH: /app/server/data/smart-nutrition.sqlite
     volumes:
       - smart_nutrition_data:/app/server/data
 
 volumes:
   smart_nutrition_data:
+  smart_nutrition_postgres:
+  smart_nutrition_mongo:
+  smart_nutrition_redis:

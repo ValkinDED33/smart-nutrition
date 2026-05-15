@@ -214,7 +214,7 @@ export const createAuthService = ({
     ),
   });
 
-  const writeAuditLog = ({
+  const writeAuditLog = async ({
     actorUserId = null,
     actorRole = "USER",
     action,
@@ -222,7 +222,7 @@ export const createAuthService = ({
     targetId = null,
     details = null,
   }) => {
-    authRepository.createAuditLog?.({
+    await authRepository.createAuditLog?.({
       id: createId("audit"),
       actorUserId,
       actorRole,
@@ -234,11 +234,11 @@ export const createAuthService = ({
     });
   };
 
-  const buildAuthResponse = (user, accessToken, refreshToken = undefined) => ({
+  const buildAuthResponse = async (user, accessToken, refreshToken = undefined) => ({
     user: toPublicUser(user),
     token: accessToken,
     refreshToken,
-    snapshot: stateRepository.getSnapshotByUserId(user.id, user),
+    snapshot: await stateRepository.getSnapshotByUserId(user.id, user),
   });
   const getDefaultPasswordResetDelivery = () =>
     config.isProduction || emailService?.isConfigured?.() ? "email" : "preview";
@@ -277,14 +277,14 @@ export const createAuthService = ({
   });
 
   const createRegistrationVerification = async (user, channel, target) => {
-    authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
+    await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
 
     const code = createVerificationCode();
     const expiresAt =
       Date.now() + (config.registrationVerificationTokenTtlMs ?? 1000 * 60 * 15);
     const codeHash = hashOneTimeToken(`${user.email}:${code}`, config.jwtSecret);
 
-    authRepository.createRegistrationVerificationToken?.({
+    await authRepository.createRegistrationVerificationToken?.({
       id: createId("registration-code"),
       userId: user.id,
       channel,
@@ -346,7 +346,7 @@ export const createAuthService = ({
       tokenVersion: getTokenVersion(user),
     });
 
-  const createRefreshSession = (user) => {
+  const createRefreshSession = async (user) => {
     const expiresAt = Date.now() + config.refreshTokenTtlMs;
     const token = createSessionToken({
       userId: user.id,
@@ -363,7 +363,7 @@ export const createAuthService = ({
       expiresAt,
     };
 
-    authRepository.createSession({
+    await authRepository.createSession({
       token: tokenHash,
       userId: user.id,
       expiresAt,
@@ -371,16 +371,16 @@ export const createAuthService = ({
     return session;
   };
 
-  const deleteRefreshTokenSession = (token) => {
+  const deleteRefreshTokenSession = async (token) => {
     if (!token) {
       return;
     }
 
-    authRepository.deleteSessionByToken(getRefreshTokenHash(token));
-    authRepository.deleteSessionByToken(token);
+    await authRepository.deleteSessionByToken(getRefreshTokenHash(token));
+    await authRepository.deleteSessionByToken(token);
   };
 
-  const authenticateRefreshToken = (token) => {
+  const authenticateRefreshToken = async (token) => {
     if (!token) {
       return null;
     }
@@ -396,10 +396,10 @@ export const createAuthService = ({
     }
 
     const tokenHash = getRefreshTokenHash(token);
-    let session = authRepository.findSessionByToken(tokenHash);
+    let session = await authRepository.findSessionByToken(tokenHash);
 
     if (!session) {
-      session = authRepository.findSessionByToken(token);
+      session = await authRepository.findSessionByToken(token);
     }
 
     if (!session) {
@@ -411,31 +411,31 @@ export const createAuthService = ({
       verifiedToken.expiresAt <= Date.now() ||
       verifiedToken.userId !== session.userId
     ) {
-      deleteRefreshTokenSession(token);
+      await deleteRefreshTokenSession(token);
       return null;
     }
 
-    const user = authRepository.findUserById(session.userId);
+    const user = await authRepository.findUserById(session.userId);
 
     if (!user) {
-      deleteRefreshTokenSession(token);
+      await deleteRefreshTokenSession(token);
       return null;
     }
 
     if (isUserBanned(user) || !isRegistrationVerified(user)) {
-      deleteRefreshTokenSession(token);
+      await deleteRefreshTokenSession(token);
       return null;
     }
 
     if (verifiedToken.tokenVersion !== getTokenVersion(user)) {
-      deleteRefreshTokenSession(token);
+      await deleteRefreshTokenSession(token);
       return null;
     }
 
     return { token, tokenHash, session, user };
   };
 
-  const authenticateToken = (token) => {
+  const authenticateToken = async (token) => {
     if (!token) {
       return null;
     }
@@ -458,7 +458,7 @@ export const createAuthService = ({
       return null;
     }
 
-    const user = getUserById(verifiedToken.userId);
+    const user = await getUserById(verifiedToken.userId);
 
     if (!user) {
       return null;
@@ -487,12 +487,12 @@ export const createAuthService = ({
 
   const authenticateRequest = (request) => authenticateToken(getAccessTokenFromRequest(request));
 
-  const clearLoginAttempts = (email) => {
-    authRepository.clearLoginAttempt(email);
+  const clearLoginAttempts = async (email) => {
+    await authRepository.clearLoginAttempt(email);
   };
 
-  const assertLoginAllowed = (email) => {
-    const attempt = authRepository.getLoginAttempt(email);
+  const assertLoginAllowed = async (email) => {
+    const attempt = await authRepository.getLoginAttempt(email);
 
     if (!attempt?.lockUntil) {
       return;
@@ -502,14 +502,14 @@ export const createAuthService = ({
       throw new AuthApiError("TOO_MANY_ATTEMPTS", "Too many failed login attempts.");
     }
 
-    clearLoginAttempts(email);
+    await clearLoginAttempts(email);
   };
 
-  const registerFailedAttempt = (email) => {
-    const current = authRepository.getLoginAttempt(email) ?? { count: 0, lockUntil: null };
+  const registerFailedAttempt = async (email) => {
+    const current = (await authRepository.getLoginAttempt(email)) ?? { count: 0, lockUntil: null };
     const nextCount = current.count + 1;
 
-    authRepository.upsertLoginAttempt({
+    await authRepository.upsertLoginAttempt({
       email,
       count: nextCount,
       lockUntil:
@@ -518,23 +518,26 @@ export const createAuthService = ({
   };
 
   if (config.superAdminEmail) {
-    authRepository.promoteUserByEmailToSuperAdmin?.(config.superAdminEmail);
+    void authRepository.promoteUserByEmailToSuperAdmin?.(config.superAdminEmail);
   }
 
   return {
     authenticateToken,
     authenticateRequest,
 
-    cleanupExpiredSessions: () => {
-      authRepository.cleanupExpiredSessions();
-      authRepository.cleanupExpiredPasswordResetTokens?.();
-      authRepository.cleanupExpiredRegistrationVerificationTokens?.();
+    cleanupExpiredSessions: async () => {
+      await authRepository.cleanupExpiredSessions();
+      await authRepository.cleanupExpiredPasswordResetTokens?.();
+      await authRepository.cleanupExpiredRegistrationVerificationTokens?.();
     },
 
     getHealthInfo: () => ({
       ok: true,
       mode: "remote-cloud",
-      provider: "smart-nutrition-sqlite-api",
+      provider:
+        config.databaseProvider === "postgres"
+          ? "smart-nutrition-postgres-api"
+          : "smart-nutrition-sqlite-api",
       auth: "httpOnly-cookie-session",
     }),
 
@@ -550,7 +553,7 @@ export const createAuthService = ({
         assertSmsDeliveryAvailable();
       }
 
-      if (authRepository.findUserByEmail(email)) {
+      if (await authRepository.findUserByEmail(email)) {
         throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
       }
 
@@ -560,7 +563,7 @@ export const createAuthService = ({
       const shouldBootstrapSuperAdmin =
         Boolean(config.superAdminEmail) &&
         email === config.superAdminEmail &&
-        !authRepository.hasUserWithRole?.("SUPER_ADMIN");
+        !(await authRepository.hasUserWithRole?.("SUPER_ADMIN"));
       const role = shouldBootstrapSuperAdmin ? "SUPER_ADMIN" : "USER";
       const passwordRecord = createPasswordRecord(
         String(body.password || ""),
@@ -585,8 +588,8 @@ export const createAuthService = ({
         ...passwordRecord,
       };
 
-      authRepository.insertUser(user);
-      stateRepository.upsertSnapshot(user.id, {
+      await authRepository.insertUser(user);
+      await stateRepository.upsertSnapshot(user.id, {
         profile: createInitialProfileState(user),
         meal: createInitialMealState(),
         water: createInitialWaterState(),
@@ -595,7 +598,7 @@ export const createAuthService = ({
         updatedAt: new Date().toISOString(),
       });
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
         action: "auth.registered",
@@ -614,12 +617,12 @@ export const createAuthService = ({
           verificationChannel === "sms" ? phone : email
         );
       } catch (error) {
-        authRepository.deleteUser?.(user.id);
+        await authRepository.deleteUser?.(user.id);
         throw error;
       }
     },
 
-    verifyRegistration: (body) => {
+    verifyRegistration: async (body) => {
       const email = normalizeEmail(body?.email);
       const code = String(body?.code ?? "").trim();
 
@@ -630,7 +633,7 @@ export const createAuthService = ({
         );
       }
 
-      const user = authRepository.findUserByEmail(email);
+      const user = await authRepository.findUserByEmail(email);
 
       if (!user) {
         throw new AuthApiError(
@@ -645,7 +648,7 @@ export const createAuthService = ({
 
       const codeHash = hashOneTimeToken(`${email}:${code}`, config.jwtSecret);
       const verificationToken =
-        authRepository.findRegistrationVerificationTokenByHash?.(codeHash);
+        await authRepository.findRegistrationVerificationTokenByHash?.(codeHash);
 
       if (
         !verificationToken ||
@@ -660,17 +663,17 @@ export const createAuthService = ({
       }
 
       const consumedAt = new Date().toISOString();
-      authRepository.markRegistrationVerificationTokenConsumed?.(codeHash, consumedAt);
+      await authRepository.markRegistrationVerificationTokenConsumed?.(codeHash, consumedAt);
       const verifiedUser =
-        authRepository.markUserRegistrationVerified?.({
+        (await authRepository.markUserRegistrationVerified?.({
           userId: user.id,
           channel: verificationToken.channel,
-        }) ?? user;
-      authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
-      clearLoginAttempts(email);
+        })) ?? user;
+      await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
+      await clearLoginAttempts(email);
 
-      const refreshSession = createRefreshSession(verifiedUser);
-      writeAuditLog({
+      const refreshSession = await createRefreshSession(verifiedUser);
+      await writeAuditLog({
         actorUserId: verifiedUser.id,
         actorRole: verifiedUser.role,
         action: "auth.registration_verified",
@@ -690,7 +693,7 @@ export const createAuthService = ({
 
     resendRegistrationVerification: async (body) => {
       const email = normalizeEmail(body?.email);
-      const user = authRepository.findUserByEmail(email);
+      const user = await authRepository.findUserByEmail(email);
 
       if (!user || isRegistrationVerified(user)) {
         throw new AuthApiError(
@@ -714,11 +717,11 @@ export const createAuthService = ({
       }
 
       const updatedUser =
-        authRepository.updateUserVerificationTarget?.({
+        (await authRepository.updateUserVerificationTarget?.({
           userId: user.id,
           channel: verificationChannel,
           phone,
-        }) ?? user;
+        })) ?? user;
 
       return createRegistrationVerification(
         updatedUser,
@@ -734,19 +737,19 @@ export const createAuthService = ({
         return buildPasswordResetResponse();
       }
 
-      const user = authRepository.findUserByEmail(email);
+      const user = await authRepository.findUserByEmail(email);
 
       if (!user) {
         return buildPasswordResetResponse();
       }
 
-      authRepository.deletePasswordResetTokensByUserId?.(user.id);
+      await authRepository.deletePasswordResetTokensByUserId?.(user.id);
 
       const rawToken = createOpaqueToken(32);
       const expiresAt = Date.now() + config.passwordResetTokenTtlMs;
       const resetUrl = `${config.appBaseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
-      authRepository.createPasswordResetToken?.({
+      await authRepository.createPasswordResetToken?.({
         id: createId("pw-reset"),
         userId: user.id,
         tokenHash: hashOneTimeToken(rawToken, config.jwtSecret),
@@ -754,7 +757,7 @@ export const createAuthService = ({
         createdAt: new Date().toISOString(),
       });
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
         action: "auth.password_reset_requested",
@@ -788,7 +791,7 @@ export const createAuthService = ({
       });
     },
 
-    resetPassword: (body) => {
+    resetPassword: async (body) => {
       const token = String(body?.token || "").trim();
       const password = String(body?.password || "");
 
@@ -799,7 +802,7 @@ export const createAuthService = ({
       assertPasswordPolicy(password);
 
       const tokenHash = hashOneTimeToken(token, config.jwtSecret);
-      const resetToken = authRepository.findPasswordResetTokenByHash?.(tokenHash);
+      const resetToken = await authRepository.findPasswordResetTokenByHash?.(tokenHash);
 
       if (
         !resetToken ||
@@ -809,27 +812,27 @@ export const createAuthService = ({
         throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
       }
 
-      const user = authRepository.findUserById(resetToken.userId);
+      const user = await authRepository.findUserById(resetToken.userId);
 
       if (!user) {
         throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
       }
 
       const consumedAt = new Date().toISOString();
-      authRepository.markPasswordResetTokenConsumed?.(tokenHash, consumedAt);
+      await authRepository.markPasswordResetTokenConsumed?.(tokenHash, consumedAt);
 
       const passwordRecord = createPasswordRecord(password, config.passwordIterations);
 
-      authRepository.updateUserPassword?.({
+      await authRepository.updateUserPassword?.({
         userId: user.id,
         ...passwordRecord,
       });
-      authRepository.incrementUserTokenVersion?.(user.id);
-      authRepository.deleteSessionsByUserId(user.id);
-      authRepository.deletePasswordResetTokensByUserId?.(user.id);
-      clearLoginAttempts(user.email);
+      await authRepository.incrementUserTokenVersion?.(user.id);
+      await authRepository.deleteSessionsByUserId(user.id);
+      await authRepository.deletePasswordResetTokensByUserId?.(user.id);
+      await clearLoginAttempts(user.email);
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
         action: "auth.password_reset_completed",
@@ -843,16 +846,16 @@ export const createAuthService = ({
       };
     },
 
-    login: (body) => {
+    login: async (body) => {
       const email = normalizeEmail(body.email);
       const password = String(body.password || "");
 
-      assertLoginAllowed(email);
+      await assertLoginAllowed(email);
 
-      const user = authRepository.findUserByEmail(email);
+      const user = await authRepository.findUserByEmail(email);
 
       if (!user || !verifyPassword(user, password, config.passwordIterations)) {
-        registerFailedAttempt(email);
+        await registerFailedAttempt(email);
         throw new AuthApiError("INVALID_CREDENTIALS", "Invalid email or password.");
       }
 
@@ -867,9 +870,9 @@ export const createAuthService = ({
         );
       }
 
-      clearLoginAttempts(email);
-      const refreshSession = createRefreshSession(user);
-      writeAuditLog({
+      await clearLoginAttempts(email);
+      const refreshSession = await createRefreshSession(user);
+      await writeAuditLog({
         actorUserId: user.id,
         actorRole: user.role,
         action: "auth.logged_in",
@@ -879,8 +882,8 @@ export const createAuthService = ({
       return buildAuthResponse(user, createAccessToken(user), refreshSession.token);
     },
 
-    restoreSession: (request) => {
-      const auth = authenticateRequest(request);
+    restoreSession: async (request) => {
+      const auth = await authenticateRequest(request);
       return auth
         ? buildAuthResponse(
             auth.user,
@@ -890,16 +893,16 @@ export const createAuthService = ({
         : null;
     },
 
-    refreshSession: (request, body) => {
+    refreshSession: async (request, body) => {
       const refreshToken = getRefreshTokenFromRequest(request, body);
-      const auth = authenticateRefreshToken(refreshToken);
+      const auth = await authenticateRefreshToken(refreshToken);
 
       if (!auth) {
         throw new AuthApiError("INVALID_CREDENTIALS", "Refresh session expired.");
       }
 
-      deleteRefreshTokenSession(refreshToken);
-      const nextRefreshSession = createRefreshSession(auth.user);
+      await deleteRefreshTokenSession(refreshToken);
+      const nextRefreshSession = await createRefreshSession(auth.user);
 
       return buildAuthResponse(
         auth.user,
@@ -908,21 +911,21 @@ export const createAuthService = ({
       );
     },
 
-    logout: (request, body = {}) => {
+    logout: async (request, body = {}) => {
       const token = getAccessTokenFromRequest(request);
       const refreshToken = getRefreshTokenFromRequest(request, body);
-      const auth = authenticateRequest(request);
+      const auth = await authenticateRequest(request);
 
       if (refreshToken) {
-        deleteRefreshTokenSession(refreshToken);
+        await deleteRefreshTokenSession(refreshToken);
       }
 
       if (token && verifySessionToken(token, config.jwtSecret)?.kind === "legacy") {
-        deleteRefreshTokenSession(token);
+        await deleteRefreshTokenSession(token);
       }
 
       if (auth?.user) {
-        writeAuditLog({
+        await writeAuditLog({
           actorUserId: auth.user.id,
           actorRole: auth.user.role,
           action: "auth.logged_out",
@@ -932,10 +935,10 @@ export const createAuthService = ({
       }
     },
 
-    logoutAll: (currentUser) => {
-      authRepository.incrementUserTokenVersion?.(currentUser.id);
-      authRepository.deleteSessionsByUserId(currentUser.id);
-      writeAuditLog({
+    logoutAll: async (currentUser) => {
+      await authRepository.incrementUserTokenVersion?.(currentUser.id);
+      await authRepository.deleteSessionsByUserId(currentUser.id);
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: "auth.logged_out_all",
@@ -944,14 +947,14 @@ export const createAuthService = ({
       });
     },
 
-    updateUserProfile: (requestBody, currentUser) => {
+    updateUserProfile: async (requestBody, currentUser) => {
       const profileInput = readProfileInput(requestBody, currentUser);
-      const updatedUser = authRepository.updateUser({
+      const updatedUser = await authRepository.updateUser({
         ...currentUser,
         ...profileInput,
       });
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: "auth.profile_updated",
@@ -961,36 +964,36 @@ export const createAuthService = ({
       return toPublicUser(updatedUser);
     },
 
-    deleteAccount: (currentUser) => {
+    deleteAccount: async (currentUser) => {
       if (currentUser.role === "SUPER_ADMIN") {
         throw new AuthApiError("FORBIDDEN", "The super admin account cannot be deleted.");
       }
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: "auth.account_deleted",
         targetType: "user",
         targetId: currentUser.id,
       });
-      authRepository.deleteSessionsByUserId(currentUser.id);
-      authRepository.deleteUser(currentUser.id);
-      clearLoginAttempts(currentUser.email);
+      await authRepository.deleteSessionsByUserId(currentUser.id);
+      await authRepository.deleteUser(currentUser.id);
+      await clearLoginAttempts(currentUser.email);
     },
 
-    exportAccountData: (currentUser) => ({
+    exportAccountData: async (currentUser) => ({
       exportedAt: new Date().toISOString(),
       mode: "remote-cloud",
       user: toPublicUser(currentUser),
-      snapshot: stateRepository.getSnapshotByUserId(currentUser.id, currentUser),
-      backups: authRepository.listUserBackups?.(currentUser.id) ?? [],
+      snapshot: await stateRepository.getSnapshotByUserId(currentUser.id, currentUser),
+      backups: (await authRepository.listUserBackups?.(currentUser.id)) ?? [],
     }),
 
-    listAccountBackups: (currentUser) =>
-      authRepository.listUserBackups?.(currentUser.id) ?? [],
+    listAccountBackups: async (currentUser) =>
+      (await authRepository.listUserBackups?.(currentUser.id)) ?? [],
 
-    readAccountBackup: (currentUser, backupId = undefined) => {
-      const backup = authRepository.readUserBackup?.(currentUser.id, backupId) ?? null;
+    readAccountBackup: async (currentUser, backupId = undefined) => {
+      const backup = (await authRepository.readUserBackup?.(currentUser.id, backupId)) ?? null;
 
       if (!backup) {
         throw new AuthApiError("BACKUP_NOT_FOUND", "Backup not found.");

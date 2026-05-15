@@ -1,8 +1,9 @@
 import http from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { RateLimiterMemory } from "rate-limiter-flexible";
+import { RateLimiterMemory, RateLimiterRedis } from "rate-limiter-flexible";
 import { serverConfig } from "./config.mjs";
+import { createRedisCache } from "./cache/redisCache.mjs";
 import {
   AssistantApiError,
   AuthApiError,
@@ -24,6 +25,7 @@ import {
 import { createAiController } from "./controllers/ai.controller.mjs";
 import { createAiRepository } from "./repositories/aiRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
+import { createMongoAiRepository } from "./repositories/mongoAiRepository.mjs";
 import { createPlatformRepository } from "./repositories/platformRepository.mjs";
 import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
@@ -34,10 +36,17 @@ import { createMangoSmsService } from "./services/mangoSmsService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
-import { createSqliteStorage } from "./storage/sqlite.mjs";
+import { createStorage } from "./storage/index.mjs";
 
-const storage = await createSqliteStorage(serverConfig);
-const aiRepository = createAiRepository(storage);
+const redisCache = await createRedisCache(serverConfig);
+const storage = await createStorage(serverConfig);
+const primaryAiRepository = createAiRepository(storage);
+const aiRepository = serverConfig.mongoAiEnabled
+  ? await createMongoAiRepository({
+      config: serverConfig,
+      auditRepository: primaryAiRepository,
+    })
+  : primaryAiRepository;
 const authRepository = createAuthRepository(storage);
 const platformRepository = createPlatformRepository(storage);
 const stateRepository = createStateRepository(storage);
@@ -61,6 +70,7 @@ const authService = createAuthService({
 const platformService = createPlatformService({
   platformRepository,
   config: serverConfig,
+  cacheRepository: redisCache,
 });
 const stateService = createStateService({ stateRepository });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
@@ -69,7 +79,7 @@ const aiController = createAiController({
   bodyLimitBytes: serverConfig.bodyLimitBytes,
 });
 const apiRouter = createApiRouter({ aiController });
-platformService.bootstrapAccessControl();
+await platformService.bootstrapAccessControl();
 const stateStreams = new Map();
 const staticRoot = path.resolve(serverConfig.staticDir);
 
@@ -139,12 +149,33 @@ const requestMetrics = {
   routes: new Map(),
 };
 
-const requestLimiter = new RateLimiterMemory({
+const createRateLimiter = ({ keyPrefix, points, duration }) => {
+  if (redisCache.enabled && redisCache.client) {
+    return new RateLimiterRedis({
+      storeClient: redisCache.client,
+      keyPrefix,
+      points,
+      duration,
+      insuranceLimiter: new RateLimiterMemory({
+        keyPrefix: `${keyPrefix}-insurance`,
+        points,
+        duration,
+      }),
+    });
+  }
+
+  return new RateLimiterMemory({
+    keyPrefix,
+    points,
+    duration,
+  });
+};
+const requestLimiter = createRateLimiter({
   keyPrefix: "smart-nutrition-api",
   points: serverConfig.requestLimitMax,
   duration: Math.max(Math.ceil(serverConfig.requestLimitWindowMs / 1000), 1),
 });
-const aiRequestLimiter = new RateLimiterMemory({
+const aiRequestLimiter = createRateLimiter({
   keyPrefix: "smart-nutrition-ai",
   points: serverConfig.aiRateLimitMax,
   duration: Math.max(Math.ceil(serverConfig.aiRateLimitWindowMs / 1000), 1),
@@ -371,14 +402,14 @@ const removeStateStream = (userId, response) => {
   }
 };
 
-const broadcastStateMeta = (user, stateService) => {
+const broadcastStateMeta = async (user, stateService) => {
   const streams = stateStreams.get(user.id);
 
   if (!streams || streams.size === 0) {
     return;
   }
 
-  const payload = JSON.stringify(stateService.getSnapshotMeta(user));
+  const payload = JSON.stringify(await stateService.getSnapshotMeta(user));
 
   streams.forEach((streamResponse) => {
     streamResponse.write(`event: state-updated\n`);
@@ -459,10 +490,10 @@ const normalizeMealEntriesPayload = (body) => {
 const getWeightHistory = (profileState) =>
   Array.isArray(profileState?.weightHistory) ? profileState.weightHistory : [];
 
-const getStatsSummary = (user) => {
-  const profileState = stateService.getProfileState(user);
-  const waterState = normalizeWaterApiState(stateService.getWaterState(user));
-  const mealState = stateService.getMealState(user);
+const getStatsSummary = async (user) => {
+  const profileState = await stateService.getProfileState(user);
+  const waterState = normalizeWaterApiState(await stateService.getWaterState(user));
+  const mealState = await stateService.getMealState(user);
   const todayMeals = getTodayMealEntries(mealState);
   const mealSummary = summarizeMealEntries(todayMeals);
   const weightHistory = getWeightHistory(profileState);
@@ -491,10 +522,10 @@ const getStatsSummary = (user) => {
   };
 };
 
-const getStatsTrends = (user) => {
-  const profileState = stateService.getProfileState(user);
-  const waterState = stateService.getWaterState(user);
-  const mealState = stateService.getMealState(user);
+const getStatsTrends = async (user) => {
+  const profileState = await stateService.getProfileState(user);
+  const waterState = await stateService.getWaterState(user);
+  const mealState = await stateService.getMealState(user);
   const mealCaloriesByDate = new Map();
 
   (Array.isArray(mealState?.items) ? mealState.items : []).forEach((entry) => {
@@ -578,7 +609,7 @@ const routeRequest = async (request, response) => {
     response.setHeader("X-AI-RateLimit-Remaining", String(aiRateLimit.remaining));
   }
 
-  authService.cleanupExpiredSessions();
+  await authService.cleanupExpiredSessions();
 
   const mealEntryMatch = pathname.match(/^\/api\/meal-entries\/([^/]+)$/);
   const mealTemplateMatch = pathname.match(/^\/api\/meal-templates\/([^/]+)$/);
@@ -595,6 +626,7 @@ const routeRequest = async (request, response) => {
       sendJson(response, 200, {
         ...authService.getHealthInfo(),
         storage: storage.getEngineInfo(),
+        cache: redisCache.getStatus(),
         static: {
           enabled: serverConfig.serveStatic,
           available: staticAvailable,
@@ -623,7 +655,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/verify-registration" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, authService.verifyRegistration(body));
+      sendAuthSession(response, 200, await authService.verifyRegistration(body));
       return;
     }
 
@@ -635,7 +667,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/login" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, authService.login(body));
+      sendAuthSession(response, 200, await authService.login(body));
       return;
     }
 
@@ -647,12 +679,12 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/reset-password" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, authService.resetPassword(body));
+      sendJson(response, 200, await authService.resetPassword(body));
       return;
     }
 
     if (pathname === "/api/auth/session" && request.method === "GET") {
-      const session = authService.restoreSession(request);
+      const session = await authService.restoreSession(request);
 
       if (!session) {
         sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
@@ -664,7 +696,7 @@ const routeRequest = async (request, response) => {
     }
 
     if (pathname === "/api/auth/me" && request.method === "GET") {
-      const session = authService.restoreSession(request);
+      const session = await authService.restoreSession(request);
 
       if (!session) {
         sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
@@ -677,12 +709,12 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/refresh" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, authService.refreshSession(request, body));
+      sendAuthSession(response, 200, await authService.refreshSession(request, body));
       return;
     }
 
     if (pathname === "/api/state/stream" && request.method === "GET") {
-      const auth = authService.authenticateRequest(request);
+      const auth = await authService.authenticateRequest(request);
 
       if (!auth) {
         sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
@@ -695,7 +727,7 @@ const routeRequest = async (request, response) => {
         Connection: "keep-alive",
       });
       response.write(`event: connected\n`);
-      response.write(`data: ${JSON.stringify(stateService.getSnapshotMeta(auth.user))}\n\n`);
+      response.write(`data: ${JSON.stringify(await stateService.getSnapshotMeta(auth.user))}\n\n`);
       addStateStream(auth.user.id, response);
 
       const heartbeatId = setInterval(() => {
@@ -711,7 +743,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/auth/logout" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      authService.logout(request, body);
+      await authService.logout(request, body);
       clearAuthCookies(response);
       sendNoContent(response);
       return;
@@ -723,7 +755,7 @@ const routeRequest = async (request, response) => {
       }
     }
 
-    const auth = authService.authenticateRequest(request);
+    const auth = await authService.authenticateRequest(request);
 
     if (pathname !== "/api/health" && !auth) {
       sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
@@ -743,7 +775,7 @@ const routeRequest = async (request, response) => {
     }
 
     if (pathname === "/api/water/today" && request.method === "GET") {
-      const waterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      const waterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
       sendJson(response, 200, toWaterTodayResponse(waterState));
       return;
     }
@@ -754,49 +786,49 @@ const routeRequest = async (request, response) => {
         Math.round(Number(body?.amountMl ?? body?.ml ?? body?.value ?? 250) || 250),
         0
       );
-      const currentWaterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      const currentWaterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
       const nextWaterState = normalizeWaterApiState({
         ...currentWaterState,
         consumedMl: currentWaterState.consumedMl + amountMl,
       });
 
-      stateService.saveWaterState(auth.user, nextWaterState, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
+      await stateService.saveWaterState(auth.user, nextWaterState, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
       sendJson(response, 201, toWaterTodayResponse(nextWaterState));
       return;
     }
 
     if (pathname === "/api/water/history" && request.method === "GET") {
-      const waterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      const waterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
       sendJson(response, 200, { items: waterState.history });
       return;
     }
 
     if (pathname === "/api/meals/today" && request.method === "GET") {
-      const mealState = stateService.getMealState(auth.user);
+      const mealState = await stateService.getMealState(auth.user);
       sendJson(response, 200, summarizeMealEntries(getTodayMealEntries(mealState)));
       return;
     }
 
     if (pathname === "/api/meals" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.addMealEntries(
+      await stateService.addMealEntries(
         auth.user,
         { entries: normalizeMealEntriesPayload(body) },
         getSyncContext(request)
       );
-      broadcastStateMeta(auth.user, stateService);
+      await broadcastStateMeta(auth.user, stateService);
       sendJson(
         response,
         201,
-        summarizeMealEntries(getTodayMealEntries(stateService.getMealState(auth.user)))
+        summarizeMealEntries(getTodayMealEntries(await stateService.getMealState(auth.user)))
       );
       return;
     }
 
     if (pathname === "/api/products/search" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listVisibleCatalogProducts(auth.user, {
+        items: await platformService.listVisibleCatalogProducts(auth.user, {
           status: url.searchParams.get("status"),
           search: url.searchParams.get("q") ?? url.searchParams.get("search") ?? "",
           limit: url.searchParams.get("limit") ?? undefined,
@@ -807,7 +839,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/weight/history" && request.method === "GET") {
       sendJson(response, 200, {
-        items: getWeightHistory(stateService.getProfileState(auth.user)),
+        items: getWeightHistory(await stateService.getProfileState(auth.user)),
       });
       return;
     }
@@ -821,7 +853,7 @@ const routeRequest = async (request, response) => {
         return;
       }
 
-      const profileState = stateService.getProfileState(auth.user);
+      const profileState = await stateService.getProfileState(auth.user);
       const nextEntry = {
         date:
           typeof body?.date === "string" && body.date.trim()
@@ -834,30 +866,30 @@ const routeRequest = async (request, response) => {
         weightHistory: [...getWeightHistory(profileState), nextEntry].slice(-180),
       };
 
-      stateService.saveProfileState(auth.user, nextProfileState, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
+      await stateService.saveProfileState(auth.user, nextProfileState, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
       sendJson(response, 201, nextEntry);
       return;
     }
 
     if (pathname === "/api/stats/summary" && request.method === "GET") {
-      sendJson(response, 200, getStatsSummary(auth.user));
+      sendJson(response, 200, await getStatsSummary(auth.user));
       return;
     }
 
     if (pathname === "/api/stats/trends" && request.method === "GET") {
-      sendJson(response, 200, getStatsTrends(auth.user));
+      sendJson(response, 200, await getStatsTrends(auth.user));
       return;
     }
 
     if (pathname === "/api/auth/profile" && request.method === "PATCH") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, authService.updateUserProfile(body, auth.user));
+      sendJson(response, 200, await authService.updateUserProfile(body, auth.user));
       return;
     }
 
     if (pathname === "/api/auth/logout-all" && request.method === "POST") {
-      authService.logoutAll(auth.user);
+      await authService.logoutAll(auth.user);
       clearAuthCookies(response);
       sendNoContent(response);
       return;
@@ -869,138 +901,143 @@ const routeRequest = async (request, response) => {
     }
 
     if (pathname === "/api/state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getSnapshot(auth.user));
+      sendJson(response, 200, await stateService.getSnapshot(auth.user));
       return;
     }
 
     if (pathname === "/api/state/meta" && request.method === "GET") {
-      sendJson(response, 200, stateService.getSnapshotMeta(auth.user));
+      sendJson(response, 200, await stateService.getSnapshotMeta(auth.user));
       return;
     }
 
     if (pathname === "/api/state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveSnapshot(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveSnapshot(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/profile-state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getProfileState(auth.user));
+      sendJson(response, 200, await stateService.getProfileState(auth.user));
       return;
     }
 
     if (pathname === "/api/profile-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveProfileState(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveProfileState(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/meal-state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getMealState(auth.user));
+      sendJson(response, 200, await stateService.getMealState(auth.user));
       return;
     }
 
     if (pathname === "/api/meal-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveMealState(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveMealState(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/water-state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getWaterState(auth.user));
+      sendJson(response, 200, await stateService.getWaterState(auth.user));
       return;
     }
 
     if (pathname === "/api/water-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveWaterState(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveWaterState(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/fridge-state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getFridgeState(auth.user));
+      sendJson(response, 200, await stateService.getFridgeState(auth.user));
       return;
     }
 
     if (pathname === "/api/fridge-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveFridgeState(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveFridgeState(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/community-state" && request.method === "GET") {
-      sendJson(response, 200, stateService.getCommunityState(auth.user));
+      sendJson(response, 200, await stateService.getCommunityState(auth.user));
       return;
     }
 
     if (pathname === "/api/community-state" && request.method === "PUT") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.saveCommunityState(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.saveCommunityState(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/meal-entries" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.addMealEntries(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.addMealEntries(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (mealEntryMatch && request.method === "DELETE") {
       const entryId = decodeURIComponent(mealEntryMatch[1]);
-      stateService.removeMealEntry(auth.user, entryId, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.removeMealEntry(auth.user, entryId, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (pathname === "/api/meal-templates" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.addMealTemplate(auth.user, body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.addMealTemplate(auth.user, body, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (mealTemplateMatch && request.method === "DELETE") {
       const templateId = decodeURIComponent(mealTemplateMatch[1]);
-      stateService.deleteMealTemplate(auth.user, templateId, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.deleteMealTemplate(auth.user, templateId, getSyncContext(request));
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (mealProductMatch && request.method === "POST" && !mealProductMatch[2]) {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      stateService.upsertMealProduct(auth.user, mealProductMatch[1], body, getSyncContext(request));
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await stateService.upsertMealProduct(
+        auth.user,
+        mealProductMatch[1],
+        body,
+        getSyncContext(request)
+      );
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
     if (mealProductMatch && request.method === "DELETE" && mealProductMatch[2]) {
       const productKey = decodeURIComponent(mealProductMatch[2]);
-      stateService.removeMealProduct(
+      await stateService.removeMealProduct(
         auth.user,
         mealProductMatch[1],
         productKey,
         getSyncContext(request)
       );
-      broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: stateService.getSnapshotMeta(auth.user) });
+      await broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
       return;
     }
 
@@ -1010,7 +1047,7 @@ const routeRequest = async (request, response) => {
         response,
         200,
         await photoAnalysisService.analyzePhoto(
-          stateService.getProfileState(auth.user),
+          await stateService.getProfileState(auth.user),
           body
         )
       );
@@ -1019,7 +1056,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/foods" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listVisibleCatalogProducts(auth.user, {
+        items: await platformService.listVisibleCatalogProducts(auth.user, {
           status: url.searchParams.get("status"),
           search: url.searchParams.get("search") ?? "",
           limit: url.searchParams.get("limit") ?? undefined,
@@ -1030,7 +1067,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/foods/submissions" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listOwnCatalogProducts(auth.user, {
+        items: await platformService.listOwnCatalogProducts(auth.user, {
           status: url.searchParams.get("status"),
           search: url.searchParams.get("search") ?? "",
           limit: url.searchParams.get("limit") ?? undefined,
@@ -1041,7 +1078,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/foods/duplicates" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.findCatalogDuplicates(auth.user, {
+        items: await platformService.findCatalogDuplicates(auth.user, {
           name: url.searchParams.get("name") ?? "",
           barcode: url.searchParams.get("barcode") ?? "",
           limit: url.searchParams.get("limit") ?? undefined,
@@ -1052,13 +1089,13 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/foods/submissions" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 201, platformService.submitCatalogProduct(auth.user, body));
+      sendJson(response, 201, await platformService.submitCatalogProduct(auth.user, body));
       return;
     }
 
     if (pathname === "/api/admin/foods/submissions" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listModerationQueue(auth.user, {
+        items: await platformService.listModerationQueue(auth.user, {
           status: url.searchParams.get("status"),
           search: url.searchParams.get("search") ?? "",
           limit: url.searchParams.get("limit") ?? undefined,
@@ -1072,7 +1109,7 @@ const routeRequest = async (request, response) => {
       sendJson(
         response,
         200,
-        platformService.reviewCatalogProduct(
+        await platformService.reviewCatalogProduct(
           auth.user,
           decodeURIComponent(adminFoodSubmissionMatch[1]),
           body
@@ -1083,7 +1120,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/admin/audit-logs" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listAuditLogs(auth.user, {
+        items: await platformService.listAuditLogs(auth.user, {
           limit: url.searchParams.get("limit") ?? undefined,
         }),
       });
@@ -1092,7 +1129,7 @@ const routeRequest = async (request, response) => {
 
     if (pathname === "/api/admin/users" && request.method === "GET") {
       sendJson(response, 200, {
-        items: platformService.listUsers(auth.user),
+        items: await platformService.listUsers(auth.user),
       });
       return;
     }
@@ -1102,7 +1139,7 @@ const routeRequest = async (request, response) => {
       sendJson(
         response,
         200,
-        platformService.updateUserRole(
+        await platformService.updateUserRole(
           auth.user,
           decodeURIComponent(adminUserRoleMatch[1]),
           body
@@ -1116,7 +1153,7 @@ const routeRequest = async (request, response) => {
       sendJson(
         response,
         200,
-        platformService.updateUserBan(
+        await platformService.updateUserBan(
           auth.user,
           decodeURIComponent(adminUserBanMatch[1]),
           body
@@ -1126,27 +1163,27 @@ const routeRequest = async (request, response) => {
     }
 
     if (pathname === "/api/account" && request.method === "DELETE") {
-      authService.deleteAccount(auth.user);
+      await authService.deleteAccount(auth.user);
       clearAuthCookies(response);
       sendNoContent(response);
       return;
     }
 
     if (pathname === "/api/account/export" && request.method === "GET") {
-      sendJson(response, 200, authService.exportAccountData(auth.user));
+      sendJson(response, 200, await authService.exportAccountData(auth.user));
       return;
     }
 
     if (pathname === "/api/account/backups" && request.method === "GET") {
       sendJson(response, 200, {
-        items: authService.listAccountBackups(auth.user),
+        items: await authService.listAccountBackups(auth.user),
       });
       return;
     }
 
     if (accountBackupMatch && request.method === "GET") {
       const backupId = decodeURIComponent(accountBackupMatch[1]);
-      const backupPayload = authService.readAccountBackup(auth.user, backupId);
+      const backupPayload = await authService.readAccountBackup(auth.user, backupId);
 
       response.setHeader(
         "Content-Disposition",

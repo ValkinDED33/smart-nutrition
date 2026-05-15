@@ -179,7 +179,7 @@ describe("ai.service", () => {
     ).rejects.toBeInstanceOf(AssistantApiError);
   });
 
-  it("returns stored conversation history and clears it on request", () => {
+  it("returns stored conversation history and clears it on request", async () => {
     const history = [
       {
         id: "assistant-msg-1",
@@ -191,8 +191,8 @@ describe("ai.service", () => {
     ];
     const { aiRepository, service } = createAiServiceFixture({ history });
 
-    const result = service.getConversationHistory(currentUser);
-    service.clearConversationHistory(currentUser);
+    const result = await service.getConversationHistory(currentUser);
+    await service.clearConversationHistory(currentUser);
 
     expect(result).toEqual(history);
     expect(aiRepository.clearConversationMessages).toHaveBeenCalledWith(currentUser.id);

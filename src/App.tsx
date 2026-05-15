@@ -18,6 +18,7 @@ const loadProfilePage = () => import("./pages/ProfilePage");
 const loadMealsPage = () => import("./pages/MealsPage");
 const loadWaterPage = () => import("./pages/WaterPage");
 const loadAiCompanionPage = () => import("./pages/AiCompanionPage");
+const loadAdminPage = () => import("./pages/AdminPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
@@ -31,6 +32,7 @@ const ProfilePage = lazy(loadProfilePage);
 const MealsPage = lazy(loadMealsPage);
 const WaterPage = lazy(loadWaterPage);
 const AiCompanionPage = lazy(loadAiCompanionPage);
+const AdminPage = lazy(loadAdminPage);
 const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
@@ -62,6 +64,7 @@ function App() {
       void loadAiCompanionPage();
       void loadProgressPage();
       void loadProfilePage();
+      void loadAdminPage();
     };
     const idleWindow = window as Window & {
       requestIdleCallback?: (callback: IdleRequestCallback) => number;
@@ -191,6 +194,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute roles={["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"]}>
+                    <AdminPage />
                   </ProtectedRoute>
                 }
               />

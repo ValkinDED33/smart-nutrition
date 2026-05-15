@@ -65,7 +65,7 @@ const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = 
 };
 
 describe("authService", () => {
-  it("rotates refresh sessions on refresh", () => {
+  it("rotates refresh sessions on refresh", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {
       id: "user-1",
@@ -102,7 +102,7 @@ describe("authService", () => {
     });
     authRepository.findUserById.mockReturnValue(user);
 
-    const result = service.refreshSession({ headers: {} }, { refreshToken });
+    const result = await service.refreshSession({ headers: {} }, { refreshToken });
 
     expect(authRepository.findSessionByToken).toHaveBeenCalledWith(refreshTokenHash);
     expect(authRepository.deleteSessionByToken).toHaveBeenCalledWith(refreshTokenHash);
@@ -114,16 +114,16 @@ describe("authService", () => {
     expect(result.user.email).toBe(user.email);
   });
 
-  it("revokes all sessions for the current user", () => {
+  it("revokes all sessions for the current user", async () => {
     const { authRepository, service } = createAuthServiceFixture();
 
-    service.logoutAll({ id: "user-42", role: "USER", tokenVersion: 0 });
+    await service.logoutAll({ id: "user-42", role: "USER", tokenVersion: 0 });
 
     expect(authRepository.incrementUserTokenVersion).toHaveBeenCalledWith("user-42");
     expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith("user-42");
   });
 
-  it("rejects access tokens when the stored token version changes", () => {
+  it("rejects access tokens when the stored token version changes", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {
       id: "user-9",
@@ -152,7 +152,7 @@ describe("authService", () => {
 
     authRepository.findUserById.mockReturnValue(user);
 
-    expect(service.authenticateToken(accessToken)).toBeNull();
+    expect(await service.authenticateToken(accessToken)).toBeNull();
   });
 
   it("creates a password reset preview token for an existing user", async () => {
@@ -347,7 +347,7 @@ describe("authService", () => {
     ).rejects.toThrow(/valid email|Name|Age|Weight|Height|Gender|Activity|Goal/);
   });
 
-  it("rejects invalid profile updates server-side", () => {
+  it("rejects invalid profile updates server-side", async () => {
     const { service } = createAuthServiceFixture();
     const currentUser = {
       id: "user-profile",
@@ -362,17 +362,17 @@ describe("authService", () => {
       role: "USER",
     };
 
-    expect(() =>
+    await expect(
       service.updateUserProfile(
         {
           weight: 500,
         },
         currentUser
       )
-    ).toThrow(/Weight/);
+    ).rejects.toThrow(/Weight/);
   });
 
-  it("resets the password, revokes sessions, and bumps token version", () => {
+  it("resets the password, revokes sessions, and bumps token version", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {
       id: "user-18",
@@ -401,7 +401,7 @@ describe("authService", () => {
       consumedAt: new Date().toISOString(),
     });
 
-    const result = service.resetPassword({
+    const result = await service.resetPassword({
       token: rawToken,
       password: "StrongPass123!",
     });
@@ -414,7 +414,7 @@ describe("authService", () => {
     expect(authRepository.clearLoginAttempt).toHaveBeenCalledWith(user.email);
   });
 
-  it("exports account data with snapshot and backup summaries", () => {
+  it("exports account data with snapshot and backup summaries", async () => {
     const { authRepository, stateRepository, service } = createAuthServiceFixture();
     const currentUser = {
       id: "user-7",
@@ -441,7 +441,7 @@ describe("authService", () => {
     stateRepository.getSnapshotByUserId.mockReturnValue(snapshot);
     authRepository.listUserBackups.mockReturnValue(backups);
 
-    const result = service.exportAccountData(currentUser);
+    const result = await service.exportAccountData(currentUser);
 
     expect(result.user.email).toBe(currentUser.email);
     expect(result.snapshot).toEqual(snapshot);

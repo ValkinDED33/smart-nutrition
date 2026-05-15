@@ -19,6 +19,9 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_SMTP_PASS",
   "SMART_NUTRITION_MANGO_API_KEY",
   "SMART_NUTRITION_MANGO_API_SALT",
+  "SMART_NUTRITION_DATABASE_URL",
+  "SMART_NUTRITION_MONGODB_URI",
+  "SMART_NUTRITION_REDIS_URL",
 ];
 
 const toTrimmedString = (value, fallback = "") =>
@@ -166,6 +169,34 @@ const readBooleanFlag = (value, fallback = false) => {
   }
 
   return fallback;
+};
+
+const normalizeStorageProvider = (value, postgresUrl) => {
+  const normalized = toTrimmedString(value).toLowerCase();
+
+  if (normalized === "postgres" || normalized === "postgresql") {
+    return "postgres";
+  }
+
+  if (normalized === "sqlite") {
+    return "sqlite";
+  }
+
+  return postgresUrl ? "postgres" : "sqlite";
+};
+
+const normalizeAiDataProvider = (value, mongoUri) => {
+  const normalized = toTrimmedString(value).toLowerCase();
+
+  if (normalized === "mongo" || normalized === "mongodb") {
+    return "mongodb";
+  }
+
+  if (normalized === "sql" || normalized === "storage" || normalized === "primary") {
+    return "primary";
+  }
+
+  return mongoUri ? "mongodb" : "primary";
 };
 
 const readPositiveInteger = (value, fallback, name, errors, { min = 1 } = {}) => {
@@ -751,6 +782,24 @@ export const createServerConfig = (rawEnv = process.env) => {
     "SMART_NUTRITION_RATE_LIMIT_MAX",
     errors
   );
+  const redisUrl = toTrimmedString(env.SMART_NUTRITION_REDIS_URL ?? env.REDIS_URL) || null;
+  const redisKeyPrefix =
+    toTrimmedString(env.SMART_NUTRITION_REDIS_KEY_PREFIX, "smart-nutrition") ||
+    "smart-nutrition";
+  const redisConnectTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_REDIS_CONNECT_TIMEOUT_MS,
+    5_000,
+    "SMART_NUTRITION_REDIS_CONNECT_TIMEOUT_MS",
+    errors,
+    { min: 500 }
+  );
+  const catalogCacheTtlSeconds = readPositiveInteger(
+    env.SMART_NUTRITION_CATALOG_CACHE_TTL_SECONDS,
+    60,
+    "SMART_NUTRITION_CATALOG_CACHE_TTL_SECONDS",
+    errors,
+    { min: 1 }
+  );
   const passwordIterations = readPositiveInteger(
     env.SMART_NUTRITION_PASSWORD_ITERATIONS,
     180_000,
@@ -805,6 +854,25 @@ export const createServerConfig = (rawEnv = process.env) => {
       env.SMART_NUTRITION_DB_PATH,
       path.join(DATA_DIR, "smart-nutrition.sqlite")
     );
+  const postgresUrl =
+    toTrimmedString(
+      env.SMART_NUTRITION_DATABASE_URL ?? env.DATABASE_URL ?? env.POSTGRES_URL
+    ) || null;
+  const databaseProvider = normalizeStorageProvider(
+    env.SMART_NUTRITION_DATABASE_PROVIDER ?? env.SMART_NUTRITION_DB_PROVIDER,
+    postgresUrl
+  );
+  const postgresSsl = readBooleanFlag(
+    env.SMART_NUTRITION_DATABASE_SSL,
+    isProduction && Boolean(postgresUrl) && !/localhost|127\.0\.0\.1/i.test(postgresUrl)
+  );
+
+  if (databaseProvider === "postgres" && !postgresUrl) {
+    errors.push(
+      "SMART_NUTRITION_DATABASE_URL or DATABASE_URL is required when SMART_NUTRITION_DATABASE_PROVIDER=postgres."
+    );
+  }
+
   const backupDir =
     normalizeRuntimePath(
       env.SMART_NUTRITION_BACKUP_DIR,
@@ -1002,6 +1070,26 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 0, max: 100 }
   );
+  const mongoUri = toTrimmedString(env.SMART_NUTRITION_MONGODB_URI ?? env.MONGODB_URI) || null;
+  const mongoDatabaseName =
+    toTrimmedString(env.SMART_NUTRITION_MONGODB_DB, "smart_nutrition") || "smart_nutrition";
+  const mongoServerSelectionTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_TIMEOUT_MS,
+    5_000,
+    "SMART_NUTRITION_MONGODB_TIMEOUT_MS",
+    errors,
+    { min: 500 }
+  );
+  const aiDataProvider = normalizeAiDataProvider(
+    env.SMART_NUTRITION_AI_DATA_PROVIDER,
+    mongoUri
+  );
+
+  if (aiDataProvider === "mongodb" && !mongoUri) {
+    errors.push(
+      "SMART_NUTRITION_MONGODB_URI or MONGODB_URI is required when SMART_NUTRITION_AI_DATA_PROVIDER=mongodb."
+    );
+  }
 
   const assistantRuntimeConfigured = assistantProviders.length > 0;
 
@@ -1024,7 +1112,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     registrationVerificationTokenTtlMs,
     bodyLimitBytes,
     dataDir: DATA_DIR,
+    databaseProvider,
     sqlitePath,
+    postgresUrl,
+    postgresSsl,
     legacyJsonPath: path.join(DATA_DIR, "db.json"),
     jwtSecret,
     superAdminEmail,
@@ -1034,6 +1125,11 @@ export const createServerConfig = (rawEnv = process.env) => {
     maxBackupFilesPerUser,
     requestLimitWindowMs,
     requestLimitMax,
+    redisUrl,
+    redisKeyPrefix,
+    redisConnectTimeoutMs,
+    redisEnabled: Boolean(redisUrl),
+    catalogCacheTtlSeconds,
     authAccessCookieName: "smart-nutrition-access",
     authRefreshCookieName: "smart-nutrition-refresh",
     authCookieSameSite,
@@ -1072,6 +1168,11 @@ export const createServerConfig = (rawEnv = process.env) => {
     aiMonthlyTokenLimit,
     aiRequestCooldownMs,
     aiEstimatedUsdPer1kTokens,
+    aiDataProvider,
+    mongoUri,
+    mongoDatabaseName,
+    mongoServerSelectionTimeoutMs,
+    mongoAiEnabled: aiDataProvider === "mongodb" && Boolean(mongoUri),
     assistantRuntimeConfigured,
     assistantProviderOrder: assistantProviders.map((provider) => provider.id),
     assistantPrimaryProviderId: primaryAssistantProvider?.id ?? null,

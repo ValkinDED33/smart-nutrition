@@ -184,8 +184,24 @@ const createAuditDetails = (extra = {}) => ({
   ...extra,
 });
 
-export const createPlatformService = ({ platformRepository, config }) => {
-  const writeAuditLog = ({
+export const createPlatformService = ({ platformRepository, config, cacheRepository = null }) => {
+  const withCache = async (key, ttlSeconds, producer) => {
+    if (!cacheRepository?.enabled) {
+      return producer();
+    }
+
+    const cachedValue = await cacheRepository.getJson(key).catch(() => null);
+
+    if (cachedValue !== null) {
+      return cachedValue;
+    }
+
+    const nextValue = await producer();
+    await cacheRepository.setJson(key, nextValue, ttlSeconds).catch(() => false);
+    return nextValue;
+  };
+
+  const writeAuditLog = async ({
     actorUserId = null,
     actorRole = "USER",
     action,
@@ -193,7 +209,7 @@ export const createPlatformService = ({ platformRepository, config }) => {
     targetId = null,
     details = null,
   }) => {
-    platformRepository.createAuditLog({
+    await platformRepository.createAuditLog({
       id: createId("audit"),
       actorUserId,
       actorRole,
@@ -206,9 +222,9 @@ export const createPlatformService = ({ platformRepository, config }) => {
   };
 
   return {
-    bootstrapAccessControl: () => {
+    bootstrapAccessControl: async () => {
       if (config.superAdminEmail) {
-        platformRepository.promoteUserByEmailToSuperAdmin(config.superAdminEmail);
+        await platformRepository.promoteUserByEmailToSuperAdmin(config.superAdminEmail);
       }
     },
 
@@ -219,16 +235,22 @@ export const createPlatformService = ({ platformRepository, config }) => {
       twoFactorRequired: Boolean(currentUser.twoFactorRequired),
     }),
 
-    listVisibleCatalogProducts: (currentUser, query = {}) =>
-      platformRepository.listCatalogProducts({
+    listVisibleCatalogProducts: async (currentUser, query = {}) => {
+      const options = {
         viewerUserId: currentUser.id,
         includeUnapproved: false,
         statuses: normalizeStatusFilters(query.status),
         search: normalizeSearchQuery(query.search),
         limit: readListLimit(query.limit),
-      }),
+      };
+      const cacheKey = `catalog:visible:${JSON.stringify(options)}`;
 
-    listOwnCatalogProducts: (currentUser, query = {}) =>
+      return withCache(cacheKey, config.catalogCacheTtlSeconds ?? 60, () =>
+        platformRepository.listCatalogProducts(options)
+      );
+    },
+
+    listOwnCatalogProducts: async (currentUser, query = {}) =>
       platformRepository.listCatalogProducts({
         viewerUserId: currentUser.id,
         includeUnapproved: true,
@@ -238,21 +260,29 @@ export const createPlatformService = ({ platformRepository, config }) => {
         limit: readListLimit(query.limit),
       }),
 
-    findCatalogDuplicates: (currentUser, query = {}) =>
-      platformRepository.findCatalogDuplicateCandidates({
+    findCatalogDuplicates: async (currentUser, query = {}) => {
+      const options = {
         name: normalizeSearchQuery(query.name ?? query.search),
         barcode: normalizeSearchQuery(query.barcode),
         limit: readListLimit(query.limit, { fallback: 6, max: 12 }),
-      }).filter(
+      };
+      const candidates = await withCache(
+        `catalog:duplicates:${JSON.stringify(options)}`,
+        config.catalogCacheTtlSeconds ?? 60,
+        () => platformRepository.findCatalogDuplicateCandidates(options)
+      );
+
+      return candidates.filter(
         (product) =>
           product.status === "approved" || product.ownerUserId === currentUser.id
-      ),
+      );
+    },
 
-    submitCatalogProduct: (currentUser, payload) => {
+    submitCatalogProduct: async (currentUser, payload) => {
       const dayStart = new Date();
       dayStart.setUTCHours(0, 0, 0, 0);
 
-      const submissionsToday = platformRepository.countCatalogProductsByOwnerSince(
+      const submissionsToday = await platformRepository.countCatalogProductsByOwnerSince(
         currentUser.id,
         dayStart.toISOString()
       );
@@ -265,18 +295,18 @@ export const createPlatformService = ({ platformRepository, config }) => {
       }
 
       const product = buildCatalogProduct(payload, currentUser);
-      const possibleDuplicates = platformRepository.findCatalogDuplicateCandidates({
+      const possibleDuplicates = await platformRepository.findCatalogDuplicateCandidates({
         name: product.name,
         barcode: product.barcode ?? "",
         limit: 6,
       });
 
-      platformRepository.insertCatalogProduct(product);
-      platformRepository.createCatalogProductVersion(
+      await platformRepository.insertCatalogProduct(product);
+      await platformRepository.createCatalogProductVersion(
         createCatalogVersionEntry(product, currentUser.id, "submitted")
       );
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: "catalog.product_submitted",
@@ -294,7 +324,7 @@ export const createPlatformService = ({ platformRepository, config }) => {
       };
     },
 
-    listModerationQueue: (currentUser, query = {}) => {
+    listModerationQueue: async (currentUser, query = {}) => {
       assertModerationAccess(currentUser);
       const statuses = normalizeStatusFilters(query.status);
 
@@ -307,10 +337,10 @@ export const createPlatformService = ({ platformRepository, config }) => {
       });
     },
 
-    reviewCatalogProduct: (currentUser, productId, payload) => {
+    reviewCatalogProduct: async (currentUser, productId, payload) => {
       assertModerationAccess(currentUser);
 
-      const existingProduct = platformRepository.findCatalogProductById(productId);
+      const existingProduct = await platformRepository.findCatalogProductById(productId);
 
       if (!existingProduct) {
         throw new PlatformApiError("FOOD_NOT_FOUND", "Product submission was not found.");
@@ -342,16 +372,16 @@ export const createPlatformService = ({ platformRepository, config }) => {
         version: existingProduct.version + 1,
       };
 
-      platformRepository.updateCatalogProduct(nextProduct);
-      platformRepository.createCatalogProductVersion(
+      const updatedProduct = await platformRepository.updateCatalogProduct(nextProduct);
+      await platformRepository.createCatalogProductVersion(
         createCatalogVersionEntry(
-          nextProduct,
+          updatedProduct ?? nextProduct,
           currentUser.id,
           decision === "approve" ? "approved" : "rejected"
         )
       );
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action:
@@ -367,10 +397,10 @@ export const createPlatformService = ({ platformRepository, config }) => {
         }),
       });
 
-      return nextProduct;
+      return updatedProduct ?? nextProduct;
     },
 
-    listAuditLogs: (currentUser, query = {}) => {
+    listAuditLogs: async (currentUser, query = {}) => {
       assertAdminAccess(currentUser);
 
       return platformRepository.listAuditLogs(
@@ -378,16 +408,16 @@ export const createPlatformService = ({ platformRepository, config }) => {
       );
     },
 
-    listUsers: (currentUser) => {
+    listUsers: async (currentUser) => {
       assertAdminAccess(currentUser);
 
-      return platformRepository.listUsers().map((user) => ({
+      return (await platformRepository.listUsers()).map((user) => ({
         ...toPublicUser(user),
         createdAt: user.createdAt,
       }));
     },
 
-    updateUserRole: (currentUser, targetUserId, payload) => {
+    updateUserRole: async (currentUser, targetUserId, payload) => {
       assertAdminAccess(currentUser);
 
       const nextRole = payload?.role;
@@ -399,7 +429,7 @@ export const createPlatformService = ({ platformRepository, config }) => {
         );
       }
 
-      const targetUser = platformRepository.findUserById(targetUserId);
+      const targetUser = await platformRepository.findUserById(targetUserId);
 
       if (!targetUser) {
         throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
@@ -426,13 +456,13 @@ export const createPlatformService = ({ platformRepository, config }) => {
         );
       }
 
-      const updatedUser = platformRepository.updateUserRole({
+      const updatedUser = await platformRepository.updateUserRole({
         userId: targetUserId,
         role: nextRole,
         twoFactorRequired: nextRole === "ADMIN",
       });
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: "access.role_updated",
@@ -450,10 +480,10 @@ export const createPlatformService = ({ platformRepository, config }) => {
       };
     },
 
-    updateUserBan: (currentUser, targetUserId, payload) => {
+    updateUserBan: async (currentUser, targetUserId, payload) => {
       assertAdminAccess(currentUser);
 
-      const targetUser = platformRepository.findUserById(targetUserId);
+      const targetUser = await platformRepository.findUserById(targetUserId);
 
       if (!targetUser) {
         throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
@@ -477,13 +507,13 @@ export const createPlatformService = ({ platformRepository, config }) => {
       const reason = shouldBan
         ? normalizeOptionalText(payload?.reason ?? "Admin action", 240) ?? "Admin action"
         : null;
-      const updatedUser = platformRepository.updateUserBan({
+      const updatedUser = await platformRepository.updateUserBan({
         userId: targetUserId,
         bannedAt: shouldBan ? new Date().toISOString() : null,
         bannedReason: reason,
       });
 
-      writeAuditLog({
+      await writeAuditLog({
         actorUserId: currentUser.id,
         actorRole: currentUser.role,
         action: shouldBan ? "access.user_banned" : "access.user_unbanned",
