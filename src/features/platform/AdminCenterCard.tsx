@@ -13,9 +13,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { Ban, ShieldCheck, Trash2 } from "lucide-react";
 import type { RootState } from "../../app/store";
 import type {
   AccessOverview,
+  AdminPlatformStats,
   AdminUserSummary,
   AuditLogEntry,
   CatalogProductItem,
@@ -23,6 +25,8 @@ import type {
 import type { UserRole } from "../../shared/types/user";
 import {
   PlatformApiError,
+  deleteAdminUser,
+  getAdminPlatformStats,
   getPlatformAccessOverview,
   listAdminUsers,
   listAuditLogs,
@@ -33,7 +37,7 @@ import {
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
 
-type AdminTab = "queue" | "users" | "audit" | "system";
+type AdminTab = "stats" | "queue" | "users" | "audit" | "system";
 
 const adminCopy = {
   uk: {
@@ -44,10 +48,27 @@ const adminCopy = {
       "Cloud backend недоступний, тому admin center зараз не може підвантажити дані.",
     tabs: {
       queue: "Модерація",
+      stats: "Статистика",
       users: "Користувачі",
       audit: "Аудит",
       system: "Система",
     },
+    statsTitle: "Платформа",
+    statsSubtitle: "Ключові показники користувачів, AI і каталогу.",
+    usersTotal: "Користувачі",
+    usersActive: "Активні",
+    usersNewThisWeek: "Нові за тиждень",
+    usersBanned: "Заблоковані",
+    aiRequestsTotal: "AI-запити",
+    productsTotal: "Продукти",
+    productsPending: "На модерації",
+    photoAnalysesTotal: "Фото-аналіз",
+    suspiciousAccounts: "Підозрілі акаунти",
+    moderationTitle: "Модерація",
+    reportsLabel: "Скарги",
+    contentLabel: "Контент",
+    photoAnalytics: "Фото-аналітика",
+    suspicious: "Підозрілі акаунти",
     systemTitle: "Операційний центр",
     systemSubtitle:
       "Аналітика, reports, content management, AI controls і системні логи в одному місці.",
@@ -68,6 +89,9 @@ const adminCopy = {
     applyRole: "Застосувати",
     ban: "Заблокувати",
     unban: "Розблокувати",
+    deleteUser: "Видалити",
+    active: "Активний",
+    confirmDelete: "Видалити користувача? Цю дію не можна скасувати.",
     banned: "Заблоковано",
     twoFactor: "2FA",
     required: "Потрібно",
@@ -82,10 +106,27 @@ const adminCopy = {
       "Backend cloud jest niedostępny, więc admin center nie może teraz pobrać danych.",
     tabs: {
       queue: "Moderacja",
+      stats: "Statystyka",
       users: "Użytkownicy",
       audit: "Audyt",
       system: "System",
     },
+    statsTitle: "Platforma",
+    statsSubtitle: "Kluczowe wskaźniki użytkowników, AI i katalogu.",
+    usersTotal: "Użytkownicy",
+    usersActive: "Aktywni",
+    usersNewThisWeek: "Nowi w tygodniu",
+    usersBanned: "Zablokowani",
+    aiRequestsTotal: "Zapytania AI",
+    productsTotal: "Produkty",
+    productsPending: "W moderacji",
+    photoAnalysesTotal: "Analiza zdjęć",
+    suspiciousAccounts: "Podejrzane konta",
+    moderationTitle: "Moderacja",
+    reportsLabel: "Zgłoszenia",
+    contentLabel: "Treści",
+    photoAnalytics: "Analiza zdjęć",
+    suspicious: "Podejrzane konta",
     systemTitle: "Centrum operacyjne",
     systemSubtitle:
       "Analityka, reports, content management, AI controls i logi systemowe w jednym miejscu.",
@@ -106,6 +147,9 @@ const adminCopy = {
     applyRole: "Zastosuj",
     ban: "Zablokuj",
     unban: "Odblokuj",
+    deleteUser: "Usuń",
+    active: "Aktywne",
+    confirmDelete: "Usunąć użytkownika? Tej akcji nie można cofnąć.",
     banned: "Zablokowane",
     twoFactor: "2FA",
     required: "Wymagane",
@@ -127,6 +171,7 @@ export const AdminCenterCard = () => {
   const backendUnavailableMessage = adminCopy[language].backendUnavailable;
   const [tab, setTab] = useState<AdminTab>("queue");
   const [access, setAccess] = useState<AccessOverview | null>(null);
+  const [stats, setStats] = useState<AdminPlatformStats | null>(null);
   const [queue, setQueue] = useState<CatalogProductItem[]>([]);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
@@ -146,6 +191,14 @@ export const AdminCenterCard = () => {
 
         setAccess(nextAccess);
         setError(null);
+
+        if (nextAccess.permissions.manageSystem) {
+          const nextStats = await getAdminPlatformStats();
+
+          if (active) {
+            setStats(nextStats);
+          }
+        }
 
         if (nextAccess.permissions.accessAdminCenter) {
           const queueItems = await listModerationQueue();
@@ -244,12 +297,75 @@ export const AdminCenterCard = () => {
           allowScrollButtonsMobile
         >
           <Tab value="queue" label={copy.tabs.queue} />
+          {access?.permissions.manageSystem && (
+            <Tab value="stats" label={copy.tabs.stats} />
+          )}
           {(access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
             <Tab value="users" label={copy.tabs.users} />
           )}
           {access?.permissions.viewAuditLogs && <Tab value="audit" label={copy.tabs.audit} />}
           {access?.permissions.manageSystem && <Tab value="system" label={copy.tabs.system} />}
         </Tabs>
+
+        {tab === "stats" && access?.permissions.manageSystem && (
+          <Stack spacing={1.4}>
+            <Stack spacing={0.3}>
+              <Typography sx={{ fontWeight: 900 }}>{copy.statsTitle}</Typography>
+              <Typography color="text.secondary">{copy.statsSubtitle}</Typography>
+            </Stack>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" },
+                gap: 1.2,
+              }}
+            >
+              {[
+                [copy.usersTotal, stats?.usersTotal ?? users.length],
+                [copy.usersActive, stats?.usersActive ?? 0],
+                [copy.usersNewThisWeek, stats?.usersNewThisWeek ?? 0],
+                [copy.usersBanned, stats?.usersBanned ?? 0],
+                [copy.aiRequestsTotal, stats?.aiRequestsTotal ?? 0],
+                [copy.productsTotal, stats?.productsTotal ?? 0],
+                [copy.productsPending, stats?.productsPending ?? queue.length],
+                [copy.photoAnalysesTotal, stats?.photoAnalysesTotal ?? 0],
+              ].map(([label, value]) => (
+                <Box
+                  key={label}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    border: "1px solid rgba(15, 23, 42, 0.1)",
+                    backgroundColor: "rgba(255,255,255,0.72)",
+                  }}
+                >
+                  <Typography color="text.secondary" variant="body2">
+                    {label}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 900, fontSize: 26 }}>{value}</Typography>
+                </Box>
+              ))}
+            </Box>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                gap: 1.2,
+              }}
+            >
+              {[
+                [copy.reportsLabel, stats?.reportsOpen ?? 0],
+                [copy.contentLabel, stats?.productsPending ?? queue.length],
+                [copy.photoAnalytics, stats?.photoAnalysesTotal ?? 0],
+                [copy.suspicious, stats?.suspiciousAccounts ?? 0],
+              ].map(([label, value]) => (
+                <Alert key={label} severity={Number(value) > 0 ? "warning" : "info"}>
+                  <strong>{label}</strong>: {value}
+                </Alert>
+              ))}
+            </Box>
+          </Stack>
+        )}
 
         {tab === "queue" && (
           <Stack spacing={1.2}>
@@ -353,9 +469,11 @@ export const AdminCenterCard = () => {
                     </Typography>
                   </Stack>
                   <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
-                    {user.isBanned && (
-                      <Chip color="error" label={copy.banned} sx={{ alignSelf: "center" }} />
-                    )}
+                    <Chip
+                      color={user.isBanned ? "error" : "success"}
+                      label={user.isBanned ? copy.banned : copy.active}
+                      sx={{ alignSelf: "center" }}
+                    />
                     <TextField
                       select
                       size="small"
@@ -378,6 +496,7 @@ export const AdminCenterCard = () => {
                     </TextField>
                     <Button
                       disabled={user.id === currentUser.id}
+                      startIcon={<ShieldCheck size={16} />}
                       onClick={() => {
                         const nextRole = roleDrafts[user.id];
 
@@ -398,9 +517,10 @@ export const AdminCenterCard = () => {
                     </Button>
                     {access?.permissions.banUsers && (
                       <Button
-                        color={user.isBanned ? "success" : "error"}
-                        disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
-                        onClick={() => {
+                      color={user.isBanned ? "success" : "error"}
+                      disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
+                      startIcon={<Ban size={16} />}
+                      onClick={() => {
                           void updateAdminUserBan(user.id, {
                             banned: !user.isBanned,
                             reason: "Admin moderation action",
@@ -414,6 +534,40 @@ export const AdminCenterCard = () => {
                         }}
                       >
                         {user.isBanned ? copy.unban : copy.ban}
+                      </Button>
+                    )}
+                    {access?.permissions.manageAdmins && (
+                      <Button
+                        color="error"
+                        disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
+                        startIcon={<Trash2 size={16} />}
+                        onClick={() => {
+                          if (!window.confirm(copy.confirmDelete)) {
+                            return;
+                          }
+
+                          void deleteAdminUser(user.id).then(() => {
+                            setUsers((current) =>
+                              current.filter((entry) => entry.id !== user.id)
+                            );
+                            setStats((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    usersTotal: Math.max(current.usersTotal - 1, 0),
+                                    usersActive: user.isBanned
+                                      ? current.usersActive
+                                      : Math.max(current.usersActive - 1, 0),
+                                    usersBanned: user.isBanned
+                                      ? Math.max(current.usersBanned - 1, 0)
+                                      : current.usersBanned,
+                                  }
+                                : current
+                            );
+                          });
+                        }}
+                      >
+                        {copy.deleteUser}
                       </Button>
                     )}
                   </Stack>
@@ -458,17 +612,17 @@ export const AdminCenterCard = () => {
               {[
                 {
                   title: copy.analytics,
-                  value: `${users.length}`,
+                  value: `${stats?.usersActive ?? users.length}`,
                   hint: copy.activeUsers,
                 },
                 {
                   title: copy.reports,
-                  value: "0",
+                  value: `${stats?.reportsOpen ?? 0}`,
                   hint: copy.openReports,
                 },
                 {
                   title: copy.content,
-                  value: `${queue.length}`,
+                  value: `${stats?.productsPending ?? queue.length}`,
                   hint: copy.publicProducts,
                 },
                 {

@@ -172,18 +172,26 @@ const readBooleanFlag = (value, fallback = false) => {
   return fallback;
 };
 
-const normalizeStorageProvider = (value, postgresUrl) => {
+const normalizeStorageProvider = (value, { postgresUrl, mongoUri } = {}) => {
   const normalized = toTrimmedString(value).toLowerCase();
 
   if (normalized === "postgres" || normalized === "postgresql") {
     return "postgres";
   }
 
+  if (normalized === "mongo" || normalized === "mongodb") {
+    return "mongodb";
+  }
+
   if (normalized === "sqlite") {
     return "sqlite";
   }
 
-  return postgresUrl ? "postgres" : "sqlite";
+  if (postgresUrl) {
+    return "postgres";
+  }
+
+  return mongoUri ? "mongodb" : "sqlite";
 };
 
 const normalizeAiDataProvider = (value, mongoUri, { preferMongoUri = false } = {}) => {
@@ -877,9 +885,18 @@ export const createServerConfig = (rawEnv = process.env) => {
     toTrimmedString(
       env.SMART_NUTRITION_DATABASE_URL ?? env.DATABASE_URL ?? env.POSTGRES_URL
     ) || null;
+  const explicitMongoUri = toTrimmedString(env.SMART_NUTRITION_MONGO_URI) || null;
+  const mongoUri =
+    explicitMongoUri ||
+    toTrimmedString(env.SMART_NUTRITION_MONGODB_URI ?? env.MONGODB_URI) ||
+    null;
+  const mongoDatabaseName =
+    toTrimmedString(env.SMART_NUTRITION_MONGODB_DB) ||
+    readMongoDatabaseNameFromUri(mongoUri) ||
+    "smart_nutrition";
   const databaseProvider = normalizeStorageProvider(
     env.SMART_NUTRITION_DATABASE_PROVIDER ?? env.SMART_NUTRITION_DB_PROVIDER,
-    postgresUrl
+    { postgresUrl, mongoUri }
   );
   const postgresSsl = readBooleanFlag(
     env.SMART_NUTRITION_DATABASE_SSL,
@@ -889,6 +906,12 @@ export const createServerConfig = (rawEnv = process.env) => {
   if (databaseProvider === "postgres" && !postgresUrl) {
     errors.push(
       "SMART_NUTRITION_DATABASE_URL or DATABASE_URL is required when SMART_NUTRITION_DATABASE_PROVIDER=postgres."
+    );
+  }
+
+  if (databaseProvider === "mongodb" && !mongoUri) {
+    errors.push(
+      "SMART_NUTRITION_MONGO_URI, SMART_NUTRITION_MONGODB_URI, or MONGODB_URI is required when SMART_NUTRITION_DATABASE_PROVIDER=mongodb."
     );
   }
 
@@ -1094,15 +1117,6 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 0, max: 100 }
   );
-  const explicitMongoUri = toTrimmedString(env.SMART_NUTRITION_MONGO_URI) || null;
-  const mongoUri =
-    explicitMongoUri ||
-    toTrimmedString(env.SMART_NUTRITION_MONGODB_URI ?? env.MONGODB_URI) ||
-    null;
-  const mongoDatabaseName =
-    toTrimmedString(env.SMART_NUTRITION_MONGODB_DB) ||
-    readMongoDatabaseNameFromUri(mongoUri) ||
-    "smart_nutrition";
   const mongoServerSelectionTimeoutMs = readPositiveInteger(
     env.SMART_NUTRITION_MONGODB_TIMEOUT_MS,
     5_000,

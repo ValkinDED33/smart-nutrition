@@ -1,5 +1,6 @@
 import type {
   AccessOverview,
+  AdminPlatformStats,
   AdminUserSummary,
   AuditLogEntry,
   CatalogProductItem,
@@ -123,6 +124,9 @@ export const reviewCatalogSubmission = (
 export const listAdminUsers = async () =>
   (await requestPlatform<{ items: AdminUserSummary[] }>("/api/admin/users")).items;
 
+export const getAdminPlatformStats = () =>
+  requestPlatform<AdminPlatformStats>("/api/admin/stats");
+
 export const updateAdminUserRole = (
   userId: string,
   role: Exclude<UserRole, "SUPER_ADMIN">
@@ -139,6 +143,11 @@ export const updateAdminUserBan = (
   requestPlatform<AdminUserSummary>(`/api/admin/users/${encodeURIComponent(userId)}/ban`, {
     method: "PATCH",
     body: JSON.stringify(payload),
+  });
+
+export const deleteAdminUser = (userId: string) =>
+  requestPlatform<void>(`/api/admin/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
   });
 
 export const listAuditLogs = async () =>

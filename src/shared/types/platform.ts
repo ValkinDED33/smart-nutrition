@@ -63,3 +63,16 @@ export interface AuditLogEntry {
 export interface AdminUserSummary extends User {
   createdAt: string;
 }
+
+export interface AdminPlatformStats {
+  usersTotal: number;
+  usersActive: number;
+  usersNewThisWeek: number;
+  usersBanned: number;
+  aiRequestsTotal: number;
+  productsTotal: number;
+  productsPending: number;
+  reportsOpen: number;
+  suspiciousAccounts: number;
+  photoAnalysesTotal: number;
+}

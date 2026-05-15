@@ -542,6 +542,8 @@ export const createAuthService = ({
       provider:
         config.databaseProvider === "postgres"
           ? "smart-nutrition-postgres-api"
+          : config.databaseProvider === "mongodb"
+            ? "smart-nutrition-mongodb-api"
           : "smart-nutrition-sqlite-api",
       auth: "httpOnly-cookie-session",
     }),

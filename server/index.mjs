@@ -22,10 +22,15 @@ import {
   setCorsHeaders,
   setSecurityHeaders,
 } from "./lib/http.mjs";
+import { createAdminController } from "./controllers/admin.controller.mjs";
 import { createAiController } from "./controllers/ai.controller.mjs";
 import { createAiRepository } from "./repositories/aiRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
+import { createMongoAdminRepository } from "./repositories/mongoAdminRepository.mjs";
 import { createMongoAiRepository } from "./repositories/mongoAiRepository.mjs";
+import { createMongoAuthRepository } from "./repositories/mongoAuthRepository.mjs";
+import { createMongoPlatformRepository } from "./repositories/mongoPlatformRepository.mjs";
+import { createMongoStateRepository } from "./repositories/mongoStateRepository.mjs";
 import { createPlatformRepository } from "./repositories/platformRepository.mjs";
 import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
@@ -41,15 +46,25 @@ import { createStorage } from "./storage/index.mjs";
 const redisCache = await createRedisCache(serverConfig);
 const storage = await createStorage(serverConfig);
 const primaryAiRepository = createAiRepository(storage);
-const aiRepository = serverConfig.mongoAiEnabled
+const aiRepository = serverConfig.mongoAiEnabled && serverConfig.databaseProvider !== "mongodb"
   ? await createMongoAiRepository({
       config: serverConfig,
       auditRepository: primaryAiRepository,
     })
   : primaryAiRepository;
-const authRepository = createAuthRepository(storage);
-const platformRepository = createPlatformRepository(storage);
-const stateRepository = createStateRepository(storage);
+const authRepository =
+  serverConfig.databaseProvider === "mongodb"
+    ? createMongoAuthRepository(storage)
+    : createAuthRepository(storage);
+const platformRepository =
+  serverConfig.databaseProvider === "mongodb"
+    ? createMongoPlatformRepository(storage)
+    : createPlatformRepository(storage);
+const stateRepository =
+  serverConfig.databaseProvider === "mongodb"
+    ? createMongoStateRepository(storage)
+    : createStateRepository(storage);
+const adminRepository = createMongoAdminRepository(storage);
 const emailService = createEmailService({
   config: serverConfig,
 });
@@ -78,7 +93,12 @@ const aiController = createAiController({
   aiService,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
 });
-const apiRouter = createApiRouter({ aiController });
+const adminController = createAdminController({
+  platformService,
+  adminRepository,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+});
+const apiRouter = createApiRouter({ aiController, adminController });
 await platformService.bootstrapAccessControl();
 const stateStreams = new Map();
 const staticRoot = path.resolve(serverConfig.staticDir);
