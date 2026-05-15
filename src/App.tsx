@@ -16,6 +16,7 @@ const loadLandingPage = () => import("./pages/LandingPage");
 const loadHomePage = () => import("./pages/HomePage");
 const loadProfilePage = () => import("./pages/ProfilePage");
 const loadMealsPage = () => import("./pages/MealsPage");
+const loadWaterPage = () => import("./pages/WaterPage");
 const loadAiCompanionPage = () => import("./pages/AiCompanionPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
@@ -28,6 +29,7 @@ const LandingPage = lazy(loadLandingPage);
 const HomePage = lazy(loadHomePage);
 const ProfilePage = lazy(loadProfilePage);
 const MealsPage = lazy(loadMealsPage);
+const WaterPage = lazy(loadWaterPage);
 const AiCompanionPage = lazy(loadAiCompanionPage);
 const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
@@ -56,6 +58,7 @@ function App() {
     const preloadRoutes = () => {
       void loadHomePage();
       void loadMealsPage();
+      void loadWaterPage();
       void loadAiCompanionPage();
       void loadProgressPage();
       void loadProfilePage();
@@ -156,6 +159,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? <LanguageSetupPage /> : <MealsPage />}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/water"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? <LanguageSetupPage /> : <WaterPage />}
                   </ProtectedRoute>
                 }
               />

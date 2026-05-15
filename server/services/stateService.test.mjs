@@ -31,7 +31,7 @@ describe("stateService", () => {
     const snapshot = {
       profile: { dailyCalories: 2100 },
       meal: { items: [] },
-      water: { consumedMl: 1250, dailyTargetMl: 2300 },
+      water: { consumedMl: 1250, dailyWaterGoal: 2300 },
       fridge: { items: [{ id: "fridge-1" }] },
       community: { score: 180, posts: [{ id: "post-1" }] },
     };

@@ -6,6 +6,7 @@ import { serverConfig } from "./config.mjs";
 import {
   AssistantApiError,
   AuthApiError,
+  calculateMealTotalNutrients,
   PlatformApiError,
   StateApiError,
 } from "./lib/domain.mjs";
@@ -29,6 +30,7 @@ import { createApiRouter } from "./routes/index.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
+import { createMangoSmsService } from "./services/mangoSmsService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
@@ -42,6 +44,9 @@ const stateRepository = createStateRepository(storage);
 const emailService = createEmailService({
   config: serverConfig,
 });
+const mangoSmsService = createMangoSmsService({
+  config: serverConfig,
+});
 const aiService = createAiService({
   aiRepository,
   config: serverConfig,
@@ -50,6 +55,7 @@ const authService = createAuthService({
   authRepository,
   stateRepository,
   emailService,
+  smsService: mangoSmsService,
   config: serverConfig,
 });
 const platformService = createPlatformService({
@@ -314,7 +320,8 @@ const consumeAiRateLimit = async (request, pathname) => {
   }
 };
 
-const isAiMutationRoute = (pathname, method) => pathname === "/api/ai" && method === "POST";
+const isAiMutationRoute = (pathname, method) =>
+  (pathname === "/api/ai" || pathname === "/api/assistant/message") && method === "POST";
 
 const getMetricsSnapshot = () => {
   const topRoutes = [...requestMetrics.routes.entries()]
@@ -377,6 +384,141 @@ const broadcastStateMeta = (user, stateService) => {
     streamResponse.write(`event: state-updated\n`);
     streamResponse.write(`data: ${payload}\n\n`);
   });
+};
+
+const createDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
+
+const normalizeWaterGoal = (waterState) =>
+  Math.max(
+    Math.round(Number(waterState?.dailyWaterGoal ?? waterState?.dailyTargetMl ?? 2000) || 2000),
+    250
+  );
+
+const normalizeWaterApiState = (waterState, dateKey = createDateKey()) => {
+  const dailyWaterGoal = normalizeWaterGoal(waterState);
+  const consumedMl =
+    waterState?.lastLoggedOn === dateKey
+      ? Math.max(Math.round(Number(waterState?.consumedMl ?? 0) || 0), 0)
+      : 0;
+  const history = Array.isArray(waterState?.history) ? waterState.history : [];
+  const historyEntry = {
+    date: dateKey,
+    consumedMl,
+    targetMl: dailyWaterGoal,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    ...waterState,
+    dailyWaterGoal,
+    consumedMl,
+    lastLoggedOn: dateKey,
+    history: [
+      historyEntry,
+      ...history.filter((entry) => entry?.date !== dateKey),
+    ].slice(0, 30),
+  };
+};
+
+const toWaterTodayResponse = (waterState) => {
+  const dailyWaterGoal = normalizeWaterGoal(waterState);
+  const consumedMl = Math.max(Math.round(Number(waterState?.consumedMl ?? 0) || 0), 0);
+
+  return {
+    date: waterState?.lastLoggedOn ?? createDateKey(),
+    consumedMl,
+    dailyWaterGoal,
+    remainingMl: Math.max(dailyWaterGoal - consumedMl, 0),
+    progress: dailyWaterGoal > 0 ? Math.min(consumedMl / dailyWaterGoal, 1) : 0,
+    glassSizeMl: Math.max(Math.round(Number(waterState?.glassSizeMl ?? 250) || 250), 100),
+  };
+};
+
+const getTodayMealEntries = (mealState, dateKey = createDateKey()) =>
+  (Array.isArray(mealState?.items) ? mealState.items : []).filter((item) =>
+    String(item?.eatenAt ?? "").startsWith(dateKey)
+  );
+
+const summarizeMealEntries = (entries) => ({
+  items: entries,
+  totalNutrients: calculateMealTotalNutrients(entries),
+});
+
+const normalizeMealEntriesPayload = (body) => {
+  if (Array.isArray(body?.entries)) {
+    return body.entries;
+  }
+
+  if (Array.isArray(body)) {
+    return body;
+  }
+
+  return [body];
+};
+
+const getWeightHistory = (profileState) =>
+  Array.isArray(profileState?.weightHistory) ? profileState.weightHistory : [];
+
+const getStatsSummary = (user) => {
+  const profileState = stateService.getProfileState(user);
+  const waterState = normalizeWaterApiState(stateService.getWaterState(user));
+  const mealState = stateService.getMealState(user);
+  const todayMeals = getTodayMealEntries(mealState);
+  const mealSummary = summarizeMealEntries(todayMeals);
+  const weightHistory = getWeightHistory(profileState);
+  const latestWeight = weightHistory.at(-1)?.weight ?? user.weight ?? null;
+
+  return {
+    date: createDateKey(),
+    calories: {
+      consumed: Math.round(mealSummary.totalNutrients.calories ?? 0),
+      goal: Math.round(Number(profileState?.dailyCalories ?? 0) || 0),
+      remaining: Math.max(
+        Math.round(Number(profileState?.dailyCalories ?? 0) || 0) -
+          Math.round(mealSummary.totalNutrients.calories ?? 0),
+        0
+      ),
+    },
+    water: toWaterTodayResponse(waterState),
+    meals: {
+      count: todayMeals.length,
+      totalNutrients: mealSummary.totalNutrients,
+    },
+    weight: {
+      current: latestWeight,
+      historyCount: weightHistory.length,
+    },
+  };
+};
+
+const getStatsTrends = (user) => {
+  const profileState = stateService.getProfileState(user);
+  const waterState = stateService.getWaterState(user);
+  const mealState = stateService.getMealState(user);
+  const mealCaloriesByDate = new Map();
+
+  (Array.isArray(mealState?.items) ? mealState.items : []).forEach((entry) => {
+    const date = String(entry?.eatenAt ?? "").slice(0, 10);
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return;
+    }
+
+    const calories = Number(entry?.product?.nutrients?.calories ?? 0) *
+      (Number(entry?.quantity ?? 0) / 100);
+    mealCaloriesByDate.set(date, (mealCaloriesByDate.get(date) ?? 0) + calories);
+  });
+
+  return {
+    water: Array.isArray(waterState?.history) ? waterState.history : [],
+    weight: getWeightHistory(profileState),
+    calories: [...mealCaloriesByDate.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, calories]) => ({
+        date,
+        calories: Math.round(calories),
+      })),
+  };
 };
 
 const routeRequest = async (request, response) => {
@@ -467,6 +609,7 @@ const routeRequest = async (request, response) => {
         },
         warnings: serverConfig.warnings,
         email: emailService.getStatus(),
+        sms: mangoSmsService.getStatus(),
         ai: aiService.getRuntimeStatus(),
       });
       return;
@@ -520,6 +663,18 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    if (pathname === "/api/auth/me" && request.method === "GET") {
+      const session = authService.restoreSession(request);
+
+      if (!session) {
+        sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
+        return;
+      }
+
+      sendJson(response, 200, { user: session.user });
+      return;
+    }
+
     if (pathname === "/api/auth/refresh" && request.method === "POST") {
       const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
       sendAuthSession(response, 200, authService.refreshSession(request, body));
@@ -570,11 +725,7 @@ const routeRequest = async (request, response) => {
 
     const auth = authService.authenticateRequest(request);
 
-    if (
-      pathname !== "/api/health" &&
-      !pathname.startsWith("/api/auth/") &&
-      !auth
-    ) {
+    if (pathname !== "/api/health" && !auth) {
       sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
       return;
     }
@@ -588,6 +739,114 @@ const routeRequest = async (request, response) => {
         auth,
       })
     ) {
+      return;
+    }
+
+    if (pathname === "/api/water/today" && request.method === "GET") {
+      const waterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      sendJson(response, 200, toWaterTodayResponse(waterState));
+      return;
+    }
+
+    if (pathname === "/api/water" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      const amountMl = Math.max(
+        Math.round(Number(body?.amountMl ?? body?.ml ?? body?.value ?? 250) || 250),
+        0
+      );
+      const currentWaterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      const nextWaterState = normalizeWaterApiState({
+        ...currentWaterState,
+        consumedMl: currentWaterState.consumedMl + amountMl,
+      });
+
+      stateService.saveWaterState(auth.user, nextWaterState, getSyncContext(request));
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 201, toWaterTodayResponse(nextWaterState));
+      return;
+    }
+
+    if (pathname === "/api/water/history" && request.method === "GET") {
+      const waterState = normalizeWaterApiState(stateService.getWaterState(auth.user));
+      sendJson(response, 200, { items: waterState.history });
+      return;
+    }
+
+    if (pathname === "/api/meals/today" && request.method === "GET") {
+      const mealState = stateService.getMealState(auth.user);
+      sendJson(response, 200, summarizeMealEntries(getTodayMealEntries(mealState)));
+      return;
+    }
+
+    if (pathname === "/api/meals" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      stateService.addMealEntries(
+        auth.user,
+        { entries: normalizeMealEntriesPayload(body) },
+        getSyncContext(request)
+      );
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(
+        response,
+        201,
+        summarizeMealEntries(getTodayMealEntries(stateService.getMealState(auth.user)))
+      );
+      return;
+    }
+
+    if (pathname === "/api/products/search" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: platformService.listVisibleCatalogProducts(auth.user, {
+          status: url.searchParams.get("status"),
+          search: url.searchParams.get("q") ?? url.searchParams.get("search") ?? "",
+          limit: url.searchParams.get("limit") ?? undefined,
+        }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/weight/history" && request.method === "GET") {
+      sendJson(response, 200, {
+        items: getWeightHistory(stateService.getProfileState(auth.user)),
+      });
+      return;
+    }
+
+    if (pathname === "/api/weight" && request.method === "POST") {
+      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
+      const weight = Number(body?.weight);
+
+      if (!Number.isFinite(weight) || weight <= 0) {
+        sendError(response, 400, "INVALID_WEIGHT", "Weight must be a positive number.");
+        return;
+      }
+
+      const profileState = stateService.getProfileState(auth.user);
+      const nextEntry = {
+        date:
+          typeof body?.date === "string" && body.date.trim()
+            ? body.date.trim()
+            : new Date().toISOString(),
+        weight,
+      };
+      const nextProfileState = {
+        ...profileState,
+        weightHistory: [...getWeightHistory(profileState), nextEntry].slice(-180),
+      };
+
+      stateService.saveProfileState(auth.user, nextProfileState, getSyncContext(request));
+      broadcastStateMeta(auth.user, stateService);
+      sendJson(response, 201, nextEntry);
+      return;
+    }
+
+    if (pathname === "/api/stats/summary" && request.method === "GET") {
+      sendJson(response, 200, getStatsSummary(auth.user));
+      return;
+    }
+
+    if (pathname === "/api/stats/trends" && request.method === "GET") {
+      sendJson(response, 200, getStatsTrends(auth.user));
       return;
     }
 
@@ -918,6 +1177,8 @@ const routeRequest = async (request, response) => {
           : error.code === "TOO_MANY_ATTEMPTS"
             ? 429
             : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
+              ? 503
+            : error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
               ? 503
             : error.code === "INVALID_RESET_TOKEN" || error.code === "WEAK_PASSWORD"
               ? 400

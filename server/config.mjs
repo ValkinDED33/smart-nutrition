@@ -9,6 +9,7 @@ const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
 const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
 const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
+const DEFAULT_MANGO_SMS_ENDPOINT = "https://app.mango-office.ru/vpbx/commands/sms";
 const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_JWT_SECRET",
   "SMART_NUTRITION_ASSISTANT_API_KEY",
@@ -16,6 +17,8 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_GROQ_API_KEY",
   "SMART_NUTRITION_GOOGLE_API_KEY",
   "SMART_NUTRITION_SMTP_PASS",
+  "SMART_NUTRITION_MANGO_API_KEY",
+  "SMART_NUTRITION_MANGO_API_SALT",
 ];
 
 const toTrimmedString = (value, fallback = "") =>
@@ -58,6 +61,23 @@ const hydrateSecretFileEnv = (env) => {
 
 const normalizeBaseUrl = (value, fallback) =>
   (toTrimmedString(value, fallback) || fallback).replace(/\/+$/, "");
+
+const normalizeHttpUrl = (value, fallback, name, errors) => {
+  const rawValue = toTrimmedString(value, fallback) || fallback;
+
+  try {
+    const parsedUrl = new URL(rawValue);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // Fall through to the shared validation error below.
+  }
+
+  errors.push(`${name} must be a valid http/https URL.`);
+  return fallback;
+};
 
 const normalizeRuntimePath = (value, fallback) => {
   const nextValue = toTrimmedString(value, fallback) || fallback;
@@ -861,6 +881,32 @@ export const createServerConfig = (rawEnv = process.env) => {
   }
 
   const emailTransportConfigured = Boolean(emailFromAddress && (smtpUrl || smtpHost));
+  const mangoApiKey = toTrimmedString(env.SMART_NUTRITION_MANGO_API_KEY) || null;
+  const mangoApiSalt = toTrimmedString(env.SMART_NUTRITION_MANGO_API_SALT) || null;
+
+  if (Boolean(mangoApiKey) !== Boolean(mangoApiSalt)) {
+    errors.push(
+      "SMART_NUTRITION_MANGO_API_KEY and SMART_NUTRITION_MANGO_API_SALT must either both be set or both be omitted."
+    );
+  }
+
+  const mangoSmsEndpoint = normalizeHttpUrl(
+    env.SMART_NUTRITION_MANGO_SMS_ENDPOINT,
+    DEFAULT_MANGO_SMS_ENDPOINT,
+    "SMART_NUTRITION_MANGO_SMS_ENDPOINT",
+    errors
+  );
+  const mangoFromExtension =
+    toTrimmedString(env.SMART_NUTRITION_MANGO_FROM_EXTENSION, "101") || "101";
+  const mangoSmsSender = toTrimmedString(env.SMART_NUTRITION_MANGO_SMS_SENDER);
+  const mangoSmsTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_MANGO_SMS_TIMEOUT_MS,
+    10_000,
+    "SMART_NUTRITION_MANGO_SMS_TIMEOUT_MS",
+    errors,
+    { min: 1_000 }
+  );
+  const mangoSmsConfigured = Boolean(mangoApiKey && mangoApiSalt);
   const explicitAssistantApiKey =
     toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null;
   const explicitAssistantModel =
@@ -1003,6 +1049,13 @@ export const createServerConfig = (rawEnv = process.env) => {
     smtpSecure,
     smtpUser,
     smtpPass,
+    mangoSmsConfigured,
+    mangoApiKey,
+    mangoApiSalt,
+    mangoSmsEndpoint,
+    mangoFromExtension,
+    mangoSmsSender,
+    mangoSmsTimeoutMs,
     assistantApiKey,
     assistantModel,
     assistantBaseUrl,

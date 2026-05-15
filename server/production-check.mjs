@@ -89,6 +89,15 @@ const run = () => {
       required: true,
     }),
     createCheck({
+      id: "mango-sms",
+      label: "MANGO OFFICE SMS delivery is configured",
+      ok: config.mangoSmsConfigured,
+      detail: config.mangoSmsConfigured
+        ? `Endpoint: ${config.mangoSmsEndpoint}, extension: ${config.mangoFromExtension}`
+        : "Set SMART_NUTRITION_MANGO_API_KEY and SMART_NUTRITION_MANGO_API_SALT to enable SMS verification.",
+      required: false,
+    }),
+    createCheck({
       id: "assistant",
       label: "AI assistant runtime is configured",
       ok: config.assistantRuntimeConfigured,

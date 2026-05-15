@@ -27,7 +27,7 @@ export interface AssistantContextSource {
     | "weightHistory"
     | "weeklyCheckIn"
   >;
-  water: Pick<WaterState, "consumedMl" | "dailyTargetMl" | "lastLoggedOn">;
+  water: Pick<WaterState, "consumedMl" | "dailyWaterGoal" | "lastLoggedOn">;
   todayTotals: Pick<
     AssistantRuntimeContext,
     "caloriesConsumed" | "fatConsumed" | "carbsConsumed" | "proteinConsumed"

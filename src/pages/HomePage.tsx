@@ -161,9 +161,9 @@ const HomePage = () => {
     ? Math.min((totals.calories / dailyCalories) * 100, 100)
     : 0;
   const remainingCalories = Math.max(dailyCalories - totals.calories, 0);
-  const remainingWaterMl = Math.max(water.dailyTargetMl - water.consumedMl, 0);
-  const waterProgress = water.dailyTargetMl
-    ? Math.min((water.consumedMl / water.dailyTargetMl) * 100, 100)
+  const remainingWaterMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
+  const waterProgress = water.dailyWaterGoal
+    ? Math.min((water.consumedMl / water.dailyWaterGoal) * 100, 100)
     : 0;
   const proteinProgress = macroProgress.protein.progress;
   const actionModes: MealActionMode[] = ["photo", "search", "barcode"];
@@ -346,6 +346,56 @@ const HomePage = () => {
                 sx={{ color: "white", borderColor: "rgba(255,255,255,0.28)" }}
                 variant="outlined"
               />
+            </Stack>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Button
+                variant="contained"
+                onClick={() => navigate("/meals?mode=search")}
+                sx={{
+                  borderRadius: 999,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  backgroundColor: "#ffffff",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" },
+                }}
+              >
+                {copy.startMeal}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleAddWater}
+                sx={{
+                  borderRadius: 999,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  color: "#ffffff",
+                  borderColor: "rgba(255,255,255,0.42)",
+                  "&:hover": {
+                    borderColor: "#ffffff",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  },
+                }}
+              >
+                {copy.addWater}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => navigate("/ai")}
+                sx={{
+                  borderRadius: 999,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  color: "#ffffff",
+                  borderColor: "rgba(255,255,255,0.42)",
+                  "&:hover": {
+                    borderColor: "#ffffff",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  },
+                }}
+              >
+                {copy.askAssistant}
+              </Button>
             </Stack>
           </Stack>
 

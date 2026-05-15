@@ -165,18 +165,18 @@ export const WaterTracker = () => {
     dispatch(syncWaterTargetFromWeight(latestWeight));
   }, [dispatch, latestWeight]);
 
-  const remainingMl = Math.max(water.dailyTargetMl - water.consumedMl, 0);
-  const progress = water.dailyTargetMl
-    ? Math.min((water.consumedMl / water.dailyTargetMl) * 100, 100)
+  const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
+  const progress = water.dailyWaterGoal
+    ? Math.min((water.consumedMl / water.dailyWaterGoal) * 100, 100)
     : 0;
   const animatedProgress = useSpring({
     progress,
     config: { tension: 170, friction: 22 },
   });
   const status =
-    water.consumedMl < water.dailyTargetMl
+    water.consumedMl < water.dailyWaterGoal
       ? copy.statusUnder
-      : water.consumedMl <= water.dailyTargetMl + water.glassSizeMl / 2
+      : water.consumedMl <= water.dailyWaterGoal + water.glassSizeMl / 2
         ? copy.statusOnTrack
         : copy.statusAbove;
   const quickAmounts = useMemo(
@@ -192,9 +192,9 @@ export const WaterTracker = () => {
       createWeeklyWaterRecords({
         history: water.history,
         consumedMl: water.consumedMl,
-        dailyTargetMl: water.dailyTargetMl,
+        dailyWaterGoal: water.dailyWaterGoal,
       }),
-    [water.consumedMl, water.dailyTargetMl, water.history]
+    [water.consumedMl, water.dailyWaterGoal, water.history]
   );
   const weeklyTotalMl = weeklyRecords.reduce(
     (total, item) => total + item.consumedMl,
@@ -270,10 +270,10 @@ export const WaterTracker = () => {
     () =>
       createWaterGlassSlots(
         water.consumedMl,
-        water.dailyTargetMl,
+        water.dailyWaterGoal,
         water.glassSizeMl
       ),
-    [water.consumedMl, water.dailyTargetMl, water.glassSizeMl]
+    [water.consumedMl, water.dailyWaterGoal, water.glassSizeMl]
   );
 
   const playWaterFeedback = (nextConsumedMl: number, previousConsumedMl = water.consumedMl) => {
@@ -282,8 +282,8 @@ export const WaterTracker = () => {
 
     if (nextConsumedMl > previousConsumedMl) {
       if (
-        previousConsumedMl < water.dailyTargetMl &&
-        nextConsumedMl >= water.dailyTargetMl
+        previousConsumedMl < water.dailyWaterGoal &&
+        nextConsumedMl >= water.dailyWaterGoal
       ) {
         playAchievementSound();
         void confetti({
@@ -459,7 +459,7 @@ export const WaterTracker = () => {
             <Typography sx={{ fontWeight: 700 }}>
               {copy.progress
                 .replace("{current}", formatWaterLiters(water.consumedMl))
-                .replace("{target}", formatWaterLiters(water.dailyTargetMl))}
+                .replace("{target}", formatWaterLiters(water.dailyWaterGoal))}
             </Typography>
             <Typography color="text.secondary">
               {copy.remainingLabel.replace("{value}", remainingMl.toFixed(0))}
@@ -524,7 +524,7 @@ export const WaterTracker = () => {
           <TextField
             type="number"
             label={`${copy.target} (ml)`}
-            value={water.dailyTargetMl}
+            value={water.dailyWaterGoal}
             onChange={(event) => dispatch(setWaterTarget(Number(event.target.value) || 0))}
             inputProps={{ min: 250, step: 50 }}
           />

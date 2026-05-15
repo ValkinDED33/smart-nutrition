@@ -1,6 +1,14 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  Bot,
+  Droplets,
+  Home,
+  TrendingUp,
+  Utensils,
+  UserRound,
+} from "lucide-react";
+import {
   AppBar,
   Avatar,
   BottomNavigation,
@@ -33,19 +41,21 @@ import { setProfileLanguage } from "../../features/profile/profileSlice";
 import { useAppColorMode } from "../theme/colorMode";
 
 const mobileTabs = [
-  { value: "/home", label: "Home", icon: "🏠" },
-  { value: "/meals", label: "Meals", icon: "🍽" },
-  { value: "/ai", label: "AI", icon: "🤖" },
-  { value: "/progress", label: "Progress", icon: "📊" },
-  { value: "/profile", label: "Profile", icon: "👤" },
+  { value: "/home", label: "Home", icon: Home },
+  { value: "/meals", label: "Meals", icon: Utensils },
+  { value: "/water", label: "Water", icon: Droplets },
+  { value: "/progress", label: "Progress", icon: TrendingUp },
+  { value: "/profile", label: "Profile", icon: UserRound },
+  { value: "/ai", label: "AI", icon: Bot },
 ];
 
 const desktopTabs = [
   { value: "/home", label: "Dashboard" },
   { value: "/meals", label: "Food" },
+  { value: "/water", label: "Water" },
   { value: "/progress", label: "Progress" },
-  { value: "/ai", label: "AI Coach" },
   { value: "/profile", label: "Profile" },
+  { value: "/ai", label: "AI Coach" },
 ];
 
 const Layout = () => {
@@ -344,14 +354,25 @@ const Layout = () => {
               },
             }}
           >
-            {mobileTabs.map((tab) => (
-              <BottomNavigationAction
-                key={tab.value}
-                value={tab.value}
-                label={tab.label}
-                icon={<span>{tab.icon}</span>}
-              />
-            ))}
+            {mobileTabs.map((tab) => {
+              const Icon = tab.icon;
+
+              return (
+                <BottomNavigationAction
+                  key={tab.value}
+                  value={tab.value}
+                  label={tab.label}
+                  icon={<Icon size={21} strokeWidth={2.2} aria-hidden="true" />}
+                  sx={{
+                    px: 0.4,
+                    "& .MuiBottomNavigationAction-label": {
+                      fontSize: 11,
+                      whiteSpace: "nowrap",
+                    },
+                  }}
+                />
+              );
+            })}
           </BottomNavigation>
         </Paper>
       )}

@@ -33,8 +33,8 @@ const waterSlice = createSlice({
 
     setWaterTarget(state, action: PayloadAction<number>) {
       syncTodayWaterState(state);
-      state.dailyTargetMl = Math.max(Math.round(action.payload), 250);
-      state.consumedMl = Math.min(state.consumedMl, state.dailyTargetMl + state.glassSizeMl * 4);
+      state.dailyWaterGoal = Math.max(Math.round(action.payload), 250);
+      state.consumedMl = Math.min(state.consumedMl, state.dailyWaterGoal + state.glassSizeMl * 4);
       state.targetMode = "manual";
       upsertWaterHistory(state);
     },
@@ -52,8 +52,8 @@ const waterSlice = createSlice({
         return;
       }
 
-      state.dailyTargetMl = calculateRecommendedWaterTarget(weight);
-      state.consumedMl = Math.min(state.consumedMl, state.dailyTargetMl + state.glassSizeMl * 4);
+      state.dailyWaterGoal = calculateRecommendedWaterTarget(weight);
+      state.consumedMl = Math.min(state.consumedMl, state.dailyWaterGoal + state.glassSizeMl * 4);
       upsertWaterHistory(state);
     },
 

@@ -13,7 +13,7 @@ describe("waterModel", () => {
     const records = createWeeklyWaterRecords(
       {
         consumedMl: 1250,
-        dailyTargetMl: 2100,
+        dailyWaterGoal: 2100,
         history: [
           {
             date: "2026-05-04",
@@ -74,7 +74,7 @@ describe("waterModel", () => {
   it("normalizes persisted water state defensively", () => {
     const state = normalizeWaterState({
       consumedMl: "640",
-      dailyTargetMl: -1,
+      dailyWaterGoal: -1,
       glassSizeMl: 0,
       lastLoggedOn: "2026-05-05",
       targetMode: "manual",
@@ -92,7 +92,7 @@ describe("waterModel", () => {
 
     expect(state).toMatchObject({
       consumedMl: 640,
-      dailyTargetMl: 2000,
+      dailyWaterGoal: 2000,
       glassSizeMl: 250,
       lastLoggedOn: "2026-05-05",
       targetMode: "manual",
@@ -105,5 +105,18 @@ describe("waterModel", () => {
     });
     expect(state.history.map((entry) => entry.date)).toContain("2026-05-05");
     expect(state.history.map((entry) => entry.date)).not.toContain("bad-date");
+  });
+
+  it("migrates the legacy dailyTargetMl field into dailyWaterGoal", () => {
+    const state = normalizeWaterState({
+      dailyTargetMl: 2400,
+      consumedMl: 500,
+      lastLoggedOn: "2026-05-05",
+    });
+
+    expect(state.dailyWaterGoal).toBe(2400);
+    expect(state.history.find((entry) => entry.date === "2026-05-05")).toMatchObject({
+      targetMl: 2400,
+    });
   });
 });

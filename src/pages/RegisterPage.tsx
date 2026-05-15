@@ -113,6 +113,8 @@ const registerPageCopy = {
     preview: "Preview-код",
     sent: "Код надіслано: {target}",
     verified: "Реєстрацію підтверджено.",
+    deliveryUnavailable:
+      "SMS-підтвердження тимчасово недоступне. Спробуйте ще раз або оберіть email.",
   },
   pl: {
     showPassword: "Pokaż hasło",
@@ -143,6 +145,8 @@ const registerPageCopy = {
     preview: "Kod preview",
     sent: "Kod wysłany: {target}",
     verified: "Rejestracja potwierdzona.",
+    deliveryUnavailable:
+      "Potwierdzenie SMS jest tymczasowo niedostępne. Spróbuj ponownie albo wybierz email.",
   },
 } as const;
 
@@ -344,6 +348,11 @@ const RegisterPage = () => {
         error.code === "WEAK_PASSWORD"
       ) {
         setServerError(t("validation.passwordMin"));
+      } else if (
+        error instanceof AuthApiError &&
+        error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
+      ) {
+        setServerError(copy.deliveryUnavailable);
       } else {
         setServerError(t("error.genericRegister"));
       }
@@ -361,6 +370,11 @@ const RegisterPage = () => {
 
       if (error.code === "ACCOUNT_BANNED") {
         setServerError("This account is banned.");
+        return;
+      }
+
+      if (error.code === "VERIFICATION_DELIVERY_UNAVAILABLE") {
+        setServerError(copy.deliveryUnavailable);
         return;
       }
     }

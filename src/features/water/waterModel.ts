@@ -1,7 +1,7 @@
 import { addDays, getLocalDateKey } from "../../shared/lib/date";
 
 export interface WaterState {
-  dailyTargetMl: number;
+  dailyWaterGoal: number;
   consumedMl: number;
   glassSizeMl: number;
   lastLoggedOn: string | null;
@@ -144,7 +144,7 @@ export const upsertWaterHistory = (
   const nextEntry = createWaterHistoryEntry(
     date,
     state.consumedMl,
-    state.dailyTargetMl
+    state.dailyWaterGoal
   );
   const nextHistory = [
     nextEntry,
@@ -174,7 +174,7 @@ export const createInitialWaterState = (): WaterState => {
   const today = createWaterDayKey();
 
   return {
-    dailyTargetMl: DEFAULT_DAILY_TARGET_ML,
+    dailyWaterGoal: DEFAULT_DAILY_TARGET_ML,
     consumedMl: 0,
     glassSizeMl: DEFAULT_GLASS_SIZE_ML,
     lastLoggedOn: today,
@@ -189,9 +189,13 @@ export const normalizeWaterState = (value: unknown): WaterState => {
     typeof value === "object" && value !== null
       ? (value as Record<string, unknown>)
       : {};
+  const legacyDailyTargetMl = record.dailyTargetMl;
 
   const state: WaterState = {
-    dailyTargetMl: toPositiveNumber(record.dailyTargetMl, DEFAULT_DAILY_TARGET_ML),
+    dailyWaterGoal: toPositiveNumber(
+      record.dailyWaterGoal ?? legacyDailyTargetMl,
+      DEFAULT_DAILY_TARGET_ML
+    ),
     consumedMl: clampToZero(record.consumedMl),
     glassSizeMl: toPositiveNumber(record.glassSizeMl, DEFAULT_GLASS_SIZE_ML),
     lastLoggedOn:
@@ -214,7 +218,7 @@ export const normalizeWaterState = (value: unknown): WaterState => {
 };
 
 export const createWeeklyWaterRecords = (
-  water: Pick<WaterState, "history" | "consumedMl" | "dailyTargetMl">,
+  water: Pick<WaterState, "history" | "consumedMl" | "dailyWaterGoal">,
   baseDate = new Date()
 ): WeeklyWaterRecord[] => {
   const historyByDate = new Map(water.history.map((entry) => [entry.date, entry]));
@@ -225,7 +229,7 @@ export const createWeeklyWaterRecords = (
     const historyEntry = historyByDate.get(date);
     const consumedMl = date === todayKey ? water.consumedMl : historyEntry?.consumedMl ?? 0;
     const targetMl =
-      date === todayKey ? water.dailyTargetMl : historyEntry?.targetMl ?? water.dailyTargetMl;
+      date === todayKey ? water.dailyWaterGoal : historyEntry?.targetMl ?? water.dailyWaterGoal;
 
     return {
       date,
@@ -237,13 +241,13 @@ export const createWeeklyWaterRecords = (
 
 export const createWaterGlassSlots = (
   consumedMl: number,
-  dailyTargetMl: number,
+  dailyWaterGoal: number,
   glassSizeMl: number,
   minSlotCount = 6
 ): WaterGlassSlot[] => {
   const normalizedGlassSize = Math.max(Math.round(glassSizeMl), MIN_GLASS_SIZE_ML);
   const glassCount = Math.max(
-    Math.ceil(Math.max(dailyTargetMl, 0) / normalizedGlassSize),
+    Math.ceil(Math.max(dailyWaterGoal, 0) / normalizedGlassSize),
     minSlotCount
   );
 

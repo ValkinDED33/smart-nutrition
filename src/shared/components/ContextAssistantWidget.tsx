@@ -208,8 +208,8 @@ export const ContextAssistantWidget = () => {
       calorieTarget > 0 ? todayTotals.calories / calorieTarget : 0;
     const waterIsLow =
       hours >= 16 &&
-      water.dailyTargetMl > 0 &&
-      water.consumedMl < water.dailyTargetMl * 0.6;
+      water.dailyWaterGoal > 0 &&
+      water.consumedMl < water.dailyWaterGoal * 0.6;
     const checkInDue =
       profile.weeklyCheckIn.enabled &&
       getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=

@@ -12,6 +12,11 @@ export const createAiRoutes = ({ aiController }) => [
     handler: aiController.askQuestion,
   },
   {
+    method: "POST",
+    pathname: "/api/assistant/message",
+    handler: aiController.askQuestion,
+  },
+  {
     method: "GET",
     pathname: AI_PATH,
     handler: aiController.getConversationHistory,

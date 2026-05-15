@@ -473,7 +473,7 @@ export const createInitialMealState = () => ({
 });
 
 export const createInitialWaterState = () => ({
-  dailyTargetMl: 2000,
+  dailyWaterGoal: 2000,
   consumedMl: 0,
   glassSizeMl: 250,
   lastLoggedOn: new Date().toISOString().slice(0, 10),

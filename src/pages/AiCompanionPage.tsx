@@ -128,7 +128,7 @@ const AiCompanionPage = () => {
   const calorieTarget = Math.max(profile.dailyCalories, 0);
   const calorieProgress =
     calorieTarget > 0 ? Math.min((todayTotals.calories / calorieTarget) * 100, 120) : 0;
-  const remainingWaterMl = Math.max(water.dailyTargetMl - water.consumedMl, 0);
+  const remainingWaterMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const actionCards = [
     ...(todayItems.length === 0
       ? [
@@ -148,8 +148,8 @@ const AiCompanionPage = () => {
             title: copy.waterTitle(remainingWaterMl),
             body: copy.waterBody,
             to: "/progress",
-            progress: water.dailyTargetMl
-              ? Math.min((water.consumedMl / water.dailyTargetMl) * 100, 100)
+            progress: water.dailyWaterGoal
+              ? Math.min((water.consumedMl / water.dailyWaterGoal) * 100, 100)
               : 0,
           },
         ]

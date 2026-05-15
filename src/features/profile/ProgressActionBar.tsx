@@ -66,14 +66,14 @@ export const ProgressActionBar = () => {
   const { language, t } = useLanguage();
   const copyText = progressActionCopy[language];
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? authWeight ?? 0;
-  const waterProgress = water.dailyTargetMl
-    ? Math.round((water.consumedMl / water.dailyTargetMl) * 100)
+  const waterProgress = water.dailyWaterGoal
+    ? Math.round((water.consumedMl / water.dailyWaterGoal) * 100)
     : 0;
 
   const report = [
     copyText.reportTitle,
     `${copyText.calories}: ${Math.round(totals.calories)} / ${profile.dailyCalories} ${t("common.kcal")}`,
-    `${copyText.water}: ${water.consumedMl} / ${water.dailyTargetMl} ml (${waterProgress}%)`,
+    `${copyText.water}: ${water.consumedMl} / ${water.dailyWaterGoal} ml (${waterProgress}%)`,
     `${copyText.weight}: ${latestWeight.toFixed(1)} ${t("common.kg")}`,
   ].join("\n");
 

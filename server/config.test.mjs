@@ -173,6 +173,40 @@ describe("createServerConfig", () => {
     }
   });
 
+  it("reads Render secret files for MANGO OFFICE SMS credentials", () => {
+    const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
+
+    try {
+      writeFileSync(path.join(secretFileDir, "SMART_NUTRITION_MANGO_API_KEY"), "mango-key");
+      writeFileSync(path.join(secretFileDir, "SMART_NUTRITION_MANGO_API_SALT"), "mango-salt");
+
+      const config = createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_SECRET_FILE_DIR: secretFileDir,
+        SMART_NUTRITION_MANGO_FROM_EXTENSION: "202",
+        SMART_NUTRITION_MANGO_SMS_SENDER: "SMARTNUTRI",
+      });
+
+      expect(config.mangoSmsConfigured).toBe(true);
+      expect(config.mangoApiKey).toBe("mango-key");
+      expect(config.mangoApiSalt).toBe("mango-salt");
+      expect(config.mangoFromExtension).toBe("202");
+      expect(config.mangoSmsSender).toBe("SMARTNUTRI");
+    } finally {
+      rmSync(secretFileDir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects partial MANGO OFFICE SMS credentials", () => {
+    expect(() =>
+      createServerConfig({
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_MANGO_API_KEY: "mango-key",
+      })
+    ).toThrow(/SMART_NUTRITION_MANGO_API_KEY/);
+  });
+
   it("prefers the three provider-specific Render secret files over the generic assistant key", () => {
     const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
 

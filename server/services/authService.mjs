@@ -24,6 +24,7 @@ export const createAuthService = ({
   authRepository,
   stateRepository,
   emailService,
+  smsService = null,
   config,
 }) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
@@ -65,6 +66,15 @@ export const createAuthService = ({
       throw new AuthApiError(
         "INVALID_PROFILE",
         "A valid phone number is required for SMS verification."
+      );
+    }
+  };
+
+  const assertSmsDeliveryAvailable = () => {
+    if (config.isProduction && !smsService?.isConfigured?.()) {
+      throw new AuthApiError(
+        "VERIFICATION_DELIVERY_UNAVAILABLE",
+        "SMS verification is unavailable until MANGO OFFICE credentials are configured."
       );
     }
   };
@@ -293,11 +303,27 @@ export const createAuthService = ({
             expiresAt,
           })
         : null;
+    const smsResult =
+      channel === "sms"
+        ? await smsService?.sendRegistrationVerificationSms?.({
+            to: target,
+            name: user.name,
+            code,
+            expiresAt,
+          })
+        : null;
+
+    if (channel === "sms" && config.isProduction && !smsResult?.ok) {
+      throw new AuthApiError(
+        "VERIFICATION_DELIVERY_UNAVAILABLE",
+        "SMS verification could not be delivered through MANGO OFFICE."
+      );
+    }
 
     const delivery =
       channel === "email" && emailResult?.ok
         ? "email"
-        : channel === "sms" && config.isProduction
+        : channel === "sms" && (smsResult?.ok || config.isProduction)
           ? "sms"
           : "preview";
 
@@ -521,6 +547,7 @@ export const createAuthService = ({
 
       if (verificationChannel === "sms") {
         assertValidPhone(phone);
+        assertSmsDeliveryAvailable();
       }
 
       if (authRepository.findUserByEmail(email)) {
@@ -580,11 +607,16 @@ export const createAuthService = ({
           verificationChannel,
         },
       });
-      return createRegistrationVerification(
-        user,
-        verificationChannel,
-        verificationChannel === "sms" ? phone : email
-      );
+      try {
+        return await createRegistrationVerification(
+          user,
+          verificationChannel,
+          verificationChannel === "sms" ? phone : email
+        );
+      } catch (error) {
+        authRepository.deleteUser?.(user.id);
+        throw error;
+      }
     },
 
     verifyRegistration: (body) => {
@@ -678,6 +710,7 @@ export const createAuthService = ({
 
       if (verificationChannel === "sms") {
         assertValidPhone(phone);
+        assertSmsDeliveryAvailable();
       }
 
       const updatedUser =

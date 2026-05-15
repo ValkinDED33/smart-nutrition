@@ -571,7 +571,7 @@ const normalizeWaterHistory = (value, fallback) =>
           return {
             date,
             consumedMl: Math.max(toNumber(record.consumedMl, 0), 0),
-            targetMl: Math.max(toNumber(record.targetMl, fallback.dailyTargetMl), 250),
+            targetMl: Math.max(toNumber(record.targetMl, fallback.dailyWaterGoal), 250),
             updatedAt:
               typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0
                 ? record.updatedAt
@@ -600,9 +600,13 @@ const normalizeWaterReminders = (value, fallback) => {
 const normalizeWaterState = (value) => {
   const fallback = createInitialWaterState();
   const record = isRecord(value) ? value : {};
+  const legacyDailyTargetMl = record.dailyTargetMl;
 
   return {
-    dailyTargetMl: Math.max(toNumber(record.dailyTargetMl, fallback.dailyTargetMl), 250),
+    dailyWaterGoal: Math.max(
+      toNumber(record.dailyWaterGoal ?? legacyDailyTargetMl, fallback.dailyWaterGoal),
+      250
+    ),
     consumedMl: Math.max(toNumber(record.consumedMl, fallback.consumedMl), 0),
     glassSizeMl: Math.max(toNumber(record.glassSizeMl, fallback.glassSizeMl), 100),
     lastLoggedOn:

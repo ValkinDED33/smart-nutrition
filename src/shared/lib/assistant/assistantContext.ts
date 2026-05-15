@@ -51,7 +51,7 @@ export const createAssistantRuntimeContext = ({
     carbsConsumed: todayTotals.carbsConsumed,
     mealEntriesToday: todayMealEntriesCount,
     waterConsumedMl,
-    waterTargetMl: water.dailyTargetMl,
+    waterTargetMl: water.dailyWaterGoal,
     latestWeight,
     weightChangeKg: latestWeight - firstWeight,
     weeklyCheckInDue:

@@ -269,8 +269,8 @@ const HabitReminderAgent = () => {
         }
       }
 
-      if (nowMinutes >= 18 * 60 && water.dailyTargetMl > 0) {
-        if (waterConsumedToday < water.dailyTargetMl * 0.6) {
+      if (nowMinutes >= 18 * 60 && water.dailyWaterGoal > 0) {
+        if (waterConsumedToday < water.dailyWaterGoal * 0.6) {
           maybeSendNotification(
             `${todayKey}-water-low`,
             wellbeingCopy.waterTitle,
@@ -349,7 +349,7 @@ const HabitReminderAgent = () => {
     totalCalories,
     user,
     water.consumedMl,
-    water.dailyTargetMl,
+    water.dailyWaterGoal,
     water.history,
     water.lastLoggedOn,
     weeklyCheckIn.enabled,

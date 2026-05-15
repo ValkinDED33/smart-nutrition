@@ -51,7 +51,7 @@ const rootReducer = (
 
 const persistConfig = {
   key: "root",
-  version: 6,
+  version: 7,
   storage: persistStorage,
   whitelist: ["profile", "meal", "water", "fridge", "community"],
   migrate: async (state: PersistedState): Promise<PersistedState> => {

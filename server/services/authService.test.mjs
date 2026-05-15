@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createSessionToken, hashOneTimeToken } from "../lib/domain.mjs";
 import { createAuthService } from "./authService.mjs";
 
-const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
+const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = {}) => {
   const authRepository = {
     findUserByEmail: vi.fn(),
     findUserById: vi.fn(),
@@ -20,6 +20,8 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
     findPasswordResetTokenByHash: vi.fn(),
     markPasswordResetTokenConsumed: vi.fn(),
     deletePasswordResetTokensByUserId: vi.fn(),
+    createRegistrationVerificationToken: vi.fn(),
+    deleteRegistrationVerificationTokensByUserId: vi.fn(),
     incrementUserTokenVersion: vi.fn(),
     getLoginAttempt: vi.fn(),
     upsertLoginAttempt: vi.fn(),
@@ -56,6 +58,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
       authRepository,
       stateRepository,
       emailService,
+      smsService,
       config,
     }),
   };
@@ -219,6 +222,111 @@ describe("authService", () => {
       delivery: "email",
     });
     expect(result.previewToken).toBeUndefined();
+  });
+
+  it("sends SMS registration codes through the configured MANGO OFFICE service", async () => {
+    const smsService = {
+      isConfigured: vi.fn(() => true),
+      sendRegistrationVerificationSms: vi.fn(async () => ({
+        ok: true,
+        providerMessageId: "sms-1",
+      })),
+    };
+    const { authRepository, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+      smsService,
+    });
+
+    const result = await service.register({
+      name: "Sms User",
+      email: "sms@example.com",
+      password: "StrongPass123!",
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      verificationChannel: "sms",
+      phone: "+48 123 456 789",
+    });
+
+    expect(result.delivery).toBe("sms");
+    expect(result.previewCode).toBeUndefined();
+    expect(smsService.sendRegistrationVerificationSms).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "+48 123 456 789",
+        code: expect.stringMatching(/^\d{6}$/),
+      })
+    );
+    expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects production SMS registration before creating a user when Mango is not configured", async () => {
+    const smsService = {
+      isConfigured: vi.fn(() => false),
+      sendRegistrationVerificationSms: vi.fn(),
+    };
+    const { authRepository, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+      smsService,
+    });
+
+    await expect(
+      service.register({
+        name: "Sms User",
+        email: "sms-unavailable@example.com",
+        password: "StrongPass123!",
+        age: 31,
+        weight: 72,
+        height: 178,
+        gender: "male",
+        activity: "moderate",
+        goal: "maintain",
+        verificationChannel: "sms",
+        phone: "+48 123 456 789",
+      })
+    ).rejects.toMatchObject({
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+    });
+    expect(authRepository.insertUser).not.toHaveBeenCalled();
+    expect(smsService.sendRegistrationVerificationSms).not.toHaveBeenCalled();
+  });
+
+  it("rolls back a fresh production registration when Mango rejects the SMS", async () => {
+    const smsService = {
+      isConfigured: vi.fn(() => true),
+      sendRegistrationVerificationSms: vi.fn(async () => ({
+        ok: false,
+        code: "MANGO_SMS_REJECTED",
+      })),
+    };
+    const { authRepository, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+      smsService,
+    });
+
+    await expect(
+      service.register({
+        name: "Sms User",
+        email: "sms-rejected@example.com",
+        password: "StrongPass123!",
+        age: 31,
+        weight: 72,
+        height: 178,
+        gender: "male",
+        activity: "moderate",
+        goal: "maintain",
+        verificationChannel: "sms",
+        phone: "+48 123 456 789",
+      })
+    ).rejects.toMatchObject({
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+    });
+    expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
+    expect(authRepository.deleteUser).toHaveBeenCalledWith(
+      authRepository.insertUser.mock.calls[0][0].id
+    );
   });
 
   it("rejects invalid registration profile fields server-side", () => {
