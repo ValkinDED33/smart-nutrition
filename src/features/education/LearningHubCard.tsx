@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Lottie from "lottie-react";
 import ReactMarkdown from "react-markdown";
 import { useSwipeable } from "react-swipeable";
 import rehypeHighlight from "rehype-highlight";
@@ -199,73 +198,6 @@ const learningCopy = {
   },
 } as const;
 
-const wellnessPulseAnimation = {
-  v: "5.7.4",
-  fr: 30,
-  ip: 0,
-  op: 90,
-  w: 180,
-  h: 120,
-  nm: "wellness-pulse",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "pulse-ring",
-      sr: 1,
-      ks: {
-        o: { a: 1, k: [{ t: 0, s: [38] }, { t: 45, s: [100] }, { t: 90, s: [38] }] },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [90, 60, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 1, k: [{ t: 0, s: [82, 82, 100] }, { t: 45, s: [118, 118, 100] }, { t: 90, s: [82, 82, 100] }] },
-      },
-      shapes: [
-        {
-          ty: "el",
-          p: { a: 0, k: [0, 0] },
-          s: { a: 0, k: [76, 76] },
-        },
-        {
-          ty: "st",
-          c: { a: 0, k: [0.0588, 0.4627, 0.4314, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 5 },
-        },
-      ],
-    },
-    {
-      ddd: 0,
-      ind: 2,
-      ty: 4,
-      nm: "core",
-      sr: 1,
-      ks: {
-        o: { a: 0, k: 100 },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [90, 60, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 1, k: [{ t: 0, s: [92, 92, 100] }, { t: 45, s: [104, 104, 100] }, { t: 90, s: [92, 92, 100] }] },
-      },
-      shapes: [
-        {
-          ty: "el",
-          p: { a: 0, k: [0, 0] },
-          s: { a: 0, k: [52, 52] },
-        },
-        {
-          ty: "fl",
-          c: { a: 0, k: [0.396, 0.639, 0.051, 1] },
-          o: { a: 0, k: 92 },
-        },
-      ],
-    },
-  ],
-};
-
 export const LearningHubCard = () => {
   const { language } = useLanguage();
   const copy = learningCopy[language];
@@ -396,8 +328,58 @@ export const LearningHubCard = () => {
           >
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Box sx={{ width: 72, height: 52, overflow: "hidden" }}>
-                  <Lottie animationData={wellnessPulseAnimation} loop autoplay />
+                <Box
+                  aria-hidden="true"
+                  sx={{
+                    position: "relative",
+                    width: 72,
+                    height: 52,
+                    overflow: "hidden",
+                    "@keyframes wellnessPulseRing": {
+                      "0%, 100%": {
+                        opacity: 0.38,
+                        transform: "translate(-50%, -50%) scale(0.82)",
+                      },
+                      "50%": {
+                        opacity: 1,
+                        transform: "translate(-50%, -50%) scale(1.18)",
+                      },
+                    },
+                    "@keyframes wellnessPulseCore": {
+                      "0%, 100%": {
+                        transform: "translate(-50%, -50%) scale(0.92)",
+                      },
+                      "50%": {
+                        transform: "translate(-50%, -50%) scale(1.04)",
+                      },
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      width: 42,
+                      height: 42,
+                      borderRadius: "50%",
+                      border: "3px solid #0f766e",
+                      animation: "wellnessPulseRing 3s ease-in-out infinite",
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      backgroundColor: "#65a30d",
+                      opacity: 0.92,
+                      animation: "wellnessPulseCore 3s ease-in-out infinite",
+                    }}
+                  />
                 </Box>
                 <Typography sx={{ fontWeight: 900 }}>{copy.infographic}</Typography>
               </Stack>

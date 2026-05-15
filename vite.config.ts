@@ -37,9 +37,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        entryFileNames: "assets/[name]-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
 
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, "/");
@@ -79,13 +79,6 @@ export default defineConfig({
             normalizedId.includes("/node_modules/axios/")
           ) {
             return "scanner-vendor";
-          }
-
-          if (
-            normalizedId.includes("/node_modules/lottie-react/") ||
-            normalizedId.includes("/node_modules/lottie-web/")
-          ) {
-            return "lottie-vendor";
           }
 
           if (normalizedId.includes("/node_modules/recharts/")) {

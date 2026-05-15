@@ -1,23 +1,26 @@
 import Redis from "ioredis";
 
+const createMemoryCache = (fallbackReason = null) => ({
+  enabled: false,
+  client: null,
+  getStatus: () => ({
+    enabled: false,
+    provider: "memory",
+    fallbackReason,
+  }),
+  getJson: async () => null,
+  setJson: async () => false,
+  deleteKey: async () => false,
+  close: async () => {},
+});
+
 export const createRedisCache = async ({
   redisUrl,
   redisKeyPrefix = "smart-nutrition",
   redisConnectTimeoutMs = 5_000,
 }) => {
   if (!redisUrl) {
-    return {
-      enabled: false,
-      client: null,
-      getStatus: () => ({
-        enabled: false,
-        provider: "memory",
-      }),
-      getJson: async () => null,
-      setJson: async () => false,
-      deleteKey: async () => false,
-      close: async () => {},
-    };
+    return createMemoryCache();
   }
 
   const client = new Redis(redisUrl, {
@@ -28,7 +31,16 @@ export const createRedisCache = async ({
     connectTimeout: redisConnectTimeoutMs,
   });
 
-  await client.connect();
+  client.on("error", () => {});
+
+  try {
+    await client.connect();
+  } catch (error) {
+    client.disconnect();
+    return createMemoryCache(
+      error instanceof Error ? error.message : "Redis connection failed"
+    );
+  }
 
   const buildKey = (key) => String(key ?? "").replace(/^\:+/, "");
 
@@ -64,7 +76,9 @@ export const createRedisCache = async ({
       return true;
     },
     close: async () => {
-      await client.quit();
+      await client.quit().catch(() => {
+        client.disconnect();
+      });
     },
   };
 };

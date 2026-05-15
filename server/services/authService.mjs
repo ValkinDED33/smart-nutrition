@@ -9,6 +9,7 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   createPasswordRecord,
+  createVerificationCode,
   createSessionToken,
   getBearerToken,
   readCookieValue,
@@ -83,9 +84,6 @@ export const createAuthService = ({
     user?.emailVerified !== false || Boolean(user?.phoneVerified);
 
   const isUserBanned = (user) => Boolean(user?.bannedAt);
-
-  const createVerificationCode = () =>
-    String(Math.floor(100000 + Math.random() * 900000));
 
   const maskEmail = (email) => {
     const [name = "", domain = ""] = String(email ?? "").split("@");
@@ -317,6 +315,13 @@ export const createAuthService = ({
       throw new AuthApiError(
         "VERIFICATION_DELIVERY_UNAVAILABLE",
         "SMS verification could not be delivered through MANGO OFFICE."
+      );
+    }
+
+    if (channel === "email" && config.isProduction && !emailResult?.ok) {
+      throw new AuthApiError(
+        "VERIFICATION_DELIVERY_UNAVAILABLE",
+        "Email verification could not be delivered."
       );
     }
 

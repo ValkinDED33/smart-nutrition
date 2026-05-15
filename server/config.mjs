@@ -20,6 +20,7 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_MANGO_API_KEY",
   "SMART_NUTRITION_MANGO_API_SALT",
   "SMART_NUTRITION_DATABASE_URL",
+  "SMART_NUTRITION_MONGO_URI",
   "SMART_NUTRITION_MONGODB_URI",
   "SMART_NUTRITION_REDIS_URL",
 ];
@@ -185,10 +186,14 @@ const normalizeStorageProvider = (value, postgresUrl) => {
   return postgresUrl ? "postgres" : "sqlite";
 };
 
-const normalizeAiDataProvider = (value, mongoUri) => {
+const normalizeAiDataProvider = (value, mongoUri, { preferMongoUri = false } = {}) => {
   const normalized = toTrimmedString(value).toLowerCase();
 
   if (normalized === "mongo" || normalized === "mongodb") {
+    return "mongodb";
+  }
+
+  if (preferMongoUri && mongoUri) {
     return "mongodb";
   }
 
@@ -197,6 +202,20 @@ const normalizeAiDataProvider = (value, mongoUri) => {
   }
 
   return mongoUri ? "mongodb" : "primary";
+};
+
+const readMongoDatabaseNameFromUri = (mongoUri) => {
+  if (!mongoUri) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(mongoUri);
+    const databaseName = decodeURIComponent(parsedUrl.pathname.replace(/^\/+/, "")).trim();
+    return databaseName || null;
+  } catch {
+    return null;
+  }
 };
 
 const readPositiveInteger = (value, fallback, name, errors, { min = 1 } = {}) => {
@@ -1070,9 +1089,15 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 0, max: 100 }
   );
-  const mongoUri = toTrimmedString(env.SMART_NUTRITION_MONGODB_URI ?? env.MONGODB_URI) || null;
+  const explicitMongoUri = toTrimmedString(env.SMART_NUTRITION_MONGO_URI) || null;
+  const mongoUri =
+    explicitMongoUri ||
+    toTrimmedString(env.SMART_NUTRITION_MONGODB_URI ?? env.MONGODB_URI) ||
+    null;
   const mongoDatabaseName =
-    toTrimmedString(env.SMART_NUTRITION_MONGODB_DB, "smart_nutrition") || "smart_nutrition";
+    toTrimmedString(env.SMART_NUTRITION_MONGODB_DB) ||
+    readMongoDatabaseNameFromUri(mongoUri) ||
+    "smart_nutrition";
   const mongoServerSelectionTimeoutMs = readPositiveInteger(
     env.SMART_NUTRITION_MONGODB_TIMEOUT_MS,
     5_000,
@@ -1080,14 +1105,64 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 500 }
   );
+  const mongoConnectRetries = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_CONNECT_RETRIES,
+    3,
+    "SMART_NUTRITION_MONGODB_CONNECT_RETRIES",
+    errors,
+    { min: 1 }
+  );
+  const mongoConnectRetryDelayMs = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_CONNECT_RETRY_DELAY_MS,
+    1_000,
+    "SMART_NUTRITION_MONGODB_CONNECT_RETRY_DELAY_MS",
+    errors,
+    { min: 100 }
+  );
+  const mongoConnectTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_CONNECT_TIMEOUT_MS,
+    10_000,
+    "SMART_NUTRITION_MONGODB_CONNECT_TIMEOUT_MS",
+    errors,
+    { min: 500 }
+  );
+  const mongoSocketTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_SOCKET_TIMEOUT_MS,
+    45_000,
+    "SMART_NUTRITION_MONGODB_SOCKET_TIMEOUT_MS",
+    errors,
+    { min: 1_000 }
+  );
+  const mongoMinPoolSize = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_MIN_POOL_SIZE,
+    0,
+    "SMART_NUTRITION_MONGODB_MIN_POOL_SIZE",
+    errors,
+    { min: 0 }
+  );
+  const mongoMaxPoolSize = readPositiveInteger(
+    env.SMART_NUTRITION_MONGODB_MAX_POOL_SIZE,
+    20,
+    "SMART_NUTRITION_MONGODB_MAX_POOL_SIZE",
+    errors,
+    { min: 1 }
+  );
+
+  if (mongoMinPoolSize > mongoMaxPoolSize) {
+    errors.push(
+      "SMART_NUTRITION_MONGODB_MIN_POOL_SIZE must be less than or equal to SMART_NUTRITION_MONGODB_MAX_POOL_SIZE."
+    );
+  }
+
   const aiDataProvider = normalizeAiDataProvider(
     env.SMART_NUTRITION_AI_DATA_PROVIDER,
-    mongoUri
+    mongoUri,
+    { preferMongoUri: Boolean(explicitMongoUri) }
   );
 
   if (aiDataProvider === "mongodb" && !mongoUri) {
     errors.push(
-      "SMART_NUTRITION_MONGODB_URI or MONGODB_URI is required when SMART_NUTRITION_AI_DATA_PROVIDER=mongodb."
+      "SMART_NUTRITION_MONGO_URI, SMART_NUTRITION_MONGODB_URI, or MONGODB_URI is required when SMART_NUTRITION_AI_DATA_PROVIDER=mongodb."
     );
   }
 
@@ -1172,6 +1247,12 @@ export const createServerConfig = (rawEnv = process.env) => {
     mongoUri,
     mongoDatabaseName,
     mongoServerSelectionTimeoutMs,
+    mongoConnectRetries,
+    mongoConnectRetryDelayMs,
+    mongoConnectTimeoutMs,
+    mongoSocketTimeoutMs,
+    mongoMinPoolSize,
+    mongoMaxPoolSize,
     mongoAiEnabled: aiDataProvider === "mongodb" && Boolean(mongoUri),
     assistantRuntimeConfigured,
     assistantProviderOrder: assistantProviders.map((provider) => provider.id),

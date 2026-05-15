@@ -443,7 +443,8 @@ const isRemoteHealthPayload = (value: unknown) =>
   "ok" in value &&
   (value as { ok?: unknown }).ok === true &&
   "provider" in value &&
-  (value as { provider?: unknown }).provider === "smart-nutrition-sqlite-api";
+  ((value as { provider?: unknown }).provider === "smart-nutrition-sqlite-api" ||
+    (value as { provider?: unknown }).provider === "smart-nutrition-postgres-api");
 
 const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
   if (!force && remoteBaseProbePromise) {

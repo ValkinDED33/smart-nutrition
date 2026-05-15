@@ -14,6 +14,11 @@ const toNonNegativeNumber = (value, fallback = 0) => {
   return Number.isFinite(next) && next >= 0 ? next : fallback;
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getErrorMessage = (error) =>
+  error instanceof Error ? error.message : "Unknown MongoDB connection error";
+
 const mapAssistantMessage = (doc) =>
   doc
     ? {
@@ -42,13 +47,50 @@ const mapUsageEvent = (doc) =>
       }
     : null;
 
+const connectMongoClient = async ({ client, config }) => {
+  let lastError = null;
+  const maxAttempts = Math.max(Number(config.mongoConnectRetries) || 1, 1);
+  const retryDelayMs = Math.max(Number(config.mongoConnectRetryDelayMs) || 0, 0);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await client.connect();
+      await client.db(config.mongoDatabaseName).command({ ping: 1 });
+      console.log(`Connected to MongoDB Atlas database "${config.mongoDatabaseName}"`);
+      return;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt >= maxAttempts) {
+        break;
+      }
+
+      console.warn(
+        `MongoDB connection attempt ${attempt}/${maxAttempts} failed: ${getErrorMessage(
+          error
+        )}. Retrying...`
+      );
+      await wait(retryDelayMs * attempt);
+    }
+  }
+
+  await client.close().catch(() => {});
+  throw new Error(`MongoDB connection failed: ${getErrorMessage(lastError)}`);
+};
+
 export const createMongoAiRepository = async ({ config, auditRepository }) => {
   const client = new MongoClient(config.mongoUri, {
     appName: "smart-nutrition-ai",
     serverSelectionTimeoutMS: config.mongoServerSelectionTimeoutMs,
+    connectTimeoutMS: config.mongoConnectTimeoutMs,
+    socketTimeoutMS: config.mongoSocketTimeoutMs,
+    minPoolSize: config.mongoMinPoolSize,
+    maxPoolSize: config.mongoMaxPoolSize,
+    retryReads: true,
+    retryWrites: true,
   });
 
-  await client.connect();
+  await connectMongoClient({ client, config });
 
   const database = client.db(config.mongoDatabaseName);
   const messages = database.collection("assistant_messages");

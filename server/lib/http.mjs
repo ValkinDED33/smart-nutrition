@@ -13,6 +13,11 @@ const readRequestOrigin = (request) => {
   return String(origin ?? "").trim();
 };
 
+const readRequestHeader = (request, name) => {
+  const value = request.headers[name];
+  return Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
+};
+
 export const setCorsHeaders = (request, response, allowedOrigins = []) => {
   const origin = readRequestOrigin(request);
 
@@ -35,7 +40,12 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
   }
 
   const origin = readRequestOrigin(request);
-  return Boolean(origin) && !isCorsOriginAllowed(origin, allowedOrigins);
+
+  if (origin) {
+    return !isCorsOriginAllowed(origin, allowedOrigins);
+  }
+
+  return readRequestHeader(request, "sec-fetch-site").toLowerCase() === "cross-site";
 };
 
 export const setSecurityHeaders = (response) => {

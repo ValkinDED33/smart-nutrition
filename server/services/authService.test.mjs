@@ -34,7 +34,12 @@ const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = 
     upsertSnapshot: vi.fn(),
   };
   const emailService = {
+    isConfigured: vi.fn(() => false),
     sendPasswordResetEmail: vi.fn(async () => ({ ok: false, code: "EMAIL_NOT_CONFIGURED" })),
+    sendRegistrationVerificationEmail: vi.fn(async () => ({
+      ok: false,
+      code: "EMAIL_NOT_CONFIGURED",
+    })),
   };
   const config = {
     accessTokenTtlMs: 900000,
@@ -222,6 +227,68 @@ describe("authService", () => {
       delivery: "email",
     });
     expect(result.previewToken).toBeUndefined();
+  });
+
+  it("does not expose registration verification codes when production email delivery fails", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+    });
+
+    await expect(
+      service.register({
+        name: "Email User",
+        email: "prod-email@example.com",
+        password: "StrongPass123!",
+        age: 31,
+        weight: 72,
+        height: 178,
+        gender: "male",
+        activity: "moderate",
+        goal: "maintain",
+        verificationChannel: "email",
+      })
+    ).rejects.toMatchObject({
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+    });
+
+    expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(1);
+    expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
+    expect(authRepository.deleteUser).toHaveBeenCalledWith(
+      authRepository.insertUser.mock.calls[0][0].id
+    );
+  });
+
+  it("sends production email registration codes without previewing them", async () => {
+    const { emailService, service } = createAuthServiceFixture({
+      configOverrides: { isProduction: true },
+    });
+    emailService.isConfigured.mockReturnValue(true);
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: true,
+      messageId: "email-1",
+    });
+
+    const result = await service.register({
+      name: "Email User",
+      email: "prod-email-ok@example.com",
+      password: "StrongPass123!",
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      verificationChannel: "email",
+    });
+
+    expect(result.delivery).toBe("email");
+    expect(result.previewCode).toBeUndefined();
+    expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "prod-email-ok@example.com",
+        code: expect.stringMatching(/^\d{6}$/),
+      })
+    );
   });
 
   it("sends SMS registration codes through the configured MANGO OFFICE service", async () => {

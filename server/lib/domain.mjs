@@ -121,6 +121,9 @@ export const createId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 export const createOpaqueToken = (bytes = 32) =>
   crypto.randomBytes(bytes).toString("base64url");
 
+export const createVerificationCode = () =>
+  String(crypto.randomInt(100_000, 1_000_000));
+
 export const hashOneTimeToken = (token, secret) =>
   crypto.createHash("sha256").update(`${secret}:${String(token ?? "")}`).digest("hex");
 
@@ -282,8 +285,16 @@ export const createPasswordRecord = (password, iterations) => {
   };
 };
 
-export const verifyPassword = (user, password, iterations) =>
-  derivePasswordHash(password, user.passwordSalt, iterations) === user.passwordHash;
+export const verifyPassword = (user, password, iterations) => {
+  const nextPasswordHash = derivePasswordHash(password, user.passwordSalt, iterations);
+  const expectedHash = Buffer.from(String(user.passwordHash ?? ""));
+  const actualHash = Buffer.from(nextPasswordHash);
+
+  return (
+    expectedHash.length === actualHash.length &&
+    crypto.timingSafeEqual(expectedHash, actualHash)
+  );
+};
 
 export const calculateMaintenanceCalories = ({ gender, weight, height, age, activity }) => {
   const bmr =

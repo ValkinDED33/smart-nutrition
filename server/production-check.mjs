@@ -112,6 +112,15 @@ const run = () => {
         : "Set SMART_NUTRITION_ASSISTANT_API_KEY and SMART_NUTRITION_ASSISTANT_MODEL.",
       required: false,
     }),
+    createCheck({
+      id: "mongodb-ai",
+      label: "MongoDB Atlas AI data store is configured",
+      ok: config.mongoAiEnabled,
+      detail: config.mongoAiEnabled
+        ? `Database: ${config.mongoDatabaseName}, max pool size: ${config.mongoMaxPoolSize}`
+        : "Set SMART_NUTRITION_MONGO_URI to persist assistant messages and AI usage events in MongoDB Atlas.",
+      required: false,
+    }),
   ];
 
   console.log("Smart Nutrition production readiness");

@@ -104,4 +104,26 @@ describe("http response helpers", () => {
       )
     ).toBe(false);
   });
+
+  it("rejects browser-reported cross-site mutations when Origin is missing", () => {
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { "sec-fetch-site": "cross-site" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(true);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { "sec-fetch-site": "same-origin" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
+  });
 });

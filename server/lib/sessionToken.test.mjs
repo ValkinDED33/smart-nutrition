@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createSessionToken, verifySessionToken } from "./domain.mjs";
+import {
+  createSessionToken,
+  createVerificationCode,
+  verifySessionToken,
+} from "./domain.mjs";
 
 describe("session token helpers", () => {
   it("creates and verifies signed session tokens", () => {
@@ -65,5 +69,9 @@ describe("session token helpers", () => {
       kind: "access",
       tokenVersion: 3,
     });
+  });
+
+  it("creates a six digit verification code", () => {
+    expect(createVerificationCode()).toMatch(/^\d{6}$/);
   });
 });

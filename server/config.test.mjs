@@ -328,6 +328,59 @@ describe("createServerConfig", () => {
     expect(config.backupDir).toBe("/var/data/backups");
   });
 
+  it("accepts a single MongoDB Atlas URI alias and reads the database from the URI path", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_AI_DATA_PROVIDER: "primary",
+      SMART_NUTRITION_MONGO_URI:
+        "mongodb+srv://cluster0.example.mongodb.net/smart-nutrition?retryWrites=true&w=majority&appName=Cluster0",
+    });
+
+    expect(config.aiDataProvider).toBe("mongodb");
+    expect(config.mongoAiEnabled).toBe(true);
+    expect(config.mongoUri).toContain("mongodb+srv://cluster0.example.mongodb.net");
+    expect(config.mongoDatabaseName).toBe("smart-nutrition");
+    expect(config.mongoConnectRetries).toBe(3);
+    expect(config.mongoConnectRetryDelayMs).toBe(1000);
+    expect(config.mongoConnectTimeoutMs).toBe(10000);
+    expect(config.mongoSocketTimeoutMs).toBe(45000);
+    expect(config.mongoMinPoolSize).toBe(0);
+    expect(config.mongoMaxPoolSize).toBe(20);
+  });
+
+  it("allows MongoDB database and pool overrides", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_MONGODB_URI: "mongodb://localhost:27017/uri_db",
+      SMART_NUTRITION_MONGODB_DB: "override_db",
+      SMART_NUTRITION_MONGODB_CONNECT_RETRIES: "5",
+      SMART_NUTRITION_MONGODB_CONNECT_RETRY_DELAY_MS: "250",
+      SMART_NUTRITION_MONGODB_CONNECT_TIMEOUT_MS: "1500",
+      SMART_NUTRITION_MONGODB_SOCKET_TIMEOUT_MS: "3000",
+      SMART_NUTRITION_MONGODB_MIN_POOL_SIZE: "2",
+      SMART_NUTRITION_MONGODB_MAX_POOL_SIZE: "12",
+    });
+
+    expect(config.mongoDatabaseName).toBe("override_db");
+    expect(config.mongoConnectRetries).toBe(5);
+    expect(config.mongoConnectRetryDelayMs).toBe(250);
+    expect(config.mongoConnectTimeoutMs).toBe(1500);
+    expect(config.mongoSocketTimeoutMs).toBe(3000);
+    expect(config.mongoMinPoolSize).toBe(2);
+    expect(config.mongoMaxPoolSize).toBe(12);
+  });
+
+  it("rejects an invalid MongoDB pool range", () => {
+    expect(() =>
+      createServerConfig({
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_MONGO_URI: "mongodb://localhost:27017/smart_nutrition",
+        SMART_NUTRITION_MONGODB_MIN_POOL_SIZE: "10",
+        SMART_NUTRITION_MONGODB_MAX_POOL_SIZE: "2",
+      })
+    ).toThrow(/SMART_NUTRITION_MONGODB_MIN_POOL_SIZE/);
+  });
+
   it("accepts an explicit CORS allowlist", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),

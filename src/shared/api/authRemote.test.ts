@@ -66,4 +66,25 @@ describe("remote API base URL guards", () => {
       expect.any(Object)
     );
   });
+
+  it("accepts a healthy Postgres-backed remote API", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          provider: "smart-nutrition-postgres-api",
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+  });
 });

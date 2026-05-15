@@ -382,6 +382,38 @@ const getMetricsSnapshot = () => {
   };
 };
 
+const getPublicStorageStatus = (engineInfo = {}) => ({
+  engine: engineInfo.engine ?? "unknown",
+  ...(engineInfo.database ? { database: engineInfo.database } : {}),
+  ...(typeof engineInfo.ssl === "boolean" ? { ssl: engineInfo.ssl } : {}),
+});
+
+const getPublicCacheStatus = (cacheStatus = {}) => ({
+  enabled: Boolean(cacheStatus.enabled),
+  provider: cacheStatus.provider ?? "memory",
+  ...(cacheStatus.enabled && cacheStatus.status ? { status: cacheStatus.status } : {}),
+  fallback: !cacheStatus.enabled && Boolean(cacheStatus.fallbackReason),
+});
+
+const getPublicEmailStatus = (emailStatus = {}) => ({
+  configured: Boolean(emailStatus.configured),
+});
+
+const getPublicSmsStatus = (smsStatus = {}) => ({
+  provider: smsStatus.provider ?? "mango-office",
+  configured: Boolean(smsStatus.configured),
+  senderConfigured: Boolean(smsStatus.senderConfigured),
+});
+
+const getPublicAiStatus = (aiStatus = {}) => ({
+  configured: Boolean(aiStatus.configured),
+  providerCount: Math.max(Number(aiStatus.providerCount) || 0, 0),
+  fallbackEnabled: Boolean(aiStatus.fallbackEnabled),
+  primaryProviderId: aiStatus.primaryProviderId ?? null,
+  dataProvider: aiStatus.dataProvider ?? "primary",
+  abuseProtection: aiStatus.abuseProtection ?? null,
+});
+
 const addStateStream = (userId, response) => {
   const streams = stateStreams.get(userId) ?? new Set();
   streams.add(response);
@@ -625,12 +657,11 @@ const routeRequest = async (request, response) => {
     if (pathname === "/api/health" && request.method === "GET") {
       sendJson(response, 200, {
         ...authService.getHealthInfo(),
-        storage: storage.getEngineInfo(),
-        cache: redisCache.getStatus(),
+        storage: getPublicStorageStatus(storage.getEngineInfo()),
+        cache: getPublicCacheStatus(redisCache.getStatus()),
         static: {
           enabled: serverConfig.serveStatic,
           available: staticAvailable,
-          staticDir: serverConfig.staticDir,
         },
         metrics: getMetricsSnapshot(),
         limits: {
@@ -640,9 +671,9 @@ const routeRequest = async (request, response) => {
           aiWindowMs: serverConfig.aiRateLimitWindowMs,
         },
         warnings: serverConfig.warnings,
-        email: emailService.getStatus(),
-        sms: mangoSmsService.getStatus(),
-        ai: aiService.getRuntimeStatus(),
+        email: getPublicEmailStatus(emailService.getStatus()),
+        sms: getPublicSmsStatus(mangoSmsService.getStatus()),
+        ai: getPublicAiStatus(aiService.getRuntimeStatus()),
       });
       return;
     }
@@ -1193,7 +1224,7 @@ const routeRequest = async (request, response) => {
       return;
     }
 
-    if (await tryServeStatic(request, response, pathname)) {
+    if (!pathname.startsWith("/api/") && (await tryServeStatic(request, response, pathname))) {
       return;
     }
 
@@ -1334,6 +1365,45 @@ const server = http.createServer((request, response) => {
     sendError(response, 500, "SERVER_ERROR", "Unexpected server error.");
   });
 });
+
+const closeRuntime = async () => {
+  await Promise.allSettled([
+    redisCache.close?.(),
+    aiRepository.close?.(),
+    storage.close?.(),
+  ]);
+};
+
+let isShuttingDown = false;
+
+const shutdown = (signal) => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`Received ${signal}. Shutting down Smart Nutrition API...`);
+
+  const forceExitTimeout = setTimeout(() => {
+    console.error("Graceful shutdown timed out.");
+    process.exit(1);
+  }, 10_000);
+  forceExitTimeout.unref?.();
+
+  server.close(() => {
+    closeRuntime()
+      .catch((error) => {
+        console.error(error);
+      })
+      .finally(() => {
+        clearTimeout(forceExitTimeout);
+        process.exit(0);
+      });
+  });
+};
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
 
 server.listen(serverConfig.port, () => {
   serverConfig.warnings.forEach((warning) => {
