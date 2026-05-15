@@ -15,7 +15,9 @@ const readRequestOrigin = (request) => {
 
 const readRequestHeader = (request, name) => {
   const value = request.headers[name];
-  return Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
+  return Array.isArray(value)
+    ? String(value[0] ?? "").trim()
+    : String(value ?? "").trim();
 };
 
 export const setCorsHeaders = (request, response, allowedOrigins = []) => {
@@ -26,7 +28,10 @@ export const setCorsHeaders = (request, response, allowedOrigins = []) => {
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, X-Device-Id, X-State-Version"
   );
-  response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  response.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
 
   if (isCorsOriginAllowed(origin, allowedOrigins)) {
     response.setHeader("Access-Control-Allow-Origin", origin);
@@ -45,7 +50,9 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
     return !isCorsOriginAllowed(origin, allowedOrigins);
   }
 
-  return readRequestHeader(request, "sec-fetch-site").toLowerCase() === "cross-site";
+  return (
+    readRequestHeader(request, "sec-fetch-site").toLowerCase() === "cross-site"
+  );
 };
 
 export const setSecurityHeaders = (response) => {
@@ -68,8 +75,14 @@ export const setSecurityHeaders = (response) => {
   );
   response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-  response.setHeader("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
-  response.setHeader("Strict-Transport-Security", "max-age=15552000; includeSubDomains");
+  response.setHeader(
+    "Permissions-Policy",
+    "camera=(self), microphone=(self), geolocation=()"
+  );
+  response.setHeader(
+    "Strict-Transport-Security",
+    "max-age=15552000; includeSubDomains"
+  );
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-DNS-Prefetch-Control", "off");
   response.setHeader("X-Download-Options", "noopen");
@@ -84,8 +97,9 @@ const serializeCookie = ({
   maxAge,
   path = "/",
   httpOnly = true,
-  sameSite = "Lax",
-  secure = false,
+  // Для кросс-домена (Vercel → Render) нужны эти значения:
+  sameSite = "None",
+  secure = true,
 }) => {
   const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`];
 
@@ -134,7 +148,14 @@ export const setCookie = (response, options) => {
 
 export const clearCookie = (
   response,
-  { name, path = "/", sameSite = "Lax", secure = false, httpOnly = true }
+  {
+    name,
+    path = "/",
+    // Должно совпадать с тем, как ставим cookie
+    sameSite = "None",
+    secure = true,
+    httpOnly = true,
+  }
 ) => {
   appendSetCookie(
     response,
@@ -162,7 +183,13 @@ export const sendNoContent = (response, statusCode = 204) => {
   response.end();
 };
 
-export const sendError = (response, statusCode, code, message, details = undefined) => {
+export const sendError = (
+  response,
+  statusCode,
+  code,
+  message,
+  details = undefined
+) => {
   sendJson(response, statusCode, {
     success: false,
     code,
@@ -173,7 +200,9 @@ export const sendError = (response, statusCode, code, message, details = undefin
 };
 
 const readHeaderValue = (value) =>
-  Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
+  Array.isArray(value)
+    ? String(value[0] ?? "").trim()
+    : String(value ?? "").trim();
 
 const isJsonContentType = (contentType) => {
   const mimeType = String(contentType ?? "")
