@@ -53,7 +53,7 @@ const uk = {
     "Увійдіть у свій профіль, щоб переглянути план харчування та прогрес.",
   "auth.registerTitle": "Створення профілю",
   "auth.registerSubtitle":
-    "Реєстрація створює захищену локальну сесію та персональний профіль користувача.",
+    "Реєстрація створює захищену backend-сесію та персональний профіль користувача.",
   "auth.haveAccount": "Вже маєте акаунт?",
   "auth.noAccount": "Ще не маєте акаунта?",
   "auth.loginLink": "Увійти",
@@ -296,7 +296,7 @@ const pl: Record<keyof typeof uk, string> = {
     "Zaloguj się do swojego profilu, aby zobaczyć plan żywienia i postępy.",
   "auth.registerTitle": "Tworzenie profilu",
   "auth.registerSubtitle":
-    "Rejestracja tworzy bezpieczną lokalną sesję i osobisty profil użytkownika.",
+    "Rejestracja tworzy bezpieczną sesję backendową i osobisty profil użytkownika.",
   "auth.haveAccount": "Masz już konto?",
   "auth.noAccount": "Nie masz jeszcze konta?",
   "auth.loginLink": "Zaloguj się",

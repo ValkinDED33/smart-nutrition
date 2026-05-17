@@ -7,24 +7,24 @@ import { useLanguage } from "../language";
 
 const bannerCopy = {
   uk: {
-    offline: "Ви офлайн. Зміни залишаються на цьому пристрої, поки з'єднання не повернеться.",
+    offline: "Немає з'єднання з інтернетом. Підключіться знову, щоб продовжити.",
     backendDown:
-      "Хмарний API зараз недоступний. Останні зміни залишаються локально і синхронізуються, коли сервер повернеться.",
+      "Хмарний API зараз недоступний. Підключіться знову, щоб продовжити.",
     retry: "Перевірити ще раз",
     checking: "Перевіряємо...",
   },
   pl: {
     offline:
-      "Brak połączenia z internetem. Zmiany zostają na tym urządzeniu, dopóki połączenie nie wróci.",
+      "Brak połączenia z internetem. Połącz się ponownie, aby kontynuować.",
     backendDown:
-      "Cloud API jest teraz niedostępne. Ostatnie zmiany zostają lokalnie i zsynchronizują się po powrocie serwera.",
+      "Cloud API jest teraz niedostępne. Połącz się ponownie, aby kontynuować.",
     retry: "Sprawdź ponownie",
     checking: "Sprawdzam...",
   },
 } as const;
 
 const BackendOfflineBanner = () => {
-  const { user, syncMode } = useSelector((state: RootState) => state.auth);
+  const { user, error } = useSelector((state: RootState) => state.auth);
   const { language } = useLanguage();
   const copy = bannerCopy[language];
   const [browserOnline, setBrowserOnline] = useState(
@@ -51,7 +51,7 @@ const BackendOfflineBanner = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || syncMode !== "remote-cloud") {
+    if (!user && error !== "REMOTE_API_UNAVAILABLE") {
       setBackendReachable(true);
       return;
     }
@@ -84,9 +84,9 @@ const BackendOfflineBanner = () => {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [syncMode, user]);
+  }, [error, user]);
 
-  if (!user || syncMode !== "remote-cloud") {
+  if (!user && error !== "REMOTE_API_UNAVAILABLE") {
     return null;
   }
 

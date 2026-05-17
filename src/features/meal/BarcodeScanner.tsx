@@ -119,7 +119,7 @@ const scannerCopy = {
     manualAdded: "Ручний продукт додано",
     catalogQueued: "Продукт також надіслано в загальну базу на модерацію.",
     catalogSkipped:
-      "Локально продукт збережено, але загальна база зараз недоступна.",
+      "Продукт додано до поточного списку, але загальна база зараз недоступна.",
     manualNameRequired: "Вкажіть назву продукту",
     detectedCode: "Розпізнаний код",
     scanHistory: "Історія сканів",
@@ -181,7 +181,7 @@ const scannerCopy = {
     manualAdded: "Ręczny produkt został dodany",
     catalogQueued: "Produkt wysłano też do wspólnej bazy do moderacji.",
     catalogSkipped:
-      "Produkt zapisano lokalnie, ale wspólna baza jest teraz niedostępna.",
+      "Produkt dodano do bieżącej listy, ale wspólna baza jest teraz niedostępna.",
     manualNameRequired: "Podaj nazwę produktu",
     detectedCode: "Rozpoznany kod",
     scanHistory: "Historia skanów",

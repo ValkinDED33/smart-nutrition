@@ -28,7 +28,7 @@ const onboardingCopy = {
       "Інтерфейс, помічник і підказки працюватимуть обраною мовою. Це займає кілька секунд.",
     introTitle: "Усе важливе зібрано в короткі мобільні екрани",
     introBody:
-      "Платформа підлаштована під режим однієї руки: без довгих сторінок, з offline-first логікою і швидкими діями.",
+      "Платформа підлаштована під режим однієї руки: без довгих сторінок, з хмарною синхронізацією і швидкими діями.",
     authTitle: "Готово. Переходимо до безпечного входу",
     authBody:
       "Токени не живуть у localStorage: сесія працює через backend, а дані підтягнуться після входу та синхронізації.",
@@ -49,8 +49,8 @@ const onboardingCopy = {
         body: "AI-компаньйон підказує, пояснює ІМТ і нагадує про рутину без нав'язливості.",
       },
       {
-        title: "Offline-first",
-        body: "Записи зберігаються локально, а при появі інтернету автоматично летять у sync.",
+        title: "Cloud-first",
+        body: "Записи підтверджуються бекендом і синхронізуються через хмарний API.",
       },
     ],
   },
@@ -65,7 +65,7 @@ const onboardingCopy = {
       "Interfejs, asystent i podpowiedzi będą działać w wybranym języku. To zajmie tylko chwilę.",
     introTitle: "Najważniejsze rzeczy są podzielone na krótkie mobilne ekrany",
     introBody:
-      "Platforma jest zbudowana pod obsługę jedną ręką: bez długich stron, z offline-first i szybkimi akcjami.",
+      "Platforma jest zbudowana pod obsługę jedną ręką: bez długich stron, z synchronizacją w chmurze i szybkimi akcjami.",
     authTitle: "Gotowe. Przechodzimy do bezpiecznego logowania",
     authBody:
       "Tokeny nie są trzymane w localStorage: sesja działa przez backend, a dane wrócą po zalogowaniu i synchronizacji.",
@@ -87,8 +87,8 @@ const onboardingCopy = {
         body: "AI companion podpowiada, tłumaczy BMI i przypomina o rutynie bez bycia natrętnym.",
       },
       {
-        title: "Offline-first",
-        body: "Wpisy zapisują się lokalnie, a po powrocie internetu lecą do synchronizacji.",
+        title: "Cloud-first",
+        body: "Wpisy są potwierdzane przez backend i synchronizowane przez Cloud API.",
       },
     ],
   },

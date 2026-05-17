@@ -10,8 +10,6 @@ import { useLanguage } from "../language";
 
 const syncCopy = {
   uk: {
-    localOnlyLabel: "Локально",
-    localOnlyHint: "Дані залишаються в цьому браузері на цьому пристрої.",
     syncingLabel: "Йде синхронізація",
     syncingHint: "Останні зміни зберігаються в хмару.",
     syncedLabel: "Хмара OK",
@@ -27,8 +25,6 @@ const syncCopy = {
     hours: "{count} год",
   },
   pl: {
-    localOnlyLabel: "Tylko lokalnie",
-    localOnlyHint: "Dane zostaja tylko w tej przegladarce na tym urzadzeniu.",
     syncingLabel: "Trwa synchronizacja",
     syncingHint: "Zapisuje ostatnie zmiany do chmury.",
     syncedLabel: "Chmura OK",
@@ -104,7 +100,6 @@ const formatRelativeSyncAge = (
 const SyncStatusChip = () => {
   const {
     isAuthenticated,
-    syncMode,
     syncStatus,
     lastSyncedAt,
     syncError,
@@ -130,20 +125,15 @@ const SyncStatusChip = () => {
 
   const formattedTime = formatAbsoluteSyncTime(lastSyncedAt, language);
   const relativeTime = formatRelativeSyncAge(lastSyncedAt, language, now);
-  const isRemote = syncMode === "remote-cloud";
   const translatedSyncError = translateSyncErrorMessage(syncError, language);
 
-  const label = !isRemote
-    ? copy.localOnlyLabel
-    : syncStatus === "syncing"
+  const label = syncStatus === "syncing"
       ? copy.syncingLabel
       : syncStatus === "error"
         ? copy.errorLabel
         : `${copy.syncedLabel} ${copy.syncedRelative.replace("{time}", relativeTime)}`;
 
-  const title = !isRemote
-    ? copy.localOnlyHint
-    : syncStatus === "syncing"
+  const title = syncStatus === "syncing"
       ? copy.syncingHint
       : syncStatus === "error"
         ? syncOutbox.pendingChanges > 0
@@ -157,7 +147,7 @@ const SyncStatusChip = () => {
         size="small"
         label={label}
         color={
-          !isRemote ? "default" : syncStatus === "error" ? "warning" : "success"
+          syncStatus === "error" ? "warning" : "success"
         }
         variant={syncStatus === "syncing" ? "filled" : "outlined"}
         sx={{

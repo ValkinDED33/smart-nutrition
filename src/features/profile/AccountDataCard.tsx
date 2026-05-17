@@ -19,7 +19,6 @@ import {
   getRemoteAccountBackups,
   logoutEverywhere,
   type AccountBackupSummary,
-  type AuthRuntimeInfo,
 } from "../../shared/api/auth";
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
@@ -33,11 +32,8 @@ const accountCopy = {
     session: "Сесія",
     sync: "Синхронізація",
     security: "Безпека",
-    providerLocal: "Локальний акаунт у браузері",
     providerRemote: "Віддалений API-акаунт",
-    sessionLocal: "7-денна браузерна сесія",
     sessionRemote: "API-сесія access + refresh",
-    securityLocal: "Паролі зберігаються локально з хешуванням на стороні браузера.",
     securityRemote: "Сесії працюють через access + refresh токени з серверною перевіркою.",
     exportAction: "Експортувати мої дані",
     exportBusy: "Готуємо експорт...",
@@ -59,8 +55,6 @@ const accountCopy = {
     deleteBusy: "Видалення...",
     deleteSuccess: "Акаунт видалено.",
     deleteError: "Не вдалося видалити акаунт.",
-    localNotice:
-      "Цей акаунт зараз працює лише в режимі браузера. Дані про харчування залишаються на цьому пристрої, доки ви не ввімкнете синхронізацію з бекендом.",
     remoteNotice:
       "Віддалені акаунти працюють через сесії access + refresh, фонову синхронізацію, хмарний стан із врахуванням конфліктів і резервні знімки на сервері.",
     confirmTitle: "Видалити цей акаунт?",
@@ -69,7 +63,6 @@ const accountCopy = {
     confirmCancel: "Скасувати",
     confirmDelete: "Так, видалити все",
     syncRemote: "Хмарна синхронізація активна",
-    syncLocal: "Лише браузер",
   },
   pl: {
     title: "Konto i dane",
@@ -79,11 +72,8 @@ const accountCopy = {
     session: "Sesja",
     sync: "Synchronizacja",
     security: "Bezpieczenstwo",
-    providerLocal: "Lokalne konto w przegladarce",
     providerRemote: "Zdalne konto API",
-    sessionLocal: "7-dniowa sesja przegladarkowa",
     sessionRemote: "Sesja API access + refresh",
-    securityLocal: "Hasla sa przechowywane lokalnie z haszowaniem po stronie przegladarki.",
     securityRemote: "Sesje dzialaja przez tokeny access + refresh z weryfikacja po stronie serwera.",
     exportAction: "Eksportuj moje dane",
     exportBusy: "Przygotowujemy eksport...",
@@ -105,8 +95,6 @@ const accountCopy = {
     deleteBusy: "Usuwanie...",
     deleteSuccess: "Konto zostalo usuniete.",
     deleteError: "Nie udalo sie usunac konta.",
-    localNotice:
-      "To konto dziala obecnie tylko w przegladarce. Dane zywieniowe pozostaja na tym urzadzeniu, dopoki nie wlaczysz synchronizacji z backendem.",
     remoteNotice:
       "Konta zdalne korzystaja z sesji access + refresh, synchronizacji w tle, wykrywania konfliktow i snapshotow zapasowych na serwerze.",
     confirmTitle: "Usunac to konto?",
@@ -115,7 +103,6 @@ const accountCopy = {
     confirmCancel: "Anuluj",
     confirmDelete: "Tak, usun wszystko",
     syncRemote: "Synchronizacja z chmura aktywna",
-    syncLocal: "Tylko przegladarka",
   },
 } as const;
 
@@ -130,22 +117,20 @@ const formatBytes = (value: number) => {
 const formatBackupTimestamp = (value: string, language: "uk" | "pl") =>
   new Date(value).toLocaleString(language === "uk" ? "uk-UA" : "pl-PL");
 
-const getRuntimeLabels = (runtime: AuthRuntimeInfo, copy: AccountCopy) => ({
-  provider: runtime.mode === "remote-cloud" ? copy.providerRemote : copy.providerLocal,
-  session: runtime.mode === "remote-cloud" ? copy.sessionRemote : copy.sessionLocal,
-  security: runtime.mode === "remote-cloud" ? copy.securityRemote : copy.securityLocal,
+const getRuntimeLabels = (copy: AccountCopy) => ({
+  provider: copy.providerRemote,
+  session: copy.sessionRemote,
+  security: copy.securityRemote,
 });
 
 export const AccountDataCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
-  const profile = useSelector((state: RootState) => state.profile);
-  const meal = useSelector((state: RootState) => state.meal);
   const { language } = useLanguage();
   const copy = accountCopy[language];
   const runtime = getAuthRuntimeInfo();
-  const runtimeLabels = getRuntimeLabels(runtime, copy);
+  const runtimeLabels = getRuntimeLabels(copy);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
@@ -158,11 +143,6 @@ export const AccountDataCard = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
-    if (!runtime.supportsCloudSync) {
-      setBackups([]);
-      return;
-    }
-
     let cancelled = false;
     setBackupsLoading(true);
 
@@ -186,7 +166,7 @@ export const AccountDataCard = () => {
     return () => {
       cancelled = true;
     };
-  }, [copy.backupError, runtime.supportsCloudSync]);
+  }, [copy.backupError]);
 
   if (!user) return null;
 
@@ -210,20 +190,7 @@ export const AccountDataCard = () => {
     setNotice(null);
 
     try {
-      const payload = runtime.supportsCloudSync
-        ? await exportRemoteAccountData()
-        : {
-            exportedAt: new Date().toISOString(),
-            mode: runtime.mode,
-            auth: runtime,
-            user,
-            snapshot: {
-              profile,
-              meal,
-              updatedAt: new Date().toISOString(),
-            },
-            backups: [],
-          };
+      const payload = await exportRemoteAccountData();
 
       triggerJsonDownload(
         payload,
@@ -314,63 +281,57 @@ export const AccountDataCard = () => {
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Chip label={`${copy.provider}: ${runtimeLabels.provider}`} />
           <Chip label={`${copy.session}: ${runtimeLabels.session}`} />
-          <Chip
-            label={`${copy.sync}: ${
-              runtime.supportsCloudSync ? copy.syncRemote : copy.syncLocal
-            }`}
-          />
+          <Chip label={`${copy.sync}: ${copy.syncRemote}`} />
           <Chip label={`${copy.security}: ${runtimeLabels.security}`} />
         </Stack>
 
         <Alert severity="info" sx={{ borderRadius: 3 }}>
-          {runtime.supportsCloudSync ? copy.remoteNotice : copy.localNotice}
+          {copy.remoteNotice}
         </Alert>
 
-        {runtime.supportsCloudSync && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
-            <Stack spacing={1.2}>
-              <Stack spacing={0.4}>
-                <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>
-                <Typography color="text.secondary">{copy.backupsSubtitle}</Typography>
-              </Stack>
-              {backupsLoading ? (
-                <Typography color="text.secondary">{copy.backupsLoading}</Typography>
-              ) : backups.length === 0 ? (
-                <Typography color="text.secondary">{copy.backupsEmpty}</Typography>
-              ) : (
-                backups.slice(0, 4).map((backup) => (
-                  <Stack
-                    key={backup.id}
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={1}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", md: "center" }}
-                  >
-                    <Box>
-                      <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatBackupTimestamp(backup.updatedAt, language)} ·{" "}
-                        {formatBytes(backup.sizeBytes)}
-                      </Typography>
-                    </Box>
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        void handleBackupDownload(backup);
-                      }}
-                      disabled={downloadingBackupId === backup.id}
-                      sx={{ textTransform: "none", fontWeight: 700 }}
-                    >
-                      {downloadingBackupId === backup.id
-                        ? copy.backupBusy
-                        : copy.backupDownload}
-                    </Button>
-                  </Stack>
-                ))
-              )}
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Stack spacing={1.2}>
+            <Stack spacing={0.4}>
+              <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>
+              <Typography color="text.secondary">{copy.backupsSubtitle}</Typography>
             </Stack>
-          </Paper>
-        )}
+            {backupsLoading ? (
+              <Typography color="text.secondary">{copy.backupsLoading}</Typography>
+            ) : backups.length === 0 ? (
+              <Typography color="text.secondary">{copy.backupsEmpty}</Typography>
+            ) : (
+              backups.slice(0, 4).map((backup) => (
+                <Stack
+                  key={backup.id}
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={1}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "flex-start", md: "center" }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formatBackupTimestamp(backup.updatedAt, language)} ·{" "}
+                      {formatBytes(backup.sizeBytes)}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      void handleBackupDownload(backup);
+                    }}
+                    disabled={downloadingBackupId === backup.id}
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    {downloadingBackupId === backup.id
+                      ? copy.backupBusy
+                      : copy.backupDownload}
+                  </Button>
+                </Stack>
+              ))
+            )}
+          </Stack>
+        </Paper>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           {runtime.supportsDataExport && (

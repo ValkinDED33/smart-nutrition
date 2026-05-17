@@ -30,12 +30,9 @@ import { logout as logoutSession } from "../api/auth";
 import { useLanguage } from "../language";
 import BackendOfflineBanner from "../components/BackendOfflineBanner";
 import SyncStatusChip from "../components/SyncStatusChip";
-import SyncOutboxAgent from "../components/SyncOutboxAgent";
 import SyncFeedbackAlert from "../components/SyncFeedbackAlert";
 import HabitReminderAgent from "../components/HabitReminderAgent";
 import { ContextAssistantWidget } from "../components/ContextAssistantWidget";
-import LocalRealtimeSyncAgent from "../components/LocalRealtimeSyncAgent";
-import RemoteStatePullAgent from "../components/RemoteStatePullAgent";
 import { clearSyncOutbox } from "../lib/syncOutbox";
 import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
 import { setProfileLanguage } from "../../features/profile/profileSlice";
@@ -389,10 +386,7 @@ const Layout = () => {
         </Paper>
       )}
 
-      <SyncOutboxAgent />
       <ProfileLanguageAgent />
-      <LocalRealtimeSyncAgent />
-      <RemoteStatePullAgent />
       <HabitReminderAgent />
       <ContextAssistantWidget />
     </Box>

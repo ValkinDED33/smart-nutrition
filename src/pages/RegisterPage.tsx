@@ -340,7 +340,7 @@ const RegisterPage = () => {
         setServerError(t("error.emailInUse"));
       } else if (
         error instanceof AuthApiError &&
-        error.code === "BACKEND_UNAVAILABLE"
+        error.code === "REMOTE_API_UNAVAILABLE"
       ) {
         setServerError(t("error.backendUnavailable"));
       } else if (

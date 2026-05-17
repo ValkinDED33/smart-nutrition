@@ -97,7 +97,7 @@ const ForgotPasswordPage = () => {
         setServerError(
           error.code === "EMAIL_DELIVERY_UNAVAILABLE"
             ? copy.deliveryUnavailable
-            : error.code === "BACKEND_UNAVAILABLE"
+            : error.code === "REMOTE_API_UNAVAILABLE"
               ? t("error.backendUnavailable")
             : error.message
         );

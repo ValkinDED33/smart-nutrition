@@ -8,11 +8,11 @@ import { useAutoDismiss } from "../hooks/useAutoDismiss";
 const syncFeedbackCopy = {
   uk: {
     retrySuccess: "Хмарна синхронізація завершилася успішно.",
-    outboxFlushed: "Зміни з локальної черги синхронізовано.",
+    outboxFlushed: "Очікувані зміни підтверджено хмарою.",
   },
   pl: {
     retrySuccess: "Synchronizacja z chmura zakonczona pomyslnie.",
-    outboxFlushed: "Zalegle lokalne zmiany zostaly zsynchronizowane.",
+    outboxFlushed: "Oczekujace zmiany zostaly potwierdzone przez chmure.",
   },
 } as const;
 

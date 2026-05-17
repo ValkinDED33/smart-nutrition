@@ -20,6 +20,7 @@ import {
   removeClientStorageItem,
   setClientStorageItem,
 } from "../lib/clientPersistence";
+import { AuthApiError } from "./authProvider";
 import type {
   AccountBackupPayload,
   AccountBackupSummary,
@@ -31,9 +32,6 @@ import type {
   RegisterPayload,
   RegistrationResult,
 } from "./authProvider";
-import { AuthApiError } from "./authLocal";
-
-type AuthMode = "local-browser" | "remote-cloud";
 
 export interface RemoteSyncResult {
   ok: boolean;
@@ -74,11 +72,18 @@ class RemoteRequestError extends Error {
   }
 }
 
-const AUTH_MODE_KEY = "smart-nutrition.auth-mode";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
-const REMOTE_USER_KEY = "smart-nutrition.remote-user";
 const PUBLIC_REMOTE_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
 const PUBLIC_FRONTEND_HOSTNAMES = new Set(["smart-nutrition-topaz.vercel.app"]);
+const LEGACY_BROWSER_AUTH_KEYS = [
+  "smart-nutrition.users",
+  "smart-nutrition.session",
+  "smart-nutrition.login-attempts",
+  "smart-nutrition.password-reset-tokens",
+  "smart-nutrition.registration-verification-tokens",
+  "smart-nutrition.auth-mode",
+  "smart-nutrition.remote-user",
+];
 
 const remoteRuntimeInfo: AuthRuntimeInfo = {
   mode: "remote-cloud",
@@ -88,7 +93,6 @@ const remoteRuntimeInfo: AuthRuntimeInfo = {
     "Profile, meal, water, fridge, and community changes are synchronized through remote state endpoints.",
   securityLabel:
     "Authentication relies on httpOnly cookie sessions, so tokens are never exposed to client-side JavaScript.",
-  supportsCloudSync: true,
   supportsAccountDeletion: true,
   supportsDataExport: true,
   supportsSessionRevocation: true,
@@ -96,6 +100,7 @@ const remoteRuntimeInfo: AuthRuntimeInfo = {
 
 let remoteBaseProbePromise: Promise<string | null> | null = null;
 let remoteRefreshPromise: Promise<void> | null = null;
+let remoteSessionActive = false;
 
 const loopbackHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -179,15 +184,6 @@ const shouldProbeSameOriginApi = () => {
   return isLocalBrowserHost() || !window.location.hostname.endsWith(".vercel.app");
 };
 
-const getStoredAuthMode = (): AuthMode =>
-  getClientStorageItem(AUTH_MODE_KEY) === "remote-cloud"
-    ? "remote-cloud"
-    : "local-browser";
-
-const setStoredAuthMode = (mode: AuthMode) => {
-  setClientStorageItem(AUTH_MODE_KEY, mode);
-};
-
 const getStoredRemoteBaseUrl = () => {
   const storedBaseUrl = normalizeRemoteBaseUrl(getClientStorageItem(REMOTE_BASE_URL_KEY));
 
@@ -202,28 +198,16 @@ const getStoredRemoteBaseUrl = () => {
   return storedBaseUrl;
 };
 
-const getStoredRemoteUser = (): User | null => {
-  const raw = getClientStorageItem(REMOTE_USER_KEY);
-
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as User;
-  } catch {
-    return null;
-  }
+export const purgeLegacyBrowserAuthStorage = () => {
+  LEGACY_BROWSER_AUTH_KEYS.forEach((key) => {
+    removeClientStorageItem(key);
+  });
 };
 
-const setStoredRemoteUser = (user: User) => {
-  setClientStorageItem(REMOTE_USER_KEY, JSON.stringify(user));
-};
-
-const setRemoteSession = (baseUrl: string, user: User) => {
+const setRemoteSession = (baseUrl: string) => {
+  purgeLegacyBrowserAuthStorage();
   setClientStorageItem(REMOTE_BASE_URL_KEY, baseUrl);
-  setStoredRemoteUser(user);
-  setStoredAuthMode("remote-cloud");
+  remoteSessionActive = true;
 };
 
 const rememberRemoteBaseUrl = (baseUrl: string) => {
@@ -231,10 +215,10 @@ const rememberRemoteBaseUrl = (baseUrl: string) => {
 };
 
 const clearRemoteSession = () => {
+  remoteSessionActive = false;
   removeClientStorageItem(REMOTE_BASE_URL_KEY);
-  removeClientStorageItem(REMOTE_USER_KEY);
   clearCachedRemoteState();
-  setStoredAuthMode("local-browser");
+  purgeLegacyBrowserAuthStorage();
 };
 
 const isRegistrationVerificationPending = (
@@ -349,6 +333,15 @@ const toRemoteSyncResult = (
   error: unknown,
   fallbackMessage = "Cloud sync could not save the latest change."
 ): RemoteSyncResult => {
+  if (error instanceof AuthApiError) {
+    return {
+      ok: false,
+      code: error.code,
+      message: error.message,
+      meta: null,
+    };
+  }
+
   if (error instanceof RemoteRequestError) {
     return {
       ok: false,
@@ -377,13 +370,22 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
   }
 
   remoteRefreshPromise = (async () => {
-    const response = await fetch(`${baseUrl}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      credentials: "include",
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`${baseUrl}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "include",
+      });
+    } catch {
+      throw new AuthApiError(
+        "REMOTE_API_UNAVAILABLE",
+        "Backend unavailable. Please reconnect."
+      );
+    }
 
     if (!response.ok) {
       const authError = toAuthApiError(await toRemoteRequestError(response));
@@ -397,7 +399,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
     }
 
     const payload = await readJsonResponse<AuthResponse>(response);
-    setRemoteSession(baseUrl, payload.user);
+    setRemoteSession(baseUrl);
 
     if (payload.snapshot) {
       writeCachedRemoteSnapshot(payload.snapshot);
@@ -495,7 +497,10 @@ const requestRemote = async <T,>(
     (await probeRemoteBaseUrl(true));
 
   if (!baseUrl) {
-    throw new Error("Remote auth server is not available.");
+    throw new AuthApiError(
+      "REMOTE_API_UNAVAILABLE",
+      "Backend unavailable. Please reconnect."
+    );
   }
 
   const headers = new Headers(init.headers);
@@ -528,12 +533,28 @@ const requestRemote = async <T,>(
     });
   };
 
-  let response = await performRequest();
+  let response: Response;
+
+  try {
+    response = await performRequest();
+  } catch {
+    throw new AuthApiError(
+      "REMOTE_API_UNAVAILABLE",
+      "Backend unavailable. Please reconnect."
+    );
+  }
 
   if (response.status === 401 && requireAuth && allowRefresh) {
     try {
       await refreshRemoteAccessToken(baseUrl);
-      response = await performRequest();
+      try {
+        response = await performRequest();
+      } catch {
+        throw new AuthApiError(
+          "REMOTE_API_UNAVAILABLE",
+          "Backend unavailable. Please reconnect."
+        );
+      }
     } catch (error) {
       const authError = toAuthApiError(error);
 
@@ -554,27 +575,12 @@ const requestRemote = async <T,>(
   return { data, baseUrl };
 };
 
-const getOfflineSessionPayload = (): AuthResponse | null => {
-  const cachedUser = getStoredRemoteUser();
-
-  if (!cachedUser) {
-    return null;
-  }
-
-  return {
-    user: cachedUser,
-    token: "cookie-session",
-    snapshot: readCachedRemoteSnapshot(),
-  };
-};
-
 export const checkRemoteBackendAvailability = async (force = false) =>
   Boolean(await probeRemoteBaseUrl(force));
 
 export const isRemoteAuthAvailable = async () => checkRemoteBackendAvailability();
 
-export const isRemoteAuthMode = () =>
-  getStoredAuthMode() === "remote-cloud" && Boolean(getStoredRemoteUser());
+export const isRemoteAuthMode = () => remoteSessionActive;
 
 export const getRemoteAuthRuntimeInfo = () => remoteRuntimeInfo;
 
@@ -920,7 +926,7 @@ export const fetchRemoteAccountBackup = async (
 };
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
-  setRemoteSession(baseUrl, payload.user);
+  setRemoteSession(baseUrl);
   const granularSnapshot = await loadRemoteAppState();
   const nextSnapshot = granularSnapshot ?? payload.snapshot ?? null;
 
@@ -938,7 +944,7 @@ const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
 
 export const remoteAuthProvider: AuthProvider = {
   restoreSession: async () => {
-    if (!isRemoteAuthMode() && !getStoredRemoteBaseUrl()) {
+    if (!getStoredRemoteBaseUrl() && !(await probeRemoteBaseUrl())) {
       return null;
     }
 
@@ -951,16 +957,24 @@ export const remoteAuthProvider: AuthProvider = {
 
       return mapAuthResponse(data, baseUrl);
     } catch (error) {
+      if (error instanceof AuthApiError) {
+        if (error.code === "REMOTE_API_UNAVAILABLE") {
+          throw error;
+        }
+
+        clearRemoteSession();
+        return null;
+      }
+
       if (
-        error instanceof AuthApiError ||
-        (error instanceof RemoteRequestError &&
-          (error.status === 401 || error.code === "INVALID_CREDENTIALS"))
+        error instanceof RemoteRequestError &&
+        (error.status === 401 || error.code === "INVALID_CREDENTIALS")
       ) {
         clearRemoteSession();
         return null;
       }
 
-      return getOfflineSessionPayload();
+      throw error;
     }
   },
 
@@ -1010,7 +1024,7 @@ export const remoteAuthProvider: AuthProvider = {
       throw authError ?? error;
     });
 
-    setRemoteSession(baseUrl, data);
+    setRemoteSession(baseUrl);
 
     return data;
   },

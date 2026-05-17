@@ -1,16 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  AuthApiError,
   getAuthRuntimeInfo,
-  login,
   logout,
   register,
-  verifyRegistration,
 } from "./auth";
 
 const password = "StrongPass1!";
 
 const createRegisterPayload = (email: string) => ({
-  name: "Local User",
+  name: "Cloud User",
   email,
   password,
   age: 32,
@@ -28,51 +27,33 @@ describe("auth provider selection", () => {
     vi.restoreAllMocks();
   });
 
-  it("falls back to local browser auth when a deployed app has no usable cloud API", async () => {
+  it("requires the cloud API instead of falling back to browser auth", async () => {
     vi.stubGlobal("window", {
       location: {
         hostname: "smart-nutrition-preview.vercel.app",
         origin: "https://smart-nutrition-preview.vercel.app",
       },
     });
-    const fetchMock = vi.fn();
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError("network down"));
     vi.stubGlobal("fetch", fetchMock);
 
-    const email = `local-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
-    const registration = await register(createRegisterPayload(email));
+    await expect(
+      register(createRegisterPayload("cloud-required@example.com"))
+    ).rejects.toMatchObject({
+      code: "REMOTE_API_UNAVAILABLE",
+    } satisfies Partial<AuthApiError>);
 
-    expect(registration).toMatchObject({
-      requiresVerification: true,
-      email,
-    });
-    expect("previewCode" in registration ? registration.previewCode : undefined).toBeTruthy();
-
-    const registeredSession = await verifyRegistration({
-      email,
-      code: "previewCode" in registration ? registration.previewCode ?? "" : "",
-    });
-
-    expect(registeredSession.user.email).toBe(email);
-    expect(getAuthRuntimeInfo().mode).toBe("local-browser");
-    expect(getAuthRuntimeInfo().supportsCloudSync).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
-
-    await logout();
-
-    const loginSession = await login(email, password);
-
-    expect(loginSession.user.email).toBe(email);
-    expect(getAuthRuntimeInfo().mode).toBe("local-browser");
+    expect(getAuthRuntimeInfo().mode).toBe("remote-cloud");
   });
 
-  it("validates local registration profile fields before storing an account", async () => {
-    await expect(
-      register({
-        ...createRegisterPayload("invalid-local-profile@example.com"),
-        weight: 500,
-      })
-    ).rejects.toMatchObject({
-      code: "INVALID_PROFILE",
+  it("exposes cloud runtime metadata only", () => {
+    const runtime = getAuthRuntimeInfo();
+
+    expect(runtime).toMatchObject({
+      mode: "remote-cloud",
+      supportsAccountDeletion: true,
+      supportsDataExport: true,
+      supportsSessionRevocation: true,
     });
   });
 });

@@ -33,8 +33,8 @@ import { replaceProfileState } from "../profile/profileSlice";
 import { replaceMealState } from "../meal/mealSlice";
 import { replaceWaterState } from "../water/waterSlice";
 
-export type SyncMode = "local-browser" | "remote-cloud";
-export type SyncStatus = "local-only" | "syncing" | "synced" | "error";
+export type SyncMode = "remote-cloud";
+export type SyncStatus = "syncing" | "synced" | "error";
 
 interface AuthState {
   user: User | null;
@@ -53,29 +53,16 @@ interface AuthState {
 
 const getQueuedSyncMessage = (pendingChanges: number) =>
   pendingChanges <= 1
-    ? "1 local change is queued and waiting for cloud sync."
-    : `${pendingChanges} local changes are queued and waiting for cloud sync.`;
+    ? "1 unsynced change is waiting for cloud confirmation."
+    : `${pendingChanges} unsynced changes are waiting for cloud confirmation.`;
 
-const getSyncStatusForMode = (
-  mode: SyncMode,
-  syncOutbox: SyncOutboxMeta
-): SyncStatus =>
-  mode === "remote-cloud"
-    ? syncOutbox.pendingChanges > 0
-      ? "error"
-      : "synced"
-    : "local-only";
+const getSyncStatus = (syncOutbox: SyncOutboxMeta): SyncStatus =>
+  syncOutbox.pendingChanges > 0 ? "error" : "synced";
 
-const getSyncErrorForMode = (
-  mode: SyncMode,
-  syncOutbox: SyncOutboxMeta
-) =>
-  mode === "remote-cloud" && syncOutbox.pendingChanges > 0
+const getSyncError = (syncOutbox: SyncOutboxMeta) =>
+  syncOutbox.pendingChanges > 0
     ? syncOutbox.lastError ?? getQueuedSyncMessage(syncOutbox.pendingChanges)
     : null;
-
-const getCloudMetaForMode = (mode: SyncMode, snapshotMeta: AppSnapshotMeta | null) =>
-  mode === "remote-cloud" ? snapshotMeta : null;
 
 const getSyncErrorMessage = (result: RemoteSyncResult) =>
   result.code === "STATE_CONFLICT"
@@ -108,8 +95,8 @@ const initialState: AuthState = {
   isLoading: false,
   isInitialized: false,
   error: null,
-  syncMode: "local-browser",
-  syncStatus: "local-only",
+  syncMode: "remote-cloud",
+  syncStatus: "synced",
   lastSyncedAt: null,
   syncError: null,
   cloudMeta: null,
@@ -156,10 +143,13 @@ export const initializeAuth = createAsyncThunk<
       cloudMeta,
     };
   } catch (error) {
-    const errorCode =
-      error instanceof AuthApiError && error.code === "INVALID_CREDENTIALS"
+    const errorCode = error instanceof AuthApiError
+      ? error.code === "INVALID_CREDENTIALS"
         ? "SESSION_EXPIRED"
-        : null;
+        : error.code === "REMOTE_API_UNAVAILABLE"
+          ? "REMOTE_API_UNAVAILABLE"
+          : null
+      : null;
 
     return rejectWithValue(errorCode);
   }
@@ -217,10 +207,6 @@ export const retryCloudSync = createAsyncThunk<
   void,
   { state: RootState; rejectValue: string }
 >("auth/retryCloudSync", async (_, { dispatch, getState, rejectWithValue }) => {
-  if (getAuthRuntimeInfo().mode !== "remote-cloud") {
-    return rejectWithValue("Cloud sync is not enabled for this account.");
-  }
-
   const state = getState();
   const syncResult = await pushCurrentStateToCloud(state);
 
@@ -245,10 +231,6 @@ export const flushSyncOutbox = createAsyncThunk<
 >(
   "auth/flushSyncOutbox",
   async (_, { dispatch, getState, rejectWithValue }) => {
-    if (getAuthRuntimeInfo().mode !== "remote-cloud") {
-      return rejectWithValue("Cloud sync is not enabled for this account.");
-    }
-
     const available = await getRemoteBackendAvailability(true);
 
     if (!available) {
@@ -292,10 +274,6 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
 >(
   "auth/pullLatestCloudSnapshot",
   async (payload, { dispatch, rejectWithValue }) => {
-    if (getAuthRuntimeInfo().mode !== "remote-cloud") {
-      return rejectWithValue("Cloud sync is not enabled for this account.");
-    }
-
     const snapshot = await pullRemoteAppSnapshot({ force: true });
 
     if (!snapshot) {
@@ -340,8 +318,8 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
-      state.syncMode = "local-browser";
-      state.syncStatus = "local-only";
+      state.syncMode = "remote-cloud";
+      state.syncStatus = "synced";
       state.lastSyncedAt = null;
       state.syncError = null;
       state.cloudMeta = null;
@@ -366,23 +344,13 @@ const authSlice = createSlice({
       state.error = null;
       state.syncMode = action.payload.syncMode;
       state.syncOutbox = action.payload.syncOutbox;
-      state.syncStatus = getSyncStatusForMode(
-        action.payload.syncMode,
-        action.payload.syncOutbox
-      );
+      state.syncStatus = getSyncStatus(action.payload.syncOutbox);
       state.lastSyncedAt =
-        action.payload.syncMode === "remote-cloud" &&
         action.payload.syncOutbox.pendingChanges === 0
           ? new Date().toISOString()
           : null;
-      state.syncError = getSyncErrorForMode(
-        action.payload.syncMode,
-        action.payload.syncOutbox
-      );
-      state.cloudMeta = getCloudMetaForMode(
-        action.payload.syncMode,
-        action.payload.cloudMeta ?? null
-      );
+      state.syncError = getSyncError(action.payload.syncOutbox);
+      state.cloudMeta = action.payload.cloudMeta ?? null;
       state.syncToast = null;
     },
     markSyncStarted(state) {
@@ -420,7 +388,7 @@ const authSlice = createSlice({
 
       if (action.payload.pendingChanges > 0) {
         state.syncStatus = "error";
-        state.syncError = getSyncErrorForMode(state.syncMode, action.payload);
+        state.syncError = getSyncError(action.payload);
         return;
       }
 
@@ -431,8 +399,7 @@ const authSlice = createSlice({
       state.syncError = null;
     },
     setCloudMeta(state, action: PayloadAction<AppSnapshotMeta | null>) {
-      state.cloudMeta =
-        state.syncMode === "remote-cloud" ? action.payload : null;
+      state.cloudMeta = action.payload;
     },
     clearSyncToast(state) {
       state.syncToast = null;
@@ -450,26 +417,16 @@ const authSlice = createSlice({
         state.isInitialized = true;
         state.syncMode = action.payload.syncMode;
         state.syncOutbox = action.payload.syncOutbox;
-        state.syncStatus = getSyncStatusForMode(
-          action.payload.syncMode,
-          action.payload.syncOutbox
-        );
+        state.syncStatus = getSyncStatus(action.payload.syncOutbox);
         state.lastSyncedAt =
-          action.payload.syncMode === "remote-cloud" &&
           action.payload.syncOutbox.pendingChanges === 0
             ? new Date().toISOString()
             : null;
-        state.syncError = getSyncErrorForMode(
-          action.payload.syncMode,
-          action.payload.syncOutbox
-        );
-        state.cloudMeta = getCloudMetaForMode(
-          action.payload.syncMode,
-          action.payload.cloudMeta
-        );
+        state.syncError = getSyncError(action.payload.syncOutbox);
+        state.cloudMeta = action.payload.cloudMeta;
         state.syncToast = null;
       })
-      .addCase(initializeAuth.rejected, (state) => {
+      .addCase(initializeAuth.rejected, (state, action) => {
         const syncMode = getAuthRuntimeInfo().mode;
         const syncOutbox = getSyncOutboxMeta();
 
@@ -477,11 +434,11 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isLoading = false;
         state.isInitialized = true;
-        state.error = null;
+        state.error = action.payload ?? null;
         state.syncMode = syncMode;
-        state.syncStatus = getSyncStatusForMode(syncMode, syncOutbox);
+        state.syncStatus = getSyncStatus(syncOutbox);
         state.lastSyncedAt = null;
-        state.syncError = getSyncErrorForMode(syncMode, syncOutbox);
+        state.syncError = getSyncError(syncOutbox);
         state.cloudMeta = null;
         state.syncOutbox = syncOutbox;
         state.syncToast = null;
@@ -569,7 +526,7 @@ const authSlice = createSlice({
 
         state.syncStatus = "error";
         state.syncError =
-          action.payload ?? getSyncErrorForMode(state.syncMode, state.syncOutbox);
+          action.payload ?? getSyncError(state.syncOutbox);
       });
   },
 });

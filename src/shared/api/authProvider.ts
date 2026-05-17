@@ -23,12 +23,11 @@ export interface RegisterPayload {
 }
 
 export interface AuthRuntimeInfo {
-  mode: "local-browser" | "remote-cloud";
+  mode: "remote-cloud";
   providerLabel: string;
   sessionLabel: string;
   syncLabel: string;
   securityLabel: string;
-  supportsCloudSync: boolean;
   supportsAccountDeletion: boolean;
   supportsDataExport: boolean;
   supportsSessionRevocation: boolean;
@@ -48,7 +47,7 @@ export interface AccountBackupPayload extends AccountBackupSummary {
 
 export interface AccountExportPayload {
   exportedAt: string;
-  mode: "local-browser" | "remote-cloud";
+  mode: "remote-cloud";
   user: User;
   snapshot: AppSnapshot | null;
   backups: AccountBackupSummary[];
@@ -79,6 +78,27 @@ export interface RegistrationVerificationResendPayload {
 }
 
 export type RegistrationResult = AuthResponse | RegistrationVerificationPending;
+
+export class AuthApiError extends Error {
+  code:
+    | "EMAIL_IN_USE"
+    | "INVALID_CREDENTIALS"
+    | "TOO_MANY_ATTEMPTS"
+    | "INVALID_RESET_TOKEN"
+    | "EMAIL_DELIVERY_UNAVAILABLE"
+    | "VERIFICATION_DELIVERY_UNAVAILABLE"
+    | "INVALID_VERIFICATION_CODE"
+    | "REGISTRATION_NOT_VERIFIED"
+    | "ACCOUNT_BANNED"
+    | "WEAK_PASSWORD"
+    | "INVALID_PROFILE"
+    | "REMOTE_API_UNAVAILABLE";
+
+  constructor(code: AuthApiError["code"], message: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 export interface AuthProvider {
   restoreSession: () => Promise<AuthResponse | null>;

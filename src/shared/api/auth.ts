@@ -9,7 +9,6 @@ import {
   fetchRemoteStateMeta,
   getRemoteBaseUrl,
   getRemoteSessionToken,
-  isRemoteAuthAvailable,
   isRemoteAuthMode,
   pushRemoteCommunityState,
   pushRemoteFridgeState,
@@ -22,12 +21,12 @@ import {
   pushRemoteProfileState,
   refreshRemoteSession,
   remoteAuthProvider,
+  purgeLegacyBrowserAuthStorage,
   type RemoteSyncResult,
   upsertRemoteMealProduct,
 } from "./authRemote";
-import { AuthApiError, localAuthProvider } from "./authLocal";
+import { AuthApiError } from "./authProvider";
 import type {
-  AuthProvider,
   RegistrationVerificationPayload,
   RegistrationVerificationResendPayload,
 } from "./authProvider";
@@ -48,106 +47,61 @@ export type {
 export type { RemoteSyncResult };
 export { AuthApiError };
 
-let activeAuthProvider: AuthProvider = localAuthProvider;
-
-const setActiveAuthProvider = (provider: AuthProvider) => {
-  activeAuthProvider = provider;
-  return provider;
-};
-
-const getCurrentAuthProvider = () =>
-  isRemoteAuthMode() ? setActiveAuthProvider(remoteAuthProvider) : activeAuthProvider;
-
-const getAvailableAuthProvider = async () =>
-  (await isRemoteAuthAvailable())
-    ? setActiveAuthProvider(remoteAuthProvider)
-    : setActiveAuthProvider(localAuthProvider);
-
 export const restoreSession = async () => {
-  const remoteSession = await remoteAuthProvider.restoreSession();
-
-  if (remoteSession) {
-    setActiveAuthProvider(remoteAuthProvider);
-    return remoteSession;
-  }
-
-  try {
-    const localSession = await localAuthProvider.restoreSession();
-
-    if (localSession) {
-      setActiveAuthProvider(localAuthProvider);
-    }
-
-    return localSession;
-  } catch (error) {
-    setActiveAuthProvider(localAuthProvider);
-    throw error;
-  }
+  purgeLegacyBrowserAuthStorage();
+  return remoteAuthProvider.restoreSession();
 };
 
 export const logout = async () => {
-  await Promise.allSettled([
-    remoteAuthProvider.logout(),
-    localAuthProvider.logout(),
-  ]);
-  setActiveAuthProvider(localAuthProvider);
+  await remoteAuthProvider.logout();
+  purgeLegacyBrowserAuthStorage();
 };
 
 export const logoutEverywhere = async () => {
-  try {
-    if (getCurrentAuthProvider() === remoteAuthProvider) {
-      await remoteAuthProvider.logoutEverywhere();
-    }
-  } finally {
-    await localAuthProvider.logoutEverywhere();
-    setActiveAuthProvider(localAuthProvider);
-  }
+  await remoteAuthProvider.logoutEverywhere();
+  purgeLegacyBrowserAuthStorage();
 };
 
 export const updateStoredProfile = (
-  user: Parameters<AuthProvider["updateStoredProfile"]>[0]
-) => getCurrentAuthProvider().updateStoredProfile(user);
+  user: Parameters<typeof remoteAuthProvider.updateStoredProfile>[0]
+) => remoteAuthProvider.updateStoredProfile(user);
 
 export const register = async (
-  payload: Parameters<AuthProvider["register"]>[0]
+  payload: Parameters<typeof remoteAuthProvider.register>[0]
 ) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.register(payload);
+  purgeLegacyBrowserAuthStorage();
+  return remoteAuthProvider.register(payload);
 };
 
 export const verifyRegistration = async (
   payload: RegistrationVerificationPayload
 ) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.verifyRegistration(payload);
+  return remoteAuthProvider.verifyRegistration(payload);
 };
 
 export const resendRegistrationVerification = async (
   payload: RegistrationVerificationResendPayload
 ) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.resendRegistrationVerification(payload);
+  return remoteAuthProvider.resendRegistrationVerification(payload);
 };
 
 export const login = async (email: string, password: string) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.login(email, password);
+  purgeLegacyBrowserAuthStorage();
+  return remoteAuthProvider.login(email, password);
 };
 
 export const requestPasswordReset = async (email: string) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.requestPasswordReset(email);
+  return remoteAuthProvider.requestPasswordReset(email);
 };
 
 export const resetPassword = async (token: string, password: string) => {
-  const provider = await getAvailableAuthProvider();
-  return provider.resetPassword(token, password);
+  return remoteAuthProvider.resetPassword(token, password);
 };
 
 export const deleteAccount = (email: string) =>
-  getCurrentAuthProvider().deleteAccount(email);
+  remoteAuthProvider.deleteAccount(email);
 
-export const getAuthRuntimeInfo = () => getCurrentAuthProvider().getRuntimeInfo();
+export const getAuthRuntimeInfo = () => remoteAuthProvider.getRuntimeInfo();
 
 export const isCloudSyncActive = () => isRemoteAuthMode();
 export const syncRemoteProfileState = pushRemoteProfileState;

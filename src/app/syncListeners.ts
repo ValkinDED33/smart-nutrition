@@ -84,7 +84,6 @@ import {
 } from "../shared/lib/adaptiveGoal";
 import { buildAppSnapshot } from "../shared/lib/appSnapshot";
 import { writeCachedRemoteSnapshot } from "../shared/lib/remoteStateCache";
-import { broadcastTabSnapshot } from "../shared/lib/tabRealtimeSync";
 
 type SyncState = {
   profile: ProfileState;
@@ -92,30 +91,12 @@ type SyncState = {
   water: WaterState;
   fridge: unknown;
   community: unknown;
-  auth: {
-    user: {
-      id: string;
-    } | null;
-  };
 };
 
 const getStateSnapshot = (state: unknown) => state as SyncState;
 
 const syncWholeMealState = async (state: SyncState) => {
   return syncRemoteMealState(state.meal);
-};
-
-const broadcastCurrentTabState = (state: SyncState) => {
-  if (!state.auth.user?.id) {
-    return;
-  }
-
-  broadcastTabSnapshot({
-    userId: state.auth.user.id,
-    profile: state.profile,
-    meal: state.meal,
-    water: state.water,
-  });
 };
 
 const maybeApplyAutomaticAdaptiveTarget = (
@@ -227,7 +208,6 @@ export const registerRemoteSyncListeners = () => {
     ),
     effect: async (_, listenerApi) => {
       maybeApplyAutomaticAdaptiveTarget(listenerApi);
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
 
       if (!isCloudSyncActive()) {
         return;
@@ -249,8 +229,6 @@ export const registerRemoteSyncListeners = () => {
       resetWaterTracker
     ),
     effect: async (_, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -305,15 +283,12 @@ export const registerRemoteSyncListeners = () => {
     ),
     effect: async (_, listenerApi) => {
       maybeApplyAutomaticAdaptiveTarget(listenerApi);
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
     },
   });
 
   remoteSyncListenerMiddleware.startListening({
     actionCreator: setAdaptiveCalories,
     effect: async (_, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -379,8 +354,6 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     actionCreator: saveMealTemplate,
     effect: async (_, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -402,8 +375,6 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     actionCreator: deleteMealTemplate,
     effect: async (action, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -432,8 +403,6 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     actionCreator: saveProduct,
     effect: async (action, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -450,8 +419,6 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     actionCreator: removeSavedProduct,
     effect: async (action, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }
@@ -468,8 +435,6 @@ export const registerRemoteSyncListeners = () => {
   remoteSyncListenerMiddleware.startListening({
     actionCreator: rememberRecentProduct,
     effect: async (action, listenerApi) => {
-      broadcastCurrentTabState(getStateSnapshot(listenerApi.getState()));
-
       if (!isCloudSyncActive()) {
         return;
       }

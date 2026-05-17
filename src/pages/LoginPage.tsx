@@ -122,7 +122,7 @@ const LoginPage = () => {
           setServerError(copy.notVerified);
         } else if (error.code === "ACCOUNT_BANNED") {
           setServerError(copy.banned);
-        } else if (error.code === "BACKEND_UNAVAILABLE") {
+        } else if (error.code === "REMOTE_API_UNAVAILABLE") {
           setServerError(t("error.backendUnavailable"));
         } else {
           setServerError(t("error.invalidCredentials"));
