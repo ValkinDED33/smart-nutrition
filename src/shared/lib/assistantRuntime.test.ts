@@ -27,6 +27,13 @@ const createContext = (): AssistantRuntimeContext => ({
   assistantRole: "assistant",
   assistantTone: "gentle",
   humorEnabled: true,
+  assistantPersonality: {
+    warmth: 0.9,
+    humor: 0.4,
+    strictness: 0.2,
+    motivation: 0.8,
+  },
+  communicationStyle: "supportive",
   personalDetails: {
     bloodGroup: "unknown",
     eyeColor: "unknown",
@@ -85,6 +92,30 @@ const createContext = (): AssistantRuntimeContext => ({
     insights: [{ code: "protein_low", severity: "warning", priority: 95 }],
   },
   coachPrimaryInsight: "protein_low",
+  profile: {
+    goal: "cut",
+    dietStyle: "balanced",
+    latestWeight: 81,
+    weeklyCheckInDue: false,
+  },
+  nutritionState: {
+    dailyCalories: 2000,
+    caloriesConsumed: 1460,
+    caloriesRemaining: 540,
+    proteinConsumed: 72,
+    proteinTarget: 128,
+    fatConsumed: 48,
+    carbsConsumed: 152,
+    waterConsumedMl: 900,
+    waterTargetMl: 2200,
+  },
+  behavior: {
+    mealEntriesToday: 3,
+    waterLoggedToday: true,
+    openMotivationTasks: 1,
+    completedMotivationTasks: 2,
+  },
+  memory: null,
 });
 
 describe("assistantRuntime", () => {

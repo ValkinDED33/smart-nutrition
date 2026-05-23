@@ -14,6 +14,28 @@ import type { Goal } from "./user";
 
 export type AssistantRuntimeMode = "guided" | "remote-cloud";
 
+export interface AssistantPersonality {
+  warmth: number;
+  humor: number;
+  strictness: number;
+  motivation: number;
+}
+
+export type AssistantCommunicationStyle = "supportive" | "strict" | "energetic";
+
+export interface AssistantMemory {
+  userId?: string;
+  assistantName: string;
+  personality: AssistantPersonality;
+  communicationStyle: AssistantCommunicationStyle | string;
+  goals: string[];
+  struggles: string[];
+  habits: string[];
+  motivationTriggers: string[];
+  lastMood: string | null;
+  recentProblems: string[];
+}
+
 export type AssistantQuickQuestionId =
   | "day_status"
   | "protein_help"
@@ -45,10 +67,36 @@ export interface AssistantRuntimeContext {
   assistantRole: AssistantRole;
   assistantTone: AssistantTone;
   humorEnabled: boolean;
+  assistantPersonality: AssistantPersonality;
+  communicationStyle: AssistantCommunicationStyle;
   personalDetails: PersonalProfileDetails;
   motivation: MotivationState;
   coach: NutritionCoachAnalysis;
   coachPrimaryInsight: NutritionCoachInsightCode;
+  profile: {
+    goal: Goal;
+    dietStyle: DietStyle;
+    latestWeight: number;
+    weeklyCheckInDue: boolean;
+  };
+  nutritionState: {
+    dailyCalories: number;
+    caloriesConsumed: number;
+    caloriesRemaining: number;
+    proteinConsumed: number;
+    proteinTarget: number;
+    fatConsumed: number;
+    carbsConsumed: number;
+    waterConsumedMl: number;
+    waterTargetMl: number;
+  };
+  behavior: {
+    mealEntriesToday: number;
+    waterLoggedToday: boolean;
+    openMotivationTasks: number;
+    completedMotivationTasks: number;
+  };
+  memory: AssistantMemory | null;
 }
 
 export interface AssistantQuestionInput {

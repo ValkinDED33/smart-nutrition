@@ -91,6 +91,32 @@ const mealIdeas: Record<
       full: ["ryż z kurczakiem", "ziemniaki z łososiem"],
     },
   },
+  en: {
+    balanced: {
+      light: ["skyr or Greek yogurt", "chicken with vegetables"],
+      full: ["rice with chicken", "yogurt with oats"],
+    },
+    vegetarian: {
+      light: ["cottage cheese or skyr", "vegetable omelet"],
+      full: ["tofu with rice", "yogurt with oats"],
+    },
+    vegan: {
+      light: ["tofu with vegetables", "soy yogurt"],
+      full: ["tempeh with rice", "lentils with rice"],
+    },
+    pescatarian: {
+      light: ["tuna and vegetables", "skyr or yogurt"],
+      full: ["salmon with rice", "tuna with potatoes"],
+    },
+    low_carb: {
+      light: ["eggs and cottage cheese", "salmon with salad"],
+      full: ["cheese omelet", "tofu with vegetables and nuts"],
+    },
+    gluten_free: {
+      light: ["eggs and vegetables", "skyr or yogurt"],
+      full: ["rice with chicken", "potatoes with salmon"],
+    },
+  },
 };
 
 const normalizeIntentText = (value: string) =>
@@ -296,10 +322,28 @@ const joinIdeas = (context: AssistantRuntimeContext, signals: AssistantSignals) 
         : "light";
   const items = mealIdeas[context.language][context.dietStyle][bucket];
 
-  return items.slice(0, 2).join(context.language === "pl" ? " albo " : " або ");
+  return items
+    .slice(0, 2)
+    .join(context.language === "pl" ? " albo " : context.language === "en" ? " or " : " або ");
 };
 
 const getActionLead = (context: AssistantRuntimeContext) => {
+  if (context.language === "en") {
+    if (context.assistantRole === "coach") {
+      return context.assistantTone === "gentle"
+        ? "The most important step now:"
+        : "Priority right now:";
+    }
+
+    if (context.assistantRole === "friend") {
+      return context.assistantTone === "focused"
+        ? "Here is what I would do now:"
+        : "Best move right now:";
+    }
+
+    return "Best next step:";
+  }
+
   if (context.language === "pl") {
     if (context.assistantRole === "coach") {
       return context.assistantTone === "gentle"
@@ -345,6 +389,12 @@ const getLightHumorLine = (
       : "Bez spiny: tu nie trzeba dnia idealnego, tylko jednego dobrego ruchu.";
   }
 
+  if (context.language === "en") {
+    return signals.primaryFocus === "recover"
+      ? "No drama: this day can still settle with one sensible move."
+      : "No pressure: you do not need a perfect day, just one good move.";
+  }
+
   return signals.primaryFocus === "recover"
     ? "Без драми: день ще можна вирівняти одним розумним кроком."
     : "Без напруги: тут не потрібен ідеальний день, потрібен один влучний хід.";
@@ -352,6 +402,37 @@ const getLightHumorLine = (
 
 const getPersonalContactLine = (context: AssistantRuntimeContext) => {
   const { relationshipStatus, supportSystem, petCompanion } = context.personalDetails;
+
+  if (context.language === "en") {
+    const supportLine =
+      supportSystem === "partner_supports"
+        ? "We can build small steps around your partner's support without turning it into pressure."
+        : supportSystem === "partner_neutral"
+          ? "I will keep steps independent so they do not require another person's buy-in."
+          : supportSystem === "family_friends"
+            ? "Simple steps that you can explain to close people in one sentence should work well."
+            : supportSystem === "low_support"
+              ? "I will keep the tone steadier and more supportive, because low support calls for calm consistency."
+              : supportSystem === "self"
+                ? "I will suggest steps you can do on your own."
+                : "";
+    const relationshipLine =
+      relationshipStatus === "single"
+        ? "I will not assume support from another person."
+        : relationshipStatus === "married" || relationshipStatus === "dating"
+          ? "If it helps, tiny shared rituals can make the plan easier."
+          : "";
+    const petLine =
+      petCompanion === "dog"
+        ? "With a dog around, water or a short walk can pair nicely with walk time."
+        : petCompanion === "cat"
+          ? "With a cat around, calm home rituals will fit better than rushed ones."
+          : petCompanion === "cat_and_dog"
+            ? "With pets around, short rituals around a walk or home pause can work well."
+            : "";
+
+    return [supportLine, relationshipLine, petLine].filter(Boolean).join(" ");
+  }
 
   if (context.language === "pl") {
     const supportLine =
@@ -415,6 +496,23 @@ const getPersonalContactLine = (context: AssistantRuntimeContext) => {
 };
 
 const getSnapshotLine = (context: AssistantRuntimeContext) => {
+  if (context.language === "en") {
+    const calories =
+      context.caloriesRemaining >= 0
+        ? `Today you have ${formatRounded(context.caloriesConsumed)}/${formatRounded(
+            context.dailyCalories
+          )} kcal, with ${formatRounded(context.caloriesRemaining)} kcal left.`
+        : `Today you have ${formatRounded(context.caloriesConsumed)}/${formatRounded(
+            context.dailyCalories
+          )} kcal, which is ${formatRounded(
+            Math.abs(context.caloriesRemaining)
+          )} kcal over target.`;
+
+    return `${calories} Protein: ${formatRounded(context.proteinConsumed)}/${formatRounded(
+      context.proteinTarget
+    )} g. Logged meal slots: ${context.mealEntriesToday}.`;
+  }
+
   if (context.language === "pl") {
     const calories =
       context.caloriesRemaining >= 0
@@ -452,6 +550,31 @@ const getPriorityLine = (
   context: AssistantRuntimeContext,
   signals: AssistantSignals
 ) => {
+  if (context.language === "en") {
+    const byFocus = {
+      log_day:
+        "The priority now is to complete today's log, because with 0-1 entries every next suggestion is less certain.",
+      recover:
+        "The priority now is to calmly steady the day, not to punish it with restriction.",
+      protein: `The priority now is protein, because you still need about ${formatRounded(
+        signals.proteinGap
+      )} g.`,
+      water: `The priority now is water: about ${formatRounded(
+        signals.waterGapMl
+      )} ml left to target.`,
+      weight:
+        "The priority now is a weight and measurement check-in, because the trend needs fresh data.",
+      protect_budget:
+        "The priority now is to protect the small calorie budget from random snacks.",
+      coach:
+        "The priority now is consistency, because the weekly signal still needs calm follow-through.",
+      maintain:
+        "The priority now is to keep the good rhythm without adding unnecessary corrections.",
+    } as const;
+
+    return byFocus[signals.primaryFocus];
+  }
+
   if (context.language === "pl") {
     const byFocus = {
       log_day:
@@ -507,6 +630,21 @@ const getActionLine = (
   const lead = getActionLead(context);
   const ideas = joinIdeas(context, signals);
 
+  if (context.language === "en") {
+    const byFocus = {
+      log_day: `${lead} add the missing meal or snack first, then judge the rest of the day.`,
+      recover: `${lead} keep the rest of the day light and filling with protein and vegetables, then return to your normal target tomorrow without punishment.`,
+      protein: `${lead} make one clear protein move, for example ${ideas}.`,
+      water: `${lead} drink one 250-300 ml serving of water now and come back for another serving in 60-90 minutes.`,
+      weight: `${lead} log weight and basic measurements today, then base calorie decisions on the trend, not one reading.`,
+      protect_budget: `${lead} stick to one controlled meal and do not reopen the day to random calories.`,
+      coach: `${lead} choose one repeatable rule for today and tomorrow instead of fixing everything at once.`,
+      maintain: `${lead} simply repeat the same working pattern at the next meal.`,
+    } as const;
+
+    return byFocus[signals.primaryFocus];
+  }
+
   if (context.language === "pl") {
     const byFocus = {
       log_day: `${lead} dopisz brakujący posiłek albo przekąskę, a dopiero potem oceniaj resztę dnia.`,
@@ -540,6 +678,18 @@ const getWaterLine = (
   context: AssistantRuntimeContext,
   signals: AssistantSignals
 ) => {
+  if (context.language === "en") {
+    if (signals.waterState === "hit") {
+      return `Water is done: ${formatRounded(context.waterConsumedMl)}/${formatRounded(
+        context.waterTargetMl
+      )} ml. Now keep an easy pace without forcing extra intake.`;
+    }
+
+    return `Water is at ${Math.round(signals.waterProgress * 100)}% of target: ${formatRounded(
+      context.waterConsumedMl
+    )}/${formatRounded(context.waterTargetMl)} ml. The simplest move is 250-300 ml now and another serving later.`;
+  }
+
   if (context.language === "pl") {
     if (signals.waterState === "hit") {
       return `Woda jest domknięta: ${formatRounded(context.waterConsumedMl)}/${formatRounded(
@@ -567,6 +717,24 @@ const getWeightLine = (
   context: AssistantRuntimeContext,
   signals: AssistantSignals
 ) => {
+  if (context.language === "en") {
+    if (signals.weightState === "due") {
+      return "Weekly check-in is due: log weight, waist/abdomen/chest, and treat one reading as part of the trend.";
+    }
+
+    if (signals.weightState === "plateau") {
+      return `The trend looks stable: change is ${context.weightChangeKg.toFixed(
+        1
+      )} kg. Check logging consistency, protein, and water first, then adjust calories if needed.`;
+    }
+
+    return `Latest logged weight is ${context.latestWeight.toFixed(
+      1
+    )} kg, and trend change is ${context.weightChangeKg.toFixed(
+      1
+    )} kg. Keep decisions tied to the average, not one day.`;
+  }
+
   if (context.language === "pl") {
     if (signals.weightState === "due") {
       return "Weekly check-in jest już na czasie: zapisz wagę, talię/brzuch/klatkę i potraktuj pojedynczy odczyt jako część trendu.";
@@ -608,6 +776,20 @@ const getNextMealLine = (
 ) => {
   const ideas = joinIdeas(context, signals);
 
+  if (context.language === "en") {
+    if (signals.calorieState === "over") {
+      return `A light protein meal without heavy extras is best now: ${ideas}.`;
+    }
+
+    if (signals.proteinState !== "hit") {
+      return `The best next choice is something that closes the protein gap: ${ideas}.`;
+    }
+
+    return signals.calorieState === "wide"
+      ? `You still have calorie space, so choose a fuller meal: ${ideas}.`
+      : `The budget is moderate, so choose a simple meal and avoid random snacks: ${ideas}.`;
+  }
+
   if (context.language === "pl") {
     if (signals.calorieState === "over") {
       return `Teraz najlepszy będzie lekki, białkowy posiłek bez dokładania ciężkich dodatków: ${ideas}.`;
@@ -636,6 +818,37 @@ const getNextMealLine = (
 };
 
 const getCoachSnapshot = (context: AssistantRuntimeContext) => {
+  if (context.language === "en") {
+    const byInsight = {
+      logging_low: `The biggest weekly blocker is logging consistency: you have ${context.coach.daysLogged}/7 full logged days.`,
+      protein_low: `The biggest weekly blocker is protein: average ${formatRounded(
+        context.coach.averageProtein
+      )} g against a ${formatRounded(context.coach.proteinTarget)} g target.`,
+      water_low: `The biggest weekly blocker is water: average ${formatRounded(
+        context.coach.averageWater
+      )} ml against a ${formatRounded(context.coach.waterTarget)} ml target.`,
+      breakfast_skipped: `The biggest weekly blocker is the start of the day: breakfast was skipped ${context.coach.breakfastSkippedDays} times on logged days.`,
+      fiber_low: `The biggest weekly blocker is fiber: average ${formatRounded(
+        context.coach.averageFiber
+      )} g, which is still low.`,
+      calories_high: `The biggest weekly blocker is overshooting calories: average ${formatRounded(
+        context.coach.averageCalories
+      )} kcal against a ${formatRounded(context.coach.calorieTarget)} kcal target.`,
+      calories_low: `The biggest weekly blocker is under-eating: average ${formatRounded(
+        context.coach.averageCalories
+      )} kcal against a ${formatRounded(context.coach.calorieTarget)} kcal target.`,
+      meal_pattern: `The biggest weekly blocker is rhythm: average ${context.coach.averageMeals.toFixed(
+        1
+      )} full meal slots per day.`,
+      weight_trend: `The biggest weekly blocker is the weight trend: change is ${context.coach.weightChange.toFixed(
+        1
+      )} kg.`,
+      on_track: `The week looks stable: score ${context.coach.score}/100.`,
+    } as const;
+
+    return byInsight[context.coachPrimaryInsight];
+  }
+
   if (context.language === "pl") {
     const byInsight = {
       logging_low: `Największy hamulec tygodnia to regularność logowania: masz ${context.coach.daysLogged}/7 pełnych dni z wpisami.`,
@@ -698,6 +911,32 @@ const getCoachSnapshot = (context: AssistantRuntimeContext) => {
 };
 
 const getCoachLever = (context: AssistantRuntimeContext) => {
+  if (context.language === "en") {
+    const byInsight = {
+      logging_low:
+        "Weekly rule: close the log first, then judge the quality of the day.",
+      protein_low:
+        "Weekly rule: anchor the first bigger meal around 25-35 g protein so you are not chasing it at night.",
+      water_low:
+        "Weekly rule: finish two water servings earlier in the day instead of catching up in the evening.",
+      breakfast_skipped:
+        "Weekly rule: set a simple first meal so the day does not start in catch-up mode.",
+      fiber_low: "Weekly rule: add one steady fiber item every day.",
+      calories_high:
+        "Weekly rule: stabilize one meal per day instead of trying to repair the whole day with restriction.",
+      calories_low:
+        "Weekly rule: add one stable meal or snack so the day does not end too low.",
+      meal_pattern:
+        "Weekly rule: close three full meal slots before reaching for random snacks.",
+      weight_trend:
+        "Weekly rule: hold 7 calm days under one goal instead of jumping between strategies.",
+      on_track:
+        "Weekly rule: repeat the same rhythm, because that is what is working best now.",
+    } as const;
+
+    return byInsight[context.coachPrimaryInsight];
+  }
+
   if (context.language === "pl") {
     const byInsight = {
       logging_low:
@@ -756,6 +995,22 @@ const getMotivationLine = (
 ) => {
   const freeDayReady = canUseFreeDay(context.motivation.freeDayLastUsedAt);
   const paidDayReady = canUsePaidDay(context.motivation.paidDayLastUsedMonth);
+
+  if (context.language === "en") {
+    if (signals.openTasks === 0) {
+      return "You have no open tasks left, so the best move is to keep the rhythm tomorrow without adding pressure.";
+    }
+
+    const availability = freeDayReady
+      ? "A free day off is available, but it is better kept as a reserve than used automatically."
+      : paidDayReady
+        ? "The free day off is not open yet, but the monthly paid day off is available as plan B."
+        : "Day off is closed right now, so the best value is closing one short task today.";
+
+    return signals.openTasks === 1
+      ? `You have one open task, so close it right away if you can. ${availability}`
+      : `You have several open tasks, so choose the shortest one and rebuild momentum with one quick completion. ${availability}`;
+  }
 
   if (context.language === "pl") {
     if (signals.openTasks === 0) {
@@ -823,26 +1078,36 @@ const getFollowUps = (
 };
 
 const ukCopy = {
-  guidedBadge: "Контекстний runtime",
-  remoteBadge: "Хмарний runtime",
+  guidedBadge: "Контекстний режим",
+  remoteBadge: "Хмарний режим",
   guidedHonestyNote:
     "Відповідь зібрана з профілю, щоденника, coach-аналітики та мотиваційного стану.",
   remoteHonestyNote:
-    "Відповідь зібрана через хмарний AI runtime з урахуванням поточного контексту та збереженої історії діалогу.",
+    "Відповідь зібрана через хмарний AI з урахуванням поточного контексту та збереженої історії діалогу.",
 };
 
 const plCopy = {
-  guidedBadge: "Runtime kontekstowy",
-  remoteBadge: "Runtime chmurowy",
+  guidedBadge: "Tryb kontekstowy",
+  remoteBadge: "Tryb chmurowy",
   guidedHonestyNote:
     "Ta odpowiedź została przygotowana z profilu, dziennika, analizy coacha i stanu motywacji.",
   remoteHonestyNote:
-    "Ta odpowiedź została przygotowana przez chmurowy runtime AI z użyciem bieżącego kontekstu i zapisanej historii rozmowy.",
+    "Ta odpowiedź została przygotowana przez chmurowy AI z użyciem bieżącego kontekstu i zapisanej historii rozmowy.",
+};
+
+const enCopy = {
+  guidedBadge: "Context mode",
+  remoteBadge: "Cloud mode",
+  guidedHonestyNote:
+    "This answer was built from your profile, diary, coach analysis, and motivation state.",
+  remoteHonestyNote:
+    "This answer was built through cloud AI using current context and saved conversation history.",
 };
 
 const byLanguage = {
   uk: ukCopy,
   pl: plCopy,
+  en: enCopy,
 } as const;
 
 export const buildAssistantWelcomeMessage = (
@@ -851,7 +1116,12 @@ export const buildAssistantWelcomeMessage = (
   const signals = deriveSignals(context);
   const contactLine = getPersonalContactLine(context);
   const text =
-    context.language === "pl"
+    context.language === "en"
+      ? `${context.assistantName} is ready. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+          context,
+          signals
+        )} I can quickly break down your day, protein, weekly focus, and motivation from current data.`
+      : context.language === "pl"
       ? `${context.assistantName} jest gotowy. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
@@ -891,6 +1161,96 @@ export const buildGuidedAssistantReply = ({
 }: AssistantQuestionInput): AssistantRuntimeResponse => {
   const intent = detectIntent({ question, quickQuestionId });
   const signals = deriveSignals(context);
+
+  if (context.language === "en") {
+    const textByIntent = {
+      day_status: [
+        getPersonalContactLine(context),
+        getSnapshotLine(context),
+        getPriorityLine(context, signals),
+        getActionLine(context, signals),
+        signals.loggingState !== "solid"
+          ? "While today's log is light, treat this as direction, not a verdict."
+          : "",
+        getLightHumorLine(context, signals),
+      ]
+        .filter(Boolean)
+        .join(" "),
+      protein_help:
+        signals.proteinState === "hit"
+          ? [
+              `Protein is already close to target: ${formatRounded(
+                context.proteinConsumed
+              )}/${formatRounded(context.proteinTarget)} g.`,
+              signals.calorieState === "tight"
+                ? "The main thing now is protecting the small calorie budget from random snacks."
+                : "The main thing now is keeping the day quality steady without adding empty calories.",
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : [
+              `You still need about ${formatRounded(
+                signals.proteinGap
+              )} g protein to reach a comfortable zone.`,
+              `${getActionLead(
+                context
+              )} the easiest way is one concrete meal, for example ${joinIdeas(
+                context,
+                signals
+              )}.`,
+              signals.calorieState === "tight" || signals.calorieState === "over"
+                ? "Because the calorie budget is already narrow, keep it to lean protein without heavy extras."
+                : "If there is still enough calorie space, close this with a full meal rather than several scattered snacks.",
+              getLightHumorLine(context, signals),
+            ]
+              .filter(Boolean)
+              .join(" "),
+      water_help: [
+        getWaterLine(context, signals),
+        "Water does not replace food, but it often stabilizes appetite and evening decisions.",
+      ]
+        .filter(Boolean)
+        .join(" "),
+      weight_help: [
+        getWeightLine(context, signals),
+        "If the trend is flat, do not cut calories immediately: first check logging accuracy, protein, water, and the weekly check-in.",
+      ]
+        .filter(Boolean)
+        .join(" "),
+      next_meal: [
+        getNextMealLine(context, signals),
+        `Right now you have about ${formatRounded(
+          context.caloriesRemaining
+        )} kcal and ${formatRounded(signals.proteinGap)} g protein left to target.`,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      coach_focus: [
+        `Weekly status: ${context.coach.score}/100.`,
+        getCoachSnapshot(context),
+        getCoachLever(context),
+        signals.loggingState !== "solid"
+          ? "Also: complete today's log so the weekly focus is not based on partial data."
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
+      motivation_focus: [
+        getPersonalContactLine(context),
+        `Motivation now: ${context.motivation.points} points, level ${context.motivation.level}, ${signals.openTasks} open tasks.`,
+        getMotivationLine(context, signals),
+        getLightHumorLine(context, signals),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    } as const;
+
+    return {
+      text: textByIntent[intent],
+      mode: "guided",
+      followUpQuestionIds: getFollowUps(intent, signals),
+    };
+  }
 
   const textByIntent = {
     day_status: [

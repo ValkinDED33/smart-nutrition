@@ -12,11 +12,17 @@ import { I18nextProvider, initReactI18next } from "react-i18next";
 import Cookies from "js-cookie";
 import type { AppLanguage } from "../types/i18n";
 import {
+  getLegacyContentLanguage,
+  i18nDictionaries,
+  isAppLanguage,
+  languageLabels,
+} from "../i18n";
+import {
   getClientStorageItem,
   setClientStorageItem,
 } from "../lib/clientPersistence";
 
-export type Language = AppLanguage;
+export type Language = "uk" | "pl";
 
 const STORAGE_KEY = "smart-nutrition.language";
 const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";
@@ -505,17 +511,22 @@ const pl: Record<keyof typeof uk, string> = {
   "common.mg": "mg",
 };
 
-const dictionaries = { uk, pl } as const;
+const dictionaries = {
+  uk: { ...uk, ...i18nDictionaries.uk },
+  pl: { ...pl, ...i18nDictionaries.pl },
+  en: i18nDictionaries.en,
+} as const;
 
 type TranslationKey = keyof typeof uk;
 
-const createLanguageI18nInstance = (language: Language): I18nInstance => {
+const createLanguageI18nInstance = (language: AppLanguage): I18nInstance => {
   const i18n = createInstance();
 
   void i18n.use(initReactI18next).init({
     resources: {
       uk: { translation: dictionaries.uk },
       pl: { translation: dictionaries.pl },
+      en: { translation: dictionaries.en },
     },
     lng: language,
     fallbackLng: "uk",
@@ -532,7 +543,9 @@ const createLanguageI18nInstance = (language: Language): I18nInstance => {
 
 interface LanguageContextValue {
   language: Language;
-  setLanguage: (language: Language) => void;
+  appLanguage: AppLanguage;
+  languageLabels: Record<AppLanguage, string>;
+  setLanguage: (language: AppLanguage) => void;
   hasExplicitChoice: boolean;
   hasCompletedOnboarding: boolean;
   completeOnboarding: () => void;
@@ -543,23 +556,26 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const savedLanguage = getClientStorageItem(STORAGE_KEY) ?? Cookies.get(LANGUAGE_COOKIE_KEY);
-  const initialLanguage: Language = savedLanguage === "pl" ? "pl" : "uk";
-  const [language, setLanguageState] = useState<Language>(initialLanguage);
+  const initialLanguage: AppLanguage = isAppLanguage(savedLanguage) ? savedLanguage : "uk";
+  const [appLanguage, setLanguageState] = useState<AppLanguage>(initialLanguage);
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(
     () => getClientStorageItem(ONBOARDING_STORAGE_KEY) === "true"
   );
   const [i18n] = useState(() => createLanguageI18nInstance(initialLanguage));
+  const language = getLegacyContentLanguage(appLanguage);
 
   useEffect(() => {
-    if (i18n.language !== language) {
-      void i18n.changeLanguage(language);
+    if (i18n.language !== appLanguage) {
+      void i18n.changeLanguage(appLanguage);
     }
-  }, [i18n, language]);
+  }, [i18n, appLanguage]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
       language,
+      appLanguage,
+      languageLabels,
       setLanguage: (nextLanguage) => {
         setHasExplicitChoice(true);
         setLanguageState(nextLanguage);
@@ -575,9 +591,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       completeOnboarding: () => {
         setHasExplicitChoice(true);
         setHasCompletedOnboarding(true);
-        setClientStorageItem(STORAGE_KEY, language);
+        setClientStorageItem(STORAGE_KEY, appLanguage);
         setClientStorageItem(ONBOARDING_STORAGE_KEY, "true");
-        Cookies.set(LANGUAGE_COOKIE_KEY, language, {
+        Cookies.set(LANGUAGE_COOKIE_KEY, appLanguage, {
           sameSite: "lax",
           expires: 365,
         });
@@ -586,7 +602,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         return String(i18n.t(key, vars));
       },
     }),
-    [hasCompletedOnboarding, hasExplicitChoice, i18n, language]
+    [appLanguage, hasCompletedOnboarding, hasExplicitChoice, i18n, language]
   );
 
   return (

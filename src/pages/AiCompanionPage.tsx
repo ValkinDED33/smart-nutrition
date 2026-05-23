@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
+import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
 import type { RootState } from "../app/store";
 import {
   selectTodayMealItems,
@@ -15,19 +16,19 @@ import type { AssistantRuntimeStatus } from "../shared/types/assistant";
 
 const aiCopy = {
   uk: {
-    title: "AI Companion",
+    title: "AI Помічник",
     subtitle:
       "Ваш Clippy 2.0 підказує по харчуванню, пояснює plateau, тримає контекст дня і дає наступну практичну дію.",
-    runtimeTitle: "AI runtime",
+    runtimeTitle: "Стан AI",
     runtimeSubtitle:
-      "Нижче видно реальний backend-ланцюжок провайдерів і fallback, який використовує асистент.",
-    providerChain: "Ланцюжок fallback",
-    configured: "AI backend готовий",
-    fallbackOn: "Fallback увімкнено",
-    fallbackOff: "Fallback вимкнено",
+      "Нижче видно активних провайдерів і резервний маршрут, який використовує асистент.",
+    providerChain: "Провайдери AI",
+    configured: "Хмарний AI готовий",
+    fallbackOn: "Резерв увімкнено",
+    fallbackOff: "Без резерву",
     cloudUnavailable:
-      "Cloud runtime зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
-    assistantSettings: "Поведінка companion береться з налаштувань профілю.",
+      "Хмарний AI зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
+    assistantSettings: "Поведінка помічника береться з налаштувань профілю.",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
     focusTitle: "Що зробити зараз",
     actionButton: "Відкрити",
@@ -56,19 +57,19 @@ const aiCopy = {
     backup: "Резерв",
   },
   pl: {
-    title: "AI Companion",
+    title: "AI Asystent",
     subtitle:
       "Twój Clippy 2.0 podpowiada w żywieniu, tłumaczy plateau, trzyma kontekst dnia i daje kolejną praktyczną akcję.",
-    runtimeTitle: "AI runtime",
+    runtimeTitle: "Status AI",
     runtimeSubtitle:
-      "Niżej widać realny backendowy łańcuch providerów i fallback, którego używa asystent.",
-    providerChain: "Łańcuch fallback",
-    configured: "AI backend gotowy",
-    fallbackOn: "Fallback aktywny",
-    fallbackOff: "Fallback wyłączony",
+      "Niżej widać aktywnych providerów i trasę zapasową, której używa asystent.",
+    providerChain: "Providerzy AI",
+    configured: "Chmurowy AI gotowy",
+    fallbackOn: "Rezerwa aktywna",
+    fallbackOff: "Bez rezerwy",
     cloudUnavailable:
-      "Cloud runtime jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
-    assistantSettings: "Zachowanie companion bierze się z ustawień profilu.",
+      "Chmurowy AI jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
+    assistantSettings: "Zachowanie asystenta bierze się z ustawień profilu.",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
     focusTitle: "Co zrobić teraz",
     actionButton: "Otwórz",
@@ -136,7 +137,7 @@ const AiCompanionPage = () => {
             id: "first-meal",
             title: copy.noMealTitle,
             body: copy.noMealBody,
-            to: "/meals",
+            to: "/food",
             progress: null,
           },
         ]
@@ -160,7 +161,7 @@ const AiCompanionPage = () => {
             id: "calories-high",
             title: copy.caloriesHighTitle,
             body: copy.caloriesHighBody,
-            to: "/meals",
+            to: "/food",
             progress: Math.min(calorieProgress, 100),
           },
         ]
@@ -170,7 +171,7 @@ const AiCompanionPage = () => {
               id: "calories-low",
               title: copy.caloriesLowTitle,
               body: copy.caloriesLowBody,
-              to: "/meals",
+              to: "/food",
               progress: calorieProgress,
             },
           ]
@@ -414,6 +415,7 @@ const AiCompanionPage = () => {
         </Stack>
       </Paper>
 
+      <NutritionCoachCard />
       <AssistantRuntimeCard />
     </Stack>
   );

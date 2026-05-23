@@ -25,6 +25,7 @@ import {
 import { createAdminController } from "./controllers/admin.controller.mjs";
 import { createAiController } from "./controllers/ai.controller.mjs";
 import { createAiRepository } from "./repositories/aiRepository.mjs";
+import { createAssistantMemoryRepository } from "./repositories/assistantMemoryRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
 import { createMongoAdminRepository } from "./repositories/mongoAdminRepository.mjs";
 import { createMongoAiRepository } from "./repositories/mongoAiRepository.mjs";
@@ -45,6 +46,9 @@ import { createStorage } from "./storage/index.mjs";
 
 const redisCache = await createRedisCache(serverConfig);
 const storage = await createStorage(serverConfig);
+const assistantMemoryRepository = await createAssistantMemoryRepository({
+  dataDir: serverConfig.dataDir,
+});
 const primaryAiRepository = createAiRepository(storage);
 const aiRepository = serverConfig.mongoAiEnabled && serverConfig.databaseProvider !== "mongodb"
   ? await createMongoAiRepository({
@@ -73,6 +77,7 @@ const mangoSmsService = createMangoSmsService({
 });
 const aiService = createAiService({
   aiRepository,
+  assistantMemoryRepository,
   config: serverConfig,
 });
 const authService = createAuthService({

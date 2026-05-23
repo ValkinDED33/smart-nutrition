@@ -118,7 +118,8 @@ const isDietStyle = (value: unknown): value is DietStyle =>
 
 const isAdaptiveMode = (value: unknown): value is AdaptiveMode =>
   value === "automatic" || value === "manual";
-const isAppLanguage = (value: unknown): value is AppLanguage => value === "uk" || value === "pl";
+const isAppLanguage = (value: unknown): value is AppLanguage =>
+  value === "uk" || value === "pl" || value === "en";
 const isAssistantRole = (value: unknown): value is AssistantRole =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value: unknown): value is AssistantTone =>

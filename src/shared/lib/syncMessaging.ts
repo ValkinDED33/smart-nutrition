@@ -20,6 +20,16 @@ const syncMessageCopy = {
     pullFailed: "Nie udalo sie pobrac najnowszego snapshotu z chmury.",
     inactive: "Synchronizacja z chmura nie jest teraz aktywna dla tego konta.",
   },
+  en: {
+    queuedOne: "1 change is waiting for cloud confirmation.",
+    queuedMany: (count: number) =>
+      `${count} changes are waiting for cloud confirmation.`,
+    conflict:
+      "Cloud data changed on another device. Pull the latest cloud version first.",
+    saveFailed: "Could not save the latest changes to the cloud.",
+    pullFailed: "Could not pull the latest cloud snapshot.",
+    inactive: "Cloud sync is not active for this account right now.",
+  },
 } as const;
 
 export const formatQueuedSyncMessage = (pendingChanges: number, language: AppLanguage) =>

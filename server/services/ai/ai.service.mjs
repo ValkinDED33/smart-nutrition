@@ -182,13 +182,131 @@ const countOpenTasks = (motivation) =>
       ).length
     : 0;
 
+const normalizeLanguage = (value) => {
+  if (value === "en") {
+    return "en";
+  }
+
+  return value === "pl" ? "pl" : "uk";
+};
+
+const toScore = (value, fallback) => {
+  const nextValue = Number(value);
+
+  if (!Number.isFinite(nextValue)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(Number(nextValue.toFixed(2)), 0), 1);
+};
+
+const inferAssistantPersonality = (tone) => {
+  if (tone === "focused") {
+    return {
+      warmth: 0.55,
+      humor: 0.15,
+      strictness: 0.75,
+      motivation: 0.82,
+    };
+  }
+
+  if (tone === "playful") {
+    return {
+      warmth: 0.86,
+      humor: 0.72,
+      strictness: 0.22,
+      motivation: 0.9,
+    };
+  }
+
+  return {
+    warmth: 0.9,
+    humor: 0.36,
+    strictness: 0.18,
+    motivation: 0.78,
+  };
+};
+
+const normalizeAssistantPersonality = (value, fallback) => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    warmth: toScore(record.warmth, fallback.warmth),
+    humor: toScore(record.humor, fallback.humor),
+    strictness: toScore(record.strictness, fallback.strictness),
+    motivation: toScore(record.motivation, fallback.motivation),
+  };
+};
+
+const inferCommunicationStyle = (tone) => {
+  if (tone === "focused") {
+    return "strict";
+  }
+
+  if (tone === "playful") {
+    return "energetic";
+  }
+
+  return "supportive";
+};
+
+const toUniqueList = (...sources) =>
+  [
+    ...new Set(
+      sources
+        .flatMap((source) => (Array.isArray(source) ? source : source ? [source] : []))
+        .map((item) => normalizeText(item, { maxLength: 80 }))
+        .filter(Boolean)
+    ),
+  ].slice(0, 8);
+
+const createContextualAssistantMemory = ({ currentUser, context, storedMemory }) => {
+  const proteinGap =
+    context.proteinTarget > 0 && context.proteinConsumed < context.proteinTarget * 0.75;
+  const waterGap =
+    context.waterTargetMl > 0 && context.waterConsumedMl < context.waterTargetMl * 0.55;
+  const calorieOvershoot = context.dailyCalories > 0 && context.caloriesRemaining < -150;
+  const recentProblems = [
+    proteinGap ? "protein_gap" : null,
+    waterGap ? "water_gap" : null,
+    calorieOvershoot ? "calorie_overshoot" : null,
+  ].filter(Boolean);
+
+  return {
+    userId: currentUser.id,
+    assistantName: context.assistantName,
+    personality: normalizeAssistantPersonality(
+      storedMemory?.personality ?? context.assistantPersonality,
+      context.assistantPersonality
+    ),
+    communicationStyle:
+      normalizeText(storedMemory?.communicationStyle, {
+        maxLength: 40,
+        fallback: context.communicationStyle,
+      }) || context.communicationStyle,
+    goals: toUniqueList(storedMemory?.goals, context.goal),
+    struggles: toUniqueList(storedMemory?.struggles),
+    habits: toUniqueList(
+      storedMemory?.habits,
+      context.mealEntriesToday > 0 ? "logs_meals" : null,
+      context.waterConsumedMl > 0 ? "tracks_water" : null
+    ),
+    motivationTriggers: toUniqueList(
+      storedMemory?.motivationTriggers,
+      context.motivation.level > 1 ? "progress_points" : null
+    ),
+    lastMood: normalizeText(storedMemory?.lastMood, { maxLength: 40, fallback: "" }) || null,
+    recentProblems: toUniqueList(storedMemory?.recentProblems, recentProblems),
+  };
+};
+
 const normalizeContext = (payload, currentUser) => {
   const record = isRecord(payload) ? payload : {};
   const coach = isRecord(record.coach) ? record.coach : {};
   const motivation = isRecord(record.motivation) ? record.motivation : {};
 
   return {
-    language: record.language === "pl" ? "pl" : "uk",
+    language: normalizeLanguage(record.language),
     userName: normalizeText(record.userName, {
       maxLength: 60,
       fallback: currentUser.name ?? "User",
@@ -223,6 +341,14 @@ const normalizeContext = (payload, currentUser) => {
       fallback: "gentle",
     }),
     humorEnabled: Boolean(record.humorEnabled),
+    assistantPersonality: normalizeAssistantPersonality(
+      record.assistantPersonality,
+      inferAssistantPersonality(record.assistantTone)
+    ),
+    communicationStyle: normalizeText(record.communicationStyle, {
+      maxLength: 40,
+      fallback: inferCommunicationStyle(record.assistantTone),
+    }),
     personalDetails: normalizePersonalDetails(record.personalDetails),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
@@ -250,6 +376,36 @@ const normalizeContext = (payload, currentUser) => {
       completedTasks: Math.max(Math.round(toFiniteNumber(motivation.completedTasks)), 0),
       openTasks: countOpenTasks(motivation),
     },
+    profile: {
+      goal: normalizeText(record.goal, {
+        maxLength: 24,
+        fallback: currentUser.goal ?? "maintain",
+      }),
+      dietStyle: normalizeText(record.dietStyle, { maxLength: 24, fallback: "balanced" }),
+      latestWeight: toFiniteNumber(record.latestWeight, currentUser.weight ?? 0),
+      weeklyCheckInDue: Boolean(record.weeklyCheckInDue),
+    },
+    nutritionState: {
+      dailyCalories: toFiniteNumber(record.dailyCalories),
+      caloriesConsumed: toFiniteNumber(record.caloriesConsumed),
+      caloriesRemaining: toFiniteNumber(record.caloriesRemaining),
+      proteinConsumed: toFiniteNumber(record.proteinConsumed),
+      proteinTarget: toFiniteNumber(record.proteinTarget),
+      fatConsumed: toFiniteNumber(record.fatConsumed),
+      carbsConsumed: toFiniteNumber(record.carbsConsumed),
+      waterConsumedMl: Math.max(Math.round(toFiniteNumber(record.waterConsumedMl)), 0),
+      waterTargetMl: Math.max(Math.round(toFiniteNumber(record.waterTargetMl)), 0),
+    },
+    behavior: {
+      mealEntriesToday: Math.max(Math.round(toFiniteNumber(record.mealEntriesToday)), 0),
+      waterLoggedToday: Math.max(Math.round(toFiniteNumber(record.waterConsumedMl)), 0) > 0,
+      openMotivationTasks: countOpenTasks(motivation),
+      completedMotivationTasks: Math.max(
+        Math.round(toFiniteNumber(motivation.completedTasks)),
+        0
+      ),
+    },
+    memory: null,
   };
 };
 
@@ -375,7 +531,7 @@ const toProviderFailureSummary = (provider, error) => {
   };
 };
 
-export const createAiService = ({ aiRepository, config }) => {
+export const createAiService = ({ aiRepository, assistantMemoryRepository = null, config }) => {
   const configuredProviders = buildConfiguredProviderList(config);
   const providerRuntimeState = new Map(
     configuredProviders.map((provider) => [provider.id, createProviderState()])
@@ -505,6 +661,29 @@ export const createAiService = ({ aiRepository, config }) => {
       },
       createdAt,
     });
+  };
+
+  const resolveAssistantMemory = async (currentUser, context) => {
+    let storedMemory = null;
+
+    try {
+      storedMemory =
+        (await assistantMemoryRepository?.findByUserId?.(currentUser.id)) ?? null;
+    } catch {
+      storedMemory = null;
+    }
+
+    const nextMemory = createContextualAssistantMemory({
+      currentUser,
+      context,
+      storedMemory,
+    });
+
+    try {
+      return (await assistantMemoryRepository?.upsert?.(nextMemory)) ?? nextMemory;
+    } catch {
+      return nextMemory;
+    }
   };
 
   const rejectAiRequest = async ({
@@ -792,6 +971,7 @@ export const createAiService = ({ aiRepository, config }) => {
 
       const quickQuestionId = normalizeQuickQuestionId(payload?.quickQuestionId);
       const context = normalizeContext(payload?.context, currentUser);
+      context.memory = await resolveAssistantMemory(currentUser, context);
       const history = await aiRepository.listConversationMessages(
         currentUser.id,
         config.assistantMemoryMessageLimit

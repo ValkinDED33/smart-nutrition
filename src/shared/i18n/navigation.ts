@@ -1,0 +1,32 @@
+export const navigation = {
+  uk: {
+    dashboard: "Головна",
+    food: "Їжа",
+    recipes: "Рецепти",
+    community: "Спільнота",
+    progress: "Прогрес",
+    coach: "AI Помічник",
+    profile: "Профіль",
+    admin: "Адмін",
+  },
+  pl: {
+    dashboard: "Główna",
+    food: "Jedzenie",
+    recipes: "Przepisy",
+    community: "Społeczność",
+    progress: "Postępy",
+    coach: "AI Asystent",
+    profile: "Profil",
+    admin: "Admin",
+  },
+  en: {
+    dashboard: "Dashboard",
+    food: "Food",
+    recipes: "Recipes",
+    community: "Community",
+    progress: "Progress",
+    coach: "AI Coach",
+    profile: "Profile",
+    admin: "Admin",
+  },
+} as const;

@@ -196,7 +196,7 @@ const ProfilePage = () => {
   const currentWeight = useSelector(selectCurrentWeight);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
-  const { t, language } = useLanguage();
+  const { t, language, languageLabels } = useLanguage();
   const copy = profileCopy[language];
   const localizedDietLabels = dietStyleLabels[language];
 
@@ -497,9 +497,7 @@ const ProfilePage = () => {
           </Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${copy.dietLabel}: ${localizedDietLabels[dietStyle]}`} />
-            <Chip
-              label={`${copy.languageLabel}: ${languagePreference === "pl" ? "Polski" : "Українська"}`}
-            />
+            <Chip label={`${copy.languageLabel}: ${languageLabels[languagePreference]}`} />
             {allergies.map((item) => (
               <Chip key={`allergy-${item}`} label={`${copy.allergiesLabel}: ${item}`} />
             ))}

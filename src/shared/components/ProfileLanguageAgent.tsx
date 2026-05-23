@@ -5,13 +5,13 @@ import { useLanguage } from "../language";
 
 const ProfileLanguageAgent = () => {
   const profileLanguage = useSelector((state: RootState) => state.profile.languagePreference);
-  const { language, setLanguage } = useLanguage();
+  const { appLanguage, setLanguage } = useLanguage();
 
   useEffect(() => {
-    if (profileLanguage !== language) {
+    if (profileLanguage !== appLanguage) {
       setLanguage(profileLanguage);
     }
-  }, [language, profileLanguage, setLanguage]);
+  }, [appLanguage, profileLanguage, setLanguage]);
 
   return null;
 };

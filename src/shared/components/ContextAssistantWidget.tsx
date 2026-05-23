@@ -238,7 +238,7 @@ export const ContextAssistantWidget = () => {
         id: "calories-high",
         ...copy.caloriesHigh,
         mood: "concerned",
-        onAction: () => navigate("/meals"),
+        onAction: () => navigate("/food"),
       };
     }
 
@@ -270,7 +270,7 @@ export const ContextAssistantWidget = () => {
         id: "calories-low",
         ...copy.caloriesLow,
         mood: "coach",
-        onAction: () => navigate("/meals"),
+        onAction: () => navigate("/food"),
       };
     }
 
@@ -394,7 +394,7 @@ export const ContextAssistantWidget = () => {
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={() => navigate("/ai")}
+                  onClick={() => navigate("/coach")}
                   sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
                 >
                   {copy.openChat}
@@ -414,7 +414,7 @@ export const ContextAssistantWidget = () => {
         <Box
           component="button"
           type="button"
-          onClick={() => navigate("/ai")}
+          onClick={() => navigate("/coach")}
           aria-label={copy.open}
           sx={{
             width: 64,

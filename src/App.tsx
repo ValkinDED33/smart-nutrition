@@ -10,14 +10,15 @@ import Loader from "./shared/components/Loader/PacmanLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
-import LanguageSetupPage from "./pages/LanguageSetupPage";
 
 const loadLandingPage = () => import("./pages/LandingPage");
-const loadHomePage = () => import("./pages/HomePage");
+const loadOnboardingPage = () => import("./pages/OnboardingPage");
+const loadDashboardPage = () => import("./pages/DashboardPage");
+const loadFoodPage = () => import("./pages/FoodPage");
+const loadRecipesPage = () => import("./pages/RecipesPage");
+const loadCommunityPage = () => import("./pages/CommunityPage");
+const loadCoachPage = () => import("./pages/CoachPage");
 const loadProfilePage = () => import("./pages/ProfilePage");
-const loadMealsPage = () => import("./pages/MealsPage");
-const loadWaterPage = () => import("./pages/WaterPage");
-const loadAiCompanionPage = () => import("./pages/AiCompanionPage");
 const loadAdminPage = () => import("./pages/AdminPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
@@ -27,11 +28,13 @@ const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
 
 const LandingPage = lazy(loadLandingPage);
-const HomePage = lazy(loadHomePage);
+const OnboardingPage = lazy(loadOnboardingPage);
+const DashboardPage = lazy(loadDashboardPage);
+const FoodPage = lazy(loadFoodPage);
+const RecipesPage = lazy(loadRecipesPage);
+const CommunityPage = lazy(loadCommunityPage);
+const CoachPage = lazy(loadCoachPage);
 const ProfilePage = lazy(loadProfilePage);
-const MealsPage = lazy(loadMealsPage);
-const WaterPage = lazy(loadWaterPage);
-const AiCompanionPage = lazy(loadAiCompanionPage);
 const AdminPage = lazy(loadAdminPage);
 const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
@@ -44,9 +47,9 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isInitialized, isLoading } = useSelector(selectAuth);
-  const { hasExplicitChoice, hasCompletedOnboarding } = useLanguage();
-  const shouldShowOnboarding = !hasExplicitChoice || !hasCompletedOnboarding;
+  const { isAuthenticated, isInitialized, isLoading } = useSelector(selectAuth);
+  const { hasCompletedOnboarding } = useLanguage();
+  const shouldShowOnboarding = isAuthenticated && !hasCompletedOnboarding;
 
   useEffect(() => {
     dispatch(initializeAuth());
@@ -58,10 +61,11 @@ function App() {
     }
 
     const preloadRoutes = () => {
-      void loadHomePage();
-      void loadMealsPage();
-      void loadWaterPage();
-      void loadAiCompanionPage();
+      void loadDashboardPage();
+      void loadFoodPage();
+      void loadRecipesPage();
+      void loadCommunityPage();
+      void loadCoachPage();
       void loadProgressPage();
       void loadProfilePage();
       void loadAdminPage();
@@ -108,13 +112,9 @@ function App() {
               <Route
                 path="/"
                 element={
-                  shouldShowOnboarding ? (
-                    <LanguageSetupPage />
-                  ) : (
-                    <PublicRoute>
-                      <LandingPage />
-                    </PublicRoute>
-                  )
+                  <PublicRoute>
+                    <LandingPage />
+                  </PublicRoute>
                 }
               />
               <Route
@@ -150,34 +150,50 @@ function App() {
                 }
               />
               <Route
-                path="/home"
+                path="/onboarding/*"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <HomePage />}
+                    <OnboardingPage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/meals"
+                path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <MealsPage />}
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <DashboardPage />}
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/water"
+                path="/food"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <WaterPage />}
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <FoodPage />}
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/ai"
+                path="/recipes"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <AiCompanionPage />}
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <RecipesPage />}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/community"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <CommunityPage />}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/coach"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <CoachPage />}
                   </ProtectedRoute>
                 }
               />
@@ -185,7 +201,7 @@ function App() {
                 path="/progress"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <LanguageSetupPage /> : <ProgressPage />}
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <ProgressPage />}
                   </ProtectedRoute>
                 }
               />
@@ -193,7 +209,7 @@ function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    <ProfilePage />
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <ProfilePage />}
                   </ProtectedRoute>
                 }
               />
@@ -201,15 +217,18 @@ function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute roles={["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"]}>
-                    <AdminPage />
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <AdminPage />}
                   </ProtectedRoute>
                 }
               />
-              <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-              <Route path="/meal-builder" element={<Navigate to="/meals" replace />} />
+              <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/meals" element={<Navigate to="/food" replace />} />
+              <Route path="/water" element={<Navigate to="/progress" replace />} />
+              <Route path="/ai" element={<Navigate to="/coach" replace />} />
+              <Route path="/meal-builder" element={<Navigate to="/food" replace />} />
               <Route
                 path="*"
-                element={shouldShowOnboarding ? <LanguageSetupPage /> : <NotFoundPage />}
+                element={shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <NotFoundPage />}
               />
             </Route>
           </Routes>

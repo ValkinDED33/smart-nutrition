@@ -55,7 +55,7 @@ const isDietStyle = (value) =>
   value === "low_carb" ||
   value === "gluten_free";
 const isAdaptiveMode = (value) => value === "automatic" || value === "manual";
-const isAppLanguage = (value) => value === "uk" || value === "pl";
+const isAppLanguage = (value) => value === "uk" || value === "pl" || value === "en";
 const isAssistantRole = (value) =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value) => value === "gentle" || value === "playful" || value === "focused";

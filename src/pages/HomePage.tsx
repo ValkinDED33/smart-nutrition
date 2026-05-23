@@ -241,14 +241,14 @@ const HomePage = () => {
 
   const nextAction = useMemo(() => {
     if (todayItems.length === 0) {
-      return { label: copy.startMeal, to: "/meals?mode=photo" };
+      return { label: copy.startMeal, to: "/food?mode=photo" };
     }
 
     if (remainingWaterMl > 0 && waterProgress < 70) {
       return { label: copy.addWater, to: null };
     }
 
-    return { label: copy.askAssistant, to: "/ai" };
+    return { label: copy.askAssistant, to: "/coach" };
   }, [
     copy.addWater,
     copy.askAssistant,
@@ -270,7 +270,7 @@ const HomePage = () => {
   }
 
   const handleMealAction = (mode: MealActionMode) => {
-    navigate(`/meals?mode=${mode}`);
+    navigate(`/food?mode=${mode}`);
   };
 
   const handleNextAction = () => {
@@ -350,7 +350,7 @@ const HomePage = () => {
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Button
                 variant="contained"
-                onClick={() => navigate("/meals?mode=search")}
+                onClick={() => navigate("/food?mode=search")}
                 sx={{
                   borderRadius: 999,
                   textTransform: "none",
@@ -381,7 +381,7 @@ const HomePage = () => {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => navigate("/ai")}
+                onClick={() => navigate("/coach")}
                 sx={{
                   borderRadius: 999,
                   textTransform: "none",
@@ -748,7 +748,7 @@ const HomePage = () => {
             </Button>
             <Button
               variant="text"
-              onClick={() => navigate("/ai")}
+              onClick={() => navigate("/coach")}
               sx={{ textTransform: "none", fontWeight: 800 }}
             >
               {copy.askAssistant}

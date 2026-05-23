@@ -336,6 +336,11 @@ const goalLabelByLanguage = {
     maintain: "utrzymanie",
     bulk: "masa",
   },
+  en: {
+    cut: "fat loss",
+    maintain: "maintenance",
+    bulk: "muscle gain",
+  },
 } as const;
 
 const taskCopyByLanguage = {
@@ -365,6 +370,20 @@ const taskCopyByLanguage = {
     reflection: {
       title: "Zamknij dzień krótką refleksją",
       description: "Sprawdź progres i zapisz jedną małą korektę na jutro.",
+    },
+  },
+  en: {
+    "check-in": {
+      title: "Check in with your day",
+      description: "Open your plan and decide what matters most today.",
+    },
+    nutrition: (goal: Goal) => ({
+      title: `Support your goal: ${goalLabelByLanguage.en[goal]}`,
+      description: "Complete one nutrition action that directly supports your current goal.",
+    }),
+    reflection: {
+      title: "Close the day with a short reflection",
+      description: "Review progress and save one tiny adjustment for tomorrow.",
     },
   },
 } as const;
@@ -404,6 +423,24 @@ const achievementCopyByLanguage = {
     "steady-run": {
       title: "Stabilny rytm",
       description: "Zamknij 15 zadań motywacyjnych.",
+    },
+  },
+  en: {
+    "first-step": {
+      title: "First step",
+      description: "Complete your first motivation task.",
+    },
+    momentum: {
+      title: "Momentum",
+      description: "Complete 5 motivation tasks.",
+    },
+    century: {
+      title: "Century",
+      description: "Earn 100 points.",
+    },
+    "steady-run": {
+      title: "Steady rhythm",
+      description: "Complete 15 motivation tasks.",
     },
   },
 } as const;

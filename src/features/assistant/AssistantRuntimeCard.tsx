@@ -59,7 +59,7 @@ const createWelcomeMessage = (
 
 const cardCopy = {
   uk: {
-    title: "Assistant Runtime",
+    title: "AI Помічник",
     subtitle:
       "Швидкий діалоговий блок відповідає по калоріях, білку, coach-аналітиці та мотивації на базі ваших поточних даних.",
     inputLabel: "Поставте швидке питання",
@@ -83,7 +83,7 @@ const cardCopy = {
     error: "Не вдалося отримати відповідь. Спробуйте ще раз за секунду.",
   },
   pl: {
-    title: "Assistant Runtime",
+    title: "AI Asystent",
     subtitle:
       "Szybki blok dialogowy odpowiada na podstawie bieżących kalorii, białka, analizy coacha i motywacji.",
     inputLabel: "Zadaj szybkie pytanie",
@@ -106,6 +106,30 @@ const cardCopy = {
     empty: "Zadaj pytanie albo wybierz jeden z szybkich wariantów.",
     error: "Nie udało się pobrać odpowiedzi. Spróbuj jeszcze raz za chwilę.",
   },
+  en: {
+    title: "AI Coach",
+    subtitle:
+      "A quick chat block answers from your current calories, protein, coach analysis, and motivation state.",
+    inputLabel: "Ask a quick question",
+    inputPlaceholder: "For example: what is the best next move today?",
+    ask: "Ask",
+    thinking: "Thinking...",
+    loadingHistory: "Loading previous conversation...",
+    resetConversation: "New conversation",
+    quickTitle: "Quick questions",
+    followUpTitle: "What else to ask",
+    quickQuestions: {
+      day_status: "How does today look?",
+      protein_help: "What about protein?",
+      water_help: "What about water?",
+      weight_help: "What about weight?",
+      next_meal: "What should I eat now?",
+      coach_focus: "What is the coach focus?",
+      motivation_focus: "What about motivation?",
+    } satisfies Record<AssistantQuickQuestionId, string>,
+    empty: "Ask a question or choose one of the quick options.",
+    error: "Could not get an answer. Try again in a moment.",
+  },
 } as const;
 
 export const AssistantRuntimeCard = () => {
@@ -116,8 +140,8 @@ export const AssistantRuntimeCard = () => {
   const todayItems = useSelector(selectTodayMealItems);
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
   const macroTargets = useSelector(selectDailyMacroTargets);
-  const { language } = useLanguage();
-  const copy = cardCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = cardCopy[appLanguage];
 
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
@@ -150,7 +174,7 @@ export const AssistantRuntimeCard = () => {
   const context = useMemo<AssistantRuntimeContext>(
     () =>
       createAssistantRuntimeContext({
-        language,
+        language: appLanguage,
         user,
         profile,
         water,
@@ -168,7 +192,7 @@ export const AssistantRuntimeCard = () => {
     [
       coach,
       coachPrimaryInsight,
-      language,
+      appLanguage,
       macroTargets,
       profile,
       todayItems.length,

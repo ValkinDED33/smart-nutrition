@@ -7,11 +7,28 @@ export const normalizeText = (value, { maxLength = 600, fallback = "" } = {}) =>
   return nextValue ? nextValue.slice(0, maxLength) : fallback;
 };
 
+const assistantLanguageLabels = {
+  uk: "Ukrainian",
+  pl: "Polish",
+  en: "English",
+};
+
+const formatList = (value) =>
+  Array.isArray(value) && value.length > 0 ? value.join(", ") : "none";
+
+const formatPersonality = (personality) =>
+  personality
+    ? `warmth ${personality.warmth}, humor ${personality.humor}, strictness ${personality.strictness}, motivation ${personality.motivation}`
+    : "warmth 0.9, humor 0.4, strictness 0.2, motivation 0.8";
+
 const buildSystemPrompt = (context) =>
   [
     `You are ${context.assistantName}, the Smart Nutrition assistant.`,
-    `Reply in ${context.language === "pl" ? "Polish" : "Ukrainian"}.`,
-    "Be warm, concise, and practical.",
+    `Reply in ${assistantLanguageLabels[context.language] ?? "Ukrainian"}.`,
+    `Communication style: ${context.communicationStyle}. Personality sliders: ${formatPersonality(
+      context.assistantPersonality
+    )}.`,
+    "Be concise, practical, and emotionally aware.",
     "Use only the current nutrition context and the conversation memory provided below.",
     "Do not invent calories, macros, diagnoses, or certainty.",
     "Use relationship, support, and pet context only to adapt tone and practical contact style.",
@@ -25,6 +42,26 @@ const buildContextBlock = (context) =>
     "Current Smart Nutrition context:",
     `- User: ${context.userName}`,
     `- Goal: ${context.goal}`,
+    `- Diet style: ${context.profile?.dietStyle ?? "balanced"}`,
+    `- Structured profile: goal ${context.profile?.goal ?? context.goal}, latest weight ${Number(
+      context.profile?.latestWeight ?? context.latestWeight
+    ).toFixed(1)} kg, weekly check-in due ${
+      context.profile?.weeklyCheckInDue ? "yes" : "no"
+    }`,
+    `- Nutrition state: ${Math.round(
+      context.nutritionState?.caloriesConsumed ?? context.caloriesConsumed
+    )} / ${Math.round(
+      context.nutritionState?.dailyCalories ?? context.dailyCalories
+    )} kcal, protein ${Math.round(
+      context.nutritionState?.proteinConsumed ?? context.proteinConsumed
+    )} / ${Math.round(
+      context.nutritionState?.proteinTarget ?? context.proteinTarget
+    )} g, water ${Math.round(
+      context.nutritionState?.waterConsumedMl ?? context.waterConsumedMl
+    )} / ${Math.round(context.nutritionState?.waterTargetMl ?? context.waterTargetMl)} ml`,
+    `- Behavior: ${context.behavior?.mealEntriesToday ?? context.mealEntriesToday} meal entries today, water logged ${
+      context.behavior?.waterLoggedToday ? "yes" : "no"
+    }, ${context.behavior?.openMotivationTasks ?? context.motivation.openTasks} open motivation tasks`,
     `- Daily calories target: ${Math.round(context.dailyCalories)} kcal`,
     `- Calories consumed today: ${Math.round(context.caloriesConsumed)} kcal`,
     `- Calories remaining today: ${Math.round(context.caloriesRemaining)} kcal`,
@@ -38,6 +75,16 @@ const buildContextBlock = (context) =>
     `- Weekly body check-in due: ${context.weeklyCheckInDue ? "yes" : "no"}`,
     `- Assistant role/tone: ${context.assistantRole} / ${context.assistantTone}`,
     `- Humor enabled: ${context.humorEnabled ? "yes" : "no"}`,
+    `- Assistant personality: ${formatPersonality(context.assistantPersonality)}`,
+    `- Communication style: ${context.communicationStyle}`,
+    `- Assistant memory goals: ${formatList(context.memory?.goals)}`,
+    `- Assistant memory struggles: ${formatList(context.memory?.struggles)}`,
+    `- Assistant memory habits: ${formatList(context.memory?.habits)}`,
+    `- Assistant memory motivation triggers: ${formatList(
+      context.memory?.motivationTriggers
+    )}`,
+    `- Assistant memory last mood: ${context.memory?.lastMood ?? "unknown"}`,
+    `- Assistant memory recent problems: ${formatList(context.memory?.recentProblems)}`,
     `- Blood group: ${context.personalDetails?.bloodGroup ?? "unknown"}`,
     `- Eye color: ${context.personalDetails?.eyeColor ?? "unknown"}`,
     `- Relationship status: ${context.personalDetails?.relationshipStatus ?? "prefer_not"}`,

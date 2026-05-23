@@ -2,12 +2,14 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Bot,
-  Droplets,
+  BookOpen,
+  Globe2,
   Home,
   ShieldCheck,
   TrendingUp,
   Utensils,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import {
   AppBar,
@@ -17,10 +19,11 @@ import {
   Box,
   Button,
   Container,
+  FormControl,
+  MenuItem,
   Paper,
+  Select,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   Toolbar,
   Tooltip,
   Typography,
@@ -39,21 +42,23 @@ import { setProfileLanguage } from "../../features/profile/profileSlice";
 import { useAppColorMode } from "../theme/colorMode";
 
 const mobileTabs = [
-  { value: "/home", label: "Home", icon: Home },
-  { value: "/meals", label: "Meals", icon: Utensils },
-  { value: "/water", label: "Water", icon: Droplets },
-  { value: "/progress", label: "Progress", icon: TrendingUp },
-  { value: "/profile", label: "Profile", icon: UserRound },
-  { value: "/ai", label: "AI", icon: Bot },
+  { value: "/dashboard", labelKey: "navigation.dashboard", icon: Home },
+  { value: "/food", labelKey: "navigation.food", icon: Utensils },
+  { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
+  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
+  { value: "/progress", labelKey: "navigation.progress", icon: TrendingUp },
+  { value: "/community", labelKey: "navigation.community", icon: UsersRound },
+  { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
 ];
 
 const desktopTabs = [
-  { value: "/home", label: "Dashboard" },
-  { value: "/meals", label: "Food" },
-  { value: "/water", label: "Water" },
-  { value: "/progress", label: "Progress" },
-  { value: "/profile", label: "Profile" },
-  { value: "/ai", label: "AI Coach" },
+  { value: "/dashboard", labelKey: "navigation.dashboard" },
+  { value: "/food", labelKey: "navigation.food" },
+  { value: "/recipes", labelKey: "navigation.recipes" },
+  { value: "/coach", labelKey: "navigation.coach" },
+  { value: "/community", labelKey: "navigation.community" },
+  { value: "/progress", labelKey: "navigation.progress" },
+  { value: "/profile", labelKey: "navigation.profile" },
 ];
 
 const Layout = () => {
@@ -61,7 +66,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { language, setLanguage, t } = useLanguage();
+  const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
 
   const handleLogout = async () => {
@@ -73,16 +78,16 @@ const Layout = () => {
   };
 
   const activeTab =
-    mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? "/home";
+    mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? "/dashboard";
   const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
   const canAccessAdmin =
     user &&
     ["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(user.role);
   const visibleDesktopTabs = canAccessAdmin
-    ? [...desktopTabs, { value: "/admin", label: "Admin" }]
+    ? [...desktopTabs, { value: "/admin", labelKey: "navigation.admin" }]
     : desktopTabs;
   const visibleMobileTabs = canAccessAdmin
-    ? [...mobileTabs, { value: "/admin", label: "Admin", icon: ShieldCheck }]
+    ? [...mobileTabs, { value: "/admin", labelKey: "navigation.admin", icon: ShieldCheck }]
     : mobileTabs;
   const activeMobileTab =
     visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? activeTab;
@@ -131,7 +136,7 @@ const Layout = () => {
               <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
                 <Typography
                   component={Link}
-                  to={user ? "/home" : "/"}
+                  to={user ? "/dashboard" : "/"}
                   sx={{
                     display: "inline-block",
                     textDecoration: "none",
@@ -193,7 +198,7 @@ const Layout = () => {
                         },
                       }}
                     >
-                      {tab.label}
+                      {t(tab.labelKey)}
                     </Button>
                   );
                 })}
@@ -230,33 +235,51 @@ const Layout = () => {
                 </Button>
               </Tooltip>
 
-              <ToggleButtonGroup
-                exclusive
+              <FormControl
                 size="small"
-                value={language}
-                onChange={(_, nextLanguage) => {
-                  if (nextLanguage) {
-                    setLanguage(nextLanguage);
-                    dispatch(setProfileLanguage(nextLanguage));
-                  }
-                }}
                 sx={{
-                  bgcolor: isDarkMode
-                    ? "rgba(15, 23, 42, 0.9)"
-                    : "rgba(255,255,255,0.9)",
-                  borderRadius: 999,
-                  "& .MuiToggleButton-root": {
-                    border: 0,
-                    px: 1.2,
-                    py: 0.4,
-                    textTransform: "none",
-                    fontWeight: 700,
+                  minWidth: { xs: 58, sm: 162 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 999,
+                    bgcolor: isDarkMode
+                      ? "rgba(15, 23, 42, 0.9)"
+                      : "rgba(255,255,255,0.9)",
+                  },
+                  "& .MuiSelect-select": {
+                    py: 0.7,
+                    pl: 1.2,
+                    pr: { xs: "28px !important", sm: "32px !important" },
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.8,
+                    fontWeight: 800,
                   },
                 }}
               >
-                <ToggleButton value="uk">UA</ToggleButton>
-                <ToggleButton value="pl">PL</ToggleButton>
-              </ToggleButtonGroup>
+                <Select
+                  value={appLanguage}
+                  aria-label={t("language.label")}
+                  renderValue={(value) => (
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <Globe2 size={17} aria-hidden="true" />
+                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                        {languageLabels[value]}
+                      </Box>
+                    </Stack>
+                  )}
+                  onChange={(event) => {
+                    const nextLanguage = event.target.value;
+                    if (nextLanguage === "uk" || nextLanguage === "pl" || nextLanguage === "en") {
+                      setLanguage(nextLanguage);
+                      dispatch(setProfileLanguage(nextLanguage));
+                    }
+                  }}
+                >
+                  <MenuItem value="uk">{languageLabels.uk}</MenuItem>
+                  <MenuItem value="pl">{languageLabels.pl}</MenuItem>
+                  <MenuItem value="en">{languageLabels.en}</MenuItem>
+                </Select>
+              </FormControl>
 
               {user ? (
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -370,7 +393,7 @@ const Layout = () => {
                 <BottomNavigationAction
                   key={tab.value}
                   value={tab.value}
-                  label={tab.label}
+                  label={t(tab.labelKey)}
                   icon={<Icon size={21} strokeWidth={2.2} aria-hidden="true" />}
                   sx={{
                     px: 0.4,
