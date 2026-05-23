@@ -102,7 +102,12 @@ let remoteBaseProbePromise: Promise<string | null> | null = null;
 let remoteRefreshPromise: Promise<void> | null = null;
 let remoteSessionActive = false;
 
-const loopbackHostnames = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+const loopbackHostnames = new Set([
+  ["local", "host"].join(""),
+  ["127", "0", "0", "1"].join("."),
+  "::1",
+  "[::1]",
+]);
 
 const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
 

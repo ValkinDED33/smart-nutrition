@@ -19,8 +19,8 @@ import type { MealType } from "../../shared/types/meal";
 import type { Product } from "../../shared/types/product";
 import {
   getFeaturedProducts,
-  searchLocalProducts,
-} from "../../shared/lib/mockProducts";
+  searchCatalogProducts,
+} from "../../shared/lib/productCatalog";
 import { searchProducts } from "../../shared/api/products";
 import { useLanguage } from "../../shared/language";
 import { selectPersonalBarcodeProducts } from "./selectors";
@@ -53,7 +53,7 @@ const suggestionCopy = {
     results: "Знайдено",
     duplicateTitle: "Асистент бази",
     duplicateAdvice:
-      "это блюдо уже есть. Если создать новое, ты добавил дубликат; лучше использовать готовое.",
+      "Ця страва вже є. Якщо створити нову, з'явиться дублікат; краще використати готовий запис.",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
   pl: {
@@ -66,7 +66,7 @@ const suggestionCopy = {
     results: "Znaleziono",
     duplicateTitle: "Asystent bazy",
     duplicateAdvice:
-      "это блюдо уже есть. Jeśli utworzysz nowe, dodasz duplikat; lepiej użyć gotowego wpisu.",
+      "Ten wpis już istnieje. Jeśli utworzysz nowy, dodasz duplikat; lepiej użyć gotowego wpisu.",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
 } as const;
@@ -133,7 +133,7 @@ export const ProductSearch = ({ mealType }: Props) => {
       return [];
     }
 
-    return searchLocalProducts(normalizedQuery, 12).filter((product) =>
+    return searchCatalogProducts(normalizedQuery, 12).filter((product) =>
       productMatchesPreferences(product, preferences)
     );
   }, [normalizedQuery, preferences]);

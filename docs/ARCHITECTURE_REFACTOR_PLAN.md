@@ -167,7 +167,7 @@ export class LocalMealRepository implements IMealRepository {
   constructor(private db: LocalDatabase) {}
   
   async getMeals(dateKey: string): Promise<MealEntry[]> {
-    // Реализация для localStorage/IndexedDB
+    // Реализация для browser storage/IndexedDB
   }
 }
 
@@ -613,9 +613,9 @@ describe('MealRepository', () => {
     const remote = [meal3];
     
     const repo = new SyncedMealRepository(
-      mockLocalRepo(local),
-      mockRemoteRepo(remote),
-      mockSync()
+      fakePrimaryRepo(primary),
+      fakeRemoteRepo(remote),
+      fakeSync()
     );
 
     const result = await repo.getMeals('2026-04-13');

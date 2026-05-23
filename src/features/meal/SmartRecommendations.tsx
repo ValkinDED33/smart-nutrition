@@ -5,7 +5,7 @@ import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, getLocalDateKey } from "../../shared/lib/date";
-import { mockProducts } from "../../shared/lib/mockProducts";
+import { productCatalog } from "../../shared/lib/productCatalog";
 import {
   pickPreferredProteinProducts,
   productMatchesPreferences,
@@ -170,9 +170,9 @@ export const SmartRecommendations = () => {
       excludedIngredients: profile.excludedIngredients,
       adaptiveMode: profile.adaptiveMode,
     };
-    const preferredProteinProducts = pickPreferredProteinProducts(mockProducts, preferences, 4);
+    const preferredProteinProducts = pickPreferredProteinProducts(productCatalog, preferences, 4);
     const proteinFoods = preferredProteinProducts.map((product) => product.name).join(", ");
-    const fiberProducts = mockProducts
+    const fiberProducts = productCatalog
       .filter((product) => productMatchesPreferences(product, preferences))
       .filter((product) => product.nutrients.fiber >= 3)
       .sort((left, right) => right.nutrients.fiber - left.nutrients.fiber);
@@ -256,7 +256,7 @@ export const SmartRecommendations = () => {
     }
 
     if (profile.goal === "bulk" && todayTotals.calories < dailyCalories - 250) {
-      const denseSnack = mockProducts
+      const denseSnack = productCatalog
         .filter((product) => productMatchesPreferences(product, preferences))
         .sort(
           (left, right) =>

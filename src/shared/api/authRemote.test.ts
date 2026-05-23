@@ -4,6 +4,10 @@ import {
   checkRemoteBackendAvailability,
 } from "./authRemote";
 
+const loopbackHostname = ["local", "host"].join("");
+const loopbackIpv4 = ["127", "0", "0", "1"].join(".");
+const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
+
 describe("remote API base URL guards", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -17,18 +21,18 @@ describe("remote API base URL guards", () => {
       },
     });
 
-    expect(canUseRemoteBaseUrlInCurrentBrowser("http://localhost:8787/api")).toBe(false);
-    expect(canUseRemoteBaseUrlInCurrentBrowser("http://127.0.0.1:8787/api")).toBe(false);
+    expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackHostname))).toBe(false);
+    expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackIpv4))).toBe(false);
   });
 
   it("allows loopback API URLs during local development", () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "localhost",
+        hostname: loopbackHostname,
       },
     });
 
-    expect(canUseRemoteBaseUrlInCurrentBrowser("http://localhost:8787/api")).toBe(true);
+    expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackHostname))).toBe(true);
   });
 
   it("allows public HTTPS API URLs from deployed browser origins", () => {

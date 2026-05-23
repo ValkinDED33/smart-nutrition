@@ -47,7 +47,6 @@ const uk = {
   "landing.card3.title": "Дві мови",
   "landing.card3.body":
     "Інтерфейс миттєво перемикається між українською та польською без перезавантаження.",
-  "auth.demoHint": "Демо-акаунт: ivan@mail.com / StrongPass123!",
   "auth.loginTitle": "Безпечний вхід",
   "auth.loginSubtitle":
     "Увійдіть у свій профіль, щоб переглянути план харчування та прогрес.",
@@ -178,7 +177,7 @@ const uk = {
   "weekly.empty": "Поки замало даних для тижневої аналітики.",
   "productSearch.title": "Пошук продуктів",
   "productSearch.subtitle":
-    "Шукайте за назвою, брендом і популярними варіантами написання. Результати поєднують локальний каталог і онлайн-бази.",
+    "Шукайте за назвою, брендом і популярними варіантами написання. Результати поєднують каталог продуктів і онлайн-бази.",
   "productSearch.placeholder":
     "Наприклад: сир, м'ясо, помідор, яйце, йогурт, рис",
   "productSearch.clear": "Очистити",
@@ -290,7 +289,6 @@ const pl: Record<keyof typeof uk, string> = {
   "landing.card3.title": "Dwa języki",
   "landing.card3.body":
     "Interfejs przełącza się między ukraińskim a polskim natychmiast, bez odświeżania.",
-  "auth.demoHint": "Konto demo: ivan@mail.com / StrongPass123!",
   "auth.loginTitle": "Bezpieczne logowanie",
   "auth.loginSubtitle":
     "Zaloguj się do swojego profilu, aby zobaczyć plan żywienia i postępy.",
@@ -420,7 +418,7 @@ const pl: Record<keyof typeof uk, string> = {
   "weekly.empty": "Za mało danych do analityki tygodniowej.",
   "productSearch.title": "Wyszukiwanie produktów",
   "productSearch.subtitle":
-    "Szukaj po nazwie, marce i popularnych aliasach. Wyniki łączą katalog lokalny i bazy online.",
+    "Szukaj po nazwie, marce i popularnych aliasach. Wyniki łączą katalog produktów i bazy online.",
   "productSearch.placeholder":
     "Np. ser, mięso, pomidor, jajko, jogurt, ryż",
   "productSearch.clear": "Wyczyść",

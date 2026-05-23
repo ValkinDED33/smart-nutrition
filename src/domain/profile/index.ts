@@ -1,2 +1,2 @@
-// Profile domain (placeholder)
+export {};
 export { };

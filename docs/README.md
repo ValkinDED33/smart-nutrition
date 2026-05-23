@@ -99,7 +99,7 @@ Vercel hosts only the static frontend for this project. Registration, login, syn
 password reset, admin tools, and AI endpoints still need the Node backend running
 on a public URL.
 
-Set the frontend build variable on Vercel to the public backend API, not localhost:
+Set the frontend build variable on Vercel to the public backend API, not loopback URL:
 
 ```env
 VITE_SMART_NUTRITION_API_BASE_URL=https://smart-nutrition-sk5r.onrender.com/api
@@ -116,7 +116,7 @@ SMART_NUTRITION_AUTH_COOKIE_SECURE=true
 ```
 
 Never deploy a frontend build with `VITE_SMART_NUTRITION_API_BASE_URL` pointing
-to `localhost`; from a deployed site that means the visitor's own computer.
+to `loopback URL`; from a deployed site that means the visitor's own computer.
 
 ## Scripts
 
@@ -139,8 +139,8 @@ npm run test
 - When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/ai`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
 - The assistant backend now supports a provider chain with automatic fallback between Groq, Google AI Studio, OpenRouter, and other OpenAI-compatible runtimes when multiple credentials are configured.
 - `/api/health` now exposes per-provider assistant runtime status, including failure cooldown state for flaky providers.
-- If the backend on `http://localhost:8787` is available, the app prefers remote auth and cloud snapshots automatically.
-- If the backend on `http://localhost:8787` is available, the app prefers remote auth and syncs profile/meal state through dedicated backend endpoints automatically.
+- If the backend on `https://smart-nutrition-sk5r.onrender.com` is available, the app prefers remote auth and cloud snapshots automatically.
+- If the backend on `https://smart-nutrition-sk5r.onrender.com` is available, the app prefers remote auth and syncs profile/meal state through dedicated backend endpoints automatically.
 - Remote mode now keeps a cached cloud snapshot/meta locally, so session restore and cloud status stay responsive even through short backend interruptions.
 - The server now validates environment configuration on startup and refuses weak default JWT secrets in `production`.
 - Remote accounts now support `log out all sessions` in addition to current-session logout.

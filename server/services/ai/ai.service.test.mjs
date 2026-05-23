@@ -341,7 +341,7 @@ describe("ai.service", () => {
             apiPath: "/chat/completions",
             timeoutMs: 15_000,
             temperature: 0.4,
-            httpReferer: "http://localhost",
+            httpReferer: "https://smart-nutrition-topaz.vercel.app",
             title: "Smart Nutrition",
           },
           {
@@ -368,7 +368,9 @@ describe("ai.service", () => {
     expect(result.text).toContain("Groq fallback");
     expect(result.providerId).toBe("groq");
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0][1].headers["HTTP-Referer"]).toBe("http://localhost");
+    expect(fetchMock.mock.calls[0][1].headers["HTTP-Referer"]).toBe(
+      "https://smart-nutrition-topaz.vercel.app"
+    );
     expect(fetchMock.mock.calls[0][1].headers["X-Title"]).toBe("Smart Nutrition");
     expect(runtimeStatus.providers[0].lastFailureAt).not.toBeNull();
     expect(runtimeStatus.providers[0].coolingDown).toBe(true);

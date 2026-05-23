@@ -112,7 +112,7 @@ SMART_NUTRITION_ASSISTANT_PROVIDER=openrouter
 SMART_NUTRITION_ASSISTANT_BASE_URL=https://openrouter.ai/api/v1
 SMART_NUTRITION_ASSISTANT_PROVIDER_ORDER=openrouter,groq,google
 
-SMART_NUTRITION_OPENROUTER_HTTP_REFERER=http://localhost:5173
+SMART_NUTRITION_OPENROUTER_HTTP_REFERER=https://smart-nutrition-topaz.vercel.app
 SMART_NUTRITION_OPENROUTER_TITLE=Smart Nutrition
 
 SMART_NUTRITION_GROQ_API_KEY=gsk_...
@@ -143,12 +143,12 @@ npm run server:dev
 
 PowerShell:
 ```powershell
-Invoke-RestMethod http://localhost:8787/api/health | Select-Object -ExpandProperty ai
+Invoke-RestMethod https://smart-nutrition-sk5r.onrender.com/api/health | Select-Object -ExpandProperty ai
 ```
 
 `curl`:
 ```bash
-curl http://localhost:8787/api/health
+curl https://smart-nutrition-sk5r.onrender.com/api/health
 ```
 
 When the cloud runtime is configured correctly:
@@ -168,7 +168,7 @@ When the cloud runtime is configured correctly:
 ## What Stays Local
 
 - photo draft analysis
-- all offline/local preview assistant behavior
+- all offline/context fallback assistant behavior
 - the app remains usable without any cloud key
 
 ## Troubleshooting

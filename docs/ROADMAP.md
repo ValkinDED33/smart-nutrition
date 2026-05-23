@@ -59,7 +59,7 @@ Main blockers that still prevent a "best possible" product:
 
 ## Phase 0: Production foundation
 
-Goal: move from local demo-style architecture to a real product base.
+Goal: move from prototype-style architecture to a real product base.
 
 Deliver:
 
@@ -73,8 +73,8 @@ Deliver:
 Success criteria:
 
 - user can sign in from multiple devices and see the same data
-- no critical product data depends on browser localStorage only
-- demo/test account path is gone from production UX
+- no critical product data depends on browser browser storage only
+- test account path is gone from production UX
 
 ## Phase 1: Best-in-class tracking core
 

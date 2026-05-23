@@ -236,7 +236,10 @@ const readSingleHeader = (value) =>
 
 const getRequestUrl = (request) => {
   try {
-    return new URL(request.url ?? "/", `http://${request.headers.host || "localhost"}`);
+    return new URL(
+      request.url ?? "/",
+      `https://${request.headers.host || "smart-nutrition.internal"}`
+    );
   } catch {
     return null;
   }
@@ -473,9 +476,12 @@ const broadcastStateMeta = async (user, stateService) => {
 const createDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
 
 const normalizeWaterGoal = (waterState) =>
-  Math.max(
-    Math.round(Number(waterState?.dailyWaterGoal ?? waterState?.dailyTargetMl ?? 2000) || 2000),
-    250
+  Math.min(
+    Math.max(
+      Math.round(Number(waterState?.dailyWaterGoal ?? waterState?.dailyTargetMl ?? 2000) || 2000),
+      2000
+    ),
+    3000
   );
 
 const normalizeWaterApiState = (waterState, dateKey = createDateKey()) => {
@@ -1431,7 +1437,7 @@ server.listen(serverConfig.port, () => {
     console.warn(`[config warning] ${warning}`);
   });
 
-  console.log(`Smart Nutrition API listening on http://localhost:${serverConfig.port}`);
+  console.log(`Smart Nutrition API listening on port ${serverConfig.port}`);
 
   if (serverConfig.serveStatic) {
     console.log(

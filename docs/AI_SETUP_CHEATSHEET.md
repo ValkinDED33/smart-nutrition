@@ -87,7 +87,7 @@ npm run server:dev
 
 PowerShell:
 ```powershell
-Invoke-RestMethod http://localhost:8787/api/health | Select-Object -ExpandProperty ai
+Invoke-RestMethod https://smart-nutrition-sk5r.onrender.com/api/health | Select-Object -ExpandProperty ai
 ```
 
 Expected:
@@ -107,5 +107,5 @@ Expected:
 
 ## Honest Note
 
-- local preview assistant still works without cloud keys
+- context fallback assistant still works without cloud keys
 - this build does not turn photo uploads into AI vision analysis

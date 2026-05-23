@@ -2,7 +2,7 @@ import type { Product } from "../types/product";
 import { createEmptyNutrients } from "./nutrients";
 import { fuzzySearchProducts } from "./fuzzySearch";
 
-interface LocalProductRecord {
+interface CatalogProductRecord {
   product: Product;
   aliases: string[];
   featured?: boolean;
@@ -169,7 +169,7 @@ const createProduct = ({
   barcode?: string;
   unit?: Product["unit"];
   facts?: Product["facts"];
-}): LocalProductRecord => ({
+}): CatalogProductRecord => ({
   featured,
   aliases,
   product: {
@@ -191,7 +191,7 @@ const createProduct = ({
   },
 });
 
-const catalog: LocalProductRecord[] = [
+const catalog: CatalogProductRecord[] = [
   createProduct({
     id: "manual-oats",
     name: "Oats",
@@ -908,7 +908,7 @@ const localizedAliasesById: Record<string, string[]> = {
   "manual-protein-bar": ["протеїновий батончик", "протеиновый батончик", "baton proteinowy"],
 };
 
-const getSearchCandidates = (record: LocalProductRecord) =>
+const getSearchCandidates = (record: CatalogProductRecord) =>
   dedupeNormalizedValues(
     [
       record.product.name,
@@ -944,7 +944,7 @@ const createTokenGroups = (tokens: string[]) =>
   );
 
 const recordMatchesIntentToken = (
-  record: LocalProductRecord,
+  record: CatalogProductRecord,
   candidates: string[],
   haystackTokens: string[],
   token: string
@@ -979,7 +979,7 @@ const recordMatchesIntentToken = (
   return false;
 };
 
-export const mockProducts: Product[] = catalog.map((record) => record.product);
+export const productCatalog: Product[] = catalog.map((record) => record.product);
 
 export const getFeaturedProducts = (limit = 12): Product[] =>
   catalog
@@ -987,10 +987,10 @@ export const getFeaturedProducts = (limit = 12): Product[] =>
     .slice(0, limit)
     .map((record) => record.product);
 
-export const findLocalProductByBarcode = (barcode: string): Product | null =>
+export const findCatalogProductByBarcode = (barcode: string): Product | null =>
   catalog.find((record) => record.product.barcode === barcode)?.product ?? null;
 
-export const searchLocalProducts = (query: string, limit = 18): Product[] => {
+export const searchCatalogProducts = (query: string, limit = 18): Product[] => {
   const normalizedQuery = normalizeSearchText(query);
   if (!normalizedQuery) {
     return getFeaturedProducts(limit);

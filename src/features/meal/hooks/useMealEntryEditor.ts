@@ -6,7 +6,7 @@ import { productMatchesPreferences } from "../../../shared/lib/preferences";
 import {
   getProductPortionPresets,
 } from "../../../shared/lib/productPortions";
-import { searchLocalProducts } from "../../../shared/lib/mockProducts";
+import { searchCatalogProducts } from "../../../shared/lib/productCatalog";
 import type { MealEntry, MealType } from "../../../shared/types/meal";
 import type { Product } from "../../../shared/types/product";
 import { removeProduct, updateMealEntry } from "../mealSlice";
@@ -85,7 +85,7 @@ export const useMealEntryEditor = (entry: MealEntry) => {
       return [];
     }
 
-    return searchLocalProducts(normalizedSearchQuery, 10).filter((product) =>
+    return searchCatalogProducts(normalizedSearchQuery, 10).filter((product) =>
       productMatchesPreferences(product, preferences)
     );
   }, [normalizedSearchQuery, preferences]);

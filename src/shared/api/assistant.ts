@@ -6,7 +6,7 @@ import type {
   AssistantRuntimeStatus,
   AssistantRuntimeStatusProvider,
 } from "../types/assistant";
-import { buildLocalAssistantReply } from "../lib/assistant/assistantRules";
+import { buildGuidedAssistantReply } from "../lib/assistant/assistantRules";
 import {
   assistantQuickQuestionIds,
   isAssistantQuickQuestionId,
@@ -56,7 +56,7 @@ const parseLocalHistory = (): AssistantConversationMessage[] => {
               id: item.id,
               role: item.role,
               text: item.text.trim(),
-              mode: item.mode === "remote-cloud" ? "remote-cloud" : "local-preview",
+              mode: item.mode === "remote-cloud" ? "remote-cloud" : "guided",
               followUpQuestionIds: Array.isArray(item.followUpQuestionIds)
                 ? item.followUpQuestionIds.filter(isAssistantQuickQuestionId)
                 : undefined,
@@ -104,7 +104,7 @@ const appendLocalHistory = ({
       id: createLocalMessageId("assistant-local"),
       role: "assistant",
       text: response.text,
-      mode: "local-preview",
+      mode: "guided",
       followUpQuestionIds: response.followUpQuestionIds,
       createdAt: new Date(Date.now() + 1).toISOString(),
     },
@@ -187,7 +187,7 @@ export const askAssistantQuestion = async (
   input: AssistantQuestionInput
 ): Promise<AssistantRuntimeResponse> => {
   const buildFallback = () => {
-    const response = buildLocalAssistantReply(input);
+    const response = buildGuidedAssistantReply(input);
     appendLocalHistory({
       question: input.question,
       response,

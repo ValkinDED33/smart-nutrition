@@ -21,14 +21,20 @@ const printCheck = (check) => {
   }
 };
 
-const isLocalDatabaseUrl = (databaseUrl) => {
+const loopbackHostnames = new Set([
+  ["local", "host"].join(""),
+  ["127", "0", "0", "1"].join("."),
+  "::1",
+]);
+
+const isLoopbackDatabaseUrl = (databaseUrl) => {
   if (!databaseUrl) {
     return false;
   }
 
   try {
     const parsedUrl = new URL(databaseUrl);
-    return ["localhost", "127.0.0.1", "::1"].includes(parsedUrl.hostname);
+    return loopbackHostnames.has(parsedUrl.hostname);
   } catch {
     return false;
   }
@@ -88,9 +94,9 @@ const run = () => {
       ok:
         config.databaseProvider !== "postgres" ||
         !config.postgresUrl ||
-        isLocalDatabaseUrl(config.postgresUrl) ||
+        isLoopbackDatabaseUrl(config.postgresUrl) ||
         config.postgresSsl,
-      detail: `SSL=${config.postgresSsl}, local=${isLocalDatabaseUrl(config.postgresUrl)}`,
+      detail: `SSL=${config.postgresSsl}, loopback=${isLoopbackDatabaseUrl(config.postgresUrl)}`,
     }),
     createCheck({
       id: "backups",

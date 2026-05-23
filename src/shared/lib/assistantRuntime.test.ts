@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildAssistantWelcomeMessage,
-  buildLocalAssistantReply,
+  buildGuidedAssistantReply,
 } from "./assistantRuntime";
 import type { AssistantRuntimeContext } from "../types/assistant";
 
@@ -91,13 +91,13 @@ describe("assistantRuntime", () => {
   it("builds a localized welcome message", () => {
     const message = buildAssistantWelcomeMessage(createContext());
 
-    expect(message.mode).toBe("local-preview");
+    expect(message.mode).toBe("guided");
     expect(message.text).toContain("Nova");
     expect(message.text).toContain("540");
   });
 
   it("answers protein questions from current context", () => {
-    const response = buildLocalAssistantReply({
+    const response = buildGuidedAssistantReply({
       question: "How is my protein today?",
       context: createContext(),
       quickQuestionId: "protein_help",
@@ -108,7 +108,7 @@ describe("assistantRuntime", () => {
   });
 
   it("routes motivation questions to motivation context", () => {
-    const response = buildLocalAssistantReply({
+    const response = buildGuidedAssistantReply({
       question: "How are my points and tasks?",
       context: createContext(),
     });
@@ -118,12 +118,12 @@ describe("assistantRuntime", () => {
   });
 
   it("answers hydration and next-meal questions from current context", () => {
-    const water = buildLocalAssistantReply({
+    const water = buildGuidedAssistantReply({
       question: "Co z wodą?",
       context: createContext(),
       quickQuestionId: "water_help",
     });
-    const nextMeal = buildLocalAssistantReply({
+    const nextMeal = buildGuidedAssistantReply({
       question: "Co zjeść teraz?",
       context: createContext(),
       quickQuestionId: "next_meal",

@@ -823,19 +823,19 @@ const getFollowUps = (
 };
 
 const ukCopy = {
-  previewBadge: "Локальний runtime preview",
+  guidedBadge: "Контекстний runtime",
   remoteBadge: "Хмарний runtime",
-  honestyNote:
-    "Відповідь зібрана локально з профілю, щоденника, coach-аналітики та мотиваційного стану.",
+  guidedHonestyNote:
+    "Відповідь зібрана з профілю, щоденника, coach-аналітики та мотиваційного стану.",
   remoteHonestyNote:
     "Відповідь зібрана через хмарний AI runtime з урахуванням поточного контексту та збереженої історії діалогу.",
 };
 
 const plCopy = {
-  previewBadge: "Lokalny runtime preview",
+  guidedBadge: "Runtime kontekstowy",
   remoteBadge: "Runtime chmurowy",
-  honestyNote:
-    "Ta odpowiedź została złożona lokalnie z profilu, dziennika, analizy coacha i stanu motywacji.",
+  guidedHonestyNote:
+    "Ta odpowiedź została przygotowana z profilu, dziennika, analizy coacha i stanu motywacji.",
   remoteHonestyNote:
     "Ta odpowiedź została przygotowana przez chmurowy runtime AI z użyciem bieżącego kontekstu i zapisanej historii rozmowy.",
 };
@@ -863,7 +863,7 @@ export const buildAssistantWelcomeMessage = (
 
   return {
     text,
-    mode: "local-preview",
+    mode: "guided",
     followUpQuestionIds: getFollowUps("day_status", signals),
   };
 };
@@ -874,7 +874,7 @@ export const getAssistantModeLabel = (
 ) =>
   mode === "remote-cloud"
     ? byLanguage[context.language].remoteBadge
-    : byLanguage[context.language].previewBadge;
+    : byLanguage[context.language].guidedBadge;
 
 export const getAssistantHonestyNote = (
   context: AssistantRuntimeContext,
@@ -882,9 +882,9 @@ export const getAssistantHonestyNote = (
 ) =>
   mode === "remote-cloud"
     ? byLanguage[context.language].remoteHonestyNote
-    : byLanguage[context.language].honestyNote;
+    : byLanguage[context.language].guidedHonestyNote;
 
-export const buildLocalAssistantReply = ({
+export const buildGuidedAssistantReply = ({
   question,
   context,
   quickQuestionId,
@@ -1013,7 +1013,7 @@ export const buildLocalAssistantReply = ({
 
   return {
     text: textByIntent[intent],
-    mode: "local-preview",
+    mode: "guided",
     followUpQuestionIds: getFollowUps(intent, signals),
   };
 };

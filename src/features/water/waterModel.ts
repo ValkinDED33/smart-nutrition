@@ -38,7 +38,8 @@ export interface WaterGlassSlot {
   fill: number;
 }
 
-const MIN_DAILY_TARGET_ML = 250;
+const MIN_DAILY_TARGET_ML = 2000;
+const MAX_DAILY_TARGET_ML = 3000;
 const MIN_GLASS_SIZE_ML = 100;
 const DEFAULT_DAILY_TARGET_ML = 2000;
 const DEFAULT_GLASS_SIZE_ML = 250;
@@ -71,8 +72,14 @@ export const getWaterDayKeyOffset = (daysAgo: number, baseDate = new Date()) =>
 
 export const formatWaterLiters = (valueMl: number) => (valueMl / 1000).toFixed(1);
 
+export const normalizeDailyWaterGoal = (value: unknown) =>
+  Math.min(
+    Math.max(Math.round(toPositiveNumber(value, DEFAULT_DAILY_TARGET_ML)), MIN_DAILY_TARGET_ML),
+    MAX_DAILY_TARGET_ML
+  );
+
 export const calculateRecommendedWaterTarget = (weightKg: number) =>
-  Math.max(Math.round(weightKg * 33), MIN_DAILY_TARGET_ML);
+  normalizeDailyWaterGoal(Math.round(weightKg * 33));
 
 export const createWaterHistoryEntry = (
   date: string,
@@ -82,7 +89,7 @@ export const createWaterHistoryEntry = (
 ): WaterHistoryEntry => ({
   date,
   consumedMl: Math.max(Math.round(consumedMl), 0),
-  targetMl: Math.max(Math.round(targetMl), MIN_DAILY_TARGET_ML),
+  targetMl: normalizeDailyWaterGoal(targetMl),
   updatedAt,
 });
 
@@ -110,7 +117,7 @@ export const normalizeWaterHistoryEntry = (
   return createWaterHistoryEntry(
     date,
     clampToZero(record.consumedMl),
-    toPositiveNumber(record.targetMl, DEFAULT_DAILY_TARGET_ML),
+    normalizeDailyWaterGoal(record.targetMl),
     typeof record.updatedAt === "string" ? record.updatedAt : new Date().toISOString()
   );
 };
@@ -192,9 +199,8 @@ export const normalizeWaterState = (value: unknown): WaterState => {
   const legacyDailyTargetMl = record.dailyTargetMl;
 
   const state: WaterState = {
-    dailyWaterGoal: toPositiveNumber(
+    dailyWaterGoal: normalizeDailyWaterGoal(
       record.dailyWaterGoal ?? legacyDailyTargetMl,
-      DEFAULT_DAILY_TARGET_ML
     ),
     consumedMl: clampToZero(record.consumedMl),
     glassSizeMl: toPositiveNumber(record.glassSizeMl, DEFAULT_GLASS_SIZE_ML),

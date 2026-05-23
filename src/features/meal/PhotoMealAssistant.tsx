@@ -130,7 +130,7 @@ const photoCopy = {
     analysisError:
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
     manualFallback:
-      "Хмарний аналіз недоступний, тому ми підготували локальну чернетку за типом прийому їжі та вашими вподобаннями.",
+      "Хмарний аналіз недоступний, тому ми підготували чернетку за типом прийому їжі та вашими вподобаннями.",
     cloudDraft:
       "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
     previewAlt: "Прев'ю фото страви",
@@ -169,7 +169,7 @@ const photoCopy = {
     analysisError:
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
     manualFallback:
-      "Analiza chmurowa jest teraz niedostępna, więc przygotowaliśmy lokalny szkic na podstawie typu posiłku i Twoich preferencji.",
+      "Analiza chmurowa jest teraz niedostępna, więc przygotowaliśmy szkic na podstawie typu posiłku i Twoich preferencji.",
     cloudDraft:
       "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
     previewAlt: "Podgląd zdjęcia posiłku",

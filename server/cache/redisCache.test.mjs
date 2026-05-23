@@ -57,12 +57,12 @@ describe("createRedisCache", () => {
     redisMocks.connect.mockRejectedValueOnce(new Error("connection refused"));
 
     const cache = await createRedisCache({
-      redisUrl: "redis://localhost:6379",
+      redisUrl: "redis://redis.internal:6379",
       redisConnectTimeoutMs: 10,
     });
 
     expect(Redis).toHaveBeenCalledWith(
-      "redis://localhost:6379",
+      "redis://redis.internal:6379",
       expect.objectContaining({
         lazyConnect: true,
         enableOfflineQueue: false,
@@ -83,7 +83,7 @@ describe("createRedisCache", () => {
     redisMocks.get.mockResolvedValueOnce(JSON.stringify({ ok: true }));
 
     const cache = await createRedisCache({
-      redisUrl: "redis://localhost:6379",
+      redisUrl: "redis://redis.internal:6379",
       redisKeyPrefix: "smart-test",
     });
 

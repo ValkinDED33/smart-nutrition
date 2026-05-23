@@ -10,7 +10,7 @@ import {
 } from "./assistantGateway";
 import {
   buildAssistantWelcomeMessage,
-  buildLocalAssistantReply,
+  buildGuidedAssistantReply,
   getAssistantHonestyNote,
   getAssistantModeLabel,
 } from "./assistantRules";
@@ -32,7 +32,7 @@ export interface AssistantRuntime {
   loadHistory: () => Promise<AssistantChatMessage[]>;
   clearHistory: () => Promise<boolean>;
   buildWelcomeMessage: typeof buildAssistantWelcomeMessage;
-  buildLocalReply: (input: AssistantQuestionInput) => ReturnType<typeof buildLocalAssistantReply>;
+  buildGuidedReply: (input: AssistantQuestionInput) => ReturnType<typeof buildGuidedAssistantReply>;
   getModeLabel: typeof getAssistantModeLabel;
   getHonestyNote: typeof getAssistantHonestyNote;
 }
@@ -46,7 +46,7 @@ export const createAssistantRuntime = ({
   loadHistory: () => memory.loadHistory(),
   clearHistory: () => memory.clearHistory(),
   buildWelcomeMessage: buildAssistantWelcomeMessage,
-  buildLocalReply: buildLocalAssistantReply,
+  buildGuidedReply: buildGuidedAssistantReply,
   getModeLabel: getAssistantModeLabel,
   getHonestyNote: getAssistantHonestyNote,
 });
@@ -56,7 +56,7 @@ export const assistantRuntime = createAssistantRuntime();
 export {
   askAssistantRuntimeQuestion,
   buildAssistantWelcomeMessage,
-  buildLocalAssistantReply,
+  buildGuidedAssistantReply,
   clearAssistantRuntimeMemory,
   createAssistantRuntimeContext,
   getAssistantHonestyNote,

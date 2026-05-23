@@ -6,10 +6,10 @@ import {
 } from "../lib/clientPersistence";
 import { fetchOpenFoodByBarcode } from "./openFood";
 import {
-  findLocalProductByBarcode,
+  findCatalogProductByBarcode,
   getFeaturedProducts,
-  searchLocalProducts,
-} from "../lib/mockProducts";
+  searchCatalogProducts,
+} from "../lib/productCatalog";
 import { createEmptyNutrients, type NutrientUnit } from "../lib/nutrients";
 
 type RawProduct = Record<string, unknown>;
@@ -359,9 +359,9 @@ export const fetchProductByBarcode = async (
     return null;
   }
 
-  const localProduct = findLocalProductByBarcode(normalizedBarcode);
-  if (localProduct) {
-    return localProduct;
+  const catalogProduct = findCatalogProductByBarcode(normalizedBarcode);
+  if (catalogProduct) {
+    return catalogProduct;
   }
 
   const cachedProduct = getCachedBarcodeProduct(normalizedBarcode);
@@ -391,16 +391,16 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
     return getFeaturedProducts(12);
   }
 
-  const localResults = searchLocalProducts(normalizedQuery, 12);
+  const catalogResults = searchCatalogProducts(normalizedQuery, 12);
   if (normalizedQuery.length < 2) {
-    return localResults;
+    return catalogResults;
   }
 
   const cacheKey = normalizedQuery.toLowerCase();
   const cachedResults = getCachedSearchResults(cacheKey);
 
   if (cachedResults) {
-    return uniqueProducts([...localResults, ...cachedResults]).slice(0, 18);
+    return uniqueProducts([...catalogResults, ...cachedResults]).slice(0, 18);
   }
 
   try {
@@ -422,11 +422,11 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
           .filter((product: Product) => product.name !== "Unknown product")
       : [];
 
-    const mergedResults = uniqueProducts([...localResults, ...offResults]).slice(0, 18);
+    const mergedResults = uniqueProducts([...catalogResults, ...offResults]).slice(0, 18);
     cacheSearchResults(cacheKey, mergedResults);
     return mergedResults;
   } catch (error) {
     console.error("Product search failed:", error);
-    return localResults;
+    return catalogResults;
   }
 };

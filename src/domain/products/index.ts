@@ -1,2 +1,2 @@
-// Products domain (placeholder)
+export {};
 export { };

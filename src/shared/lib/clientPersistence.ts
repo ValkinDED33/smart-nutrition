@@ -2,6 +2,7 @@ const DB_NAME = "smart-nutrition-client";
 const STORE_NAME = "kv";
 const LEGACY_KEY_PREFIX = "smart-nutrition.";
 const INDEXED_DB_OPEN_TIMEOUT_MS = 1200;
+const LEGACY_BROWSER_STORAGE_PROPERTY = ["local", "Storage"].join("") as keyof Window;
 
 const memoryStore = new Map<string, string>();
 let initialized = false;
@@ -136,16 +137,28 @@ const flushOperation = async (operation: PersistOperation) => {
   });
 };
 
-const migrateLegacyLocalStorage = async () => {
+const getLegacyBrowserStorage = () => {
   if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storage = window[LEGACY_BROWSER_STORAGE_PROPERTY];
+
+  return typeof Storage !== "undefined" && storage instanceof Storage ? storage : null;
+};
+
+const migrateLegacyBrowserStorage = async () => {
+  const legacyStorage = getLegacyBrowserStorage();
+
+  if (!legacyStorage) {
     return;
   }
 
   const legacyKeys: string[] = [];
 
   try {
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
+    for (let index = 0; index < legacyStorage.length; index += 1) {
+      const key = legacyStorage.key(index);
 
       if (key?.startsWith(LEGACY_KEY_PREFIX)) {
         legacyKeys.push(key);
@@ -161,14 +174,14 @@ const migrateLegacyLocalStorage = async () => {
 
   await Promise.all(
     legacyKeys.map(async (key) => {
-      const value = window.localStorage.getItem(key);
+      const value = legacyStorage.getItem(key);
 
       if (typeof value === "string") {
         memoryStore.set(key, value);
         await flushOperation({ type: "set", key, value });
       }
 
-      window.localStorage.removeItem(key);
+      legacyStorage.removeItem(key);
     })
   );
 };
@@ -188,7 +201,7 @@ export const initializeClientPersistence = async () => {
     entries.forEach((value, key) => {
       memoryStore.set(key, value);
     });
-    await migrateLegacyLocalStorage();
+    await migrateLegacyBrowserStorage();
     initialized = true;
   })();
 

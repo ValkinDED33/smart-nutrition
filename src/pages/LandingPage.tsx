@@ -28,7 +28,7 @@ const landingCopy = {
       "Слідкуйте за їжею, водою, звичками і прогресом разом із живим AI-компаньйоном, який пояснює день простою мовою.",
     primary: "Почати безкоштовно",
     secondary: "Спробувати AI",
-    navDemo: "Демо продукту",
+    navOverview: "Огляд продукту",
     proof: ["AI-компаньйон", "Вода і білок", "Community", "PWA"],
     heroStats: [
       { label: "Калорії", value: "1 420 / 2 050", progress: 69, color: "#0f766e" },
@@ -100,7 +100,7 @@ const landingCopy = {
       "Śledź jedzenie, wodę, nawyki i progres razem z żywym AI companionem, który tłumaczy dzień prostym językiem.",
     primary: "Zacznij za darmo",
     secondary: "Wypróbuj AI",
-    navDemo: "Demo produktu",
+    navOverview: "Przegląd produktu",
     proof: ["AI pupil", "Woda i białko", "Community", "PWA"],
     heroStats: [
       { label: "Kalorie", value: "1 420 / 2 050", progress: 69, color: "#0f766e" },
@@ -244,7 +244,7 @@ const HeroDashboard = ({
           <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 900 }}>
             Smart Nutrition
           </Typography>
-          <Typography sx={{ fontSize: 22, fontWeight: 900 }}>{copy.navDemo}</Typography>
+          <Typography sx={{ fontSize: 22, fontWeight: 900 }}>{copy.navOverview}</Typography>
         </Box>
         <Chip label="AI online" color="success" variant="outlined" />
       </Stack>
@@ -306,7 +306,7 @@ const LandingMascot = ({
 
   return (
     <Paper
-      id="ai-demo"
+      id="ai-overview"
       elevation={0}
       sx={{
         p: 2,
@@ -440,7 +440,7 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
         </Button>
         <Button
           component="a"
-          href="#ai-demo"
+          href="#ai-overview"
           variant="outlined"
           size="large"
           sx={{ px: 3.2, py: 1.4, bgcolor: "rgba(255,255,255,0.72)" }}

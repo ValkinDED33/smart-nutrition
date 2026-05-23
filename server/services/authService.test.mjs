@@ -50,7 +50,7 @@ const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = 
     passwordIterations: 180000,
     passwordResetTokenTtlMs: 3600000,
     isProduction: false,
-    appBaseUrl: "http://localhost:5173",
+    appBaseUrl: "https://app.smartnutrition.test",
     ...configOverrides,
   };
 

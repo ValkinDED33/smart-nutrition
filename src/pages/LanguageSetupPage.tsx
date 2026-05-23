@@ -31,7 +31,7 @@ const onboardingCopy = {
       "Платформа підлаштована під режим однієї руки: без довгих сторінок, з хмарною синхронізацією і швидкими діями.",
     authTitle: "Готово. Переходимо до безпечного входу",
     authBody:
-      "Токени не живуть у localStorage: сесія працює через backend, а дані підтягнуться після входу та синхронізації.",
+      "Сесія працює через backend, а дані підтягнуться після входу та синхронізації.",
     changeLanguage: "Змінити мову",
     continue: "Далі",
     back: "Назад",
@@ -68,7 +68,7 @@ const onboardingCopy = {
       "Platforma jest zbudowana pod obsługę jedną ręką: bez długich stron, z synchronizacją w chmurze i szybkimi akcjami.",
     authTitle: "Gotowe. Przechodzimy do bezpiecznego logowania",
     authBody:
-      "Tokeny nie są trzymane w localStorage: sesja działa przez backend, a dane wrócą po zalogowaniu i synchronizacji.",
+      "Sesja działa przez backend, a dane wrócą po zalogowaniu i synchronizacji.",
     changeLanguage: "Zmień język",
     continue: "Dalej",
     back: "Wstecz",

@@ -1,6 +1,6 @@
 export {
   buildAssistantWelcomeMessage,
-  buildLocalAssistantReply,
+  buildGuidedAssistantReply,
   getAssistantHonestyNote,
   getAssistantModeLabel,
 } from "./assistant/assistantRules";

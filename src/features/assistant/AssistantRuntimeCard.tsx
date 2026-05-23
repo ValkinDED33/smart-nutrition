@@ -295,7 +295,7 @@ export const AssistantRuntimeCard = () => {
   const latestAssistantMessage = [...messages]
     .reverse()
     .find((message) => message.role === "assistant");
-  const latestAssistantMode = latestAssistantMessage?.mode ?? "local-preview";
+  const latestAssistantMode = latestAssistantMessage?.mode ?? "guided";
   const honestyNote = getAssistantHonestyNote(context, latestAssistantMode);
   const followUpQuestionIds =
     latestAssistantMessage?.followUpQuestionIds ??

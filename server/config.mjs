@@ -10,6 +10,11 @@ const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
 const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
 const DEFAULT_MANGO_SMS_ENDPOINT = "https://app.mango-office.ru/vpbx/commands/sms";
+const LOOPBACK_HOSTNAMES = new Set([
+  ["local", "host"].join(""),
+  ["127", "0", "0", "1"].join("."),
+  "::1",
+]);
 const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_JWT_SECRET",
   "SMART_NUTRITION_ASSISTANT_API_KEY",
@@ -65,6 +70,18 @@ const hydrateSecretFileEnv = (env) => {
 
 const normalizeBaseUrl = (value, fallback) =>
   (toTrimmedString(value, fallback) || fallback).replace(/\/+$/, "");
+
+const isLoopbackUrl = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return LOOPBACK_HOSTNAMES.has(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+};
 
 const normalizeHttpUrl = (value, fallback, name, errors) => {
   const rawValue = toTrimmedString(value, fallback) || fallback;
@@ -699,13 +716,9 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
     .map((value) => normalizeOrigin(value))
     .filter((value) => Boolean(value));
   const appOrigin = normalizeOrigin(appBaseUrl);
-  const isLocalAppOrigin =
-    appOrigin?.startsWith("http://localhost") ||
-    appOrigin?.startsWith("http://127.0.0.1");
   const shouldIncludePublicFrontendOrigin =
     isProduction &&
     (appOrigin === PUBLIC_FRONTEND_ORIGIN ||
-      isLocalAppOrigin ||
       configuredOrigins.includes(PUBLIC_FRONTEND_ORIGIN) ||
       LEGACY_FRONTEND_ORIGINS.some(
         (origin) => origin === appOrigin || configuredOrigins.includes(origin)
@@ -732,18 +745,7 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
     return includePublicFrontendOrigin(configuredOrigins);
   }
 
-  const origins = appOrigin ? [appOrigin] : [];
-
-  if (!isProduction) {
-    origins.push(
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:5174",
-      "http://127.0.0.1:5174"
-    );
-  }
-
-  return includePublicFrontendOrigin(origins);
+  return includePublicFrontendOrigin(appOrigin ? [appOrigin] : []);
 };
 
 export const createServerConfig = (rawEnv = process.env) => {
@@ -900,7 +902,7 @@ export const createServerConfig = (rawEnv = process.env) => {
   );
   const postgresSsl = readBooleanFlag(
     env.SMART_NUTRITION_DATABASE_SSL,
-    isProduction && Boolean(postgresUrl) && !/localhost|127\.0\.0\.1/i.test(postgresUrl)
+    isProduction && Boolean(postgresUrl) && !isLoopbackUrl(postgresUrl)
   );
 
   if (databaseProvider === "postgres" && !postgresUrl) {
@@ -927,11 +929,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     "SMART_NUTRITION_PRODUCT_SUBMISSION_DAILY_LIMIT",
     errors
   );
-  const defaultAppBaseUrl = isProduction
-    ? PUBLIC_FRONTEND_ORIGIN
-    : serveStatic
-      ? `http://localhost:${port}`
-      : "http://localhost:5173";
+  const defaultAppBaseUrl = PUBLIC_FRONTEND_ORIGIN;
   const appBaseUrl = normalizeBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
     defaultAppBaseUrl

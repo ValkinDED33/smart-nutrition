@@ -3,6 +3,7 @@ import {
   calculateRecommendedWaterTarget,
   createInitialWaterState,
   createWaterDayKey,
+  normalizeDailyWaterGoal,
   normalizeWaterReminders,
   normalizeWaterState,
   syncTodayWaterState,
@@ -33,7 +34,7 @@ const waterSlice = createSlice({
 
     setWaterTarget(state, action: PayloadAction<number>) {
       syncTodayWaterState(state);
-      state.dailyWaterGoal = Math.max(Math.round(action.payload), 250);
+      state.dailyWaterGoal = normalizeDailyWaterGoal(action.payload);
       state.consumedMl = Math.min(state.consumedMl, state.dailyWaterGoal + state.glassSizeMl * 4);
       state.targetMode = "manual";
       upsertWaterHistory(state);

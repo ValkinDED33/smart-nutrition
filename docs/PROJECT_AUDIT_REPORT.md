@@ -6,7 +6,7 @@
 
 Проект уже не MVP-заготовка. Сейчас это рабочий nutrition tracker с:
 
-- локальным и backend-режимом
+- browser-only и backend-режимом
 - регистрацией и логином
 - `access + refresh` API-сессиями
 - профилем, калориями, БЖУ и дневником питания
@@ -46,7 +46,7 @@
 - логин
 - logout
 - хранение пользователя
-- локальный auth provider
+- browser-only auth provider
 - backend auth provider
 - `access + refresh` flow для remote режима
 - хеширование паролей
@@ -122,7 +122,7 @@
 
 Есть:
 
-- локальный каталог
+- каталог продуктов
 - ручное добавление продукта
 - хранение калорий и нутриентов
 - сохранённые и недавние продукты
@@ -170,8 +170,8 @@
 - быстрый поиск
 - live search
 - autocomplete suggestions
-- локальный search cache
-- merge локальных данных с Open Food Facts
+- browser search cache
+- merge данных каталога с Open Food Facts
 
 Нет:
 
@@ -187,7 +187,7 @@
 - камера
 - ручной ввод кода
 - Open Food Facts lookup
-- fallback на локальные и ручные данные
+- fallback на данные каталога и ручной ввод
 - barcode cache
 
 Нет:
@@ -246,7 +246,7 @@
 
 Есть:
 
-- локальный nutrition coach
+- контекстный nutrition coach
 - weekly scoring
 - insights
 - next actions

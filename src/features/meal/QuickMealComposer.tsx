@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { addProduct } from "./mealSlice";
 import { selectFavoriteProductIds } from "./selectors";
-import { mockProducts } from "../../shared/lib/mockProducts";
+import { productCatalog } from "../../shared/lib/productCatalog";
 import type { MealType } from "../../shared/types/meal";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
@@ -31,7 +31,7 @@ interface ComposerRow {
   quantity: number | "";
 }
 
-const createRow = (productId = mockProducts[0]?.id ?? ""): ComposerRow => ({
+const createRow = (productId = productCatalog[0]?.id ?? ""): ComposerRow => ({
   id:
     globalThis.crypto?.randomUUID?.() ??
     `composer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -49,7 +49,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
-  const availableProducts = mockProducts.filter((product) =>
+  const availableProducts = productCatalog.filter((product) =>
     productMatchesPreferences(product, preferences)
   );
   const [rows, setRows] = useState<ComposerRow[]>([

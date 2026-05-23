@@ -351,7 +351,7 @@ describe("createServerConfig", () => {
   it("allows MongoDB database and pool overrides", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
-      SMART_NUTRITION_MONGODB_URI: "mongodb://localhost:27017/uri_db",
+      SMART_NUTRITION_MONGODB_URI: "mongodb://mongo.internal:27017/uri_db",
       SMART_NUTRITION_MONGODB_DB: "override_db",
       SMART_NUTRITION_MONGODB_CONNECT_RETRIES: "5",
       SMART_NUTRITION_MONGODB_CONNECT_RETRY_DELAY_MS: "250",
@@ -374,7 +374,7 @@ describe("createServerConfig", () => {
     expect(() =>
       createServerConfig({
         SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
-        SMART_NUTRITION_MONGO_URI: "mongodb://localhost:27017/smart_nutrition",
+        SMART_NUTRITION_MONGO_URI: "mongodb://mongo.internal:27017/smart_nutrition",
         SMART_NUTRITION_MONGODB_MIN_POOL_SIZE: "10",
         SMART_NUTRITION_MONGODB_MAX_POOL_SIZE: "2",
       })
@@ -417,19 +417,13 @@ describe("createServerConfig", () => {
     ]);
   });
 
-  it("allows local Vite origins in development", () => {
+  it("uses the public frontend origin as the development default", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
       SMART_NUTRITION_SERVE_STATIC: "true",
       SMART_NUTRITION_API_PORT: "8787",
     });
 
-    expect(config.allowedCorsOrigins).toEqual(
-      expect.arrayContaining([
-        "http://localhost:8787",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-      ])
-    );
+    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-topaz.vercel.app"]);
   });
 });

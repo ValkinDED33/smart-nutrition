@@ -32,7 +32,7 @@ const editorCopy = {
     cancel: "Скасувати",
     save: "Зберегти",
     quickPortions: "Швидкі порції",
-    noMatches: "Не знайдено відповідних локальних або віддалених продуктів.",
+    noMatches: "Не знайдено відповідних продуктів у каталозі або онлайн-базах.",
   },
   pl: {
     edit: "Edytuj",
@@ -45,7 +45,7 @@ const editorCopy = {
     cancel: "Anuluj",
     save: "Zapisz",
     quickPortions: "Szybkie porcje",
-    noMatches: "Nie znaleziono pasujących produktów lokalnych ani zdalnych.",
+    noMatches: "Nie znaleziono pasujących produktów w katalogu ani bazach online.",
   },
 } as const;
 

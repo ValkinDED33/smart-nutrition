@@ -26,7 +26,7 @@ const aiCopy = {
     fallbackOn: "Fallback увімкнено",
     fallbackOff: "Fallback вимкнено",
     cloudUnavailable:
-      "Cloud runtime зараз недоступний. Сторінка залишає локальний preview, але бойовий AI не активний.",
+      "Cloud runtime зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
     assistantSettings: "Поведінка companion береться з налаштувань профілю.",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
     focusTitle: "Що зробити зараз",
@@ -67,7 +67,7 @@ const aiCopy = {
     fallbackOn: "Fallback aktywny",
     fallbackOff: "Fallback wyłączony",
     cloudUnavailable:
-      "Cloud runtime jest teraz niedostępny. Strona zostawia local preview, ale produkcyjny AI nie jest aktywny.",
+      "Cloud runtime jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
     assistantSettings: "Zachowanie companion bierze się z ustawień profilu.",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
     focusTitle: "Co zrobić teraz",

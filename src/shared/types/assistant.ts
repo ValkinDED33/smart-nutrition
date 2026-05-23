@@ -12,7 +12,7 @@ import type {
 } from "../lib/nutritionCoach";
 import type { Goal } from "./user";
 
-export type AssistantRuntimeMode = "local-preview" | "remote-cloud";
+export type AssistantRuntimeMode = "guided" | "remote-cloud";
 
 export type AssistantQuickQuestionId =
   | "day_status"

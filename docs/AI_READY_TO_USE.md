@@ -4,7 +4,7 @@ The repo is ready for an optional cloud assistant runtime.
 
 What already works:
 
-- local preview assistant without any paid API keys
+- context fallback assistant without any paid API keys
 - backend route `POST /api/ai`
 - backend history routes on `GET` / `DELETE /api/ai`
 - short conversation memory stored in SQLite
@@ -73,7 +73,7 @@ Verification:
 
 PowerShell:
 ```powershell
-Invoke-RestMethod http://localhost:8787/api/health | Select-Object -ExpandProperty ai
+Invoke-RestMethod https://smart-nutrition-sk5r.onrender.com/api/health | Select-Object -ExpandProperty ai
 ```
 
 Expected:

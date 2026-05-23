@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mockProducts } from "./mockProducts";
+import { productCatalog } from "./productCatalog";
 import {
   createDefaultNutritionPreferences,
   productMatchesPreferences,
@@ -12,8 +12,8 @@ describe("preferences filters", () => {
       ...createDefaultNutritionPreferences(),
       dietStyle: "vegan" as const,
     };
-    const greekYogurt = mockProducts.find((product) => product.id === "manual-greek-yogurt");
-    const tofu = mockProducts.find((product) => product.id === "manual-tofu");
+    const greekYogurt = productCatalog.find((product) => product.id === "manual-greek-yogurt");
+    const tofu = productCatalog.find((product) => product.id === "manual-tofu");
 
     expect(greekYogurt).toBeDefined();
     expect(tofu).toBeDefined();
@@ -26,7 +26,7 @@ describe("preferences filters", () => {
       ...createDefaultNutritionPreferences(),
       excludedIngredients: ["banana"],
     };
-    const banana = mockProducts.find((product) => product.id === "manual-banana");
+    const banana = productCatalog.find((product) => product.id === "manual-banana");
 
     expect(productMatchesPreferences(banana!, preferences)).toBe(false);
   });
@@ -39,7 +39,7 @@ describe("preferences filters", () => {
     const vegetarianRecipe = {
       ingredients: [
         {
-          product: mockProducts.find((product) => product.id === "manual-tofu")!,
+          product: productCatalog.find((product) => product.id === "manual-tofu")!,
           quantity: 150,
         },
       ],
@@ -47,7 +47,7 @@ describe("preferences filters", () => {
     const nonVegetarianRecipe = {
       ingredients: [
         {
-          product: mockProducts.find((product) => product.id === "manual-chicken-breast")!,
+          product: productCatalog.find((product) => product.id === "manual-chicken-breast")!,
           quantity: 150,
         },
       ],

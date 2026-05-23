@@ -2,7 +2,7 @@
 
 Проект работает в двух режимах:
 
-- без облачного AI: локальный preview-ассистент доступен и без ключей
+- без облачного AI: контекстный ассистент доступен и без ключей
 - с облачным AI: backend включает `/api/ai` и хранит историю диалога в SQLite
 
 Важно: текущая сборка не включает paid AI vision. Фото еды по-прежнему идут в manual draft mode с ручной проверкой.
@@ -33,7 +33,7 @@ SMART_NUTRITION_API_PORT=8787
 
 Если запускаешь production, обязательно поставь свой длинный `SMART_NUTRITION_JWT_SECRET`.
 
-Для Vercel-фронтенда и отдельного backend-домена не используй `localhost` в
+Для Vercel-фронтенда и отдельного backend-домена не используй `loopback URL` в
 frontend build env. На Vercel поставь:
 
 ```env
@@ -140,18 +140,18 @@ docker compose down
 docker compose up -d
 ```
 
-Если работаешь локально без Docker, просто перезапусти `npm run server:dev` или `npm run start`.
+Если работаешь без Docker, просто перезапусти `npm run server:dev` или `npm run start`.
 
 ## Шаг 6: Проверь, что runtime поднялся
 
 PowerShell:
 ```powershell
-Invoke-RestMethod http://localhost:8787/api/health | Select-Object -ExpandProperty ai
+Invoke-RestMethod https://smart-nutrition-sk5r.onrender.com/api/health | Select-Object -ExpandProperty ai
 ```
 
 `curl`:
 ```bash
-curl http://localhost:8787/api/health
+curl https://smart-nutrition-sk5r.onrender.com/api/health
 ```
 
 Ожидаемый результат:

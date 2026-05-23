@@ -5,6 +5,30 @@ import react from "@vitejs/plugin-react";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const fromRoot = (target: string) => path.resolve(projectRoot, target);
+const defaultApiTarget = "https://smart-nutrition-sk5r.onrender.com";
+
+const normalizeApiProxyTarget = (value: string | undefined) => {
+  if (!value) {
+    return defaultApiTarget;
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+    parsedUrl.pathname = parsedUrl.pathname.replace(/\/api\/?$/, "") || "/";
+    parsedUrl.search = "";
+    parsedUrl.hash = "";
+
+    return parsedUrl.toString().replace(/\/+$/, "");
+  } catch {
+    return defaultApiTarget;
+  }
+};
+
+const apiProxyTarget = normalizeApiProxyTarget(
+  process.env.VITE_SMART_NUTRITION_DEV_API_TARGET ??
+    process.env.VITE_SMART_NUTRITION_API_BASE_URL ??
+    process.env.SMART_NUTRITION_API_BASE_URL
+);
 
 export default defineConfig({
   base: "/",
@@ -28,7 +52,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8787",
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },
