@@ -58,7 +58,12 @@ const isAdaptiveMode = (value) => value === "automatic" || value === "manual";
 const isAppLanguage = (value) => value === "uk" || value === "pl" || value === "en";
 const isAssistantRole = (value) =>
   value === "friend" || value === "assistant" || value === "coach";
-const isAssistantTone = (value) => value === "gentle" || value === "playful" || value === "focused";
+const isAssistantTone = (value) =>
+  value === "gentle" ||
+  value === "playful" ||
+  value === "focused" ||
+  value === "calm" ||
+  value === "scientific";
 const isAssistantCompanionKind = (value) =>
   value === "cat" ||
   value === "dog" ||

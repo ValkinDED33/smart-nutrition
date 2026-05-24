@@ -6,6 +6,8 @@ export const assistant = {
       supportive: "Підтримуючий",
       strict: "Строгий",
       energetic: "Енергійний",
+      calm: "Спокійний",
+      scientific: "Науковий",
     },
   },
   pl: {
@@ -15,6 +17,8 @@ export const assistant = {
       supportive: "Wspierający",
       strict: "Konkretny",
       energetic: "Energiczny",
+      calm: "Spokojny",
+      scientific: "Naukowy",
     },
   },
   en: {
@@ -24,6 +28,8 @@ export const assistant = {
       supportive: "Supportive",
       strict: "Strict",
       energetic: "Energetic",
+      calm: "Calm",
+      scientific: "Scientific",
     },
   },
 } as const;

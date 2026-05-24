@@ -33,6 +33,7 @@ export const createAssistantRuntimeContext = ({
   macroTargets,
   coach,
   coachPrimaryInsight,
+  dailyContext,
 }: AssistantContextSource): AssistantRuntimeContext => {
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const firstWeight = profile.weightHistory[0]?.weight ?? latestWeight;
@@ -93,6 +94,7 @@ export const createAssistantRuntimeContext = ({
     motivation: profile.motivation,
     coach,
     coachPrimaryInsight: coachPrimaryInsight ?? coach.insights[0]?.code ?? "on_track",
+    dailyContext,
     profile: {
       goal: profile.goal,
       dietStyle: profile.dietStyle,

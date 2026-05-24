@@ -160,6 +160,18 @@ export const assistantPersonalityByTone: Record<AssistantTone, AssistantPersonal
     strictness: 0.75,
     motivation: 0.82,
   },
+  calm: {
+    warmth: 0.86,
+    humor: 0.18,
+    strictness: 0.16,
+    motivation: 0.62,
+  },
+  scientific: {
+    warmth: 0.58,
+    humor: 0.08,
+    strictness: 0.62,
+    motivation: 0.72,
+  },
 };
 
 export const communicationStyleByTone: Record<
@@ -169,6 +181,8 @@ export const communicationStyleByTone: Record<
   gentle: "supportive",
   playful: "energetic",
   focused: "strict",
+  calm: "calm",
+  scientific: "scientific",
 };
 
 const speechStyleByTone: Record<AssistantTone, Omit<AssistantSpeechStyle, "communicationStyle">> = {
@@ -185,6 +199,16 @@ const speechStyleByTone: Record<AssistantTone, Omit<AssistantSpeechStyle, "commu
   focused: {
     pace: "direct",
     nudgeStyle: "firm",
+    phraseDensity: "short",
+  },
+  calm: {
+    pace: "soft",
+    nudgeStyle: "gentle",
+    phraseDensity: "short",
+  },
+  scientific: {
+    pace: "direct",
+    nudgeStyle: "practical",
     phraseDensity: "short",
   },
 };

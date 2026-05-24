@@ -5,7 +5,12 @@ import type {
 } from "../../shared/types/profile";
 import type { Goal } from "../../shared/types/user";
 
-export type PersonalityPreset = "supportive" | "strict" | "energetic";
+export type PersonalityPreset =
+  | "supportive"
+  | "strict"
+  | "energetic"
+  | "calm"
+  | "scientific";
 
 export interface OnboardingState {
   assistantName: string;
@@ -64,6 +69,8 @@ export const personalityValues: Record<
   supportive: { warmth: 0.9, humor: 0.4, strictness: 0.2, motivation: 0.8 },
   strict: { warmth: 0.45, humor: 0.1, strictness: 0.85, motivation: 0.7 },
   energetic: { warmth: 0.75, humor: 0.55, strictness: 0.35, motivation: 0.95 },
+  calm: { warmth: 0.86, humor: 0.18, strictness: 0.16, motivation: 0.62 },
+  scientific: { warmth: 0.58, humor: 0.08, strictness: 0.62, motivation: 0.72 },
 };
 
 export const clampNumber = (value: number, min: number, max: number) =>

@@ -47,14 +47,23 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       goal: state.goal,
     });
     const personality = personalityValues[state.personality];
+    const assistantTone =
+      state.personality === "strict"
+        ? "focused"
+        : state.personality === "energetic"
+          ? "playful"
+          : state.personality;
 
     dispatch(setUser(nextUser));
     dispatch(setProfileLanguage(appLanguage));
     dispatch(
       setAssistantCustomization({
         name: state.assistantName.trim(),
-        role: state.personality === "strict" ? "coach" : "assistant",
-        tone: state.personality === "strict" ? "focused" : state.personality === "energetic" ? "playful" : "gentle",
+        role:
+          state.personality === "strict" || state.personality === "scientific"
+            ? "coach"
+            : "assistant",
+        tone: assistantTone === "supportive" ? "gentle" : assistantTone,
         humorEnabled: personality.humor >= 0.4,
         proactiveHintsEnabled: personality.motivation >= 0.7,
         onboarding: {

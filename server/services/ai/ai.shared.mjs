@@ -21,6 +21,29 @@ const formatPersonality = (personality) =>
     ? `warmth ${personality.warmth}, humor ${personality.humor}, strictness ${personality.strictness}, motivation ${personality.motivation}`
     : "warmth 0.9, humor 0.4, strictness 0.2, motivation 0.8";
 
+const formatDailyContextLine = (context) => {
+  const dailyContext = context.dailyContext;
+
+  if (!dailyContext) {
+    return "- Daily context engine: unavailable";
+  }
+
+  return [
+    `- Daily context engine: focus ${dailyContext.primaryFocus}, suggested meal ${dailyContext.suggestedMealType}, nudge tone ${dailyContext.nudgeTone}`,
+    `- Today vs yesterday: ${Math.round(dailyContext.today?.calories ?? 0)} kcal / ${Math.round(
+      dailyContext.today?.protein ?? 0
+    )} g protein today, ${Math.round(dailyContext.yesterday?.calories ?? 0)} kcal / ${Math.round(
+      dailyContext.yesterday?.protein ?? 0
+    )} g protein yesterday`,
+    `- Daily gaps: ${Math.round(dailyContext.gaps?.calories ?? 0)} kcal, ${Math.round(
+      dailyContext.gaps?.protein ?? 0
+    )} g protein, ${Math.round(dailyContext.gaps?.fiber ?? 0)} g fiber, ${Math.round(
+      dailyContext.gaps?.waterMl ?? 0
+    )} ml water`,
+    `- Behavior patterns: ${formatList(dailyContext.patterns)}`,
+  ].join("\n");
+};
+
 const buildSystemPrompt = (context) =>
   [
     `You are ${context.assistantName}, the Smart Nutrition assistant.`,
@@ -62,6 +85,7 @@ const buildContextBlock = (context) =>
     `- Behavior: ${context.behavior?.mealEntriesToday ?? context.mealEntriesToday} meal entries today, water logged ${
       context.behavior?.waterLoggedToday ? "yes" : "no"
     }, ${context.behavior?.openMotivationTasks ?? context.motivation.openTasks} open motivation tasks`,
+    formatDailyContextLine(context),
     `- Daily calories target: ${Math.round(context.dailyCalories)} kcal`,
     `- Calories consumed today: ${Math.round(context.caloriesConsumed)} kcal`,
     `- Calories remaining today: ${Math.round(context.caloriesRemaining)} kcal`,

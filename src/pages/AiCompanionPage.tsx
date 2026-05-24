@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
 import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
+import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import type { RootState } from "../app/store";
 import {
   selectTodayMealItems,
@@ -591,6 +592,7 @@ const AiCompanionPage = () => {
         </Stack>
       </Paper>
 
+      <SmartRecommendations />
       <NutritionCoachCard />
       <AssistantRuntimeCard />
     </Stack>

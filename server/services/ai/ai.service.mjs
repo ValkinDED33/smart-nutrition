@@ -175,6 +175,59 @@ const normalizePersonalDetails = (value) => {
   };
 };
 
+const normalizeDailyContextDay = (value) => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    dateKey: normalizeText(record.dateKey, { maxLength: 16 }),
+    entries: Math.max(Math.round(toFiniteNumber(record.entries)), 0),
+    mealTypes: Array.isArray(record.mealTypes)
+      ? record.mealTypes.map((item) => normalizeText(item, { maxLength: 24 })).filter(Boolean)
+      : [],
+    calories: toFiniteNumber(record.calories),
+    protein: toFiniteNumber(record.protein),
+    fat: toFiniteNumber(record.fat),
+    carbs: toFiniteNumber(record.carbs),
+    fiber: toFiniteNumber(record.fiber),
+  };
+};
+
+const normalizeDailyContext = (value) => {
+  const record = isRecord(value) ? value : {};
+  const gaps = isRecord(record.gaps) ? record.gaps : {};
+  const week = isRecord(record.week) ? record.week : {};
+
+  return {
+    today: normalizeDailyContextDay(record.today),
+    yesterday: normalizeDailyContextDay(record.yesterday),
+    week: {
+      daysLogged: Math.max(Math.round(toFiniteNumber(week.daysLogged)), 0),
+      averageCalories: toFiniteNumber(week.averageCalories),
+      averageProtein: toFiniteNumber(week.averageProtein),
+      averageFiber: toFiniteNumber(week.averageFiber),
+      averageEntries: toFiniteNumber(week.averageEntries),
+    },
+    gaps: {
+      calories: toFiniteNumber(gaps.calories),
+      protein: toFiniteNumber(gaps.protein),
+      fiber: toFiniteNumber(gaps.fiber),
+      waterMl: toFiniteNumber(gaps.waterMl),
+    },
+    primaryFocus: normalizeText(record.primaryFocus, {
+      maxLength: 32,
+      fallback: "steady",
+    }),
+    suggestedMealType: normalizeText(record.suggestedMealType, {
+      maxLength: 24,
+      fallback: "snack",
+    }),
+    patterns: Array.isArray(record.patterns)
+      ? record.patterns.map((item) => normalizeText(item, { maxLength: 40 })).filter(Boolean)
+      : [],
+    nudgeTone: normalizeText(record.nudgeTone, { maxLength: 24, fallback: "gentle" }),
+  };
+};
+
 const countOpenTasks = (motivation) =>
   Array.isArray(motivation?.activeTasks)
     ? motivation.activeTasks.filter(
@@ -219,6 +272,24 @@ const inferAssistantPersonality = (tone) => {
     };
   }
 
+  if (tone === "calm") {
+    return {
+      warmth: 0.86,
+      humor: 0.18,
+      strictness: 0.16,
+      motivation: 0.62,
+    };
+  }
+
+  if (tone === "scientific") {
+    return {
+      warmth: 0.58,
+      humor: 0.08,
+      strictness: 0.62,
+      motivation: 0.72,
+    };
+  }
+
   return {
     warmth: 0.9,
     humor: 0.36,
@@ -245,6 +316,14 @@ const inferCommunicationStyle = (tone) => {
 
   if (tone === "playful") {
     return "energetic";
+  }
+
+  if (tone === "calm") {
+    return "calm";
+  }
+
+  if (tone === "scientific") {
+    return "scientific";
   }
 
   return "supportive";
@@ -384,6 +463,7 @@ const normalizeContext = (payload, currentUser) => {
     assistantPersonality,
     communicationStyle,
     personalDetails: normalizePersonalDetails(record.personalDetails),
+    dailyContext: normalizeDailyContext(record.dailyContext),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
       fallback: "on_track",

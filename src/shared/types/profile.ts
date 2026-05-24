@@ -9,7 +9,7 @@ export type DietStyle =
 export type AdaptiveMode = "automatic" | "manual";
 export type AssistantCompanionKind = "cat" | "dog" | "capybara" | "dragon" | "robot";
 export type AssistantRole = "friend" | "assistant" | "coach";
-export type AssistantTone = "gentle" | "playful" | "focused";
+export type AssistantTone = "gentle" | "playful" | "focused" | "calm" | "scientific";
 export type AssistantDietFriction =
   | "unknown"
   | "emotional_eating"

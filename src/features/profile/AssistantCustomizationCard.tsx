@@ -20,6 +20,7 @@ import type {
   AssistantCompanionKind,
   AssistantDietFriction,
   AssistantMotivationStyle,
+  AssistantTone,
 } from "../../shared/types/profile";
 
 const assistantCopy = {
@@ -47,6 +48,8 @@ const assistantCopy = {
     toneGentle: "М'який",
     tonePlayful: "Грайливий",
     toneFocused: "Зібраний",
+    toneCalm: "Спокійний",
+    toneScientific: "Науковий",
     motivationGentle: "М'яко",
     motivationDirect: "Прямо",
     motivationEnergetic: "Енергійно",
@@ -90,6 +93,8 @@ const assistantCopy = {
     toneGentle: "Spokojny",
     tonePlayful: "Swobodny",
     toneFocused: "Skupiony",
+    toneCalm: "Łagodny",
+    toneScientific: "Naukowy",
     motivationGentle: "Łagodnie",
     motivationDirect: "Konkretnie",
     motivationEnergetic: "Energicznie",
@@ -133,6 +138,8 @@ const assistantCopy = {
     toneGentle: "Gentle",
     tonePlayful: "Playful",
     toneFocused: "Focused",
+    toneCalm: "Calm",
+    toneScientific: "Scientific",
     motivationGentle: "Gently",
     motivationDirect: "Directly",
     motivationEnergetic: "Energetically",
@@ -240,7 +247,7 @@ export const AssistantCustomizationCard = () => {
             onChange={(event) =>
               dispatch(
                 setAssistantCustomization({
-                  tone: event.target.value as "gentle" | "playful" | "focused",
+                  tone: event.target.value as AssistantTone,
                 })
               )
             }
@@ -248,6 +255,8 @@ export const AssistantCustomizationCard = () => {
             <MenuItem value="gentle">{copy.toneGentle}</MenuItem>
             <MenuItem value="playful">{copy.tonePlayful}</MenuItem>
             <MenuItem value="focused">{copy.toneFocused}</MenuItem>
+            <MenuItem value="calm">{copy.toneCalm}</MenuItem>
+            <MenuItem value="scientific">{copy.toneScientific}</MenuItem>
           </TextField>
         </Stack>
 

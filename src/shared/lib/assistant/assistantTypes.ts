@@ -10,6 +10,7 @@ import type {
   NutritionCoachAnalysis,
   NutritionCoachInsightCode,
 } from "../nutritionCoach";
+import type { DailyContext } from "../dailyContext";
 
 export type AssistantChatMessage = AssistantConversationMessage;
 
@@ -36,4 +37,5 @@ export interface AssistantContextSource {
   macroTargets: Pick<MacroTargets, "protein">;
   coach: NutritionCoachAnalysis;
   coachPrimaryInsight?: NutritionCoachInsightCode;
+  dailyContext: DailyContext;
 }

@@ -352,6 +352,32 @@ const deriveSignals = (context: AssistantRuntimeContext): AssistantSignals => {
     primaryFocus = "coach";
   }
 
+  switch (context.dailyContext.primaryFocus) {
+    case "log_first_meal":
+    case "complete_day":
+      primaryFocus = "log_day";
+      break;
+    case "calories_high":
+      primaryFocus = "recover";
+      break;
+    case "protein":
+      primaryFocus = "protein";
+      break;
+    case "water":
+      primaryFocus = "water";
+      break;
+    case "fiber":
+      primaryFocus = primaryFocus === "maintain" ? "coach" : primaryFocus;
+      break;
+    case "calories_low":
+      primaryFocus = primaryFocus === "maintain" ? "log_day" : primaryFocus;
+      break;
+    case "steady":
+      break;
+    default:
+      break;
+  }
+
   return {
     proteinGap,
     waterGapMl,
@@ -550,6 +576,26 @@ const getPersonalContactLine = (context: AssistantRuntimeContext) => {
   return [supportLine, relationshipLine, petLine].filter(Boolean).join(" ");
 };
 
+const getDailyContextLine = (context: AssistantRuntimeContext) => {
+  const { dailyContext } = context;
+
+  if (context.language === "en") {
+    return `Context engine focus: ${dailyContext.primaryFocus}. Yesterday was ${formatRounded(
+      dailyContext.yesterday.calories
+    )} kcal and ${formatRounded(dailyContext.yesterday.protein)} g protein.`;
+  }
+
+  if (context.language === "pl") {
+    return `Fokus context engine: ${dailyContext.primaryFocus}. Wczoraj było ${formatRounded(
+      dailyContext.yesterday.calories
+    )} kcal i ${formatRounded(dailyContext.yesterday.protein)} g białka.`;
+  }
+
+  return `Фокус context engine: ${dailyContext.primaryFocus}. Учора було ${formatRounded(
+    dailyContext.yesterday.calories
+  )} ккал і ${formatRounded(dailyContext.yesterday.protein)} г білка.`;
+};
+
 const getSnapshotLine = (context: AssistantRuntimeContext) => {
   if (context.language === "en") {
     const calories =
@@ -565,7 +611,7 @@ const getSnapshotLine = (context: AssistantRuntimeContext) => {
 
     return `${calories} Protein: ${formatRounded(context.proteinConsumed)}/${formatRounded(
       context.proteinTarget
-    )} g. Logged meal slots: ${context.mealEntriesToday}.`;
+    )} g. Logged meal slots: ${context.mealEntriesToday}. ${getDailyContextLine(context)}`;
   }
 
   if (context.language === "pl") {
@@ -582,7 +628,7 @@ const getSnapshotLine = (context: AssistantRuntimeContext) => {
 
     return `${calories} Białko: ${formatRounded(context.proteinConsumed)}/${formatRounded(
       context.proteinTarget
-    )} g. Zalogowane sloty: ${context.mealEntriesToday}.`;
+    )} g. Zalogowane sloty: ${context.mealEntriesToday}. ${getDailyContextLine(context)}`;
   }
 
   const calories =
@@ -598,7 +644,7 @@ const getSnapshotLine = (context: AssistantRuntimeContext) => {
 
   return `${calories} Білок: ${formatRounded(context.proteinConsumed)}/${formatRounded(
     context.proteinTarget
-  )} г. Записаних слотів їжі: ${context.mealEntriesToday}.`;
+  )} г. Записаних слотів їжі: ${context.mealEntriesToday}. ${getDailyContextLine(context)}`;
 };
 
 const getPriorityLine = (

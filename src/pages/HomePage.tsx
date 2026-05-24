@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../app/store";
 import {
+  selectMealItems,
   selectTodayMealItems,
   selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
@@ -21,10 +22,15 @@ import { incrementWater } from "../features/water/waterSlice";
 import { useLanguage } from "../shared/language";
 import {
   selectCurrentWeight,
+  selectDailyMacroTargets,
   selectDailyMacroProgress,
 } from "../features/profile/selectors";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { LearningHubCard } from "../features/education/LearningHubCard";
+import {
+  buildDailyContext,
+  type DailyContextFocus,
+} from "../shared/lib/dailyContext";
 
 type MealActionMode = "photo" | "search" | "barcode";
 
@@ -71,6 +77,31 @@ const homeCopy = {
     todayFood: "Їжа сьогодні",
     assistant: "Помічник поруч",
     nextStep: "Наступна дія",
+    goalToday: "Ціль сьогодні",
+    progressDone: "Виконано",
+    weekProgress: "Тиждень",
+    improveToday: "Покращити сьогодні",
+    weekLogged: (days: number) => `${days}/7 днів із записами`,
+    focusLabels: {
+      log_first_meal: "додати перший прийом їжі",
+      complete_day: "закрити базову структуру дня",
+      protein: "добрати білок",
+      water: "підтягнути воду",
+      fiber: "додати клітковину",
+      calories_high: "заспокоїти решту дня",
+      calories_low: "додати енергію без хаосу",
+      steady: "утримати стабільний ритм",
+    } satisfies Record<DailyContextFocus, string>,
+    improveLabels: {
+      log_first_meal: "Почніть з одного простого запису, щоб AI бачив реальний день.",
+      complete_day: "Додайте ще один повноцінний слот їжі перед висновками.",
+      protein: "Наступний прийом краще зібрати навколо 25-35 г білка.",
+      water: "Додайте склянку зараз і поверніться до темпу маленькими порціями.",
+      fiber: "Додайте овочі, фрукти або крупу з клітковиною.",
+      calories_high: "Решту дня тримайте легшою: білок, овочі, вода.",
+      calories_low: "Додайте нормальний прийом їжі, щоб вечір не став наздоганянням.",
+      steady: "Повторіть структуру, яка вже працює.",
+    } satisfies Record<DailyContextFocus, string>,
     waterDone: "Норма води закрита.",
     waterLogged: "Воду додано.",
     noFood: "Їжі ще немає. Почніть з фото, пошуку або штрихкоду.",
@@ -81,6 +112,12 @@ const homeCopy = {
       "Вода відстає від темпу. Додайте один стакан зараз, а їжу залишимо без стресу.",
     aiProtein:
       "Білок нижче плану. Наступний прийом краще зібрати навколо яєць, йогурту, сиру або курки.",
+    aiComplete:
+      "День ще неповний. Додайте один нормальний прийом їжі, а потім вже коригуйте деталі.",
+    aiFiber:
+      "Клітковини мало. Додайте овочі, фрукти або крупу — це вирівняє ситість.",
+    aiCaloriesLow:
+      "Калорій ще мало для плану. Краще додати спокійний прийом їжі зараз, ніж наздоганяти ввечері.",
     aiLimit:
       "Калорії близько до плану. Далі краще білок, овочі і легка вечеря.",
     aiGood: "День виглядає рівно. Тримайте темп і не забувайте про воду.",
@@ -127,6 +164,31 @@ const homeCopy = {
     todayFood: "Jedzenie dzisiaj",
     assistant: "Asystent obok",
     nextStep: "Kolejna akcja",
+    goalToday: "Cel na dziś",
+    progressDone: "Wykonano",
+    weekProgress: "Tydzień",
+    improveToday: "Popraw dziś",
+    weekLogged: (days: number) => `${days}/7 dni z wpisami`,
+    focusLabels: {
+      log_first_meal: "dodać pierwszy posiłek",
+      complete_day: "domknąć bazową strukturę dnia",
+      protein: "uzupełnić białko",
+      water: "podciągnąć wodę",
+      fiber: "dodać błonnik",
+      calories_high: "uspokoić resztę dnia",
+      calories_low: "dodać energię bez chaosu",
+      steady: "utrzymać stabilny rytm",
+    } satisfies Record<DailyContextFocus, string>,
+    improveLabels: {
+      log_first_meal: "Zacznij od jednego prostego wpisu, żeby AI widziało realny dzień.",
+      complete_day: "Dodaj jeszcze jeden pełny slot jedzenia przed mocniejszymi wnioskami.",
+      protein: "Kolejny posiłek oprzyj o 25-35 g białka.",
+      water: "Dodaj szklankę teraz i wróć do tempa małymi porcjami.",
+      fiber: "Dodaj warzywa, owoce albo produkt z błonnikiem.",
+      calories_high: "Resztę dnia trzymaj lżej: białko, warzywa, woda.",
+      calories_low: "Dodaj normalny posiłek teraz, zamiast nadrabiać wieczorem.",
+      steady: "Powtórz strukturę, która już działa.",
+    } satisfies Record<DailyContextFocus, string>,
     waterDone: "Norma wody zamknięta.",
     waterLogged: "Dodano wodę.",
     noFood: "Nie ma jeszcze jedzenia. Zacznij od zdjęcia, wyszukiwania albo kodu.",
@@ -137,6 +199,12 @@ const homeCopy = {
       "Woda jest poniżej tempa. Dodaj teraz jedną szklankę, a jedzenie zostawimy bez stresu.",
     aiProtein:
       "Białko jest poniżej planu. Następny posiłek oprzyj o jajka, jogurt, twaróg albo kurczaka.",
+    aiComplete:
+      "Dzień jest jeszcze niepełny. Dodaj jeden normalny posiłek, a dopiero potem koryguj szczegóły.",
+    aiFiber:
+      "Błonnika jest mało. Dodaj warzywa, owoce albo kaszę, żeby ustabilizować sytość.",
+    aiCaloriesLow:
+      "Kalorii jest jeszcze mało względem planu. Lepiej dodać spokojny posiłek teraz niż nadrabiać wieczorem.",
     aiLimit:
       "Kalorie są blisko planu. Dalej najlepiej białko, warzywa i lekka kolacja.",
     aiGood: "Dzień wygląda równo. Utrzymaj tempo i pamiętaj o wodzie.",
@@ -183,6 +251,31 @@ const homeCopy = {
     todayFood: "Food today",
     assistant: "Assistant nearby",
     nextStep: "Next action",
+    goalToday: "Today’s goal",
+    progressDone: "Complete",
+    weekProgress: "Week",
+    improveToday: "Improve today",
+    weekLogged: (days: number) => `${days}/7 days logged`,
+    focusLabels: {
+      log_first_meal: "log the first meal",
+      complete_day: "complete the day structure",
+      protein: "close the protein gap",
+      water: "catch up on water",
+      fiber: "add fiber",
+      calories_high: "settle the rest of the day",
+      calories_low: "add energy without chaos",
+      steady: "keep the steady rhythm",
+    } satisfies Record<DailyContextFocus, string>,
+    improveLabels: {
+      log_first_meal: "Start with one simple log so the AI can read the real day.",
+      complete_day: "Add one more proper meal slot before making bigger adjustments.",
+      protein: "Build the next meal around 25-35 g of protein.",
+      water: "Add one glass now and return to pace in small portions.",
+      fiber: "Add vegetables, fruit, or a fiber-rich grain.",
+      calories_high: "Keep the rest of the day lighter: protein, vegetables, water.",
+      calories_low: "Add a real meal now instead of catching up late.",
+      steady: "Repeat the structure that is already working.",
+    } satisfies Record<DailyContextFocus, string>,
     waterDone: "Water goal closed.",
     waterLogged: "Water added.",
     noFood: "No food yet. Start with a photo, search, or barcode.",
@@ -193,6 +286,12 @@ const homeCopy = {
       "Water is behind pace. Add one glass now and keep food stress-free.",
     aiProtein:
       "Protein is below plan. Build the next meal around eggs, yogurt, cottage cheese, or chicken.",
+    aiComplete:
+      "The day is still incomplete. Add one proper meal first, then adjust the details.",
+    aiFiber:
+      "Fiber is low. Add vegetables, fruit, or grains to make satiety steadier.",
+    aiCaloriesLow:
+      "Calories are still low for the plan. Add a calm meal now instead of catching up tonight.",
     aiLimit:
       "Calories are close to plan. Next, lean protein, vegetables, and a light dinner will fit best.",
     aiGood: "The day looks steady. Keep the pace and remember water.",
@@ -207,21 +306,30 @@ const HomePage = () => {
   const water = useSelector((state: RootState) => state.water);
   const motivation = useSelector((state: RootState) => state.profile.motivation);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const items = useSelector(selectMealItems);
   const totals = useSelector(selectTodayMealTotalNutrients);
   const todayItems = useSelector(selectTodayMealItems);
+  const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
   const currentWeight = useSelector(selectCurrentWeight);
   const { appLanguage, t } = useLanguage();
   const copy = homeCopy[appLanguage];
-  const calorieProgress = dailyCalories
-    ? Math.min((totals.calories / dailyCalories) * 100, 100)
-    : 0;
-  const remainingCalories = Math.max(dailyCalories - totals.calories, 0);
-  const remainingWaterMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
-  const waterProgress = water.dailyWaterGoal
-    ? Math.min((water.consumedMl / water.dailyWaterGoal) * 100, 100)
-    : 0;
-  const proteinProgress = macroProgress.protein.progress;
+  const dailyContext = useMemo(
+    () =>
+      buildDailyContext({
+        items,
+        dailyCalories,
+        macroTargets,
+        waterConsumedMl: water.consumedMl,
+        waterTargetMl: water.dailyWaterGoal,
+      }),
+    [dailyCalories, items, macroTargets, water.consumedMl, water.dailyWaterGoal]
+  );
+  const calorieProgress = Math.min(dailyContext.progress.calories, 100);
+  const remainingCalories = dailyContext.gaps.calories;
+  const remainingWaterMl = dailyContext.gaps.waterMl;
+  const waterProgress = Math.min(dailyContext.progress.water, 100);
+  const proteinProgress = Math.min(dailyContext.progress.protein, 100);
   const actionModes: MealActionMode[] = ["photo", "search", "barcode"];
 
   const macroItems = [
@@ -266,41 +374,52 @@ const HomePage = () => {
   }, [motivation.history]);
 
   const assistantAdvice = useMemo(() => {
-    if (todayItems.length === 0) {
-      return copy.aiStart;
+    switch (dailyContext.primaryFocus) {
+      case "log_first_meal":
+        return copy.aiStart;
+      case "complete_day":
+        return copy.aiComplete;
+      case "water":
+        return copy.aiWater;
+      case "protein":
+        return copy.aiProtein;
+      case "fiber":
+        return copy.aiFiber;
+      case "calories_high":
+        return copy.aiLimit;
+      case "calories_low":
+        return copy.aiCaloriesLow;
+      case "steady":
+      default:
+        return copy.aiGood;
     }
-
-    if (waterProgress < 45) {
-      return copy.aiWater;
-    }
-
-    if (proteinProgress < 55) {
-      return copy.aiProtein;
-    }
-
-    if (calorieProgress > 92) {
-      return copy.aiLimit;
-    }
-
-    return copy.aiGood;
   }, [
-    calorieProgress,
+    copy.aiCaloriesLow,
+    copy.aiComplete,
+    copy.aiFiber,
     copy.aiGood,
     copy.aiLimit,
     copy.aiProtein,
     copy.aiStart,
     copy.aiWater,
-    proteinProgress,
-    todayItems.length,
-    waterProgress,
+    dailyContext.primaryFocus,
   ]);
 
   const nextAction = useMemo(() => {
-    if (todayItems.length === 0) {
-      return { label: copy.startMeal, to: "/food?mode=photo" };
+    if (
+      dailyContext.primaryFocus === "log_first_meal" ||
+      dailyContext.primaryFocus === "complete_day" ||
+      dailyContext.primaryFocus === "protein" ||
+      dailyContext.primaryFocus === "fiber" ||
+      dailyContext.primaryFocus === "calories_low"
+    ) {
+      return {
+        label: copy.startMeal,
+        to: `/food?mode=search&mealType=${dailyContext.suggestedMealType}`,
+      };
     }
 
-    if (remainingWaterMl > 0 && waterProgress < 70) {
+    if (dailyContext.primaryFocus === "water") {
       return { label: copy.addWater, to: null };
     }
 
@@ -309,17 +428,34 @@ const HomePage = () => {
     copy.addWater,
     copy.askAssistant,
     copy.startMeal,
-    remainingWaterMl,
-    todayItems.length,
-    waterProgress,
+    dailyContext.primaryFocus,
+    dailyContext.suggestedMealType,
   ]);
 
   const moodLabel =
-    calorieProgress > 105 || waterProgress < 35
+    dailyContext.progress.calories > 105 || waterProgress < 35
       ? copy.recoveryMood
       : proteinProgress >= 70 && waterProgress >= 70
         ? copy.focusedMood
         : copy.calmMood;
+  const dailyBriefItems = [
+    {
+      label: copy.goalToday,
+      value: copy.focusLabels[dailyContext.primaryFocus],
+    },
+    {
+      label: copy.progressDone,
+      value: `${Math.round(calorieProgress)}%`,
+    },
+    {
+      label: copy.weekProgress,
+      value: copy.weekLogged(dailyContext.week.daysLogged),
+    },
+    {
+      label: copy.improveToday,
+      value: copy.improveLabels[dailyContext.primaryFocus],
+    },
+  ];
 
   if (!user) {
     return <Typography>{t("dashboard.needLogin")}</Typography>;
@@ -484,6 +620,48 @@ const HomePage = () => {
           </Paper>
         </Stack>
       </Paper>
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, minmax(0, 1fr))",
+            lg: "repeat(4, minmax(0, 1fr))",
+          },
+          gap: 1.2,
+        }}
+      >
+        {dailyBriefItems.map((item) => (
+          <Paper
+            key={item.label}
+            elevation={0}
+            sx={{
+              p: { xs: 1.6, md: 1.8 },
+              borderRadius: 1,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              backgroundColor: "rgba(255,255,255,0.9)",
+              minHeight: 112,
+            }}
+          >
+            <Stack spacing={0.7}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                {item.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  fontSize: item.value.length > 44 ? 16 : 19,
+                  overflowWrap: "anywhere",
+                  lineHeight: 1.25,
+                }}
+              >
+                {item.value}
+              </Typography>
+            </Stack>
+          </Paper>
+        ))}
+      </Box>
 
       <Paper
         elevation={0}

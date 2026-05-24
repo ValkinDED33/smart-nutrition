@@ -26,6 +26,7 @@ import {
   selectTodayMealTotalNutrients,
 } from "../meal/selectors";
 import { generateNutritionCoachAnalysis } from "../../shared/lib/nutritionCoach";
+import { buildDailyContext } from "../../shared/lib/dailyContext";
 import { selectDailyMacroTargets } from "../profile/selectors";
 import { assistantQuickQuestionIds } from "../../shared/types/assistant";
 import type {
@@ -170,6 +171,23 @@ export const AssistantRuntimeCard = () => {
   );
 
   const coachPrimaryInsight = coach.insights[0]?.code ?? "on_track";
+  const dailyContext = useMemo(
+    () =>
+      buildDailyContext({
+        items,
+        dailyCalories: profile.dailyCalories,
+        macroTargets,
+        waterConsumedMl: water.consumedMl,
+        waterTargetMl: water.dailyWaterGoal,
+      }),
+    [
+      items,
+      macroTargets,
+      profile.dailyCalories,
+      water.consumedMl,
+      water.dailyWaterGoal,
+    ]
+  );
 
   const context = useMemo<AssistantRuntimeContext>(
     () =>
@@ -188,10 +206,12 @@ export const AssistantRuntimeCard = () => {
         macroTargets,
         coach,
         coachPrimaryInsight,
+        dailyContext,
       }),
     [
       coach,
       coachPrimaryInsight,
+      dailyContext,
       appLanguage,
       macroTargets,
       profile,

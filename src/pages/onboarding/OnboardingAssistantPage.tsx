@@ -22,6 +22,13 @@ import {
 } from "./types";
 
 const motivationStyleOptions = assistantMotivationStyles;
+const personalityOptions: PersonalityPreset[] = [
+  "supportive",
+  "strict",
+  "energetic",
+  "calm",
+  "scientific",
+];
 
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
@@ -59,10 +66,28 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
                 updateState({ personality: value });
               }
             }}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(5, minmax(0, 1fr))",
+              },
+              gap: 1,
+              "& .MuiToggleButtonGroup-grouped": {
+                border: "1px solid rgba(15, 23, 42, 0.12)",
+                borderRadius: 1,
+                m: 0,
+                textTransform: "none",
+                fontWeight: 800,
+              },
+            }}
           >
-            <ToggleButton value="supportive">{t("assistant.personalities.supportive")}</ToggleButton>
-            <ToggleButton value="strict">{t("assistant.personalities.strict")}</ToggleButton>
-            <ToggleButton value="energetic">{t("assistant.personalities.energetic")}</ToggleButton>
+            {personalityOptions.map((personality) => (
+              <ToggleButton key={personality} value={personality}>
+                {t(`assistant.personalities.${personality}`)}
+              </ToggleButton>
+            ))}
           </ToggleButtonGroup>
 
           <Stack spacing={1}>

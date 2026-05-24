@@ -10,6 +10,7 @@ import type {
   NutritionCoachAnalysis,
   NutritionCoachInsightCode,
 } from "../lib/nutritionCoach";
+import type { DailyContext } from "../lib/dailyContext";
 import type { Goal } from "./user";
 
 export type AssistantRuntimeMode = "guided" | "remote-cloud";
@@ -21,7 +22,12 @@ export interface AssistantPersonality {
   motivation: number;
 }
 
-export type AssistantCommunicationStyle = "supportive" | "strict" | "energetic";
+export type AssistantCommunicationStyle =
+  | "supportive"
+  | "strict"
+  | "energetic"
+  | "calm"
+  | "scientific";
 
 export interface AssistantMemory {
   userId?: string;
@@ -73,6 +79,7 @@ export interface AssistantRuntimeContext {
   motivation: MotivationState;
   coach: NutritionCoachAnalysis;
   coachPrimaryInsight: NutritionCoachInsightCode;
+  dailyContext: DailyContext;
   profile: {
     goal: Goal;
     dietStyle: DietStyle;

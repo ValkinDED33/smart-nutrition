@@ -124,7 +124,11 @@ const isAppLanguage = (value: unknown): value is AppLanguage =>
 const isAssistantRole = (value: unknown): value is AssistantRole =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value: unknown): value is AssistantTone =>
-  value === "gentle" || value === "playful" || value === "focused";
+  value === "gentle" ||
+  value === "playful" ||
+  value === "focused" ||
+  value === "calm" ||
+  value === "scientific";
 const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKind =>
   value === "cat" ||
   value === "dog" ||
