@@ -3,6 +3,11 @@ import { navigation } from "./navigation";
 import { onboarding } from "./onboarding";
 
 export const en = {
+  "brand.name": "Smart Nutrition",
+  "brand.tagline": "Smart nutrition without chaos",
+  "nav.login": "Log in",
+  "nav.register": "Register",
+  "nav.logout": "Log out",
   "option.goal.cut": "Fat loss",
   "option.goal.maintain": "Maintain",
   "option.goal.bulk": "Muscle gain",

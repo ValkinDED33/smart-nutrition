@@ -45,6 +45,9 @@ const toLimitedList = (value, limit = 8) => {
   ];
 };
 
+const mergeLimitedLists = (...sources) =>
+  toLimitedList(sources.flatMap((source) => (Array.isArray(source) ? source : source ? [source] : [])));
+
 const toScore = (value, fallback) => {
   const nextValue = Number(value);
 
@@ -151,6 +154,17 @@ export const createAssistantMemoryRepository = async ({ dataDir }) => {
             ...(previous?.personality ?? DEFAULT_PERSONALITY),
             ...normalized.personality,
           },
+          goals: mergeLimitedLists(previous?.goals, normalized.goals),
+          struggles: mergeLimitedLists(previous?.struggles, normalized.struggles),
+          habits: mergeLimitedLists(previous?.habits, normalized.habits),
+          motivationTriggers: mergeLimitedLists(
+            previous?.motivationTriggers,
+            normalized.motivationTriggers
+          ),
+          recentProblems: mergeLimitedLists(
+            previous?.recentProblems,
+            normalized.recentProblems
+          ),
           updatedAt: new Date().toISOString(),
         },
         {

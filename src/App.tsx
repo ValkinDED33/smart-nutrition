@@ -221,7 +221,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+              <Route
+                path="/home"
+                element={
+                  <Navigate
+                    to={shouldShowOnboarding ? "/onboarding" : "/dashboard"}
+                    replace
+                  />
+                }
+              />
               <Route path="/meals" element={<Navigate to="/food" replace />} />
               <Route path="/water" element={<Navigate to="/progress" replace />} />
               <Route path="/ai" element={<Navigate to="/coach" replace />} />

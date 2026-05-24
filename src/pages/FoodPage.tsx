@@ -7,7 +7,6 @@ import { MealDayOverview } from "../features/meal/MealDayOverview";
 import { ProductSearch } from "../features/meal/ProductSearch";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
-import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import Loader from "../shared/components/Loader/PacmanLoader";
 import { useLanguage } from "../shared/language";
@@ -32,7 +31,6 @@ const foodFlowCopy = {
     search: "Пошук їжі",
     quickAdd: "Швидке додавання",
     scan: "Фото і скан",
-    assistant: "Рекомендація помічника",
     summary: "Історія і підсумок",
   },
   pl: {
@@ -40,7 +38,6 @@ const foodFlowCopy = {
     search: "Wyszukiwanie jedzenia",
     quickAdd: "Szybkie dodawanie",
     scan: "Zdjęcie i skan",
-    assistant: "Rekomendacja asystenta",
     summary: "Historia i podsumowanie",
   },
   en: {
@@ -48,7 +45,6 @@ const foodFlowCopy = {
     search: "Search food",
     quickAdd: "Quick add",
     scan: "Photo and scan",
-    assistant: "Assistant recommendation",
     summary: "History and summary",
   },
 } as const;
@@ -183,9 +179,6 @@ const FoodPage = () => {
         <Stack spacing={2.5}>
           <FoodSection title={copy.today}>
             <MealDayOverview />
-          </FoodSection>
-          <FoodSection title={copy.assistant}>
-            <SmartRecommendations />
           </FoodSection>
           <FoodSection title={copy.summary}>
             <DailyHistoryExplorer />

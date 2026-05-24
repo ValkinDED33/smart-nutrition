@@ -77,6 +77,9 @@ const buildContextBlock = (context) =>
     `- Humor enabled: ${context.humorEnabled ? "yes" : "no"}`,
     `- Assistant personality: ${formatPersonality(context.assistantPersonality)}`,
     `- Communication style: ${context.communicationStyle}`,
+    `- Assistant memory personality: ${formatPersonality(
+      context.memory?.personality ?? context.assistantPersonality
+    )}`,
     `- Assistant memory goals: ${formatList(context.memory?.goals)}`,
     `- Assistant memory struggles: ${formatList(context.memory?.struggles)}`,
     `- Assistant memory habits: ${formatList(context.memory?.habits)}`,

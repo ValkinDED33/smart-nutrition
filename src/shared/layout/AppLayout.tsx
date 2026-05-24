@@ -5,7 +5,9 @@ import {
   BookOpen,
   Globe2,
   Home,
+  Moon,
   ShieldCheck,
+  Sun,
   TrendingUp,
   Utensils,
   UserRound,
@@ -19,13 +21,13 @@ import {
   Box,
   Button,
   Container,
-  FormControl,
-  MenuItem,
+  IconButton,
   Paper,
-  Select,
   Stack,
   Toolbar,
   Tooltip,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
@@ -40,6 +42,7 @@ import { clearSyncOutbox } from "../lib/syncOutbox";
 import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
 import { setProfileLanguage } from "../../features/profile/profileSlice";
 import { useAppColorMode } from "../theme/colorMode";
+import type { AppLanguage } from "../types/i18n";
 
 const mobileTabs = [
   { value: "/dashboard", labelKey: "navigation.dashboard", icon: Home },
@@ -59,6 +62,12 @@ const desktopTabs = [
   { value: "/coach", labelKey: "navigation.coach" },
   { value: "/community", labelKey: "navigation.community" },
   { value: "/profile", labelKey: "navigation.profile" },
+];
+
+const languageOptions: Array<{ value: AppLanguage; code: string }> = [
+  { value: "uk", code: "UA" },
+  { value: "pl", code: "PL" },
+  { value: "en", code: "EN" },
 ];
 
 const Layout = () => {
@@ -164,7 +173,7 @@ const Layout = () => {
             {user && (
               <Stack
                 component="nav"
-                aria-label="Primary navigation"
+                aria-label={t("navigation.primaryAria")}
                 direction="row"
                 spacing={0.5}
                 alignItems="center"
@@ -210,75 +219,89 @@ const Layout = () => {
               alignItems="center"
               sx={{ flexShrink: 0 }}
             >
-              <Tooltip title={mode === "dark" ? "Light mode" : "Dark mode"}>
-                <Button
+              <Tooltip title={mode === "dark" ? t("navigation.themeLight") : t("navigation.themeDark")}>
+                <IconButton
                   onClick={toggleMode}
-                  variant="outlined"
                   size="small"
-                  aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                  aria-label={
+                    mode === "dark"
+                      ? t("navigation.switchToLight")
+                      : t("navigation.switchToDark")
+                  }
                   sx={{
-                    minWidth: { xs: 40, sm: 48 },
-                    px: { xs: 1, sm: 1.2 },
+                    width: 40,
+                    height: 40,
                     color: isDarkMode ? "#e5eef7" : "#0f766e",
+                    border: "1px solid",
                     borderColor: isDarkMode
                       ? "rgba(148, 163, 184, 0.32)"
                       : "rgba(15, 118, 110, 0.24)",
                   }}
                 >
-                  <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-                    {mode === "dark" ? "Light" : "Dark"}
-                  </Box>
-                  <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-                    {mode === "dark" ? "☀" : "☾"}
-                  </Box>
-                </Button>
+                  {mode === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+                </IconButton>
               </Tooltip>
 
-              <FormControl
-                size="small"
+              <Stack
+                direction="row"
+                spacing={0.6}
+                alignItems="center"
                 sx={{
-                  minWidth: { xs: 58, sm: 162 },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 999,
-                    bgcolor: isDarkMode
-                      ? "rgba(15, 23, 42, 0.9)"
-                      : "rgba(255,255,255,0.9)",
-                  },
-                  "& .MuiSelect-select": {
-                    py: 0.7,
-                    pl: 1.2,
-                    pr: { xs: "28px !important", sm: "32px !important" },
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.8,
-                    fontWeight: 800,
-                  },
+                  px: 0.6,
+                  py: 0.4,
+                  borderRadius: 999,
+                  border: "1px solid",
+                  borderColor: isDarkMode
+                    ? "rgba(148, 163, 184, 0.32)"
+                    : "rgba(15, 118, 110, 0.18)",
+                  bgcolor: isDarkMode
+                    ? "rgba(15, 23, 42, 0.9)"
+                    : "rgba(255,255,255,0.9)",
                 }}
               >
-                <Select
+                <Globe2 size={16} aria-hidden="true" />
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
                   value={appLanguage}
-                  aria-label={t("language.label")}
-                  renderValue={(value) => (
-                    <Stack direction="row" spacing={0.8} alignItems="center">
-                      <Globe2 size={17} aria-hidden="true" />
-                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-                        {languageLabels[value]}
-                      </Box>
-                    </Stack>
-                  )}
-                  onChange={(event) => {
-                    const nextLanguage = event.target.value;
+                  aria-label={t("navigation.languageAria")}
+                  onChange={(_, nextLanguage) => {
                     if (nextLanguage === "uk" || nextLanguage === "pl" || nextLanguage === "en") {
                       setLanguage(nextLanguage);
                       dispatch(setProfileLanguage(nextLanguage));
                     }
                   }}
+                  sx={{
+                    gap: 0.25,
+                    "& .MuiToggleButtonGroup-grouped": {
+                      width: 34,
+                      height: 30,
+                      border: 0,
+                      borderRadius: "999px !important",
+                      m: 0,
+                      px: 0,
+                      color: isDarkMode ? "#cbd5e1" : "#334155",
+                      fontWeight: 900,
+                      fontSize: 12,
+                      "&.Mui-selected": {
+                        color: "#ffffff",
+                        bgcolor: "#0f766e",
+                        "&:hover": { bgcolor: "#115e59" },
+                      },
+                    },
+                  }}
                 >
-                  <MenuItem value="uk">{languageLabels.uk}</MenuItem>
-                  <MenuItem value="pl">{languageLabels.pl}</MenuItem>
-                  <MenuItem value="en">{languageLabels.en}</MenuItem>
-                </Select>
-              </FormControl>
+                  {languageOptions.map((option) => (
+                    <ToggleButton
+                      key={option.value}
+                      value={option.value}
+                      aria-label={languageLabels[option.value]}
+                    >
+                      {option.code}
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+              </Stack>
 
               {user ? (
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -345,7 +368,7 @@ const Layout = () => {
       {user && (
         <Paper
           component="nav"
-          aria-label="Mobile navigation"
+          aria-label={t("navigation.mobileAria")}
           elevation={0}
           sx={{
             display: { xs: "block", md: "none" },
@@ -366,7 +389,7 @@ const Layout = () => {
           }}
         >
           <BottomNavigation
-            aria-label="Mobile primary navigation"
+            aria-label={t("navigation.mobilePrimaryAria")}
             showLabels
             value={activeMobileTab}
             onChange={(_, nextValue) => {

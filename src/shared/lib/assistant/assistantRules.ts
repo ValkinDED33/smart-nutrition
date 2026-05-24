@@ -35,6 +35,59 @@ type AssistantSignals = {
   primaryFocus: PrimaryFocus;
 };
 
+const getActivePersonality = (context: AssistantRuntimeContext) =>
+  context.memory?.personality ?? context.assistantPersonality;
+
+const getPersonalityLine = (context: AssistantRuntimeContext) => {
+  const personality = getActivePersonality(context);
+
+  if (context.language === "en") {
+    if (personality.strictness >= 0.7) {
+      return "I will keep the advice direct and accountable, without making the day feel punitive.";
+    }
+
+    if (personality.motivation >= 0.88) {
+      return "I will keep the next step energetic and concrete.";
+    }
+
+    if (personality.warmth >= 0.8) {
+      return "I will keep the tone calm, supportive, and practical.";
+    }
+
+    return "I will keep the tone practical and balanced.";
+  }
+
+  if (context.language === "pl") {
+    if (personality.strictness >= 0.7) {
+      return "Będę prowadzić konkretnie i odpowiedzialnie, bez karania dnia.";
+    }
+
+    if (personality.motivation >= 0.88) {
+      return "Będę trzymać kolejny krok energiczny i konkretny.";
+    }
+
+    if (personality.warmth >= 0.8) {
+      return "Będę trzymać ton spokojny, wspierający i praktyczny.";
+    }
+
+    return "Będę trzymać ton praktyczny i zbalansowany.";
+  }
+
+  if (personality.strictness >= 0.7) {
+    return "Я триматиму поради конкретними й відповідальними, але без покарання за день.";
+  }
+
+  if (personality.motivation >= 0.88) {
+    return "Я триматиму наступний крок енергійним і конкретним.";
+  }
+
+  if (personality.warmth >= 0.8) {
+    return "Я триматиму тон спокійним, підтримуючим і практичним.";
+  }
+
+  return "Я триматиму тон практичним і збалансованим.";
+};
+
 const mealIdeas: Record<
   AssistantRuntimeContext["language"],
   Record<DietStyle, { light: string[]; full: string[] }>
@@ -379,7 +432,9 @@ const getLightHumorLine = (
   context: AssistantRuntimeContext,
   signals: AssistantSignals
 ) => {
-  if (!context.humorEnabled || context.assistantTone !== "playful") {
+  const personality = getActivePersonality(context);
+
+  if (!context.humorEnabled || personality.humor < 0.45) {
     return "";
   }
 
@@ -1115,18 +1170,19 @@ export const buildAssistantWelcomeMessage = (
 ): AssistantRuntimeResponse => {
   const signals = deriveSignals(context);
   const contactLine = getPersonalContactLine(context);
+  const personalityLine = getPersonalityLine(context);
   const text =
     context.language === "en"
-      ? `${context.assistantName} is ready. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      ? `${context.assistantName} is ready. ${personalityLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} I can quickly break down your day, protein, weekly focus, and motivation from current data.`
       : context.language === "pl"
-      ? `${context.assistantName} jest gotowy. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      ? `${context.assistantName} jest gotowy. ${personalityLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} Mogę szybko rozłożyć dzień, białko, fokus tygodnia i motywację na podstawie bieżących danych.`
-      : `${context.assistantName} вже на місці. ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      : `${context.assistantName} вже на місці. ${personalityLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} Можу швидко розкласти день, білок, тижневий фокус і мотивацію по ваших поточних даних.`;
@@ -1166,6 +1222,7 @@ export const buildGuidedAssistantReply = ({
     const textByIntent = {
       day_status: [
         getPersonalContactLine(context),
+        getPersonalityLine(context),
         getSnapshotLine(context),
         getPriorityLine(context, signals),
         getActionLine(context, signals),
@@ -1255,6 +1312,7 @@ export const buildGuidedAssistantReply = ({
   const textByIntent = {
     day_status: [
       getPersonalContactLine(context),
+      getPersonalityLine(context),
       getSnapshotLine(context),
       getPriorityLine(context, signals),
       getActionLine(context, signals),

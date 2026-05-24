@@ -96,7 +96,7 @@ export interface AssistantRuntimeContext {
     openMotivationTasks: number;
     completedMotivationTasks: number;
   };
-  memory: AssistantMemory | null;
+  memory: AssistantMemory;
 }
 
 export interface AssistantQuestionInput {

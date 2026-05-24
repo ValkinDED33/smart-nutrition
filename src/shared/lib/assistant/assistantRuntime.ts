@@ -31,11 +31,15 @@ export interface AssistantRuntime {
   askQuestion: typeof askAssistantRuntimeQuestion;
   loadHistory: () => Promise<AssistantChatMessage[]>;
   clearHistory: () => Promise<boolean>;
+  getPersonality: typeof getAssistantRuntimePersonality;
   buildWelcomeMessage: typeof buildAssistantWelcomeMessage;
   buildGuidedReply: (input: AssistantQuestionInput) => ReturnType<typeof buildGuidedAssistantReply>;
   getModeLabel: typeof getAssistantModeLabel;
   getHonestyNote: typeof getAssistantHonestyNote;
 }
+
+export const getAssistantRuntimePersonality = (context: AssistantRuntimeContext) =>
+  context.memory?.personality ?? context.assistantPersonality;
 
 export const createAssistantRuntime = ({
   provider = assistantRuntimeGateway,
@@ -45,6 +49,7 @@ export const createAssistantRuntime = ({
   askQuestion: (input) => provider.askQuestion(input),
   loadHistory: () => memory.loadHistory(),
   clearHistory: () => memory.clearHistory(),
+  getPersonality: getAssistantRuntimePersonality,
   buildWelcomeMessage: buildAssistantWelcomeMessage,
   buildGuidedReply: buildGuidedAssistantReply,
   getModeLabel: getAssistantModeLabel,

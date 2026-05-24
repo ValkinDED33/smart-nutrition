@@ -115,7 +115,23 @@ const createContext = (): AssistantRuntimeContext => ({
     openMotivationTasks: 1,
     completedMotivationTasks: 2,
   },
-  memory: null,
+  memory: {
+    userId: "user-1",
+    assistantName: "Diana",
+    personality: {
+      warmth: 0.9,
+      humor: 0.4,
+      strictness: 0.2,
+      motivation: 0.8,
+    },
+    communicationStyle: "supportive",
+    goals: ["steady fat loss"],
+    struggles: ["evening snacking"],
+    habits: ["prefers short check-ins"],
+    motivationTriggers: ["gentle support"],
+    lastMood: "focused",
+    recentProblems: [],
+  },
 });
 
 describe("assistantRuntime", () => {

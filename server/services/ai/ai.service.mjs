@@ -260,10 +260,14 @@ const toUniqueList = (...sources) =>
     ),
   ].slice(0, 8);
 
-const normalizeIncomingAssistantMemory = (value) => {
+const normalizeIncomingAssistantMemory = (
+  value,
+  fallbackPersonality = inferAssistantPersonality("gentle")
+) => {
   const record = isRecord(value) ? value : {};
 
   return {
+    personality: normalizeAssistantPersonality(record.personality, fallbackPersonality),
     goals: toUniqueList(record.goals),
     struggles: toUniqueList(record.struggles),
     habits: toUniqueList(record.habits),
@@ -274,7 +278,10 @@ const normalizeIncomingAssistantMemory = (value) => {
 };
 
 const createContextualAssistantMemory = ({ currentUser, context, storedMemory }) => {
-  const incomingMemory = normalizeIncomingAssistantMemory(context.memory);
+  const incomingMemory = normalizeIncomingAssistantMemory(
+    context.memory,
+    context.assistantPersonality
+  );
   const proteinGap =
     context.proteinTarget > 0 && context.proteinConsumed < context.proteinTarget * 0.75;
   const waterGap =
@@ -290,7 +297,7 @@ const createContextualAssistantMemory = ({ currentUser, context, storedMemory })
     userId: currentUser.id,
     assistantName: context.assistantName,
     personality: normalizeAssistantPersonality(
-      storedMemory?.personality ?? context.assistantPersonality,
+      storedMemory?.personality ?? incomingMemory.personality,
       context.assistantPersonality
     ),
     communicationStyle:
@@ -328,6 +335,18 @@ const normalizeContext = (payload, currentUser) => {
   const record = isRecord(payload) ? payload : {};
   const coach = isRecord(record.coach) ? record.coach : {};
   const motivation = isRecord(record.motivation) ? record.motivation : {};
+  const assistantTone = normalizeText(record.assistantTone, {
+    maxLength: 24,
+    fallback: "gentle",
+  });
+  const assistantPersonality = normalizeAssistantPersonality(
+    record.assistantPersonality,
+    inferAssistantPersonality(assistantTone)
+  );
+  const communicationStyle = normalizeText(record.communicationStyle, {
+    maxLength: 40,
+    fallback: inferCommunicationStyle(assistantTone),
+  });
 
   return {
     language: normalizeLanguage(record.language),
@@ -360,19 +379,10 @@ const normalizeContext = (payload, currentUser) => {
       maxLength: 24,
       fallback: "assistant",
     }),
-    assistantTone: normalizeText(record.assistantTone, {
-      maxLength: 24,
-      fallback: "gentle",
-    }),
+    assistantTone,
     humorEnabled: Boolean(record.humorEnabled),
-    assistantPersonality: normalizeAssistantPersonality(
-      record.assistantPersonality,
-      inferAssistantPersonality(record.assistantTone)
-    ),
-    communicationStyle: normalizeText(record.communicationStyle, {
-      maxLength: 40,
-      fallback: inferCommunicationStyle(record.assistantTone),
-    }),
+    assistantPersonality,
+    communicationStyle,
     personalDetails: normalizePersonalDetails(record.personalDetails),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
@@ -429,7 +439,7 @@ const normalizeContext = (payload, currentUser) => {
         0
       ),
     },
-    memory: normalizeIncomingAssistantMemory(record.memory),
+    memory: normalizeIncomingAssistantMemory(record.memory, assistantPersonality),
   };
 };
 
