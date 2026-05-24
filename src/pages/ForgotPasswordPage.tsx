@@ -31,9 +31,6 @@ const forgotPasswordCopy = {
       "Введіть email акаунта, і ми підготуємо посилання для скидання пароля.",
     submit: "Надіслати посилання",
     sending: "Готую посилання...",
-    previewTitle: "Попередній перегляд посилання",
-    previewHint:
-      "У цій збірці email-доставка ще не налаштована. Нижче показано чесний preview reset-посилання.",
     backToLogin: "Повернутися до входу",
     genericError: "Не вдалося підготувати посилання.",
     deliveryUnavailable:
@@ -46,9 +43,6 @@ const forgotPasswordCopy = {
       "Podaj email konta, a przygotujemy link do ustawienia nowego hasła.",
     submit: "Wyślij link resetu",
     sending: "Przygotowuję link...",
-    previewTitle: "Podgląd linku resetu",
-    previewHint:
-      "W tej konfiguracji wysyłka email nie jest jeszcze podpięta. Poniżej pokazujemy uczciwy preview linku resetu.",
     backToLogin: "Wróć do logowania",
     genericError: "Nie udało się przygotować linku resetu.",
     deliveryUnavailable:
@@ -109,10 +103,6 @@ const ForgotPasswordPage = () => {
     }
   };
 
-  const previewHref = result?.previewToken
-    ? `/reset-password?token=${encodeURIComponent(result.previewToken)}`
-    : null;
-
   return (
     <Box sx={{ display: "grid", placeItems: "center", minHeight: "75vh" }}>
       <Paper
@@ -142,23 +132,6 @@ const ForgotPasswordPage = () => {
 
           {serverError && <Alert severity="error">{serverError}</Alert>}
           {result && <Alert severity="success">{result.message}</Alert>}
-
-          {previewHref && (
-            <Alert severity="info">
-              <Stack spacing={1}>
-                <Typography sx={{ fontWeight: 800 }}>{copy.previewTitle}</Typography>
-                <Typography variant="body2">{copy.previewHint}</Typography>
-                <Button
-                  component={Link}
-                  to={previewHref}
-                  variant="outlined"
-                  sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
-                >
-                  {copy.openResetLink}
-                </Button>
-              </Stack>
-            </Alert>
-          )}
 
           <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
             <TextField

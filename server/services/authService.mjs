@@ -135,7 +135,7 @@ export const createAuthService = ({
     }
 
     const avatar = String(value).trim();
-    const allowedAvatarPattern = /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp|svg\+xml)[;,])/i;
+    const allowedAvatarPattern = /^(https?:\/\/|data:image\/(?:png|jpeg|jpg|webp)[;,])/i;
 
     if (avatar.length > 512 * 1024 || !allowedAvatarPattern.test(avatar)) {
       throw new AuthApiError("INVALID_PROFILE", "Avatar must be a safe image URL.");
@@ -238,20 +238,15 @@ export const createAuthService = ({
     refreshToken,
     snapshot: await stateRepository.getSnapshotByUserId(user.id, user),
   });
-  const getDefaultPasswordResetDelivery = () =>
-    config.isProduction || emailService?.isConfigured?.() ? "email" : "preview";
-
   const getUserById = (userId) => authRepository.findUserById(userId);
 
   const buildPasswordResetResponse = ({
-    delivery = getDefaultPasswordResetDelivery(),
-    previewToken = undefined,
+    delivery = "email",
     expiresAt = undefined,
   } = {}) => ({
     ok: true,
     message: passwordResetRequestMessage,
     delivery,
-    previewToken,
     expiresAt,
   });
 
@@ -260,7 +255,6 @@ export const createAuthService = ({
     channel,
     target,
     delivery,
-    previewCode = undefined,
     expiresAt,
   }) => ({
     ok: true,
@@ -270,7 +264,6 @@ export const createAuthService = ({
     maskedTarget: channel === "sms" ? maskPhone(target) : maskEmail(email),
     delivery,
     message: registrationVerificationMessage,
-    previewCode,
     expiresAt: new Date(expiresAt).toISOString(),
   });
 
@@ -311,33 +304,25 @@ export const createAuthService = ({
           })
         : null;
 
-    if (channel === "sms" && config.isProduction && !smsResult?.ok) {
+    if (channel === "sms" && !smsResult?.ok) {
       throw new AuthApiError(
         "VERIFICATION_DELIVERY_UNAVAILABLE",
         "SMS verification could not be delivered through MANGO OFFICE."
       );
     }
 
-    if (channel === "email" && config.isProduction && !emailResult?.ok) {
+    if (channel === "email" && !emailResult?.ok) {
       throw new AuthApiError(
         "VERIFICATION_DELIVERY_UNAVAILABLE",
         "Email verification could not be delivered."
       );
     }
 
-    const delivery =
-      channel === "email" && emailResult?.ok
-        ? "email"
-        : channel === "sms" && (smsResult?.ok || config.isProduction)
-          ? "sms"
-          : "preview";
-
     return buildRegistrationVerificationResponse({
       email: user.email,
       channel,
       target,
-      delivery,
-      previewCode: delivery === "preview" ? code : undefined,
+      delivery: channel,
       expiresAt,
     });
   };
@@ -782,18 +767,12 @@ export const createAuthService = ({
       if (emailResult?.ok) {
         return buildPasswordResetResponse({
           delivery: "email",
-        });
-      }
-
-      if (config.isProduction) {
-        return buildPasswordResetResponse({
-          delivery: "email",
+          expiresAt: new Date(expiresAt).toISOString(),
         });
       }
 
       return buildPasswordResetResponse({
-        delivery: "preview",
-        previewToken: rawToken,
+        delivery: "email",
         expiresAt: new Date(expiresAt).toISOString(),
       });
     },

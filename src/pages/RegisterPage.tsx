@@ -87,11 +87,10 @@ const registerPageCopy = {
     verify: "Підтвердити",
     verifying: "Перевіряємо...",
     resend: "Надіслати ще раз",
-    preview: "Preview-код",
     sent: "Код надіслано: {target}",
     verified: "Реєстрацію підтверджено.",
     deliveryUnavailable:
-      "SMS-підтвердження тимчасово недоступне. Спробуйте ще раз або оберіть email.",
+      "Доставка коду підтвердження тимчасово недоступна на backend.",
   },
   pl: {
     showPassword: "Pokaż hasło",
@@ -119,11 +118,10 @@ const registerPageCopy = {
     verify: "Potwierdź",
     verifying: "Sprawdzam...",
     resend: "Wyślij ponownie",
-    preview: "Kod preview",
     sent: "Kod wysłany: {target}",
     verified: "Rejestracja potwierdzona.",
     deliveryUnavailable:
-      "Potwierdzenie SMS jest tymczasowo niedostępne. Spróbuj ponownie albo wybierz email.",
+      "Dostawa kodu potwierdzającego jest tymczasowo niedostępna po stronie backendu.",
   },
 } as const;
 
@@ -271,7 +269,7 @@ const RegisterPage = () => {
 
       if (isVerificationPending(response)) {
         setPendingVerification(response);
-        setVerificationCode(response.previewCode ?? "");
+        setVerificationCode("");
         return;
       }
 
@@ -407,11 +405,6 @@ const RegisterPage = () => {
                 <Typography sx={{ fontWeight: 800 }}>
                   {copy.sent.replace("{target}", pendingVerification.maskedTarget)}
                 </Typography>
-                {pendingVerification.previewCode && (
-                  <Typography>
-                    {copy.preview}: <strong>{pendingVerification.previewCode}</strong>
-                  </Typography>
-                )}
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                   <TextField
                     fullWidth

@@ -34,7 +34,7 @@ const resetPasswordCopy = {
     weakPassword:
       "Пароль має містити щонайменше 10 символів, велику, малу літеру, цифру та символ.",
     missingToken:
-      "Тут немає reset-токена. Відкрийте сторінку з посилання з листа або preview.",
+      "Тут немає reset-токена. Відкрийте сторінку з посилання з листа.",
     backToLogin: "Перейти до входу",
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
@@ -49,7 +49,7 @@ const resetPasswordCopy = {
     weakPassword:
       "Hasło musi mieć co najmniej 10 znaków, wielką, małą literę, cyfrę i symbol.",
     missingToken:
-      "Brakuje tokenu resetu. Otwórz stronę z linku z maila albo preview.",
+      "Brakuje tokenu resetu. Otwórz stronę z linku z maila.",
     backToLogin: "Przejdź do logowania",
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",

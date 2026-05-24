@@ -73,9 +73,8 @@ export interface RegistrationVerificationPending {
   email: string;
   channel: VerificationChannel;
   maskedTarget: string;
-  delivery: VerificationChannel | "preview";
+  delivery: VerificationChannel;
   message: string;
-  previewCode?: string;
   expiresAt?: string;
 }
 

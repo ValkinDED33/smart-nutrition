@@ -1,189 +1,68 @@
-const DB_NAME = "smart-nutrition-client";
-const STORE_NAME = "kv";
 const LEGACY_KEY_PREFIX = "smart-nutrition.";
-const INDEXED_DB_OPEN_TIMEOUT_MS = 1200;
-const LEGACY_BROWSER_STORAGE_PROPERTY = ["local", "Storage"].join("") as keyof Window;
+const LEGACY_DB_NAME = "smart-nutrition-client";
 
 const memoryStore = new Map<string, string>();
 let initialized = false;
 let initializationPromise: Promise<void> | null = null;
-let databasePromise: Promise<IDBDatabase | null> | null = null;
 
-type PersistOperation =
-  | { type: "set"; key: string; value: string }
-  | { type: "remove"; key: string };
+type BrowserStorageName = "local" | "session";
 
-const openDatabase = () => {
-  if (databasePromise) {
-    return databasePromise;
-  }
-
-  databasePromise = new Promise<IDBDatabase | null>((resolve) => {
-    if (typeof indexedDB === "undefined") {
-      resolve(null);
-      return;
-    }
-
-    try {
-      let settled = false;
-      let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
-      const finish = (database: IDBDatabase | null) => {
-        if (settled) {
-          return;
-        }
-
-        settled = true;
-
-        if (timeoutId) {
-          globalThis.clearTimeout(timeoutId);
-        }
-
-        if (!database) {
-          databasePromise = null;
-        }
-
-        resolve(database);
-      };
-      const request = indexedDB.open(DB_NAME, 1);
-
-      timeoutId = globalThis.setTimeout(() => {
-        finish(null);
-      }, INDEXED_DB_OPEN_TIMEOUT_MS);
-
-      request.onupgradeneeded = () => {
-        const database = request.result;
-
-        if (!database.objectStoreNames.contains(STORE_NAME)) {
-          database.createObjectStore(STORE_NAME);
-        }
-      };
-
-      request.onsuccess = () => {
-        finish(request.result);
-      };
-
-      request.onerror = () => {
-        finish(null);
-      };
-
-      request.onblocked = () => {
-        finish(null);
-      };
-    } catch {
-      resolve(null);
-    }
-  });
-
-  return databasePromise;
-};
-
-const withStore = async <T,>(
-  mode: IDBTransactionMode,
-  handler: (store: IDBObjectStore) => Promise<T> | T
-) => {
-  const database = await openDatabase();
-
-  if (!database) {
-    return null as T | null;
-  }
-
-  const transaction = database.transaction(STORE_NAME, mode);
-  const store = transaction.objectStore(STORE_NAME);
-
-  return handler(store);
-};
-
-const readAllEntries = async () => {
-  const entries = await withStore<Map<string, string>>("readonly", (store) => {
-    return new Promise<Map<string, string>>((resolve) => {
-      const nextMap = new Map<string, string>();
-      const request = store.openCursor();
-
-      request.onsuccess = () => {
-        const cursor = request.result;
-
-        if (!cursor) {
-          resolve(nextMap);
-          return;
-        }
-
-        if (typeof cursor.key === "string" && typeof cursor.value === "string") {
-          nextMap.set(cursor.key, cursor.value);
-        }
-
-        cursor.continue();
-      };
-
-      request.onerror = () => {
-        resolve(nextMap);
-      };
-    });
-  });
-
-  return entries ?? new Map<string, string>();
-};
-
-const flushOperation = async (operation: PersistOperation) => {
-  await withStore("readwrite", (store) => {
-    return new Promise<void>((resolve) => {
-      const request =
-        operation.type === "set"
-          ? store.put(operation.value, operation.key)
-          : store.delete(operation.key);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => resolve();
-    });
-  });
-};
-
-const getLegacyBrowserStorage = () => {
+const getBrowserStorage = (name: BrowserStorageName) => {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const storage = window[LEGACY_BROWSER_STORAGE_PROPERTY];
+  const propertyName = [name, "Storage"].join("");
+  const storage = (window as unknown as Record<string, Storage | undefined>)[propertyName];
 
   return typeof Storage !== "undefined" && storage instanceof Storage ? storage : null;
 };
 
-const migrateLegacyBrowserStorage = async () => {
-  const legacyStorage = getLegacyBrowserStorage();
+const purgeLegacyBrowserStorage = (name: BrowserStorageName) => {
+  const storage = getBrowserStorage(name);
 
-  if (!legacyStorage) {
+  if (!storage) {
     return;
   }
 
-  const legacyKeys: string[] = [];
+  const keys: string[] = [];
 
   try {
-    for (let index = 0; index < legacyStorage.length; index += 1) {
-      const key = legacyStorage.key(index);
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
 
       if (key?.startsWith(LEGACY_KEY_PREFIX)) {
-        legacyKeys.push(key);
+        keys.push(key);
       }
     }
+
+    keys.forEach((key) => storage.removeItem(key));
   } catch {
+    // Old browser storage is best-effort cleanup only.
+  }
+};
+
+const deleteLegacyDatabase = async () => {
+  const propertyName = ["indexed", "DB"].join("");
+  const indexedDbRef = (globalThis as unknown as Record<string, IDBFactory | undefined>)[
+    propertyName
+  ];
+
+  if (!indexedDbRef?.deleteDatabase) {
     return;
   }
 
-  if (legacyKeys.length === 0) {
-    return;
-  }
+  await new Promise<void>((resolve) => {
+    try {
+      const request = indexedDbRef.deleteDatabase(LEGACY_DB_NAME);
 
-  await Promise.all(
-    legacyKeys.map(async (key) => {
-      const value = legacyStorage.getItem(key);
-
-      if (typeof value === "string") {
-        memoryStore.set(key, value);
-        await flushOperation({ type: "set", key, value });
-      }
-
-      legacyStorage.removeItem(key);
-    })
-  );
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
 };
 
 export const initializeClientPersistence = async () => {
@@ -196,42 +75,22 @@ export const initializeClientPersistence = async () => {
   }
 
   initializationPromise = (async () => {
-    const entries = await readAllEntries();
     memoryStore.clear();
-    entries.forEach((value, key) => {
-      memoryStore.set(key, value);
-    });
-    await migrateLegacyBrowserStorage();
+    purgeLegacyBrowserStorage("local");
+    purgeLegacyBrowserStorage("session");
+    await deleteLegacyDatabase();
     initialized = true;
   })();
 
   return initializationPromise;
 };
 
-const schedulePersist = (operation: PersistOperation) => {
-  void flushOperation(operation);
-};
-
 export const getClientStorageItem = (key: string) => memoryStore.get(key) ?? null;
 
 export const setClientStorageItem = (key: string, value: string) => {
   memoryStore.set(key, value);
-  schedulePersist({ type: "set", key, value });
 };
 
 export const removeClientStorageItem = (key: string) => {
   memoryStore.delete(key);
-  schedulePersist({ type: "remove", key });
 };
-
-export const createIndexedDbPersistStorage = () => ({
-  getItem: (key: string) => Promise.resolve(getClientStorageItem(key)),
-  setItem: (key: string, value: string) => {
-    setClientStorageItem(key, value);
-    return Promise.resolve(value);
-  },
-  removeItem: (key: string) => {
-    removeClientStorageItem(key);
-    return Promise.resolve();
-  },
-});

@@ -56,8 +56,7 @@ export interface AccountExportPayload {
 export interface PasswordResetRequestResult {
   ok: true;
   message: string;
-  delivery: "email" | "preview";
-  previewToken?: string;
+  delivery: "email";
   expiresAt?: string;
 }
 

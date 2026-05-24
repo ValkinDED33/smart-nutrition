@@ -1,12 +1,10 @@
 import type {
   AssistantQuestionInput,
   AssistantConversationMessage,
-  AssistantQuickQuestionId,
   AssistantRuntimeResponse,
   AssistantRuntimeStatus,
   AssistantRuntimeStatusProvider,
 } from "../types/assistant";
-import { buildGuidedAssistantReply } from "../lib/assistant/assistantRules";
 import {
   assistantQuickQuestionIds,
   isAssistantQuickQuestionId,
@@ -15,102 +13,22 @@ import {
   getRemoteAuthBaseUrl,
   isCloudSyncActive,
 } from "./auth";
-import {
-  getClientStorageItem,
-  removeClientStorageItem,
-  setClientStorageItem,
-} from "../lib/clientPersistence";
 
 const AI_PATH = "/ai";
 const AI_STATUS_PATH = "/ai/status";
-const LOCAL_HISTORY_KEY = "smart-nutrition.assistant-history";
-const LOCAL_HISTORY_LIMIT = 30;
 
-const createLocalMessageId = (prefix: string) =>
-  globalThis.crypto?.randomUUID?.() ??
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-const parseLocalHistory = (): AssistantConversationMessage[] => {
-  const raw = getClientStorageItem(LOCAL_HISTORY_KEY);
-
-  if (!raw) {
-    return [];
+const getRequiredAssistantBaseUrl = () => {
+  if (!isCloudSyncActive()) {
+    throw new Error("Backend session is required for assistant requests.");
   }
 
-  try {
-    const parsed = JSON.parse(raw) as Array<Partial<AssistantConversationMessage>>;
+  const baseUrl = getRemoteAuthBaseUrl();
 
-    return Array.isArray(parsed)
-      ? parsed
-          .map((item): AssistantConversationMessage | null => {
-            if (
-              typeof item.id !== "string" ||
-              !isAssistantMessageRole(item.role) ||
-              typeof item.text !== "string" ||
-              !item.text.trim()
-            ) {
-              return null;
-            }
-
-            return {
-              id: item.id,
-              role: item.role,
-              text: item.text.trim(),
-              mode: item.mode === "remote-cloud" ? "remote-cloud" : "guided",
-              followUpQuestionIds: Array.isArray(item.followUpQuestionIds)
-                ? item.followUpQuestionIds.filter(isAssistantQuickQuestionId)
-                : undefined,
-              createdAt:
-                typeof item.createdAt === "string" && item.createdAt.trim()
-                  ? item.createdAt
-                  : undefined,
-            };
-          })
-          .filter((item): item is AssistantConversationMessage => item !== null)
-      : [];
-  } catch {
-    return [];
+  if (!baseUrl) {
+    throw new Error("Backend unavailable for assistant requests.");
   }
-};
 
-const writeLocalHistory = (items: AssistantConversationMessage[]) => {
-  setClientStorageItem(
-    LOCAL_HISTORY_KEY,
-    JSON.stringify(items.slice(-LOCAL_HISTORY_LIMIT))
-  );
-};
-
-const appendLocalHistory = ({
-  question,
-  response,
-  quickQuestionId,
-}: {
-  question: string;
-  response: AssistantRuntimeResponse;
-  quickQuestionId?: AssistantQuickQuestionId | null;
-}) => {
-  const createdAt = new Date().toISOString();
-  const history = parseLocalHistory();
-
-  writeLocalHistory([
-    ...history,
-    {
-      id: createLocalMessageId("assistant-user"),
-      role: "user",
-      text: question,
-      createdAt,
-    },
-    {
-      id: createLocalMessageId("assistant-local"),
-      role: "assistant",
-      text: response.text,
-      mode: "guided",
-      followUpQuestionIds: response.followUpQuestionIds,
-      createdAt: new Date(Date.now() + 1).toISOString(),
-    },
-  ]);
-
-  void quickQuestionId;
+  return baseUrl;
 };
 
 const parseAiResponse = async (
@@ -186,63 +104,32 @@ const parseAiHistory = async (
 export const askAssistantQuestion = async (
   input: AssistantQuestionInput
 ): Promise<AssistantRuntimeResponse> => {
-  const buildFallback = () => {
-    const response = buildGuidedAssistantReply(input);
-    appendLocalHistory({
+  const baseUrl = getRequiredAssistantBaseUrl();
+  const response = await fetch(`${baseUrl}${AI_PATH}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
       question: input.question,
-      response,
-      quickQuestionId: input.quickQuestionId,
-    });
-    return response;
-  };
+      quickQuestionId: input.quickQuestionId ?? null,
+      context: input.context,
+    }),
+  });
 
-  if (!isCloudSyncActive()) {
-    return buildFallback();
+  if (!response.ok) {
+    throw new Error("AI request failed.");
   }
 
-  const baseUrl = getRemoteAuthBaseUrl();
-
-  if (!baseUrl) {
-    return buildFallback();
-  }
-
-  try {
-    const response = await fetch(`${baseUrl}${AI_PATH}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        question: input.question,
-        quickQuestionId: input.quickQuestionId ?? null,
-        context: input.context,
-      }),
-    });
-
-    if (!response.ok) {
-      return buildFallback();
-    }
-
-    return await parseAiResponse(response);
-  } catch {
-    return buildFallback();
-  }
+  return parseAiResponse(response);
 };
 
 export const getAssistantConversationHistory = async (): Promise<
   AssistantConversationMessage[]
 > => {
-  if (!isCloudSyncActive()) {
-    return parseLocalHistory();
-  }
-
-  const baseUrl = getRemoteAuthBaseUrl();
-
-  if (!baseUrl) {
-    return parseLocalHistory();
-  }
+  const baseUrl = getRequiredAssistantBaseUrl();
 
   const response = await fetch(`${baseUrl}${AI_PATH}`, {
     method: "GET",
@@ -260,17 +147,7 @@ export const getAssistantConversationHistory = async (): Promise<
 };
 
 export const clearAssistantConversationHistory = async () => {
-  if (!isCloudSyncActive()) {
-    removeClientStorageItem(LOCAL_HISTORY_KEY);
-    return true;
-  }
-
-  const baseUrl = getRemoteAuthBaseUrl();
-
-  if (!baseUrl) {
-    removeClientStorageItem(LOCAL_HISTORY_KEY);
-    return true;
-  }
+  const baseUrl = getRequiredAssistantBaseUrl();
 
   const response = await fetch(`${baseUrl}${AI_PATH}`, {
     method: "DELETE",

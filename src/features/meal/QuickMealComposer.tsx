@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
 import {
   Button,
   MenuItem,
@@ -10,7 +11,7 @@ import {
 } from "@mui/material";
 import { addProduct } from "./mealSlice";
 import { selectFavoriteProductIds } from "./selectors";
-import { productCatalog } from "../../shared/lib/productCatalog";
+import { searchProducts } from "../../shared/api/products";
 import type { MealType } from "../../shared/types/meal";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
@@ -31,7 +32,7 @@ interface ComposerRow {
   quantity: number | "";
 }
 
-const createRow = (productId = productCatalog[0]?.id ?? ""): ComposerRow => ({
+const createRow = (productId = ""): ComposerRow => ({
   id:
     globalThis.crypto?.randomUUID?.() ??
     `composer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -49,12 +50,20 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
-  const availableProducts = productCatalog.filter((product) =>
-    productMatchesPreferences(product, preferences)
+  const productsQuery = useQuery({
+    queryKey: ["composer-products"],
+    queryFn: () => searchProducts(""),
+  });
+  const availableProducts = useMemo(
+    () =>
+      (productsQuery.data ?? []).filter((product) =>
+        productMatchesPreferences(product, preferences)
+      ),
+    [preferences, productsQuery.data]
   );
   const [rows, setRows] = useState<ComposerRow[]>([
-    createRow(availableProducts[0]?.id ?? ""),
-    { ...createRow(availableProducts[1]?.id ?? availableProducts[0]?.id ?? ""), quantity: 80 },
+    createRow(),
+    { ...createRow(), quantity: 80 },
   ]);
 
   const normalizedRows = useMemo(
@@ -224,10 +233,14 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         })}
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <Button variant="outlined" onClick={addRow}>
+          <Button variant="outlined" onClick={addRow} disabled={availableProducts.length === 0}>
             {t("composer.addRow")}
           </Button>
-          <Button variant="contained" onClick={handleSaveMeal}>
+          <Button
+            variant="contained"
+            onClick={handleSaveMeal}
+            disabled={availableProducts.length === 0}
+          >
             {t("composer.saveMeal")}
           </Button>
         </Stack>

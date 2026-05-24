@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useDebounce } from "react-use";
 import {
   Box,
   Alert,
@@ -17,10 +16,6 @@ import {
 import { ProductCard } from "./ProductCard";
 import type { MealType } from "../../shared/types/meal";
 import type { Product } from "../../shared/types/product";
-import {
-  getFeaturedProducts,
-  searchCatalogProducts,
-} from "../../shared/lib/productCatalog";
 import { searchProducts } from "../../shared/api/products";
 import { useLanguage } from "../../shared/language";
 import { selectPersonalBarcodeProducts } from "./selectors";
@@ -108,18 +103,17 @@ export const ProductSearch = ({ mealType }: Props) => {
   const normalizedQuery = query.trim();
   const copy = suggestionCopy[language];
 
-  useDebounce(
-    () => {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
       setDebouncedQuery(normalizedQuery);
-    },
-    250,
-    [normalizedQuery]
-  );
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [normalizedQuery]);
 
   const productQuery = useQuery({
     queryKey: ["product-search", debouncedQuery],
     queryFn: () => searchProducts(debouncedQuery),
-    enabled: debouncedQuery.length > 0,
   });
 
   const results = useMemo(() => productQuery.data ?? [], [productQuery.data]);
@@ -128,16 +122,6 @@ export const ProductSearch = ({ mealType }: Props) => {
     (normalizedQuery !== debouncedQuery ||
       productQuery.isLoading ||
       productQuery.isFetching);
-
-  const rankedLocalResults = useMemo(() => {
-    if (!normalizedQuery) {
-      return [];
-    }
-
-    return searchCatalogProducts(normalizedQuery, 12).filter((product) =>
-      productMatchesPreferences(product, preferences)
-    );
-  }, [normalizedQuery, preferences]);
 
   const autocompleteSuggestions = useMemo(() => {
     if (!normalizedQuery) {
@@ -180,16 +164,16 @@ export const ProductSearch = ({ mealType }: Props) => {
       .slice(0, 4)
       .forEach((product) => addSuggestion(formatSuggestionLabel(product)));
 
-    [...rankedLocalResults, ...results]
+    results
       .filter((product) => productMatchesPreferences(product, preferences))
       .forEach((product) => addSuggestion(formatSuggestionLabel(product)));
 
     return [...suggestions.values()].slice(0, 6);
-  }, [normalizedQuery, personalBarcodeProducts, preferences, rankedLocalResults, results]);
+  }, [normalizedQuery, personalBarcodeProducts, preferences, results]);
 
   const displayResults = useMemo(() => {
     if (!normalizedQuery) {
-      return getFeaturedProducts(12).filter((product) =>
+      return results.filter((product) =>
         productMatchesPreferences(product, preferences)
       );
     }
@@ -211,7 +195,7 @@ export const ProductSearch = ({ mealType }: Props) => {
 
     const merged = new Map<string, Product>();
 
-    [...localMatches, ...rankedLocalResults, ...results].forEach((product) => {
+    [...localMatches, ...results].forEach((product) => {
       const key = createProductKey(product);
 
       if (!merged.has(key)) {
@@ -222,7 +206,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     return [...merged.values()].filter((product) =>
       productMatchesPreferences(product, preferences)
     );
-  }, [normalizedQuery, personalBarcodeProducts, preferences, rankedLocalResults, results]);
+  }, [normalizedQuery, personalBarcodeProducts, preferences, results]);
 
   const duplicateAdvice = useMemo(() => {
     if (normalizedQuery.length < 3) {
@@ -231,7 +215,7 @@ export const ProductSearch = ({ mealType }: Props) => {
 
     const merged = new Map<string, Product>();
 
-    [...personalBarcodeProducts, ...rankedLocalResults, ...results].forEach((product) => {
+    [...personalBarcodeProducts, ...results].forEach((product) => {
       const key = createProductKey(product);
 
       if (!merged.has(key)) {
@@ -242,7 +226,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     return fuzzySearchProducts(normalizedQuery, [...merged.values()], 3).filter(
       (match) => match.score >= 70
     );
-  }, [normalizedQuery, personalBarcodeProducts, rankedLocalResults, results]);
+  }, [normalizedQuery, personalBarcodeProducts, results]);
 
   const availableCategories = useMemo(() => {
     const categoryMap = new Map<string, string>();

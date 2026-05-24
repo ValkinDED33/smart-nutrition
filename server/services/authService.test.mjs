@@ -160,7 +160,7 @@ describe("authService", () => {
     expect(await service.authenticateToken(accessToken)).toBeNull();
   });
 
-  it("creates a password reset preview token for an existing user", async () => {
+  it("creates a password reset token without exposing it when email is unavailable", async () => {
     const { authRepository, emailService, service } = createAuthServiceFixture();
     const user = {
       id: "user-12",
@@ -177,8 +177,7 @@ describe("authService", () => {
     expect(authRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
     expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
     expect(result.ok).toBe(true);
-    expect(result.delivery).toBe("preview");
-    expect(result.previewToken).toBeTruthy();
+    expect(result.delivery).toBe("email");
   });
 
   it("returns email delivery mode when the mailer succeeds", async () => {
@@ -200,7 +199,6 @@ describe("authService", () => {
 
     expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
     expect(result.delivery).toBe("email");
-    expect(result.previewToken).toBeUndefined();
   });
 
   it("does not expose password reset delivery failures in production", async () => {
@@ -226,7 +224,6 @@ describe("authService", () => {
       ok: true,
       delivery: "email",
     });
-    expect(result.previewToken).toBeUndefined();
   });
 
   it("does not expose registration verification codes when production email delivery fails", async () => {
@@ -282,7 +279,6 @@ describe("authService", () => {
     });
 
     expect(result.delivery).toBe("email");
-    expect(result.previewCode).toBeUndefined();
     expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "prod-email-ok@example.com",
@@ -319,7 +315,6 @@ describe("authService", () => {
     });
 
     expect(result.delivery).toBe("sms");
-    expect(result.previewCode).toBeUndefined();
     expect(smsService.sendRegistrationVerificationSms).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "+48 123 456 789",

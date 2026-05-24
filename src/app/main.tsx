@@ -5,8 +5,7 @@ import "./index.css";
 import App from "../App";
 
 import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { persistor, store } from "./store";
+import { store } from "./store";
 
 import { LanguageProvider } from "../shared/language";
 import { initializeClientPersistence } from "../shared/lib/clientPersistence";
@@ -22,13 +21,11 @@ const bootstrap = async () => {
   root.render(
     <StrictMode>
       <Provider store={store}>
-        <PersistGate persistor={persistor}>
-          <AppThemeProvider>
-            <LanguageProvider>
-              <App />
-            </LanguageProvider>
-          </AppThemeProvider>
-        </PersistGate>
+        <AppThemeProvider>
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
+        </AppThemeProvider>
       </Provider>
     </StrictMode>
   );

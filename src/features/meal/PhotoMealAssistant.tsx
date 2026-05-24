@@ -1,5 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import imageCompression from "browser-image-compression";
 import {
   Alert,
@@ -14,10 +14,9 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { AppDispatch } from "../../app/store";
 import { analyzeMealPhoto } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
-import { createFreePhotoAnalysis } from "../../shared/lib/freePhotoAnalysis";
 import { createEmptyNutrients } from "../../shared/lib/nutrients";
 import {
   rescalePhotoMealAnalysis,
@@ -129,8 +128,6 @@ const photoCopy = {
     tooLarge: "Фото завелике. Оберіть файл до 12 MB.",
     analysisError:
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
-    manualFallback:
-      "Хмарний аналіз недоступний, тому ми підготували чернетку за типом прийому їжі та вашими вподобаннями.",
     cloudDraft:
       "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
     previewAlt: "Прев'ю фото страви",
@@ -168,8 +165,6 @@ const photoCopy = {
     tooLarge: "Zdjęcie jest za duże. Wybierz plik do 12 MB.",
     analysisError:
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
-    manualFallback:
-      "Analiza chmurowa jest teraz niedostępna, więc przygotowaliśmy szkic na podstawie typu posiłku i Twoich preferencji.",
     cloudDraft:
       "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
     previewAlt: "Podgląd zdjęcia posiłku",
@@ -203,17 +198,12 @@ type Props = {
 
 export const PhotoMealAssistant = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const profilePreferences = useSelector((state: RootState) => ({
-    dietStyle: state.profile.dietStyle,
-    allergies: state.profile.allergies,
-    excludedIngredients: state.profile.excludedIngredients,
-  }));
   const { language, t } = useLanguage();
   const copy = photoCopy[language];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
   const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");
-  const [analysisMode, setAnalysisMode] = useState<"cloud" | "local-draft" | null>(null);
+  const [analysisMode, setAnalysisMode] = useState<"cloud" | null>(null);
   const [selectedItemIndexes, setSelectedItemIndexes] = useState<number[]>([]);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -256,34 +246,19 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
       try {
         const remoteAnalysis = await analyzeMealPhoto(dataUrl, mealType);
-        const nextMode = remoteAnalysis ? "cloud" : "local-draft";
-        const nextAnalysis = scalePhotoMealAnalysis(
-          remoteAnalysis ??
-            createFreePhotoAnalysis({
-              mealType,
-              preferences: profilePreferences,
-            }),
-          "regular"
-        );
+
+        if (!remoteAnalysis) {
+          throw new Error("PHOTO_ANALYSIS_UNAVAILABLE");
+        }
+
+        const nextAnalysis = scalePhotoMealAnalysis(remoteAnalysis, "regular");
 
         setPortionSize("regular");
         setAnalysis(nextAnalysis);
         setSelectedItemIndexes(nextAnalysis.items.map((_, index) => index));
-        setAnalysisMode(nextMode);
+        setAnalysisMode("cloud");
       } catch {
-        const fallbackAnalysis = scalePhotoMealAnalysis(
-          createFreePhotoAnalysis({
-            mealType,
-            preferences: profilePreferences,
-          }),
-          "regular"
-        );
-
-        setPortionSize("regular");
-        setAnalysis(fallbackAnalysis);
-        setSelectedItemIndexes(fallbackAnalysis.items.map((_, index) => index));
-        setAnalysisMode("local-draft");
-        setError(null);
+        setError(copy.analysisError);
       }
     } catch (readError) {
       const message =
@@ -402,9 +377,6 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
         {error && <Alert severity="warning">{error}</Alert>}
         {feedback && <Alert severity="success">{feedback}</Alert>}
-        {analysisMode === "local-draft" && !error && analysis && (
-          <Alert severity="info">{copy.manualFallback}</Alert>
-        )}
         {analysisMode === "cloud" && !error && analysis && (
           <Alert severity="success">{copy.cloudDraft}</Alert>
         )}

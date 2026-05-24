@@ -10,7 +10,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { persistor, resetAppState, type AppDispatch, type RootState } from "../../app/store";
+import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
 import {
   deleteAccount,
   exportRemoteAccountData,
@@ -227,7 +227,6 @@ export const AccountDataCard = () => {
       await deleteAccount(user.email);
       clearSyncOutbox();
       dispatch(resetAppState());
-      await persistor.purge();
       setNotice({ type: "success", message: copy.deleteSuccess });
       navigate("/");
     } catch {
@@ -246,7 +245,6 @@ export const AccountDataCard = () => {
       await logoutEverywhere();
       clearSyncOutbox();
       dispatch(resetAppState());
-      await persistor.flush();
       setNotice({ type: "success", message: copy.revokeSuccess });
       navigate("/login");
     } catch {

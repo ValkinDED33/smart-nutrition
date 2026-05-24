@@ -27,7 +27,6 @@ describe("barcodeScannerModel", () => {
 
     expect(emptyUrls.google).toBe("#");
     expect(urls.google).toContain("590123%20nutrition%20facts");
-    expect(urls.openFoodFacts).toContain("search_terms=590123");
     expect(urls.auchan).toContain("site%3Azakupy.auchan.pl%20590123");
     expect(urls.biedronka).toContain("site%3Azakupy.biedronka.pl%20590123");
   });

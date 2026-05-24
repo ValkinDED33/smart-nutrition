@@ -28,7 +28,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { persistor, resetAppState, type AppDispatch, type RootState } from "../../app/store";
+import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
 import { logout as logoutSession } from "../api/auth";
 import { useLanguage } from "../language";
 import BackendOfflineBanner from "../components/BackendOfflineBanner";
@@ -73,7 +73,6 @@ const Layout = () => {
     await logoutSession();
     clearSyncOutbox();
     dispatch(resetAppState());
-    await persistor.flush();
     navigate("/");
   };
 

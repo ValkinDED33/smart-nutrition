@@ -132,14 +132,6 @@ const normalizeRemoteBaseUrl = (value: unknown) => {
   }
 };
 
-const isLocalBrowserHost = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return loopbackHostnames.has(window.location.hostname);
-};
-
 const isLoopbackBaseUrl = (value: string) => {
   try {
     const { hostname } = new URL(value);
@@ -150,7 +142,7 @@ const isLoopbackBaseUrl = (value: string) => {
 };
 
 export const canUseRemoteBaseUrlInCurrentBrowser = (value: string) =>
-  isLocalBrowserHost() || !isLoopbackBaseUrl(value);
+  !isLoopbackBaseUrl(value);
 
 const getPublicDeploymentRemoteBaseUrl = () => {
   if (typeof window === "undefined") {
@@ -172,21 +164,6 @@ const getConfiguredRemoteBaseUrl = () => {
   }
 
   return configuredBaseUrl;
-};
-
-const shouldProbeSameOriginApi = () => {
-  if (typeof window === "undefined" || !window.location.origin.startsWith("http")) {
-    return false;
-  }
-
-  if (
-    isLocalBrowserHost() &&
-    (window.location.port === "5173" || window.location.port === "5174")
-  ) {
-    return false;
-  }
-
-  return isLocalBrowserHost() || !window.location.hostname.endsWith(".vercel.app");
 };
 
 const getStoredRemoteBaseUrl = () => {
@@ -437,10 +414,6 @@ export const refreshRemoteSession = async () => {
 const getCandidateBaseUrls = () => {
   const candidates = [getStoredRemoteBaseUrl(), getConfiguredRemoteBaseUrl()];
 
-  if (shouldProbeSameOriginApi()) {
-    candidates.push(`${window.location.origin}/api`);
-  }
-
   return dedupe(candidates.filter((value): value is string => Boolean(value)));
 };
 
@@ -451,7 +424,8 @@ const isRemoteHealthPayload = (value: unknown) =>
   (value as { ok?: unknown }).ok === true &&
   "provider" in value &&
   ((value as { provider?: unknown }).provider === "smart-nutrition-sqlite-api" ||
-    (value as { provider?: unknown }).provider === "smart-nutrition-postgres-api");
+    (value as { provider?: unknown }).provider === "smart-nutrition-postgres-api" ||
+    (value as { provider?: unknown }).provider === "smart-nutrition-mongodb-api");
 
 const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
   if (!force && remoteBaseProbePromise) {

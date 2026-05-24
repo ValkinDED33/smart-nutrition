@@ -7,7 +7,7 @@ import { getDaysSince } from "../lib/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "../lib/nutritionCoach";
 import { syncWaterDay } from "../../features/water/waterSlice";
 
-const STORAGE_KEY = "smart-nutrition.notification-log";
+const notificationLog = new Set<string>();
 
 const formatLocalDayKey = (date: Date) => {
   const year = date.getFullYear();
@@ -36,28 +36,12 @@ const parseTimeToMinutes = (value: string) => {
   return hours * 60 + minutes;
 };
 
-const readNotificationLog = () => {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, true>) : {};
-  } catch {
-    return {};
-  }
-};
-
-const writeNotificationLog = (value: Record<string, true>) => {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-};
-
 const maybeSendNotification = (key: string, title: string, body: string) => {
-  const notificationLog = readNotificationLog();
-
-  if (notificationLog[key]) {
+  if (notificationLog.has(key)) {
     return;
   }
 
-  notificationLog[key] = true;
-  writeNotificationLog(notificationLog);
+  notificationLog.add(key);
   new Notification(title, { body, silent: true });
 };
 

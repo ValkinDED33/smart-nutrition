@@ -1,31 +1,15 @@
 import { configureStore, combineReducers, type AnyAction } from "@reduxjs/toolkit";
-import {
-  persistStore,
-  persistReducer,
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from "redux-persist";
-import type { PersistedState } from "redux-persist/es/types";
 
-import profileReducer, {
-  normalizeProfileState,
-} from "../features/profile/profileSlice";
-import mealReducer, { normalizeMealState } from "../features/meal/mealSlice";
-import waterReducer, { normalizeWaterState } from "../features/water/waterSlice";
+import profileReducer from "../features/profile/profileSlice";
+import mealReducer from "../features/meal/mealSlice";
+import waterReducer from "../features/water/waterSlice";
 import authReducer from "../features/auth/authSlice";
-import fridgeReducer, { normalizeFridgeState } from "../features/fridge/fridgeSlice";
-import communityReducer, {
-  normalizeCommunityState,
-} from "../features/community/communitySlice";
+import fridgeReducer from "../features/fridge/fridgeSlice";
+import communityReducer from "../features/community/communitySlice";
 import {
   registerRemoteSyncListeners,
   remoteSyncListenerMiddleware,
 } from "./syncListeners";
-import persistStorage from "./persistStorage";
 
 const appReducer = combineReducers({
   profile: profileReducer,
@@ -49,42 +33,12 @@ const rootReducer = (
   return appReducer(state, action);
 };
 
-const persistConfig = {
-  key: "root",
-  version: 7,
-  storage: persistStorage,
-  whitelist: ["profile", "meal", "water", "fridge", "community"],
-  migrate: async (state: PersistedState): Promise<PersistedState> => {
-    if (!state || typeof state !== "object") {
-      return state;
-    }
-
-    const persistedState = state as PersistedState & Record<string, unknown>;
-
-    return {
-      ...persistedState,
-      profile: normalizeProfileState(persistedState.profile),
-      meal: normalizeMealState(persistedState.meal),
-      water: normalizeWaterState(persistedState.water),
-      fridge: normalizeFridgeState(persistedState.fridge),
-      community: normalizeCommunityState(persistedState.community),
-    } as PersistedState;
-  },
-};
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-      },
-    }).prepend(remoteSyncListenerMiddleware.middleware),
+    getDefaultMiddleware().prepend(remoteSyncListenerMiddleware.middleware),
 });
 
-export const persistor = persistStore(store);
 export const resetAppState = () => ({ type: RESET_APP_ACTION } as const);
 registerRemoteSyncListeners();
 

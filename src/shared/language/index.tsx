@@ -9,7 +9,6 @@ import {
 } from "react";
 import { createInstance, type i18n as I18nInstance } from "i18next";
 import { I18nextProvider, initReactI18next } from "react-i18next";
-import Cookies from "js-cookie";
 import type { AppLanguage } from "../types/i18n";
 import {
   getLegacyContentLanguage,
@@ -26,7 +25,6 @@ export type Language = "uk" | "pl";
 
 const STORAGE_KEY = "smart-nutrition.language";
 const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";
-const LANGUAGE_COOKIE_KEY = "sn-language";
 
 const uk = {
   "brand.name": "Smart Nutrition",
@@ -555,7 +553,7 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const savedLanguage = getClientStorageItem(STORAGE_KEY) ?? Cookies.get(LANGUAGE_COOKIE_KEY);
+  const savedLanguage = getClientStorageItem(STORAGE_KEY);
   const initialLanguage: AppLanguage = isAppLanguage(savedLanguage) ? savedLanguage : "uk";
   const [appLanguage, setLanguageState] = useState<AppLanguage>(initialLanguage);
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
@@ -581,10 +579,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setLanguageState(nextLanguage);
         void i18n.changeLanguage(nextLanguage);
         setClientStorageItem(STORAGE_KEY, nextLanguage);
-        Cookies.set(LANGUAGE_COOKIE_KEY, nextLanguage, {
-          sameSite: "lax",
-          expires: 365,
-        });
       },
       hasExplicitChoice,
       hasCompletedOnboarding,
@@ -593,10 +587,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setHasCompletedOnboarding(true);
         setClientStorageItem(STORAGE_KEY, appLanguage);
         setClientStorageItem(ONBOARDING_STORAGE_KEY, "true");
-        Cookies.set(LANGUAGE_COOKIE_KEY, appLanguage, {
-          sameSite: "lax",
-          expires: 365,
-        });
       },
       t: (key, vars) => {
         return String(i18n.t(key, vars));

@@ -97,7 +97,6 @@ const scannerCopy = {
     retailerHint:
       "Спробуйте пошук на офіційних сторінках магазинів, де часто є картки товарів з описом і харчовою цінністю.",
     google: "Google",
-    openFoodFacts: "OpenFoodFacts",
     auchan: "Auchan",
     biedronka: "Biedronka",
     manualOpen: "Заповнити вручну",
@@ -159,7 +158,6 @@ const scannerCopy = {
     retailerHint:
       "Sprawdź oficjalne strony sklepów, gdzie często są karty produktów z opisem i wartościami odżywczymi.",
     google: "Google",
-    openFoodFacts: "OpenFoodFacts",
     auchan: "Auchan",
     biedronka: "Biedronka",
     manualOpen: "Wypełnij ręcznie",
@@ -868,15 +866,6 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   rel="noreferrer"
                 >
                   {copy.google}
-                </Button>
-                <Button
-                  variant="outlined"
-                  component="a"
-                  href={barcodeSearchUrls.openFoodFacts}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {copy.openFoodFacts}
                 </Button>
               </Stack>
 

@@ -6,7 +6,6 @@ import { productMatchesPreferences } from "../../../shared/lib/preferences";
 import {
   getProductPortionPresets,
 } from "../../../shared/lib/productPortions";
-import { searchCatalogProducts } from "../../../shared/lib/productCatalog";
 import type { MealEntry, MealType } from "../../../shared/types/meal";
 import type { Product } from "../../../shared/types/product";
 import { removeProduct, updateMealEntry } from "../mealSlice";
@@ -80,22 +79,11 @@ export const useMealEntryEditor = (entry: MealEntry) => {
     setQuantity(value === "" ? "" : Math.max(1, Number(value) || 1));
   }, []);
 
-  const localSearchResults = useMemo(() => {
-    if (!normalizedSearchQuery) {
-      return [];
-    }
-
-    return searchCatalogProducts(normalizedSearchQuery, 10).filter((product) =>
-      productMatchesPreferences(product, preferences)
-    );
-  }, [normalizedSearchQuery, preferences]);
-
   const candidateProducts = useMemo(() => {
     const searchableResults = normalizedSearchQuery ? searchResults : [];
 
     return uniqueProductsByIdentity([
       entry.product,
-      ...localSearchResults,
       ...recentProducts,
       ...savedProducts,
       ...searchableResults,
@@ -104,7 +92,6 @@ export const useMealEntryEditor = (entry: MealEntry) => {
       .slice(0, 8);
   }, [
     entry.product,
-    localSearchResults,
     normalizedSearchQuery,
     preferences,
     recentProducts,

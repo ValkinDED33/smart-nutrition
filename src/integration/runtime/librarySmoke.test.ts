@@ -34,7 +34,7 @@ describe("runtime library integrations", () => {
     expect(typeof getRuntimePlatform()).toBe("string");
   });
 
-  it("creates AI helpers from ElevenLabs, VAD, and LangChain", () => {
+  it("creates AI helpers from ElevenLabs, VAD, and the local token estimator", () => {
     expect(createElevenLabsClient()).toBeNull();
     expect(createElevenLabsClient("test-api-key")).toBeTruthy();
     expect(getNutritionVadOptions()).toMatchObject({

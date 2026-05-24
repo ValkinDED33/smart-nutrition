@@ -86,7 +86,6 @@ export const createBarcodeSearchUrls = (barcodeInput: string) => {
   if (!normalizedBarcode) {
     return {
       google: "#",
-      openFoodFacts: "#",
       auchan: "#",
       biedronka: "#",
     };
@@ -96,9 +95,6 @@ export const createBarcodeSearchUrls = (barcodeInput: string) => {
     google: `https://www.google.com/search?q=${encodeURIComponent(
       `${normalizedBarcode} nutrition facts`
     )}`,
-    openFoodFacts: `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
-      normalizedBarcode
-    )}&search_simple=1&action=process`,
     auchan: `https://www.google.com/search?q=${encodeURIComponent(
       `site:zakupy.auchan.pl ${normalizedBarcode}`
     )}`,

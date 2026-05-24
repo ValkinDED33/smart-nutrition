@@ -25,14 +25,14 @@ describe("remote API base URL guards", () => {
     expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackIpv4))).toBe(false);
   });
 
-  it("allows loopback API URLs during local development", () => {
+  it("rejects loopback API URLs during local development", () => {
     vi.stubGlobal("window", {
       location: {
         hostname: loopbackHostname,
       },
     });
 
-    expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackHostname))).toBe(true);
+    expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackHostname))).toBe(false);
   });
 
   it("allows public HTTPS API URLs from deployed browser origins", () => {
@@ -83,6 +83,27 @@ describe("remote API base URL guards", () => {
         JSON.stringify({
           ok: true,
           provider: "smart-nutrition-postgres-api",
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+  });
+
+  it("accepts a healthy MongoDB-backed remote API", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          provider: "smart-nutrition-mongodb-api",
         }),
         { status: 200 }
       )

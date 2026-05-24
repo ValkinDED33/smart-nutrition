@@ -4,7 +4,6 @@ import {
   useMicVAD,
   type ReactRealTimeVADOptions,
 } from "@ricky0123/vad-react";
-import { HumanMessage, countTokensApproximately } from "langchain/browser";
 
 export const createElevenLabsClient = (apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY) => {
   if (!apiKey) {
@@ -27,4 +26,4 @@ export const useNutritionMicVAD = (options: Partial<ReactRealTimeVADOptions> = {
   useMicVAD(getNutritionVadOptions(options));
 
 export const estimateAssistantPromptTokens = (text: string) =>
-  countTokensApproximately([new HumanMessage(text)]);
+  Math.max(1, Math.ceil(text.trim().length / 4));

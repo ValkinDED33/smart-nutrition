@@ -77,8 +77,7 @@ export default defineConfig({
             normalizedId.includes("/node_modules/react-dom/") ||
             normalizedId.includes("/node_modules/react-router-dom/") ||
             normalizedId.includes("/node_modules/react-redux/") ||
-            normalizedId.includes("/node_modules/@reduxjs/toolkit/") ||
-            normalizedId.includes("/node_modules/redux-persist/")
+            normalizedId.includes("/node_modules/@reduxjs/toolkit/")
           ) {
             return "react-vendor";
           }
@@ -98,10 +97,7 @@ export default defineConfig({
             return "forms-vendor";
           }
 
-          if (
-            normalizedId.includes("/node_modules/@zxing/browser/") ||
-            normalizedId.includes("/node_modules/axios/")
-          ) {
+          if (normalizedId.includes("/node_modules/@zxing/browser/")) {
             return "scanner-vendor";
           }
 
@@ -146,7 +142,6 @@ export default defineConfig({
             normalizedId.includes("/node_modules/fuse.js/") ||
             normalizedId.includes("/node_modules/react-virtuoso/") ||
             normalizedId.includes("/node_modules/react-swipeable/") ||
-            normalizedId.includes("/node_modules/react-use/") ||
             normalizedId.includes("/node_modules/screenfull/") ||
             normalizedId.includes("/node_modules/copy-to-clipboard/") ||
             normalizedId.includes("/node_modules/zustand/")
@@ -166,9 +161,7 @@ export default defineConfig({
           if (
             normalizedId.includes("/node_modules/@elevenlabs/") ||
             normalizedId.includes("/node_modules/@ricky0123/") ||
-            normalizedId.includes("/node_modules/onnxruntime-web/") ||
-            normalizedId.includes("/node_modules/langchain/") ||
-            normalizedId.includes("/node_modules/@langchain/")
+            normalizedId.includes("/node_modules/onnxruntime-web/")
           ) {
             return "ai-runtime-vendor";
           }
