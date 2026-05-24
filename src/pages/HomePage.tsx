@@ -35,7 +35,7 @@ const homeCopy = {
       "Один екран для рішення на зараз: додати їжу, закрити воду і побачити наступний крок без зайвих карток.",
     startMeal: "Додати прийом їжі",
     addWater: "Додати воду",
-    askAssistant: "Запитати companion",
+    askAssistant: "Запитати помічника",
     quickActions: "Як додати їжу",
     actionHint: "Оберіть найшвидший спосіб. Все інше можна уточнити потім.",
     actions: {
@@ -69,7 +69,7 @@ const homeCopy = {
     recoveryMood: "відновлення",
     days: "днів",
     todayFood: "Їжа сьогодні",
-    assistant: "Companion поруч",
+    assistant: "Помічник поруч",
     nextStep: "Наступна дія",
     waterDone: "Норма води закрита.",
     waterLogged: "Воду додано.",
@@ -91,7 +91,7 @@ const homeCopy = {
       "Jeden ekran na decyzję teraz: dodaj jedzenie, domknij wodę i zobacz kolejny krok bez nadmiaru kart.",
     startMeal: "Dodaj posiłek",
     addWater: "Dodaj wodę",
-    askAssistant: "Zapytaj companion",
+    askAssistant: "Zapytaj asystenta",
     quickActions: "Jak dodać jedzenie",
     actionHint: "Wybierz najszybszą metodę. Resztę doprecyzujesz później.",
     actions: {
@@ -125,7 +125,7 @@ const homeCopy = {
     recoveryMood: "regeneracja",
     days: "dni",
     todayFood: "Jedzenie dzisiaj",
-    assistant: "Companion obok",
+    assistant: "Asystent obok",
     nextStep: "Kolejna akcja",
     waterDone: "Norma wody zamknięta.",
     waterLogged: "Dodano wodę.",
@@ -141,6 +141,62 @@ const homeCopy = {
       "Kalorie są blisko planu. Dalej najlepiej białko, warzywa i lekka kolacja.",
     aiGood: "Dzień wygląda równo. Utrzymaj tempo i pamiętaj o wodzie.",
   },
+  en: {
+    productLine: "You eat. I think with you.",
+    productSubtitle:
+      "One screen for the decision now: add food, close water, and see the next step without extra panels.",
+    startMeal: "Add meal",
+    addWater: "Add water",
+    askAssistant: "Ask assistant",
+    quickActions: "How to add food",
+    actionHint: "Choose the fastest method. Everything else can be refined later.",
+    actions: {
+      photo: {
+        title: "Photo",
+        body: "Take a plate photo, review the draft, and add it to the diary.",
+      },
+      search: {
+        title: "Search",
+        body: "Find a product by name and set the portion quickly.",
+      },
+      barcode: {
+        title: "Barcode",
+        body: "Scan the package or enter the code manually.",
+      },
+    } satisfies Record<MealActionMode, { title: string; body: string }>,
+    dayStatus: "Day now",
+    wellness: "Wellness state",
+    calories: "Calories",
+    eaten: "Eaten",
+    left: "Left",
+    water: "Water",
+    protein: "Protein",
+    macros: "Macros",
+    weight: "Weight",
+    streak: "Streak",
+    mood: "Mood",
+    level: "Level",
+    calmMood: "calm",
+    focusedMood: "focused",
+    recoveryMood: "recovery",
+    days: "days",
+    todayFood: "Food today",
+    assistant: "Assistant nearby",
+    nextStep: "Next action",
+    waterDone: "Water goal closed.",
+    waterLogged: "Water added.",
+    noFood: "No food yet. Start with a photo, search, or barcode.",
+    entries: "{value} entries",
+    aiStart:
+      "Start with one meal. After the first log I can suggest what to add next.",
+    aiWater:
+      "Water is behind pace. Add one glass now and keep food stress-free.",
+    aiProtein:
+      "Protein is below plan. Build the next meal around eggs, yogurt, cottage cheese, or chicken.",
+    aiLimit:
+      "Calories are close to plan. Next, lean protein, vegetables, and a light dinner will fit best.",
+    aiGood: "The day looks steady. Keep the pace and remember water.",
+  },
 } as const;
 
 const HomePage = () => {
@@ -155,8 +211,8 @@ const HomePage = () => {
   const todayItems = useSelector(selectTodayMealItems);
   const macroProgress = useSelector(selectDailyMacroProgress);
   const currentWeight = useSelector(selectCurrentWeight);
-  const { language, t } = useLanguage();
-  const copy = homeCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = homeCopy[appLanguage];
   const calorieProgress = dailyCalories
     ? Math.min((totals.calories / dailyCalories) * 100, 100)
     : 0;

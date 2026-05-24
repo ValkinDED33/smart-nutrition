@@ -23,7 +23,7 @@ const createContext = (): AssistantRuntimeContext => ({
   latestWeight: 81,
   weightChangeKg: -0.4,
   weeklyCheckInDue: false,
-  assistantName: "Nova",
+  assistantName: "Diana",
   assistantRole: "assistant",
   assistantTone: "gentle",
   humorEnabled: true,
@@ -123,7 +123,7 @@ describe("assistantRuntime", () => {
     const message = buildAssistantWelcomeMessage(createContext());
 
     expect(message.mode).toBe("guided");
-    expect(message.text).toContain("Nova");
+    expect(message.text).toContain("Diana");
     expect(message.text).toContain("540");
   });
 

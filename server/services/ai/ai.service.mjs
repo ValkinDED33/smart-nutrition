@@ -260,7 +260,21 @@ const toUniqueList = (...sources) =>
     ),
   ].slice(0, 8);
 
+const normalizeIncomingAssistantMemory = (value) => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    goals: toUniqueList(record.goals),
+    struggles: toUniqueList(record.struggles),
+    habits: toUniqueList(record.habits),
+    motivationTriggers: toUniqueList(record.motivationTriggers),
+    lastMood: normalizeText(record.lastMood, { maxLength: 40, fallback: "" }) || null,
+    recentProblems: toUniqueList(record.recentProblems),
+  };
+};
+
 const createContextualAssistantMemory = ({ currentUser, context, storedMemory }) => {
+  const incomingMemory = normalizeIncomingAssistantMemory(context.memory);
   const proteinGap =
     context.proteinTarget > 0 && context.proteinConsumed < context.proteinTarget * 0.75;
   const waterGap =
@@ -284,19 +298,29 @@ const createContextualAssistantMemory = ({ currentUser, context, storedMemory })
         maxLength: 40,
         fallback: context.communicationStyle,
       }) || context.communicationStyle,
-    goals: toUniqueList(storedMemory?.goals, context.goal),
-    struggles: toUniqueList(storedMemory?.struggles),
+    goals: toUniqueList(storedMemory?.goals, incomingMemory.goals, context.goal),
+    struggles: toUniqueList(storedMemory?.struggles, incomingMemory.struggles),
     habits: toUniqueList(
       storedMemory?.habits,
+      incomingMemory.habits,
       context.mealEntriesToday > 0 ? "logs_meals" : null,
       context.waterConsumedMl > 0 ? "tracks_water" : null
     ),
     motivationTriggers: toUniqueList(
       storedMemory?.motivationTriggers,
+      incomingMemory.motivationTriggers,
       context.motivation.level > 1 ? "progress_points" : null
     ),
-    lastMood: normalizeText(storedMemory?.lastMood, { maxLength: 40, fallback: "" }) || null,
-    recentProblems: toUniqueList(storedMemory?.recentProblems, recentProblems),
+    lastMood:
+      normalizeText(incomingMemory.lastMood ?? storedMemory?.lastMood, {
+        maxLength: 40,
+        fallback: "",
+      }) || null,
+    recentProblems: toUniqueList(
+      storedMemory?.recentProblems,
+      incomingMemory.recentProblems,
+      recentProblems
+    ),
   };
 };
 
@@ -330,7 +354,7 @@ const normalizeContext = (payload, currentUser) => {
     weeklyCheckInDue: Boolean(record.weeklyCheckInDue),
     assistantName: normalizeText(record.assistantName, {
       maxLength: 40,
-      fallback: "Nova",
+      fallback: "Diana",
     }),
     assistantRole: normalizeText(record.assistantRole, {
       maxLength: 24,
@@ -405,7 +429,7 @@ const normalizeContext = (payload, currentUser) => {
         0
       ),
     },
-    memory: null,
+    memory: normalizeIncomingAssistantMemory(record.memory),
   };
 };
 

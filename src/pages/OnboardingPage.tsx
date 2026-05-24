@@ -25,7 +25,12 @@ import { updateStoredProfile } from "../shared/api/auth";
 import { calculateProfileTargets } from "../shared/lib/profileTargets";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
+import { DEFAULT_ASSISTANT_NAME, assistantDietFrictions, assistantMotivationStyles } from "../core/assistant";
 import type { AppLanguage } from "../shared/types/i18n";
+import type {
+  AssistantDietFriction,
+  AssistantMotivationStyle,
+} from "../shared/types/profile";
 import type { Goal } from "../shared/types/user";
 
 type PersonalityPreset = "supportive" | "strict" | "energetic";
@@ -36,6 +41,10 @@ interface OnboardingState {
   name: string;
   age: number;
   goal: Goal;
+  primaryGoalNote: string;
+  mainFriction: AssistantDietFriction;
+  motivationStyle: AssistantMotivationStyle;
+  supportNote: string;
   weight: number;
 }
 
@@ -48,8 +57,10 @@ const stepPaths = {
   welcome: "/onboarding",
   assistant: "/onboarding/assistant",
   name: "/onboarding/name",
-  age: "/onboarding/age",
   goal: "/onboarding/goal",
+  friction: "/onboarding/friction",
+  motivation: "/onboarding/motivation",
+  age: "/onboarding/age",
   weight: "/onboarding/weight",
   finish: "/onboarding/finish",
 } as const;
@@ -70,6 +81,10 @@ const shellSx = {
 } as const;
 
 const goalOptions: Goal[] = ["cut", "maintain", "bulk"];
+const frictionOptions = assistantDietFrictions.filter(
+  (friction) => friction !== "unknown"
+);
+const motivationStyleOptions = assistantMotivationStyles;
 
 const personalityValues: Record<
   PersonalityPreset,
@@ -240,7 +255,7 @@ export const OnboardingNamePage = ({ state, updateState }: OnboardingStepProps) 
             <Button
               variant="contained"
               disabled={state.name.trim().length < 2}
-              onClick={() => navigate(stepPaths.age)}
+              onClick={() => navigate(stepPaths.goal)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}
@@ -276,14 +291,14 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
-              onClick={() => navigate(stepPaths.name)}
+              onClick={() => navigate(stepPaths.motivation)}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               {t("onboarding.back")}
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.goal)}
+              onClick={() => navigate(stepPaths.weight)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}
@@ -319,6 +334,70 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
               </Button>
             ))}
           </Stack>
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            value={state.primaryGoalNote}
+            label={t("onboarding.goalNoteLabel")}
+            placeholder={t("onboarding.goalNotePlaceholder")}
+            onChange={(event) => updateState({ primaryGoalNote: event.target.value })}
+            inputProps={{ maxLength: 180 }}
+          />
+          <Stack direction="row" spacing={1.2}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate(stepPaths.name)}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.back")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => navigate(stepPaths.friction)}
+              sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+            >
+              {t("onboarding.next")}
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+    </Box>
+  );
+};
+
+export const OnboardingFrictionPage = ({ state, updateState }: OnboardingStepProps) => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  return (
+    <Box sx={shellSx}>
+      <Paper elevation={0} sx={cardSx}>
+        <Stack spacing={3}>
+          <Stack spacing={0.8}>
+            <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
+              {t("onboarding.frictionTitle")}
+            </Typography>
+            <Typography color="text.secondary">{t("onboarding.frictionBody")}</Typography>
+          </Stack>
+          <Stack spacing={1.2}>
+            {frictionOptions.map((friction) => (
+              <Button
+                key={friction}
+                variant={state.mainFriction === friction ? "contained" : "outlined"}
+                size="large"
+                onClick={() => updateState({ mainFriction: friction })}
+                sx={{
+                  justifyContent: "flex-start",
+                  borderRadius: 1,
+                  textTransform: "none",
+                  fontWeight: 900,
+                }}
+              >
+                {t(`onboarding.frictions.${friction}`)}
+              </Button>
+            ))}
+          </Stack>
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
@@ -329,7 +408,84 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.weight)}
+              onClick={() => navigate(stepPaths.motivation)}
+              sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+            >
+              {t("onboarding.next")}
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+    </Box>
+  );
+};
+
+export const OnboardingMotivationPage = ({ state, updateState }: OnboardingStepProps) => {
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  return (
+    <Box sx={shellSx}>
+      <Paper elevation={0} sx={cardSx}>
+        <Stack spacing={3}>
+          <Stack spacing={0.8}>
+            <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
+              {t("onboarding.motivationTitle")}
+            </Typography>
+            <Typography color="text.secondary">{t("onboarding.motivationBody")}</Typography>
+          </Stack>
+
+          <ToggleButtonGroup
+            exclusive
+            fullWidth
+            value={state.motivationStyle}
+            onChange={(_, value: AssistantMotivationStyle | null) => {
+              if (value) {
+                updateState({ motivationStyle: value });
+              }
+            }}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+              gap: 1,
+              "& .MuiToggleButtonGroup-grouped": {
+                border: "1px solid rgba(15, 23, 42, 0.12)",
+                borderRadius: 1,
+                m: 0,
+                textTransform: "none",
+                fontWeight: 800,
+              },
+            }}
+          >
+            {motivationStyleOptions.map((style) => (
+              <ToggleButton key={style} value={style}>
+                {t(`onboarding.motivationStyles.${style}`)}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={2}
+            value={state.supportNote}
+            label={t("onboarding.supportNoteLabel")}
+            placeholder={t("onboarding.supportNotePlaceholder")}
+            onChange={(event) => updateState({ supportNote: event.target.value })}
+            inputProps={{ maxLength: 180 }}
+          />
+
+          <Stack direction="row" spacing={1.2}>
+            <Button
+              variant="outlined"
+              onClick={() => navigate(stepPaths.friction)}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.back")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => navigate(stepPaths.age)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}
@@ -423,6 +579,14 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         tone: state.personality === "strict" ? "focused" : state.personality === "energetic" ? "playful" : "gentle",
         humorEnabled: personality.humor >= 0.4,
         proactiveHintsEnabled: personality.motivation >= 0.7,
+        onboarding: {
+          preferredName: trimmedName,
+          primaryGoalNote: state.primaryGoalNote,
+          mainFriction: state.mainFriction,
+          motivationStyle: state.motivationStyle,
+          supportNote: state.supportNote,
+          completedAt: new Date().toISOString(),
+        },
       })
     );
     dispatch(
@@ -484,14 +648,24 @@ const OnboardingPage = () => {
   const profile = useSelector((rootState: RootState) => rootState.profile);
   const initialState = useMemo<OnboardingState>(
     () => ({
-      assistantName: profile.assistant.name || "Nova",
+      assistantName: profile.assistant.name || DEFAULT_ASSISTANT_NAME,
       personality: "supportive",
-      name: user?.name ?? "",
+      name: profile.assistant.onboarding.preferredName || user?.name || "",
       age: user?.age ?? 25,
       goal: user?.goal ?? profile.goal,
+      primaryGoalNote: profile.assistant.onboarding.primaryGoalNote,
+      mainFriction: profile.assistant.onboarding.mainFriction,
+      motivationStyle: profile.assistant.onboarding.motivationStyle,
+      supportNote: profile.assistant.onboarding.supportNote,
       weight: user?.weight ?? profile.weightHistory.at(-1)?.weight ?? 70,
     }),
-    [profile.assistant.name, profile.goal, profile.weightHistory, user]
+    [
+      profile.assistant.name,
+      profile.assistant.onboarding,
+      profile.goal,
+      profile.weightHistory,
+      user,
+    ]
   );
   const [state, setState] = useState(initialState);
   const updateState = (patch: Partial<OnboardingState>) =>
@@ -504,8 +678,10 @@ const OnboardingPage = () => {
       <Route index element={<OnboardingWelcomePage />} />
       <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
       <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
-      <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
       <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
+      <Route path="friction" element={<OnboardingFrictionPage {...stepProps} />} />
+      <Route path="motivation" element={<OnboardingMotivationPage {...stepProps} />} />
+      <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
       <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />
       <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
       <Route path="*" element={<Navigate to={stepPaths.welcome} replace />} />

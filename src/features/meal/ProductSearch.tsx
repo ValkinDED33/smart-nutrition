@@ -103,6 +103,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
+  const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
   const { language, t } = useLanguage();
   const normalizedQuery = query.trim();
   const copy = suggestionCopy[language];
@@ -389,7 +390,7 @@ export const ProductSearch = ({ mealType }: Props) => {
         {duplicateAdvice.length > 0 && (
           <Alert
             severity="info"
-            icon={<AssistantAvatar name="Nova" size={34} mood="coach" active />}
+            icon={<AssistantAvatar name={assistantName} size={34} mood="coach" active />}
             sx={{ alignItems: "center" }}
           >
             <Stack spacing={0.8}>

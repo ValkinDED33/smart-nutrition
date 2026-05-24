@@ -3,10 +3,18 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import { selectTodayMealTotalNutrients } from "../../features/meal/selectors";
+import {
+  selectTodayMealItems,
+  selectTodayMealTotalNutrients,
+} from "../../features/meal/selectors";
+import { selectDailyMacroTargets } from "../../features/profile/selectors";
 import { detectWeightPlateau, getDaysSince } from "../lib/bodyMetrics";
 import { useLanguage } from "../language";
 import { AssistantAvatar, type AssistantAvatarMood } from "./AssistantAvatar";
+import {
+  buildAssistantCoreSnapshot,
+  type AssistantCoreEmotion,
+} from "../../core/assistant";
 
 const widgetCopy = {
   uk: {
@@ -111,12 +119,71 @@ const widgetCopy = {
       action: "Zobacz progres",
     },
   },
+  en: {
+    help: "Tip",
+    close: "Hide",
+    open: "Open assistant",
+    openChat: "Open assistant",
+    level: "Level",
+    points: "XP",
+    moods: {
+      idle: "Nearby",
+      happy: "Rhythm is here",
+      coach: "Coach mode",
+      concerned: "Gentle control",
+      sleepy: "Waiting nearby",
+      celebrate: "Progress",
+    },
+    setup: {
+      title: "I can see you are still starting",
+      body: "Want me to help quickly set goals and first measurements?",
+      action: "Open profile",
+    },
+    plateau: {
+      title: "This looks like a plateau",
+      body: "Weight has barely moved for a few weeks. That can be normal. Want to review progress and options?",
+      action: "View measurements",
+    },
+    water: {
+      title: "Water is low today",
+      body: "You drank less than planned. Want to update the water tracker quickly?",
+      action: "Open water",
+    },
+    checkIn: {
+      title: "Time to update weight",
+      body: "It is a good moment to add a weekly check-in and measurements.",
+      action: "Add check-in",
+    },
+    caloriesHigh: {
+      title: "Calories are already above plan",
+      body: "No drama. We can make the rest of the day calmer without sharp turns.",
+      action: "Open diary",
+    },
+    caloriesLow: {
+      title: "The day is still underfed",
+      body: "Calories look too low. Add a simple meal without stress?",
+      action: "Add food",
+    },
+    progressGood: {
+      title: "Good rhythm today",
+      body: "You are keeping the day in a controlled zone. That is the small progress that adds up.",
+      action: "View progress",
+    },
+  },
 } as const;
 
 const IDLE_TIMEOUT_MS = 75_000;
 
 const clamp = (value: number, min = -1, max = 1) =>
   Math.max(min, Math.min(max, value));
+
+const avatarMoodByEmotion: Record<AssistantCoreEmotion, AssistantAvatarMood> = {
+  calm: "idle",
+  encouraging: "happy",
+  focused: "coach",
+  concerned: "concerned",
+  celebrating: "celebrate",
+};
 
 interface AssistantTip {
   id: string;
@@ -132,12 +199,58 @@ export const ContextAssistantWidget = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const water = useSelector((state: RootState) => state.water);
+  const todayItems = useSelector(selectTodayMealItems);
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
-  const { language } = useLanguage();
-  const copy = widgetCopy[language];
+  const macroTargets = useSelector(selectDailyMacroTargets);
+  const { appLanguage } = useLanguage();
+  const copy = widgetCopy[appLanguage];
   const [dismissedTipId, setDismissedTipId] = useState<string | null>(null);
   const [isIdle, setIsIdle] = useState(false);
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
+  const weeklyCheckInDue =
+    profile.weeklyCheckIn.enabled &&
+    getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
+      profile.weeklyCheckIn.remindIntervalDays;
+  const openMotivationTasks = profile.motivation.activeTasks.filter(
+    (task) => !task.completedAt && !task.skippedWithDayOffAt
+  ).length;
+  const assistantCore = useMemo(
+    () =>
+      buildAssistantCoreSnapshot({
+        userId: user?.id,
+        userName: user?.name ?? "",
+        goal: profile.goal,
+        assistant: profile.assistant,
+        signals: {
+          mealEntriesToday: todayItems.length,
+          caloriesConsumed: todayTotals.calories,
+          dailyCalories: profile.dailyCalories,
+          proteinConsumed: todayTotals.protein,
+          proteinTarget: macroTargets.protein,
+          waterConsumedMl: water.consumedMl,
+          waterTargetMl: water.dailyWaterGoal,
+          completedMotivationTasks: profile.motivation.completedTasks,
+          openMotivationTasks,
+          weeklyCheckInDue,
+        },
+      }),
+    [
+      macroTargets.protein,
+      openMotivationTasks,
+      profile.assistant,
+      profile.dailyCalories,
+      profile.goal,
+      profile.motivation.completedTasks,
+      todayItems.length,
+      todayTotals.calories,
+      todayTotals.protein,
+      user?.id,
+      user?.name,
+      water.consumedMl,
+      water.dailyWaterGoal,
+      weeklyCheckInDue,
+    ]
+  );
 
   useEffect(() => {
     if (!user || !profile.assistant.widgetEnabled) {
@@ -210,11 +323,6 @@ export const ContextAssistantWidget = () => {
       hours >= 16 &&
       water.dailyWaterGoal > 0 &&
       water.consumedMl < water.dailyWaterGoal * 0.6;
-    const checkInDue =
-      profile.weeklyCheckIn.enabled &&
-      getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
-        profile.weeklyCheckIn.remindIntervalDays;
-
     if (profile.weightHistory.length < 2 && profile.measurementHistory.length === 0) {
       return {
         id: "setup",
@@ -224,7 +332,7 @@ export const ContextAssistantWidget = () => {
       };
     }
 
-    if (checkInDue) {
+    if (weeklyCheckInDue) {
       return {
         id: "check-in",
         ...copy.checkIn,
@@ -303,6 +411,7 @@ export const ContextAssistantWidget = () => {
     todayTotals.calories,
     user,
     water,
+    weeklyCheckInDue,
   ]);
 
   if (!user || !profile.assistant.widgetEnabled) {
@@ -311,7 +420,7 @@ export const ContextAssistantWidget = () => {
 
   const assistantMood: AssistantAvatarMood = isIdle
     ? "sleepy"
-    : currentTip?.mood ?? "happy";
+    : currentTip?.mood ?? avatarMoodByEmotion[assistantCore.emotion];
   const showTipCard =
     profile.assistant.proactiveHintsEnabled &&
     Boolean(currentTip) &&

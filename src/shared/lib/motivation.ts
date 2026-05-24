@@ -7,6 +7,10 @@ import type {
 } from "../types/profile";
 import type { AppLanguage } from "../types/i18n";
 import type { Goal } from "../types/user";
+import {
+  createDefaultAssistantOnboardingProfile,
+  DEFAULT_ASSISTANT_NAME,
+} from "../../core/assistant";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -21,13 +25,14 @@ const toMonthKey = (value: string | Date) => {
 };
 
 export const createDefaultAssistantCustomization = (): AssistantCustomization => ({
-  name: "Nova",
+  name: DEFAULT_ASSISTANT_NAME,
   companionKind: "robot",
   role: "assistant",
   tone: "gentle",
   humorEnabled: true,
   widgetEnabled: true,
   proactiveHintsEnabled: true,
+  onboarding: createDefaultAssistantOnboardingProfile(),
 });
 
 export const createDefaultAchievements = (): AchievementProgress[] => [

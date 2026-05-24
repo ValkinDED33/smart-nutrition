@@ -456,13 +456,21 @@ export const createInitialProfileState = (userInput) => {
       cancelledAt: null,
     },
     assistant: {
-      name: "Nova",
+      name: "Diana",
       companionKind: "robot",
       role: "assistant",
       tone: "gentle",
       humorEnabled: true,
       widgetEnabled: true,
       proactiveHintsEnabled: true,
+      onboarding: {
+        preferredName: "",
+        primaryGoalNote: "",
+        mainFriction: "unknown",
+        motivationStyle: "gentle",
+        supportNote: "",
+        completedAt: null,
+      },
     },
     personalDetails: {
       bloodGroup: "unknown",

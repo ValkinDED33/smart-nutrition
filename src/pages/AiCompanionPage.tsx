@@ -9,16 +9,24 @@ import {
   selectTodayMealItems,
   selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
+import { selectDailyMacroTargets } from "../features/profile/selectors";
 import { getAssistantRuntimeStatus } from "../shared/api/assistant";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
 import type { AssistantRuntimeStatus } from "../shared/types/assistant";
+import { getDaysSince } from "../shared/lib/bodyMetrics";
+import {
+  buildAssistantCoreSnapshot,
+  type AssistantCoreEmotion,
+  type AssistantCoreState,
+  type AssistantRelationshipLevel,
+} from "../core/assistant";
 
 const aiCopy = {
   uk: {
-    title: "AI Помічник",
+    title: "Помічник",
     subtitle:
-      "Ваш Clippy 2.0 підказує по харчуванню, пояснює plateau, тримає контекст дня і дає наступну практичну дію.",
+      "Особистий companion для харчування, мотивації і щоденного ритму. Він тримає контекст, пам'ятає стиль підтримки і веде до наступної дії.",
     runtimeTitle: "Стан AI",
     runtimeSubtitle:
       "Нижче видно активних провайдерів і резервний маршрут, який використовує асистент.",
@@ -30,6 +38,33 @@ const aiCopy = {
       "Хмарний AI зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
     assistantSettings: "Поведінка помічника береться з налаштувань профілю.",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
+    coreTitle: "Ядро помічника",
+    coreSubtitle: "Це не окрема карточка з AI, а поточний стан особистого companion.",
+    memoryGoals: "Цілі",
+    memoryStruggles: "Що враховувати",
+    memoryTriggers: "Як підтримувати",
+    emptyMemory: "Після onboarding тут з'явиться більше особистого контексту.",
+    relationshipLabels: {
+      new_companion: "Новий companion",
+      warming_up: "Знайомимось",
+      trusted_companion: "Є довіра",
+      deep_context: "Глибокий контекст",
+    } satisfies Record<AssistantRelationshipLevel, string>,
+    stateLabels: {
+      needs_context: "Потрібен перший запис",
+      hydration_attention: "Фокус на воді",
+      protein_attention: "Фокус на білку",
+      over_target: "День вище плану",
+      weekly_check_in: "Час check-in",
+      steady_day: "День стабільний",
+    } satisfies Record<AssistantCoreState, string>,
+    emotionLabels: {
+      calm: "Спокійно",
+      encouraging: "Підтримую",
+      focused: "Зібрано",
+      concerned: "М'який контроль",
+      celebrating: "Прогрес",
+    } satisfies Record<AssistantCoreEmotion, string>,
     focusTitle: "Що зробити зараз",
     actionButton: "Відкрити",
     noMealTitle: "Додайте перший прийом їжі",
@@ -47,19 +82,13 @@ const aiCopy = {
     profileTitle: "Задайте ціль ваги",
     profileBody:
       "Ціль відкриє шкалу прогресу, точнішу норму води і кращі AI-поради.",
-    featuresTitle: "Що він вміє",
-    features: [
-      "рада по калоріях, білку і наступному прийому їжі",
-      "підказки по воді, вазі, BMI, plateau і weekly check-in",
-      "щоденні мотиваційні повідомлення та історія діалогу",
-    ],
     primary: "Основний",
     backup: "Резерв",
   },
   pl: {
-    title: "AI Asystent",
+    title: "Asystent",
     subtitle:
-      "Twój Clippy 2.0 podpowiada w żywieniu, tłumaczy plateau, trzyma kontekst dnia i daje kolejną praktyczną akcję.",
+      "Osobisty companion do jedzenia, motywacji i codziennego rytmu. Trzyma kontekst, pamięta styl wsparcia i prowadzi do kolejnej akcji.",
     runtimeTitle: "Status AI",
     runtimeSubtitle:
       "Niżej widać aktywnych providerów i trasę zapasową, której używa asystent.",
@@ -71,6 +100,33 @@ const aiCopy = {
       "Chmurowy AI jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
     assistantSettings: "Zachowanie asystenta bierze się z ustawień profilu.",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
+    coreTitle: "Rdzeń asystenta",
+    coreSubtitle: "To nie osobna karta z AI, tylko bieżący stan osobistego companion.",
+    memoryGoals: "Cele",
+    memoryStruggles: "Co brać pod uwagę",
+    memoryTriggers: "Jak wspierać",
+    emptyMemory: "Po onboardingu pojawi się tu więcej osobistego kontekstu.",
+    relationshipLabels: {
+      new_companion: "Nowy companion",
+      warming_up: "Poznajemy się",
+      trusted_companion: "Jest zaufanie",
+      deep_context: "Głęboki kontekst",
+    } satisfies Record<AssistantRelationshipLevel, string>,
+    stateLabels: {
+      needs_context: "Potrzebny pierwszy wpis",
+      hydration_attention: "Fokus na wodzie",
+      protein_attention: "Fokus na białku",
+      over_target: "Dzień ponad plan",
+      weekly_check_in: "Czas na check-in",
+      steady_day: "Dzień stabilny",
+    } satisfies Record<AssistantCoreState, string>,
+    emotionLabels: {
+      calm: "Spokojnie",
+      encouraging: "Wspieram",
+      focused: "Skupienie",
+      concerned: "Łagodna kontrola",
+      celebrating: "Progres",
+    } satisfies Record<AssistantCoreEmotion, string>,
     focusTitle: "Co zrobić teraz",
     actionButton: "Otwórz",
     noMealTitle: "Dodaj pierwszy posiłek",
@@ -88,14 +144,70 @@ const aiCopy = {
     profileTitle: "Ustaw cel wagi",
     profileBody:
       "Cel odblokuje skalę progresu, dokładniejszą normę wody i lepsze rady AI.",
-    featuresTitle: "Co potrafi",
-    features: [
-      "rada dotycząca kalorii, białka i kolejnego posiłku",
-      "podpowiedzi o wodzie, wadze, BMI, plateau i weekly check-in",
-      "codzienne wiadomości motywacyjne i historia rozmowy",
-    ],
     primary: "Główny",
     backup: "Zapasowy",
+  },
+  en: {
+    title: "Assistant",
+    subtitle:
+      "A personal companion for nutrition, motivation, and daily rhythm. It keeps context, remembers your support style, and guides the next action.",
+    runtimeTitle: "AI status",
+    runtimeSubtitle:
+      "Below you can see active providers and the fallback route used by the assistant.",
+    providerChain: "AI providers",
+    configured: "Cloud AI ready",
+    fallbackOn: "Fallback enabled",
+    fallbackOff: "No fallback",
+    cloudUnavailable:
+      "Cloud AI is unavailable right now. Basic guidance remains available, but production AI is not active.",
+    assistantSettings: "Assistant behavior comes from your profile settings.",
+    greeting: (name: string) => `Hi, ${name}. I am already reading your day.`,
+    coreTitle: "Assistant Core",
+    coreSubtitle: "This is not a separate AI card, but the current state of your personal companion.",
+    memoryGoals: "Goals",
+    memoryStruggles: "What to account for",
+    memoryTriggers: "How to support you",
+    emptyMemory: "More personal context will appear here after onboarding.",
+    relationshipLabels: {
+      new_companion: "New companion",
+      warming_up: "Getting to know you",
+      trusted_companion: "Trust is forming",
+      deep_context: "Deep context",
+    } satisfies Record<AssistantRelationshipLevel, string>,
+    stateLabels: {
+      needs_context: "Needs first log",
+      hydration_attention: "Hydration focus",
+      protein_attention: "Protein focus",
+      over_target: "Day above plan",
+      weekly_check_in: "Check-in due",
+      steady_day: "Steady day",
+    } satisfies Record<AssistantCoreState, string>,
+    emotionLabels: {
+      calm: "Calm",
+      encouraging: "Encouraging",
+      focused: "Focused",
+      concerned: "Gentle control",
+      celebrating: "Progress",
+    } satisfies Record<AssistantCoreEmotion, string>,
+    focusTitle: "What to do now",
+    actionButton: "Open",
+    noMealTitle: "Add the first meal",
+    noMealBody:
+      "Start with one product or quick portion so the assistant has real day context.",
+    waterTitle: (value: number) => `Water: ${value} ml left`,
+    waterBody:
+      "Close the goal in small portions. One tap on a glass updates progress.",
+    caloriesLowTitle: "Calories are still low",
+    caloriesLowBody:
+      "Add a simple meal so the evening does not become chaotic.",
+    caloriesHighTitle: "Calories are above plan",
+    caloriesHighBody:
+      "Review the diary and make the rest of the day lighter without harsh decisions.",
+    profileTitle: "Set a target weight",
+    profileBody:
+      "A target unlocks the progress scale, a better water goal, and sharper assistant guidance.",
+    primary: "Primary",
+    backup: "Backup",
   },
 } as const;
 
@@ -107,8 +219,9 @@ const AiCompanionPage = () => {
   const water = useSelector((state: RootState) => state.water);
   const todayItems = useSelector(selectTodayMealItems);
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
-  const { language } = useLanguage();
-  const copy = aiCopy[language];
+  const macroTargets = useSelector(selectDailyMacroTargets);
+  const { appLanguage } = useLanguage();
+  const copy = aiCopy[appLanguage];
   const [runtimeStatus, setRuntimeStatus] = useState<AssistantRuntimeStatus | null>(null);
 
   useEffect(() => {
@@ -130,6 +243,31 @@ const AiCompanionPage = () => {
   const calorieProgress =
     calorieTarget > 0 ? Math.min((todayTotals.calories / calorieTarget) * 100, 120) : 0;
   const remainingWaterMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
+  const weeklyCheckInDue =
+    profile.weeklyCheckIn.enabled &&
+    getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
+      profile.weeklyCheckIn.remindIntervalDays;
+  const openMotivationTasks = profile.motivation.activeTasks.filter(
+    (task) => !task.completedAt && !task.skippedWithDayOffAt
+  ).length;
+  const assistantCore = buildAssistantCoreSnapshot({
+    userId: user?.id,
+    userName: user?.name ?? "",
+    goal: profile.goal,
+    assistant,
+    signals: {
+      mealEntriesToday: todayItems.length,
+      caloriesConsumed: todayTotals.calories,
+      dailyCalories: profile.dailyCalories,
+      proteinConsumed: todayTotals.protein,
+      proteinTarget: macroTargets.protein,
+      waterConsumedMl: water.consumedMl,
+      waterTargetMl: water.dailyWaterGoal,
+      completedMotivationTasks: profile.motivation.completedTasks,
+      openMotivationTasks,
+      weeklyCheckInDue,
+    },
+  });
   const actionCards = [
     ...(todayItems.length === 0
       ? [
@@ -188,6 +326,20 @@ const AiCompanionPage = () => {
         ]
       : []),
   ].slice(0, 3);
+  const memoryGroups = [
+    {
+      label: copy.memoryGoals,
+      items: assistantCore.memory.goals,
+    },
+    {
+      label: copy.memoryStruggles,
+      items: assistantCore.memory.struggles,
+    },
+    {
+      label: copy.memoryTriggers,
+      items: assistantCore.memory.motivationTriggers,
+    },
+  ];
 
   return (
     <Stack spacing={2.5}>
@@ -231,7 +383,11 @@ const AiCompanionPage = () => {
               {copy.subtitle}
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              {[assistant.role, assistant.tone].map((label) => (
+              {[
+                copy.relationshipLabels[assistantCore.relationshipLevel],
+                copy.stateLabels[assistantCore.state],
+                copy.emotionLabels[assistantCore.emotion],
+              ].map((label) => (
                 <Chip
                   key={label}
                   label={label}
@@ -326,6 +482,47 @@ const AiCompanionPage = () => {
           p: { xs: 2, md: 3 },
           borderRadius: 1,
           border: "1px solid rgba(15, 23, 42, 0.08)",
+          backgroundColor: "rgba(255,255,255,0.88)",
+        }}
+      >
+        <Stack spacing={2}>
+          <Stack spacing={0.7}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+              {copy.coreTitle}
+            </Typography>
+            <Typography color="text.secondary">{copy.coreSubtitle}</Typography>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gap: 1.5,
+            }}
+          >
+            {memoryGroups.map((group) => (
+              <Stack key={group.label} spacing={1}>
+                <Typography sx={{ fontWeight: 900 }}>{group.label}</Typography>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {group.items.length > 0 ? (
+                    group.items.map((item) => (
+                      <Chip key={item} label={item} variant="outlined" />
+                    ))
+                  ) : (
+                    <Typography color="text.secondary">{copy.emptyMemory}</Typography>
+                  )}
+                </Stack>
+              </Stack>
+            ))}
+          </Box>
+        </Stack>
+      </Paper>
+
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 3 },
+          borderRadius: 1,
+          border: "1px solid rgba(15, 23, 42, 0.08)",
           backgroundColor: "rgba(255,255,255,0.86)",
         }}
       >
@@ -391,27 +588,6 @@ const AiCompanionPage = () => {
           ) : (
             <Alert severity="warning">{copy.cloudUnavailable}</Alert>
           )}
-        </Stack>
-      </Paper>
-
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
-        <Stack spacing={1.2}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-            {copy.featuresTitle}
-          </Typography>
-          {copy.features.map((item) => (
-            <Typography key={item} color="text.secondary">
-              • {item}
-            </Typography>
-          ))}
         </Stack>
       </Paper>
 

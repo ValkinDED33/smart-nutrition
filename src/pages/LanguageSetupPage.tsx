@@ -45,8 +45,8 @@ const onboardingCopy = {
         body: "Додавайте прийоми їжі, стакани води, вагу та заміри без зайвих переходів.",
       },
       {
-        title: "Clippy 2.0",
-        body: "AI-компаньйон підказує, пояснює ІМТ і нагадує про рутину без нав'язливості.",
+        title: "Diana поруч",
+        body: "AI companion пам'ятає цілі, стиль підтримки і допомагає тримати рутину без нав'язливості.",
       },
       {
         title: "Cloud-first",
@@ -83,8 +83,8 @@ const onboardingCopy = {
         body: "Dodawaj posiłki, szklanki wody, wagę i pomiary bez zbędnego klikania.",
       },
       {
-        title: "Clippy 2.0",
-        body: "AI companion podpowiada, tłumaczy BMI i przypomina o rutynie bez bycia natrętnym.",
+        title: "Diana obok",
+        body: "AI companion pamięta cele, styl wsparcia i pomaga utrzymać rutynę bez bycia natrętnym.",
       },
       {
         title: "Cloud-first",

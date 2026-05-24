@@ -11,6 +11,7 @@ import reducer, {
   activatePremiumPlan,
   cancelPremiumSubscription,
   normalizeProfileState,
+  setAssistantCustomization,
   startPremiumTrial,
   updatePersonalDetails,
 } from "./profileSlice";
@@ -163,6 +164,46 @@ describe("profileSlice personal details", () => {
       relationshipStatus: "prefer_not",
       supportSystem: "low_support",
       petCompanion: "dog",
+    });
+  });
+});
+
+describe("profileSlice assistant onboarding", () => {
+  it("persists and normalizes companion memory inputs", () => {
+    const state = reducer(
+      undefined,
+      setAssistantCustomization({
+        onboarding: {
+          preferredName: "Ira",
+          primaryGoalNote: "steady evenings",
+          mainFriction: "evening_snacking",
+          motivationStyle: "direct",
+          supportNote: "keep it practical",
+          completedAt: "2026-05-23T12:00:00.000Z",
+        },
+      })
+    );
+
+    expect(state.assistant.onboarding).toMatchObject({
+      preferredName: "Ira",
+      primaryGoalNote: "steady evenings",
+      mainFriction: "evening_snacking",
+      motivationStyle: "direct",
+      supportNote: "keep it practical",
+    });
+
+    const normalized = normalizeProfileState({
+      assistant: {
+        onboarding: {
+          mainFriction: "invalid",
+          motivationStyle: "invalid",
+        },
+      },
+    });
+
+    expect(normalized.assistant.onboarding).toMatchObject({
+      mainFriction: "unknown",
+      motivationStyle: "gentle",
     });
   });
 });

@@ -1,32 +1,6 @@
 import type { AssistantRuntimeContext } from "../../types/assistant";
 import type { AssistantContextSource } from "./assistantTypes";
-
-const personalityByTone = {
-  gentle: {
-    warmth: 0.9,
-    humor: 0.36,
-    strictness: 0.18,
-    motivation: 0.78,
-  },
-  playful: {
-    warmth: 0.86,
-    humor: 0.72,
-    strictness: 0.22,
-    motivation: 0.9,
-  },
-  focused: {
-    warmth: 0.55,
-    humor: 0.15,
-    strictness: 0.75,
-    motivation: 0.82,
-  },
-} as const;
-
-const communicationStyleByTone = {
-  gentle: "supportive",
-  playful: "energetic",
-  focused: "strict",
-} as const;
+import { buildAssistantCoreSnapshot } from "../../../core/assistant";
 
 const getTodayKey = () => {
   const now = new Date();
@@ -63,8 +37,33 @@ export const createAssistantRuntimeContext = ({
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const firstWeight = profile.weightHistory[0]?.weight ?? latestWeight;
   const waterConsumedMl = water.lastLoggedOn === getTodayKey() ? water.consumedMl : 0;
-  const assistantPersonality = personalityByTone[profile.assistant.tone];
-  const communicationStyle = communicationStyleByTone[profile.assistant.tone];
+  const weeklyCheckInDue =
+    profile.weeklyCheckIn.enabled &&
+    getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
+      profile.weeklyCheckIn.remindIntervalDays;
+  const openMotivationTasks = profile.motivation.activeTasks.filter(
+    (task) => !task.completedAt && !task.skippedWithDayOffAt
+  ).length;
+  const assistantCore = buildAssistantCoreSnapshot({
+    userId: user?.id,
+    userName: user?.name ?? "",
+    goal: profile.goal,
+    assistant: profile.assistant,
+    signals: {
+      mealEntriesToday: todayMealEntriesCount,
+      caloriesConsumed: todayTotals.caloriesConsumed,
+      dailyCalories: profile.dailyCalories,
+      proteinConsumed: todayTotals.proteinConsumed,
+      proteinTarget: macroTargets.protein,
+      waterConsumedMl,
+      waterTargetMl: water.dailyWaterGoal,
+      completedMotivationTasks: profile.motivation.completedTasks,
+      openMotivationTasks,
+      weeklyCheckInDue,
+    },
+  });
+  const assistantPersonality = assistantCore.personality;
+  const communicationStyle = assistantCore.speechStyle.communicationStyle;
 
   return {
     language,
@@ -83,13 +82,10 @@ export const createAssistantRuntimeContext = ({
     waterTargetMl: water.dailyWaterGoal,
     latestWeight,
     weightChangeKg: latestWeight - firstWeight,
-    weeklyCheckInDue:
-      profile.weeklyCheckIn.enabled &&
-      getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
-        profile.weeklyCheckIn.remindIntervalDays,
-    assistantName: profile.assistant.name,
-    assistantRole: profile.assistant.role,
-    assistantTone: profile.assistant.tone,
+    weeklyCheckInDue,
+    assistantName: assistantCore.identity.name,
+    assistantRole: assistantCore.identity.role,
+    assistantTone: assistantCore.identity.tone,
     humorEnabled: profile.assistant.humorEnabled,
     assistantPersonality,
     communicationStyle,
@@ -101,10 +97,7 @@ export const createAssistantRuntimeContext = ({
       goal: profile.goal,
       dietStyle: profile.dietStyle,
       latestWeight,
-      weeklyCheckInDue:
-        profile.weeklyCheckIn.enabled &&
-        getDaysSince(profile.weeklyCheckIn.lastRecordedAt) >=
-          profile.weeklyCheckIn.remindIntervalDays,
+      weeklyCheckInDue,
     },
     nutritionState: {
       dailyCalories: profile.dailyCalories,
@@ -120,11 +113,9 @@ export const createAssistantRuntimeContext = ({
     behavior: {
       mealEntriesToday: todayMealEntriesCount,
       waterLoggedToday: waterConsumedMl > 0,
-      openMotivationTasks: profile.motivation.activeTasks.filter(
-        (task) => !task.completedAt && !task.skippedWithDayOffAt
-      ).length,
+      openMotivationTasks,
       completedMotivationTasks: profile.motivation.completedTasks,
     },
-    memory: null,
+    memory: assistantCore.memory,
   };
 };

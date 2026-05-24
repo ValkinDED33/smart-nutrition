@@ -1,7 +1,7 @@
 export const assistant = {
   uk: {
-    hello: "Привіт 👋 Я буду допомагати тобі з харчуванням.",
-    memoryReady: "Я запам'ятаю цілі, звички й стиль підтримки, щоб підказки були живими.",
+    hello: "Привіт. Я буду вести тебе через харчування, мотивацію і складні моменти.",
+    memoryReady: "Я запам'ятаю цілі, тригери й стиль підтримки, щоб підказки не звучали як випадковий чат.",
     personalities: {
       supportive: "Підтримуючий",
       strict: "Строгий",
@@ -9,8 +9,8 @@ export const assistant = {
     },
   },
   pl: {
-    hello: "Cześć 👋 Będę pomagać Ci z odżywianiem.",
-    memoryReady: "Zapamiętam cele, nawyki i styl wsparcia, żeby podpowiedzi były żywe.",
+    hello: "Cześć. Będę prowadzić Cię przez jedzenie, motywację i trudniejsze momenty.",
+    memoryReady: "Zapamiętam cele, wyzwalacze i styl wsparcia, żeby podpowiedzi nie brzmiały jak przypadkowy chat.",
     personalities: {
       supportive: "Wspierający",
       strict: "Konkretny",
@@ -18,8 +18,8 @@ export const assistant = {
     },
   },
   en: {
-    hello: "Hi 👋 I'll help you with your nutrition.",
-    memoryReady: "I'll remember your goals, habits, and support style so advice feels personal.",
+    hello: "Hi. I'll guide you through nutrition, motivation, and the harder moments.",
+    memoryReady: "I'll remember your goals, triggers, and support style so guidance does not feel like a random chat.",
     personalities: {
       supportive: "Supportive",
       strict: "Strict",

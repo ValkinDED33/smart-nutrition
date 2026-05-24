@@ -45,8 +45,8 @@ const mobileTabs = [
   { value: "/dashboard", labelKey: "navigation.dashboard", icon: Home },
   { value: "/food", labelKey: "navigation.food", icon: Utensils },
   { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
-  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
   { value: "/progress", labelKey: "navigation.progress", icon: TrendingUp },
+  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
   { value: "/community", labelKey: "navigation.community", icon: UsersRound },
   { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
 ];
@@ -55,9 +55,9 @@ const desktopTabs = [
   { value: "/dashboard", labelKey: "navigation.dashboard" },
   { value: "/food", labelKey: "navigation.food" },
   { value: "/recipes", labelKey: "navigation.recipes" },
+  { value: "/progress", labelKey: "navigation.progress" },
   { value: "/coach", labelKey: "navigation.coach" },
   { value: "/community", labelKey: "navigation.community" },
-  { value: "/progress", labelKey: "navigation.progress" },
   { value: "/profile", labelKey: "navigation.profile" },
 ];
 

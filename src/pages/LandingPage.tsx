@@ -36,8 +36,8 @@ const landingCopy = {
       { label: "Білок", value: "96 / 120 г", progress: 80, color: "#2563eb" },
     ],
     mascot: {
-      name: "Nova",
-      title: "Nova поруч",
+      name: "Diana",
+      title: "Diana поруч",
       body: "Сьогодні залишилось 600 ккал. Я б додала воду і легку вечерю з білком.",
       mood: "жива реакція",
       xps: "+25 XP за серію",
@@ -108,8 +108,8 @@ const landingCopy = {
       { label: "Białko", value: "96 / 120 g", progress: 80, color: "#2563eb" },
     ],
     mascot: {
-      name: "Nova",
-      title: "Nova jest obok",
+      name: "Diana",
+      title: "Diana jest obok",
       body: "Zostało dziś 600 kcal. Dodałabym wodę i lekką kolację z białkiem.",
       mood: "żywa reakcja",
       xps: "+25 XP za serię",

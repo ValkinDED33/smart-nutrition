@@ -61,8 +61,8 @@ const profileCopy = {
   uk: {
     sectionBasics: "Основні дані",
     sectionPersonal: "Контекст для помічника",
-    personalSubtitle:
-      "Ці дані допомагають Nova краще підібрати тон, підтримку й спосіб контакту. Група крові та колір очей не використовуються для медичних або харчових висновків.",
+    personalSubtitle: (assistantName: string) =>
+      `Ці дані допомагають ${assistantName} краще підібрати тон, підтримку й спосіб контакту. Група крові та колір очей не використовуються для медичних або харчових висновків.`,
     targetWeightLabel: "Target weight (kg)",
     targetWeightHint: "Optional: add a goal to unlock the progress scale.",
     targetWeightMax: "Enter a realistic target weight up to 300 kg.",
@@ -90,8 +90,8 @@ const profileCopy = {
   pl: {
     sectionBasics: "Dane podstawowe",
     sectionPersonal: "Kontekst dla asystenta",
-    personalSubtitle:
-      "Te dane pomagają Nova dobrać ton, wsparcie i sposób kontaktu. Grupa krwi i kolor oczu nie są używane do wniosków medycznych ani żywieniowych.",
+    personalSubtitle: (assistantName: string) =>
+      `Te dane pomagają ${assistantName} dobrać ton, wsparcie i sposób kontaktu. Grupa krwi i kolor oczu nie są używane do wniosków medycznych ani żywieniowych.`,
     targetWeightLabel: "Target weight (kg)",
     targetWeightHint: "Optional: add a goal to unlock the progress scale.",
     targetWeightMax: "Enter a realistic target weight up to 300 kg.",
@@ -185,6 +185,7 @@ const ProfileForm = () => {
     excludedIngredients,
     adaptiveMode,
     personalDetails,
+    assistant,
   } = useSelector((state: RootState) => state.profile);
   const { t, language } = useLanguage();
   const copy = profileCopy[language];
@@ -529,7 +530,9 @@ const ProfileForm = () => {
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                 {copy.sectionPersonal}
               </Typography>
-              <Typography color="text.secondary">{copy.personalSubtitle}</Typography>
+              <Typography color="text.secondary">
+                {copy.personalSubtitle(assistant.name)}
+              </Typography>
             </Stack>
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={2}>

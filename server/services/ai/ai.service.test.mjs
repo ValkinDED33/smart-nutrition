@@ -14,6 +14,7 @@ const createAiServiceFixture = ({
   latestUsageEvent = null,
   usageSummary = undefined,
   configOverrides = {},
+  assistantMemoryRepository = null,
 } = {}) => {
   const aiRepository = {
     listConversationMessages: vi.fn(() => history),
@@ -55,6 +56,7 @@ const createAiServiceFixture = ({
     aiRepository,
     service: createAiService({
       aiRepository,
+      assistantMemoryRepository,
       config,
     }),
   };
@@ -113,7 +115,7 @@ describe("ai.service", () => {
         latestWeight: 78,
         weightChangeKg: -0.4,
         weeklyCheckInDue: false,
-        assistantName: "Nova",
+        assistantName: "Diana",
         assistantRole: "assistant",
         assistantTone: "gentle",
         humorEnabled: true,
@@ -196,6 +198,68 @@ describe("ai.service", () => {
 
     expect(result).toEqual(history);
     expect(aiRepository.clearConversationMessages).toHaveBeenCalledWith(currentUser.id);
+  });
+
+  it("merges incoming companion memory into remote assistant context", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: "I will keep the evening snack trigger in mind.",
+            },
+          },
+        ],
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(() => null),
+      upsert: vi.fn((memory) => memory),
+    };
+    const { service } = createAiServiceFixture({ assistantMemoryRepository });
+
+    await service.askQuestion(currentUser, {
+      question: "Help me plan dinner.",
+      context: {
+        assistantName: "Diana",
+        assistantTone: "gentle",
+        assistantPersonality: {
+          warmth: 0.9,
+          humor: 0.3,
+          strictness: 0.2,
+          motivation: 0.8,
+        },
+        communicationStyle: "supportive",
+        memory: {
+          goals: ["steady fat loss"],
+          struggles: ["evening snacking"],
+          habits: ["prefers short check-ins"],
+          motivationTriggers: ["direct accountability"],
+          lastMood: "focused",
+        },
+      },
+    });
+
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assistantName: "Diana",
+        goals: expect.arrayContaining(["steady fat loss", "cut"]),
+        struggles: expect.arrayContaining(["evening snacking"]),
+        habits: expect.arrayContaining(["prefers short check-ins"]),
+        motivationTriggers: expect.arrayContaining(["direct accountability"]),
+        lastMood: "focused",
+      })
+    );
+
+    const providerBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const contextBlock = providerBody.messages[1].content;
+
+    expect(contextBlock).toContain("steady fat loss");
+    expect(contextBlock).toContain("evening snacking");
+    expect(contextBlock).toContain("direct accountability");
   });
 
   it("blocks suspicious assistant prompt injection attempts before calling a provider", async () => {

@@ -43,6 +43,7 @@ import type {
   WeeklyCheckInState,
 } from "../../shared/types/profile";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { normalizeAssistantOnboardingProfile } from "../../core/assistant";
 
 interface WeightHistoryItem {
   date: string;
@@ -468,6 +469,7 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
       typeof value.proactiveHintsEnabled === "boolean"
         ? value.proactiveHintsEnabled
         : fallback.proactiveHintsEnabled,
+    onboarding: normalizeAssistantOnboardingProfile(value.onboarding),
   };
 };
 

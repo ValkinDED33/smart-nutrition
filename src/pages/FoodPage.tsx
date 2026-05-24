@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Box, Chip, LinearProgress, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
@@ -7,6 +7,7 @@ import { MealDayOverview } from "../features/meal/MealDayOverview";
 import { ProductSearch } from "../features/meal/ProductSearch";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
+import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import Loader from "../shared/components/Loader/PacmanLoader";
 import { useLanguage } from "../shared/language";
@@ -17,14 +18,62 @@ const BarcodeScanner = lazy(() =>
     default: module.BarcodeScanner,
   }))
 );
+const PhotoMealAssistant = lazy(() =>
+  import("../features/meal/PhotoMealAssistant").then((module) => ({
+    default: module.PhotoMealAssistant,
+  }))
+);
 
 const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+
+const foodFlowCopy = {
+  uk: {
+    today: "Сьогодні",
+    search: "Пошук їжі",
+    quickAdd: "Швидке додавання",
+    scan: "Фото і скан",
+    assistant: "Рекомендація помічника",
+    summary: "Історія і підсумок",
+  },
+  pl: {
+    today: "Dzisiaj",
+    search: "Wyszukiwanie jedzenia",
+    quickAdd: "Szybkie dodawanie",
+    scan: "Zdjęcie i skan",
+    assistant: "Rekomendacja asystenta",
+    summary: "Historia i podsumowanie",
+  },
+  en: {
+    today: "Today",
+    search: "Search food",
+    quickAdd: "Quick add",
+    scan: "Photo and scan",
+    assistant: "Assistant recommendation",
+    summary: "History and summary",
+  },
+} as const;
+
+const FoodSection = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) => (
+  <Stack spacing={1.5}>
+    <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+      {title}
+    </Typography>
+    {children}
+  </Stack>
+);
 
 const FoodPage = () => {
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const dailyCalories = useSelector((state: RootState) => state.profile.dailyCalories);
   const totals = useSelector(selectTodayMealTotalNutrients);
-  const { t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
+  const copy = foodFlowCopy[appLanguage];
   const caloriePercent = dailyCalories
     ? Math.min((totals.calories / dailyCalories) * 100, 100)
     : 0;
@@ -116,17 +165,31 @@ const FoodPage = () => {
         }}
       >
         <Stack spacing={2.5}>
-          <ProductSearch mealType={mealType} />
-          <QuickProductShelf mealType={mealType} />
-          <QuickMealComposer mealType={mealType} />
-          <Suspense fallback={<Loader fullScreen={false} size={70} />}>
-            <BarcodeScanner mealType={mealType} />
-          </Suspense>
+          <FoodSection title={copy.search}>
+            <ProductSearch mealType={mealType} />
+            <QuickProductShelf mealType={mealType} />
+          </FoodSection>
+          <FoodSection title={copy.quickAdd}>
+            <QuickMealComposer mealType={mealType} />
+          </FoodSection>
+          <FoodSection title={copy.scan}>
+            <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+              <PhotoMealAssistant mealType={mealType} />
+              <BarcodeScanner mealType={mealType} />
+            </Suspense>
+          </FoodSection>
         </Stack>
 
         <Stack spacing={2.5}>
-          <MealDayOverview />
-          <DailyHistoryExplorer />
+          <FoodSection title={copy.today}>
+            <MealDayOverview />
+          </FoodSection>
+          <FoodSection title={copy.assistant}>
+            <SmartRecommendations />
+          </FoodSection>
+          <FoodSection title={copy.summary}>
+            <DailyHistoryExplorer />
+          </FoodSection>
         </Stack>
       </Box>
     </Stack>

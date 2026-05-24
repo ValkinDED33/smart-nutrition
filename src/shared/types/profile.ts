@@ -10,6 +10,14 @@ export type AdaptiveMode = "automatic" | "manual";
 export type AssistantCompanionKind = "cat" | "dog" | "capybara" | "dragon" | "robot";
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused";
+export type AssistantDietFriction =
+  | "unknown"
+  | "emotional_eating"
+  | "chaotic_schedule"
+  | "evening_snacking"
+  | "low_energy"
+  | "social_pressure";
+export type AssistantMotivationStyle = "gentle" | "direct" | "energetic";
 export type MotivationTaskCategory = "nutrition" | "consistency" | "reflection";
 export type PremiumPlanId = "free" | "pro" | "coach";
 export type PremiumStatus = "inactive" | "trial" | "active" | "cancelled";
@@ -82,6 +90,16 @@ export interface AssistantCustomization {
   humorEnabled: boolean;
   widgetEnabled: boolean;
   proactiveHintsEnabled: boolean;
+  onboarding: AssistantOnboardingProfile;
+}
+
+export interface AssistantOnboardingProfile {
+  preferredName: string;
+  primaryGoalNote: string;
+  mainFriction: AssistantDietFriction;
+  motivationStyle: AssistantMotivationStyle;
+  supportNote: string;
+  completedAt: string | null;
 }
 
 export interface PersonalProfileDetails {

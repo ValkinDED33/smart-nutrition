@@ -12,7 +12,15 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { setAssistantCustomization } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
-import type { AssistantCompanionKind } from "../../shared/types/profile";
+import {
+  assistantDietFrictions,
+  assistantMotivationStyles,
+} from "../../core/assistant";
+import type {
+  AssistantCompanionKind,
+  AssistantDietFriction,
+  AssistantMotivationStyle,
+} from "../../shared/types/profile";
 
 const assistantCopy = {
   uk: {
@@ -24,14 +32,32 @@ const assistantCopy = {
     role: "Роль",
     tone: "Тон",
     humor: "Легкий гумор",
-    widget: "Плаваючий Clippy",
+    widget: "Плаваючий помічник",
     proactiveHints: "Контекстні підказки",
+    memoryTitle: "Пам'ять і стиль підтримки",
+    memorySubtitle:
+      "Це той контекст, який робить помічника постійним companion, а не окремим чатом.",
+    primaryGoalNote: "Що саме важливо змінити",
+    supportNote: "Що помічнику варто пам'ятати",
+    mainFriction: "Що найчастіше збиває",
+    motivationStyle: "Як підтримувати",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
     toneGentle: "М'який",
     tonePlayful: "Грайливий",
     toneFocused: "Зібраний",
+    motivationGentle: "М'яко",
+    motivationDirect: "Прямо",
+    motivationEnergetic: "Енергійно",
+    frictions: {
+      unknown: "Ще не визначено",
+      emotional_eating: "Емоційна їжа",
+      chaotic_schedule: "Хаотичний графік",
+      evening_snacking: "Вечірні перекуси",
+      low_energy: "Мало енергії",
+      social_pressure: "Соціальний тиск",
+    },
     companions: {
       cat: "Кіт",
       dog: "Собака",
@@ -49,19 +75,80 @@ const assistantCopy = {
     role: "Rola",
     tone: "Ton",
     humor: "Lekki humor",
-    widget: "Pływający Clippy",
+    widget: "Pływający asystent",
     proactiveHints: "Podpowiedzi kontekstowe",
+    memoryTitle: "Pamięć i styl wsparcia",
+    memorySubtitle:
+      "To kontekst, który robi z asystenta stałego companion, nie osobny chat.",
+    primaryGoalNote: "Co konkretnie ma się zmienić",
+    supportNote: "Co asystent ma pamiętać",
+    mainFriction: "Co najczęściej wybija rytm",
+    motivationStyle: "Jak wspierać",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
     toneGentle: "Spokojny",
     tonePlayful: "Swobodny",
     toneFocused: "Skupiony",
+    motivationGentle: "Łagodnie",
+    motivationDirect: "Konkretnie",
+    motivationEnergetic: "Energicznie",
+    frictions: {
+      unknown: "Jeszcze nie ustawiono",
+      emotional_eating: "Jedzenie emocjonalne",
+      chaotic_schedule: "Chaotyczny grafik",
+      evening_snacking: "Wieczorne podjadanie",
+      low_energy: "Mało energii",
+      social_pressure: "Presja społeczna",
+    },
     companions: {
       cat: "Kot",
       dog: "Pies",
       capybara: "Kapibara",
       dragon: "Smok",
+      robot: "Robot",
+    },
+  },
+  en: {
+    title: "Assistant style",
+    subtitle:
+      "Set how the assistant addresses you and what tone it uses for daily support.",
+    name: "Assistant name",
+    companion: "Character",
+    role: "Role",
+    tone: "Tone",
+    humor: "Light humor",
+    widget: "Floating assistant",
+    proactiveHints: "Context hints",
+    memoryTitle: "Memory and support style",
+    memorySubtitle:
+      "This context makes the assistant feel like a persistent companion, not a separate chat.",
+    primaryGoalNote: "What should change",
+    supportNote: "What the assistant should remember",
+    mainFriction: "What usually breaks rhythm",
+    motivationStyle: "How to support you",
+    roleFriend: "Friend",
+    roleAssistant: "Assistant",
+    roleCoach: "Coach",
+    toneGentle: "Gentle",
+    tonePlayful: "Playful",
+    toneFocused: "Focused",
+    motivationGentle: "Gently",
+    motivationDirect: "Directly",
+    motivationEnergetic: "Energetically",
+    frictions: {
+      unknown: "Not set yet",
+      emotional_eating: "Emotional eating",
+      chaotic_schedule: "Chaotic schedule",
+      evening_snacking: "Evening snacking",
+      low_energy: "Low energy",
+      social_pressure: "Social pressure",
+    },
+    companions: {
+      cat: "Cat",
+      dog: "Dog",
+      capybara: "Capybara",
+      dragon: "Dragon",
       robot: "Robot",
     },
   },
@@ -75,11 +162,14 @@ const companionKinds: AssistantCompanionKind[] = [
   "robot",
 ];
 
+const frictionOptions = assistantDietFrictions;
+const motivationStyleOptions = assistantMotivationStyles;
+
 export const AssistantCustomizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const assistant = useSelector((state: RootState) => state.profile.assistant);
-  const { language } = useLanguage();
-  const copy = assistantCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = assistantCopy[appLanguage];
 
   return (
     <Paper
@@ -172,6 +262,96 @@ export const AssistantCustomizationCard = () => {
             {copy.companions[assistant.companionKind]} · {assistant.name}
           </Typography>
         </Stack>
+
+        <BoxHeader title={copy.memoryTitle} subtitle={copy.memorySubtitle} />
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <TextField
+            select
+            fullWidth
+            label={copy.mainFriction}
+            value={assistant.onboarding.mainFriction}
+            onChange={(event) =>
+              dispatch(
+                setAssistantCustomization({
+                  onboarding: {
+                    ...assistant.onboarding,
+                    mainFriction: event.target.value as AssistantDietFriction,
+                  },
+                })
+              )
+            }
+          >
+            {frictionOptions.map((friction) => (
+              <MenuItem key={friction} value={friction}>
+                {copy.frictions[friction]}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            select
+            fullWidth
+            label={copy.motivationStyle}
+            value={assistant.onboarding.motivationStyle}
+            onChange={(event) =>
+              dispatch(
+                setAssistantCustomization({
+                  onboarding: {
+                    ...assistant.onboarding,
+                    motivationStyle: event.target.value as AssistantMotivationStyle,
+                  },
+                })
+              )
+            }
+          >
+            {motivationStyleOptions.map((style) => (
+              <MenuItem key={style} value={style}>
+                {style === "gentle"
+                  ? copy.motivationGentle
+                  : style === "direct"
+                    ? copy.motivationDirect
+                    : copy.motivationEnergetic}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
+
+        <TextField
+          label={copy.primaryGoalNote}
+          value={assistant.onboarding.primaryGoalNote}
+          multiline
+          minRows={2}
+          onChange={(event) =>
+            dispatch(
+              setAssistantCustomization({
+                onboarding: {
+                  ...assistant.onboarding,
+                  primaryGoalNote: event.target.value,
+                },
+              })
+            )
+          }
+          inputProps={{ maxLength: 180 }}
+        />
+
+        <TextField
+          label={copy.supportNote}
+          value={assistant.onboarding.supportNote}
+          multiline
+          minRows={2}
+          onChange={(event) =>
+            dispatch(
+              setAssistantCustomization({
+                onboarding: {
+                  ...assistant.onboarding,
+                  supportNote: event.target.value,
+                },
+              })
+            )
+          }
+          inputProps={{ maxLength: 180 }}
+        />
 
         <FormControlLabel
           control={

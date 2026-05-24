@@ -9,7 +9,7 @@ const DEFAULT_PERSONALITY = {
 };
 
 const DEFAULT_MEMORY = {
-  assistantName: "Nova",
+  assistantName: "Diana",
   personality: DEFAULT_PERSONALITY,
   communicationStyle: "supportive",
   goals: [],

@@ -59,6 +59,21 @@ const isAppLanguage = (value) => value === "uk" || value === "pl" || value === "
 const isAssistantRole = (value) =>
   value === "friend" || value === "assistant" || value === "coach";
 const isAssistantTone = (value) => value === "gentle" || value === "playful" || value === "focused";
+const isAssistantCompanionKind = (value) =>
+  value === "cat" ||
+  value === "dog" ||
+  value === "capybara" ||
+  value === "dragon" ||
+  value === "robot";
+const isAssistantDietFriction = (value) =>
+  value === "unknown" ||
+  value === "emotional_eating" ||
+  value === "chaotic_schedule" ||
+  value === "evening_snacking" ||
+  value === "low_energy" ||
+  value === "social_pressure";
+const isAssistantMotivationStyle = (value) =>
+  value === "gentle" || value === "direct" || value === "energetic";
 const isPremiumPlan = (value) => value === "free" || value === "pro" || value === "coach";
 const isPremiumStatus = (value) =>
   value === "inactive" || value === "trial" || value === "active" || value === "cancelled";
@@ -133,12 +148,17 @@ const normalizeReminderTimes = (value, fallback) => {
 
 const normalizeAssistantCustomization = (value, fallback) => {
   const record = isRecord(value) ? value : {};
+  const onboarding = isRecord(record.onboarding) ? record.onboarding : {};
+  const fallbackOnboarding = fallback.onboarding ?? {};
 
   return {
     name:
       typeof record.name === "string" && record.name.trim().length > 0
         ? record.name.trim().slice(0, 32)
         : fallback.name,
+    companionKind: isAssistantCompanionKind(record.companionKind)
+      ? record.companionKind
+      : fallback.companionKind,
     role: isAssistantRole(record.role) ? record.role : fallback.role,
     tone: isAssistantTone(record.tone) ? record.tone : fallback.tone,
     humorEnabled:
@@ -149,6 +169,30 @@ const normalizeAssistantCustomization = (value, fallback) => {
       typeof record.proactiveHintsEnabled === "boolean"
         ? record.proactiveHintsEnabled
         : fallback.proactiveHintsEnabled,
+    onboarding: {
+      preferredName:
+        typeof onboarding.preferredName === "string"
+          ? normalizeText(onboarding.preferredName).slice(0, 60)
+          : fallbackOnboarding.preferredName ?? "",
+      primaryGoalNote:
+        typeof onboarding.primaryGoalNote === "string"
+          ? normalizeText(onboarding.primaryGoalNote).slice(0, 180)
+          : fallbackOnboarding.primaryGoalNote ?? "",
+      mainFriction: isAssistantDietFriction(onboarding.mainFriction)
+        ? onboarding.mainFriction
+        : fallbackOnboarding.mainFriction ?? "unknown",
+      motivationStyle: isAssistantMotivationStyle(onboarding.motivationStyle)
+        ? onboarding.motivationStyle
+        : fallbackOnboarding.motivationStyle ?? "gentle",
+      supportNote:
+        typeof onboarding.supportNote === "string"
+          ? normalizeText(onboarding.supportNote).slice(0, 180)
+          : fallbackOnboarding.supportNote ?? "",
+      completedAt:
+        onboarding.completedAt === null || isIsoDate(onboarding.completedAt)
+          ? onboarding.completedAt
+          : fallbackOnboarding.completedAt ?? null,
+    },
   };
 };
 
@@ -1169,7 +1213,7 @@ const createSchema = (database) => {
       progress_photos_json TEXT NOT NULL DEFAULT '[]',
       weekly_check_in_json TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}',
       motivation_json TEXT NOT NULL DEFAULT '{"points":0,"level":1,"completedTasks":0,"activeTasks":[],"history":[],"achievements":[],"lastTaskRefreshDate":null,"freeDayLastUsedAt":null,"paidDayLastUsedAt":null,"paidDayLastUsedMonth":null}',
-      assistant_json TEXT NOT NULL DEFAULT '{"name":"Nova","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true}',
+      assistant_json TEXT NOT NULL DEFAULT '{"name":"Diana","companionKind":"robot","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true,"onboarding":{"preferredName":"","primaryGoalNote":"","mainFriction":"unknown","motivationStyle":"gentle","supportNote":"","completedAt":null}}',
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -2124,7 +2168,7 @@ export const createSqliteStorage = async ({
     database,
     "profile_states",
     "assistant_json",
-      "TEXT NOT NULL DEFAULT '{\"name\":\"Nova\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true,\"widgetEnabled\":true,\"proactiveHintsEnabled\":true}'"
+      "TEXT NOT NULL DEFAULT '{\"name\":\"Diana\",\"companionKind\":\"robot\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true,\"widgetEnabled\":true,\"proactiveHintsEnabled\":true,\"onboarding\":{\"preferredName\":\"\",\"primaryGoalNote\":\"\",\"mainFriction\":\"unknown\",\"motivationStyle\":\"gentle\",\"supportNote\":\"\",\"completedAt\":null}}'"
   );
   createIndexes(database);
   setMeta(database, "storage_engine", "sqlite");

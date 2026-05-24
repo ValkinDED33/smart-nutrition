@@ -59,7 +59,7 @@ const createWelcomeMessage = (
 
 const cardCopy = {
   uk: {
-    title: "AI Помічник",
+    title: "Помічник",
     subtitle:
       "Швидкий діалоговий блок відповідає по калоріях, білку, coach-аналітиці та мотивації на базі ваших поточних даних.",
     inputLabel: "Поставте швидке питання",
@@ -83,7 +83,7 @@ const cardCopy = {
     error: "Не вдалося отримати відповідь. Спробуйте ще раз за секунду.",
   },
   pl: {
-    title: "AI Asystent",
+    title: "Asystent",
     subtitle:
       "Szybki blok dialogowy odpowiada na podstawie bieżących kalorii, białka, analizy coacha i motywacji.",
     inputLabel: "Zadaj szybkie pytanie",
@@ -107,7 +107,7 @@ const cardCopy = {
     error: "Nie udało się pobrać odpowiedzi. Spróbuj jeszcze raz za chwilę.",
   },
   en: {
-    title: "AI Coach",
+    title: "Assistant",
     subtitle:
       "A quick chat block answers from your current calories, protein, coach analysis, and motivation state.",
     inputLabel: "Ask a quick question",
