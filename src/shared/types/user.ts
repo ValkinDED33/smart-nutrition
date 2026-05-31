@@ -25,8 +25,6 @@ export interface User {
   name: string;
   email: string;
   emailVerified?: boolean;
-  phone?: string;
-  phoneVerified?: boolean;
   verificationChannel?: VerificationChannel;
   avatar?: string;
   age: number;

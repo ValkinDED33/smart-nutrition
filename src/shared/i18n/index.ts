@@ -3,7 +3,7 @@ import { en } from "./en";
 import { pl } from "./pl";
 import { uk } from "./uk";
 
-export const appLanguages = ["uk", "pl", "en"] as const satisfies readonly AppLanguage[];
+export const appLanguages = ["pl", "uk", "en"] as const satisfies readonly AppLanguage[];
 
 export const languageLabels: Record<AppLanguage, string> = {
   uk: "Українська",

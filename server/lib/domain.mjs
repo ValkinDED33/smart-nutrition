@@ -453,7 +453,7 @@ export const createInitialProfileState = (userInput) => {
       cancelledAt: null,
     },
     assistant: {
-      name: "Diana",
+      name: "Алекс",
       companionKind: "robot",
       role: "assistant",
       tone: "gentle",
@@ -647,8 +647,6 @@ export const toPublicUser = (user) => ({
   name: user.name,
   email: user.email,
   emailVerified: Boolean(user.emailVerified),
-  phone: user.phone,
-  phoneVerified: Boolean(user.phoneVerified),
   verificationChannel: "email",
   avatar: user.avatar,
   age: user.age,

@@ -205,7 +205,7 @@ const normalizeStorageProvider = (value, { postgresUrl, mongoUri } = {}) => {
     return "postgres";
   }
 
-  return mongoUri ? "mongodb" : "sqlite";
+  return "mongodb";
 };
 
 const normalizeAiDataProvider = (value, mongoUri, { preferMongoUri = false } = {}) => {

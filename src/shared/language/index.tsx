@@ -18,6 +18,7 @@ import {
 } from "../i18n";
 import {
   getClientStorageItem,
+  removeClientStorageItem,
   setClientStorageItem,
 } from "../lib/clientPersistence";
 
@@ -25,6 +26,9 @@ export type Language = "uk" | "pl";
 
 const STORAGE_KEY = "smart-nutrition.language";
 const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";
+
+const getOnboardingStorageKey = (userId: string | null) =>
+  userId ? `${ONBOARDING_STORAGE_KEY}:${userId}` : ONBOARDING_STORAGE_KEY;
 
 const uk = {
   "brand.name": "Smart Nutrition",
@@ -550,6 +554,8 @@ interface LanguageContextValue {
   setLanguage: (language: AppLanguage) => void;
   hasExplicitChoice: boolean;
   hasCompletedOnboarding: boolean;
+  setOnboardingUser: (userId: string | null) => void;
+  resetOnboarding: () => void;
   completeOnboarding: () => void;
   t: (key: TranslationKey | string, vars?: Record<string, string | number>) => string;
 }
@@ -561,8 +567,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const initialLanguage: AppLanguage = isAppLanguage(savedLanguage) ? savedLanguage : "uk";
   const [appLanguage, setLanguageState] = useState<AppLanguage>(initialLanguage);
   const [hasExplicitChoice, setHasExplicitChoice] = useState(() => Boolean(savedLanguage));
+  const [onboardingUserId, setOnboardingUserId] = useState<string | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(
-    () => getClientStorageItem(ONBOARDING_STORAGE_KEY) === "true"
+    () => getClientStorageItem(getOnboardingStorageKey(null)) === "true"
   );
   const [i18n] = useState(() => createLanguageI18nInstance(initialLanguage));
   const language = getLegacyContentLanguage(appLanguage);
@@ -586,17 +593,27 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       },
       hasExplicitChoice,
       hasCompletedOnboarding,
+      setOnboardingUser: (userId) => {
+        setOnboardingUserId(userId);
+        setHasCompletedOnboarding(
+          getClientStorageItem(getOnboardingStorageKey(userId)) === "true"
+        );
+      },
+      resetOnboarding: () => {
+        setHasCompletedOnboarding(false);
+        removeClientStorageItem(getOnboardingStorageKey(onboardingUserId));
+      },
       completeOnboarding: () => {
         setHasExplicitChoice(true);
         setHasCompletedOnboarding(true);
         setClientStorageItem(STORAGE_KEY, appLanguage);
-        setClientStorageItem(ONBOARDING_STORAGE_KEY, "true");
+        setClientStorageItem(getOnboardingStorageKey(onboardingUserId), "true");
       },
       t: (key, vars) => {
         return String(i18n.t(key, vars));
       },
     }),
-    [appLanguage, hasCompletedOnboarding, hasExplicitChoice, i18n, language]
+    [appLanguage, hasCompletedOnboarding, hasExplicitChoice, i18n, language, onboardingUserId]
   );
 
   return (

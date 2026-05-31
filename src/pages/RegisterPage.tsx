@@ -37,6 +37,7 @@ import {
 import type { AuthResponse } from "../shared/types/user";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 
@@ -60,7 +61,8 @@ const registerPageCopy = {
   uk: {
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
-    note: "Створіть акаунт, підтвердіть email кнопкою в листі, а потім помічник проведе онбординг.",
+    note: "Створіть акаунт і підтвердіть email кнопкою в листі. Далі Алекс проведе коротке налаштування профілю.",
+    assistantIntro: "Після підтвердження я запитаю 7 речей: ім'я, вік, стать, зріст, вагу і головну ціль.",
     profileTitle: "Стартові дані для AI",
     profileBody:
       "Ці параметри одразу дадуть норму калорій, води і перші підказки companion.",
@@ -84,7 +86,8 @@ const registerPageCopy = {
   pl: {
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
-    note: "Utwórz konto, potwierdź email przyciskiem w wiadomości, a potem asystent poprowadzi onboarding.",
+    note: "Utwórz konto i potwierdź email przyciskiem w wiadomości. Potem Alex przeprowadzi krótką konfigurację profilu.",
+    assistantIntro: "Po potwierdzeniu zapytam o 7 rzeczy: imię, wiek, płeć, wzrost, wagę i główny cel.",
     profileTitle: "Dane startowe dla AI",
     profileBody:
       "Te parametry od razu ustawiają kalorie, wodę i pierwsze podpowiedzi companion.",
@@ -117,7 +120,7 @@ const isVerificationPending = (
 const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { t, language, appLanguage } = useLanguage();
+  const { t, language, appLanguage, resetOnboarding } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<RegistrationVerificationPending | null>(null);
@@ -209,6 +212,7 @@ const RegisterPage = () => {
     }
 
     dispatch(setProfileLanguage(appLanguage));
+    resetOnboarding();
   };
 
   const onSubmit = async (data: FormData) => {
@@ -313,17 +317,24 @@ const RegisterPage = () => {
         }}
       >
         <Stack spacing={2.5}>
-          <Box>
-            <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-              {t("brand.name")}
-            </Typography>
-            <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-              {t("auth.registerTitle")}
-            </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-              {copy.note}
-            </Typography>
-          </Box>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <AssistantAvatar name="Алекс" variant="robot" mood="happy" size={72} />
+            <Box>
+              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                {t("brand.name")}
+              </Typography>
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+                {t("auth.registerTitle")}
+              </Typography>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                {copy.note}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Alert severity="success" icon={false} sx={{ borderRadius: 3 }}>
+            <Typography sx={{ fontWeight: 800 }}>{copy.assistantIntro}</Typography>
+          </Alert>
 
           {serverError && (
             <Alert severity="error" sx={{ borderRadius: 3 }}>

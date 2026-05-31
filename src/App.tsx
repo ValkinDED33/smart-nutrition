@@ -49,13 +49,17 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, isInitialized, isLoading } = useSelector(selectAuth);
-  const { hasCompletedOnboarding } = useLanguage();
+  const { isAuthenticated, isInitialized, isLoading, user } = useSelector(selectAuth);
+  const { hasCompletedOnboarding, setOnboardingUser } = useLanguage();
   const shouldShowOnboarding = isAuthenticated && !hasCompletedOnboarding;
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  useEffect(() => {
+    setOnboardingUser(isAuthenticated ? user?.id ?? null : null);
+  }, [isAuthenticated, setOnboardingUser, user?.id]);
 
   useEffect(() => {
     if (!isInitialized || typeof window === "undefined") {

@@ -38,7 +38,7 @@ const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t, language, appLanguage } = useLanguage();
+  const { t, language, appLanguage, resetOnboarding } = useLanguage();
   const copy = verifyCopy[language];
   const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
@@ -83,6 +83,7 @@ const VerifyEmailPage = () => {
         }
 
         dispatch(setProfileLanguage(appLanguage));
+        resetOnboarding();
         setStatus("success");
         window.setTimeout(() => {
           navigate("/onboarding", { replace: true });
@@ -106,7 +107,7 @@ const VerifyEmailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [appLanguage, copy.generic, copy.invalid, dispatch, navigate, token]);
+  }, [appLanguage, copy.generic, copy.invalid, dispatch, navigate, resetOnboarding, token]);
 
   return (
     <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>

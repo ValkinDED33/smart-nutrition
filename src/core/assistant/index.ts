@@ -13,7 +13,7 @@ import type {
 } from "../../shared/types/profile";
 import type { Goal } from "../../shared/types/user";
 
-export const DEFAULT_ASSISTANT_NAME = "Diana";
+export const DEFAULT_ASSISTANT_NAME = "Алекс";
 
 export type AssistantCoreEmotion =
   | "calm"

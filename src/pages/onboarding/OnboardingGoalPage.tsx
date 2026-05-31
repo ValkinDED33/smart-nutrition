@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
-import { assistantDietFrictions } from "../../core/assistant";
+import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useLanguage } from "../../shared/language";
 import {
   cardSx,
@@ -9,10 +8,6 @@ import {
   stepPaths,
   type OnboardingStepProps,
 } from "./types";
-
-const frictionOptions = assistantDietFrictions.filter(
-  (friction) => friction !== "unknown"
-);
 
 export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
@@ -26,7 +21,7 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             {t("onboarding.goalTitle")}
           </Typography>
           <Stack spacing={1.2}>
-            {[...goalOptions, "healthy" as const].map((goal) => (
+            {goalOptions.map((goal) => (
               <Button
                 key={goal}
                 variant={
@@ -50,51 +45,6 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
               </Button>
             ))}
           </Stack>
-
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            value={state.primaryGoalNote}
-            label={t("onboarding.goalNoteLabel")}
-            placeholder={t("onboarding.goalNotePlaceholder")}
-            onChange={(event) => updateState({ primaryGoalNote: event.target.value })}
-            inputProps={{ maxLength: 180 }}
-          />
-
-          <Stack spacing={1}>
-            <Typography sx={{ fontWeight: 800 }}>{t("onboarding.frictionTitle")}</Typography>
-            <Typography color="text.secondary">{t("onboarding.frictionBody")}</Typography>
-            <Stack spacing={1}>
-              {frictionOptions.map((friction) => (
-                <Button
-                  key={friction}
-                  variant={state.mainFriction === friction ? "contained" : "outlined"}
-                  size="large"
-                  onClick={() => updateState({ mainFriction: friction })}
-                  sx={{
-                    justifyContent: "flex-start",
-                    borderRadius: 1,
-                    textTransform: "none",
-                    fontWeight: 900,
-                  }}
-                >
-                  {t(`onboarding.frictions.${friction}`)}
-                </Button>
-              ))}
-            </Stack>
-          </Stack>
-
-          <TextField
-            fullWidth
-            multiline
-            minRows={2}
-            value={state.supportNote}
-            label={t("onboarding.supportNoteLabel")}
-            placeholder={t("onboarding.supportNotePlaceholder")}
-            onChange={(event) => updateState({ supportNote: event.target.value })}
-            inputProps={{ maxLength: 180 }}
-          />
 
           <Stack direction="row" spacing={1.2}>
             <Button

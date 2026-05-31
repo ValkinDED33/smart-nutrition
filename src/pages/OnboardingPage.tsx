@@ -10,7 +10,6 @@ import { OnboardingGenderPage } from "./onboarding/OnboardingGenderPage";
 import { OnboardingGoalPage } from "./onboarding/OnboardingGoalPage";
 import { OnboardingHeightPage } from "./onboarding/OnboardingHeightPage";
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
-import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
 import { stepPaths, type OnboardingState } from "./onboarding/types";
 
@@ -47,7 +46,7 @@ const OnboardingPage = () => {
 
   return (
     <Routes>
-      <Route index element={<OnboardingWelcomePage />} />
+      <Route index element={<Navigate to={stepPaths.assistant} replace />} />
       <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
       <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
       <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
@@ -58,7 +57,7 @@ const OnboardingPage = () => {
       <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
       <Route path="friction" element={<Navigate to={stepPaths.goal} replace />} />
       <Route path="motivation" element={<Navigate to={stepPaths.assistant} replace />} />
-      <Route path="*" element={<Navigate to={stepPaths.welcome} replace />} />
+      <Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />
     </Routes>
   );
 };

@@ -5,131 +5,85 @@ import {
   Paper,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { assistantMotivationStyles } from "../../core/assistant";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
-import type { AssistantMotivationStyle } from "../../shared/types/profile";
 import {
   cardSx,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
-  type PersonalityPreset,
 } from "./types";
 
-const motivationStyleOptions = assistantMotivationStyles;
-const personalityOptions: PersonalityPreset[] = [
-  "supportive",
-  "strict",
-  "energetic",
-  "calm",
-  "scientific",
+const languageOptions = [
+  { value: "pl" as const, label: "Polski", flag: "🇵🇱" },
+  { value: "uk" as const, label: "Українська", flag: "🇺🇦" },
+  { value: "en" as const, label: "English", flag: "🇬🇧" },
 ];
 
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { appLanguage, setLanguage, t } = useLanguage();
 
   return (
     <Box sx={shellSx}>
       <Paper elevation={0} sx={cardSx}>
         <Stack spacing={3}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name={state.assistantName} variant="robot" mood="happy" active />
-            <Stack spacing={0.5}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+            <AssistantAvatar name={state.assistantName} variant="robot" mood="happy" size={96} />
+            <Stack spacing={0.8}>
               <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
                 {t("onboarding.assistantTitle")}
               </Typography>
-              <Typography color="text.secondary">{t("assistant.hello")}</Typography>
+              <Typography color="text.secondary" sx={{ fontSize: "1.08rem", lineHeight: 1.55 }}>
+                {t("onboarding.assistantBody")}
+              </Typography>
             </Stack>
           </Stack>
 
-          <TextField
-            autoFocus
-            fullWidth
-            value={state.assistantName}
-            placeholder={t("onboarding.assistantPlaceholder")}
-            onChange={(event) => updateState({ assistantName: event.target.value })}
-            inputProps={{ maxLength: 32 }}
-          />
-
-          <ToggleButtonGroup
-            exclusive
-            fullWidth
-            value={state.personality}
-            onChange={(_, value: PersonalityPreset | null) => {
-              if (value) {
-                updateState({ personality: value });
-              }
-            }}
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-                md: "repeat(5, minmax(0, 1fr))",
-              },
-              gap: 1,
-              "& .MuiToggleButtonGroup-grouped": {
-                border: "1px solid rgba(15, 23, 42, 0.12)",
-                borderRadius: 1,
-                m: 0,
-                textTransform: "none",
-                fontWeight: 800,
-              },
-            }}
-          >
-            {personalityOptions.map((personality) => (
-              <ToggleButton key={personality} value={personality}>
-                {t(`assistant.personalities.${personality}`)}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 900 }}>{t("onboarding.assistantQuestion")}</Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              value={state.assistantName}
+              placeholder={t("onboarding.assistantPlaceholder")}
+              onChange={(event) => updateState({ assistantName: event.target.value })}
+              inputProps={{ maxLength: 32 }}
+            />
+          </Stack>
 
           <Stack spacing={1}>
-            <Typography sx={{ fontWeight: 800 }}>{t("onboarding.motivationTitle")}</Typography>
-            <ToggleButtonGroup
-              exclusive
-              fullWidth
-              value={state.motivationStyle}
-              onChange={(_, value: AssistantMotivationStyle | null) => {
-                if (value) {
-                  updateState({ motivationStyle: value });
-                }
-              }}
+            <Typography sx={{ fontWeight: 900 }}>{t("onboarding.languageTitle")}</Typography>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-                gap: 1,
-                "& .MuiToggleButtonGroup-grouped": {
-                  border: "1px solid rgba(15, 23, 42, 0.12)",
+                "& .MuiButton-root": {
                   borderRadius: 1,
-                  m: 0,
                   textTransform: "none",
-                  fontWeight: 800,
+                  fontWeight: 900,
+                  justifyContent: "flex-start",
                 },
               }}
             >
-              {motivationStyleOptions.map((style) => (
-                <ToggleButton key={style} value={style}>
-                  {t(`onboarding.motivationStyles.${style}`)}
-                </ToggleButton>
+              {languageOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={appLanguage === option.value ? "contained" : "outlined"}
+                  onClick={() => setLanguage(option.value)}
+                >
+                  {option.flag} {option.label}
+                </Button>
               ))}
-            </ToggleButtonGroup>
+              <Button variant="outlined" disabled>
+                {t("onboarding.languageAdd")}
+              </Button>
+            </Stack>
           </Stack>
 
           <Stack direction="row" spacing={1.2}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate(stepPaths.welcome)}
-              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
-            >
-              {t("onboarding.back")}
-            </Button>
             <Button
               variant="contained"
               disabled={state.assistantName.trim().length < 2}

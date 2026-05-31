@@ -59,7 +59,7 @@ export const shellSx = {
   placeItems: "center",
 } satisfies SxProps<Theme>;
 
-export const goalOptions: Goal[] = ["cut", "maintain", "bulk"];
+export const goalOptions: Array<Goal | "healthy"> = ["cut", "bulk", "maintain", "healthy"];
 
 export const personalityValues: Record<
   PersonalityPreset,
