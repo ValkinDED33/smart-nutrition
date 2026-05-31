@@ -35,14 +35,16 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       ...user,
       name: trimmedName,
       age: state.age,
+      gender: state.gender,
+      height: state.height,
       weight: state.weight,
       goal: state.goal,
     };
     const { maintenanceCalories, targetCalories } = calculateProfileTargets({
       age: state.age,
       weight: state.weight,
-      height: user.height,
-      gender: user.gender,
+      height: state.height,
+      gender: state.gender,
       activity: user.activity,
       goal: state.goal,
     });

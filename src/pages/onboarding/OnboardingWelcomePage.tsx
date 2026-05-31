@@ -52,9 +52,12 @@ export const OnboardingWelcomePage = () => {
                   }
                 }}
               >
-                <MenuItem value="uk">{languageLabels.uk}</MenuItem>
-                <MenuItem value="pl">{languageLabels.pl}</MenuItem>
-                <MenuItem value="en">{languageLabels.en}</MenuItem>
+                <MenuItem value="pl">🇵🇱 {languageLabels.pl}</MenuItem>
+                <MenuItem value="uk">🇺🇦 {languageLabels.uk}</MenuItem>
+                <MenuItem value="en">🇬🇧 {languageLabels.en}</MenuItem>
+                <MenuItem disabled value="add">
+                  + {t("language.add")}
+                </MenuItem>
               </Select>
             </FormControl>
           </Stack>

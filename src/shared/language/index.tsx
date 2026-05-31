@@ -35,6 +35,7 @@ const uk = {
   "nav.login": "Увійти",
   "nav.register": "Реєстрація",
   "nav.logout": "Вийти",
+  "language.add": "Додати мову",
   "landing.eyebrow": "Планування харчування",
   "landing.title":
     "Безпечна реєстрація, персональний профіль і контроль калорій в одному місці.",
@@ -89,6 +90,7 @@ const uk = {
   "option.goal.cut": "Схуднення",
   "option.goal.maintain": "Підтримка",
   "option.goal.bulk": "Набір маси",
+  "option.goal.healthy": "Харчуватись здоровіше",
   "validation.nameMin": "Ім'я має містити щонайменше 2 символи.",
   "validation.invalidEmail": "Вкажіть коректний email.",
   "validation.passwordRequired": "Введіть пароль.",
@@ -277,6 +279,7 @@ const pl: Record<keyof typeof uk, string> = {
   "nav.login": "Zaloguj",
   "nav.register": "Rejestracja",
   "nav.logout": "Wyloguj",
+  "language.add": "Dodaj język",
   "landing.eyebrow": "Planowanie żywienia",
   "landing.title":
     "Bezpieczna rejestracja, profil użytkownika i kontrola kalorii w jednym miejscu.",
@@ -331,6 +334,7 @@ const pl: Record<keyof typeof uk, string> = {
   "option.goal.cut": "Redukcja",
   "option.goal.maintain": "Utrzymanie",
   "option.goal.bulk": "Masa",
+  "option.goal.healthy": "Jeść zdrowiej",
   "validation.nameMin": "Imię musi mieć co najmniej 2 znaki.",
   "validation.invalidEmail": "Podaj poprawny adres email.",
   "validation.passwordRequired": "Wpisz hasło.",

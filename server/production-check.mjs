@@ -1,7 +1,13 @@
 import { createServerConfig } from "./config.mjs";
 import { POSTGRES_SCHEMA_VERSION } from "./storage/postgres.mjs";
 
-const statusIcon = (ok) => (ok ? "OK " : "ERR");
+const statusIcon = (check) => {
+  if (check.ok) {
+    return "OK ";
+  }
+
+  return check.required ? "ERR" : "WARN";
+};
 
 const createCheck = ({ id, label, ok, detail, required = true }) => ({
   id,
@@ -12,7 +18,7 @@ const createCheck = ({ id, label, ok, detail, required = true }) => ({
 });
 
 const printCheck = (check) => {
-  const marker = statusIcon(check.ok);
+  const marker = statusIcon(check);
   const requirement = check.required ? "required" : "recommended";
   console.log(`${marker} ${check.label} (${requirement})`);
 
@@ -108,9 +114,9 @@ const run = () => {
     }),
     createCheck({
       id: "health",
-      label: "/api/health is enabled",
+      label: "/api/health and /api/ready are enabled",
       ok: true,
-      detail: "Render live check path: /api/health",
+      detail: "Render live check path: /api/health; readiness path: /api/ready",
     }),
     createCheck({
       id: "email",
@@ -118,8 +124,17 @@ const run = () => {
       ok: config.emailTransportConfigured,
       detail: config.emailTransportConfigured
         ? `From: ${config.emailFromName} <${config.emailFromAddress}>`
-        : "SMTP env must be configured so production password reset emails can be delivered.",
+        : "Set SMART_NUTRITION_RESEND_API_KEY and SMART_NUTRITION_EMAIL_FROM_ADDRESS.",
       required: true,
+    }),
+    createCheck({
+      id: "redis",
+      label: "Redis is configured for distributed production state",
+      ok: config.redisEnabled,
+      detail: config.redisEnabled
+        ? `Redis key prefix: ${config.redisKeyPrefix}, connect timeout: ${config.redisConnectTimeoutMs} ms`
+        : "Set SMART_NUTRITION_REDIS_URL before running multiple Render instances.",
+      required: false,
     }),
     createCheck({
       id: "super-admin-seed",
@@ -128,15 +143,6 @@ const run = () => {
       detail: config.superAdminEmail
         ? `Bootstrap email: ${config.superAdminEmail}`
         : "Set SMART_NUTRITION_SUPER_ADMIN_EMAIL so the first matching registered account becomes SUPER_ADMIN.",
-      required: false,
-    }),
-    createCheck({
-      id: "mango-sms",
-      label: "MANGO OFFICE SMS delivery is configured",
-      ok: config.mangoSmsConfigured,
-      detail: config.mangoSmsConfigured
-        ? `Endpoint: ${config.mangoSmsEndpoint}, extension: ${config.mangoFromExtension}`
-        : "Set SMART_NUTRITION_MANGO_API_KEY and SMART_NUTRITION_MANGO_API_SALT to enable SMS verification.",
       required: false,
     }),
     createCheck({
@@ -170,10 +176,18 @@ const run = () => {
   }
 
   const failedRequired = checks.filter((check) => check.required && !check.ok);
+  const warningChecks = checks.filter((check) => !check.required && !check.ok);
 
   console.log("");
   if (failedRequired.length === 0) {
-    console.log("OK Required production checks passed.");
+    console.log(`OK 0 failed required check(s).`);
+    if (warningChecks.length > 0) {
+      console.log(
+        `WARN ${warningChecks.length} recommended production check(s) need attention: ${warningChecks
+          .map((check) => check.id)
+          .join(", ")}`
+      );
+    }
   } else {
     console.log(
       `ERR ${failedRequired.length} required production check(s) failed: ${failedRequired

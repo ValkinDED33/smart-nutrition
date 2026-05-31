@@ -9,7 +9,6 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   createPasswordRecord,
-  createVerificationCode,
   createSessionToken,
   getBearerToken,
   readCookieValue,
@@ -25,7 +24,6 @@ export const createAuthService = ({
   authRepository,
   stateRepository,
   emailService,
-  smsService = null,
   config,
 }) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
@@ -33,9 +31,8 @@ export const createAuthService = ({
   const passwordResetRequestMessage =
     "If an account with that email exists, a password reset link has been prepared.";
   const registrationVerificationMessage =
-    "Registration confirmation code has been prepared.";
+    "Registration confirmation link has been prepared.";
   const validEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const validPhonePattern = /^[+\d][\d\s().-]{6,24}$/;
   const validActivityLevels = new Set([
     "sedentary",
     "light",
@@ -55,33 +52,8 @@ export const createAuthService = ({
     }
   };
 
-  const normalizeVerificationChannel = (value) => (value === "sms" ? "sms" : "email");
-
-  const readPhone = (value) =>
-    String(value ?? "")
-      .trim()
-      .replace(/\s+/g, " ");
-
-  const assertValidPhone = (phone) => {
-    if (!validPhonePattern.test(phone)) {
-      throw new AuthApiError(
-        "INVALID_PROFILE",
-        "A valid phone number is required for SMS verification."
-      );
-    }
-  };
-
-  const assertSmsDeliveryAvailable = () => {
-    if (config.isProduction && !smsService?.isConfigured?.()) {
-      throw new AuthApiError(
-        "VERIFICATION_DELIVERY_UNAVAILABLE",
-        "SMS verification is unavailable until MANGO OFFICE credentials are configured."
-      );
-    }
-  };
-
   const isRegistrationVerified = (user) =>
-    user?.emailVerified !== false || Boolean(user?.phoneVerified);
+    user?.emailVerified !== false;
 
   const isUserBanned = (user) => Boolean(user?.bannedAt);
 
@@ -89,11 +61,6 @@ export const createAuthService = ({
     const [name = "", domain = ""] = String(email ?? "").split("@");
     const visibleName = name.length <= 2 ? `${name[0] ?? "*"}*` : `${name.slice(0, 2)}***`;
     return `${visibleName}@${domain}`;
-  };
-
-  const maskPhone = (phone) => {
-    const compact = String(phone ?? "").replace(/\s+/g, "");
-    return compact.length <= 4 ? "****" : `${compact.slice(0, 2)}***${compact.slice(-2)}`;
   };
 
   const readName = (value) => {
@@ -240,78 +207,53 @@ export const createAuthService = ({
   });
   const getUserById = (userId) => authRepository.findUserById(userId);
 
-  const buildPasswordResetResponse = ({
-    delivery = "email",
-    expiresAt = undefined,
-  } = {}) => ({
+  const buildPasswordResetResponse = () => ({
     ok: true,
     message: passwordResetRequestMessage,
-    delivery,
-    expiresAt,
+    delivery: "email",
   });
 
   const buildRegistrationVerificationResponse = ({
     email,
-    channel,
-    target,
-    delivery,
     expiresAt,
   }) => ({
     ok: true,
     requiresVerification: true,
     email,
-    channel,
-    maskedTarget: channel === "sms" ? maskPhone(target) : maskEmail(email),
-    delivery,
+    channel: "email",
+    maskedTarget: maskEmail(email),
+    delivery: "email",
     message: registrationVerificationMessage,
     expiresAt: new Date(expiresAt).toISOString(),
   });
 
-  const createRegistrationVerification = async (user, channel, target) => {
+  const createRegistrationVerification = async (user) => {
     await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
 
-    const code = createVerificationCode();
+    const token = createOpaqueToken(32);
     const expiresAt =
       Date.now() + (config.registrationVerificationTokenTtlMs ?? 1000 * 60 * 15);
-    const codeHash = hashOneTimeToken(`${user.email}:${code}`, config.jwtSecret);
+    const tokenHash = hashOneTimeToken(token, config.jwtSecret);
+    const verificationUrl = `${config.appBaseUrl}/verify-email?token=${encodeURIComponent(token)}`;
 
     await authRepository.createRegistrationVerificationToken?.({
-      id: createId("registration-code"),
+      id: createId("registration-token"),
       userId: user.id,
-      channel,
-      target,
-      codeHash,
+      channel: "email",
+      target: user.email,
+      codeHash: tokenHash,
       expiresAt,
       createdAt: new Date().toISOString(),
     });
 
-    const emailResult =
-      channel === "email"
-        ? await emailService?.sendRegistrationVerificationEmail?.({
-            to: user.email,
-            name: user.name,
-            code,
-            expiresAt,
-          })
-        : null;
-    const smsResult =
-      channel === "sms"
-        ? await smsService?.sendRegistrationVerificationSms?.({
-            to: target,
-            name: user.name,
-            code,
-            expiresAt,
-          })
-        : null;
+    const emailResult = await emailService?.sendRegistrationVerificationEmail?.({
+      to: user.email,
+      name: user.name,
+      verificationUrl,
+      expiresAt,
+    });
 
-    if (channel === "sms" && !smsResult?.ok) {
-      throw new AuthApiError(
-        "VERIFICATION_DELIVERY_UNAVAILABLE",
-        "SMS verification could not be delivered through MANGO OFFICE."
-      );
-    }
-
-    if (channel === "email" && !emailResult?.ok) {
+    if (!emailResult?.ok) {
       throw new AuthApiError(
         "VERIFICATION_DELIVERY_UNAVAILABLE",
         "Email verification could not be delivered."
@@ -320,9 +262,6 @@ export const createAuthService = ({
 
     return buildRegistrationVerificationResponse({
       email: user.email,
-      channel,
-      target,
-      delivery: channel,
       expiresAt,
     });
   };
@@ -535,22 +474,17 @@ export const createAuthService = ({
 
     register: async (body) => {
       const email = normalizeEmail(body.email);
-      const verificationChannel = normalizeVerificationChannel(body.verificationChannel);
-      const phone = verificationChannel === "sms" ? readPhone(body.phone) : null;
 
       assertValidEmail(email);
-
-      if (verificationChannel === "sms") {
-        assertValidPhone(phone);
-        assertSmsDeliveryAvailable();
-      }
-
-      if (await authRepository.findUserByEmail(email)) {
-        throw new AuthApiError("EMAIL_IN_USE", "User already exists.");
-      }
-
       assertPasswordPolicy(String(body.password || ""));
       const profileInput = readProfileInput(body);
+
+      if (await authRepository.findUserByEmail(email)) {
+        return buildRegistrationVerificationResponse({
+          email,
+          expiresAt: Date.now() + (config.registrationVerificationTokenTtlMs ?? 1000 * 60 * 15),
+        });
+      }
 
       const shouldBootstrapSuperAdmin =
         Boolean(config.superAdminEmail) &&
@@ -567,9 +501,9 @@ export const createAuthService = ({
         ...profileInput,
         email,
         emailVerified: false,
-        phone,
+        phone: null,
         phoneVerified: false,
-        verificationChannel,
+        verificationChannel: "email",
         createdAt: new Date().toISOString(),
         role,
         bannedAt: null,
@@ -599,15 +533,11 @@ export const createAuthService = ({
         details: {
           email: user.email,
           role: user.role,
-          verificationChannel,
+          verificationChannel: "email",
         },
       });
       try {
-        return await createRegistrationVerification(
-          user,
-          verificationChannel,
-          verificationChannel === "sms" ? phone : email
-        );
+        return await createRegistrationVerification(user);
       } catch (error) {
         await authRepository.deleteUser?.(user.id);
         throw error;
@@ -615,22 +545,37 @@ export const createAuthService = ({
     },
 
     verifyRegistration: async (body) => {
-      const email = normalizeEmail(body?.email);
-      const code = String(body?.code ?? "").trim();
+      const token = String(body?.token ?? "").trim();
 
-      if (!email || !code) {
+      if (!token) {
         throw new AuthApiError(
           "INVALID_VERIFICATION_CODE",
-          "Registration confirmation code is invalid or expired."
+          "Registration confirmation link is invalid or expired."
         );
       }
 
-      const user = await authRepository.findUserByEmail(email);
+      const tokenHash = hashOneTimeToken(token, config.jwtSecret);
+      const verificationToken =
+        await authRepository.findRegistrationVerificationTokenByHash?.(tokenHash);
+
+      if (
+        !verificationToken ||
+        verificationToken.channel !== "email" ||
+        verificationToken.consumedAt ||
+        verificationToken.expiresAt <= Date.now()
+      ) {
+        throw new AuthApiError(
+          "INVALID_VERIFICATION_CODE",
+          "Registration confirmation link is invalid or expired."
+        );
+      }
+
+      const user = await authRepository.findUserById(verificationToken.userId);
 
       if (!user) {
         throw new AuthApiError(
           "INVALID_VERIFICATION_CODE",
-          "Registration confirmation code is invalid or expired."
+          "Registration confirmation link is invalid or expired."
         );
       }
 
@@ -638,31 +583,15 @@ export const createAuthService = ({
         throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
       }
 
-      const codeHash = hashOneTimeToken(`${email}:${code}`, config.jwtSecret);
-      const verificationToken =
-        await authRepository.findRegistrationVerificationTokenByHash?.(codeHash);
-
-      if (
-        !verificationToken ||
-        verificationToken.userId !== user.id ||
-        verificationToken.consumedAt ||
-        verificationToken.expiresAt <= Date.now()
-      ) {
-        throw new AuthApiError(
-          "INVALID_VERIFICATION_CODE",
-          "Registration confirmation code is invalid or expired."
-        );
-      }
-
       const consumedAt = new Date().toISOString();
-      await authRepository.markRegistrationVerificationTokenConsumed?.(codeHash, consumedAt);
+      await authRepository.markRegistrationVerificationTokenConsumed?.(tokenHash, consumedAt);
       const verifiedUser =
         (await authRepository.markUserRegistrationVerified?.({
           userId: user.id,
           channel: verificationToken.channel,
         })) ?? user;
       await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
-      await clearLoginAttempts(email);
+      await clearLoginAttempts(user.email);
 
       const refreshSession = await createRefreshSession(verifiedUser);
       await writeAuditLog({
@@ -698,28 +627,14 @@ export const createAuthService = ({
         throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
       }
 
-      const verificationChannel = normalizeVerificationChannel(
-        body?.channel ?? user.verificationChannel
-      );
-      const phone = verificationChannel === "sms" ? readPhone(body?.phone ?? user.phone) : null;
-
-      if (verificationChannel === "sms") {
-        assertValidPhone(phone);
-        assertSmsDeliveryAvailable();
-      }
-
       const updatedUser =
         (await authRepository.updateUserVerificationTarget?.({
           userId: user.id,
-          channel: verificationChannel,
-          phone,
+          channel: "email",
+          phone: null,
         })) ?? user;
 
-      return createRegistrationVerification(
-        updatedUser,
-        verificationChannel,
-        verificationChannel === "sms" ? phone : updatedUser.email
-      );
+      return createRegistrationVerification(updatedUser);
     },
 
     requestPasswordReset: async (body) => {
@@ -765,16 +680,10 @@ export const createAuthService = ({
       });
 
       if (emailResult?.ok) {
-        return buildPasswordResetResponse({
-          delivery: "email",
-          expiresAt: new Date(expiresAt).toISOString(),
-        });
+        return buildPasswordResetResponse();
       }
 
-      return buildPasswordResetResponse({
-        delivery: "email",
-        expiresAt: new Date(expiresAt).toISOString(),
-      });
+      return buildPasswordResetResponse();
     },
 
     resetPassword: async (body) => {
@@ -884,7 +793,7 @@ export const createAuthService = ({
       const auth = await authenticateRefreshToken(refreshToken);
 
       if (!auth) {
-        throw new AuthApiError("INVALID_CREDENTIALS", "Refresh session expired.");
+        throw new AuthApiError("INVALID_REFRESH_TOKEN", "Refresh session expired.");
       }
 
       await deleteRefreshTokenSession(refreshToken);

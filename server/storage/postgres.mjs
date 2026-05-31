@@ -47,7 +47,7 @@ const toNumber = (value, fallback = 0) => {
 const toBoolean = (value, fallback = false) =>
   typeof value === "boolean" ? value : value === 1 || value === "1" ? true : fallback;
 
-const isVerificationChannel = (value) => value === "email" || value === "sms";
+const isVerificationChannel = (value) => value === "email";
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
 const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
@@ -1632,7 +1632,7 @@ export const createPostgresStorage = async ({
         `,
         [
           channel === "email" ? true : existingUser.emailVerified,
-          channel === "sms" ? true : existingUser.phoneVerified,
+          existingUser.phoneVerified,
           isVerificationChannel(channel) ? channel : existingUser.verificationChannel,
           userId,
         ]

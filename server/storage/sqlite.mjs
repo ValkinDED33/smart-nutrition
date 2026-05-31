@@ -109,7 +109,7 @@ const isUserRole = (value) =>
   value === "MODERATOR" ||
   value === "ADMIN" ||
   value === "SUPER_ADMIN";
-const isVerificationChannel = (value) => value === "email" || value === "sms";
+const isVerificationChannel = (value) => value === "email";
 
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
@@ -3337,7 +3337,7 @@ export const createSqliteStorage = async ({
         )
         .run(
           channel === "email" ? 1 : existingUser.emailVerified ? 1 : 0,
-          channel === "sms" ? 1 : existingUser.phoneVerified ? 1 : 0,
+          existingUser.phoneVerified ? 1 : 0,
           isVerificationChannel(channel) ? channel : existingUser.verificationChannel,
           userId
         );

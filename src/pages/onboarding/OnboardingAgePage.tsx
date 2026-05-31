@@ -40,7 +40,7 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.goal)}
+              onClick={() => navigate(stepPaths.gender)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

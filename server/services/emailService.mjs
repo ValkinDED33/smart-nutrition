@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -8,51 +8,30 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-const createTransport = (config) => {
-  if (!config.emailTransportConfigured) {
-    return null;
-  }
-
-  if (config.smtpUrl) {
-    return nodemailer.createTransport(config.smtpUrl);
-  }
-
-  return nodemailer.createTransport({
-    host: config.smtpHost,
-    port: config.smtpPort,
-    secure: config.smtpSecure,
-    auth:
-      config.smtpUser && config.smtpPass
-        ? {
-            user: config.smtpUser,
-            pass: config.smtpPass,
-          }
-        : undefined,
-  });
-};
-
 const buildResetSubject = () => "Reset your Smart Nutrition password";
 
-const buildVerificationSubject = () => "Confirm your Smart Nutrition registration";
+const buildVerificationSubject = () => "Confirm your Smart Nutrition email";
 
-const buildVerificationText = ({ name, code, expiresAt }) => {
+const buildVerificationText = ({ appBaseUrl, name, verificationUrl, expiresAt }) => {
   const displayName = String(name ?? "").trim() || "there";
 
   return [
     `Hi ${displayName},`,
     "",
-    "Use this code to confirm your Smart Nutrition registration:",
-    code,
+    "Confirm your Smart Nutrition email with the secure link below:",
+    verificationUrl,
     "",
-    `This code expires at ${new Date(expiresAt).toUTCString()}.`,
+    `This link expires at ${new Date(expiresAt).toUTCString()}.`,
     "",
     "If you did not create this account, you can ignore this message.",
+    "",
+    `App: ${appBaseUrl}`,
   ].join("\n");
 };
 
-const buildVerificationHtml = ({ name, code, expiresAt }) => {
+const buildVerificationHtml = ({ name, verificationUrl, expiresAt }) => {
   const displayName = escapeHtml(String(name ?? "").trim() || "there");
-  const safeCode = escapeHtml(code);
+  const safeUrl = escapeHtml(verificationUrl);
   const expiresLabel = escapeHtml(new Date(expiresAt).toUTCString());
 
   return `<!doctype html>
@@ -60,11 +39,15 @@ const buildVerificationHtml = ({ name, code, expiresAt }) => {
   <body style="margin:0;padding:24px;background:#f8fafc;color:#0f172a;font-family:Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,23,42,0.08);border-radius:20px;padding:32px;">
       <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;color:#0f766e;text-transform:uppercase;">Smart Nutrition</p>
-      <h1 style="margin:0 0 16px;font-size:28px;line-height:1.15;">Confirm registration</h1>
+      <h1 style="margin:0 0 16px;font-size:28px;line-height:1.15;">Confirm your email</h1>
       <p style="margin:0 0 16px;line-height:1.7;">Hi ${displayName},</p>
-      <p style="margin:0 0 20px;line-height:1.7;">Enter this code in the app to finish creating your account.</p>
-      <p style="margin:0 0 20px;font-size:32px;letter-spacing:0.18em;font-weight:800;color:#0f766e;">${safeCode}</p>
-      <p style="margin:0;line-height:1.7;color:#475569;">This code expires at <strong>${expiresLabel}</strong>.</p>
+      <p style="margin:0 0 20px;line-height:1.7;">Finish creating your Smart Nutrition account with the secure button below.</p>
+      <p style="margin:0 0 20px;">
+        <a href="${safeUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:linear-gradient(135deg,#0f766e 0%,#65a30d 100%);color:#ffffff;text-decoration:none;font-weight:700;">Verify Email</a>
+      </p>
+      <p style="margin:0 0 12px;line-height:1.7;">If the button does not open, copy and paste this link into your browser:</p>
+      <p style="margin:0 0 20px;word-break:break-all;line-height:1.7;"><a href="${safeUrl}" style="color:#2563eb;">${safeUrl}</a></p>
+      <p style="margin:0;line-height:1.7;color:#475569;">This link expires at <strong>${expiresLabel}</strong>.</p>
     </div>
   </body>
 </html>`;
@@ -114,97 +97,107 @@ const buildResetHtml = ({ name, resetUrl, expiresAt }) => {
 };
 
 export const createEmailService = ({ config, logger = console }) => {
-  const transporter = createTransport(config);
+  const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
   const from = config.emailFromAddress
     ? `"${config.emailFromName}" <${config.emailFromAddress}>`
     : null;
 
+  const sendEmail = async ({ to, subject, html, text }) => {
+    if (!resend || !from) {
+      return {
+        ok: false,
+        code: "EMAIL_NOT_CONFIGURED",
+      };
+    }
+
+    try {
+      const { data, error } = await resend.emails.send({
+        from,
+        to: [to],
+        subject,
+        html,
+        text,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        ok: true,
+        messageId: data?.id ?? null,
+      };
+    } catch (error) {
+      logger.error?.("[email] delivery failed", error);
+
+      return {
+        ok: false,
+        code: "EMAIL_SEND_FAILED",
+      };
+    }
+  };
+
   return {
-    isConfigured: () => Boolean(transporter && from),
+    isConfigured: () => Boolean(resend && from),
 
     getStatus: () => ({
-      configured: Boolean(transporter && from),
+      configured: Boolean(resend && from),
+      provider: "resend",
       fromAddress: config.emailFromAddress ?? null,
       fromName: config.emailFromName,
     }),
 
     sendPasswordResetEmail: async ({ to, name, resetUrl, expiresAt }) => {
-      if (!transporter || !from) {
-        return {
-          ok: false,
-          code: "EMAIL_NOT_CONFIGURED",
-        };
-      }
+      const result = await sendEmail({
+        to,
+        subject: buildResetSubject(),
+        text: buildResetText({
+          appBaseUrl: config.appBaseUrl,
+          name,
+          resetUrl,
+          expiresAt,
+        }),
+        html: buildResetHtml({
+          name,
+          resetUrl,
+          expiresAt,
+        }),
+      });
 
-      try {
-        const info = await transporter.sendMail({
-          from,
-          to,
-          subject: buildResetSubject(),
-          text: buildResetText({
-            appBaseUrl: config.appBaseUrl,
-            name,
-            resetUrl,
-            expiresAt,
-          }),
-          html: buildResetHtml({
-            name,
-            resetUrl,
-            expiresAt,
-          }),
-        });
-
+      if (result.ok) {
         logger.info?.(
-          `[email] password reset sent to ${to} (${info.messageId ?? "no-message-id"})`
+          `[email] password reset sent to ${to} (${result.messageId ?? "no-message-id"})`
         );
-
-        return {
-          ok: true,
-          messageId: info.messageId ?? null,
-        };
-      } catch (error) {
-        logger.error?.("[email] password reset delivery failed", error);
-
-        return {
-          ok: false,
-          code: "EMAIL_SEND_FAILED",
-        };
       }
+
+      return result;
     },
 
-    sendRegistrationVerificationEmail: async ({ to, name, code, expiresAt }) => {
-      if (!transporter || !from) {
-        return {
-          ok: false,
-          code: "EMAIL_NOT_CONFIGURED",
-        };
-      }
+    sendRegistrationVerificationEmail: async ({
+      to,
+      name,
+      verificationUrl,
+      expiresAt,
+    }) => {
+      const result = await sendEmail({
+        to,
+        subject: buildVerificationSubject(),
+        text: buildVerificationText({
+          appBaseUrl: config.appBaseUrl,
+          name,
+          verificationUrl,
+          expiresAt,
+        }),
+        html: buildVerificationHtml({ name, verificationUrl, expiresAt }),
+      });
 
-      try {
-        const info = await transporter.sendMail({
-          from,
-          to,
-          subject: buildVerificationSubject(),
-          text: buildVerificationText({ name, code, expiresAt }),
-          html: buildVerificationHtml({ name, code, expiresAt }),
-        });
-
+      if (result.ok) {
         logger.info?.(
-          `[email] registration verification sent to ${to} (${info.messageId ?? "no-message-id"})`
+          `[email] registration verification sent to ${to} (${result.messageId ?? "no-message-id"})`
         );
-
-        return {
-          ok: true,
-          messageId: info.messageId ?? null,
-        };
-      } catch (error) {
-        logger.error?.("[email] registration verification delivery failed", error);
-
-        return {
-          ok: false,
-          code: "EMAIL_SEND_FAILED",
-        };
       }
+
+      return result;
     },
   };
 };

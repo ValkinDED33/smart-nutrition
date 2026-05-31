@@ -21,7 +21,7 @@ import {
 } from "../lib/domain.mjs";
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
-const isVerificationChannel = (value) => value === "email" || value === "sms";
+const isVerificationChannel = (value) => value === "email";
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
 const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
@@ -988,11 +988,15 @@ export const createMongoStorage = async (config) => {
     },
 
     cleanupExpiredPasswordResetTokens: async (now = Date.now()) => {
-      await collections.passwordResetTokens.deleteMany({ expiresAt: { $lte: now } });
+      await collections.passwordResetTokens.deleteMany({
+        $or: [{ expiresAt: { $lte: now } }, { consumedAt: { $ne: null } }],
+      });
     },
 
     cleanupExpiredRegistrationVerificationTokens: async (now = Date.now()) => {
-      await collections.registrationVerificationTokens.deleteMany({ expiresAt: { $lte: now } });
+      await collections.registrationVerificationTokens.deleteMany({
+        $or: [{ expiresAt: { $lte: now } }, { consumedAt: { $ne: null } }],
+      });
     },
 
     findUserByEmail: async (email) => mapUserDoc(await collections.users.findOne({ email })),
@@ -1308,7 +1312,7 @@ export const createMongoStorage = async (config) => {
         {
           $set: {
             emailVerified: channel === "email" ? true : existingUser.emailVerified,
-            phoneVerified: channel === "sms" ? true : existingUser.phoneVerified,
+            phoneVerified: existingUser.phoneVerified,
             verificationChannel: isVerificationChannel(channel)
               ? channel
               : existingUser.verificationChannel,

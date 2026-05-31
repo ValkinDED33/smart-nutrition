@@ -9,7 +9,7 @@ import {
   type OnboardingStepProps,
 } from "./types";
 
-export const OnboardingWeightPage = ({ state, updateState }: OnboardingStepProps) => {
+export const OnboardingHeightPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -18,29 +18,29 @@ export const OnboardingWeightPage = ({ state, updateState }: OnboardingStepProps
       <Paper elevation={0} sx={cardSx}>
         <Stack spacing={3}>
           <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
-            {t("onboarding.weightTitle")}
+            {t("onboarding.heightTitle")}
           </Typography>
           <TextField
             autoFocus
             fullWidth
             type="number"
-            value={state.weight}
+            value={state.height}
             onChange={(event) =>
-              updateState({ weight: clampNumber(Number(event.target.value) || 70, 30, 300) })
+              updateState({ height: clampNumber(Number(event.target.value) || 175, 120, 250) })
             }
-            inputProps={{ min: 30, max: 300, step: 0.1, inputMode: "decimal" }}
+            inputProps={{ min: 120, max: 250, step: 1, inputMode: "numeric" }}
           />
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
-              onClick={() => navigate(stepPaths.height)}
+              onClick={() => navigate(stepPaths.gender)}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               {t("onboarding.back")}
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.goal)}
+              onClick={() => navigate(stepPaths.weight)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

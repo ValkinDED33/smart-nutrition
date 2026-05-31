@@ -43,14 +43,14 @@ const authPageCopy = {
     forgotPassword: "Забули пароль?",
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
-    notVerified: "Підтвердіть реєстрацію кодом з email або SMS перед входом.",
+    notVerified: "Підтвердіть email кнопкою в листі перед входом.",
     banned: "Акаунт заблоковано адміністратором.",
   },
   pl: {
     forgotPassword: "Zapomniałeś hasła?",
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
-    notVerified: "Potwierdź rejestrację kodem z emaila albo SMS przed logowaniem.",
+    notVerified: "Potwierdź email przyciskiem w wiadomości przed logowaniem.",
     banned: "Konto zostało zablokowane przez administratora.",
   },
 } as const;

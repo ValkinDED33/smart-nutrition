@@ -13,6 +13,23 @@ const readRequestOrigin = (request) => {
   return String(origin ?? "").trim();
 };
 
+const readRequestRefererOrigin = (request) => {
+  const referer = request.headers.referer ?? request.headers.referrer;
+  const value = Array.isArray(referer)
+    ? String(referer[0] ?? "").trim()
+    : String(referer ?? "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+};
+
 const readRequestHeader = (request, name) => {
   const value = request.headers[name];
   return Array.isArray(value)
@@ -48,6 +65,12 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
 
   if (origin) {
     return !isCorsOriginAllowed(origin, allowedOrigins);
+  }
+
+  const refererOrigin = readRequestRefererOrigin(request);
+
+  if (refererOrigin) {
+    return !isCorsOriginAllowed(refererOrigin, allowedOrigins);
   }
 
   return (

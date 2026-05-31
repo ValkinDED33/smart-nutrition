@@ -2,7 +2,6 @@ import type {
   AuthResponse,
   RegistrationVerificationPending,
   User,
-  VerificationChannel,
 } from "../types/user";
 import type { AppSnapshot } from "../types/appSnapshot";
 
@@ -12,8 +11,6 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
-  verificationChannel?: VerificationChannel;
-  phone?: string;
   age: number;
   weight: number;
   height: number;
@@ -66,14 +63,11 @@ export interface PasswordResetResult {
 }
 
 export interface RegistrationVerificationPayload {
-  email: string;
-  code: string;
+  token: string;
 }
 
 export interface RegistrationVerificationResendPayload {
   email: string;
-  channel?: VerificationChannel;
-  phone?: string;
 }
 
 export type RegistrationResult = AuthResponse | RegistrationVerificationPending;
@@ -82,6 +76,7 @@ export class AuthApiError extends Error {
   code:
     | "EMAIL_IN_USE"
     | "INVALID_CREDENTIALS"
+    | "INVALID_REFRESH_TOKEN"
     | "TOO_MANY_ATTEMPTS"
     | "INVALID_RESET_TOKEN"
     | "EMAIL_DELIVERY_UNAVAILABLE"

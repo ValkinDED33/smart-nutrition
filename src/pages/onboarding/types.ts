@@ -3,7 +3,7 @@ import type {
   AssistantDietFriction,
   AssistantMotivationStyle,
 } from "../../shared/types/profile";
-import type { Goal } from "../../shared/types/user";
+import type { Gender, Goal } from "../../shared/types/user";
 
 export type PersonalityPreset =
   | "supportive"
@@ -17,6 +17,8 @@ export interface OnboardingState {
   personality: PersonalityPreset;
   name: string;
   age: number;
+  gender: Gender;
+  height: number;
   goal: Goal;
   primaryGoalNote: string;
   mainFriction: AssistantDietFriction;
@@ -35,6 +37,8 @@ export const stepPaths = {
   assistant: "/onboarding/assistant",
   name: "/onboarding/name",
   age: "/onboarding/age",
+  gender: "/onboarding/gender",
+  height: "/onboarding/height",
   goal: "/onboarding/goal",
   weight: "/onboarding/weight",
   finish: "/onboarding/finish",

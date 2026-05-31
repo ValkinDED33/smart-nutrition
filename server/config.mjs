@@ -9,7 +9,6 @@ const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
 const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
 const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
-const DEFAULT_MANGO_SMS_ENDPOINT = "https://app.mango-office.ru/vpbx/commands/sms";
 const LOOPBACK_HOSTNAMES = new Set([
   ["local", "host"].join(""),
   ["127", "0", "0", "1"].join("."),
@@ -21,9 +20,7 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_OPENROUTER_API_KEY",
   "SMART_NUTRITION_GROQ_API_KEY",
   "SMART_NUTRITION_GOOGLE_API_KEY",
-  "SMART_NUTRITION_SMTP_PASS",
-  "SMART_NUTRITION_MANGO_API_KEY",
-  "SMART_NUTRITION_MANGO_API_SALT",
+  "SMART_NUTRITION_RESEND_API_KEY",
   "SMART_NUTRITION_DATABASE_URL",
   "SMART_NUTRITION_MONGO_URI",
   "SMART_NUTRITION_MONGODB_URI",
@@ -811,6 +808,49 @@ export const createServerConfig = (rawEnv = process.env) => {
     "SMART_NUTRITION_RATE_LIMIT_MAX",
     errors
   );
+  const authRateLimitWindowMs = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_RATE_LIMIT_WINDOW_MS,
+    60_000,
+    "SMART_NUTRITION_AUTH_RATE_LIMIT_WINDOW_MS",
+    errors
+  );
+  const authRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_RATE_LIMIT_MAX,
+    10,
+    "SMART_NUTRITION_AUTH_RATE_LIMIT_MAX",
+    errors
+  );
+  const authRegisterRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_REGISTER_RATE_LIMIT_MAX,
+    5,
+    "SMART_NUTRITION_AUTH_REGISTER_RATE_LIMIT_MAX",
+    errors
+  );
+  const authLoginRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_LOGIN_RATE_LIMIT_MAX,
+    10,
+    "SMART_NUTRITION_AUTH_LOGIN_RATE_LIMIT_MAX",
+    errors
+  );
+  const authForgotPasswordRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_FORGOT_PASSWORD_RATE_LIMIT_MAX,
+    5,
+    "SMART_NUTRITION_AUTH_FORGOT_PASSWORD_RATE_LIMIT_MAX",
+    errors
+  );
+  const authVerifyEmailRateLimitMax = readPositiveInteger(
+    env.SMART_NUTRITION_AUTH_VERIFY_EMAIL_RATE_LIMIT_MAX,
+    5,
+    "SMART_NUTRITION_AUTH_VERIFY_EMAIL_RATE_LIMIT_MAX",
+    errors
+  );
+  const tokenCleanupIntervalMs = readPositiveInteger(
+    env.SMART_NUTRITION_TOKEN_CLEANUP_INTERVAL_MS,
+    86_400_000,
+    "SMART_NUTRITION_TOKEN_CLEANUP_INTERVAL_MS",
+    errors,
+    { min: 60_000 }
+  );
   const redisUrl = toTrimmedString(env.SMART_NUTRITION_REDIS_URL ?? env.REDIS_URL) || null;
   const redisKeyPrefix =
     toTrimmedString(env.SMART_NUTRITION_REDIS_KEY_PREFIX, "smart-nutrition") ||
@@ -956,70 +996,22 @@ export const createServerConfig = (rawEnv = process.env) => {
     warnings,
     { isProduction }
   );
-  const smtpUrl = toTrimmedString(env.SMART_NUTRITION_SMTP_URL) || null;
-  const smtpHost = toTrimmedString(env.SMART_NUTRITION_SMTP_HOST) || null;
-  const smtpPort = readPositiveInteger(
-    env.SMART_NUTRITION_SMTP_PORT,
-    587,
-    "SMART_NUTRITION_SMTP_PORT",
-    errors
-  );
-  const smtpSecure = readBooleanFlag(env.SMART_NUTRITION_SMTP_SECURE, false);
-  const smtpUser = toTrimmedString(env.SMART_NUTRITION_SMTP_USER) || null;
-  const smtpPass = toTrimmedString(env.SMART_NUTRITION_SMTP_PASS) || null;
+  const resendApiKey = toTrimmedString(env.SMART_NUTRITION_RESEND_API_KEY) || null;
   const emailFromAddress =
+    normalizeOptionalEmail(env.SMART_NUTRITION_EMAIL_FROM_ADDRESS) ??
     normalizeOptionalEmail(env.SMART_NUTRITION_EMAIL_FROM) ??
-    normalizeOptionalEmail(env.SMART_NUTRITION_SMTP_USER) ??
     null;
   const emailFromName =
     toTrimmedString(env.SMART_NUTRITION_EMAIL_FROM_NAME, "Smart Nutrition") ||
     "Smart Nutrition";
 
-  if (!smtpUrl && smtpHost && Boolean(smtpUser) !== Boolean(smtpPass)) {
-    errors.push(
-      "SMART_NUTRITION_SMTP_USER and SMART_NUTRITION_SMTP_PASS must either both be set or both be omitted."
-    );
-  }
-
-  if (!smtpUrl && !smtpHost && (smtpUser || smtpPass)) {
+  if (resendApiKey && !emailFromAddress) {
     warnings.push(
-      "SMTP credentials are set without SMART_NUTRITION_SMTP_HOST. Email delivery stays disabled until a host is configured."
+      "Email delivery is configured without SMART_NUTRITION_EMAIL_FROM_ADDRESS."
     );
   }
 
-  if ((smtpUrl || smtpHost) && !emailFromAddress) {
-    warnings.push(
-      "Email delivery is configured without SMART_NUTRITION_EMAIL_FROM. Falling back to the SMTP user when possible."
-    );
-  }
-
-  const emailTransportConfigured = Boolean(emailFromAddress && (smtpUrl || smtpHost));
-  const mangoApiKey = toTrimmedString(env.SMART_NUTRITION_MANGO_API_KEY) || null;
-  const mangoApiSalt = toTrimmedString(env.SMART_NUTRITION_MANGO_API_SALT) || null;
-
-  if (Boolean(mangoApiKey) !== Boolean(mangoApiSalt)) {
-    errors.push(
-      "SMART_NUTRITION_MANGO_API_KEY and SMART_NUTRITION_MANGO_API_SALT must either both be set or both be omitted."
-    );
-  }
-
-  const mangoSmsEndpoint = normalizeHttpUrl(
-    env.SMART_NUTRITION_MANGO_SMS_ENDPOINT,
-    DEFAULT_MANGO_SMS_ENDPOINT,
-    "SMART_NUTRITION_MANGO_SMS_ENDPOINT",
-    errors
-  );
-  const mangoFromExtension =
-    toTrimmedString(env.SMART_NUTRITION_MANGO_FROM_EXTENSION, "101") || "101";
-  const mangoSmsSender = toTrimmedString(env.SMART_NUTRITION_MANGO_SMS_SENDER);
-  const mangoSmsTimeoutMs = readPositiveInteger(
-    env.SMART_NUTRITION_MANGO_SMS_TIMEOUT_MS,
-    10_000,
-    "SMART_NUTRITION_MANGO_SMS_TIMEOUT_MS",
-    errors,
-    { min: 1_000 }
-  );
-  const mangoSmsConfigured = Boolean(mangoApiKey && mangoApiSalt);
+  const emailTransportConfigured = Boolean(emailFromAddress && resendApiKey);
   const explicitAssistantApiKey =
     toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null;
   const explicitAssistantModel =
@@ -1217,6 +1209,15 @@ export const createServerConfig = (rawEnv = process.env) => {
     maxBackupFilesPerUser,
     requestLimitWindowMs,
     requestLimitMax,
+    authRateLimitWindowMs,
+    authRateLimitMax,
+    authRateLimits: {
+      register: authRegisterRateLimitMax,
+      login: authLoginRateLimitMax,
+      forgotPassword: authForgotPasswordRateLimitMax,
+      verifyEmail: authVerifyEmailRateLimitMax,
+    },
+    tokenCleanupIntervalMs,
     redisUrl,
     redisKeyPrefix,
     redisConnectTimeoutMs,
@@ -1230,20 +1231,8 @@ export const createServerConfig = (rawEnv = process.env) => {
     allowedCorsOrigins,
     emailFromAddress,
     emailFromName,
+    resendApiKey,
     emailTransportConfigured,
-    smtpUrl,
-    smtpHost,
-    smtpPort,
-    smtpSecure,
-    smtpUser,
-    smtpPass,
-    mangoSmsConfigured,
-    mangoApiKey,
-    mangoApiSalt,
-    mangoSmsEndpoint,
-    mangoFromExtension,
-    mangoSmsSender,
-    mangoSmsTimeoutMs,
     assistantApiKey,
     assistantModel,
     assistantBaseUrl,

@@ -13,8 +13,6 @@ import {
   Paper,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
@@ -34,9 +32,9 @@ import {
   getAuthRuntimeInfo,
   register as registerApi,
   resendRegistrationVerification,
-  verifyRegistration,
   type RegistrationVerificationPending,
 } from "../shared/api/auth";
+import type { AuthResponse } from "../shared/types/user";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
@@ -47,8 +45,6 @@ type FormData = {
   email: string;
   password: string;
   confirmPassword: string;
-  verificationChannel: "email" | "sms";
-  phone: string;
 };
 
 const defaultProfileBootstrap = {
@@ -64,7 +60,7 @@ const registerPageCopy = {
   uk: {
     showPassword: "Показати пароль",
     hidePassword: "Сховати пароль",
-    note: "Оберіть, куди надіслати код підтвердження. Профіль відкриється після перевірки.",
+    note: "Створіть акаунт, підтвердіть email кнопкою в листі, а потім помічник проведе онбординг.",
     profileTitle: "Стартові дані для AI",
     profileBody:
       "Ці параметри одразу дадуть норму калорій, води і перші підказки companion.",
@@ -79,23 +75,16 @@ const registerPageCopy = {
       dragon: "Дракон",
       robot: "Робот",
     },
-    channel: "Підтвердження",
-    emailChannel: "Email",
-    smsChannel: "SMS",
-    phone: "Телефон для SMS",
-    code: "Код підтвердження",
-    verify: "Підтвердити",
-    verifying: "Перевіряємо...",
     resend: "Надіслати ще раз",
-    sent: "Код надіслано: {target}",
-    verified: "Реєстрацію підтверджено.",
+    sent: "Ми надіслали посилання для підтвердження на {target}.",
+    openEmail: "Відкрийте лист і натисніть Verify Email.",
     deliveryUnavailable:
-      "Доставка коду підтвердження тимчасово недоступна на backend.",
+      "Доставка листа підтвердження тимчасово недоступна на backend.",
   },
   pl: {
     showPassword: "Pokaż hasło",
     hidePassword: "Ukryj hasło",
-    note: "Wybierz, gdzie wysłać kod potwierdzający. Profil otworzy się po weryfikacji.",
+    note: "Utwórz konto, potwierdź email przyciskiem w wiadomości, a potem asystent poprowadzi onboarding.",
     profileTitle: "Dane startowe dla AI",
     profileBody:
       "Te parametry od razu ustawiają kalorie, wodę i pierwsze podpowiedzi companion.",
@@ -110,18 +99,11 @@ const registerPageCopy = {
       dragon: "Smok",
       robot: "Robot",
     },
-    channel: "Potwierdzenie",
-    emailChannel: "Email",
-    smsChannel: "SMS",
-    phone: "Telefon do SMS",
-    code: "Kod potwierdzający",
-    verify: "Potwierdź",
-    verifying: "Sprawdzam...",
     resend: "Wyślij ponownie",
-    sent: "Kod wysłany: {target}",
-    verified: "Rejestracja potwierdzona.",
+    sent: "Wysłaliśmy link potwierdzający na {target}.",
+    openEmail: "Otwórz wiadomość i kliknij Verify Email.",
     deliveryUnavailable:
-      "Dostawa kodu potwierdzającego jest tymczasowo niedostępna po stronie backendu.",
+      "Dostawa emaila potwierdzającego jest tymczasowo niedostępna po stronie backendu.",
   },
 } as const;
 
@@ -139,9 +121,7 @@ const RegisterPage = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<RegistrationVerificationPending | null>(null);
-  const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [verifying, setVerifying] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const copy = registerPageCopy[language];
@@ -163,18 +143,7 @@ const RegisterPage = () => {
               t("validation.passwordSymbol")
             ),
           confirmPassword: z.string(),
-          verificationChannel: z.enum(["email", "sms"]),
-          phone: z.string(),
         })
-        .refine(
-          (data) =>
-            data.verificationChannel === "email" ||
-            /^[+\d][\d\s().-]{6,24}$/.test(data.phone.trim()),
-          {
-            path: ["phone"],
-            message: "Phone number is required for SMS verification.",
-          }
-        )
         .refine((data) => data.password === data.confirmPassword, {
           path: ["confirmPassword"],
           message: t("validation.passwordMatch"),
@@ -185,8 +154,6 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -195,18 +162,10 @@ const RegisterPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      verificationChannel: "email",
-      phone: "",
     },
   });
-  const verificationChannel = watch("verificationChannel");
 
-  const applyAuthenticatedSession = (
-    {
-      user,
-      snapshot,
-    }: Awaited<ReturnType<typeof verifyRegistration>>
-  ) => {
+  const applyAuthenticatedSession = ({ user, snapshot }: AuthResponse) => {
     dispatch(
       setCredentials({
         user,
@@ -263,13 +222,10 @@ const RegisterPage = () => {
         email: data.email,
         password: data.password,
         ...defaultProfileBootstrap,
-        verificationChannel: data.verificationChannel,
-        phone: data.verificationChannel === "sms" ? data.phone : undefined,
       });
 
       if (isVerificationPending(response)) {
         setPendingVerification(response);
-        setVerificationCode("");
         return;
       }
 
@@ -304,7 +260,7 @@ const RegisterPage = () => {
   const handleVerificationError = (error: unknown) => {
     if (error instanceof AuthApiError) {
       if (error.code === "INVALID_VERIFICATION_CODE") {
-        setServerError("Invalid or expired confirmation code.");
+        setServerError("Invalid or expired confirmation link.");
         return;
       }
 
@@ -322,28 +278,6 @@ const RegisterPage = () => {
     setServerError(t("error.genericRegister"));
   };
 
-  const handleVerify = async () => {
-    if (!pendingVerification || !verificationCode.trim()) {
-      return;
-    }
-
-    setVerifying(true);
-    setServerError(null);
-
-    try {
-      const response = await verifyRegistration({
-        email: pendingVerification.email,
-        code: verificationCode,
-      });
-      applyAuthenticatedSession(response);
-      navigate("/onboarding");
-    } catch (error) {
-      handleVerificationError(error);
-    } finally {
-      setVerifying(false);
-    }
-  };
-
   const handleResend = async () => {
     if (!pendingVerification) {
       return;
@@ -355,10 +289,8 @@ const RegisterPage = () => {
     try {
       const nextVerification = await resendRegistrationVerification({
         email: pendingVerification.email,
-        channel: pendingVerification.channel,
       });
       setPendingVerification(nextVerification);
-      setVerificationCode("");
     } catch (error) {
       handleVerificationError(error);
     } finally {
@@ -405,33 +337,11 @@ const RegisterPage = () => {
                 <Typography sx={{ fontWeight: 800 }}>
                   {copy.sent.replace("{target}", pendingVerification.maskedTarget)}
                 </Typography>
+                <Typography color="text.secondary">{copy.openEmail}</Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={copy.code}
-                    value={verificationCode}
-                    onChange={(event) => setVerificationCode(event.target.value)}
-                    slotProps={{
-                      htmlInput: {
-                        inputMode: "numeric",
-                        autoComplete: "one-time-code",
-                      },
-                    }}
-                  />
-                  <Button
-                    variant="contained"
-                    disabled={verifying || !verificationCode.trim()}
-                    onClick={() => {
-                      void handleVerify();
-                    }}
-                    sx={{ textTransform: "none", fontWeight: 800 }}
-                  >
-                    {verifying ? copy.verifying : copy.verify}
-                  </Button>
                   <Button
                     variant="outlined"
-                    disabled={submitting || verifying}
+                    disabled={submitting}
                     onClick={() => {
                       void handleResend();
                     }}
@@ -461,44 +371,6 @@ const RegisterPage = () => {
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
             />
-
-            <Stack spacing={1}>
-              <Typography component="h2" variant="body2" sx={{ fontWeight: 800 }}>
-                {copy.channel}
-              </Typography>
-              <ToggleButtonGroup
-                exclusive
-                fullWidth
-                value={verificationChannel}
-                onChange={(_, nextChannel: "email" | "sms" | null) => {
-                  if (nextChannel) {
-                    setValue("verificationChannel", nextChannel, {
-                      shouldValidate: true,
-                    });
-                  }
-                }}
-                size="small"
-              >
-                <ToggleButton value="email">{copy.emailChannel}</ToggleButton>
-                <ToggleButton value="sms">{copy.smsChannel}</ToggleButton>
-              </ToggleButtonGroup>
-            </Stack>
-
-            {verificationChannel === "sms" && (
-              <TextField
-                fullWidth
-                label={copy.phone}
-                {...register("phone")}
-                error={Boolean(errors.phone)}
-                helperText={errors.phone?.message}
-                slotProps={{
-                  htmlInput: {
-                    inputMode: "tel",
-                    autoComplete: "tel",
-                  },
-                }}
-              />
-            )}
 
             <TextField
               fullWidth

@@ -2,9 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import { createPlatformService } from "./platformService.mjs";
 
 const createPlatformFixture = () => {
+  const targetUser = {
+    id: "target-user-1",
+    email: "target@example.com",
+    role: "USER",
+    name: "Target User",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
   const platformRepository = {
     listCatalogProducts: vi.fn(() => []),
     listAuditLogs: vi.fn(() => []),
+    listUsers: vi.fn(() => [targetUser]),
+    findUserById: vi.fn(() => targetUser),
+    updateUserRole: vi.fn(({ role }) => ({ ...targetUser, role })),
+    updateUserBan: vi.fn(({ bannedAt, bannedReason }) => ({
+      ...targetUser,
+      bannedAt,
+      bannedReason,
+    })),
     countCatalogProductsByOwnerSince: vi.fn(() => 0),
     findCatalogDuplicateCandidates: vi.fn(() => []),
     insertCatalogProduct: vi.fn(),
@@ -25,6 +40,11 @@ const createPlatformFixture = () => {
 const user = {
   id: "user-1",
   role: "USER",
+};
+
+const nutritionist = {
+  id: "nutritionist-1",
+  role: "NUTRITIONIST",
 };
 
 const moderator = {
@@ -87,5 +107,62 @@ describe("platformService", () => {
         nutrients: expect.objectContaining({ calories: 100000 }),
       })
     );
+  });
+
+  it.each([user, nutritionist, moderator])(
+    "blocks %s from strict admin operations",
+    async (actor) => {
+      const { service } = createPlatformFixture();
+
+      await expect(service.listUsers(actor)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      await expect(
+        service.updateUserRole(actor, "target-user-1", { role: "MODERATOR" })
+      ).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      await expect(
+        service.updateUserBan(actor, "target-user-1", { banned: true })
+      ).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      await expect(service.listAuditLogs(actor)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+    }
+  );
+
+  it("allows admins to use strict admin operations", async () => {
+    const { platformRepository, service } = createPlatformFixture();
+
+    await expect(service.listUsers(admin)).resolves.toHaveLength(1);
+    await expect(
+      service.updateUserRole(admin, "target-user-1", { role: "MODERATOR" })
+    ).resolves.toMatchObject({
+      role: "MODERATOR",
+    });
+    await expect(
+      service.updateUserBan(admin, "target-user-1", { banned: true, reason: "Policy" })
+    ).resolves.toMatchObject({
+      bannedReason: "Policy",
+    });
+    await expect(service.listAuditLogs(admin)).resolves.toEqual([]);
+
+    expect(platformRepository.listUsers).toHaveBeenCalledTimes(1);
+    expect(platformRepository.updateUserRole).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "target-user-1",
+        role: "MODERATOR",
+        twoFactorRequired: false,
+      })
+    );
+    expect(platformRepository.updateUserBan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "target-user-1",
+        bannedReason: "Policy",
+      })
+    );
+    expect(platformRepository.listAuditLogs).toHaveBeenCalledWith(80);
   });
 });

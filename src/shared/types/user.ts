@@ -18,7 +18,7 @@ export type UserRole =
   | "MODERATOR"
   | "ADMIN"
   | "SUPER_ADMIN";
-export type VerificationChannel = "email" | "sms";
+export type VerificationChannel = "email";
 
 export interface User {
   id: string;

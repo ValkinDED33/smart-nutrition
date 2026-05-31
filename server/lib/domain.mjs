@@ -121,9 +121,6 @@ export const createId = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 export const createOpaqueToken = (bytes = 32) =>
   crypto.randomBytes(bytes).toString("base64url");
 
-export const createVerificationCode = () =>
-  String(crypto.randomInt(100_000, 1_000_000));
-
 export const hashOneTimeToken = (token, secret) =>
   crypto.createHash("sha256").update(`${secret}:${String(token ?? "")}`).digest("hex");
 
@@ -652,7 +649,7 @@ export const toPublicUser = (user) => ({
   emailVerified: Boolean(user.emailVerified),
   phone: user.phone,
   phoneVerified: Boolean(user.phoneVerified),
-  verificationChannel: user.verificationChannel === "sms" ? "sms" : "email",
+  verificationChannel: "email",
   avatar: user.avatar,
   age: user.age,
   weight: user.weight,

@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSessionToken, hashOneTimeToken } from "../lib/domain.mjs";
+import {
+  createPasswordRecord,
+  createSessionToken,
+  hashOneTimeToken,
+} from "../lib/domain.mjs";
 import { createAuthService } from "./authService.mjs";
 
-const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = {}) => {
+const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
   const authRepository = {
     findUserByEmail: vi.fn(),
     findUserById: vi.fn(),
@@ -21,7 +25,11 @@ const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = 
     markPasswordResetTokenConsumed: vi.fn(),
     deletePasswordResetTokensByUserId: vi.fn(),
     createRegistrationVerificationToken: vi.fn(),
+    findRegistrationVerificationTokenByHash: vi.fn(),
+    markRegistrationVerificationTokenConsumed: vi.fn(),
     deleteRegistrationVerificationTokensByUserId: vi.fn(),
+    markUserRegistrationVerified: vi.fn(),
+    cleanupExpiredRegistrationVerificationTokens: vi.fn(),
     incrementUserTokenVersion: vi.fn(),
     getLoginAttempt: vi.fn(),
     upsertLoginAttempt: vi.fn(),
@@ -63,7 +71,6 @@ const createAuthServiceFixture = ({ configOverrides = {}, smsService = null } = 
       authRepository,
       stateRepository,
       emailService,
-      smsService,
       config,
     }),
   };
@@ -117,6 +124,65 @@ describe("authService", () => {
     expect(result.refreshToken).not.toBe(refreshToken);
     expect(result.token).toBeTruthy();
     expect(result.user.email).toBe(user.email);
+  });
+
+  it("rejects refresh token replay after rotation", async () => {
+    const { authRepository, config, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-refresh-replay",
+      email: "refresh-replay@example.com",
+      name: "Refresh Replay",
+      avatar: undefined,
+      age: 30,
+      weight: 80,
+      height: 180,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      measurements: undefined,
+      passwordHash: "hash",
+      passwordSalt: "salt",
+      passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 0,
+      createdAt: new Date().toISOString(),
+    };
+    const expiresAt = Date.now() + 60_000;
+    const refreshToken = createSessionToken({
+      userId: user.id,
+      expiresAt,
+      secret: config.jwtSecret,
+      kind: "refresh",
+      tokenVersion: user.tokenVersion,
+    });
+    const refreshTokenHash = hashOneTimeToken(refreshToken, config.jwtSecret);
+    const sessions = new Map([
+      [
+        refreshTokenHash,
+        {
+          token: refreshTokenHash,
+          userId: user.id,
+          expiresAt,
+        },
+      ],
+    ]);
+
+    authRepository.findSessionByToken.mockImplementation((token) => sessions.get(token) ?? null);
+    authRepository.deleteSessionByToken.mockImplementation((token) => {
+      sessions.delete(token);
+    });
+    authRepository.createSession.mockImplementation((session) => {
+      sessions.set(session.token, session);
+    });
+    authRepository.findUserById.mockReturnValue(user);
+
+    await service.refreshSession({ headers: {} }, { refreshToken });
+
+    await expect(
+      service.refreshSession({ headers: {} }, { refreshToken })
+    ).rejects.toMatchObject({
+      code: "INVALID_REFRESH_TOKEN",
+    });
+    expect(authRepository.createSession).toHaveBeenCalledTimes(1);
   });
 
   it("revokes all sessions for the current user", async () => {
@@ -201,6 +267,28 @@ describe("authService", () => {
     expect(result.delivery).toBe("email");
   });
 
+  it("returns the same password reset response for unknown emails", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-known-reset",
+      email: "known-reset@example.com",
+      name: "Known Reset",
+      role: "USER",
+    };
+
+    authRepository.findUserByEmail.mockImplementation((email) =>
+      email === user.email ? user : null
+    );
+
+    const knownResult = await service.requestPasswordReset({ email: user.email });
+    const unknownResult = await service.requestPasswordReset({
+      email: "unknown-reset@example.com",
+    });
+
+    expect(unknownResult).toEqual(knownResult);
+    expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+  });
+
   it("does not expose password reset delivery failures in production", async () => {
     const { authRepository, emailService, service } = createAuthServiceFixture({
       configOverrides: { isProduction: true },
@@ -226,7 +314,7 @@ describe("authService", () => {
     });
   });
 
-  it("does not expose registration verification codes when production email delivery fails", async () => {
+  it("does not expose registration verification tokens when production email delivery fails", async () => {
     const { authRepository, emailService, service } = createAuthServiceFixture({
       configOverrides: { isProduction: true },
     });
@@ -255,7 +343,7 @@ describe("authService", () => {
     );
   });
 
-  it("sends production email registration codes without previewing them", async () => {
+  it("sends production email verification links without previewing tokens", async () => {
     const { emailService, service } = createAuthServiceFixture({
       configOverrides: { isProduction: true },
     });
@@ -275,34 +363,34 @@ describe("authService", () => {
       gender: "male",
       activity: "moderate",
       goal: "maintain",
-      verificationChannel: "email",
     });
 
     expect(result.delivery).toBe("email");
     expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: "prod-email-ok@example.com",
-        code: expect.stringMatching(/^\d{6}$/),
+        verificationUrl: expect.stringMatching(
+          /^https:\/\/app\.smartnutrition\.test\/verify-email\?token=/
+        ),
       })
     );
   });
 
-  it("sends SMS registration codes through the configured MANGO OFFICE service", async () => {
-    const smsService = {
-      isConfigured: vi.fn(() => true),
-      sendRegistrationVerificationSms: vi.fn(async () => ({
-        ok: true,
-        providerMessageId: "sms-1",
-      })),
-    };
-    const { authRepository, service } = createAuthServiceFixture({
-      configOverrides: { isProduction: true },
-      smsService,
+  it("does not expose whether an email is already registered", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: {
+        registrationVerificationTokenTtlMs: 900000,
+      },
     });
-
-    const result = await service.register({
-      name: "Sms User",
-      email: "sms@example.com",
+    const existingUser = {
+      id: "user-existing-register",
+      email: "existing-register@example.com",
+      name: "Existing Register",
+      role: "USER",
+      emailVerified: true,
+    };
+    const validRegistrationBody = {
+      name: "Email User",
       password: "StrongPass123!",
       age: 31,
       weight: 72,
@@ -310,85 +398,127 @@ describe("authService", () => {
       gender: "male",
       activity: "moderate",
       goal: "maintain",
-      verificationChannel: "sms",
-      phone: "+48 123 456 789",
+    };
+
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: true,
+      messageId: "email-1",
+    });
+    authRepository.findUserByEmail.mockImplementation((email) =>
+      email === existingUser.email ? existingUser : null
+    );
+
+    const existingResult = await service.register({
+      ...validRegistrationBody,
+      email: existingUser.email,
+    });
+    const newResult = await service.register({
+      ...validRegistrationBody,
+      email: "new-register@example.com",
     });
 
-    expect(result.delivery).toBe("sms");
-    expect(smsService.sendRegistrationVerificationSms).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "+48 123 456 789",
-        code: expect.stringMatching(/^\d{6}$/),
-      })
-    );
+    expect(existingResult).toMatchObject({
+      ok: true,
+      requiresVerification: true,
+      delivery: "email",
+      message: newResult.message,
+    });
+    expect(Object.keys(existingResult).sort()).toEqual(Object.keys(newResult).sort());
     expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
+    expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects production SMS registration before creating a user when Mango is not configured", async () => {
-    const smsService = {
-      isConfigured: vi.fn(() => false),
-      sendRegistrationVerificationSms: vi.fn(),
+  it("verifies email links once and rejects repeat opens", async () => {
+    const { authRepository, config, service } = createAuthServiceFixture();
+    const rawToken = "verify-token";
+    const tokenHash = hashOneTimeToken(rawToken, config.jwtSecret);
+    const user = {
+      id: "user-verify",
+      email: "verify@example.com",
+      name: "Verify User",
+      avatar: undefined,
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      emailVerified: false,
+      tokenVersion: 0,
+      createdAt: new Date().toISOString(),
     };
-    const { authRepository, service } = createAuthServiceFixture({
-      configOverrides: { isProduction: true },
-      smsService,
+    const verificationToken = {
+      id: "registration-token-1",
+      userId: user.id,
+      channel: "email",
+      target: user.email,
+      codeHash: tokenHash,
+      expiresAt: Date.now() + 10_000,
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    authRepository.findRegistrationVerificationTokenByHash
+      .mockReturnValueOnce(verificationToken)
+      .mockReturnValueOnce({
+        ...verificationToken,
+        consumedAt: new Date().toISOString(),
+      });
+    authRepository.findUserById.mockReturnValue(user);
+    authRepository.markUserRegistrationVerified.mockResolvedValue({
+      ...user,
+      emailVerified: true,
+    });
+
+    const result = await service.verifyRegistration({ token: rawToken });
+
+    expect(result.user.emailVerified).toBe(true);
+    expect(authRepository.markRegistrationVerificationTokenConsumed).toHaveBeenCalledWith(
+      tokenHash,
+      expect.any(String)
+    );
+    expect(authRepository.deleteRegistrationVerificationTokensByUserId).toHaveBeenCalledWith(
+      user.id
+    );
+    expect(authRepository.createSession).toHaveBeenCalledTimes(1);
+
+    await expect(service.verifyRegistration({ token: rawToken })).rejects.toMatchObject({
+      code: "INVALID_VERIFICATION_CODE",
+    });
+    expect(authRepository.createSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks login for users who have not verified email", async () => {
+    const { authRepository, config, service } = createAuthServiceFixture();
+    const password = "StrongPass123!";
+    const passwordRecord = createPasswordRecord(password, config.passwordIterations);
+
+    authRepository.getLoginAttempt.mockReturnValue(null);
+    authRepository.findUserByEmail.mockReturnValue({
+      id: "user-unverified",
+      email: "unverified@example.com",
+      name: "Unverified User",
+      avatar: undefined,
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      emailVerified: false,
+      tokenVersion: 0,
+      createdAt: new Date().toISOString(),
+      ...passwordRecord,
     });
 
     await expect(
-      service.register({
-        name: "Sms User",
-        email: "sms-unavailable@example.com",
-        password: "StrongPass123!",
-        age: 31,
-        weight: 72,
-        height: 178,
-        gender: "male",
-        activity: "moderate",
-        goal: "maintain",
-        verificationChannel: "sms",
-        phone: "+48 123 456 789",
-      })
+      service.login({ email: "unverified@example.com", password })
     ).rejects.toMatchObject({
-      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+      code: "REGISTRATION_NOT_VERIFIED",
     });
-    expect(authRepository.insertUser).not.toHaveBeenCalled();
-    expect(smsService.sendRegistrationVerificationSms).not.toHaveBeenCalled();
-  });
-
-  it("rolls back a fresh production registration when Mango rejects the SMS", async () => {
-    const smsService = {
-      isConfigured: vi.fn(() => true),
-      sendRegistrationVerificationSms: vi.fn(async () => ({
-        ok: false,
-        code: "MANGO_SMS_REJECTED",
-      })),
-    };
-    const { authRepository, service } = createAuthServiceFixture({
-      configOverrides: { isProduction: true },
-      smsService,
-    });
-
-    await expect(
-      service.register({
-        name: "Sms User",
-        email: "sms-rejected@example.com",
-        password: "StrongPass123!",
-        age: 31,
-        weight: 72,
-        height: 178,
-        gender: "male",
-        activity: "moderate",
-        goal: "maintain",
-        verificationChannel: "sms",
-        phone: "+48 123 456 789",
-      })
-    ).rejects.toMatchObject({
-      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
-    });
-    expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
-    expect(authRepository.deleteUser).toHaveBeenCalledWith(
-      authRepository.insertUser.mock.calls[0][0].id
-    );
+    expect(authRepository.createSession).not.toHaveBeenCalled();
   });
 
   it("rejects invalid registration profile fields server-side", () => {
@@ -474,6 +604,52 @@ describe("authService", () => {
     expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith(user.id);
     expect(authRepository.deletePasswordResetTokensByUserId).toHaveBeenCalledWith(user.id);
     expect(authRepository.clearLoginAttempt).toHaveBeenCalledWith(user.email);
+  });
+
+  it("rejects a password reset token after it has been consumed", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-reset-once",
+      email: "reset-once@example.com",
+      name: "Reset Once",
+      role: "USER",
+      passwordHash: "old",
+      passwordSalt: "salt",
+      passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 0,
+    };
+    const rawToken = "single-use-reset-token";
+    const resetToken = {
+      id: "pw-reset-once",
+      userId: user.id,
+      tokenHash: "hash",
+      expiresAt: Date.now() + 10_000,
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    authRepository.findPasswordResetTokenByHash
+      .mockReturnValueOnce(resetToken)
+      .mockReturnValueOnce({
+        ...resetToken,
+        consumedAt: new Date().toISOString(),
+      });
+    authRepository.findUserById.mockReturnValue(user);
+
+    await service.resetPassword({
+      token: rawToken,
+      password: "StrongPass123!",
+    });
+
+    await expect(
+      service.resetPassword({
+        token: rawToken,
+        password: "AnotherStrongPass123!",
+      })
+    ).rejects.toMatchObject({
+      code: "INVALID_RESET_TOKEN",
+    });
+    expect(authRepository.updateUserPassword).toHaveBeenCalledTimes(1);
   });
 
   it("exports account data with snapshot and backup summaries", async () => {

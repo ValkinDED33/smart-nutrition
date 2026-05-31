@@ -1,14 +1,11 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Bot,
   BookOpen,
   Globe2,
-  Home,
   Moon,
   ShieldCheck,
   Sun,
-  TrendingUp,
   Utensils,
   UserRound,
   UsersRound,
@@ -45,29 +42,23 @@ import { useAppColorMode } from "../theme/colorMode";
 import type { AppLanguage } from "../types/i18n";
 
 const mobileTabs = [
-  { value: "/dashboard", labelKey: "navigation.dashboard", icon: Home },
   { value: "/food", labelKey: "navigation.food", icon: Utensils },
   { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
-  { value: "/progress", labelKey: "navigation.progress", icon: TrendingUp },
-  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
   { value: "/community", labelKey: "navigation.community", icon: UsersRound },
   { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
 ];
 
 const desktopTabs = [
-  { value: "/dashboard", labelKey: "navigation.dashboard" },
   { value: "/food", labelKey: "navigation.food" },
   { value: "/recipes", labelKey: "navigation.recipes" },
-  { value: "/progress", labelKey: "navigation.progress" },
-  { value: "/coach", labelKey: "navigation.coach" },
   { value: "/community", labelKey: "navigation.community" },
   { value: "/profile", labelKey: "navigation.profile" },
 ];
 
 const languageOptions: Array<{ value: AppLanguage; code: string }> = [
-  { value: "uk", code: "UA" },
-  { value: "pl", code: "PL" },
-  { value: "en", code: "EN" },
+  { value: "pl", code: "🇵🇱" },
+  { value: "uk", code: "🇺🇦" },
+  { value: "en", code: "🇬🇧" },
 ];
 
 const Layout = () => {

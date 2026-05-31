@@ -23,6 +23,7 @@ const loadAdminPage = () => import("./pages/AdminPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
+const loadVerifyEmailPage = () => import("./pages/VerifyEmailPage");
 const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
@@ -39,6 +40,7 @@ const AdminPage = lazy(loadAdminPage);
 const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
+const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
 const NotFoundPage = lazy(loadNotFoundPage);
@@ -130,6 +132,14 @@ function App() {
                 element={
                   <PublicRoute>
                     <RegisterPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/verify-email"
+                element={
+                  <PublicRoute>
+                    <VerifyEmailPage />
                   </PublicRoute>
                 }
               />

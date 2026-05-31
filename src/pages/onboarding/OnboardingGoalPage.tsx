@@ -26,12 +26,24 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             {t("onboarding.goalTitle")}
           </Typography>
           <Stack spacing={1.2}>
-            {goalOptions.map((goal) => (
+            {[...goalOptions, "healthy" as const].map((goal) => (
               <Button
                 key={goal}
-                variant={state.goal === goal ? "contained" : "outlined"}
+                variant={
+                  goal === "healthy"
+                    ? state.goal === "maintain" && state.primaryGoalNote === "healthy"
+                      ? "contained"
+                      : "outlined"
+                    : state.goal === goal && state.primaryGoalNote !== "healthy"
+                      ? "contained"
+                      : "outlined"
+                }
                 size="large"
-                onClick={() => updateState({ goal })}
+                onClick={() =>
+                  goal === "healthy"
+                    ? updateState({ goal: "maintain", primaryGoalNote: "healthy" })
+                    : updateState({ goal, primaryGoalNote: "" })
+                }
                 sx={{ justifyContent: "flex-start", borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {t(`option.goal.${goal}`)}
@@ -87,14 +99,14 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
-              onClick={() => navigate(stepPaths.age)}
+              onClick={() => navigate(stepPaths.weight)}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               {t("onboarding.back")}
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.weight)}
+              onClick={() => navigate(stepPaths.finish)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

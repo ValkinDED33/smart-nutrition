@@ -6,7 +6,9 @@ import type { RootState } from "../app/store";
 import { OnboardingAgePage } from "./onboarding/OnboardingAgePage";
 import { OnboardingAssistantPage } from "./onboarding/OnboardingAssistantPage";
 import { OnboardingFinishPage } from "./onboarding/OnboardingFinishPage";
+import { OnboardingGenderPage } from "./onboarding/OnboardingGenderPage";
 import { OnboardingGoalPage } from "./onboarding/OnboardingGoalPage";
+import { OnboardingHeightPage } from "./onboarding/OnboardingHeightPage";
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
@@ -21,6 +23,8 @@ const OnboardingPage = () => {
       personality: "supportive",
       name: profile.assistant.onboarding.preferredName || user?.name || "",
       age: user?.age ?? 25,
+      gender: user?.gender ?? "male",
+      height: user?.height ?? 175,
       goal: user?.goal ?? profile.goal,
       primaryGoalNote: profile.assistant.onboarding.primaryGoalNote,
       mainFriction: profile.assistant.onboarding.mainFriction,
@@ -47,6 +51,8 @@ const OnboardingPage = () => {
       <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
       <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
       <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
+      <Route path="gender" element={<OnboardingGenderPage {...stepProps} />} />
+      <Route path="height" element={<OnboardingHeightPage {...stepProps} />} />
       <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
       <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />
       <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />

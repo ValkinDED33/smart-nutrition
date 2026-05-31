@@ -1,22 +1,8 @@
 import http from "node:http";
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { RateLimiterMemory, RateLimiterRedis } from "rate-limiter-flexible";
 import { serverConfig } from "./config.mjs";
 import { createRedisCache } from "./cache/redisCache.mjs";
 import {
-  AssistantApiError,
-  AuthApiError,
-  calculateMealTotalNutrients,
-  PlatformApiError,
-  StateApiError,
-} from "./lib/domain.mjs";
-import {
-  clearCookie,
-  readJsonBody,
-  setCookie,
   sendError,
-  sendJson,
   sendNoContent,
   isUnsafeCrossSiteMutation,
   setCorsHeaders,
@@ -24,6 +10,7 @@ import {
 } from "./lib/http.mjs";
 import { createAdminController } from "./controllers/admin.controller.mjs";
 import { createAiController } from "./controllers/ai.controller.mjs";
+import { createStateController } from "./controllers/state.controller.mjs";
 import { createAiRepository } from "./repositories/aiRepository.mjs";
 import { createAssistantMemoryRepository } from "./repositories/assistantMemoryRepository.mjs";
 import { createAuthRepository } from "./repositories/authRepository.mjs";
@@ -35,14 +22,35 @@ import { createMongoStateRepository } from "./repositories/mongoStateRepository.
 import { createPlatformRepository } from "./repositories/platformRepository.mjs";
 import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
+import { createAccountController } from "./routes/account.routes.mjs";
+import { createAuthController } from "./routes/auth.routes.mjs";
+import { createHealthController } from "./routes/health.routes.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
-import { createMangoSmsService } from "./services/mangoSmsService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
 import { createStorage } from "./storage/index.mjs";
+import { createAuthSessionHelpers } from "./runtime/authCookies.mjs";
+import { handleRouteError } from "./runtime/errorHandler.mjs";
+import { createRequestMetrics } from "./runtime/metrics.mjs";
+import {
+  getClientAddress,
+  getRequestPathname,
+  getRequestUrl,
+  getSyncContext,
+} from "./runtime/requestContext.mjs";
+import { createRateLimiters } from "./runtime/rateLimits.mjs";
+import {
+  createReadinessSnapshot,
+  getPublicAiStatus,
+  getPublicCacheStatus,
+  getPublicEmailStatus,
+  getPublicStorageStatus,
+} from "./runtime/status.mjs";
+import { createStateStreamRuntime } from "./runtime/stateStreams.mjs";
+import { createStaticFileServer } from "./runtime/staticFiles.mjs";
 
 const redisCache = await createRedisCache(serverConfig);
 const storage = await createStorage(serverConfig);
@@ -72,9 +80,6 @@ const adminRepository = createMongoAdminRepository(storage);
 const emailService = createEmailService({
   config: serverConfig,
 });
-const mangoSmsService = createMangoSmsService({
-  config: serverConfig,
-});
 const aiService = createAiService({
   aiRepository,
   assistantMemoryRepository,
@@ -84,7 +89,6 @@ const authService = createAuthService({
   authRepository,
   stateRepository,
   emailService,
-  smsService: mangoSmsService,
   config: serverConfig,
 });
 const platformService = createPlatformService({
@@ -94,6 +98,36 @@ const platformService = createPlatformService({
 });
 const stateService = createStateService({ stateRepository });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
+const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);
+const { staticAvailable, tryServeStatic } = await createStaticFileServer({
+  staticDir: serverConfig.staticDir,
+  serveStatic: serverConfig.serveStatic,
+});
+const { stateStreams, broadcastStateMeta, handleStateStream } = createStateStreamRuntime({
+  stateService,
+});
+const { getMetricsSnapshot, trackRequest } = createRequestMetrics({
+  getRequestPathname,
+  stateStreams,
+});
+const getReadinessSnapshot = createReadinessSnapshot({
+  storage,
+  redisCache,
+  emailService,
+  aiService,
+  serverConfig,
+  staticAvailable,
+});
+const {
+  consumeRateLimit,
+  consumeAiRateLimit,
+  consumeAuthRateLimit,
+  isAiMutationRoute,
+} = createRateLimiters({
+  redisCache,
+  serverConfig,
+  getClientAddress,
+});
 const aiController = createAiController({
   aiService,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
@@ -103,518 +137,60 @@ const adminController = createAdminController({
   adminRepository,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
 });
-const apiRouter = createApiRouter({ aiController, adminController });
+const stateController = createStateController({
+  stateService,
+  platformService,
+  photoAnalysisService,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+  getSyncContext,
+  broadcastStateMeta,
+});
+const healthController = createHealthController({
+  authService,
+  getStorageStatus: () => getPublicStorageStatus(storage.getEngineInfo()),
+  getCacheStatus: () => getPublicCacheStatus(redisCache.getStatus()),
+  getStaticStatus: () => ({
+    enabled: serverConfig.serveStatic,
+    available: staticAvailable,
+  }),
+  getMetrics: () => getMetricsSnapshot(),
+  getLimits: () => ({
+    requestsPerWindow: serverConfig.requestLimitMax,
+    windowMs: serverConfig.requestLimitWindowMs,
+    authRequestsPerWindow: serverConfig.authRateLimits,
+    authWindowMs: serverConfig.authRateLimitWindowMs,
+    aiRequestsPerWindow: serverConfig.aiRateLimitMax,
+    aiWindowMs: serverConfig.aiRateLimitWindowMs,
+  }),
+  getWarnings: () => serverConfig.warnings,
+  getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
+  getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
+  getReadiness: () => getReadinessSnapshot(),
+});
+const authController = createAuthController({
+  authService,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+  sendAuthSession,
+  clearAuthCookies,
+});
+const accountController = createAccountController({
+  authService,
+  clearAuthCookies,
+});
+const publicApiRouter = createApiRouter({
+  healthController,
+  authController,
+  authRouteScope: "public",
+});
+const apiRouter = createApiRouter({
+  authController,
+  authRouteScope: "protected",
+  accountController,
+  stateController,
+  aiController,
+  adminController,
+});
 await platformService.bootstrapAccessControl();
-const stateStreams = new Map();
-const staticRoot = path.resolve(serverConfig.staticDir);
-
-const clearAuthCookies = (response) => {
-  clearCookie(response, {
-    name: serverConfig.authAccessCookieName,
-    sameSite: serverConfig.authCookieSameSite,
-    secure: serverConfig.authCookieSecure,
-  });
-  clearCookie(response, {
-    name: serverConfig.authRefreshCookieName,
-    sameSite: serverConfig.authCookieSameSite,
-    secure: serverConfig.authCookieSecure,
-  });
-};
-
-const applyAuthCookies = (response, payload) => {
-  if (payload?.token) {
-    setCookie(response, {
-      name: serverConfig.authAccessCookieName,
-      value: payload.token,
-      maxAge: Math.floor(serverConfig.accessTokenTtlMs / 1000),
-      sameSite: serverConfig.authCookieSameSite,
-      secure: serverConfig.authCookieSecure,
-    });
-  }
-
-  if (payload?.refreshToken) {
-    setCookie(response, {
-      name: serverConfig.authRefreshCookieName,
-      value: payload.refreshToken,
-      maxAge: Math.floor(serverConfig.refreshTokenTtlMs / 1000),
-      sameSite: serverConfig.authCookieSameSite,
-      secure: serverConfig.authCookieSecure,
-    });
-  }
-};
-
-const sendAuthSession = (response, statusCode, payload) => {
-  applyAuthCookies(response, payload);
-  sendJson(response, statusCode, {
-    user: payload.user,
-    snapshot: payload.snapshot ?? null,
-  });
-};
-
-const fileExists = async (filePath) => {
-  try {
-    const stats = await fs.stat(filePath);
-    return stats.isFile();
-  } catch {
-    return false;
-  }
-};
-
-const staticIndexPath = path.join(staticRoot, "index.html");
-const staticAvailable =
-  serverConfig.serveStatic && (await fileExists(staticIndexPath));
-
-const requestMetrics = {
-  startedAt: Date.now(),
-  totalRequests: 0,
-  activeRequests: 0,
-  errorResponses: 0,
-  rateLimitedResponses: 0,
-  totalResponseMs: 0,
-  routes: new Map(),
-};
-
-const createRateLimiter = ({ keyPrefix, points, duration }) => {
-  if (redisCache.enabled && redisCache.client) {
-    return new RateLimiterRedis({
-      storeClient: redisCache.client,
-      keyPrefix,
-      points,
-      duration,
-      insuranceLimiter: new RateLimiterMemory({
-        keyPrefix: `${keyPrefix}-insurance`,
-        points,
-        duration,
-      }),
-    });
-  }
-
-  return new RateLimiterMemory({
-    keyPrefix,
-    points,
-    duration,
-  });
-};
-const requestLimiter = createRateLimiter({
-  keyPrefix: "smart-nutrition-api",
-  points: serverConfig.requestLimitMax,
-  duration: Math.max(Math.ceil(serverConfig.requestLimitWindowMs / 1000), 1),
-});
-const aiRequestLimiter = createRateLimiter({
-  keyPrefix: "smart-nutrition-ai",
-  points: serverConfig.aiRateLimitMax,
-  duration: Math.max(Math.ceil(serverConfig.aiRateLimitWindowMs / 1000), 1),
-});
-const mimeTypes = new Map([
-  [".html", "text/html; charset=utf-8"],
-  [".js", "text/javascript; charset=utf-8"],
-  [".css", "text/css; charset=utf-8"],
-  [".json", "application/json; charset=utf-8"],
-  [".webmanifest", "application/manifest+json; charset=utf-8"],
-  [".svg", "image/svg+xml"],
-  [".png", "image/png"],
-  [".jpg", "image/jpeg"],
-  [".jpeg", "image/jpeg"],
-  [".webp", "image/webp"],
-  [".ico", "image/x-icon"],
-  [".txt", "text/plain; charset=utf-8"],
-  [".woff", "font/woff"],
-  [".woff2", "font/woff2"],
-]);
-
-const normalizeRouteLabel = (pathname) =>
-  pathname
-    .replace(/^\/api\/meal-entries\/[^/]+$/, "/api/meal-entries/:id")
-    .replace(/^\/api\/meal-templates\/[^/]+$/, "/api/meal-templates/:id")
-    .replace(/^\/api\/meal-products\/(saved|recent)\/[^/]+$/, "/api/meal-products/$1/:id")
-    .replace(/^\/api\/admin\/foods\/submissions\/[^/]+$/, "/api/admin/foods/submissions/:id")
-    .replace(/^\/api\/admin\/users\/[^/]+\/role$/, "/api/admin/users/:id/role")
-    .replace(/^\/api\/admin\/users\/[^/]+\/ban$/, "/api/admin/users/:id/ban");
-
-const getClientAddress = (request) =>
-  String(request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown")
-    .split(",")[0]
-    .trim();
-
-const readSingleHeader = (value) =>
-  Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();
-
-const getRequestUrl = (request) => {
-  try {
-    return new URL(
-      request.url ?? "/",
-      `https://${request.headers.host || "smart-nutrition.internal"}`
-    );
-  } catch {
-    return null;
-  }
-};
-
-const getRequestPathname = (request) => getRequestUrl(request)?.pathname ?? "/";
-
-const getSyncContext = (request) => ({
-  deviceId: readSingleHeader(request.headers["x-device-id"]) || null,
-  baseVersion: readSingleHeader(request.headers["x-state-version"]) || null,
-});
-
-const isInsideDirectory = (rootDir, candidatePath) => {
-  const relativePath = path.relative(rootDir, candidatePath);
-
-  return (
-    relativePath === "" ||
-    (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
-  );
-};
-
-const getContentType = (filePath) =>
-  mimeTypes.get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
-
-const toAttachmentFilename = (value, fallback = "smart-nutrition-backup.json") => {
-  const filename = String(value ?? "")
-    .replace(/[\r\n\\/:"*?<>|]+/g, "_")
-    .replace(/[^\w. -]+/g, "_")
-    .trim()
-    .slice(0, 120);
-
-  return filename || fallback;
-};
-
-const sendStaticFile = async (request, response, filePath) => {
-  const body = await fs.readFile(filePath);
-  const isAsset = filePath.includes(`${path.sep}assets${path.sep}`);
-
-  response.writeHead(200, {
-    "Content-Type": getContentType(filePath),
-    "Content-Length": String(body.byteLength),
-    "Cache-Control": isAsset ? "public, max-age=31536000, immutable" : "no-cache",
-  });
-
-  if (request.method === "HEAD") {
-    response.end();
-    return;
-  }
-
-  response.end(body);
-};
-
-const tryServeStatic = async (request, response, pathname) => {
-  if (!staticAvailable || !["GET", "HEAD"].includes(request.method ?? "")) {
-    return false;
-  }
-
-  let decodedPathname = pathname;
-
-  try {
-    decodedPathname = decodeURIComponent(pathname);
-  } catch {
-    sendError(response, 400, "INVALID_PATH", "Invalid request path.");
-    return true;
-  }
-
-  const requestedPath =
-    decodedPathname === "/"
-      ? staticIndexPath
-      : path.resolve(staticRoot, decodedPathname.replace(/^\/+/, ""));
-
-  if (!isInsideDirectory(staticRoot, requestedPath)) {
-    sendError(response, 404, "NOT_FOUND", "File not found.");
-    return true;
-  }
-
-  if (await fileExists(requestedPath)) {
-    await sendStaticFile(request, response, requestedPath);
-    return true;
-  }
-
-  if (!path.extname(decodedPathname) && await fileExists(staticIndexPath)) {
-    await sendStaticFile(request, response, staticIndexPath);
-    return true;
-  }
-
-  return false;
-};
-
-const consumeRateLimit = async (request) => {
-  const clientAddress = getClientAddress(request);
-
-  try {
-    const rateLimitResult = await requestLimiter.consume(clientAddress);
-
-    return {
-      allowed: true,
-      remaining: Math.max(rateLimitResult.remainingPoints, 0),
-      resetAt: Date.now() + rateLimitResult.msBeforeNext,
-    };
-  } catch (rateLimitResult) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt:
-        Date.now() +
-        Number(rateLimitResult?.msBeforeNext ?? serverConfig.requestLimitWindowMs),
-    };
-  }
-};
-
-const consumeAiRateLimit = async (request, pathname) => {
-  const clientAddress = getClientAddress(request);
-  const limiterKey = `${clientAddress}:${pathname}`;
-
-  try {
-    const rateLimitResult = await aiRequestLimiter.consume(limiterKey);
-
-    return {
-      allowed: true,
-      remaining: Math.max(rateLimitResult.remainingPoints, 0),
-      resetAt: Date.now() + rateLimitResult.msBeforeNext,
-    };
-  } catch (rateLimitResult) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt:
-        Date.now() +
-        Number(rateLimitResult?.msBeforeNext ?? serverConfig.aiRateLimitWindowMs),
-    };
-  }
-};
-
-const isAiMutationRoute = (pathname, method) =>
-  (pathname === "/api/ai" || pathname === "/api/assistant/message") && method === "POST";
-
-const getMetricsSnapshot = () => {
-  const topRoutes = [...requestMetrics.routes.entries()]
-    .sort((left, right) => right[1].count - left[1].count)
-    .slice(0, 8)
-    .map(([route, value]) => ({
-      route,
-      count: value.count,
-      averageMs: value.totalMs > 0 ? Math.round(value.totalMs / value.count) : 0,
-    }));
-
-  return {
-    uptimeSeconds: Math.round((Date.now() - requestMetrics.startedAt) / 1000),
-    totalRequests: requestMetrics.totalRequests,
-    activeRequests: requestMetrics.activeRequests,
-    errorResponses: requestMetrics.errorResponses,
-    rateLimitedResponses: requestMetrics.rateLimitedResponses,
-    averageResponseMs:
-      requestMetrics.totalRequests > 0
-        ? Math.round(requestMetrics.totalResponseMs / requestMetrics.totalRequests)
-        : 0,
-    activeStateStreams: [...stateStreams.values()].reduce(
-      (sum, streams) => sum + streams.size,
-      0
-    ),
-    topRoutes,
-  };
-};
-
-const getPublicStorageStatus = (engineInfo = {}) => ({
-  engine: engineInfo.engine ?? "unknown",
-  ...(engineInfo.schemaVersion ? { schemaVersion: engineInfo.schemaVersion } : {}),
-  ...(engineInfo.database ? { database: engineInfo.database } : {}),
-  ...(typeof engineInfo.ssl === "boolean" ? { ssl: engineInfo.ssl } : {}),
-});
-
-const getPublicCacheStatus = (cacheStatus = {}) => ({
-  enabled: Boolean(cacheStatus.enabled),
-  provider: cacheStatus.provider ?? "memory",
-  ...(cacheStatus.enabled && cacheStatus.status ? { status: cacheStatus.status } : {}),
-  fallback: !cacheStatus.enabled && Boolean(cacheStatus.fallbackReason),
-});
-
-const getPublicEmailStatus = (emailStatus = {}) => ({
-  configured: Boolean(emailStatus.configured),
-});
-
-const getPublicSmsStatus = (smsStatus = {}) => ({
-  provider: smsStatus.provider ?? "mango-office",
-  configured: Boolean(smsStatus.configured),
-  senderConfigured: Boolean(smsStatus.senderConfigured),
-});
-
-const getPublicAiStatus = (aiStatus = {}) => ({
-  configured: Boolean(aiStatus.configured),
-  providerCount: Math.max(Number(aiStatus.providerCount) || 0, 0),
-  fallbackEnabled: Boolean(aiStatus.fallbackEnabled),
-  primaryProviderId: aiStatus.primaryProviderId ?? null,
-  dataProvider: aiStatus.dataProvider ?? "primary",
-  abuseProtection: aiStatus.abuseProtection ?? null,
-});
-
-const addStateStream = (userId, response) => {
-  const streams = stateStreams.get(userId) ?? new Set();
-  streams.add(response);
-  stateStreams.set(userId, streams);
-};
-
-const removeStateStream = (userId, response) => {
-  const streams = stateStreams.get(userId);
-
-  if (!streams) {
-    return;
-  }
-
-  streams.delete(response);
-
-  if (streams.size === 0) {
-    stateStreams.delete(userId);
-  }
-};
-
-const broadcastStateMeta = async (user, stateService) => {
-  const streams = stateStreams.get(user.id);
-
-  if (!streams || streams.size === 0) {
-    return;
-  }
-
-  const payload = JSON.stringify(await stateService.getSnapshotMeta(user));
-
-  streams.forEach((streamResponse) => {
-    streamResponse.write(`event: state-updated\n`);
-    streamResponse.write(`data: ${payload}\n\n`);
-  });
-};
-
-const createDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
-
-const normalizeWaterGoal = (waterState) =>
-  Math.min(
-    Math.max(
-      Math.round(Number(waterState?.dailyWaterGoal ?? waterState?.dailyTargetMl ?? 2000) || 2000),
-      2000
-    ),
-    3000
-  );
-
-const normalizeWaterApiState = (waterState, dateKey = createDateKey()) => {
-  const dailyWaterGoal = normalizeWaterGoal(waterState);
-  const consumedMl =
-    waterState?.lastLoggedOn === dateKey
-      ? Math.max(Math.round(Number(waterState?.consumedMl ?? 0) || 0), 0)
-      : 0;
-  const history = Array.isArray(waterState?.history) ? waterState.history : [];
-  const historyEntry = {
-    date: dateKey,
-    consumedMl,
-    targetMl: dailyWaterGoal,
-    updatedAt: new Date().toISOString(),
-  };
-
-  return {
-    ...waterState,
-    dailyWaterGoal,
-    consumedMl,
-    lastLoggedOn: dateKey,
-    history: [
-      historyEntry,
-      ...history.filter((entry) => entry?.date !== dateKey),
-    ].slice(0, 30),
-  };
-};
-
-const toWaterTodayResponse = (waterState) => {
-  const dailyWaterGoal = normalizeWaterGoal(waterState);
-  const consumedMl = Math.max(Math.round(Number(waterState?.consumedMl ?? 0) || 0), 0);
-
-  return {
-    date: waterState?.lastLoggedOn ?? createDateKey(),
-    consumedMl,
-    dailyWaterGoal,
-    remainingMl: Math.max(dailyWaterGoal - consumedMl, 0),
-    progress: dailyWaterGoal > 0 ? Math.min(consumedMl / dailyWaterGoal, 1) : 0,
-    glassSizeMl: Math.max(Math.round(Number(waterState?.glassSizeMl ?? 250) || 250), 100),
-  };
-};
-
-const getTodayMealEntries = (mealState, dateKey = createDateKey()) =>
-  (Array.isArray(mealState?.items) ? mealState.items : []).filter((item) =>
-    String(item?.eatenAt ?? "").startsWith(dateKey)
-  );
-
-const summarizeMealEntries = (entries) => ({
-  items: entries,
-  totalNutrients: calculateMealTotalNutrients(entries),
-});
-
-const normalizeMealEntriesPayload = (body) => {
-  if (Array.isArray(body?.entries)) {
-    return body.entries;
-  }
-
-  if (Array.isArray(body)) {
-    return body;
-  }
-
-  return [body];
-};
-
-const getWeightHistory = (profileState) =>
-  Array.isArray(profileState?.weightHistory) ? profileState.weightHistory : [];
-
-const getStatsSummary = async (user) => {
-  const profileState = await stateService.getProfileState(user);
-  const waterState = normalizeWaterApiState(await stateService.getWaterState(user));
-  const mealState = await stateService.getMealState(user);
-  const todayMeals = getTodayMealEntries(mealState);
-  const mealSummary = summarizeMealEntries(todayMeals);
-  const weightHistory = getWeightHistory(profileState);
-  const latestWeight = weightHistory.at(-1)?.weight ?? user.weight ?? null;
-
-  return {
-    date: createDateKey(),
-    calories: {
-      consumed: Math.round(mealSummary.totalNutrients.calories ?? 0),
-      goal: Math.round(Number(profileState?.dailyCalories ?? 0) || 0),
-      remaining: Math.max(
-        Math.round(Number(profileState?.dailyCalories ?? 0) || 0) -
-          Math.round(mealSummary.totalNutrients.calories ?? 0),
-        0
-      ),
-    },
-    water: toWaterTodayResponse(waterState),
-    meals: {
-      count: todayMeals.length,
-      totalNutrients: mealSummary.totalNutrients,
-    },
-    weight: {
-      current: latestWeight,
-      historyCount: weightHistory.length,
-    },
-  };
-};
-
-const getStatsTrends = async (user) => {
-  const profileState = await stateService.getProfileState(user);
-  const waterState = await stateService.getWaterState(user);
-  const mealState = await stateService.getMealState(user);
-  const mealCaloriesByDate = new Map();
-
-  (Array.isArray(mealState?.items) ? mealState.items : []).forEach((entry) => {
-    const date = String(entry?.eatenAt ?? "").slice(0, 10);
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return;
-    }
-
-    const calories = Number(entry?.product?.nutrients?.calories ?? 0) *
-      (Number(entry?.quantity ?? 0) / 100);
-    mealCaloriesByDate.set(date, (mealCaloriesByDate.get(date) ?? 0) + calories);
-  });
-
-  return {
-    water: Array.isArray(waterState?.history) ? waterState.history : [],
-    weight: getWeightHistory(profileState),
-    calories: [...mealCaloriesByDate.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([date, calories]) => ({
-        date,
-        calories: Math.round(calories),
-      })),
-  };
-};
 
 const routeRequest = async (request, response) => {
   setSecurityHeaders(response);
@@ -644,7 +220,9 @@ const routeRequest = async (request, response) => {
   }
 
   const rateLimit =
-    pathname === "/api/health" ? null : await consumeRateLimit(request);
+    pathname === "/api/health" || pathname === "/api/ready"
+      ? null
+      : await consumeRateLimit(request);
 
   if (rateLimit && !rateLimit.allowed) {
     response.setHeader("Retry-After", String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)));
@@ -654,6 +232,21 @@ const routeRequest = async (request, response) => {
 
   if (rateLimit) {
     response.setHeader("X-RateLimit-Remaining", String(rateLimit.remaining));
+  }
+
+  const authRateLimit = await consumeAuthRateLimit(request, pathname);
+
+  if (authRateLimit && !authRateLimit.allowed) {
+    response.setHeader(
+      "Retry-After",
+      String(Math.ceil((authRateLimit.resetAt - Date.now()) / 1000))
+    );
+    sendError(response, 429, "AUTH_RATE_LIMITED", "Too many auth requests. Please slow down.");
+    return;
+  }
+
+  if (authRateLimit) {
+    response.setHeader("X-Auth-RateLimit-Remaining", String(authRateLimit.remaining));
   }
 
   const aiRateLimit = isAiMutationRoute(pathname, request.method)
@@ -675,140 +268,21 @@ const routeRequest = async (request, response) => {
 
   await authService.cleanupExpiredSessions();
 
-  const mealEntryMatch = pathname.match(/^\/api\/meal-entries\/([^/]+)$/);
-  const mealTemplateMatch = pathname.match(/^\/api\/meal-templates\/([^/]+)$/);
-  const mealProductMatch = pathname.match(
-    /^\/api\/meal-products\/(saved|recent)(?:\/([^/]+))?$/
-  );
-  const accountBackupMatch = pathname.match(/^\/api\/account\/backups\/([^/]+)$/);
-  const adminFoodSubmissionMatch = pathname.match(/^\/api\/admin\/foods\/submissions\/([^/]+)$/);
-  const adminUserRoleMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/role$/);
-  const adminUserBanMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/ban$/);
-
   try {
-    if (pathname === "/api/health" && request.method === "GET") {
-      sendJson(response, 200, {
-        ...authService.getHealthInfo(),
-        storage: getPublicStorageStatus(storage.getEngineInfo()),
-        cache: getPublicCacheStatus(redisCache.getStatus()),
-        static: {
-          enabled: serverConfig.serveStatic,
-          available: staticAvailable,
-        },
-        metrics: getMetricsSnapshot(),
-        limits: {
-          requestsPerWindow: serverConfig.requestLimitMax,
-          windowMs: serverConfig.requestLimitWindowMs,
-          aiRequestsPerWindow: serverConfig.aiRateLimitMax,
-          aiWindowMs: serverConfig.aiRateLimitWindowMs,
-        },
-        warnings: serverConfig.warnings,
-        email: getPublicEmailStatus(emailService.getStatus()),
-        sms: getPublicSmsStatus(mangoSmsService.getStatus()),
-        ai: getPublicAiStatus(aiService.getRuntimeStatus()),
-      });
-      return;
-    }
-
-    if (pathname === "/api/auth/register" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 201, await authService.register(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/verify-registration" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, await authService.verifyRegistration(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/resend-verification" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, await authService.resendRegistrationVerification(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/login" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, await authService.login(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/forgot-password" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, await authService.requestPasswordReset(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/reset-password" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, await authService.resetPassword(body));
-      return;
-    }
-
-    if (pathname === "/api/auth/session" && request.method === "GET") {
-      const session = await authService.restoreSession(request);
-
-      if (!session) {
-        sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
-        return;
-      }
-
-      sendAuthSession(response, 200, session);
-      return;
-    }
-
-    if (pathname === "/api/auth/me" && request.method === "GET") {
-      const session = await authService.restoreSession(request);
-
-      if (!session) {
-        sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
-        return;
-      }
-
-      sendJson(response, 200, { user: session.user });
-      return;
-    }
-
-    if (pathname === "/api/auth/refresh" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendAuthSession(response, 200, await authService.refreshSession(request, body));
+    if (
+      await publicApiRouter({
+        request,
+        response,
+        pathname,
+        url,
+        auth: null,
+      })
+    ) {
       return;
     }
 
     if (pathname === "/api/state/stream" && request.method === "GET") {
-      const auth = await authService.authenticateRequest(request);
-
-      if (!auth) {
-        sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
-        return;
-      }
-
-      response.writeHead(200, {
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-      });
-      response.write(`event: connected\n`);
-      response.write(`data: ${JSON.stringify(await stateService.getSnapshotMeta(auth.user))}\n\n`);
-      addStateStream(auth.user.id, response);
-
-      const heartbeatId = setInterval(() => {
-        response.write(`event: ping\ndata: {}\n\n`);
-      }, 20_000);
-
-      request.on("close", () => {
-        clearInterval(heartbeatId);
-        removeStateStream(auth.user.id, response);
-      });
-      return;
-    }
-
-    if (pathname === "/api/auth/logout" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await authService.logout(request, body);
-      clearAuthCookies(response);
-      sendNoContent(response);
+      await handleStateStream({ request, response, authService });
       return;
     }
 
@@ -820,7 +294,7 @@ const routeRequest = async (request, response) => {
 
     const auth = await authService.authenticateRequest(request);
 
-    if (pathname !== "/api/health" && !auth) {
+    if (pathname !== "/api/health" && pathname !== "/api/ready" && !auth) {
       sendError(response, 401, "INVALID_CREDENTIALS", "Session expired.");
       return;
     }
@@ -837,527 +311,13 @@ const routeRequest = async (request, response) => {
       return;
     }
 
-    if (pathname === "/api/water/today" && request.method === "GET") {
-      const waterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
-      sendJson(response, 200, toWaterTodayResponse(waterState));
-      return;
-    }
-
-    if (pathname === "/api/water" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      const amountMl = Math.max(
-        Math.round(Number(body?.amountMl ?? body?.ml ?? body?.value ?? 250) || 250),
-        0
-      );
-      const currentWaterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
-      const nextWaterState = normalizeWaterApiState({
-        ...currentWaterState,
-        consumedMl: currentWaterState.consumedMl + amountMl,
-      });
-
-      await stateService.saveWaterState(auth.user, nextWaterState, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, toWaterTodayResponse(nextWaterState));
-      return;
-    }
-
-    if (pathname === "/api/water/history" && request.method === "GET") {
-      const waterState = normalizeWaterApiState(await stateService.getWaterState(auth.user));
-      sendJson(response, 200, { items: waterState.history });
-      return;
-    }
-
-    if (pathname === "/api/meals/today" && request.method === "GET") {
-      const mealState = await stateService.getMealState(auth.user);
-      sendJson(response, 200, summarizeMealEntries(getTodayMealEntries(mealState)));
-      return;
-    }
-
-    if (pathname === "/api/meals" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.addMealEntries(
-        auth.user,
-        { entries: normalizeMealEntriesPayload(body) },
-        getSyncContext(request)
-      );
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(
-        response,
-        201,
-        summarizeMealEntries(getTodayMealEntries(await stateService.getMealState(auth.user)))
-      );
-      return;
-    }
-
-    if (pathname === "/api/products/search" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listVisibleCatalogProducts(auth.user, {
-          status: url.searchParams.get("status"),
-          search: url.searchParams.get("q") ?? url.searchParams.get("search") ?? "",
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (pathname === "/api/weight/history" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: getWeightHistory(await stateService.getProfileState(auth.user)),
-      });
-      return;
-    }
-
-    if (pathname === "/api/weight" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      const weight = Number(body?.weight);
-
-      if (!Number.isFinite(weight) || weight <= 0) {
-        sendError(response, 400, "INVALID_WEIGHT", "Weight must be a positive number.");
-        return;
-      }
-
-      const profileState = await stateService.getProfileState(auth.user);
-      const nextEntry = {
-        date:
-          typeof body?.date === "string" && body.date.trim()
-            ? body.date.trim()
-            : new Date().toISOString(),
-        weight,
-      };
-      const nextProfileState = {
-        ...profileState,
-        weightHistory: [...getWeightHistory(profileState), nextEntry].slice(-180),
-      };
-
-      await stateService.saveProfileState(auth.user, nextProfileState, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, nextEntry);
-      return;
-    }
-
-    if (pathname === "/api/stats/summary" && request.method === "GET") {
-      sendJson(response, 200, await getStatsSummary(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/stats/trends" && request.method === "GET") {
-      sendJson(response, 200, await getStatsTrends(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/auth/profile" && request.method === "PATCH") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 200, await authService.updateUserProfile(body, auth.user));
-      return;
-    }
-
-    if (pathname === "/api/auth/logout-all" && request.method === "POST") {
-      await authService.logoutAll(auth.user);
-      clearAuthCookies(response);
-      sendNoContent(response);
-      return;
-    }
-
-    if (pathname === "/api/access" && request.method === "GET") {
-      sendJson(response, 200, platformService.getAccessOverview(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getSnapshot(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/state/meta" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getSnapshotMeta(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveSnapshot(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/profile-state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getProfileState(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/profile-state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveProfileState(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/meal-state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getMealState(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/meal-state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveMealState(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/water-state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getWaterState(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/water-state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveWaterState(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/fridge-state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getFridgeState(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/fridge-state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveFridgeState(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/community-state" && request.method === "GET") {
-      sendJson(response, 200, await stateService.getCommunityState(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/community-state" && request.method === "PUT") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.saveCommunityState(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/meal-entries" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.addMealEntries(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (mealEntryMatch && request.method === "DELETE") {
-      const entryId = decodeURIComponent(mealEntryMatch[1]);
-      await stateService.removeMealEntry(auth.user, entryId, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/meal-templates" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.addMealTemplate(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (mealTemplateMatch && request.method === "DELETE") {
-      const templateId = decodeURIComponent(mealTemplateMatch[1]);
-      await stateService.deleteMealTemplate(auth.user, templateId, getSyncContext(request));
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (mealProductMatch && request.method === "POST" && !mealProductMatch[2]) {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      await stateService.upsertMealProduct(
-        auth.user,
-        mealProductMatch[1],
-        body,
-        getSyncContext(request)
-      );
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (mealProductMatch && request.method === "DELETE" && mealProductMatch[2]) {
-      const productKey = decodeURIComponent(mealProductMatch[2]);
-      await stateService.removeMealProduct(
-        auth.user,
-        mealProductMatch[1],
-        productKey,
-        getSyncContext(request)
-      );
-      await broadcastStateMeta(auth.user, stateService);
-      sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
-      return;
-    }
-
-    if (pathname === "/api/photo-analysis" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(
-        response,
-        200,
-        await photoAnalysisService.analyzePhoto(
-          await stateService.getProfileState(auth.user),
-          body
-        )
-      );
-      return;
-    }
-
-    if (pathname === "/api/foods" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listVisibleCatalogProducts(auth.user, {
-          status: url.searchParams.get("status"),
-          search: url.searchParams.get("search") ?? "",
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (pathname === "/api/foods/submissions" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listOwnCatalogProducts(auth.user, {
-          status: url.searchParams.get("status"),
-          search: url.searchParams.get("search") ?? "",
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (pathname === "/api/foods/duplicates" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.findCatalogDuplicates(auth.user, {
-          name: url.searchParams.get("name") ?? "",
-          barcode: url.searchParams.get("barcode") ?? "",
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (pathname === "/api/foods/submissions" && request.method === "POST") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(response, 201, await platformService.submitCatalogProduct(auth.user, body));
-      return;
-    }
-
-    if (pathname === "/api/admin/foods/submissions" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listModerationQueue(auth.user, {
-          status: url.searchParams.get("status"),
-          search: url.searchParams.get("search") ?? "",
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (adminFoodSubmissionMatch && request.method === "PATCH") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(
-        response,
-        200,
-        await platformService.reviewCatalogProduct(
-          auth.user,
-          decodeURIComponent(adminFoodSubmissionMatch[1]),
-          body
-        )
-      );
-      return;
-    }
-
-    if (pathname === "/api/admin/audit-logs" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listAuditLogs(auth.user, {
-          limit: url.searchParams.get("limit") ?? undefined,
-        }),
-      });
-      return;
-    }
-
-    if (pathname === "/api/admin/users" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await platformService.listUsers(auth.user),
-      });
-      return;
-    }
-
-    if (adminUserRoleMatch && request.method === "PATCH") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(
-        response,
-        200,
-        await platformService.updateUserRole(
-          auth.user,
-          decodeURIComponent(adminUserRoleMatch[1]),
-          body
-        )
-      );
-      return;
-    }
-
-    if (adminUserBanMatch && request.method === "PATCH") {
-      const body = await readJsonBody(request, serverConfig.bodyLimitBytes);
-      sendJson(
-        response,
-        200,
-        await platformService.updateUserBan(
-          auth.user,
-          decodeURIComponent(adminUserBanMatch[1]),
-          body
-        )
-      );
-      return;
-    }
-
-    if (pathname === "/api/account" && request.method === "DELETE") {
-      await authService.deleteAccount(auth.user);
-      clearAuthCookies(response);
-      sendNoContent(response);
-      return;
-    }
-
-    if (pathname === "/api/account/export" && request.method === "GET") {
-      sendJson(response, 200, await authService.exportAccountData(auth.user));
-      return;
-    }
-
-    if (pathname === "/api/account/backups" && request.method === "GET") {
-      sendJson(response, 200, {
-        items: await authService.listAccountBackups(auth.user),
-      });
-      return;
-    }
-
-    if (accountBackupMatch && request.method === "GET") {
-      const backupId = decodeURIComponent(accountBackupMatch[1]);
-      const backupPayload = await authService.readAccountBackup(auth.user, backupId);
-
-      response.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${toAttachmentFilename(backupId)}"`
-      );
-      sendJson(response, 200, backupPayload);
-      return;
-    }
-
     if (!pathname.startsWith("/api/") && (await tryServeStatic(request, response, pathname))) {
       return;
     }
 
     sendError(response, 404, "NOT_FOUND", "Route not found.");
   } catch (error) {
-    if (error instanceof AuthApiError) {
-      const statusCode =
-        error.code === "INVALID_PROFILE"
-          ? 400
-          : error.code === "EMAIL_IN_USE"
-          ? 409
-          : error.code === "INVALID_VERIFICATION_CODE"
-            ? 400
-            : error.code === "REGISTRATION_NOT_VERIFIED"
-              ? 403
-              : error.code === "ACCOUNT_BANNED"
-                ? 403
-          : error.code === "TOO_MANY_ATTEMPTS"
-            ? 429
-            : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
-              ? 503
-            : error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
-              ? 503
-            : error.code === "INVALID_RESET_TOKEN" || error.code === "WEAK_PASSWORD"
-              ? 400
-            : error.code === "BACKUP_NOT_FOUND"
-              ? 404
-            : error.code === "FORBIDDEN"
-              ? 403
-              : 401;
-      sendError(response, statusCode, error.code, error.message);
-      return;
-    }
-
-    if (error instanceof PlatformApiError) {
-      const statusCode =
-        error.code === "FORBIDDEN" || error.code === "ROLE_CHANGE_NOT_ALLOWED"
-          ? 403
-          : error.code === "FOOD_NOT_FOUND" || error.code === "USER_NOT_FOUND"
-            ? 404
-            : error.code === "SUBMISSION_LIMIT_REACHED"
-              ? 429
-              : error.code === "INVALID_ROLE" || error.code === "INVALID_FOOD_SUBMISSION"
-                ? 400
-                : 409;
-      sendError(response, statusCode, error.code, error.message, error.details);
-      return;
-    }
-
-    if (error instanceof AssistantApiError) {
-      const statusCode =
-        error.code === "ASSISTANT_RUNTIME_UNAVAILABLE"
-          ? 503
-          : error.code === "ASSISTANT_RUNTIME_FAILED"
-            ? 502
-            : error.code === "ASSISTANT_COOLDOWN" ||
-                error.code === "ASSISTANT_QUOTA_EXCEEDED"
-              ? 429
-              : error.code === "ASSISTANT_REQUEST_BLOCKED"
-                ? 403
-            : 400;
-      if (Number.isFinite(Number(error.details?.retryAfterMs))) {
-        response.setHeader(
-          "Retry-After",
-          String(Math.ceil(Number(error.details.retryAfterMs) / 1000))
-        );
-      }
-      sendError(response, statusCode, error.code, error.message, error.details);
-      return;
-    }
-
-    if (error instanceof StateApiError) {
-      const statusCode =
-        error.code === "PHOTO_ANALYSIS_UNAVAILABLE"
-          ? 503
-          : error.code === "PHOTO_ANALYSIS_FAILED"
-            ? 502
-            : error.code === "STATE_CONFLICT"
-              ? 409
-            : 400;
-      sendError(response, statusCode, error.code, error.message, error.details);
-      return;
-    }
-
-    if (error instanceof Error && error.message === "INVALID_JSON") {
-      sendError(response, 400, "INVALID_JSON", "Request body must be valid JSON.");
-      return;
-    }
-
-    if (error instanceof Error && error.message === "BODY_TOO_LARGE") {
-      sendError(response, 413, "BODY_TOO_LARGE", "Request body is too large.");
-      return;
-    }
-
-    if (error instanceof Error && error.message === "UNSUPPORTED_MEDIA_TYPE") {
-      sendError(
-        response,
-        415,
-        "UNSUPPORTED_MEDIA_TYPE",
-        "JSON requests must use Content-Type: application/json."
-      );
+    if (handleRouteError(error, response)) {
       return;
     }
 
@@ -1367,30 +327,7 @@ const routeRequest = async (request, response) => {
 };
 
 const server = http.createServer((request, response) => {
-  const startedAt = Date.now();
-  const routeLabel = normalizeRouteLabel(getRequestPathname(request));
-
-  requestMetrics.totalRequests += 1;
-  requestMetrics.activeRequests += 1;
-
-  response.on("finish", () => {
-    const elapsedMs = Date.now() - startedAt;
-    requestMetrics.activeRequests = Math.max(requestMetrics.activeRequests - 1, 0);
-    requestMetrics.totalResponseMs += elapsedMs;
-
-    if (response.statusCode >= 400) {
-      requestMetrics.errorResponses += 1;
-    }
-
-    if (response.statusCode === 429) {
-      requestMetrics.rateLimitedResponses += 1;
-    }
-
-    const routeStats = requestMetrics.routes.get(routeLabel) ?? { count: 0, totalMs: 0 };
-    routeStats.count += 1;
-    routeStats.totalMs += elapsedMs;
-    requestMetrics.routes.set(routeLabel, routeStats);
-  });
+  trackRequest(request, response);
 
   routeRequest(request, response).catch((error) => {
     console.error(error);
@@ -1398,7 +335,39 @@ const server = http.createServer((request, response) => {
   });
 });
 
+const getMsUntilNextTokenCleanup = (now = new Date()) => {
+  const nextRun = new Date(now);
+  nextRun.setHours(3, 0, 0, 0);
+
+  if (nextRun <= now) {
+    nextRun.setDate(nextRun.getDate() + 1);
+  }
+
+  return nextRun.getTime() - now.getTime();
+};
+
+let tokenCleanupTimeout = null;
+
+const scheduleTokenCleanup = (delayMs = getMsUntilNextTokenCleanup()) => {
+  tokenCleanupTimeout = setTimeout(() => {
+    authService.cleanupExpiredSessions()
+      .catch((error) => {
+        console.error("Expired token cleanup failed.", error);
+      })
+      .finally(() => {
+        scheduleTokenCleanup(serverConfig.tokenCleanupIntervalMs);
+      });
+  }, delayMs);
+  tokenCleanupTimeout.unref?.();
+};
+
+scheduleTokenCleanup();
+
 const closeRuntime = async () => {
+  if (tokenCleanupTimeout) {
+    clearTimeout(tokenCleanupTimeout);
+  }
+
   await Promise.allSettled([
     redisCache.close?.(),
     aiRepository.close?.(),

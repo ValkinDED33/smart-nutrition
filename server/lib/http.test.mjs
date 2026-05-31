@@ -126,4 +126,26 @@ describe("http response helpers", () => {
       )
     ).toBe(false);
   });
+
+  it("uses Referer as a CSRF fallback when Origin is missing", () => {
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { referer: "https://evil.example/path" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(true);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { referer: "https://app.example/profile" },
+        },
+        ["https://app.example"]
+      )
+    ).toBe(false);
+  });
 });
