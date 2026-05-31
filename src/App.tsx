@@ -14,7 +14,7 @@ import { useLanguage } from "./shared/language";
 const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
 const loadOnboardingPage = () => import("./pages/OnboardingPage");
 const loadDashboardPage = () => import("./pages/DashboardPage");
-const loadFoodPage = () => import("./pages/FoodPage");
+const loadMealsPage = () => import("./pages/MealsPage");
 const loadRecipesPage = () => import("./pages/RecipesPage");
 const loadCommunityPage = () => import("./pages/CommunityPage");
 const loadCoachPage = () => import("./pages/CoachPage");
@@ -31,7 +31,7 @@ const loadNotFoundPage = () => import("./pages/NotFoundPage");
 const LanguageSetupPage = lazy(loadLanguageSetupPage);
 const OnboardingPage = lazy(loadOnboardingPage);
 const DashboardPage = lazy(loadDashboardPage);
-const FoodPage = lazy(loadFoodPage);
+const MealsPage = lazy(loadMealsPage);
 const RecipesPage = lazy(loadRecipesPage);
 const CommunityPage = lazy(loadCommunityPage);
 const CoachPage = lazy(loadCoachPage);
@@ -68,7 +68,7 @@ function App() {
 
     const preloadRoutes = () => {
       void loadDashboardPage();
-      void loadFoodPage();
+      void loadMealsPage();
       void loadRecipesPage();
       void loadCommunityPage();
       void loadCoachPage();
@@ -183,7 +183,15 @@ function App() {
                 path="/food"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <FoodPage />}
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/meals" replace />}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/meals"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <MealsPage />}
                   </ProtectedRoute>
                 }
               />
@@ -244,10 +252,9 @@ function App() {
                   />
                 }
               />
-              <Route path="/meals" element={<Navigate to="/food" replace />} />
+              <Route path="/meal-builder" element={<Navigate to="/meals" replace />} />
               <Route path="/water" element={<Navigate to="/progress" replace />} />
               <Route path="/ai" element={<Navigate to="/coach" replace />} />
-              <Route path="/meal-builder" element={<Navigate to="/food" replace />} />
               <Route
                 path="*"
                 element={shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <NotFoundPage />}

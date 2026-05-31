@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   BookOpen,
+  BarChart3,
   Globe2,
   Moon,
   ShieldCheck,
@@ -42,16 +43,19 @@ import { useAppColorMode } from "../theme/colorMode";
 import type { AppLanguage } from "../types/i18n";
 
 const mobileTabs = [
-  { value: "/food", labelKey: "navigation.food", icon: Utensils },
+  { value: "/meals", labelKey: "navigation.food", icon: Utensils },
   { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
   { value: "/community", labelKey: "navigation.community", icon: UsersRound },
+  { value: "/progress", labelKey: "navigation.progress", icon: BarChart3 },
   { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
 ];
 
 const desktopTabs = [
-  { value: "/food", labelKey: "navigation.food" },
+  { value: "/dashboard", labelKey: "navigation.dashboard" },
+  { value: "/meals", labelKey: "navigation.food" },
   { value: "/recipes", labelKey: "navigation.recipes" },
   { value: "/community", labelKey: "navigation.community" },
+  { value: "/progress", labelKey: "navigation.progress" },
   { value: "/profile", labelKey: "navigation.profile" },
 ];
 
