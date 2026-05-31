@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-nutrition-shell-v1";
+const CACHE_NAME = "smart-nutrition-shell-v2";
 const SHELL_ASSETS = ["/", "/manifest.webmanifest", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -31,6 +31,24 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).catch(() => caches.match("/")));
+    return;
+  }
+
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (!response || response.status !== 200 || response.type === "opaque") {
+          return response;
+        }
+
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, responseToCache);
+        });
+
+        return response;
+      }).catch(() => caches.match(request))
+    );
     return;
   }
 
