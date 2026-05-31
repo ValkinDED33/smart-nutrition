@@ -21,6 +21,7 @@ import type {
   AdminUserSummary,
   AuditLogEntry,
   CatalogProductItem,
+  ContentReportItem,
 } from "../../shared/types/platform";
 import type { UserRole } from "../../shared/types/user";
 import {
@@ -30,6 +31,7 @@ import {
   getPlatformAccessOverview,
   listAdminUsers,
   listAuditLogs,
+  listContentReports,
   listModerationQueue,
   reviewCatalogSubmission,
   updateAdminUserBan,
@@ -175,6 +177,7 @@ export const AdminCenterCard = () => {
   const [queue, setQueue] = useState<CatalogProductItem[]>([]);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
+  const [reports, setReports] = useState<ContentReportItem[]>([]);
   const [roleDrafts, setRoleDrafts] = useState<Record<string, Exclude<UserRole, "SUPER_ADMIN">>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -205,6 +208,14 @@ export const AdminCenterCard = () => {
 
           if (active) {
             setQueue(queueItems);
+          }
+        }
+
+        if (nextAccess.permissions.reviewReports) {
+          const reportItems = await listContentReports();
+
+          if (active) {
+            setReports(reportItems);
           }
         }
 
@@ -369,6 +380,18 @@ export const AdminCenterCard = () => {
 
         {tab === "queue" && (
           <Stack spacing={1.2}>
+            {reports.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Stack spacing={1}>
+                  <Typography sx={{ fontWeight: 900 }}>{copy.reportsLabel}</Typography>
+                  {reports.map((report) => (
+                    <Alert key={report.id} severity="warning">
+                      <strong>{report.targetType}</strong> · {report.reason}
+                    </Alert>
+                  ))}
+                </Stack>
+              </Paper>
+            )}
             {queue.length === 0 ? (
               <Alert severity="info">{copy.pendingEmpty}</Alert>
             ) : (

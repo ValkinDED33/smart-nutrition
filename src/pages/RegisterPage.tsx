@@ -57,59 +57,6 @@ const defaultProfileBootstrap = {
   goal: "maintain" as const,
 };
 
-const registerPageCopy = {
-  uk: {
-    showPassword: "Показати пароль",
-    hidePassword: "Сховати пароль",
-    note: "Створіть акаунт і підтвердіть email кнопкою в листі. Далі Алекс проведе коротке налаштування профілю.",
-    assistantIntro: "Після підтвердження я запитаю 7 речей: ім'я, вік, стать, зріст, вагу і головну ціль.",
-    profileTitle: "Стартові дані для AI",
-    profileBody:
-      "Ці параметри одразу дадуть норму калорій, води і перші підказки companion.",
-    assistantTitle: "Оберіть свого companion",
-    assistantBody:
-      "Цей персонаж буде вітати вас, дивитися за курсором, реагувати на воду, білок і прогрес.",
-    assistantName: "Ім'я companion",
-    companionLabels: {
-      cat: "Кіт",
-      dog: "Собака",
-      capybara: "Капібара",
-      dragon: "Дракон",
-      robot: "Робот",
-    },
-    resend: "Надіслати ще раз",
-    sent: "Ми надіслали посилання для підтвердження на {target}.",
-    openEmail: "Відкрийте лист і натисніть Verify Email.",
-    deliveryUnavailable:
-      "Доставка листа підтвердження тимчасово недоступна на backend.",
-  },
-  pl: {
-    showPassword: "Pokaż hasło",
-    hidePassword: "Ukryj hasło",
-    note: "Utwórz konto i potwierdź email przyciskiem w wiadomości. Potem Alex przeprowadzi krótką konfigurację profilu.",
-    assistantIntro: "Po potwierdzeniu zapytam o 7 rzeczy: imię, wiek, płeć, wzrost, wagę i główny cel.",
-    profileTitle: "Dane startowe dla AI",
-    profileBody:
-      "Te parametry od razu ustawiają kalorie, wodę i pierwsze podpowiedzi companion.",
-    assistantTitle: "Wybierz swojego companion",
-    assistantBody:
-      "Ta postać będzie Cię witać, patrzeć za kursorem i reagować na wodę, białko oraz progres.",
-    assistantName: "Imię companion",
-    companionLabels: {
-      cat: "Kot",
-      dog: "Pies",
-      capybara: "Kapibara",
-      dragon: "Smok",
-      robot: "Robot",
-    },
-    resend: "Wyślij ponownie",
-    sent: "Wysłaliśmy link potwierdzający na {target}.",
-    openEmail: "Otwórz wiadomość i kliknij Verify Email.",
-    deliveryUnavailable:
-      "Dostawa emaila potwierdzającego jest tymczasowo niedostępna po stronie backendu.",
-  },
-} as const;
-
 const isVerificationPending = (
   value: unknown
 ): value is RegistrationVerificationPending =>
@@ -120,14 +67,13 @@ const isVerificationPending = (
 const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { t, language, appLanguage, resetOnboarding } = useLanguage();
+  const { t, appLanguage, resetOnboarding } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<RegistrationVerificationPending | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const copy = registerPageCopy[language];
 
   const schema = useMemo(
     () =>
@@ -252,7 +198,7 @@ const RegisterPage = () => {
         error instanceof AuthApiError &&
         error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
       ) {
-        setServerError(copy.deliveryUnavailable);
+        setServerError(t("auth.deliveryUnavailable"));
       } else {
         setServerError(t("error.genericRegister"));
       }
@@ -264,17 +210,17 @@ const RegisterPage = () => {
   const handleVerificationError = (error: unknown) => {
     if (error instanceof AuthApiError) {
       if (error.code === "INVALID_VERIFICATION_CODE") {
-        setServerError("Invalid or expired confirmation link.");
+        setServerError(t("auth.invalidConfirmationLink"));
         return;
       }
 
       if (error.code === "ACCOUNT_BANNED") {
-        setServerError("This account is banned.");
+        setServerError(t("auth.accountBanned"));
         return;
       }
 
       if (error.code === "VERIFICATION_DELIVERY_UNAVAILABLE") {
-        setServerError(copy.deliveryUnavailable);
+        setServerError(t("auth.deliveryUnavailable"));
         return;
       }
     }
@@ -327,13 +273,13 @@ const RegisterPage = () => {
                 {t("auth.registerTitle")}
               </Typography>
               <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                {copy.note}
+                {t("auth.registrationNote")}
               </Typography>
             </Box>
           </Stack>
 
           <Alert severity="success" icon={false} sx={{ borderRadius: 3 }}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.assistantIntro}</Typography>
+            <Typography sx={{ fontWeight: 800 }}>{t("auth.registrationAssistantIntro")}</Typography>
           </Alert>
 
           {serverError && (
@@ -346,9 +292,9 @@ const RegisterPage = () => {
             <Alert severity="info" sx={{ borderRadius: 3 }}>
               <Stack spacing={1}>
                 <Typography sx={{ fontWeight: 800 }}>
-                  {copy.sent.replace("{target}", pendingVerification.maskedTarget)}
+                  {t("auth.confirmationSent", { target: pendingVerification.maskedTarget })}
                 </Typography>
-                <Typography color="text.secondary">{copy.openEmail}</Typography>
+                <Typography color="text.secondary">{t("auth.openConfirmationEmail")}</Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                   <Button
                     variant="outlined"
@@ -358,7 +304,7 @@ const RegisterPage = () => {
                     }}
                     sx={{ textTransform: "none", fontWeight: 800 }}
                   >
-                    {copy.resend}
+                    {t("auth.resend")}
                   </Button>
                 </Stack>
               </Stack>
@@ -396,8 +342,8 @@ const RegisterPage = () => {
                     <PasswordVisibilityButton
                       visible={passwordVisible}
                       onToggle={() => setPasswordVisible((current) => !current)}
-                      showLabel={copy.showPassword}
-                      hideLabel={copy.hidePassword}
+                      showLabel={t("auth.showPassword")}
+                      hideLabel={t("auth.hidePassword")}
                     />
                   </InputAdornment>
                 ),
@@ -417,8 +363,8 @@ const RegisterPage = () => {
                     <PasswordVisibilityButton
                       visible={confirmPasswordVisible}
                       onToggle={() => setConfirmPasswordVisible((current) => !current)}
-                      showLabel={copy.showPassword}
-                      hideLabel={copy.hidePassword}
+                      showLabel={t("auth.showPassword")}
+                      hideLabel={t("auth.hidePassword")}
                     />
                   </InputAdornment>
                 ),

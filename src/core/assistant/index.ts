@@ -365,7 +365,10 @@ export const createAssistantMemoryProfile = ({
     frictionMemoryLabels[onboarding.mainFriction],
     onboarding.supportNote,
   ].filter((item): item is string => item.trim().length > 0);
-  const habits = [userName ? `prefers being called ${userName}` : ""].filter(
+  const habits = [
+    userName ? `prefers being called ${userName}` : "",
+    ...assistant.assistantMemory.preferences,
+  ].filter(
     (item): item is string => item.length > 0
   );
   const motivationTriggers = [
@@ -377,12 +380,12 @@ export const createAssistantMemoryProfile = ({
     assistantName: getAssistantName(assistant),
     personality,
     communicationStyle: speechStyle.communicationStyle,
-    goals,
+    goals: [...new Set([...goals, ...assistant.assistantMemory.goals])],
     struggles,
     habits,
     motivationTriggers,
     lastMood: emotion,
-    recentProblems: [],
+    recentProblems: assistant.assistantMemory.conversationHighlights,
   };
 };
 

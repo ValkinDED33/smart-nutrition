@@ -25,7 +25,7 @@ import type {
 
 const assistantCopy = {
   uk: {
-    title: "Стиль асистента",
+    title: "Мій помічник",
     subtitle:
       "Налаштуйте, як асистент має звертатися до вас і яким тоном підтримувати вас у щоденній роботі.",
     name: "Ім'я асистента",
@@ -46,10 +46,10 @@ const assistantCopy = {
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
     toneGentle: "М'який",
-    tonePlayful: "Грайливий",
-    toneFocused: "Зібраний",
+    tonePlayful: "Мотиватор",
+    toneFocused: "Тренер",
     toneCalm: "Спокійний",
-    toneScientific: "Науковий",
+    toneScientific: "Експерт",
     motivationGentle: "М'яко",
     motivationDirect: "Прямо",
     motivationEnergetic: "Енергійно",
@@ -64,13 +64,15 @@ const assistantCopy = {
     companions: {
       cat: "Кіт",
       dog: "Собака",
+      fox: "Лис",
+      human: "Тренер",
       capybara: "Капібара",
       dragon: "Дракон",
       robot: "Робот",
     },
   },
   pl: {
-    title: "Styl asystenta",
+    title: "Mój asystent",
     subtitle:
       "Ustaw, jak asystent ma się do Ciebie zwracać i jakim tonem wspierać Cię na co dzień.",
     name: "Imię asystenta",
@@ -90,11 +92,11 @@ const assistantCopy = {
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
-    toneGentle: "Spokojny",
-    tonePlayful: "Swobodny",
-    toneFocused: "Skupiony",
+    toneGentle: "Przyjazny",
+    tonePlayful: "Motywator",
+    toneFocused: "Trener",
     toneCalm: "Łagodny",
-    toneScientific: "Naukowy",
+    toneScientific: "Ekspert",
     motivationGentle: "Łagodnie",
     motivationDirect: "Konkretnie",
     motivationEnergetic: "Energicznie",
@@ -109,13 +111,15 @@ const assistantCopy = {
     companions: {
       cat: "Kot",
       dog: "Pies",
+      fox: "Lis",
+      human: "Trener",
       capybara: "Kapibara",
       dragon: "Smok",
       robot: "Robot",
     },
   },
   en: {
-    title: "Assistant style",
+    title: "My assistant",
     subtitle:
       "Set how the assistant addresses you and what tone it uses for daily support.",
     name: "Assistant name",
@@ -135,11 +139,11 @@ const assistantCopy = {
     roleFriend: "Friend",
     roleAssistant: "Assistant",
     roleCoach: "Coach",
-    toneGentle: "Gentle",
-    tonePlayful: "Playful",
-    toneFocused: "Focused",
+    toneGentle: "Friendly",
+    tonePlayful: "Motivator",
+    toneFocused: "Trainer",
     toneCalm: "Calm",
-    toneScientific: "Scientific",
+    toneScientific: "Expert",
     motivationGentle: "Gently",
     motivationDirect: "Directly",
     motivationEnergetic: "Energetically",
@@ -154,6 +158,8 @@ const assistantCopy = {
     companions: {
       cat: "Cat",
       dog: "Dog",
+      fox: "Fox",
+      human: "Trainer",
       capybara: "Capybara",
       dragon: "Dragon",
       robot: "Robot",
@@ -162,11 +168,11 @@ const assistantCopy = {
 } as const;
 
 const companionKinds: AssistantCompanionKind[] = [
+  "robot",
   "cat",
   "dog",
-  "capybara",
-  "dragon",
-  "robot",
+  "fox",
+  "human",
 ];
 
 const frictionOptions = assistantDietFrictions;
@@ -195,7 +201,12 @@ export const AssistantCustomizationCard = () => {
           label={copy.name}
           value={assistant.name}
           onChange={(event) =>
-            dispatch(setAssistantCustomization({ name: event.target.value }))
+            dispatch(
+              setAssistantCustomization({
+                name: event.target.value,
+                assistantName: event.target.value,
+              })
+            )
           }
           inputProps={{ maxLength: 32 }}
         />
@@ -210,6 +221,7 @@ export const AssistantCustomizationCard = () => {
               dispatch(
                 setAssistantCustomization({
                   companionKind: event.target.value as AssistantCompanionKind,
+                  assistantAvatar: event.target.value as AssistantCompanionKind,
                 })
               )
             }
@@ -248,15 +260,15 @@ export const AssistantCustomizationCard = () => {
               dispatch(
                 setAssistantCustomization({
                   tone: event.target.value as AssistantTone,
+                  assistantPersonality: event.target.value as AssistantTone,
                 })
               )
             }
           >
             <MenuItem value="gentle">{copy.toneGentle}</MenuItem>
-            <MenuItem value="playful">{copy.tonePlayful}</MenuItem>
             <MenuItem value="focused">{copy.toneFocused}</MenuItem>
-            <MenuItem value="calm">{copy.toneCalm}</MenuItem>
             <MenuItem value="scientific">{copy.toneScientific}</MenuItem>
+            <MenuItem value="playful">{copy.tonePlayful}</MenuItem>
           </TextField>
         </Stack>
 

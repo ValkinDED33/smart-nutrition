@@ -6,6 +6,8 @@ import type {
   CatalogProductItem,
   CatalogProductSubmissionPayload,
   CatalogSubmissionResponse,
+  ContentReportItem,
+  ContentReportPayload,
 } from "../types/platform";
 import type { UserRole } from "../types/user";
 import { getRemoteAuthBaseUrl } from "./auth";
@@ -152,3 +154,12 @@ export const deleteAdminUser = (userId: string) =>
 
 export const listAuditLogs = async () =>
   (await requestPlatform<{ items: AuditLogEntry[] }>("/api/admin/audit-logs")).items;
+
+export const submitContentReport = (payload: ContentReportPayload) =>
+  requestPlatform<ContentReportItem>("/api/reports", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const listContentReports = async () =>
+  (await requestPlatform<{ items: ContentReportItem[] }>("/api/admin/reports")).items;

@@ -184,6 +184,30 @@ const createAuditDetails = (extra = {}) => ({
   ...extra,
 });
 
+const isReportTargetType = (value) =>
+  value === "post" ||
+  value === "comment" ||
+  value === "progress" ||
+  value === "recipe" ||
+  value === "meal";
+
+const mapAuditLogToContentReport = (entry) => ({
+  id: entry.id,
+  reporterUserId: entry.actorUserId ?? null,
+  reporterName: normalizeText(entry.details?.reporterName, {
+    maxLength: 80,
+    fallback: "Smart User",
+  }),
+  targetType: normalizeText(entry.targetType, { maxLength: 40, fallback: "content" }),
+  targetId: normalizeText(entry.targetId, { maxLength: 96 }),
+  reason: normalizeText(entry.details?.reason, {
+    maxLength: 600,
+    fallback: "Content reported by user.",
+  }),
+  status: "open",
+  createdAt: entry.createdAt,
+});
+
 export const createPlatformService = ({ platformRepository, config, cacheRepository = null }) => {
   const withCache = async (key, ttlSeconds, producer) => {
     if (!cacheRepository?.enabled) {
@@ -406,6 +430,51 @@ export const createPlatformService = ({ platformRepository, config, cacheReposit
       return platformRepository.listAuditLogs(
         readListLimit(query.limit, { fallback: 80, max: 200 })
       );
+    },
+
+    createContentReport: async (currentUser, payload) => {
+      const targetType = isReportTargetType(payload?.targetType)
+        ? payload.targetType
+        : "post";
+      const targetId = normalizeText(payload?.targetId, { maxLength: 96 });
+      const reason = normalizeText(payload?.reason, { maxLength: 600 });
+
+      if (!targetId || !reason) {
+        throw new PlatformApiError(
+          "INVALID_CONTENT_REPORT",
+          "Report target and reason are required."
+        );
+      }
+
+      const entry = {
+        id: createId("report"),
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: "content.report_created",
+        targetType,
+        targetId,
+        details: {
+          reason,
+          reporterName: normalizeText(payload?.reporterName ?? currentUser.name, {
+            maxLength: 80,
+            fallback: "Smart User",
+          }),
+        },
+        createdAt: new Date().toISOString(),
+      };
+
+      await platformRepository.createAuditLog(entry);
+      return mapAuditLogToContentReport(entry);
+    },
+
+    listContentReports: async (currentUser, query = {}) => {
+      assertModerationAccess(currentUser);
+
+      return (await platformRepository.listAuditLogs(
+        readListLimit(query.limit, { fallback: 80, max: 200 })
+      ))
+        .filter((entry) => entry.action === "content.report_created")
+        .map(mapAuditLogToContentReport);
     },
 
     listUsers: async (currentUser) => {

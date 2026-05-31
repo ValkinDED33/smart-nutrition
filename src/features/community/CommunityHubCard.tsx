@@ -19,6 +19,7 @@ import { useLanguage } from "../../shared/language";
 import {
   addFriend,
   commentCommunityPost,
+  deleteCommunityCommentAsModerator,
   deleteCommunityPostAsSpam,
   findDuplicateCommunityPost,
   likeCommunityPost,
@@ -26,11 +27,13 @@ import {
   mergeCommunityPosts,
   publishCommunityPost,
   publishProgressCard,
+  reportCommunityContent,
   reviewCommunityPost,
   sendCommunityMessage,
   sendDirectMessage,
   toggleFavoritePost,
 } from "./communitySlice";
+import { submitContentReport } from "../../shared/api/platform";
 
 const communityCopy = {
   uk: {
@@ -77,9 +80,13 @@ const communityCopy = {
       rejected: "Відхилено",
     },
     moderation: "Модерація форуму",
+    reports: "Скарги",
+    report: "Поскаржитися",
+    reportSent: "Скаргу відправлено на модерацію",
     approve: "Схвалити",
     reject: "Відхилити",
     deleteSpam: "Видалити спам",
+    deleteComment: "Видалити коментар",
     mergeDuplicate: "Об'єднати дубль",
     comments: "Коментарі",
     addComment: "Коментувати",
@@ -147,9 +154,13 @@ const communityCopy = {
       rejected: "Odrzucono",
     },
     moderation: "Moderacja forum",
+    reports: "Zgłoszenia",
+    report: "Zgłoś",
+    reportSent: "Zgłoszenie wysłane do moderacji",
     approve: "Zatwierdź",
     reject: "Odrzuć",
     deleteSpam: "Usuń spam",
+    deleteComment: "Usuń komentarz",
     mergeDuplicate: "Scal duplikat",
     comments: "Komentarze",
     addComment: "Skomentuj",
@@ -227,6 +238,10 @@ export const CommunityHubCard = () => {
   const moderationQueue = useMemo(
     () => community.posts.filter((post) => post.status === "pending"),
     [community.posts]
+  );
+  const openReports = useMemo(
+    () => community.reports.filter((report) => report.status === "open"),
+    [community.reports]
   );
   const visiblePosts = useMemo(() => {
     const posts = community.posts.filter(
@@ -330,6 +345,24 @@ export const CommunityHubCard = () => {
     setProgressMetricLabel("");
     setProgressMetricValue("");
     setProgressCaption("");
+  };
+
+  const reportPost = (postId: string) => {
+    dispatch(
+      reportCommunityContent({
+        targetType: "post",
+        targetId: postId,
+        reason: `Reported by ${authorName}`,
+        reporterId: user?.id,
+        reporterName: authorName,
+      })
+    );
+    void submitContentReport({
+      targetType: "post",
+      targetId: postId,
+      reason: `Reported by ${authorName}`,
+      reporterName: authorName,
+    }).catch(() => undefined);
   };
 
   return (
@@ -572,10 +605,15 @@ export const CommunityHubCard = () => {
               {copy.publish}
             </Button>
 
-            {isModerator && moderationQueue.length > 0 && (
+            {isModerator && (moderationQueue.length > 0 || openReports.length > 0) && (
               <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
                 <Stack spacing={1.2}>
                   <Typography sx={{ fontWeight: 800 }}>{copy.moderation}</Typography>
+                  {openReports.length > 0 && (
+                    <Alert severity="warning">
+                      {copy.reports}: {openReports.length}
+                    </Alert>
+                  )}
                   {moderationQueue.map((post) => {
                     const duplicateTarget = community.posts.find(
                       (candidate) =>
@@ -728,6 +766,12 @@ export const CommunityHubCard = () => {
                             <Button onClick={() => dispatch(toggleFavoritePost(post.id))}>
                               {saved ? copy.unsave : copy.save}
                             </Button>
+                            <Button
+                              color="warning"
+                              onClick={() => reportPost(post.id)}
+                            >
+                              {copy.report}
+                            </Button>
                           </Stack>
                           <Divider />
                           <Typography variant="body2" sx={{ fontWeight: 800 }}>
@@ -744,6 +788,23 @@ export const CommunityHubCard = () => {
                                   {comment.authorName}
                                 </Typography>
                                 <Typography variant="body2">{comment.text}</Typography>
+                                {isModerator && (
+                                  <Button
+                                    color="error"
+                                    size="small"
+                                    onClick={() =>
+                                      dispatch(
+                                        deleteCommunityCommentAsModerator({
+                                          commentId: comment.id,
+                                          moderatorName: authorName,
+                                        })
+                                      )
+                                    }
+                                    sx={{ alignSelf: "flex-start" }}
+                                  >
+                                    {copy.deleteComment}
+                                  </Button>
+                                )}
                               </Stack>
                             </Paper>
                           ))}

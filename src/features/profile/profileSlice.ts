@@ -21,6 +21,8 @@ import type {
   AdaptiveMode,
   AssistantCustomization,
   AssistantCompanionKind,
+  AssistantMemoryProfile,
+  AssistantMood,
   AssistantRole,
   AssistantTone,
   AchievementProgress,
@@ -129,9 +131,18 @@ const isAssistantTone = (value: unknown): value is AssistantTone =>
   value === "focused" ||
   value === "calm" ||
   value === "scientific";
+const isAssistantMood = (value: unknown): value is AssistantMood =>
+  value === "idle" ||
+  value === "happy" ||
+  value === "coach" ||
+  value === "concerned" ||
+  value === "sleepy" ||
+  value === "celebrate";
 const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKind =>
   value === "cat" ||
   value === "dog" ||
+  value === "fox" ||
+  value === "human" ||
   value === "capybara" ||
   value === "dragon" ||
   value === "robot";
@@ -199,6 +210,12 @@ const normalizeStringArray = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
     : [];
+
+const normalizeLimitedStringArray = (value: unknown, maxItems = 12) =>
+  normalizeStringArray(value)
+    .map((item) => item.trim().replace(/\s+/g, " ").slice(0, 120))
+    .filter(Boolean)
+    .slice(0, maxItems);
 
 const normalizeReminderTimes = (
   value: unknown,
@@ -448,6 +465,20 @@ const normalizeMotivationState = (value: unknown, goal: Goal): MotivationState =
   };
 };
 
+const normalizeAssistantMemoryProfile = (
+  value: unknown,
+  fallback: AssistantMemoryProfile
+): AssistantMemoryProfile => {
+  const record = isRecord(value) ? value : {};
+
+  return {
+    goals: normalizeLimitedStringArray(record.goals),
+    preferences: normalizeLimitedStringArray(record.preferences),
+    conversationHighlights: normalizeLimitedStringArray(record.conversationHighlights),
+    lastSyncedAt: toNullableIsoDate(record.lastSyncedAt) ?? fallback.lastSyncedAt,
+  };
+};
+
 const normalizeAssistantCustomization = (value: unknown): AssistantCustomization => {
   const fallback = createDefaultAssistantCustomization();
 
@@ -455,16 +486,38 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
     return fallback;
   }
 
+  const name =
+    typeof value.name === "string" && value.name.trim().length > 0
+      ? value.name.trim().slice(0, 32)
+      : typeof value.assistantName === "string" && value.assistantName.trim().length > 0
+        ? value.assistantName.trim().slice(0, 32)
+        : fallback.name;
+  const companionKind = isAssistantCompanionKind(value.companionKind)
+    ? value.companionKind
+    : isAssistantCompanionKind(value.assistantAvatar)
+      ? value.assistantAvatar
+      : fallback.companionKind;
+  const tone = isAssistantTone(value.tone)
+    ? value.tone
+    : isAssistantTone(value.assistantPersonality)
+      ? value.assistantPersonality
+      : fallback.tone;
+
   return {
-    name:
-      typeof value.name === "string" && value.name.trim().length > 0
-        ? value.name.trim().slice(0, 32)
-        : fallback.name,
-    companionKind: isAssistantCompanionKind(value.companionKind)
-      ? value.companionKind
-      : fallback.companionKind,
+    name,
+    assistantName: name,
+    companionKind,
+    assistantAvatar: companionKind,
     role: isAssistantRole(value.role) ? value.role : fallback.role,
-    tone: isAssistantTone(value.tone) ? value.tone : fallback.tone,
+    tone,
+    assistantPersonality: tone,
+    assistantMood: isAssistantMood(value.assistantMood)
+      ? value.assistantMood
+      : fallback.assistantMood,
+    assistantMemory: normalizeAssistantMemoryProfile(
+      value.assistantMemory,
+      fallback.assistantMemory
+    ),
     humorEnabled:
       typeof value.humorEnabled === "boolean" ? value.humorEnabled : fallback.humorEnabled,
     widgetEnabled:

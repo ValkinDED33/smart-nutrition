@@ -11,7 +11,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
 
-const loadLandingPage = () => import("./pages/LandingPage");
+const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
 const loadOnboardingPage = () => import("./pages/OnboardingPage");
 const loadDashboardPage = () => import("./pages/DashboardPage");
 const loadFoodPage = () => import("./pages/FoodPage");
@@ -28,7 +28,7 @@ const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
 
-const LandingPage = lazy(loadLandingPage);
+const LanguageSetupPage = lazy(loadLanguageSetupPage);
 const OnboardingPage = lazy(loadOnboardingPage);
 const DashboardPage = lazy(loadDashboardPage);
 const FoodPage = lazy(loadFoodPage);
@@ -119,7 +119,7 @@ function App() {
                 path="/"
                 element={
                   <PublicRoute>
-                    <LandingPage />
+                    <LanguageSetupPage />
                   </PublicRoute>
                 }
               />

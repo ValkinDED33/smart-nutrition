@@ -24,39 +24,11 @@ type FormData = {
   email: string;
 };
 
-const forgotPasswordCopy = {
-  uk: {
-    title: "Відновлення пароля",
-    subtitle:
-      "Введіть email акаунта, і ми підготуємо посилання для скидання пароля.",
-    submit: "Надіслати посилання",
-    sending: "Готую посилання...",
-    backToLogin: "Повернутися до входу",
-    genericError: "Не вдалося підготувати посилання.",
-    deliveryUnavailable:
-      "На сервері ще не налаштована email-доставка для скидання пароля.",
-    openResetLink: "Відкрити скидання",
-  },
-  pl: {
-    title: "Reset hasła",
-    subtitle:
-      "Podaj email konta, a przygotujemy link do ustawienia nowego hasła.",
-    submit: "Wyślij link resetu",
-    sending: "Przygotowuję link...",
-    backToLogin: "Wróć do logowania",
-    genericError: "Nie udało się przygotować linku resetu.",
-    deliveryUnavailable:
-      "Na serwerze nie skonfigurowano jeszcze wysyłki email dla resetu hasła.",
-    openResetLink: "Otwórz reset hasła",
-  },
-} as const;
-
 const ForgotPasswordPage = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<PasswordResetRequestResult | null>(null);
-  const copy = forgotPasswordCopy[language];
   const identityHint = useMemo(() => readAuthIdentityHint(), []);
 
   const schema = useMemo(
@@ -90,13 +62,13 @@ const ForgotPasswordPage = () => {
       if (error instanceof AuthApiError) {
         setServerError(
           error.code === "EMAIL_DELIVERY_UNAVAILABLE"
-            ? copy.deliveryUnavailable
+            ? t("auth.resetDeliveryUnavailable")
             : error.code === "REMOTE_API_UNAVAILABLE"
               ? t("error.backendUnavailable")
             : error.message
         );
       } else {
-        setServerError(copy.genericError);
+        setServerError(t("auth.forgotGenericError"));
       }
     } finally {
       setSubmitting(false);
@@ -123,10 +95,10 @@ const ForgotPasswordPage = () => {
               {t("brand.name")}
             </Typography>
             <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-              {copy.title}
+              {t("auth.forgotTitle")}
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {copy.subtitle}
+              {t("auth.forgotSubtitle")}
             </Typography>
           </Box>
 
@@ -156,7 +128,7 @@ const ForgotPasswordPage = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {submitting ? copy.sending : copy.submit}
+              {submitting ? t("auth.forgotSending") : t("auth.forgotSubmit")}
             </Button>
           </Stack>
 
@@ -171,7 +143,7 @@ const ForgotPasswordPage = () => {
                 display: "inline",
               }}
             >
-              {copy.backToLogin}
+              {t("auth.backToLogin")}
             </Box>
           </Typography>
         </Stack>

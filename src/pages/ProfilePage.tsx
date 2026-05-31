@@ -91,6 +91,34 @@ const profileCopy = {
     macroTitle: "Cele makroskładników",
     macroSubtitle: "Dzienne cele białka, tłuszczów i węglowodanów wyliczone z kalorii, masy ciała i celu.",
   },
+  en: {
+    weightGoal: "Target weight",
+    weightGoalSubtitle: "Track how your current weight moves toward your goal.",
+    start: "Start",
+    current: "Current",
+    target: "Goal",
+    remaining: "Remaining",
+    targetMissing: "Add a target weight in your profile to enable the progress scale.",
+    targetReached: "Goal reached. You can set the next milestone.",
+    targetSame: "Your current weight already matches the goal.",
+    targetAway: (value: string) => `${value} kg left to the goal.`,
+    preferencesTitle: "Preferences",
+    noRestrictions: "No allergies or exclusions added yet.",
+    dietLabel: "Diet",
+    allergiesLabel: "Allergies",
+    exclusionsLabel: "Excluded",
+    languageLabel: "Language",
+    bloodGroupLabel: "Blood group",
+    eyeColorLabel: "Eyes",
+    relationshipLabel: "Status",
+    supportLabel: "Support",
+    petLabel: "Nearby",
+    roleLabel: "Role",
+    adaptiveAuto: "Adaptive calories update automatically.",
+    adaptiveManual: "Adaptive calories stay manual until you apply a recommendation.",
+    macroTitle: "Macro targets",
+    macroSubtitle: "Daily protein, fat, and carbohydrate targets based on calories, weight, and goal.",
+  },
 } as const;
 
 const roleLabels = {
@@ -103,6 +131,14 @@ const roleLabels = {
     SUPER_ADMIN: "Super Admin",
   },
   pl: {
+    USER: "User",
+    VERIFIED_USER: "Verified User",
+    NUTRITIONIST: "Nutritionist",
+    MODERATOR: "Moderator",
+    ADMIN: "Admin",
+    SUPER_ADMIN: "Super Admin",
+  },
+  en: {
     USER: "User",
     VERIFIED_USER: "Verified User",
     NUTRITIONIST: "Nutritionist",
@@ -129,51 +165,151 @@ const dietStyleLabels = {
     low_carb: "Niskowęglowodanowa",
     gluten_free: "Bez glutenu",
   },
+  en: {
+    balanced: "Balanced",
+    vegetarian: "Vegetarian",
+    vegan: "Vegan",
+    pescatarian: "Pescatarian",
+    low_carb: "Low carb",
+    gluten_free: "Gluten free",
+  },
 } as const;
 
 const personalDetailLabels = {
-  bloodGroup: {
-    unknown: "—",
-    o_positive: "O+",
-    o_negative: "O-",
-    a_positive: "A+",
-    a_negative: "A-",
-    b_positive: "B+",
-    b_negative: "B-",
-    ab_positive: "AB+",
-    ab_negative: "AB-",
+  uk: {
+    bloodGroup: {
+      unknown: "—",
+      o_positive: "O+",
+      o_negative: "O-",
+      a_positive: "A+",
+      a_negative: "A-",
+      b_positive: "B+",
+      b_negative: "B-",
+      ab_positive: "AB+",
+      ab_negative: "AB-",
+    },
+    eyeColor: {
+      unknown: "—",
+      brown: "карі",
+      blue: "голубі",
+      green: "зелені",
+      gray: "сірі",
+      hazel: "горіхові",
+      amber: "бурштинові",
+      other: "інші",
+    },
+    relationshipStatus: {
+      single: "сам/сама",
+      dating: "у стосунках",
+      married: "шлюб",
+      complicated: "складно",
+      prefer_not: "—",
+    },
+    supportSystem: {
+      self: "сам/сама",
+      partner_supports: "партнер підтримує",
+      partner_neutral: "партнер нейтральний",
+      family_friends: "близькі",
+      low_support: "мало підтримки",
+      prefer_not: "—",
+    },
+    petCompanion: {
+      none: "—",
+      cat: "кіт",
+      dog: "собака",
+      cat_and_dog: "кіт і собака",
+      other: "інше",
+    },
   },
-  eyeColor: {
-    unknown: "—",
-    brown: "карі",
-    blue: "голубі",
-    green: "зелені",
-    gray: "сірі",
-    hazel: "горіхові",
-    amber: "бурштинові",
-    other: "інші",
+  pl: {
+    bloodGroup: {
+      unknown: "—",
+      o_positive: "O+",
+      o_negative: "O-",
+      a_positive: "A+",
+      a_negative: "A-",
+      b_positive: "B+",
+      b_negative: "B-",
+      ab_positive: "AB+",
+      ab_negative: "AB-",
+    },
+    eyeColor: {
+      unknown: "—",
+      brown: "brązowe",
+      blue: "niebieskie",
+      green: "zielone",
+      gray: "szare",
+      hazel: "piwne",
+      amber: "bursztynowe",
+      other: "inne",
+    },
+    relationshipStatus: {
+      single: "sam/sama",
+      dating: "w związku",
+      married: "małżeństwo",
+      complicated: "skomplikowane",
+      prefer_not: "—",
+    },
+    supportSystem: {
+      self: "sam/sama",
+      partner_supports: "partner wspiera",
+      partner_neutral: "partner neutralny",
+      family_friends: "bliscy",
+      low_support: "mało wsparcia",
+      prefer_not: "—",
+    },
+    petCompanion: {
+      none: "—",
+      cat: "kot",
+      dog: "pies",
+      cat_and_dog: "kot i pies",
+      other: "inne",
+    },
   },
-  relationshipStatus: {
-    single: "сам/сама",
-    dating: "у стосунках",
-    married: "шлюб",
-    complicated: "складно",
-    prefer_not: "—",
-  },
-  supportSystem: {
-    self: "сам/сама",
-    partner_supports: "партнер підтримує",
-    partner_neutral: "партнер нейтральний",
-    family_friends: "близькі",
-    low_support: "мало підтримки",
-    prefer_not: "—",
-  },
-  petCompanion: {
-    none: "—",
-    cat: "кіт",
-    dog: "собака",
-    cat_and_dog: "кіт і собака",
-    other: "питомец",
+  en: {
+    bloodGroup: {
+      unknown: "—",
+      o_positive: "O+",
+      o_negative: "O-",
+      a_positive: "A+",
+      a_negative: "A-",
+      b_positive: "B+",
+      b_negative: "B-",
+      ab_positive: "AB+",
+      ab_negative: "AB-",
+    },
+    eyeColor: {
+      unknown: "—",
+      brown: "brown",
+      blue: "blue",
+      green: "green",
+      gray: "gray",
+      hazel: "hazel",
+      amber: "amber",
+      other: "other",
+    },
+    relationshipStatus: {
+      single: "single",
+      dating: "dating",
+      married: "married",
+      complicated: "complicated",
+      prefer_not: "—",
+    },
+    supportSystem: {
+      self: "myself",
+      partner_supports: "partner supports",
+      partner_neutral: "partner neutral",
+      family_friends: "family or friends",
+      low_support: "low support",
+      prefer_not: "—",
+    },
+    petCompanion: {
+      none: "—",
+      cat: "cat",
+      dog: "dog",
+      cat_and_dog: "cat and dog",
+      other: "other",
+    },
   },
 } as const;
 
@@ -196,9 +332,10 @@ const ProfilePage = () => {
   const currentWeight = useSelector(selectCurrentWeight);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
-  const { t, language, languageLabels } = useLanguage();
-  const copy = profileCopy[language];
-  const localizedDietLabels = dietStyleLabels[language];
+  const { t, appLanguage, languageLabels } = useLanguage();
+  const copy = profileCopy[appLanguage];
+  const localizedDietLabels = dietStyleLabels[appLanguage];
+  const localizedPersonalDetails = personalDetailLabels[appLanguage];
 
   if (!user) return <Typography>{t("profile.notFound")}</Typography>;
 
@@ -267,7 +404,7 @@ const ProfilePage = () => {
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip
-              label={`${copy.roleLabel}: ${roleLabels[language][user.role]}`}
+              label={`${copy.roleLabel}: ${roleLabels[appLanguage][user.role]}`}
               color={user.role === "USER" ? "default" : "primary"}
               variant={user.role === "USER" ? "outlined" : "filled"}
             />
@@ -275,19 +412,19 @@ const ProfilePage = () => {
             <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
             <Chip
-              label={`${copy.bloodGroupLabel}: ${personalDetailLabels.bloodGroup[personalDetails.bloodGroup]}`}
+              label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
             />
             <Chip
-              label={`${copy.eyeColorLabel}: ${personalDetailLabels.eyeColor[personalDetails.eyeColor]}`}
+              label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
             />
             <Chip
-              label={`${copy.relationshipLabel}: ${personalDetailLabels.relationshipStatus[personalDetails.relationshipStatus]}`}
+              label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
             />
             <Chip
-              label={`${copy.supportLabel}: ${personalDetailLabels.supportSystem[personalDetails.supportSystem]}`}
+              label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
             />
             <Chip
-              label={`${copy.petLabel}: ${personalDetailLabels.petCompanion[personalDetails.petCompanion]}`}
+              label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
             />
             {hasTargetWeight && (
               <Chip

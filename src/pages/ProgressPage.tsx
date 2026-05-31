@@ -20,11 +20,16 @@ const progressPageCopy = {
     subtitle:
       "Waga, woda, kalorie i cotygodniowe pomiary w jednym responsywnym widoku.",
   },
+  en: {
+    title: "Progress",
+    subtitle:
+      "Weight, water, calories, and weekly measurements in one responsive view.",
+  },
 } as const;
 
 const ProgressPage = () => {
-  const { language } = useLanguage();
-  const copy = progressPageCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = progressPageCopy[appLanguage];
 
   return (
     <Stack spacing={2.5}>

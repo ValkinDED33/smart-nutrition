@@ -59,4 +59,14 @@ export const createAdminRoutes = ({ adminController }) => [
     pathname: "/api/admin/audit-logs",
     handler: adminController.listAuditLogs,
   },
+  {
+    method: "POST",
+    pathname: "/api/reports",
+    handler: adminController.createContentReport,
+  },
+  {
+    method: "GET",
+    pathname: "/api/admin/reports",
+    handler: adminController.listContentReports,
+  },
 ];

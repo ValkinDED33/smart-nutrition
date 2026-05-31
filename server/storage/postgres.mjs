@@ -239,8 +239,6 @@ const mapUserRow = (row) => {
     email: row.email,
     name: row.name,
     emailVerified: toBoolean(row.email_verified, true),
-    phone: row.phone ?? undefined,
-    phoneVerified: toBoolean(row.phone_verified, false),
     verificationChannel: isVerificationChannel(row.verification_channel)
       ? row.verification_channel
       : "email",
@@ -401,8 +399,6 @@ export const POSTGRES_SCHEMA_MIGRATIONS = [
         email TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-        phone TEXT,
-        phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
         verification_channel TEXT NOT NULL DEFAULT 'email',
         avatar TEXT,
         age DOUBLE PRECISION NOT NULL,
@@ -1142,13 +1138,13 @@ export const createPostgresStorage = async ({
       await pool.query(
         `
           INSERT INTO users (
-            id, email, name, email_verified, phone, phone_verified, verification_channel,
+            id, email, name, email_verified, verification_channel,
             avatar, age, weight, height, gender, activity, goal, measurements_json,
             created_at, role, banned_at, banned_reason, two_factor_enabled,
             two_factor_required, token_version, password_hash, password_salt, password_version
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15::jsonb, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+            $13::jsonb, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
           )
         `,
         [
@@ -1156,8 +1152,6 @@ export const createPostgresStorage = async ({
           user.email,
           user.name,
           toBoolean(user.emailVerified, false),
-          user.phone ?? null,
-          toBoolean(user.phoneVerified, false),
           isVerificationChannel(user.verificationChannel) ? user.verificationChannel : "email",
           user.avatar ?? null,
           user.age,
@@ -1626,13 +1620,11 @@ export const createPostgresStorage = async ({
         `
           UPDATE users
           SET email_verified = $1,
-              phone_verified = $2,
-              verification_channel = $3
-          WHERE id = $4
+              verification_channel = $2
+          WHERE id = $3
         `,
         [
           channel === "email" ? true : existingUser.emailVerified,
-          existingUser.phoneVerified,
           isVerificationChannel(channel) ? channel : existingUser.verificationChannel,
           userId,
         ]
@@ -1641,15 +1633,14 @@ export const createPostgresStorage = async ({
       return getResolvedUser(userId);
     },
 
-    updateUserVerificationTarget: async ({ userId, channel, phone }) => {
+    updateUserVerificationTarget: async ({ userId, channel }) => {
       await pool.query(
         `
           UPDATE users
-          SET phone = $1,
-              verification_channel = $2
-          WHERE id = $3
+          SET verification_channel = $1
+          WHERE id = $2
         `,
-        [phone ?? null, isVerificationChannel(channel) ? channel : "email", userId]
+        [isVerificationChannel(channel) ? channel : "email", userId]
       );
 
       return getResolvedUser(userId);

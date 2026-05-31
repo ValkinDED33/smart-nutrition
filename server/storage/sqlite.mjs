@@ -929,8 +929,6 @@ const mapUserRow = (row) => {
     email: row.email,
     name: row.name,
     emailVerified: toBoolean(row.email_verified, true),
-    phone: row.phone ?? undefined,
-    phoneVerified: toBoolean(row.phone_verified, false),
     verificationChannel: isVerificationChannel(row.verification_channel)
       ? row.verification_channel
       : "email",
@@ -1127,8 +1125,6 @@ const createSchema = (database) => {
       email TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
       email_verified INTEGER NOT NULL DEFAULT 1,
-      phone TEXT,
-      phone_verified INTEGER NOT NULL DEFAULT 0,
       verification_channel TEXT NOT NULL DEFAULT 'email',
       avatar TEXT,
       age REAL NOT NULL,
@@ -1425,8 +1421,6 @@ const importLegacyUsers = (database, users) => {
       email,
       name,
       email_verified,
-      phone,
-      phone_verified,
       verification_channel,
       avatar,
       age,
@@ -1446,7 +1440,7 @@ const importLegacyUsers = (database, users) => {
       password_hash,
       password_salt,
       password_version
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   users.forEach((user) => {
@@ -1455,8 +1449,6 @@ const importLegacyUsers = (database, users) => {
       user.email,
       user.name,
       toBoolean(user.emailVerified, true) ? 1 : 0,
-      user.phone ?? null,
-      toBoolean(user.phoneVerified, false) ? 1 : 0,
       isVerificationChannel(user.verificationChannel) ? user.verificationChannel : "email",
       user.avatar ?? null,
       Number(user.age ?? 0),
@@ -2092,8 +2084,6 @@ export const createSqliteStorage = async ({
   ensureColumn(database, "snapshots", "fridge_json", "TEXT");
   ensureColumn(database, "snapshots", "community_json", "TEXT");
   ensureColumn(database, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1");
-  ensureColumn(database, "users", "phone", "TEXT");
-  ensureColumn(database, "users", "phone_verified", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "verification_channel", "TEXT NOT NULL DEFAULT 'email'");
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
   ensureColumn(database, "users", "banned_at", "TEXT");
@@ -2750,8 +2740,6 @@ export const createSqliteStorage = async ({
               email,
               name,
               email_verified,
-              phone,
-              phone_verified,
               verification_channel,
               avatar,
               age,
@@ -2771,7 +2759,7 @@ export const createSqliteStorage = async ({
               password_hash,
               password_salt,
               password_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
         )
         .run(
@@ -2779,8 +2767,6 @@ export const createSqliteStorage = async ({
           user.email,
           user.name,
           toBoolean(user.emailVerified, true) ? 1 : 0,
-          user.phone ?? null,
-          toBoolean(user.phoneVerified, false) ? 1 : 0,
           isVerificationChannel(user.verificationChannel) ? user.verificationChannel : "email",
           user.avatar ?? null,
           user.age,
@@ -3330,14 +3316,12 @@ export const createSqliteStorage = async ({
             UPDATE users
             SET
               email_verified = ?,
-              phone_verified = ?,
               verification_channel = ?
             WHERE id = ?
           `
         )
         .run(
           channel === "email" ? 1 : existingUser.emailVerified ? 1 : 0,
-          existingUser.phoneVerified ? 1 : 0,
           isVerificationChannel(channel) ? channel : existingUser.verificationChannel,
           userId
         );
@@ -3345,19 +3329,17 @@ export const createSqliteStorage = async ({
       return getResolvedUser(userId);
     },
 
-    updateUserVerificationTarget: ({ userId, channel, phone }) => {
+    updateUserVerificationTarget: ({ userId, channel }) => {
       database
         .prepare(
           `
             UPDATE users
             SET
-              phone = ?,
               verification_channel = ?
             WHERE id = ?
           `
         )
         .run(
-          phone ?? null,
           isVerificationChannel(channel) ? channel : "email",
           userId
         );

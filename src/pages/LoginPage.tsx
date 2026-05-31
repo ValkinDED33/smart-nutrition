@@ -38,32 +38,14 @@ type FormData = {
   password: string;
 };
 
-const authPageCopy = {
-  uk: {
-    forgotPassword: "Забули пароль?",
-    showPassword: "Показати пароль",
-    hidePassword: "Сховати пароль",
-    notVerified: "Підтвердіть email кнопкою в листі перед входом.",
-    banned: "Акаунт заблоковано адміністратором.",
-  },
-  pl: {
-    forgotPassword: "Zapomniałeś hasła?",
-    showPassword: "Pokaż hasło",
-    hidePassword: "Ukryj hasło",
-    notVerified: "Potwierdź email przyciskiem w wiadomości przed logowaniem.",
-    banned: "Konto zostało zablokowane przez administratora.",
-  },
-} as const;
-
 const LoginPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const identityHint = useMemo(() => readAuthIdentityHint(), []);
-  const copy = authPageCopy[language];
 
   const schema = useMemo(
     () =>
@@ -119,9 +101,9 @@ const LoginPage = () => {
         if (error.code === "TOO_MANY_ATTEMPTS") {
           setServerError(t("error.tooManyAttempts"));
         } else if (error.code === "REGISTRATION_NOT_VERIFIED") {
-          setServerError(copy.notVerified);
+          setServerError(t("auth.notVerified"));
         } else if (error.code === "ACCOUNT_BANNED") {
-          setServerError(copy.banned);
+          setServerError(t("auth.accountBanned"));
         } else if (error.code === "REMOTE_API_UNAVAILABLE") {
           setServerError(t("error.backendUnavailable"));
         } else {
@@ -192,8 +174,8 @@ const LoginPage = () => {
                     <PasswordVisibilityButton
                       visible={passwordVisible}
                       onToggle={() => setPasswordVisible((current) => !current)}
-                      showLabel={copy.showPassword}
-                      hideLabel={copy.hidePassword}
+                      showLabel={t("auth.showPassword")}
+                      hideLabel={t("auth.hidePassword")}
                     />
                   </InputAdornment>
                 ),
@@ -210,7 +192,7 @@ const LoginPage = () => {
                   textDecoration: "none",
                 }}
               >
-                {copy.forgotPassword}
+                {t("auth.forgotPassword")}
               </Typography>
             </Box>
 

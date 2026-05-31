@@ -11,6 +11,7 @@ import { OnboardingGoalPage } from "./onboarding/OnboardingGoalPage";
 import { OnboardingHeightPage } from "./onboarding/OnboardingHeightPage";
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
+import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
 import { stepPaths, type OnboardingState } from "./onboarding/types";
 
 const OnboardingPage = () => {
@@ -19,6 +20,7 @@ const OnboardingPage = () => {
   const initialState = useMemo<OnboardingState>(
     () => ({
       assistantName: profile.assistant.name || DEFAULT_ASSISTANT_NAME,
+      assistantAvatar: profile.assistant.companionKind,
       personality: "supportive",
       name: profile.assistant.onboarding.preferredName || user?.name || "",
       age: user?.age ?? 25,
@@ -46,7 +48,8 @@ const OnboardingPage = () => {
 
   return (
     <Routes>
-      <Route index element={<Navigate to={stepPaths.assistant} replace />} />
+      <Route index element={<OnboardingWelcomePage />} />
+      <Route path="welcome" element={<OnboardingWelcomePage />} />
       <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
       <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
       <Route path="age" element={<OnboardingAgePage {...stepProps} />} />

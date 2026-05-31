@@ -9,6 +9,19 @@ export const assistant = {
       calm: "Спокійний",
       scientific: "Науковий",
     },
+    avatar: {
+      robot: "Робот",
+      cat: "Кіт",
+      dog: "Собака",
+      fox: "Лис",
+      human: "Тренер",
+    },
+    style: {
+      supportive: "Дружелюбний",
+      strict: "Тренер",
+      scientific: "Експерт",
+      energetic: "Мотиватор",
+    },
   },
   pl: {
     hello: "Cześć. Będę prowadzić Cię przez jedzenie, motywację i trudniejsze momenty.",
@@ -20,6 +33,19 @@ export const assistant = {
       calm: "Spokojny",
       scientific: "Naukowy",
     },
+    avatar: {
+      robot: "Robot",
+      cat: "Kot",
+      dog: "Pies",
+      fox: "Lis",
+      human: "Trener",
+    },
+    style: {
+      supportive: "Przyjazny",
+      strict: "Trener",
+      scientific: "Ekspert",
+      energetic: "Motywator",
+    },
   },
   en: {
     hello: "Hi. I'll guide you through nutrition, motivation, and the harder moments.",
@@ -30,6 +56,19 @@ export const assistant = {
       energetic: "Energetic",
       calm: "Calm",
       scientific: "Scientific",
+    },
+    avatar: {
+      robot: "Robot",
+      cat: "Cat",
+      dog: "Dog",
+      fox: "Fox",
+      human: "Trainer",
+    },
+    style: {
+      supportive: "Friendly",
+      strict: "Trainer",
+      scientific: "Expert",
+      energetic: "Motivator",
     },
   },
 } as const;

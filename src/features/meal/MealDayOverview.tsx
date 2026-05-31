@@ -10,6 +10,8 @@ import {
   MenuItem,
 } from "@mui/material";
 import type { AppDispatch } from "../../app/store";
+import type { RootState } from "../../app/store";
+import { publishCommunityPost } from "../community/communitySlice";
 import { removeProduct, updateMealEntry, addMealEntries } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
@@ -32,6 +34,8 @@ const overviewCopy = {
     cancel: "Скасувати",
     save: "Зберегти",
     editTitle: "Редагування запису",
+    share: "Поділитися блюдом",
+    shared: "Страва з щоденника",
   },
   pl: {
     title: "Dzisiejsze posiłki",
@@ -45,6 +49,8 @@ const overviewCopy = {
     cancel: "Anuluj",
     save: "Zapisz",
     editTitle: "Edycja wpisu",
+    share: "Udostępnij posiłek",
+    shared: "Posiłek z dziennika",
   },
 } as const;
 
@@ -144,6 +150,7 @@ const InlineEditPanel = ({
 export const MealDayOverview = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
+  const user = useSelector((state: RootState) => state.auth.user);
   const { language, t } = useLanguage();
   const copy = overviewCopy[language];
   const [currentDate, setCurrentDate] = useState(() => new Date());
@@ -245,6 +252,35 @@ export const MealDayOverview = () => {
     dispatch(addMealEntries(newEntries));
   };
 
+  const handleShareMealType = (mealType: MealType, entries: MealEntry[]) => {
+    if (!user || entries.length === 0) {
+      return;
+    }
+
+    const calories = entries.reduce(
+      (sum, item) => sum + (item.product.nutrients.calories * item.quantity) / 100,
+      0
+    );
+    const protein = entries.reduce(
+      (sum, item) => sum + (item.product.nutrients.protein * item.quantity) / 100,
+      0
+    );
+    const ingredients = entries.map((item) => getProductDisplayName(item.product, language));
+
+    dispatch(
+      publishCommunityPost({
+        type: "experience",
+        title: `${mealLabels[mealType]} · ${calories.toFixed(0)} ${t("common.kcal")}`,
+        body: `${copy.shared}: ${ingredients.join(", ")}. Protein: ${protein.toFixed(1)} ${t(
+          "common.g"
+        )}.`,
+        authorId: user.id,
+        authorName: user.name,
+        ingredients,
+      })
+    );
+  };
+
   return (
     <>
       <Paper
@@ -312,6 +348,15 @@ export const MealDayOverview = () => {
                             sx={{ textTransform: "none" }}
                           >
                             {copy.repeat}
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="text"
+                            onClick={() => handleShareMealType(mealType, entries)}
+                            disabled={entries.length === 0 || !user}
+                            sx={{ textTransform: "none" }}
+                          >
+                            {copy.share}
                           </Button>
                           <Chip
                             size="small"

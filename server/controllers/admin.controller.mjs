@@ -121,6 +121,23 @@ export const createAdminController = ({
     });
   },
 
+  createContentReport: async (context) => {
+    const body = await readJsonBody(context.request, bodyLimitBytes);
+    sendJson(
+      context.response,
+      201,
+      await platformService.createContentReport(context.auth.user, body)
+    );
+  },
+
+  listContentReports: async ({ response, auth, url }) => {
+    sendJson(response, 200, {
+      items: await platformService.listContentReports(auth.user, {
+        limit: url.searchParams.get("limit") ?? undefined,
+      }),
+    });
+  },
+
   getAllUsersRaw: async ({ response, auth }) => {
     assertRole(auth.user, "admin");
     sendJson(response, 200, (await adminRepository.getAllUsers()).map(toPublicUser));

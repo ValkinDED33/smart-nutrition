@@ -76,3 +76,21 @@ export interface AdminPlatformStats {
   suspiciousAccounts: number;
   photoAnalysesTotal: number;
 }
+
+export interface ContentReportItem {
+  id: string;
+  reporterUserId: string | null;
+  reporterName: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  status: "open" | "reviewed";
+  createdAt: string;
+}
+
+export interface ContentReportPayload {
+  targetType: "post" | "comment" | "progress" | "recipe" | "meal";
+  targetId: string;
+  reason: string;
+  reporterName?: string;
+}

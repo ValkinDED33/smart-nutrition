@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {
   CommunityFriend,
+  CommunityContentReport,
   CommunityContentStatus,
   CommunityMessage,
   CommunityPost,
@@ -16,6 +17,7 @@ interface CommunityState {
   roomMessages: CommunityRoomMessage[];
   posts: CommunityPost[];
   comments: CommunityPostComment[];
+  reports: CommunityContentReport[];
   progressCards: CommunityProgressCard[];
   favoritePostIds: string[];
   score: number;
@@ -175,6 +177,36 @@ const normalizeComment = (value: unknown): CommunityPostComment | null => {
   };
 };
 
+const normalizeReport = (value: unknown): CommunityContentReport | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const item = value as Partial<CommunityContentReport>;
+  const targetType =
+    item.targetType === "comment" || item.targetType === "progress" ? item.targetType : "post";
+  const targetId = normalizeText(item.targetId, "", 96);
+  const reason = normalizeText(item.reason, "", 600);
+
+  if (!targetId || !reason) {
+    return null;
+  }
+
+  return {
+    id: normalizeText(item.id, createId("community-report"), 96),
+    targetType,
+    targetId,
+    reason,
+    reporterId: normalizeText(item.reporterId, "", 96) || undefined,
+    reporterName: normalizeText(item.reporterName, "Smart User", 80),
+    status:
+      item.status === "reviewed" || item.status === "dismissed" ? item.status : "open",
+    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    reviewedAt: normalizeText(item.reviewedAt, "", 40) || null,
+    reviewedBy: normalizeText(item.reviewedBy, "", 80) || null,
+  };
+};
+
 const normalizeProgressCard = (value: unknown): CommunityProgressCard | null => {
   if (!value || typeof value !== "object") {
     return null;
@@ -303,6 +335,7 @@ const initialState: CommunityState = {
       createdAt: "2026-04-25T09:05:00.000Z",
     },
   ],
+  reports: [],
   progressCards: [
     {
       id: "progress-1",
@@ -435,6 +468,10 @@ export const normalizeCommunityState = (value: unknown): CommunityState => {
       ? (state.comments.map(normalizeComment).filter(Boolean) as CommunityPostComment[])
           .slice(0, 1000)
       : initialState.comments,
+    reports: Array.isArray(state.reports)
+      ? (state.reports.map(normalizeReport).filter(Boolean) as CommunityContentReport[])
+          .slice(0, 500)
+      : initialState.reports,
     progressCards: Array.isArray(state.progressCards)
       ? (state.progressCards.map(normalizeProgressCard).filter(Boolean) as CommunityProgressCard[])
           .slice(0, 200)
@@ -579,6 +616,48 @@ const communitySlice = createSlice({
       });
       state.score += 3;
     },
+    reportCommunityContent(
+      state,
+      action: PayloadAction<{
+        targetType: CommunityContentReport["targetType"];
+        targetId: string;
+        reason: string;
+        reporterId?: string;
+        reporterName: string;
+      }>
+    ) {
+      const targetId = normalizeText(action.payload.targetId, "", 96);
+      const reason = normalizeText(action.payload.reason, "", 600);
+
+      if (!targetId || !reason) {
+        return;
+      }
+
+      const alreadyReported = state.reports.some(
+        (report) =>
+          report.status === "open" &&
+          report.targetType === action.payload.targetType &&
+          report.targetId === targetId &&
+          report.reporterId === action.payload.reporterId
+      );
+
+      if (alreadyReported) {
+        return;
+      }
+
+      state.reports.unshift({
+        id: createId("community-report"),
+        targetType: action.payload.targetType,
+        targetId,
+        reason,
+        reporterId: normalizeText(action.payload.reporterId, "", 96) || undefined,
+        reporterName: normalizeText(action.payload.reporterName, "Smart User", 80),
+        status: "open",
+        createdAt: new Date().toISOString(),
+        reviewedAt: null,
+        reviewedBy: null,
+      });
+    },
     publishProgressCard(
       state,
       action: PayloadAction<{
@@ -649,6 +728,25 @@ const communitySlice = createSlice({
       post.publishedAt = null;
       state.favoritePostIds = state.favoritePostIds.filter((id) => id !== post.id);
       state.comments = state.comments.filter((comment) => comment.postId !== post.id);
+    },
+    deleteCommunityCommentAsModerator(
+      state,
+      action: PayloadAction<{ commentId: string; moderatorName: string }>
+    ) {
+      const commentId = normalizeText(action.payload.commentId, "", 96);
+
+      if (!commentId) {
+        return;
+      }
+
+      state.comments = state.comments.filter((comment) => comment.id !== commentId);
+      state.reports.forEach((report) => {
+        if (report.targetType === "comment" && report.targetId === commentId) {
+          report.status = "reviewed";
+          report.reviewedAt = new Date().toISOString();
+          report.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
+        }
+      });
     },
     mergeCommunityPosts(
       state,
@@ -741,10 +839,12 @@ export const {
   publishProgressCard,
   reviewCommunityPost,
   deleteCommunityPostAsSpam,
+  deleteCommunityCommentAsModerator,
   mergeCommunityPosts,
   toggleFavoritePost,
   likeCommunityPost,
   likeProgressCard,
+  reportCommunityContent,
 } = communitySlice.actions;
 
 export default communitySlice.reducer;

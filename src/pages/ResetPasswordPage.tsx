@@ -22,49 +22,14 @@ type FormData = {
   confirmPassword: string;
 };
 
-const resetPasswordCopy = {
-  uk: {
-    title: "Новий пароль",
-    subtitle:
-      "Встановіть новий пароль. Посилання для скидання одноразове і має обмежений час дії.",
-    submit: "Зберегти новий пароль",
-    saving: "Зберігаю...",
-    invalidToken:
-      "Посилання для скидання недійсне або вже прострочене.",
-    weakPassword:
-      "Пароль має містити щонайменше 10 символів, велику, малу літеру, цифру та символ.",
-    missingToken:
-      "Тут немає reset-токена. Відкрийте сторінку з посилання з листа.",
-    backToLogin: "Перейти до входу",
-    showPassword: "Показати пароль",
-    hidePassword: "Сховати пароль",
-  },
-  pl: {
-    title: "Nowe hasło",
-    subtitle:
-      "Ustaw nowe hasło. Link resetu jest jednorazowy i ma ograniczony czas ważności.",
-    submit: "Zapisz nowe hasło",
-    saving: "Zapisuję...",
-    invalidToken: "Link resetu jest nieprawidłowy albo już wygasł.",
-    weakPassword:
-      "Hasło musi mieć co najmniej 10 znaków, wielką, małą literę, cyfrę i symbol.",
-    missingToken:
-      "Brakuje tokenu resetu. Otwórz stronę z linku z maila.",
-    backToLogin: "Przejdź do logowania",
-    showPassword: "Pokaż hasło",
-    hidePassword: "Ukryj hasło",
-  },
-} as const;
-
 const ResetPasswordPage = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const copy = resetPasswordCopy[language];
   const token = searchParams.get("token")?.trim() ?? "";
 
   const schema = useMemo(
@@ -101,7 +66,7 @@ const ResetPasswordPage = () => {
 
   const onSubmit = async (data: FormData) => {
     if (!token) {
-      setServerError(copy.missingToken);
+      setServerError(t("auth.missingResetToken"));
       return;
     }
 
@@ -114,16 +79,16 @@ const ResetPasswordPage = () => {
     } catch (error) {
       if (error instanceof AuthApiError) {
         if (error.code === "INVALID_RESET_TOKEN") {
-          setServerError(copy.invalidToken);
+          setServerError(t("auth.invalidResetToken"));
         } else if (error.code === "WEAK_PASSWORD") {
-          setServerError(copy.weakPassword);
+          setServerError(t("auth.weakResetPassword"));
         } else if (error.code === "REMOTE_API_UNAVAILABLE") {
           setServerError(t("error.backendUnavailable"));
         } else {
           setServerError(error.message);
         }
       } else {
-        setServerError(copy.invalidToken);
+        setServerError(t("auth.invalidResetToken"));
       }
     } finally {
       setSubmitting(false);
@@ -150,14 +115,14 @@ const ResetPasswordPage = () => {
               {t("brand.name")}
             </Typography>
             <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-              {copy.title}
+              {t("auth.resetTitle")}
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {copy.subtitle}
+              {t("auth.resetSubtitle")}
             </Typography>
           </Box>
 
-          {!token && <Alert severity="warning">{copy.missingToken}</Alert>}
+          {!token && <Alert severity="warning">{t("auth.missingResetToken")}</Alert>}
           {serverError && <Alert severity="error">{serverError}</Alert>}
           {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
@@ -176,8 +141,8 @@ const ResetPasswordPage = () => {
                     <PasswordVisibilityButton
                       visible={passwordVisible}
                       onToggle={() => setPasswordVisible((current) => !current)}
-                      showLabel={copy.showPassword}
-                      hideLabel={copy.hidePassword}
+                      showLabel={t("auth.showPassword")}
+                      hideLabel={t("auth.hidePassword")}
                     />
                   </InputAdornment>
                 ),
@@ -200,8 +165,8 @@ const ResetPasswordPage = () => {
                       onToggle={() =>
                         setConfirmPasswordVisible((current) => !current)
                       }
-                      showLabel={copy.showPassword}
-                      hideLabel={copy.hidePassword}
+                      showLabel={t("auth.showPassword")}
+                      hideLabel={t("auth.hidePassword")}
                     />
                   </InputAdornment>
                 ),
@@ -221,7 +186,7 @@ const ResetPasswordPage = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {submitting ? copy.saving : copy.submit}
+              {submitting ? t("auth.resetSaving") : t("auth.resetSubmit")}
             </Button>
           </Stack>
 
@@ -236,7 +201,7 @@ const ResetPasswordPage = () => {
                 display: "inline",
               }}
             >
-              {copy.backToLogin}
+              {t("auth.backToLogin")}
             </Box>
           </Typography>
         </Stack>

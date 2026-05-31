@@ -33,6 +33,19 @@ export interface CommunityPostComment {
   createdAt: string;
 }
 
+export interface CommunityContentReport {
+  id: string;
+  targetType: "post" | "comment" | "progress";
+  targetId: string;
+  reason: string;
+  reporterId?: string;
+  reporterName: string;
+  status: "open" | "reviewed" | "dismissed";
+  createdAt: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
+}
+
 export interface CommunityPost {
   id: string;
   type: CommunityPostType;

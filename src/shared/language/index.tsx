@@ -535,7 +535,7 @@ const createLanguageI18nInstance = (language: AppLanguage): I18nInstance => {
       en: { translation: dictionaries.en },
     },
     lng: language,
-    fallbackLng: "uk",
+    fallbackLng: "en",
     initAsync: false,
     interpolation: {
       escapeValue: false,

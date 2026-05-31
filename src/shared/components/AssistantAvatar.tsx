@@ -56,6 +56,16 @@ const companionAccent: Record<
     detail: "#fde68a",
     shadow: "0 18px 36px rgba(161, 98, 7, 0.24)",
   },
+  fox: {
+    face: "linear-gradient(135deg, #ea580c 0%, #f97316 48%, #0f766e 100%)",
+    detail: "#ffedd5",
+    shadow: "0 18px 36px rgba(234, 88, 12, 0.24)",
+  },
+  human: {
+    face: "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #2563eb 100%)",
+    detail: "#dbeafe",
+    shadow: "0 18px 36px rgba(20, 184, 166, 0.24)",
+  },
   capybara: {
     face: "linear-gradient(135deg, #92400e 0%, #d97706 52%, #0f766e 100%)",
     detail: "#fef3c7",
@@ -151,7 +161,7 @@ export const AssistantAvatar = ({
         },
       }}
     >
-      {(variant === "cat" || variant === "dog" || variant === "capybara") && (
+      {(variant === "cat" || variant === "dog" || variant === "fox" || variant === "capybara") && (
         <>
           <Box
             sx={{
@@ -161,14 +171,14 @@ export const AssistantAvatar = ({
               width: earSize,
               height: variant === "dog" ? Math.round(size * 0.3) : earSize,
               borderRadius:
-                variant === "cat"
+                variant === "cat" || variant === "fox"
                   ? "70% 30% 55% 45%"
                   : variant === "dog"
                     ? "60% 60% 70% 70%"
                     : "50%",
               background: companion.detail,
               border: "1px solid rgba(255,255,255,0.34)",
-              transform: variant === "cat" ? "rotate(-28deg)" : "rotate(-12deg)",
+              transform: variant === "cat" || variant === "fox" ? "rotate(-28deg)" : "rotate(-12deg)",
               opacity: 0.9,
             }}
           />
@@ -180,14 +190,14 @@ export const AssistantAvatar = ({
               width: earSize,
               height: variant === "dog" ? Math.round(size * 0.3) : earSize,
               borderRadius:
-                variant === "cat"
+                variant === "cat" || variant === "fox"
                   ? "30% 70% 45% 55%"
                   : variant === "dog"
                     ? "60% 60% 70% 70%"
                     : "50%",
               background: companion.detail,
               border: "1px solid rgba(255,255,255,0.34)",
-              transform: variant === "cat" ? "rotate(28deg)" : "rotate(12deg)",
+              transform: variant === "cat" || variant === "fox" ? "rotate(28deg)" : "rotate(12deg)",
               opacity: 0.9,
             }}
           />
@@ -248,6 +258,21 @@ export const AssistantAvatar = ({
               transform: "translateX(-50%)",
               boxShadow: "0 0 12px rgba(219,234,254,0.72)",
             },
+          }}
+        />
+      )}
+
+      {variant === "human" && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: Math.round(size * 0.09),
+            left: "50%",
+            width: Math.round(size * 0.46),
+            height: Math.round(size * 0.2),
+            borderRadius: "999px 999px 55% 55%",
+            backgroundColor: "rgba(15,23,42,0.32)",
+            transform: "translateX(-50%)",
           }}
         />
       )}

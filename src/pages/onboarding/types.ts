@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from "@mui/material";
 import type {
+  AssistantCompanionKind,
   AssistantDietFriction,
   AssistantMotivationStyle,
 } from "../../shared/types/profile";
@@ -14,6 +15,7 @@ export type PersonalityPreset =
 
 export interface OnboardingState {
   assistantName: string;
+  assistantAvatar: AssistantCompanionKind;
   personality: PersonalityPreset;
   name: string;
   age: number;
@@ -76,6 +78,14 @@ export const personalityValues: Record<
   calm: { warmth: 0.86, humor: 0.18, strictness: 0.16, motivation: 0.62 },
   scientific: { warmth: 0.58, humor: 0.08, strictness: 0.62, motivation: 0.72 },
 };
+
+export const assistantAvatarOptions: AssistantCompanionKind[] = [
+  "robot",
+  "cat",
+  "dog",
+  "fox",
+  "human",
+];
 
 export const clampNumber = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));

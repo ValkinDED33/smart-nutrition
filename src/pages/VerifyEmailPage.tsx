@@ -15,31 +15,11 @@ import { writeAuthIdentityHint } from "../shared/lib/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 
-const verifyCopy = {
-  uk: {
-    title: "Підтверджуємо email",
-    body: "Зачекайте кілька секунд. Після підтвердження ми одразу відкриємо онбординг помічника.",
-    success: "Email підтверджено. Запускаємо помічника...",
-    invalid: "Посилання підтвердження недійсне або застаріло.",
-    generic: "Не вдалося підтвердити email. Спробуйте надіслати лист ще раз.",
-    back: "Повернутися до реєстрації",
-  },
-  pl: {
-    title: "Potwierdzamy email",
-    body: "Poczekaj kilka sekund. Po potwierdzeniu od razu otworzymy onboarding asystenta.",
-    success: "Email potwierdzony. Uruchamiamy asystenta...",
-    invalid: "Link potwierdzający jest nieprawidłowy albo wygasł.",
-    generic: "Nie udało się potwierdzić emaila. Wyślij wiadomość jeszcze raz.",
-    back: "Wróć do rejestracji",
-  },
-} as const;
-
 const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t, language, appLanguage, resetOnboarding } = useLanguage();
-  const copy = verifyCopy[language];
+  const { t, appLanguage, resetOnboarding } = useLanguage();
   const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,7 +30,7 @@ const VerifyEmailPage = () => {
     const run = async () => {
       if (!token) {
         setStatus("error");
-        setErrorMessage(copy.invalid);
+        setErrorMessage(t("auth.invalidConfirmationLink"));
         return;
       }
 
@@ -96,8 +76,8 @@ const VerifyEmailPage = () => {
         setStatus("error");
         setErrorMessage(
           error instanceof AuthApiError && error.code === "INVALID_VERIFICATION_CODE"
-            ? copy.invalid
-            : copy.generic
+            ? t("auth.invalidConfirmationLink")
+            : t("auth.verifyGeneric")
         );
       }
     };
@@ -107,7 +87,7 @@ const VerifyEmailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [appLanguage, copy.generic, copy.invalid, dispatch, navigate, resetOnboarding, token]);
+  }, [appLanguage, dispatch, navigate, resetOnboarding, t, token]);
 
   return (
     <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>
@@ -128,16 +108,16 @@ const VerifyEmailPage = () => {
             {t("brand.name")}
           </Typography>
           <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
-            {copy.title}
+            {t("auth.verifyTitle")}
           </Typography>
           <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-            {copy.body}
+            {t("auth.verifyBody")}
           </Typography>
 
           {status === "pending" && <CircularProgress size={28} />}
           {status === "success" && (
             <Alert severity="success" sx={{ width: "100%", borderRadius: 3 }}>
-              {copy.success}
+              {t("auth.verifySuccess")}
             </Alert>
           )}
           {status === "error" && (
@@ -146,7 +126,7 @@ const VerifyEmailPage = () => {
                 {errorMessage}
               </Alert>
               <Button component={Link} to="/register" variant="contained">
-                {copy.back}
+                {t("auth.backToRegister")}
               </Button>
             </>
           )}

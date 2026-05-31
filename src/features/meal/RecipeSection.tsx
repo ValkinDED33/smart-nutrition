@@ -23,6 +23,7 @@ import {
   deleteMealTemplate,
   saveMealTemplate,
 } from "./mealSlice";
+import { publishCommunityPost } from "../community/communitySlice";
 import { recipes } from "../../shared/lib/recipes";
 import type {
   MealEntry,
@@ -58,6 +59,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { language, t } = useLanguage();
   const templates = useSelector(selectMealTemplates);
+  const user = useSelector((state: RootState) => state.auth.user);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -237,6 +239,29 @@ export const RecipeSection = ({ mealType }: Props) => {
     );
   };
 
+  const handlePublishRecipe = (recipe: Recipe) => {
+    if (!user) {
+      return;
+    }
+
+    dispatch(
+      publishCommunityPost({
+        type: "recipe",
+        title: recipe.title,
+        body:
+          recipe.description ||
+          `Recipe with ${recipe.ingredients.length} ingredients and ${recipe.calories.toFixed(
+            0
+          )} ${t("common.kcal")}.`,
+        authorId: user.id,
+        authorName: user.name,
+        ingredients: recipe.ingredients.map((ingredient) =>
+          getProductDisplayName(ingredient.product, language)
+        ),
+      })
+    );
+  };
+
   const allRecipes = [...customRecipes, ...filteredRecipes];
 
   return (
@@ -401,6 +426,9 @@ export const RecipeSection = ({ mealType }: Props) => {
                 <Stack direction="row" spacing={1}>
                   <Button onClick={() => dispatch(applyMealTemplate(recipe.id))}>
                     Reuse
+                  </Button>
+                  <Button onClick={() => handlePublishRecipe(recipe)} disabled={!user}>
+                    Publish recipe
                   </Button>
                   <Button color="error" onClick={() => dispatch(deleteMealTemplate(recipe.id))}>
                     Remove

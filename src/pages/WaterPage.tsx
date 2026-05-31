@@ -24,13 +24,21 @@ const waterPageCopy = {
     remaining: "Pozostało",
     addGlass: "Dodaj 250 ml",
   },
+  en: {
+    title: "Water",
+    subtitle: "Goal, consumed, remaining, and quick add without extra steps.",
+    consumed: "Consumed",
+    goal: "Goal",
+    remaining: "Remaining",
+    addGlass: "Add 250 ml",
+  },
 } as const;
 
 const WaterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
-  const { language } = useLanguage();
-  const copy = waterPageCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = waterPageCopy[appLanguage];
   const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const addAmountMl = water.glassSizeMl || 250;
 

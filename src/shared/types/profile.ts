@@ -7,9 +7,24 @@ export type DietStyle =
   | "gluten_free";
 
 export type AdaptiveMode = "automatic" | "manual";
-export type AssistantCompanionKind = "cat" | "dog" | "capybara" | "dragon" | "robot";
+export type AssistantCompanionKind =
+  | "robot"
+  | "cat"
+  | "dog"
+  | "fox"
+  | "human"
+  | "capybara"
+  | "dragon";
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused" | "calm" | "scientific";
+export type AssistantMood = "idle" | "happy" | "coach" | "concerned" | "sleepy" | "celebrate";
+
+export interface AssistantMemoryProfile {
+  goals: string[];
+  preferences: string[];
+  conversationHighlights: string[];
+  lastSyncedAt: string | null;
+}
 export type AssistantDietFriction =
   | "unknown"
   | "emotional_eating"
@@ -84,9 +99,14 @@ export interface NutritionPreferences {
 
 export interface AssistantCustomization {
   name: string;
+  assistantName: string;
   companionKind: AssistantCompanionKind;
+  assistantAvatar: AssistantCompanionKind;
   role: AssistantRole;
   tone: AssistantTone;
+  assistantPersonality: AssistantTone;
+  assistantMood: AssistantMood;
+  assistantMemory: AssistantMemoryProfile;
   humorEnabled: boolean;
   widgetEnabled: boolean;
   proactiveHintsEnabled: boolean;

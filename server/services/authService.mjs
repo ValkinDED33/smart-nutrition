@@ -501,8 +501,6 @@ export const createAuthService = ({
         ...profileInput,
         email,
         emailVerified: false,
-        phone: null,
-        phoneVerified: false,
         verificationChannel: "email",
         createdAt: new Date().toISOString(),
         role,
@@ -631,7 +629,6 @@ export const createAuthService = ({
         (await authRepository.updateUserVerificationTarget?.({
           userId: user.id,
           channel: "email",
-          phone: null,
         })) ?? user;
 
       return createRegistrationVerification(updatedUser);

@@ -1,9 +1,9 @@
 export const navigation = {
   uk: {
     dashboard: "Головна",
-    food: "Еда",
+    food: "Їжа",
     recipes: "Рецепти",
-    community: "Сообщество",
+    community: "Спільнота",
     progress: "Прогрес",
     coach: "Помічник",
     profile: "Профіль",

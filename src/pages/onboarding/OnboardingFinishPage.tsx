@@ -61,11 +61,26 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
     dispatch(
       setAssistantCustomization({
         name: state.assistantName.trim(),
+        assistantName: state.assistantName.trim(),
+        companionKind: state.assistantAvatar,
+        assistantAvatar: state.assistantAvatar,
         role:
           state.personality === "strict" || state.personality === "scientific"
             ? "coach"
             : "assistant",
         tone: assistantTone === "supportive" ? "gentle" : assistantTone,
+        assistantPersonality: assistantTone === "supportive" ? "gentle" : assistantTone,
+        assistantMood: "happy",
+        assistantMemory: {
+          goals: [state.goal, state.primaryGoalNote].filter(Boolean),
+          preferences: [
+            trimmedName ? `prefers being called ${trimmedName}` : "",
+            `assistant avatar: ${state.assistantAvatar}`,
+            `communication style: ${state.personality}`,
+          ].filter(Boolean),
+          conversationHighlights: [],
+          lastSyncedAt: new Date().toISOString(),
+        },
         humorEnabled: personality.humor >= 0.4,
         proactiveHintsEnabled: personality.motivation >= 0.7,
         onboarding: {

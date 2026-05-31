@@ -153,8 +153,6 @@ const mapUserDoc = (doc) => {
     email: doc.email,
     name: doc.name,
     emailVerified: doc.emailVerified !== false,
-    phone: doc.phone ?? undefined,
-    phoneVerified: Boolean(doc.phoneVerified),
     verificationChannel: isVerificationChannel(doc.verificationChannel)
       ? doc.verificationChannel
       : "email",
@@ -1011,7 +1009,6 @@ export const createMongoStorage = async (config) => {
       const doc = stripUndefined({
         ...user,
         emailVerified: user.emailVerified !== false,
-        phoneVerified: Boolean(user.phoneVerified),
         verificationChannel: isVerificationChannel(user.verificationChannel)
           ? user.verificationChannel
           : "email",
@@ -1312,7 +1309,6 @@ export const createMongoStorage = async (config) => {
         {
           $set: {
             emailVerified: channel === "email" ? true : existingUser.emailVerified,
-            phoneVerified: existingUser.phoneVerified,
             verificationChannel: isVerificationChannel(channel)
               ? channel
               : existingUser.verificationChannel,
@@ -1322,12 +1318,11 @@ export const createMongoStorage = async (config) => {
       return getResolvedUser(userId);
     },
 
-    updateUserVerificationTarget: async ({ userId, channel, phone }) => {
+    updateUserVerificationTarget: async ({ userId, channel }) => {
       await collections.users.updateOne(
         { id: userId },
         {
           $set: {
-            phone: phone ?? null,
             verificationChannel: isVerificationChannel(channel) ? channel : "email",
           },
         }

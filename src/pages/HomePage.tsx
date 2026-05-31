@@ -36,6 +36,8 @@ type MealActionMode = "photo" | "search" | "barcode";
 
 const homeCopy = {
   uk: {
+    greeting: "Доброго ранку, {name} 👋",
+    feelingQuestion: "Як ти сьогодні почуваєшся?",
     productLine: "Ви їсте. Я думаю за вас.",
     productSubtitle:
       "Один екран для рішення на зараз: додати їжу, закрити воду і побачити наступний крок без зайвих карток.",
@@ -76,6 +78,7 @@ const homeCopy = {
     days: "днів",
     todayFood: "Їжа сьогодні",
     assistant: "Помічник поруч",
+    assistantHero: "🤖 Помічник",
     nextStep: "Наступна дія",
     goalToday: "Ціль сьогодні",
     progressDone: "Виконано",
@@ -123,6 +126,8 @@ const homeCopy = {
     aiGood: "День виглядає рівно. Тримайте темп і не забувайте про воду.",
   },
   pl: {
+    greeting: "Dzień dobry, {name} 👋",
+    feelingQuestion: "Jak się dziś czujesz?",
     productLine: "Ty jesz. Ja myślę za Ciebie.",
     productSubtitle:
       "Jeden ekran na decyzję teraz: dodaj jedzenie, domknij wodę i zobacz kolejny krok bez nadmiaru kart.",
@@ -163,6 +168,7 @@ const homeCopy = {
     days: "dni",
     todayFood: "Jedzenie dzisiaj",
     assistant: "Asystent obok",
+    assistantHero: "🤖 Asystent",
     nextStep: "Kolejna akcja",
     goalToday: "Cel na dziś",
     progressDone: "Wykonano",
@@ -210,6 +216,8 @@ const homeCopy = {
     aiGood: "Dzień wygląda równo. Utrzymaj tempo i pamiętaj o wodzie.",
   },
   en: {
+    greeting: "Good morning, {name} 👋",
+    feelingQuestion: "How are you feeling today?",
     productLine: "You eat. I think with you.",
     productSubtitle:
       "One screen for the decision now: add food, close water, and see the next step without extra panels.",
@@ -250,6 +258,7 @@ const homeCopy = {
     days: "days",
     todayFood: "Food today",
     assistant: "Assistant nearby",
+    assistantHero: "🤖 Assistant",
     nextStep: "Next action",
     goalToday: "Today’s goal",
     progressDone: "Complete",
@@ -461,6 +470,8 @@ const HomePage = () => {
     return <Typography>{t("dashboard.needLogin")}</Typography>;
   }
 
+  const firstName = user.name.split(" ")[0] || user.name;
+
   const handleMealAction = (mode: MealActionMode) => {
     navigate(`/food?mode=${mode}`);
   };
@@ -501,7 +512,10 @@ const HomePage = () => {
         >
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
             <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
-              Smart Nutrition
+              {copy.greeting.replace("{name}", firstName)}
+            </Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 800 }}>
+              {copy.feelingQuestion}
             </Typography>
             <Typography
               component="h1"
@@ -512,6 +526,9 @@ const HomePage = () => {
                 overflowWrap: "anywhere",
               }}
             >
+              {copy.assistantHero}: {assistant.name}
+            </Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 800 }}>
               {copy.productLine}
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.84)", maxWidth: 720 }}>
