@@ -478,6 +478,14 @@ const getMongoUriFromEnv = () =>
   toTrimmedString(process.env.SMART_NUTRITION_MONGODB_URI ?? process.env.MONGODB_URI) ||
   null;
 
+const getMongoHostLabel = (mongoUri) => {
+  try {
+    return new URL(mongoUri).host || "unknown";
+  } catch {
+    return "unknown";
+  }
+};
+
 export async function connectMongo(config = {}) {
   const mongoUri = toTrimmedString(config.mongoUri) || getMongoUriFromEnv();
 
@@ -505,6 +513,8 @@ export async function connectMongo(config = {}) {
       const database = client.db(config.mongoDatabaseName ?? "smart-nutrition");
       await database.command({ ping: 1 });
       console.log("✅ MongoDB Atlas connected");
+      console.log("MongoDB database:", database.databaseName);
+      console.log("MongoDB host:", getMongoHostLabel(mongoUri));
       return { client, database };
     } catch (error) {
       lastError = error;

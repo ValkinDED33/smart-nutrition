@@ -1024,6 +1024,11 @@ export const createAiService = ({ aiRepository, assistantMemoryRepository = null
 
     for (const provider of getProviderAttemptOrder()) {
       markProviderAttempt(provider);
+      console.log("AI REQUEST");
+      console.log("Provider:", provider.label);
+      console.log("Provider ID:", provider.id);
+      console.log("Model:", provider.model);
+      console.log("Base URL:", provider.baseUrl);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), provider.timeoutMs);
@@ -1040,6 +1045,7 @@ export const createAiService = ({ aiRepository, assistantMemoryRepository = null
 
         clearTimeout(timeoutId);
         markProviderSuccess(provider);
+        console.log("✅ AI provider success:", provider.label, provider.model);
         return { text, provider };
       } catch (error) {
         clearTimeout(timeoutId);
@@ -1070,6 +1076,21 @@ export const createAiService = ({ aiRepository, assistantMemoryRepository = null
                 );
 
         markProviderFailure(provider, resolvedError);
+        console.error("❌ AI provider failed");
+        console.error("Provider:", provider.label);
+        console.error("Model:", provider.model);
+        console.error(
+          "Error:",
+          resolvedError instanceof AssistantApiError
+            ? resolvedError.details?.providerMessage ?? resolvedError.message
+            : resolvedError instanceof Error
+              ? resolvedError.message
+              : "Unknown error"
+        );
+        if (resolvedError instanceof AssistantApiError) {
+          console.error("Code:", resolvedError.code);
+          console.error("Status:", resolvedError.details?.status ?? "n/a");
+        }
         providerErrors.push(toProviderFailureSummary(provider, resolvedError));
       }
     }

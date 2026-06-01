@@ -13,6 +13,11 @@ export const createHealthRoutes = ({ healthController } = {}) =>
           pathname: "/api/ready",
           handler: healthController.getReadiness,
         },
+        {
+          method: "GET",
+          pathname: "/api/debug/startup",
+          handler: healthController.getDebugStartup,
+        },
       ]
     : [];
 
@@ -27,6 +32,7 @@ export const createHealthController = ({
   getEmailStatus,
   getAiStatus,
   getReadiness,
+  getDebugStartup,
 }) => ({
   getHealth: ({ response }) => {
     sendJson(response, 200, {
@@ -45,5 +51,9 @@ export const createHealthController = ({
   getReadiness: ({ response }) => {
     const readiness = getReadiness();
     sendJson(response, readiness.ready ? 200 : 503, readiness);
+  },
+
+  getDebugStartup: ({ response }) => {
+    sendJson(response, 200, getDebugStartup());
   },
 });

@@ -33,6 +33,11 @@ import { createPlatformService } from "./services/platformService.mjs";
 import { createStateService } from "./services/stateService.mjs";
 import { createStorage } from "./storage/index.mjs";
 import { createAuthSessionHelpers } from "./runtime/authCookies.mjs";
+import {
+  createRequestDiagnostics,
+  createStartupDiagnostics,
+  logStartupDiagnostics,
+} from "./runtime/diagnostics.mjs";
 import { handleRouteError } from "./runtime/errorHandler.mjs";
 import { createRequestMetrics } from "./runtime/metrics.mjs";
 import {
@@ -54,6 +59,7 @@ import { createStaticFileServer } from "./runtime/staticFiles.mjs";
 
 const redisCache = await createRedisCache(serverConfig);
 const storage = await createStorage(serverConfig);
+const requestDiagnostics = createRequestDiagnostics();
 const assistantMemoryRepository = await createAssistantMemoryRepository({
   dataDir: serverConfig.dataDir,
 });
@@ -166,6 +172,11 @@ const healthController = createHealthController({
   getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
   getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
   getReadiness: () => getReadinessSnapshot(),
+  getDebugStartup: () =>
+    createStartupDiagnostics({
+      config: serverConfig,
+      requestDiagnostics,
+    }),
 });
 const authController = createAuthController({
   authService,
@@ -213,8 +224,18 @@ const routeRequest = async (request, response) => {
   }
 
   const { pathname } = url;
+  requestDiagnostics.logApiRequest({
+    request,
+    pathname,
+    allowedOrigins: serverConfig.allowedCorsOrigins,
+  });
 
   if (isUnsafeCrossSiteMutation(request, serverConfig.allowedCorsOrigins)) {
+    requestDiagnostics.logCsrfBlocked({
+      request,
+      pathname,
+      allowedOrigins: serverConfig.allowedCorsOrigins,
+    });
     sendError(response, 403, "CSRF_BLOCKED", "Request origin is not allowed.");
     return;
   }
@@ -407,9 +428,12 @@ process.once("SIGINT", () => shutdown("SIGINT"));
 process.once("SIGTERM", () => shutdown("SIGTERM"));
 
 server.listen(serverConfig.port, () => {
-  serverConfig.warnings.forEach((warning) => {
-    console.warn(`[config warning] ${warning}`);
-  });
+  logStartupDiagnostics(
+    createStartupDiagnostics({
+      config: serverConfig,
+      requestDiagnostics,
+    })
+  );
 
   console.log(`Smart Nutrition API listening on port ${serverConfig.port}`);
 
