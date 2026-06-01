@@ -479,11 +479,18 @@ export const createAuthService = ({
       assertPasswordPolicy(String(body.password || ""));
       const profileInput = readProfileInput(body);
 
-      if (await authRepository.findUserByEmail(email)) {
-        return buildRegistrationVerificationResponse({
-          email,
-          expiresAt: Date.now() + (config.registrationVerificationTokenTtlMs ?? 1000 * 60 * 15),
-        });
+      const existingUser = await authRepository.findUserByEmail(email);
+
+      if (existingUser) {
+        if (isRegistrationVerified(existingUser)) {
+          throw new AuthApiError("EMAIL_IN_USE", "A user with this email already exists.");
+        }
+
+        if (isUserBanned(existingUser)) {
+          throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
+        }
+
+        return createRegistrationVerification(existingUser);
       }
 
       const shouldBootstrapSuperAdmin =

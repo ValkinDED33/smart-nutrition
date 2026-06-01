@@ -376,7 +376,7 @@ describe("authService", () => {
     );
   });
 
-  it("does not expose whether an email is already registered", async () => {
+  it("rejects registration for an already verified email", async () => {
     const { authRepository, emailService, service } = createAuthServiceFixture({
       configOverrides: {
         registrationVerificationTokenTtlMs: 900000,
@@ -388,6 +388,49 @@ describe("authService", () => {
       name: "Existing Register",
       role: "USER",
       emailVerified: true,
+    };
+    const validRegistrationBody = {
+      name: "Email User",
+      password: "StrongPass123!",
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+    };
+
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: true,
+      messageId: "email-1",
+    });
+    authRepository.findUserByEmail.mockImplementation((email) =>
+      email === existingUser.email ? existingUser : null
+    );
+
+    await expect(service.register({
+      ...validRegistrationBody,
+      email: existingUser.email,
+    })).rejects.toMatchObject({
+      code: "EMAIL_IN_USE",
+    });
+
+    expect(authRepository.insertUser).not.toHaveBeenCalled();
+    expect(emailService.sendRegistrationVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it("resends verification when registering an unverified email again", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: {
+        registrationVerificationTokenTtlMs: 900000,
+      },
+    });
+    const existingUser = {
+      id: "user-existing-unverified-register",
+      email: "existing-unverified-register@example.com",
+      name: "Existing Unverified",
+      role: "USER",
+      emailVerified: false,
     };
     const validRegistrationBody = {
       name: "Email User",
@@ -425,7 +468,11 @@ describe("authService", () => {
     });
     expect(Object.keys(existingResult).sort()).toEqual(Object.keys(newResult).sort());
     expect(authRepository.insertUser).toHaveBeenCalledTimes(1);
-    expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(1);
+    expect(authRepository.deleteRegistrationVerificationTokensByUserId).toHaveBeenCalledWith(
+      existingUser.id
+    );
+    expect(authRepository.createRegistrationVerificationToken).toHaveBeenCalledTimes(2);
+    expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(2);
   });
 
   it("verifies email links once and rejects repeat opens", async () => {
