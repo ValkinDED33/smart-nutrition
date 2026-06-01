@@ -63,6 +63,7 @@ const buildSystemPrompt = (context) =>
 const buildContextBlock = (context) =>
   [
     "Current Smart Nutrition context:",
+    `- Current app screen: ${context.screen ?? "unknown"} (${context.currentPath ?? "/"})`,
     `- User: ${context.userName}`,
     `- Goal: ${context.goal}`,
     `- Diet style: ${context.profile?.dietStyle ?? "balanced"}`,

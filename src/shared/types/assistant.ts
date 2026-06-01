@@ -15,6 +15,23 @@ import type { Goal } from "./user";
 
 export type AssistantRuntimeMode = "guided" | "remote-cloud";
 
+export type AssistantScreenId =
+  | "dashboard"
+  | "food"
+  | "recipes"
+  | "community"
+  | "progress"
+  | "profile"
+  | "coach"
+  | "admin"
+  | "water"
+  | "unknown";
+
+export interface AssistantScreenContext {
+  screen: AssistantScreenId;
+  currentPath: string;
+}
+
 export interface AssistantPersonality {
   warmth: number;
   humor: number;
@@ -53,6 +70,8 @@ export type AssistantQuickQuestionId =
 
 export interface AssistantRuntimeContext {
   language: AppLanguage;
+  screen: AssistantScreenId;
+  currentPath: string;
   userName: string;
   goal: Goal;
   dietStyle: DietStyle;

@@ -1,7 +1,10 @@
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Paper,
@@ -29,16 +32,12 @@ import { generateNutritionCoachAnalysis } from "../../shared/lib/nutritionCoach"
 import { buildDailyContext } from "../../shared/lib/dailyContext";
 import { selectDailyMacroTargets } from "../profile/selectors";
 import { assistantQuickQuestionIds } from "../../shared/types/assistant";
+import { useAssistantChatStore } from "../../shared/state/useAssistantChatStore";
 import type {
   AssistantConversationMessage,
   AssistantQuickQuestionId,
   AssistantRuntimeContext,
-  AssistantRuntimeMode,
 } from "../../shared/types/assistant";
-
-type ChatMessage = AssistantConversationMessage & {
-  mode?: AssistantRuntimeMode;
-};
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -57,6 +56,56 @@ const createWelcomeMessage = (
     followUpQuestionIds: welcome.followUpQuestionIds,
   };
 };
+
+const AssistantMessageMarkdown = ({ text }: { text: string }) => (
+  <Box
+    sx={{
+      color: "text.primary",
+      "& p": { m: 0 },
+      "& p + p": { mt: 1 },
+      "& ul, & ol": { m: 0, pl: 2.4 },
+      "& li + li": { mt: 0.4 },
+      "& table": {
+        width: "100%",
+        borderCollapse: "collapse",
+        mt: 1,
+        overflow: "hidden",
+      },
+      "& th, & td": {
+        border: "1px solid rgba(15, 23, 42, 0.12)",
+        px: 1,
+        py: 0.7,
+        textAlign: "left",
+        verticalAlign: "top",
+      },
+      "& th": { bgcolor: "rgba(15, 118, 110, 0.08)", fontWeight: 800 },
+      "& code": {
+        px: 0.45,
+        py: 0.15,
+        borderRadius: 0.5,
+        bgcolor: "rgba(15, 23, 42, 0.08)",
+        fontFamily: "monospace",
+        fontSize: "0.92em",
+      },
+      "& pre": {
+        m: 0,
+        mt: 1,
+        p: 1.2,
+        borderRadius: 1,
+        overflowX: "auto",
+        bgcolor: "rgba(15, 23, 42, 0.9)",
+        color: "white",
+      },
+      "& pre code": {
+        p: 0,
+        bgcolor: "transparent",
+        color: "inherit",
+      },
+    }}
+  >
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+  </Box>
+);
 
 const cardCopy = {
   uk: {
@@ -143,6 +192,17 @@ export const AssistantRuntimeCard = () => {
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage } = useLanguage();
   const copy = cardCopy[appLanguage];
+  const activeUserId = useAssistantChatStore((state) => state.activeUserId);
+  const currentScreen = useAssistantChatStore((state) => state.currentScreen);
+  const messages = useAssistantChatStore((state) => state.messages);
+  const historyReady = useAssistantChatStore((state) => state.historyReady);
+  const setActiveUserId = useAssistantChatStore((state) => state.setActiveUserId);
+  const setMessages = useAssistantChatStore((state) => state.setMessages);
+  const appendMessage = useAssistantChatStore((state) => state.appendMessage);
+  const setHistoryReady = useAssistantChatStore((state) => state.setHistoryReady);
+  const resetConversationState = useAssistantChatStore(
+    (state) => state.resetConversationState
+  );
 
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
@@ -193,6 +253,8 @@ export const AssistantRuntimeCard = () => {
     () =>
       createAssistantRuntimeContext({
         language: appLanguage,
+        screen: currentScreen.screen,
+        currentPath: currentScreen.currentPath,
         user,
         profile,
         water,
@@ -213,6 +275,8 @@ export const AssistantRuntimeCard = () => {
       coachPrimaryInsight,
       dailyContext,
       appLanguage,
+      currentScreen.currentPath,
+      currentScreen.screen,
       macroTargets,
       profile,
       todayItems.length,
@@ -224,15 +288,17 @@ export const AssistantRuntimeCard = () => {
   const getWelcomeMessage = useEffectEvent(() => createWelcomeMessage(context));
   const userId = user?.id ?? null;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [historyReady, setHistoryReady] = useState(false);
-
   useEffect(() => {
     let active = true;
 
     if (!userId) {
-      setMessages([]);
-      setHistoryReady(true);
+      resetConversationState();
+      return () => {
+        active = false;
+      };
+    }
+
+    if (activeUserId === userId && historyReady) {
       return () => {
         active = false;
       };
@@ -240,6 +306,7 @@ export const AssistantRuntimeCard = () => {
 
     const welcomeMessage = getWelcomeMessage();
 
+    setActiveUserId(userId);
     setHistoryReady(false);
     setError(null);
 
@@ -267,7 +334,16 @@ export const AssistantRuntimeCard = () => {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [
+    activeUserId,
+    getWelcomeMessage,
+    historyReady,
+    resetConversationState,
+    setActiveUserId,
+    setHistoryReady,
+    setMessages,
+    userId,
+  ]);
 
   if (!user) {
     return null;
@@ -285,14 +361,11 @@ export const AssistantRuntimeCard = () => {
 
     setLoading(true);
     setError(null);
-    setMessages((current) => [
-      ...current,
-      {
-        id: createId("user"),
-        role: "user",
-        text: trimmedQuestion,
-      },
-    ]);
+    appendMessage({
+      id: createId("user"),
+      role: "user",
+      text: trimmedQuestion,
+    });
     setQuestion("");
 
     try {
@@ -302,16 +375,13 @@ export const AssistantRuntimeCard = () => {
         context,
       });
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: createId("assistant"),
-          role: "assistant",
-          text: response.text,
-          mode: response.mode,
-          followUpQuestionIds: response.followUpQuestionIds,
-        },
-      ]);
+      appendMessage({
+        id: createId("assistant"),
+        role: "assistant",
+        text: response.text,
+        mode: response.mode,
+        followUpQuestionIds: response.followUpQuestionIds,
+      });
     } catch {
       setError(copy.error);
     } finally {
@@ -444,7 +514,13 @@ export const AssistantRuntimeCard = () => {
                   >
                     {message.role === "user" ? user.name : profile.assistant.name}
                   </Typography>
-                  <Typography color="text.primary">{message.text}</Typography>
+                  {message.role === "assistant" ? (
+                    <AssistantMessageMarkdown text={message.text} />
+                  ) : (
+                    <Typography color="text.primary" sx={{ whiteSpace: "pre-wrap" }}>
+                      {message.text}
+                    </Typography>
+                  )}
                 </Stack>
               </Paper>
             ))

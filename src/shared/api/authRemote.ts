@@ -74,7 +74,11 @@ class RemoteRequestError extends Error {
 
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const PUBLIC_REMOTE_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
-const PUBLIC_FRONTEND_HOSTNAMES = new Set(["smart-nutrition-topaz.vercel.app"]);
+const PUBLIC_FRONTEND_HOSTNAMES = new Set([
+  "smart-nutrition-topaz.vercel.app",
+  "smart-nutrition-git-master-valkindeds-projects.vercel.app",
+  "smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
+]);
 const LEGACY_BROWSER_AUTH_KEYS = [
   "smart-nutrition.users",
   "smart-nutrition.session",

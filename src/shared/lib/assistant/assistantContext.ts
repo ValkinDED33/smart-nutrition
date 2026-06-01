@@ -25,6 +25,8 @@ const getDaysSince = (value: string | null | undefined) => {
 
 export const createAssistantRuntimeContext = ({
   language,
+  screen = "unknown",
+  currentPath = "/",
   user,
   profile,
   water,
@@ -68,6 +70,8 @@ export const createAssistantRuntimeContext = ({
 
   return {
     language,
+    screen,
+    currentPath,
     userName: user?.name ?? "",
     goal: profile.goal,
     dietStyle: profile.dietStyle,

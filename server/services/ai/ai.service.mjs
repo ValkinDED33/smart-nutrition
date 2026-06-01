@@ -243,6 +243,28 @@ const normalizeLanguage = (value) => {
   return value === "pl" ? "pl" : "uk";
 };
 
+const normalizeScreenId = (value) => {
+  const normalized = normalizeText(value, {
+    maxLength: 32,
+    fallback: "unknown",
+  });
+
+  return [
+    "dashboard",
+    "food",
+    "recipes",
+    "community",
+    "progress",
+    "profile",
+    "coach",
+    "admin",
+    "water",
+    "unknown",
+  ].includes(normalized)
+    ? normalized
+    : "unknown";
+};
+
 const toScore = (value, fallback) => {
   const nextValue = Number(value);
 
@@ -429,6 +451,11 @@ const normalizeContext = (payload, currentUser) => {
 
   return {
     language: normalizeLanguage(record.language),
+    screen: normalizeScreenId(record.screen),
+    currentPath: normalizeText(record.currentPath, {
+      maxLength: 120,
+      fallback: "/",
+    }),
     userName: normalizeText(record.userName, {
       maxLength: 60,
       fallback: currentUser.name ?? "User",

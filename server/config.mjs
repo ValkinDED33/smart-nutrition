@@ -6,7 +6,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DATA_DIR = path.join(__dirname, "data");
 const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
-const PUBLIC_FRONTEND_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
+const PUBLIC_FRONTEND_ORIGINS = [
+  "https://smart-nutrition-topaz.vercel.app",
+  "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
+  "https://smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
+];
+const PUBLIC_FRONTEND_ORIGIN = PUBLIC_FRONTEND_ORIGINS[0];
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
 const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
 const LOOPBACK_HOSTNAMES = new Set([
@@ -205,7 +210,7 @@ const normalizeStorageProvider = (value, { postgresUrl, mongoUri } = {}) => {
     return "postgres";
   }
 
-  return "mongodb";
+  return mongoUri ? "mongodb" : "sqlite";
 };
 
 const normalizeAiDataProvider = (value, mongoUri, { preferMongoUri = false } = {}) => {
@@ -715,14 +720,14 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   const appOrigin = normalizeOrigin(appBaseUrl);
   const shouldIncludePublicFrontendOrigin =
     isProduction &&
-    (appOrigin === PUBLIC_FRONTEND_ORIGIN ||
-      configuredOrigins.includes(PUBLIC_FRONTEND_ORIGIN) ||
+    (PUBLIC_FRONTEND_ORIGINS.includes(appOrigin) ||
+      PUBLIC_FRONTEND_ORIGINS.some((origin) => configuredOrigins.includes(origin)) ||
       LEGACY_FRONTEND_ORIGINS.some(
         (origin) => origin === appOrigin || configuredOrigins.includes(origin)
       ));
   const includePublicFrontendOrigin = (origins) =>
     shouldIncludePublicFrontendOrigin
-      ? [...new Set([...origins, PUBLIC_FRONTEND_ORIGIN])]
+      ? [...new Set([...origins, ...PUBLIC_FRONTEND_ORIGINS])]
       : [...new Set(origins)];
 
   if (String(envValue ?? "").trim()) {

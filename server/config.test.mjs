@@ -4,6 +4,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createServerConfig } from "./config.mjs";
 
+const publicVercelOrigins = [
+  "https://smart-nutrition-topaz.vercel.app",
+  "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
+  "https://smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
+];
+
 describe("createServerConfig", () => {
   it("rejects the default JWT secret in production", () => {
     expect(() =>
@@ -405,16 +411,16 @@ describe("createServerConfig", () => {
     ]);
   });
 
-  it("keeps the public Vercel origin available for production Render defaults", () => {
+  it("keeps the public Vercel origins available for production Render defaults", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
     });
 
-    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-topaz.vercel.app"]);
+    expect(config.allowedCorsOrigins).toEqual(publicVercelOrigins);
   });
 
-  it("adds the public Vercel origin when a legacy frontend origin is configured", () => {
+  it("adds the public Vercel origins when a legacy frontend origin is configured", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
@@ -423,7 +429,7 @@ describe("createServerConfig", () => {
 
     expect(config.allowedCorsOrigins).toEqual([
       "https://smart-nutrition-nine.vercel.app",
-      "https://smart-nutrition-topaz.vercel.app",
+      ...publicVercelOrigins,
     ]);
   });
 

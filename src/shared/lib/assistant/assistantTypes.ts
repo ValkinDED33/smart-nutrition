@@ -16,6 +16,8 @@ export type AssistantChatMessage = AssistantConversationMessage;
 
 export interface AssistantContextSource {
   language: AssistantRuntimeContext["language"];
+  screen?: AssistantRuntimeContext["screen"];
+  currentPath?: AssistantRuntimeContext["currentPath"];
   user: User | null;
   profile: Pick<
     ProfileState,

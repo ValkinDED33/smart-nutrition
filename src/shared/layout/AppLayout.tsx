@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -36,6 +37,8 @@ import SyncStatusChip from "../components/SyncStatusChip";
 import SyncFeedbackAlert from "../components/SyncFeedbackAlert";
 import HabitReminderAgent from "../components/HabitReminderAgent";
 import { ContextAssistantWidget } from "../components/ContextAssistantWidget";
+import { createAssistantScreenContext } from "../lib/assistant/assistantScreen";
+import { useAssistantChatStore } from "../state/useAssistantChatStore";
 import { clearSyncOutbox } from "../lib/syncOutbox";
 import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
 import { setProfileLanguage } from "../../features/profile/profileSlice";
@@ -72,6 +75,11 @@ const Layout = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
+  const setAssistantCurrentScreen = useAssistantChatStore((state) => state.setCurrentScreen);
+
+  useEffect(() => {
+    setAssistantCurrentScreen(createAssistantScreenContext(location.pathname));
+  }, [location.pathname, setAssistantCurrentScreen]);
 
   const handleLogout = async () => {
     await logoutSession();

@@ -7,6 +7,8 @@ import type { AssistantRuntimeContext } from "../types/assistant";
 
 const createContext = (): AssistantRuntimeContext => ({
   language: "pl",
+  screen: "food",
+  currentPath: "/meals",
   userName: "Ira",
   goal: "cut",
   dietStyle: "balanced",
