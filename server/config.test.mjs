@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createServerConfig } from "./config.mjs";
 
 const publicVercelOrigins = [
+  "https://smart-nutrition-alpha.vercel.app",
   "https://smart-nutrition-topaz.vercel.app",
   "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
   "https://smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
@@ -440,6 +441,6 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_API_PORT: "8787",
     });
 
-    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-topaz.vercel.app"]);
+    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-alpha.vercel.app"]);
   });
 });
