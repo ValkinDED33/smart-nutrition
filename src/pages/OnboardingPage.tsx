@@ -8,6 +8,7 @@ import { OnboardingAssistantPage } from "./onboarding/OnboardingAssistantPage";
 import { OnboardingFinishPage } from "./onboarding/OnboardingFinishPage";
 import { OnboardingGenderPage } from "./onboarding/OnboardingGenderPage";
 import { OnboardingGoalPage } from "./onboarding/OnboardingGoalPage";
+import { OnboardingGuide } from "./onboarding/OnboardingGuide";
 import { OnboardingHeightPage } from "./onboarding/OnboardingHeightPage";
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
@@ -48,21 +49,24 @@ const OnboardingPage = () => {
   const stepProps = { state, updateState };
 
   return (
-    <Routes>
-      <Route index element={<OnboardingWelcomePage />} />
-      <Route path="welcome" element={<OnboardingWelcomePage />} />
-      <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
-      <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
-      <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
-      <Route path="gender" element={<OnboardingGenderPage {...stepProps} />} />
-      <Route path="height" element={<OnboardingHeightPage {...stepProps} />} />
-      <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
-      <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />
-      <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
-      <Route path="friction" element={<Navigate to={stepPaths.goal} replace />} />
-      <Route path="motivation" element={<Navigate to={stepPaths.assistant} replace />} />
-      <Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />
-    </Routes>
+    <>
+      <OnboardingGuide state={state} />
+      <Routes>
+        <Route index element={<OnboardingWelcomePage />} />
+        <Route path="welcome" element={<OnboardingWelcomePage />} />
+        <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
+        <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
+        <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
+        <Route path="gender" element={<OnboardingGenderPage {...stepProps} />} />
+        <Route path="height" element={<OnboardingHeightPage {...stepProps} />} />
+        <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
+        <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />
+        <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
+        <Route path="friction" element={<Navigate to={stepPaths.goal} replace />} />
+        <Route path="motivation" element={<Navigate to={stepPaths.assistant} replace />} />
+        <Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />
+      </Routes>
+    </>
   );
 };
 

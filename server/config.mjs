@@ -7,6 +7,8 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DATA_DIR = path.join(__dirname, "data");
 const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
 const PUBLIC_FRONTEND_ORIGINS = [
+  "https://www.smart-nutrition.club",
+  "https://smart-nutrition.club",
   "https://smart-nutrition-alpha.vercel.app",
   "https://smart-nutrition-topaz.vercel.app",
   "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",

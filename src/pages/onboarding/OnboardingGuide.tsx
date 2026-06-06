@@ -1,0 +1,212 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { Box, Paper, Stack, Typography } from "@mui/material";
+import { AssistantAvatar, type AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import { useLanguage } from "../../shared/language";
+import type { OnboardingState } from "./types";
+
+type GuidePlacement = "peekLeft" | "peekRight" | "floatTop" | "floatBottom";
+
+const guideCopy = {
+  uk: {
+    welcome: "Я буду поруч на кожному кроці. Почнемо спокійно.",
+    assistant: "Обери, яким я буду. Це твій постійний companion.",
+    name: "Як тебе звати? Я запам'ятаю, як звертатися до тебе.",
+    age: "Вік потрібен тільки для точніших норм калорій.",
+    gender: "Це допоможе краще порахувати базовий обмін.",
+    height: "Зріст уточнює розрахунок цілі.",
+    goal: "Тут обираємо напрям: схуднення, набір або стабільність.",
+    weight: "Вага стане стартовою точкою прогресу.",
+    finish: "Готово. Зараз зберу твій маршрут і відкрию головний екран.",
+  },
+  pl: {
+    welcome: "Będę obok na każdym kroku. Zaczynamy spokojnie.",
+    assistant: "Wybierz, jaki mam być. To Twój stały companion.",
+    name: "Jak mam się do Ciebie zwracać? Zapamiętam to.",
+    age: "Wiek pomaga dokładniej policzyć normę kalorii.",
+    gender: "To pomoże lepiej wyliczyć podstawową przemianę.",
+    height: "Wzrost doprecyzuje cel.",
+    goal: "Tu wybieramy kierunek: redukcja, masa albo stabilizacja.",
+    weight: "Waga będzie punktem startowym progresu.",
+    finish: "Gotowe. Zaraz złożę Twój plan i otworzę główny ekran.",
+  },
+  en: {
+    welcome: "I will stay with you on every step. Let us begin calmly.",
+    assistant: "Choose what I should feel like. I will be your companion.",
+    name: "What should I call you? I will remember it.",
+    age: "Age helps me calculate calorie targets more accurately.",
+    gender: "This helps estimate your baseline needs.",
+    height: "Height sharpens the goal calculation.",
+    goal: "Pick the direction: fat loss, muscle gain, or stability.",
+    weight: "Weight becomes the starting point for progress.",
+    finish: "Done. I will assemble your route and open the main screen.",
+  },
+} as const;
+
+const stepMeta: Record<
+  string,
+  { key: keyof typeof guideCopy.en; placement: GuidePlacement; mood: AssistantAvatarMood }
+> = {
+  "/onboarding": { key: "welcome", placement: "floatTop", mood: "happy" },
+  "/onboarding/welcome": { key: "welcome", placement: "floatTop", mood: "happy" },
+  "/onboarding/assistant": { key: "assistant", placement: "peekRight", mood: "celebrate" },
+  "/onboarding/name": { key: "name", placement: "peekLeft", mood: "coach" },
+  "/onboarding/age": { key: "age", placement: "peekRight", mood: "coach" },
+  "/onboarding/gender": { key: "gender", placement: "floatBottom", mood: "happy" },
+  "/onboarding/height": { key: "height", placement: "peekLeft", mood: "coach" },
+  "/onboarding/goal": { key: "goal", placement: "peekRight", mood: "coach" },
+  "/onboarding/weight": { key: "weight", placement: "peekLeft", mood: "coach" },
+  "/onboarding/finish": { key: "finish", placement: "floatTop", mood: "celebrate" },
+};
+
+const placementSx: Record<GuidePlacement, object> = {
+  peekLeft: {
+    left: { xs: 12, md: "calc(50% - 430px)" },
+    top: { xs: "auto", md: "44%" },
+    bottom: { xs: 92, md: "auto" },
+  },
+  peekRight: {
+    right: { xs: 12, md: "calc(50% - 430px)" },
+    top: { xs: "auto", md: "38%" },
+    bottom: { xs: 92, md: "auto" },
+  },
+  floatTop: {
+    right: { xs: 12, md: "calc(50% - 420px)" },
+    top: { xs: 92, md: 118 },
+  },
+  floatBottom: {
+    left: { xs: 12, md: "calc(50% - 410px)" },
+    bottom: { xs: 92, md: 94 },
+  },
+};
+
+const usePointerLook = () => {
+  const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    let frame: number | undefined;
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (frame !== undefined) {
+        window.cancelAnimationFrame(frame);
+      }
+
+      frame = window.requestAnimationFrame(() => {
+        setLookOffset({
+          x: (event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2,
+          y: (event.clientY / Math.max(window.innerHeight, 1) - 0.5) * 2,
+        });
+      });
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+
+    return () => {
+      if (frame !== undefined) {
+        window.cancelAnimationFrame(frame);
+      }
+      window.removeEventListener("pointermove", onPointerMove);
+    };
+  }, []);
+
+  return lookOffset;
+};
+
+export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
+  const { pathname } = useLocation();
+  const { appLanguage } = useLanguage();
+  const lookOffset = usePointerLook();
+  const [vanishing, setVanishing] = useState(false);
+  const meta = stepMeta[pathname] ?? stepMeta["/onboarding/assistant"];
+  const copy = guideCopy[appLanguage][meta.key];
+
+  useEffect(() => {
+    setVanishing(true);
+    const timerId = window.setTimeout(() => setVanishing(false), 360);
+
+    return () => window.clearTimeout(timerId);
+  }, [pathname]);
+
+  const transform = useMemo(
+    () =>
+      meta.placement === "peekLeft"
+        ? "translate(-18px, -50%)"
+        : meta.placement === "peekRight"
+          ? "translate(18px, -50%)"
+          : "none",
+    [meta.placement]
+  );
+
+  return (
+    <Box
+      sx={{
+        position: "fixed",
+        zIndex: 1250,
+        pointerEvents: "none",
+        display: { xs: "none", sm: "block" },
+        ...placementSx[meta.placement],
+        transform,
+        opacity: vanishing ? 0 : 1,
+        filter: vanishing ? "blur(10px)" : "blur(0)",
+        transition: "opacity 260ms ease, filter 260ms ease, transform 260ms ease",
+        animation: vanishing ? "snGuideVanish 360ms ease" : "snGuideFloat 3.4s ease-in-out infinite",
+        "@keyframes snGuideFloat": {
+          "0%, 100%": { marginTop: 0 },
+          "50%": { marginTop: -8 },
+        },
+        "@keyframes snGuideVanish": {
+          "0%": { opacity: 1, filter: "blur(0)" },
+          "45%": { opacity: 0.15, filter: "blur(12px)" },
+          "100%": { opacity: 0, filter: "blur(16px)" },
+        },
+      }}
+    >
+      <Stack direction={meta.placement === "peekLeft" ? "row" : "row-reverse"} spacing={1.2} alignItems="center">
+        <Box sx={{ position: "relative" }}>
+          <Box
+            sx={{
+              position: "absolute",
+              inset: -18,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(20,184,166,0.22), rgba(255,255,255,0) 68%)",
+              animation: "snGuideMist 2.8s ease-in-out infinite",
+              "@keyframes snGuideMist": {
+                "0%, 100%": { transform: "scale(0.96)", opacity: 0.58 },
+                "50%": { transform: "scale(1.12)", opacity: 0.28 },
+              },
+            }}
+          />
+          <AssistantAvatar
+            name={state.assistantName}
+            variant={state.assistantAvatar}
+            mood={meta.mood}
+            lookOffset={lookOffset}
+            active
+            size={92}
+          />
+        </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            width: 250,
+            p: 1.6,
+            borderRadius: 1,
+            color: "#0f172a",
+            border: "1px solid rgba(15,23,42,0.1)",
+            bgcolor: "rgba(255,255,255,0.92)",
+            boxShadow: "0 18px 48px rgba(15,23,42,0.16)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          <Typography sx={{ fontWeight: 900, fontSize: 14 }}>
+            {state.assistantName}
+          </Typography>
+          <Typography sx={{ mt: 0.5, color: "#334155", lineHeight: 1.55, fontSize: 14 }}>
+            {copy}
+          </Typography>
+        </Paper>
+      </Stack>
+    </Box>
+  );
+};
