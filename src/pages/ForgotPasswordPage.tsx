@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import {
   AuthApiError,
   requestPasswordReset,
@@ -90,26 +91,35 @@ const ForgotPasswordPage = () => {
         }}
       >
         <Stack spacing={3}>
-          <Box>
-            <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-              {t("brand.name")}
-            </Typography>
-            <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-              {t("auth.forgotTitle")}
-            </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {t("auth.forgotSubtitle")}
-            </Typography>
-          </Box>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <AssistantAvatar name="Алекс" variant="robot" mood="coach" size={72} />
+            <Box>
+              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                {t("brand.name")}
+              </Typography>
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+                {t("auth.forgotTitle")}
+              </Typography>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                {t("auth.forgotSubtitle")}
+              </Typography>
+            </Box>
+          </Stack>
 
           {serverError && <Alert severity="error">{serverError}</Alert>}
           {result && <Alert severity="success">{result.message}</Alert>}
 
-          <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="on"
+          >
             <TextField
               label={t("form.email")}
               type="email"
               fullWidth
+              autoComplete="email"
               {...register("email")}
               error={Boolean(errors.email)}
               helperText={errors.email?.message}

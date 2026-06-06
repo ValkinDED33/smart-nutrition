@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { AuthApiError, resetPassword } from "../shared/api/auth";
+import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { useLanguage } from "../shared/language";
 
@@ -30,6 +31,8 @@ const ResetPasswordPage = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [passwordInputArmed, setPasswordInputArmed] = useState(false);
+  const [confirmPasswordInputArmed, setConfirmPasswordInputArmed] = useState(false);
   const token = searchParams.get("token")?.trim() ?? "";
 
   const schema = useMemo(
@@ -63,6 +66,8 @@ const ResetPasswordPage = () => {
       confirmPassword: "",
     },
   });
+  const passwordField = register("password");
+  const confirmPasswordField = register("confirmPassword");
 
   const onSubmit = async (data: FormData) => {
     if (!token) {
@@ -110,31 +115,47 @@ const ResetPasswordPage = () => {
         }}
       >
         <Stack spacing={3}>
-          <Box>
-            <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-              {t("brand.name")}
-            </Typography>
-            <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-              {t("auth.resetTitle")}
-            </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-              {t("auth.resetSubtitle")}
-            </Typography>
-          </Box>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <AssistantAvatar name="Алекс" variant="robot" mood="coach" size={72} />
+            <Box>
+              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
+                {t("brand.name")}
+              </Typography>
+              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+                {t("auth.resetTitle")}
+              </Typography>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                {t("auth.resetSubtitle")}
+              </Typography>
+            </Box>
+          </Stack>
 
           {!token && <Alert severity="warning">{t("auth.missingResetToken")}</Alert>}
           {serverError && <Alert severity="error">{serverError}</Alert>}
           {successMessage && <Alert severity="success">{successMessage}</Alert>}
 
-          <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="off"
+          >
             <TextField
               label={t("form.password")}
               type={passwordVisible ? "text" : "password"}
               fullWidth
               disabled={!token || Boolean(successMessage)}
-              {...register("password")}
+              {...passwordField}
+              autoComplete="new-password"
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+              inputProps={{
+                autoComplete: "new-password",
+                readOnly: !passwordInputArmed,
+                onFocus: () => {
+                  setPasswordInputArmed(true);
+                },
+              }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -154,9 +175,17 @@ const ResetPasswordPage = () => {
               type={confirmPasswordVisible ? "text" : "password"}
               fullWidth
               disabled={!token || Boolean(successMessage)}
-              {...register("confirmPassword")}
+              {...confirmPasswordField}
+              autoComplete="new-password"
               error={Boolean(errors.confirmPassword)}
               helperText={errors.confirmPassword?.message}
+              inputProps={{
+                autoComplete: "new-password",
+                readOnly: !confirmPasswordInputArmed,
+                onFocus: () => {
+                  setConfirmPasswordInputArmed(true);
+                },
+              }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

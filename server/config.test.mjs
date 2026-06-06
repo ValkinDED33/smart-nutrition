@@ -4,7 +4,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { createServerConfig } from "./config.mjs";
 
-const publicVercelOrigins = [
+const publicFrontendOrigins = [
+  "https://www.smart-nutrition.club",
+  "https://smart-nutrition.club",
   "https://smart-nutrition-alpha.vercel.app",
   "https://smart-nutrition-topaz.vercel.app",
   "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
@@ -444,16 +446,16 @@ describe("createServerConfig", () => {
     );
   });
 
-  it("keeps the public Vercel origins available for production Render defaults", () => {
+  it("keeps the public frontend origins available for production Render defaults", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
     });
 
-    expect(config.allowedCorsOrigins).toEqual(publicVercelOrigins);
+    expect(config.allowedCorsOrigins).toEqual(publicFrontendOrigins);
   });
 
-  it("adds the public Vercel origins when a legacy frontend origin is configured", () => {
+  it("adds the public frontend origins when a legacy frontend origin is configured", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
@@ -462,7 +464,7 @@ describe("createServerConfig", () => {
 
     expect(config.allowedCorsOrigins).toEqual([
       "https://smart-nutrition-nine.vercel.app",
-      ...publicVercelOrigins,
+      ...publicFrontendOrigins,
     ]);
   });
 
@@ -473,6 +475,6 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_API_PORT: "8787",
     });
 
-    expect(config.allowedCorsOrigins).toEqual(["https://smart-nutrition-alpha.vercel.app"]);
+    expect(config.allowedCorsOrigins).toEqual(["https://www.smart-nutrition.club"]);
   });
 });

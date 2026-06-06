@@ -74,6 +74,8 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [passwordInputArmed, setPasswordInputArmed] = useState(false);
+  const [confirmPasswordInputArmed, setConfirmPasswordInputArmed] = useState(false);
 
   const schema = useMemo(
     () =>
@@ -113,6 +115,10 @@ const RegisterPage = () => {
       confirmPassword: "",
     },
   });
+  const nameField = register("name");
+  const emailField = register("email");
+  const passwordField = register("password");
+  const confirmPasswordField = register("confirmPassword");
 
   const applyAuthenticatedSession = ({ user, snapshot }: AuthResponse) => {
     dispatch(
@@ -311,11 +317,17 @@ const RegisterPage = () => {
             </Alert>
           )}
 
-          <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="off"
+          >
             <TextField
               fullWidth
               label={t("form.name")}
-              {...register("name")}
+              {...nameField}
+              autoComplete="name"
               error={Boolean(errors.name)}
               helperText={errors.name?.message}
             />
@@ -324,7 +336,8 @@ const RegisterPage = () => {
               fullWidth
               label={t("form.email")}
               type="email"
-              {...register("email")}
+              {...emailField}
+              autoComplete="email"
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
             />
@@ -333,9 +346,17 @@ const RegisterPage = () => {
               fullWidth
               label={t("form.password")}
               type={passwordVisible ? "text" : "password"}
-              {...register("password")}
+              {...passwordField}
+              autoComplete="new-password"
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
+              inputProps={{
+                autoComplete: "new-password",
+                readOnly: !passwordInputArmed,
+                onFocus: () => {
+                  setPasswordInputArmed(true);
+                },
+              }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -354,9 +375,17 @@ const RegisterPage = () => {
               fullWidth
               label={t("form.confirmPassword")}
               type={confirmPasswordVisible ? "text" : "password"}
-              {...register("confirmPassword")}
+              {...confirmPasswordField}
+              autoComplete="new-password"
               error={Boolean(errors.confirmPassword)}
               helperText={errors.confirmPassword?.message}
+              inputProps={{
+                autoComplete: "new-password",
+                readOnly: !confirmPasswordInputArmed,
+                onFocus: () => {
+                  setConfirmPasswordInputArmed(true);
+                },
+              }}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

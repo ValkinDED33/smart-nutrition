@@ -56,7 +56,7 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.finish)}
+              onClick={() => navigate(stepPaths.friction)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

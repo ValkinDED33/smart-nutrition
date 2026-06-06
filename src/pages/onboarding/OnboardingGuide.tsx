@@ -16,6 +16,8 @@ const guideCopy = {
     gender: "Це допоможе краще порахувати базовий обмін.",
     height: "Зріст уточнює розрахунок цілі.",
     goal: "Тут обираємо напрям: схуднення, набір або стабільність.",
+    friction: "Скажи, що найчастіше збиває. Я підлаштую підтримку.",
+    motivation: "Виберемо стиль підтримки, щоб я не тиснув зайвого.",
     weight: "Вага стане стартовою точкою прогресу.",
     finish: "Готово. Зараз зберу твій маршрут і відкрию головний екран.",
   },
@@ -27,6 +29,8 @@ const guideCopy = {
     gender: "To pomoże lepiej wyliczyć podstawową przemianę.",
     height: "Wzrost doprecyzuje cel.",
     goal: "Tu wybieramy kierunek: redukcja, masa albo stabilizacja.",
+    friction: "Powiedz, co najczęściej wybija z rytmu. Dopasuję wsparcie.",
+    motivation: "Wybierzemy styl wsparcia, żebym nie naciskał za mocno.",
     weight: "Waga będzie punktem startowym progresu.",
     finish: "Gotowe. Zaraz złożę Twój plan i otworzę główny ekran.",
   },
@@ -38,6 +42,8 @@ const guideCopy = {
     gender: "This helps estimate your baseline needs.",
     height: "Height sharpens the goal calculation.",
     goal: "Pick the direction: fat loss, muscle gain, or stability.",
+    friction: "Tell me what usually throws you off. I will adapt the support.",
+    motivation: "Let us pick a support style that will actually fit.",
     weight: "Weight becomes the starting point for progress.",
     finish: "Done. I will assemble your route and open the main screen.",
   },
@@ -55,6 +61,8 @@ const stepMeta: Record<
   "/onboarding/gender": { key: "gender", placement: "floatBottom", mood: "happy" },
   "/onboarding/height": { key: "height", placement: "peekLeft", mood: "coach" },
   "/onboarding/goal": { key: "goal", placement: "peekRight", mood: "coach" },
+  "/onboarding/friction": { key: "friction", placement: "floatBottom", mood: "concerned" },
+  "/onboarding/motivation": { key: "motivation", placement: "peekRight", mood: "happy" },
   "/onboarding/weight": { key: "weight", placement: "peekLeft", mood: "coach" },
   "/onboarding/finish": { key: "finish", placement: "floatTop", mood: "celebrate" },
 };
@@ -78,6 +86,16 @@ const placementSx: Record<GuidePlacement, object> = {
     left: { xs: 12, md: "calc(50% - 410px)" },
     bottom: { xs: 92, md: 94 },
   },
+};
+
+const fallbackStepMeta = {
+  key: "assistant",
+  placement: "peekRight",
+  mood: "celebrate",
+} as const satisfies {
+  key: keyof typeof guideCopy.en;
+  placement: GuidePlacement;
+  mood: AssistantAvatarMood;
 };
 
 const usePointerLook = () => {
@@ -117,7 +135,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const { appLanguage } = useLanguage();
   const lookOffset = usePointerLook();
   const [vanishing, setVanishing] = useState(false);
-  const meta = stepMeta[pathname] ?? stepMeta["/onboarding/assistant"];
+  const meta = stepMeta[pathname] ?? fallbackStepMeta;
   const copy = guideCopy[appLanguage][meta.key];
 
   useEffect(() => {

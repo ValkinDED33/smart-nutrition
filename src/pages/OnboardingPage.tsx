@@ -6,10 +6,12 @@ import type { RootState } from "../app/store";
 import { OnboardingAgePage } from "./onboarding/OnboardingAgePage";
 import { OnboardingAssistantPage } from "./onboarding/OnboardingAssistantPage";
 import { OnboardingFinishPage } from "./onboarding/OnboardingFinishPage";
+import { OnboardingFrictionPage } from "./onboarding/OnboardingFrictionPage";
 import { OnboardingGenderPage } from "./onboarding/OnboardingGenderPage";
 import { OnboardingGoalPage } from "./onboarding/OnboardingGoalPage";
 import { OnboardingGuide } from "./onboarding/OnboardingGuide";
 import { OnboardingHeightPage } from "./onboarding/OnboardingHeightPage";
+import { OnboardingMotivationPage } from "./onboarding/OnboardingMotivationPage";
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
 import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
@@ -61,9 +63,9 @@ const OnboardingPage = () => {
         <Route path="height" element={<OnboardingHeightPage {...stepProps} />} />
         <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
         <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />
+        <Route path="friction" element={<OnboardingFrictionPage {...stepProps} />} />
+        <Route path="motivation" element={<OnboardingMotivationPage {...stepProps} />} />
         <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
-        <Route path="friction" element={<Navigate to={stepPaths.goal} replace />} />
-        <Route path="motivation" element={<Navigate to={stepPaths.assistant} replace />} />
         <Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />
       </Routes>
     </>

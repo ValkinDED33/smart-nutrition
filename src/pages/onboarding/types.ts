@@ -42,6 +42,8 @@ export const stepPaths = {
   gender: "/onboarding/gender",
   height: "/onboarding/height",
   goal: "/onboarding/goal",
+  friction: "/onboarding/friction",
+  motivation: "/onboarding/motivation",
   weight: "/onboarding/weight",
   finish: "/onboarding/finish",
 } as const;
