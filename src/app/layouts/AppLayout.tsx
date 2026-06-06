@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   BookOpen,
   BarChart3,
+  Bot,
   Globe2,
   Moon,
   ShieldCheck,
@@ -29,7 +30,11 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
+import {
+  resetAppState,
+  type AppDispatch,
+  type RootState,
+} from "../../app/store";
 import { logout as logoutSession } from "@shared/api/auth";
 import { useLanguage } from "@shared/language";
 import BackendOfflineBanner from "@shared/components/BackendOfflineBanner";
@@ -48,6 +53,7 @@ import type { AppLanguage } from "@shared/types/i18n";
 const mobileTabs = [
   { value: "/meals", labelKey: "navigation.food", icon: Utensils },
   { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
+  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
   { value: "/community", labelKey: "navigation.community", icon: UsersRound },
   { value: "/progress", labelKey: "navigation.progress", icon: BarChart3 },
   { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
@@ -57,6 +63,7 @@ const desktopTabs = [
   { value: "/dashboard", labelKey: "navigation.dashboard" },
   { value: "/meals", labelKey: "navigation.food" },
   { value: "/recipes", labelKey: "navigation.recipes" },
+  { value: "/coach", labelKey: "navigation.coach" },
   { value: "/community", labelKey: "navigation.community" },
   { value: "/progress", labelKey: "navigation.progress" },
   { value: "/profile", labelKey: "navigation.profile" },
@@ -75,7 +82,9 @@ const Layout = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
-  const setAssistantCurrentScreen = useAssistantChatStore((state) => state.setCurrentScreen);
+  const setAssistantCurrentScreen = useAssistantChatStore(
+    (state) => state.setCurrentScreen,
+  );
 
   useEffect(() => {
     setAssistantCurrentScreen(createAssistantScreenContext(location.pathname));
@@ -89,7 +98,8 @@ const Layout = () => {
   };
 
   const activeTab =
-    mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? "/dashboard";
+    mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ??
+    "/dashboard";
   const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
   const canAccessAdmin =
     user &&
@@ -98,10 +108,14 @@ const Layout = () => {
     ? [...desktopTabs, { value: "/admin", labelKey: "navigation.admin" }]
     : desktopTabs;
   const visibleMobileTabs = canAccessAdmin
-    ? [...mobileTabs, { value: "/admin", labelKey: "navigation.admin", icon: ShieldCheck }]
+    ? [
+        ...mobileTabs,
+        { value: "/admin", labelKey: "navigation.admin", icon: ShieldCheck },
+      ]
     : mobileTabs;
   const activeMobileTab =
-    visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ?? activeTab;
+    visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))
+      ?.value ?? activeTab;
 
   return (
     <Box
@@ -127,14 +141,27 @@ const Layout = () => {
         }}
       >
         <Container maxWidth="xl">
-          <Toolbar sx={{ minHeight: 72, px: 0, gap: 1.5, justifyContent: "space-between" }}>
-            <Stack direction="row" spacing={1.2} alignItems="center" minWidth={0}>
+          <Toolbar
+            sx={{
+              minHeight: 72,
+              px: 0,
+              gap: 1.5,
+              justifyContent: "space-between",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={1.2}
+              alignItems="center"
+              minWidth={0}
+            >
               <Box
                 sx={{
                   width: 40,
                   height: 40,
                   borderRadius: "14px",
-                  background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                  background:
+                    "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
                   display: "grid",
                   placeItems: "center",
                   color: "white",
@@ -222,7 +249,13 @@ const Layout = () => {
               alignItems="center"
               sx={{ flexShrink: 0 }}
             >
-              <Tooltip title={mode === "dark" ? t("navigation.themeLight") : t("navigation.themeDark")}>
+              <Tooltip
+                title={
+                  mode === "dark"
+                    ? t("navigation.themeLight")
+                    : t("navigation.themeDark")
+                }
+              >
                 <IconButton
                   onClick={toggleMode}
                   size="small"
@@ -241,7 +274,11 @@ const Layout = () => {
                       : "rgba(15, 118, 110, 0.24)",
                   }}
                 >
-                  {mode === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+                  {mode === "dark" ? (
+                    <Sun size={18} aria-hidden="true" />
+                  ) : (
+                    <Moon size={18} aria-hidden="true" />
+                  )}
                 </IconButton>
               </Tooltip>
 
@@ -269,7 +306,11 @@ const Layout = () => {
                   value={appLanguage}
                   aria-label={t("navigation.languageAria")}
                   onChange={(_, nextLanguage) => {
-                    if (nextLanguage === "uk" || nextLanguage === "pl" || nextLanguage === "en") {
+                    if (
+                      nextLanguage === "uk" ||
+                      nextLanguage === "pl" ||
+                      nextLanguage === "en"
+                    ) {
                       setLanguage(nextLanguage);
                       dispatch(setProfileLanguage(nextLanguage));
                     }
@@ -330,8 +371,16 @@ const Layout = () => {
                   </Button>
                 </Stack>
               ) : (
-                <Stack direction="row" spacing={1} sx={{ display: { xs: "none", sm: "flex" } }}>
-                  <Button component={Link} to="/login" sx={{ textTransform: "none", fontWeight: 800 }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ display: { xs: "none", sm: "flex" } }}
+                >
+                  <Button
+                    component={Link}
+                    to="/login"
+                    sx={{ textTransform: "none", fontWeight: 800 }}
+                  >
                     {t("nav.login")}
                   </Button>
                   <Button
@@ -342,7 +391,8 @@ const Layout = () => {
                       textTransform: "none",
                       fontWeight: 800,
                       borderRadius: 999,
-                      background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                      background:
+                        "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
                     }}
                   >
                     {t("nav.register")}

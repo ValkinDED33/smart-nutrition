@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { TypeAnimation } from "react-type-animation";
 import {
+  Bot,
+  Camera,
+  MessageSquareText,
+  RotateCcw,
+  ScanBarcode,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import {
   Box,
   Button,
   Chip,
@@ -18,7 +27,7 @@ import {
 import type { AssistantCompanionKind } from "@domain/profile/types";
 import { useLanguage } from "../shared/language";
 
-type LandingLanguage = "uk" | "pl";
+type LandingLanguage = "uk" | "pl" | "en";
 
 const landingCopy = {
   uk: {
@@ -31,7 +40,12 @@ const landingCopy = {
     navOverview: "Огляд продукту",
     proof: ["AI-компаньйон", "Вода і білок", "Community", "PWA"],
     heroStats: [
-      { label: "Калорії", value: "1 420 / 2 050", progress: 69, color: "#0f766e" },
+      {
+        label: "Калорії",
+        value: "1 420 / 2 050",
+        progress: 69,
+        color: "#0f766e",
+      },
       { label: "Вода", value: "1.5 / 2.2 л", progress: 68, color: "#0891b2" },
       { label: "Білок", value: "96 / 120 г", progress: 80, color: "#2563eb" },
     ],
@@ -83,7 +97,14 @@ const landingCopy = {
     progressAdvice:
       "Я бачу плато за вагою. Це нормально: білок стабільний, воду краще підняти на 2 склянки.",
     communityTitle: "Community і модерація вже в логіці продукту",
-    communityItems: ["Друзі", "Форум", "Рецепти", "Статті", "Модератори", "Admin panel"],
+    communityItems: [
+      "Друзі",
+      "Форум",
+      "Рецепти",
+      "Статті",
+      "Модератори",
+      "Admin panel",
+    ],
     mobileTitle: "Працює як responsive web app і PWA",
     mobileBody:
       "Перший екран після входу дає три дії: додати їжу, випити воду, запитати companion. Без інструкцій.",
@@ -103,7 +124,12 @@ const landingCopy = {
     navOverview: "Przegląd produktu",
     proof: ["AI pupil", "Woda i białko", "Community", "PWA"],
     heroStats: [
-      { label: "Kalorie", value: "1 420 / 2 050", progress: 69, color: "#0f766e" },
+      {
+        label: "Kalorie",
+        value: "1 420 / 2 050",
+        progress: 69,
+        color: "#0f766e",
+      },
       { label: "Woda", value: "1.5 / 2.2 l", progress: 68, color: "#0891b2" },
       { label: "Białko", value: "96 / 120 g", progress: 80, color: "#2563eb" },
     ],
@@ -155,7 +181,14 @@ const landingCopy = {
     progressAdvice:
       "Widzę plateau wagi. To normalne: białko jest stabilne, wodę warto podnieść o 2 szklanki.",
     communityTitle: "Community i moderacja są częścią produktu",
-    communityItems: ["Znajomi", "Forum", "Przepisy", "Artykuły", "Moderatorzy", "Admin panel"],
+    communityItems: [
+      "Znajomi",
+      "Forum",
+      "Przepisy",
+      "Artykuły",
+      "Moderatorzy",
+      "Admin panel",
+    ],
     mobileTitle: "Działa jako responsive web app i PWA",
     mobileBody:
       "Pierwszy ekran po wejściu daje trzy akcje: dodaj jedzenie, wypij wodę, zapytaj companion. Bez instrukcji.",
@@ -165,7 +198,98 @@ const landingCopy = {
     finalBody:
       "Użytkownik ma czuć nie złożoną aplikację, tylko żywego pomocnika, który pomaga stawać się lepszym każdego dnia.",
   },
+  en: {
+    eyebrow: "AI wellness ecosystem",
+    title: "AI nutrition and health assistant",
+    subtitle:
+      "Track food, water, habits, and progress with a living AI companion that explains your day in plain language.",
+    primary: "Start free",
+    secondary: "Try AI",
+    navOverview: "Product overview",
+    proof: ["AI companion", "Water and protein", "Community", "PWA"],
+    heroStats: [
+      {
+        label: "Calories",
+        value: "1 420 / 2 050",
+        progress: 69,
+        color: "#0f766e",
+      },
+      { label: "Water", value: "1.5 / 2.2 l", progress: 68, color: "#0891b2" },
+      { label: "Protein", value: "96 / 120 g", progress: 80, color: "#2563eb" },
+    ],
+    mascot: {
+      name: "Diana",
+      title: "Diana is here",
+      body: "You have 600 kcal left today. I would add water and a light protein dinner.",
+      mood: "live reaction",
+      xps: "+25 XP streak",
+    },
+    quickActions: ["Food photo", "Barcode", "Repeat yesterday", "Manual entry"],
+    sectionEyebrow: "Clear next actions in 5 seconds",
+    ecosystemTitle: "Not a calculator, a companion platform",
+    ecosystemBody:
+      "Smart Nutrition connects nutrition, gamification, analytics, hydration, progress, and community into one calm daily flow.",
+    ecosystem: [
+      {
+        title: "AI companion",
+        body: "Follows the cursor, reacts to actions, celebrates wins, and warns about risks without pressure.",
+      },
+      {
+        title: "Frictionless food",
+        body: "Search, barcode, photo, templates, yesterday repeat, and a personal product catalog.",
+      },
+      {
+        title: "Living motivation",
+        body: "Streaks, XP, levels, achievements, day-off protection, and gentle tasks that keep momentum.",
+      },
+      {
+        title: "Community food hub",
+        body: "Recipes, comments, saves, ratings, and meal moderation before publishing.",
+      },
+    ],
+    foodTitle: "Adding food should feel almost invisible",
+    foodBody:
+      "The user does not think about forms. They pick the fastest path while AI builds the draft and explains macros.",
+    foods: [
+      { title: "Chicken bowl", kcal: "520 kcal", meta: "38 g protein" },
+      { title: "Yogurt and berries", kcal: "210 kcal", meta: "16 g protein" },
+      { title: "Oats", kcal: "340 kcal", meta: "repeat yesterday" },
+    ],
+    analyticsTitle: "Analytics that speaks like a human",
+    analytics: [
+      { label: "Streak", value: "12 days" },
+      { label: "Weight", value: "-0.4 kg" },
+      { label: "Mood", value: "stable" },
+      { label: "Risk", value: "low water" },
+    ],
+    progressAdvice:
+      "I see a weight plateau. That is normal: protein is stable, water should go up by 2 glasses.",
+    communityTitle: "Community and moderation are product logic",
+    communityItems: [
+      "Friends",
+      "Forum",
+      "Recipes",
+      "Articles",
+      "Moderators",
+      "Admin panel",
+    ],
+    mobileTitle: "Works as a responsive web app and PWA",
+    mobileBody:
+      "The first screen after login gives three actions: add food, drink water, ask companion. No instructions needed.",
+    learningTitle: "Worth knowing",
+    learningTopics: ["sleep", "stress", "magnesium", "sugar", "gut", "water"],
+    finalTitle: "The product goal is simple",
+    finalBody:
+      "Users should feel a living assistant, not a complicated app: something that helps them improve every day.",
+  },
 } as const;
+
+const quickActionIcons = [
+  Camera,
+  ScanBarcode,
+  RotateCcw,
+  MessageSquareText,
+] as const;
 
 const companionKinds: AssistantCompanionKind[] = [
   "robot",
@@ -199,7 +323,9 @@ const usePointerLook = () => {
       });
     };
 
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
 
     return () => {
       if (animationFrame !== undefined) {
@@ -239,12 +365,22 @@ const HeroDashboard = ({
     }}
   >
     <Stack spacing={1.6}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={2}
+      >
         <Box>
-          <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 900 }}>
+          <Typography
+            variant="overline"
+            sx={{ color: "#0f766e", fontWeight: 900 }}
+          >
             Smart Nutrition
           </Typography>
-          <Typography sx={{ fontSize: 22, fontWeight: 900 }}>{copy.navOverview}</Typography>
+          <Typography sx={{ fontSize: 22, fontWeight: 900 }}>
+            {copy.navOverview}
+          </Typography>
         </Box>
         <Chip label="AI online" color="success" variant="outlined" />
       </Stack>
@@ -253,7 +389,9 @@ const HeroDashboard = ({
         <Box key={metric.label}>
           <Stack direction="row" justifyContent="space-between" spacing={2}>
             <Typography sx={{ fontWeight: 900 }}>{metric.label}</Typography>
-            <Typography sx={{ color: metric.color, fontWeight: 900 }}>{metric.value}</Typography>
+            <Typography sx={{ color: metric.color, fontWeight: 900 }}>
+              {metric.value}
+            </Typography>
           </Stack>
           <LinearProgress
             variant="determinate"
@@ -278,7 +416,9 @@ const HeroDashboard = ({
         }}
       >
         <Typography sx={{ fontWeight: 900 }}>{copy.mascot.title}</Typography>
-        <Typography sx={{ mt: 0.4, lineHeight: 1.55 }}>{copy.mascot.body}</Typography>
+        <Typography sx={{ mt: 0.4, lineHeight: 1.55 }}>
+          {copy.mascot.body}
+        </Typography>
       </Box>
     </Stack>
   </Paper>
@@ -329,8 +469,12 @@ const LandingMascot = ({
           size={86}
         />
         <Stack spacing={0.8} sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 22 }}>{copy.mascot.name}</Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>{copy.mascot.body}</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: 22 }}>
+            {copy.mascot.name}
+          </Typography>
+          <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
+            {copy.mascot.body}
+          </Typography>
           <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
             <Chip
               size="small"
@@ -469,7 +613,11 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
   </Box>
 );
 
-const QuickFoodPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
+const QuickFoodPanel = ({
+  copy,
+}: {
+  copy: (typeof landingCopy)[LandingLanguage];
+}) => (
   <Box
     component="section"
     sx={{
@@ -490,15 +638,27 @@ const QuickFoodPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
       >
         {copy.foodTitle}
       </Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 650, lineHeight: 1.75 }}>
+      <Typography
+        color="text.secondary"
+        sx={{ maxWidth: 650, lineHeight: 1.75 }}
+      >
         {copy.foodBody}
       </Typography>
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-        {copy.quickActions.map((action) => (
-          <Button key={action} variant="outlined" sx={iconButtonSx} aria-label={action}>
-            {action[0]}
-          </Button>
-        ))}
+        {copy.quickActions.map((action, index) => {
+          const Icon = quickActionIcons[index] ?? Sparkles;
+
+          return (
+            <Button
+              key={action}
+              variant="outlined"
+              sx={iconButtonSx}
+              aria-label={action}
+            >
+              <Icon size={20} aria-hidden="true" />
+            </Button>
+          );
+        })}
       </Stack>
     </Stack>
 
@@ -535,7 +695,9 @@ const QuickFoodPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
                       : "linear-gradient(135deg, #fde68a 0%, #92400e 100%)",
               }}
             />
-            <Typography sx={{ fontWeight: 900, fontSize: 20 }}>{food.title}</Typography>
+            <Typography sx={{ fontWeight: 900, fontSize: 20 }}>
+              {food.title}
+            </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Chip size="small" label={food.kcal} />
               <Chip size="small" label={food.meta} variant="outlined" />
@@ -547,7 +709,11 @@ const QuickFoodPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
   </Box>
 );
 
-const EcosystemGrid = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
+const EcosystemGrid = ({
+  copy,
+}: {
+  copy: (typeof landingCopy)[LandingLanguage];
+}) => (
   <Box component="section">
     <Stack spacing={1.2} sx={{ mb: 2 }}>
       <Typography
@@ -557,7 +723,10 @@ const EcosystemGrid = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }
       >
         {copy.ecosystemTitle}
       </Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 850, lineHeight: 1.75 }}>
+      <Typography
+        color="text.secondary"
+        sx={{ maxWidth: 850, lineHeight: 1.75 }}
+      >
         {copy.ecosystemBody}
       </Typography>
     </Stack>
@@ -585,7 +754,10 @@ const EcosystemGrid = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }
               label={`0${index + 1}`}
               sx={{
                 width: 54,
-                bgcolor: index % 2 === 0 ? "rgba(15,118,110,0.1)" : "rgba(37,99,235,0.1)",
+                bgcolor:
+                  index % 2 === 0
+                    ? "rgba(15,118,110,0.1)"
+                    : "rgba(37,99,235,0.1)",
                 color: index % 2 === 0 ? "#0f766e" : "#1d4ed8",
               }}
             />
@@ -602,7 +774,11 @@ const EcosystemGrid = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }
   </Box>
 );
 
-const AnalyticsPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
+const AnalyticsPanel = ({
+  copy,
+}: {
+  copy: (typeof landingCopy)[LandingLanguage];
+}) => (
   <Paper
     component="section"
     elevation={0}
@@ -626,7 +802,11 @@ const AnalyticsPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, 1fr)" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, minmax(0, 1fr))",
+            lg: "repeat(4, 1fr)",
+          },
           gap: 1.5,
         }}
       >
@@ -640,8 +820,12 @@ const AnalyticsPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
               bgcolor: "rgba(255,255,255,0.08)",
             }}
           >
-            <Typography sx={{ color: "rgba(255,255,255,0.66)" }}>{item.label}</Typography>
-            <Typography sx={{ mt: 0.5, fontSize: 28, fontWeight: 900 }}>{item.value}</Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.66)" }}>
+              {item.label}
+            </Typography>
+            <Typography sx={{ mt: 0.5, fontSize: 28, fontWeight: 900 }}>
+              {item.value}
+            </Typography>
           </Box>
         ))}
       </Box>
@@ -653,8 +837,17 @@ const AnalyticsPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
           border: "1px solid rgba(94,234,212,0.22)",
         }}
       >
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems="center">
-          <AssistantAvatar name={copy.mascot.name} variant="robot" mood="coach" active />
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          alignItems="center"
+        >
+          <AssistantAvatar
+            name={copy.mascot.name}
+            variant="robot"
+            mood="coach"
+            active
+          />
           <Typography sx={{ color: "rgba(255,255,255,0.86)", lineHeight: 1.7 }}>
             {copy.progressAdvice}
           </Typography>
@@ -664,7 +857,11 @@ const AnalyticsPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] 
   </Paper>
 );
 
-const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
+const MobileCommunityPanel = ({
+  copy,
+}: {
+  copy: (typeof landingCopy)[LandingLanguage];
+}) => (
   <Box
     component="section"
     sx={{
@@ -682,7 +879,10 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
       >
         {copy.mobileTitle}
       </Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 680, lineHeight: 1.75 }}>
+      <Typography
+        color="text.secondary"
+        sx={{ maxWidth: 680, lineHeight: 1.75 }}
+      >
         {copy.mobileBody}
       </Typography>
       <Paper
@@ -694,7 +894,12 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
           bgcolor: "rgba(255,255,255,0.9)",
         }}
       >
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>{copy.communityTitle}</Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <ShieldCheck size={20} aria-hidden="true" />
+          <Typography sx={{ fontWeight: 900 }}>
+            {copy.communityTitle}
+          </Typography>
+        </Stack>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           {copy.communityItems.map((item) => (
             <Chip key={item} label={item} variant="outlined" />
@@ -710,10 +915,18 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
           bgcolor: "rgba(255,255,255,0.9)",
         }}
       >
-        <Typography sx={{ fontWeight: 900, mb: 1 }}>{copy.learningTitle}</Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+          <Bot size={20} aria-hidden="true" />
+          <Typography sx={{ fontWeight: 900 }}>{copy.learningTitle}</Typography>
+        </Stack>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           {copy.learningTopics.map((topic) => (
-            <Chip key={topic} label={topic} color="primary" variant="outlined" />
+            <Chip
+              key={topic}
+              label={topic}
+              color="primary"
+              variant="outlined"
+            />
           ))}
         </Stack>
       </Paper>
@@ -740,7 +953,13 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
       >
         <Stack spacing={1.4}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <AssistantAvatar name={copy.mascot.name} variant="cat" mood="happy" size={54} active />
+            <AssistantAvatar
+              name={copy.mascot.name}
+              variant="cat"
+              mood="happy"
+              size={54}
+              active
+            />
             <Box>
               <Typography sx={{ fontWeight: 900 }}>Smart Nutrition</Typography>
               <Typography variant="caption" color="text.secondary">
@@ -776,7 +995,12 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
               />
             </Box>
           ))}
-          <Button component={Link} to="/register" variant="contained" sx={{ mt: 1 }}>
+          <Button
+            component={Link}
+            to="/register"
+            variant="contained"
+            sx={{ mt: 1 }}
+          >
             {copy.primary}
           </Button>
         </Stack>
@@ -785,7 +1009,11 @@ const MobileCommunityPanel = ({ copy }: { copy: (typeof landingCopy)[LandingLang
   </Box>
 );
 
-const FinalCta = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
+const FinalCta = ({
+  copy,
+}: {
+  copy: (typeof landingCopy)[LandingLanguage];
+}) => (
   <Paper
     component="section"
     elevation={0}
@@ -806,7 +1034,10 @@ const FinalCta = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => 
         <Typography component="h2" variant="h4" sx={{ fontWeight: 900 }}>
           {copy.finalTitle}
         </Typography>
-        <Typography color="text.secondary" sx={{ maxWidth: 820, lineHeight: 1.7 }}>
+        <Typography
+          color="text.secondary"
+          sx={{ maxWidth: 820, lineHeight: 1.7 }}
+        >
           {copy.finalBody}
         </Typography>
       </Stack>

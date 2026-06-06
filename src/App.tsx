@@ -12,6 +12,7 @@ import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
 
 const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
+const loadLandingPage = () => import("./pages/LandingPage");
 const loadOnboardingPage = () => import("./pages/OnboardingPage");
 const loadDashboardPage = () => import("./pages/DashboardPage");
 const loadMealsPage = () => import("./pages/MealsPage");
@@ -29,6 +30,7 @@ const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
 const loadNotFoundPage = () => import("./pages/NotFoundPage");
 
 const LanguageSetupPage = lazy(loadLanguageSetupPage);
+const LandingPage = lazy(loadLandingPage);
 const OnboardingPage = lazy(loadOnboardingPage);
 const DashboardPage = lazy(loadDashboardPage);
 const MealsPage = lazy(loadMealsPage);
@@ -49,7 +51,8 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, isInitialized, isLoading, user } = useSelector(selectAuth);
+  const { isAuthenticated, isInitialized, isLoading, user } =
+    useSelector(selectAuth);
   const { hasCompletedOnboarding, setOnboardingUser } = useLanguage();
   const shouldShowOnboarding = isAuthenticated && !hasCompletedOnboarding;
 
@@ -58,7 +61,7 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
-    setOnboardingUser(isAuthenticated ? user?.id ?? null : null);
+    setOnboardingUser(isAuthenticated ? (user?.id ?? null) : null);
   }, [isAuthenticated, setOnboardingUser, user?.id]);
 
   useEffect(() => {
@@ -105,7 +108,10 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <Helmet titleTemplate="%s | Smart Nutrition" defaultTitle="Smart Nutrition">
+      <Helmet
+        titleTemplate="%s | Smart Nutrition"
+        defaultTitle="Smart Nutrition"
+      >
         <meta
           name="description"
           content="Smart Nutrition tracks meals, water, progress, and AI coaching in one responsive app."
@@ -117,6 +123,14 @@ function App() {
             <Route element={<Layout />}>
               <Route
                 path="/"
+                element={
+                  <PublicRoute>
+                    <LandingPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/language"
                 element={
                   <PublicRoute>
                     <LanguageSetupPage />
@@ -175,7 +189,11 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <DashboardPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <DashboardPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -183,7 +201,11 @@ function App() {
                 path="/food"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <Navigate to="/meals" replace />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <Navigate to="/meals" replace />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -191,7 +213,11 @@ function App() {
                 path="/meals"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <MealsPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <MealsPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -199,7 +225,11 @@ function App() {
                 path="/recipes"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <RecipesPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <RecipesPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -207,7 +237,11 @@ function App() {
                 path="/community"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <CommunityPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <CommunityPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -215,7 +249,11 @@ function App() {
                 path="/coach"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <CoachPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <CoachPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -223,7 +261,11 @@ function App() {
                 path="/progress"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <ProgressPage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <ProgressPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -231,15 +273,30 @@ function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <ProfilePage />}
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <ProfilePage />
+                    )}
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute roles={["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"]}>
-                    {shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <AdminPage />}
+                  <ProtectedRoute
+                    roles={[
+                      "NUTRITIONIST",
+                      "MODERATOR",
+                      "ADMIN",
+                      "SUPER_ADMIN",
+                    ]}
+                  >
+                    {shouldShowOnboarding ? (
+                      <Navigate to="/onboarding" replace />
+                    ) : (
+                      <AdminPage />
+                    )}
                   </ProtectedRoute>
                 }
               />
@@ -252,12 +309,24 @@ function App() {
                   />
                 }
               />
-              <Route path="/meal-builder" element={<Navigate to="/meals" replace />} />
-              <Route path="/water" element={<Navigate to="/progress" replace />} />
+              <Route
+                path="/meal-builder"
+                element={<Navigate to="/meals" replace />}
+              />
+              <Route
+                path="/water"
+                element={<Navigate to="/progress" replace />}
+              />
               <Route path="/ai" element={<Navigate to="/coach" replace />} />
               <Route
                 path="*"
-                element={shouldShowOnboarding ? <Navigate to="/onboarding" replace /> : <NotFoundPage />}
+                element={
+                  shouldShowOnboarding ? (
+                    <Navigate to="/onboarding" replace />
+                  ) : (
+                    <NotFoundPage />
+                  )
+                }
               />
             </Route>
           </Routes>
