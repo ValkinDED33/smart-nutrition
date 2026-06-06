@@ -2,19 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
-import type { RootState } from "../../app/store";
+import type { RootState } from "@app/store";
 import {
   selectTodayMealItems,
   selectTodayMealTotalNutrients,
-} from "../../features/meal/selectors";
-import { selectDailyMacroTargets } from "../../features/profile/selectors";
+} from "@features/meal/selectors";
+import { selectDailyMacroTargets } from "@features/profile/selectors";
 import { detectWeightPlateau, getDaysSince } from "@domain/profile/bodyMetrics";
-import { useLanguage } from "../language";
-import { AssistantAvatar, type AssistantAvatarMood } from "./AssistantAvatar";
+import { useLanguage } from "@shared/language";
+import { AssistantAvatar, type AssistantAvatarMood } from "@shared/components/AssistantAvatar";
 import {
   buildAssistantCoreSnapshot,
   type AssistantCoreEmotion,
-} from "../../core/assistant";
+} from "@core/assistant";
 
 const widgetCopy = {
   uk: {

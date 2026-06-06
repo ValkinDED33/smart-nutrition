@@ -21,7 +21,7 @@ export function calculateMealTotalNutrients(items: MealEntry[]): Nutrients {
     const n = item.product.nutrients;
 
     nutrientKeys.forEach((key) => {
-      totals[key] += (n[key] ?? 0) * factor;
+      totals[key] = (totals[key] ?? 0) + (n[key] ?? 0) * factor;
     });
   });
 

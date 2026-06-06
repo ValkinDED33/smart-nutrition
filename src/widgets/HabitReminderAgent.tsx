@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../../app/store";
+import type { RootState } from "@app/store";
 import type { MealType } from "@domain/meal/types";
-import { useLanguage } from "../language";
+import { useLanguage } from "@shared/language";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
-import { syncWaterDay } from "../../features/water/waterSlice";
+import { syncWaterDay } from "@features/water/waterSlice";
 
 const notificationLog = new Set<string>();
 

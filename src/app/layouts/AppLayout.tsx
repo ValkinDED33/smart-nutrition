@@ -30,20 +30,20 @@ import {
   Typography,
 } from "@mui/material";
 import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
-import { logout as logoutSession } from "../api/auth";
-import { useLanguage } from "../language";
-import BackendOfflineBanner from "../components/BackendOfflineBanner";
-import SyncStatusChip from "../components/SyncStatusChip";
-import SyncFeedbackAlert from "../components/SyncFeedbackAlert";
-import HabitReminderAgent from "../components/HabitReminderAgent";
-import { ContextAssistantWidget } from "../components/ContextAssistantWidget";
-import { createAssistantScreenContext } from "../lib/assistant/assistantScreen";
-import { useAssistantChatStore } from "../state/useAssistantChatStore";
-import { clearSyncOutbox } from "../lib/syncOutbox";
-import ProfileLanguageAgent from "../components/ProfileLanguageAgent";
-import { setProfileLanguage } from "../../features/profile/profileSlice";
-import { useAppColorMode } from "../theme/colorMode";
-import type { AppLanguage } from "../types/i18n";
+import { logout as logoutSession } from "@shared/api/auth";
+import { useLanguage } from "@shared/language";
+import BackendOfflineBanner from "@shared/components/BackendOfflineBanner";
+import SyncStatusChip from "@widgets/SyncStatusChip";
+import SyncFeedbackAlert from "@widgets/SyncFeedbackAlert";
+import HabitReminderAgent from "@widgets/HabitReminderAgent";
+import { ContextAssistantWidget } from "@widgets/ContextAssistantWidget";
+import { createAssistantScreenContext } from "@features/assistant/assistantScreen";
+import { useAssistantChatStore } from "@features/assistant/model/store";
+import { clearSyncOutbox } from "@shared/lib/syncOutbox";
+import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
+import { setProfileLanguage } from "@features/profile/model/store";
+import { useAppColorMode } from "@shared/theme/colorMode";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const mobileTabs = [
   { value: "/meals", labelKey: "navigation.food", icon: Utensils },

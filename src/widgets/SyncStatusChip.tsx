@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Chip, Tooltip } from "@mui/material";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../app/store";
+import type { RootState } from "@app/store";
 import {
   formatQueuedSyncMessage,
   translateSyncErrorMessage,
-} from "../lib/syncMessaging";
-import { useLanguage } from "../language";
+} from "@shared/lib/syncMessaging";
+import { useLanguage } from "@shared/language";
 
 const syncCopy = {
   uk: {

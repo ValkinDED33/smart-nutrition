@@ -1,9 +1,9 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Alert } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
-import { clearSyncToast } from "../../features/auth/authSlice";
-import { useLanguage } from "../language";
-import { useAutoDismiss } from "../hooks/useAutoDismiss";
+import type { AppDispatch, RootState } from "@app/store";
+import { clearSyncToast } from "@features/auth/authSlice";
+import { useLanguage } from "@shared/language";
+import { useAutoDismiss } from "@shared/hooks/useAutoDismiss";
 
 const syncFeedbackCopy = {
   uk: {

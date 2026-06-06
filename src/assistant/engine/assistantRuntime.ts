@@ -13,13 +13,13 @@ import {
   buildGuidedAssistantReply,
   getAssistantHonestyNote,
   getAssistantModeLabel,
-} from "./assistantRules";
+} from "./assistantRuntimeRules";
 import type { AssistantQuestionInput, AssistantRuntimeContext } from "@domain/assistant/types";
 import type { AssistantRuntimeMemoryStore } from "./assistantMemory";
 import type { AssistantRuntimeGateway } from "./assistantGateway";
-import type { AssistantChatMessage, AssistantContextSource } from "./assistantTypes";
+import type { AssistantChatMessage, AssistantContextSource } from "./assistantRuntimeTypes";
 
-export type { AssistantChatMessage, AssistantContextSource } from "./assistantTypes";
+export type { AssistantChatMessage, AssistantContextSource } from "./assistantRuntimeTypes";
 
 export interface AssistantRuntimeDependencies {
   provider?: AssistantRuntimeGateway;

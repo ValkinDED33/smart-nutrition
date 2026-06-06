@@ -1,11 +1,11 @@
-import type { AppLanguage } from "../types/i18n";
+import type { AppLanguage } from "@shared/types/i18n";
 import type { AssistantCompanionKind, AssistantTone } from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
 import {
   getClientStorageItem,
   removeClientStorageItem,
   setClientStorageItem,
-} from "./clientPersistence";
+} from "@shared/lib/clientPersistence";
 
 const ONBOARDING_DRAFT_KEY = "smart-nutrition.pre-auth-onboarding";
 

@@ -1,4 +1,4 @@
-import { canUseFreeDay, canUsePaidDay } from "../motivation";
+import { canUseFreeDay, canUsePaidDay } from "@domain/profile/motivation";
 import type { DietStyle } from "@domain/profile/types";
 import type {
   AssistantQuestionInput,

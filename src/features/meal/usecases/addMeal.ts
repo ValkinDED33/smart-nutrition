@@ -67,7 +67,7 @@ export class AddMealUseCase {
         product: command.product,
         quantity: command.quantity,
         mealType: command.mealType,
-        eatenAt: new Date(),
+        eatenAt: new Date().toISOString(),
         origin: "manual",
       },
       command.currentMeals
@@ -81,7 +81,7 @@ export class AddMealUseCase {
       product: command.product,
       quantity: command.quantity,
       mealType: command.mealType,
-      eatenAt: new Date(),
+      eatenAt: new Date().toISOString(),
       origin: 'manual',
     };
 

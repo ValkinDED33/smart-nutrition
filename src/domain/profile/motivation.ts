@@ -5,7 +5,7 @@ import type {
   MotivationState,
   MotivationTask,
 } from "@domain/profile/types";
-import type { AppLanguage } from "../types/i18n";
+import type { AppLanguage } from "@shared/types/i18n";
 import type { Goal } from "@domain/user/types";
 import {
   createDefaultAssistantOnboardingProfile,

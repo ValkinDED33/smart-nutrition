@@ -1,4 +1,4 @@
-import type { Language } from "../language";
+import type { Language } from "@shared/language";
 import type { Product } from "@domain/products/types";
 
 type LocalizedLabel = Record<Language, string>;

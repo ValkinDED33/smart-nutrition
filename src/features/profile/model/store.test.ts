@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { RootState } from "../../app/store";
+import type { RootState } from "@app/store";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
 import type { User } from "@domain/user/types";
 import {
   selectCurrentWeight,
   selectDailyMacroTargets,
-} from "./selectors";
+} from "../selectors";
 import reducer, {
   addProgressPhoto,
   activatePremiumPlan,
@@ -14,7 +14,7 @@ import reducer, {
   setAssistantCustomization,
   startPremiumTrial,
   updatePersonalDetails,
-} from "./profileSlice";
+} from "./store";
 
 const createSelectorState = ({
   weightHistory = [],

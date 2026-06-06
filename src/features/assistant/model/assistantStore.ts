@@ -6,7 +6,7 @@ import type {
   AssistantScene,
   AssistantStatus,
   AssistantUserStyle,
-} from "../engine/assistantTypes";
+} from "@assistant/engine/assistantRuntimeTypes";
 
 export interface AssistantState {
   scene: AssistantScene;

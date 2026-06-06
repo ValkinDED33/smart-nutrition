@@ -3,4 +3,4 @@ export {
   buildGuidedAssistantReply,
   getAssistantHonestyNote,
   getAssistantModeLabel,
-} from "./assistant/assistantRules";
+} from "./assistantRuntimeRules";

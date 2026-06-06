@@ -1,6 +1,6 @@
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
-import type { AssistantContextSource } from "./assistantTypes";
-import { buildAssistantCoreSnapshot } from "../../../core/assistant";
+import type { AssistantContextSource } from "./assistantRuntimeTypes";
+import { buildAssistantCoreSnapshot } from "@core/assistant";
 
 const getTodayKey = () => {
   const now = new Date();

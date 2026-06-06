@@ -44,8 +44,8 @@ import type {
   SupportSystem,
   WeeklyCheckInState,
 } from "@domain/profile/types";
-import type { AppLanguage } from "../../shared/types/i18n";
-import { normalizeAssistantOnboardingProfile } from "../../core/assistant";
+import type { AppLanguage } from "@shared/types/i18n";
+import { normalizeAssistantOnboardingProfile } from "@core/assistant";
 
 interface WeightHistoryItem {
   date: string;

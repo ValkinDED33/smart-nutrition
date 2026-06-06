@@ -43,6 +43,7 @@ export default defineConfig({
       "@state": fromRoot("src/state"),
       "@features": fromRoot("src/features"),
       "@assistant": fromRoot("src/assistant"),
+      "@core": fromRoot("src/core"),
       "@widgets": fromRoot("src/widgets"),
       "@shared": fromRoot("src/shared"),
       "@app": fromRoot("src/app"),

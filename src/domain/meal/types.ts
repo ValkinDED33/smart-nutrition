@@ -8,6 +8,14 @@ export type MealOrigin = "manual" | "barcode" | "recipe";
 
 export type { Nutrients, Product };
 
+export interface UserProfile {
+  dailyCalories: number;
+  macroGoals?: MacroGoals;
+  allergies: string[];
+  excludedIngredients: string[];
+  dietStyle?: "balanced" | "low_carb" | "high_protein";
+}
+
 export interface MealEntry {
   id: string;
   product: Product;

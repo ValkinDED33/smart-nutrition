@@ -1,4 +1,4 @@
-import type { AppSnapshot, AppSnapshotMeta } from "../types/appSnapshot";
+import type { AppSnapshot, AppSnapshotMeta } from "@shared/types/appSnapshot";
 
 export const getSnapshotMetaFromSnapshot = (
   snapshot: AppSnapshot | null | undefined

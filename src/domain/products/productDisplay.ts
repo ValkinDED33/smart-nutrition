@@ -1,5 +1,5 @@
 import type { Product } from "@domain/products/types";
-import type { Language } from "../language";
+import type { Language } from "@shared/language";
 
 const localizedNames: Record<
   string,
