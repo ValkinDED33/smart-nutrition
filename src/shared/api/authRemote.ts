@@ -2,11 +2,11 @@ import type {
   AuthResponse,
   RegistrationVerificationPending,
   User,
-} from "../types/user";
+} from "@domain/user/types";
 import type { AppSnapshot, AppSnapshotMeta } from "../types/appSnapshot";
-import type { MealEntry, MealTemplate } from "../types/meal";
+import type { MealEntry, MealTemplate } from "@domain/meal/types";
 import type { PhotoMealAnalysis } from "../types/photo";
-import type { Product } from "../types/product";
+import type { Product } from "@domain/products/types";
 import { getRemoteDeviceId } from "../lib/remoteDevice";
 import {
   clearCachedRemoteState,

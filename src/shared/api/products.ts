@@ -1,5 +1,5 @@
-import type { NutrientKey, Product, ProductSource } from "../types/product";
-import { createEmptyNutrients, type NutrientUnit } from "../lib/nutrients";
+import type { NutrientKey, Product, ProductSource } from "@domain/products/types";
+import { createEmptyNutrients, type NutrientUnit } from "@domain/meal/nutrients";
 import {
   getRemoteAuthBaseUrl,
   isCloudSyncActive,

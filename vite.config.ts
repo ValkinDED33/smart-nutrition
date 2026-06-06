@@ -42,6 +42,8 @@ export default defineConfig({
       "@integration": fromRoot("src/integration"),
       "@state": fromRoot("src/state"),
       "@features": fromRoot("src/features"),
+      "@assistant": fromRoot("src/assistant"),
+      "@widgets": fromRoot("src/widgets"),
       "@shared": fromRoot("src/shared"),
       "@app": fromRoot("src/app"),
       "@pages": fromRoot("src/pages"),

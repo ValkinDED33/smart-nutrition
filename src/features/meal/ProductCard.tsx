@@ -16,20 +16,20 @@ import {
 import { addProduct, removeSavedProduct, saveProduct } from "./mealSlice";
 import { selectSavedProducts } from "./selectors";
 import type { AppDispatch, RootState } from "../../app/store";
-import type { Product } from "../../shared/types/product";
-import type { MealType } from "../../shared/types/meal";
+import type { Product } from "@domain/products/types";
+import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
-import { getProductArtwork } from "../../shared/lib/productArtwork";
+import { getProductDisplayName } from "@domain/products/productDisplay";
+import { getProductArtwork } from "@domain/products/productArtwork";
 import { ProductNutritionFacts } from "./ProductNutritionFacts";
 import {
   getProductCategoryKey,
   getProductCategoryLabel,
-} from "../../shared/lib/productCategory";
+} from "@domain/products/productCategory";
 import {
   formatProductPortion,
   getProductPortionPresets,
-} from "../../shared/lib/productPortions";
+} from "@domain/products/productPortions";
 
 interface Props {
   product: Product;

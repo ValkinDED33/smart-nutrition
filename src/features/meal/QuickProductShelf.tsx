@@ -2,10 +2,10 @@ import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import { ProductCard } from "./ProductCard";
 import { selectRecentProducts, selectSavedProducts } from "./selectors";
-import type { MealType } from "../../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import type { RootState } from "../../app/store";
-import { productMatchesPreferences } from "../../shared/lib/preferences";
+import { productMatchesPreferences } from "@domain/user/preferences";
 
 interface Props {
   mealType: MealType;

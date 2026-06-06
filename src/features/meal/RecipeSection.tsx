@@ -24,23 +24,23 @@ import {
   saveMealTemplate,
 } from "./mealSlice";
 import { publishCommunityPost } from "../community/communitySlice";
-import { recipes } from "../../shared/lib/recipes";
+import { recipes } from "@domain/meal/recipes";
 import type {
   MealEntry,
   MealTemplateItem,
   MealType,
   Recipe,
-} from "../../shared/types/meal";
-import type { Product } from "../../shared/types/product";
+} from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
 import type { AppDispatch } from "../../app/store";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import {
   productMatchesPreferences,
   recipeMatchesPreferences,
-} from "../../shared/lib/preferences";
+} from "@domain/user/preferences";
 import { searchProducts } from "../../shared/api/products";
 import { calculateMealTotalNutrients } from "./mealSlice";
 import { selectMealTemplates } from "./selectors";

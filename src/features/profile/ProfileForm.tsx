@@ -17,26 +17,26 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
 import { applyProfileTargets, updatePersonalDetails } from "./profileSlice";
-import { calculateProfileTargets } from "../../shared/lib/profileTargets";
+import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
 import {
   avatarPresets,
   getDefaultAvatar,
   resizeAvatarFile,
-} from "../../shared/lib/avatar";
+} from "@shared/ui/avatar";
 import {
   formatPreferenceList,
   parsePreferenceList,
-} from "../../shared/lib/preferences";
-import type { AdaptiveMode, DietStyle } from "../../shared/types/profile";
+} from "@domain/user/preferences";
+import type { AdaptiveMode, DietStyle } from "@domain/profile/types";
 import type {
   BloodGroup,
   EyeColor,
   PetCompanion,
   RelationshipStatus,
   SupportSystem,
-} from "../../shared/types/profile";
+} from "@domain/profile/types";
 
 type FormData = {
   gender: "male" | "female";

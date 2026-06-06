@@ -5,18 +5,18 @@ import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, getLocalDateKey } from "../../shared/lib/date";
-import { productCatalog } from "../../shared/lib/productCatalog";
-import { recipes } from "../../shared/lib/recipes";
+import { productCatalog } from "@domain/products/productCatalog";
+import { recipes } from "@domain/meal/recipes";
 import {
   pickPreferredProteinProducts,
   productMatchesPreferences,
   recipeMatchesPreferences,
-} from "../../shared/lib/preferences";
+} from "@domain/user/preferences";
 import { addMealEntries, addProduct } from "./mealSlice";
-import type { MealEntry } from "../../shared/types/meal";
-import type { Product } from "../../shared/types/product";
-import { calculateMacroTargets } from "../../shared/lib/macroTargets";
-import { buildDailyContext } from "../../shared/lib/dailyContext";
+import type { MealEntry } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
+import { calculateMacroTargets } from "@domain/profile/macroTargets";
+import { buildDailyContext } from "@domain/meal/dailyContext";
 
 const recommendationCopy = {
   uk: {

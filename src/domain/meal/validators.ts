@@ -69,10 +69,10 @@ export function validateMealEntry(
 
   if (!entry.eatenAt) {
     errors.push({ field: 'eatenAt', message: 'Eaten at date is required' });
-  } else if (!(entry.eatenAt instanceof Date)) {
+  } else if (Number.isNaN(new Date(entry.eatenAt).getTime())) {
     errors.push({
       field: 'eatenAt',
-      message: 'Eaten at must be a valid Date',
+      message: 'Eaten at must be a valid date string',
     });
   }
 

@@ -26,7 +26,7 @@ import {
   setProfileLanguage,
 } from "../features/profile/profileSlice";
 import { replaceWaterState } from "../features/water/waterSlice";
-import { calculateProfileTargets } from "../shared/lib/profileTargets";
+import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
@@ -34,9 +34,9 @@ import {
   resendRegistrationVerification,
   type RegistrationVerificationPending,
 } from "../shared/api/auth";
-import type { AuthResponse } from "../shared/types/user";
+import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
-import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";

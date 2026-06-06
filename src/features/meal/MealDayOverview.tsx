@@ -16,8 +16,8 @@ import { removeProduct, updateMealEntry, addMealEntries } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
-import type { MealEntry, MealType } from "../../shared/types/meal";
+import { getProductDisplayName } from "@domain/products/productDisplay";
+import type { MealEntry, MealType } from "@domain/meal/types";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 

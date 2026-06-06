@@ -21,23 +21,23 @@ import {
   getAssistantHonestyNote,
   loadAssistantConversationHistory,
   getAssistantModeLabel,
-} from "../../shared/lib/assistant/assistantRuntime";
+} from "@assistant/engine/assistantRuntime";
 import { useLanguage } from "../../shared/language";
 import {
   selectMealItems,
   selectTodayMealItems,
   selectTodayMealTotalNutrients,
 } from "../meal/selectors";
-import { generateNutritionCoachAnalysis } from "../../shared/lib/nutritionCoach";
-import { buildDailyContext } from "../../shared/lib/dailyContext";
+import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
+import { buildDailyContext } from "@domain/meal/dailyContext";
 import { selectDailyMacroTargets } from "../profile/selectors";
-import { assistantQuickQuestionIds } from "../../shared/types/assistant";
-import { useAssistantChatStore } from "../../shared/state/useAssistantChatStore";
+import { assistantQuickQuestionIds } from "@domain/assistant/types";
+import { useAssistantChatStore } from "@features/assistant/model/store";
 import type {
   AssistantConversationMessage,
   AssistantQuickQuestionId,
   AssistantRuntimeContext,
-} from "../../shared/types/assistant";
+} from "@domain/assistant/types";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??

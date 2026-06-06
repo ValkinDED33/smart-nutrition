@@ -2,7 +2,7 @@ import type {
   AssistantCommunicationStyle,
   AssistantMemory,
   AssistantPersonality,
-} from "../../shared/types/assistant";
+} from "@domain/assistant/types";
 import type {
   AssistantCustomization,
   AssistantDietFriction,
@@ -10,8 +10,8 @@ import type {
   AssistantOnboardingProfile,
   AssistantRole,
   AssistantTone,
-} from "../../shared/types/profile";
-import type { Goal } from "../../shared/types/user";
+} from "@domain/profile/types";
+import type { Goal } from "@domain/user/types";
 
 export const DEFAULT_ASSISTANT_NAME = "Алекс";
 

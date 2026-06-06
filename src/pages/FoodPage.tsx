@@ -10,7 +10,7 @@ import { QuickProductShelf } from "../features/meal/QuickProductShelf";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import Loader from "../shared/components/Loader/PacmanLoader";
 import { useLanguage } from "../shared/language";
-import type { MealType } from "../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({

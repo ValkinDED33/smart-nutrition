@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import type { RootState } from "../app/store";
 import PacmanLoader from "../shared/components/Loader/PacmanLoader";
-import type { UserRole } from "../shared/types/user";
+import type { UserRole } from "@domain/user/types";
 
 interface ProtectedRouteProps {
   children: ReactNode;

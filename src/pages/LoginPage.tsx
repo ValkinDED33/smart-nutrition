@@ -27,9 +27,9 @@ import {
   getAuthRuntimeInfo,
   login as loginApi,
 } from "../shared/api/auth";
-import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
+import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
-import { readAuthIdentityHint, writeAuthIdentityHint } from "../shared/lib/authIdentity";
+import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 

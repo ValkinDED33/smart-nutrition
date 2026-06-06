@@ -1,15 +1,15 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Nutrients, Product } from "../../shared/types/product";
+import type { Nutrients, Product } from "@domain/products/types";
 import type {
   MealEntry,
   MealTemplate,
   MealTemplateItem,
   MealType,
-} from "../../shared/types/meal";
+} from "@domain/meal/types";
 import {
   createEmptyNutrients,
   nutrientKeys,
-} from "../../shared/lib/nutrients";
+} from "@domain/meal/nutrients";
 import { createProductKey, normalizeBarcode } from "./productIdentity";
 
 export interface MealState {

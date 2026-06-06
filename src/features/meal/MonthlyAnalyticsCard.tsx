@@ -6,7 +6,7 @@ import type { RootState } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
-import { calculateMacroTargets } from "../../shared/lib/macroTargets";
+import { calculateMacroTargets } from "@domain/profile/macroTargets";
 
 const monthlyCopy = {
   uk: {

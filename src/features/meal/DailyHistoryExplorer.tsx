@@ -4,7 +4,7 @@ import { MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
 import { Virtuoso } from "react-virtuoso";
 import { selectAvailableMealDays, selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import {
   formatLocalDateKey,
   getLocalDateKey,

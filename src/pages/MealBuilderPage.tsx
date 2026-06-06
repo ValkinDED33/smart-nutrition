@@ -27,9 +27,9 @@ import {
 } from "../features/meal/selectors";
 import { TemplateVault } from "../features/meal/TemplateVault";
 import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
-import type { MealEntry, MealType } from "../shared/types/meal";
+import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
-import { getProductDisplayName } from "../shared/lib/productDisplay";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import Loader from "../shared/components/Loader/PacmanLoader";
 
 const BarcodeScanner = lazy(() =>

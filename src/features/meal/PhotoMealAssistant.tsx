@@ -17,18 +17,18 @@ import {
 import type { AppDispatch } from "../../app/store";
 import { analyzeMealPhoto } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
-import { createEmptyNutrients } from "../../shared/lib/nutrients";
+import { createEmptyNutrients } from "@domain/meal/nutrients";
 import {
   rescalePhotoMealAnalysis,
   scalePhotoMealAnalysis,
-} from "../../shared/lib/photoDraft";
-import type { MealEntry, MealType } from "../../shared/types/meal";
+} from "@features/meal/photo/photoDraft";
+import type { MealEntry, MealType } from "@domain/meal/types";
 import type {
   PhotoMealAnalysis,
   PhotoMealSuggestion,
   PhotoPortionSize,
 } from "../../shared/types/photo";
-import type { Product } from "../../shared/types/product";
+import type { Product } from "@domain/products/types";
 import { addMealEntries } from "./mealSlice";
 
 const readFileAsDataUrl = (file: File) =>

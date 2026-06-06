@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import type { PremiumPlanId } from "../../shared/types/profile";
+import type { PremiumPlanId } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
 import {
   activatePremiumPlan,

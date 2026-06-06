@@ -4,7 +4,7 @@ import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
-import type { AssistantCompanionKind } from "../../shared/types/profile";
+import type { AssistantCompanionKind } from "@domain/profile/types";
 import { setAssistantCustomization } from "./profileSlice";
 
 type ShopCategory =

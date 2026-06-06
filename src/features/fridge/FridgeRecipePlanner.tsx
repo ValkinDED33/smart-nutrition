@@ -16,12 +16,12 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import type { MealType } from "../../shared/types/meal";
-import type { Product } from "../../shared/types/product";
+import type { MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
 import type { CommunityPost } from "../../shared/types/community";
 import { useLanguage } from "../../shared/language";
 import { searchProducts } from "../../shared/api/products";
-import { recipes } from "../../shared/lib/recipes";
+import { recipes } from "@domain/meal/recipes";
 import { addMealEntries } from "../meal/mealSlice";
 import { selectSavedProducts } from "../meal/selectors";
 import {

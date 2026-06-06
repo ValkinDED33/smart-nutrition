@@ -23,7 +23,7 @@ import type {
   CatalogProductItem,
   ContentReportItem,
 } from "../../shared/types/platform";
-import type { UserRole } from "../../shared/types/user";
+import type { UserRole } from "@domain/user/types";
 import {
   PlatformApiError,
   deleteAdminUser,

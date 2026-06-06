@@ -1,65 +1,53 @@
-/**
- * Meal Domain Types
- * 
- * Pure domain model - independent from any framework or database
- */
+import type { Product, Nutrients } from "../products/types";
 
-export type MealTypeValue = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-export type ProductUnit = 'g' | 'ml' | 'piece';
-export type ProductSource = 'USDA' | 'OpenFoodFacts' | 'Manual' | 'Recipe';
-export type MealOrigin = 'manual' | 'barcode' | 'recipe';
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type MealTypeValue = MealType;
+export type ProductUnit = "g" | "ml" | "piece";
+export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
+export type MealOrigin = "manual" | "barcode" | "recipe";
 
-/**
- * Nutrients per 100g
- */
-export interface Nutrients {
+export type { Nutrients, Product };
+
+export interface MealEntry {
+  id: string;
+  product: Product;
+  quantity: number;
+  mealType: MealType;
+  eatenAt: string;
+  origin: MealOrigin;
+}
+
+export interface MealTemplateItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface MealTemplate {
+  id: string;
+  name: string;
+  mealType: MealType;
+  items: MealTemplateItem[];
+  createdAt: string;
+}
+
+export interface RecipeIngredient {
+  product: Product;
+  quantity: number;
+}
+
+export interface Recipe {
+  id: string;
+  title: string;
+  mealType: MealType;
+  description: string;
+  ingredients: RecipeIngredient[];
+  steps: string[];
   calories: number;
   protein: number;
   fat: number;
   carbs: number;
-  fiber: number;
-  sugar: number;
-  sodium: number;
-  calcium: number;
-  iron: number;
 }
 
-/**
- * Product - represents a food item in the catalog
- */
-export interface Product {
-  id: string;
-  name: string;
-  brand?: string;
-  barcode?: string;
-  unit: ProductUnit;
-  source: ProductSource;
-  nutrients: Nutrients;
-  imageUrl?: string;
-  facts?: {
-    foodGroup?: string;
-    carbohydrateTypes?: string[];
-    proteinTypes?: string[];
-    fatTypes?: string[];
-    extraCompounds?: string[];
-  };
-}
-
-/**
- * Meal Entry - represents a logged meal
- */
-export interface MealEntry {
-  id: string;
-  product: Product;
-  quantity: number; // in grams/ml/pieces depending on product.unit
-  mealType: MealTypeValue;
-  eatenAt: Date;
-  origin: MealOrigin;
-}
-
-/**
- * Macro goals per day
- */
 export interface MacroGoals {
   calories: number;
   protein: number;
@@ -67,20 +55,14 @@ export interface MacroGoals {
   carbs: number;
 }
 
-/**
- * Macro progress tracking
- */
 export interface MacroProgress {
   current: number;
   target: number;
-  progress: number; // 0-100
+  progress: number;
 }
 
-/**
- * Daily nutrition snapshot
- */
 export interface DailyNutrition {
-  date: string; // YYYY-MM-DD
+  date: string;
   nutrients: Nutrients;
   mealCount: number;
   calorieProgress: MacroProgress;
@@ -89,15 +71,4 @@ export interface DailyNutrition {
     fat: MacroProgress;
     carbs: MacroProgress;
   };
-}
-
-/**
- * User profile - for meal calculations
- */
-export interface UserProfile {
-  dailyCalories: number;
-  macroGoals: MacroGoals;
-  allergies: string[];
-  excludedIngredients: string[];
-  dietStyle: 'balanced' | 'low_carb' | 'low_fat' | 'high_protein';
 }

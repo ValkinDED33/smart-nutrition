@@ -11,11 +11,11 @@ import {
   selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
-import { getAssistantRuntimeStatus } from "../shared/api/assistant";
+import { getAssistantRuntimeStatus } from "@shared/api/assistant";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
-import type { AssistantRuntimeStatus } from "../shared/types/assistant";
-import { getDaysSince } from "../shared/lib/bodyMetrics";
+import type { AssistantRuntimeStatus } from "@domain/assistant/types";
+import { getDaysSince } from "@domain/profile/bodyMetrics";
 import {
   buildAssistantCoreSnapshot,
   type AssistantCoreEmotion,

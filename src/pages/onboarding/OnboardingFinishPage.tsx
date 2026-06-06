@@ -10,7 +10,7 @@ import {
 } from "../../features/profile/profileSlice";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
-import { calculateProfileTargets } from "../../shared/lib/profileTargets";
+import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import {
   cardSx,
   personalityValues,

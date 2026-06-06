@@ -31,11 +31,11 @@ import {
 import { incrementWater } from "../features/water/waterSlice";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
-import { buildDailyContext } from "../shared/lib/dailyContext";
+import { buildDailyContext } from "@domain/meal/dailyContext";
 import {
   buildAssistantHomeIntelligence,
   type AssistantHomeAction,
-} from "../shared/lib/assistantHomeIntelligence";
+} from "@features/assistant/assistantHomeIntelligence";
 import { useLanguage } from "../shared/language";
 
 const homeCopy = {

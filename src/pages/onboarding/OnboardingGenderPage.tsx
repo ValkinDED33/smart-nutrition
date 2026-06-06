@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useLanguage } from "../../shared/language";
-import type { Gender } from "../../shared/types/user";
+import type { Gender } from "@domain/user/types";
 import { cardSx, shellSx, stepPaths, type OnboardingStepProps } from "./types";
 
 const genderOptions: Gender[] = ["male", "female"];

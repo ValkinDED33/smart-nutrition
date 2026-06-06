@@ -14,24 +14,24 @@ import {
   Typography,
 } from "@mui/material";
 import { ProductCard } from "./ProductCard";
-import type { MealType } from "../../shared/types/meal";
-import type { Product } from "../../shared/types/product";
+import type { MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
 import { searchProducts } from "../../shared/api/products";
 import { useLanguage } from "../../shared/language";
 import { selectPersonalBarcodeProducts } from "./selectors";
-import { productMatchesPreferences } from "../../shared/lib/preferences";
+import { productMatchesPreferences } from "@domain/user/preferences";
 import type { RootState } from "../../app/store";
 import {
   getProductCategoryKey,
   getProductCategoryLabel,
-} from "../../shared/lib/productCategory";
+} from "@domain/products/productCategory";
 import {
   createProductKey,
   normalizeBarcode,
 } from "./productIdentity";
 import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
-import { useMealSearchStore } from "../../shared/state/useMealSearchStore";
+import { useMealSearchStore } from "@features/meal/model/searchStore";
 
 interface Props {
   mealType: MealType;

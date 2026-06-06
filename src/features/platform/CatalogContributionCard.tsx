@@ -17,7 +17,7 @@ import {
   submitCatalogSubmission,
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
-import { getKnownProductCategoryOptions } from "../../shared/lib/productCategory";
+import { getKnownProductCategoryOptions } from "@domain/products/productCategory";
 
 const catalogCopy = {
   uk: {

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import { createWeeklyBodyReport } from "../../shared/lib/bodyMetrics";
+import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
 
 const bodyReportCopy = {

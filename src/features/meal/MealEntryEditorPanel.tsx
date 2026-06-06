@@ -6,13 +6,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { MealEntry, MealType } from "../../shared/types/meal";
-import type { Product } from "../../shared/types/product";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import type { MealEntry, MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import { useLanguage } from "../../shared/language";
 import {
   formatProductPortion,
-} from "../../shared/lib/productPortions";
+} from "@domain/products/productPortions";
 import { useMealEntryEditor } from "./hooks/useMealEntryEditor";
 import { createProductKey } from "./productIdentity";
 

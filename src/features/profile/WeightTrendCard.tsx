@@ -16,7 +16,7 @@ import {
   calculateBmi,
   detectWeightPlateau,
   getBmiStatus,
-} from "../../shared/lib/bodyMetrics";
+} from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 
 const weightTrendCopy = {

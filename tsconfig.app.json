@@ -19,6 +19,8 @@
       "@integration/*": ["integration/*"],
       "@state/*": ["state/*"],
       "@features/*": ["features/*"],
+      "@assistant/*": ["assistant/*"],
+      "@widgets/*": ["widgets/*"],
       "@shared/*": ["shared/*"],
       "@app/*": ["app/*"],
       "@pages/*": ["pages/*"],

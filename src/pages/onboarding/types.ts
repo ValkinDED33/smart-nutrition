@@ -3,8 +3,8 @@ import type {
   AssistantCompanionKind,
   AssistantDietFriction,
   AssistantMotivationStyle,
-} from "../../shared/types/profile";
-import type { Gender, Goal } from "../../shared/types/user";
+} from "@domain/profile/types";
+import type { Gender, Goal } from "@domain/user/types";
 
 export type PersonalityPreset =
   | "supportive"

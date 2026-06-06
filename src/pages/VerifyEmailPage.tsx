@@ -10,8 +10,8 @@ import { replaceMealState } from "../features/meal/mealSlice";
 import { replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
 import { replaceWaterState } from "../features/water/waterSlice";
 import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
-import { getSnapshotMetaFromSnapshot } from "../shared/lib/appSnapshot";
-import { writeAuthIdentityHint } from "../shared/lib/authIdentity";
+import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
+import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 

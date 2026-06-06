@@ -1,4 +1,4 @@
-import type { Product } from "../../shared/types/product";
+import type { Product } from "@domain/products/types";
 
 export const normalizeBarcode = (value: string) => value.replace(/\D/g, "");
 

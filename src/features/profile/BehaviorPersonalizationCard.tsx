@@ -7,10 +7,10 @@ import {
   getReminderShiftMinutes,
   hasBehaviorReminderSuggestion,
   type BehaviorProfileStatus,
-} from "../../shared/lib/behaviorProfile";
+} from "@domain/profile/behaviorProfile";
 import { selectMealItems } from "../meal/selectors";
 import { updateNotificationPreferences } from "./profileSlice";
-import type { MealType } from "../../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 
 const copyByLanguage = {
   uk: {

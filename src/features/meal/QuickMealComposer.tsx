@@ -12,15 +12,15 @@ import {
 import { addProduct } from "./mealSlice";
 import { selectFavoriteProductIds } from "./selectors";
 import { searchProducts } from "../../shared/api/products";
-import type { MealType } from "../../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
-import { productMatchesPreferences } from "../../shared/lib/preferences";
+import { getProductDisplayName } from "@domain/products/productDisplay";
+import { productMatchesPreferences } from "@domain/user/preferences";
 import {
   formatProductPortion,
   getProductPortionPresets,
-} from "../../shared/lib/productPortions";
+} from "@domain/products/productPortions";
 
 interface Props {
   mealType: MealType;

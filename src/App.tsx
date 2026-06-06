@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "./app/store";
 import { initializeAuth, selectAuth } from "./features/auth/authSlice";
-import Layout from "./shared/layout/AppLayout";
+import Layout from "@app/layouts/AppLayout";
 import ErrorBoundary from "./shared/components/ErrorBoundary";
 import Loader from "./shared/components/Loader/PacmanLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";

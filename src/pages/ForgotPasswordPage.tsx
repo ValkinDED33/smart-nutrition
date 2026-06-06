@@ -17,7 +17,7 @@ import {
   requestPasswordReset,
   type PasswordResetRequestResult,
 } from "../shared/api/auth";
-import { readAuthIdentityHint, writeAuthIdentityHint } from "../shared/lib/authIdentity";
+import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { useLanguage } from "../shared/language";
 
 type FormData = {

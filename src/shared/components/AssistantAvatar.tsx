@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import type { AssistantCompanionKind } from "../types/profile";
+import type { AssistantCompanionKind } from "@domain/profile/types";
 
 export type AssistantAvatarMood =
   | "idle"

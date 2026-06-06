@@ -7,7 +7,7 @@ import { setAdaptiveCalories } from "./profileSlice";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
-} from "../../shared/lib/adaptiveGoal";
+} from "@domain/profile/adaptiveGoal";
 import { useLanguage } from "../../shared/language";
 
 export const AdaptiveGoalCard = () => {

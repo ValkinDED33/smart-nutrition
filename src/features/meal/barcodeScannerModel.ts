@@ -1,5 +1,5 @@
-import { createEmptyNutrients } from "../../shared/lib/nutrients";
-import type { Product } from "../../shared/types/product";
+import { createEmptyNutrients } from "@domain/meal/nutrients";
+import type { Product } from "@domain/products/types";
 import { normalizeBarcode } from "./productIdentity";
 
 export type ManualDraft = {

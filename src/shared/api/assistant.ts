@@ -4,11 +4,11 @@ import type {
   AssistantRuntimeResponse,
   AssistantRuntimeStatus,
   AssistantRuntimeStatusProvider,
-} from "../types/assistant";
+} from "@domain/assistant/types";
 import {
   assistantQuickQuestionIds,
   isAssistantQuickQuestionId,
-} from "../types/assistant";
+} from "@domain/assistant/types";
 import {
   getRemoteAuthBaseUrl,
   isCloudSyncActive,

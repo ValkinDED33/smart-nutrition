@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
-import { calculateMacroTargets } from "../../shared/lib/macroTargets";
+import { calculateMacroTargets } from "@domain/profile/macroTargets";
 import { selectTodayMealTotalNutrients } from "../meal/selectors";
 
 export const selectCurrentWeight = createSelector(

@@ -69,6 +69,15 @@ self.addEventListener("fetch", (event) => {
         });
 
         return response;
+      }).catch(() => {
+        if (request.destination === "document") {
+          return caches.match("/");
+        }
+
+        return new Response("", {
+          status: 503,
+          statusText: "Offline",
+        });
       });
     })
   );

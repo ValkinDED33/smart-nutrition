@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import { calculateBmi, getBmiStatus } from "../../shared/lib/bodyMetrics";
+import { calculateBmi, getBmiStatus } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { updateWeight } from "./profileSlice";

@@ -9,7 +9,7 @@ import type {
   ContentReportItem,
   ContentReportPayload,
 } from "../types/platform";
-import type { UserRole } from "../types/user";
+import type { UserRole } from "@domain/user/types";
 import { getRemoteAuthBaseUrl } from "./auth";
 
 export class PlatformApiError extends Error {

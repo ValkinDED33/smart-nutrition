@@ -4,7 +4,7 @@ import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import { useLanguage } from "../shared/language";
-import type { MealType } from "../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 
 const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 

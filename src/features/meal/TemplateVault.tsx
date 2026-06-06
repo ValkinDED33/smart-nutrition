@@ -22,9 +22,9 @@ import {
 import type { AppDispatch } from "../../app/store";
 import { applyMealTemplate, deleteMealTemplate, saveMealTemplate } from "./mealSlice";
 import { selectMealTemplates, selectTodayMealItems } from "./selectors";
-import type { MealTemplate, MealType } from "../../shared/types/meal";
+import type { MealTemplate, MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import { toast } from "sonner";
 
 interface Props {

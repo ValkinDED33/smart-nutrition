@@ -1,0 +1,193 @@
+import type { AppLanguage } from "./i18n";
+import type {
+  AssistantRole,
+  AssistantTone,
+  DietStyle,
+  MotivationState,
+  PersonalProfileDetails,
+} from "./profile";
+import type {
+  NutritionCoachAnalysis,
+  NutritionCoachInsightCode,
+} from "@domain/meal/nutritionCoach";
+import type { DailyContext } from "@domain/meal/dailyContext";
+import type { Goal } from "./user";
+
+export type AssistantRuntimeMode = "guided" | "remote-cloud";
+
+export type AssistantScreenId =
+  | "dashboard"
+  | "food"
+  | "recipes"
+  | "community"
+  | "progress"
+  | "profile"
+  | "coach"
+  | "admin"
+  | "water"
+  | "unknown";
+
+export interface AssistantScreenContext {
+  screen: AssistantScreenId;
+  currentPath: string;
+}
+
+export interface AssistantPersonality {
+  warmth: number;
+  humor: number;
+  strictness: number;
+  motivation: number;
+}
+
+export type AssistantCommunicationStyle =
+  | "supportive"
+  | "strict"
+  | "energetic"
+  | "calm"
+  | "scientific";
+
+export interface AssistantMemory {
+  userId?: string;
+  assistantName: string;
+  personality: AssistantPersonality;
+  communicationStyle: AssistantCommunicationStyle | string;
+  goals: string[];
+  struggles: string[];
+  habits: string[];
+  motivationTriggers: string[];
+  lastMood: string | null;
+  recentProblems: string[];
+}
+
+export type AssistantQuickQuestionId =
+  | "day_status"
+  | "protein_help"
+  | "water_help"
+  | "weight_help"
+  | "next_meal"
+  | "coach_focus"
+  | "motivation_focus";
+
+export interface AssistantRuntimeContext {
+  language: AppLanguage;
+  screen: AssistantScreenId;
+  currentPath: string;
+  userName: string;
+  goal: Goal;
+  dietStyle: DietStyle;
+  dailyCalories: number;
+  caloriesConsumed: number;
+  caloriesRemaining: number;
+  proteinConsumed: number;
+  proteinTarget: number;
+  fatConsumed: number;
+  carbsConsumed: number;
+  mealEntriesToday: number;
+  waterConsumedMl: number;
+  waterTargetMl: number;
+  latestWeight: number;
+  weightChangeKg: number;
+  weeklyCheckInDue: boolean;
+  assistantName: string;
+  assistantRole: AssistantRole;
+  assistantTone: AssistantTone;
+  humorEnabled: boolean;
+  assistantPersonality: AssistantPersonality;
+  communicationStyle: AssistantCommunicationStyle;
+  personalDetails: PersonalProfileDetails;
+  motivation: MotivationState;
+  coach: NutritionCoachAnalysis;
+  coachPrimaryInsight: NutritionCoachInsightCode;
+  dailyContext: DailyContext;
+  profile: {
+    goal: Goal;
+    dietStyle: DietStyle;
+    latestWeight: number;
+    weeklyCheckInDue: boolean;
+  };
+  nutritionState: {
+    dailyCalories: number;
+    caloriesConsumed: number;
+    caloriesRemaining: number;
+    proteinConsumed: number;
+    proteinTarget: number;
+    fatConsumed: number;
+    carbsConsumed: number;
+    waterConsumedMl: number;
+    waterTargetMl: number;
+  };
+  behavior: {
+    mealEntriesToday: number;
+    waterLoggedToday: boolean;
+    openMotivationTasks: number;
+    completedMotivationTasks: number;
+  };
+  memory: AssistantMemory;
+}
+
+export interface AssistantQuestionInput {
+  question: string;
+  context: AssistantRuntimeContext;
+  quickQuestionId?: AssistantQuickQuestionId | null;
+}
+
+export interface AssistantRuntimeResponse {
+  text: string;
+  mode: AssistantRuntimeMode;
+  followUpQuestionIds: AssistantQuickQuestionId[];
+}
+
+export interface AssistantConversationMessage {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
+  mode?: AssistantRuntimeMode;
+  followUpQuestionIds?: AssistantQuickQuestionId[];
+  createdAt?: string;
+}
+
+export interface AssistantRuntimeStatusProvider {
+  id: string;
+  label: string;
+  model: string | null;
+  baseUrl: string | null;
+  priority: number;
+  primary: boolean;
+  coolingDown: boolean;
+  coolingDownUntil: string | null;
+  lastAttemptedAt: string | null;
+  lastSuccessAt: string | null;
+  lastFailureAt: string | null;
+  consecutiveFailures: number;
+  lastError: string | null;
+  lastErrorCode: string | null;
+  lastErrorStatus: number | null;
+}
+
+export interface AssistantRuntimeStatus {
+  configured: boolean;
+  providerCount: number;
+  fallbackEnabled: boolean;
+  model: string | null;
+  baseUrl: string | null;
+  primaryProviderId: string | null;
+  primaryProviderLabel: string | null;
+  memoryMessageLimit: number;
+  retryCooldownMs: number;
+  providers: AssistantRuntimeStatusProvider[];
+}
+
+export const assistantQuickQuestionIds: AssistantQuickQuestionId[] = [
+  "day_status",
+  "protein_help",
+  "water_help",
+  "weight_help",
+  "next_meal",
+  "coach_focus",
+  "motivation_focus",
+];
+
+export const isAssistantQuickQuestionId = (
+  value: unknown
+): value is AssistantQuickQuestionId =>
+  assistantQuickQuestionIds.includes(value as AssistantQuickQuestionId);

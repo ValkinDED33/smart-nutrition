@@ -15,7 +15,7 @@ import {
   AssistantAvatar,
   type AssistantAvatarMood,
 } from "../shared/components/AssistantAvatar";
-import type { AssistantCompanionKind } from "../shared/types/profile";
+import type { AssistantCompanionKind } from "@domain/profile/types";
 import { useLanguage } from "../shared/language";
 
 type LandingLanguage = "uk" | "pl";

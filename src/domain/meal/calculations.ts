@@ -6,6 +6,7 @@
  */
 
 import type { MealEntry, Nutrients, MacroProgress, MealTypeValue } from "./types";
+import { createEmptyNutrients, nutrientKeys } from "./nutrients";
 
 const toDateKey = (value: Date) => value.toISOString().slice(0, 10);
 
@@ -13,31 +14,15 @@ const toDateKey = (value: Date) => value.toISOString().slice(0, 10);
  * Calculate total nutrients from meal entries
  */
 export function calculateMealTotalNutrients(items: MealEntry[]): Nutrients {
-  const totals: Nutrients = {
-    calories: 0,
-    protein: 0,
-    fat: 0,
-    carbs: 0,
-    fiber: 0,
-    sugar: 0,
-    sodium: 0,
-    calcium: 0,
-    iron: 0,
-  };
+  const totals = createEmptyNutrients();
 
   items.forEach((item) => {
     const factor = item.quantity / 100; // Nutrients are per 100g
     const n = item.product.nutrients;
 
-    totals.calories += (n.calories ?? 0) * factor;
-    totals.protein += (n.protein ?? 0) * factor;
-    totals.fat += (n.fat ?? 0) * factor;
-    totals.carbs += (n.carbs ?? 0) * factor;
-    totals.fiber += (n.fiber ?? 0) * factor;
-    totals.sugar += (n.sugar ?? 0) * factor;
-    totals.sodium += (n.sodium ?? 0) * factor;
-    totals.calcium += (n.calcium ?? 0) * factor;
-    totals.iron += (n.iron ?? 0) * factor;
+    nutrientKeys.forEach((key) => {
+      totals[key] += (n[key] ?? 0) * factor;
+    });
   });
 
   return totals;

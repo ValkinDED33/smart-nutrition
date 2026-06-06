@@ -2,10 +2,10 @@ import type {
   AuthResponse,
   RegistrationVerificationPending,
   User,
-} from "../types/user";
+} from "@domain/user/types";
 import type { AppSnapshot } from "../types/appSnapshot";
 
-export type { RegistrationVerificationPending, VerificationChannel } from "../types/user";
+export type { RegistrationVerificationPending, VerificationChannel } from "@domain/user/types";
 
 export interface RegisterPayload {
   name: string;

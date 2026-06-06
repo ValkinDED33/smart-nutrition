@@ -24,7 +24,7 @@ import {
   canUsePaidDay,
   getLocalizedAchievementCopy,
   getLocalizedMotivationTaskCopy,
-} from "../../shared/lib/motivation";
+} from "@domain/profile/motivation";
 
 const copyByLanguage = {
   uk: {

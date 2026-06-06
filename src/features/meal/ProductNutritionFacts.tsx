@@ -1,11 +1,11 @@
 import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
-import type { Product } from "../../shared/types/product";
+import type { Product } from "@domain/products/types";
 import {
   formatNutrientValue,
   hasMeaningfulNutrientValue,
   nutrientDefinitions,
   nutritionSections,
-} from "../../shared/lib/nutrients";
+} from "@domain/meal/nutrients";
 import { useLanguage } from "../../shared/language";
 
 const foodGroupLabels: Record<

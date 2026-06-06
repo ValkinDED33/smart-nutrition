@@ -88,8 +88,8 @@ import { clearSyncOutbox, enqueueSyncOutbox } from "../shared/lib/syncOutbox";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
-} from "../shared/lib/adaptiveGoal";
-import { buildAppSnapshot } from "../shared/lib/appSnapshot";
+} from "@domain/profile/adaptiveGoal";
+import { buildAppSnapshot } from "@domain/appSnapshot";
 import { writeCachedRemoteSnapshot } from "../shared/lib/remoteStateCache";
 
 type SyncState = {

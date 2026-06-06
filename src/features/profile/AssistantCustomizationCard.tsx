@@ -21,7 +21,7 @@ import type {
   AssistantDietFriction,
   AssistantMotivationStyle,
   AssistantTone,
-} from "../../shared/types/profile";
+} from "@domain/profile/types";
 
 const assistantCopy = {
   uk: {

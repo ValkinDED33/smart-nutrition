@@ -16,7 +16,7 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
 import { updateStoredProfile } from "../../shared/api/auth";
-import { getDaysSince } from "../../shared/lib/bodyMetrics";
+import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { recordMeasurementCheckIn } from "./profileSlice";

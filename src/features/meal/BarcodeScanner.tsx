@@ -14,19 +14,19 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { Product } from "../../shared/types/product";
+import type { Product } from "@domain/products/types";
 import type { AppDispatch, RootState } from "../../app/store";
 import {
   playScanErrorSound,
   playScanSuccessSound,
 } from "../../shared/lib/sound";
 import { fetchProductByBarcode } from "../../shared/api/products";
-import type { MealType } from "../../shared/types/meal";
+import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import { ProductCard } from "./ProductCard";
 import { addProduct, rememberRecentProduct, saveProduct } from "./mealSlice";
 import { selectPersonalBarcodeProducts } from "./selectors";
-import { getProductDisplayName } from "../../shared/lib/productDisplay";
+import { getProductDisplayName } from "@domain/products/productDisplay";
 import {
   PlatformApiError,
   submitCatalogSubmission,
@@ -34,7 +34,7 @@ import {
 import {
   getKnownProductCategoryOptions,
   getProductCategoryLabel,
-} from "../../shared/lib/productCategory";
+} from "@domain/products/productCategory";
 import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
 import {
   MAX_MANUAL_PHOTO_BYTES,

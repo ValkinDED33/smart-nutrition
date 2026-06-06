@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
 import type { AppSnapshotMeta } from "../../shared/types/appSnapshot";
-import type { User } from "../../shared/types/user";
+import type { User } from "@domain/user/types";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
@@ -15,7 +15,7 @@ import {
   syncRemoteProfileState,
   syncRemoteWaterState,
 } from "../../shared/api/auth";
-import { buildAppSnapshot, getSnapshotMetaFromSnapshot } from "../../shared/lib/appSnapshot";
+import { buildAppSnapshot, getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import {
   readCachedRemoteMeta,
   writeCachedRemoteMeta,

@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../app/store";
 import { searchProducts } from "../../../shared/api/products";
-import { productMatchesPreferences } from "../../../shared/lib/preferences";
+import { productMatchesPreferences } from "@domain/user/preferences";
 import {
   getProductPortionPresets,
-} from "../../../shared/lib/productPortions";
-import type { MealEntry, MealType } from "../../../shared/types/meal";
-import type { Product } from "../../../shared/types/product";
+} from "@domain/products/productPortions";
+import type { MealEntry, MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
 import { removeProduct, updateMealEntry } from "../mealSlice";
 import { selectRecentProducts, selectSavedProducts } from "../selectors";
 import { uniqueProductsByIdentity } from "../productIdentity";

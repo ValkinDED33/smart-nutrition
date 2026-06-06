@@ -7,7 +7,7 @@ import {
   type NutritionCoachAnalysis,
   type NutritionCoachInsight,
   type NutritionCoachStatus,
-} from "../../shared/lib/nutritionCoach";
+} from "@domain/meal/nutritionCoach";
 import { selectMealItems } from "./selectors";
 
 const coachCopy = {
