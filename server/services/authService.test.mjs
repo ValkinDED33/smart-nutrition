@@ -531,7 +531,7 @@ describe("authService", () => {
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
 
     await expect(service.verifyRegistration({ token: rawToken })).rejects.toMatchObject({
-      code: "INVALID_VERIFICATION_CODE",
+      code: "INVALID_VERIFICATION_LINK",
     });
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
   });

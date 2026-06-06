@@ -70,19 +70,6 @@ const LanguageSetupPage = () => {
                 {languageFlags[language]} {languageLabels[language]}
               </Button>
             ))}
-            <Button
-              variant="outlined"
-              disabled
-              sx={{
-                justifyContent: "flex-start",
-                py: 1.5,
-                borderRadius: 1,
-                textTransform: "none",
-                fontWeight: 900,
-              }}
-            >
-              {t("language.add")}
-            </Button>
           </Stack>
         </Stack>
       </Paper>

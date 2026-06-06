@@ -9,7 +9,7 @@ export const getPublicCacheStatus = (cacheStatus = {}) => ({
   enabled: Boolean(cacheStatus.enabled),
   provider: cacheStatus.provider ?? "memory",
   ...(cacheStatus.enabled && cacheStatus.status ? { status: cacheStatus.status } : {}),
-  fallback: !cacheStatus.enabled && Boolean(cacheStatus.fallbackReason),
+  fallback: Boolean(cacheStatus.fallbackReason),
 });
 
 export const getPublicEmailStatus = (emailStatus = {}) => ({

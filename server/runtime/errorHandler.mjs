@@ -13,7 +13,7 @@ export const handleRouteError = (error, response) => {
         ? 400
         : error.code === "EMAIL_IN_USE"
           ? 409
-          : error.code === "INVALID_VERIFICATION_CODE"
+          : error.code === "INVALID_VERIFICATION_LINK"
             ? 400
             : error.code === "REGISTRATION_NOT_VERIFIED"
               ? 403

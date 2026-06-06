@@ -1,18 +1,51 @@
 import Redis from "ioredis";
 
-const createMemoryCache = (fallbackReason = null) => ({
-  enabled: false,
-  client: null,
-  getStatus: () => ({
-    enabled: false,
-    provider: "memory",
-    fallbackReason,
-  }),
-  getJson: async () => null,
-  setJson: async () => false,
-  deleteKey: async () => false,
-  close: async () => {},
-});
+const createMemoryCache = (fallbackReason = null) => {
+  const entries = new Map();
+  const buildKey = (key) => String(key ?? "").replace(/^\:+/, "");
+  const readEntry = (key) => {
+    const normalizedKey = buildKey(key);
+    const entry = entries.get(normalizedKey);
+
+    if (!entry) {
+      return null;
+    }
+
+    if (entry.expiresAt <= Date.now()) {
+      entries.delete(normalizedKey);
+      return null;
+    }
+
+    return entry.value;
+  };
+
+  return {
+    enabled: true,
+    client: null,
+    getStatus: () => ({
+      enabled: true,
+      provider: "memory",
+      fallbackReason,
+      size: entries.size,
+    }),
+    getJson: async (key) => readEntry(key),
+    setJson: async (key, value, ttlSeconds) => {
+      const normalizedTtl = Math.max(Math.round(Number(ttlSeconds) || 0), 1);
+      entries.set(buildKey(key), {
+        value,
+        expiresAt: Date.now() + normalizedTtl * 1000,
+      });
+      return true;
+    },
+    deleteKey: async (key) => {
+      entries.delete(buildKey(key));
+      return true;
+    },
+    close: async () => {
+      entries.clear();
+    },
+  };
+};
 
 export const createRedisCache = async ({
   redisUrl,

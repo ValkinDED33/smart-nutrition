@@ -75,7 +75,7 @@ const VerifyEmailPage = () => {
 
         setStatus("error");
         setErrorMessage(
-          error instanceof AuthApiError && error.code === "INVALID_VERIFICATION_CODE"
+          error instanceof AuthApiError && error.code === "INVALID_VERIFICATION_LINK"
             ? t("auth.invalidConfirmationLink")
             : t("auth.verifyGeneric")
         );

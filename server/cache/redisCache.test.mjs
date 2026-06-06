@@ -38,19 +38,22 @@ describe("createRedisCache", () => {
     redisMocks.del.mockResolvedValue(1);
   });
 
-  it("uses the memory fallback when no Redis URL is configured", async () => {
+  it("uses an in-memory cache when no Redis URL is configured", async () => {
     const cache = await createRedisCache({ redisUrl: "" });
 
     expect(Redis).not.toHaveBeenCalled();
-    expect(cache.enabled).toBe(false);
+    expect(cache.enabled).toBe(true);
     expect(cache.client).toBeNull();
-    expect(cache.getStatus()).toEqual({
-      enabled: false,
+    expect(cache.getStatus()).toMatchObject({
+      enabled: true,
       provider: "memory",
       fallbackReason: null,
     });
     await expect(cache.getJson("catalog")).resolves.toBeNull();
-    await expect(cache.setJson("catalog", { ok: true }, 60)).resolves.toBe(false);
+    await expect(cache.setJson("catalog", { ok: true }, 60)).resolves.toBe(true);
+    await expect(cache.getJson(":catalog")).resolves.toEqual({ ok: true });
+    await expect(cache.deleteKey("catalog")).resolves.toBe(true);
+    await expect(cache.getJson("catalog")).resolves.toBeNull();
   });
 
   it("falls back to memory when Redis cannot connect", async () => {
@@ -71,9 +74,9 @@ describe("createRedisCache", () => {
     );
     expect(redisMocks.on).toHaveBeenCalledWith("error", expect.any(Function));
     expect(redisMocks.disconnect).toHaveBeenCalled();
-    expect(cache.enabled).toBe(false);
-    expect(cache.getStatus()).toEqual({
-      enabled: false,
+    expect(cache.enabled).toBe(true);
+    expect(cache.getStatus()).toMatchObject({
+      enabled: true,
       provider: "memory",
       fallbackReason: "connection refused",
     });

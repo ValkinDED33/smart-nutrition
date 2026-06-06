@@ -554,7 +554,7 @@ export const createAuthService = ({
 
       if (!token) {
         throw new AuthApiError(
-          "INVALID_VERIFICATION_CODE",
+          "INVALID_VERIFICATION_LINK",
           "Registration confirmation link is invalid or expired."
         );
       }
@@ -570,7 +570,7 @@ export const createAuthService = ({
         verificationToken.expiresAt <= Date.now()
       ) {
         throw new AuthApiError(
-          "INVALID_VERIFICATION_CODE",
+          "INVALID_VERIFICATION_LINK",
           "Registration confirmation link is invalid or expired."
         );
       }
@@ -579,7 +579,7 @@ export const createAuthService = ({
 
       if (!user) {
         throw new AuthApiError(
-          "INVALID_VERIFICATION_CODE",
+          "INVALID_VERIFICATION_LINK",
           "Registration confirmation link is invalid or expired."
         );
       }
@@ -623,7 +623,7 @@ export const createAuthService = ({
 
       if (!user || isRegistrationVerified(user)) {
         throw new AuthApiError(
-          "INVALID_VERIFICATION_CODE",
+          "INVALID_VERIFICATION_LINK",
           "Registration confirmation is not available for this account."
         );
       }

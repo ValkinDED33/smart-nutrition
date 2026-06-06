@@ -286,8 +286,8 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
       return new AuthApiError("VERIFICATION_DELIVERY_UNAVAILABLE", error.message);
     }
 
-    if (error.code === "INVALID_VERIFICATION_CODE") {
-      return new AuthApiError("INVALID_VERIFICATION_CODE", error.message);
+    if (error.code === "INVALID_VERIFICATION_LINK") {
+      return new AuthApiError("INVALID_VERIFICATION_LINK", error.message);
     }
 
     if (error.code === "REGISTRATION_NOT_VERIFIED") {

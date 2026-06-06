@@ -209,7 +209,7 @@ const RegisterPage = () => {
 
   const handleVerificationError = (error: unknown) => {
     if (error instanceof AuthApiError) {
-      if (error.code === "INVALID_VERIFICATION_CODE") {
+      if (error.code === "INVALID_VERIFICATION_LINK") {
         setServerError(t("auth.invalidConfirmationLink"));
         return;
       }
