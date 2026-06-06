@@ -412,6 +412,38 @@ describe("createServerConfig", () => {
     ]);
   });
 
+  it("keeps the configured app base URL allowed when CORS has an explicit allowlist", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_APP_BASE_URL: "https://new.smartnutrition.test",
+      SMART_NUTRITION_CORS_ORIGINS: "https://old.smartnutrition.test",
+    });
+
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://old.smartnutrition.test",
+      "https://new.smartnutrition.test",
+    ]);
+  });
+
+  it("uses the first valid app base URL when a comma-separated list is configured", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_APP_BASE_URL:
+        "https://smart-nutrition.club, https://www.smart-nutrition.club",
+      SMART_NUTRITION_CORS_ORIGINS:
+        "https://smart-nutrition.club, https://www.smart-nutrition.club",
+    });
+
+    expect(config.appBaseUrl).toBe("https://smart-nutrition.club");
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://smart-nutrition.club",
+      "https://www.smart-nutrition.club",
+    ]);
+    expect(config.warnings.join(" ")).toContain(
+      "SMART_NUTRITION_APP_BASE_URL should contain one canonical URL"
+    );
+  });
+
   it("keeps the public Vercel origins available for production Render defaults", () => {
     const config = createServerConfig({
       NODE_ENV: "production",

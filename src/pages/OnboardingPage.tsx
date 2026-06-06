@@ -35,6 +35,7 @@ const OnboardingPage = () => {
     }),
     [
       profile.assistant.name,
+      profile.assistant.companionKind,
       profile.assistant.onboarding,
       profile.goal,
       profile.weightHistory,

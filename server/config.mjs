@@ -74,6 +74,40 @@ const hydrateSecretFileEnv = (env) => {
 const normalizeBaseUrl = (value, fallback) =>
   (toTrimmedString(value, fallback) || fallback).replace(/\/+$/, "");
 
+const normalizeAppBaseUrl = (value, fallback, warnings) => {
+  const rawValue = toTrimmedString(value, fallback) || fallback;
+  const candidates = rawValue
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (candidates.length > 1) {
+    warnings.push(
+      "SMART_NUTRITION_APP_BASE_URL should contain one canonical URL. Using the first valid URL; put additional frontend origins in SMART_NUTRITION_CORS_ORIGINS."
+    );
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsedUrl = new URL(candidate);
+
+      if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+        parsedUrl.search = "";
+        parsedUrl.hash = "";
+        return parsedUrl.toString().replace(/\/+$/, "");
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  warnings.push(
+    "SMART_NUTRITION_APP_BASE_URL must be a valid http/https URL. Falling back to the default frontend URL."
+  );
+
+  return fallback;
+};
+
 const isLoopbackUrl = (value) => {
   if (!value) {
     return false;
@@ -726,6 +760,8 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
       LEGACY_FRONTEND_ORIGINS.some(
         (origin) => origin === appOrigin || configuredOrigins.includes(origin)
       ));
+  const includeAppOrigin = (origins) =>
+    appOrigin ? [...new Set([...origins, appOrigin])] : [...new Set(origins)];
   const includePublicFrontendOrigin = (origins) =>
     shouldIncludePublicFrontendOrigin
       ? [...new Set([...origins, ...PUBLIC_FRONTEND_ORIGINS])]
@@ -745,7 +781,7 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   }
 
   if (configuredOrigins.length > 0) {
-    return includePublicFrontendOrigin(configuredOrigins);
+    return includePublicFrontendOrigin(includeAppOrigin(configuredOrigins));
   }
 
   return includePublicFrontendOrigin(appOrigin ? [appOrigin] : []);
@@ -976,9 +1012,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors
   );
   const defaultAppBaseUrl = PUBLIC_FRONTEND_ORIGIN;
-  const appBaseUrl = normalizeBaseUrl(
+  const appBaseUrl = normalizeAppBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
-    defaultAppBaseUrl
+    defaultAppBaseUrl,
+    warnings
   );
   const authCookieSameSite = normalizeCookieSameSite(
     env.SMART_NUTRITION_AUTH_COOKIE_SAME_SITE,

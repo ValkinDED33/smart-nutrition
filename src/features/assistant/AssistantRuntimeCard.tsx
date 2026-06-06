@@ -336,7 +336,6 @@ export const AssistantRuntimeCard = () => {
     };
   }, [
     activeUserId,
-    getWelcomeMessage,
     historyReady,
     resetConversationState,
     setActiveUserId,
