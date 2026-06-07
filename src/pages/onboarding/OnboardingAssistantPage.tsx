@@ -18,6 +18,42 @@ import {
   type OnboardingStepProps,
 } from "./types";
 
+const assistantAvatarLabels = {
+  uk: {
+    cat: "Кіт",
+    dog: "Собака",
+    fox: "Лис",
+    panda: "Панда",
+    owl: "Сова",
+    dragon: "Дракон",
+    robot: "Робот",
+    human: "Тренер",
+    capybara: "Капібара",
+  },
+  pl: {
+    cat: "Kot",
+    dog: "Pies",
+    fox: "Lis",
+    panda: "Panda",
+    owl: "Sowa",
+    dragon: "Smok",
+    robot: "Robot",
+    human: "Trener",
+    capybara: "Kapibara",
+  },
+  en: {
+    cat: "Cat",
+    dog: "Dog",
+    fox: "Fox",
+    panda: "Panda",
+    owl: "Owl",
+    dragon: "Dragon",
+    robot: "Robot",
+    human: "Trainer",
+    capybara: "Capybara",
+  },
+} as const;
+
 const languageOptions = [
   { value: "pl" as const, label: "Polski", flag: "🇵🇱" },
   { value: "uk" as const, label: "Українська", flag: "🇺🇦" },
@@ -27,6 +63,7 @@ const languageOptions = [
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { appLanguage, setLanguage, t } = useLanguage();
+  const avatarLabels = assistantAvatarLabels[appLanguage];
   const personalityOptions: PersonalityPreset[] = [
     "supportive",
     "strict",
@@ -78,7 +115,7 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
                       mood="happy"
                       size={42}
                     />
-                    <span>{t(`assistant.avatar.${avatar}`)}</span>
+                    <span>{avatarLabels[avatar]}</span>
                   </Stack>
                 </Button>
               ))}

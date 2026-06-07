@@ -50,6 +50,8 @@ const isAvatar = (value: unknown): value is AssistantCompanionKind =>
   value === "cat" ||
   value === "dog" ||
   value === "fox" ||
+  value === "panda" ||
+  value === "owl" ||
   value === "human" ||
   value === "capybara" ||
   value === "dragon";
@@ -114,6 +116,9 @@ export const readPreAuthOnboardingDraft = (language: AppLanguage) => {
     return defaultPreAuthOnboardingDraft(language);
   }
 };
+
+export const hasPreAuthOnboardingDraft = () =>
+  Boolean(getClientStorageItem(ONBOARDING_DRAFT_KEY));
 
 export const writePreAuthOnboardingDraft = (draft: PreAuthOnboardingDraft) => {
   setClientStorageItem(ONBOARDING_DRAFT_KEY, JSON.stringify(draft));

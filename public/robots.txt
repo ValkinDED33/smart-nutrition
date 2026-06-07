@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://smart-nutrition-topaz.vercel.app/sitemap.xml
+Sitemap: https://smart-nutrition.club/sitemap.xml

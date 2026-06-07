@@ -15,6 +15,7 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { calculateBmi, getBmiStatus } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { updateWeight } from "./profileSlice";
 
 const quickWeightCopy = {
@@ -133,6 +134,12 @@ export const QuickWeightCheckInCard = () => {
     }
 
     dispatch(updateWeight(Math.round(nextWeight * 10) / 10));
+    captureRuntimeEvent("weight_updated", {
+      weightKg: Math.round(nextWeight * 10) / 10,
+      previousWeightKg: latestWeight || null,
+      targetWeightKg: targetWeight,
+      hasTarget: Boolean(targetWeight),
+    });
     setWeightDraft(nextWeight.toFixed(1));
     setSaved(true);
   };

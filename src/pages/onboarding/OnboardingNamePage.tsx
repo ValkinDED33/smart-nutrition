@@ -6,11 +6,28 @@ import { cardSx, shellSx, stepPaths, type OnboardingStepProps } from "./types";
 export const OnboardingNamePage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const trimmedName = state.name.trim();
+  const canContinue = trimmedName.length >= 2;
+  const handleNext = () => {
+    if (!canContinue) {
+      return;
+    }
+
+    updateState({ name: trimmedName });
+    navigate(stepPaths.age);
+  };
 
   return (
     <Box sx={shellSx}>
       <Paper elevation={0} sx={cardSx}>
-        <Stack spacing={3}>
+        <Stack
+          component="form"
+          spacing={3}
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleNext();
+          }}
+        >
           <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
             {t("onboarding.nameTitle")}
           </Typography>
@@ -20,6 +37,7 @@ export const OnboardingNamePage = ({ state, updateState }: OnboardingStepProps) 
             value={state.name}
             placeholder={t("onboarding.namePlaceholder")}
             onChange={(event) => updateState({ name: event.target.value })}
+            autoComplete="name"
             inputProps={{ maxLength: 60 }}
           />
           <Stack direction="row" spacing={1.2}>
@@ -32,8 +50,8 @@ export const OnboardingNamePage = ({ state, updateState }: OnboardingStepProps) 
             </Button>
             <Button
               variant="contained"
-              disabled={state.name.trim().length < 2}
-              onClick={() => navigate(stepPaths.age)}
+              type="submit"
+              disabled={!canContinue}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

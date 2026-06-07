@@ -82,11 +82,12 @@ export const personalityValues: Record<
 };
 
 export const assistantAvatarOptions: AssistantCompanionKind[] = [
-  "robot",
   "cat",
   "dog",
   "fox",
-  "human",
+  "panda",
+  "owl",
+  "dragon",
 ];
 
 export const clampNumber = (value: number, min: number, max: number) =>

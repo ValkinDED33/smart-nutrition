@@ -2,6 +2,7 @@ import type { ProfileState } from "@features/profile/profileSlice";
 import type { WaterState } from "@features/water/waterSlice";
 import type {
   AssistantConversationMessage,
+  AssistantPromptContext,
   AssistantRuntimeContext,
 } from "@domain/assistant/types";
 import type { MacroTargets } from "@domain/profile/types";
@@ -48,6 +49,7 @@ export interface AssistantContextSource {
   language: AssistantRuntimeContext["language"];
   screen?: AssistantRuntimeContext["screen"];
   currentPath?: AssistantRuntimeContext["currentPath"];
+  promptContext?: AssistantPromptContext;
   user: User | null;
   profile: Pick<
     ProfileState,

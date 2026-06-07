@@ -12,6 +12,8 @@ export type AssistantCompanionKind =
   | "cat"
   | "dog"
   | "fox"
+  | "panda"
+  | "owl"
   | "human"
   | "capybara"
   | "dragon";

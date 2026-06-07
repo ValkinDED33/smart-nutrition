@@ -18,6 +18,7 @@ import { useLanguage } from "../../shared/language";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
+import { EmptyState } from "@shared/ui";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -27,6 +28,7 @@ const overviewCopy = {
     subtitle: "Переглядайте сніданок, обід, вечерю та перекуси в одному місці.",
     empty: "На сьогодні ще немає доданих продуктів.",
     emptyGroup: "Поки тут порожньо.",
+    emptyHint: "Додайте перший продукт або повторіть вчорашній прийом, якщо день схожий.",
     items: "позицій",
     repeat: "Повторити вчорашнє",
     edit: "Редагувати",
@@ -42,6 +44,7 @@ const overviewCopy = {
     subtitle: "Zobacz śniadanie, obiad, kolację i przekąski w jednym miejscu.",
     empty: "Na dziś nie dodano jeszcze żadnych produktów.",
     emptyGroup: "Na razie pusto.",
+    emptyHint: "Dodaj pierwszy produkt albo powtórz wczorajszy posiłek, jeśli dzień wygląda podobnie.",
     items: "produktów",
     repeat: "Powtórz wczoraj",
     edit: "Edytuj",
@@ -316,7 +319,11 @@ export const MealDayOverview = () => {
           </Stack>
 
           {todayEntries.length === 0 ? (
-            <Typography color="text.secondary">{copy.empty}</Typography>
+            <EmptyState
+              title={copy.empty}
+              description={copy.emptyHint}
+              compact
+            />
           ) : (
             <Stack spacing={1.5}>
               {mealTypeOrder.map((mealType) => {
@@ -368,9 +375,7 @@ export const MealDayOverview = () => {
                       </Stack>
 
                       {entries.length === 0 ? (
-                        <Typography color="text.secondary" variant="body2">
-                          {copy.emptyGroup}
-                        </Typography>
+                        <EmptyState title={copy.emptyGroup} compact />
                       ) : (
                         <Stack spacing={1}>
                           {entries.map((item) => (

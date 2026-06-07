@@ -1,3 +1,5 @@
+import { applySecurityHeaders } from "../runtime/securityHeaders.mjs";
+
 export const isCorsOriginAllowed = (origin, allowedOrigins = []) =>
   Boolean(origin) && allowedOrigins.includes(origin);
 
@@ -78,41 +80,8 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
   );
 };
 
-export const setSecurityHeaders = (response) => {
-  response.setHeader(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "frame-ancestors 'none'",
-      "form-action 'self'",
-      "img-src 'self' data: https:",
-      "font-src 'self' data:",
-      "script-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
-      "connect-src 'self' https: wss:",
-      "worker-src 'self'",
-      "manifest-src 'self'",
-    ].join("; ")
-  );
-  response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-  response.setHeader(
-    "Permissions-Policy",
-    "camera=(self), microphone=(self), geolocation=()"
-  );
-  response.setHeader(
-    "Strict-Transport-Security",
-    "max-age=15552000; includeSubDomains"
-  );
-  response.setHeader("X-Content-Type-Options", "nosniff");
-  response.setHeader("X-DNS-Prefetch-Control", "off");
-  response.setHeader("X-Download-Options", "noopen");
-  response.setHeader("X-Frame-Options", "DENY");
-  response.setHeader("X-Permitted-Cross-Domain-Policies", "none");
-  response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-};
+export const setSecurityHeaders = (response, options) =>
+  applySecurityHeaders(response, options);
 
 const serializeCookie = ({
   name,

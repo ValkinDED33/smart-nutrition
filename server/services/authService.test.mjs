@@ -49,6 +49,22 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
       code: "EMAIL_NOT_CONFIGURED",
     })),
   };
+  const brevoService = {
+    isConfigured: vi.fn(() => false),
+    getStatus: vi.fn(() => ({
+      configured: false,
+      provider: "brevo",
+      listIdConfigured: false,
+    })),
+    upsertContact: vi.fn(async () => ({
+      ok: true,
+      skipped: true,
+      code: "BREVO_NOT_CONFIGURED",
+    })),
+  };
+  const logger = {
+    warn: vi.fn(),
+  };
   const config = {
     accessTokenTtlMs: 900000,
     refreshTokenTtlMs: 604800000,
@@ -71,8 +87,12 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
       authRepository,
       stateRepository,
       emailService,
+      brevoService,
       config,
+      logger,
     }),
+    brevoService,
+    logger,
   };
 };
 
@@ -532,6 +552,58 @@ describe("authService", () => {
 
     await expect(service.verifyRegistration({ token: rawToken })).rejects.toMatchObject({
       code: "INVALID_VERIFICATION_LINK",
+    });
+    expect(authRepository.createSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not break registration verification when Brevo contact sync fails", async () => {
+    const { authRepository, brevoService, config, service } = createAuthServiceFixture();
+    const rawToken = "verify-brevo-token";
+    const tokenHash = hashOneTimeToken(rawToken, config.jwtSecret);
+    const user = {
+      id: "user-verify-brevo",
+      email: "verify-brevo@example.com",
+      name: "Verify Brevo",
+      avatar: undefined,
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      emailVerified: false,
+      tokenVersion: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    authRepository.findRegistrationVerificationTokenByHash.mockReturnValue({
+      id: "registration-token-brevo",
+      userId: user.id,
+      channel: "email",
+      target: user.email,
+      codeHash: tokenHash,
+      expiresAt: Date.now() + 10_000,
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    });
+    authRepository.findUserById.mockReturnValue(user);
+    authRepository.markUserRegistrationVerified.mockResolvedValue({
+      ...user,
+      emailVerified: true,
+    });
+    brevoService.upsertContact.mockResolvedValue({
+      ok: false,
+      code: "BREVO_CONTACT_SYNC_FAILED",
+    });
+
+    const result = await service.verifyRegistration({ token: rawToken });
+
+    expect(result.user.emailVerified).toBe(true);
+    expect(result.token).toBeTruthy();
+    expect(brevoService.upsertContact).toHaveBeenCalledWith({
+      email: user.email,
+      name: user.name,
     });
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
   });

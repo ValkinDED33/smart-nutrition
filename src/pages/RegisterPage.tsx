@@ -37,6 +37,7 @@ import {
 import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
@@ -74,8 +75,6 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [passwordInputArmed, setPasswordInputArmed] = useState(false);
-  const [confirmPasswordInputArmed, setConfirmPasswordInputArmed] = useState(false);
 
   const schema = useMemo(
     () =>
@@ -171,6 +170,10 @@ const RegisterPage = () => {
     setSubmitting(true);
     setServerError(null);
     setPendingVerification(null);
+    captureRuntimeEvent("signup_started", {
+      authMode: getAuthRuntimeInfo().mode,
+      language: appLanguage,
+    });
 
     try {
       const response = await registerApi({
@@ -181,11 +184,22 @@ const RegisterPage = () => {
       });
 
       if (isVerificationPending(response)) {
+        captureRuntimeEvent("signup_completed", {
+          authMode: getAuthRuntimeInfo().mode,
+          requiresVerification: true,
+          language: appLanguage,
+        });
         setPendingVerification(response);
         return;
       }
 
       applyAuthenticatedSession(response);
+      captureRuntimeEvent("signup_completed", {
+        authMode: getAuthRuntimeInfo().mode,
+        requiresVerification: false,
+        hasCloudSnapshot: Boolean(response.snapshot),
+        language: appLanguage,
+      });
       navigate("/onboarding");
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
@@ -321,7 +335,7 @@ const RegisterPage = () => {
             component="form"
             spacing={2}
             onSubmit={handleSubmit(onSubmit)}
-            autoComplete="off"
+            autoComplete="on"
           >
             <TextField
               fullWidth
@@ -352,10 +366,6 @@ const RegisterPage = () => {
               helperText={errors.password?.message}
               inputProps={{
                 autoComplete: "new-password",
-                readOnly: !passwordInputArmed,
-                onFocus: () => {
-                  setPasswordInputArmed(true);
-                },
               }}
               InputProps={{
                 endAdornment: (
@@ -381,10 +391,6 @@ const RegisterPage = () => {
               helperText={errors.confirmPassword?.message}
               inputProps={{
                 autoComplete: "new-password",
-                readOnly: !confirmPasswordInputArmed,
-                onFocus: () => {
-                  setConfirmPasswordInputArmed(true);
-                },
               }}
               InputProps={{
                 endAdornment: (

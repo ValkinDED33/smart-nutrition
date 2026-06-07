@@ -1,4 +1,12 @@
 import { resolveAssistantContext } from "@features/assistant/assistantContext";
+import {
+  resolveAssistantEmotion,
+  type AssistantEmotionSignals,
+} from "@features/assistant/assistantEmotion";
+import {
+  resolveAssistantPresence,
+  type AssistantPresenceOptions,
+} from "@features/assistant/assistantPresence";
 
 export const hiddenGlobalAssistantRoutePrefixes = [
   "/login",
@@ -13,14 +21,27 @@ export const hiddenGlobalAssistantRoutePrefixes = [
 export const shouldHideAssistantLayer = (pathname: string) =>
   hiddenGlobalAssistantRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
 
-export const resolveGlobalAssistantLayerModel = (pathname: string) => {
+export const resolveGlobalAssistantLayerModel = (
+  pathname: string,
+  presenceOptions: Omit<AssistantPresenceOptions, "pathname">,
+  emotionSignals: AssistantEmotionSignals = {}
+) => {
   const assistantContext = resolveAssistantContext(pathname);
+  const presence = resolveAssistantPresence(assistantContext, {
+    ...presenceOptions,
+    pathname,
+  });
+  const emotion = resolveAssistantEmotion(
+    assistantContext,
+    presence,
+    emotionSignals
+  );
 
   return {
     ...assistantContext,
+    presence,
+    emotion,
     isVisibleOnAuthenticatedRoute:
-      assistantContext.area !== "unknown" &&
-      assistantContext.visibility === "global" &&
-      !shouldHideAssistantLayer(pathname),
+      presence.visible && presence.reason !== "public-route",
   };
 };

@@ -1,20 +1,52 @@
 {
-  "name": "Smart Nutrition",
+  "name": "Smart Nutrition | AI nutrition companion",
   "short_name": "Smart Nutrition",
-  "description": "AI wellness companion with meals, water, protein, habits, progress analytics and community.",
+  "description": "AI nutrition companion for meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#eefaf4",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#f8fafc",
   "theme_color": "#0f766e",
   "orientation": "portrait-primary",
+  "lang": "uk",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["health", "fitness", "food"]
+  "categories": ["health", "fitness", "food"],
+  "shortcuts": [
+    {
+      "name": "Add meal",
+      "short_name": "Meal",
+      "description": "Open meal planning and food logging.",
+      "url": "/meals",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Open assistant",
+      "short_name": "Assistant",
+      "description": "Open the AI nutrition companion.",
+      "url": "/coach",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

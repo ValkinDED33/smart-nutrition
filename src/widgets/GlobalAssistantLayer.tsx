@@ -1,12 +1,22 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot } from "lucide-react";
-import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
 import type { RootState } from "@app/store";
-import type { AssistantArea } from "@features/assistant/assistantManifest";
+import type { AssistantViewport } from "@features/assistant/assistantPresence";
+import { selectTodayMealItems } from "@features/meal/selectors";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
+import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
 import {
   assistantSpeechBubbleVariants,
@@ -73,21 +83,37 @@ const layerCopy = {
   },
 } as const;
 
-const moodByAreaTone: Record<
-  AssistantArea,
-  "happy" | "coach" | "concerned" | "celebrate"
-> = {
-  onboarding: "happy",
-  home: "happy",
-  meals: "coach",
-  coach: "happy",
-  progress: "coach",
-  profile: "happy",
-  community: "celebrate",
-  recipes: "coach",
-  water: "concerned",
-  admin: "coach",
-  unknown: "happy",
+const isEditableElement = (element: Element | null) => {
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(
+    element.closest(
+      'input, textarea, select, [contenteditable="true"], [role="textbox"]'
+    )
+  );
+};
+
+const useInputFocusState = () => {
+  const [inputFocused, setInputFocused] = useState(false);
+
+  useEffect(() => {
+    const updateFocusedElement = () => {
+      setInputFocused(isEditableElement(document.activeElement));
+    };
+
+    updateFocusedElement();
+    document.addEventListener("focusin", updateFocusedElement);
+    document.addEventListener("focusout", updateFocusedElement);
+
+    return () => {
+      document.removeEventListener("focusin", updateFocusedElement);
+      document.removeEventListener("focusout", updateFocusedElement);
+    };
+  }, []);
+
+  return inputFocused;
 };
 
 export const GlobalAssistantLayer = () => {
@@ -95,18 +121,73 @@ export const GlobalAssistantLayer = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const todayMeals = useSelector(selectTodayMealItems);
+  const water = useSelector((state: RootState) => state.water);
+  const weightHistory = useSelector(
+    (state: RootState) => state.profile.weightHistory
+  );
   const { appLanguage } = useLanguage();
   const copy = layerCopy[appLanguage];
+  const inputFocused = useInputFocusState();
+  const isMobile = useMediaQuery("(max-width: 599.95px)");
+  const isTablet = useMediaQuery(
+    "(min-width: 600px) and (max-width: 899.95px)"
+  );
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const viewport: AssistantViewport = isMobile
+    ? "mobile"
+    : isTablet
+      ? "tablet"
+      : "desktop";
+  const todayKey = getLocalDateKey(new Date());
+  const emotionSignals = useMemo(
+    () => ({
+      hasNoMealsToday: todayMeals.length === 0,
+      waterBehindTarget:
+        water.dailyWaterGoal > 0 && water.consumedMl < water.dailyWaterGoal,
+      weightUpdatedToday: weightHistory.some(
+        (entry) => getLocalDateKey(entry.date) === todayKey
+      ),
+      onboardingCompleted: Boolean(assistant.onboarding.completedAt),
+      recentError: false,
+      recentSuccess: false,
+      userInactive: false,
+    }),
+    [
+      assistant.onboarding.completedAt,
+      todayKey,
+      todayMeals.length,
+      water.consumedMl,
+      water.dailyWaterGoal,
+      weightHistory,
+    ]
+  );
   const layerModel = useMemo(
-    () => resolveGlobalAssistantLayerModel(location.pathname),
-    [location.pathname]
+    () =>
+      resolveGlobalAssistantLayerModel(
+        location.pathname,
+        {
+          viewport,
+          inputFocused,
+          prefersReducedMotion,
+        },
+        emotionSignals
+      ),
+    [
+      emotionSignals,
+      inputFocused,
+      location.pathname,
+      prefersReducedMotion,
+      viewport,
+    ]
   );
   const { area, defaultAction, duties, primaryCapability } = layerModel;
+  const { presence } = layerModel;
 
   if (
     !user ||
     !assistant.widgetEnabled ||
-    !layerModel.isVisibleOnAuthenticatedRoute ||
+    !presence.visible ||
     !defaultAction
   ) {
     return null;
@@ -117,21 +198,31 @@ export const GlobalAssistantLayer = () => {
       area,
       path: location.pathname,
       capability: primaryCapability?.id ?? "unknown",
+      screenName: layerModel.screenName,
+      duties: duties.join(","),
+      tone: layerModel.tone,
+      actionLabel: defaultAction.label,
       actionRoute: defaultAction.route,
+      presenceMode: presence.mode,
+      presenceReason: presence.reason,
+      presencePriority: presence.priority,
+      emotion: layerModel.emotion.emotion,
+      messageIntent: layerModel.emotion.messageIntent,
+      emotionPriority: layerModel.emotion.priority,
     });
     navigate(defaultAction.route);
   };
 
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence initial={presence.allowMotion}>
       <Box
         key={area}
         component={motion.aside}
-        layout
+        layout={presence.allowMotion}
         variants={assistantSpeechStaggerVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
+        initial={presence.allowMotion ? "initial" : false}
+        animate={presence.allowMotion ? "animate" : false}
+        exit={presence.allowMotion ? "exit" : undefined}
         aria-label={copy.eyebrow}
         sx={{
           position: "fixed",
@@ -149,11 +240,13 @@ export const GlobalAssistantLayer = () => {
       >
         <Paper
           component={motion.div}
-          layout
+          layout={presence.allowMotion}
           variants={assistantSpeechBubbleVariants}
           elevation={8}
           sx={{
-            display: { xs: "none", md: "block" },
+            display: presence.allowSpeechBubble
+              ? { xs: "none", md: "block" }
+              : "none",
             width: 330,
             p: 2,
             borderRadius: 1,
@@ -248,7 +341,7 @@ export const GlobalAssistantLayer = () => {
         <Box
           component={motion.button}
           type="button"
-          layout
+          layout={presence.allowMotion}
           variants={fadeUpVariants}
           onClick={handleOpenAssistant}
           aria-label={copy.mobileLabel}
@@ -266,7 +359,7 @@ export const GlobalAssistantLayer = () => {
           <AssistantAvatar
             name={assistant.name}
             variant={assistant.companionKind}
-            mood={moodByAreaTone[area]}
+            mood={layerModel.emotion.mood}
             active
           />
         </Box>

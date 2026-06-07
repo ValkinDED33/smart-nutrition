@@ -29,6 +29,8 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_GROQ_API_KEY",
   "SMART_NUTRITION_GOOGLE_API_KEY",
   "SMART_NUTRITION_RESEND_API_KEY",
+  "SMART_NUTRITION_BREVO_API_KEY",
+  "SMART_NUTRITION_BREVO_LIST_ID",
   "SMART_NUTRITION_DATABASE_URL",
   "SMART_NUTRITION_MONGO_URI",
   "SMART_NUTRITION_MONGODB_URI",
@@ -1057,6 +1059,22 @@ export const createServerConfig = (rawEnv = process.env) => {
   }
 
   const emailTransportConfigured = Boolean(emailFromAddress && resendApiKey);
+  const brevoApiKey = toTrimmedString(env.SMART_NUTRITION_BREVO_API_KEY) || null;
+  const brevoListId = readPositiveInteger(
+    env.SMART_NUTRITION_BREVO_LIST_ID,
+    0,
+    "SMART_NUTRITION_BREVO_LIST_ID",
+    errors,
+    { min: 0 }
+  );
+  const brevoConfigured = Boolean(brevoApiKey && brevoListId > 0);
+
+  if (brevoApiKey && !brevoConfigured) {
+    warnings.push(
+      "Brevo is configured without SMART_NUTRITION_BREVO_LIST_ID. Marketing contact sync will be disabled."
+    );
+  }
+
   const explicitAssistantApiKey =
     toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null;
   const explicitAssistantModel =
@@ -1278,6 +1296,9 @@ export const createServerConfig = (rawEnv = process.env) => {
     emailFromName,
     resendApiKey,
     emailTransportConfigured,
+    brevoApiKey,
+    brevoListId,
+    brevoConfigured,
     assistantApiKey,
     assistantModel,
     assistantBaseUrl,

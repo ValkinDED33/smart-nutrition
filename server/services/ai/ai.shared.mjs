@@ -44,6 +44,36 @@ const formatDailyContextLine = (context) => {
   ].join("\n");
 };
 
+const formatPromptContextLine = (context) => {
+  const promptContext = context.promptContext;
+
+  if (!promptContext) {
+    return "- Assistant prompt context: unavailable";
+  }
+
+  const capabilities = Array.isArray(promptContext.capabilities)
+    ? promptContext.capabilities
+        .slice(0, 6)
+        .map((capability) => {
+          const duties = formatList(capability.duties);
+          return `${capability.id}: ${capability.description || "no description"} [${duties}]`;
+        })
+        .join("; ")
+    : "none";
+  const defaultAction = promptContext.defaultAction
+    ? `${promptContext.defaultAction.label} -> ${promptContext.defaultAction.route}`
+    : "none";
+
+  return [
+    `- Assistant prompt context: ${promptContext.screenName ?? "Unknown"} / area ${
+      promptContext.area ?? "unknown"
+    } / tone ${promptContext.tone ?? "supportive"}`,
+    `- Assistant duties on this screen: ${formatList(promptContext.duties)}`,
+    `- Assistant capabilities on this screen: ${capabilities || "none"}`,
+    `- Assistant default action on this screen: ${defaultAction}`,
+  ].join("\n");
+};
+
 const buildSystemPrompt = (context) =>
   [
     `You are ${context.assistantName}, the Smart Nutrition assistant.`,
@@ -54,6 +84,7 @@ const buildSystemPrompt = (context) =>
     "Be concise, practical, and emotionally aware.",
     "Use only the current nutrition context and the conversation memory provided below.",
     "Use onboarding friction and motivation style explicitly when choosing tone, recommendation priority, and next step.",
+    "Use assistant prompt context to respect the current screen area, duties, capabilities, tone, and default action.",
     "Do not invent calories, macros, diagnoses, or certainty.",
     "Use relationship, support, and pet context only to adapt tone and practical contact style.",
     "Do not make medical or nutrition claims from blood group or eye color.",
@@ -65,6 +96,7 @@ const buildContextBlock = (context) =>
   [
     "Current Smart Nutrition context:",
     `- Current app screen: ${context.screen ?? "unknown"} (${context.currentPath ?? "/"})`,
+    formatPromptContextLine(context),
     `- User: ${context.userName}`,
     `- Goal: ${context.goal}`,
     `- Diet style: ${context.profile?.dietStyle ?? "balanced"}`,

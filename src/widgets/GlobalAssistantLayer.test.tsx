@@ -4,29 +4,32 @@ import {
   shouldHideAssistantLayer,
 } from "./globalAssistantLayerModel";
 
+const resolveModel = (pathname: string) =>
+  resolveGlobalAssistantLayerModel(pathname, {
+    viewport: "desktop",
+    inputFocused: false,
+    prefersReducedMotion: false,
+  });
+
 describe("GlobalAssistantLayer", () => {
   it("hides on public and onboarding routes", () => {
     ["/login", "/register", "/reset-password", "/verify-email", "/onboarding"].forEach(
       (pathname) => {
         expect(shouldHideAssistantLayer(pathname)).toBe(true);
         expect(
-          resolveGlobalAssistantLayerModel(pathname).isVisibleOnAuthenticatedRoute
+          resolveModel(pathname).isVisibleOnAuthenticatedRoute
         ).toBe(false);
       }
     );
   });
 
   it("is visible on authenticated product routes", () => {
-    expect(
-      resolveGlobalAssistantLayerModel("/dashboard").isVisibleOnAuthenticatedRoute
-    ).toBe(true);
-    expect(
-      resolveGlobalAssistantLayerModel("/progress").isVisibleOnAuthenticatedRoute
-    ).toBe(true);
+    expect(resolveModel("/dashboard").isVisibleOnAuthenticatedRoute).toBe(true);
+    expect(resolveModel("/progress").isVisibleOnAuthenticatedRoute).toBe(true);
   });
 
   it("resolves meals area and action from the assistant manifest", () => {
-    const model = resolveGlobalAssistantLayerModel("/meals");
+    const model = resolveModel("/meals");
 
     expect(model.area).toBe("meals");
     expect(model.primaryCapability?.id).toBe("meal-helper");
@@ -40,14 +43,8 @@ describe("GlobalAssistantLayer", () => {
   });
 
   it("uses area-specific action routes instead of always routing to coach", () => {
-    expect(resolveGlobalAssistantLayerModel("/community").defaultAction?.route).toBe(
-      "/community"
-    );
-    expect(resolveGlobalAssistantLayerModel("/profile").defaultAction?.route).toBe(
-      "/profile"
-    );
-    expect(resolveGlobalAssistantLayerModel("/coach").defaultAction?.route).toBe(
-      "/coach"
-    );
+    expect(resolveModel("/community").defaultAction?.route).toBe("/community");
+    expect(resolveModel("/profile").defaultAction?.route).toBe("/profile");
+    expect(resolveModel("/coach").defaultAction?.route).toBe("/coach");
   });
 });

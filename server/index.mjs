@@ -6,7 +6,6 @@ import {
   sendNoContent,
   isUnsafeCrossSiteMutation,
   setCorsHeaders,
-  setSecurityHeaders,
 } from "./lib/http.mjs";
 import { createAdminController } from "./controllers/admin.controller.mjs";
 import { createAiController } from "./controllers/ai.controller.mjs";
@@ -27,6 +26,7 @@ import { createAuthController } from "./routes/auth.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
+import { createBrevoService } from "./services/brevoService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
@@ -47,9 +47,11 @@ import {
   getSyncContext,
 } from "./runtime/requestContext.mjs";
 import { createRateLimiters } from "./runtime/rateLimits.mjs";
+import { applySecurityHeaders } from "./runtime/securityHeaders.mjs";
 import {
   createReadinessSnapshot,
   getPublicAiStatus,
+  getPublicBrevoStatus,
   getPublicCacheStatus,
   getPublicEmailStatus,
   getPublicStorageStatus,
@@ -86,6 +88,9 @@ const adminRepository = createMongoAdminRepository(storage);
 const emailService = createEmailService({
   config: serverConfig,
 });
+const brevoService = createBrevoService({
+  config: serverConfig,
+});
 const aiService = createAiService({
   aiRepository,
   assistantMemoryRepository,
@@ -95,6 +100,7 @@ const authService = createAuthService({
   authRepository,
   stateRepository,
   emailService,
+  brevoService,
   config: serverConfig,
 });
 const platformService = createPlatformService({
@@ -120,6 +126,7 @@ const getReadinessSnapshot = createReadinessSnapshot({
   storage,
   redisCache,
   emailService,
+  brevoService,
   aiService,
   serverConfig,
   staticAvailable,
@@ -170,6 +177,7 @@ const healthController = createHealthController({
   }),
   getWarnings: () => serverConfig.warnings,
   getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
+  getBrevoStatus: () => getPublicBrevoStatus(brevoService.getStatus()),
   getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
   getReadiness: () => getReadinessSnapshot(),
   getDebugStartup: () =>
@@ -204,7 +212,7 @@ const apiRouter = createApiRouter({
 await platformService.bootstrapAccessControl();
 
 const routeRequest = async (request, response) => {
-  setSecurityHeaders(response);
+  applySecurityHeaders(response, { isProduction: serverConfig.isProduction });
   setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);
 
   if (!request.url) {

@@ -1,11 +1,18 @@
+import { lazy, Suspense } from "react";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import CountUp from "react-countup";
 import { Droplets } from "lucide-react";
 import type { AppDispatch, RootState } from "../app/store";
 import { incrementWater } from "../features/water/waterSlice";
-import { WaterTracker } from "../features/water/WaterTracker";
 import { useLanguage } from "../shared/language";
+import { LoadingSkeleton } from "@shared/ui";
+
+const WaterTracker = lazy(() =>
+  import("../features/water/WaterTracker").then((module) => ({
+    default: module.WaterTracker,
+  }))
+);
 
 const waterPageCopy = {
   uk: {
@@ -136,7 +143,9 @@ const WaterPage = () => {
         ))}
       </Box>
 
-      <WaterTracker />
+      <Suspense fallback={<LoadingSkeleton titleRows={1} cards={3} chart bodyRows={3} />}>
+        <WaterTracker />
+      </Suspense>
     </Stack>
   );
 };

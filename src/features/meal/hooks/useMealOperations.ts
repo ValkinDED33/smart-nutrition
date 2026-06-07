@@ -16,6 +16,7 @@ import {
 import { selectTodayMeals } from "@state/meal/selectors";
 import { AddMealUseCase } from "../usecases/addMeal";
 import type { Product } from "@domain/meal";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 
 export function useMealOperations() {
   const dispatch = useDispatch<AppDispatch>();
@@ -71,6 +72,17 @@ export function useMealOperations() {
 
         if (result.isOk && result.value) {
           dispatch(addMealOptimistically(result.value));
+          captureRuntimeEvent("meal_added", {
+            mealType: result.value.mealType,
+            productId: result.value.product.id,
+            productName: result.value.product.name,
+            productSource: result.value.product.source,
+            quantity: result.value.quantity,
+            unit: result.value.product.unit,
+            calories: Math.round(
+              (result.value.product.nutrients.calories * result.value.quantity) / 100
+            ),
+          });
         } else {
           dispatch(setError(result.errors?.[0] || "Failed to add meal"));
         }

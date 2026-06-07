@@ -199,6 +199,28 @@ const createContext = (): AssistantRuntimeContext => ({
     lastMood: "focused",
     recentProblems: [],
   },
+  promptContext: {
+    area: "meals",
+    screenName: "Meals",
+    duties: ["suggest", "analyze", "warn"],
+    tone: "focused",
+    capabilities: [
+      {
+        id: "meal-helper",
+        area: "meals",
+        duties: ["suggest", "analyze", "warn"],
+        description: "Helps add food and explain calories, macros, and mistakes.",
+        entryRoute: "/meals",
+      },
+    ],
+    defaultAction: {
+      label: "Open meal helper",
+      route: "/meals",
+    },
+    currentRoute: "/meals",
+    summary:
+      "Meals: area=meals; duties=suggest, analyze, warn; tone=focused; capabilities=meal-helper.",
+  },
 });
 
 describe("assistantRuntime", () => {
@@ -208,6 +230,7 @@ describe("assistantRuntime", () => {
     expect(message.mode).toBe("guided");
     expect(message.text).toContain("Diana");
     expect(message.text).toContain("540");
+    expect(message.text).toContain("Meals");
   });
 
   it("answers protein questions from current context", () => {

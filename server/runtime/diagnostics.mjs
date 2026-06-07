@@ -113,6 +113,8 @@ export const createStartupDiagnostics = ({
     groqKey: readEnvFlag(env, "SMART_NUTRITION_GROQ_API_KEY"),
     assistantApiKey: readEnvFlag(env, "SMART_NUTRITION_ASSISTANT_API_KEY"),
     resendKey: readEnvFlag(env, "SMART_NUTRITION_RESEND_API_KEY"),
+    brevoKey: readEnvFlag(env, "SMART_NUTRITION_BREVO_API_KEY"),
+    brevoListId: readEnvFlag(env, "SMART_NUTRITION_BREVO_LIST_ID"),
     jwtSecret: readEnvFlag(env, "SMART_NUTRITION_JWT_SECRET"),
     corsOrigins: readEnvFlag(env, "SMART_NUTRITION_CORS_ORIGINS"),
     appBaseUrl: readEnvFlag(env, "SMART_NUTRITION_APP_BASE_URL"),
@@ -137,6 +139,7 @@ export const createStartupDiagnostics = ({
       mongoAiEnabled: config.mongoAiEnabled,
       redisEnabled: config.redisEnabled,
       emailTransportConfigured: config.emailTransportConfigured,
+      brevoConfigured: config.brevoConfigured,
       assistantRuntimeConfigured: config.assistantRuntimeConfigured,
       assistantProviderOrder: config.assistantProviderOrder,
       assistantPrimaryProviderId: config.assistantPrimaryProviderId,
@@ -175,6 +178,7 @@ export const logStartupDiagnostics = (diagnostics) => {
     }`
   );
   console.log(`- emailTransportConfigured: ${diagnostics.config.emailTransportConfigured}`);
+  console.log(`- brevoConfigured: ${diagnostics.config.brevoConfigured}`);
   console.log(`- redisEnabled: ${diagnostics.config.redisEnabled}`);
   diagnostics.config.warnings.forEach((warning) => {
     console.warn(`[config warning] ${warning}`);

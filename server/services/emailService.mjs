@@ -1,5 +1,23 @@
 import { Resend } from "resend";
 
+const EMAIL_PROVIDER = "resend";
+const MAX_EMAIL_ATTEMPTS = 3;
+const EMAIL_RETRY_DELAYS_MS = [300, 900, 1800];
+const TRANSIENT_STATUS_CODES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+const TRANSIENT_ERROR_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "EHOSTUNREACH",
+  "ENETDOWN",
+  "ENETRESET",
+  "ENETUNREACH",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+]);
+
 const escapeHtml = (value) =>
   String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -11,6 +29,56 @@ const escapeHtml = (value) =>
 const buildResetSubject = () => "Reset your Smart Nutrition password";
 
 const buildVerificationSubject = () => "Confirm your Smart Nutrition email";
+
+const sleep = (delayMs) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+
+const readProviderErrorStatus = (error) => {
+  const status = error?.statusCode ?? error?.status;
+  const numericStatus = Number(status);
+
+  return Number.isFinite(numericStatus) ? numericStatus : null;
+};
+
+const readProviderErrorCode = (error) => {
+  const code = error?.code ?? error?.name;
+  const value = String(code ?? "").trim();
+
+  return value || null;
+};
+
+const readProviderErrorMessage = (error) => {
+  const message = error?.message ?? error?.error ?? error?.detail;
+  const value = String(message ?? "").replace(/\s+/g, " ").trim();
+
+  return value ? value.slice(0, 240) : null;
+};
+
+const isTransientProviderError = (error) => {
+  const status = readProviderErrorStatus(error);
+
+  if (status) {
+    return TRANSIENT_STATUS_CODES.has(status) || status >= 500;
+  }
+
+  const code = readProviderErrorCode(error);
+
+  if (code && TRANSIENT_ERROR_CODES.has(code)) {
+    return true;
+  }
+
+  return error instanceof Error;
+};
+
+const toSafeProviderErrorDetails = (error) => ({
+  provider: EMAIL_PROVIDER,
+  status: readProviderErrorStatus(error),
+  code: readProviderErrorCode(error),
+  message: readProviderErrorMessage(error),
+  transient: isTransientProviderError(error),
+});
 
 const buildVerificationText = ({ appBaseUrl, name, verificationUrl, expiresAt }) => {
   const displayName = String(name ?? "").trim() || "there";
@@ -96,11 +164,18 @@ const buildResetHtml = ({ name, resetUrl, expiresAt }) => {
 </html>`;
 };
 
-export const createEmailService = ({ config, logger = console }) => {
-  const resend = config.resendApiKey ? new Resend(config.resendApiKey) : null;
+export const createEmailService = ({
+  config,
+  logger = console,
+  resendClient = null,
+  retryDelaysMs = EMAIL_RETRY_DELAYS_MS,
+  wait = sleep,
+} = {}) => {
+  const resend = resendClient ?? (config.resendApiKey ? new Resend(config.resendApiKey) : null);
   const from = config.emailFromAddress
     ? `"${config.emailFromName}" <${config.emailFromAddress}>`
     : null;
+  const maxAttempts = MAX_EMAIL_ATTEMPTS;
 
   const sendEmail = async ({ to, subject, html, text }) => {
     if (!resend || !from) {
@@ -110,31 +185,59 @@ export const createEmailService = ({ config, logger = console }) => {
       };
     }
 
-    try {
-      const { data, error } = await resend.emails.send({
-        from,
-        to: [to],
-        subject,
-        html,
-        text,
-      });
+    let lastError = null;
+    let attemptsUsed = 0;
 
-      if (error) {
-        throw error;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      attemptsUsed = attempt;
+
+      try {
+        const { data, error } = await resend.emails.send({
+          from,
+          to: [to],
+          subject,
+          html,
+          text,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        return {
+          ok: true,
+          messageId: data?.id ?? null,
+          attempts: attempt,
+        };
+      } catch (error) {
+        lastError = error;
+        const details = {
+          ...toSafeProviderErrorDetails(error),
+          attempt,
+          maxAttempts,
+          willRetry: attempt < maxAttempts && isTransientProviderError(error),
+        };
+
+        logger.error?.("[email] delivery attempt failed", details);
+
+        if (!details.willRetry) {
+          break;
+        }
+
+        await wait(retryDelaysMs[attempt - 1] ?? retryDelaysMs.at(-1) ?? 0);
       }
-
-      return {
-        ok: true,
-        messageId: data?.id ?? null,
-      };
-    } catch (error) {
-      logger.error?.("[email] delivery failed", error);
-
-      return {
-        ok: false,
-        code: "EMAIL_SEND_FAILED",
-      };
     }
+
+    logger.error?.("[email] delivery failed", {
+      ...toSafeProviderErrorDetails(lastError),
+      attempts: attemptsUsed,
+    });
+
+    return {
+      ok: false,
+      code: "EMAIL_SEND_FAILED",
+      attempts: attemptsUsed,
+    };
   };
 
   return {
@@ -142,9 +245,11 @@ export const createEmailService = ({ config, logger = console }) => {
 
     getStatus: () => ({
       configured: Boolean(resend && from),
-      provider: "resend",
-      fromAddress: config.emailFromAddress ?? null,
+      provider: EMAIL_PROVIDER,
+      fromAddress: config.emailFromAddress || null,
       fromName: config.emailFromName,
+      retryEnabled: true,
+      maxAttempts,
     }),
 
     sendPasswordResetEmail: async ({ to, name, resetUrl, expiresAt }) => {

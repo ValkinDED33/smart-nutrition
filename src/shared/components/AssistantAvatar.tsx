@@ -50,44 +50,76 @@ const companionAccent: Record<
     face: string;
     detail: string;
     shadow: string;
+    muzzle: string;
+    eye: string;
   }
 > = {
   cat: {
-    face: "linear-gradient(135deg, #f97316 0%, #f59e0b 52%, #0f766e 100%)",
-    detail: "#fed7aa",
+    face: "linear-gradient(135deg, #f97316 0%, #fb923c 52%, #facc15 100%)",
+    detail: "#ffedd5",
     shadow: "0 18px 36px rgba(249, 115, 22, 0.24)",
+    muzzle: "rgba(255,237,213,0.82)",
+    eye: "#fff7ed",
   },
   dog: {
-    face: "linear-gradient(135deg, #a16207 0%, #f59e0b 50%, #2563eb 100%)",
+    face: "linear-gradient(135deg, #7c3f16 0%, #b45309 52%, #f59e0b 100%)",
     detail: "#fde68a",
     shadow: "0 18px 36px rgba(161, 98, 7, 0.24)",
+    muzzle: "rgba(254,243,199,0.88)",
+    eye: "#fef3c7",
   },
   fox: {
-    face: "linear-gradient(135deg, #ea580c 0%, #f97316 48%, #0f766e 100%)",
+    face: "linear-gradient(135deg, #ea580c 0%, #f97316 50%, #111827 100%)",
     detail: "#ffedd5",
     shadow: "0 18px 36px rgba(234, 88, 12, 0.24)",
+    muzzle: "rgba(255,247,237,0.9)",
+    eye: "#fff7ed",
+  },
+  panda: {
+    face: "linear-gradient(135deg, #111827 0%, #f8fafc 42%, #cbd5e1 100%)",
+    detail: "#111827",
+    shadow: "0 18px 36px rgba(15, 23, 42, 0.22)",
+    muzzle: "rgba(255,255,255,0.94)",
+    eye: "#f8fafc",
+  },
+  owl: {
+    face: "linear-gradient(135deg, #78350f 0%, #ca8a04 50%, #fde68a 100%)",
+    detail: "#fef3c7",
+    shadow: "0 18px 36px rgba(120, 53, 15, 0.22)",
+    muzzle: "rgba(254,243,199,0.72)",
+    eye: "#fff7ed",
   },
   human: {
     face: "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #2563eb 100%)",
     detail: "#dbeafe",
     shadow: "0 18px 36px rgba(20, 184, 166, 0.24)",
+    muzzle: "rgba(219,234,254,0.2)",
+    eye: "#eff6ff",
   },
   capybara: {
     face: "linear-gradient(135deg, #92400e 0%, #d97706 52%, #0f766e 100%)",
     detail: "#fef3c7",
     shadow: "0 18px 36px rgba(146, 64, 14, 0.22)",
+    muzzle: "rgba(254,243,199,0.78)",
+    eye: "#fef3c7",
   },
   dragon: {
-    face: "linear-gradient(135deg, #16a34a 0%, #2563eb 54%, #7c3aed 100%)",
+    face: "linear-gradient(135deg, #15803d 0%, #16a34a 38%, #7c3aed 100%)",
     detail: "#bbf7d0",
     shadow: "0 18px 36px rgba(22, 163, 74, 0.24)",
+    muzzle: "rgba(187,247,208,0.36)",
+    eye: "#dcfce7",
   },
   robot: {
     face: "linear-gradient(135deg, #0f766e 0%, #2563eb 58%, #65a30d 100%)",
     detail: "#dbeafe",
     shadow: "0 18px 36px rgba(15, 118, 110, 0.28)",
+    muzzle: "rgba(219,234,254,0.18)",
+    eye: "#e0f2fe",
   },
 };
+
+const round = (value: number) => Math.round(value);
 
 export const AssistantAvatar = ({
   name,
@@ -110,6 +142,16 @@ export const AssistantAvatar = ({
   const shouldUseMoodGradient = mood === "sleepy" || mood === "concerned";
   const earSize = Math.max(Math.round(size * 0.22), 10);
   const hornSize = Math.max(Math.round(size * 0.16), 8);
+  const faceRadius =
+    variant === "robot"
+      ? "28%"
+      : variant === "fox"
+        ? "44% 44% 58% 58%"
+        : variant === "owl"
+          ? "50% 50% 42% 42%"
+          : variant === "dog"
+            ? "48% 48% 55% 55%"
+            : "50%";
   const motionState = isCelebrating
     ? "celebrate"
     : isSleepy
@@ -128,7 +170,7 @@ export const AssistantAvatar = ({
       sx={{
         width: size,
         height: size,
-        borderRadius: "50%",
+        borderRadius: faceRadius,
         position: "relative",
         display: "grid",
         placeItems: "center",
@@ -163,15 +205,15 @@ export const AssistantAvatar = ({
         },
       }}
     >
-      {(variant === "cat" || variant === "dog" || variant === "fox" || variant === "capybara") && (
+      {(variant === "cat" || variant === "dog" || variant === "fox" || variant === "capybara" || variant === "panda") && (
         <>
           <Box
             sx={{
               position: "absolute",
-              top: variant === "capybara" ? Math.round(size * 0.08) : -Math.round(size * 0.02),
-              left: Math.round(size * 0.12),
+              top: variant === "capybara" || variant === "panda" ? round(size * 0.08) : -round(size * 0.02),
+              left: variant === "panda" ? round(size * 0.08) : round(size * 0.12),
               width: earSize,
-              height: variant === "dog" ? Math.round(size * 0.3) : earSize,
+              height: variant === "dog" ? round(size * 0.32) : earSize,
               borderRadius:
                 variant === "cat" || variant === "fox"
                   ? "70% 30% 55% 45%"
@@ -187,10 +229,10 @@ export const AssistantAvatar = ({
           <Box
             sx={{
               position: "absolute",
-              top: variant === "capybara" ? Math.round(size * 0.08) : -Math.round(size * 0.02),
-              right: Math.round(size * 0.12),
+              top: variant === "capybara" || variant === "panda" ? round(size * 0.08) : -round(size * 0.02),
+              right: variant === "panda" ? round(size * 0.08) : round(size * 0.12),
               width: earSize,
-              height: variant === "dog" ? Math.round(size * 0.3) : earSize,
+              height: variant === "dog" ? round(size * 0.32) : earSize,
               borderRadius:
                 variant === "cat" || variant === "fox"
                   ? "30% 70% 45% 55%"
@@ -201,6 +243,35 @@ export const AssistantAvatar = ({
               border: "1px solid rgba(255,255,255,0.34)",
               transform: variant === "cat" || variant === "fox" ? "rotate(28deg)" : "rotate(12deg)",
               opacity: 0.9,
+            }}
+          />
+        </>
+      )}
+
+      {variant === "owl" && (
+        <>
+          <Box
+            sx={{
+              position: "absolute",
+              top: -round(size * 0.03),
+              left: round(size * 0.16),
+              width: round(size * 0.24),
+              height: round(size * 0.26),
+              background: companion.detail,
+              clipPath: "polygon(50% 0, 100% 100%, 0 78%)",
+              transform: "rotate(-10deg)",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: -round(size * 0.03),
+              right: round(size * 0.16),
+              width: round(size * 0.24),
+              height: round(size * 0.26),
+              background: companion.detail,
+              clipPath: "polygon(50% 0, 100% 78%, 0 100%)",
+              transform: "rotate(10deg)",
             }}
           />
         </>
@@ -285,12 +356,67 @@ export const AssistantAvatar = ({
           inset: Math.max(Math.round(size * 0.2), 10),
           top: Math.max(Math.round(size * 0.22), 10),
           bottom: Math.max(Math.round(size * 0.16), 8),
-          borderRadius: "46% 46% 52% 52%",
+          borderRadius:
+            variant === "fox"
+              ? "42% 42% 68% 68%"
+              : variant === "robot"
+                ? "24%"
+                : "46% 46% 52% 52%",
           background:
-            "linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%)",
+            variant === "panda"
+              ? "linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.52) 100%)"
+              : variant === "owl"
+                ? "radial-gradient(circle at 30% 38%, rgba(255,255,255,0.5) 0 18%, transparent 19%), radial-gradient(circle at 70% 38%, rgba(255,255,255,0.5) 0 18%, transparent 19%), linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%)"
+                : `linear-gradient(180deg, ${companion.muzzle} 0%, rgba(255,255,255,0.08) 100%)`,
           border: "1px solid rgba(255,255,255,0.24)",
         }}
       />
+
+      {variant === "fox" && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: "50%",
+            bottom: round(size * 0.2),
+            width: round(size * 0.26),
+            height: round(size * 0.2),
+            transform: "translateX(-50%)",
+            backgroundColor: companion.muzzle,
+            clipPath: "polygon(50% 100%, 0 0, 100% 0)",
+          }}
+        />
+      )}
+
+      {variant === "dog" && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: "50%",
+            top: round(size * 0.5),
+            width: round(size * 0.24),
+            height: round(size * 0.16),
+            transform: "translateX(-50%)",
+            borderRadius: "50%",
+            backgroundColor: companion.muzzle,
+          }}
+        />
+      )}
+
+      {variant === "dragon" && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: round(size * 0.2),
+            right: round(size * 0.07),
+            width: round(size * 0.13),
+            height: round(size * 0.48),
+            background:
+              "repeating-linear-gradient(180deg, rgba(187,247,208,0.94) 0 8px, rgba(124,58,237,0.72) 8px 14px)",
+            clipPath: "polygon(100% 0, 0 12%, 100% 24%, 0 36%, 100% 48%, 0 60%, 100% 72%, 0 84%, 100% 100%)",
+            opacity: 0.9,
+          }}
+        />
+      )}
 
       {(["left", "right"] as const).map((side) => (
         <Box
@@ -319,7 +445,7 @@ export const AssistantAvatar = ({
               width: "100%",
               height: "100%",
               borderRadius: 999,
-              backgroundColor: "rgba(255,255,255,0.92)",
+              backgroundColor: companion.eye,
               boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
               transformOrigin: "50% 50%",
             }}

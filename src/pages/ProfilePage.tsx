@@ -14,6 +14,7 @@ import { NotificationSettingsCard } from "../features/profile/NotificationSettin
 import { WeightTrendCard } from "../features/profile/WeightTrendCard";
 import { AccountDataCard } from "../features/profile/AccountDataCard";
 import { CloudSyncStatusCard } from "../features/profile/CloudSyncStatusCard";
+import { ProfileSectionTabs } from "../features/profile/ProfileSectionTabs";
 import MotivationHubCard from "../features/profile/MotivationHubCard";
 import AssistantCustomizationCard from "../features/profile/AssistantCustomizationCard";
 import CompanionShopCard from "../features/profile/CompanionShopCard";
@@ -23,6 +24,7 @@ import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCa
 import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
 import { PremiumAccessCard } from "../features/profile/PremiumAccessCard";
 import { useLanguage } from "../shared/language";
+import { EmptyState } from "@shared/ui";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import { MealDayOverview } from "../features/meal/MealDayOverview";
@@ -62,6 +64,13 @@ const profileCopy = {
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
     macroTitle: "Цілі за макроелементами",
     macroSubtitle: "Добові цілі за білками, жирами та вуглеводами на основі калорій, ваги та мети.",
+    tabs: {
+      data: "Дані",
+      goal: "Ціль",
+      assistant: "Асистент",
+      motivation: "Мотивація",
+      security: "Безпека",
+    },
   },
   pl: {
     weightGoal: "Waga docelowa",
@@ -90,6 +99,13 @@ const profileCopy = {
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
     macroTitle: "Cele makroskładników",
     macroSubtitle: "Dzienne cele białka, tłuszczów i węglowodanów wyliczone z kalorii, masy ciała i celu.",
+    tabs: {
+      data: "Dane",
+      goal: "Cel",
+      assistant: "Asystent",
+      motivation: "Motywacja",
+      security: "Bezpieczeństwo",
+    },
   },
   en: {
     weightGoal: "Target weight",
@@ -118,6 +134,13 @@ const profileCopy = {
     adaptiveManual: "Adaptive calories stay manual until you apply a recommendation.",
     macroTitle: "Macro targets",
     macroSubtitle: "Daily protein, fat, and carbohydrate targets based on calories, weight, and goal.",
+    tabs: {
+      data: "Data",
+      goal: "Goal",
+      assistant: "Assistant",
+      motivation: "Motivation",
+      security: "Security",
+    },
   },
 } as const;
 
@@ -337,7 +360,14 @@ const ProfilePage = () => {
   const localizedDietLabels = dietStyleLabels[appLanguage];
   const localizedPersonalDetails = personalDetailLabels[appLanguage];
 
-  if (!user) return <Typography>{t("profile.notFound")}</Typography>;
+  if (!user) {
+    return (
+      <EmptyState
+        title={t("profile.notFound")}
+        description={t("dashboard.needLogin")}
+      />
+    );
+  }
 
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
@@ -435,231 +465,259 @@ const ProfilePage = () => {
         </Stack>
       </Paper>
 
-      <ProfileForm />
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
-          gap: 3,
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, md: 3 },
-            borderRadius: 1,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255,255,255,0.86)",
-          }}
-        >
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-            {t("profile.progress")}
-          </Typography>
-          <Typography color="text.secondary" sx={{ mb: 1.5 }}>
-            {totalMealNutrients.calories.toFixed(0)} / {dailyCalories} {t("common.kcal")}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={caloriePercent}
-            sx={{ height: 12, borderRadius: 999 }}
-          />
-        </Paper>
-
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, md: 3 },
-            borderRadius: 1,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255,255,255,0.86)",
-          }}
-        >
-          <Stack spacing={1.6}>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-              {copy.weightGoal}
-            </Typography>
-            <Typography color="text.secondary">{copy.weightGoalSubtitle}</Typography>
-            <Typography color="text.secondary">{weightSummary}</Typography>
-            <LinearProgress
-              variant="determinate"
-              value={weightProgress}
-              sx={{
-                height: 12,
-                borderRadius: 999,
-                bgcolor: "rgba(15, 23, 42, 0.08)",
-                "& .MuiLinearProgress-bar": {
-                  background:
-                    "linear-gradient(135deg, rgba(15,118,110,1) 0%, rgba(101,163,13,1) 100%)",
-                },
-              }}
-            />
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              <Chip label={`${copy.start}: ${progressStart.toFixed(1)} ${t("common.kg")}`} />
-              <Chip label={`${copy.current}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
-              <Chip
-                label={
-                  hasTargetWeight
-                    ? `${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`
-                    : copy.target
-                }
-                color={hasTargetWeight ? "primary" : "default"}
-                variant={hasTargetWeight ? "filled" : "outlined"}
-              />
-              {hasTargetWeight && (
-                <Chip
-                  label={`${copy.remaining}: ${remainingWeight.toFixed(1)} ${t("common.kg")}`}
-                  color={targetReached ? "success" : "default"}
-                />
-              )}
-            </Stack>
-            {hasTargetWeight && (
-              <Stack direction="row" justifyContent="space-between" spacing={2}>
-                <Typography variant="caption" color="text.secondary">
-                  {progressStart.toFixed(1)} {t("common.kg")}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {weightProgress.toFixed(0)}%
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {effectiveTargetWeight.toFixed(1)} {t("common.kg")}
-                </Typography>
+      <ProfileSectionTabs
+        sections={[
+          {
+            id: "data",
+            label: copy.tabs.data,
+            content: (
+              <Stack spacing={3}>
+                <ProfileForm />
+                <WeightTrendCard />
+                <MeasurementsCheckInCard />
+                <BodyProgressPhotosCard />
               </Stack>
-            )}
-          </Stack>
-        </Paper>
-      </Box>
+            ),
+          },
+          {
+            id: "goal",
+            label: copy.tabs.goal,
+            content: (
+              <Stack spacing={3}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                    gap: 3,
+                  }}
+                >
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: { xs: 2, md: 3 },
+                      borderRadius: 1,
+                      border: "1px solid rgba(15, 23, 42, 0.08)",
+                      backgroundColor: "rgba(255,255,255,0.86)",
+                    }}
+                  >
+                    <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
+                      {t("profile.progress")}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mb: 1.5 }}>
+                      {totalMealNutrients.calories.toFixed(0)} / {dailyCalories} {t("common.kcal")}
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={caloriePercent}
+                      sx={{ height: 12, borderRadius: 999 }}
+                    />
+                  </Paper>
 
-      <WeightTrendCard />
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: { xs: 2, md: 3 },
+                      borderRadius: 1,
+                      border: "1px solid rgba(15, 23, 42, 0.08)",
+                      backgroundColor: "rgba(255,255,255,0.86)",
+                    }}
+                  >
+                    <Stack spacing={1.6}>
+                      <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                        {copy.weightGoal}
+                      </Typography>
+                      <Typography color="text.secondary">{copy.weightGoalSubtitle}</Typography>
+                      <Typography color="text.secondary">{weightSummary}</Typography>
+                      <LinearProgress
+                        variant="determinate"
+                        value={weightProgress}
+                        sx={{
+                          height: 12,
+                          borderRadius: 999,
+                          bgcolor: "rgba(15, 23, 42, 0.08)",
+                          "& .MuiLinearProgress-bar": {
+                            background:
+                              "linear-gradient(135deg, rgba(15,118,110,1) 0%, rgba(101,163,13,1) 100%)",
+                          },
+                        }}
+                      />
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Chip label={`${copy.start}: ${progressStart.toFixed(1)} ${t("common.kg")}`} />
+                        <Chip label={`${copy.current}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
+                        <Chip
+                          label={
+                            hasTargetWeight
+                              ? `${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`
+                              : copy.target
+                          }
+                          color={hasTargetWeight ? "primary" : "default"}
+                          variant={hasTargetWeight ? "filled" : "outlined"}
+                        />
+                        {hasTargetWeight && (
+                          <Chip
+                            label={`${copy.remaining}: ${remainingWeight.toFixed(1)} ${t("common.kg")}`}
+                            color={targetReached ? "success" : "default"}
+                          />
+                        )}
+                      </Stack>
+                      {hasTargetWeight && (
+                        <Stack direction="row" justifyContent="space-between" spacing={2}>
+                          <Typography variant="caption" color="text.secondary">
+                            {progressStart.toFixed(1)} {t("common.kg")}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {weightProgress.toFixed(0)}%
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {effectiveTargetWeight.toFixed(1)} {t("common.kg")}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Paper>
+                </Box>
 
-      <BodyWeeklyReportCard />
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, md: 3 },
+                    borderRadius: 1,
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    backgroundColor: "rgba(255,255,255,0.86)",
+                  }}
+                >
+                  <Stack spacing={1.4}>
+                    <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                      {copy.macroTitle}
+                    </Typography>
+                    <Typography color="text.secondary">{copy.macroSubtitle}</Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+                        gap: 2,
+                      }}
+                    >
+                      {[
+                        {
+                          label: t("dashboard.protein"),
+                          current: macroProgress.protein.current,
+                          target: macroTargets.protein,
+                          progress: macroProgress.protein.progress,
+                        },
+                        {
+                          label: t("dashboard.fat"),
+                          current: macroProgress.fat.current,
+                          target: macroTargets.fat,
+                          progress: macroProgress.fat.progress,
+                        },
+                        {
+                          label: t("dashboard.carbs"),
+                          current: macroProgress.carbs.current,
+                          target: macroTargets.carbs,
+                          progress: macroProgress.carbs.progress,
+                        },
+                      ].map((macro) => (
+                        <Paper
+                          key={macro.label}
+                          variant="outlined"
+                          sx={{
+                            p: 2,
+                            borderRadius: 1,
+                            borderColor: "rgba(15, 23, 42, 0.08)",
+                          }}
+                        >
+                          <Stack spacing={1}>
+                            <Typography sx={{ fontWeight: 800 }}>{macro.label}</Typography>
+                            <Typography color="text.secondary">
+                              {macro.current.toFixed(1)} / {macro.target.toFixed(0)} {t("common.g")}
+                            </Typography>
+                            <LinearProgress
+                              variant="determinate"
+                              value={macro.progress}
+                              sx={{ height: 8, borderRadius: 999 }}
+                            />
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </Box>
+                  </Stack>
+                </Paper>
 
-      <MeasurementsCheckInCard />
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, md: 3 },
+                    borderRadius: 1,
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    backgroundColor: "rgba(255,255,255,0.86)",
+                  }}
+                >
+                  <Stack spacing={1.5}>
+                    <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                      {copy.preferencesTitle}
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Chip label={`${copy.dietLabel}: ${localizedDietLabels[dietStyle]}`} />
+                      <Chip label={`${copy.languageLabel}: ${languageLabels[languagePreference]}`} />
+                      {allergies.map((item) => (
+                        <Chip key={`allergy-${item}`} label={`${copy.allergiesLabel}: ${item}`} />
+                      ))}
+                      {excludedIngredients.map((item) => (
+                        <Chip key={`excluded-${item}`} label={`${copy.exclusionsLabel}: ${item}`} />
+                      ))}
+                    </Stack>
+                    {allergies.length === 0 && excludedIngredients.length === 0 && (
+                      <Typography color="text.secondary">{copy.noRestrictions}</Typography>
+                    )}
+                    <Typography color="text.secondary">
+                      {adaptiveMode === "automatic" ? copy.adaptiveAuto : copy.adaptiveManual}
+                    </Typography>
+                  </Stack>
+                </Paper>
 
-      <BodyProgressPhotosCard />
-
-      <BehaviorPersonalizationCard />
-
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
-        <Stack spacing={1.4}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-            {copy.macroTitle}
-          </Typography>
-          <Typography color="text.secondary">{copy.macroSubtitle}</Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-              gap: 2,
-            }}
-          >
-            {[
-              {
-                label: t("dashboard.protein"),
-                current: macroProgress.protein.current,
-                target: macroTargets.protein,
-                progress: macroProgress.protein.progress,
-              },
-              {
-                label: t("dashboard.fat"),
-                current: macroProgress.fat.current,
-                target: macroTargets.fat,
-                progress: macroProgress.fat.progress,
-              },
-              {
-                label: t("dashboard.carbs"),
-                current: macroProgress.carbs.current,
-                target: macroTargets.carbs,
-                progress: macroProgress.carbs.progress,
-              },
-            ].map((macro) => (
-              <Paper
-                key={macro.label}
-                variant="outlined"
-                sx={{
-                  p: 2,
-                  borderRadius: 1,
-                  borderColor: "rgba(15, 23, 42, 0.08)",
-                }}
-              >
-                <Stack spacing={1}>
-                  <Typography sx={{ fontWeight: 800 }}>{macro.label}</Typography>
-                  <Typography color="text.secondary">
-                    {macro.current.toFixed(1)} / {macro.target.toFixed(0)} {t("common.g")}
-                  </Typography>
-                  <LinearProgress
-                    variant="determinate"
-                    value={macro.progress}
-                    sx={{ height: 8, borderRadius: 999 }}
-                  />
-                </Stack>
-              </Paper>
-            ))}
-          </Box>
-        </Stack>
-      </Paper>
-
-      <MotivationHubCard />
-
-      <AssistantCustomizationCard />
-
-      <CompanionShopCard />
-
-      <PremiumAccessCard />
-
-      <CommunityHubCard />
-
-      <AdminCenterCard />
-
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
-        <Stack spacing={1.5}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-            {copy.preferencesTitle}
-          </Typography>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={`${copy.dietLabel}: ${localizedDietLabels[dietStyle]}`} />
-            <Chip label={`${copy.languageLabel}: ${languageLabels[languagePreference]}`} />
-            {allergies.map((item) => (
-              <Chip key={`allergy-${item}`} label={`${copy.allergiesLabel}: ${item}`} />
-            ))}
-            {excludedIngredients.map((item) => (
-              <Chip key={`excluded-${item}`} label={`${copy.exclusionsLabel}: ${item}`} />
-            ))}
-          </Stack>
-          {allergies.length === 0 && excludedIngredients.length === 0 && (
-            <Typography color="text.secondary">{copy.noRestrictions}</Typography>
-          )}
-          <Typography color="text.secondary">
-            {adaptiveMode === "automatic" ? copy.adaptiveAuto : copy.adaptiveManual}
-          </Typography>
-        </Stack>
-      </Paper>
-
-      <MealDayOverview />
-
-      <DailyHistoryExplorer />
-
-      <NotificationSettingsCard />
-
-      <CloudSyncStatusCard />
-
-      <AccountDataCard />
+                <BodyWeeklyReportCard />
+                <MealDayOverview />
+                <DailyHistoryExplorer />
+              </Stack>
+            ),
+          },
+          {
+            id: "assistant",
+            label: copy.tabs.assistant,
+            content: (
+              <Stack spacing={3}>
+                <AssistantCustomizationCard />
+                <CompanionShopCard />
+                <CommunityHubCard />
+              </Stack>
+            ),
+          },
+          {
+            id: "motivation",
+            label: copy.tabs.motivation,
+            content: (
+              <Stack spacing={3}>
+                <BehaviorPersonalizationCard />
+                <MotivationHubCard />
+                <PremiumAccessCard />
+              </Stack>
+            ),
+          },
+          {
+            id: "security",
+            label: copy.tabs.security,
+            content: (
+              <Stack spacing={3}>
+                <NotificationSettingsCard />
+                <CloudSyncStatusCard />
+                <AccountDataCard />
+                <AdminCenterCard />
+              </Stack>
+            ),
+          },
+        ]}
+      />
     </Stack>
   );
 };

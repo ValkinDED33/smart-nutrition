@@ -18,12 +18,14 @@ import {
   getBmiStatus,
 } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
+import { EmptyState } from "@shared/ui";
 
 const weightTrendCopy = {
   uk: {
     title: "Історія ваги",
     subtitle: "Останні check-in у простому графіку для швидкого контролю.",
     empty: "Запишіть вагу кілька разів, щоб побудувати графік.",
+    emptyHint: "Перші два check-in відкриють тренд, BMI і підказки про plateau.",
     latest: "Остання",
     totalDelta: "Зміна всього",
     recentDelta: "Остання зміна",
@@ -40,6 +42,7 @@ const weightTrendCopy = {
     title: "Historia wagi",
     subtitle: "Ostatnie check-iny pokazane jako prosty wykres.",
     empty: "Zapisz wagę kilka razy, aby zbudować wykres.",
+    emptyHint: "Pierwsze dwa check-iny odblokują trend, BMI i podpowiedzi plateau.",
     latest: "Ostatnia",
     totalDelta: "Zmiana łącznie",
     recentDelta: "Ostatnia zmiana",
@@ -137,7 +140,7 @@ export const WeightTrendCard = () => {
         )}
 
         {entries.length < 2 ? (
-          <Typography color="text.secondary">{copy.empty}</Typography>
+          <EmptyState title={copy.empty} description={copy.emptyHint} />
         ) : (
           <Box
             sx={{

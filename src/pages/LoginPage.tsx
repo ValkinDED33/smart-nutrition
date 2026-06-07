@@ -30,6 +30,7 @@ import {
 import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 
@@ -94,6 +95,12 @@ const LoginPage = () => {
         dispatch(replaceFridgeState(snapshot.fridge));
         dispatch(replaceCommunityState(snapshot.community));
       }
+
+      captureRuntimeEvent("login_completed", {
+        authMode: getAuthRuntimeInfo().mode,
+        hasCloudSnapshot: Boolean(snapshot),
+        pendingSyncChanges: getSyncOutboxMeta().pendingChanges,
+      });
 
       navigate("/home");
     } catch (error) {

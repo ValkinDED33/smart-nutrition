@@ -142,6 +142,8 @@ const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKi
   value === "cat" ||
   value === "dog" ||
   value === "fox" ||
+  value === "panda" ||
+  value === "owl" ||
   value === "human" ||
   value === "capybara" ||
   value === "dragon" ||

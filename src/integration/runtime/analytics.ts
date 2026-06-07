@@ -5,6 +5,31 @@ interface PostHogConfig {
   key: string;
 }
 
+export type RuntimeAnalyticsEvent =
+  | "screen_viewed"
+  | "language_changed"
+  | "mobile_navigation_selected"
+  | "signup_started"
+  | "signup_completed"
+  | "login_completed"
+  | "meal_added"
+  | "water_added"
+  | "weight_updated"
+  | "global_assistant_opened"
+  | "assistant_followup_clicked"
+  | "onboarding_completed";
+
+export type RuntimeAnalyticsPropertyValue =
+  | string
+  | number
+  | boolean
+  | null;
+
+export type RuntimeAnalyticsProperties = Record<
+  string,
+  RuntimeAnalyticsPropertyValue
+>;
+
 let posthogClient: PostHog | null = null;
 
 export const readPostHogConfig = (): PostHogConfig | null => {
@@ -44,8 +69,8 @@ export const initializePostHog = async () => {
 };
 
 export const captureRuntimeEvent = (
-  event: string,
-  properties?: Record<string, string | number | boolean | null>
+  event: RuntimeAnalyticsEvent,
+  properties?: RuntimeAnalyticsProperties
 ) => {
   posthogClient?.capture(event, properties);
 };

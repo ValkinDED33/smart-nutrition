@@ -31,6 +31,7 @@ export const PasswordVisibilityButton = ({
   <IconButton
     edge="end"
     onClick={onToggle}
+    onMouseDown={(event) => event.preventDefault()}
     aria-label={visible ? hideLabel : showLabel}
     size="small"
   >

@@ -65,6 +65,8 @@ const assistantCopy = {
       cat: "Кіт",
       dog: "Собака",
       fox: "Лис",
+      panda: "Панда",
+      owl: "Сова",
       human: "Тренер",
       capybara: "Капібара",
       dragon: "Дракон",
@@ -112,6 +114,8 @@ const assistantCopy = {
       cat: "Kot",
       dog: "Pies",
       fox: "Lis",
+      panda: "Panda",
+      owl: "Sowa",
       human: "Trener",
       capybara: "Kapibara",
       dragon: "Smok",
@@ -159,6 +163,8 @@ const assistantCopy = {
       cat: "Cat",
       dog: "Dog",
       fox: "Fox",
+      panda: "Panda",
+      owl: "Owl",
       human: "Trainer",
       capybara: "Capybara",
       dragon: "Dragon",
@@ -168,11 +174,12 @@ const assistantCopy = {
 } as const;
 
 const companionKinds: AssistantCompanionKind[] = [
-  "robot",
   "cat",
   "dog",
   "fox",
-  "human",
+  "panda",
+  "owl",
+  "dragon",
 ];
 
 const frictionOptions = assistantDietFrictions;

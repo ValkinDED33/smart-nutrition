@@ -1,8 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { DEFAULT_ASSISTANT_NAME } from "../core/assistant";
 import type { RootState } from "../app/store";
+import {
+  hasPreAuthOnboardingDraft,
+  readPreAuthOnboardingDraft,
+  writePreAuthOnboardingDraft,
+} from "../features/onboarding/model/onboardingDraft";
+import { useLanguage } from "../shared/language";
 import { OnboardingAgePage } from "./onboarding/OnboardingAgePage";
 import { OnboardingAssistantPage } from "./onboarding/OnboardingAssistantPage";
 import { OnboardingFinishPage } from "./onboarding/OnboardingFinishPage";
@@ -20,23 +26,53 @@ import { stepPaths, type OnboardingState } from "./onboarding/types";
 const OnboardingPage = () => {
   const user = useSelector((rootState: RootState) => rootState.auth.user);
   const profile = useSelector((rootState: RootState) => rootState.profile);
+  const { appLanguage } = useLanguage();
   const initialState = useMemo<OnboardingState>(
-    () => ({
-      assistantName: profile.assistant.name || DEFAULT_ASSISTANT_NAME,
-      assistantAvatar: profile.assistant.companionKind,
-      personality: "supportive",
-      name: profile.assistant.onboarding.preferredName || user?.name || "",
-      age: user?.age ?? 25,
-      gender: user?.gender ?? "male",
-      height: user?.height ?? 175,
-      goal: user?.goal ?? profile.goal,
-      primaryGoalNote: profile.assistant.onboarding.primaryGoalNote,
-      mainFriction: profile.assistant.onboarding.mainFriction,
-      motivationStyle: profile.assistant.onboarding.motivationStyle,
-      supportNote: profile.assistant.onboarding.supportNote,
-      weight: user?.weight ?? profile.weightHistory.at(-1)?.weight ?? 70,
-    }),
+    () => {
+      const draft = readPreAuthOnboardingDraft(appLanguage);
+      const hasDraft = hasPreAuthOnboardingDraft();
+      const onboardingCompleted = Boolean(profile.assistant.onboarding.completedAt);
+      const profileAssistantName = profile.assistant.name.trim();
+      const draftAssistantName = draft.assistantName.trim();
+      const preferredName = profile.assistant.onboarding.preferredName.trim();
+      const draftUserName = draft.userName.trim();
+
+      return {
+        assistantName:
+          !onboardingCompleted && hasDraft && draftAssistantName
+            ? draftAssistantName
+            : profileAssistantName || DEFAULT_ASSISTANT_NAME,
+        assistantAvatar:
+          !onboardingCompleted && hasDraft
+            ? draft.assistantAvatar
+            : profile.assistant.companionKind,
+        personality: "supportive",
+        name:
+          !onboardingCompleted && hasDraft && draftUserName
+            ? draftUserName
+            : preferredName || user?.name || "",
+        age: user?.age ?? (!onboardingCompleted && hasDraft ? draft.age : 25),
+        gender: user?.gender ?? (!onboardingCompleted && hasDraft ? draft.gender : "male"),
+        height: user?.height ?? (!onboardingCompleted && hasDraft ? draft.height : 175),
+        goal:
+          user?.goal ??
+          profile.goal ??
+          (!onboardingCompleted && hasDraft ? draft.goal : "maintain"),
+        primaryGoalNote:
+          !onboardingCompleted && hasDraft
+            ? draft.primaryGoalNote
+            : profile.assistant.onboarding.primaryGoalNote,
+        mainFriction: profile.assistant.onboarding.mainFriction,
+        motivationStyle: profile.assistant.onboarding.motivationStyle,
+        supportNote: profile.assistant.onboarding.supportNote,
+        weight:
+          user?.weight ??
+          profile.weightHistory.at(-1)?.weight ??
+          (!onboardingCompleted && hasDraft ? draft.weight : 70),
+      };
+    },
     [
+      appLanguage,
       profile.assistant.name,
       profile.assistant.companionKind,
       profile.assistant.onboarding,
@@ -49,6 +85,29 @@ const OnboardingPage = () => {
   const updateState = (patch: Partial<OnboardingState>) =>
     setState((current) => ({ ...current, ...patch }));
   const stepProps = { state, updateState };
+
+  useEffect(() => {
+    writePreAuthOnboardingDraft({
+      language: appLanguage,
+      assistantName: state.assistantName.trim(),
+      assistantAvatar: state.assistantAvatar,
+      assistantPersonality:
+        state.personality === "strict"
+          ? "focused"
+          : state.personality === "energetic"
+            ? "playful"
+            : state.personality === "supportive"
+              ? "gentle"
+              : state.personality,
+      userName: state.name.trim(),
+      age: state.age,
+      gender: state.gender,
+      height: state.height,
+      weight: state.weight,
+      goal: state.goal,
+      primaryGoalNote: state.primaryGoalNote,
+    });
+  }, [appLanguage, state]);
 
   return (
     <>

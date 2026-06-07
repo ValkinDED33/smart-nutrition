@@ -30,6 +30,7 @@ export const createHealthController = ({
   getLimits,
   getWarnings,
   getEmailStatus,
+  getBrevoStatus,
   getAiStatus,
   getReadiness,
   getDebugStartup,
@@ -44,6 +45,7 @@ export const createHealthController = ({
       limits: getLimits(),
       warnings: getWarnings(),
       email: getEmailStatus(),
+      brevo: getBrevoStatus?.() ?? null,
       ai: getAiStatus(),
     });
   },

@@ -378,6 +378,61 @@ const normalizeIncomingAssistantMemory = (
   };
 };
 
+const normalizePromptContext = (value, fallbackPath = "/") => {
+  const record = isRecord(value) ? value : {};
+  const defaultAction = isRecord(record.defaultAction)
+    ? {
+        label: normalizeText(record.defaultAction.label, {
+          maxLength: 80,
+          fallback: "",
+        }),
+        route: normalizeText(record.defaultAction.route, {
+          maxLength: 120,
+          fallback: "",
+        }),
+      }
+    : null;
+  const capabilities = Array.isArray(record.capabilities)
+    ? record.capabilities
+        .filter(isRecord)
+        .slice(0, 8)
+        .map((capability) => ({
+          id: normalizeText(capability.id, { maxLength: 80, fallback: "unknown" }),
+          area: normalizeText(capability.area, { maxLength: 40, fallback: "unknown" }),
+          duties: toUniqueList(capability.duties).slice(0, 8),
+          description: normalizeText(capability.description, {
+            maxLength: 220,
+            fallback: "",
+          }),
+          entryRoute: normalizeText(capability.entryRoute, {
+            maxLength: 120,
+            fallback: "",
+          }) || null,
+        }))
+    : [];
+
+  return {
+    area: normalizeText(record.area, { maxLength: 40, fallback: "unknown" }),
+    screenName: normalizeText(record.screenName, {
+      maxLength: 80,
+      fallback: "Unknown",
+    }),
+    duties: toUniqueList(record.duties).slice(0, 12),
+    tone: normalizeText(record.tone, { maxLength: 40, fallback: "supportive" }),
+    capabilities,
+    defaultAction:
+      defaultAction?.label && defaultAction.route ? defaultAction : null,
+    currentRoute: normalizeText(record.currentRoute, {
+      maxLength: 120,
+      fallback: fallbackPath,
+    }),
+    summary: normalizeText(record.summary, {
+      maxLength: 400,
+      fallback: "",
+    }),
+  };
+};
+
 const createContextualAssistantMemory = ({ currentUser, context, storedMemory }) => {
   const incomingMemory = normalizeIncomingAssistantMemory(
     context.memory,
@@ -448,14 +503,15 @@ const normalizeContext = (payload, currentUser) => {
     maxLength: 40,
     fallback: inferCommunicationStyle(assistantTone),
   });
+  const currentPath = normalizeText(record.currentPath, {
+    maxLength: 120,
+    fallback: "/",
+  });
 
   return {
     language: normalizeLanguage(record.language),
     screen: normalizeScreenId(record.screen),
-    currentPath: normalizeText(record.currentPath, {
-      maxLength: 120,
-      fallback: "/",
-    }),
+    currentPath,
     userName: normalizeText(record.userName, {
       maxLength: 60,
       fallback: currentUser.name ?? "User",
@@ -547,6 +603,7 @@ const normalizeContext = (payload, currentUser) => {
       ),
     },
     memory: normalizeIncomingAssistantMemory(record.memory, assistantPersonality),
+    promptContext: normalizePromptContext(record.promptContext, currentPath),
   };
 };
 

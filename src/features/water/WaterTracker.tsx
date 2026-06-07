@@ -47,6 +47,8 @@ import {
   playWaterLogSound,
   uiTickSoundDataUrl,
 } from "../../shared/lib/sound";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { EmptyState } from "@shared/ui";
 
 const waterCopy = {
   uk: {
@@ -67,6 +69,8 @@ const waterCopy = {
     addGlass: "Додати стакан",
     removeGlass: "Зняти стакан",
     historyTitle: "Історія води",
+    historyEmpty: "Сьогодні ще немає записів води.",
+    historyEmptyHint: "Додайте перший стакан, і тут з'явиться жива історія дня.",
     analyticsTitle: "Аналітика за 7 днів",
     average: "Середньо",
     goalDays: "Днів у нормі",
@@ -111,6 +115,8 @@ const waterCopy = {
     addGlass: "Dodaj szklankę",
     removeGlass: "Odejmij szklankę",
     historyTitle: "Historia wody",
+    historyEmpty: "Dziś nie ma jeszcze zapisów wody.",
+    historyEmptyHint: "Dodaj pierwszą szklankę, a tutaj pojawi się historia dnia.",
     analyticsTitle: "Analityka 7 dni",
     average: "Średnio",
     goalDays: "Dni w normie",
@@ -302,14 +308,35 @@ export const WaterTracker = () => {
     playGentleClickSound();
   };
 
-  const setWaterAmount = (amountMl: number) => {
-    playWaterFeedback(amountMl);
-    dispatch(setWaterConsumed(amountMl));
+  const trackWaterAdded = (
+    amountMl: number,
+    source: string,
+    consumedMlAfter: number
+  ) => {
+    if (amountMl <= 0) {
+      return;
+    }
+
+    captureRuntimeEvent("water_added", {
+      amountMl,
+      source,
+      consumedMlAfter,
+      dailyGoalMl: water.dailyWaterGoal,
+    });
   };
 
-  const addWaterAmount = (amountMl: number) => {
-    playWaterFeedback(Math.max(water.consumedMl + amountMl, 0));
+  const setWaterAmount = (amountMl: number, source = "set_amount") => {
+    const previousConsumedMl = water.consumedMl;
+    playWaterFeedback(amountMl);
+    dispatch(setWaterConsumed(amountMl));
+    trackWaterAdded(amountMl - previousConsumedMl, source, amountMl);
+  };
+
+  const addWaterAmount = (amountMl: number, source = "increment") => {
+    const nextConsumedMl = Math.max(water.consumedMl + amountMl, 0);
+    playWaterFeedback(nextConsumedMl);
     dispatch(incrementWater(amountMl));
+    trackWaterAdded(Math.min(amountMl, nextConsumedMl), source, nextConsumedMl);
   };
 
   const handleGlassClick = (index: number, fill: number) => {
@@ -317,7 +344,7 @@ export const WaterTracker = () => {
     const slotEnd = slotStart + water.glassSizeMl;
 
     if (fill === 1) {
-      setWaterAmount(slotStart);
+      setWaterAmount(slotStart, "glass_slot");
       return;
     }
 
@@ -327,7 +354,7 @@ export const WaterTracker = () => {
       return;
     }
 
-    setWaterAmount(slotEnd);
+    setWaterAmount(slotEnd, "glass_slot");
   };
 
   const openPartialPanel = () => {
@@ -360,7 +387,7 @@ export const WaterTracker = () => {
       water.glassSizeMl
     );
 
-    setWaterAmount(slotStart + normalizedAmount);
+    setWaterAmount(slotStart + normalizedAmount, "partial_glass");
     setEditingSlot(null);
   };
 
@@ -546,7 +573,7 @@ export const WaterTracker = () => {
               <Button
                 key={amount}
                 variant={amount === water.glassSizeMl ? "contained" : "outlined"}
-                onClick={() => addWaterAmount(amount)}
+                onClick={() => addWaterAmount(amount, "quick_amount")}
                 sx={{ minWidth: 82 }}
               >
                 +{amount} ml
@@ -613,7 +640,7 @@ export const WaterTracker = () => {
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button
             variant="contained"
-            onClick={() => addWaterAmount(water.glassSizeMl)}
+            onClick={() => addWaterAmount(water.glassSizeMl, "add_glass")}
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -632,7 +659,7 @@ export const WaterTracker = () => {
           </Button>
           <Button
             variant="text"
-            onClick={() => addWaterAmount(-water.glassSizeMl)}
+            onClick={() => addWaterAmount(-water.glassSizeMl, "remove_glass")}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {copy.removeGlass}
@@ -816,25 +843,33 @@ export const WaterTracker = () => {
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.2}>
             <Typography sx={{ fontWeight: 800 }}>{copy.historyTitle}</Typography>
-            {weeklyRecords
-              .slice()
-              .reverse()
-              .map((item) => (
-                <Stack
-                  key={item.date}
-                  direction="row"
-                  spacing={1}
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography sx={{ fontWeight: 700 }}>
-                    {dayFormatter.format(new Date(`${item.date}T12:00:00`))}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    {item.consumedMl} / {item.targetMl} ml
-                  </Typography>
-                </Stack>
-              ))}
+            {water.consumedMl === 0 && water.history.every((item) => item.consumedMl === 0) ? (
+              <EmptyState
+                title={copy.historyEmpty}
+                description={copy.historyEmptyHint}
+                compact
+              />
+            ) : (
+              weeklyRecords
+                .slice()
+                .reverse()
+                .map((item) => (
+                  <Stack
+                    key={item.date}
+                    direction="row"
+                    spacing={1}
+                    justifyContent="space-between"
+                    alignItems="center"
+                  >
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {dayFormatter.format(new Date(`${item.date}T12:00:00`))}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {item.consumedMl} / {item.targetMl} ml
+                    </Typography>
+                  </Stack>
+                ))
+            )}
           </Stack>
         </Paper>
       </Stack>

@@ -11,6 +11,8 @@ import {
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { clearPreAuthOnboardingDraft } from "../../features/onboarding/model/onboardingDraft";
 import {
   cardSx,
   personalityValues,
@@ -107,7 +109,18 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       })
     );
     void updateStoredProfile(nextUser).catch(() => undefined);
+    clearPreAuthOnboardingDraft();
     completeOnboarding();
+    captureRuntimeEvent("onboarding_completed", {
+      nextPath,
+      goal: state.goal,
+      mainFriction: state.mainFriction,
+      motivationStyle: state.motivationStyle,
+      assistantAvatar: state.assistantAvatar,
+      assistantPersonality: state.personality,
+      hasPrimaryGoalNote: Boolean(state.primaryGoalNote.trim()),
+      hasSupportNote: Boolean(state.supportNote.trim()),
+    });
     navigate(nextPath, { replace: true });
   };
 

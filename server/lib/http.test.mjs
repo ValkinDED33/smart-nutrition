@@ -49,9 +49,9 @@ describe("http response helpers", () => {
 
     expect(response.headers).toMatchObject({
       "Content-Security-Policy": expect.stringContaining("default-src 'self'"),
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Permissions-Policy": "camera=(self), microphone=(self), geolocation=()",
-      "Strict-Transport-Security": "max-age=15552000; includeSubDomains",
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+      "Cross-Origin-Resource-Policy": "same-site",
+      "Permissions-Policy": expect.stringContaining("camera=()"),
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",

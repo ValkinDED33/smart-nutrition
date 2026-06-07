@@ -16,6 +16,12 @@ export const getPublicEmailStatus = (emailStatus = {}) => ({
   configured: Boolean(emailStatus.configured),
 });
 
+export const getPublicBrevoStatus = (brevoStatus = {}) => ({
+  configured: Boolean(brevoStatus.configured),
+  provider: brevoStatus.provider ?? "brevo",
+  listIdConfigured: Boolean(brevoStatus.listIdConfigured),
+});
+
 export const getPublicAiStatus = (aiStatus = {}) => ({
   configured: Boolean(aiStatus.configured),
   providerCount: Math.max(Number(aiStatus.providerCount) || 0, 0),
@@ -29,6 +35,7 @@ export const createReadinessSnapshot = ({
   storage,
   redisCache,
   emailService,
+  brevoService,
   aiService,
   serverConfig,
   staticAvailable,
@@ -36,6 +43,7 @@ export const createReadinessSnapshot = ({
   const storageStatus = getPublicStorageStatus(storage.getEngineInfo());
   const cacheStatus = getPublicCacheStatus(redisCache.getStatus());
   const emailStatus = getPublicEmailStatus(emailService.getStatus());
+  const brevoStatus = getPublicBrevoStatus(brevoService?.getStatus?.());
   const aiStatus = getPublicAiStatus(aiService.getRuntimeStatus());
   const checks = {
     storage: storageStatus.engine !== "unknown",
@@ -56,6 +64,7 @@ export const createReadinessSnapshot = ({
       available: staticAvailable,
     },
     email: emailStatus,
+    brevo: brevoStatus,
     ai: aiStatus,
   };
 };

@@ -106,6 +106,24 @@ const getOnboardingPersonalizationLine = (context: AssistantRuntimeContext) => {
   return `Фокус з онбордингу: ${personalization.frictionLabel}. Стиль підтримки: ${personalization.motivationLabel}. ${personalization.actionHint}`;
 };
 
+const getPromptContextLine = (context: AssistantRuntimeContext) => {
+  const promptContext = context.promptContext;
+  const duties = promptContext.duties.join(", ");
+  const defaultAction = promptContext.defaultAction
+    ? `${promptContext.defaultAction.label} -> ${promptContext.defaultAction.route}`
+    : "none";
+
+  if (context.language === "en") {
+    return `Screen context: ${promptContext.screenName} (${promptContext.area}). Duties: ${duties || "none"}. Default action: ${defaultAction}.`;
+  }
+
+  if (context.language === "pl") {
+    return `Kontekst ekranu: ${promptContext.screenName} (${promptContext.area}). Obowiązki: ${duties || "brak"}. Domyślna akcja: ${defaultAction}.`;
+  }
+
+  return `Контекст екрана: ${promptContext.screenName} (${promptContext.area}). Обов'язки: ${duties || "немає"}. Дія за замовчуванням: ${defaultAction}.`;
+};
+
 const mealIdeas: Record<
   AssistantRuntimeContext["language"],
   Record<DietStyle, { light: string[]; full: string[] }>
@@ -1236,21 +1254,22 @@ export const buildAssistantWelcomeMessage = (
   const contactLine = getPersonalContactLine(context);
   const personalityLine = getPersonalityLine(context);
   const onboardingLine = getOnboardingPersonalizationLine(context);
+  const promptContextLine = getPromptContextLine(context);
   const text =
     context.language === "en"
       ? `${context.assistantName} is ready. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
-        )} I can quickly break down your day, protein, weekly focus, and motivation from current data.`
+        )} ${promptContextLine} I can quickly break down your day, protein, weekly focus, and motivation from current data.`
       : context.language === "pl"
       ? `${context.assistantName} jest gotowy. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
-        )} Mogę szybko rozłożyć dzień, białko, fokus tygodnia i motywację na podstawie bieżących danych.`
+        )} ${promptContextLine} Mogę szybko rozłożyć dzień, białko, fokus tygodnia i motywację na podstawie bieżących danych.`
       : `${context.assistantName} вже на місці. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
-        )} Можу швидко розкласти день, білок, тижневий фокус і мотивацію по ваших поточних даних.`;
+        )} ${promptContextLine} Можу швидко розкласти день, білок, тижневий фокус і мотивацію по ваших поточних даних.`;
 
   return {
     text,
@@ -1288,6 +1307,7 @@ export const buildGuidedAssistantReply = ({
       day_status: [
         getPersonalContactLine(context),
         getPersonalityLine(context),
+        getPromptContextLine(context),
         getOnboardingPersonalizationLine(context),
         getSnapshotLine(context),
         getPriorityLine(context, signals),
@@ -1380,6 +1400,7 @@ export const buildGuidedAssistantReply = ({
     day_status: [
       getPersonalContactLine(context),
       getPersonalityLine(context),
+      getPromptContextLine(context),
       getOnboardingPersonalizationLine(context),
       getSnapshotLine(context),
       getPriorityLine(context, signals),

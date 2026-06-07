@@ -60,6 +60,30 @@ export interface AssistantMemory {
   recentProblems: string[];
 }
 
+export interface AssistantPromptCapabilityContext {
+  id: string;
+  area: string;
+  duties: string[];
+  description: string;
+  entryRoute: string | null;
+}
+
+export interface AssistantPromptActionContext {
+  label: string;
+  route: string;
+}
+
+export interface AssistantPromptContext {
+  area: string;
+  screenName: string;
+  duties: string[];
+  tone: string;
+  capabilities: AssistantPromptCapabilityContext[];
+  defaultAction: AssistantPromptActionContext | null;
+  currentRoute: string;
+  summary: string;
+}
+
 export type AssistantQuickQuestionId =
   | "day_status"
   | "protein_help"
@@ -125,6 +149,7 @@ export interface AssistantRuntimeContext {
   };
   onboarding: AssistantOnboardingProfile;
   memory: AssistantMemory;
+  promptContext: AssistantPromptContext;
 }
 
 export interface AssistantQuestionInput {

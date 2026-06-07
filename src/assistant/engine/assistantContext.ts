@@ -1,6 +1,7 @@
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
 import type { AssistantContextSource } from "./assistantRuntimeTypes";
 import { buildAssistantCoreSnapshot } from "@core/assistant";
+import { resolveAssistantPromptContext } from "@features/assistant/assistantPromptContext";
 
 const getTodayKey = () => {
   const now = new Date();
@@ -36,6 +37,7 @@ export const createAssistantRuntimeContext = ({
   coach,
   coachPrimaryInsight,
   dailyContext,
+  promptContext,
 }: AssistantContextSource): AssistantRuntimeContext => {
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const firstWeight = profile.weightHistory[0]?.weight ?? latestWeight;
@@ -67,6 +69,8 @@ export const createAssistantRuntimeContext = ({
   });
   const assistantPersonality = assistantCore.personality;
   const communicationStyle = assistantCore.speechStyle.communicationStyle;
+  const resolvedPromptContext =
+    promptContext ?? resolveAssistantPromptContext(currentPath);
 
   return {
     language,
@@ -124,5 +128,6 @@ export const createAssistantRuntimeContext = ({
     },
     onboarding: assistantCore.onboarding,
     memory: assistantCore.memory,
+    promptContext: resolvedPromptContext,
   };
 };

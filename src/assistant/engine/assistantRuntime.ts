@@ -1,5 +1,9 @@
 import { createAssistantRuntimeContext } from "./assistantContext";
 import {
+  resolveAssistantPromptContext,
+  serializeAssistantPromptContext,
+} from "@features/assistant/assistantPromptContext";
+import {
   assistantRuntimeMemory,
   clearAssistantRuntimeMemory,
   loadAssistantConversationHistory,
@@ -37,6 +41,8 @@ export interface AssistantRuntime {
   buildGuidedReply: (input: AssistantQuestionInput) => ReturnType<typeof buildGuidedAssistantReply>;
   getModeLabel: typeof getAssistantModeLabel;
   getHonestyNote: typeof getAssistantHonestyNote;
+  resolvePromptContext: typeof resolveAssistantPromptContext;
+  serializePromptContext: typeof serializeAssistantPromptContext;
 }
 
 export const getAssistantRuntimePersonality = (context: AssistantRuntimeContext) =>
@@ -55,6 +61,8 @@ export const createAssistantRuntime = ({
   buildGuidedReply: buildGuidedAssistantReply,
   getModeLabel: getAssistantModeLabel,
   getHonestyNote: getAssistantHonestyNote,
+  resolvePromptContext: resolveAssistantPromptContext,
+  serializePromptContext: serializeAssistantPromptContext,
 });
 
 export const assistantRuntime = createAssistantRuntime();
@@ -68,5 +76,7 @@ export {
   getAssistantHonestyNote,
   getAssistantModeLabel,
   loadAssistantConversationHistory,
+  resolveAssistantPromptContext,
   saveAssistantConversationHistory,
+  serializeAssistantPromptContext,
 };

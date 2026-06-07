@@ -47,6 +47,8 @@ import {
   fadeUpVariants,
   pageSectionVariants,
 } from "@shared/ui/motion";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { resolveAssistantPromptContext } from "./assistantPromptContext";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -264,11 +266,14 @@ export const AssistantRuntimeCard = () => {
   );
 
   const context = useMemo<AssistantRuntimeContext>(
-    () =>
-      createAssistantRuntimeContext({
+    () => {
+      const promptContext = resolveAssistantPromptContext(currentScreen.currentPath);
+
+      return createAssistantRuntimeContext({
         language: appLanguage,
         screen: currentScreen.screen,
         currentPath: currentScreen.currentPath,
+        promptContext,
         user,
         profile,
         water,
@@ -283,7 +288,8 @@ export const AssistantRuntimeCard = () => {
         coach,
         coachPrimaryInsight,
         dailyContext,
-      }),
+      });
+    },
     [
       coach,
       coachPrimaryInsight,
@@ -451,6 +457,17 @@ export const AssistantRuntimeCard = () => {
     latestAssistantMessage?.followUpQuestionIds ??
     (latestAssistantMessage ? assistantQuickQuestionIds : []);
 
+  const handleFollowUpClick = (id: AssistantQuickQuestionId) => {
+    captureRuntimeEvent("assistant_followup_clicked", {
+      quickQuestionId: id,
+      area: context.promptContext.area,
+      screenName: context.promptContext.screenName,
+      path: context.currentPath,
+      mode: latestAssistantMode,
+    });
+    void handleAsk(copy.quickQuestions[id], id);
+  };
+
   return (
     <Paper
       component={motion.div}
@@ -605,9 +622,7 @@ export const AssistantRuntimeCard = () => {
                     disabled={loading || !historyReady}
                     variant="outlined"
                     label={copy.quickQuestions[id]}
-                    onClick={() => {
-                      void handleAsk(copy.quickQuestions[id], id);
-                    }}
+                    onClick={() => handleFollowUpClick(id)}
                   />
                 ))}
               </Stack>

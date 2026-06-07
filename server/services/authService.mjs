@@ -24,7 +24,9 @@ export const createAuthService = ({
   authRepository,
   stateRepository,
   emailService,
+  brevoService = null,
   config,
+  logger = console,
 }) => {
   const getTokenVersion = (user) => Math.max(Number(user?.tokenVersion ?? 0) || 0, 0);
   const getRefreshTokenHash = (token) => hashOneTimeToken(token, config.jwtSecret);
@@ -226,6 +228,30 @@ export const createAuthService = ({
     message: registrationVerificationMessage,
     expiresAt: new Date(expiresAt).toISOString(),
   });
+
+  const syncVerifiedMarketingContact = async (user) => {
+    try {
+      const result = await brevoService?.upsertContact?.({
+        email: user.email,
+        name: user.name,
+      });
+
+      if (result && !result.ok) {
+        logger.warn?.("[brevo] verified contact sync skipped", {
+          provider: "brevo",
+          userId: user.id,
+          code: result.code ?? "BREVO_CONTACT_SYNC_FAILED",
+        });
+      }
+    } catch (error) {
+      logger.warn?.("[brevo] verified contact sync skipped", {
+        provider: "brevo",
+        userId: user.id,
+        code: String(error?.code ?? error?.name ?? "BREVO_CONTACT_SYNC_ERROR").slice(0, 80),
+        message: String(error?.message ?? "").replace(/\s+/g, " ").trim().slice(0, 160),
+      });
+    }
+  };
 
   const createRegistrationVerification = async (user) => {
     await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
@@ -609,6 +635,7 @@ export const createAuthService = ({
           channel: verificationToken.channel,
         },
       });
+      await syncVerifiedMarketingContact(verifiedUser);
 
       return buildAuthResponse(
         verifiedUser,
