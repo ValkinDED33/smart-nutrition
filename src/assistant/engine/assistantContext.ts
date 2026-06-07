@@ -122,6 +122,7 @@ export const createAssistantRuntimeContext = ({
       openMotivationTasks,
       completedMotivationTasks: profile.motivation.completedTasks,
     },
+    onboarding: assistantCore.onboarding,
     memory: assistantCore.memory,
   };
 };

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Box, Paper, Stack, Typography } from "@mui/material";
-import { AssistantAvatar, type AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import {
+  AssistantAvatar,
+  type AssistantAvatarMood,
+} from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
 import type { OnboardingState } from "./types";
 
@@ -49,22 +52,73 @@ const guideCopy = {
   },
 } as const;
 
-const stepMeta: Record<
-  string,
-  { key: keyof typeof guideCopy.en; placement: GuidePlacement; mood: AssistantAvatarMood }
-> = {
-  "/onboarding": { key: "welcome", placement: "floatTop", mood: "happy" },
-  "/onboarding/welcome": { key: "welcome", placement: "floatTop", mood: "happy" },
-  "/onboarding/assistant": { key: "assistant", placement: "peekRight", mood: "celebrate" },
-  "/onboarding/name": { key: "name", placement: "peekLeft", mood: "coach" },
-  "/onboarding/age": { key: "age", placement: "peekRight", mood: "coach" },
-  "/onboarding/gender": { key: "gender", placement: "floatBottom", mood: "happy" },
-  "/onboarding/height": { key: "height", placement: "peekLeft", mood: "coach" },
-  "/onboarding/goal": { key: "goal", placement: "peekRight", mood: "coach" },
-  "/onboarding/friction": { key: "friction", placement: "floatBottom", mood: "concerned" },
-  "/onboarding/motivation": { key: "motivation", placement: "peekRight", mood: "happy" },
-  "/onboarding/weight": { key: "weight", placement: "peekLeft", mood: "coach" },
-  "/onboarding/finish": { key: "finish", placement: "floatTop", mood: "celebrate" },
+type StepMeta = {
+  key: keyof typeof guideCopy.en;
+  placement: GuidePlacement;
+  mood: AssistantAvatarMood;
+};
+
+const stepMeta: Record<string, StepMeta> = {
+  "/onboarding": {
+    key: "welcome",
+    placement: "floatTop",
+    mood: "happy",
+  },
+  "/onboarding/welcome": {
+    key: "welcome",
+    placement: "floatTop",
+    mood: "happy",
+  },
+  "/onboarding/assistant": {
+    key: "assistant",
+    placement: "peekRight",
+    mood: "celebrate",
+  },
+  "/onboarding/name": {
+    key: "name",
+    placement: "peekLeft",
+    mood: "coach",
+  },
+  "/onboarding/age": {
+    key: "age",
+    placement: "peekRight",
+    mood: "coach",
+  },
+  "/onboarding/gender": {
+    key: "gender",
+    placement: "floatBottom",
+    mood: "happy",
+  },
+  "/onboarding/height": {
+    key: "height",
+    placement: "peekLeft",
+    mood: "coach",
+  },
+  "/onboarding/goal": {
+    key: "goal",
+    placement: "peekRight",
+    mood: "coach",
+  },
+  "/onboarding/friction": {
+    key: "friction",
+    placement: "floatBottom",
+    mood: "concerned",
+  },
+  "/onboarding/motivation": {
+    key: "motivation",
+    placement: "peekRight",
+    mood: "happy",
+  },
+  "/onboarding/weight": {
+    key: "weight",
+    placement: "peekLeft",
+    mood: "coach",
+  },
+  "/onboarding/finish": {
+    key: "finish",
+    placement: "floatTop",
+    mood: "celebrate",
+  },
 };
 
 const placementSx: Record<GuidePlacement, object> = {
@@ -88,14 +142,10 @@ const placementSx: Record<GuidePlacement, object> = {
   },
 };
 
-const fallbackStepMeta = {
+const fallbackStepMeta: StepMeta = {
   key: "assistant",
   placement: "peekRight",
   mood: "celebrate",
-} as const satisfies {
-  key: keyof typeof guideCopy.en;
-  placement: GuidePlacement;
-  mood: AssistantAvatarMood;
 };
 
 const usePointerLook = () => {
@@ -117,12 +167,15 @@ const usePointerLook = () => {
       });
     };
 
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, {
+      passive: true,
+    });
 
     return () => {
       if (frame !== undefined) {
         window.cancelAnimationFrame(frame);
       }
+
       window.removeEventListener("pointermove", onPointerMove);
     };
   }, []);
@@ -134,29 +187,26 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const { pathname } = useLocation();
   const { appLanguage } = useLanguage();
   const lookOffset = usePointerLook();
-  const [vanishing, setVanishing] = useState(false);
-  const meta = stepMeta[pathname] ?? fallbackStepMeta;
+
+  const meta: StepMeta = stepMeta[pathname] ?? fallbackStepMeta;
+
   const copy = guideCopy[appLanguage][meta.key];
 
-  useEffect(() => {
-    setVanishing(true);
-    const timerId = window.setTimeout(() => setVanishing(false), 360);
+  const transform = useMemo(() => {
+    if (meta.placement === "peekLeft") {
+      return "translate(-18px, -50%)";
+    }
 
-    return () => window.clearTimeout(timerId);
-  }, [pathname]);
+    if (meta.placement === "peekRight") {
+      return "translate(18px, -50%)";
+    }
 
-  const transform = useMemo(
-    () =>
-      meta.placement === "peekLeft"
-        ? "translate(-18px, -50%)"
-        : meta.placement === "peekRight"
-          ? "translate(18px, -50%)"
-          : "none",
-    [meta.placement]
-  );
+    return "none";
+  }, [meta.placement]);
 
   return (
     <Box
+      key={pathname}
       sx={{
         position: "fixed",
         zIndex: 1250,
@@ -164,22 +214,37 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
         display: { xs: "none", sm: "block" },
         ...placementSx[meta.placement],
         transform,
-        opacity: vanishing ? 0 : 1,
-        filter: vanishing ? "blur(10px)" : "blur(0)",
-        transition: "opacity 260ms ease, filter 260ms ease, transform 260ms ease",
-        animation: vanishing ? "snGuideVanish 360ms ease" : "snGuideFloat 3.4s ease-in-out infinite",
-        "@keyframes snGuideFloat": {
-          "0%, 100%": { marginTop: 0 },
-          "50%": { marginTop: -8 },
+        opacity: 1,
+        filter: "blur(0)",
+        transition:
+          "opacity 260ms ease, filter 260ms ease, transform 260ms ease",
+        animation:
+          "snGuideArrive 360ms ease, snGuideFloat 3.4s ease-in-out 360ms infinite",
+        "@keyframes snGuideArrive": {
+          "0%": {
+            opacity: 0,
+            filter: "blur(14px)",
+          },
+          "100%": {
+            opacity: 1,
+            filter: "blur(0)",
+          },
         },
-        "@keyframes snGuideVanish": {
-          "0%": { opacity: 1, filter: "blur(0)" },
-          "45%": { opacity: 0.15, filter: "blur(12px)" },
-          "100%": { opacity: 0, filter: "blur(16px)" },
+        "@keyframes snGuideFloat": {
+          "0%, 100%": {
+            marginTop: 0,
+          },
+          "50%": {
+            marginTop: -8,
+          },
         },
       }}
     >
-      <Stack direction={meta.placement === "peekLeft" ? "row" : "row-reverse"} spacing={1.2} alignItems="center">
+      <Stack
+        direction={meta.placement === "peekLeft" ? "row" : "row-reverse"}
+        spacing={1.2}
+        alignItems="center"
+      >
         <Box sx={{ position: "relative" }}>
           <Box
             sx={{
@@ -190,11 +255,18 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
                 "radial-gradient(circle, rgba(20,184,166,0.22), rgba(255,255,255,0) 68%)",
               animation: "snGuideMist 2.8s ease-in-out infinite",
               "@keyframes snGuideMist": {
-                "0%, 100%": { transform: "scale(0.96)", opacity: 0.58 },
-                "50%": { transform: "scale(1.12)", opacity: 0.28 },
+                "0%, 100%": {
+                  transform: "scale(0.96)",
+                  opacity: 0.58,
+                },
+                "50%": {
+                  transform: "scale(1.12)",
+                  opacity: 0.28,
+                },
               },
             }}
           />
+
           <AssistantAvatar
             name={state.assistantName}
             variant={state.assistantAvatar}
@@ -204,6 +276,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
             size={92}
           />
         </Box>
+
         <Paper
           elevation={0}
           sx={{
@@ -217,10 +290,23 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
             backdropFilter: "blur(16px)",
           }}
         >
-          <Typography sx={{ fontWeight: 900, fontSize: 14 }}>
+          <Typography
+            sx={{
+              fontWeight: 900,
+              fontSize: 14,
+            }}
+          >
             {state.assistantName}
           </Typography>
-          <Typography sx={{ mt: 0.5, color: "#334155", lineHeight: 1.55, fontSize: 14 }}>
+
+          <Typography
+            sx={{
+              mt: 0.5,
+              color: "#334155",
+              lineHeight: 1.55,
+              fontSize: 14,
+            }}
+          >
             {copy}
           </Typography>
         </Paper>

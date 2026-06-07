@@ -3,6 +3,7 @@ import {
   assistantRuntimeMemory,
   clearAssistantRuntimeMemory,
   loadAssistantConversationHistory,
+  saveAssistantConversationHistory,
 } from "./assistantMemory";
 import {
   askAssistantRuntimeQuestion,
@@ -67,4 +68,5 @@ export {
   getAssistantHonestyNote,
   getAssistantModeLabel,
   loadAssistantConversationHistory,
+  saveAssistantConversationHistory,
 };

@@ -6,6 +6,7 @@ import { useLanguage } from "@shared/language";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
 
 const notificationLog = new Set<string>();
 
@@ -152,6 +153,13 @@ const wellbeingNotificationCopy = {
     waterBody: "Ви випили менше плану. Додайте ще води, щоб наблизитися до цілі.",
     checkInTitle: "Пора оновити вагу і заміри",
     checkInBody: "Щотижневий check-in вже на часі. Оновіть вагу, талію або інші об’єми.",
+    goal: {
+      cut: "Пам'ятайте про ціль зниження ваги без різких компенсацій.",
+      maintain: "Пам'ятайте про ціль стабільного ритму без зайвих гойдалок.",
+      bulk: "Пам'ятайте про ціль набору: енергія й білок мають бути регулярними.",
+    },
+    progress: (ratio: number) =>
+      `Зараз день закрито приблизно на ${Math.round(ratio * 100)}% від калорійної цілі.`,
   },
   pl: {
     dailyTitle: (name: string) => `${name}: plan na dziś`,
@@ -160,8 +168,32 @@ const wellbeingNotificationCopy = {
     waterBody: "Wypito mniej niż plan. Dodaj jeszcze trochę wody, aby zbliżyć się do celu.",
     checkInTitle: "Czas odświeżyć wagę i pomiary",
     checkInBody: "Weekly check-in jest już na czasie. Zapisz wagę i obwody.",
+    goal: {
+      cut: "Pamiętaj o celu redukcji bez ostrych kompensacji.",
+      maintain: "Pamiętaj o celu stabilnego rytmu bez dużych wahań.",
+      bulk: "Pamiętaj o celu budowy: energia i białko muszą być regularne.",
+    },
+    progress: (ratio: number) =>
+      `Dzień jest teraz domknięty mniej więcej w ${Math.round(ratio * 100)}% celu kalorii.`,
   },
 } as const;
+
+const withPersonalNotificationContext = (
+  body: string,
+  {
+    actionHint,
+    recommendationHint,
+    goalLine,
+    progressLine,
+  }: {
+    actionHint: string;
+    recommendationHint?: string;
+    goalLine: string;
+    progressLine: string;
+  }
+) => [body, actionHint, recommendationHint, goalLine, progressLine]
+  .filter((line): line is string => Boolean(line))
+  .join(" ");
 
 const HabitReminderAgent = () => {
   const dispatch = useDispatch();
@@ -207,6 +239,18 @@ const HabitReminderAgent = () => {
       const localizedMealCopy = mealNotificationCopy[language];
       const coachCopy = coachNotificationCopy[language];
       const wellbeingCopy = wellbeingNotificationCopy[language];
+      const personalization = buildAssistantPersonalizationPlan(
+        assistant.onboarding,
+        language
+      );
+      const calorieRatio =
+        dailyCalories > 0 ? Math.max(totalCalories / dailyCalories, 0) : 0;
+      const personalContext = {
+        actionHint: personalization.actionHint,
+        recommendationHint: personalization.recommendationHint,
+        goalLine: wellbeingCopy.goal[goal],
+        progressLine: wellbeingCopy.progress(calorieRatio),
+      };
       const waterConsumedToday =
         water.lastLoggedOn === todayKey ? water.consumedMl : 0;
 
@@ -214,7 +258,10 @@ const HabitReminderAgent = () => {
         maybeSendNotification(
           `${todayKey}-daily-motivation`,
           wellbeingCopy.dailyTitle(assistant.name),
-          wellbeingCopy.dailyBody
+          withPersonalNotificationContext(
+            personalization.notificationBody || wellbeingCopy.dailyBody,
+            personalContext
+          )
         );
       }
 
@@ -231,7 +278,10 @@ const HabitReminderAgent = () => {
             maybeSendNotification(
               `${todayKey}-${mealType}`,
               reminder.title,
-              reminder.body
+              withPersonalNotificationContext(reminder.body, {
+                ...personalContext,
+                progressLine: "",
+              })
             );
           }
         });
@@ -242,13 +292,13 @@ const HabitReminderAgent = () => {
           maybeSendNotification(
             `${todayKey}-calories-low`,
             coachCopy.caloriesLowTitle,
-            coachCopy.caloriesLowBody
+            withPersonalNotificationContext(coachCopy.caloriesLowBody, personalContext)
           );
         } else if (totalCalories > dailyCalories * 1.12) {
           maybeSendNotification(
             `${todayKey}-calories-high`,
             coachCopy.caloriesHighTitle,
-            coachCopy.caloriesHighBody
+            withPersonalNotificationContext(coachCopy.caloriesHighBody, personalContext)
           );
         }
       }
@@ -258,7 +308,7 @@ const HabitReminderAgent = () => {
           maybeSendNotification(
             `${todayKey}-water-low`,
             wellbeingCopy.waterTitle,
-            wellbeingCopy.waterBody
+            withPersonalNotificationContext(wellbeingCopy.waterBody, personalContext)
           );
         }
       }
@@ -271,7 +321,7 @@ const HabitReminderAgent = () => {
         maybeSendNotification(
           `${todayKey}-weekly-check-in`,
           wellbeingCopy.checkInTitle,
-          wellbeingCopy.checkInBody
+          withPersonalNotificationContext(wellbeingCopy.checkInBody, personalContext)
         );
       }
 
@@ -306,7 +356,7 @@ const HabitReminderAgent = () => {
             maybeSendNotification(
               `${todayKey}-coach-focus`,
               coachCopy.title(assistant.name),
-              body
+              withPersonalNotificationContext(body, personalContext)
             );
           }
         }
@@ -321,6 +371,7 @@ const HabitReminderAgent = () => {
     };
   }, [
     assistant.name,
+    assistant.onboarding,
     calorieAlertsEnabled,
     dailyCalories,
     dietStyle,

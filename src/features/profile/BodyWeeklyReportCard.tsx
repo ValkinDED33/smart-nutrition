@@ -4,6 +4,7 @@ import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
 
 const bodyReportCopy = {
   uk: {
@@ -17,6 +18,7 @@ const bodyReportCopy = {
     chest: "Chest",
     checkIns: "Check-ins",
     plateauTitle: "AI plateau detection",
+    personalTitle: "Personal assistant focus",
     plateauBody: (weeks: number, delta: string) =>
       `Weight has stayed within ${delta} kg for about ${weeks} weeks. Keep calories, protein, water, and check-in consistency visible before changing the goal.`,
     progressBody: (delta: string) =>
@@ -38,6 +40,7 @@ const bodyReportCopy = {
     chest: "Klatka",
     checkIns: "Check-ins",
     plateauTitle: "AI plateau detection",
+    personalTitle: "Osobisty fokus asystenta",
     plateauBody: (weeks: number, delta: string) =>
       `Waga utrzymuje się w zakresie ${delta} kg przez około ${weeks} tyg. Sprawdź kalorie, białko, wodę i regularność zapisów przed zmianą celu.`,
     progressBody: (delta: string) =>
@@ -60,11 +63,15 @@ const formatSigned = (value: number | null) => {
 
 export const BodyWeeklyReportCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const { measurementHistory, weightHistory } = useSelector(
+  const { assistant, measurementHistory, weightHistory } = useSelector(
     (state: RootState) => state.profile
   );
   const { language } = useLanguage();
   const copy = bodyReportCopy[language];
+  const personalization = buildAssistantPersonalizationPlan(
+    assistant.onboarding,
+    language
+  );
 
   const report = useMemo(
     () =>
@@ -148,6 +155,11 @@ export const BodyWeeklyReportCard = () => {
                   ? copy.plateauBody(report.plateau.weeksStable || 2, plateauDelta)
                   : copy.progressBody(weeklyDelta)}
               </Typography>
+            </Alert>
+
+            <Alert severity="info">
+              <Typography sx={{ fontWeight: 800 }}>{copy.personalTitle}</Typography>
+              <Typography variant="body2">{personalization.reportHint}</Typography>
             </Alert>
 
             <Box

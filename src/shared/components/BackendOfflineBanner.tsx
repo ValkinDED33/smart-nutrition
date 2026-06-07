@@ -52,7 +52,6 @@ const BackendOfflineBanner = () => {
 
   useEffect(() => {
     if (!user && error !== "REMOTE_API_UNAVAILABLE") {
-      setBackendReachable(true);
       return;
     }
 
@@ -90,7 +89,9 @@ const BackendOfflineBanner = () => {
     return null;
   }
 
-  const shouldShow = !browserOnline || !backendReachable;
+  const effectiveBackendReachable =
+    !user && error !== "REMOTE_API_UNAVAILABLE" ? true : backendReachable;
+  const shouldShow = !browserOnline || !effectiveBackendReachable;
 
   const handleRetry = async () => {
     setChecking(true);

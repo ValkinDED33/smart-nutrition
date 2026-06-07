@@ -146,8 +146,9 @@ const HomePage = () => {
       buildAssistantHomeIntelligence({
         context: dailyContext,
         language: appLanguage,
+        onboarding: assistant.onboarding,
       }),
-    [appLanguage, dailyContext]
+    [appLanguage, assistant.onboarding, dailyContext]
   );
 
   if (!user) {
@@ -272,6 +273,11 @@ const HomePage = () => {
             <Typography sx={{ color: "white", fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
               {intelligence.message}
             </Typography>
+            {intelligence.personalizationLine && (
+              <Typography sx={{ color: "rgba(255,255,255,0.78)", maxWidth: 760 }}>
+                {intelligence.personalizationLine}
+              </Typography>
+            )}
           </Stack>
 
           <Paper

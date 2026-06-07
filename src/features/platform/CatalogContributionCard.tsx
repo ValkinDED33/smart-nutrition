@@ -118,15 +118,18 @@ export const CatalogContributionCard = () => {
   }, [copy.backendUnavailable]);
 
   useEffect(() => {
-    void loadSubmissions();
+    queueMicrotask(() => {
+      void loadSubmissions();
+    });
   }, [loadSubmissions]);
 
   useEffect(() => {
     const name = form.name.trim();
 
     if (name.length < 3) {
-      setDuplicates([]);
-      return undefined;
+      const timer = window.setTimeout(() => setDuplicates([]), 0);
+
+      return () => window.clearTimeout(timer);
     }
 
     let active = true;

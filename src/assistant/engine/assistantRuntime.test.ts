@@ -174,6 +174,14 @@ const createContext = (): AssistantRuntimeContext => ({
     openMotivationTasks: 1,
     completedMotivationTasks: 2,
   },
+  onboarding: {
+    preferredName: "Ira",
+    primaryGoalNote: "steady fat loss",
+    mainFriction: "evening_snacking",
+    motivationStyle: "gentle",
+    supportNote: "prefers short check-ins",
+    completedAt: "2026-04-01T00:00:00.000Z",
+  },
   memory: {
     userId: "user-1",
     assistantName: "Diana",

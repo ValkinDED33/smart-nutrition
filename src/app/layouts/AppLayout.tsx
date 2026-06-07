@@ -49,6 +49,7 @@ import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 
 const mobileTabs = [
   { value: "/meals", labelKey: "navigation.food", icon: Utensils },
@@ -88,7 +89,11 @@ const Layout = () => {
 
   useEffect(() => {
     setAssistantCurrentScreen(createAssistantScreenContext(location.pathname));
-  }, [location.pathname, setAssistantCurrentScreen]);
+    captureRuntimeEvent("screen_viewed", {
+      path: location.pathname,
+      authenticated: Boolean(user),
+    });
+  }, [location.pathname, setAssistantCurrentScreen, user]);
 
   const handleLogout = async () => {
     await logoutSession();
@@ -313,6 +318,9 @@ const Layout = () => {
                     ) {
                       setLanguage(nextLanguage);
                       dispatch(setProfileLanguage(nextLanguage));
+                      captureRuntimeEvent("language_changed", {
+                        language: nextLanguage,
+                      });
                     }
                   }}
                   sx={{
@@ -447,6 +455,9 @@ const Layout = () => {
             value={activeMobileTab}
             onChange={(_, nextValue) => {
               if (typeof nextValue === "string") {
+                captureRuntimeEvent("mobile_navigation_selected", {
+                  path: nextValue,
+                });
                 navigate(nextValue);
               }
             }}

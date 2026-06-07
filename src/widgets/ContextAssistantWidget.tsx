@@ -13,6 +13,7 @@ import { useLanguage } from "@shared/language";
 import { AssistantAvatar, type AssistantAvatarMood } from "@shared/components/AssistantAvatar";
 import {
   buildAssistantCoreSnapshot,
+  buildAssistantPersonalizationPlan,
   type AssistantCoreEmotion,
 } from "@core/assistant";
 
@@ -67,6 +68,11 @@ const widgetCopy = {
       body: "Ви тримаєте день у керованій зоні. Це саме той маленький прогрес, який накопичується.",
       action: "Подивитися прогрес",
     },
+    personalCommunity: {
+      title: "Підтримка може підсилити план",
+      body: "У Community можна швидко знайти людей зі схожим сценарієм і не тягнути все самостійно.",
+      action: "Відкрити Community",
+    },
   },
   pl: {
     help: "Podpowiedź",
@@ -118,6 +124,11 @@ const widgetCopy = {
       body: "Trzymasz dzień w kontrolowanej strefie. To właśnie mały progres, który się sumuje.",
       action: "Zobacz progres",
     },
+    personalCommunity: {
+      title: "Wsparcie może wzmocnić plan",
+      body: "W Community możesz szybko znaleźć osoby z podobnym scenariuszem i nie ciągnąć wszystkiego samodzielnie.",
+      action: "Otwórz Community",
+    },
   },
   en: {
     help: "Tip",
@@ -168,6 +179,11 @@ const widgetCopy = {
       title: "Good rhythm today",
       body: "You are keeping the day in a controlled zone. That is the small progress that adds up.",
       action: "View progress",
+    },
+    personalCommunity: {
+      title: "Support can strengthen the plan",
+      body: "Community can connect you with people facing a similar scenario, so you are not carrying everything alone.",
+      action: "Open Community",
     },
   },
 } as const;
@@ -323,6 +339,14 @@ export const ContextAssistantWidget = () => {
       hours >= 16 &&
       water.dailyWaterGoal > 0 &&
       water.consumedMl < water.dailyWaterGoal * 0.6;
+    const personalization = buildAssistantPersonalizationPlan(
+      profile.assistant.onboarding,
+      appLanguage
+    );
+    const shouldSurfaceCommunity =
+      profile.assistant.onboarding.completedAt &&
+      (profile.assistant.onboarding.mainFriction === "social_pressure" ||
+        openMotivationTasks >= 2);
     if (profile.weightHistory.length < 2 && profile.measurementHistory.length === 0) {
       return {
         id: "setup",
@@ -368,6 +392,16 @@ export const ContextAssistantWidget = () => {
       };
     }
 
+    if (shouldSurfaceCommunity) {
+      return {
+        id: "personal-community",
+        ...copy.personalCommunity,
+        body: `${copy.personalCommunity.body} ${personalization.recommendationHint}`,
+        mood: "happy",
+        onAction: () => navigate("/community"),
+      };
+    }
+
     if (
       calorieTarget > 0 &&
       hours >= 19 &&
@@ -403,10 +437,13 @@ export const ContextAssistantWidget = () => {
     copy.caloriesLow,
     copy.checkIn,
     copy.plateau,
+    copy.personalCommunity,
     copy.progressGood,
     copy.setup,
     copy.water,
     navigate,
+    openMotivationTasks,
+    appLanguage,
     profile,
     todayTotals.calories,
     user,

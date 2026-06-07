@@ -53,6 +53,7 @@ const buildSystemPrompt = (context) =>
     )}.`,
     "Be concise, practical, and emotionally aware.",
     "Use only the current nutrition context and the conversation memory provided below.",
+    "Use onboarding friction and motivation style explicitly when choosing tone, recommendation priority, and next step.",
     "Do not invent calories, macros, diagnoses, or certainty.",
     "Use relationship, support, and pet context only to adapt tone and practical contact style.",
     "Do not make medical or nutrition claims from blood group or eye color.",
@@ -67,6 +68,11 @@ const buildContextBlock = (context) =>
     `- User: ${context.userName}`,
     `- Goal: ${context.goal}`,
     `- Diet style: ${context.profile?.dietStyle ?? "balanced"}`,
+    `- Onboarding preferred name: ${context.onboarding?.preferredName ?? "unknown"}`,
+    `- Onboarding goal note: ${context.onboarding?.primaryGoalNote ?? "none"}`,
+    `- Onboarding friction: ${context.onboarding?.mainFriction ?? "unknown"}`,
+    `- Onboarding motivation style: ${context.onboarding?.motivationStyle ?? "gentle"}`,
+    `- Onboarding support note: ${context.onboarding?.supportNote ?? "none"}`,
     `- Structured profile: goal ${context.profile?.goal ?? context.goal}, latest weight ${Number(
       context.profile?.latestWeight ?? context.latestWeight
     ).toFixed(1)} kg, weekly check-in due ${

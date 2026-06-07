@@ -2,12 +2,11 @@ import { useMemo, useState } from "react";
 import {
   DndContext,
   PointerSensor,
-  useDraggable,
-  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -26,6 +25,7 @@ import type { MealTemplate, MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import { toast } from "sonner";
+import { reorderItems } from "@integration/runtime/interaction";
 
 interface Props {
   mealType: MealType;
@@ -49,15 +49,10 @@ const TemplateCard = ({
   const {
     attributes,
     listeners,
-    setNodeRef: setDraggableNodeRef,
+    setNodeRef,
     transform,
     isDragging,
-  } = useDraggable({ id: template.id });
-  const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({ id: template.id });
-  const setNodeRef = (element: HTMLDivElement | null) => {
-    setDraggableNodeRef(element);
-    setDroppableNodeRef(element);
-  };
+  } = useSortable({ id: template.id });
 
   return (
     <motion.div
@@ -74,7 +69,7 @@ const TemplateCard = ({
       <Card
         sx={{
           borderRadius: 1,
-          border: isOver
+          border: isDragging
             ? "1px solid rgba(15, 118, 110, 0.55)"
             : "1px solid rgba(15, 23, 42, 0.08)",
           boxShadow: "none",
@@ -124,14 +119,7 @@ const moveId = (ids: string[], activeId: string, overId: string) => {
     return ids;
   }
 
-  const nextIds = [...ids];
-  const [movedId] = nextIds.splice(activeIndex, 1);
-
-  if (movedId) {
-    nextIds.splice(overIndex, 0, movedId);
-  }
-
-  return nextIds;
+  return reorderItems(ids, activeIndex, overIndex);
 };
 
 const normalizeOrderIds = (ids: string[], templates: MealTemplate[]) => [
@@ -246,22 +234,24 @@ export const TemplateVault = ({ mealType }: Props) => {
         </Stack>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <Stack spacing={1.5}>
-          {currentMealTemplates.length === 0 ? (
-            <Typography color="text.secondary">{t("templates.empty")}</Typography>
-          ) : (
-            orderedCurrentMealTemplates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                language={language}
-                onApply={handleApplyTemplate}
-                onRemove={handleDeleteTemplate}
-                template={template}
-                t={t}
-              />
-            ))
-          )}
-        </Stack>
+          <SortableContext items={orderedCurrentMealTemplates.map((template) => template.id)}>
+            <Stack spacing={1.5}>
+              {currentMealTemplates.length === 0 ? (
+                <Typography color="text.secondary">{t("templates.empty")}</Typography>
+              ) : (
+                orderedCurrentMealTemplates.map((template) => (
+                  <TemplateCard
+                    key={template.id}
+                    language={language}
+                    onApply={handleApplyTemplate}
+                    onRemove={handleDeleteTemplate}
+                    template={template}
+                    t={t}
+                  />
+                ))
+              )}
+            </Stack>
+          </SortableContext>
         </DndContext>
       </Stack>
     </Paper>

@@ -34,12 +34,16 @@ import {
   toggleFavoritePost,
 } from "./communitySlice";
 import { submitContentReport } from "../../shared/api/platform";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { sanitizeHtml } from "@integration/runtime/content";
 
 const communityCopy = {
   uk: {
     title: "Community Hub",
     subtitle:
       "Друзі, приватні повідомлення, рецепт-форум і особисті бали в одному місці.",
+    personalFocus: (friction: string, motivation: string) =>
+      `Ваш фокус із онбордингу: ${friction}. Стиль підтримки: ${motivation}. Тут можна знайти приклади, підтримку або поділитися прогресом саме під цей сценарій.`,
     tabs: {
       friends: "Друзі",
       chat: "Чат",
@@ -114,6 +118,8 @@ const communityCopy = {
     title: "Community Hub",
     subtitle:
       "Znajomi, prywatne wiadomości, forum z przepisami i osobiste punkty w jednym miejscu.",
+    personalFocus: (friction: string, motivation: string) =>
+      `Twój fokus z onboardingu: ${friction}. Styl wsparcia: ${motivation}. Tutaj możesz znaleźć przykłady, wsparcie albo pokazać postęp pod ten scenariusz.`,
     tabs: {
       friends: "Znajomi",
       chat: "Czat",
@@ -195,12 +201,20 @@ const formatDateTime = (value: string, language: "uk" | "pl") =>
     timeStyle: "short",
   });
 
+const sanitizeCommunityText = (value: string) =>
+  sanitizeHtml(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+
 export const CommunityHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const community = useSelector((state: RootState) => state.community);
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { language } = useLanguage();
   const copy = communityCopy[language];
+  const personalization = buildAssistantPersonalizationPlan(
+    assistant.onboarding,
+    language
+  );
   const [tab, setTab] = useState<TabValue>("friends");
   const [forumView, setForumView] = useState<ForumView>("popular");
   const [friendName, setFriendName] = useState("");
@@ -272,12 +286,14 @@ export const CommunityHubCard = () => {
   }, [community.posts, forumView, isModerator, user?.id]);
 
   const publishPost = () => {
+    const safeTitle = sanitizeCommunityText(postTitle);
+    const safeBody = sanitizeCommunityText(postBody);
     const ingredients = postIngredients
       .split(",")
-      .map((item) => item.trim())
+      .map((item) => sanitizeCommunityText(item))
       .filter(Boolean);
     const duplicate = findDuplicateCommunityPost(community.posts, {
-      title: postTitle,
+      title: safeTitle,
       ingredients,
     });
 
@@ -285,15 +301,15 @@ export const CommunityHubCard = () => {
       setDuplicateWarning(copy.duplicate);
     }
 
-    if (!user || !postTitle.trim() || !postBody.trim()) {
+    if (!user || !safeTitle || !safeBody) {
       return;
     }
 
     dispatch(
       publishCommunityPost({
         type: postType,
-        title: postTitle,
-        body: postBody,
+        title: safeTitle,
+        body: safeBody,
         authorId: user.id,
         authorName: user.name,
         ingredients,
@@ -306,22 +322,26 @@ export const CommunityHubCard = () => {
   };
 
   const sendRoomMessage = () => {
-    if (!roomMessageDraft.trim()) {
+    const safeMessage = sanitizeCommunityText(roomMessageDraft);
+
+    if (!safeMessage) {
       return;
     }
 
-    dispatch(sendCommunityMessage({ text: roomMessageDraft, authorName }));
+    dispatch(sendCommunityMessage({ text: safeMessage, authorName }));
     setRoomMessageDraft("");
   };
 
   const publishComment = (postId: string) => {
     const text = commentDrafts[postId] ?? "";
 
-    if (!text.trim()) {
+    const safeText = sanitizeCommunityText(text);
+
+    if (!safeText) {
       return;
     }
 
-    dispatch(commentCommunityPost({ postId, text, authorName }));
+    dispatch(commentCommunityPost({ postId, text: safeText, authorName }));
     setCommentDrafts((drafts) => ({ ...drafts, [postId]: "" }));
   };
 
@@ -381,6 +401,12 @@ export const CommunityHubCard = () => {
             {copy.title}
           </Typography>
           <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography color="text.secondary">
+            {copy.personalFocus(
+              personalization.frictionLabel,
+              personalization.motivationLabel
+            )}
+          </Typography>
         </Stack>
 
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">

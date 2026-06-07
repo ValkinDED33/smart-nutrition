@@ -1,5 +1,6 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { MonthlyAnalyticsCard } from "../features/meal/MonthlyAnalyticsCard";
+import { WeeklyInsights } from "../features/meal/WeeklyInsights";
 import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
 import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
 import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
@@ -64,6 +65,7 @@ const ProgressPage = () => {
         <WaterTracker />
       </Box>
 
+      <WeeklyInsights />
       <MonthlyAnalyticsCard />
       <BodyWeeklyReportCard />
 

@@ -136,7 +136,7 @@ export const AccountDataCard = () => {
   );
   const [exporting, setExporting] = useState(false);
   const [backups, setBackups] = useState<AccountBackupSummary[]>([]);
-  const [backupsLoading, setBackupsLoading] = useState(false);
+  const [backupsLoading, setBackupsLoading] = useState(true);
   const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(null);
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -144,7 +144,6 @@ export const AccountDataCard = () => {
 
   useEffect(() => {
     let cancelled = false;
-    setBackupsLoading(true);
 
     void getRemoteAccountBackups()
       .then((items) => {

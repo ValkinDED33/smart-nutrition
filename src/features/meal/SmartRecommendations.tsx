@@ -17,6 +17,7 @@ import type { MealEntry } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
 import { buildDailyContext } from "@domain/meal/dailyContext";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
 
 const recommendationCopy = {
   uk: {
@@ -60,6 +61,9 @@ const recommendationCopy = {
     todayBalancedTitle: "Сьогодні все виглядає збалансовано",
     todayBalancedDetail:
       "Калорії та макроси поки виглядають рівно. Збережіть подібну якість і розмір порції в наступному прийомі їжі.",
+    personalFocusTitle: (friction: string) => `Особистий фокус: ${friction}`,
+    personalFocusDetail: (motivation: string, hint: string) =>
+      `Стиль підтримки: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>
       `Додати ${quantity.toFixed(0)} ${unit === "piece" ? "шт." : unit === "ml" ? "мл" : "г"} ${productName}`,
     addRecipeAction: (title: string) => `Додати рецепт: ${title}`,
@@ -105,6 +109,9 @@ const recommendationCopy = {
     todayBalancedTitle: "Dzisiejszy dzień wygląda dobrze",
     todayBalancedDetail:
       "Kalorie i makroskładniki wyglądają na razie stabilnie. Zachowaj podobną jakość i wielkość kolejnego posiłku.",
+    personalFocusTitle: (friction: string) => `Osobisty fokus: ${friction}`,
+    personalFocusDetail: (motivation: string, hint: string) =>
+      `Styl wsparcia: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>
       `Dodaj ${quantity.toFixed(0)} ${unit === "piece" ? "szt." : unit === "ml" ? "ml" : "g"} ${productName}`,
     addRecipeAction: (title: string) => `Dodaj przepis: ${title}`,
@@ -150,6 +157,9 @@ const recommendationCopy = {
     todayBalancedTitle: "Today looks balanced",
     todayBalancedDetail:
       "Calories and macros look steady so far. Keep similar quality and portion size in the next meal.",
+    personalFocusTitle: (friction: string) => `Personal focus: ${friction}`,
+    personalFocusDetail: (motivation: string, hint: string) =>
+      `Support style: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>
       `Add ${quantity.toFixed(0)} ${unit === "piece" ? "pc." : unit === "ml" ? "ml" : "g"} ${productName}`,
     addRecipeAction: (title: string) => `Add recipe: ${title}`,
@@ -263,12 +273,26 @@ export const SmartRecommendations = () => {
       actionQuantity?: number;
       actionRecipe?: (typeof recipes)[number];
     }> = [];
+    const personalization = buildAssistantPersonalizationPlan(
+      profile.assistant.onboarding,
+      appLanguage
+    );
 
     next.push({
       priority: 98,
       tone: dailyContext.nudgeTone === "direct" ? "warning" : "info",
       title: copy.todayFitTitle,
       detail: copy.todayFitDetail(suggestedMealLabel),
+    });
+
+    next.push({
+      priority: 99,
+      tone: dailyContext.nudgeTone === "direct" ? "warning" : "info",
+      title: copy.personalFocusTitle(personalization.frictionLabel),
+      detail: copy.personalFocusDetail(
+        personalization.motivationLabel,
+        personalization.recommendationHint
+      ),
     });
 
     if (todayTotals.protein < proteinTarget * 0.75) {
@@ -444,12 +468,14 @@ export const SmartRecommendations = () => {
 
     return next.sort((left, right) => right.priority - left.priority).slice(0, 4);
   }, [
+    appLanguage,
     copy,
     dailyContext,
     items,
     macroTargets.protein,
     profile.adaptiveMode,
     profile.allergies,
+    profile.assistant.onboarding,
     profile.dailyCalories,
     profile.dietStyle,
     profile.excludedIngredients,

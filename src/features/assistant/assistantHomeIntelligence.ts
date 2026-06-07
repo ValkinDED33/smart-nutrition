@@ -1,5 +1,7 @@
 import type { DailyContext, DailyContextFocus } from "./dailyContext";
 import type { AppLanguage } from "../types/i18n";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import type { AssistantOnboardingProfile } from "@domain/profile/types";
 
 export type AssistantHomePhase = "morning" | "day" | "evening";
 export type AssistantHomeActionKind = "meal_search" | "meal_photo" | "meal_scan" | "water" | "recipes" | "progress";
@@ -15,6 +17,7 @@ export interface AssistantHomeIntelligence {
   phase: AssistantHomePhase;
   headline: string;
   message: string;
+  personalizationLine: string;
   primaryAction: AssistantHomeAction;
   secondaryActions: AssistantHomeAction[];
 }
@@ -141,15 +144,20 @@ const mealActionKeyByPhase: Record<AssistantHomePhase, "breakfast" | "lunch" | "
 export const buildAssistantHomeIntelligence = ({
   context,
   language,
+  onboarding,
   now = new Date(),
 }: {
   context: DailyContext;
   language: AppLanguage;
+  onboarding?: AssistantOnboardingProfile;
   now?: Date;
 }): AssistantHomeIntelligence => {
   const phase = getPhase(now);
   const text = copy[language];
   const focus = context.primaryFocus;
+  const personalization = onboarding
+    ? buildAssistantPersonalizationPlan(onboarding, language)
+    : null;
   let primaryAction: AssistantHomeAction;
 
   if (focus === "water") {
@@ -173,8 +181,16 @@ export const buildAssistantHomeIntelligence = ({
   return {
     phase,
     headline: text.phase[phase],
-    message: text.focus[focus as DailyContextFocus],
-    primaryAction,
+    message: personalization
+      ? `${text.focus[focus as DailyContextFocus]} ${personalization.actionHint}`
+      : text.focus[focus as DailyContextFocus],
+    personalizationLine: personalization?.homeLine ?? "",
+    primaryAction: personalization
+      ? {
+          ...primaryAction,
+          helper: `${primaryAction.helper} ${personalization.recommendationHint}`,
+        }
+      : primaryAction,
     secondaryActions,
   };
 };

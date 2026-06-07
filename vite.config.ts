@@ -110,7 +110,6 @@ export default defineConfig({
 
           if (
             normalizedId.includes("/node_modules/framer-motion/") ||
-            normalizedId.includes("/node_modules/motion/") ||
             normalizedId.includes("/node_modules/@react-spring/") ||
             normalizedId.includes("/node_modules/react-countup/") ||
             normalizedId.includes("/node_modules/react-type-animation/")
@@ -150,23 +149,6 @@ export default defineConfig({
             normalizedId.includes("/node_modules/zustand/")
           ) {
             return "interaction-vendor";
-          }
-
-          if (
-            normalizedId.includes("/node_modules/three/") ||
-            normalizedId.includes("/node_modules/@react-three/") ||
-            normalizedId.includes("/node_modules/@tsparticles/") ||
-            normalizedId.includes("/node_modules/matter-js/")
-          ) {
-            return "visual-runtime-vendor";
-          }
-
-          if (
-            normalizedId.includes("/node_modules/@elevenlabs/") ||
-            normalizedId.includes("/node_modules/@ricky0123/") ||
-            normalizedId.includes("/node_modules/onnxruntime-web/")
-          ) {
-            return "ai-runtime-vendor";
           }
 
           if (normalizedId.includes("/node_modules/@capacitor/")) {

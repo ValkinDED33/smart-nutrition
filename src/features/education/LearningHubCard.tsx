@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
 import { useSwipeable } from "react-swipeable";
 import rehypeHighlight from "rehype-highlight";
@@ -14,6 +15,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useLanguage } from "../../shared/language";
+import type { RootState } from "../../app/store";
+import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import type { AssistantDietFriction } from "@domain/profile/types";
 
 const learningCopy = {
   uk: {
@@ -21,6 +25,7 @@ const learningCopy = {
     subtitle:
       "Короткі wellness-картки, міні-статті, інфографіка і AI пояснення без довгих лекцій.",
     aiLabel: "AI пояснення",
+    personalFocus: "Персональна тема",
     infographic: "Інфографіка",
     readTime: "2 хв",
     topics: [
@@ -111,6 +116,7 @@ const learningCopy = {
     subtitle:
       "Krótkie karty wellness, mini artykuły, infografiki i wyjaśnienia AI bez długich wykładów.",
     aiLabel: "Wyjaśnienie AI",
+    personalFocus: "Temat osobisty",
     infographic: "Infografika",
     readTime: "2 min",
     topics: [
@@ -198,10 +204,29 @@ const learningCopy = {
   },
 } as const;
 
+const topicByFriction: Record<AssistantDietFriction, string> = {
+  unknown: "weight-loss",
+  emotional_eating: "stress",
+  chaotic_schedule: "water",
+  evening_snacking: "sleep",
+  low_energy: "water",
+  social_pressure: "stress",
+};
+
 export const LearningHubCard = () => {
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { language } = useLanguage();
   const copy = learningCopy[language];
-  const [topicIndex, setTopicIndex] = useState(0);
+  const recommendedTopicKey = topicByFriction[assistant.onboarding.mainFriction];
+  const recommendedTopicIndex = Math.max(
+    copy.topics.findIndex((topic) => topic.key === recommendedTopicKey),
+    0
+  );
+  const personalization = buildAssistantPersonalizationPlan(
+    assistant.onboarding,
+    language
+  );
+  const [topicIndex, setTopicIndex] = useState(recommendedTopicIndex);
   const activeTopic = copy.topics[topicIndex] ?? copy.topics[0];
   const articleMarkdown = useMemo(
     () =>
@@ -245,7 +270,14 @@ export const LearningHubCard = () => {
             </Typography>
             <Typography color="text.secondary">{copy.subtitle}</Typography>
           </Stack>
-          <Chip label={copy.readTime} color="primary" variant="outlined" />
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip
+              label={`${copy.personalFocus}: ${personalization.frictionLabel}`}
+              color="primary"
+              variant="outlined"
+            />
+            <Chip label={copy.readTime} color="primary" variant="outlined" />
+          </Stack>
         </Stack>
 
         <Tabs

@@ -1,5 +1,6 @@
 import type { AppLanguage } from "./i18n";
 import type {
+  AssistantOnboardingProfile,
   AssistantRole,
   AssistantTone,
   DietStyle,
@@ -122,6 +123,7 @@ export interface AssistantRuntimeContext {
     openMotivationTasks: number;
     completedMotivationTasks: number;
   };
+  onboarding: AssistantOnboardingProfile;
   memory: AssistantMemory;
 }
 

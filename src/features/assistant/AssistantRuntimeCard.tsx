@@ -15,11 +15,13 @@ import {
 import type { RootState } from "../../app/store";
 import {
   askAssistantRuntimeQuestion,
+  buildGuidedAssistantReply,
   buildAssistantWelcomeMessage,
   clearAssistantRuntimeMemory,
   createAssistantRuntimeContext,
   getAssistantHonestyNote,
   loadAssistantConversationHistory,
+  saveAssistantConversationHistory,
   getAssistantModeLabel,
 } from "@assistant/engine/assistantRuntime";
 import { useLanguage } from "../../shared/language";
@@ -131,6 +133,8 @@ const cardCopy = {
     } satisfies Record<AssistantQuickQuestionId, string>,
     empty: "Поставте питання або оберіть один зі швидких варіантів.",
     error: "Не вдалося отримати відповідь. Спробуйте ще раз за секунду.",
+    localFallback:
+      "Хмарний AI зараз недоступний, тому я відповів з локального контексту.",
   },
   pl: {
     title: "Asystent",
@@ -155,6 +159,8 @@ const cardCopy = {
     } satisfies Record<AssistantQuickQuestionId, string>,
     empty: "Zadaj pytanie albo wybierz jeden z szybkich wariantów.",
     error: "Nie udało się pobrać odpowiedzi. Spróbuj jeszcze raz za chwilę.",
+    localFallback:
+      "Chmurowy AI jest teraz niedostępny, więc odpowiedź powstała z lokalnego kontekstu.",
   },
   en: {
     title: "Assistant",
@@ -179,6 +185,8 @@ const cardCopy = {
     } satisfies Record<AssistantQuickQuestionId, string>,
     empty: "Ask a question or choose one of the quick options.",
     error: "Could not get an answer. Try again in a moment.",
+    localFallback:
+      "Cloud AI is unavailable right now, so I answered from local context.",
   },
 } as const;
 
@@ -198,7 +206,6 @@ export const AssistantRuntimeCard = () => {
   const historyReady = useAssistantChatStore((state) => state.historyReady);
   const setActiveUserId = useAssistantChatStore((state) => state.setActiveUserId);
   const setMessages = useAssistantChatStore((state) => state.setMessages);
-  const appendMessage = useAssistantChatStore((state) => state.appendMessage);
   const setHistoryReady = useAssistantChatStore((state) => state.setHistoryReady);
   const resetConversationState = useAssistantChatStore(
     (state) => state.resetConversationState
@@ -308,9 +315,8 @@ export const AssistantRuntimeCard = () => {
 
     setActiveUserId(userId);
     setHistoryReady(false);
-    setError(null);
 
-    void loadAssistantConversationHistory()
+    void loadAssistantConversationHistory(userId)
       .then((history) => {
         if (!active) {
           return;
@@ -360,11 +366,15 @@ export const AssistantRuntimeCard = () => {
 
     setLoading(true);
     setError(null);
-    appendMessage({
+    const userMessage: AssistantConversationMessage = {
       id: createId("user"),
       role: "user",
       text: trimmedQuestion,
-    });
+    };
+    const nextMessages = [...messages, userMessage];
+
+    setMessages(nextMessages);
+    void saveAssistantConversationHistory(nextMessages, userId);
     setQuestion("");
 
     try {
@@ -374,15 +384,35 @@ export const AssistantRuntimeCard = () => {
         context,
       });
 
-      appendMessage({
+      const assistantMessage: AssistantConversationMessage = {
         id: createId("assistant"),
         role: "assistant",
         text: response.text,
         mode: response.mode,
         followUpQuestionIds: response.followUpQuestionIds,
-      });
+      };
+      const savedMessages = [...nextMessages, assistantMessage];
+
+      setMessages(savedMessages);
+      void saveAssistantConversationHistory(savedMessages, userId);
     } catch {
-      setError(copy.error);
+      const fallback = buildGuidedAssistantReply({
+        question: trimmedQuestion,
+        quickQuestionId: quickQuestionId ?? null,
+        context,
+      });
+      const assistantMessage: AssistantConversationMessage = {
+        id: createId("assistant"),
+        role: "assistant",
+        text: fallback.text,
+        mode: fallback.mode,
+        followUpQuestionIds: fallback.followUpQuestionIds,
+      };
+      const savedMessages = [...nextMessages, assistantMessage];
+
+      setMessages(savedMessages);
+      void saveAssistantConversationHistory(savedMessages, userId);
+      setError(copy.localFallback);
     } finally {
       setLoading(false);
     }
@@ -398,7 +428,7 @@ export const AssistantRuntimeCard = () => {
     setQuestion("");
 
     try {
-      await clearAssistantRuntimeMemory();
+      await clearAssistantRuntimeMemory(userId);
     } finally {
       setMessages([createWelcomeMessage(context)]);
       setLoading(false);
