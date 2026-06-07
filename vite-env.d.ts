@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  readonly VITE_SMART_NUTRITION_API_BASE_URL?: string;
   readonly VITE_ELEVENLABS_API_KEY?: string;
   readonly VITE_FIREBASE_API_KEY?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
@@ -82,7 +83,10 @@ declare module "matter-js" {
       ) => MatterBody;
     };
     Composite: {
-      add: (composite: MatterComposite, bodies: MatterBody | MatterBody[]) => void;
+      add: (
+        composite: MatterComposite,
+        bodies: MatterBody | MatterBody[]
+      ) => void;
       allBodies: (composite: MatterComposite) => MatterBody[];
     };
     Engine: {

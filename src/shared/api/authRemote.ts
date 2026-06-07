@@ -73,7 +73,8 @@ class RemoteRequestError extends Error {
 }
 
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
-const PUBLIC_REMOTE_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
+const PUBLIC_REMOTE_API_BASE_URL =
+  "https://smart-nutrition-sk5r.onrender.com/api";
 const PUBLIC_FRONTEND_HOSTNAMES = new Set([
   "www.smart-nutrition.club",
   "smart-nutrition.club",
@@ -151,12 +152,18 @@ const isLoopbackBaseUrl = (value: string) => {
 export const canUseRemoteBaseUrlInCurrentBrowser = (value: string) =>
   !isLoopbackBaseUrl(value);
 
+const isVercelPreviewHostname = (hostname: string) =>
+  hostname.endsWith(".vercel.app");
+
 const getPublicDeploymentRemoteBaseUrl = () => {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return PUBLIC_FRONTEND_HOSTNAMES.has(window.location.hostname)
+  const { hostname } = window.location;
+
+  return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ||
+    isVercelPreviewHostname(hostname)
     ? PUBLIC_REMOTE_API_BASE_URL
     : null;
 };
@@ -166,7 +173,10 @@ const getConfiguredRemoteBaseUrl = () => {
     normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL) ??
     normalizeRemoteBaseUrl(getPublicDeploymentRemoteBaseUrl());
 
-  if (!configuredBaseUrl || !canUseRemoteBaseUrlInCurrentBrowser(configuredBaseUrl)) {
+  if (
+    !configuredBaseUrl ||
+    !canUseRemoteBaseUrlInCurrentBrowser(configuredBaseUrl)
+  ) {
     return null;
   }
 
@@ -174,7 +184,9 @@ const getConfiguredRemoteBaseUrl = () => {
 };
 
 const getStoredRemoteBaseUrl = () => {
-  const storedBaseUrl = normalizeRemoteBaseUrl(getClientStorageItem(REMOTE_BASE_URL_KEY));
+  const storedBaseUrl = normalizeRemoteBaseUrl(
+    getClientStorageItem(REMOTE_BASE_URL_KEY)
+  );
 
   if (!storedBaseUrl) {
     return null;
@@ -217,7 +229,7 @@ const isRegistrationVerificationPending = (
   value !== null &&
   (value as { requiresVerification?: unknown }).requiresVerification === true;
 
-const readJsonResponse = async <T,>(response: Response) => {
+const readJsonResponse = async <T>(response: Response) => {
   if (response.status === 204) {
     return undefined as T;
   }
@@ -285,7 +297,10 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
     }
 
     if (error.code === "VERIFICATION_DELIVERY_UNAVAILABLE") {
-      return new AuthApiError("VERIFICATION_DELIVERY_UNAVAILABLE", error.message);
+      return new AuthApiError(
+        "VERIFICATION_DELIVERY_UNAVAILABLE",
+        error.message
+      );
     }
 
     if (error.code === "INVALID_VERIFICATION_LINK") {
@@ -434,9 +449,12 @@ const isRemoteHealthPayload = (value: unknown) =>
   "ok" in value &&
   (value as { ok?: unknown }).ok === true &&
   "provider" in value &&
-  ((value as { provider?: unknown }).provider === "smart-nutrition-sqlite-api" ||
-    (value as { provider?: unknown }).provider === "smart-nutrition-postgres-api" ||
-    (value as { provider?: unknown }).provider === "smart-nutrition-mongodb-api");
+  ((value as { provider?: unknown }).provider ===
+    "smart-nutrition-sqlite-api" ||
+    (value as { provider?: unknown }).provider ===
+      "smart-nutrition-postgres-api" ||
+    (value as { provider?: unknown }).provider ===
+      "smart-nutrition-mongodb-api");
 
 const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
   if (!force && remoteBaseProbePromise) {
@@ -452,7 +470,10 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
           credentials: "include",
         });
 
-        if (response.ok && isRemoteHealthPayload(await readJsonResponse<unknown>(response))) {
+        if (
+          response.ok &&
+          isRemoteHealthPayload(await readJsonResponse<unknown>(response))
+        ) {
           return baseUrl;
         }
       } catch {
@@ -472,14 +493,18 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
   return baseUrl;
 };
 
-const requestRemote = async <T,>(
+const requestRemote = async <T>(
   path: string,
   init: RequestInit = {},
   {
     requireAuth = false,
     allowRefresh = true,
     withSyncContext = false,
-  }: { requireAuth?: boolean; allowRefresh?: boolean; withSyncContext?: boolean } = {}
+  }: {
+    requireAuth?: boolean;
+    allowRefresh?: boolean;
+    withSyncContext?: boolean;
+  } = {}
 ): Promise<{ data: T; baseUrl: string }> => {
   const baseUrl =
     getStoredRemoteBaseUrl() ??
@@ -568,7 +593,8 @@ const requestRemote = async <T,>(
 export const checkRemoteBackendAvailability = async (force = false) =>
   Boolean(await probeRemoteBaseUrl(force));
 
-export const isRemoteAuthAvailable = async () => checkRemoteBackendAvailability();
+export const isRemoteAuthAvailable = async () =>
+  checkRemoteBackendAvailability();
 
 export const isRemoteAuthMode = () => remoteSessionActive;
 
@@ -641,7 +667,8 @@ export const fetchRemoteAppState = async ({
   }
 };
 
-const loadRemoteAppState = async (): Promise<AppSnapshot | null> => fetchRemoteAppState();
+const loadRemoteAppState = async (): Promise<AppSnapshot | null> =>
+  fetchRemoteAppState();
 
 const getRemoteMutationResult = async (
   path: string,
@@ -666,7 +693,9 @@ const getRemoteMutationResult = async (
   }
 };
 
-export const pushRemoteProfileState = async (profile: unknown): Promise<RemoteSyncResult> => {
+export const pushRemoteProfileState = async (
+  profile: unknown
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode()) {
     return {
       ok: false,
@@ -682,7 +711,9 @@ export const pushRemoteProfileState = async (profile: unknown): Promise<RemoteSy
   });
 };
 
-export const pushRemoteMealState = async (meal: unknown): Promise<RemoteSyncResult> => {
+export const pushRemoteMealState = async (
+  meal: unknown
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode()) {
     return {
       ok: false,
@@ -698,7 +729,9 @@ export const pushRemoteMealState = async (meal: unknown): Promise<RemoteSyncResu
   });
 };
 
-export const pushRemoteWaterState = async (water: unknown): Promise<RemoteSyncResult> => {
+export const pushRemoteWaterState = async (
+  water: unknown
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode()) {
     return {
       ok: false,
@@ -714,7 +747,9 @@ export const pushRemoteWaterState = async (water: unknown): Promise<RemoteSyncRe
   });
 };
 
-export const pushRemoteFridgeState = async (fridge: unknown): Promise<RemoteSyncResult> => {
+export const pushRemoteFridgeState = async (
+  fridge: unknown
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode()) {
     return {
       ok: false,
@@ -748,7 +783,9 @@ export const pushRemoteCommunityState = async (
   });
 };
 
-export const addRemoteMealEntries = async (entries: MealEntry[]): Promise<RemoteSyncResult> => {
+export const addRemoteMealEntries = async (
+  entries: MealEntry[]
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode() || entries.length === 0) {
     return {
       ok: false,
@@ -764,7 +801,9 @@ export const addRemoteMealEntries = async (entries: MealEntry[]): Promise<Remote
   });
 };
 
-export const removeRemoteMealEntry = async (entryId: string): Promise<RemoteSyncResult> => {
+export const removeRemoteMealEntry = async (
+  entryId: string
+): Promise<RemoteSyncResult> => {
   if (!isRemoteAuthMode() || !entryId) {
     return {
       ok: false,
@@ -774,9 +813,12 @@ export const removeRemoteMealEntry = async (entryId: string): Promise<RemoteSync
     };
   }
 
-  return getRemoteMutationResult(`/meal-entries/${encodeURIComponent(entryId)}`, {
-    method: "DELETE",
-  });
+  return getRemoteMutationResult(
+    `/meal-entries/${encodeURIComponent(entryId)}`,
+    {
+      method: "DELETE",
+    }
+  );
 };
 
 export const addRemoteMealTemplate = async (
@@ -809,9 +851,12 @@ export const removeRemoteMealTemplate = async (
     };
   }
 
-  return getRemoteMutationResult(`/meal-templates/${encodeURIComponent(templateId)}`, {
-    method: "DELETE",
-  });
+  return getRemoteMutationResult(
+    `/meal-templates/${encodeURIComponent(templateId)}`,
+    {
+      method: "DELETE",
+    }
+  );
 };
 
 export const upsertRemoteMealProduct = async (
@@ -879,21 +924,24 @@ export const analyzeRemoteMealPhoto = async (
   }
 };
 
-export const fetchRemoteAccountExport = async (): Promise<AccountExportPayload> => {
-  const { data } = await requestRemote<AccountExportPayload>(
-    "/account/export",
-    { method: "GET" },
-    { requireAuth: true }
-  );
+export const fetchRemoteAccountExport =
+  async (): Promise<AccountExportPayload> => {
+    const { data } = await requestRemote<AccountExportPayload>(
+      "/account/export",
+      { method: "GET" },
+      { requireAuth: true }
+    );
 
-  if (data.snapshot) {
-    writeCachedRemoteSnapshot(data.snapshot);
-  }
+    if (data.snapshot) {
+      writeCachedRemoteSnapshot(data.snapshot);
+    }
 
-  return data;
-};
+    return data;
+  };
 
-export const listRemoteAccountBackups = async (): Promise<AccountBackupSummary[]> => {
+export const listRemoteAccountBackups = async (): Promise<
+  AccountBackupSummary[]
+> => {
   const { data } = await requestRemote<RemoteBackupListResponse>(
     "/account/backups",
     { method: "GET" },
@@ -1020,10 +1068,13 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   register: async (payload: RegisterPayload) => {
-    const { data, baseUrl } = await requestRemote<RegistrationResult>("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }).catch((error) => {
+    const { data, baseUrl } = await requestRemote<RegistrationResult>(
+      "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    ).catch((error) => {
       const authError = toAuthApiError(error);
       throw authError ?? error;
     });
@@ -1052,16 +1103,17 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   resendRegistrationVerification: async (payload) => {
-    const { data, baseUrl } = await requestRemote<RegistrationVerificationPending>(
-      "/auth/resend-verification",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    ).catch((error) => {
-      const authError = toAuthApiError(error);
-      throw authError ?? error;
-    });
+    const { data, baseUrl } =
+      await requestRemote<RegistrationVerificationPending>(
+        "/auth/resend-verification",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      ).catch((error) => {
+        const authError = toAuthApiError(error);
+        throw authError ?? error;
+      });
 
     rememberRemoteBaseUrl(baseUrl);
     return data;
@@ -1095,10 +1147,13 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   resetPassword: async (token: string, password: string) => {
-    const { data } = await requestRemote<PasswordResetResult>("/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token, password }),
-    }).catch((error) => {
+    const { data } = await requestRemote<PasswordResetResult>(
+      "/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
+      }
+    ).catch((error) => {
       const authError = toAuthApiError(error);
       throw authError ?? error;
     });
