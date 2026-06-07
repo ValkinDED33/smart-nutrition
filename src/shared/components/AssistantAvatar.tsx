@@ -1,5 +1,11 @@
+import { motion } from "framer-motion";
 import { Box } from "@mui/material";
 import type { AssistantCompanionKind } from "@domain/profile/types";
+import {
+  assistantAvatarHover,
+  assistantAvatarRootVariants,
+  assistantEyeBlinkTransition,
+} from "@shared/ui/motion/assistant";
 
 export type AssistantAvatarMood =
   | "idle"
@@ -104,10 +110,21 @@ export const AssistantAvatar = ({
   const shouldUseMoodGradient = mood === "sleepy" || mood === "concerned";
   const earSize = Math.max(Math.round(size * 0.22), 10);
   const hornSize = Math.max(Math.round(size * 0.16), 8);
+  const motionState = isCelebrating
+    ? "celebrate"
+    : isSleepy
+      ? "sleepy"
+      : active
+        ? "active"
+        : "idle";
 
   return (
     <Box
+      component={motion.div}
       aria-hidden
+      variants={assistantAvatarRootVariants}
+      animate={motionState}
+      whileHover={assistantAvatarHover}
       sx={{
         width: size,
         height: size,
@@ -125,12 +142,6 @@ export const AssistantAvatar = ({
             : companion.shadow,
         overflow: "visible",
         transformOrigin: "50% 80%",
-        animation:
-          active || isCelebrating
-            ? "snMascotBob 1.8s ease-in-out infinite"
-            : isSleepy
-              ? "snMascotBreathe 3.2s ease-in-out infinite"
-              : "none",
         "&::before": {
           content: '""',
           position: "absolute",
@@ -149,15 +160,6 @@ export const AssistantAvatar = ({
           transform: "translateX(-50%)",
           borderTop: "2px solid rgba(255,255,255,0.72)",
           opacity: mood === "coach" || isCelebrating ? 1 : 0.72,
-        },
-        "@keyframes snMascotBob": {
-          "0%, 100%": { transform: "translateY(0) rotate(0deg)" },
-          "45%": { transform: "translateY(-4px) rotate(-2deg)" },
-          "70%": { transform: "translateY(1px) rotate(1deg)" },
-        },
-        "@keyframes snMascotBreathe": {
-          "0%, 100%": { transform: "translateY(0) scale(1)", opacity: 0.92 },
-          "50%": { transform: "translateY(2px) scale(0.985)", opacity: 0.78 },
         },
       }}
     >
@@ -296,19 +298,33 @@ export const AssistantAvatar = ({
           sx={{
             position: "absolute",
             width: eyeSize,
-            height: isSleepy ? Math.max(Math.round(size * 0.025), 2) : eyeSize,
-            borderRadius: 999,
+            height: eyeSize,
             top: Math.round(size * 0.38),
             left: side === "left" ? Math.round(size * 0.34) : Math.round(size * 0.55),
-            backgroundColor: "rgba(255,255,255,0.92)",
             transform: isSleepy
               ? "translateY(1px)"
               : `translate(${Math.round(eyeX)}px, ${Math.round(eyeY)}px)`,
-            transition: "transform 120ms ease, height 180ms ease, opacity 180ms ease",
-            opacity: isSleepy ? 0.78 : 1,
-            boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
+            transition: "transform 120ms ease, opacity 180ms ease",
           }}
-        />
+        >
+          <Box
+            component={motion.span}
+            animate={{
+              scaleY: isSleepy ? 0.22 : [1, 1, 0.12, 1, 1],
+              opacity: isSleepy ? 0.78 : 1,
+            }}
+            transition={isSleepy ? { duration: 0.18 } : assistantEyeBlinkTransition}
+            sx={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              borderRadius: 999,
+              backgroundColor: "rgba(255,255,255,0.92)",
+              boxShadow: "0 2px 8px rgba(15, 23, 42, 0.12)",
+              transformOrigin: "50% 50%",
+            }}
+          />
+        </Box>
       ))}
 
       <Box

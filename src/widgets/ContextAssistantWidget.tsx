@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "@app/store";
 import {
@@ -16,6 +17,11 @@ import {
   buildAssistantPersonalizationPlan,
   type AssistantCoreEmotion,
 } from "@core/assistant";
+import {
+  assistantSpeechBubbleVariants,
+  assistantSpeechStaggerVariants,
+  fadeUpVariants,
+} from "@shared/ui/motion";
 
 const widgetCopy = {
   uk: {
@@ -480,8 +486,16 @@ export const ContextAssistantWidget = () => {
           justifyItems: "end",
         }}
       >
-        {showTipCard && currentTip && (
+        <AnimatePresence initial={false}>
+          {showTipCard && currentTip && (
           <Paper
+            key={currentTip.id}
+            component={motion.div}
+            layout
+            variants={assistantSpeechBubbleVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
             elevation={8}
             sx={{
               display: { xs: "none", xl: "block" },
@@ -493,8 +507,17 @@ export const ContextAssistantWidget = () => {
                 "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.94) 100%)",
             }}
           >
-            <Stack spacing={1.2}>
+            <Stack
+              component={motion.div}
+              variants={assistantSpeechStaggerVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              spacing={1.2}
+            >
               <Stack
+                component={motion.div}
+                variants={fadeUpVariants}
                 direction="row"
                 spacing={1}
                 alignItems="center"
@@ -511,9 +534,20 @@ export const ContextAssistantWidget = () => {
                   variant="outlined"
                 />
               </Stack>
-              <Typography sx={{ fontWeight: 800 }}>{currentTip.title}</Typography>
-              <Typography color="text.secondary">{currentTip.body}</Typography>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Typography component={motion.p} variants={fadeUpVariants} sx={{ fontWeight: 800 }}>
+                {currentTip.title}
+              </Typography>
+              <Typography component={motion.p} variants={fadeUpVariants} color="text.secondary">
+                {currentTip.body}
+              </Typography>
+              <Stack
+                component={motion.div}
+                variants={fadeUpVariants}
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+              >
                 <Chip
                   size="small"
                   label={`${copy.level}: ${profile.motivation.level}`}
@@ -525,7 +559,14 @@ export const ContextAssistantWidget = () => {
                   variant="outlined"
                 />
               </Stack>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Stack
+                component={motion.div}
+                variants={fadeUpVariants}
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+              >
                 <Button
                   variant="contained"
                   onClick={currentTip.onAction}
@@ -555,7 +596,8 @@ export const ContextAssistantWidget = () => {
               </Stack>
             </Stack>
           </Paper>
-        )}
+          )}
+        </AnimatePresence>
 
         <Box
           component="button"

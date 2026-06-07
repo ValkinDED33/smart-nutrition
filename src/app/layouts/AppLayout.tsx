@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import {
   BookOpen,
@@ -41,8 +42,12 @@ import BackendOfflineBanner from "@shared/components/BackendOfflineBanner";
 import SyncStatusChip from "@widgets/SyncStatusChip";
 import SyncFeedbackAlert from "@widgets/SyncFeedbackAlert";
 import HabitReminderAgent from "@widgets/HabitReminderAgent";
-import { ContextAssistantWidget } from "@widgets/ContextAssistantWidget";
+import GlobalAssistantLayer from "@widgets/GlobalAssistantLayer";
 import { createAssistantScreenContext } from "@features/assistant/assistantScreen";
+import {
+  resolveAssistantContext,
+  serializeAssistantDuties,
+} from "@features/assistant/assistantContext";
 import { useAssistantChatStore } from "@features/assistant/model/store";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
@@ -50,6 +55,7 @@ import { setProfileLanguage } from "@features/profile/model/store";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { pageTransitionVariants } from "@shared/ui/motion";
 
 const mobileTabs = [
   { value: "/meals", labelKey: "navigation.food", icon: Utensils },
@@ -88,10 +94,16 @@ const Layout = () => {
   );
 
   useEffect(() => {
+    const assistantContext = resolveAssistantContext(location.pathname);
+
     setAssistantCurrentScreen(createAssistantScreenContext(location.pathname));
     captureRuntimeEvent("screen_viewed", {
       path: location.pathname,
       authenticated: Boolean(user),
+      assistantArea: assistantContext.area,
+      assistantDuties: serializeAssistantDuties(assistantContext.duties),
+      assistantScreenName: assistantContext.screenName,
+      assistantTone: assistantContext.tone,
     });
   }, [location.pathname, setAssistantCurrentScreen, user]);
 
@@ -423,7 +435,19 @@ const Layout = () => {
       >
         <BackendOfflineBanner />
         <SyncFeedbackAlert />
-        <Outlet />
+        <AnimatePresence mode="wait" initial={false}>
+          <Box
+            key={location.pathname}
+            component={motion.div}
+            variants={pageTransitionVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            sx={{ minWidth: 0 }}
+          >
+            <Outlet />
+          </Box>
+        </AnimatePresence>
       </Container>
 
       {user && (
@@ -497,7 +521,7 @@ const Layout = () => {
 
       <ProfileLanguageAgent />
       <HabitReminderAgent />
-      <ContextAssistantWidget />
+      <GlobalAssistantLayer />
     </Box>
   );
 };

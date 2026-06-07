@@ -1,24 +1,30 @@
 import type { AssistantScreenContext } from "@domain/assistant/types";
+import {
+  resolveAssistantArea,
+  type AssistantArea,
+} from "./assistantManifest";
 
-const screenMatchers: Array<{
-  screen: AssistantScreenContext["screen"];
-  test: (path: string) => boolean;
-}> = [
-  { screen: "dashboard", test: (path) => path.startsWith("/dashboard") },
-  { screen: "food", test: (path) => path.startsWith("/food") || path.startsWith("/meals") },
-  { screen: "recipes", test: (path) => path.startsWith("/recipes") },
-  { screen: "community", test: (path) => path.startsWith("/community") },
-  { screen: "progress", test: (path) => path.startsWith("/progress") },
-  { screen: "profile", test: (path) => path.startsWith("/profile") },
-  { screen: "coach", test: (path) => path.startsWith("/coach") },
-  { screen: "admin", test: (path) => path.startsWith("/admin") },
-  { screen: "water", test: (path) => path.startsWith("/water") },
-];
+const assistantAreaToScreen: Record<
+  AssistantArea,
+  AssistantScreenContext["screen"]
+> = {
+  onboarding: "unknown",
+  home: "dashboard",
+  meals: "food",
+  coach: "coach",
+  progress: "progress",
+  profile: "profile",
+  community: "community",
+  recipes: "recipes",
+  water: "water",
+  admin: "admin",
+  unknown: "unknown",
+};
 
 export const getAssistantScreenFromPath = (
   path: string
 ): AssistantScreenContext["screen"] =>
-  screenMatchers.find((item) => item.test(path))?.screen ?? "unknown";
+  assistantAreaToScreen[resolveAssistantArea(path)];
 
 export const createAssistantScreenContext = (
   path: string

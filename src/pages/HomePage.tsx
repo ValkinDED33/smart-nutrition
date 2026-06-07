@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { motion } from "framer-motion";
 import {
   BarChart3,
   BookOpen,
@@ -37,6 +38,7 @@ import {
   type AssistantHomeAction,
 } from "@features/assistant/assistantHomeIntelligence";
 import { useLanguage } from "../shared/language";
+import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
 
 const homeCopy = {
   uk: {
@@ -452,7 +454,14 @@ const HomePage = () => {
           },
         }}
       >
-        <Stack spacing={1.4}>
+        <Stack
+          component={motion.div}
+          variants={bottomSheetVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          spacing={1.4}
+        >
           <Box
             sx={{
               width: 44,
@@ -486,6 +495,8 @@ const HomePage = () => {
 
             return (
               <Button
+                component={motion.button}
+                variants={fadeUpVariants}
                 key={action.label}
                 onClick={action.onClick}
                 startIcon={<Icon size={19} />}

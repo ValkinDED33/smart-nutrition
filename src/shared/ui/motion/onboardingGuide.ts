@@ -1,4 +1,10 @@
 import type { Variants } from "framer-motion";
+import {
+  assistantAuraVariants,
+  assistantSpeechBubbleVariants,
+  assistantSpeechStaggerVariants,
+} from "./assistant";
+import { EASE_EMPHASIZED } from "./spring";
 
 export const onboardingGuideShellVariants: Variants = {
   initial: {
@@ -10,7 +16,7 @@ export const onboardingGuideShellVariants: Variants = {
     filter: "blur(0px)",
     transition: {
       duration: 0.34,
-      ease: [0.22, 1, 0.36, 1],
+      ease: EASE_EMPHASIZED,
       when: "beforeChildren",
       staggerChildren: 0.05,
     },
@@ -37,27 +43,8 @@ export const onboardingGuideFloatVariants: Variants = {
   },
 };
 
-export const onboardingGuideBubbleVariants: Variants = {
-  initial: {
-    opacity: 0,
-    x: 8,
-  },
-  animate: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.26,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  },
-  exit: {
-    opacity: 0,
-    x: 6,
-    transition: {
-      duration: 0.16,
-    },
-  },
-};
+export const onboardingGuideBubbleVariants = assistantSpeechBubbleVariants;
+export const onboardingGuideStaggerVariants = assistantSpeechStaggerVariants;
 
 export const onboardingGuideAvatarVariants: Variants = {
   initial: {
@@ -75,15 +62,4 @@ export const onboardingGuideAvatarVariants: Variants = {
   },
 };
 
-export const onboardingGuideGlowVariants: Variants = {
-  animate: {
-    scale: [0.96, 1.12, 0.96],
-    opacity: [0.58, 0.28, 0.58],
-    transition: {
-      duration: 2.8,
-      ease: "easeInOut",
-      repeat: Infinity,
-      repeatType: "loop",
-    },
-  },
-};
+export const onboardingGuideGlowVariants = assistantAuraVariants;

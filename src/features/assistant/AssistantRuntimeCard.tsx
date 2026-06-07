@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -40,6 +41,12 @@ import type {
   AssistantQuickQuestionId,
   AssistantRuntimeContext,
 } from "@domain/assistant/types";
+import {
+  assistantSpeechBubbleVariants,
+  assistantSpeechStaggerVariants,
+  fadeUpVariants,
+  pageSectionVariants,
+} from "@shared/ui/motion";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -446,6 +453,11 @@ export const AssistantRuntimeCard = () => {
 
   return (
     <Paper
+      component={motion.div}
+      layout
+      variants={pageSectionVariants}
+      initial="initial"
+      animate="animate"
       elevation={0}
       sx={{
         p: { xs: 2, md: 3 },
@@ -508,75 +520,115 @@ export const AssistantRuntimeCard = () => {
           </Stack>
         </Stack>
 
-        <Stack spacing={1.2}>
+        <Stack
+          component={motion.div}
+          layout
+          variants={assistantSpeechStaggerVariants}
+          initial="initial"
+          animate="animate"
+          spacing={1.2}
+        >
           {messages.length === 0 ? (
-            <Typography color="text.secondary">
+            <Typography component={motion.p} variants={fadeUpVariants} color="text.secondary">
               {historyReady ? copy.empty : copy.loadingHistory}
             </Typography>
           ) : (
-            messages.map((message) => (
-              <Paper
-                key={message.id}
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  borderRadius: 1,
-                  alignSelf: message.role === "user" ? "flex-end" : "stretch",
-                  maxWidth: message.role === "user" ? { xs: "100%", md: "78%" } : "100%",
-                  borderColor:
-                    message.role === "user"
-                      ? "rgba(15, 118, 110, 0.2)"
-                      : "rgba(15, 23, 42, 0.08)",
-                  background:
-                    message.role === "user"
-                      ? "linear-gradient(135deg, rgba(240,249,255,0.94) 0%, rgba(236,253,245,0.92) 100%)"
-                      : "rgba(248,250,252,0.9)",
-                }}
-              >
-                <Stack spacing={0.6}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 800,
-                      color: message.role === "user" ? "#0f766e" : "#475569",
-                    }}
-                  >
-                    {message.role === "user" ? user.name : profile.assistant.name}
-                  </Typography>
-                  {message.role === "assistant" ? (
-                    <AssistantMessageMarkdown text={message.text} />
-                  ) : (
-                    <Typography color="text.primary" sx={{ whiteSpace: "pre-wrap" }}>
-                      {message.text}
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <Paper
+                  key={message.id}
+                  component={motion.div}
+                  layout
+                  variants={assistantSpeechBubbleVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    alignSelf: message.role === "user" ? "flex-end" : "stretch",
+                    maxWidth:
+                      message.role === "user" ? { xs: "100%", md: "78%" } : "100%",
+                    borderColor:
+                      message.role === "user"
+                        ? "rgba(15, 118, 110, 0.2)"
+                        : "rgba(15, 23, 42, 0.08)",
+                    background:
+                      message.role === "user"
+                        ? "linear-gradient(135deg, rgba(240,249,255,0.94) 0%, rgba(236,253,245,0.92) 100%)"
+                        : "rgba(248,250,252,0.9)",
+                  }}
+                >
+                  <Stack spacing={0.6}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 800,
+                        color: message.role === "user" ? "#0f766e" : "#475569",
+                      }}
+                    >
+                      {message.role === "user" ? user.name : profile.assistant.name}
                     </Typography>
-                  )}
-                </Stack>
-              </Paper>
-            ))
+                    {message.role === "assistant" ? (
+                      <AssistantMessageMarkdown text={message.text} />
+                    ) : (
+                      <Typography color="text.primary" sx={{ whiteSpace: "pre-wrap" }}>
+                        {message.text}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Paper>
+              ))}
+            </AnimatePresence>
           )}
         </Stack>
 
-        {followUpQuestionIds.length > 0 && (
-          <Stack spacing={1}>
-            <Typography sx={{ fontWeight: 700 }}>{copy.followUpTitle}</Typography>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              {followUpQuestionIds.map((id) => (
-                <Chip
-                  key={id}
-                  clickable
-                  disabled={loading || !historyReady}
-                  variant="outlined"
-                  label={copy.quickQuestions[id]}
-                  onClick={() => {
-                    void handleAsk(copy.quickQuestions[id], id);
-                  }}
-                />
-              ))}
+        <AnimatePresence initial={false}>
+          {followUpQuestionIds.length > 0 && (
+            <Stack
+              key="follow-ups"
+              component={motion.div}
+              layout
+              variants={fadeUpVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              spacing={1}
+            >
+              <Typography sx={{ fontWeight: 700 }}>{copy.followUpTitle}</Typography>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {followUpQuestionIds.map((id) => (
+                  <Chip
+                    key={id}
+                    clickable
+                    disabled={loading || !historyReady}
+                    variant="outlined"
+                    label={copy.quickQuestions[id]}
+                    onClick={() => {
+                      void handleAsk(copy.quickQuestions[id], id);
+                    }}
+                  />
+                ))}
+              </Stack>
             </Stack>
-          </Stack>
-        )}
+          )}
+        </AnimatePresence>
 
-        {error && <Alert severity="warning">{error}</Alert>}
+        <AnimatePresence initial={false}>
+          {error && (
+            <Box
+              key="assistant-runtime-error"
+              component={motion.div}
+              variants={fadeUpVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <Alert severity="warning">{error}</Alert>
+            </Box>
+          )}
+        </AnimatePresence>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
           <TextField

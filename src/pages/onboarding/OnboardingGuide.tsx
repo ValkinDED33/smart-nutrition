@@ -13,6 +13,7 @@ import {
   onboardingGuideFloatVariants,
   onboardingGuideGlowVariants,
   onboardingGuideShellVariants,
+  onboardingGuideStaggerVariants,
 } from "../../shared/ui/motion/onboardingGuide";
 import type { OnboardingState } from "./types";
 
@@ -245,6 +246,9 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
           animate="animate"
         >
           <Stack
+            component={motion.div}
+            layout
+            variants={onboardingGuideStaggerVariants}
             direction={placement === "peekLeft" ? "row" : "row-reverse"}
             spacing={1.2}
             alignItems="center"
