@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import {
   AssistantAvatar,
   type AssistantAvatarMood,
 } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
+import {
+  onboardingGuideAvatarVariants,
+  onboardingGuideBubbleVariants,
+  onboardingGuideFloatVariants,
+  onboardingGuideGlowVariants,
+  onboardingGuideShellVariants,
+} from "../../shared/ui/motion/onboardingGuide";
 import type { OnboardingState } from "./types";
 
 type GuidePlacement = "peekLeft" | "peekRight" | "floatTop" | "floatBottom";
@@ -148,6 +156,11 @@ const fallbackStepMeta: StepMeta = {
   mood: "celebrate",
 };
 
+const resolveStepMeta = (pathname: string): StepMeta =>
+  Object.prototype.hasOwnProperty.call(stepMeta, pathname)
+    ? stepMeta[pathname]!
+    : fallbackStepMeta;
+
 const usePointerLook = () => {
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
 
@@ -188,129 +201,122 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const { appLanguage } = useLanguage();
   const lookOffset = usePointerLook();
 
-  const meta: StepMeta = stepMeta[pathname] ?? fallbackStepMeta;
+  const meta = resolveStepMeta(pathname);
+  const { key, placement, mood } = meta;
 
-  const copy = guideCopy[appLanguage][meta.key];
+  const copy = guideCopy[appLanguage][key];
 
   const transform = useMemo(() => {
-    if (meta.placement === "peekLeft") {
+    if (placement === "peekLeft") {
       return "translate(-18px, -50%)";
     }
 
-    if (meta.placement === "peekRight") {
+    if (placement === "peekRight") {
       return "translate(18px, -50%)";
     }
 
     return "none";
-  }, [meta.placement]);
+  }, [placement]);
 
   return (
-    <Box
-      key={pathname}
-      sx={{
-        position: "fixed",
-        zIndex: 1250,
-        pointerEvents: "none",
-        display: { xs: "none", sm: "block" },
-        ...placementSx[meta.placement],
-        transform,
-        opacity: 1,
-        filter: "blur(0)",
-        transition:
-          "opacity 260ms ease, filter 260ms ease, transform 260ms ease",
-        animation:
-          "snGuideArrive 360ms ease, snGuideFloat 3.4s ease-in-out 360ms infinite",
-        "@keyframes snGuideArrive": {
-          "0%": {
-            opacity: 0,
-            filter: "blur(14px)",
-          },
-          "100%": {
-            opacity: 1,
-            filter: "blur(0)",
-          },
-        },
-        "@keyframes snGuideFloat": {
-          "0%, 100%": {
-            marginTop: 0,
-          },
-          "50%": {
-            marginTop: -8,
-          },
-        },
-      }}
-    >
-      <Stack
-        direction={meta.placement === "peekLeft" ? "row" : "row-reverse"}
-        spacing={1.2}
-        alignItems="center"
+    <AnimatePresence mode="popLayout" initial={false}>
+      <Box
+        key={pathname}
+        component={motion.div}
+        layout
+        variants={onboardingGuideShellVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        sx={{
+          position: "fixed",
+          zIndex: 1250,
+          pointerEvents: "none",
+          display: { xs: "none", sm: "block" },
+          ...placementSx[placement],
+          transform,
+          transformOrigin: placement === "peekLeft" ? "left center" : "right center",
+        }}
       >
-        <Box sx={{ position: "relative" }}>
-          <Box
-            sx={{
-              position: "absolute",
-              inset: -18,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(20,184,166,0.22), rgba(255,255,255,0) 68%)",
-              animation: "snGuideMist 2.8s ease-in-out infinite",
-              "@keyframes snGuideMist": {
-                "0%, 100%": {
-                  transform: "scale(0.96)",
-                  opacity: 0.58,
-                },
-                "50%": {
-                  transform: "scale(1.12)",
-                  opacity: 0.28,
-                },
-              },
-            }}
-          />
-
-          <AssistantAvatar
-            name={state.assistantName}
-            variant={state.assistantAvatar}
-            mood={meta.mood}
-            lookOffset={lookOffset}
-            active
-            size={92}
-          />
-        </Box>
-
-        <Paper
-          elevation={0}
-          sx={{
-            width: 250,
-            p: 1.6,
-            borderRadius: 1,
-            color: "#0f172a",
-            border: "1px solid rgba(15,23,42,0.1)",
-            bgcolor: "rgba(255,255,255,0.92)",
-            boxShadow: "0 18px 48px rgba(15,23,42,0.16)",
-            backdropFilter: "blur(16px)",
-          }}
+        <Box
+          component={motion.div}
+          layout
+          variants={onboardingGuideFloatVariants}
+          animate="animate"
         >
-          <Typography
-            sx={{
-              fontWeight: 900,
-              fontSize: 14,
-            }}
+          <Stack
+            direction={placement === "peekLeft" ? "row" : "row-reverse"}
+            spacing={1.2}
+            alignItems="center"
           >
-            {state.assistantName}
-          </Typography>
+            <Box
+              component={motion.div}
+              layout
+              variants={onboardingGuideAvatarVariants}
+              sx={{ position: "relative" }}
+            >
+              <Box
+                component={motion.div}
+                variants={onboardingGuideGlowVariants}
+                animate="animate"
+                sx={{
+                  position: "absolute",
+                  inset: -18,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(20,184,166,0.22), rgba(255,255,255,0) 68%)",
+                }}
+              />
 
-          <Typography
-            sx={{
-              mt: 0.5,
-              color: "#334155",
-              lineHeight: 1.55,
-              fontSize: 14,
-            }}
-          >
-            {copy}
-          </Typography>
-        </Paper>
-      </Stack>
-    </Box>
+              <AssistantAvatar
+                name={state.assistantName}
+                variant={state.assistantAvatar}
+                mood={mood}
+                lookOffset={lookOffset}
+                active
+                size={92}
+              />
+            </Box>
+
+            <Paper
+              component={motion.div}
+              layout
+              variants={onboardingGuideBubbleVariants}
+              elevation={0}
+              sx={{
+                width: 250,
+                p: 1.6,
+                borderRadius: 1,
+                color: "#0f172a",
+                border: "1px solid rgba(15,23,42,0.1)",
+                bgcolor: "rgba(255,255,255,0.92)",
+                boxShadow: "0 18px 48px rgba(15,23,42,0.16)",
+                backdropFilter: "blur(16px)",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  fontSize: 14,
+                }}
+              >
+                {state.assistantName}
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 0.5,
+                  color: "#334155",
+                  lineHeight: 1.55,
+                  fontSize: 14,
+                }}
+              >
+                {copy}
+              </Typography>
+            </Paper>
+          </Stack>
+        </Box>
+      </Box>
+    </AnimatePresence>
   );
 };
