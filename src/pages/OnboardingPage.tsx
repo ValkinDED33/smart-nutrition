@@ -27,11 +27,11 @@ const OnboardingPage = () => {
   const user = useSelector((rootState: RootState) => rootState.auth.user);
   const profile = useSelector((rootState: RootState) => rootState.profile);
   const { appLanguage } = useLanguage();
+  const onboardingCompleted = Boolean(profile.assistant.onboarding.completedAt);
   const initialState = useMemo<OnboardingState>(
     () => {
       const draft = readPreAuthOnboardingDraft(appLanguage);
       const hasDraft = hasPreAuthOnboardingDraft();
-      const onboardingCompleted = Boolean(profile.assistant.onboarding.completedAt);
       const profileAssistantName = profile.assistant.name.trim();
       const draftAssistantName = draft.assistantName.trim();
       const preferredName = profile.assistant.onboarding.preferredName.trim();
@@ -73,6 +73,7 @@ const OnboardingPage = () => {
     },
     [
       appLanguage,
+      onboardingCompleted,
       profile.assistant.name,
       profile.assistant.companionKind,
       profile.assistant.onboarding,
@@ -87,6 +88,10 @@ const OnboardingPage = () => {
   const stepProps = { state, updateState };
 
   useEffect(() => {
+    if (onboardingCompleted) {
+      return;
+    }
+
     writePreAuthOnboardingDraft({
       language: appLanguage,
       assistantName: state.assistantName.trim(),
@@ -107,7 +112,11 @@ const OnboardingPage = () => {
       goal: state.goal,
       primaryGoalNote: state.primaryGoalNote,
     });
-  }, [appLanguage, state]);
+  }, [appLanguage, onboardingCompleted, state]);
+
+  if (user && onboardingCompleted) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <>

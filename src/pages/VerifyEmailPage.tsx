@@ -14,12 +14,31 @@ import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
+import type { AppSnapshot } from "../shared/types/appSnapshot";
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const hasCompletedOnboardingSnapshot = (snapshot?: AppSnapshot | null) => {
+  if (!isRecord(snapshot?.profile)) {
+    return false;
+  }
+
+  const { assistant } = snapshot.profile;
+
+  if (!isRecord(assistant) || !isRecord(assistant.onboarding)) {
+    return false;
+  }
+
+  return typeof assistant.onboarding.completedAt === "string" &&
+    assistant.onboarding.completedAt.trim().length > 0;
+};
 
 const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t, appLanguage, resetOnboarding } = useLanguage();
+  const { t, appLanguage } = useLanguage();
   const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -63,10 +82,12 @@ const VerifyEmailPage = () => {
         }
 
         dispatch(setProfileLanguage(appLanguage));
-        resetOnboarding();
         setStatus("success");
+        const nextPath = hasCompletedOnboardingSnapshot(snapshot)
+          ? "/dashboard"
+          : "/onboarding";
         window.setTimeout(() => {
-          navigate("/onboarding", { replace: true });
+          navigate(nextPath, { replace: true });
         }, 700);
       } catch (error) {
         if (cancelled) {
@@ -87,7 +108,7 @@ const VerifyEmailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [appLanguage, dispatch, navigate, resetOnboarding, t, token]);
+  }, [appLanguage, dispatch, navigate, t, token]);
 
   return (
     <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>

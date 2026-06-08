@@ -495,7 +495,7 @@ describe("authService", () => {
     expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(2);
   });
 
-  it("verifies email links once and rejects repeat opens", async () => {
+  it("verifies email links and treats repeat opens for verified users as safe success", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const rawToken = "verify-token";
     const tokenHash = hashOneTimeToken(rawToken, config.jwtSecret);
@@ -532,7 +532,12 @@ describe("authService", () => {
         ...verificationToken,
         consumedAt: new Date().toISOString(),
       });
-    authRepository.findUserById.mockReturnValue(user);
+    authRepository.findUserById
+      .mockReturnValueOnce(user)
+      .mockReturnValueOnce({
+        ...user,
+        emailVerified: true,
+      });
     authRepository.markUserRegistrationVerified.mockResolvedValue({
       ...user,
       emailVerified: true,
@@ -545,15 +550,15 @@ describe("authService", () => {
       tokenHash,
       expect.any(String)
     );
-    expect(authRepository.deleteRegistrationVerificationTokensByUserId).toHaveBeenCalledWith(
-      user.id
-    );
+    expect(authRepository.deleteRegistrationVerificationTokensByUserId).not.toHaveBeenCalled();
     expect(authRepository.createSession).toHaveBeenCalledTimes(1);
 
-    await expect(service.verifyRegistration({ token: rawToken })).rejects.toMatchObject({
-      code: "INVALID_VERIFICATION_LINK",
-    });
-    expect(authRepository.createSession).toHaveBeenCalledTimes(1);
+    const repeatResult = await service.verifyRegistration({ token: rawToken });
+
+    expect(repeatResult.user.emailVerified).toBe(true);
+    expect(authRepository.markRegistrationVerificationTokenConsumed).toHaveBeenCalledTimes(1);
+    expect(authRepository.markUserRegistrationVerified).toHaveBeenCalledTimes(1);
+    expect(authRepository.createSession).toHaveBeenCalledTimes(2);
   });
 
   it("does not break registration verification when Brevo contact sync fails", async () => {

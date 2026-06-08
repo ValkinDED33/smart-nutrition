@@ -592,7 +592,6 @@ export const createAuthService = ({
       if (
         !verificationToken ||
         verificationToken.channel !== "email" ||
-        verificationToken.consumedAt ||
         verificationToken.expiresAt <= Date.now()
       ) {
         throw new AuthApiError(
@@ -614,6 +613,24 @@ export const createAuthService = ({
         throw new AuthApiError("ACCOUNT_BANNED", "This account is banned.");
       }
 
+      if (verificationToken.consumedAt) {
+        if (!isRegistrationVerified(user)) {
+          throw new AuthApiError(
+            "INVALID_VERIFICATION_LINK",
+            "Registration confirmation link is invalid or expired."
+          );
+        }
+
+        await clearLoginAttempts(user.email);
+        const refreshSession = await createRefreshSession(user);
+
+        return buildAuthResponse(
+          user,
+          createAccessToken(user),
+          refreshSession.token
+        );
+      }
+
       const consumedAt = new Date().toISOString();
       await authRepository.markRegistrationVerificationTokenConsumed?.(tokenHash, consumedAt);
       const verifiedUser =
@@ -621,7 +638,6 @@ export const createAuthService = ({
           userId: user.id,
           channel: verificationToken.channel,
         })) ?? user;
-      await authRepository.deleteRegistrationVerificationTokensByUserId?.(user.id);
       await clearLoginAttempts(user.email);
 
       const refreshSession = await createRefreshSession(verifiedUser);

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -25,14 +25,13 @@ type FormData = {
 
 const ResetPasswordPage = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [passwordInputArmed, setPasswordInputArmed] = useState(false);
-  const [confirmPasswordInputArmed, setConfirmPasswordInputArmed] = useState(false);
   const token = searchParams.get("token")?.trim() ?? "";
 
   const schema = useMemo(
@@ -81,6 +80,12 @@ const ResetPasswordPage = () => {
     try {
       const result = await resetPassword(token, data.password);
       setSuccessMessage(result.message);
+      window.setTimeout(() => {
+        navigate("/login", {
+          replace: true,
+          state: { notice: result.message },
+        });
+      }, 900);
     } catch (error) {
       if (error instanceof AuthApiError) {
         if (error.code === "INVALID_RESET_TOKEN") {
@@ -138,7 +143,7 @@ const ResetPasswordPage = () => {
             component="form"
             spacing={2}
             onSubmit={handleSubmit(onSubmit)}
-            autoComplete="off"
+            autoComplete="on"
           >
             <TextField
               label={t("form.password")}
@@ -151,10 +156,6 @@ const ResetPasswordPage = () => {
               helperText={errors.password?.message}
               inputProps={{
                 autoComplete: "new-password",
-                readOnly: !passwordInputArmed,
-                onFocus: () => {
-                  setPasswordInputArmed(true);
-                },
               }}
               InputProps={{
                 endAdornment: (
@@ -181,10 +182,6 @@ const ResetPasswordPage = () => {
               helperText={errors.confirmPassword?.message}
               inputProps={{
                 autoComplete: "new-password",
-                readOnly: !confirmPasswordInputArmed,
-                onFocus: () => {
-                  setConfirmPasswordInputArmed(true);
-                },
               }}
               InputProps={{
                 endAdornment: (

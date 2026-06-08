@@ -102,6 +102,24 @@ Run after every production deploy:
 12. Open the global assistant.
 13. If analytics is enabled, confirm key events appear in PostHog/provider logs.
 
+## Auth Smoke Test
+
+Run this when auth, onboarding, email, sessions, or profile sync changes:
+
+1. Register a new account with a fresh email.
+2. Confirm the registration page shows the pending "check your email" state.
+3. Receive the Resend verification email.
+4. Open the verification link and confirm it creates a session.
+5. Complete onboarding, including assistant name and avatar.
+6. Reload the app and confirm onboarding does not reopen.
+7. Log out.
+8. Log in with the verified account and confirm onboarding does not repeat.
+9. Confirm assistant name/avatar still appear in profile and global assistant UI.
+10. Request a password reset.
+11. Open the reset link, set a new password, and confirm redirect to login.
+12. Log in with the new password.
+13. Confirm the reset flow did not change onboarding/profile state.
+
 ## Common Failures
 
 - `401 /api/auth/refresh` before login is normal.

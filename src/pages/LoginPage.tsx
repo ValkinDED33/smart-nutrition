@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -42,11 +42,16 @@ type FormData = {
 const LoginPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const identityHint = useMemo(() => readAuthIdentityHint(), []);
+  const loginNotice =
+    typeof (location.state as { notice?: unknown } | null)?.notice === "string"
+      ? String((location.state as { notice?: string }).notice)
+      : null;
 
   const schema = useMemo(
     () =>
@@ -157,13 +162,24 @@ const LoginPage = () => {
               {serverError}
             </Alert>
           )}
+          {loginNotice && (
+            <Alert severity="success" sx={{ borderRadius: 3 }}>
+              {loginNotice}
+            </Alert>
+          )}
 
-          <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
+          <Stack
+            component="form"
+            spacing={2}
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="on"
+          >
             <TextField
               label={t("form.email")}
               type="email"
               fullWidth
               {...register("email")}
+              autoComplete="email"
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
             />
@@ -173,6 +189,7 @@ const LoginPage = () => {
               type={passwordVisible ? "text" : "password"}
               fullWidth
               {...register("password")}
+              autoComplete="current-password"
               error={Boolean(errors.password)}
               helperText={errors.password?.message}
               InputProps={{

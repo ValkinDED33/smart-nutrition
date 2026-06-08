@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch } from "./app/store";
+import type { AppDispatch, RootState } from "./app/store";
 import { initializeAuth, selectAuth } from "./features/auth/authSlice";
 import Layout from "@app/layouts/AppLayout";
 import ErrorBoundary from "./shared/components/ErrorBoundary";
@@ -53,8 +53,11 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, isInitialized, isLoading, user } =
     useSelector(selectAuth);
-  const { hasCompletedOnboarding, setOnboardingUser } = useLanguage();
-  const shouldShowOnboarding = isAuthenticated && !hasCompletedOnboarding;
+  const profileOnboardingCompleted = useSelector((state: RootState) =>
+    Boolean(state.profile.assistant.onboarding.completedAt)
+  );
+  const { setOnboardingUser } = useLanguage();
+  const shouldShowOnboarding = isAuthenticated && !profileOnboardingCompleted;
 
   useEffect(() => {
     dispatch(initializeAuth());
