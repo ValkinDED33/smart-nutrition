@@ -90,6 +90,22 @@ describe("assistantPresence", () => {
     });
   });
 
+  it("uses compact mode on community desktop surfaces to avoid covering content cards", () => {
+    const context = resolveAssistantContext("/community");
+
+    expect(
+      resolveAssistantPresence(context, {
+        pathname: "/community",
+        viewport: "desktop",
+      })
+    ).toMatchObject({
+      visible: true,
+      mode: "compact",
+      reason: "community-content-surface",
+      allowSpeechBubble: false,
+    });
+  });
+
   it("excludes onboarding because the onboarding guide owns that experience", () => {
     const context = resolveAssistantContext("/onboarding");
 

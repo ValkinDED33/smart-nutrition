@@ -111,6 +111,7 @@ export const ProductCard = ({
       sx={{
         minWidth: 0,
         height: "100%",
+        overflow: "hidden",
         borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         boxShadow: "none",
@@ -123,15 +124,19 @@ export const ProductCard = ({
         sx={{
           display: "block",
           width: "100%",
-          height: 168,
+          height: { xs: 152, md: 164 },
           objectFit: "cover",
           backgroundColor: "rgba(15, 23, 42, 0.06)",
         }}
       />
-      <CardContent sx={{ height: "100%" }}>
+      <CardContent sx={{ height: "100%", p: { xs: 1.6, md: 2 } }}>
         <Stack spacing={1.2} sx={{ height: "100%" }}>
           <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
-            <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography
+              component="h3"
+              variant="subtitle1"
+              sx={{ fontWeight: 900, overflowWrap: "anywhere" }}
+            >
               {displayName}
             </Typography>
             {isSaved && <Typography sx={{ fontSize: "1.2rem" }}>⭐</Typography>}
@@ -230,7 +235,15 @@ export const ProductCard = ({
             ))}
           </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: "auto" }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 126px), 1fr))",
+              gap: 1,
+              mt: "auto",
+            }}
+          >
             <Button
               variant="contained"
               fullWidth
@@ -249,7 +262,7 @@ export const ProductCard = ({
                 {isSaved ? "⭐ " + t("productCard.remove") : "☆ " + t("productCard.save")}
               </Button>
             )}
-          </Stack>
+          </Box>
 
           <Button
             variant="text"

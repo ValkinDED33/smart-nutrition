@@ -7,6 +7,7 @@ import {
   resolveAssistantPresence,
   type AssistantPresenceOptions,
 } from "@features/assistant/assistantPresence";
+import type { AssistantDefaultAction } from "@features/assistant/assistantManifest";
 
 export const hiddenGlobalAssistantRoutePrefixes = [
   "/login",
@@ -20,6 +21,34 @@ export const hiddenGlobalAssistantRoutePrefixes = [
 
 export const shouldHideAssistantLayer = (pathname: string) =>
   hiddenGlobalAssistantRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
+
+const normalizeRouteForComparison = (pathname: string) => {
+  const normalized = pathname.trim() || "/";
+  const withSlash = normalized.startsWith("/") ? normalized : `/${normalized}`;
+
+  return withSlash.length > 1 ? withSlash.replace(/\/+$/, "") : withSlash;
+};
+
+export const resolveGlobalAssistantDisplayAction = (
+  currentRoute: string,
+  defaultAction: AssistantDefaultAction | null
+) => {
+  if (!defaultAction) {
+    return null;
+  }
+
+  const normalizedCurrentRoute = normalizeRouteForComparison(currentRoute);
+  const normalizedActionRoute = normalizeRouteForComparison(defaultAction.route);
+  const shouldOpenCoachInstead =
+    normalizedCurrentRoute === normalizedActionRoute &&
+    normalizedCurrentRoute !== "/coach";
+
+  return {
+    ...defaultAction,
+    route: shouldOpenCoachInstead ? "/coach" : defaultAction.route,
+    usesCoachFallback: shouldOpenCoachInstead,
+  };
+};
 
 export const resolveGlobalAssistantLayerModel = (
   pathname: string,
@@ -39,6 +68,10 @@ export const resolveGlobalAssistantLayerModel = (
 
   return {
     ...assistantContext,
+    displayAction: resolveGlobalAssistantDisplayAction(
+      assistantContext.currentRoute,
+      assistantContext.defaultAction
+    ),
     presence,
     emotion,
     isVisibleOnAuthenticatedRoute:

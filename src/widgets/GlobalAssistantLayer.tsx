@@ -13,6 +13,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import type { RootState } from "@app/store";
+import type { AssistantArea } from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
@@ -33,16 +34,75 @@ const layerCopy = {
     fallbackBody:
       "Я підлаштовую підказки під поточний екран, профіль і вашу ціль.",
     action: "Відкрити AI",
+    coachFallbackAction: "Запитати асистента",
     mobileLabel: "Відкрити асистента",
-    duties: {
-      guide: "веде",
-      explain: "пояснює",
-      warn: "попереджає",
-      motivate: "мотивує",
-      suggest: "радить",
-      remind: "нагадує",
-      analyze: "аналізує",
-      navigate: "веде далі",
+    areas: {
+      onboarding: {
+        chip: "старт",
+        title: "Допоможу налаштувати профіль",
+        body: "Підкажу наступний крок і збережу ваші цілі для персональних порад.",
+        action: "Продовжити",
+      },
+      home: {
+        chip: "сьогодні",
+        title: "Фокус на день",
+        body: "Підкажу, що важливіше саме зараз: їжа, вода, прогрес або підтримка.",
+        action: "Відкрити коуча",
+      },
+      meals: {
+        chip: "харчування",
+        title: "Підказка по їжі",
+        body: "Допоможу швидше додати прийом їжі і зрозуміти, що варто поправити.",
+        action: "Перевірити день",
+      },
+      coach: {
+        chip: "коуч",
+        title: "Готовий до діалогу",
+        body: "Можу пояснити план, помітити ризики і запропонувати наступний крок.",
+        action: "Відкрити коуча",
+      },
+      progress: {
+        chip: "прогрес",
+        title: "Поясню прогрес",
+        body: "Допоможу розібрати тренди, вагу, воду і зміни без зайвого шуму.",
+        action: "Подивитися прогрес",
+      },
+      profile: {
+        chip: "профіль",
+        title: "Налаштування під вас",
+        body: "Допоможу зробити профіль точнішим, щоб поради були персональними.",
+        action: "Доповнити профіль",
+      },
+      community: {
+        chip: "спільнота",
+        title: "Підтримка поруч",
+        body: "Допоможу знайти корисний формат: друзі, чат, форум або прогрес.",
+        action: "До спільноти",
+      },
+      recipes: {
+        chip: "рецепти",
+        title: "Ідеї під ваш план",
+        body: "Підберу рецепт під ціль, калорії, білок і ваші вподобання.",
+        action: "Відкрити рецепти",
+      },
+      water: {
+        chip: "вода",
+        title: "Мʼяке нагадування про воду",
+        body: "Підкажу, як закрити воду без різких нагадувань і перевантаження.",
+        action: "Додати воду",
+      },
+      admin: {
+        chip: "адмін",
+        title: "Поясню інструменти",
+        body: "Допоможу швидше зорієнтуватися в операційних діях.",
+        action: "Відкрити інструменти",
+      },
+      unknown: {
+        chip: "асистент",
+        title: "Готовий допомогти",
+        body: "Підлаштовую підказки під поточний екран, профіль і вашу ціль.",
+        action: "Відкрити AI",
+      },
     },
   },
   pl: {
@@ -51,16 +111,75 @@ const layerCopy = {
     fallbackBody:
       "Dopasowuję podpowiedzi do bieżącego ekranu, profilu i celu.",
     action: "Otwórz AI",
+    coachFallbackAction: "Zapytaj asystenta",
     mobileLabel: "Otwórz asystenta",
-    duties: {
-      guide: "prowadzi",
-      explain: "wyjaśnia",
-      warn: "ostrzega",
-      motivate: "motywuje",
-      suggest: "podpowiada",
-      remind: "przypomina",
-      analyze: "analizuje",
-      navigate: "prowadzi dalej",
+    areas: {
+      onboarding: {
+        chip: "start",
+        title: "Pomogę ustawić profil",
+        body: "Podpowiem kolejny krok i zachowam cele do personalnych wskazówek.",
+        action: "Kontynuuj",
+      },
+      home: {
+        chip: "dzisiaj",
+        title: "Fokus na dzień",
+        body: "Podpowiem, co jest teraz ważniejsze: jedzenie, woda, postęp albo wsparcie.",
+        action: "Otwórz coacha",
+      },
+      meals: {
+        chip: "jedzenie",
+        title: "Podpowiedź do posiłków",
+        body: "Pomogę szybciej dodać jedzenie i zrozumieć, co warto poprawić.",
+        action: "Sprawdź dzień",
+      },
+      coach: {
+        chip: "coach",
+        title: "Gotowy do rozmowy",
+        body: "Mogę wyjaśnić plan, zauważyć ryzyka i zaproponować kolejny krok.",
+        action: "Otwórz coacha",
+      },
+      progress: {
+        chip: "postęp",
+        title: "Wyjaśnię postęp",
+        body: "Pomogę zrozumieć trendy, wagę, wodę i zmiany bez nadmiaru szumu.",
+        action: "Zobacz postęp",
+      },
+      profile: {
+        chip: "profil",
+        title: "Ustawienia pod Ciebie",
+        body: "Pomogę doprecyzować profil, żeby wskazówki były bardziej osobiste.",
+        action: "Uzupełnij profil",
+      },
+      community: {
+        chip: "społeczność",
+        title: "Wsparcie jest obok",
+        body: "Pomogę wybrać przydatny format: znajomi, czat, forum albo postęp.",
+        action: "Do społeczności",
+      },
+      recipes: {
+        chip: "przepisy",
+        title: "Pomysły pod Twój plan",
+        body: "Dobiorę przepis pod cel, kalorie, białko i preferencje.",
+        action: "Otwórz przepisy",
+      },
+      water: {
+        chip: "woda",
+        title: "Łagodne przypomnienie o wodzie",
+        body: "Podpowiem, jak domknąć wodę bez ostrych przypomnień i przeciążenia.",
+        action: "Dodaj wodę",
+      },
+      admin: {
+        chip: "admin",
+        title: "Wyjaśnię narzędzia",
+        body: "Pomogę szybciej odnaleźć się w działaniach operacyjnych.",
+        action: "Otwórz narzędzia",
+      },
+      unknown: {
+        chip: "asystent",
+        title: "Gotowy do pomocy",
+        body: "Dopasowuję podpowiedzi do bieżącego ekranu, profilu i celu.",
+        action: "Otwórz AI",
+      },
     },
   },
   en: {
@@ -69,19 +188,83 @@ const layerCopy = {
     fallbackBody:
       "I adapt guidance to the current screen, profile, and goal.",
     action: "Open AI",
+    coachFallbackAction: "Ask assistant",
     mobileLabel: "Open assistant",
-    duties: {
-      guide: "guide",
-      explain: "explain",
-      warn: "warn",
-      motivate: "motivate",
-      suggest: "suggest",
-      remind: "remind",
-      analyze: "analyze",
-      navigate: "navigate",
+    areas: {
+      onboarding: {
+        chip: "start",
+        title: "I can help set up your profile",
+        body: "I will guide the next step and keep your goals available for personal guidance.",
+        action: "Continue",
+      },
+      home: {
+        chip: "today",
+        title: "Daily focus",
+        body: "I can help decide what matters now: food, water, progress, or support.",
+        action: "Open coach",
+      },
+      meals: {
+        chip: "food",
+        title: "Meal guidance",
+        body: "I can help add food faster and explain what is worth adjusting.",
+        action: "Review day",
+      },
+      coach: {
+        chip: "coach",
+        title: "Ready to talk",
+        body: "I can explain the plan, spot risks, and suggest the next step.",
+        action: "Open coach",
+      },
+      progress: {
+        chip: "progress",
+        title: "Progress explained",
+        body: "I can help read trends, weight, water, and changes without the noise.",
+        action: "Review progress",
+      },
+      profile: {
+        chip: "profile",
+        title: "Tuned to you",
+        body: "I can help make your profile sharper so recommendations feel personal.",
+        action: "Complete profile",
+      },
+      community: {
+        chip: "community",
+        title: "Support nearby",
+        body: "I can help choose what fits now: friends, chat, forum, or progress sharing.",
+        action: "Open community",
+      },
+      recipes: {
+        chip: "recipes",
+        title: "Ideas for your plan",
+        body: "I can match recipes to your goal, calories, protein, and preferences.",
+        action: "Open recipes",
+      },
+      water: {
+        chip: "water",
+        title: "Gentle hydration nudge",
+        body: "I can help close the water goal without harsh reminders or overload.",
+        action: "Log water",
+      },
+      admin: {
+        chip: "admin",
+        title: "Tools explained",
+        body: "I can help make operational actions easier to understand.",
+        action: "Open tools",
+      },
+      unknown: {
+        chip: "assistant",
+        title: "Ready to help",
+        body: "I adapt guidance to the current screen, profile, and goal.",
+        action: "Open AI",
+      },
     },
   },
 } as const;
+
+const getAreaCopy = (
+  copy: (typeof layerCopy)[keyof typeof layerCopy],
+  area: AssistantArea
+) => copy.areas[area] ?? copy.areas.unknown;
 
 const isEditableElement = (element: Element | null) => {
   if (!(element instanceof HTMLElement)) {
@@ -181,14 +364,18 @@ export const GlobalAssistantLayer = () => {
       viewport,
     ]
   );
-  const { area, defaultAction, duties, primaryCapability } = layerModel;
+  const { area, defaultAction, displayAction, duties, primaryCapability } = layerModel;
   const { presence } = layerModel;
+  const visibleCopy = getAreaCopy(copy, area);
+  const actionLabel = displayAction?.usesCoachFallback
+    ? copy.coachFallbackAction
+    : visibleCopy.action || copy.action;
 
   if (
     !user ||
     !assistant.widgetEnabled ||
     !presence.visible ||
-    !defaultAction
+    !displayAction
   ) {
     return null;
   }
@@ -201,8 +388,10 @@ export const GlobalAssistantLayer = () => {
       screenName: layerModel.screenName,
       duties: duties.join(","),
       tone: layerModel.tone,
-      actionLabel: defaultAction.label,
-      actionRoute: defaultAction.route,
+      actionLabel,
+      actionRoute: displayAction.route,
+      manifestActionLabel: defaultAction?.label ?? "none",
+      manifestActionRoute: defaultAction?.route ?? "none",
       presenceMode: presence.mode,
       presenceReason: presence.reason,
       presencePriority: presence.priority,
@@ -210,7 +399,7 @@ export const GlobalAssistantLayer = () => {
       messageIntent: layerModel.emotion.messageIntent,
       emotionPriority: layerModel.emotion.priority,
     });
-    navigate(defaultAction.route);
+    navigate(displayAction.route);
   };
 
   return (
@@ -275,7 +464,7 @@ export const GlobalAssistantLayer = () => {
               </Typography>
               <Chip
                 size="small"
-                label={area}
+                label={visibleCopy.chip}
                 variant="outlined"
                 color="success"
               />
@@ -286,7 +475,7 @@ export const GlobalAssistantLayer = () => {
               variants={fadeUpVariants}
               sx={{ m: 0, fontWeight: 900 }}
             >
-              {primaryCapability?.id ?? copy.fallbackTitle}
+              {visibleCopy.title || copy.fallbackTitle}
             </Typography>
 
             <Typography
@@ -295,28 +484,8 @@ export const GlobalAssistantLayer = () => {
               color="text.secondary"
               sx={{ m: 0 }}
             >
-              {primaryCapability?.description ?? copy.fallbackBody}
+              {visibleCopy.body || copy.fallbackBody}
             </Typography>
-
-            {duties.length > 0 && (
-              <Stack
-                component={motion.div}
-                variants={fadeUpVariants}
-                direction="row"
-                spacing={0.8}
-                useFlexGap
-                flexWrap="wrap"
-              >
-                {duties.slice(0, 4).map((duty) => (
-                  <Chip
-                    key={duty}
-                    size="small"
-                    label={copy.duties[duty]}
-                    variant="outlined"
-                  />
-                ))}
-              </Stack>
-            )}
 
             <Button
               component={motion.button}
@@ -333,7 +502,7 @@ export const GlobalAssistantLayer = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {defaultAction.label || copy.action}
+              {actionLabel}
             </Button>
           </Stack>
         </Paper>

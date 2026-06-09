@@ -155,7 +155,10 @@ const FoodPage = () => {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.05fr) minmax(340px, 0.95fr)" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            xl: "minmax(0, 1.35fr) minmax(360px, 0.65fr)",
+          },
           gap: 2.5,
           alignItems: "start",
         }}

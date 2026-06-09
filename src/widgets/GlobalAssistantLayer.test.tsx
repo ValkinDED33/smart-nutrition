@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveGlobalAssistantDisplayAction,
   resolveGlobalAssistantLayerModel,
   shouldHideAssistantLayer,
 } from "./globalAssistantLayerModel";
@@ -46,5 +47,26 @@ describe("GlobalAssistantLayer", () => {
     expect(resolveModel("/community").defaultAction?.route).toBe("/community");
     expect(resolveModel("/profile").defaultAction?.route).toBe("/profile");
     expect(resolveModel("/coach").defaultAction?.route).toBe("/coach");
+  });
+
+  it("uses coach fallback when the manifest action points to the current page", () => {
+    const action = resolveGlobalAssistantDisplayAction("/community", {
+      label: "Open community",
+      route: "/community",
+    });
+
+    expect(action).toEqual({
+      label: "Open community",
+      route: "/coach",
+      usesCoachFallback: true,
+    });
+  });
+
+  it("keeps community compact so it does not cover content cards", () => {
+    const model = resolveModel("/community");
+
+    expect(model.presence.mode).toBe("compact");
+    expect(model.presence.allowSpeechBubble).toBe(false);
+    expect(model.displayAction?.route).toBe("/coach");
   });
 });

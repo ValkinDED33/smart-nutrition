@@ -149,6 +149,14 @@ export const resolveAssistantPresence = (
     });
   }
 
+  if (context.area === "community") {
+    return compactPresence({
+      reason: "community-content-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
   if (context.area === "coach") {
     return {
       visible: true,

@@ -162,7 +162,11 @@ const MealBuilderPage = () => {
   ];
 
   return (
-    <PageShell title={t("mealBuilder.title")} subtitle={t("mealBuilder.subtitle")}>
+    <PageShell
+      title={t("mealBuilder.title")}
+      subtitle={t("mealBuilder.subtitle")}
+      maxWidth={1360}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -315,7 +319,7 @@ const MealBuilderPage = () => {
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            lg: "minmax(0, 1.15fr) minmax(320px, 0.85fr)",
+            xl: "minmax(0, 1.35fr) minmax(360px, 0.65fr)",
           },
           gap: 3,
           alignItems: "start",
@@ -347,8 +351,8 @@ const MealBuilderPage = () => {
               borderRadius: 1,
               border: "1px solid rgba(15, 23, 42, 0.08)",
               backgroundColor: "rgba(255,255,255,0.86)",
-              position: { lg: "sticky" },
-              top: { lg: 96 },
+              position: { xl: "sticky" },
+              top: { xl: 96 },
             }}
           >
             <Stack spacing={2}>
