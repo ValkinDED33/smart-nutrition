@@ -87,6 +87,8 @@ import {
 } from "../features/water/waterSlice";
 import {
   awardCompanionReward,
+  equipCompanionItem,
+  purchaseCompanionItem,
   resetCompanionState,
   unlockCompanionAchievement,
 } from "../features/companion/model/store";
@@ -230,6 +232,8 @@ export const registerRemoteSyncListeners = () => {
     matcher: isAnyOf(
       awardCompanionReward,
       unlockCompanionAchievement,
+      purchaseCompanionItem,
+      equipCompanionItem,
       resetCompanionState
     ),
     effect: async (_, listenerApi) => {

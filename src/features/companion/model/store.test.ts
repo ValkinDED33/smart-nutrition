@@ -1,10 +1,22 @@
 import { describe, expect, it } from "vitest";
 import companionReducer, {
   awardCompanionReward,
+  equipCompanionItem,
   hydrateCompanionState,
+  purchaseCompanionItem,
   resetCompanionState,
   unlockCompanionAchievement,
 } from "./store";
+
+const CREATED_AT = "2026-06-08T09:00:00.000Z";
+const UPDATED_AT = "2026-06-08T10:00:00.000Z";
+const DRAGON_ITEM_ID = "dragon-premium";
+const FIRST_MEAL_ACHIEVEMENT_ID = "first_meal_logged";
+const FIRST_WATER_ACHIEVEMENT_ID = "first_water_logged";
+const FIRST_WEIGHT_ACHIEVEMENT_ID = "first_weight_updated";
+const ONBOARDING_ACHIEVEMENT_ID = "onboarding_completed";
+const LEVEL_2_ACHIEVEMENT_ID = "level_2_reached";
+const LEVEL_5_ACHIEVEMENT_ID = "level_5_reached";
 
 describe("companion store", () => {
   it("creates initial companion state", () => {
@@ -16,6 +28,8 @@ describe("companion store", () => {
       coins: 0,
       relationshipLevel: 1,
       achievements: [],
+      ownedItemIds: [],
+      equippedItemIds: [],
     });
   });
 
@@ -25,7 +39,7 @@ describe("companion store", () => {
     expect(state.xp).toBe(10);
     expect(state.level).toBe(1);
     expect(state.achievements).toContainEqual(
-      expect.objectContaining({ id: "first_meal_logged" })
+      expect.objectContaining({ id: FIRST_MEAL_ACHIEVEMENT_ID })
     );
   });
 
@@ -39,17 +53,21 @@ describe("companion store", () => {
     );
 
     expect(afterMeal.xp).toBe(10);
+    expect(afterMeal.coins).toBe(2);
     expect(afterWater.xp).toBe(15);
+    expect(afterWater.coins).toBe(3);
     expect(afterWeight.xp).toBe(25);
+    expect(afterWeight.coins).toBe(6);
     expect(afterOnboarding.xp).toBe(125);
+    expect(afterOnboarding.coins).toBe(26);
     expect(afterOnboarding.level).toBe(2);
     expect(afterOnboarding.achievements.map((achievement) => achievement.id)).toEqual(
       expect.arrayContaining([
-        "first_meal_logged",
-        "first_water_logged",
-        "first_weight_updated",
-        "onboarding_completed",
-        "level_2_reached",
+        FIRST_MEAL_ACHIEVEMENT_ID,
+        FIRST_WATER_ACHIEVEMENT_ID,
+        FIRST_WEIGHT_ACHIEVEMENT_ID,
+        ONBOARDING_ACHIEVEMENT_ID,
+        LEVEL_2_ACHIEVEMENT_ID,
       ])
     );
   });
@@ -73,8 +91,10 @@ describe("companion store", () => {
         coins: 0,
         relationshipLevel: 1,
         achievements: [],
-        createdAt: "2026-06-08T10:00:00.000Z",
-        updatedAt: "2026-06-08T10:00:00.000Z",
+        ownedItemIds: [],
+        equippedItemIds: [],
+        createdAt: UPDATED_AT,
+        updatedAt: UPDATED_AT,
       })
     );
     const rewarded = companionReducer(hydrated, awardCompanionReward("login_daily"));
@@ -82,7 +102,7 @@ describe("companion store", () => {
     expect(rewarded.xp).toBe(100);
     expect(rewarded.level).toBe(2);
     expect(rewarded.achievements).toContainEqual(
-      expect.objectContaining({ id: "level_2_reached" })
+      expect.objectContaining({ id: LEVEL_2_ACHIEVEMENT_ID })
     );
   });
 
@@ -97,10 +117,10 @@ describe("companion store", () => {
     );
     const ids = afterOnboarding.achievements.map((achievement) => achievement.id);
 
-    expect(ids.filter((id) => id === "first_meal_logged")).toHaveLength(1);
-    expect(ids.filter((id) => id === "first_water_logged")).toHaveLength(1);
-    expect(ids.filter((id) => id === "first_weight_updated")).toHaveLength(1);
-    expect(ids.filter((id) => id === "onboarding_completed")).toHaveLength(1);
+    expect(ids.filter((id) => id === FIRST_MEAL_ACHIEVEMENT_ID)).toHaveLength(1);
+    expect(ids.filter((id) => id === FIRST_WATER_ACHIEVEMENT_ID)).toHaveLength(1);
+    expect(ids.filter((id) => id === FIRST_WEIGHT_ACHIEVEMENT_ID)).toHaveLength(1);
+    expect(ids.filter((id) => id === ONBOARDING_ACHIEVEMENT_ID)).toHaveLength(1);
   });
 
   it("unlocks level 5 when a reward crosses that threshold", () => {
@@ -111,16 +131,18 @@ describe("companion store", () => {
         xp: 880,
         coins: 0,
         relationshipLevel: 1,
-        achievements: [{ id: "level_2_reached", title: "Level 2" }],
-        createdAt: "2026-06-08T10:00:00.000Z",
-        updatedAt: "2026-06-08T10:00:00.000Z",
+        achievements: [{ id: LEVEL_2_ACHIEVEMENT_ID, title: "Level 2" }],
+        ownedItemIds: [],
+        equippedItemIds: [],
+        createdAt: UPDATED_AT,
+        updatedAt: UPDATED_AT,
       })
     );
     const rewarded = companionReducer(hydrated, awardCompanionReward("goal_completed"));
 
     expect(rewarded.level).toBe(5);
     expect(rewarded.achievements).toContainEqual(
-      expect.objectContaining({ id: "level_5_reached" })
+      expect.objectContaining({ id: LEVEL_5_ACHIEVEMENT_ID })
     );
   });
 
@@ -136,11 +158,13 @@ describe("companion store", () => {
           {
             id: "first-meal",
             title: "First meal",
-            unlockedAt: "2026-06-08T10:00:00.000Z",
+            unlockedAt: UPDATED_AT,
           },
         ],
-        createdAt: "2026-06-08T09:00:00.000Z",
-        updatedAt: "2026-06-08T10:00:00.000Z",
+        ownedItemIds: [DRAGON_ITEM_ID],
+        equippedItemIds: [DRAGON_ITEM_ID],
+        createdAt: CREATED_AT,
+        updatedAt: UPDATED_AT,
       })
     );
 
@@ -149,10 +173,31 @@ describe("companion store", () => {
       xp: 260,
       coins: 12,
       relationshipLevel: 2,
-      createdAt: "2026-06-08T09:00:00.000Z",
-      updatedAt: "2026-06-08T10:00:00.000Z",
+      ownedItemIds: [DRAGON_ITEM_ID],
+      equippedItemIds: [DRAGON_ITEM_ID],
+      createdAt: CREATED_AT,
+      updatedAt: UPDATED_AT,
     });
     expect(state.achievements).toHaveLength(1);
+  });
+
+  it("drops equipped inventory items that are not owned during hydration", () => {
+    const state = companionReducer(
+      undefined,
+      hydrateCompanionState({
+        level: 1,
+        xp: 0,
+        coins: 0,
+        relationshipLevel: 1,
+        achievements: [],
+        ownedItemIds: [],
+        equippedItemIds: [DRAGON_ITEM_ID],
+        createdAt: CREATED_AT,
+        updatedAt: UPDATED_AT,
+      })
+    );
+
+    expect(state.equippedItemIds).toEqual([]);
   });
 
   it("falls back safely when hydrated from a missing snapshot field", () => {
@@ -163,7 +208,52 @@ describe("companion store", () => {
       xp: 0,
       coins: 0,
       achievements: [],
+      ownedItemIds: [],
+      equippedItemIds: [],
     });
+  });
+
+  it("purchases and equips companion items through persistent state", () => {
+    const hydrated = companionReducer(
+      undefined,
+      hydrateCompanionState({
+        level: 1,
+        xp: 0,
+        coins: 300,
+        relationshipLevel: 1,
+        achievements: [],
+        ownedItemIds: [],
+        equippedItemIds: [],
+        createdAt: CREATED_AT,
+        updatedAt: UPDATED_AT,
+      })
+    );
+    const purchased = companionReducer(hydrated, purchaseCompanionItem(DRAGON_ITEM_ID));
+    const equipped = companionReducer(purchased, equipCompanionItem(DRAGON_ITEM_ID));
+
+    expect(purchased.coins).toBe(40);
+    expect(purchased.ownedItemIds).toContain(DRAGON_ITEM_ID);
+    expect(equipped.equippedItemIds).toContain(DRAGON_ITEM_ID);
+  });
+
+  it("does not purchase items when coins are insufficient", () => {
+    const state = companionReducer(
+      undefined,
+      hydrateCompanionState({
+        level: 1,
+        xp: 0,
+        coins: 5,
+        relationshipLevel: 1,
+        achievements: [],
+        ownedItemIds: [],
+        equippedItemIds: [],
+        createdAt: CREATED_AT,
+        updatedAt: UPDATED_AT,
+      })
+    );
+    const nextState = companionReducer(state, purchaseCompanionItem(DRAGON_ITEM_ID));
+
+    expect(nextState).toBe(state);
   });
 
   it("unlocks achievements idempotently", () => {
@@ -193,6 +283,8 @@ describe("companion store", () => {
       xp: 0,
       coins: 0,
       achievements: [],
+      ownedItemIds: [],
+      equippedItemIds: [],
     });
   });
 });

@@ -35,6 +35,8 @@ export const createInitialCompanionState = (
   coins: 0,
   relationshipLevel: 1,
   achievements: [],
+  ownedItemIds: [],
+  equippedItemIds: [],
   createdAt: now,
   updatedAt: now,
 });

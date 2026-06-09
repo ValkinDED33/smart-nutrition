@@ -2,7 +2,9 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   applyCompanionReward,
   createInitialCompanionState,
+  equipCompanionItem as equipCompanionCatalogItem,
   getCompanionLevelForXp,
+  purchaseCompanionItem as purchaseCompanionCatalogItem,
   unlockCompanionAchievement as unlockAchievement,
   type CompanionAchievement,
   type CompanionAchievementCategory,
@@ -36,6 +38,21 @@ const normalizeNumber = (value: unknown, fallback: number, min = 0) => {
 
 const normalizeIsoString = (value: unknown, fallback: string) =>
   typeof value === "string" && value.trim().length > 0 ? value : fallback;
+
+const normalizeIdList = (value: unknown) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+    )
+  );
+};
 
 const isCompanionAchievementCategory = (
   value: unknown
@@ -89,6 +106,7 @@ export const normalizeCompanionState = (value: unknown): CompanionState => {
   const level = isCompanionLevel(value.level) && value.level === normalizedLevel
     ? value.level
     : normalizedLevel;
+  const ownedItemIds = normalizeIdList(value.ownedItemIds);
 
   return {
     level,
@@ -104,6 +122,10 @@ export const normalizeCompanionState = (value: unknown): CompanionState => {
           .map((achievement) => normalizeAchievement(achievement))
           .filter((achievement): achievement is CompanionAchievement => achievement !== null)
       : fallback.achievements,
+    ownedItemIds,
+    equippedItemIds: normalizeIdList(value.equippedItemIds).filter((itemId) =>
+      ownedItemIds.includes(itemId)
+    ),
     createdAt: normalizeIsoString(value.createdAt, fallback.createdAt),
     updatedAt: normalizeIsoString(value.updatedAt, fallback.updatedAt),
   };
@@ -126,6 +148,14 @@ const companionSlice = createSlice({
       return unlockAchievement(state, action.payload);
     },
 
+    purchaseCompanionItem(state, action: PayloadAction<string>) {
+      return purchaseCompanionCatalogItem(state, action.payload);
+    },
+
+    equipCompanionItem(state, action: PayloadAction<string>) {
+      return equipCompanionCatalogItem(state, action.payload);
+    },
+
     resetCompanionState() {
       return createInitialCompanionState();
     },
@@ -139,6 +169,8 @@ const companionSlice = createSlice({
 export const {
   awardCompanionReward,
   unlockCompanionAchievement,
+  purchaseCompanionItem,
+  equipCompanionItem,
   resetCompanionState,
   hydrateCompanionState,
 } = companionSlice.actions;

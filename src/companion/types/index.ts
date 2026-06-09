@@ -49,6 +49,8 @@ export interface CompanionState {
   coins: number;
   relationshipLevel: number;
   achievements: CompanionAchievement[];
+  ownedItemIds: string[];
+  equippedItemIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -64,4 +66,44 @@ export interface CompanionLevelProgress {
   currentXp: number;
   nextLevelXp: number | null;
   progress: number;
+}
+
+export type CompanionCatalogCategory =
+  | "outfit"
+  | "emotion"
+  | "accessory"
+  | "animation"
+  | "premium"
+  | "seasonal";
+
+export type CompanionCatalogLocale = "uk" | "pl" | "en";
+
+export type CompanionCatalogCompanionKind =
+  | "cat"
+  | "dog"
+  | "fox"
+  | "panda"
+  | "owl"
+  | "dragon"
+  | "capybara"
+  | "robot"
+  | "human";
+
+export type CompanionItemSlot =
+  | "companion"
+  | "outfit"
+  | "reaction"
+  | "accessory"
+  | "animation";
+
+export interface CompanionCatalogItem {
+  id: string;
+  category: CompanionCatalogCategory;
+  title: Record<CompanionCatalogLocale, string>;
+  description: Record<CompanionCatalogLocale, string>;
+  tagLabel: Record<CompanionCatalogLocale, string>;
+  price: number;
+  slot: CompanionItemSlot;
+  companionKind?: CompanionCatalogCompanionKind;
+  available: boolean;
 }

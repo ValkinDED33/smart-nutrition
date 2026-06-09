@@ -16,6 +16,8 @@ describe("companionProgression", () => {
       coins: 0,
       relationshipLevel: 1,
       achievements: [],
+      ownedItemIds: [],
+      equippedItemIds: [],
       createdAt: "2026-06-08T10:00:00.000Z",
       updatedAt: "2026-06-08T10:00:00.000Z",
     });
@@ -30,6 +32,7 @@ describe("companionProgression", () => {
     );
 
     expect(nextState.xp).toBe(10);
+    expect(nextState.coins).toBe(2);
     expect(nextState.level).toBe(1);
     expect(nextState.updatedAt).toBe("2026-06-08T10:05:00.000Z");
   });

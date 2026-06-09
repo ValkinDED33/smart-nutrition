@@ -16,7 +16,12 @@ describe("companionRewards", () => {
     expect(getCompanionReward("water_logged")).toMatchObject({
       event: "water_logged",
       xp: 5,
-      coins: 0,
+      coins: 1,
+    });
+    expect(getCompanionReward("goal_completed")).toMatchObject({
+      event: "goal_completed",
+      xp: 50,
+      coins: 10,
     });
   });
 

@@ -6,9 +6,13 @@ import {
 export const getCompanionRewardXp = (event: CompanionRewardEvent) =>
   getCompanionReward(event)?.xp ?? 0;
 
+export const getCompanionRewardCoins = (event: CompanionRewardEvent) =>
+  getCompanionReward(event)?.coins ?? 0;
+
 export const createCompanionRewardAnalyticsPayload = (
   event: CompanionRewardEvent
 ) => ({
   companionRewardEvent: event,
   companionXpAwarded: getCompanionRewardXp(event),
+  companionCoinsAwarded: getCompanionRewardCoins(event),
 });
