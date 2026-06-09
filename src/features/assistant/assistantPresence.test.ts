@@ -74,6 +74,22 @@ describe("assistantPresence", () => {
     });
   });
 
+  it("uses compact mode on profile desktop surfaces to avoid covering forms and shop cards", () => {
+    const context = resolveAssistantContext("/profile");
+
+    expect(
+      resolveAssistantPresence(context, {
+        pathname: "/profile",
+        viewport: "desktop",
+      })
+    ).toMatchObject({
+      visible: true,
+      mode: "compact",
+      reason: "profile-interactive-surface",
+      allowSpeechBubble: false,
+    });
+  });
+
   it("excludes onboarding because the onboarding guide owns that experience", () => {
     const context = resolveAssistantContext("/onboarding");
 

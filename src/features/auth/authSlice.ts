@@ -169,50 +169,46 @@ export const initializeAuth = createAsyncThunk<
 });
 
 const pushCurrentStateToCloud = async (state: AuthRootState) => {
-  const [profileSynced, mealSynced, waterSynced, fridgeSynced, communitySynced] = await Promise.all([
-    syncRemoteProfileState(state.profile),
-    syncRemoteMealState(state.meal),
-    syncRemoteWaterState(state.water),
-    syncRemoteFridgeState(state.fridge),
-    syncRemoteCommunityState(state.community),
-  ]);
-
-  if (
-    profileSynced.ok &&
-    mealSynced.ok &&
-    waterSynced.ok &&
-    fridgeSynced.ok &&
-    communitySynced.ok
-  ) {
-    return {
-      ok: true,
-      meta:
-        communitySynced.meta ??
-        fridgeSynced.meta ??
-        waterSynced.meta ??
-        mealSynced.meta ??
-        profileSynced.meta ??
-        null,
-    } satisfies RemoteSyncResult;
-  }
+  const profileSynced = await syncRemoteProfileState(state.profile);
 
   if (!profileSynced.ok) {
     return profileSynced;
   }
 
+  const mealSynced = await syncRemoteMealState(state.meal);
+
   if (!mealSynced.ok) {
     return mealSynced;
   }
+
+  const waterSynced = await syncRemoteWaterState(state.water);
 
   if (!waterSynced.ok) {
     return waterSynced;
   }
 
+  const fridgeSynced = await syncRemoteFridgeState(state.fridge);
+
   if (!fridgeSynced.ok) {
     return fridgeSynced;
   }
 
-  return communitySynced;
+  const communitySynced = await syncRemoteCommunityState(state.community);
+
+  if (!communitySynced.ok) {
+    return communitySynced;
+  }
+
+  return {
+    ok: true,
+    meta:
+      communitySynced.meta ??
+      fridgeSynced.meta ??
+      waterSynced.meta ??
+      mealSynced.meta ??
+      profileSynced.meta ??
+      null,
+  } satisfies RemoteSyncResult;
 };
 
 export const retryCloudSync = createAsyncThunk<

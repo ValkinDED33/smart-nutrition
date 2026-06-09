@@ -141,6 +141,14 @@ export const resolveAssistantPresence = (
     });
   }
 
+  if (context.area === "profile") {
+    return compactPresence({
+      reason: "profile-interactive-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
   if (context.area === "coach") {
     return {
       visible: true,

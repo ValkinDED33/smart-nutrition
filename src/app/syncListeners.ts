@@ -113,6 +113,17 @@ type SyncState = {
 
 const getStateSnapshot = (state: unknown) => state as SyncState;
 
+type RemoteSyncListenerApi = Parameters<
+  typeof remoteSyncListenerMiddleware.startListening
+>[0]["effect"] extends (
+  action: infer _Action,
+  api: infer Api
+) => unknown
+  ? Api
+  : never;
+
+type CloudSyncTask = (state: SyncState) => Promise<RemoteSyncResult>;
+
 const syncWholeMealState = async (state: SyncState) => {
   return syncRemoteMealState(state.meal);
 };
@@ -135,12 +146,7 @@ const writeCachedSnapshotFromState = (
 };
 
 const maybeApplyAutomaticAdaptiveTarget = (
-  listenerApi: Parameters<typeof remoteSyncListenerMiddleware.startListening>[0]["effect"] extends (
-    action: infer _Action,
-    api: infer Api
-  ) => unknown
-    ? Api
-    : never
+  listenerApi: RemoteSyncListenerApi
 ) => {
   const state = getStateSnapshot(listenerApi.getState());
 
@@ -168,6 +174,7 @@ export const remoteSyncListenerMiddleware = createListenerMiddleware();
 let listenersRegistered = false;
 
 const SYNC_ERROR_MESSAGE = "Cloud sync could not save the latest change.";
+let cloudSyncQueue: Promise<void> = Promise.resolve();
 
 const getRemoteSyncErrorMessage = (result: RemoteSyncResult) =>
   result.code === "STATE_CONFLICT"
@@ -175,39 +182,41 @@ const getRemoteSyncErrorMessage = (result: RemoteSyncResult) =>
     : result.message ?? SYNC_ERROR_MESSAGE;
 
 const runCloudSync = async (
-  listenerApi: Parameters<typeof remoteSyncListenerMiddleware.startListening>[0]["effect"] extends (
-    action: infer _Action,
-    api: infer Api
-  ) => unknown
-    ? Api
-    : never,
-  task: () => Promise<RemoteSyncResult>
+  listenerApi: RemoteSyncListenerApi,
+  task: CloudSyncTask
 ) => {
-  listenerApi.dispatch(markSyncStarted());
+  const execute = async () => {
+    listenerApi.dispatch(markSyncStarted());
 
-  try {
-    const result = await task();
+    try {
+      const stateBeforeSync = getStateSnapshot(listenerApi.getState());
+      const result = await task(stateBeforeSync);
 
-    if (result.ok) {
-      const state = getStateSnapshot(listenerApi.getState());
-      const clearedOutbox = clearSyncOutbox();
-      writeCachedSnapshotFromState(state, result.meta);
-      listenerApi.dispatch(hydrateSyncOutbox(clearedOutbox));
+      if (result.ok) {
+        const stateAfterSync = getStateSnapshot(listenerApi.getState());
+        const clearedOutbox = clearSyncOutbox();
+        writeCachedSnapshotFromState(stateAfterSync, result.meta);
+        listenerApi.dispatch(hydrateSyncOutbox(clearedOutbox));
+        listenerApi.dispatch(setCloudMeta(result.meta ?? null));
+        listenerApi.dispatch(markSyncSuccess(result.meta?.updatedAt ?? undefined));
+        return;
+      }
+
+      const nextOutbox = enqueueSyncOutbox(getRemoteSyncErrorMessage(result));
+      listenerApi.dispatch(hydrateSyncOutbox(nextOutbox));
       listenerApi.dispatch(setCloudMeta(result.meta ?? null));
-      listenerApi.dispatch(markSyncSuccess(result.meta?.updatedAt ?? undefined));
-      return;
+      listenerApi.dispatch(markSyncError(nextOutbox.lastError ?? getRemoteSyncErrorMessage(result)));
+    } catch (error) {
+      void error;
+      const nextOutbox = enqueueSyncOutbox(SYNC_ERROR_MESSAGE);
+      listenerApi.dispatch(hydrateSyncOutbox(nextOutbox));
+      listenerApi.dispatch(markSyncError(nextOutbox.lastError ?? SYNC_ERROR_MESSAGE));
     }
+  };
 
-    const nextOutbox = enqueueSyncOutbox(getRemoteSyncErrorMessage(result));
-    listenerApi.dispatch(hydrateSyncOutbox(nextOutbox));
-    listenerApi.dispatch(setCloudMeta(result.meta ?? null));
-    listenerApi.dispatch(markSyncError(nextOutbox.lastError ?? getRemoteSyncErrorMessage(result)));
-  } catch (error) {
-    void error;
-    const nextOutbox = enqueueSyncOutbox(SYNC_ERROR_MESSAGE);
-    listenerApi.dispatch(hydrateSyncOutbox(nextOutbox));
-    listenerApi.dispatch(markSyncError(nextOutbox.lastError ?? SYNC_ERROR_MESSAGE));
-  }
+  const queuedSync = cloudSyncQueue.catch(() => undefined).then(execute);
+  cloudSyncQueue = queuedSync.catch(() => undefined);
+  await queuedSync;
 };
 
 export const registerRemoteSyncListeners = () => {
@@ -253,8 +262,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncRemoteProfileState(state.profile));
+      await runCloudSync(listenerApi, (state) => syncRemoteProfileState(state.profile));
     },
   });
 
@@ -273,8 +281,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncRemoteWaterState(state.water));
+      await runCloudSync(listenerApi, (state) => syncRemoteWaterState(state.water));
     },
   });
 
@@ -285,8 +292,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncRemoteFridgeState(state.fridge));
+      await runCloudSync(listenerApi, (state) => syncRemoteFridgeState(state.fridge));
     },
   });
 
@@ -312,8 +318,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncRemoteCommunityState(state.community));
+      await runCloudSync(listenerApi, (state) => syncRemoteCommunityState(state.community));
     },
   });
 
@@ -338,8 +343,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncRemoteProfileState(state.profile));
+      await runCloudSync(listenerApi, (state) => syncRemoteProfileState(state.profile));
     },
   });
 
@@ -350,10 +354,9 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      const entry = state.meal.items[0];
+      await runCloudSync(listenerApi, async (state) => {
+        const entry = state.meal.items[0];
 
-      await runCloudSync(listenerApi, async () => {
         if (!entry) {
           return syncWholeMealState(state);
         }
@@ -371,9 +374,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await createRemoteMealEntries(action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });
@@ -387,9 +388,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await deleteRemoteMealEntry(action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });
@@ -403,10 +402,9 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      const template = state.meal.templates[0];
+      await runCloudSync(listenerApi, async (state) => {
+        const template = state.meal.templates[0];
 
-      await runCloudSync(listenerApi, async () => {
         if (!template) {
           return syncWholeMealState(state);
         }
@@ -424,9 +422,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await deleteRemoteMealTemplate(action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });
@@ -440,8 +436,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-      await runCloudSync(listenerApi, () => syncWholeMealState(state));
+      await runCloudSync(listenerApi, (state) => syncWholeMealState(state));
     },
   });
 
@@ -452,9 +447,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await saveRemoteMealProduct("saved", action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });
@@ -468,9 +461,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await deleteRemoteMealProduct("saved", action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });
@@ -484,9 +475,7 @@ export const registerRemoteSyncListeners = () => {
         return;
       }
 
-      const state = getStateSnapshot(listenerApi.getState());
-
-      await runCloudSync(listenerApi, async () => {
+      await runCloudSync(listenerApi, async (state) => {
         const granularResult = await saveRemoteMealProduct("recent", action.payload);
         return granularResult.ok ? granularResult : syncWholeMealState(state);
       });

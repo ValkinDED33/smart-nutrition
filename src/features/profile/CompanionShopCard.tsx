@@ -21,114 +21,139 @@ interface ShopItem {
   title: string;
   description: string;
   price: number;
-  tag: string;
+  tagLabel: string;
   companionKind?: AssistantCompanionKind;
+  comingSoon?: boolean;
 }
 
 const shopCopy = {
   uk: {
-    title: "AI магазин companion",
+    title: "Студія компаньйона",
     subtitle:
-      "Одяг, емоції, аксесуари, анімації та premium skins для живого помічника.",
-    balance: "Баланс",
-    owned: "Активовано",
-    equip: "Приміряти",
+      "Образи, реакції та аксесуари для ігрового компаньйона. Зараз доступні тільки чесні прев'ю та вибір персонажа.",
+    balance: "Монети",
+    coins: "монет",
+    selected: "Поточний",
+    choose: "Вибрати",
+    previewAction: "Прев'ю",
     equipped: "Вибрано",
-    preview: "Прев'ю",
+    preview: "Поточний образ",
+    previewHint: "Прев'ю не списує монети і не змінює профіль.",
+    statusAvailable: "Доступно",
+    statusComingSoon: "Скоро",
+    statusLocked: "Не вистачає монет",
+    statusEquipped: "Активний",
+    futureItem: "Буде доступно пізніше",
+    needCoins: "Потрібно {count}",
     categories: {
       outfit: "Одяг",
       emotion: "Емоція",
       accessory: "Аксесуар",
       animation: "Анімація",
-      premium: "Premium skin",
-      seasonal: "Seasonal",
+      premium: "Преміум образ",
+      seasonal: "Сезонний образ",
     },
     items: [
       {
         id: "soft-hoodie",
         category: "outfit",
-        title: "М'який hoodie",
+        title: "М'яка худі",
         description: "Теплий образ для ранкових нагадувань про воду.",
         price: 120,
-        tag: "cozy",
+        tagLabel: "затишок",
+        comingSoon: true,
       },
       {
         id: "spark-reaction",
         category: "emotion",
         title: "Радість за рекорд",
-        description: "Companion святкує серії, закриту воду і білок.",
+        description: "Компаньйон святкує серії, закриту воду і білок.",
         price: 80,
-        tag: "emotion",
+        tagLabel: "емоція",
+        comingSoon: true,
       },
       {
         id: "water-bottle",
         category: "accessory",
         title: "Пляшка води",
-        description: "Аксесуар для water tracker і м'яких нагадувань.",
+        description: "Аксесуар для водного трекера і м'яких нагадувань.",
         price: 95,
-        tag: "hydrate",
+        tagLabel: "вода",
+        comingSoon: true,
       },
       {
         id: "float-idle",
         category: "animation",
-        title: "Floating idle",
+        title: "Плавна пауза",
         description: "Легка анімація очікування без зайвого шуму.",
         price: 140,
-        tag: "motion",
+        tagLabel: "рух",
+        comingSoon: true,
       },
       {
         id: "dragon-premium",
         category: "premium",
-        title: "Dragon companion",
-        description: "Premium образ для більш ігрового wellness вайбу.",
+        title: "Дракон",
+        description: "Ігровий преміум-образ для яскравішої підтримки.",
         price: 260,
-        tag: "premium",
+        tagLabel: "преміум",
         companionKind: "dragon",
       },
       {
         id: "capybara-season",
         category: "seasonal",
-        title: "Capybara calm",
-        description: "Сезонний спокійний companion для режиму без стресу.",
+        title: "Спокій капібари",
+        description: "Сезонний спокійний образ для режиму без стресу.",
         price: 220,
-        tag: "seasonal",
+        tagLabel: "сезон",
         companionKind: "capybara",
       },
     ] satisfies ShopItem[],
   },
   pl: {
-    title: "Sklep AI companion",
+    title: "Studio kompana",
     subtitle:
-      "Ubrania, emocje, akcesoria, animacje i premium skins dla żywego asystenta.",
-    balance: "Saldo",
-    owned: "Aktywowane",
-    equip: "Przymierz",
+      "Wyglądy, reakcje i akcesoria dla grywalnego kompana. Teraz pokazujemy tylko uczciwy podgląd i wybór postaci.",
+    balance: "Monety",
+    coins: "monet",
+    selected: "Obecny",
+    choose: "Wybierz",
+    previewAction: "Podgląd",
     equipped: "Wybrane",
-    preview: "Podgląd",
+    preview: "Obecny wygląd",
+    previewHint: "Podgląd nie wydaje monet i nie zmienia profilu.",
+    statusAvailable: "Dostępne",
+    statusComingSoon: "Wkrótce",
+    statusLocked: "Za mało monet",
+    statusEquipped: "Aktywny",
+    futureItem: "Dostępne później",
+    needCoins: "Potrzeba {count}",
     categories: {
       outfit: "Ubranie",
       emotion: "Emocja",
       accessory: "Akcesorium",
       animation: "Animacja",
-      premium: "Premium skin",
-      seasonal: "Seasonal",
+      premium: "Wygląd premium",
+      seasonal: "Wygląd sezonowy",
     },
     items: [
       {
         id: "soft-hoodie",
         category: "outfit",
-        title: "Miękki hoodie",
+        title: "Miękka bluza",
         description: "Ciepły styl do porannych przypomnień o wodzie.",
         price: 120,
-        tag: "cozy",
+        tagLabel: "komfort",
+        comingSoon: true,
       },
       {
         id: "spark-reaction",
         category: "emotion",
         title: "Radość za rekord",
-        description: "Companion świętuje serie, wodę i domknięte białko.",
+        description: "Kompan świętuje serie, wodę i domknięte białko.",
         price: 80,
-        tag: "emotion",
+        tagLabel: "emocja",
+        comingSoon: true,
       },
       {
         id: "water-bottle",
@@ -136,32 +161,34 @@ const shopCopy = {
         title: "Butelka wody",
         description: "Akcesorium do water trackera i łagodnych przypomnień.",
         price: 95,
-        tag: "hydrate",
+        tagLabel: "woda",
+        comingSoon: true,
       },
       {
         id: "float-idle",
         category: "animation",
-        title: "Floating idle",
+        title: "Płynny spokój",
         description: "Lekka animacja oczekiwania bez nadmiaru ruchu.",
         price: 140,
-        tag: "motion",
+        tagLabel: "ruch",
+        comingSoon: true,
       },
       {
         id: "dragon-premium",
         category: "premium",
-        title: "Dragon companion",
-        description: "Premium wygląd dla bardziej grywalnego wellness klimatu.",
+        title: "Smok",
+        description: "Premium wygląd dla bardziej grywalnego wsparcia.",
         price: 260,
-        tag: "premium",
+        tagLabel: "premium",
         companionKind: "dragon",
       },
       {
         id: "capybara-season",
         category: "seasonal",
-        title: "Capybara calm",
-        description: "Sezonowy spokojny companion do trybu bez stresu.",
+        title: "Spokój kapibary",
+        description: "Sezonowy spokojny wygląd do trybu bez stresu.",
         price: 220,
-        tag: "seasonal",
+        tagLabel: "sezon",
         companionKind: "capybara",
       },
     ] satisfies ShopItem[],
@@ -171,27 +198,38 @@ const shopCopy = {
 const CompanionShopCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const assistant = useSelector((state: RootState) => state.profile.assistant);
-  const motivation = useSelector((state: RootState) => state.profile.motivation);
+  const companion = useSelector((state: RootState) => state.companion);
   const { language } = useLanguage();
   const copy = shopCopy[language];
-  const [activatedIds, setActivatedIds] = useState<Record<string, boolean>>({
-    "soft-hoodie": true,
-  });
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
 
   const activePreview = useMemo(
     () =>
+      copy.items.find((item) => item.id === previewItemId) ??
       copy.items.find((item) => item.companionKind === assistant.companionKind) ??
       copy.items.find((item) => item.id === "soft-hoodie") ??
       copy.items[0],
-    [assistant.companionKind, copy.items]
+    [assistant.companionKind, copy.items, previewItemId]
   );
 
-  const activatedCount = Object.values(activatedIds).filter(Boolean).length;
+  const selectedCount = copy.items.some(
+    (item) => item.companionKind === assistant.companionKind
+  )
+    ? 1
+    : 0;
 
   const handleEquip = (item: ShopItem) => {
-    setActivatedIds((current) => ({ ...current, [item.id]: true }));
+    setPreviewItemId(item.id);
 
-    if (item.companionKind) {
+    const isEquipped =
+      Boolean(item.companionKind) &&
+      item.companionKind === assistant.companionKind;
+    const canChoose =
+      Boolean(item.companionKind) &&
+      !item.comingSoon &&
+      (isEquipped || companion.coins >= item.price);
+
+    if (item.companionKind && canChoose && !isEquipped) {
       dispatch(setAssistantCustomization({ companionKind: item.companionKind }));
     }
   };
@@ -220,8 +258,8 @@ const CompanionShopCard = () => {
             <Typography color="text.secondary">{copy.subtitle}</Typography>
           </Stack>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={`${copy.balance}: ${motivation.points}`} color="primary" />
-            <Chip label={`${copy.owned}: ${activatedCount}`} variant="outlined" />
+            <Chip label={`${copy.balance}: ${companion.coins}`} color="primary" />
+            <Chip label={`${copy.selected}: ${selectedCount}`} variant="outlined" />
           </Stack>
         </Stack>
 
@@ -246,7 +284,7 @@ const CompanionShopCard = () => {
               <Typography sx={{ fontWeight: 800 }}>{copy.preview}</Typography>
               <AssistantAvatar
                 name={assistant.name}
-                variant={assistant.companionKind}
+                variant={activePreview?.companionKind ?? assistant.companionKind}
                 mood="happy"
                 size={96}
                 active
@@ -255,6 +293,9 @@ const CompanionShopCard = () => {
                 <Stack spacing={0.6}>
                   <Typography sx={{ fontWeight: 900 }}>{activePreview.title}</Typography>
                   <Typography color="text.secondary">{activePreview.description}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {copy.previewHint}
+                  </Typography>
                 </Stack>
               )}
             </Stack>
@@ -271,7 +312,30 @@ const CompanionShopCard = () => {
               const isEquipped =
                 Boolean(item.companionKind) &&
                 item.companionKind === assistant.companionKind;
-              const isActivated = activatedIds[item.id] || isEquipped;
+              const isComingSoon = Boolean(item.comingSoon);
+              const isLocked =
+                Boolean(item.companionKind) &&
+                !isEquipped &&
+                companion.coins < item.price;
+              const canChoose =
+                Boolean(item.companionKind) &&
+                !isComingSoon &&
+                !isLocked &&
+                !isEquipped;
+              const statusLabel = isEquipped
+                ? copy.statusEquipped
+                : isComingSoon
+                  ? copy.statusComingSoon
+                  : isLocked
+                    ? copy.statusLocked
+                    : copy.statusAvailable;
+              const actionLabel = isEquipped
+                ? copy.equipped
+                : isComingSoon
+                  ? copy.statusComingSoon
+                  : canChoose
+                    ? copy.choose
+                    : copy.previewAction;
 
               return (
                 <Paper
@@ -295,7 +359,13 @@ const CompanionShopCard = () => {
                         size="small"
                         color={item.category === "premium" ? "secondary" : "default"}
                       />
-                      <Chip label={item.tag} size="small" variant="outlined" />
+                      <Chip label={item.tagLabel} size="small" variant="outlined" />
+                      <Chip
+                        label={statusLabel}
+                        size="small"
+                        color={isEquipped ? "success" : isLocked ? "warning" : "default"}
+                        variant={isEquipped ? "filled" : "outlined"}
+                      />
                     </Stack>
                     <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
                     <Typography color="text.secondary" variant="body2">
@@ -307,14 +377,21 @@ const CompanionShopCard = () => {
                       justifyContent="space-between"
                       alignItems="center"
                     >
-                      <Typography sx={{ fontWeight: 900 }}>{item.price}</Typography>
+                      <Typography sx={{ fontWeight: 900 }}>
+                        {isComingSoon
+                          ? copy.futureItem
+                          : isLocked
+                            ? copy.needCoins.replace("{count}", `${item.price} ${copy.coins}`)
+                            : `${item.price} ${copy.coins}`}
+                      </Typography>
                       <Button
                         size="small"
                         variant={isEquipped ? "contained" : "outlined"}
+                        disabled={isEquipped || isComingSoon}
                         onClick={() => handleEquip(item)}
                         sx={{ textTransform: "none", fontWeight: 800 }}
                       >
-                        {isEquipped ? copy.equipped : isActivated ? copy.equip : copy.equip}
+                        {actionLabel}
                       </Button>
                     </Stack>
                   </Stack>
