@@ -63,6 +63,26 @@ const quickWeightCopy = {
     obesity: "Otyłość",
     progress: "Postęp do celu",
   },
+  en: {
+    title: "Weight today",
+    subtitle: "Log a quick check-in without going to profile.",
+    current: "Current",
+    target: "Target",
+    toGoal: "To goal",
+    noTarget: "Goal is not set yet",
+    bmi: "BMI",
+    lastCheckIn: "Last entry",
+    empty: "After the first entry, the trend will appear here.",
+    input: "Weight (kg)",
+    save: "Log weight",
+    saved: "Weight added to history.",
+    invalid: "Enter a weight from 30 to 300 kg.",
+    underweight: "Underweight",
+    normal: "Normal",
+    overweight: "Overweight",
+    obesity: "Obesity",
+    progress: "Goal progress",
+  },
 } as const;
 
 const clamp = (value: number, min: number, max: number) =>
@@ -98,8 +118,8 @@ export const QuickWeightCheckInCard = () => {
   const { targetWeight, targetWeightStart, weightHistory } = useSelector(
     (state: RootState) => state.profile
   );
-  const { language } = useLanguage();
-  const copy = quickWeightCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = quickWeightCopy[appLanguage];
   const latestEntry = weightHistory.at(-1);
   const latestWeight = latestEntry?.weight ?? user?.weight ?? 0;
   const [weightDraft, setWeightDraft] = useState(
@@ -113,7 +133,7 @@ export const QuickWeightCheckInCard = () => {
   const bmi = calculateBmi(latestWeight, user?.height ?? 0);
   const bmiStatus = getBmiStatus(bmi);
   const lastCheckInLabel = latestEntry
-    ? formatLocalDateKey(getLocalDateKey(latestEntry.date), language, {
+    ? formatLocalDateKey(getLocalDateKey(latestEntry.date), appLanguage, {
         month: "short",
         day: "numeric",
       })

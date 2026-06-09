@@ -8,26 +8,27 @@ import { buildAssistantPersonalizationPlan } from "@core/assistant";
 
 const bodyReportCopy = {
   uk: {
-    title: "Weekly body report",
-    subtitle: "Weight, BMI, body measurements, and plateau signal in one weekly summary.",
-    weight: "Weight",
+    title: "Щотижневий звіт тіла",
+    subtitle: "Вага, BMI, заміри тіла і сигнал plateau в одному тижневому підсумку.",
+    weight: "Вага",
     bmi: "BMI",
-    waist: "Waist",
-    abdomen: "Abdomen",
-    hip: "Hips",
-    chest: "Chest",
-    checkIns: "Check-ins",
-    plateauTitle: "AI plateau detection",
-    personalTitle: "Personal assistant focus",
+    waist: "Талія",
+    abdomen: "Живіт",
+    hip: "Стегна",
+    chest: "Груди",
+    checkIns: "Check-in",
+    plateauTitle: "AI визначення plateau",
+    personalTitle: "Персональний фокус асистента",
     plateauBody: (weeks: number, delta: string) =>
-      `Weight has stayed within ${delta} kg for about ${weeks} weeks. Keep calories, protein, water, and check-in consistency visible before changing the goal.`,
+      `Вага тримається в межах ${delta} кг приблизно ${weeks} тиж. Спершу перевірте калорії, білок, воду і регулярність записів перед зміною цілі.`,
     progressBody: (delta: string) =>
-      `This week's weight movement is ${delta} kg. Keep using the same weigh-in conditions for cleaner trend data.`,
-    empty: "Add at least one weekly check-in to unlock the body report.",
-    normal: "Normal",
-    underweight: "Underweight",
-    overweight: "Overweight",
-    obesity: "Obesity",
+      `Зміна ваги цього тижня: ${delta} кг. Зважуйтеся в однакових умовах, щоб тренд був чистішим.`,
+    empty: "Додайте хоча б один weekly check-in, щоб відкрити звіт тіла.",
+    previousDelta: "см до попереднього",
+    normal: "Норма",
+    underweight: "Нижче норми",
+    overweight: "Вище норми",
+    obesity: "Ожиріння",
   },
   pl: {
     title: "Weekly body report",
@@ -46,6 +47,30 @@ const bodyReportCopy = {
     progressBody: (delta: string) =>
       `Zmiana masy w tym tygodniu to ${delta} kg. Waż się w tych samych warunkach, aby trend był czytelniejszy.`,
     empty: "Dodaj przynajmniej jeden weekly check-in, aby odblokować raport ciała.",
+    previousDelta: "cm vs poprzedni",
+    normal: "Normal",
+    underweight: "Underweight",
+    overweight: "Overweight",
+    obesity: "Obesity",
+  },
+  en: {
+    title: "Weekly body report",
+    subtitle: "Weight, BMI, body measurements, and plateau signal in one weekly summary.",
+    weight: "Weight",
+    bmi: "BMI",
+    waist: "Waist",
+    abdomen: "Abdomen",
+    hip: "Hips",
+    chest: "Chest",
+    checkIns: "Check-ins",
+    plateauTitle: "AI plateau detection",
+    personalTitle: "Personal assistant focus",
+    plateauBody: (weeks: number, delta: string) =>
+      `Weight has stayed within ${delta} kg for about ${weeks} weeks. Keep calories, protein, water, and check-in consistency visible before changing the goal.`,
+    progressBody: (delta: string) =>
+      `This week's weight movement is ${delta} kg. Keep using the same weigh-in conditions for cleaner trend data.`,
+    empty: "Add at least one weekly check-in to unlock the body report.",
+    previousDelta: "cm vs previous",
     normal: "Normal",
     underweight: "Underweight",
     overweight: "Overweight",
@@ -66,11 +91,11 @@ export const BodyWeeklyReportCard = () => {
   const { assistant, measurementHistory, weightHistory } = useSelector(
     (state: RootState) => state.profile
   );
-  const { language } = useLanguage();
-  const copy = bodyReportCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = bodyReportCopy[appLanguage];
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
-    language
+    appLanguage
   );
 
   const report = useMemo(
@@ -177,7 +202,7 @@ export const BodyWeeklyReportCard = () => {
                       {item.current ? `${item.current.toFixed(1)} cm` : "-"}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {formatSigned(item.delta)} cm vs previous
+                      {formatSigned(item.delta)} {copy.previousDelta}
                     </Typography>
                   </Stack>
                 </Paper>

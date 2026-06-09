@@ -65,6 +65,34 @@ const monthlyCopy = {
     dayLabel: "Dzień",
     days: "dni",
   },
+  en: {
+    title: "30-day analytics",
+    subtitle: "Track goal adherence, calorie deviation, and macro balance over the last month.",
+    averageCalories: "Average calories",
+    averageProtein: "Average protein",
+    adherence: "Goal adherence",
+    streak: "Logging streak",
+    noData: "Add more logged days to unlock the monthly overview.",
+    calendarLegendUnder: "Blue: below target",
+    calendarLegendOn: "Green: on target",
+    calendarLegendOver: "Yellow/red: above target",
+    deviationTitle: "Largest deviations",
+    deviationSubtitle: "The strongest surpluses and deficits help explain the weekly trend.",
+    surplus: "Largest surplus",
+    deficit: "Deepest deficit",
+    noSurplus: "No day above target yet",
+    noDeficit: "No day below target yet",
+    macroHeatmapTitle: "Macro heatmap",
+    macroHeatmapSubtitle: "Recent logged days compared with your daily macro targets.",
+    protein: "Protein",
+    fat: "Fat",
+    carbs: "Carbs",
+    legendLow: "Below target",
+    legendOn: "On target",
+    legendHigh: "Above target",
+    dayLabel: "Day",
+    days: "days",
+  },
 } as const;
 
 const getCalorieColor = (ratio: number) => {
@@ -89,8 +117,8 @@ export const MonthlyAnalyticsCard = () => {
   const items = useSelector(selectMealItems);
   const profile = useSelector((state: RootState) => state.profile);
   const user = useSelector((state: RootState) => state.auth.user);
-  const { language, t } = useLanguage();
-  const copy = monthlyCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = monthlyCopy[appLanguage];
 
   const currentWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const macroTargets = useMemo(() => {
@@ -132,7 +160,7 @@ export const MonthlyAnalyticsCard = () => {
 
       return {
         key,
-        label: formatLocalDateKey(key, language, { day: "numeric", month: "short" }),
+        label: formatLocalDateKey(key, appLanguage, { day: "numeric", month: "short" }),
         calories,
         protein,
         fat,
@@ -145,7 +173,7 @@ export const MonthlyAnalyticsCard = () => {
     });
   }, [
     items,
-    language,
+    appLanguage,
     macroTargets.carbs,
     macroTargets.fat,
     macroTargets.protein,

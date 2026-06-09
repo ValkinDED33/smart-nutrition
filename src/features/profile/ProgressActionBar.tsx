@@ -56,6 +56,18 @@ const progressActionCopy = {
     weight: "Waga",
     reportTitle: "Smart Nutrition progress",
   },
+  en: {
+    title: "Quick progress actions",
+    subtitle: "Copy a short summary or open analytics in full screen.",
+    copy: "Copy report",
+    fullscreen: "Full screen",
+    copied: "Report copied.",
+    fullscreenUnsupported: "Fullscreen is not available in this browser.",
+    calories: "Calories",
+    water: "Water",
+    weight: "Weight",
+    reportTitle: "Smart Nutrition progress",
+  },
 } as const;
 
 export const ProgressActionBar = () => {
@@ -63,8 +75,8 @@ export const ProgressActionBar = () => {
   const water = useSelector((state: RootState) => state.water);
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
   const totals = useSelector(selectTodayMealTotalNutrients);
-  const { language, t } = useLanguage();
-  const copyText = progressActionCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copyText = progressActionCopy[appLanguage];
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? authWeight ?? 0;
   const waterProgress = water.dailyWaterGoal
     ? Math.round((water.consumedMl / water.dailyWaterGoal) * 100)

@@ -55,13 +55,30 @@ const weightTrendCopy = {
     obesity: "Otyłość",
     plateauHint: (weeks: number) => `Waga jest prawie płaska od ${weeks} tyg.`,
   },
+  en: {
+    title: "Weight history",
+    subtitle: "Recent check-ins in a simple chart for quick review.",
+    empty: "Log your weight a few times to build the chart.",
+    emptyHint: "The first two check-ins unlock trend, BMI, and plateau hints.",
+    latest: "Latest",
+    totalDelta: "Total change",
+    recentDelta: "Recent change",
+    checkIns: "Entries",
+    bmi: "BMI",
+    plateau: "Plateau",
+    underweight: "Underweight",
+    normal: "Normal",
+    overweight: "Overweight",
+    obesity: "Obesity",
+    plateauHint: (weeks: number) => `Weight has barely changed for ${weeks} weeks.`,
+  },
 } as const;
 
 export const WeightTrendCard = () => {
   const { weightHistory } = useSelector((state: RootState) => state.profile);
   const user = useSelector((state: RootState) => state.auth.user);
-  const { language } = useLanguage();
-  const copy = weightTrendCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = weightTrendCopy[appLanguage];
 
   const entries = useMemo(() => {
     return weightHistory.slice(-8).map((entry) => {
@@ -70,13 +87,13 @@ export const WeightTrendCard = () => {
       return {
         ...entry,
         dateKey,
-        label: formatLocalDateKey(dateKey, language, {
+        label: formatLocalDateKey(dateKey, appLanguage, {
           month: "short",
           day: "numeric",
         }),
       };
     });
-  }, [language, weightHistory]);
+  }, [appLanguage, weightHistory]);
 
   const weights = entries.map((entry) => entry.weight);
   const minWeight = weights.length > 0 ? Math.min(...weights) : 0;

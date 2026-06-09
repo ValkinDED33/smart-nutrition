@@ -1,8 +1,9 @@
-import type { Language } from "../language";
+import type { AppLanguage } from "../types/i18n";
 
-const localeByLanguage: Record<Language, string> = {
+const localeByLanguage: Record<AppLanguage, string> = {
   uk: "uk-UA",
   pl: "pl-PL",
+  en: "en-US",
 };
 
 const pad = (value: number) => String(value).padStart(2, "0");
@@ -24,7 +25,7 @@ export const parseLocalDateKey = (dateKey: string) => {
 
 export const formatLocalDateKey = (
   dateKey: string,
-  language: Language,
+  language: AppLanguage,
   options: Intl.DateTimeFormatOptions
 ) => parseLocalDateKey(dateKey).toLocaleDateString(localeByLanguage[language], options);
 

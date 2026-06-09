@@ -11,7 +11,7 @@ import {
 
 export const WeeklyInsights = () => {
   const items = useSelector(selectMealItems);
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
 
   const days = useMemo(() => {
     const today = new Date();
@@ -32,14 +32,14 @@ export const WeeklyInsights = () => {
 
       return {
         key,
-        label: formatLocalDateKey(key, language, {
+        label: formatLocalDateKey(key, appLanguage, {
           weekday: "short",
           day: "numeric",
         }),
         ...totals,
       };
     });
-  }, [items, language]);
+  }, [appLanguage, items]);
 
   const totalWeekCalories = days.reduce((sum, day) => sum + day.calories, 0);
   const totalWeekProtein = days.reduce((sum, day) => sum + day.protein, 0);

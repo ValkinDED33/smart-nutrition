@@ -7,6 +7,7 @@ import {
   translateSyncErrorMessage,
 } from "@shared/lib/syncMessaging";
 import { useLanguage } from "@shared/language";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const syncCopy = {
   uk: {
@@ -39,9 +40,30 @@ const syncCopy = {
     oneHour: "1 h",
     hours: "{count} h",
   },
+  en: {
+    syncingLabel: "Syncing",
+    syncingHint: "Saving the latest changes to the cloud.",
+    syncedLabel: "Cloud OK",
+    syncedRelative: "{time} ago",
+    syncedHint: "Last cloud save: {time}",
+    errorLabel: "Sync issue",
+    errorHint: "Latest changes are waiting for a successful cloud sync.",
+    queuedSuffix: "queued: {count}",
+    unknownTime: "just now",
+    oneMinute: "1 min",
+    minutes: "{count} min",
+    oneHour: "1 h",
+    hours: "{count} h",
+  },
 } as const;
 
-const formatAbsoluteSyncTime = (value: string | null, language: "uk" | "pl") => {
+const syncLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatAbsoluteSyncTime = (value: string | null, language: AppLanguage) => {
   if (!value) {
     return syncCopy[language].unknownTime;
   }
@@ -52,7 +74,7 @@ const formatAbsoluteSyncTime = (value: string | null, language: "uk" | "pl") => 
     return syncCopy[language].unknownTime;
   }
 
-  return new Intl.DateTimeFormat(language === "pl" ? "pl-PL" : "uk-UA", {
+  return new Intl.DateTimeFormat(syncLocaleByLanguage[language], {
     hour: "2-digit",
     minute: "2-digit",
   }).format(parsed);
@@ -60,7 +82,7 @@ const formatAbsoluteSyncTime = (value: string | null, language: "uk" | "pl") => 
 
 const formatRelativeSyncAge = (
   value: string | null,
-  language: "uk" | "pl",
+  language: AppLanguage,
   now: number
 ) => {
   if (!value) {
@@ -105,8 +127,8 @@ const SyncStatusChip = () => {
     syncError,
     syncOutbox,
   } = useSelector((state: RootState) => state.auth);
-  const { language } = useLanguage();
-  const copy = syncCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = syncCopy[appLanguage];
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -123,9 +145,9 @@ const SyncStatusChip = () => {
     return null;
   }
 
-  const formattedTime = formatAbsoluteSyncTime(lastSyncedAt, language);
-  const relativeTime = formatRelativeSyncAge(lastSyncedAt, language, now);
-  const translatedSyncError = translateSyncErrorMessage(syncError, language);
+  const formattedTime = formatAbsoluteSyncTime(lastSyncedAt, appLanguage);
+  const relativeTime = formatRelativeSyncAge(lastSyncedAt, appLanguage, now);
+  const translatedSyncError = translateSyncErrorMessage(syncError, appLanguage);
 
   const label = syncStatus === "syncing"
       ? copy.syncingLabel
@@ -137,7 +159,7 @@ const SyncStatusChip = () => {
       ? copy.syncingHint
       : syncStatus === "error"
         ? syncOutbox.pendingChanges > 0
-          ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, language) ?? copy.errorHint} (${copy.queuedSuffix.replace("{count}", String(syncOutbox.pendingChanges))})`
+          ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, appLanguage) ?? copy.errorHint} (${copy.queuedSuffix.replace("{count}", String(syncOutbox.pendingChanges))})`
           : translatedSyncError ?? copy.errorHint
         : copy.syncedHint.replace("{time}", formattedTime);
 

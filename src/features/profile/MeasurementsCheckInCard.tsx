@@ -66,6 +66,24 @@ const checkInCopy = {
     saveError: "Nie udało się zapisać pomiarów.",
     saved: "Pomiary zostały zapisane.",
   },
+  en: {
+    title: "Weight and measurements",
+    subtitle:
+      "Update weight and body measurements weekly to see real progress.",
+    dueNow: "Time to update weight and measurements.",
+    nextInDays: "Next check-in in {days} days.",
+    lastCheckIn: "Last check-in",
+    submit: "Save check-in",
+    saving: "Saving...",
+    waist: "Waist (cm)",
+    abdomen: "Abdomen (cm)",
+    hip: "Hips (cm)",
+    chest: "Chest (cm)",
+    history: "Recent entries",
+    empty: "No weekly check-ins yet.",
+    saveError: "Could not save measurements.",
+    saved: "Measurements saved.",
+  },
 } as const;
 
 export const MeasurementsCheckInCard = () => {
@@ -74,8 +92,8 @@ export const MeasurementsCheckInCard = () => {
   const { measurementHistory, weeklyCheckIn } = useSelector(
     (state: RootState) => state.profile
   );
-  const { t, language } = useLanguage();
-  const copy = checkInCopy[language];
+  const { t, appLanguage } = useLanguage();
+  const copy = checkInCopy[appLanguage];
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -185,7 +203,7 @@ export const MeasurementsCheckInCard = () => {
               weeklyCheckIn.lastRecordedAt
                 ? `${copy.lastCheckIn}: ${formatLocalDateKey(
                     getLocalDateKey(weeklyCheckIn.lastRecordedAt),
-                    language,
+                    appLanguage,
                     { month: "short", day: "numeric" }
                   )}`
                 : copy.dueNow
@@ -281,7 +299,7 @@ export const MeasurementsCheckInCard = () => {
                 <Paper key={`${entry.date}-${entry.weight}`} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
                   <Stack spacing={0.7}>
                     <Typography sx={{ fontWeight: 700 }}>
-                      {formatLocalDateKey(getLocalDateKey(entry.date), language, {
+                      {formatLocalDateKey(getLocalDateKey(entry.date), appLanguage, {
                         month: "short",
                         day: "numeric",
                       })}

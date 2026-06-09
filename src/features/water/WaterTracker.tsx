@@ -147,6 +147,51 @@ const waterCopy = {
     save: "Zapisz",
     cancel: "Anuluj",
   },
+  en: {
+    title: "Water today",
+    subtitle: "Track your target, remaining water, and each glass size.",
+    drank: "Drank",
+    remaining: "Remaining",
+    target: "Daily target",
+    glassSize: "Glass size",
+    statusUnder: "Below target",
+    statusOnTrack: "On track",
+    statusAbove: "Above target",
+    progress: "Drank {current} L of {target} L",
+    remainingLabel: "{value} ml remaining",
+    customAmount: "Partial glass",
+    quickAmounts: "Quick amounts",
+    addGlass: "Add glass",
+    removeGlass: "Remove glass",
+    historyTitle: "Water history",
+    historyEmpty: "No water entries yet today.",
+    historyEmptyHint: "Add the first glass and today's live history will appear here.",
+    analyticsTitle: "7-day analytics",
+    average: "Average",
+    goalDays: "Days on target",
+    bestDay: "Best day",
+    remindersTitle: "Water reminders",
+    aiTitle: "Companion reaction",
+    aiLow:
+      "Water is behind for now. Let's close one small glass without drama.",
+    aiMid:
+      "Good pace. A little more water and the day will feel lighter.",
+    aiDone:
+      "Water target closed. I am celebrating quietly, but sincerely.",
+    remindersEnabled: "Enable reminders",
+    reminderInterval: "Interval",
+    reminderStart: "Start",
+    reminderEnd: "End",
+    reminderDue: "Time to drink water. {value} ml left to target.",
+    reminderPermission:
+      "Allow browser notifications to receive system reminders.",
+    minutes: "min",
+    partialTitle: "How much did you drink?",
+    partialHint: "Set the amount for this glass.",
+    amount: "Amount (ml)",
+    save: "Save",
+    cancel: "Cancel",
+  },
 } as const;
 
 export const WaterTracker = () => {
@@ -158,8 +203,8 @@ export const WaterTracker = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
   const latestWeight = latestWeightHistoryWeight ?? authWeight ?? 0;
-  const { language } = useLanguage();
-  const copy = waterCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = waterCopy[appLanguage];
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [partialAmountMl, setPartialAmountMl] = useState<number>(water.glassSizeMl);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
@@ -219,12 +264,15 @@ export const WaterTracker = () => {
   );
   const dayFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(language === "pl" ? "pl-PL" : "uk-UA", {
+      new Intl.DateTimeFormat(
+        appLanguage === "pl" ? "pl-PL" : appLanguage === "en" ? "en-US" : "uk-UA",
+        {
         weekday: "short",
         day: "2-digit",
         month: "2-digit",
-      }),
-    [language]
+        }
+      ),
+    [appLanguage]
   );
 
   useEffect(() => {

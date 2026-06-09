@@ -108,13 +108,32 @@ const progressPhotoCopy = {
     invalid: "Nie udało się odczytać zdjęcia.",
     remove: "Usuń",
   },
+  en: {
+    title: "Progress photos",
+    subtitle: "Keep the same angle once a week to see changes without guessing.",
+    upload: "Add photo",
+    replace: "Replace photo",
+    note: "Note",
+    save: "Save photo",
+    crop: "Crop",
+    applyCrop: "Apply crop",
+    zoom: "Zoom",
+    preview: "Preview",
+    latest: "Latest photo",
+    previous: "Previous",
+    history: "Photo history",
+    empty: "No progress photos yet.",
+    tooLarge: "Photo is too large. Choose a file up to 8 MB.",
+    invalid: "Could not read the photo.",
+    remove: "Remove",
+  },
 } as const;
 
 export const BodyProgressPhotosCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const photos = useSelector((state: RootState) => state.profile.progressPhotos);
-  const { language } = useLanguage();
-  const copy = progressPhotoCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = progressPhotoCopy[appLanguage];
   const [rawPreview, setRawPreview] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -355,7 +374,7 @@ export const BodyProgressPhotosCard = () => {
                       {index === 0 ? copy.latest : copy.previous}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {formatLocalDateKey(getLocalDateKey(photo.date), language, {
+                      {formatLocalDateKey(getLocalDateKey(photo.date), appLanguage, {
                         month: "short",
                         day: "numeric",
                       })}
@@ -392,7 +411,7 @@ export const BodyProgressPhotosCard = () => {
                     />
                     <Stack spacing={0.6} sx={{ p: 1 }}>
                       <Typography variant="caption" color="text.secondary">
-                        {formatLocalDateKey(getLocalDateKey(photo.date), language, {
+                        {formatLocalDateKey(getLocalDateKey(photo.date), appLanguage, {
                           month: "short",
                           day: "numeric",
                         })}
