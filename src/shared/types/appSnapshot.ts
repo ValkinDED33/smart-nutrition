@@ -13,4 +13,5 @@ export interface AppSnapshot extends AppSnapshotMeta {
   water: unknown | null;
   fridge: unknown | null;
   community: unknown | null;
+  companion?: unknown | null;
 }

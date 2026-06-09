@@ -12,6 +12,7 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { setAssistantCustomization } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { CompanionProgressCard } from "../companion";
 import {
   assistantDietFrictions,
   assistantMotivationStyles,
@@ -290,6 +291,8 @@ export const AssistantCustomizationCard = () => {
             {copy.companions[assistant.companionKind]} · {assistant.name}
           </Typography>
         </Stack>
+
+        <CompanionProgressCard embedded />
 
         <BoxHeader title={copy.memoryTitle} subtitle={copy.memorySubtitle} />
 

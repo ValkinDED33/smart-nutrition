@@ -49,6 +49,10 @@ import {
 } from "../../shared/lib/sound";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { EmptyState } from "@shared/ui";
+import {
+  awardCompanionReward,
+  createCompanionRewardAnalyticsPayload,
+} from "@features/companion";
 
 const waterCopy = {
   uk: {
@@ -317,11 +321,13 @@ export const WaterTracker = () => {
       return;
     }
 
+    dispatch(awardCompanionReward("water_logged"));
     captureRuntimeEvent("water_added", {
       amountMl,
       source,
       consumedMlAfter,
       dailyGoalMl: water.dailyWaterGoal,
+      ...createCompanionRewardAnalyticsPayload("water_logged"),
     });
   };
 

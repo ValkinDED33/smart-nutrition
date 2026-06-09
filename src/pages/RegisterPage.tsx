@@ -18,6 +18,11 @@ import {
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceCommunityState } from "../features/community/communitySlice";
+import {
+  awardCompanionReward,
+  createCompanionRewardAnalyticsPayload,
+  hydrateCompanionState,
+} from "../features/companion";
 import { replaceFridgeState } from "../features/fridge/fridgeSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
 import {
@@ -135,6 +140,7 @@ const RegisterPage = () => {
       dispatch(replaceWaterState(snapshot.water));
       dispatch(replaceFridgeState(snapshot.fridge));
       dispatch(replaceCommunityState(snapshot.community));
+      dispatch(hydrateCompanionState(snapshot.companion));
     } else {
       const profileBootstrap = {
         age: user.age,
@@ -164,6 +170,7 @@ const RegisterPage = () => {
 
     dispatch(setProfileLanguage(appLanguage));
     resetOnboarding();
+    dispatch(awardCompanionReward("registration_completed"));
   };
 
   const onSubmit = async (data: FormData) => {
@@ -199,6 +206,7 @@ const RegisterPage = () => {
         requiresVerification: false,
         hasCloudSnapshot: Boolean(response.snapshot),
         language: appLanguage,
+        ...createCompanionRewardAnalyticsPayload("registration_completed"),
       });
       navigate("/onboarding");
     } catch (error) {

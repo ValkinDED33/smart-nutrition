@@ -5,6 +5,11 @@ import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from "
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceCommunityState } from "../features/community/communitySlice";
+import {
+  awardCompanionReward,
+  createCompanionRewardAnalyticsPayload,
+  hydrateCompanionState,
+} from "../features/companion";
 import { replaceFridgeState } from "../features/fridge/fridgeSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
 import { replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
@@ -15,6 +20,7 @@ import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 import type { AppSnapshot } from "../shared/types/appSnapshot";
+import { captureRuntimeEvent } from "@integration/runtime/analytics";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -79,13 +85,23 @@ const VerifyEmailPage = () => {
           dispatch(replaceWaterState(snapshot.water));
           dispatch(replaceFridgeState(snapshot.fridge));
           dispatch(replaceCommunityState(snapshot.community));
+          dispatch(hydrateCompanionState(snapshot.companion));
         }
 
         dispatch(setProfileLanguage(appLanguage));
+        dispatch(awardCompanionReward("registration_completed"));
         setStatus("success");
         const nextPath = hasCompletedOnboardingSnapshot(snapshot)
           ? "/dashboard"
           : "/onboarding";
+        captureRuntimeEvent("signup_completed", {
+          authMode: getAuthRuntimeInfo().mode,
+          requiresVerification: true,
+          verified: true,
+          hasCloudSnapshot: Boolean(snapshot),
+          language: appLanguage,
+          ...createCompanionRewardAnalyticsPayload("registration_completed"),
+        });
         window.setTimeout(() => {
           navigate(nextPath, { replace: true });
         }, 700);

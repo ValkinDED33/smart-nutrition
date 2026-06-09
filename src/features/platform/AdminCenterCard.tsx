@@ -270,6 +270,13 @@ export const AdminCenterCard = () => {
     ? (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR", "ADMIN"] as const)
     : (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR"] as const);
   const latestAudit = audit[0];
+  const handlePlatformMutationError = (nextError: unknown) => {
+    setError(
+      nextError instanceof PlatformApiError
+        ? nextError.message
+        : backendUnavailableMessage
+    );
+  };
 
   return (
     <Paper
@@ -438,15 +445,16 @@ export const AdminCenterCard = () => {
                     <Stack direction="row" spacing={1}>
                       <Button
                         onClick={() => {
-                          void reviewCatalogSubmission(item.id, { decision: "approve" }).then(
-                            (updatedItem) => {
+                          void reviewCatalogSubmission(item.id, { decision: "approve" })
+                            .then((updatedItem) => {
                               setQueue((current) =>
                                 current.map((entry) =>
                                   entry.id === updatedItem.id ? updatedItem : entry
                                 )
                               );
-                            }
-                          );
+                              setError(null);
+                            })
+                            .catch(handlePlatformMutationError);
                         }}
                       >
                         {copy.approve}
@@ -454,15 +462,16 @@ export const AdminCenterCard = () => {
                       <Button
                         color="error"
                         onClick={() => {
-                          void reviewCatalogSubmission(item.id, { decision: "reject" }).then(
-                            (updatedItem) => {
+                          void reviewCatalogSubmission(item.id, { decision: "reject" })
+                            .then((updatedItem) => {
                               setQueue((current) =>
                                 current.map((entry) =>
                                   entry.id === updatedItem.id ? updatedItem : entry
                                 )
                               );
-                            }
-                          );
+                              setError(null);
+                            })
+                            .catch(handlePlatformMutationError);
                         }}
                       >
                         {copy.reject}
@@ -527,13 +536,16 @@ export const AdminCenterCard = () => {
                           return;
                         }
 
-                        void updateAdminUserRole(user.id, nextRole).then((updatedUser) => {
-                          setUsers((current) =>
-                            current.map((entry) =>
-                              entry.id === updatedUser.id ? updatedUser : entry
-                            )
-                          );
-                        });
+                        void updateAdminUserRole(user.id, nextRole)
+                          .then((updatedUser) => {
+                            setUsers((current) =>
+                              current.map((entry) =>
+                                entry.id === updatedUser.id ? updatedUser : entry
+                              )
+                            );
+                            setError(null);
+                          })
+                          .catch(handlePlatformMutationError);
                       }}
                     >
                       {copy.applyRole}
@@ -547,13 +559,16 @@ export const AdminCenterCard = () => {
                           void updateAdminUserBan(user.id, {
                             banned: !user.isBanned,
                             reason: "Admin moderation action",
-                          }).then((updatedUser) => {
-                            setUsers((current) =>
-                              current.map((entry) =>
-                                entry.id === updatedUser.id ? updatedUser : entry
-                              )
-                            );
-                          });
+                          })
+                            .then((updatedUser) => {
+                              setUsers((current) =>
+                                current.map((entry) =>
+                                  entry.id === updatedUser.id ? updatedUser : entry
+                                )
+                              );
+                              setError(null);
+                            })
+                            .catch(handlePlatformMutationError);
                         }}
                       >
                         {user.isBanned ? copy.unban : copy.ban}
@@ -569,25 +584,28 @@ export const AdminCenterCard = () => {
                             return;
                           }
 
-                          void deleteAdminUser(user.id).then(() => {
-                            setUsers((current) =>
-                              current.filter((entry) => entry.id !== user.id)
-                            );
-                            setStats((current) =>
-                              current
-                                ? {
-                                    ...current,
-                                    usersTotal: Math.max(current.usersTotal - 1, 0),
-                                    usersActive: user.isBanned
-                                      ? current.usersActive
-                                      : Math.max(current.usersActive - 1, 0),
-                                    usersBanned: user.isBanned
-                                      ? Math.max(current.usersBanned - 1, 0)
-                                      : current.usersBanned,
-                                  }
-                                : current
-                            );
-                          });
+                          void deleteAdminUser(user.id)
+                            .then(() => {
+                              setUsers((current) =>
+                                current.filter((entry) => entry.id !== user.id)
+                              );
+                              setStats((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      usersTotal: Math.max(current.usersTotal - 1, 0),
+                                      usersActive: user.isBanned
+                                        ? current.usersActive
+                                        : Math.max(current.usersActive - 1, 0),
+                                      usersBanned: user.isBanned
+                                        ? Math.max(current.usersBanned - 1, 0)
+                                        : current.usersBanned,
+                                    }
+                                  : current
+                              );
+                              setError(null);
+                            })
+                            .catch(handlePlatformMutationError);
                         }}
                       >
                         {copy.deleteUser}

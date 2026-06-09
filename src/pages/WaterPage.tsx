@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import CountUp from "react-countup";
@@ -6,7 +6,7 @@ import { Droplets } from "lucide-react";
 import type { AppDispatch, RootState } from "../app/store";
 import { incrementWater } from "../features/water/waterSlice";
 import { useLanguage } from "../shared/language";
-import { LoadingSkeleton } from "@shared/ui";
+import { LoadingSkeleton, PageShell, SectionCard, SectionTabs } from "@shared/ui";
 
 const WaterTracker = lazy(() =>
   import("../features/water/WaterTracker").then((module) => ({
@@ -22,6 +22,12 @@ const waterPageCopy = {
     goal: "Норма",
     remaining: "Залишилось",
     addGlass: "Додати 250 мл",
+    sections: {
+      today: "Сьогодні",
+      goal: "Ціль",
+      history: "Історія",
+      reminders: "Нагадування",
+    },
   },
   pl: {
     title: "Woda",
@@ -30,6 +36,12 @@ const waterPageCopy = {
     goal: "Norma",
     remaining: "Pozostało",
     addGlass: "Dodaj 250 ml",
+    sections: {
+      today: "Dzisiaj",
+      goal: "Cel",
+      history: "Historia",
+      reminders: "Przypomnienia",
+    },
   },
   en: {
     title: "Water",
@@ -38,19 +50,39 @@ const waterPageCopy = {
     goal: "Goal",
     remaining: "Remaining",
     addGlass: "Add 250 ml",
+    sections: {
+      today: "Today",
+      goal: "Goal",
+      history: "History",
+      reminders: "Reminders",
+    },
   },
 } as const;
+
+type WaterSection = "today" | "goal" | "history" | "reminders";
 
 const WaterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
   const { appLanguage } = useLanguage();
+  const [activeSection, setActiveSection] = useState<WaterSection>("today");
   const copy = waterPageCopy[appLanguage];
   const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const addAmountMl = water.glassSizeMl || 250;
+  const sections = [
+    { id: "today", label: copy.sections.today },
+    { id: "goal", label: copy.sections.goal },
+    { id: "history", label: copy.sections.history },
+    { id: "reminders", label: copy.sections.reminders },
+  ];
+  const tracker = (
+    <Suspense fallback={<LoadingSkeleton titleRows={1} cards={3} chart bodyRows={3} />}>
+      <WaterTracker />
+    </Suspense>
+  );
 
   return (
-    <Stack spacing={2.5}>
+    <PageShell title={copy.title} subtitle={copy.subtitle}>
       <Paper
         elevation={0}
         sx={{
@@ -82,7 +114,7 @@ const WaterPage = () => {
                 <Droplets size={24} aria-hidden="true" />
               </Box>
               <Typography
-                component="h1"
+                component="h2"
                 variant="h4"
                 sx={{ fontWeight: 900, fontSize: { xs: 34, md: 42 } }}
               >
@@ -113,40 +145,51 @@ const WaterPage = () => {
         </Stack>
       </Paper>
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-          gap: 1.5,
-        }}
-      >
-        {[
-          { label: copy.consumed, value: water.consumedMl },
-          { label: copy.goal, value: water.dailyWaterGoal },
-          { label: copy.remaining, value: remainingMl },
-        ].map((item) => (
-          <Paper
-            key={item.label}
-            elevation={0}
+      <SectionTabs
+        sections={sections}
+        activeSection={activeSection}
+        onChange={(sectionId) => setActiveSection(sectionId as WaterSection)}
+        ariaLabel="Water sections"
+      />
+
+      {activeSection === "today" ? (
+        <SectionCard tone="info">
+          <Box
             sx={{
-              p: 2,
-              borderRadius: 1,
-              border: "1px solid rgba(15, 23, 42, 0.08)",
-              backgroundColor: "rgba(255,255,255,0.9)",
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+              gap: 1.5,
             }}
           >
-            <Typography color="text.secondary">{item.label}</Typography>
-            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              <CountUp end={item.value} duration={0.65} /> ml
-            </Typography>
-          </Paper>
-        ))}
-      </Box>
+            {[
+              { label: copy.consumed, value: water.consumedMl },
+              { label: copy.goal, value: water.dailyWaterGoal },
+              { label: copy.remaining, value: remainingMl },
+            ].map((item) => (
+              <Paper
+                key={item.label}
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 1,
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                }}
+              >
+                <Typography color="text.secondary">{item.label}</Typography>
+                <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
+                  <CountUp end={item.value} duration={0.65} /> ml
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
+        </SectionCard>
+      ) : (
+        tracker
+      )}
 
-      <Suspense fallback={<LoadingSkeleton titleRows={1} cards={3} chart bodyRows={3} />}>
-        <WaterTracker />
-      </Suspense>
-    </Stack>
+      {activeSection === "today" ? tracker : null}
+    </PageShell>
   );
 };
 

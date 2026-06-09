@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { RootState } from "../../app/store";
+import type { CompanionState } from "../../companion";
 import type { AppSnapshotMeta } from "../../shared/types/appSnapshot";
 import type { User } from "@domain/user/types";
 import {
@@ -27,11 +27,12 @@ import {
   getSyncOutboxMeta,
   type SyncOutboxMeta,
 } from "../../shared/lib/syncOutbox";
-import { replaceCommunityState } from "../community/communitySlice";
-import { replaceFridgeState } from "../fridge/fridgeSlice";
-import { replaceProfileState } from "../profile/profileSlice";
-import { replaceMealState } from "../meal/mealSlice";
-import { replaceWaterState } from "../water/waterSlice";
+import { replaceCommunityState, type CommunityState } from "../community/communitySlice";
+import { hydrateCompanionState } from "../companion/model/store";
+import { replaceFridgeState, type FridgeState } from "../fridge/fridgeSlice";
+import { replaceProfileState, type ProfileState } from "../profile/profileSlice";
+import { replaceMealState, type MealState } from "../meal/mealSlice";
+import { replaceWaterState, type WaterState } from "../water/waterSlice";
 
 export type SyncMode = "remote-cloud";
 export type SyncStatus = "syncing" | "synced" | "error";
@@ -49,6 +50,16 @@ interface AuthState {
   cloudMeta: AppSnapshotMeta | null;
   syncOutbox: SyncOutboxMeta;
   syncToast: { id: number; kind: "retry-success" | "outbox-flushed" } | null;
+}
+
+interface AuthRootState {
+  auth: AuthState;
+  profile: ProfileState;
+  meal: MealState;
+  water: WaterState;
+  fridge: FridgeState;
+  community: CommunityState;
+  companion: CompanionState;
 }
 
 const getQueuedSyncMessage = (pendingChanges: number) =>
@@ -70,7 +81,7 @@ const getSyncErrorMessage = (result: RemoteSyncResult) =>
     : result.message ?? "Cloud sync could not save the latest app data.";
 
 const cacheCurrentRemoteSnapshot = (
-  state: RootState,
+  state: AuthRootState,
   meta: AppSnapshotMeta | null | undefined
 ) => {
     const snapshot = buildAppSnapshot({
@@ -79,6 +90,7 @@ const cacheCurrentRemoteSnapshot = (
       water: state.water,
       fridge: state.fridge,
       community: state.community,
+      companion: state.companion,
       meta,
     });
 
@@ -128,6 +140,7 @@ export const initializeAuth = createAsyncThunk<
       dispatch(replaceWaterState(data.snapshot.water));
       dispatch(replaceFridgeState(data.snapshot.fridge));
       dispatch(replaceCommunityState(data.snapshot.community));
+      dispatch(hydrateCompanionState(data.snapshot.companion));
     }
 
     const cloudMeta = getSnapshotMetaFromSnapshot(data.snapshot) ?? readCachedRemoteMeta({ allowStale: true });
@@ -155,7 +168,7 @@ export const initializeAuth = createAsyncThunk<
   }
 });
 
-const pushCurrentStateToCloud = async (state: RootState) => {
+const pushCurrentStateToCloud = async (state: AuthRootState) => {
   const [profileSynced, mealSynced, waterSynced, fridgeSynced, communitySynced] = await Promise.all([
     syncRemoteProfileState(state.profile),
     syncRemoteMealState(state.meal),
@@ -205,7 +218,7 @@ const pushCurrentStateToCloud = async (state: RootState) => {
 export const retryCloudSync = createAsyncThunk<
   { syncedAt: string; syncOutbox: SyncOutboxMeta; cloudMeta: AppSnapshotMeta | null },
   void,
-  { state: RootState; rejectValue: string }
+  { state: AuthRootState; rejectValue: string }
 >("auth/retryCloudSync", async (_, { dispatch, getState, rejectWithValue }) => {
   const state = getState();
   const syncResult = await pushCurrentStateToCloud(state);
@@ -227,7 +240,7 @@ export const retryCloudSync = createAsyncThunk<
 export const flushSyncOutbox = createAsyncThunk<
   { syncedAt: string; syncOutbox: SyncOutboxMeta; cloudMeta: AppSnapshotMeta | null },
   void,
-  { state: RootState; rejectValue: string }
+  { state: AuthRootState; rejectValue: string }
 >(
   "auth/flushSyncOutbox",
   async (_, { dispatch, getState, rejectWithValue }) => {
@@ -255,7 +268,7 @@ export const flushSyncOutbox = createAsyncThunk<
   },
   {
     condition: (_, { getState }) => {
-      const state = getState() as RootState;
+      const state = getState() as AuthRootState;
 
       return (
         state.auth.isAuthenticated &&
@@ -270,7 +283,7 @@ export const flushSyncOutbox = createAsyncThunk<
 export const pullLatestCloudSnapshot = createAsyncThunk<
   { syncedAt: string; syncOutbox: SyncOutboxMeta; cloudMeta: AppSnapshotMeta | null },
   { discardQueuedChanges?: boolean } | void,
-  { state: RootState; rejectValue: string }
+  { state: AuthRootState; rejectValue: string }
 >(
   "auth/pullLatestCloudSnapshot",
   async (payload, { dispatch, rejectWithValue }) => {
@@ -285,6 +298,7 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
     dispatch(replaceWaterState(snapshot.water));
     dispatch(replaceFridgeState(snapshot.fridge));
     dispatch(replaceCommunityState(snapshot.community));
+    dispatch(hydrateCompanionState(snapshot.companion));
     writeCachedRemoteSnapshot(snapshot);
 
     const syncOutbox = payload?.discardQueuedChanges
@@ -299,7 +313,7 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
   },
   {
     condition: (_, { getState }) => {
-      const state = getState() as RootState;
+      const state = getState() as AuthRootState;
 
       return (
         state.auth.isAuthenticated &&
@@ -542,6 +556,6 @@ export const {
   setCloudMeta,
   clearSyncToast,
 } = authSlice.actions;
-export const selectAuth = (state: RootState) => state.auth;
+export const selectAuth = (state: AuthRootState) => state.auth;
 
 export default authSlice.reducer;

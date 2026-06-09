@@ -22,6 +22,10 @@ import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import type { AssistantCustomization } from "@domain/profile/types";
+import {
+  awardCompanionReward,
+  createCompanionRewardAnalyticsPayload,
+} from "@features/companion";
 import { clearPreAuthOnboardingDraft } from "../../features/onboarding/model/onboardingDraft";
 import { clearSyncOutbox, enqueueSyncOutbox } from "../../shared/lib/syncOutbox";
 import {
@@ -150,6 +154,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       dispatch(markSyncSuccess(syncResult.meta?.updatedAt ?? completedAt));
       clearPreAuthOnboardingDraft();
       completeOnboarding();
+      dispatch(awardCompanionReward("onboarding_completed"));
       captureRuntimeEvent("onboarding_completed", {
         nextPath,
         goal: state.goal,
@@ -159,6 +164,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         assistantPersonality: state.personality,
         hasPrimaryGoalNote: Boolean(state.primaryGoalNote.trim()),
         hasSupportNote: Boolean(state.supportNote.trim()),
+        ...createCompanionRewardAnalyticsPayload("onboarding_completed"),
       });
       navigate(nextPath, { replace: true });
     } catch (error) {

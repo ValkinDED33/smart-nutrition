@@ -24,7 +24,7 @@ import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCa
 import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
 import { PremiumAccessCard } from "../features/profile/PremiumAccessCard";
 import { useLanguage } from "../shared/language";
-import { EmptyState } from "@shared/ui";
+import { EmptyState, PageShell } from "@shared/ui";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import { MealDayOverview } from "../features/meal/MealDayOverview";
@@ -401,7 +401,7 @@ const ProfilePage = () => {
       : copy.targetAway(remainingWeight.toFixed(1));
 
   return (
-    <Stack spacing={3}>
+    <PageShell title={t("profile.title")} subtitle={t("profile.subtitle")}>
       <Paper
         elevation={0}
         sx={{
@@ -423,11 +423,11 @@ const ProfilePage = () => {
               {user.name[0]}
             </Avatar>
             <Box>
-              <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
-                {t("profile.title")}
+              <Typography component="h2" variant="h5" sx={{ fontWeight: 900 }}>
+                {user.name}
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                {t("profile.subtitle")}
+                {user.email}
               </Typography>
             </Box>
           </Stack>
@@ -718,7 +718,7 @@ const ProfilePage = () => {
           },
         ]}
       />
-    </Stack>
+    </PageShell>
   );
 };
 

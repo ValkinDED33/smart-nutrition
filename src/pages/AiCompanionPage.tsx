@@ -5,6 +5,7 @@ import { Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } fr
 import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
 import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
+import { CompanionProgressCard } from "../features/companion";
 import type { RootState } from "../app/store";
 import {
   selectTodayMealItems,
@@ -14,6 +15,7 @@ import { selectDailyMacroTargets } from "../features/profile/selectors";
 import { getAssistantRuntimeStatus } from "@shared/api/assistant";
 import { AssistantAvatar } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
+import { PageShell, SectionTabs } from "@shared/ui";
 import type { AssistantRuntimeStatus } from "@domain/assistant/types";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import {
@@ -85,6 +87,12 @@ const aiCopy = {
       "Ціль відкриє шкалу прогресу, точнішу норму води і кращі AI-поради.",
     primary: "Основний",
     backup: "Резерв",
+    sections: {
+      companion: "Компаньйон",
+      progress: "Прогрес",
+      memory: "Пам'ять",
+      settings: "Налаштування",
+    },
   },
   pl: {
     title: "Asystent",
@@ -147,6 +155,12 @@ const aiCopy = {
       "Cel odblokuje skalę progresu, dokładniejszą normę wody i lepsze rady AI.",
     primary: "Główny",
     backup: "Zapasowy",
+    sections: {
+      companion: "Companion",
+      progress: "Progres",
+      memory: "Pamięć",
+      settings: "Ustawienia",
+    },
   },
   en: {
     title: "Assistant",
@@ -209,8 +223,16 @@ const aiCopy = {
       "A target unlocks the progress scale, a better water goal, and sharper assistant guidance.",
     primary: "Primary",
     backup: "Backup",
+    sections: {
+      companion: "Companion",
+      progress: "Progress",
+      memory: "Memory",
+      settings: "Settings",
+    },
   },
 } as const;
+
+type AiCompanionSection = "companion" | "progress" | "memory" | "settings";
 
 const AiCompanionPage = () => {
   const navigate = useNavigate();
@@ -224,6 +246,7 @@ const AiCompanionPage = () => {
   const { appLanguage } = useLanguage();
   const copy = aiCopy[appLanguage];
   const [runtimeStatus, setRuntimeStatus] = useState<AssistantRuntimeStatus | null>(null);
+  const [activeSection, setActiveSection] = useState<AiCompanionSection>("companion");
 
   useEffect(() => {
     let active = true;
@@ -231,6 +254,10 @@ const AiCompanionPage = () => {
     void getAssistantRuntimeStatus().then((status) => {
       if (active) {
         setRuntimeStatus(status);
+      }
+    }).catch(() => {
+      if (active) {
+        setRuntimeStatus(null);
       }
     });
 
@@ -341,9 +368,24 @@ const AiCompanionPage = () => {
       items: assistantCore.memory.motivationTriggers,
     },
   ];
+  const sections = [
+    { id: "companion", label: copy.sections.companion },
+    { id: "progress", label: copy.sections.progress },
+    { id: "memory", label: copy.sections.memory },
+    { id: "settings", label: copy.sections.settings },
+  ];
 
   return (
-    <Stack spacing={2.5}>
+    <PageShell title={copy.title} subtitle={copy.subtitle}>
+      <SectionTabs
+        sections={sections}
+        activeSection={activeSection}
+        onChange={(sectionId) => setActiveSection(sectionId as AiCompanionSection)}
+        ariaLabel="Assistant companion sections"
+      />
+
+      {activeSection === "companion" ? (
+        <Stack spacing={2.5}>
       <Paper
         elevation={0}
         sx={{
@@ -363,11 +405,11 @@ const AiCompanionPage = () => {
               {assistant.name}
             </Typography>
             <Typography
-              component="h1"
+              component="h2"
               variant="h4"
               sx={{ fontWeight: 900, fontSize: { xs: 38, md: 42 } }}
             >
-              {copy.title}
+              {assistant.name}
             </Typography>
             {user && (
               <Typography
@@ -476,7 +518,10 @@ const AiCompanionPage = () => {
           </Stack>
         </Paper>
       )}
+        </Stack>
+      ) : null}
 
+      {activeSection === "memory" ? (
       <Paper
         elevation={0}
         sx={{
@@ -517,7 +562,10 @@ const AiCompanionPage = () => {
           </Box>
         </Stack>
       </Paper>
+      ) : null}
 
+      {activeSection === "settings" ? (
+        <Stack spacing={2.5}>
       <Paper
         elevation={0}
         sx={{
@@ -591,11 +639,18 @@ const AiCompanionPage = () => {
           )}
         </Stack>
       </Paper>
+          <AssistantRuntimeCard />
+        </Stack>
+      ) : null}
 
-      <SmartRecommendations />
-      <NutritionCoachCard />
-      <AssistantRuntimeCard />
-    </Stack>
+      {activeSection === "progress" ? (
+        <Stack spacing={2.5}>
+          <CompanionProgressCard />
+          <SmartRecommendations />
+          <NutritionCoachCard />
+        </Stack>
+      ) : null}
+    </PageShell>
   );
 };
 

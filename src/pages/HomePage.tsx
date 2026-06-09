@@ -39,6 +39,7 @@ import {
 } from "@features/assistant/assistantHomeIntelligence";
 import { useLanguage } from "../shared/language";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
+import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
 
 const homeCopy = {
   uk: {
@@ -65,6 +66,13 @@ const homeCopy = {
     quickAddSubtitle: "Оберіть найшвидший спосіб для цього моменту.",
     water: "Додати воду",
     close: "Закрити",
+    sections: {
+      today: "Сьогодні",
+      meals: "Харчування",
+      water: "Вода",
+      progress: "Прогрес",
+      assistant: "Асистент",
+    },
   },
   pl: {
     assistant: "Asystent",
@@ -90,6 +98,13 @@ const homeCopy = {
     quickAddSubtitle: "Wybierz najszybszy sposób na ten moment.",
     water: "Dodaj wodę",
     close: "Zamknij",
+    sections: {
+      today: "Dzisiaj",
+      meals: "Jedzenie",
+      water: "Woda",
+      progress: "Progres",
+      assistant: "Asystent",
+    },
   },
   en: {
     assistant: "Assistant",
@@ -115,8 +130,17 @@ const homeCopy = {
     quickAddSubtitle: "Choose the fastest method for this moment.",
     water: "Add water",
     close: "Close",
+    sections: {
+      today: "Today",
+      meals: "Meals",
+      water: "Water",
+      progress: "Progress",
+      assistant: "Assistant",
+    },
   },
 } as const;
+
+type HomeSection = "today" | "meals" | "water" | "progress" | "assistant";
 
 const HomePage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -130,6 +154,7 @@ const HomePage = () => {
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage, t } = useLanguage();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<HomeSection>("today");
   const copy = homeCopy[appLanguage];
 
   const dailyContext = useMemo(
@@ -209,9 +234,29 @@ const HomePage = () => {
     { label: copy.progress, icon: BarChart3, path: "/progress" },
     { label: copy.profile, icon: UserRound, path: "/profile" },
   ];
+  const sections = [
+    { id: "today", label: copy.sections.today },
+    { id: "meals", label: copy.sections.meals },
+    { id: "water", label: copy.sections.water },
+    { id: "progress", label: copy.sections.progress },
+    { id: "assistant", label: copy.sections.assistant },
+  ];
+  const mealQuickActions = [
+    { label: copy.scan, icon: ScanBarcode, onClick: () => openMealMode("barcode") },
+    { label: copy.photo, icon: Camera, onClick: () => openMealMode("photo") },
+    { label: copy.searchFood, icon: Search, onClick: () => openMealMode("search") },
+    { label: copy.mealPlan, icon: ChefHat, onClick: () => navigate("/recipes") },
+  ];
+  const progressCards = routeCards.filter((card) =>
+    ["/progress", "/profile", "/community"].includes(card.path)
+  );
 
   return (
-    <Stack spacing={2.2} sx={{ maxWidth: 980, mx: "auto" }}>
+    <PageShell
+      title={copy.greeting.replace("{name}", firstName)}
+      subtitle={copy.subtitle}
+      maxWidth={980}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -365,52 +410,111 @@ const HomePage = () => {
         </Stack>
       </Paper>
 
-      <Stack spacing={1}>
-        <Typography sx={{ fontWeight: 900 }}>{copy.otherActions}</Typography>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-            gap: 1,
-          }}
-        >
-          {intelligence.secondaryActions.map((action) => (
+      <SectionTabs
+        sections={sections}
+        activeSection={activeSection}
+        onChange={(sectionId) => setActiveSection(sectionId as HomeSection)}
+        ariaLabel="Dashboard sections"
+      />
+
+      {activeSection === "assistant" ? (
+        <SectionCard title={copy.otherActions} tone="info">
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gap: 1,
+            }}
+          >
+            {intelligence.secondaryActions.map((action) => (
+              <Button
+                key={`${action.kind}-${action.label}`}
+                variant="outlined"
+                onClick={() => runAssistantAction(action)}
+                sx={{
+                  minHeight: 54,
+                  borderRadius: 1,
+                  textTransform: "none",
+                  fontWeight: 900,
+                }}
+              >
+                {action.label}
+              </Button>
+            ))}
             <Button
-              key={`${action.kind}-${action.label}`}
               variant="outlined"
-              onClick={() => runAssistantAction(action)}
-              sx={{
-                minHeight: 54,
-                borderRadius: 1,
-                textTransform: "none",
-                fontWeight: 900,
-              }}
+              onClick={() => setQuickAddOpen(true)}
+              startIcon={<Plus size={18} />}
+              sx={{ minHeight: 54, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
             >
-              {action.label}
+              {copy.quickAddTitle}
             </Button>
-          ))}
+          </Box>
+        </SectionCard>
+      ) : null}
+
+      {activeSection === "meals" ? (
+        <SectionCard title={copy.quickAddTitle} description={copy.quickAddSubtitle}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+              gap: 1,
+            }}
+          >
+            {mealQuickActions.map((action) => {
+              const Icon = action.icon;
+
+              return (
+                <Button
+                  key={action.label}
+                  onClick={action.onClick}
+                  startIcon={<Icon size={19} />}
+                  variant="outlined"
+                  sx={{
+                    minHeight: 54,
+                    justifyContent: "flex-start",
+                    borderRadius: 1,
+                    textTransform: "none",
+                    fontWeight: 900,
+                  }}
+                >
+                  {action.label}
+                </Button>
+              );
+            })}
+          </Box>
+        </SectionCard>
+      ) : null}
+
+      {activeSection === "water" ? (
+        <SectionCard title={copy.water} tone="info">
           <Button
-            variant="outlined"
-            onClick={() => setQuickAddOpen(true)}
+            variant="contained"
+            onClick={() => dispatch(incrementWater(water.glassSizeMl))}
             startIcon={<Plus size={18} />}
             sx={{ minHeight: 54, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
           >
-            {copy.quickAddTitle}
+            {copy.water}
           </Button>
-        </Box>
-      </Stack>
+        </SectionCard>
+      ) : null}
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(5, minmax(0, 1fr))" },
-          gap: 1,
-        }}
-      >
-        {routeCards.map((card) => {
-          const Icon = card.icon;
+      {activeSection === "today" || activeSection === "progress" ? (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: `repeat(${activeSection === "today" ? 5 : 3}, minmax(0, 1fr))`,
+            },
+            gap: 1,
+          }}
+        >
+          {(activeSection === "today" ? routeCards : progressCards).map((card) => {
+            const Icon = card.icon;
 
-          return (
+            return (
             <Paper
               key={card.path}
               component="button"
@@ -436,9 +540,10 @@ const HomePage = () => {
                 <Typography sx={{ fontWeight: 900 }}>{card.label}</Typography>
               </Stack>
             </Paper>
-          );
-        })}
-      </Box>
+            );
+          })}
+        </Box>
+      ) : null}
 
       <Drawer
         anchor="bottom"
@@ -512,7 +617,7 @@ const HomePage = () => {
           </Button>
         </Stack>
       </Drawer>
-    </Stack>
+    </PageShell>
   );
 };
 

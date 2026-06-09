@@ -76,8 +76,14 @@ const createCacheApi = (storage: StorageLike | null) => {
   return {
     readSnapshot: () => read<AppSnapshot>(SNAPSHOT_CACHE_KEY)?.value ?? null,
     writeSnapshot: (snapshot: AppSnapshot) => {
-      write(SNAPSHOT_CACHE_KEY, snapshot);
-      write(META_CACHE_KEY, getSnapshotMetaFromSnapshot(snapshot));
+      const previousSnapshot = read<AppSnapshot>(SNAPSHOT_CACHE_KEY)?.value ?? null;
+      const nextSnapshot =
+        snapshot.companion === undefined && previousSnapshot?.companion !== undefined
+          ? { ...snapshot, companion: previousSnapshot.companion }
+          : snapshot;
+
+      write(SNAPSHOT_CACHE_KEY, nextSnapshot);
+      write(META_CACHE_KEY, getSnapshotMetaFromSnapshot(nextSnapshot));
     },
     readMeta: ({ allowStale = false }: { allowStale?: boolean } = {}) => {
       const envelope = read<AppSnapshotMeta>(META_CACHE_KEY);

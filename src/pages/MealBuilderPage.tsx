@@ -18,6 +18,7 @@ import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
+import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
 import { CatalogContributionCard } from "../features/platform/CatalogContributionCard";
 import { MealEntryEditorPanel } from "../features/meal/MealEntryEditorPanel";
@@ -27,10 +28,12 @@ import {
 } from "../features/meal/selectors";
 import { TemplateVault } from "../features/meal/TemplateVault";
 import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
+import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import Loader from "../shared/components/Loader/PacmanLoader";
+import { PageShell, SectionTabs } from "@shared/ui";
 
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({
@@ -52,6 +55,13 @@ const mealInputCopy = {
     advancedTitle: "Додаткові інструменти",
     advancedSubtitle:
       "Шаблони, повтори, холодильник і рецепти залишаються нижче, коли потрібна точніша збірка.",
+    sections: {
+      day: "День",
+      add: "Додати",
+      history: "Історія",
+      templates: "Шаблони",
+      recommendations: "Поради",
+    },
     modes: {
       photo: {
         title: "Фото",
@@ -73,6 +83,13 @@ const mealInputCopy = {
     advancedTitle: "Dodatkowe narzędzia",
     advancedSubtitle:
       "Szablony, powtórki, lodówka i przepisy zostają niżej, gdy potrzeba dokładniejszego składania.",
+    sections: {
+      day: "Dzień",
+      add: "Dodaj",
+      history: "Historia",
+      templates: "Szablony",
+      recommendations: "Rekomendacje",
+    },
     modes: {
       photo: {
         title: "Zdjęcie",
@@ -90,6 +107,8 @@ const mealInputCopy = {
   },
 } as const;
 
+type MealSection = "day" | "add" | "history" | "templates" | "recommendations";
+
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const items = useSelector(selectTodayMealItems);
@@ -101,6 +120,7 @@ const MealBuilderPage = () => {
   const { language, t } = useLanguage();
   const copy = mealInputCopy[language];
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
+  const [activeSection, setActiveSection] = useState<MealSection>("add");
 
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),
@@ -133,9 +153,16 @@ const MealBuilderPage = () => {
     nextParams.set("mode", mode);
     setSearchParams(nextParams);
   };
+  const sections = [
+    { id: "day", label: copy.sections.day },
+    { id: "add", label: copy.sections.add },
+    { id: "history", label: copy.sections.history },
+    { id: "templates", label: copy.sections.templates },
+    { id: "recommendations", label: copy.sections.recommendations },
+  ];
 
   return (
-    <Stack spacing={3}>
+    <PageShell title={t("mealBuilder.title")} subtitle={t("mealBuilder.subtitle")}>
       <Paper
         elevation={0}
         sx={{
@@ -146,16 +173,6 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={{ xs: 1, md: 1.5 }}>
-          <Typography
-            component="h1"
-            variant="h4"
-            sx={{ fontWeight: 900, fontSize: { xs: 26, md: 34 } }}
-          >
-            {t("mealBuilder.title")}
-          </Typography>
-          <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
-            {t("mealBuilder.subtitle")}
-          </Typography>
           <Typography variant="body2">
             {t("mealBuilder.calories")}: {totals.calories.toFixed(0)} / {dailyCalories}{" "}
             {t("common.kcal")}
@@ -168,6 +185,15 @@ const MealBuilderPage = () => {
         </Stack>
       </Paper>
 
+      <SectionTabs
+        sections={sections}
+        activeSection={activeSection}
+        onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
+        ariaLabel="Meal sections"
+      />
+
+      {activeSection === "add" ? (
+        <Stack spacing={3}>
       <Paper
         elevation={0}
         sx={{
@@ -389,7 +415,74 @@ const MealBuilderPage = () => {
           </Paper>
         </Stack>
       </Box>
+        </Stack>
+      ) : null}
 
+      {activeSection === "day" ? (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            borderRadius: 1,
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+            backgroundColor: "rgba(255,255,255,0.86)",
+          }}
+        >
+          <Stack spacing={2}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+              {t("mealBuilder.diary")}
+            </Typography>
+
+            {(Object.keys(groupedEntries) as MealType[]).map((group) => (
+              <Stack key={group} spacing={1.2}>
+                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                  <Typography sx={{ fontWeight: 800 }}>{mealLabels[group]}</Typography>
+                  <Chip
+                    label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
+                    size="small"
+                  />
+                </Stack>
+
+                {groupedEntries[group].length === 0 ? (
+                  <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
+                ) : (
+                  groupedEntries[group].map((item) => {
+                    const entryCalories =
+                      (item.product.nutrients.calories * item.quantity) / 100;
+
+                    return (
+                      <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          justifyContent="space-between"
+                          spacing={1}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 700 }}>
+                              {getProductDisplayName(item.product, language)}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2">
+                              {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
+                              {t("common.kcal")}
+                            </Typography>
+                          </Box>
+                          <MealEntryEditorPanel entry={item} />
+                        </Stack>
+                      </Paper>
+                    );
+                  })
+                )}
+
+                <Divider />
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
+      ) : null}
+
+      {activeSection === "history" ? <DailyHistoryExplorer /> : null}
+
+      {activeSection === "templates" ? (
       <Paper
         elevation={0}
         sx={{
@@ -426,7 +519,10 @@ const MealBuilderPage = () => {
           </Box>
         </Stack>
       </Paper>
-    </Stack>
+      ) : null}
+
+      {activeSection === "recommendations" ? <SmartRecommendations /> : null}
+    </PageShell>
   );
 };
 

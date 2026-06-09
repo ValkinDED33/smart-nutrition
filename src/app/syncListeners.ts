@@ -14,6 +14,7 @@ import {
   syncRemoteProfileState,
   syncRemoteWaterState,
 } from "../shared/api/auth";
+import type { AppSnapshotMeta } from "../shared/types/appSnapshot";
 import {
   hydrateSyncOutbox,
   setCloudMeta,
@@ -84,7 +85,13 @@ import {
   syncWaterTargetFromWeight,
   type WaterState,
 } from "../features/water/waterSlice";
+import {
+  awardCompanionReward,
+  resetCompanionState,
+  unlockCompanionAchievement,
+} from "../features/companion/model/store";
 import { clearSyncOutbox, enqueueSyncOutbox } from "../shared/lib/syncOutbox";
+import type { CompanionState } from "../companion";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
@@ -93,17 +100,38 @@ import { buildAppSnapshot } from "@domain/appSnapshot";
 import { writeCachedRemoteSnapshot } from "../shared/lib/remoteStateCache";
 
 type SyncState = {
+  auth: {
+    cloudMeta: AppSnapshotMeta | null;
+  };
   profile: ProfileState;
   meal: MealState;
   water: WaterState;
   fridge: unknown;
   community: unknown;
+  companion: CompanionState;
 };
 
 const getStateSnapshot = (state: unknown) => state as SyncState;
 
 const syncWholeMealState = async (state: SyncState) => {
   return syncRemoteMealState(state.meal);
+};
+
+const writeCachedSnapshotFromState = (
+  state: SyncState,
+  meta: AppSnapshotMeta | null | undefined
+) => {
+  writeCachedRemoteSnapshot(
+    buildAppSnapshot({
+      profile: state.profile,
+      meal: state.meal,
+      water: state.water,
+      fridge: state.fridge,
+      community: state.community,
+      companion: state.companion,
+      meta,
+    })
+  );
 };
 
 const maybeApplyAutomaticAdaptiveTarget = (
@@ -163,16 +191,7 @@ const runCloudSync = async (
     if (result.ok) {
       const state = getStateSnapshot(listenerApi.getState());
       const clearedOutbox = clearSyncOutbox();
-      writeCachedRemoteSnapshot(
-        buildAppSnapshot({
-          profile: state.profile,
-          meal: state.meal,
-          water: state.water,
-          fridge: state.fridge,
-          community: state.community,
-          meta: result.meta,
-        })
-      );
+      writeCachedSnapshotFromState(state, result.meta);
       listenerApi.dispatch(hydrateSyncOutbox(clearedOutbox));
       listenerApi.dispatch(setCloudMeta(result.meta ?? null));
       listenerApi.dispatch(markSyncSuccess(result.meta?.updatedAt ?? undefined));
@@ -197,6 +216,18 @@ export const registerRemoteSyncListeners = () => {
   }
 
   listenersRegistered = true;
+
+  remoteSyncListenerMiddleware.startListening({
+    matcher: isAnyOf(
+      awardCompanionReward,
+      unlockCompanionAchievement,
+      resetCompanionState
+    ),
+    effect: async (_, listenerApi) => {
+      const state = getStateSnapshot(listenerApi.getState());
+      writeCachedSnapshotFromState(state, state.auth.cloudMeta);
+    },
+  });
 
   remoteSyncListenerMiddleware.startListening({
     matcher: isAnyOf(

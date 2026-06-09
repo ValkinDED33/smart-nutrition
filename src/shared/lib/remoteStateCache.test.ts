@@ -81,4 +81,30 @@ describe("remoteStateCache", () => {
     expect(cache.readSnapshot()).toBeNull();
     expect(cache.readMeta({ allowStale: true })).toBeNull();
   });
+
+  it("preserves cached companion state when an older snapshot omits companion", () => {
+    const cache = createRemoteStateCache(createMemoryStorage());
+
+    cache.writeSnapshot({
+      profile: { calories: 2200 },
+      meal: { items: [] },
+      water: { consumedMl: 1200 },
+      fridge: { items: [] },
+      community: { posts: [] },
+      companion: { xp: 150, level: 2 },
+      updatedAt: "2026-04-03T10:00:00.000Z",
+    });
+
+    cache.writeSnapshot({
+      profile: { calories: 2300 },
+      meal: { items: [] },
+      water: { consumedMl: 1400 },
+      fridge: { items: [] },
+      community: { posts: [] },
+      updatedAt: "2026-04-03T11:00:00.000Z",
+    });
+
+    expect(cache.readSnapshot()?.companion).toEqual({ xp: 150, level: 2 });
+    expect(cache.readSnapshot()?.profile).toEqual({ calories: 2300 });
+  });
 });

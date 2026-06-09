@@ -11,7 +11,7 @@ import type {
   CommunityRoomMessage,
 } from "../../shared/types/community";
 
-interface CommunityState {
+export interface CommunityState {
   friends: CommunityFriend[];
   messages: CommunityMessage[];
   roomMessages: CommunityRoomMessage[];

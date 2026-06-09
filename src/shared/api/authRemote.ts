@@ -659,9 +659,12 @@ export const fetchRemoteAppState = async ({
       { method: "GET" },
       { requireAuth: true }
     );
+    const nextData = preserveCachedCompanionState(data);
 
-    writeCachedRemoteSnapshot(data);
-    return data;
+    if (nextData) {
+      writeCachedRemoteSnapshot(nextData);
+    }
+    return nextData;
   } catch {
     return preferCache ? readCachedRemoteSnapshot() : null;
   }
@@ -669,6 +672,21 @@ export const fetchRemoteAppState = async ({
 
 const loadRemoteAppState = async (): Promise<AppSnapshot | null> =>
   fetchRemoteAppState();
+
+const preserveCachedCompanionState = (snapshot: AppSnapshot | null) => {
+  if (!snapshot || snapshot.companion !== undefined) {
+    return snapshot;
+  }
+
+  const cachedCompanion = readCachedRemoteSnapshot()?.companion;
+
+  return cachedCompanion === undefined
+    ? snapshot
+    : {
+        ...snapshot,
+        companion: cachedCompanion,
+      };
+};
 
 const getRemoteMutationResult = async (
   path: string,
@@ -966,7 +984,9 @@ export const fetchRemoteAccountBackup = async (
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
   setRemoteSession(baseUrl);
   const granularSnapshot = await loadRemoteAppState();
-  const nextSnapshot = granularSnapshot ?? payload.snapshot ?? null;
+  const nextSnapshot = preserveCachedCompanionState(
+    granularSnapshot ?? payload.snapshot ?? null
+  );
 
   if (nextSnapshot) {
     writeCachedRemoteSnapshot(nextSnapshot);

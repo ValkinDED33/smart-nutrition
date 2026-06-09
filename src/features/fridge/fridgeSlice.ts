@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { FridgeItem } from "../../shared/types/fridge";
 import type { Product } from "@domain/products/types";
 
-interface FridgeState {
+export interface FridgeState {
   items: FridgeItem[];
 }
 

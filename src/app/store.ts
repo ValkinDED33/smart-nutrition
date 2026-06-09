@@ -6,6 +6,7 @@ import waterReducer from "../features/water/waterSlice";
 import authReducer from "../features/auth/authSlice";
 import fridgeReducer from "../features/fridge/fridgeSlice";
 import communityReducer from "../features/community/communitySlice";
+import companionReducer from "../features/companion/model/store";
 import {
   registerRemoteSyncListeners,
   remoteSyncListenerMiddleware,
@@ -18,6 +19,7 @@ const appReducer = combineReducers({
   auth: authReducer,
   fridge: fridgeReducer,
   community: communityReducer,
+  companion: companionReducer,
 });
 
 const RESET_APP_ACTION = "app/reset";

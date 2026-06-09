@@ -17,6 +17,10 @@ import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { updateWeight } from "./profileSlice";
+import {
+  awardCompanionReward,
+  createCompanionRewardAnalyticsPayload,
+} from "@features/companion";
 
 const quickWeightCopy = {
   uk: {
@@ -134,11 +138,13 @@ export const QuickWeightCheckInCard = () => {
     }
 
     dispatch(updateWeight(Math.round(nextWeight * 10) / 10));
+    dispatch(awardCompanionReward("weight_updated"));
     captureRuntimeEvent("weight_updated", {
       weightKg: Math.round(nextWeight * 10) / 10,
       previousWeightKg: latestWeight || null,
       targetWeightKg: targetWeight,
       hasTarget: Boolean(targetWeight),
+      ...createCompanionRewardAnalyticsPayload("weight_updated"),
     });
     setWeightDraft(nextWeight.toFixed(1));
     setSaved(true);

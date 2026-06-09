@@ -18,6 +18,7 @@ import {
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceCommunityState } from "../features/community/communitySlice";
+import { hydrateCompanionState } from "../features/companion";
 import { replaceFridgeState } from "../features/fridge/fridgeSlice";
 import { replaceMealState } from "../features/meal/mealSlice";
 import { replaceProfileState } from "../features/profile/profileSlice";
@@ -99,6 +100,7 @@ const LoginPage = () => {
         dispatch(replaceWaterState(snapshot.water));
         dispatch(replaceFridgeState(snapshot.fridge));
         dispatch(replaceCommunityState(snapshot.community));
+        dispatch(hydrateCompanionState(snapshot.companion));
       }
 
       captureRuntimeEvent("login_completed", {
