@@ -1055,8 +1055,8 @@ const FinalCta = ({
 );
 
 const LandingPage = () => {
-  const { language } = useLanguage();
-  const copy = landingCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = landingCopy[appLanguage];
 
   return (
     <Stack spacing={{ xs: 4, md: 5 }}>

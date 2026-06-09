@@ -64,6 +64,19 @@ const suggestionCopy = {
       "Ten wpis już istnieje. Jeśli utworzysz nowy, dodasz duplikat; lepiej użyć gotowego wpisu.",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
+  en: {
+    title: "Quick suggestions",
+    hint: "Click a suggestion to fill the search quickly.",
+    searchLabel: "Search food",
+    quickTitle: "Popular quick start",
+    recentTitle: "Recent searches",
+    clearRecent: "Clear history",
+    results: "Found",
+    duplicateTitle: "Database assistant",
+    duplicateAdvice:
+      "This item already exists. Creating a new one will add a duplicate; it is better to use the existing entry.",
+    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
+  },
 } as const;
 
 const genericBrands = new Set(["Manual", "Homemade", "Restaurant", "Fast food"]);
@@ -99,9 +112,9 @@ export const ProductSearch = ({ mealType }: Props) => {
     adaptiveMode: state.profile.adaptiveMode,
   }));
   const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
   const normalizedQuery = query.trim();
-  const copy = suggestionCopy[language];
+  const copy = suggestionCopy[appLanguage];
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -235,14 +248,14 @@ export const ProductSearch = ({ mealType }: Props) => {
       const categoryKey = getProductCategoryKey(product);
 
       if (!categoryMap.has(categoryKey)) {
-        categoryMap.set(categoryKey, getProductCategoryLabel(categoryKey, language));
+        categoryMap.set(categoryKey, getProductCategoryLabel(categoryKey, appLanguage));
       }
     });
 
     return [...categoryMap.entries()].sort((left, right) =>
-      left[1].localeCompare(right[1], language)
+      left[1].localeCompare(right[1], appLanguage)
     );
-  }, [displayResults, language]);
+  }, [appLanguage, displayResults]);
 
   const activeCategoryFilter =
     categoryFilter === "all" ||
@@ -443,8 +456,9 @@ export const ProductSearch = ({ mealType }: Props) => {
               sx={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
-                gap: 2,
+                  "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+                gap: { xs: 1.4, md: 1.75 },
+                alignItems: "start",
               }}
             >
               {filteredResults.map((product) => (

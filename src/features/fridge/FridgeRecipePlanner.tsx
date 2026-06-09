@@ -49,6 +49,7 @@ const fridgeCopy = {
     coverage: "Покриття",
     missing: "Ще потрібні",
     cookNow: "Додати як прийом їжі",
+    remove: "Видалити",
   },
   pl: {
     title: "Co jest w lodówce",
@@ -68,6 +69,27 @@ const fridgeCopy = {
     coverage: "Dopasowanie",
     missing: "Brakuje jeszcze",
     cookNow: "Dodaj jako posiłek",
+    remove: "Usuń",
+  },
+  en: {
+    title: "What is in the fridge",
+    subtitle:
+      "Add products you already have at home, and the system will suggest recipes from the library and community.",
+    search: "Add product to fridge",
+    searchHint: "Start typing a product name",
+    quickAdd: "Quick add",
+    selected: "Currently in the fridge",
+    selectedEmpty: "Empty for now. Add at least 2-3 ingredients.",
+    quantity: "Quantity",
+    suggestions: "What you can cook",
+    noSuggestions:
+      "Not enough matches yet. Add one more protein, vegetable, or base side.",
+    fromLibrary: "Library",
+    fromCommunity: "Community",
+    coverage: "Coverage",
+    missing: "Still needed",
+    cookNow: "Add as meal",
+    remove: "Remove",
   },
 } as const;
 
@@ -126,8 +148,8 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const fridgeItems = useSelector((state: RootState) => state.fridge.items);
   const savedProducts = useSelector(selectSavedProducts);
   const communityPosts = useSelector((state: RootState) => state.community.posts);
-  const { language } = useLanguage();
-  const copy = fridgeCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = fridgeCopy[appLanguage];
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const deferredQuery = useDeferredValue(query);
@@ -319,7 +341,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                     sx={{ width: { xs: "100%", md: 180 } }}
                   />
                   <Button color="error" onClick={() => dispatch(removeFridgeItem(item.id))}>
-                    Remove
+                    {copy.remove}
                   </Button>
                 </Stack>
               </Paper>

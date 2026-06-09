@@ -157,6 +157,38 @@ export const resolveAssistantPresence = (
     });
   }
 
+  if (context.area === "meals") {
+    return compactPresence({
+      reason: "meals-dense-input-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
+  if (context.area === "progress") {
+    return compactPresence({
+      reason: "progress-chart-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
+  if (context.area === "recipes") {
+    return compactPresence({
+      reason: "recipes-content-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
+  if (context.area === "water") {
+    return compactPresence({
+      reason: "water-check-in-surface",
+      prefersReducedMotion,
+      priority: "normal",
+    });
+  }
+
   if (context.area === "coach") {
     return {
       visible: true,

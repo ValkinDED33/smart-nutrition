@@ -62,6 +62,30 @@ const notificationCopy = {
     enabled: "Włączone",
     muted: "Wyciszone",
   },
+  en: {
+    title: "Notifications and habits",
+    subtitle:
+      "Set gentle meal reminders and calorie alerts. The browser will send them only while this app is available.",
+    unsupported: "This browser does not support notifications.",
+    permissionDefault: "Notifications are not enabled yet.",
+    permissionGranted: "Browser notifications are enabled.",
+    permissionDenied:
+      "Notifications are blocked in the browser. Allow them in browser settings first.",
+    enableAction: "Enable browser notifications",
+    notificationsEnabled: "Use browser notifications",
+    mealRemindersEnabled: "Meal reminders",
+    calorieAlertsEnabled: "Calorie alerts",
+    breakfast: "Breakfast reminder",
+    lunch: "Lunch reminder",
+    dinner: "Dinner reminder",
+    snack: "Snack reminder",
+    browserReady: "Browser ready",
+    blocked: "Blocked",
+    unsupportedChip: "Unsupported",
+    permissionNeeded: "Permission needed",
+    enabled: "Enabled",
+    muted: "Muted",
+  },
 } as const;
 
 type PermissionState = NotificationPermission | "unsupported";
@@ -74,13 +98,13 @@ export const NotificationSettingsCard = () => {
     calorieAlertsEnabled,
     reminderTimes,
   } = useSelector((state: RootState) => state.profile);
-  const { language } = useLanguage();
+  const { appLanguage } = useLanguage();
   const [permission, setPermission] = useState<PermissionState>(() =>
     typeof window !== "undefined" && "Notification" in window
       ? Notification.permission
       : "unsupported"
   );
-  const copy = notificationCopy[language];
+  const copy = notificationCopy[appLanguage];
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) {

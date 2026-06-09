@@ -33,8 +33,9 @@ export const QuickProductShelf = ({ mealType }: Props) => {
       sx={{
         display: "grid",
         gridTemplateColumns:
-          "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
-        gap: 2,
+          "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+        gap: { xs: 1.4, md: 1.75 },
+        alignItems: "start",
       }}
     >
       {products.map((product) => (

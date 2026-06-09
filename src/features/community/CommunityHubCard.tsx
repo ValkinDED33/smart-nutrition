@@ -36,6 +36,7 @@ import {
 import { submitContentReport } from "../../shared/api/platform";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
 import { sanitizeHtml } from "@integration/runtime/content";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const communityCopy = {
   uk: {
@@ -190,13 +191,95 @@ const communityCopy = {
       discussion: "Dyskusja",
     },
   },
+  en: {
+    title: "Community Hub",
+    subtitle:
+      "Friends, private messages, recipe forum, and personal points in one place.",
+    personalFocus: (friction: string, motivation: string) =>
+      `Your onboarding focus: ${friction}. Support style: ${motivation}. Here you can find examples, support, or share progress for this exact scenario.`,
+    tabs: {
+      friends: "Friends",
+      chat: "Chat",
+      forum: "Forum",
+      progress: "Progress",
+    },
+    level: "Level",
+    points: "Points",
+    favorites: "Saved",
+    addFriend: "Add friend",
+    friendName: "Name or nickname",
+    online: "Online",
+    offline: "Offline",
+    lastActive: "Last active",
+    noFriends: "No friends yet. Add the first contact.",
+    selectFriend: "Choose a friend to see the conversation.",
+    globalChat: "Global chat",
+    privateChat: "Private chat",
+    noRoomMessages: "The global chat is quiet for now.",
+    typeCommunityMessage: "Message to global chat",
+    typeMessage: "Write a message",
+    send: "Send",
+    postType: "Post type",
+    titleField: "Title",
+    bodyField: "Text",
+    ingredientsField: "Ingredients separated by commas",
+    publish: "Publish",
+    queued: "Sent for review",
+    forumViews: {
+      popular: "Popular",
+      new: "New",
+      recipes: "Recipes",
+      discussion: "Discussions",
+    },
+    status: {
+      pending: "In review",
+      approved: "Published",
+      rejected: "Rejected",
+    },
+    moderation: "Forum moderation",
+    reports: "Reports",
+    report: "Report",
+    reportSent: "Report sent to moderation",
+    approve: "Approve",
+    reject: "Reject",
+    deleteSpam: "Delete spam",
+    deleteComment: "Delete comment",
+    mergeDuplicate: "Merge duplicate",
+    comments: "Comments",
+    addComment: "Comment",
+    typeComment: "Write a comment",
+    shareProgress: "Share progress",
+    metricLabel: "Metric",
+    metricValue: "Value",
+    progressCaption: "Short description",
+    progressFeed: "Progress cards",
+    noProgressCards: "No progress cards yet.",
+    like: "Like",
+    save: "Save",
+    unsave: "Unsave",
+    duplicate:
+      "A similar post already exists. I will send it for review as a duplicate.",
+    emptyPosts: "No posts yet.",
+    types: {
+      recipe: "Recipe",
+      advice: "Advice",
+      experience: "Experience",
+      discussion: "Discussion",
+    },
+  },
 } as const;
 
 type TabValue = "friends" | "chat" | "forum" | "progress";
 type ForumView = "popular" | "new" | "recipes" | "discussion";
 
-const formatDateTime = (value: string, language: "uk" | "pl") =>
-  new Date(value).toLocaleString(language === "pl" ? "pl-PL" : "uk-UA", {
+const communityLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatDateTime = (value: string, language: AppLanguage) =>
+  new Date(value).toLocaleString(communityLocaleByLanguage[language], {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -209,11 +292,11 @@ export const CommunityHubCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const community = useSelector((state: RootState) => state.community);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
-  const { language } = useLanguage();
-  const copy = communityCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = communityCopy[appLanguage];
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
-    language
+    appLanguage
   );
   const [tab, setTab] = useState<TabValue>("friends");
   const [forumView, setForumView] = useState<ForumView>("popular");
@@ -467,7 +550,7 @@ export const CommunityHubCard = () => {
                         {friend.name} <Typography component="span">{friend.handle}</Typography>
                       </Typography>
                       <Typography color="text.secondary" variant="body2">
-                        {copy.lastActive}: {formatDateTime(friend.lastActiveAt, language)}
+                        {copy.lastActive}: {formatDateTime(friend.lastActiveAt, appLanguage)}
                       </Typography>
                     </Stack>
                     <Stack direction="row" spacing={1} alignItems="center">
@@ -505,7 +588,7 @@ export const CommunityHubCard = () => {
                       <Typography sx={{ fontWeight: 700 }}>{message.authorName}</Typography>
                       <Typography>{message.text}</Typography>
                       <Typography color="text.secondary" variant="caption">
-                        {formatDateTime(message.createdAt, language)}
+                        {formatDateTime(message.createdAt, appLanguage)}
                       </Typography>
                     </Stack>
                   </Paper>
@@ -771,7 +854,7 @@ export const CommunityHubCard = () => {
                       <Typography sx={{ fontWeight: 800 }}>{post.title}</Typography>
                       <Typography color="text.secondary">{post.body}</Typography>
                       <Typography color="text.secondary" variant="caption">
-                        {formatDateTime(post.createdAt, language)}
+                        {formatDateTime(post.createdAt, appLanguage)}
                       </Typography>
                       {post.ingredients.length > 0 && (
                         <Typography variant="body2">
@@ -917,7 +1000,7 @@ export const CommunityHubCard = () => {
                     </Stack>
                     <Typography color="text.secondary">{card.caption}</Typography>
                     <Typography color="text.secondary" variant="caption">
-                      {formatDateTime(card.createdAt, language)}
+                      {formatDateTime(card.createdAt, appLanguage)}
                     </Typography>
                     <Button
                       onClick={() => dispatch(likeProgressCard(card.id))}

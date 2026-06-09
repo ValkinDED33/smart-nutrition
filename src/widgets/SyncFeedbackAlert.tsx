@@ -14,13 +14,17 @@ const syncFeedbackCopy = {
     retrySuccess: "Synchronizacja z chmura zakonczona pomyslnie.",
     outboxFlushed: "Oczekujace zmiany zostaly potwierdzone przez chmure.",
   },
+  en: {
+    retrySuccess: "Cloud sync completed successfully.",
+    outboxFlushed: "Pending changes were confirmed by the cloud.",
+  },
 } as const;
 
 const SyncFeedbackAlert = () => {
   const dispatch = useDispatch<AppDispatch>();
   const syncToast = useSelector((state: RootState) => state.auth.syncToast);
-  const { language } = useLanguage();
-  const copy = syncFeedbackCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = syncFeedbackCopy[appLanguage];
 
   useAutoDismiss(Boolean(syncToast), 3200, () => dispatch(clearSyncToast()));
 

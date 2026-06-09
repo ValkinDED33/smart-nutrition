@@ -53,10 +53,10 @@ export const ProductCard = ({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
-  const { t, language } = useLanguage();
-  const displayName = getProductDisplayName(product, language);
+  const { t, appLanguage } = useLanguage();
+  const displayName = getProductDisplayName(product, appLanguage);
   const categoryKey = getProductCategoryKey(product);
-  const categoryLabel = getProductCategoryLabel(categoryKey, language);
+  const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);
   const portionPresets = getProductPortionPresets(product.unit);
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
@@ -110,11 +110,15 @@ export const ProductCard = ({
     <Card
       sx={{
         minWidth: 0,
-        height: "100%",
+        height: "auto",
+        alignSelf: "start",
         overflow: "hidden",
         borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         boxShadow: "none",
+        "& .MuiButton-root": {
+          minWidth: 0,
+        },
       }}
     >
       <Box
@@ -124,18 +128,22 @@ export const ProductCard = ({
         sx={{
           display: "block",
           width: "100%",
-          height: { xs: 152, md: 164 },
+          height: { xs: 132, sm: 142, md: 148 },
           objectFit: "cover",
           backgroundColor: "rgba(15, 23, 42, 0.06)",
         }}
       />
-      <CardContent sx={{ height: "100%", p: { xs: 1.6, md: 2 } }}>
-        <Stack spacing={1.2} sx={{ height: "100%" }}>
+      <CardContent sx={{ p: { xs: 1.35, md: 1.6 } }}>
+        <Stack spacing={1.05}>
           <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
             <Typography
               component="h3"
               variant="subtitle1"
-              sx={{ fontWeight: 900, overflowWrap: "anywhere" }}
+              sx={{
+                fontWeight: 900,
+                lineHeight: 1.2,
+                overflowWrap: "anywhere",
+              }}
             >
               {displayName}
             </Typography>
@@ -158,7 +166,7 @@ export const ProductCard = ({
             {nutrients.calories.toFixed(0)} {t("common.kcal")} / {product.unit}
           </Typography>
 
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
             {t("dashboard.protein")}: {nutrients.protein.toFixed(1)} {t("common.g")} /{" "}
             {t("dashboard.fat")}: {nutrients.fat.toFixed(1)} {t("common.g")} /{" "}
             {t("dashboard.carbs")}: {nutrients.carbs.toFixed(1)} {t("common.g")}
@@ -195,7 +203,7 @@ export const ProductCard = ({
                     setQty(String(preset));
                     setQuantityError(null);
                   }}
-                  sx={{ minWidth: 54 }}
+                  sx={{ minWidth: 54, px: 1 }}
                 >
                   {formatProductPortion(preset, product.unit)}
                 </Button>
@@ -228,7 +236,7 @@ export const ProductCard = ({
                 size="small"
                 variant="outlined"
                 onClick={() => handleAddQuantity(preset, false)}
-                sx={{ minWidth: 76 }}
+                sx={{ minWidth: 72, px: 1 }}
               >
                 +{formatProductPortion(preset, product.unit)}
               </Button>
@@ -239,16 +247,21 @@ export const ProductCard = ({
             sx={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(min(100%, 126px), 1fr))",
-              gap: 1,
-              mt: "auto",
+                "repeat(auto-fit, minmax(min(100%, 138px), 1fr))",
+              gap: 0.8,
             }}
           >
             <Button
               variant="contained"
               fullWidth
               onClick={handleAdd}
-              sx={{ alignSelf: "stretch" }}
+              sx={{
+                alignSelf: "stretch",
+                minHeight: 40,
+                px: 1,
+                whiteSpace: "normal",
+                lineHeight: 1.2,
+              }}
             >
               {t("meal.add")}
             </Button>
@@ -257,7 +270,13 @@ export const ProductCard = ({
                 variant="outlined"
                 fullWidth
                 onClick={handleToggleSave}
-                sx={{ alignSelf: "stretch" }}
+                sx={{
+                  alignSelf: "stretch",
+                  minHeight: 40,
+                  px: 1,
+                  whiteSpace: "normal",
+                  lineHeight: 1.2,
+                }}
               >
                 {isSaved ? "⭐ " + t("productCard.remove") : "☆ " + t("productCard.save")}
               </Button>

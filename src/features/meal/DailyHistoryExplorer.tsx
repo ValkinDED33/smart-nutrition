@@ -12,7 +12,7 @@ import {
 
 export const DailyHistoryExplorer = () => {
   const items = useSelector(selectMealItems);
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
 
   const availableDays = useSelector(selectAvailableMealDays);
 
@@ -56,7 +56,7 @@ export const DailyHistoryExplorer = () => {
         >
           {availableDays.map((day) => (
             <MenuItem key={day} value={day}>
-              {formatLocalDateKey(day, language, {
+              {formatLocalDateKey(day, appLanguage, {
                 weekday: "long",
                 year: "numeric",
                 month: "short",
@@ -85,7 +85,7 @@ export const DailyHistoryExplorer = () => {
                   sx={{ p: 1.5, mb: 1.1, borderRadius: 1 }}
                 >
                   <Typography sx={{ fontWeight: 700 }}>
-                    {getProductDisplayName(item.product, language)}
+                    {getProductDisplayName(item.product, appLanguage)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {item.quantity} {item.product.unit} -{" "}

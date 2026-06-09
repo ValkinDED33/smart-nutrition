@@ -179,6 +179,90 @@ const coachCopy = {
       },
     },
   },
+  en: {
+    title: "Nutrition coach",
+    subtitle: (name: string) =>
+      `${name} reviewed the last 7 days and highlighted what currently affects the result most.`,
+    score: "Coach score",
+    focus: "Main focus",
+    nextAction: "Next action",
+    stats: {
+      daysLogged: "Logged days",
+      avgCalories: "Avg. calories",
+      avgProtein: "Avg. protein",
+      avgWater: "Avg. water",
+      avgFiber: "Avg. fiber",
+      meals: "Avg. meals",
+      skippedBreakfast: "Skipped breakfasts",
+    },
+    status: {
+      strong: "Strong week",
+      steady: "Stable direction",
+      attention: "Needs adjustment",
+    } satisfies Record<NutritionCoachStatus, string>,
+    insights: {
+      logging_low: {
+        title: "Logging is still unstable",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Only ${analysis.daysLogged} of the last 7 days are logged. With little data, recommendations are less precise.`,
+        action: "Close at least 4 full diary days this week.",
+      },
+      protein_low: {
+        title: "Protein is low for the current goal",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `${analysis.averageProtein.toFixed(0)} g protein on average against a ${analysis.proteinTarget.toFixed(0)} g target.`,
+        action: "Add one clear protein meal or snack every day.",
+      },
+      water_low: {
+        title: "Water is low for a stable day",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `${analysis.averageWater.toFixed(0)} ml on average against a ${analysis.waterTarget.toFixed(0)} ml target.`,
+        action: "Set 2-3 control water servings before evening and close them in the tracker.",
+      },
+      breakfast_skipped: {
+        title: "Breakfast is often skipped",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Breakfast was skipped ${analysis.breakfastSkippedDays} time(s) in logged days over the last 7 days.`,
+        action: "Prepare a simple first meal with protein so you do not chase the day in the evening.",
+      },
+      fiber_low: {
+        title: "Fiber is dropping low",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `${analysis.averageFiber.toFixed(0)} g fiber on average against a baseline target of ${analysis.fiberTarget} g.`,
+        action: "Increase vegetables, legumes, fruit, or whole grains in one meal.",
+      },
+      calories_high: {
+        title: "Average calories are above target",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Weekly average is ${analysis.averageCalories.toFixed(0)} kcal against a ${analysis.calorieTarget.toFixed(0)} kcal target.`,
+        action: "Start by adjusting the highest-calorie meal instead of cutting the whole day at once.",
+      },
+      calories_low: {
+        title: "Average calories are below target",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Weekly average is ${analysis.averageCalories.toFixed(0)} kcal against a ${analysis.calorieTarget.toFixed(0)} kcal target.`,
+        action: "Add a stable meal or one more filling snack at the weakest time of day.",
+      },
+      meal_pattern: {
+        title: "Meal rhythm is uneven",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Only ${analysis.averageMeals.toFixed(1)} full meal slots per logged day on average.`,
+        action: "Stabilize at least 3 core points: breakfast, lunch, and dinner.",
+      },
+      weight_trend: {
+        title: "Weight trend does not support the goal",
+        detail: (analysis: NutritionCoachAnalysis) =>
+          `Weight change in the available history is ${analysis.weightChange.toFixed(1)} kg.`,
+        action: "Check whether the calorie target fits and make 1 adjustment for the next 7 days.",
+      },
+      on_track: {
+        title: "Nutrition looks balanced",
+        detail: () =>
+          "Logs are stable, average calories are not drifting critically, and protein stays close to target.",
+        action: "Keep the same rhythm and do not lower logging quality.",
+      },
+    },
+  },
 } as const;
 
 const statusColor = {
@@ -209,13 +293,13 @@ export const NutritionCoachCard = () => {
   const items = useSelector(selectMealItems);
   const profile = useSelector((state: RootState) => state.profile);
   const waterHistory = useSelector((state: RootState) => state.water.history);
-  const { language } = useLanguage();
+  const { appLanguage } = useLanguage();
 
   if (!user) {
     return null;
   }
 
-  const copy = coachCopy[language];
+  const copy = coachCopy[appLanguage];
   const analysis = generateNutritionCoachAnalysis({
     items,
     dailyCalories: profile.dailyCalories,

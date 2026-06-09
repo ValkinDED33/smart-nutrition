@@ -22,6 +22,7 @@ import {
 } from "../../shared/api/auth";
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const accountCopy = {
   uk: {
@@ -104,6 +105,47 @@ const accountCopy = {
     confirmDelete: "Tak, usun wszystko",
     syncRemote: "Synchronizacja z chmura aktywna",
   },
+  en: {
+    title: "Account and data",
+    subtitle:
+      "Export your data, check where it is stored, and fully delete the account if needed.",
+    provider: "Storage mode",
+    session: "Session",
+    sync: "Sync",
+    security: "Security",
+    providerRemote: "Remote API account",
+    sessionRemote: "API session access + refresh",
+    securityRemote:
+      "Sessions use access + refresh tokens with server-side verification.",
+    exportAction: "Export my data",
+    exportBusy: "Preparing export...",
+    exportSuccess: "Data export is ready.",
+    exportError: "Could not create export.",
+    backupsTitle: "Backup snapshots",
+    backupsSubtitle:
+      "Latest cloud restore points created from synchronized state changes.",
+    backupsEmpty: "Backup snapshots are not available yet.",
+    backupsLoading: "Loading backup snapshots...",
+    backupDownload: "Download backup",
+    backupBusy: "Downloading...",
+    backupError: "Could not download backup.",
+    deleteAction: "Delete account",
+    revokeAction: "Log out all sessions",
+    revokeBusy: "Revoking sessions...",
+    revokeSuccess: "All sessions were ended.",
+    revokeError: "Could not end all sessions.",
+    deleteBusy: "Deleting...",
+    deleteSuccess: "Account deleted.",
+    deleteError: "Could not delete account.",
+    remoteNotice:
+      "Remote accounts use access + refresh sessions, background sync, conflict-aware cloud state, and server-side backup snapshots.",
+    confirmTitle: "Delete this account?",
+    confirmBody:
+      "This will delete the account, session, profile data, meal history, saved products, templates, and barcode memory for this installation.",
+    confirmCancel: "Cancel",
+    confirmDelete: "Yes, delete everything",
+    syncRemote: "Cloud sync is active",
+  },
 } as const;
 
 type AccountCopy = (typeof accountCopy)[keyof typeof accountCopy];
@@ -114,8 +156,14 @@ const formatBytes = (value: number) => {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const formatBackupTimestamp = (value: string, language: "uk" | "pl") =>
-  new Date(value).toLocaleString(language === "uk" ? "uk-UA" : "pl-PL");
+const accountLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatBackupTimestamp = (value: string, language: AppLanguage) =>
+  new Date(value).toLocaleString(accountLocaleByLanguage[language]);
 
 const getRuntimeLabels = (copy: AccountCopy) => ({
   provider: copy.providerRemote,
@@ -127,8 +175,8 @@ export const AccountDataCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { language } = useLanguage();
-  const copy = accountCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = accountCopy[appLanguage];
   const runtime = getAuthRuntimeInfo();
   const runtimeLabels = getRuntimeLabels(copy);
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(
@@ -308,7 +356,7 @@ export const AccountDataCard = () => {
                   <Box>
                     <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {formatBackupTimestamp(backup.updatedAt, language)} ·{" "}
+                      {formatBackupTimestamp(backup.updatedAt, appLanguage)} ·{" "}
                       {formatBytes(backup.sizeBytes)}
                     </Typography>
                   </Box>

@@ -20,6 +20,7 @@ import {
   translateSyncErrorMessage,
 } from "../../shared/lib/syncMessaging";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const syncStatusCopy = {
   uk: {
@@ -72,9 +73,40 @@ const syncStatusCopy = {
     queuedSinceLabel: "W kolejce od",
     unknownTime: "Jeszcze nie zsynchronizowano",
   },
+  en: {
+    title: "Cloud sync status",
+    subtitle:
+      "Check where your nutrition data is saved and retry sync right away if the server has not confirmed the latest change.",
+    remoteMode: "Cloud API",
+    remoteInfo:
+      "This account is connected to the backend. Profile and meal changes sync in the background, and newer cloud snapshots are pulled automatically.",
+    statusLabel: "Status",
+    lastSyncLabel: "Last confirmed sync",
+    syncingStatus: "Syncing",
+    syncedStatus: "Cloud OK",
+    errorStatus: "Retry needed",
+    retryAction: "Retry sync",
+    syncingAction: "Syncing...",
+    syncNowAction: "Sync now",
+    pullLatestAction: "Use cloud version",
+    pullShadowAction: "Pull latest cloud data",
+    writerLabel: "Last cloud write",
+    writerCurrent: "This device",
+    writerOther: "Other device",
+    writerUnknown: "Unknown",
+    pendingChangesLabel: "Changes waiting for confirmation",
+    queuedSinceLabel: "Queued since",
+    unknownTime: "Not synced yet",
+  },
 } as const;
 
-const formatSyncTime = (value: string | null, language: "uk" | "pl") => {
+const syncStatusLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatSyncTime = (value: string | null, language: AppLanguage) => {
   if (!value) {
     return syncStatusCopy[language].unknownTime;
   }
@@ -85,7 +117,7 @@ const formatSyncTime = (value: string | null, language: "uk" | "pl") => {
     return syncStatusCopy[language].unknownTime;
   }
 
-  return new Intl.DateTimeFormat(language === "pl" ? "pl-PL" : "uk-UA", {
+  return new Intl.DateTimeFormat(syncStatusLocaleByLanguage[language], {
     hour: "2-digit",
     minute: "2-digit",
     day: "2-digit",
@@ -97,8 +129,8 @@ export const CloudSyncStatusCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user, syncStatus, syncError, lastSyncedAt, syncOutbox, cloudMeta } =
     useSelector((state: RootState) => state.auth);
-  const { language } = useLanguage();
-  const copy = syncStatusCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = syncStatusCopy[appLanguage];
 
   if (!user) {
     return null;
@@ -106,7 +138,7 @@ export const CloudSyncStatusCard = () => {
 
   const isSyncing = syncStatus === "syncing";
   const hasConflict = Boolean(syncError?.includes("another device"));
-  const translatedSyncError = translateSyncErrorMessage(syncError, language);
+  const translatedSyncError = translateSyncErrorMessage(syncError, appLanguage);
   const currentDeviceId = getRemoteDeviceId();
   const writerOwnership = resolveRemoteWriterOwnership(
     currentDeviceId,
@@ -167,7 +199,7 @@ export const CloudSyncStatusCard = () => {
             color={syncStatus === "error" ? "warning" : "success"}
             variant={syncStatus === "syncing" ? "filled" : "outlined"}
           />
-          <Chip label={`${copy.lastSyncLabel}: ${formatSyncTime(lastSyncedAt, language)}`} />
+          <Chip label={`${copy.lastSyncLabel}: ${formatSyncTime(lastSyncedAt, appLanguage)}`} />
           <Chip label={`${copy.writerLabel}: ${writerText}`} variant="outlined" />
           {syncOutbox.pendingChanges > 0 && (
             <Chip
@@ -182,9 +214,9 @@ export const CloudSyncStatusCard = () => {
           sx={{ borderRadius: 3 }}
         >
           {syncOutbox.pendingChanges > 0
-            ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, language) ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
+            ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, appLanguage) ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
                 syncOutbox.firstQueuedAt,
-                language
+                appLanguage
               )}.`
             : translatedSyncError ?? copy.remoteInfo}
         </Alert>

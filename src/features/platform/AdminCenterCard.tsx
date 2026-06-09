@@ -38,6 +38,7 @@ import {
   updateAdminUserRole,
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 type AdminTab = "stats" | "queue" | "users" | "audit" | "system";
 
@@ -158,19 +159,84 @@ const adminCopy = {
     optional: "Opcjonalne",
     noAudit: "Dziennik działań jest pusty.",
   },
+  en: {
+    title: "Admin Center",
+    subtitle:
+      "Product moderation, user roles, and audit logs for team control.",
+    backendUnavailable:
+      "Cloud backend is unavailable, so Admin Center cannot load data right now.",
+    tabs: {
+      queue: "Moderation",
+      stats: "Stats",
+      users: "Users",
+      audit: "Audit",
+      system: "System",
+    },
+    statsTitle: "Platform",
+    statsSubtitle: "Key indicators for users, AI, and catalog.",
+    usersTotal: "Users",
+    usersActive: "Active",
+    usersNewThisWeek: "New this week",
+    usersBanned: "Banned",
+    aiRequestsTotal: "AI requests",
+    productsTotal: "Products",
+    productsPending: "Pending moderation",
+    photoAnalysesTotal: "Photo analysis",
+    suspiciousAccounts: "Suspicious accounts",
+    moderationTitle: "Moderation",
+    reportsLabel: "Reports",
+    contentLabel: "Content",
+    photoAnalytics: "Photo analytics",
+    suspicious: "Suspicious accounts",
+    systemTitle: "Operations center",
+    systemSubtitle:
+      "Analytics, reports, content management, AI controls, and system logs in one place.",
+    analytics: "Analytics",
+    reports: "Reports",
+    content: "Content",
+    aiControls: "AI controls",
+    systemLogs: "System logs",
+    activeUsers: "Users",
+    publicProducts: "Products to review",
+    openReports: "Reports",
+    aiPolicy:
+      "AI responds as a wellness companion, without medical diagnoses and with gentle warnings.",
+    logsReady: "Role, moderation, and ban events are already written to audit log.",
+    pendingEmpty: "Moderation queue is empty right now.",
+    approve: "Approve",
+    reject: "Reject",
+    role: "Role",
+    applyRole: "Apply",
+    ban: "Ban",
+    unban: "Unban",
+    deleteUser: "Delete",
+    active: "Active",
+    confirmDelete: "Delete this user? This action cannot be undone.",
+    banned: "Banned",
+    twoFactor: "2FA",
+    required: "Required",
+    optional: "Optional",
+    noAudit: "Audit log is empty.",
+  },
 } as const;
 
-const formatDateTime = (value: string, language: "uk" | "pl") =>
-  new Date(value).toLocaleString(language === "pl" ? "pl-PL" : "uk-UA", {
+const adminLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatDateTime = (value: string, language: AppLanguage) =>
+  new Date(value).toLocaleString(adminLocaleByLanguage[language], {
     dateStyle: "short",
     timeStyle: "short",
   });
 
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const { language } = useLanguage();
-  const copy = adminCopy[language];
-  const backendUnavailableMessage = adminCopy[language].backendUnavailable;
+  const { appLanguage } = useLanguage();
+  const copy = adminCopy[appLanguage];
+  const backendUnavailableMessage = adminCopy[appLanguage].backendUnavailable;
   const [tab, setTab] = useState<AdminTab>("queue");
   const [access, setAccess] = useState<AccessOverview | null>(null);
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
@@ -628,7 +694,7 @@ export const AdminCenterCard = () => {
                   <Stack spacing={0.4}>
                     <Typography sx={{ fontWeight: 700 }}>{item.action}</Typography>
                     <Typography color="text.secondary" variant="body2">
-                      {item.actorRole} - {formatDateTime(item.createdAt, language)}
+                      {item.actorRole} - {formatDateTime(item.createdAt, appLanguage)}
                     </Typography>
                   </Stack>
                 </Paper>
@@ -689,7 +755,7 @@ export const AdminCenterCard = () => {
                 <Typography sx={{ fontWeight: 900 }}>{copy.systemLogs}</Typography>
                 <Typography color="text.secondary" variant="body2">
                   {latestAudit
-                    ? `${latestAudit.action} - ${formatDateTime(latestAudit.createdAt, language)}`
+                    ? `${latestAudit.action} - ${formatDateTime(latestAudit.createdAt, appLanguage)}`
                     : copy.noAudit}
                 </Typography>
               </Stack>

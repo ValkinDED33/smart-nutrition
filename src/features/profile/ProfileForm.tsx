@@ -29,6 +29,7 @@ import {
   formatPreferenceList,
   parsePreferenceList,
 } from "@domain/user/preferences";
+import type { AppLanguage } from "../../shared/types/i18n";
 import type { AdaptiveMode, DietStyle } from "@domain/profile/types";
 import type {
   BloodGroup,
@@ -116,63 +117,206 @@ const profileCopy = {
     supportLabel: "Wsparcie",
     petLabel: "Kto jest obok",
   },
+  en: {
+    sectionBasics: "Basic data",
+    sectionPersonal: "Assistant context",
+    personalSubtitle: (assistantName: string) =>
+      `These details help ${assistantName} choose tone, support, and contact style. Blood group and eye color are not used for medical or nutrition conclusions.`,
+    targetWeightLabel: "Target weight (kg)",
+    targetWeightHint: "Optional: add a goal to unlock the progress scale.",
+    targetWeightMax: "Enter a realistic target weight up to 300 kg.",
+    avatarTitle: "Avatar",
+    avatarSubtitle: "Upload your own photo or choose one of the ready-made avatars.",
+    avatarUpload: "Upload photo",
+    avatarUploading: "Optimizing photo...",
+    avatarHint: "Large photos are resized automatically, so the profile saves a lighter version.",
+    avatarError: "The image could not be processed. Try another photo.",
+    presets: "Choose from the list",
+    dietStyleLabel: "Diet style",
+    allergiesLabel: "Allergies",
+    allergiesHint: "Comma-separated list, for example: peanuts, lactose",
+    exclusionsLabel: "Exclude ingredients",
+    exclusionsHint: "Comma-separated list, for example: sugar, mayo",
+    adaptiveModeLabel: "Adaptive calories",
+    adaptiveAuto: "Automatic recalculation",
+    adaptiveManual: "Manual only",
+    bloodGroupLabel: "Blood group",
+    eyeColorLabel: "Eye color",
+    relationshipLabel: "Relationship status",
+    supportLabel: "Support",
+    petLabel: "Nearby companion",
+  },
 } as const;
 
-const dietStyleLabels: Record<DietStyle, string> = {
-  balanced: "Balanced",
-  vegetarian: "Vegetarian",
-  vegan: "Vegan",
-  pescatarian: "Pescatarian",
-  low_carb: "Low carb",
-  gluten_free: "Gluten free",
+const dietStyleLabels: Record<AppLanguage, Record<DietStyle, string>> = {
+  uk: {
+    balanced: "Збалансований",
+    vegetarian: "Вегетаріанський",
+    vegan: "Веганський",
+    pescatarian: "Пескетаріанський",
+    low_carb: "Низьковуглеводний",
+    gluten_free: "Без глютену",
+  },
+  pl: {
+    balanced: "Zbilansowany",
+    vegetarian: "Wegetariański",
+    vegan: "Wegański",
+    pescatarian: "Pescetariański",
+    low_carb: "Low carb",
+    gluten_free: "Bez glutenu",
+  },
+  en: {
+    balanced: "Balanced",
+    vegetarian: "Vegetarian",
+    vegan: "Vegan",
+    pescatarian: "Pescatarian",
+    low_carb: "Low carb",
+    gluten_free: "Gluten free",
+  },
 };
 
-const bloodGroupLabels: Record<BloodGroup, string> = {
-  unknown: "Не указано",
-  o_positive: "O+",
-  o_negative: "O-",
-  a_positive: "A+",
-  a_negative: "A-",
-  b_positive: "B+",
-  b_negative: "B-",
-  ab_positive: "AB+",
-  ab_negative: "AB-",
+const bloodGroupLabels: Record<AppLanguage, Record<BloodGroup, string>> = {
+  uk: {
+    unknown: "Не вказано",
+    o_positive: "O+",
+    o_negative: "O-",
+    a_positive: "A+",
+    a_negative: "A-",
+    b_positive: "B+",
+    b_negative: "B-",
+    ab_positive: "AB+",
+    ab_negative: "AB-",
+  },
+  pl: {
+    unknown: "Nie podano",
+    o_positive: "O+",
+    o_negative: "O-",
+    a_positive: "A+",
+    a_negative: "A-",
+    b_positive: "B+",
+    b_negative: "B-",
+    ab_positive: "AB+",
+    ab_negative: "AB-",
+  },
+  en: {
+    unknown: "Not specified",
+    o_positive: "O+",
+    o_negative: "O-",
+    a_positive: "A+",
+    a_negative: "A-",
+    b_positive: "B+",
+    b_negative: "B-",
+    ab_positive: "AB+",
+    ab_negative: "AB-",
+  },
 };
 
-const eyeColorLabels: Record<EyeColor, string> = {
-  unknown: "Не указано",
-  brown: "Карие",
-  blue: "Голубые",
-  green: "Зелёные",
-  gray: "Серые",
-  hazel: "Ореховые",
-  amber: "Янтарные",
-  other: "Другой",
+const eyeColorLabels: Record<AppLanguage, Record<EyeColor, string>> = {
+  uk: {
+    unknown: "Не вказано",
+    brown: "Карі",
+    blue: "Блакитні",
+    green: "Зелені",
+    gray: "Сірі",
+    hazel: "Горіхові",
+    amber: "Бурштинові",
+    other: "Інший",
+  },
+  pl: {
+    unknown: "Nie podano",
+    brown: "Brązowe",
+    blue: "Niebieskie",
+    green: "Zielone",
+    gray: "Szare",
+    hazel: "Piwne",
+    amber: "Bursztynowe",
+    other: "Inny",
+  },
+  en: {
+    unknown: "Not specified",
+    brown: "Brown",
+    blue: "Blue",
+    green: "Green",
+    gray: "Gray",
+    hazel: "Hazel",
+    amber: "Amber",
+    other: "Other",
+  },
 };
 
-const relationshipLabels: Record<RelationshipStatus, string> = {
-  single: "Холостой / не замужем",
-  dating: "В отношениях",
-  married: "Женат / замужем",
-  complicated: "Сложно",
-  prefer_not: "Не указывать",
+const relationshipLabels: Record<AppLanguage, Record<RelationshipStatus, string>> = {
+  uk: {
+    single: "Без пари",
+    dating: "У стосунках",
+    married: "Одружений / заміжня",
+    complicated: "Складно",
+    prefer_not: "Не вказувати",
+  },
+  pl: {
+    single: "Bez pary",
+    dating: "W związku",
+    married: "Małżeństwo",
+    complicated: "To skomplikowane",
+    prefer_not: "Nie podawać",
+  },
+  en: {
+    single: "Single",
+    dating: "In a relationship",
+    married: "Married",
+    complicated: "Complicated",
+    prefer_not: "Prefer not to say",
+  },
 };
 
-const supportLabels: Record<SupportSystem, string> = {
-  self: "Справляюсь сам/а",
-  partner_supports: "Вторая половинка поддерживает",
-  partner_neutral: "Вторая половинка нейтральна",
-  family_friends: "Поддерживают близкие",
-  low_support: "Поддержки мало",
-  prefer_not: "Не указывать",
+const supportLabels: Record<AppLanguage, Record<SupportSystem, string>> = {
+  uk: {
+    self: "Справляюся самостійно",
+    partner_supports: "Партнер підтримує",
+    partner_neutral: "Партнер нейтральний",
+    family_friends: "Підтримують близькі",
+    low_support: "Підтримки мало",
+    prefer_not: "Не вказувати",
+  },
+  pl: {
+    self: "Radzę sobie samodzielnie",
+    partner_supports: "Partner wspiera",
+    partner_neutral: "Partner jest neutralny",
+    family_friends: "Wspierają bliscy",
+    low_support: "Mało wsparcia",
+    prefer_not: "Nie podawać",
+  },
+  en: {
+    self: "I manage on my own",
+    partner_supports: "Partner supports me",
+    partner_neutral: "Partner is neutral",
+    family_friends: "Family or friends support me",
+    low_support: "Low support",
+    prefer_not: "Prefer not to say",
+  },
 };
 
-const petLabels: Record<PetCompanion, string> = {
-  none: "Без питомца",
-  cat: "Кот",
-  dog: "Собака",
-  cat_and_dog: "Кот и собака",
-  other: "Другой питомец",
+const petLabels: Record<AppLanguage, Record<PetCompanion, string>> = {
+  uk: {
+    none: "Без улюбленця",
+    cat: "Кіт",
+    dog: "Собака",
+    cat_and_dog: "Кіт і собака",
+    other: "Інший улюбленець",
+  },
+  pl: {
+    none: "Bez zwierzaka",
+    cat: "Kot",
+    dog: "Pies",
+    cat_and_dog: "Kot i pies",
+    other: "Inny zwierzak",
+  },
+  en: {
+    none: "No pet",
+    cat: "Cat",
+    dog: "Dog",
+    cat_and_dog: "Cat and dog",
+    other: "Other pet",
+  },
 };
 
 const ProfileForm = () => {
@@ -187,8 +331,14 @@ const ProfileForm = () => {
     personalDetails,
     assistant,
   } = useSelector((state: RootState) => state.profile);
-  const { t, language } = useLanguage();
-  const copy = profileCopy[language];
+  const { t, appLanguage } = useLanguage();
+  const copy = profileCopy[appLanguage];
+  const dietLabels = dietStyleLabels[appLanguage];
+  const bloodLabels = bloodGroupLabels[appLanguage];
+  const eyeLabels = eyeColorLabels[appLanguage];
+  const relationshipOptions = relationshipLabels[appLanguage];
+  const supportOptions = supportLabels[appLanguage];
+  const petOptions = petLabels[appLanguage];
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -545,7 +695,7 @@ const ProfileForm = () => {
                 error={Boolean(errors.bloodGroup)}
                 helperText={errors.bloodGroup?.message}
               >
-                {Object.entries(bloodGroupLabels).map(([value, label]) => (
+                {Object.entries(bloodLabels).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -561,7 +711,7 @@ const ProfileForm = () => {
                 error={Boolean(errors.eyeColor)}
                 helperText={errors.eyeColor?.message}
               >
-                {Object.entries(eyeColorLabels).map(([value, label]) => (
+                {Object.entries(eyeLabels).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -579,7 +729,7 @@ const ProfileForm = () => {
                 error={Boolean(errors.relationshipStatus)}
                 helperText={errors.relationshipStatus?.message}
               >
-                {Object.entries(relationshipLabels).map(([value, label]) => (
+                {Object.entries(relationshipOptions).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -595,7 +745,7 @@ const ProfileForm = () => {
                 error={Boolean(errors.supportSystem)}
                 helperText={errors.supportSystem?.message}
               >
-                {Object.entries(supportLabels).map(([value, label]) => (
+                {Object.entries(supportOptions).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -611,7 +761,7 @@ const ProfileForm = () => {
                 error={Boolean(errors.petCompanion)}
                 helperText={errors.petCompanion?.message}
               >
-                {Object.entries(petLabels).map(([value, label]) => (
+                {Object.entries(petOptions).map(([value, label]) => (
                   <MenuItem key={value} value={value}>
                     {label}
                   </MenuItem>
@@ -673,7 +823,7 @@ const ProfileForm = () => {
             error={Boolean(errors.dietStyle)}
             helperText={errors.dietStyle?.message}
           >
-            {Object.entries(dietStyleLabels).map(([value, label]) => (
+            {Object.entries(dietLabels).map(([value, label]) => (
               <MenuItem key={value} value={value}>
                 {label}
               </MenuItem>

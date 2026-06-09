@@ -57,7 +57,7 @@ const CUSTOM_RECIPE_PREFIX = "Recipe: ";
 
 export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
   const templates = useSelector(selectMealTemplates);
   const user = useSelector((state: RootState) => state.auth.user);
   const preferences = useSelector((state: RootState) => ({
@@ -256,7 +256,7 @@ export const RecipeSection = ({ mealType }: Props) => {
         authorId: user.id,
         authorName: user.name,
         ingredients: recipe.ingredients.map((ingredient) =>
-          getProductDisplayName(ingredient.product, language)
+          getProductDisplayName(ingredient.product, appLanguage)
         ),
       })
     );
@@ -310,7 +310,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 <Chip
                   key={product.id}
                   clickable
-                  label={getProductDisplayName(product, language)}
+                  label={getProductDisplayName(product, appLanguage)}
                   onClick={() => handleAddBuilderIngredient(product)}
                 />
               ))}
@@ -327,7 +327,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                     alignItems={{ xs: "stretch", md: "center" }}
                   >
                     <Typography sx={{ flex: 1, fontWeight: 700 }}>
-                      {getProductDisplayName(item.product, language)}
+                      {getProductDisplayName(item.product, appLanguage)}
                     </Typography>
                     <TextField
                       type="number"
@@ -411,7 +411,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 {recipe.ingredients
                   .map(
                     (ingredient) =>
-                      `${getProductDisplayName(ingredient.product, language)} ${ingredient.quantity} ${ingredient.product.unit}`
+                      `${getProductDisplayName(ingredient.product, appLanguage)} ${ingredient.quantity} ${ingredient.product.unit}`
                   )
                   .join(", ")}
               </Typography>

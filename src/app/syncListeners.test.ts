@@ -83,23 +83,11 @@ const createTestStore = () =>
   });
 
 describe("remote sync listeners", () => {
-  it("serializes rapid water updates and syncs the latest water state", async () => {
+  it("coalesces rapid water updates and syncs the latest water state", async () => {
     const syncedWaterAmounts: number[] = [];
-    let resolveFirstSync = () => {};
 
     syncRemoteWaterStateMock.mockImplementation((water: { consumedMl: number }) => {
       syncedWaterAmounts.push(water.consumedMl);
-
-      if (syncedWaterAmounts.length === 1) {
-        return new Promise((resolve) => {
-          resolveFirstSync = () => {
-            resolve({
-              ok: true,
-              meta: { updatedAt: `water-${water.consumedMl}` },
-            });
-          };
-        });
-      }
 
       return Promise.resolve({
         ok: true,
@@ -136,23 +124,12 @@ describe("remote sync listeners", () => {
     );
 
     store.dispatch(incrementWater(250));
+    store.dispatch(incrementWater(250));
 
     await vi.waitFor(() => {
       expect(syncRemoteWaterStateMock).toHaveBeenCalledTimes(1);
     });
 
-    store.dispatch(incrementWater(250));
-    await Promise.resolve();
-
-    expect(syncRemoteWaterStateMock).toHaveBeenCalledTimes(1);
-    expect(syncedWaterAmounts).toEqual([250]);
-
-    resolveFirstSync();
-
-    await vi.waitFor(() => {
-      expect(syncRemoteWaterStateMock).toHaveBeenCalledTimes(2);
-    });
-
-    expect(syncedWaterAmounts).toEqual([250, 500]);
+    expect(syncedWaterAmounts).toEqual([500]);
   });
 });

@@ -25,6 +25,7 @@ import {
   getLocalizedAchievementCopy,
   getLocalizedMotivationTaskCopy,
 } from "@domain/profile/motivation";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const copyByLanguage = {
   uk: {
@@ -97,6 +98,41 @@ const copyByLanguage = {
     pointsSuffix: "pkt",
     paidCostHint: "Koszt płatnego day off",
   },
+  en: {
+    title: "Motivation Center",
+    subtitle:
+      "Tasks, points, day off strategy, and steady progress are now grouped in one profile block.",
+    points: "Points",
+    level: "Level",
+    completed: "Tasks completed",
+    freeDay: "Weekly day off",
+    paidDay: "Paid day off",
+    freeReady: "Available now",
+    freeLocked: "Unlocks 7 days after last use",
+    paidReady: "Available this month",
+    paidLocked: "Already used this month",
+    complete: "Complete",
+    skipped: "Protected by day off",
+    done: "Done",
+    useFreeDay: "Use weekly day off",
+    buyPaidDay: "Buy monthly day off",
+    reset: "Reset progress",
+    confirmFreeTitle: "Use weekly day off?",
+    confirmPaidTitle: "Buy and use monthly day off?",
+    confirmResetTitle: "Reset motivation progress?",
+    confirmBody:
+      "Open tasks for today will be protected by day off instead of being marked as failed. Confirm?",
+    confirmPaidBody: "Points will be deducted before using day off.",
+    confirmResetBody:
+      "Points, history, and achievements will be cleared. Nutrition data stays unchanged.",
+    cancel: "Cancel",
+    confirm: "Yes",
+    achievements: "Achievements",
+    recentHistory: "Recent activity",
+    emptyHistory: "No motivation activity yet.",
+    pointsSuffix: "pts",
+    paidCostHint: "Paid day off cost",
+  },
 } as const;
 
 type PendingAction = "free" | "paid" | "reset" | null;
@@ -104,8 +140,8 @@ type PendingAction = "free" | "paid" | "reset" | null;
 export const MotivationHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { motivation, goal } = useSelector((state: RootState) => state.profile);
-  const { language } = useLanguage();
-  const copy = copyByLanguage[language];
+  const { appLanguage } = useLanguage();
+  const copy = copyByLanguage[appLanguage];
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   useEffect(() => {
@@ -119,7 +155,12 @@ export const MotivationHubCard = () => {
   const freeDayAvailable = canUseFreeDay(motivation.freeDayLastUsedAt);
   const paidDayAvailable = canUsePaidDay(motivation.paidDayLastUsedMonth);
   const levelProgress = ((motivation.points % 120) / 120) * 100;
-  const locale = language === "uk" ? "uk-UA" : "pl-PL";
+  const localeByLanguage: Record<AppLanguage, string> = {
+    uk: "uk-UA",
+    pl: "pl-PL",
+    en: "en-US",
+  };
+  const locale = localeByLanguage[appLanguage];
 
   const handleConfirm = () => {
     if (pendingAction === "free") {
@@ -195,7 +236,7 @@ export const MotivationHubCard = () => {
             const isDone = Boolean(task.completedAt);
             const isSkipped = Boolean(task.skippedWithDayOffAt);
             const localizedTask = getLocalizedMotivationTaskCopy({
-              language,
+              language: appLanguage,
               taskId: task.id,
               goal,
               fallbackTitle: task.title,
@@ -294,7 +335,7 @@ export const MotivationHubCard = () => {
           </Typography>
           {motivation.achievements.map((achievement) => {
             const localizedAchievement = getLocalizedAchievementCopy({
-              language,
+              language: appLanguage,
               achievementId: achievement.id,
               fallbackTitle: achievement.title,
               fallbackDescription: achievement.description,
@@ -333,7 +374,7 @@ export const MotivationHubCard = () => {
           ) : (
             motivation.history.slice(0, 5).map((item) => {
               const localizedTask = getLocalizedMotivationTaskCopy({
-                language,
+                language: appLanguage,
                 taskId: item.taskId,
                 goal,
                 fallbackTitle: item.title,

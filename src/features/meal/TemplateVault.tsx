@@ -26,13 +26,14 @@ import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import { toast } from "sonner";
 import { reorderItems } from "@integration/runtime/interaction";
+import type { AppLanguage } from "@shared/types/i18n";
 
 interface Props {
   mealType: MealType;
 }
 
 interface TemplateCardProps {
-  language: "uk" | "pl";
+  appLanguage: AppLanguage;
   onApply: (id: string) => void;
   onRemove: (id: string) => void;
   template: MealTemplate;
@@ -40,7 +41,7 @@ interface TemplateCardProps {
 }
 
 const TemplateCard = ({
-  language,
+  appLanguage,
   onApply,
   onRemove,
   template,
@@ -85,7 +86,7 @@ const TemplateCard = ({
               {template.items
                 .map(
                   (item) =>
-                    `${getProductDisplayName(item.product, language)} ${item.quantity} ${item.product.unit}`
+                    `${getProductDisplayName(item.product, appLanguage)} ${item.quantity} ${item.product.unit}`
                 )
                 .join(", ")}
             </Typography>
@@ -133,7 +134,7 @@ export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectTodayMealItems);
   const templates = useSelector(selectMealTemplates);
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
   const [templateName, setTemplateName] = useState("");
   const [orderedTemplateIds, setOrderedTemplateIds] = useState<string[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -242,7 +243,7 @@ export const TemplateVault = ({ mealType }: Props) => {
                 orderedCurrentMealTemplates.map((template) => (
                   <TemplateCard
                     key={template.id}
-                    language={language}
+                    appLanguage={appLanguage}
                     onApply={handleApplyTemplate}
                     onRemove={handleDeleteTemplate}
                     template={template}

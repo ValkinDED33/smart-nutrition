@@ -106,6 +106,32 @@ describe("assistantPresence", () => {
     });
   });
 
+  it("uses compact mode on dense food and progress surfaces", () => {
+    expect(
+      resolveAssistantPresence(resolveAssistantContext("/meals"), {
+        pathname: "/meals",
+        viewport: "desktop",
+      })
+    ).toMatchObject({
+      visible: true,
+      mode: "compact",
+      reason: "meals-dense-input-surface",
+      allowSpeechBubble: false,
+    });
+
+    expect(
+      resolveAssistantPresence(resolveAssistantContext("/progress"), {
+        pathname: "/progress",
+        viewport: "desktop",
+      })
+    ).toMatchObject({
+      visible: true,
+      mode: "compact",
+      reason: "progress-chart-surface",
+      allowSpeechBubble: false,
+    });
+  });
+
   it("excludes onboarding because the onboarding guide owns that experience", () => {
     const context = resolveAssistantContext("/onboarding");
 

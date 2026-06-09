@@ -176,6 +176,7 @@ export const remoteSyncListenerMiddleware = createListenerMiddleware();
 let listenersRegistered = false;
 
 const SYNC_ERROR_MESSAGE = "Cloud sync could not save the latest change.";
+const WATER_SYNC_DEBOUNCE_MS = 250;
 let cloudSyncQueue: Promise<void> = Promise.resolve();
 
 const getRemoteSyncErrorMessage = (result: RemoteSyncResult) =>
@@ -281,6 +282,9 @@ export const registerRemoteSyncListeners = () => {
       resetWaterTracker
     ),
     effect: async (_, listenerApi) => {
+      listenerApi.cancelActiveListeners();
+      await listenerApi.delay(WATER_SYNC_DEBOUNCE_MS);
+
       if (!isCloudSyncActive()) {
         return;
       }

@@ -15,6 +15,7 @@ import {
 } from "@domain/products/productPortions";
 import { useMealEntryEditor } from "./hooks/useMealEntryEditor";
 import { createProductKey } from "./productIdentity";
+import type { AppLanguage } from "@shared/types/i18n";
 
 interface Props {
   entry: MealEntry;
@@ -47,11 +48,24 @@ const editorCopy = {
     quickPortions: "Szybkie porcje",
     noMatches: "Nie znaleziono pasujących produktów w katalogu ani bazach online.",
   },
+  en: {
+    edit: "Edit",
+    editTitle: "Edit entry",
+    mealType: "Meal type",
+    replaceProduct: "Replace product",
+    replacePlaceholder: "Search by name, brand, or alias",
+    selected: "Selected",
+    select: "Use",
+    cancel: "Cancel",
+    save: "Save",
+    quickPortions: "Quick portions",
+    noMatches: "No matching products found in catalog or online databases.",
+  },
 } as const;
 
 const CandidateProductCard = ({
   active,
-  language,
+  appLanguage,
   product,
   selectLabel,
   selectedLabel,
@@ -59,7 +73,7 @@ const CandidateProductCard = ({
   onSelect,
 }: {
   active: boolean;
-  language: "uk" | "pl";
+  appLanguage: AppLanguage;
   product: Product;
   selectLabel: string;
   selectedLabel: string;
@@ -82,7 +96,7 @@ const CandidateProductCard = ({
     >
       <Stack spacing={0.3}>
         <Typography sx={{ fontWeight: 700 }}>
-          {getProductDisplayName(product, language)}
+          {getProductDisplayName(product, appLanguage)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {product.nutrients.calories.toFixed(0)} {unitLabel} / {product.unit}
@@ -96,8 +110,8 @@ const CandidateProductCard = ({
 );
 
 export const MealEntryEditorPanel = ({ entry }: Props) => {
-  const { language, t } = useLanguage();
-  const copy = editorCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = editorCopy[appLanguage];
   const editor = useMealEntryEditor(entry);
 
   const mealLabels: Record<MealType, string> = {
@@ -143,7 +157,7 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
             <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 3 }}>
               <Stack spacing={0.5}>
                 <Typography sx={{ fontWeight: 700 }}>
-                  {getProductDisplayName(entry.product, language)}
+                  {getProductDisplayName(entry.product, appLanguage)}
                 </Typography>
                 <Typography color="text.secondary" variant="body2">
                   {entry.quantity} {entry.product.unit} - {editor.entryCalories.toFixed(0)}{" "}
@@ -200,7 +214,7 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
 
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 700 }}>
-                {copy.selected}: {getProductDisplayName(editor.selectedProduct, language)}
+                {copy.selected}: {getProductDisplayName(editor.selectedProduct, appLanguage)}
               </Typography>
               {editor.candidateProducts.length === 0 ? (
                 <Typography color="text.secondary">{copy.noMatches}</Typography>
@@ -213,7 +227,7 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
                     <CandidateProductCard
                       key={createProductKey(product)}
                       active={active}
-                      language={language}
+                      appLanguage={appLanguage}
                       product={product}
                       selectLabel={copy.select}
                       selectedLabel={copy.selected}

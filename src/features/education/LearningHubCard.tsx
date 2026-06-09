@@ -202,6 +202,97 @@ const learningCopy = {
       },
     ],
   },
+  en: {
+    title: "Useful to Know",
+    subtitle:
+      "Short wellness cards, mini articles, infographics, and AI explanations without long lectures.",
+    aiLabel: "AI explanation",
+    personalFocus: "Personal topic",
+    infographic: "Infographic",
+    readTime: "2 min",
+    topics: [
+      {
+        key: "sleep",
+        title: "Sleep",
+        insight: "Lack of sleep increases hunger and cravings for quick carbs.",
+        ai: "Start with one stable wake-up time. It helps the body regulate appetite more easily.",
+        tags: ["rhythm", "recovery"],
+        score: 82,
+      },
+      {
+        key: "cortisol",
+        title: "Cortisol",
+        insight: "Chronic stress can hide progress through water retention.",
+        ai: "If weight jumps overnight, check sleep, salt, and stress before cutting food.",
+        tags: ["stress", "weight"],
+        score: 68,
+      },
+      {
+        key: "stress",
+        title: "Stress",
+        insight: "Stress often affects automatic food choices more than motivation.",
+        ai: "Save one simple meal in advance that is easy to repeat on a hard day.",
+        tags: ["habits", "plan"],
+        score: 74,
+      },
+      {
+        key: "magnesium",
+        title: "Magnesium",
+        insight: "Magnesium is linked to muscle tone, sleep, and the nervous system.",
+        ai: "Add magnesium sources gradually: grains, legumes, seeds, or greens.",
+        tags: ["micros", "sleep"],
+        score: 63,
+      },
+      {
+        key: "sugar",
+        title: "Sugar",
+        insight: "Sugar is easier to manage when meals include protein and fiber.",
+        ai: "Do not ban sweets abruptly. First add a more filling base to the day.",
+        tags: ["appetite", "balance"],
+        score: 79,
+      },
+      {
+        key: "gut",
+        title: "Gut",
+        insight: "Regularity, water, and fiber often matter more than complex rules.",
+        ai: "Increase fiber slowly so digestion has time to adapt.",
+        tags: ["fiber", "water"],
+        score: 71,
+      },
+      {
+        key: "hormones",
+        title: "Hormones",
+        insight: "Weight can change because of cycle, sleep, stress, and salt.",
+        ai: "Look at a 2-4 week trend, not one morning number.",
+        tags: ["trend", "analysis"],
+        score: 76,
+      },
+      {
+        key: "vitamins",
+        title: "Vitamins",
+        insight: "Plate variety helps cover micronutrients without chaos.",
+        ai: "Use a color rule: two different vegetables or fruits every day.",
+        tags: ["micros", "plate"],
+        score: 66,
+      },
+      {
+        key: "water",
+        title: "Water",
+        insight: "Thirst can sometimes feel like fatigue or extra hunger.",
+        ai: "Attach the first glass to your morning routine instead of relying on memory.",
+        tags: ["hydration", "energy"],
+        score: 88,
+      },
+      {
+        key: "weight-loss",
+        title: "Weight loss",
+        insight: "A steady deficit works better when protein, sleep, and water do not collapse.",
+        ai: "If it gets hard, do not shrink the plan immediately. Check satiety and pace first.",
+        tags: ["deficit", "protein"],
+        score: 81,
+      },
+    ],
+  },
 } as const;
 
 const topicByFriction: Record<AssistantDietFriction, string> = {
@@ -215,8 +306,8 @@ const topicByFriction: Record<AssistantDietFriction, string> = {
 
 export const LearningHubCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
-  const { language } = useLanguage();
-  const copy = learningCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = learningCopy[appLanguage];
   const recommendedTopicKey = topicByFriction[assistant.onboarding.mainFriction];
   const recommendedTopicIndex = Math.max(
     copy.topics.findIndex((topic) => topic.key === recommendedTopicKey),
@@ -224,7 +315,7 @@ export const LearningHubCard = () => {
   );
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
-    language
+    appLanguage
   );
   const [topicIndex, setTopicIndex] = useState(recommendedTopicIndex);
   const activeTopic = copy.topics[topicIndex] ?? copy.topics[0];

@@ -21,12 +21,19 @@ const bannerCopy = {
     retry: "Sprawdź ponownie",
     checking: "Sprawdzam...",
   },
+  en: {
+    offline: "No internet connection. Reconnect to continue.",
+    backendDown:
+      "Cloud API is currently unavailable. Reconnect to continue.",
+    retry: "Check again",
+    checking: "Checking...",
+  },
 } as const;
 
 const BackendOfflineBanner = () => {
   const { user, error } = useSelector((state: RootState) => state.auth);
-  const { language } = useLanguage();
-  const copy = bannerCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = bannerCopy[appLanguage];
   const [browserOnline, setBrowserOnline] = useState(
     typeof navigator === "undefined" ? true : navigator.onLine
   );

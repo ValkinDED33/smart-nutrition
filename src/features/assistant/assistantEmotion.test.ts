@@ -57,7 +57,7 @@ describe("assistantEmotion", () => {
       mood: "coach",
       emotion: "coach",
       messageIntent: "guide",
-      priority: "high",
+      priority: "normal",
     });
   });
 
@@ -72,7 +72,7 @@ describe("assistantEmotion", () => {
       mood: "happy",
       emotion: "happy",
       messageIntent: "encourage",
-      priority: "high",
+      priority: "normal",
     });
   });
 

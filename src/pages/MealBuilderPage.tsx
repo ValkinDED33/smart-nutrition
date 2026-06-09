@@ -105,6 +105,34 @@ const mealInputCopy = {
       },
     } satisfies Record<MealInputMode, { title: string; body: string }>,
   },
+  en: {
+    inputTitle: "Add food",
+    inputSubtitle: "Three simple entry points. Choose the fastest one right now.",
+    advancedTitle: "Additional tools",
+    advancedSubtitle:
+      "Templates, repeats, fridge planning, and recipes stay below when you need a more precise setup.",
+    sections: {
+      day: "Day",
+      add: "Add",
+      history: "History",
+      templates: "Templates",
+      recommendations: "Tips",
+    },
+    modes: {
+      photo: {
+        title: "Photo",
+        body: "Plate photo -> draft -> quick confirmation.",
+      },
+      search: {
+        title: "Search",
+        body: "Product name, favorite items, and quick portions.",
+      },
+      barcode: {
+        title: "Barcode",
+        body: "Camera or manual package code.",
+      },
+    } satisfies Record<MealInputMode, { title: string; body: string }>,
+  },
 } as const;
 
 type MealSection = "day" | "add" | "history" | "templates" | "recommendations";
@@ -117,8 +145,8 @@ const MealBuilderPage = () => {
   );
   const totals = useSelector(selectTodayMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
-  const { language, t } = useLanguage();
-  const copy = mealInputCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = mealInputCopy[appLanguage];
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
   const [activeSection, setActiveSection] = useState<MealSection>("add");
 
@@ -165,7 +193,7 @@ const MealBuilderPage = () => {
     <PageShell
       title={t("mealBuilder.title")}
       subtitle={t("mealBuilder.subtitle")}
-      maxWidth={1360}
+      maxWidth={1480}
     >
       <Paper
         elevation={0}
@@ -319,9 +347,10 @@ const MealBuilderPage = () => {
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            xl: "minmax(0, 1.35fr) minmax(360px, 0.65fr)",
+            lg: "minmax(0, 1fr) minmax(300px, 340px)",
+            xl: "minmax(0, 1fr) 360px",
           },
-          gap: 3,
+          gap: { xs: 2, lg: 2.5 },
           alignItems: "start",
         }}
       >
@@ -343,16 +372,18 @@ const MealBuilderPage = () => {
           ) : null}
         </Stack>
 
-        <Stack spacing={3}>
+        <Stack spacing={3} sx={{ display: { xs: "none", lg: "block" } }}>
           <Paper
             elevation={0}
             sx={{
-              p: 3,
+              p: { lg: 2, xl: 2.25 },
               borderRadius: 1,
               border: "1px solid rgba(15, 23, 42, 0.08)",
               backgroundColor: "rgba(255,255,255,0.86)",
-              position: { xl: "sticky" },
-              top: { xl: 96 },
+              position: { lg: "sticky" },
+              top: { lg: 96 },
+              maxHeight: { lg: "calc(100vh - 120px)" },
+              overflowY: { lg: "auto" },
             }}
           >
             <Stack spacing={2}>
@@ -398,7 +429,7 @@ const MealBuilderPage = () => {
                           >
                             <Box sx={{ minWidth: 0 }}>
                               <Typography sx={{ fontWeight: 700 }}>
-                                {getProductDisplayName(item.product, language)}
+                                {getProductDisplayName(item.product, appLanguage)}
                               </Typography>
                               <Typography color="text.secondary" variant="body2">
                                 {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
@@ -463,7 +494,7 @@ const MealBuilderPage = () => {
                         >
                           <Box sx={{ minWidth: 0 }}>
                             <Typography sx={{ fontWeight: 700 }}>
-                              {getProductDisplayName(item.product, language)}
+                              {getProductDisplayName(item.product, appLanguage)}
                             </Typography>
                             <Typography color="text.secondary" variant="body2">
                               {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}

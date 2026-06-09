@@ -7,6 +7,7 @@ import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const notificationLog = new Set<string>();
 
@@ -83,8 +84,26 @@ const mealNotificationCopy = {
       body: "Nadszedł czas przypomnienia o przekąsce. Dodaj ją albo popraw plan, jeśli ją pomijasz.",
     },
   },
+  en: {
+    breakfast: {
+      title: "Breakfast check-in",
+      body: "Breakfast has not been logged yet. Add it while the details are still fresh.",
+    },
+    lunch: {
+      title: "Lunch reminder",
+      body: "Lunch is not in the diary yet. A quick entry now keeps the day accurate.",
+    },
+    dinner: {
+      title: "Dinner reminder",
+      body: "Dinner has not been logged yet. Add it before the day ends.",
+    },
+    snack: {
+      title: "Snack reminder",
+      body: "It is time for the snack reminder. Add it or adjust the plan if you skipped it.",
+    },
+  },
 } as const satisfies Record<
-  "uk" | "pl",
+  AppLanguage,
   Record<MealType, { title: string; body: string }>
 >;
 
@@ -143,6 +162,33 @@ const coachNotificationCopy = {
     caloriesHighBody:
       "Jesteś już ponad dziennym celem. Przejrzyj pozostałe posiłki, zanim dodasz kolejne.",
   },
+  en: {
+    title: (name: string) => `${name}: evening review`,
+    logging_low: (daysLogged: number) =>
+      `Only ${daysLogged} of the last 7 days are logged. Add missing entries before the day ends.`,
+    protein_low: (averageProtein: number, proteinTarget: number) =>
+      `Protein is low: ${averageProtein.toFixed(0)} g on average against a ${proteinTarget.toFixed(0)} g target. Add one more protein meal.`,
+    water_low: (averageWater: number, waterTarget: number) =>
+      `Water is low: ${averageWater.toFixed(0)} ml on average against a ${waterTarget.toFixed(0)} ml target. Close one serving now.`,
+    breakfast_skipped: (skippedDays: number) =>
+      `Breakfast was skipped ${skippedDays} time(s) on logged days. Prepare a simple first meal for tomorrow.`,
+    fiber_low: (averageFiber: number) =>
+      `Fiber is still low: ${averageFiber.toFixed(0)} g on average. Add vegetables, fruit, or legumes.`,
+    calories_high: (averageCalories: number, calorieTarget: number) =>
+      `Average calories are ${averageCalories.toFixed(0)} kcal against a ${calorieTarget.toFixed(0)} kcal target. Reduce the heaviest meal.`,
+    calories_low: (averageCalories: number, calorieTarget: number) =>
+      `Average calories are ${averageCalories.toFixed(0)} kcal against a ${calorieTarget.toFixed(0)} kcal target. Check whether you are skipping meals.`,
+    meal_pattern: (averageMeals: number) =>
+      `Meal rhythm is uneven: only ${averageMeals.toFixed(1)} full meal slots per day. Stabilize the core meals.`,
+    weight_trend: (weightChange: number) =>
+      `Weight trend ${weightChange.toFixed(1)} kg does not match the goal. Review your calorie target for the next week.`,
+    caloriesLowTitle: "Calories are still low today",
+    caloriesLowBody:
+      "You are clearly below the daily target. Check whether a meal is missing.",
+    caloriesHighTitle: "Calories are already above target today",
+    caloriesHighBody:
+      "You are already above the daily target. Review the remaining meals before adding more.",
+  },
 } as const;
 
 const wellbeingNotificationCopy = {
@@ -175,6 +221,21 @@ const wellbeingNotificationCopy = {
     },
     progress: (ratio: number) =>
       `Dzień jest teraz domknięty mniej więcej w ${Math.round(ratio * 100)}% celu kalorii.`,
+  },
+  en: {
+    dailyTitle: (name: string) => `${name}: plan for today`,
+    dailyBody: "One accurate entry, one water serving, and one protein meal already make the day manageable.",
+    waterTitle: "Water is below target today",
+    waterBody: "You have drunk less than planned. Add more water to move closer to the goal.",
+    checkInTitle: "Time to update weight and measurements",
+    checkInBody: "Weekly check-in is due. Update weight, waist, or other measurements.",
+    goal: {
+      cut: "Remember the fat-loss goal without harsh compensation.",
+      maintain: "Remember the stable rhythm goal without unnecessary swings.",
+      bulk: "Remember the muscle-gain goal: energy and protein need to be regular.",
+    },
+    progress: (ratio: number) =>
+      `The day is now about ${Math.round(ratio * 100)}% of the calorie target.`,
   },
 } as const;
 
@@ -215,7 +276,7 @@ const HabitReminderAgent = () => {
     assistant,
   } = useSelector((state: RootState) => state.profile);
   const water = useSelector((state: RootState) => state.water);
-  const { language } = useLanguage();
+  const { appLanguage } = useLanguage();
 
   useEffect(() => {
     dispatch(syncWaterDay());
@@ -236,12 +297,12 @@ const HabitReminderAgent = () => {
       const now = new Date();
       const todayKey = formatLocalDayKey(now);
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const localizedMealCopy = mealNotificationCopy[language];
-      const coachCopy = coachNotificationCopy[language];
-      const wellbeingCopy = wellbeingNotificationCopy[language];
+      const localizedMealCopy = mealNotificationCopy[appLanguage];
+      const coachCopy = coachNotificationCopy[appLanguage];
+      const wellbeingCopy = wellbeingNotificationCopy[appLanguage];
       const personalization = buildAssistantPersonalizationPlan(
         assistant.onboarding,
-        language
+        appLanguage
       );
       const calorieRatio =
         dailyCalories > 0 ? Math.max(totalCalories / dailyCalories, 0) : 0;
@@ -377,7 +438,7 @@ const HabitReminderAgent = () => {
     dietStyle,
     goal,
     items,
-    language,
+    appLanguage,
     mealRemindersEnabled,
     notificationsEnabled,
     reminderTimes,

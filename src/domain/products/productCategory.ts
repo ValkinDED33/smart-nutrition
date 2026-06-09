@@ -1,20 +1,20 @@
-import type { Language } from "@shared/language";
 import type { Product } from "@domain/products/types";
+import type { AppLanguage } from "@shared/types/i18n";
 
-type LocalizedLabel = Record<Language, string>;
+type LocalizedLabel = Record<AppLanguage, string>;
 
 const categoryLabels: Record<string, LocalizedLabel> = {
-  dairy: { uk: "Молочні", pl: "Nabiał" },
-  fruit: { uk: "Фрукти", pl: "Owoce" },
-  grain: { uk: "Крупи та хліб", pl: "Zboża i pieczywo" },
-  homemade: { uk: "Домашні страви", pl: "Domowe posiłki" },
-  legume: { uk: "Бобові", pl: "Strączki" },
-  nuts: { uk: "Горіхи", pl: "Orzechy" },
-  oil: { uk: "Олії", pl: "Oleje" },
-  packaged: { uk: "Магазинні", pl: "Sklepowe" },
-  protein: { uk: "Білкові", pl: "Białkowe" },
-  restaurant: { uk: "Ресторанні", pl: "Restauracyjne" },
-  vegetable: { uk: "Овочі", pl: "Warzywa" },
+  dairy: { uk: "Молочні", pl: "Nabiał", en: "Dairy" },
+  fruit: { uk: "Фрукти", pl: "Owoce", en: "Fruit" },
+  grain: { uk: "Крупи та хліб", pl: "Zboża i pieczywo", en: "Grains and bread" },
+  homemade: { uk: "Домашні страви", pl: "Domowe posiłki", en: "Homemade meals" },
+  legume: { uk: "Бобові", pl: "Strączki", en: "Legumes" },
+  nuts: { uk: "Горіхи", pl: "Orzechy", en: "Nuts" },
+  oil: { uk: "Олії", pl: "Oleje", en: "Oils" },
+  packaged: { uk: "Магазинні", pl: "Sklepowe", en: "Packaged" },
+  protein: { uk: "Білкові", pl: "Białkowe", en: "Protein foods" },
+  restaurant: { uk: "Ресторанні", pl: "Restauracyjne", en: "Restaurant meals" },
+  vegetable: { uk: "Овочі", pl: "Warzywa", en: "Vegetables" },
 };
 
 const normalizeCategory = (value: string) =>
@@ -43,10 +43,10 @@ export const getProductCategoryKey = (product: Product) => {
 
 export const getProductCategoryLabel = (
   categoryKey: string,
-  language: Language
+  language: AppLanguage
 ) => categoryLabels[categoryKey]?.[language] ?? formatFallbackLabel(categoryKey);
 
-export const getKnownProductCategoryOptions = (language: Language) =>
+export const getKnownProductCategoryOptions = (language: AppLanguage) =>
   Object.keys(categoryLabels)
     .map((categoryKey) => ({
       key: categoryKey,

@@ -55,6 +55,27 @@ const micronutrientCopy = {
       mcg: "mcg",
     },
   },
+  en: {
+    title: "Daily micronutrients",
+    subtitle:
+      "A quick overview of fiber, vitamins, minerals, and hydration from today's diary.",
+    empty: "Add food or drinks to start building a micronutrient summary.",
+    progressLabel: (progress: number) => `${progress.toFixed(0)}% of the estimated daily target`,
+    nutrients: {
+      fiber: "Fiber",
+      water: "Water",
+      vitaminC: "Vitamin C",
+      vitaminD: "Vitamin D",
+      calcium: "Calcium",
+      iron: "Iron",
+      potassium: "Potassium",
+    },
+    units: {
+      g: "g",
+      mg: "mg",
+      mcg: "mcg",
+    },
+  },
 } as const;
 
 const trackedNutrients = [
@@ -74,8 +95,8 @@ const trackedNutrients = [
 
 export const DailyMicronutrientsCard = () => {
   const totals = useSelector(selectTodayMealTotalNutrients);
-  const { language } = useLanguage();
-  const copy = micronutrientCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = micronutrientCopy[appLanguage];
 
   const hasAnyTrackedData = trackedNutrients.some(
     (nutrient) => totals[nutrient.key] > 0.001

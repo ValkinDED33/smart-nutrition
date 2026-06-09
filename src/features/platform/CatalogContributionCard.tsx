@@ -74,6 +74,33 @@ const catalogCopy = {
       rejected: "Odrzucono",
     },
   },
+  en: {
+    title: "User product database",
+    subtitle:
+      "Add a missing product to the catalog. If a moderator approves it, it becomes available to everyone.",
+    name: "Name",
+    category: "Category",
+    brand: "Brand",
+    barcode: "Barcode",
+    imageUrl: "Photo / package URL",
+    calories: "Calories",
+    protein: "Protein",
+    fat: "Fat",
+    carbs: "Carbs",
+    submit: "Send for moderation",
+    ownSubmissions: "My submissions",
+    duplicates: "Possible duplicates",
+    duplicateAssistant:
+      "this dish already exists. It is better to use the existing item or check the duplicate before creating a new one.",
+    submitted: "Product was submitted.",
+    backendUnavailable:
+      "Cloud backend is unavailable, so catalog and moderation will not work right now.",
+    status: {
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+    },
+  },
 } as const;
 
 const initialForm = {
@@ -89,11 +116,11 @@ const initialForm = {
 };
 
 export const CatalogContributionCard = () => {
-  const { language } = useLanguage();
-  const copy = catalogCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = catalogCopy[appLanguage];
   const categoryOptions = useMemo(
-    () => getKnownProductCategoryOptions(language),
-    [language]
+    () => getKnownProductCategoryOptions(appLanguage),
+    [appLanguage]
   );
   const [form, setForm] = useState(initialForm);
   const [submissions, setSubmissions] = useState<CatalogProductItem[]>([]);

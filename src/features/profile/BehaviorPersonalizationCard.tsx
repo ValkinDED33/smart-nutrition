@@ -59,6 +59,29 @@ const copyByLanguage = {
       fragile: "Potrzebna stabilizacja",
     } satisfies Record<BehaviorProfileStatus, string>,
   },
+  en: {
+    title: "Habit personalization",
+    subtitle: (name: string) =>
+      `${name} reviewed your logging patterns and prepared personal timing hints and habit focus.`,
+    score: "Rhythm score",
+    activeDays: "Active days",
+    currentStreak: "Current streak",
+    bestStreak: "Best streak",
+    strongest: "Strongest habit",
+    weakest: "Weakest habit",
+    averageTime: "Average time",
+    reminder: "Current reminder",
+    suggested: "Recommended time",
+    apply: "Apply smart schedule",
+    noSuggestion: "Not enough data for a new recommendation yet",
+    consistency: "consistency",
+    minutes: "min",
+    statuses: {
+      strong: "Rhythm is strong",
+      steady: "Rhythm is building",
+      fragile: "Needs stabilization",
+    } satisfies Record<BehaviorProfileStatus, string>,
+  },
 } as const;
 
 const statusColor = {
@@ -71,8 +94,8 @@ export const BehaviorPersonalizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const { reminderTimes, assistant } = useSelector((state: RootState) => state.profile);
-  const { t, language } = useLanguage();
-  const copy = copyByLanguage[language];
+  const { t, appLanguage } = useLanguage();
+  const copy = copyByLanguage[appLanguage];
 
   const analysis = generateBehaviorProfileAnalysis({
     items,

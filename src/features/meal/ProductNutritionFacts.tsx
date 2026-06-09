@@ -2,100 +2,112 @@ import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
 import type { Product } from "@domain/products/types";
 import {
   formatNutrientValue,
+  getNutrientLabel,
+  getNutritionSectionTitle,
   hasMeaningfulNutrientValue,
   nutrientDefinitions,
   nutritionSections,
 } from "@domain/meal/nutrients";
+import { getProductCategoryLabel } from "@domain/products/productCategory";
+import type { AppLanguage } from "@shared/types/i18n";
 import { useLanguage } from "../../shared/language";
 
 const foodGroupLabels: Record<
   string,
-  {
-    uk: string;
-    pl: string;
-  }
+  Record<AppLanguage, string>
 > = {
-  fruit: { uk: "Фрукт", pl: "Owoc" },
-  vegetable: { uk: "Овоч", pl: "Warzywo" },
-  dairy: { uk: "Молочний продукт", pl: "Nabiał" },
-  grain: { uk: "Крупи та зернові", pl: "Zboża i kasze" },
-  protein: { uk: "Білковий продукт", pl: "Produkt białkowy" },
-  legume: { uk: "Бобові", pl: "Rośliny strączkowe" },
-  nuts: { uk: "Горіхи та насіння", pl: "Orzechy i nasiona" },
-  oil: { uk: "Жирова основа", pl: "Źródło tłuszczu" },
+  fruit: { uk: "Фрукт", pl: "Owoc", en: "Fruit" },
+  vegetable: { uk: "Овоч", pl: "Warzywo", en: "Vegetable" },
+  dairy: { uk: "Молочний продукт", pl: "Nabiał", en: "Dairy product" },
+  grain: { uk: "Крупи та зернові", pl: "Zboża i kasze", en: "Grains and cereals" },
+  protein: { uk: "Білковий продукт", pl: "Produkt białkowy", en: "Protein food" },
+  legume: { uk: "Бобові", pl: "Rośliny strączkowe", en: "Legumes" },
+  nuts: { uk: "Горіхи та насіння", pl: "Orzechy i nasiona", en: "Nuts and seeds" },
+  oil: { uk: "Жирова основа", pl: "Źródło tłuszczu", en: "Fat source" },
 };
 
 const factLabels: Record<
   string,
-  {
-    uk: string;
-    pl: string;
-  }
+  Record<AppLanguage, string>
 > = {
-  simple: { uk: "Прості вуглеводи", pl: "Proste węglowodany" },
-  complex: { uk: "Складні вуглеводи", pl: "Złożone węglowodany" },
-  fiber: { uk: "Джерело клітковини", pl: "Źródło błonnika" },
-  animal: { uk: "Тваринний білок", pl: "Białko zwierzęce" },
-  plant: { uk: "Рослинний білок", pl: "Białko roślinne" },
-  complete: { uk: "Повноцінний білок", pl: "Białko pełnowartościowe" },
-  incomplete: { uk: "Неповноцінний білок", pl: "Białko niepełnowartościowe" },
-  fast: { uk: "Швидке засвоєння", pl: "Szybkie wchłanianie" },
-  slow: { uk: "Повільне засвоєння", pl: "Wolne wchłanianie" },
-  unsaturated: { uk: "Ненасичені жири", pl: "Tłuszcze nienasycone" },
-  monounsaturated: { uk: "Мононенасичені жири", pl: "Tłuszcze jednonienasycone" },
-  polyunsaturated: { uk: "Поліненасичені жири", pl: "Tłuszcze wielonienasycone" },
-  saturated: { uk: "Насичені жири", pl: "Tłuszcze nasycone" },
-  trans: { uk: "Трансжири", pl: "Tłuszcze trans" },
-  omega3: { uk: "Омега-3", pl: "Omega-3" },
-  omega6: { uk: "Омега-6", pl: "Omega-6" },
-  omega9: { uk: "Омега-9", pl: "Omega-9" },
-  antioxidants: { uk: "Антиоксиданти", pl: "Antyoksydanty" },
-  phytonutrients: { uk: "Фітонутрієнти", pl: "Fitoskładniki" },
-  polyphenols: { uk: "Поліфеноли", pl: "Polifenole" },
-  electrolytes: { uk: "Електроліти", pl: "Elektrolity" },
+  simple: { uk: "Прості вуглеводи", pl: "Proste węglowodany", en: "Simple carbs" },
+  complex: { uk: "Складні вуглеводи", pl: "Złożone węglowodany", en: "Complex carbs" },
+  fiber: { uk: "Джерело клітковини", pl: "Źródło błonnika", en: "Fiber source" },
+  animal: { uk: "Тваринний білок", pl: "Białko zwierzęce", en: "Animal protein" },
+  plant: { uk: "Рослинний білок", pl: "Białko roślinne", en: "Plant protein" },
+  complete: { uk: "Повноцінний білок", pl: "Białko pełnowartościowe", en: "Complete protein" },
+  incomplete: { uk: "Неповноцінний білок", pl: "Białko niepełnowartościowe", en: "Incomplete protein" },
+  fast: { uk: "Швидке засвоєння", pl: "Szybkie wchłanianie", en: "Fast absorption" },
+  slow: { uk: "Повільне засвоєння", pl: "Wolne wchłanianie", en: "Slow absorption" },
+  unsaturated: { uk: "Ненасичені жири", pl: "Tłuszcze nienasycone", en: "Unsaturated fats" },
+  monounsaturated: { uk: "Мононенасичені жири", pl: "Tłuszcze jednonienasycone", en: "Monounsaturated fats" },
+  polyunsaturated: { uk: "Поліненасичені жири", pl: "Tłuszcze wielonienasycone", en: "Polyunsaturated fats" },
+  saturated: { uk: "Насичені жири", pl: "Tłuszcze nasycone", en: "Saturated fats" },
+  trans: { uk: "Трансжири", pl: "Tłuszcze trans", en: "Trans fats" },
+  omega3: { uk: "Омега-3", pl: "Omega-3", en: "Omega-3" },
+  omega6: { uk: "Омега-6", pl: "Omega-6", en: "Omega-6" },
+  omega9: { uk: "Омега-9", pl: "Omega-9", en: "Omega-9" },
+  antioxidants: { uk: "Антиоксиданти", pl: "Antyoksydanty", en: "Antioxidants" },
+  phytonutrients: { uk: "Фітонутрієнти", pl: "Fitoskładniki", en: "Phytonutrients" },
+  polyphenols: { uk: "Поліфеноли", pl: "Polifenole", en: "Polyphenols" },
+  electrolytes: { uk: "Електроліти", pl: "Elektrolity", en: "Electrolytes" },
 };
 
 const benefitCopy = {
   fruit: {
     uk: "Дає легкий об'єм раціону, клітковину та мікронутрієнти.",
     pl: "Daje lekki wolumen dnia, błonnik i mikroskładniki.",
+    en: "Adds light meal volume, fiber, and micronutrients.",
   },
   vegetable: {
     uk: "Допомагає насиченню без зайвих калорій і підсилює щоденний мікропрофіль.",
     pl: "Wspiera sytość bez nadmiaru kalorii i wzmacnia dzienny profil mikro.",
+    en: "Supports fullness without excess calories and improves the daily micronutrient profile.",
   },
   dairy: {
     uk: "Добре підходить для білка, кальцію та зручного перекусу.",
     pl: "Dobrze wspiera białko, wapń i wygodny szybki posiłek.",
+    en: "Useful for protein, calcium, and convenient snacks.",
   },
   grain: {
     uk: "Дає стабільнішу енергію та може підтримувати ситість.",
     pl: "Daje stabilniejszą energię i może wspierać sytość.",
+    en: "Provides steadier energy and can support fullness.",
   },
   protein: {
     uk: "Корисний для ситості, відновлення та збереження м'язової маси.",
     pl: "Wspiera sytość, regenerację i utrzymanie masy mięśniowej.",
+    en: "Supports fullness, recovery, and muscle mass retention.",
   },
   legume: {
     uk: "Дає клітковину та рослинний білок для ситості.",
     pl: "Dostarcza błonnika i białka roślinnego dla sytości.",
+    en: "Adds fiber and plant protein for fullness.",
   },
   nuts: {
     uk: "Дає концентровані жири та мікроелементи, тому порцію краще контролювати.",
     pl: "Daje skoncentrowane tłuszcze i mikroelementy, więc warto pilnować porcji.",
+    en: "Provides concentrated fats and micronutrients, so portion control matters.",
   },
   oil: {
     uk: "Підсилює смак і додає жири, але калорії зростають швидко.",
     pl: "Wspiera smak i dostarcza tłuszczu, ale kalorie rosną szybko.",
+    en: "Boosts flavor and adds fat, but calories rise quickly.",
   },
 } as const;
+
+const fallbackBenefitCopy: Record<AppLanguage, string> = {
+  uk: "Дивіться на БЖУ, мікроелементи та порцію, щоб краще вписати продукт у свій день.",
+  pl: "Patrz na makro, mikro i porcję, aby lepiej wbudować produkt w swój dzień.",
+  en: "Use macros, micronutrients, and portion size to fit this product into your day.",
+};
 
 interface Props {
   product: Product;
 }
 
 export const ProductNutritionFacts = ({ product }: Props) => {
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
 
   const detailSections = nutritionSections
     .map((section) => ({
@@ -108,7 +120,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
 
           return {
             key,
-            label: definition.label[language],
+            label: getNutrientLabel(key, appLanguage),
             value: formatNutrientValue(nutrientValue, definition.unit),
           };
         }),
@@ -116,18 +128,18 @@ export const ProductNutritionFacts = ({ product }: Props) => {
     .filter((section) => section.items.length > 0);
 
   const factChips = [
-    product.facts?.foodGroup ? foodGroupLabels[product.facts.foodGroup]?.[language] : null,
+    product.facts?.foodGroup ? foodGroupLabels[product.facts.foodGroup]?.[appLanguage] : null,
     ...(product.facts?.carbohydrateTypes ?? []).map(
-      (item) => factLabels[item]?.[language] ?? null
+      (item) => factLabels[item]?.[appLanguage] ?? null
     ),
     ...(product.facts?.proteinTypes ?? []).map(
-      (item) => factLabels[item]?.[language] ?? null
+      (item) => factLabels[item]?.[appLanguage] ?? null
     ),
     ...(product.facts?.fatTypes ?? []).map(
-      (item) => factLabels[item]?.[language] ?? null
+      (item) => factLabels[item]?.[appLanguage] ?? null
     ),
     ...(product.facts?.extraCompounds ?? []).map(
-      (item) => factLabels[item]?.[language] ?? null
+      (item) => factLabels[item]?.[appLanguage] ?? null
     ),
   ].filter((item): item is string => Boolean(item));
   const categoryKey = product.category ?? product.facts?.foodGroup ?? null;
@@ -136,10 +148,8 @@ export const ProductNutritionFacts = ({ product }: Props) => {
     .flatMap((section) => section.items)
     .slice(0, 6);
   const benefitSummary =
-    (categoryKey ? benefitCopy[categoryKey as keyof typeof benefitCopy]?.[language] : null) ??
-    (language === "uk"
-      ? "Дивіться на БЖУ, мікроелементи та порцію, щоб краще вписати продукт у свій день."
-      : "Patrz na makro, mikro i porcję, aby lepiej wbudować produkt w swój dzień.");
+    (categoryKey ? benefitCopy[categoryKey as keyof typeof benefitCopy]?.[appLanguage] : null) ??
+    fallbackBenefitCopy[appLanguage];
 
   return (
     <Stack spacing={2}>
@@ -167,7 +177,10 @@ export const ProductNutritionFacts = ({ product }: Props) => {
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             {categoryKey && (
               <Chip
-                label={foodGroupLabels[categoryKey]?.[language] ?? categoryKey}
+                label={
+                  foodGroupLabels[categoryKey]?.[appLanguage] ??
+                  getProductCategoryLabel(categoryKey, appLanguage)
+                }
                 size="small"
                 color="primary"
               />
@@ -205,7 +218,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
         {detailSections.map((section) => (
           <Stack key={section.id} spacing={1}>
             <Typography sx={{ fontWeight: 700 }}>
-              {section.title[language]}
+              {getNutritionSectionTitle(section.id, appLanguage)}
             </Typography>
             <Box
               sx={{

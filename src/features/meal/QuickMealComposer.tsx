@@ -42,7 +42,7 @@ const createRow = (productId = ""): ComposerRow => ({
 
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { language, t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
   const favorites = useSelector(selectFavoriteProductIds);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -181,7 +181,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                   return (
                     <MenuItem key={product.id} value={product.id}>
                       {isFavorited ? "⭐ " : ""}
-                      {getProductDisplayName(product, language)}
+                      {getProductDisplayName(product, appLanguage)}
                     </MenuItem>
                   );
                 })}

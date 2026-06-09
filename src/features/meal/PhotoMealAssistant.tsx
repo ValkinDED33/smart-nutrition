@@ -190,6 +190,43 @@ const photoCopy = {
     itemMacros: "B {protein} g • T {fat} g • W {carbs} g",
     grams: "{value} g",
   },
+  en: {
+    title: "Meal photo",
+    subtitle:
+      "Upload a photo file. The system will try to prepare an ingredient draft, and you can quickly review it before saving.",
+    upload: "Upload meal photo",
+    uploaded: "Photo uploaded",
+    recognizing: "Analyzing photo...",
+    readError: "Could not read the photo. Try another file.",
+    invalidType: "JPG, PNG, or WebP are supported.",
+    tooLarge: "Photo is too large. Choose a file up to 12 MB.",
+    analysisError:
+      "Could not prepare suggestions for this photo. You can add the meal manually below.",
+    cloudDraft:
+      "Draft is ready. Check ingredients and portion before adding entries to the diary.",
+    previewAlt: "Meal photo preview",
+    removePhoto: "Remove photo",
+    detected: "Recognition draft",
+    portions: "Portion",
+    portionLight: "Light",
+    portionRegular: "Regular",
+    portionLarge: "Large",
+    portionsValue: "{value} portions",
+    confidence: "Confidence",
+    manualReview: "Manual review needed",
+    macros: "Estimated macros from photo",
+    suggestions: "What will be added to the diary",
+    selected: "Selected",
+    itemName: "Name",
+    itemGrams: "Grams",
+    empty: "No suggestions were created. Use manual adding below.",
+    nothingSelected: "Select at least one item from the draft.",
+    addDraft: "Add all suggestions",
+    added: "Draft was added to the diary.",
+    itemCalories: "{value} kcal",
+    itemMacros: "P {protein} g • F {fat} g • C {carbs} g",
+    grams: "{value} g",
+  },
 } as const;
 
 type Props = {
@@ -198,8 +235,8 @@ type Props = {
 
 export const PhotoMealAssistant = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { language, t } = useLanguage();
-  const copy = photoCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = photoCopy[appLanguage];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
   const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");

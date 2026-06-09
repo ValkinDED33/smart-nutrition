@@ -3,6 +3,7 @@ import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import type { PremiumPlanId } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   activatePremiumPlan,
   cancelPremiumSubscription,
@@ -68,13 +69,48 @@ const premiumCopy = {
       },
     },
   },
+  en: {
+    title: "Premium",
+    subtitle: "Pro access, coach mode, and subscription status.",
+    status: "Status",
+    renews: "Next renewal",
+    trialEnds: "Trial until",
+    startTrial: "Start 7-day trial",
+    activatePro: "Activate Pro",
+    activateCoach: "Activate Coach",
+    cancel: "Cancel",
+    current: "Current",
+    plans: {
+      free: {
+        name: "Free",
+        price: "0",
+        features: ["Food + water tracking", "Weight basics", "Community"],
+      },
+      pro: {
+        name: "Pro",
+        price: "$7.99 / month",
+        features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
+      },
+      coach: {
+        name: "Coach",
+        price: "$14.99 / month",
+        features: ["Coach summary", "Habit score", "Priority reminders"],
+      },
+    },
+  },
 } as const;
 
 const planOrder: PremiumPlanId[] = ["free", "pro", "coach"];
 
-const formatDate = (value: string | null, language: "uk" | "pl") =>
+const premiumLocaleByLanguage: Record<AppLanguage, string> = {
+  uk: "uk-UA",
+  pl: "pl-PL",
+  en: "en-US",
+};
+
+const formatDate = (value: string | null, language: AppLanguage) =>
   value
-    ? new Date(value).toLocaleDateString(language === "pl" ? "pl-PL" : "uk-UA", {
+    ? new Date(value).toLocaleDateString(premiumLocaleByLanguage[language], {
         dateStyle: "medium",
       })
     : null;
@@ -82,8 +118,8 @@ const formatDate = (value: string | null, language: "uk" | "pl") =>
 export const PremiumAccessCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const premium = useSelector((state: RootState) => state.profile.premium);
-  const { language } = useLanguage();
-  const copy = premiumCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = premiumCopy[appLanguage];
   const isPaid = premium.status === "trial" || premium.status === "active";
 
   return (
@@ -109,13 +145,13 @@ export const PremiumAccessCard = () => {
           <Chip label={`${copy.current}: ${copy.plans[premium.plan].name}`} variant="outlined" />
           {premium.trialEndsAt ? (
             <Chip
-              label={`${copy.trialEnds}: ${formatDate(premium.trialEndsAt, language)}`}
+              label={`${copy.trialEnds}: ${formatDate(premium.trialEndsAt, appLanguage)}`}
               variant="outlined"
             />
           ) : null}
           {premium.renewsAt ? (
             <Chip
-              label={`${copy.renews}: ${formatDate(premium.renewsAt, language)}`}
+              label={`${copy.renews}: ${formatDate(premium.renewsAt, appLanguage)}`}
               variant="outlined"
             />
           ) : null}

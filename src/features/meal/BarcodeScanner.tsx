@@ -186,6 +186,67 @@ const scannerCopy = {
     scanHistoryEmpty: "Po skanowaniu produkty pojawią się tutaj.",
     useHistoryItem: "Użyj",
   },
+  en: {
+    title: "Barcode scanner",
+    subtitle:
+      "Scan a product with the camera or enter the code manually. If the item is found, you can add it to the diary right away.",
+    cameraHint:
+      "Keep the barcode centered in the frame. If the product is not found, online search and a quick manual form will appear below.",
+    barcode: "Barcode",
+    grams: "Grams eaten",
+    search: "Find and add",
+    start: "Start scanner",
+    stop: "Stop scanner",
+    added: "Added to diary",
+    notFound: "No product found for this code",
+    failed: "Could not check barcode",
+    preview: "Last found product",
+    cameraIdle: "Camera preview will appear here after starting the scanner.",
+    cameraFailed:
+      "Could not start the camera. Check camera access or use manual search.",
+    lowLightTitle: "Bad lighting?",
+    lowLightBody:
+      "Light the package, clean the camera, and keep the code straight in the frame. If the phone supports torch, turn it on below.",
+    torchOn: "Turn light on",
+    torchOff: "Turn light off",
+    torchUnavailable: "Torch is unavailable in this browser.",
+    fallbackTitle: "Product was not found automatically",
+    fallbackBody:
+      "Try browser search or fill basic macros manually so you can still add the product.",
+    searchOnline: "Search online",
+    searchHint: "Results will open in a new tab.",
+    retailerSearch: "Retailer pages",
+    retailerHint:
+      "Try official store pages where product cards often include descriptions and nutrition values.",
+    google: "Google",
+    auchan: "Auchan",
+    biedronka: "Biedronka",
+    manualOpen: "Fill manually",
+    manualClose: "Hide form",
+    manualTitle: "Quick manual add",
+    manualName: "Product name",
+    manualBrand: "Brand",
+    manualCategory: "Category",
+    manualCategoryEmpty: "No category",
+    manualImageUrl: "Photo / package URL",
+    manualPhoto: "Add package photo",
+    manualPhotoTooLarge: "Photo is too large. Choose a file up to 1.2 MB.",
+    manualPhotoInvalid: "Only JPEG, PNG, or WebP are supported.",
+    manualCalories: "Kcal per 100 g",
+    manualProtein: "Protein per 100 g",
+    manualFat: "Fat per 100 g",
+    manualCarbs: "Carbs per 100 g",
+    manualAdd: "Create and add",
+    manualAdded: "Manual product added",
+    catalogQueued: "Product was also sent to the shared database for moderation.",
+    catalogSkipped:
+      "Product was added to the current list, but the shared database is unavailable right now.",
+    manualNameRequired: "Enter product name",
+    detectedCode: "Detected code",
+    scanHistory: "Scan history",
+    scanHistoryEmpty: "Products will appear here after scanning.",
+    useHistoryItem: "Use",
+  },
 } as const;
 
 export const BarcodeScanner = ({ mealType }: Props) => {
@@ -214,11 +275,11 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [catalogNotice, setCatalogNotice] = useState<CatalogNotice | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
-  const { language } = useLanguage();
-  const copy = scannerCopy[language];
+  const { appLanguage } = useLanguage();
+  const copy = scannerCopy[appLanguage];
   const categoryOptions = useMemo(
-    () => getKnownProductCategoryOptions(language),
-    [language]
+    () => getKnownProductCategoryOptions(appLanguage),
+    [appLanguage]
   );
 
   useAutoDismiss(Boolean(message), 2800, () => setMessage(null));
@@ -389,7 +450,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           stopScanner();
         }
 
-        const displayName = getProductDisplayName(product, language);
+        const displayName = getProductDisplayName(product, appLanguage);
         setMessage(autoAdd ? `${copy.added}: ${displayName}` : displayName);
       } catch (error) {
         console.error(error);
@@ -406,7 +467,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setIsSearching(false);
       }
     },
-    [copy, dispatch, findKnownProductByBarcode, language, mealType, quantity, stopScanner]
+    [appLanguage, copy, dispatch, findKnownProductByBarcode, mealType, quantity, stopScanner]
   );
 
   useEffect(() => {
@@ -807,13 +868,13 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                     >
                       <Stack spacing={0.4}>
                         <Typography sx={{ fontWeight: 700 }}>
-                          {getProductDisplayName(product, language)}
+                          {getProductDisplayName(product, appLanguage)}
                         </Typography>
                         <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
                           <Chip label={barcode} size="small" />
                           {category ? (
                             <Chip
-                              label={getProductCategoryLabel(category, language)}
+                              label={getProductCategoryLabel(category, appLanguage)}
                               size="small"
                               variant="outlined"
                             />

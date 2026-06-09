@@ -19,6 +19,7 @@ import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/d
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { EmptyState } from "@shared/ui";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -55,6 +56,22 @@ const overviewCopy = {
     share: "Udostępnij posiłek",
     shared: "Posiłek z dziennika",
   },
+  en: {
+    title: "Today's meals",
+    subtitle: "See breakfast, lunch, dinner, and snacks in one place.",
+    empty: "No products have been added for today yet.",
+    emptyGroup: "Nothing here yet.",
+    emptyHint: "Add the first product or repeat yesterday's meal if the day is similar.",
+    items: "items",
+    repeat: "Repeat yesterday",
+    edit: "Edit",
+    delete: "Delete",
+    cancel: "Cancel",
+    save: "Save",
+    editTitle: "Edit entry",
+    share: "Share meal",
+    shared: "Diary meal",
+  },
 } as const;
 
 type OverviewCopy = (typeof overviewCopy)[keyof typeof overviewCopy];
@@ -67,7 +84,7 @@ const InlineEditPanel = ({
   onDelete,
   mealTypes,
   t,
-  language,
+  appLanguage,
   copy,
 }: {
   item: MealEntry | null;
@@ -77,7 +94,7 @@ const InlineEditPanel = ({
   onDelete: () => void;
   mealTypes: Record<MealType, string>;
   t: (key: string) => string;
-  language: "uk" | "pl";
+  appLanguage: AppLanguage;
   copy: OverviewCopy;
 }) => {
   const [quantity, setQuantity] = useState<number | "">(item?.quantity ?? "");
@@ -104,7 +121,7 @@ const InlineEditPanel = ({
     >
       <Stack spacing={2}>
         <Typography sx={{ fontWeight: 800 }}>
-          {copy.editTitle}: {getProductDisplayName(item.product, language)}
+          {copy.editTitle}: {getProductDisplayName(item.product, appLanguage)}
         </Typography>
         <TextField
           type="number"
@@ -154,8 +171,8 @@ export const MealDayOverview = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const user = useSelector((state: RootState) => state.auth.user);
-  const { language, t } = useLanguage();
-  const copy = overviewCopy[language];
+  const { appLanguage, t } = useLanguage();
+  const copy = overviewCopy[appLanguage];
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [editingItem, setEditingItem] = useState<MealEntry | null>(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -268,7 +285,7 @@ export const MealDayOverview = () => {
       (sum, item) => sum + (item.product.nutrients.protein * item.quantity) / 100,
       0
     );
-    const ingredients = entries.map((item) => getProductDisplayName(item.product, language));
+    const ingredients = entries.map((item) => getProductDisplayName(item.product, appLanguage));
 
     dispatch(
       publishCommunityPost({
@@ -309,7 +326,7 @@ export const MealDayOverview = () => {
               <Typography color="text.secondary">{copy.subtitle}</Typography>
             </Stack>
             <Chip
-              label={formatLocalDateKey(todayKey, language, {
+              label={formatLocalDateKey(todayKey, appLanguage, {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -394,7 +411,7 @@ export const MealDayOverview = () => {
                               }}
                             >
                               <Typography sx={{ fontWeight: 600, flex: 1 }}>
-                                {getProductDisplayName(item.product, language)}
+                                {getProductDisplayName(item.product, appLanguage)}
                               </Typography>
                               <Stack direction="row" spacing={1} alignItems="center">
                                 <Typography variant="body2" color="text.secondary">
@@ -451,7 +468,7 @@ export const MealDayOverview = () => {
         }}
         mealTypes={mealLabels}
         t={t}
-        language={language}
+        appLanguage={appLanguage}
         copy={copy}
       />
     </>

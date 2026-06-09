@@ -1,4 +1,5 @@
 import type { NutrientKey, Nutrients } from "@domain/products/types";
+import type { AppLanguage } from "@shared/types/i18n";
 
 export type NutrientUnit = "kcal" | "g" | "mg" | "ug";
 
@@ -260,6 +261,99 @@ export const formatNutrientValue = (value: number, unit: NutrientUnit) => {
   const digits = value >= 10 ? 1 : value >= 1 ? 2 : 3;
   return `${value.toFixed(digits)} ${unit}`;
 };
+
+const englishNutrientLabels: Record<string, string> = {
+  calories: "Calories",
+  protein: "Protein",
+  fat: "Fat",
+  saturatedFat: "Saturated fat",
+  monounsaturatedFat: "Monounsaturated fat",
+  polyunsaturatedFat: "Polyunsaturated fat",
+  transFat: "Trans fat",
+  omega3: "Omega-3",
+  omega6: "Omega-6",
+  omega9: "Omega-9",
+  cholesterol: "Cholesterol",
+  carbs: "Carbohydrates",
+  sugars: "Sugars",
+  fiber: "Fiber",
+  starch: "Starch",
+  glucose: "Glucose",
+  fructose: "Fructose",
+  sucrose: "Sucrose",
+  lactose: "Lactose",
+  water: "Water",
+  sodium: "Sodium",
+  potassium: "Potassium",
+  vitaminA: "Vitamin A",
+  vitaminB: "B vitamins",
+  vitaminB1: "Vitamin B1",
+  vitaminB2: "Vitamin B2",
+  vitaminB3: "Vitamin B3",
+  vitaminB5: "Vitamin B5",
+  vitaminB6: "Vitamin B6",
+  vitaminB7: "Vitamin B7",
+  vitaminB9: "Vitamin B9",
+  vitaminB12: "Vitamin B12",
+  vitaminC: "Vitamin C",
+  vitaminD: "Vitamin D",
+  vitaminE: "Vitamin E",
+  vitaminK: "Vitamin K",
+  calcium: "Calcium",
+  iron: "Iron",
+  magnesium: "Magnesium",
+  zinc: "Zinc",
+  phosphorus: "Phosphorus",
+  iodine: "Iodine",
+  selenium: "Selenium",
+  copper: "Copper",
+};
+
+export const getNutrientLabel = (key: NutrientKey, language: AppLanguage) => {
+  if (language === "en") {
+    return englishNutrientLabels[key] ?? String(key);
+  }
+
+  return nutrientDefinitions[key]?.label[language] ?? String(key);
+};
+
+const nutritionSectionTitles: Record<NutritionSectionId, Record<AppLanguage, string>> = {
+  carbs: {
+    uk: "Вуглеводи та клітковина",
+    pl: "Węglowodany i błonnik",
+    en: "Carbohydrates and fiber",
+  },
+  proteins: {
+    uk: "Білок",
+    pl: "Białko",
+    en: "Protein",
+  },
+  fats: {
+    uk: "Жири та жирні кислоти",
+    pl: "Tłuszcze i kwasy tłuszczowe",
+    en: "Fats and fatty acids",
+  },
+  vitamins: {
+    uk: "Вітаміни",
+    pl: "Witaminy",
+    en: "Vitamins",
+  },
+  minerals: {
+    uk: "Мінерали",
+    pl: "Minerały",
+    en: "Minerals",
+  },
+  hydration: {
+    uk: "Вода та гідратація",
+    pl: "Woda i nawodnienie",
+    en: "Water and hydration",
+  },
+};
+
+export const getNutritionSectionTitle = (
+  sectionId: NutritionSectionId,
+  language: AppLanguage
+) => nutritionSectionTitles[sectionId]?.[language] ?? String(sectionId);
 
 export const nutritionSections: Array<{
   id: NutritionSectionId;
