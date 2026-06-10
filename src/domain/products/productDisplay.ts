@@ -40,6 +40,76 @@ const localizedNames: Record<
   "manual-tofu": { uk: "Тофу", pl: "Tofu", en: "Tofu" },
   "manual-hummus": { uk: "Хумус", pl: "Hummus", en: "Hummus" },
   "manual-protein-bar": { uk: "Протеїновий батончик", pl: "Baton proteinowy", en: "Protein bar" },
+  "manual-caesar-salad-restaurant": {
+    uk: "Салат Цезар з куркою",
+    pl: "Sałatka Cezar z kurczakiem",
+    en: "Chicken Caesar salad",
+  },
+  "manual-shawarma-bowl": {
+    uk: "Шаурма боул з куркою",
+    pl: "Kebab bowl z kurczakiem",
+    en: "Chicken shawarma bowl",
+  },
+  "manual-pizza-margherita": {
+    uk: "Піца Маргарита",
+    pl: "Pizza Margherita",
+    en: "Pizza Margherita",
+  },
+  "manual-sushi-set": {
+    uk: "Суші сет з лососем",
+    pl: "Zestaw sushi z łososiem",
+    en: "Salmon sushi set",
+  },
+  "manual-burger-chicken": {
+    uk: "Бургер з куркою гриль",
+    pl: "Burger z grillowanym kurczakiem",
+    en: "Grilled chicken burger",
+  },
+  "manual-borscht-home": {
+    uk: "Домашній борщ",
+    pl: "Domowy barszcz",
+    en: "Homemade borscht",
+  },
+  "manual-chicken-soup-home": {
+    uk: "Домашній курячий суп",
+    pl: "Domowy rosół z kurczakiem",
+    en: "Homemade chicken soup",
+  },
+  "manual-syrniki-home": {
+    uk: "Домашні сирники",
+    pl: "Domowe placuszki twarogowe",
+    en: "Homemade syrniki",
+  },
+  "manual-greek-salad-home": {
+    uk: "Домашній грецький салат",
+    pl: "Domowa sałatka grecka",
+    en: "Homemade Greek salad",
+  },
+  "manual-omelette-home": {
+    uk: "Домашній омлет",
+    pl: "Domowy omlet",
+    en: "Homemade omelette",
+  },
+  "manual-chicken-pilaf-home": {
+    uk: "Домашній плов з куркою",
+    pl: "Domowy pilaw z kurczakiem",
+    en: "Homemade chicken pilaf",
+  },
+  "manual-chicken-cutlet-home": {
+    uk: "Домашня куряча котлета",
+    pl: "Domowy kotlet z kurczaka",
+    en: "Homemade chicken cutlet",
+  },
+  "manual-vegetable-stew-home": {
+    uk: "Домашнє овочеве рагу",
+    pl: "Domowe leczo warzywne",
+    en: "Homemade vegetable stew",
+  },
+  "manual-pasta-bolognese-home": {
+    uk: "Домашня паста болоньєзе",
+    pl: "Domowy makaron bolognese",
+    en: "Homemade pasta bolognese",
+  },
 };
 
 export const getProductDisplayName = (product: Product, language: AppLanguage) =>

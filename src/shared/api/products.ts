@@ -21,6 +21,24 @@ const productSources = new Set<ProductSource>([
 
 const productUnits = new Set<Product["unit"]>(["g", "ml", "piece"]);
 
+const createProductIdentity = (product: Product) =>
+  product.barcode?.replace(/\D/g, "") ||
+  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+
+const mergeProductsByIdentity = (products: Product[]) => {
+  const merged = new Map<string, Product>();
+
+  products.forEach((product) => {
+    const identity = createProductIdentity(product);
+
+    if (!merged.has(identity)) {
+      merged.set(identity, product);
+    }
+  });
+
+  return [...merged.values()];
+};
+
 const toString = (value: unknown, fallback = "") =>
   typeof value === "string" && value.trim() ? value.trim() : fallback;
 
@@ -129,10 +147,16 @@ export const fetchProductByBarcode = async (
     return null;
   }
 
-  const products = await fetchBackendProducts({
-    query: normalizedBarcode,
-    limit: PRODUCT_SEARCH_LIMIT,
-  });
+  let products: Product[] = [];
+
+  try {
+    products = await fetchBackendProducts({
+      query: normalizedBarcode,
+      limit: PRODUCT_SEARCH_LIMIT,
+    });
+  } catch {
+    products = [];
+  }
 
   return (
     products.find(
@@ -143,11 +167,18 @@ export const fetchProductByBarcode = async (
 
 export const searchProducts = async (query: string): Promise<Product[]> => {
   const normalizedQuery = query.trim();
+  const limit = normalizedQuery ? PRODUCT_SEARCH_LIMIT : FEATURED_PRODUCT_LIMIT;
 
-  return fetchBackendProducts({
-    query: normalizedQuery,
-    limit: normalizedQuery ? PRODUCT_SEARCH_LIMIT : FEATURED_PRODUCT_LIMIT,
-  });
+  try {
+    const backendProducts = await fetchBackendProducts({
+      query: normalizedQuery,
+      limit,
+    });
+
+    return mergeProductsByIdentity(backendProducts).slice(0, limit);
+  } catch {
+    return [];
+  }
 };
 
 export type { NutrientUnit };

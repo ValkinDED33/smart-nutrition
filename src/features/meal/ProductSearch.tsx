@@ -18,20 +18,17 @@ import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import { searchProducts } from "../../shared/api/products";
 import { useLanguage } from "../../shared/language";
-import { selectPersonalBarcodeProducts } from "./selectors";
 import { productMatchesPreferences } from "@domain/user/preferences";
 import type { RootState } from "../../app/store";
 import {
   getProductCategoryKey,
   getProductCategoryLabel,
 } from "@domain/products/productCategory";
-import {
-  createProductKey,
-  normalizeBarcode,
-} from "./productIdentity";
+import { createProductKey } from "./productIdentity";
 import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useMealSearchStore } from "@features/meal/model/searchStore";
+import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
 
 interface Props {
   mealType: MealType;
@@ -49,6 +46,11 @@ const suggestionCopy = {
     duplicateTitle: "Асистент бази",
     duplicateAdvice:
       "Ця страва вже є. Якщо створити нову, з'явиться дублікат; краще використати готовий запис.",
+    missingTitle: "Не знайшли в онлайн-базі?",
+    missingBody:
+      "Перевірте через Google або додайте продукт у спільний каталог на backend.",
+    googleSearch: "Шукати в Google",
+    addToCatalog: "Додати в базу",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
   pl: {
@@ -62,6 +64,11 @@ const suggestionCopy = {
     duplicateTitle: "Asystent bazy",
     duplicateAdvice:
       "Ten wpis już istnieje. Jeśli utworzysz nowy, dodasz duplikat; lepiej użyć gotowego wpisu.",
+    missingTitle: "Nie ma w bazie online?",
+    missingBody:
+      "Sprawdź w Google albo dodaj produkt do wspólnego katalogu na backendzie.",
+    googleSearch: "Szukaj w Google",
+    addToCatalog: "Dodaj do bazy",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
   en: {
@@ -75,6 +82,11 @@ const suggestionCopy = {
     duplicateTitle: "Database assistant",
     duplicateAdvice:
       "This item already exists. Creating a new one will add a duplicate; it is better to use the existing entry.",
+    missingTitle: "Not found in the online database?",
+    missingBody:
+      "Check Google or add the product to the shared backend catalog.",
+    googleSearch: "Search Google",
+    addToCatalog: "Add to database",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
   },
 } as const;
@@ -104,7 +116,6 @@ export const ProductSearch = ({ mealType }: Props) => {
     rememberQuery,
     setCategoryFilter,
   } = useMealSearchStore();
-  const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -113,6 +124,7 @@ export const ProductSearch = ({ mealType }: Props) => {
   }));
   const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
   const { appLanguage, t } = useLanguage();
+  const [showContributionForm, setShowContributionForm] = useState(false);
   const normalizedQuery = query.trim();
   const copy = suggestionCopy[appLanguage];
 
@@ -142,7 +154,6 @@ export const ProductSearch = ({ mealType }: Props) => {
     }
 
     const queryLower = normalizedQuery.toLowerCase();
-    const normalizedBarcodeQuery = normalizeBarcode(normalizedQuery);
     const suggestions = new Map<string, string>();
 
     const addSuggestion = (value: string) => {
@@ -160,66 +171,18 @@ export const ProductSearch = ({ mealType }: Props) => {
       suggestions.set(normalizedValue, trimmedValue);
     };
 
-    personalBarcodeProducts
-      .filter((product) => {
-        const name = product.name.toLowerCase();
-        const brand = product.brand?.toLowerCase() ?? "";
-        const barcode = normalizeBarcode(product.barcode ?? "");
-
-        return (
-          name.includes(queryLower) ||
-          brand.includes(queryLower) ||
-          (normalizedBarcodeQuery.length > 0 &&
-            barcode.includes(normalizedBarcodeQuery))
-        );
-      })
-      .filter((product) => productMatchesPreferences(product, preferences))
-      .slice(0, 4)
-      .forEach((product) => addSuggestion(formatSuggestionLabel(product)));
-
     results
       .filter((product) => productMatchesPreferences(product, preferences))
       .forEach((product) => addSuggestion(formatSuggestionLabel(product)));
 
     return [...suggestions.values()].slice(0, 6);
-  }, [normalizedQuery, personalBarcodeProducts, preferences, results]);
+  }, [normalizedQuery, preferences, results]);
 
   const displayResults = useMemo(() => {
-    if (!normalizedQuery) {
-      return results.filter((product) =>
-        productMatchesPreferences(product, preferences)
-      );
-    }
-
-    const queryLower = normalizedQuery.toLowerCase();
-    const normalizedBarcodeQuery = normalizeBarcode(normalizedQuery);
-    const localMatches = personalBarcodeProducts.filter((product) => {
-      const name = product.name.toLowerCase();
-      const brand = product.brand?.toLowerCase() ?? "";
-      const barcode = normalizeBarcode(product.barcode ?? "");
-
-      return (
-        name.includes(queryLower) ||
-        brand.includes(queryLower) ||
-        (normalizedBarcodeQuery.length > 0 &&
-          barcode.includes(normalizedBarcodeQuery))
-      );
-    });
-
-    const merged = new Map<string, Product>();
-
-    [...localMatches, ...results].forEach((product) => {
-      const key = createProductKey(product);
-
-      if (!merged.has(key)) {
-        merged.set(key, product);
-      }
-    });
-
-    return [...merged.values()].filter((product) =>
+    return results.filter((product) =>
       productMatchesPreferences(product, preferences)
     );
-  }, [normalizedQuery, personalBarcodeProducts, preferences, results]);
+  }, [preferences, results]);
 
   const duplicateAdvice = useMemo(() => {
     if (normalizedQuery.length < 3) {
@@ -228,7 +191,7 @@ export const ProductSearch = ({ mealType }: Props) => {
 
     const merged = new Map<string, Product>();
 
-    [...personalBarcodeProducts, ...results].forEach((product) => {
+    results.forEach((product) => {
       const key = createProductKey(product);
 
       if (!merged.has(key)) {
@@ -239,7 +202,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     return fuzzySearchProducts(normalizedQuery, [...merged.values()], 3).filter(
       (match) => match.score >= 70
     );
-  }, [normalizedQuery, personalBarcodeProducts, results]);
+  }, [normalizedQuery, results]);
 
   const availableCategories = useMemo(() => {
     const categoryMap = new Map<string, string>();
@@ -286,7 +249,17 @@ export const ProductSearch = ({ mealType }: Props) => {
   const handleClear = () => {
     setQuery("");
     setDebouncedQuery("");
+    setShowContributionForm(false);
   };
+
+  const shouldShowMissingProductActions =
+    normalizedQuery.length >= 3 && !isLoading && filteredResults.length === 0;
+  const googleSearchUrl =
+    normalizedQuery.length >= 3
+      ? `https://www.google.com/search?q=${encodeURIComponent(
+          `${normalizedQuery} nutrition facts calories protein`
+        )}`
+      : "#";
 
   return (
     <Paper
@@ -445,8 +418,48 @@ export const ProductSearch = ({ mealType }: Props) => {
           </Stack>
         ) : null}
 
+        {shouldShowMissingProductActions && (
+          <Alert
+            severity="info"
+            icon={<AssistantAvatar name={assistantName} size={34} mood="coach" active />}
+          >
+            <Stack spacing={1}>
+              <Typography sx={{ fontWeight: 800 }}>{copy.missingTitle}</Typography>
+              <Typography>{copy.missingBody}</Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  component="a"
+                  href={googleSearchUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  variant="outlined"
+                  sx={{ textTransform: "none", fontWeight: 700 }}
+                >
+                  {copy.googleSearch}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => setShowContributionForm((current) => !current)}
+                  sx={{ textTransform: "none", fontWeight: 700 }}
+                >
+                  {copy.addToCatalog}
+                </Button>
+              </Stack>
+            </Stack>
+          </Alert>
+        )}
+
+        {showContributionForm && (
+          <CatalogContributionCard
+            key={normalizedQuery}
+            initialName={normalizedQuery}
+          />
+        )}
+
         {filteredResults.length === 0 ? (
-          <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
+          !shouldShowMissingProductActions && (
+            <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
+          )
         ) : (
           <Stack spacing={1.5}>
             <Typography color="text.secondary" variant="body2">

@@ -58,6 +58,7 @@ const mealInputCopy = {
     sections: {
       day: "День",
       add: "Додати",
+      scan: "Сканер",
       history: "Історія",
       templates: "Шаблони",
       recommendations: "Поради",
@@ -86,6 +87,7 @@ const mealInputCopy = {
     sections: {
       day: "Dzień",
       add: "Dodaj",
+      scan: "Skaner",
       history: "Historia",
       templates: "Szablony",
       recommendations: "Rekomendacje",
@@ -114,6 +116,7 @@ const mealInputCopy = {
     sections: {
       day: "Day",
       add: "Add",
+      scan: "Scanner",
       history: "History",
       templates: "Templates",
       recommendations: "Tips",
@@ -135,7 +138,7 @@ const mealInputCopy = {
   },
 } as const;
 
-type MealSection = "day" | "add" | "history" | "templates" | "recommendations";
+type MealSection = "day" | "add" | "scan" | "history" | "templates" | "recommendations";
 
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -184,10 +187,58 @@ const MealBuilderPage = () => {
   const sections = [
     { id: "day", label: copy.sections.day },
     { id: "add", label: copy.sections.add },
+    { id: "scan", label: copy.sections.scan },
     { id: "history", label: copy.sections.history },
     { id: "templates", label: copy.sections.templates },
     { id: "recommendations", label: copy.sections.recommendations },
   ];
+
+  const mealTypeSelector = (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 1.5, md: 2 },
+        borderRadius: 1,
+        border: "1px solid rgba(15, 23, 42, 0.08)",
+        backgroundColor: "rgba(255,255,255,0.86)",
+      }}
+    >
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
+        <Typography
+          component="h2"
+          variant="h6"
+          sx={{ fontWeight: 800, fontSize: { xs: 18, md: 20 } }}
+        >
+          {t("mealBuilder.chooseMeal")}
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          value={mealType}
+          onChange={(_, value) => {
+            if (value) setMealType(value);
+          }}
+          sx={{
+            flexWrap: "wrap",
+            gap: 1,
+            "& .MuiToggleButton-root": {
+              flexGrow: 1,
+              borderRadius: 1,
+              minWidth: { xs: "calc(50% - 4px)", sm: 140 },
+              py: { xs: 0.9, sm: 1 },
+              fontSize: { xs: 14, sm: 15 },
+              textTransform: "none",
+            },
+          }}
+        >
+          {Object.entries(mealLabels).map(([value, label]) => (
+            <ToggleButton key={value} value={value}>
+              {label}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      </Stack>
+    </Paper>
+  );
 
   return (
     <PageShell
@@ -297,50 +348,7 @@ const MealBuilderPage = () => {
         </Stack>
       </Paper>
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 1.5, md: 2 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
-        <Stack spacing={{ xs: 1.25, md: 2 }}>
-          <Typography
-            component="h2"
-            variant="h6"
-            sx={{ fontWeight: 800, fontSize: { xs: 18, md: 20 } }}
-          >
-            {t("mealBuilder.chooseMeal")}
-          </Typography>
-          <ToggleButtonGroup
-            exclusive
-            value={mealType}
-            onChange={(_, value) => {
-              if (value) setMealType(value);
-            }}
-            sx={{
-              flexWrap: "wrap",
-              gap: 1,
-              "& .MuiToggleButton-root": {
-                flexGrow: 1,
-                borderRadius: 1,
-                minWidth: { xs: "calc(50% - 4px)", sm: 140 },
-                py: { xs: 0.9, sm: 1 },
-                fontSize: { xs: 14, sm: 15 },
-                textTransform: "none",
-              },
-            }}
-          >
-            {Object.entries(mealLabels).map(([value, label]) => (
-              <ToggleButton key={value} value={value}>
-                {label}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-        </Stack>
-      </Paper>
+      {mealTypeSelector}
 
       <Box
         sx={{
@@ -450,6 +458,15 @@ const MealBuilderPage = () => {
           </Paper>
         </Stack>
       </Box>
+        </Stack>
+      ) : null}
+
+      {activeSection === "scan" ? (
+        <Stack spacing={3}>
+          {mealTypeSelector}
+          <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+            <BarcodeScanner mealType={mealType} />
+          </Suspense>
         </Stack>
       ) : null}
 

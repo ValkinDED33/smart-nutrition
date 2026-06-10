@@ -1,16 +1,46 @@
 import { useState } from "react";
-import { Box, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Paper, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
+import { NutritionLibraryPanel } from "../features/meal/NutritionLibraryPanel";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { SmartRecommendations } from "../features/meal/SmartRecommendations";
+import { PageShell } from "../shared/ui/PageShell";
+import { SectionTabs } from "../shared/ui/SectionTabs";
 import { useLanguage } from "../shared/language";
 import type { MealType } from "@domain/meal/types";
 
 const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+type RecipesSection = "library" | "saved" | "recipes" | "fridge" | "recommendations";
+
+const sectionCopy = {
+  uk: {
+    library: "Бібліотека",
+    saved: "Збережене",
+    recipes: "Рецепти",
+    fridge: "Холодильник",
+    recommendations: "Поради",
+  },
+  pl: {
+    library: "Biblioteka",
+    saved: "Zapisane",
+    recipes: "Przepisy",
+    fridge: "Lodówka",
+    recommendations: "Rekomendacje",
+  },
+  en: {
+    library: "Library",
+    saved: "Saved",
+    recipes: "Recipes",
+    fridge: "Fridge",
+    recommendations: "Tips",
+  },
+} as const;
 
 const RecipesPage = () => {
   const [mealType, setMealType] = useState<MealType>("lunch");
-  const { t } = useLanguage();
+  const [activeSection, setActiveSection] = useState<RecipesSection>("library");
+  const { appLanguage, t } = useLanguage();
+  const sections = sectionCopy[appLanguage];
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),
     lunch: t("mealType.lunch"),
@@ -19,14 +49,7 @@ const RecipesPage = () => {
   };
 
   return (
-    <Stack spacing={2.5}>
-      <Stack spacing={0.8}>
-        <Typography component="h1" variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 32, md: 40 } }}>
-          {t("page.recipes.title")}
-        </Typography>
-        <Typography color="text.secondary">{t("page.recipes.subtitle")}</Typography>
-      </Stack>
-
+    <PageShell title={t("page.recipes.title")} subtitle={t("page.recipes.subtitle")}>
       <Paper
         elevation={0}
         sx={{
@@ -65,21 +88,33 @@ const RecipesPage = () => {
         </ToggleButtonGroup>
       </Paper>
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" },
-          gap: 2.5,
-          alignItems: "start",
-        }}
-      >
-        <Stack spacing={2.5}>
-          <RecipeSection mealType={mealType} />
-          <FridgeRecipePlanner mealType={mealType} />
-        </Stack>
-        <SmartRecommendations />
-      </Box>
-    </Stack>
+      <SectionTabs
+        sections={[
+          { id: "library", label: sections.library },
+          { id: "saved", label: sections.saved },
+          { id: "recipes", label: sections.recipes },
+          { id: "fridge", label: sections.fridge },
+          { id: "recommendations", label: sections.recommendations },
+        ]}
+        activeSection={activeSection}
+        onChange={(sectionId) => setActiveSection(sectionId as RecipesSection)}
+        ariaLabel="Recipe page sections"
+      />
+
+      {activeSection === "library" ? (
+        <NutritionLibraryPanel mealType={mealType} mode="library" />
+      ) : null}
+
+      {activeSection === "saved" ? (
+        <NutritionLibraryPanel mealType={mealType} mode="saved" />
+      ) : null}
+
+      {activeSection === "recipes" ? <RecipeSection mealType={mealType} /> : null}
+
+      {activeSection === "fridge" ? <FridgeRecipePlanner mealType={mealType} /> : null}
+
+      {activeSection === "recommendations" ? <SmartRecommendations /> : null}
+    </PageShell>
   );
 };
 

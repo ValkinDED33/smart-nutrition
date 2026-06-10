@@ -376,7 +376,7 @@ export const ContextAssistantWidget = () => {
         id: "calories-high",
         ...copy.caloriesHigh,
         mood: "concerned",
-        onAction: () => navigate("/food"),
+        onAction: () => navigate("/meals"),
       };
     }
 
@@ -418,7 +418,7 @@ export const ContextAssistantWidget = () => {
         id: "calories-low",
         ...copy.caloriesLow,
         mood: "coach",
-        onAction: () => navigate("/food"),
+        onAction: () => navigate("/meals"),
       };
     }
 

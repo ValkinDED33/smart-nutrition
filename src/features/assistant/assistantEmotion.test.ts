@@ -103,7 +103,7 @@ describe("assistantEmotion", () => {
   });
 
   it("lowers high priority reactions in compact presence", () => {
-    const { context, presence } = createPresence("/meals", "mobile");
+    const { context, presence } = createPresence("/meals");
 
     expect(
       resolveAssistantEmotion(context, presence, {

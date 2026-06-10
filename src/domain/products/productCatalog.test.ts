@@ -22,6 +22,26 @@ describe("searchCatalogProducts", () => {
     expect(firstResult?.id).toBe("manual-greek-yogurt");
   });
 
+  it("supports Cyrillic product queries used in the meal composer", () => {
+    const chickenResult = searchCatalogProducts("куряче", 5)[0];
+    const tomatoResult = searchCatalogProducts("помидор", 5)[0];
+
+    expect(chickenResult?.id).toBe("manual-chicken-breast");
+    expect(tomatoResult?.id).toBe("manual-tomato");
+  });
+
+  it("supports local ready-made dish queries", () => {
+    const borschtResult = searchCatalogProducts("борщ", 5)[0];
+    const shawarmaResult = searchCatalogProducts("шаурма", 5)[0];
+    const omeletteResult = searchCatalogProducts("омлет", 5)[0];
+    const pilafResult = searchCatalogProducts("плов", 5)[0];
+
+    expect(borschtResult?.id).toBe("manual-borscht-home");
+    expect(shawarmaResult?.id).toBe("manual-shawarma-bowl");
+    expect(omeletteResult?.id).toBe("manual-omelette-home");
+    expect(pilafResult?.id).toBe("manual-chicken-pilaf-home");
+  });
+
   it("prefers high-protein dairy for protein yogurt queries", () => {
     const topResults = searchCatalogProducts("protein yogurt", 3).map((product) => product.id);
 

@@ -36,6 +36,11 @@ import { replaceWaterState, type WaterState } from "../water/waterSlice";
 
 export type SyncMode = "remote-cloud";
 export type SyncStatus = "syncing" | "synced" | "error";
+type RestoreRaceResult =
+  | { kind: "remote"; data: Awaited<ReturnType<typeof restoreSession>> }
+  | { kind: "timeout" };
+
+const STARTUP_SESSION_TIMEOUT_MS = 6_000;
 
 interface AuthState {
   user: User | null;
@@ -124,16 +129,12 @@ export const initializeAuth = createAsyncThunk<
     cloudMeta: AppSnapshotMeta | null;
   },
   void,
-  { rejectValue: string | null }
->("auth/initialize", async (_, { dispatch, rejectWithValue }) => {
-  try {
-    const data = await restoreSession();
-    const syncOutbox = getSyncOutboxMeta();
-
-    if (!data) {
-      return rejectWithValue(null);
-    }
-
+  { state: AuthRootState; rejectValue: string | null }
+>("auth/initialize", async (_, { dispatch, getState, rejectWithValue }) => {
+  const syncOutbox = getSyncOutboxMeta();
+  const applySessionData = (
+    data: NonNullable<Awaited<ReturnType<typeof restoreSession>>>
+  ) => {
     if (data.snapshot && syncOutbox.pendingChanges === 0) {
       dispatch(replaceProfileState(data.snapshot.profile));
       dispatch(replaceMealState(data.snapshot.meal));
@@ -143,7 +144,9 @@ export const initializeAuth = createAsyncThunk<
       dispatch(hydrateCompanionState(data.snapshot.companion));
     }
 
-    const cloudMeta = getSnapshotMetaFromSnapshot(data.snapshot) ?? readCachedRemoteMeta({ allowStale: true });
+    const cloudMeta =
+      getSnapshotMetaFromSnapshot(data.snapshot) ??
+      readCachedRemoteMeta({ allowStale: true });
 
     if (data.snapshot) {
       writeCachedRemoteSnapshot(data.snapshot);
@@ -155,6 +158,56 @@ export const initializeAuth = createAsyncThunk<
       syncOutbox,
       cloudMeta,
     };
+  };
+  const confirmSessionInBackground = (
+    sessionPromise: Promise<Awaited<ReturnType<typeof restoreSession>>>
+  ) => {
+    sessionPromise
+      .then((data) => {
+        const currentUserId = getState().auth.user?.id ?? null;
+
+        if (!data) {
+          if (currentUserId) {
+            return;
+          }
+
+          dispatch(logout());
+          return;
+        }
+
+        if (currentUserId && currentUserId !== data.user.id) {
+          return;
+        }
+
+        dispatch(setCredentials(applySessionData(data)));
+      })
+      .catch(() => {
+        // Cold starts and offline moments should not block startup.
+      });
+  };
+
+  try {
+    const sessionPromise = restoreSession();
+    const startupResult = await Promise.race<RestoreRaceResult>([
+      sessionPromise.then((data) => ({ kind: "remote", data })),
+      new Promise<RestoreRaceResult>((resolve) => {
+        globalThis.setTimeout(
+          () => resolve({ kind: "timeout" }),
+          STARTUP_SESSION_TIMEOUT_MS
+        );
+      }),
+    ]);
+
+    if (startupResult.kind === "timeout") {
+      confirmSessionInBackground(sessionPromise);
+      return rejectWithValue("REMOTE_API_UNAVAILABLE");
+    }
+
+    if (!startupResult.data) {
+      return rejectWithValue(null);
+    }
+
+    return applySessionData(startupResult.data);
   } catch (error) {
     const errorCode = error instanceof AuthApiError
       ? error.code === "INVALID_CREDENTIALS"
@@ -351,6 +404,8 @@ const authSlice = createSlice({
     ) {
       state.user = action.payload.user;
       state.isAuthenticated = true;
+      state.isLoading = false;
+      state.isInitialized = true;
       state.error = null;
       state.syncMode = action.payload.syncMode;
       state.syncOutbox = action.payload.syncOutbox;

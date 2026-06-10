@@ -303,7 +303,7 @@ const AiCompanionPage = () => {
             id: "first-meal",
             title: copy.noMealTitle,
             body: copy.noMealBody,
-            to: "/food",
+            to: "/meals",
             progress: null,
           },
         ]
@@ -327,7 +327,7 @@ const AiCompanionPage = () => {
             id: "calories-high",
             title: copy.caloriesHighTitle,
             body: copy.caloriesHighBody,
-            to: "/food",
+            to: "/meals",
             progress: Math.min(calorieProgress, 100),
           },
         ]
@@ -337,7 +337,7 @@ const AiCompanionPage = () => {
               id: "calories-low",
               title: copy.caloriesLowTitle,
               body: copy.caloriesLowBody,
-              to: "/food",
+              to: "/meals",
               progress: calorieProgress,
             },
           ]

@@ -115,14 +115,25 @@ const initialForm = {
   carbs: "",
 };
 
-export const CatalogContributionCard = () => {
+const createInitialForm = (initialName = "") => ({
+  ...initialForm,
+  name: initialName.trim(),
+});
+
+interface CatalogContributionCardProps {
+  initialName?: string;
+}
+
+export const CatalogContributionCard = ({
+  initialName = "",
+}: CatalogContributionCardProps) => {
   const { appLanguage } = useLanguage();
   const copy = catalogCopy[appLanguage];
   const categoryOptions = useMemo(
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
   );
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(() => createInitialForm(initialName));
   const [submissions, setSubmissions] = useState<CatalogProductItem[]>([]);
   const [duplicates, setDuplicates] = useState<CatalogProductItem[]>([]);
   const [loading, setLoading] = useState(false);

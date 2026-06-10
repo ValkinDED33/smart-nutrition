@@ -1,23 +1,24 @@
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useQueries } from "@tanstack/react-query";
 import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, getLocalDateKey } from "../../shared/lib/date";
-import { productCatalog } from "@domain/products/productCatalog";
 import { recipes } from "@domain/meal/recipes";
 import {
-  pickPreferredProteinProducts,
   productMatchesPreferences,
   recipeMatchesPreferences,
 } from "@domain/user/preferences";
 import { addMealEntries, addProduct } from "./mealSlice";
 import type { MealEntry } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
+import type { NutritionPreferences } from "@domain/profile/types";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
 import { buildDailyContext } from "@domain/meal/dailyContext";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { searchProducts } from "../../shared/api/products";
 
 const recommendationCopy = {
   uk: {
@@ -167,6 +168,12 @@ const recommendationCopy = {
 } as const;
 
 type RecommendationTone = "success" | "warning" | "info";
+type RecommendationProductKind = "protein" | "fiber" | "dense";
+
+interface RecommendationProductRequest {
+  kind: RecommendationProductKind;
+  query: string;
+}
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -187,6 +194,83 @@ const getActionQuantity = (product: Product | undefined, targetAmount: number, f
   }
 
   return clamp(Math.ceil(normalizedTargetAmount / 10) * 10, 80, 240);
+};
+
+const getRecommendationProductRequests = (
+  preferences: NutritionPreferences,
+  goal: string
+): RecommendationProductRequest[] => {
+  const proteinTerms =
+    preferences.dietStyle === "vegan"
+      ? ["tofu", "lentils", "chickpeas", "soy yogurt"]
+      : preferences.dietStyle === "vegetarian"
+        ? ["greek yogurt", "cottage cheese", "tofu", "eggs"]
+        : preferences.dietStyle === "pescatarian"
+          ? ["tuna", "salmon", "greek yogurt", "eggs"]
+          : preferences.dietStyle === "low_carb"
+            ? ["chicken breast", "eggs", "tuna", "cottage cheese"]
+            : ["chicken breast", "greek yogurt", "eggs", "tuna"];
+  const fiberTerms =
+    preferences.dietStyle === "low_carb"
+      ? ["broccoli", "avocado", "chia seeds", "berries"]
+      : preferences.dietStyle === "gluten_free"
+        ? ["beans", "apple", "broccoli", "chia seeds"]
+        : ["oats", "beans", "apple", "broccoli"];
+  const denseTerms =
+    goal === "bulk" ? ["peanut butter", "nuts", "banana", "rice cooked"] : [];
+
+  return [
+    ...proteinTerms.map((query) => ({ kind: "protein" as const, query })),
+    ...fiberTerms.map((query) => ({ kind: "fiber" as const, query })),
+    ...denseTerms.map((query) => ({ kind: "dense" as const, query })),
+  ];
+};
+
+const getProductIdentity = (product: Product) =>
+  product.barcode?.replace(/\D/g, "") || product.id || product.name.trim().toLowerCase();
+
+const groupRecommendationProducts = (
+  requests: RecommendationProductRequest[],
+  results: Product[][],
+  preferences: NutritionPreferences
+) => {
+  const groups: Record<RecommendationProductKind, Product[]> = {
+    protein: [],
+    fiber: [],
+    dense: [],
+  };
+  const seen = new Set<string>();
+
+  requests.forEach((request, index) => {
+    results[index]?.forEach((product) => {
+      const identity = `${request.kind}-${getProductIdentity(product)}`;
+
+      if (seen.has(identity) || !productMatchesPreferences(product, preferences)) {
+        return;
+      }
+
+      seen.add(identity);
+      groups[request.kind].push(product);
+    });
+  });
+
+  return {
+    protein: groups.protein
+      .filter((product) => product.nutrients.protein >= 8)
+      .sort((left, right) => right.nutrients.protein - left.nutrients.protein)
+      .slice(0, 4),
+    fiber: groups.fiber
+      .filter((product) => product.nutrients.fiber >= 3)
+      .sort((left, right) => right.nutrients.fiber - left.nutrients.fiber)
+      .slice(0, 4),
+    dense: groups.dense
+      .sort(
+        (left, right) =>
+          right.nutrients.calories + right.nutrients.protein * 3 -
+          (left.nutrients.calories + left.nutrients.protein * 3)
+      )
+      .slice(0, 4),
+  };
 };
 
 export const SmartRecommendations = () => {
@@ -227,6 +311,41 @@ export const SmartRecommendations = () => {
   const todayKey = getLocalDateKey(new Date());
   const todayTotals = dailyContext.today;
   const suggestedMealLabel = t(`mealType.${dailyContext.suggestedMealType}`);
+  const preferences = useMemo(
+    () => ({
+      dietStyle: profile.dietStyle,
+      allergies: profile.allergies,
+      excludedIngredients: profile.excludedIngredients,
+      adaptiveMode: profile.adaptiveMode,
+    }),
+    [
+      profile.adaptiveMode,
+      profile.allergies,
+      profile.dietStyle,
+      profile.excludedIngredients,
+    ]
+  );
+  const recommendationProductRequests = useMemo(
+    () => getRecommendationProductRequests(preferences, profile.goal),
+    [preferences, profile.goal]
+  );
+  const recommendationProductQueries = useQueries({
+    queries: recommendationProductRequests.map((request) => ({
+      queryKey: ["smart-recommendation-products", request.kind, request.query],
+      queryFn: () => searchProducts(request.query),
+      enabled: Boolean(user),
+      staleTime: 10 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+    })),
+  });
+  const recommendationProducts = groupRecommendationProducts(
+    recommendationProductRequests,
+    recommendationProductQueries.map((query) => query.data ?? []),
+    preferences
+  );
+  const proteinProducts = recommendationProducts.protein;
+  const fiberProducts = recommendationProducts.fiber;
+  const denseSnackProducts = recommendationProducts.dense;
 
   const recommendations = useMemo(() => {
     if (!user) return [];
@@ -243,18 +362,8 @@ export const SmartRecommendations = () => {
         (sum, item) => sum + (item.product.nutrients.calories * item.quantity) / 100,
         0
       ) / 7;
-    const preferences = {
-      dietStyle: profile.dietStyle,
-      allergies: profile.allergies,
-      excludedIngredients: profile.excludedIngredients,
-      adaptiveMode: profile.adaptiveMode,
-    };
-    const preferredProteinProducts = pickPreferredProteinProducts(productCatalog, preferences, 4);
+    const preferredProteinProducts = proteinProducts;
     const proteinFoods = preferredProteinProducts.map((product) => product.name).join(", ");
-    const fiberProducts = productCatalog
-      .filter((product) => productMatchesPreferences(product, preferences))
-      .filter((product) => product.nutrients.fiber >= 3)
-      .sort((left, right) => right.nutrients.fiber - left.nutrients.fiber);
     const fiberFoods = fiberProducts
       .slice(0, 3)
       .map((product) => product.name)
@@ -385,13 +494,7 @@ export const SmartRecommendations = () => {
     }
 
     if (profile.goal === "bulk" && todayTotals.calories < dailyCalories - 250) {
-      const denseSnack = productCatalog
-        .filter((product) => productMatchesPreferences(product, preferences))
-        .sort(
-          (left, right) =>
-            right.nutrients.calories + right.nutrients.protein * 3 -
-            (left.nutrients.calories + left.nutrients.protein * 3)
-        )[0];
+      const denseSnack = denseSnackProducts[0];
       const actionQuantity = getActionQuantity(
         denseSnack,
         denseSnack
@@ -471,8 +574,11 @@ export const SmartRecommendations = () => {
     appLanguage,
     copy,
     dailyContext,
+    denseSnackProducts,
+    fiberProducts,
     items,
     macroTargets.protein,
+    preferences,
     profile.adaptiveMode,
     profile.allergies,
     profile.assistant.onboarding,
@@ -480,6 +586,7 @@ export const SmartRecommendations = () => {
     profile.dietStyle,
     profile.excludedIngredients,
     profile.goal,
+    proteinProducts,
     todayKey,
     todayTotals.calories,
     todayTotals.fiber,

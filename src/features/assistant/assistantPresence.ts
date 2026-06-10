@@ -25,6 +25,16 @@ export interface AssistantPresence {
   priority: AssistantPresencePriority;
 }
 
+const mobileDenseAssistantAreas = new Set([
+  "meals",
+  "coach",
+  "progress",
+  "profile",
+  "community",
+  "recipes",
+  "water",
+]);
+
 const publicRoutePrefixes = [
   "/login",
   "/register",
@@ -117,6 +127,10 @@ export const resolveAssistantPresence = (
     return hiddenPresence("assistant-not-global-for-route", prefersReducedMotion);
   }
 
+  if (inputFocused && options.viewport === "mobile") {
+    return hiddenPresence("mobile-input-focused", prefersReducedMotion);
+  }
+
   if (inputFocused) {
     return compactPresence({
       reason: "input-focused",
@@ -126,6 +140,10 @@ export const resolveAssistantPresence = (
   }
 
   if (options.viewport === "mobile") {
+    if (mobileDenseAssistantAreas.has(context.area)) {
+      return hiddenPresence("mobile-dense-surface", prefersReducedMotion);
+    }
+
     return compactPresence({
       reason: "mobile-viewport",
       prefersReducedMotion,

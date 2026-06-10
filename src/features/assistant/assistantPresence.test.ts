@@ -39,6 +39,24 @@ describe("assistantPresence", () => {
     });
   });
 
+  it("hides the global assistant on dense mobile product surfaces", () => {
+    ["/meals", "/coach", "/progress", "/profile", "/community", "/recipes", "/water"].forEach(
+      (pathname) => {
+        expect(
+          resolveAssistantPresence(resolveAssistantContext(pathname), {
+            pathname,
+            viewport: "mobile",
+          })
+        ).toMatchObject({
+          visible: false,
+          mode: "hidden",
+          reason: "mobile-dense-surface",
+          allowSpeechBubble: false,
+        });
+      }
+    );
+  });
+
   it("uses bubble mode on desktop authenticated routes", () => {
     const context = resolveAssistantContext("/dashboard");
 
@@ -69,6 +87,24 @@ describe("assistantPresence", () => {
       visible: true,
       mode: "compact",
       reason: "input-focused",
+      allowSpeechBubble: false,
+      priority: "low",
+    });
+  });
+
+  it("hides on mobile when an input is focused", () => {
+    const context = resolveAssistantContext("/dashboard");
+
+    expect(
+      resolveAssistantPresence(context, {
+        pathname: "/dashboard",
+        viewport: "mobile",
+        inputFocused: true,
+      })
+    ).toMatchObject({
+      visible: false,
+      mode: "hidden",
+      reason: "mobile-input-focused",
       allowSpeechBubble: false,
       priority: "low",
     });

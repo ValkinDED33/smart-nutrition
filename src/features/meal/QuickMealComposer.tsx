@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Autocomplete,
   Button,
-  MenuItem,
+  CircularProgress,
   Paper,
   Stack,
   TextField,
@@ -13,6 +14,7 @@ import { addProduct } from "./mealSlice";
 import { selectFavoriteProductIds } from "./selectors";
 import { searchProducts } from "../../shared/api/products";
 import type { MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
@@ -28,15 +30,17 @@ interface Props {
 
 interface ComposerRow {
   id: string;
-  productId: string;
+  product: Product | null;
+  productQuery: string;
   quantity: number | "";
 }
 
-const createRow = (productId = ""): ComposerRow => ({
+const createRow = (product: Product | null = null): ComposerRow => ({
   id:
     globalThis.crypto?.randomUUID?.() ??
     `composer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  productId,
+  product,
+  productQuery: "",
   quantity: 100,
 });
 
@@ -50,9 +54,11 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
+  const [activeSearchText, setActiveSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const productsQuery = useQuery({
-    queryKey: ["composer-products"],
-    queryFn: () => searchProducts(""),
+    queryKey: ["composer-products", debouncedSearchText],
+    queryFn: () => searchProducts(debouncedSearchText),
   });
   const availableProducts = useMemo(
     () =>
@@ -66,24 +72,17 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     { ...createRow(), quantity: 80 },
   ]);
 
-  const normalizedRows = useMemo(
-    () =>
-      rows.map((row, index) => {
-        if (availableProducts.some((product) => product.id === row.productId)) {
-          return row;
-        }
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchText(activeSearchText.trim());
+    }, 220);
 
-        return {
-          ...row,
-          productId: availableProducts[index]?.id ?? availableProducts[0]?.id ?? "",
-        };
-      }),
-    [availableProducts, rows]
-  );
+    return () => window.clearTimeout(timeoutId);
+  }, [activeSearchText]);
 
-  const totals = normalizedRows.reduce(
+  const totals = rows.reduce(
     (accumulator, row) => {
-      const product = availableProducts.find((item) => item.id === row.productId);
+      const product = row.product;
       if (!product) return accumulator;
 
       const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
@@ -108,12 +107,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   };
 
   const addRow = () => {
-    setRows((currentRows) => [...currentRows, createRow(availableProducts[0]?.id ?? "")]);
+    setRows((currentRows) => [...currentRows, createRow()]);
   };
 
   const handleSaveMeal = () => {
-    normalizedRows.forEach((row) => {
-      const product = availableProducts.find((item) => item.id === row.productId);
+    rows.forEach((row) => {
+      const product = row.product;
       const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
       if (!product || quantity <= 0) return;
 
@@ -130,9 +129,21 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     setRows([
       {
         ...createRow(),
-        productId: availableProducts[0]?.id ?? "",
       },
     ]);
+  };
+
+  const hasValidMealRows = rows.some(
+    (row) => row.product && typeof row.quantity === "number" && row.quantity > 0
+  );
+
+  const getProductLabel = (product: Product) => {
+    const name = getProductDisplayName(product, appLanguage);
+    const brand = product.brand?.trim();
+
+    return brand && !name.toLowerCase().includes(brand.toLowerCase())
+      ? `${brand} ${name}`
+      : name;
   };
 
   return (
@@ -151,10 +162,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
-        {normalizedRows.map((row, index) => {
-          const selectedProduct = availableProducts.find(
-            (product) => product.id === row.productId
-          );
+        {rows.map((row, index) => {
+          const selectedProduct = row.product;
           const portionPresets = getProductPortionPresets(selectedProduct?.unit ?? "g");
 
           return (
@@ -164,28 +173,65 @@ export const QuickMealComposer = ({ mealType }: Props) => {
               spacing={1.5}
               alignItems={{ xs: "stretch", md: "center" }}
             >
-              <TextField
-                select
+              <Autocomplete
                 fullWidth
-                label={`${t("composer.ingredient")} ${index + 1}`}
-                value={row.productId}
-                onChange={(event) =>
-                  updateRow(row.id, { productId: event.target.value })
-                }
-              >
-                {availableProducts.map((product) => {
+                autoHighlight
+                loading={productsQuery.isFetching}
+                options={availableProducts}
+                value={selectedProduct}
+                inputValue={row.productQuery}
+                filterOptions={(options) => options}
+                getOptionLabel={(product) => getProductLabel(product)}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                onInputChange={(_, value, reason) => {
+                  updateRow(row.id, {
+                    productQuery: value,
+                    product:
+                      reason === "clear" || reason === "input" || value.trim() === ""
+                        ? null
+                        : row.product,
+                  });
+                  setActiveSearchText(value);
+                }}
+                onChange={(_, product) => {
+                  updateRow(row.id, {
+                    product,
+                    productQuery: product ? getProductLabel(product) : "",
+                  });
+                }}
+                renderOption={(props, product) => {
                   const isFavorited = favorites.has(
                     product.barcode?.trim() ||
                     `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
                   );
+
                   return (
-                    <MenuItem key={product.id} value={product.id}>
+                    <li {...props} key={product.barcode?.trim() || product.id}>
                       {isFavorited ? "⭐ " : ""}
-                      {getProductDisplayName(product, appLanguage)}
-                    </MenuItem>
+                      {getProductLabel(product)}
+                    </li>
                   );
-                })}
-              </TextField>
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={`${t("composer.ingredient")} ${index + 1}`}
+                    placeholder={t("productSearch.placeholder")}
+                    autoComplete="off"
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {productsQuery.isFetching ? (
+                            <CircularProgress color="inherit" size={18} />
+                          ) : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+              />
 
               <TextField
                 type="number"
@@ -233,13 +279,13 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         })}
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <Button variant="outlined" onClick={addRow} disabled={availableProducts.length === 0}>
+          <Button variant="outlined" onClick={addRow}>
             {t("composer.addRow")}
           </Button>
           <Button
             variant="contained"
             onClick={handleSaveMeal}
-            disabled={availableProducts.length === 0}
+            disabled={!hasValidMealRows}
           >
             {t("composer.saveMeal")}
           </Button>

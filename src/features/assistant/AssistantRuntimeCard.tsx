@@ -590,7 +590,12 @@ export const AssistantRuntimeCard = () => {
                     {message.role === "assistant" ? (
                       <AssistantMessageMarkdown text={message.text} />
                     ) : (
-                      <Typography color="text.primary" sx={{ whiteSpace: "pre-wrap" }}>
+                      <Typography
+                        sx={{
+                          color: "#0f172a",
+                          whiteSpace: "pre-wrap",
+                        }}
+                      >
                         {message.text}
                       </Typography>
                     )}
