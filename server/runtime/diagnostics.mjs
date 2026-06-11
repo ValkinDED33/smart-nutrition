@@ -110,6 +110,7 @@ export const createStartupDiagnostics = ({
     databaseUrl: readEnvFlag(env, "SMART_NUTRITION_DATABASE_URL", "DATABASE_URL", "POSTGRES_URL"),
     openrouterKey: readEnvFlag(env, "SMART_NUTRITION_OPENROUTER_API_KEY"),
     googleKey: readEnvFlag(env, "SMART_NUTRITION_GOOGLE_API_KEY"),
+    usdaKey: readEnvFlag(env, "SMART_NUTRITION_USDA_API_KEY"),
     groqKey: readEnvFlag(env, "SMART_NUTRITION_GROQ_API_KEY"),
     assistantApiKey: readEnvFlag(env, "SMART_NUTRITION_ASSISTANT_API_KEY"),
     resendKey: readEnvFlag(env, "SMART_NUTRITION_RESEND_API_KEY"),
@@ -138,6 +139,11 @@ export const createStartupDiagnostics = ({
       aiDataProvider: config.aiDataProvider,
       mongoAiEnabled: config.mongoAiEnabled,
       redisEnabled: config.redisEnabled,
+      productLookup: {
+        openFoodFactsEnabled: config.openFoodFactsEnabled,
+        usdaConfigured: Boolean(config.usdaApiKey),
+        timeoutMs: config.productLookupTimeoutMs,
+      },
       emailTransportConfigured: config.emailTransportConfigured,
       brevoConfigured: config.brevoConfigured,
       assistantRuntimeConfigured: config.assistantRuntimeConfigured,
@@ -180,6 +186,9 @@ export const logStartupDiagnostics = (diagnostics) => {
   console.log(`- emailTransportConfigured: ${diagnostics.config.emailTransportConfigured}`);
   console.log(`- brevoConfigured: ${diagnostics.config.brevoConfigured}`);
   console.log(`- redisEnabled: ${diagnostics.config.redisEnabled}`);
+  console.log(
+    `- productLookup: OpenFoodFacts=${diagnostics.config.productLookup.openFoodFactsEnabled}, USDA=${diagnostics.config.productLookup.usdaConfigured}`
+  );
   diagnostics.config.warnings.forEach((warning) => {
     console.warn(`[config warning] ${warning}`);
   });

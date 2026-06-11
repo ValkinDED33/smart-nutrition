@@ -43,6 +43,28 @@ const readListLimit = (value, { fallback = 48, max = 120 } = {}) => {
 
 const normalizeSearchQuery = (value) => normalizeText(value, { maxLength: 120 });
 
+const createProductIdentity = (product) =>
+  product?.barcode?.replace(/\D/g, "") ||
+  `${String(product?.source ?? "").trim().toLowerCase()}-${String(product?.name ?? "")
+    .trim()
+    .toLowerCase()}-${String(product?.brand ?? "").trim().toLowerCase()}`;
+
+const mergeCatalogProducts = (products) => {
+  const merged = new Map();
+
+  products.forEach((product) => {
+    const identity = createProductIdentity(product);
+
+    if (!identity || merged.has(identity)) {
+      return;
+    }
+
+    merged.set(identity, product);
+  });
+
+  return [...merged.values()];
+};
+
 const normalizeImageUrl = (value) => {
   if (typeof value !== "string") {
     return null;
@@ -208,7 +230,12 @@ const mapAuditLogToContentReport = (entry) => ({
   createdAt: entry.createdAt,
 });
 
-export const createPlatformService = ({ platformRepository, config, cacheRepository = null }) => {
+export const createPlatformService = ({
+  platformRepository,
+  config,
+  cacheRepository = null,
+  productLookupService = null,
+}) => {
   const withCache = async (key, ttlSeconds, producer) => {
     if (!cacheRepository?.enabled) {
       return producer();
@@ -260,18 +287,37 @@ export const createPlatformService = ({ platformRepository, config, cacheReposit
     }),
 
     listVisibleCatalogProducts: async (currentUser, query = {}) => {
+      const statuses = normalizeStatusFilters(query.status);
       const options = {
         viewerUserId: currentUser.id,
         includeUnapproved: false,
-        statuses: normalizeStatusFilters(query.status),
+        statuses,
         search: normalizeSearchQuery(query.search),
         limit: readListLimit(query.limit),
       };
       const cacheKey = `catalog:visible:${JSON.stringify(options)}`;
 
-      return withCache(cacheKey, config.catalogCacheTtlSeconds ?? 60, () =>
-        platformRepository.listCatalogProducts(options)
-      );
+      return withCache(cacheKey, config.catalogCacheTtlSeconds ?? 60, async () => {
+        const catalogProducts = await platformRepository.listCatalogProducts(options);
+        const shouldUseExternalLookup =
+          productLookupService?.isConfigured?.() &&
+          (statuses.length === 0 || statuses.includes("approved")) &&
+          catalogProducts.length < options.limit;
+
+        if (!shouldUseExternalLookup) {
+          return catalogProducts;
+        }
+
+        const externalProducts = await productLookupService.searchProducts({
+          search: options.search,
+          limit: Math.max(options.limit - catalogProducts.length, 1),
+        });
+
+        return mergeCatalogProducts([...catalogProducts, ...externalProducts]).slice(
+          0,
+          options.limit
+        );
+      });
     },
 
     listOwnCatalogProducts: async (currentUser, query = {}) =>

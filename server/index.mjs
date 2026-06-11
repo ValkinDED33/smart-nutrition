@@ -30,6 +30,7 @@ import { createBrevoService } from "./services/brevoService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
+import { createProductLookupService } from "./services/productLookupService.mjs";
 import { createStateService } from "./services/stateService.mjs";
 import { createStorage } from "./storage/index.mjs";
 import { createAuthSessionHelpers } from "./runtime/authCookies.mjs";
@@ -54,6 +55,7 @@ import {
   getPublicBrevoStatus,
   getPublicCacheStatus,
   getPublicEmailStatus,
+  getPublicProductLookupStatus,
   getPublicStorageStatus,
 } from "./runtime/status.mjs";
 import { createStateStreamRuntime } from "./runtime/stateStreams.mjs";
@@ -91,6 +93,9 @@ const emailService = createEmailService({
 const brevoService = createBrevoService({
   config: serverConfig,
 });
+const productLookupService = createProductLookupService({
+  config: serverConfig,
+});
 const aiService = createAiService({
   aiRepository,
   assistantMemoryRepository,
@@ -105,6 +110,7 @@ const authService = createAuthService({
 });
 const platformService = createPlatformService({
   platformRepository,
+  productLookupService,
   config: serverConfig,
   cacheRepository: redisCache,
 });
@@ -127,6 +133,7 @@ const getReadinessSnapshot = createReadinessSnapshot({
   redisCache,
   emailService,
   brevoService,
+  productLookupService,
   aiService,
   serverConfig,
   staticAvailable,
@@ -178,6 +185,8 @@ const healthController = createHealthController({
   getWarnings: () => serverConfig.warnings,
   getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
   getBrevoStatus: () => getPublicBrevoStatus(brevoService.getStatus()),
+  getProductLookupStatus: () =>
+    getPublicProductLookupStatus(productLookupService.getStatus()),
   getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
   getReadiness: () => getReadinessSnapshot(),
   getDebugStartup: () =>

@@ -22,6 +22,19 @@ export const getPublicBrevoStatus = (brevoStatus = {}) => ({
   listIdConfigured: Boolean(brevoStatus.listIdConfigured),
 });
 
+export const getPublicProductLookupStatus = (productLookupStatus = {}) => ({
+  configured: Boolean(productLookupStatus.configured),
+  provider: productLookupStatus.provider ?? "external-products",
+  timeoutMs: productLookupStatus.timeoutMs ?? null,
+  providers: Array.isArray(productLookupStatus.providers)
+    ? productLookupStatus.providers.map((provider) => ({
+        id: provider.id,
+        configured: Boolean(provider.configured),
+        requiresApiKey: Boolean(provider.requiresApiKey),
+      }))
+    : [],
+});
+
 export const getPublicAiStatus = (aiStatus = {}) => ({
   configured: Boolean(aiStatus.configured),
   providerCount: Math.max(Number(aiStatus.providerCount) || 0, 0),
@@ -36,6 +49,7 @@ export const createReadinessSnapshot = ({
   redisCache,
   emailService,
   brevoService,
+  productLookupService,
   aiService,
   serverConfig,
   staticAvailable,
@@ -44,6 +58,9 @@ export const createReadinessSnapshot = ({
   const cacheStatus = getPublicCacheStatus(redisCache.getStatus());
   const emailStatus = getPublicEmailStatus(emailService.getStatus());
   const brevoStatus = getPublicBrevoStatus(brevoService?.getStatus?.());
+  const productLookupStatus = getPublicProductLookupStatus(
+    productLookupService?.getStatus?.()
+  );
   const aiStatus = getPublicAiStatus(aiService.getRuntimeStatus());
   const checks = {
     storage: storageStatus.engine !== "unknown",
@@ -65,6 +82,7 @@ export const createReadinessSnapshot = ({
     },
     email: emailStatus,
     brevo: brevoStatus,
+    products: productLookupStatus,
     ai: aiStatus,
   };
 };

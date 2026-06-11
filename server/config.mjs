@@ -28,6 +28,7 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_OPENROUTER_API_KEY",
   "SMART_NUTRITION_GROQ_API_KEY",
   "SMART_NUTRITION_GOOGLE_API_KEY",
+  "SMART_NUTRITION_USDA_API_KEY",
   "SMART_NUTRITION_RESEND_API_KEY",
   "SMART_NUTRITION_BREVO_API_KEY",
   "SMART_NUTRITION_BREVO_LIST_ID",
@@ -1015,6 +1016,18 @@ export const createServerConfig = (rawEnv = process.env) => {
     "SMART_NUTRITION_PRODUCT_SUBMISSION_DAILY_LIMIT",
     errors
   );
+  const openFoodFactsEnabled = readBooleanFlag(
+    env.SMART_NUTRITION_OPEN_FOOD_FACTS_ENABLED,
+    true
+  );
+  const usdaApiKey = toTrimmedString(env.SMART_NUTRITION_USDA_API_KEY) || null;
+  const productLookupTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_PRODUCT_LOOKUP_TIMEOUT_MS,
+    3_500,
+    "SMART_NUTRITION_PRODUCT_LOOKUP_TIMEOUT_MS",
+    errors,
+    { min: 500 }
+  );
   const defaultAppBaseUrl = PUBLIC_FRONTEND_ORIGIN;
   const appBaseUrl = normalizeAppBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
@@ -1267,6 +1280,9 @@ export const createServerConfig = (rawEnv = process.env) => {
     jwtSecret,
     superAdminEmail,
     productSubmissionDailyLimit,
+    openFoodFactsEnabled,
+    usdaApiKey,
+    productLookupTimeoutMs,
     backupDir,
     backupIntervalMs,
     maxBackupFilesPerUser,
