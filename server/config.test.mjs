@@ -75,6 +75,28 @@ describe("createServerConfig", () => {
     });
   });
 
+  it("enables online product lookup with OpenFoodFacts by default and optional USDA key", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_USDA_API_KEY: "usda-key",
+      SMART_NUTRITION_PRODUCT_LOOKUP_TIMEOUT_MS: "1800",
+    });
+
+    expect(config.openFoodFactsEnabled).toBe(true);
+    expect(config.usdaApiKey).toBe("usda-key");
+    expect(config.productLookupTimeoutMs).toBe(1800);
+  });
+
+  it("allows disabling OpenFoodFacts while keeping product lookup config valid", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_OPEN_FOOD_FACTS_ENABLED: "false",
+    });
+
+    expect(config.openFoodFactsEnabled).toBe(false);
+    expect(config.usdaApiKey).toBeNull();
+  });
+
   it("uses the platform PORT when SMART_NUTRITION_API_PORT is not set", () => {
     const config = createServerConfig({
       NODE_ENV: "production",

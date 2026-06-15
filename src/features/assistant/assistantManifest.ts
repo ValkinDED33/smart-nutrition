@@ -1,4 +1,5 @@
 export type AssistantArea =
+  | "auth"
   | "onboarding"
   | "home"
   | "meals"
@@ -51,6 +52,21 @@ export type AssistantAreaManifest = {
 };
 
 export const assistantAreas: AssistantAreaManifest[] = [
+  {
+    area: "auth",
+    label: "Start",
+    routePrefixes: [
+      "/login",
+      "/register",
+      "/reset-password",
+      "/forgot-password",
+      "/verify-email",
+      "/language",
+    ],
+    defaultRoute: "/register",
+    tone: "supportive",
+    visibility: "global",
+  },
   {
     area: "onboarding",
     label: "Onboarding",
@@ -134,6 +150,20 @@ export const assistantAreas: AssistantAreaManifest[] = [
 ];
 
 export const assistantCapabilities: AssistantCapability[] = [
+  {
+    id: "auth-companion",
+    area: "auth",
+    duties: ["guide", "explain", "motivate", "navigate"],
+    description:
+      "Keeps login, registration, verification, and password recovery calm and clear without blocking form inputs.",
+    entryRoute: "/register",
+    defaultAction: {
+      label: "Create account",
+      route: "/register",
+    },
+    tone: "supportive",
+    visibility: "global",
+  },
   {
     id: "onboarding-guide",
     area: "onboarding",

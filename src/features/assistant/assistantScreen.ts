@@ -8,6 +8,7 @@ const assistantAreaToScreen: Record<
   AssistantArea,
   AssistantScreenContext["screen"]
 > = {
+  auth: "unknown",
   onboarding: "unknown",
   home: "dashboard",
   meals: "food",

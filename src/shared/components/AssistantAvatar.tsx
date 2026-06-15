@@ -149,8 +149,10 @@ export const AssistantAvatar = ({
         ? "44% 44% 58% 58%"
         : variant === "owl"
           ? "50% 50% 42% 42%"
-          : variant === "dog"
-            ? "48% 48% 55% 55%"
+        : variant === "dog"
+          ? "48% 48% 55% 55%"
+          : variant === "dragon"
+            ? "46% 54% 56% 44% / 38% 42% 62% 58%"
             : "50%";
   const motionState = isCelebrating
     ? "celebrate"
@@ -282,29 +284,75 @@ export const AssistantAvatar = ({
           <Box
             sx={{
               position: "absolute",
-              top: Math.round(size * 0.02),
+              top: round(size * 0.22),
+              left: -round(size * 0.12),
+              width: round(size * 0.34),
+              height: round(size * 0.4),
+              background:
+                "linear-gradient(135deg, rgba(34,197,94,0.76), rgba(124,58,237,0.76))",
+              clipPath: "polygon(100% 12%, 0 45%, 100% 88%)",
+              borderRadius: "20% 0 0 50%",
+              opacity: 0.82,
+              filter: "drop-shadow(0 8px 12px rgba(22,163,74,0.22))",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: round(size * 0.22),
+              right: -round(size * 0.12),
+              width: round(size * 0.34),
+              height: round(size * 0.4),
+              background:
+                "linear-gradient(225deg, rgba(34,197,94,0.76), rgba(124,58,237,0.76))",
+              clipPath: "polygon(0 12%, 100% 45%, 0 88%)",
+              borderRadius: "0 20% 50% 0",
+              opacity: 0.82,
+              filter: "drop-shadow(0 8px 12px rgba(22,163,74,0.22))",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: -Math.round(size * 0.03),
               left: Math.round(size * 0.24),
               width: hornSize,
               height: hornSize,
-              borderRadius: "70% 30% 70% 30%",
+              borderRadius: "80% 20% 72% 28%",
               background: companion.detail,
-              transform: "rotate(-28deg)",
+              transform: "rotate(-32deg)",
               border: "1px solid rgba(255,255,255,0.42)",
             }}
           />
           <Box
             sx={{
               position: "absolute",
-              top: Math.round(size * 0.02),
+              top: -Math.round(size * 0.03),
               right: Math.round(size * 0.24),
               width: hornSize,
               height: hornSize,
-              borderRadius: "30% 70% 30% 70%",
+              borderRadius: "20% 80% 28% 72%",
               background: companion.detail,
-              transform: "rotate(28deg)",
+              transform: "rotate(32deg)",
               border: "1px solid rgba(255,255,255,0.42)",
             }}
           />
+          {[0, 1, 2].map((index) => (
+            <Box
+              key={index}
+              sx={{
+                position: "absolute",
+                top: round(size * (0.09 + index * 0.105)),
+                left: "50%",
+                width: round(size * 0.11),
+                height: round(size * 0.12),
+                backgroundColor: companion.detail,
+                clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
+                transform: "translateX(-50%)",
+                opacity: 0.92 - index * 0.12,
+              }}
+            />
+          ))}
         </>
       )}
 
@@ -403,19 +451,50 @@ export const AssistantAvatar = ({
       )}
 
       {variant === "dragon" && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: round(size * 0.2),
-            right: round(size * 0.07),
-            width: round(size * 0.13),
-            height: round(size * 0.48),
-            background:
-              "repeating-linear-gradient(180deg, rgba(187,247,208,0.94) 0 8px, rgba(124,58,237,0.72) 8px 14px)",
-            clipPath: "polygon(100% 0, 0 12%, 100% 24%, 0 36%, 100% 48%, 0 60%, 100% 72%, 0 84%, 100% 100%)",
-            opacity: 0.9,
-          }}
-        />
+        <>
+          <Box
+            sx={{
+              position: "absolute",
+              top: round(size * 0.18),
+              right: round(size * 0.05),
+              width: round(size * 0.12),
+              height: round(size * 0.52),
+              background:
+                "repeating-linear-gradient(180deg, rgba(187,247,208,0.94) 0 8px, rgba(124,58,237,0.72) 8px 14px)",
+              clipPath:
+                "polygon(100% 0, 0 12%, 100% 24%, 0 36%, 100% 48%, 0 60%, 100% 72%, 0 84%, 100% 100%)",
+              opacity: 0.9,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              left: "50%",
+              bottom: round(size * 0.17),
+              width: round(size * 0.32),
+              height: round(size * 0.18),
+              transform: "translateX(-50%)",
+              borderRadius: "55% 55% 70% 70%",
+              backgroundColor: "rgba(187,247,208,0.62)",
+              border: "1px solid rgba(255,255,255,0.26)",
+              "&::before, &::after": {
+                content: '""',
+                position: "absolute",
+                top: "46%",
+                width: round(size * 0.035),
+                height: round(size * 0.035),
+                borderRadius: "50%",
+                backgroundColor: "rgba(15,23,42,0.48)",
+              },
+              "&::before": {
+                left: "33%",
+              },
+              "&::after": {
+                right: "33%",
+              },
+            }}
+          />
+        </>
       )}
 
       {(["left", "right"] as const).map((side) => (

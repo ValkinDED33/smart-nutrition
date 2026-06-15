@@ -93,7 +93,38 @@ describe("authSlice", () => {
     });
   });
 
-  it("marks auth initialized when background session confirmation updates credentials", () => {
+  it("does not auto-login later when startup restore timed out", async () => {
+    vi.useFakeTimers();
+    const store = createTestStore();
+    let resolveSession: (value: { user: User; snapshot: null } | null) => void = () => {};
+    const sessionPromise = new Promise<{ user: User; snapshot: null } | null>(
+      (resolve) => {
+        resolveSession = resolve;
+      }
+    );
+
+    authApiMock.restoreSession.mockReturnValue(sessionPromise);
+
+    const resultPromise = store.dispatch(initializeAuth());
+
+    await vi.advanceTimersByTimeAsync(6_000);
+    await resultPromise;
+
+    resolveSession({
+      user: createUser("late-session-user"),
+      snapshot: null,
+    });
+    await vi.runAllTimersAsync();
+
+    expect(store.getState().auth).toMatchObject({
+      user: null,
+      isAuthenticated: false,
+      isInitialized: true,
+      isLoading: false,
+    });
+  });
+
+  it("marks auth initialized when credentials are set explicitly", () => {
     const store = createTestStore();
     const user = createUser("confirmed-user");
 

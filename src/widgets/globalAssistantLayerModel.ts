@@ -10,12 +10,6 @@ import {
 import type { AssistantDefaultAction } from "@features/assistant/assistantManifest";
 
 export const hiddenGlobalAssistantRoutePrefixes = [
-  "/login",
-  "/register",
-  "/reset-password",
-  "/forgot-password",
-  "/verify-email",
-  "/language",
   "/onboarding",
 ];
 
@@ -29,6 +23,15 @@ const normalizeRouteForComparison = (pathname: string) => {
   return withSlash.length > 1 ? withSlash.replace(/\/+$/, "") : withSlash;
 };
 
+const publicAssistantActionRoutes = new Set([
+  "/login",
+  "/register",
+  "/reset-password",
+  "/forgot-password",
+  "/verify-email",
+  "/language",
+]);
+
 export const resolveGlobalAssistantDisplayAction = (
   currentRoute: string,
   defaultAction: AssistantDefaultAction | null
@@ -41,7 +44,8 @@ export const resolveGlobalAssistantDisplayAction = (
   const normalizedActionRoute = normalizeRouteForComparison(defaultAction.route);
   const shouldOpenCoachInstead =
     normalizedCurrentRoute === normalizedActionRoute &&
-    normalizedCurrentRoute !== "/coach";
+    normalizedCurrentRoute !== "/coach" &&
+    !publicAssistantActionRoutes.has(normalizedActionRoute);
 
   return {
     ...defaultAction,

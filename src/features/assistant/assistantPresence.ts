@@ -112,7 +112,15 @@ export const resolveAssistantPresence = (
   const prefersReducedMotion = Boolean(options.prefersReducedMotion);
 
   if (routeKind === "public") {
-    return hiddenPresence("public-route", prefersReducedMotion);
+    if (inputFocused && options.viewport === "mobile") {
+      return hiddenPresence("mobile-public-input-focused", prefersReducedMotion);
+    }
+
+    return compactPresence({
+      reason: "public-route",
+      prefersReducedMotion,
+      priority: "low",
+    });
   }
 
   if (routeKind === "onboarding" || context.visibility === "onboarding") {

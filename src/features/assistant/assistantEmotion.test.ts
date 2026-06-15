@@ -88,7 +88,7 @@ describe("assistantEmotion", () => {
   });
 
   it("lowers priority for hidden presence", () => {
-    const { context, presence } = createPresence("/login");
+    const { context, presence } = createPresence("/onboarding");
 
     expect(
       resolveAssistantEmotion(context, presence, {

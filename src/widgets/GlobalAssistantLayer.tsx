@@ -37,6 +37,12 @@ const layerCopy = {
     coachFallbackAction: "Запитати асистента",
     mobileLabel: "Відкрити асистента",
     areas: {
+      auth: {
+        chip: "старт",
+        title: "Я поруч із самого початку",
+        body: "Допоможу пройти реєстрацію, підтвердження пошти й старт без зайвого стресу.",
+        action: "Створити акаунт",
+      },
       onboarding: {
         chip: "старт",
         title: "Допоможу налаштувати профіль",
@@ -114,6 +120,12 @@ const layerCopy = {
     coachFallbackAction: "Zapytaj asystenta",
     mobileLabel: "Otwórz asystenta",
     areas: {
+      auth: {
+        chip: "start",
+        title: "Jestem obok od początku",
+        body: "Pomogę przejść rejestrację, potwierdzenie maila i start bez stresu.",
+        action: "Utwórz konto",
+      },
       onboarding: {
         chip: "start",
         title: "Pomogę ustawić profil",
@@ -191,6 +203,12 @@ const layerCopy = {
     coachFallbackAction: "Ask assistant",
     mobileLabel: "Open assistant",
     areas: {
+      auth: {
+        chip: "start",
+        title: "I'm here from the first step",
+        body: "I can help with sign-up, email verification, and a calmer start.",
+        action: "Create account",
+      },
       onboarding: {
         chip: "start",
         title: "I can help set up your profile",
@@ -370,9 +388,12 @@ export const GlobalAssistantLayer = () => {
   const actionLabel = displayAction?.usesCoachFallback
     ? copy.coachFallbackAction
     : visibleCopy.action || copy.action;
+  const isPublicCompanion = !user && area === "auth";
+  const companionName = user ? assistant.name : "Smart";
+  const companionKind = user ? assistant.companionKind : "dragon";
 
   if (
-    !user ||
+    (!user && !isPublicCompanion) ||
     !assistant.widgetEnabled ||
     !presence.visible ||
     !displayAction
@@ -526,8 +547,8 @@ export const GlobalAssistantLayer = () => {
           }}
         >
           <AssistantAvatar
-            name={assistant.name}
-            variant={assistant.companionKind}
+            name={companionName}
+            variant={companionKind}
             mood={layerModel.emotion.mood}
             active
           />

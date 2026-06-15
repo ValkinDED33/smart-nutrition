@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createPlatformService } from "./platformService.mjs";
 
-const createPlatformFixture = () => {
+const createPlatformFixture = ({ productLookupService = null } = {}) => {
   const targetUser = {
     id: "target-user-1",
     email: "target@example.com",
@@ -29,11 +29,12 @@ const createPlatformFixture = () => {
   const config = {
     productSubmissionDailyLimit: 10,
     superAdminEmail: "",
+    catalogCacheTtlSeconds: 60,
   };
 
   return {
     platformRepository,
-    service: createPlatformService({ platformRepository, config }),
+    service: createPlatformService({ platformRepository, config, productLookupService }),
   };
 };
 
@@ -72,6 +73,76 @@ describe("platformService", () => {
         limit: 120,
       })
     );
+  });
+
+  it("fills visible product search from external online providers when backend catalog is sparse", async () => {
+    const catalogProduct = {
+      id: "catalog-oats",
+      ownerUserId: "user-1",
+      name: "Oats",
+      brand: null,
+      barcode: null,
+      source: "Manual",
+      unit: "g",
+      status: "approved",
+      nutrients: {
+        calories: 370,
+        protein: 13,
+        fat: 7,
+        carbs: 60,
+      },
+    };
+    const onlineProduct = {
+      id: "openfoodfacts-yogurt",
+      ownerUserId: null,
+      name: "Greek yogurt",
+      brand: "Online",
+      barcode: "1234567890123",
+      source: "OpenFoodFacts",
+      unit: "g",
+      status: "approved",
+      nutrients: {
+        calories: 92,
+        protein: 10,
+        fat: 2,
+        carbs: 4,
+      },
+    };
+    const productLookupService = {
+      isConfigured: vi.fn(() => true),
+      searchProducts: vi.fn(async () => [onlineProduct]),
+    };
+    const { platformRepository, service } = createPlatformFixture({
+      productLookupService,
+    });
+    platformRepository.listCatalogProducts.mockResolvedValue([catalogProduct]);
+
+    const results = await service.listVisibleCatalogProducts(user, {
+      search: "protein",
+      limit: "4",
+    });
+
+    expect(results).toEqual([catalogProduct, onlineProduct]);
+    expect(productLookupService.searchProducts).toHaveBeenCalledWith({
+      search: "protein",
+      limit: 3,
+    });
+  });
+
+  it("does not call external providers for unapproved catalog status views", async () => {
+    const productLookupService = {
+      isConfigured: vi.fn(() => true),
+      searchProducts: vi.fn(async () => []),
+    };
+    const { service } = createPlatformFixture({ productLookupService });
+
+    await service.listVisibleCatalogProducts(user, {
+      status: "pending",
+      search: "oats",
+      limit: "4",
+    });
+
+    expect(productLookupService.searchProducts).not.toHaveBeenCalled();
   });
 
   it("clamps moderation and audit limits server-side", async () => {

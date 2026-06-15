@@ -130,7 +130,7 @@ export const initializeAuth = createAsyncThunk<
   },
   void,
   { state: AuthRootState; rejectValue: string | null }
->("auth/initialize", async (_, { dispatch, getState, rejectWithValue }) => {
+>("auth/initialize", async (_, { dispatch, rejectWithValue }) => {
   const syncOutbox = getSyncOutboxMeta();
   const applySessionData = (
     data: NonNullable<Awaited<ReturnType<typeof restoreSession>>>
@@ -159,33 +159,6 @@ export const initializeAuth = createAsyncThunk<
       cloudMeta,
     };
   };
-  const confirmSessionInBackground = (
-    sessionPromise: Promise<Awaited<ReturnType<typeof restoreSession>>>
-  ) => {
-    sessionPromise
-      .then((data) => {
-        const currentUserId = getState().auth.user?.id ?? null;
-
-        if (!data) {
-          if (currentUserId) {
-            return;
-          }
-
-          dispatch(logout());
-          return;
-        }
-
-        if (currentUserId && currentUserId !== data.user.id) {
-          return;
-        }
-
-        dispatch(setCredentials(applySessionData(data)));
-      })
-      .catch(() => {
-        // Cold starts and offline moments should not block startup.
-      });
-  };
-
   try {
     const sessionPromise = restoreSession();
     const startupResult = await Promise.race<RestoreRaceResult>([
@@ -199,7 +172,6 @@ export const initializeAuth = createAsyncThunk<
     ]);
 
     if (startupResult.kind === "timeout") {
-      confirmSessionInBackground(sessionPromise);
       return rejectWithValue("REMOTE_API_UNAVAILABLE");
     }
 

@@ -51,8 +51,7 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, isInitialized, isLoading, user } =
-    useSelector(selectAuth);
+  const { isAuthenticated, isInitialized, user } = useSelector(selectAuth);
   const profileOnboardingCompleted = useSelector((state: RootState) =>
     Boolean(state.profile.assistant.onboarding.completedAt)
   );
@@ -104,10 +103,6 @@ function App() {
       globalThis.clearTimeout(timeoutId);
     };
   }, [isInitialized]);
-
-  if (!isInitialized || isLoading) {
-    return <Loader />;
-  }
 
   return (
     <ErrorBoundary>

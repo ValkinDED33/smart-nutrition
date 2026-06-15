@@ -50,6 +50,16 @@ SMART_NUTRITION_BREVO_API_KEY=
 SMART_NUTRITION_BREVO_LIST_ID=
 ```
 
+Optional online product lookup:
+
+```env
+SMART_NUTRITION_OPEN_FOOD_FACTS_ENABLED=true
+SMART_NUTRITION_USDA_API_KEY=
+SMART_NUTRITION_PRODUCT_LOOKUP_TIMEOUT_MS=3500
+```
+
+OpenFoodFacts works without an API key. USDA FoodData Central needs `SMART_NUTRITION_USDA_API_KEY`. `SMART_NUTRITION_GOOGLE_API_KEY` is for Google AI/Gemini in this project, not a nutrition database key.
+
 Optional AI providers:
 
 ```env
@@ -97,10 +107,11 @@ Run after every production deploy:
 7. Log in again after logout.
 8. Complete onboarding and confirm assistant name/avatar persist.
 9. Add a meal.
-10. Add water.
-11. Update weight.
-12. Open the global assistant.
-13. If analytics is enabled, confirm key events appear in PostHog/provider logs.
+10. Search for a common product and confirm `/api/products/search` returns online products from the backend response.
+11. Add water.
+12. Update weight.
+13. Open the global assistant.
+14. If analytics is enabled, confirm key events appear in PostHog/provider logs.
 
 ## Auth Smoke Test
 
@@ -126,6 +137,7 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - `503` during registration usually means Resend sender/domain/env delivery issue.
 - CORS error means the frontend domain is missing in `SMART_NUTRITION_CORS_ORIGINS`.
 - "Cloud backend unavailable" usually means `VITE_SMART_NUTRITION_API_BASE_URL` is wrong or missing `/api`.
+- Empty product search usually means external lookup is disabled, OpenFoodFacts is unreachable, or USDA key/timeout needs checking.
 - Resend delivery unavailable means sender domain, API key, or `SMART_NUTRITION_EMAIL_FROM_ADDRESS` needs checking.
 - `/api/ready` failing in production usually means storage, cache, static build, or required email config is not ready.
 - Brevo failures should not block registration verification; check logs and Brevo env/domain/list setup.
@@ -154,4 +166,5 @@ Env rollback checklist:
 - cookie SameSite/Secure env
 - Resend API key and sender
 - Brevo API key/list id
+- product lookup env
 - AI provider keys/models/order

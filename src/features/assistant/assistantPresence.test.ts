@@ -6,7 +6,7 @@ import {
 } from "./assistantPresence";
 
 describe("assistantPresence", () => {
-  it("hides the global assistant on public routes", () => {
+  it("uses compact companion mode on public routes", () => {
     const context = resolveAssistantContext("/login");
 
     expect(
@@ -15,9 +15,27 @@ describe("assistantPresence", () => {
         viewport: "desktop",
       })
     ).toMatchObject({
+      visible: true,
+      mode: "compact",
+      reason: "public-route",
+      allowSpeechBubble: false,
+      priority: "low",
+    });
+  });
+
+  it("hides on mobile public routes while an input is focused", () => {
+    const context = resolveAssistantContext("/register");
+
+    expect(
+      resolveAssistantPresence(context, {
+        pathname: "/register",
+        viewport: "mobile",
+        inputFocused: true,
+      })
+    ).toMatchObject({
       visible: false,
       mode: "hidden",
-      reason: "public-route",
+      reason: "mobile-public-input-focused",
       allowSpeechBubble: false,
     });
   });

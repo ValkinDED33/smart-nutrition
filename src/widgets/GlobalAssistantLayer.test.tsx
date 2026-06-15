@@ -13,15 +13,25 @@ const resolveModel = (pathname: string) =>
   });
 
 describe("GlobalAssistantLayer", () => {
-  it("hides on public and onboarding routes", () => {
-    ["/login", "/register", "/reset-password", "/verify-email", "/onboarding"].forEach(
+  it("uses compact public companion mode on auth routes and hides on onboarding", () => {
+    ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {
-        expect(shouldHideAssistantLayer(pathname)).toBe(true);
-        expect(
-          resolveModel(pathname).isVisibleOnAuthenticatedRoute
-        ).toBe(false);
+        expect(shouldHideAssistantLayer(pathname)).toBe(false);
+        expect(resolveModel(pathname)).toMatchObject({
+          area: "auth",
+          presence: expect.objectContaining({
+            visible: true,
+            mode: "compact",
+            reason: "public-route",
+            allowSpeechBubble: false,
+          }),
+          isVisibleOnAuthenticatedRoute: false,
+        });
       }
     );
+
+    expect(shouldHideAssistantLayer("/onboarding")).toBe(true);
+    expect(resolveModel("/onboarding").isVisibleOnAuthenticatedRoute).toBe(false);
   });
 
   it("is visible on authenticated product routes", () => {
