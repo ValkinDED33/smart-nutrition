@@ -5,6 +5,15 @@ const USDA_SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 const FEATURED_QUERIES = ["oats", "chicken breast", "greek yogurt", "banana"];
 const BARCODE_PATTERN = /^\d{8,14}$/;
 
+export class ProductLookupProviderError extends Error {
+  constructor(message = "External product lookup is unavailable.") {
+    super(message);
+    this.name = "ProductLookupProviderError";
+    this.code = "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE";
+    this.statusCode = 502;
+  }
+}
+
 const toSafeErrorMessage = (value) => {
   const message = String(value ?? "").replace(/\s+/g, " ").trim();
   return message ? message.slice(0, 220) : null;
@@ -362,7 +371,10 @@ export const createProductLookupService = ({
 
   const runProvider = async (provider, producer) => {
     try {
-      return await producer();
+      return {
+        failed: false,
+        products: await producer(),
+      };
     } catch (error) {
       logLookupWarning(logger, {
         provider,
@@ -370,7 +382,10 @@ export const createProductLookupService = ({
         code: error?.code ?? error?.name,
         message: error?.message,
       });
-      return [];
+      return {
+        failed: true,
+        products: [],
+      };
     }
   };
 
@@ -417,9 +432,20 @@ export const createProductLookupService = ({
       });
     }
 
-    const providerResults = await Promise.all(providerCalls);
+    if (providerCalls.length === 0) {
+      return [];
+    }
 
-    return mergeProductsByIdentity(providerResults.flat()).slice(0, normalizedLimit);
+    const providerResults = await Promise.all(providerCalls);
+    const products = mergeProductsByIdentity(
+      providerResults.flatMap((result) => result.products)
+    );
+
+    if (products.length === 0 && providerResults.every((result) => result.failed)) {
+      throw new ProductLookupProviderError();
+    }
+
+    return products.slice(0, normalizedLimit);
   };
 
   const getStatus = () => ({

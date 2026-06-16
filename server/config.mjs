@@ -9,10 +9,6 @@ const DEFAULT_JWT_SECRET = "smart-nutrition-dev-secret-change-me";
 const PUBLIC_FRONTEND_ORIGINS = [
   "https://www.smart-nutrition.club",
   "https://smart-nutrition.club",
-  "https://smart-nutrition-alpha.vercel.app",
-  "https://smart-nutrition-topaz.vercel.app",
-  "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
-  "https://smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
 ];
 const PUBLIC_FRONTEND_ORIGIN = PUBLIC_FRONTEND_ORIGINS[0];
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
@@ -32,6 +28,7 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_RESEND_API_KEY",
   "SMART_NUTRITION_BREVO_API_KEY",
   "SMART_NUTRITION_BREVO_LIST_ID",
+  "SMART_NUTRITION_SENTRY_DSN",
   "SMART_NUTRITION_DATABASE_URL",
   "SMART_NUTRITION_MONGO_URI",
   "SMART_NUTRITION_MONGODB_URI",
@@ -1028,6 +1025,19 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 500 }
   );
+  const debugStartupEnabled = readBooleanFlag(
+    env.SMART_NUTRITION_DEBUG_STARTUP_ENABLED,
+    !isProduction
+  );
+  const aiDebugLogging = readBooleanFlag(env.SMART_NUTRITION_AI_DEBUG_LOGS, false);
+  const sentryDsn = toTrimmedString(env.SMART_NUTRITION_SENTRY_DSN) || null;
+  const sentryTracesSampleRate = readNumberInRange(
+    env.SMART_NUTRITION_SENTRY_TRACES_SAMPLE_RATE,
+    0,
+    "SMART_NUTRITION_SENTRY_TRACES_SAMPLE_RATE",
+    errors,
+    { min: 0, max: 1 }
+  );
   const defaultAppBaseUrl = PUBLIC_FRONTEND_ORIGIN;
   const appBaseUrl = normalizeAppBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
@@ -1283,6 +1293,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     openFoodFactsEnabled,
     usdaApiKey,
     productLookupTimeoutMs,
+    debugStartupEnabled,
+    aiDebugLogging,
+    sentryDsn,
+    sentryTracesSampleRate,
     backupDir,
     backupIntervalMs,
     maxBackupFilesPerUser,

@@ -147,11 +147,18 @@ export const resolveAssistantPresence = (
     });
   }
 
-  if (options.viewport === "mobile") {
-    if (mobileDenseAssistantAreas.has(context.area)) {
-      return hiddenPresence("mobile-dense-surface", prefersReducedMotion);
-    }
+  if (
+    (options.viewport === "mobile" || options.viewport === "tablet") &&
+    mobileDenseAssistantAreas.has(context.area)
+  ) {
+    return compactPresence({
+      reason: "compact-dense-surface",
+      prefersReducedMotion,
+      priority: "low",
+    });
+  }
 
+  if (options.viewport === "mobile") {
     return compactPresence({
       reason: "mobile-viewport",
       prefersReducedMotion,

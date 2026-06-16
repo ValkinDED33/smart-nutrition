@@ -10,6 +10,7 @@ const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
 
 describe("remote API base URL guards", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -69,6 +70,44 @@ describe("remote API base URL guards", () => {
       "https://smart-nutrition-sk5r.onrender.com/api/health",
       expect.any(Object)
     );
+  });
+
+  it("times out stalled health probes instead of blocking startup", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+
+          if (!signal) {
+            reject(new Error("Expected probe request to receive AbortSignal."));
+            return;
+          }
+
+          signal.addEventListener(
+            "abort",
+            () => {
+              const abortError = new Error("Aborted");
+              abortError.name = "AbortError";
+              reject(abortError);
+            },
+            { once: true }
+          );
+        })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const availabilityPromise = checkRemoteBackendAvailability(true);
+    await vi.runOnlyPendingTimersAsync();
+
+    await expect(availabilityPromise).resolves.toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("accepts a healthy Postgres-backed remote API", async () => {

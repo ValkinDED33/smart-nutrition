@@ -1,5 +1,9 @@
 const LEGACY_KEY_PREFIX = "smart-nutrition.";
 const LEGACY_DB_NAME = "smart-nutrition-client";
+const DURABLE_PREFERENCE_KEYS = new Set([
+  "smart-nutrition.language",
+  "smart-nutrition.color-mode",
+]);
 
 const memoryStore = new Map<string, string>();
 let initialized = false;
@@ -31,7 +35,10 @@ const purgeLegacyBrowserStorage = (name: BrowserStorageName) => {
     for (let index = 0; index < storage.length; index += 1) {
       const key = storage.key(index);
 
-      if (key?.startsWith(LEGACY_KEY_PREFIX)) {
+      if (
+        key?.startsWith(LEGACY_KEY_PREFIX) &&
+        !DURABLE_PREFERENCE_KEYS.has(key)
+      ) {
         keys.push(key);
       }
     }
@@ -79,6 +86,15 @@ export const initializeClientPersistence = async () => {
     purgeLegacyBrowserStorage("local");
     purgeLegacyBrowserStorage("session");
     await deleteLegacyDatabase();
+    const localStorageRef = getBrowserStorage("local");
+
+    DURABLE_PREFERENCE_KEYS.forEach((key) => {
+      const value = localStorageRef?.getItem(key);
+
+      if (value !== null && value !== undefined) {
+        memoryStore.set(key, value);
+      }
+    });
     initialized = true;
   })();
 
@@ -89,8 +105,24 @@ export const getClientStorageItem = (key: string) => memoryStore.get(key) ?? nul
 
 export const setClientStorageItem = (key: string, value: string) => {
   memoryStore.set(key, value);
+
+  if (DURABLE_PREFERENCE_KEYS.has(key)) {
+    try {
+      getBrowserStorage("local")?.setItem(key, value);
+    } catch {
+      // Preference persistence is best-effort; memory remains the active source.
+    }
+  }
 };
 
 export const removeClientStorageItem = (key: string) => {
   memoryStore.delete(key);
+
+  if (DURABLE_PREFERENCE_KEYS.has(key)) {
+    try {
+      getBrowserStorage("local")?.removeItem(key);
+    } catch {
+      // Preference persistence is best-effort; memory removal already happened.
+    }
+  }
 };

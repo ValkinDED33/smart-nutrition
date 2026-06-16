@@ -7,10 +7,6 @@ import { createServerConfig } from "./config.mjs";
 const publicFrontendOrigins = [
   "https://www.smart-nutrition.club",
   "https://smart-nutrition.club",
-  "https://smart-nutrition-alpha.vercel.app",
-  "https://smart-nutrition-topaz.vercel.app",
-  "https://smart-nutrition-git-master-valkindeds-projects.vercel.app",
-  "https://smart-nutrition-ibgl50b69-valkindeds-projects.vercel.app",
 ];
 
 describe("createServerConfig", () => {
@@ -48,6 +44,9 @@ describe("createServerConfig", () => {
     expect(config.serveStatic).toBe(false);
     expect(config.authCookieSameSite).toBe("None");
     expect(config.authCookieSecure).toBe(true);
+    expect(config.debugStartupEnabled).toBe(false);
+    expect(config.aiDebugLogging).toBe(false);
+    expect(config.sentryDsn).toBe(null);
     expect(config.authRateLimits).toEqual({
       register: 5,
       login: 10,
@@ -73,6 +72,29 @@ describe("createServerConfig", () => {
       forgotPassword: 4,
       verifyEmail: 6,
     });
+  });
+
+  it("keeps startup diagnostics enabled for local development", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+    });
+
+    expect(config.debugStartupEnabled).toBe(true);
+  });
+
+  it("allows explicit observability flags", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_AI_DEBUG_LOGS: "true",
+      SMART_NUTRITION_DEBUG_STARTUP_ENABLED: "true",
+      SMART_NUTRITION_SENTRY_DSN: "https://public@example.ingest.sentry.io/1",
+      SMART_NUTRITION_SENTRY_TRACES_SAMPLE_RATE: "0.25",
+    });
+
+    expect(config.aiDebugLogging).toBe(true);
+    expect(config.debugStartupEnabled).toBe(true);
+    expect(config.sentryDsn).toBe("https://public@example.ingest.sentry.io/1");
+    expect(config.sentryTracesSampleRate).toBe(0.25);
   });
 
   it("enables online product lookup with OpenFoodFacts by default and optional USDA key", () => {
@@ -509,7 +531,7 @@ describe("createServerConfig", () => {
     expect(config.allowedCorsOrigins).toEqual(publicFrontendOrigins);
   });
 
-  it("adds the public frontend origins when a legacy frontend origin is configured", () => {
+  it("keeps legacy frontend origins explicit instead of widening production CORS", () => {
     const config = createServerConfig({
       NODE_ENV: "production",
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
@@ -518,7 +540,8 @@ describe("createServerConfig", () => {
 
     expect(config.allowedCorsOrigins).toEqual([
       "https://smart-nutrition-nine.vercel.app",
-      ...publicFrontendOrigins,
+      "https://www.smart-nutrition.club",
+      "https://smart-nutrition.club",
     ]);
   });
 

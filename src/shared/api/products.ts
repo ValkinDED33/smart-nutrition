@@ -7,10 +7,34 @@ import {
 
 type ProductSearchResponse = {
   items?: unknown[];
+  code?: string;
+  message?: string;
 };
 
 const PRODUCT_SEARCH_LIMIT = 18;
 const FEATURED_PRODUCT_LIMIT = 12;
+const PRODUCT_LOOKUP_TIMEOUT_MS = 12_000;
+
+export type ProductLookupErrorCode =
+  | "PRODUCT_LOOKUP_AUTH_REQUIRED"
+  | "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE"
+  | "PRODUCT_LOOKUP_FAILED";
+
+export class ProductLookupError extends Error {
+  code: ProductLookupErrorCode;
+  status?: number;
+
+  constructor(
+    code: ProductLookupErrorCode,
+    message: string,
+    status?: number
+  ) {
+    super(message);
+    this.name = "ProductLookupError";
+    this.code = code;
+    this.status = status;
+  }
+}
 
 const productSources = new Set<ProductSource>([
   "USDA",
@@ -95,16 +119,32 @@ const readProduct = (value: unknown): Product | null => {
 
 const requireProductBackendBaseUrl = () => {
   if (!isCloudSyncActive()) {
-    throw new Error("Backend session is required for product lookup.");
+    throw new ProductLookupError(
+      "PRODUCT_LOOKUP_AUTH_REQUIRED",
+      "Backend session is required for product lookup."
+    );
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
 
   if (!baseUrl) {
-    throw new Error("Backend unavailable for product lookup.");
+    throw new ProductLookupError(
+      "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE",
+      "Backend unavailable for product lookup."
+    );
   }
 
   return baseUrl.replace(/\/+$/, "");
+};
+
+const createAbortSignal = (timeoutMs: number) => {
+  const controller = new AbortController();
+  const timerId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
+
+  return {
+    signal: controller.signal,
+    clear: () => globalThis.clearTimeout(timerId),
+  };
 };
 
 const fetchBackendProducts = async ({
@@ -115,20 +155,49 @@ const fetchBackendProducts = async ({
   limit: number;
 }) => {
   const baseUrl = requireProductBackendBaseUrl();
+  const timeout = createAbortSignal(PRODUCT_LOOKUP_TIMEOUT_MS);
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
   });
-  const response = await fetch(`${baseUrl}/products/search?${params.toString()}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    credentials: "include",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}/products/search?${params.toString()}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+      signal: timeout.signal,
+    });
+  } catch (error) {
+    throw new ProductLookupError(
+      "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE",
+      error instanceof Error && error.name === "AbortError"
+        ? "Product lookup timed out."
+        : "Product lookup backend is unavailable."
+    );
+  } finally {
+    timeout.clear();
+  }
 
   if (!response.ok) {
-    throw new Error("Product lookup failed.");
+    let payload: ProductSearchResponse = {};
+
+    try {
+      payload = (await response.json()) as ProductSearchResponse;
+    } catch {
+      payload = {};
+    }
+
+    throw new ProductLookupError(
+      response.status === 401
+        ? "PRODUCT_LOOKUP_AUTH_REQUIRED"
+        : "PRODUCT_LOOKUP_FAILED",
+      payload.message ?? "Product lookup failed.",
+      response.status
+    );
   }
 
   const payload = (await response.json()) as ProductSearchResponse;
@@ -147,16 +216,10 @@ export const fetchProductByBarcode = async (
     return null;
   }
 
-  let products: Product[] = [];
-
-  try {
-    products = await fetchBackendProducts({
-      query: normalizedBarcode,
-      limit: PRODUCT_SEARCH_LIMIT,
-    });
-  } catch {
-    products = [];
-  }
+  const products = await fetchBackendProducts({
+    query: normalizedBarcode,
+    limit: PRODUCT_SEARCH_LIMIT,
+  });
 
   return (
     products.find(
@@ -168,17 +231,12 @@ export const fetchProductByBarcode = async (
 export const searchProducts = async (query: string): Promise<Product[]> => {
   const normalizedQuery = query.trim();
   const limit = normalizedQuery ? PRODUCT_SEARCH_LIMIT : FEATURED_PRODUCT_LIMIT;
+  const backendProducts = await fetchBackendProducts({
+    query: normalizedQuery,
+    limit,
+  });
 
-  try {
-    const backendProducts = await fetchBackendProducts({
-      query: normalizedQuery,
-      limit,
-    });
-
-    return mergeProductsByIdentity(backendProducts).slice(0, limit);
-  } catch {
-    return [];
-  }
+  return mergeProductsByIdentity(backendProducts).slice(0, limit);
 };
 
 export type { NutrientUnit };

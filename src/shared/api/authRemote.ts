@@ -75,6 +75,10 @@ class RemoteRequestError extends Error {
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const PUBLIC_REMOTE_API_BASE_URL =
   "https://smart-nutrition-sk5r.onrender.com/api";
+const REMOTE_HEALTH_TIMEOUT_MS = 3_500;
+const REMOTE_AUTH_REFRESH_TIMEOUT_MS = 12_000;
+const REMOTE_REQUEST_TIMEOUT_MS = 18_000;
+const REMOTE_LONG_REQUEST_TIMEOUT_MS = 45_000;
 const PUBLIC_FRONTEND_HOSTNAMES = new Set([
   "www.smart-nutrition.club",
   "smart-nutrition.club",
@@ -118,6 +122,38 @@ const loopbackHostnames = new Set([
 ]);
 
 const dedupe = (values: string[]) => [...new Set(values.filter(Boolean))];
+
+const createTimedAbortSignal = (
+  timeoutMs: number,
+  upstreamSignal?: AbortSignal | null
+) => {
+  const controller = new AbortController();
+  let settled = false;
+  const abort = () => {
+    if (!settled) {
+      controller.abort();
+    }
+  };
+  const timerId = globalThis.setTimeout(abort, timeoutMs);
+  const abortFromUpstream = () => abort();
+
+  if (upstreamSignal?.aborted) {
+    abort();
+  } else {
+    upstreamSignal?.addEventListener("abort", abortFromUpstream, {
+      once: true,
+    });
+  }
+
+  return {
+    signal: controller.signal,
+    clear: () => {
+      settled = true;
+      globalThis.clearTimeout(timerId);
+      upstreamSignal?.removeEventListener("abort", abortFromUpstream);
+    },
+  };
+};
 
 const normalizeRemoteBaseUrl = (value: unknown) => {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -379,6 +415,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
 
   remoteRefreshPromise = (async () => {
     let response: Response;
+    const timeout = createTimedAbortSignal(REMOTE_AUTH_REFRESH_TIMEOUT_MS);
 
     try {
       response = await fetch(`${baseUrl}/auth/refresh`, {
@@ -387,12 +424,15 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
           Accept: "application/json",
         },
         credentials: "include",
+        signal: timeout.signal,
       });
     } catch {
       throw new AuthApiError(
         "REMOTE_API_UNAVAILABLE",
         "Backend unavailable. Please reconnect."
       );
+    } finally {
+      timeout.clear();
     }
 
     if (!response.ok) {
@@ -463,11 +503,14 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
 
   remoteBaseProbePromise = (async () => {
     for (const baseUrl of getCandidateBaseUrls()) {
+      const timeout = createTimedAbortSignal(REMOTE_HEALTH_TIMEOUT_MS);
+
       try {
         const response = await fetch(`${baseUrl}/health`, {
           method: "GET",
           headers: { Accept: "application/json" },
           credentials: "include",
+          signal: timeout.signal,
         });
 
         if (
@@ -478,6 +521,8 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
         }
       } catch {
         continue;
+      } finally {
+        timeout.clear();
       }
     }
 
@@ -500,10 +545,12 @@ const requestRemote = async <T>(
     requireAuth = false,
     allowRefresh = true,
     withSyncContext = false,
+    timeoutMs = REMOTE_REQUEST_TIMEOUT_MS,
   }: {
     requireAuth?: boolean;
     allowRefresh?: boolean;
     withSyncContext?: boolean;
+    timeoutMs?: number;
   } = {}
 ): Promise<{ data: T; baseUrl: string }> => {
   const baseUrl =
@@ -527,6 +574,8 @@ const requestRemote = async <T>(
 
   const performRequest = async () => {
     const nextHeaders = new Headers(headers);
+    const { signal: upstreamSignal, ...requestInit } = init;
+    const timeout = createTimedAbortSignal(timeoutMs, upstreamSignal);
 
     if (withSyncContext) {
       const deviceId = getRemoteDeviceId();
@@ -541,11 +590,16 @@ const requestRemote = async <T>(
       }
     }
 
-    return fetch(`${baseUrl}${path}`, {
-      ...init,
-      headers: nextHeaders,
-      credentials: "include",
-    });
+    try {
+      return await fetch(`${baseUrl}${path}`, {
+        ...requestInit,
+        headers: nextHeaders,
+        credentials: "include",
+        signal: timeout.signal,
+      });
+    } finally {
+      timeout.clear();
+    }
   };
 
   let response: Response;
@@ -669,9 +723,6 @@ export const fetchRemoteAppState = async ({
     return preferCache ? readCachedRemoteSnapshot() : null;
   }
 };
-
-const loadRemoteAppState = async (): Promise<AppSnapshot | null> =>
-  fetchRemoteAppState();
 
 const preserveCachedCompanionState = (snapshot: AppSnapshot | null) => {
   if (!snapshot || snapshot.companion !== undefined) {
@@ -798,6 +849,24 @@ export const pushRemoteCommunityState = async (
   return getRemoteMutationResult("/community-state", {
     method: "PUT",
     body: JSON.stringify(community),
+  });
+};
+
+export const pushRemoteCompanionState = async (
+  companion: unknown
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  return getRemoteMutationResult("/companion-state", {
+    method: "PUT",
+    body: JSON.stringify(companion),
   });
 };
 
@@ -933,7 +1002,7 @@ export const analyzeRemoteMealPhoto = async (
           mealType,
         }),
       },
-      { requireAuth: true }
+      { requireAuth: true, timeoutMs: REMOTE_LONG_REQUEST_TIMEOUT_MS }
     );
 
     return data;
@@ -983,9 +1052,8 @@ export const fetchRemoteAccountBackup = async (
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
   setRemoteSession(baseUrl);
-  const granularSnapshot = await loadRemoteAppState();
   const nextSnapshot = preserveCachedCompanionState(
-    granularSnapshot ?? payload.snapshot ?? null
+    payload.snapshot ?? null
   );
 
   if (nextSnapshot) {
@@ -1001,7 +1069,17 @@ const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
 };
 
 export const remoteAuthProvider: AuthProvider = {
-  restoreSession: async () => {
+  restoreSession: async ({
+    signal,
+    timeoutMs = REMOTE_REQUEST_TIMEOUT_MS,
+  } = {}) => {
+    if (signal?.aborted) {
+      throw new AuthApiError(
+        "REMOTE_API_UNAVAILABLE",
+        "Backend unavailable. Please reconnect."
+      );
+    }
+
     if (!getStoredRemoteBaseUrl() && !(await probeRemoteBaseUrl())) {
       return null;
     }
@@ -1009,8 +1087,8 @@ export const remoteAuthProvider: AuthProvider = {
     try {
       const { data, baseUrl } = await requestRemote<AuthResponse>(
         "/auth/session",
-        { method: "GET" },
-        { requireAuth: true }
+        { method: "GET", signal },
+        { requireAuth: true, timeoutMs }
       );
 
       return mapAuthResponse(data, baseUrl);

@@ -49,6 +49,10 @@ const suggestionCopy = {
     missingTitle: "Не знайшли в онлайн-базі?",
     missingBody:
       "Перевірте через Google або додайте продукт у спільний каталог на backend.",
+    unavailableTitle: "Онлайн-пошук тимчасово недоступний",
+    unavailableBody:
+      "Це не порожня база: backend або зовнішній каталог не відповів. Спробуйте ще раз або додайте продукт у спільну базу.",
+    retry: "Спробувати ще раз",
     googleSearch: "Шукати в Google",
     addToCatalog: "Додати в базу",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
@@ -67,6 +71,10 @@ const suggestionCopy = {
     missingTitle: "Nie ma w bazie online?",
     missingBody:
       "Sprawdź w Google albo dodaj produkt do wspólnego katalogu na backendzie.",
+    unavailableTitle: "Wyszukiwanie online jest chwilowo niedostępne",
+    unavailableBody:
+      "To nie jest pusta baza: backend albo zewnętrzny katalog nie odpowiedział. Spróbuj ponownie albo dodaj produkt do wspólnej bazy.",
+    retry: "Spróbuj ponownie",
     googleSearch: "Szukaj w Google",
     addToCatalog: "Dodaj do bazy",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
@@ -85,6 +93,10 @@ const suggestionCopy = {
     missingTitle: "Not found in the online database?",
     missingBody:
       "Check Google or add the product to the shared backend catalog.",
+    unavailableTitle: "Online search is temporarily unavailable",
+    unavailableBody:
+      "This is not an empty database: the backend or external catalog did not respond. Try again or add the product to the shared database.",
+    retry: "Try again",
     googleSearch: "Search Google",
     addToCatalog: "Add to database",
     presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
@@ -253,7 +265,10 @@ export const ProductSearch = ({ mealType }: Props) => {
   };
 
   const shouldShowMissingProductActions =
-    normalizedQuery.length >= 3 && !isLoading && filteredResults.length === 0;
+    normalizedQuery.length >= 3 &&
+    !productQuery.isError &&
+    !isLoading &&
+    filteredResults.length === 0;
   const googleSearchUrl =
     normalizedQuery.length >= 3
       ? `https://www.google.com/search?q=${encodeURIComponent(
@@ -418,6 +433,41 @@ export const ProductSearch = ({ mealType }: Props) => {
           </Stack>
         ) : null}
 
+        {productQuery.isError ? (
+          <Alert
+            severity="warning"
+            icon={<AssistantAvatar name={assistantName} size={34} mood="concerned" active />}
+          >
+            <Stack spacing={1}>
+              <Typography sx={{ fontWeight: 800 }}>{copy.unavailableTitle}</Typography>
+              <Typography>{copy.unavailableBody}</Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    void productQuery.refetch();
+                  }}
+                  sx={{ textTransform: "none", fontWeight: 700 }}
+                >
+                  {copy.retry}
+                </Button>
+                {normalizedQuery.length >= 3 ? (
+                  <Button
+                    component="a"
+                    href={googleSearchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    variant="outlined"
+                    sx={{ textTransform: "none", fontWeight: 700 }}
+                  >
+                    {copy.googleSearch}
+                  </Button>
+                ) : null}
+              </Stack>
+            </Stack>
+          </Alert>
+        ) : null}
+
         {shouldShowMissingProductActions && (
           <Alert
             severity="info"
@@ -452,13 +502,16 @@ export const ProductSearch = ({ mealType }: Props) => {
         {showContributionForm && (
           <CatalogContributionCard
             key={normalizedQuery}
+            compact
             initialName={normalizedQuery}
           />
         )}
 
         {filteredResults.length === 0 ? (
           !shouldShowMissingProductActions && (
-            <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
+            !productQuery.isError && (
+              <Typography color="text.secondary">{t("productSearch.empty")}</Typography>
+            )
           )
         ) : (
           <Stack spacing={1.5}>
@@ -485,6 +538,7 @@ export const ProductSearch = ({ mealType }: Props) => {
                     product={product}
                     mealType={mealType}
                     origin="manual"
+                    compact
                   />
                 </motion.div>
               ))}

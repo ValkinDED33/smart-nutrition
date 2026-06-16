@@ -319,6 +319,16 @@ export const createStateController = ({
       await sendSavedMeta(response, auth.user);
     },
 
+    getCompanionState: async ({ response, auth }) => {
+      sendJson(response, 200, await stateService.getCompanionState(auth.user));
+    },
+
+    saveCompanionState: async ({ request, response, auth }) => {
+      const body = await readJsonBody(request, bodyLimitBytes);
+      await stateService.saveCompanionState(auth.user, body, getSyncContext(request));
+      await sendSavedMeta(response, auth.user);
+    },
+
     addMealEntries: async ({ request, response, auth }) => {
       const body = await readJsonBody(request, bodyLimitBytes);
       await stateService.addMealEntries(auth.user, body, getSyncContext(request));

@@ -18,6 +18,7 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   isUserRole,
+  normalizeCompanionState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -227,6 +228,7 @@ const normalizeSnapshotForUser = (snapshot, user) => ({
   water: normalizeWaterState(snapshot?.water),
   fridge: normalizeFridgeState(snapshot?.fridge),
   community: normalizeCommunityState(snapshot?.community),
+  companion: normalizeCompanionState(snapshot?.companion),
 });
 
 const mapUserRow = (row) => {
@@ -560,6 +562,14 @@ export const POSTGRES_SCHEMA_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_ai_usage_events_user_event_created ON ai_usage_events(user_id, event_type, created_at DESC);
     `,
   },
+  {
+    id: "202606160001",
+    name: "companion_state_snapshot_column",
+    sql: `
+      ALTER TABLE snapshots
+        ADD COLUMN IF NOT EXISTS companion_json JSONB;
+    `,
+  },
 ];
 
 export const POSTGRES_SCHEMA_VERSION =
@@ -886,19 +896,21 @@ export const createPostgresStorage = async ({
           water_json,
           fridge_json,
           community_json,
+          companion_json,
           updated_at,
           profile_updated_at,
           meal_updated_at,
           water_updated_at,
           backup_enabled,
           last_writer_device_id
-        ) VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7, $8, $9, $10, TRUE, $11)
+        ) VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8, $9, $10, $11, TRUE, $12)
         ON CONFLICT(user_id) DO UPDATE SET
           profile_json = EXCLUDED.profile_json,
           meal_json = EXCLUDED.meal_json,
           water_json = EXCLUDED.water_json,
           fridge_json = EXCLUDED.fridge_json,
           community_json = EXCLUDED.community_json,
+          companion_json = EXCLUDED.companion_json,
           updated_at = EXCLUDED.updated_at,
           profile_updated_at = COALESCE(EXCLUDED.profile_updated_at, snapshots.profile_updated_at, EXCLUDED.updated_at),
           meal_updated_at = COALESCE(EXCLUDED.meal_updated_at, snapshots.meal_updated_at, EXCLUDED.updated_at),
@@ -912,6 +924,7 @@ export const createPostgresStorage = async ({
         toJsonParam(snapshot.water),
         toJsonParam(snapshot.fridge),
         toJsonParam(snapshot.community),
+        toJsonParam(snapshot.companion),
         updatedAt,
         profileUpdatedAt ?? existingMeta.profileUpdatedAt ?? updatedAt,
         mealUpdatedAt ?? existingMeta.mealUpdatedAt ?? updatedAt,
@@ -924,7 +937,7 @@ export const createPostgresStorage = async ({
   const getSnapshotRow = async (userId) =>
     queryOne(
       `
-        SELECT profile_json, meal_json, water_json, fridge_json, community_json,
+        SELECT profile_json, meal_json, water_json, fridge_json, community_json, companion_json,
                updated_at, profile_updated_at, meal_updated_at, water_updated_at,
                backup_enabled, last_writer_device_id
         FROM snapshots
@@ -951,6 +964,7 @@ export const createPostgresStorage = async ({
             water: row.water_json,
             fridge: row.fridge_json,
             community: row.community_json,
+            companion: row.companion_json,
           }
         : null,
       resolvedUser
@@ -1766,6 +1780,22 @@ export const createPostgresStorage = async ({
           "community-state"
         )
       )?.community ?? null,
+
+    getCompanionStateByUserId: async (userId) => (await buildSnapshot(userId))?.companion ?? null,
+
+    upsertCompanionState: async (userId, companionState, syncContext = undefined) =>
+      (
+        await withCurrentSnapshot(
+          userId,
+          syncContext,
+          (snapshot) => ({
+            ...snapshot,
+            companion: companionState,
+          }),
+          () => ({}),
+          "companion-state"
+        )
+      )?.companion ?? null,
 
     addMealEntries: async (userId, entries, syncContext = undefined) =>
       (

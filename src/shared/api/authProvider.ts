@@ -95,7 +95,10 @@ export class AuthApiError extends Error {
 }
 
 export interface AuthProvider {
-  restoreSession: () => Promise<AuthResponse | null>;
+  restoreSession: (options?: {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  }) => Promise<AuthResponse | null>;
   logout: () => Promise<void>;
   logoutEverywhere: () => Promise<void>;
   updateStoredProfile: (user: User) => Promise<User>;

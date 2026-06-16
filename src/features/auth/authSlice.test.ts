@@ -24,6 +24,7 @@ const authApiMock = vi.hoisted(() => ({
   pullRemoteAppSnapshot: vi.fn(),
   restoreSession: vi.fn(),
   syncRemoteCommunityState: vi.fn(),
+  syncRemoteCompanionState: vi.fn(),
   syncRemoteFridgeState: vi.fn(),
   syncRemoteMealState: vi.fn(),
   syncRemoteProfileState: vi.fn(),

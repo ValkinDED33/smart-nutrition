@@ -384,6 +384,9 @@ export const GlobalAssistantLayer = () => {
   );
   const { area, defaultAction, displayAction, duties, primaryCapability } = layerModel;
   const { presence } = layerModel;
+  const isDenseMobileCompanion =
+    presence.reason === "compact-dense-surface" &&
+    (viewport === "mobile" || viewport === "tablet");
   const visibleCopy = getAreaCopy(copy, area);
   const actionLabel = displayAction?.usesCoachFallback
     ? copy.coachFallbackAction
@@ -436,9 +439,12 @@ export const GlobalAssistantLayer = () => {
         aria-label={copy.eyebrow}
         sx={{
           position: "fixed",
-          right: { xs: 16, md: 24 },
+          right: isDenseMobileCompanion ? { xs: "auto", md: 24 } : { xs: 16, md: 24 },
+          left: isDenseMobileCompanion ? { xs: 14, md: "auto" } : "auto",
           bottom: {
-            xs: "calc(env(safe-area-inset-bottom, 0px) + 94px)",
+            xs: isDenseMobileCompanion
+              ? "calc(env(safe-area-inset-bottom, 0px) + 84px)"
+              : "calc(env(safe-area-inset-bottom, 0px) + 94px)",
             md: 24,
           },
           zIndex: 1190,
@@ -536,8 +542,8 @@ export const GlobalAssistantLayer = () => {
           onClick={handleOpenAssistant}
           aria-label={copy.mobileLabel}
           sx={{
-            width: { xs: 58, md: 66 },
-            height: { xs: 58, md: 66 },
+            width: { xs: isDenseMobileCompanion ? 50 : 58, md: 66 },
+            height: { xs: isDenseMobileCompanion ? 50 : 58, md: 66 },
             border: "none",
             borderRadius: "50%",
             cursor: "pointer",
@@ -549,6 +555,7 @@ export const GlobalAssistantLayer = () => {
           <AssistantAvatar
             name={companionName}
             variant={companionKind}
+            size={isDenseMobileCompanion ? 50 : undefined}
             mood={layerModel.emotion.mood}
             active
           />

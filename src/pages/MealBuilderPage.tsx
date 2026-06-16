@@ -1,8 +1,10 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { ScanBarcode } from "lucide-react";
 import {
   Box,
+  Button,
   Chip,
   Divider,
   LinearProgress,
@@ -18,6 +20,7 @@ import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
 import { RecipeSection } from "../features/meal/RecipeSection";
 import { QuickMealComposer } from "../features/meal/QuickMealComposer";
 import { QuickProductShelf } from "../features/meal/QuickProductShelf";
+import { NutritionLibraryPanel } from "../features/meal/NutritionLibraryPanel";
 import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
 import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
 import { CatalogContributionCard } from "../features/platform/CatalogContributionCard";
@@ -55,13 +58,20 @@ const mealInputCopy = {
     advancedTitle: "Додаткові інструменти",
     advancedSubtitle:
       "Шаблони, повтори, холодильник і рецепти залишаються нижче, коли потрібна точніша збірка.",
+    scanAction: "Відкрити сканер",
     sections: {
       day: "День",
       add: "Додати",
       scan: "Сканер",
+      saved: "Збережене",
       history: "Історія",
       templates: "Шаблони",
       recommendations: "Поради",
+    },
+    addTools: {
+      search: "Пошук",
+      favorites: "Обране",
+      composer: "Конструктор",
     },
     modes: {
       photo: {
@@ -84,13 +94,20 @@ const mealInputCopy = {
     advancedTitle: "Dodatkowe narzędzia",
     advancedSubtitle:
       "Szablony, powtórki, lodówka i przepisy zostają niżej, gdy potrzeba dokładniejszego składania.",
+    scanAction: "Otwórz skaner",
     sections: {
       day: "Dzień",
       add: "Dodaj",
       scan: "Skaner",
+      saved: "Zapisane",
       history: "Historia",
       templates: "Szablony",
       recommendations: "Rekomendacje",
+    },
+    addTools: {
+      search: "Szukaj",
+      favorites: "Ulubione",
+      composer: "Konstruktor",
     },
     modes: {
       photo: {
@@ -113,13 +130,20 @@ const mealInputCopy = {
     advancedTitle: "Additional tools",
     advancedSubtitle:
       "Templates, repeats, fridge planning, and recipes stay below when you need a more precise setup.",
+    scanAction: "Open scanner",
     sections: {
       day: "Day",
       add: "Add",
       scan: "Scanner",
+      saved: "Saved",
       history: "History",
       templates: "Templates",
       recommendations: "Tips",
+    },
+    addTools: {
+      search: "Search",
+      favorites: "Favorites",
+      composer: "Builder",
     },
     modes: {
       photo: {
@@ -138,7 +162,15 @@ const mealInputCopy = {
   },
 } as const;
 
-type MealSection = "day" | "add" | "scan" | "history" | "templates" | "recommendations";
+type MealSection =
+  | "day"
+  | "add"
+  | "scan"
+  | "saved"
+  | "history"
+  | "templates"
+  | "recommendations";
+type AddTool = "search" | "favorites" | "composer";
 
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -151,7 +183,10 @@ const MealBuilderPage = () => {
   const { appLanguage, t } = useLanguage();
   const copy = mealInputCopy[appLanguage];
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
-  const [activeSection, setActiveSection] = useState<MealSection>("add");
+  const [activeSection, setActiveSection] = useState<MealSection>(
+    inputMode === "barcode" ? "scan" : "add"
+  );
+  const [activeAddTool, setActiveAddTool] = useState<AddTool>("search");
 
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),
@@ -183,14 +218,32 @@ const MealBuilderPage = () => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("mode", mode);
     setSearchParams(nextParams);
+
+    if (mode === "barcode") {
+      setActiveSection("scan");
+    }
   };
+
+  const openScanner = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("mode", "barcode");
+    setSearchParams(nextParams);
+    setActiveSection("scan");
+  };
+
   const sections = [
     { id: "day", label: copy.sections.day },
     { id: "add", label: copy.sections.add },
     { id: "scan", label: copy.sections.scan },
+    { id: "saved", label: copy.sections.saved },
     { id: "history", label: copy.sections.history },
     { id: "templates", label: copy.sections.templates },
     { id: "recommendations", label: copy.sections.recommendations },
+  ];
+  const addToolSections = [
+    { id: "search", label: copy.addTools.search },
+    { id: "favorites", label: copy.addTools.favorites },
+    { id: "composer", label: copy.addTools.composer },
   ];
 
   const mealTypeSelector = (
@@ -244,6 +297,21 @@ const MealBuilderPage = () => {
     <PageShell
       title={t("mealBuilder.title")}
       subtitle={t("mealBuilder.subtitle")}
+      action={
+        <Button
+          variant="contained"
+          startIcon={<ScanBarcode size={18} />}
+          onClick={openScanner}
+          sx={{
+            width: { xs: "100%", md: "auto" },
+            textTransform: "none",
+            fontWeight: 900,
+            borderRadius: 1,
+          }}
+        >
+          {copy.scanAction}
+        </Button>
+      }
       maxWidth={1480}
     >
       <Paper
@@ -366,11 +434,17 @@ const MealBuilderPage = () => {
           {inputMode === "photo" ? <PhotoMealAssistant mealType={mealType} /> : null}
 
           {inputMode === "search" ? (
-            <>
-              <ProductSearch mealType={mealType} />
-              <QuickProductShelf mealType={mealType} />
-              <QuickMealComposer mealType={mealType} />
-            </>
+            <Stack spacing={2}>
+              <SectionTabs
+                sections={addToolSections}
+                activeSection={activeAddTool}
+                onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
+                ariaLabel="Meal add tools"
+              />
+              {activeAddTool === "search" ? <ProductSearch mealType={mealType} /> : null}
+              {activeAddTool === "favorites" ? <QuickProductShelf mealType={mealType} /> : null}
+              {activeAddTool === "composer" ? <QuickMealComposer mealType={mealType} /> : null}
+            </Stack>
           ) : null}
 
           {inputMode === "barcode" ? (
@@ -534,6 +608,10 @@ const MealBuilderPage = () => {
 
       {activeSection === "history" ? <DailyHistoryExplorer /> : null}
 
+      {activeSection === "saved" ? (
+        <NutritionLibraryPanel mealType={mealType} mode="saved" />
+      ) : null}
+
       {activeSection === "templates" ? (
       <Paper
         elevation={0}
@@ -562,7 +640,7 @@ const MealBuilderPage = () => {
             <Stack spacing={2}>
               <YesterdayRepeater />
               <TemplateVault mealType={mealType} />
-              <CatalogContributionCard />
+              <CatalogContributionCard compact />
             </Stack>
             <Stack spacing={2}>
               <FridgeRecipePlanner mealType={mealType} />

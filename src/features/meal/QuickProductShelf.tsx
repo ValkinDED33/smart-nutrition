@@ -44,6 +44,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
           product={product}
           mealType={mealType}
           origin="manual"
+          compact
         />
       ))}
     </Box>

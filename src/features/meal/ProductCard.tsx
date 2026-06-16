@@ -36,6 +36,7 @@ interface Props {
   mealType?: MealType;
   origin?: "manual" | "barcode" | "recipe";
   allowSave?: boolean;
+  compact?: boolean;
 }
 
 const getProductKey = (product: Product) =>
@@ -47,6 +48,7 @@ export const ProductCard = ({
   mealType = "snack",
   origin = "manual",
   allowSave = true,
+  compact = false,
 }: Props) => {
   const [qty, setQty] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
@@ -128,13 +130,13 @@ export const ProductCard = ({
         sx={{
           display: "block",
           width: "100%",
-          height: { xs: 132, sm: 142, md: 148 },
+          height: compact ? { xs: 84, sm: 98, md: 108 } : { xs: 132, sm: 142, md: 148 },
           objectFit: "cover",
           backgroundColor: "rgba(15, 23, 42, 0.06)",
         }}
       />
-      <CardContent sx={{ p: { xs: 1.35, md: 1.6 } }}>
-        <Stack spacing={1.05}>
+      <CardContent sx={{ p: { xs: compact ? 1.1 : 1.35, md: compact ? 1.25 : 1.6 } }}>
+        <Stack spacing={compact ? 0.8 : 1.05}>
           <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
             <Typography
               component="h3"
@@ -143,6 +145,7 @@ export const ProductCard = ({
                 fontWeight: 900,
                 lineHeight: 1.2,
                 overflowWrap: "anywhere",
+                fontSize: compact ? { xs: 15, md: 16 } : undefined,
               }}
             >
               {displayName}
@@ -162,15 +165,18 @@ export const ProductCard = ({
             </Typography>
           )}
 
-          <Typography>
+          <Typography variant={compact ? "body2" : "body1"}>
             {nutrients.calories.toFixed(0)} {t("common.kcal")} / {product.unit}
           </Typography>
 
-          <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
-            {t("dashboard.protein")}: {nutrients.protein.toFixed(1)} {t("common.g")} /{" "}
-            {t("dashboard.fat")}: {nutrients.fat.toFixed(1)} {t("common.g")} /{" "}
-            {t("dashboard.carbs")}: {nutrients.carbs.toFixed(1)} {t("common.g")}
-          </Typography>
+          <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap">
+            <Chip
+              label={`P ${nutrients.protein.toFixed(1)} ${t("common.g")}`}
+              size="small"
+            />
+            <Chip label={`F ${nutrients.fat.toFixed(1)} ${t("common.g")}`} size="small" />
+            <Chip label={`C ${nutrients.carbs.toFixed(1)} ${t("common.g")}`} size="small" />
+          </Stack>
 
           <TextField
             fullWidth
@@ -190,9 +196,11 @@ export const ProductCard = ({
           />
 
           <Stack spacing={0.8}>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              {t("productCard.quickPortions")}
-            </Typography>
+            {!compact ? (
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {t("productCard.quickPortions")}
+              </Typography>
+            ) : null}
             <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
               {portionPresets.map((preset) => (
                 <Button
@@ -229,19 +237,21 @@ export const ProductCard = ({
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-            {portionPresets.slice(0, 3).map((preset) => (
-              <Button
-                key={`quick-add-${preset}`}
-                size="small"
-                variant="outlined"
-                onClick={() => handleAddQuantity(preset, false)}
-                sx={{ minWidth: 72, px: 1 }}
-              >
-                +{formatProductPortion(preset, product.unit)}
-              </Button>
-            ))}
-          </Stack>
+          {!compact ? (
+            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+              {portionPresets.slice(0, 3).map((preset) => (
+                <Button
+                  key={`quick-add-${preset}`}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => handleAddQuantity(preset, false)}
+                  sx={{ minWidth: 72, px: 1 }}
+                >
+                  +{formatProductPortion(preset, product.unit)}
+                </Button>
+              ))}
+            </Stack>
+          ) : null}
 
           <Box
             sx={{

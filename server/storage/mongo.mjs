@@ -17,6 +17,7 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   isUserRole,
+  normalizeCompanionState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -444,6 +445,7 @@ const normalizeSnapshotForUser = (snapshot, user) => ({
   water: normalizeWaterState(snapshot?.water),
   fridge: normalizeFridgeState(snapshot?.fridge),
   community: normalizeCommunityState(snapshot?.community),
+  companion: normalizeCompanionState(snapshot?.companion),
 });
 
 const normalizeSyncContext = (syncContext = undefined) => ({
@@ -809,6 +811,7 @@ export const createMongoStorage = async (config) => {
       water: normalizeWaterState(stateDoc?.water),
       fridge: normalizeFridgeState(stateDoc?.fridge),
       community: normalizeCommunityState(stateDoc?.community),
+      companion: normalizeCompanionState(stateDoc?.companion),
       updatedAt: meta.updatedAt,
       profileUpdatedAt: meta.profileUpdatedAt,
       mealUpdatedAt: meta.mealUpdatedAt,
@@ -850,6 +853,7 @@ export const createMongoStorage = async (config) => {
             water: snapshot.water,
             fridge: snapshot.fridge,
             community: snapshot.community,
+            companion: snapshot.companion,
             updatedAt: now,
             profileUpdatedAt,
             mealUpdatedAt,
@@ -1510,6 +1514,33 @@ export const createMongoStorage = async (config) => {
       });
       writeBackupSnapshot(userId, nextSnapshot, "community-state", updatedAt);
       return normalizedCommunity;
+    },
+
+    getCompanionStateByUserId: async (userId) =>
+      normalizeCompanionState((await collections.states.findOne({ userId }))?.companion),
+
+    upsertCompanionState: async (userId, companionState, syncContext = undefined) => {
+      const resolvedUser = await getResolvedUser(userId);
+
+      if (!resolvedUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = await assertNoStateConflict(userId, syncContext);
+      const normalizedCompanion = normalizeCompanionState(companionState);
+      const updatedAt = new Date().toISOString();
+      const currentSnapshot = await buildSnapshot(userId, resolvedUser);
+      const nextSnapshot = {
+        ...currentSnapshot,
+        companion: normalizedCompanion,
+      };
+
+      await writeSnapshot(userId, nextSnapshot, {
+        updatedAt,
+        deviceId: normalizedSyncContext.deviceId,
+      });
+      writeBackupSnapshot(userId, nextSnapshot, "companion-state", updatedAt);
+      return normalizedCompanion;
     },
 
     addMealEntries: async (userId, entries, syncContext = undefined) => {

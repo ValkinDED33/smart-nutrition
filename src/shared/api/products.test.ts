@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchProductByBarcode, searchProducts } from "./products";
+import {
+  fetchProductByBarcode,
+  ProductLookupError,
+  searchProducts,
+} from "./products";
 
 const authMock = vi.hoisted(() => ({
   getRemoteAuthBaseUrl: vi.fn(() => "https://api.example.com/api"),
@@ -53,8 +57,12 @@ describe("products api", () => {
   it("does not fall back to a local product catalog when backend is unavailable", async () => {
     authMock.isCloudSyncActive.mockReturnValue(false);
 
-    await expect(searchProducts("oats")).resolves.toEqual([]);
-    await expect(fetchProductByBarcode("4820000730030")).resolves.toBeNull();
+    await expect(searchProducts("oats")).rejects.toMatchObject({
+      code: "PRODUCT_LOOKUP_AUTH_REQUIRED",
+    });
+    await expect(fetchProductByBarcode("4820000730030")).rejects.toBeInstanceOf(
+      ProductLookupError
+    );
   });
 
   it("finds barcode products only from backend results", async () => {
@@ -73,5 +81,37 @@ describe("products api", () => {
     const product = await fetchProductByBarcode("4820000730030");
 
     expect(product?.id).toBe("barcode-product");
+  });
+
+  it("returns null for a valid barcode only when backend lookup succeeds with no item", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [] }), { status: 200 })
+      )
+    );
+
+    await expect(fetchProductByBarcode("4820000730030")).resolves.toBeNull();
+  });
+
+  it("throws a typed error when backend product lookup fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            code: "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE",
+            message: "External product lookup is unavailable.",
+          }),
+          { status: 502 }
+        )
+      )
+    );
+
+    await expect(searchProducts("oats")).rejects.toMatchObject({
+      code: "PRODUCT_LOOKUP_FAILED",
+      status: 502,
+      message: "External product lookup is unavailable.",
+    });
   });
 });

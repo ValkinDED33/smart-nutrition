@@ -292,7 +292,7 @@ const RegisterPage = () => {
       >
         <Stack spacing={2.5}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name="Алекс" variant="robot" mood="happy" size={72} />
+            <AssistantAvatar name="Alex" variant="dragon" mood="happy" size={72} />
             <Box>
               <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
                 {t("brand.name")}

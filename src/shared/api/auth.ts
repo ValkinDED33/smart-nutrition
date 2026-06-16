@@ -11,6 +11,7 @@ import {
   getRemoteSessionToken,
   isRemoteAuthMode,
   pushRemoteCommunityState,
+  pushRemoteCompanionState,
   pushRemoteFridgeState,
   pushRemoteWaterState,
   listRemoteAccountBackups,
@@ -47,9 +48,12 @@ export type {
 export type { RemoteSyncResult };
 export { AuthApiError };
 
-export const restoreSession = async () => {
+export const restoreSession = async (options?: {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}) => {
   purgeLegacyBrowserAuthStorage();
-  return remoteAuthProvider.restoreSession();
+  return remoteAuthProvider.restoreSession(options);
 };
 
 export const logout = async () => {
@@ -109,6 +113,7 @@ export const syncRemoteMealState = pushRemoteMealState;
 export const syncRemoteWaterState = pushRemoteWaterState;
 export const syncRemoteFridgeState = pushRemoteFridgeState;
 export const syncRemoteCommunityState = pushRemoteCommunityState;
+export const syncRemoteCompanionState = pushRemoteCompanionState;
 export const createRemoteMealEntries = addRemoteMealEntries;
 export const deleteRemoteMealEntry = removeRemoteMealEntry;
 export const createRemoteMealTemplate = addRemoteMealTemplate;

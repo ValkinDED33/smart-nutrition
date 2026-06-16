@@ -642,6 +642,135 @@ export const createInitialCommunityState = () => ({
   score: 180,
 });
 
+export const createInitialCompanionState = () => {
+  const now = new Date().toISOString();
+
+  return {
+    level: 1,
+    xp: 0,
+    coins: 0,
+    relationshipLevel: 1,
+    achievements: [],
+    ownedItemIds: [],
+    equippedItemIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
+const companionLevelThresholds = {
+  1: 0,
+  2: 100,
+  3: 250,
+  4: 500,
+  5: 900,
+  6: 1400,
+  7: 2000,
+  8: 2800,
+  9: 3700,
+  10: 4800,
+};
+
+const normalizeInteger = (value, fallback = 0, min = 0) => {
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue)
+    ? Math.max(Math.floor(numberValue), min)
+    : fallback;
+};
+
+const normalizeStringIdList = (value) =>
+  Array.isArray(value)
+    ? [
+        ...new Set(
+          value
+            .filter((item) => typeof item === "string")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        ),
+      ]
+    : [];
+
+const getCompanionLevelForXp = (xp) =>
+  Object.entries(companionLevelThresholds).reduce(
+    (level, [candidateLevel, threshold]) =>
+      xp >= threshold ? Number(candidateLevel) : level,
+    1
+  );
+
+const normalizeCompanionAchievement = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const id = typeof value.id === "string" ? value.id.trim().slice(0, 80) : "";
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    title:
+      typeof value.title === "string" && value.title.trim()
+        ? value.title.trim().slice(0, 120)
+        : id,
+    description:
+      typeof value.description === "string" && value.description.trim()
+        ? value.description.trim().slice(0, 240)
+        : undefined,
+    icon:
+      typeof value.icon === "string" && value.icon.trim()
+        ? value.icon.trim().slice(0, 40)
+        : undefined,
+    category:
+      ["start", "nutrition", "hydration", "progress", "companion"].includes(value.category)
+        ? value.category
+        : undefined,
+    xpBonus: normalizeInteger(value.xpBonus, 0),
+    coinBonus: normalizeInteger(value.coinBonus, 0),
+    unlockedAt:
+      typeof value.unlockedAt === "string" && value.unlockedAt.trim()
+        ? value.unlockedAt
+        : undefined,
+  };
+};
+
+export const normalizeCompanionState = (value) => {
+  const fallback = createInitialCompanionState();
+  const record = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const xp = normalizeInteger(record.xp, fallback.xp);
+  const ownedItemIds = normalizeStringIdList(record.ownedItemIds);
+
+  return {
+    level: getCompanionLevelForXp(xp),
+    xp,
+    coins: normalizeInteger(record.coins, fallback.coins),
+    relationshipLevel: normalizeInteger(
+      record.relationshipLevel,
+      fallback.relationshipLevel,
+      1
+    ),
+    achievements: Array.isArray(record.achievements)
+      ? record.achievements
+          .map((achievement) => normalizeCompanionAchievement(achievement))
+          .filter(Boolean)
+      : fallback.achievements,
+    ownedItemIds,
+    equippedItemIds: normalizeStringIdList(record.equippedItemIds).filter((itemId) =>
+      ownedItemIds.includes(itemId)
+    ),
+    createdAt:
+      typeof record.createdAt === "string" && record.createdAt.trim()
+        ? record.createdAt
+        : fallback.createdAt,
+    updatedAt:
+      typeof record.updatedAt === "string" && record.updatedAt.trim()
+        ? record.updatedAt
+        : fallback.updatedAt,
+  };
+};
+
 export const toPublicUser = (user) => ({
   id: user.id,
   name: user.name,

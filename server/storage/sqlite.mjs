@@ -16,6 +16,7 @@ import {
   createInitialMealState,
   createInitialProfileState,
   createInitialWaterState,
+  normalizeCompanionState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -1008,6 +1009,7 @@ const mapSnapshotRow = (row) => {
     water: parseJson(row.water_json, null),
     fridge: parseJson(row.fridge_json, null),
     community: parseJson(row.community_json, null),
+    companion: parseJson(row.companion_json, null),
     updatedAt: row.updated_at,
   };
 };
@@ -1183,6 +1185,7 @@ const createSchema = (database) => {
       water_json TEXT,
       fridge_json TEXT,
       community_json TEXT,
+      companion_json TEXT,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -1497,9 +1500,10 @@ const importLegacySnapshots = (database, snapshots) => {
       water_json,
       fridge_json,
       community_json,
+      companion_json,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   Object.entries(snapshots).forEach(([userId, snapshot]) => {
@@ -1510,6 +1514,7 @@ const importLegacySnapshots = (database, snapshots) => {
       serializeJson(snapshot?.water ?? null),
       serializeJson(snapshot?.fridge ?? null),
       serializeJson(snapshot?.community ?? null),
+      serializeJson(snapshot?.companion ?? null),
       snapshot?.updatedAt ?? new Date().toISOString()
     );
   });
@@ -1928,6 +1933,14 @@ const buildCommunityStateFromRows = (database, userId) => {
   return normalizeCommunityState(parseJson(row?.community_json, null));
 };
 
+const buildCompanionStateFromRows = (database, userId) => {
+  const row = database
+    .prepare("SELECT companion_json FROM snapshots WHERE user_id = ? LIMIT 1")
+    .get(userId);
+
+  return normalizeCompanionState(parseJson(row?.companion_json, null));
+};
+
 const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().toISOString()) => {
   database
     .prepare(
@@ -1939,15 +1952,17 @@ const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().
           water_json,
           fridge_json,
           community_json,
+          companion_json,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
           profile_json = excluded.profile_json,
           meal_json = excluded.meal_json,
           water_json = excluded.water_json,
           fridge_json = excluded.fridge_json,
           community_json = excluded.community_json,
+          companion_json = excluded.companion_json,
           updated_at = excluded.updated_at
       `
     )
@@ -1958,6 +1973,7 @@ const upsertSnapshotCache = (database, userId, snapshot, updatedAt = new Date().
       serializeJson(snapshot?.water ?? null),
       serializeJson(snapshot?.fridge ?? null),
       serializeJson(snapshot?.community ?? null),
+      serializeJson(snapshot?.companion ?? null),
       updatedAt
     );
 };
@@ -2048,11 +2064,14 @@ const migrateNormalizedStateIfNeeded = (database) => {
         upsertSnapshotCache(
           database,
           user.id,
-          {
-            profile: normalizedProfile,
-            meal: normalizedMeal,
-            water: normalizeWaterState(snapshot.water),
-          },
+        {
+          profile: normalizedProfile,
+          meal: normalizedMeal,
+          water: normalizeWaterState(snapshot.water),
+          fridge: normalizeFridgeState(snapshot.fridge),
+          community: normalizeCommunityState(snapshot.community),
+          companion: normalizeCompanionState(snapshot.companion),
+        },
           snapshot.updatedAt
         );
     });
@@ -2083,6 +2102,7 @@ export const createSqliteStorage = async ({
   ensureColumn(database, "snapshots", "water_json", "TEXT");
   ensureColumn(database, "snapshots", "fridge_json", "TEXT");
   ensureColumn(database, "snapshots", "community_json", "TEXT");
+  ensureColumn(database, "snapshots", "companion_json", "TEXT");
   ensureColumn(database, "users", "email_verified", "INTEGER NOT NULL DEFAULT 1");
   ensureColumn(database, "users", "verification_channel", "TEXT NOT NULL DEFAULT 'email'");
   ensureColumn(database, "users", "role", "TEXT NOT NULL DEFAULT 'USER'");
@@ -2525,6 +2545,7 @@ export const createSqliteStorage = async ({
       water: buildWaterStateFromRows(database, userId),
       fridge: buildFridgeStateFromRows(database, userId),
       community: buildCommunityStateFromRows(database, userId),
+      companion: buildCompanionStateFromRows(database, userId),
     };
     upsertSnapshotCache(database, userId, snapshot, updatedAt);
     return { normalizedMeal, snapshot, updatedAt };
@@ -3380,6 +3401,7 @@ export const createSqliteStorage = async ({
         water: buildWaterStateFromRows(database, userId),
         fridge: buildFridgeStateFromRows(database, userId),
         community: buildCommunityStateFromRows(database, userId),
+        companion: buildCompanionStateFromRows(database, userId),
         updatedAt: meta.updatedAt,
         profileUpdatedAt: meta.profileUpdatedAt,
         mealUpdatedAt: meta.mealUpdatedAt,
@@ -3424,6 +3446,7 @@ export const createSqliteStorage = async ({
             water: normalizeWaterState(snapshot?.water),
             fridge: normalizeFridgeState(snapshot?.fridge),
             community: normalizeCommunityState(snapshot?.community),
+            companion: normalizeCompanionState(snapshot?.companion),
           },
           updatedAt
         );
@@ -3443,6 +3466,7 @@ export const createSqliteStorage = async ({
             water: normalizeWaterState(snapshot?.water),
             fridge: normalizeFridgeState(snapshot?.fridge),
             community: normalizeCommunityState(snapshot?.community),
+            companion: normalizeCompanionState(snapshot?.companion),
           },
           "snapshot",
           updatedAt
@@ -3492,6 +3516,7 @@ export const createSqliteStorage = async ({
           water: buildWaterStateFromRows(database, userId),
           fridge: buildFridgeStateFromRows(database, userId),
           community: buildCommunityStateFromRows(database, userId),
+          companion: buildCompanionStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -3529,6 +3554,7 @@ export const createSqliteStorage = async ({
           water: buildWaterStateFromRows(database, userId),
           fridge: buildFridgeStateFromRows(database, userId),
           community: buildCommunityStateFromRows(database, userId),
+          companion: buildCompanionStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -3566,6 +3592,7 @@ export const createSqliteStorage = async ({
           water: normalizedWater,
           fridge: buildFridgeStateFromRows(database, userId),
           community: buildCommunityStateFromRows(database, userId),
+          companion: buildCompanionStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -3603,6 +3630,7 @@ export const createSqliteStorage = async ({
           water: buildWaterStateFromRows(database, userId),
           fridge: normalizedFridge,
           community: buildCommunityStateFromRows(database, userId),
+          companion: buildCompanionStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -3639,6 +3667,7 @@ export const createSqliteStorage = async ({
           water: buildWaterStateFromRows(database, userId),
           fridge: buildFridgeStateFromRows(database, userId),
           community: normalizedCommunity,
+          companion: buildCompanionStateFromRows(database, userId),
         };
         upsertSnapshotCache(database, userId, snapshot, updatedAt);
         updateSnapshotMeta(userId, {
@@ -3648,6 +3677,43 @@ export const createSqliteStorage = async ({
         database.exec("COMMIT");
         writeBackupSnapshot(userId, snapshot, "community-state", updatedAt);
         return normalizedCommunity;
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
+    },
+
+    getCompanionStateByUserId: (userId) => buildCompanionStateFromRows(database, userId),
+
+    upsertCompanionState: (userId, companionState, syncContext = undefined) => {
+      const resolvedUser = getResolvedUser(userId);
+
+      if (!resolvedUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = assertNoStateConflict(userId, syncContext);
+      database.exec("BEGIN");
+
+      try {
+        const normalizedCompanion = normalizeCompanionState(companionState);
+        const updatedAt = new Date().toISOString();
+        const snapshot = {
+          profile: buildProfileStateFromRows(database, userId, resolvedUser),
+          meal: buildMealStateFromRows(database, userId),
+          water: buildWaterStateFromRows(database, userId),
+          fridge: buildFridgeStateFromRows(database, userId),
+          community: buildCommunityStateFromRows(database, userId),
+          companion: normalizedCompanion,
+        };
+        upsertSnapshotCache(database, userId, snapshot, updatedAt);
+        updateSnapshotMeta(userId, {
+          updatedAt,
+          deviceId: normalizedSyncContext.deviceId,
+        });
+        database.exec("COMMIT");
+        writeBackupSnapshot(userId, snapshot, "companion-state", updatedAt);
+        return normalizedCompanion;
       } catch (error) {
         database.exec("ROLLBACK");
         throw error;

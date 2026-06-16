@@ -35,6 +35,8 @@ export const createStateRoutes = ({ stateController } = {}) =>
         { method: "PUT", pathname: "/api/fridge-state", handler: stateController.saveFridgeState },
         { method: "GET", pathname: "/api/community-state", handler: stateController.getCommunityState },
         { method: "PUT", pathname: "/api/community-state", handler: stateController.saveCommunityState },
+        { method: "GET", pathname: "/api/companion-state", handler: stateController.getCompanionState },
+        { method: "PUT", pathname: "/api/companion-state", handler: stateController.saveCompanionState },
         { method: "POST", pathname: "/api/meal-entries", handler: stateController.addMealEntries },
         {
           method: "DELETE",

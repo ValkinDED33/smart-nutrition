@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Alert,
   Autocomplete,
   Button,
   CircularProgress,
+  Collapse,
   Paper,
   Stack,
   TextField,
@@ -23,6 +25,7 @@ import {
   formatProductPortion,
   getProductPortionPresets,
 } from "@domain/products/productPortions";
+import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
 
 interface Props {
   mealType: MealType;
@@ -44,9 +47,46 @@ const createRow = (product: Product | null = null): ComposerRow => ({
   quantity: 100,
 });
 
+const composerStatusCopy = {
+  uk: {
+    unavailable:
+      "Онлайн-підбір інгредієнтів тимчасово недоступний. Це не порожня база — backend або зовнішній каталог не відповів.",
+    retry: "Спробувати ще раз",
+    noOptions: "Почніть писати назву продукту",
+    searching: "Шукаю в онлайн-каталозі...",
+    onlineHint: "Пишіть назву — варіанти підтягнуться з backend-каталогу та зовнішніх баз.",
+    noMatch: "Не знайшли. Спробуйте іншу назву або додайте продукт у спільну базу нижче.",
+    addMissing: "Додати продукт в онлайн-базу",
+    closeContribution: "Сховати форму",
+  },
+  pl: {
+    unavailable:
+      "Dobór składników online jest chwilowo niedostępny. To nie pusta baza — backend albo zewnętrzny katalog nie odpowiedział.",
+    retry: "Spróbuj ponownie",
+    noOptions: "Zacznij wpisywać nazwę produktu",
+    searching: "Szukam w katalogu online...",
+    onlineHint: "Wpisuj nazwę — propozycje przyjdą z katalogu backendu i baz zewnętrznych.",
+    noMatch: "Nie znaleziono. Spróbuj innej nazwy albo dodaj produkt do wspólnej bazy niżej.",
+    addMissing: "Dodaj produkt do bazy online",
+    closeContribution: "Ukryj formularz",
+  },
+  en: {
+    unavailable:
+      "Online ingredient lookup is temporarily unavailable. This is not an empty database — the backend or external catalog did not respond.",
+    retry: "Try again",
+    noOptions: "Start typing a product name",
+    searching: "Searching the online catalog...",
+    onlineHint: "Type a name — suggestions come from the backend catalog and external databases.",
+    noMatch: "No match yet. Try another name or add the product to the shared database below.",
+    addMissing: "Add product to online database",
+    closeContribution: "Hide form",
+  },
+} as const;
+
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, t } = useLanguage();
+  const copy = composerStatusCopy[appLanguage];
   const favorites = useSelector(selectFavoriteProductIds);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -54,11 +94,19 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
-  const [activeSearchText, setActiveSearchText] = useState("");
+  const [rows, setRows] = useState<ComposerRow[]>(() => [
+    createRow(),
+    { ...createRow(), quantity: 80 },
+  ]);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
+  const [contributionOpen, setContributionOpen] = useState(false);
+  const activeRow = rows.find((row) => row.id === activeRowId) ?? rows[0] ?? null;
+  const activeSearchText = activeRow?.productQuery.trim() ?? "";
   const productsQuery = useQuery({
     queryKey: ["composer-products", debouncedSearchText],
     queryFn: () => searchProducts(debouncedSearchText),
+    staleTime: 60_000,
   });
   const availableProducts = useMemo(
     () =>
@@ -67,11 +115,6 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       ),
     [preferences, productsQuery.data]
   );
-  const [rows, setRows] = useState<ComposerRow[]>([
-    createRow(),
-    { ...createRow(), quantity: 80 },
-  ]);
-
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearchText(activeSearchText.trim());
@@ -107,7 +150,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   };
 
   const addRow = () => {
-    setRows((currentRows) => [...currentRows, createRow()]);
+    const nextRow = createRow();
+    setRows((currentRows) => [...currentRows, nextRow]);
+    setActiveRowId(nextRow.id);
   };
 
   const handleSaveMeal = () => {
@@ -126,16 +171,19 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       );
     });
 
-    setRows([
-      {
-        ...createRow(),
-      },
-    ]);
+    const nextRow = createRow();
+    setRows([nextRow]);
+    setActiveRowId(nextRow.id);
   };
 
   const hasValidMealRows = rows.some(
     (row) => row.product && typeof row.quantity === "number" && row.quantity > 0
   );
+  const canOfferContribution =
+    activeSearchText.length >= 3 &&
+    !productsQuery.isFetching &&
+    !productsQuery.isError &&
+    availableProducts.length === 0;
 
   const getProductLabel = (product: Product) => {
     const name = getProductDisplayName(product, appLanguage);
@@ -162,9 +210,46 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
+        {productsQuery.isError ? (
+          <Alert
+            severity="warning"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  void productsQuery.refetch();
+                }}
+                sx={{ textTransform: "none", fontWeight: 800 }}
+              >
+                {copy.retry}
+              </Button>
+            }
+          >
+            {copy.unavailable}
+          </Alert>
+        ) : null}
+
         {rows.map((row, index) => {
           const selectedProduct = row.product;
           const portionPresets = getProductPortionPresets(selectedProduct?.unit ?? "g");
+          const isActiveRow = activeRow?.id === row.id;
+          const rowQuery = row.productQuery.trim();
+          const rowOptions = isActiveRow ? availableProducts : [];
+          const noOptionsText = productsQuery.isError
+            ? copy.unavailable
+            : productsQuery.isFetching
+              ? copy.searching
+              : rowQuery.length >= 2
+                ? copy.noMatch
+                : copy.noOptions;
+          const helperText = productsQuery.isError
+            ? copy.unavailable
+            : selectedProduct
+              ? `${selectedProduct.source} • ${Math.round(
+                  selectedProduct.nutrients.calories
+                )} ${t("common.kcal")} / 100 ${selectedProduct.unit}`
+              : copy.onlineHint;
 
           return (
             <Stack
@@ -176,14 +261,24 @@ export const QuickMealComposer = ({ mealType }: Props) => {
               <Autocomplete
                 fullWidth
                 autoHighlight
+                clearOnBlur={false}
+                handleHomeEndKeys
                 loading={productsQuery.isFetching}
-                options={availableProducts}
+                openOnFocus
+                options={rowOptions}
+                selectOnFocus
+                noOptionsText={noOptionsText}
                 value={selectedProduct}
                 inputValue={row.productQuery}
                 filterOptions={(options) => options}
                 getOptionLabel={(product) => getProductLabel(product)}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
+                onOpen={() => setActiveRowId(row.id)}
                 onInputChange={(_, value, reason) => {
+                  setActiveRowId(row.id);
+                  if (reason === "input" || reason === "clear") {
+                    setContributionOpen(false);
+                  }
                   updateRow(row.id, {
                     productQuery: value,
                     product:
@@ -191,9 +286,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                         ? null
                         : row.product,
                   });
-                  setActiveSearchText(value);
                 }}
                 onChange={(_, product) => {
+                  setActiveRowId(row.id);
                   updateRow(row.id, {
                     product,
                     productQuery: product ? getProductLabel(product) : "",
@@ -218,6 +313,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                     label={`${t("composer.ingredient")} ${index + 1}`}
                     placeholder={t("productSearch.placeholder")}
                     autoComplete="off"
+                    helperText={helperText}
+                    onFocus={() => setActiveRowId(row.id)}
                     InputProps={{
                       ...params.InputProps,
                       endAdornment: (
@@ -277,6 +374,28 @@ export const QuickMealComposer = ({ mealType }: Props) => {
             </Stack>
           );
         })}
+
+        {canOfferContribution ? (
+          <Alert
+            severity="info"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => setContributionOpen((current) => !current)}
+                sx={{ textTransform: "none", fontWeight: 900 }}
+              >
+                {contributionOpen ? copy.closeContribution : copy.addMissing}
+              </Button>
+            }
+          >
+            {copy.noMatch}
+          </Alert>
+        ) : null}
+
+        <Collapse in={contributionOpen && canOfferContribution} timeout="auto" unmountOnExit>
+          <CatalogContributionCard key={activeSearchText} compact initialName={activeSearchText} />
+        </Collapse>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <Button variant="outlined" onClick={addRow}>

@@ -11,8 +11,10 @@ import fridgeReducer from "../features/fridge/fridgeSlice";
 import mealReducer from "../features/meal/mealSlice";
 import profileReducer from "../features/profile/profileSlice";
 import waterReducer, { incrementWater } from "../features/water/waterSlice";
+import { awardCompanionReward } from "../features/companion/model/store";
 
-const { syncRemoteWaterStateMock } = vi.hoisted(() => ({
+const { syncRemoteCompanionStateMock, syncRemoteWaterStateMock } = vi.hoisted(() => ({
+  syncRemoteCompanionStateMock: vi.fn(),
   syncRemoteWaterStateMock: vi.fn(),
 }));
 
@@ -58,6 +60,7 @@ vi.mock("../shared/api/auth", () => {
     restoreSession: vi.fn(),
     saveRemoteMealProduct: vi.fn(async () => okResult),
     syncRemoteCommunityState: vi.fn(async () => okResult),
+    syncRemoteCompanionState: syncRemoteCompanionStateMock,
     syncRemoteFridgeState: vi.fn(async () => okResult),
     syncRemoteMealState: vi.fn(async () => okResult),
     syncRemoteProfileState: vi.fn(async () => okResult),
@@ -83,6 +86,49 @@ const createTestStore = () =>
   });
 
 describe("remote sync listeners", () => {
+  it("syncs companion state when companion rewards change", async () => {
+    syncRemoteCompanionStateMock.mockResolvedValue({
+      ok: true,
+      meta: { updatedAt: "companion-sync-ok" },
+    });
+    registerRemoteSyncListeners();
+    const store = createTestStore();
+
+    store.dispatch(
+      setCredentials({
+        user: {
+          id: "user-1",
+          name: "Test User",
+          email: "test@example.com",
+          age: 30,
+          weight: 80,
+          height: 180,
+          gender: "male",
+          activity: "moderate",
+          goal: "maintain",
+          role: "VERIFIED_USER",
+        },
+        syncMode: "remote-cloud",
+        syncOutbox: {
+          pendingChanges: 0,
+          firstQueuedAt: null,
+          lastQueuedAt: null,
+          lastError: null,
+        },
+        cloudMeta: { updatedAt: "base-version" },
+      })
+    );
+
+    store.dispatch(awardCompanionReward("meal_added"));
+
+    await vi.waitFor(() => {
+      expect(syncRemoteCompanionStateMock).toHaveBeenCalledTimes(1);
+    });
+    expect(syncRemoteCompanionStateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ xp: expect.any(Number) })
+    );
+  });
+
   it("coalesces rapid water updates and syncs the latest water state", async () => {
     const syncedWaterAmounts: number[] = [];
 

@@ -52,6 +52,8 @@ const requireFridgeState = (value) =>
   requireRecord(value, "INVALID_FRIDGE_STATE", "Fridge state payload is required.");
 const requireCommunityState = (value) =>
   requireRecord(value, "INVALID_COMMUNITY_STATE", "Community state payload is required.");
+const requireCompanionState = (value) =>
+  requireRecord(value, "INVALID_COMPANION_STATE", "Companion state payload is required.");
 
 const requireSnapshot = (value) => {
   const snapshot = requireRecord(value, "INVALID_STATE", "Full state snapshot is required.");
@@ -62,6 +64,7 @@ const requireSnapshot = (value) => {
     water: requireWaterState(snapshot.water),
     fridge: requireFridgeState(snapshot.fridge),
     community: requireCommunityState(snapshot.community),
+    companion: requireCompanionState(snapshot.companion),
   };
 };
 
@@ -113,6 +116,15 @@ export const createStateService = ({ stateRepository }) => ({
     stateRepository.upsertCommunityState(
       user.id,
       requireCommunityState(communityState),
+      syncContext
+    ),
+
+  getCompanionState: async (user) => stateRepository.getCompanionStateByUserId(user.id),
+
+  saveCompanionState: async (user, companionState, syncContext = undefined) =>
+    stateRepository.upsertCompanionState(
+      user.id,
+      requireCompanionState(companionState),
       syncContext
     ),
 

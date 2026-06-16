@@ -9,6 +9,7 @@ import {
   pullRemoteAppSnapshot,
   restoreSession,
   syncRemoteCommunityState,
+  syncRemoteCompanionState,
   syncRemoteFridgeState,
   type RemoteSyncResult,
   syncRemoteMealState,
@@ -130,68 +131,91 @@ export const initializeAuth = createAsyncThunk<
   },
   void,
   { state: AuthRootState; rejectValue: string | null }
->("auth/initialize", async (_, { dispatch, rejectWithValue }) => {
-  const syncOutbox = getSyncOutboxMeta();
-  const applySessionData = (
-    data: NonNullable<Awaited<ReturnType<typeof restoreSession>>>
-  ) => {
-    if (data.snapshot && syncOutbox.pendingChanges === 0) {
-      dispatch(replaceProfileState(data.snapshot.profile));
-      dispatch(replaceMealState(data.snapshot.meal));
-      dispatch(replaceWaterState(data.snapshot.water));
-      dispatch(replaceFridgeState(data.snapshot.fridge));
-      dispatch(replaceCommunityState(data.snapshot.community));
-      dispatch(hydrateCompanionState(data.snapshot.companion));
-    }
+>(
+  "auth/initialize",
+  async (_, { dispatch, rejectWithValue }) => {
+    const syncOutbox = getSyncOutboxMeta();
+    const applySessionData = (
+      data: NonNullable<Awaited<ReturnType<typeof restoreSession>>>
+    ) => {
+      if (data.snapshot && syncOutbox.pendingChanges === 0) {
+        dispatch(replaceProfileState(data.snapshot.profile));
+        dispatch(replaceMealState(data.snapshot.meal));
+        dispatch(replaceWaterState(data.snapshot.water));
+        dispatch(replaceFridgeState(data.snapshot.fridge));
+        dispatch(replaceCommunityState(data.snapshot.community));
+        dispatch(hydrateCompanionState(data.snapshot.companion));
+      }
 
-    const cloudMeta =
-      getSnapshotMetaFromSnapshot(data.snapshot) ??
-      readCachedRemoteMeta({ allowStale: true });
+      const cloudMeta =
+        getSnapshotMetaFromSnapshot(data.snapshot) ??
+        readCachedRemoteMeta({ allowStale: true });
 
-    if (data.snapshot) {
-      writeCachedRemoteSnapshot(data.snapshot);
-    }
+      if (data.snapshot) {
+        writeCachedRemoteSnapshot(data.snapshot);
+      }
 
-    return {
-      user: data.user,
-      syncMode: getAuthRuntimeInfo().mode,
-      syncOutbox,
-      cloudMeta,
+      return {
+        user: data.user,
+        syncMode: getAuthRuntimeInfo().mode,
+        syncOutbox,
+        cloudMeta,
+      };
     };
-  };
-  try {
-    const sessionPromise = restoreSession();
-    const startupResult = await Promise.race<RestoreRaceResult>([
-      sessionPromise.then((data) => ({ kind: "remote", data })),
-      new Promise<RestoreRaceResult>((resolve) => {
-        globalThis.setTimeout(
-          () => resolve({ kind: "timeout" }),
-          STARTUP_SESSION_TIMEOUT_MS
-        );
-      }),
-    ]);
 
-    if (startupResult.kind === "timeout") {
-      return rejectWithValue("REMOTE_API_UNAVAILABLE");
+    let startupTimeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+
+    try {
+      const sessionAbortController = new AbortController();
+      const sessionPromise = restoreSession({
+        signal: sessionAbortController.signal,
+        timeoutMs: STARTUP_SESSION_TIMEOUT_MS,
+      });
+      const timeoutPromise = new Promise<RestoreRaceResult>((resolve) => {
+        startupTimeoutId = globalThis.setTimeout(() => {
+          sessionAbortController.abort();
+          resolve({ kind: "timeout" });
+        }, STARTUP_SESSION_TIMEOUT_MS);
+      });
+      const startupResult = await Promise.race<RestoreRaceResult>([
+        sessionPromise.then((data) => ({ kind: "remote", data })),
+        timeoutPromise,
+      ]);
+
+      if (startupResult.kind === "timeout") {
+        return rejectWithValue("REMOTE_API_UNAVAILABLE");
+      }
+
+      if (!startupResult.data) {
+        return rejectWithValue(null);
+      }
+
+      return applySessionData(startupResult.data);
+    } catch (error) {
+      const errorCode =
+        error instanceof AuthApiError
+          ? error.code === "INVALID_CREDENTIALS"
+            ? "SESSION_EXPIRED"
+            : error.code === "REMOTE_API_UNAVAILABLE"
+              ? "REMOTE_API_UNAVAILABLE"
+              : null
+          : null;
+
+      return rejectWithValue(errorCode);
+    } finally {
+      if (startupTimeoutId !== null) {
+        globalThis.clearTimeout(startupTimeoutId);
+      }
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState() as AuthRootState;
 
-    if (!startupResult.data) {
-      return rejectWithValue(null);
-    }
-
-    return applySessionData(startupResult.data);
-  } catch (error) {
-    const errorCode = error instanceof AuthApiError
-      ? error.code === "INVALID_CREDENTIALS"
-        ? "SESSION_EXPIRED"
-        : error.code === "REMOTE_API_UNAVAILABLE"
-          ? "REMOTE_API_UNAVAILABLE"
-          : null
-      : null;
-
-    return rejectWithValue(errorCode);
+      return !state.auth.isInitialized && !state.auth.isLoading;
+    },
   }
-});
+);
 
 const pushCurrentStateToCloud = async (state: AuthRootState) => {
   const profileSynced = await syncRemoteProfileState(state.profile);
@@ -224,9 +248,16 @@ const pushCurrentStateToCloud = async (state: AuthRootState) => {
     return communitySynced;
   }
 
+  const companionSynced = await syncRemoteCompanionState(state.companion);
+
+  if (!companionSynced.ok) {
+    return companionSynced;
+  }
+
   return {
     ok: true,
     meta:
+      companionSynced.meta ??
       communitySynced.meta ??
       fridgeSynced.meta ??
       waterSynced.meta ??

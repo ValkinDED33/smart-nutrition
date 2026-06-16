@@ -7,6 +7,7 @@ import {
   deleteRemoteMealTemplate,
   isCloudSyncActive,
   syncRemoteCommunityState,
+  syncRemoteCompanionState,
   syncRemoteFridgeState,
   type RemoteSyncResult,
   saveRemoteMealProduct,
@@ -240,6 +241,14 @@ export const registerRemoteSyncListeners = () => {
     effect: async (_, listenerApi) => {
       const state = getStateSnapshot(listenerApi.getState());
       writeCachedSnapshotFromState(state, state.auth.cloudMeta);
+
+      if (!isCloudSyncActive()) {
+        return;
+      }
+
+      await runCloudSync(listenerApi, (nextState) =>
+        syncRemoteCompanionState(nextState.companion)
+      );
     },
   });
 

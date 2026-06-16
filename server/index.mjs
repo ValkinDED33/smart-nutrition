@@ -49,6 +49,7 @@ import {
 } from "./runtime/requestContext.mjs";
 import { createRateLimiters } from "./runtime/rateLimits.mjs";
 import { applySecurityHeaders } from "./runtime/securityHeaders.mjs";
+import { createSentryRuntime } from "./runtime/sentry.mjs";
 import {
   createReadinessSnapshot,
   getPublicAiStatus,
@@ -62,6 +63,7 @@ import { createStateStreamRuntime } from "./runtime/stateStreams.mjs";
 import { createStaticFileServer } from "./runtime/staticFiles.mjs";
 
 const redisCache = await createRedisCache(serverConfig);
+const sentryRuntime = createSentryRuntime({ config: serverConfig });
 const storage = await createStorage(serverConfig);
 const requestDiagnostics = createRequestDiagnostics();
 const assistantMemoryRepository = await createAssistantMemoryRepository({
@@ -194,6 +196,7 @@ const healthController = createHealthController({
       config: serverConfig,
       requestDiagnostics,
     }),
+  debugStartupEnabled: serverConfig.debugStartupEnabled,
 });
 const authController = createAuthController({
   authService,
@@ -359,6 +362,7 @@ const routeRequest = async (request, response) => {
       return;
     }
 
+    sentryRuntime.captureException(error, { route: pathname, method: request.method });
     console.error(error);
     sendError(response, 500, "SERVER_ERROR", "Unexpected server error.");
   }
@@ -368,6 +372,7 @@ const server = http.createServer((request, response) => {
   trackRequest(request, response);
 
   routeRequest(request, response).catch((error) => {
+    sentryRuntime.captureException(error, { route: "unhandled_request" });
     console.error(error);
     sendError(response, 500, "SERVER_ERROR", "Unexpected server error.");
   });
@@ -407,6 +412,7 @@ const closeRuntime = async () => {
   }
 
   await Promise.allSettled([
+    sentryRuntime.flush?.(),
     redisCache.close?.(),
     aiRepository.close?.(),
     storage.close?.(),

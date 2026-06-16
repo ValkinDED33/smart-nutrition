@@ -18,6 +18,9 @@ export const createStateRepository = (storage) => ({
   getCommunityStateByUserId: (userId) => storage.getCommunityStateByUserId(userId),
   upsertCommunityState: (userId, communityState, syncContext) =>
     storage.upsertCommunityState(userId, communityState, syncContext),
+  getCompanionStateByUserId: (userId) => storage.getCompanionStateByUserId(userId),
+  upsertCompanionState: (userId, companionState, syncContext) =>
+    storage.upsertCompanionState(userId, companionState, syncContext),
   addMealEntries: (userId, entries, syncContext) =>
     storage.addMealEntries(userId, entries, syncContext),
   removeMealEntry: (userId, entryId, syncContext) =>

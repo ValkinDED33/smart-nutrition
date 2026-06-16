@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { createProductLookupService } from "./productLookupService.mjs";
+import {
+  createProductLookupService,
+  ProductLookupProviderError,
+} from "./productLookupService.mjs";
 
 const createResponse = ({ ok = true, status = 200, body = {} } = {}) => ({
   ok,
@@ -155,7 +158,7 @@ describe("productLookupService", () => {
     expect(JSON.stringify(fetchImpl.mock.calls)).toContain("api_key=usda-key");
   });
 
-  it("logs safe warnings and returns an empty list when providers fail", async () => {
+  it("logs safe warnings and rejects when every configured provider fails", async () => {
     const logger = { warn: vi.fn() };
     const fetchImpl = vi.fn(async () =>
       createResponse({
@@ -171,7 +174,9 @@ describe("productLookupService", () => {
       fetchImpl,
     });
 
-    await expect(service.searchProducts({ search: "oats", limit: 4 })).resolves.toEqual([]);
+    await expect(service.searchProducts({ search: "oats", limit: 4 })).rejects.toBeInstanceOf(
+      ProductLookupProviderError
+    );
     expect(logger.warn).toHaveBeenCalledWith(
       "[products] external lookup failed",
       expect.objectContaining({

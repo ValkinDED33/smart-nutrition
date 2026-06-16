@@ -308,10 +308,20 @@ export const createPlatformService = ({
           return catalogProducts;
         }
 
-        const externalProducts = await productLookupService.searchProducts({
-          search: options.search,
-          limit: Math.max(options.limit - catalogProducts.length, 1),
-        });
+        let externalProducts = [];
+
+        try {
+          externalProducts = await productLookupService.searchProducts({
+            search: options.search,
+            limit: Math.max(options.limit - catalogProducts.length, 1),
+          });
+        } catch (error) {
+          if (catalogProducts.length > 0) {
+            return catalogProducts;
+          }
+
+          throw error;
+        }
 
         return mergeCatalogProducts([...catalogProducts, ...externalProducts]).slice(
           0,

@@ -4,14 +4,15 @@ import type { RootState } from "@app/store";
 import { useLanguage } from "@shared/language";
 
 const ProfileLanguageAgent = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
   const profileLanguage = useSelector((state: RootState) => state.profile.languagePreference);
   const { appLanguage, setLanguage } = useLanguage();
 
   useEffect(() => {
-    if (profileLanguage !== appLanguage) {
+    if (user && profileLanguage !== appLanguage) {
       setLanguage(profileLanguage);
     }
-  }, [appLanguage, profileLanguage, setLanguage]);
+  }, [appLanguage, profileLanguage, setLanguage, user]);
 
   return null;
 };

@@ -89,6 +89,19 @@ export const handleRouteError = (error, response) => {
     return true;
   }
 
+  if (
+    error instanceof Error &&
+    error.code === "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE"
+  ) {
+    sendError(
+      response,
+      Number.isFinite(Number(error.statusCode)) ? Number(error.statusCode) : 502,
+      error.code,
+      error.message
+    );
+    return true;
+  }
+
   if (error instanceof Error && error.message === "INVALID_JSON") {
     sendError(response, 400, "INVALID_JSON", "Request body must be valid JSON.");
     return true;

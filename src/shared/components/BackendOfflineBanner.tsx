@@ -9,7 +9,7 @@ const bannerCopy = {
   uk: {
     offline: "Немає з'єднання з інтернетом. Підключіться знову, щоб продовжити.",
     backendDown:
-      "Хмарний API зараз недоступний. Підключіться знову, щоб продовжити.",
+      "Хмарний API прокидається або тимчасово недоступний. Ми перевіримо ще раз автоматично.",
     retry: "Перевірити ще раз",
     checking: "Перевіряємо...",
   },
@@ -17,14 +17,14 @@ const bannerCopy = {
     offline:
       "Brak połączenia z internetem. Połącz się ponownie, aby kontynuować.",
     backendDown:
-      "Cloud API jest teraz niedostępne. Połącz się ponownie, aby kontynuować.",
+      "Cloud API wybudza się albo jest chwilowo niedostępne. Sprawdzimy ponownie automatycznie.",
     retry: "Sprawdź ponownie",
     checking: "Sprawdzam...",
   },
   en: {
     offline: "No internet connection. Reconnect to continue.",
     backendDown:
-      "Cloud API is currently unavailable. Reconnect to continue.",
+      "Cloud API is waking up or temporarily unavailable. We will retry automatically.",
     retry: "Check again",
     checking: "Checking...",
   },
@@ -84,7 +84,7 @@ const BackendOfflineBanner = () => {
     void checkBackend();
     const intervalId = window.setInterval(() => {
       void checkBackend();
-    }, 20000);
+    }, 10000);
 
     return () => {
       cancelled = true;
