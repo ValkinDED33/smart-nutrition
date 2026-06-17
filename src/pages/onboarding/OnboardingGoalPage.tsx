@@ -3,15 +3,34 @@ import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useLanguage } from "../../shared/language";
 import {
   cardSx,
+  derivePrimaryGoal,
   goalOptions,
   shellSx,
   stepPaths,
+  toggleArrayValue,
+  type OnboardingGoalChoice,
   type OnboardingStepProps,
 } from "./types";
 
 export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const selectedGoals = state.selectedGoals;
+
+  const updateSelectedGoals = (nextGoals: OnboardingGoalChoice[]) => {
+    const nextPrimary = derivePrimaryGoal(nextGoals);
+    updateState({
+      selectedGoals: nextGoals,
+      goal: nextPrimary.goal,
+      primaryGoalNote: nextPrimary.primaryGoalNote,
+    });
+  };
+
+  const toggleGoal = (goal: OnboardingGoalChoice) => {
+    updateSelectedGoals(toggleArrayValue(selectedGoals, goal));
+  };
+
+  const allGoalsSelected = goalOptions.every((goal) => selectedGoals.includes(goal));
 
   return (
     <Box sx={shellSx}>
@@ -20,25 +39,29 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
           <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
             {t("onboarding.goalTitle")}
           </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant={allGoalsSelected ? "contained" : "outlined"}
+              onClick={() => updateSelectedGoals(goalOptions)}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.selectAll")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => updateSelectedGoals([])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.clearSelection")}
+            </Button>
+          </Stack>
           <Stack spacing={1.2}>
             {goalOptions.map((goal) => (
               <Button
                 key={goal}
-                variant={
-                  goal === "healthy"
-                    ? state.goal === "maintain" && state.primaryGoalNote === "healthy"
-                      ? "contained"
-                      : "outlined"
-                    : state.goal === goal && state.primaryGoalNote !== "healthy"
-                      ? "contained"
-                      : "outlined"
-                }
+                variant={selectedGoals.includes(goal) ? "contained" : "outlined"}
                 size="large"
-                onClick={() =>
-                  goal === "healthy"
-                    ? updateState({ goal: "maintain", primaryGoalNote: "healthy" })
-                    : updateState({ goal, primaryGoalNote: "" })
-                }
+                onClick={() => toggleGoal(goal)}
                 sx={{ justifyContent: "flex-start", borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {t(`option.goal.${goal}`)}
@@ -57,6 +80,7 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             <Button
               variant="contained"
               onClick={() => navigate(stepPaths.friction)}
+              disabled={selectedGoals.length === 0}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

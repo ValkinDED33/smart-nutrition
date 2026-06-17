@@ -13,6 +13,7 @@ import {
   getBearerToken,
   readCookieValue,
   hashOneTimeToken,
+  isOwnerRole,
   normalizeEmail,
   sanitizeName,
   toPublicUser,
@@ -519,11 +520,14 @@ export const createAuthService = ({
         return createRegistrationVerification(existingUser);
       }
 
-      const shouldBootstrapSuperAdmin =
+      const hasExistingOwner =
+        (await authRepository.hasUserWithRole?.("OWNER")) ||
+        (await authRepository.hasUserWithRole?.("SUPER_ADMIN"));
+      const shouldBootstrapOwner =
         Boolean(config.superAdminEmail) &&
         email === config.superAdminEmail &&
-        !(await authRepository.hasUserWithRole?.("SUPER_ADMIN"));
-      const role = shouldBootstrapSuperAdmin ? "SUPER_ADMIN" : "USER";
+        !hasExistingOwner;
+      const role = shouldBootstrapOwner ? "OWNER" : "USER";
       const passwordRecord = createPasswordRecord(
         String(body.password || ""),
         config.passwordIterations
@@ -540,7 +544,7 @@ export const createAuthService = ({
         bannedAt: null,
         bannedReason: null,
         twoFactorEnabled: false,
-        twoFactorRequired: role === "ADMIN" || role === "SUPER_ADMIN",
+        twoFactorRequired: role === "ADMIN" || isOwnerRole(role),
         tokenVersion: 0,
         ...passwordRecord,
       };
@@ -907,8 +911,8 @@ export const createAuthService = ({
     },
 
     deleteAccount: async (currentUser) => {
-      if (currentUser.role === "SUPER_ADMIN") {
-        throw new AuthApiError("FORBIDDEN", "The super admin account cannot be deleted.");
+      if (isOwnerRole(currentUser.role)) {
+        throw new AuthApiError("FORBIDDEN", "The owner account cannot be deleted.");
       }
 
       await writeAuditLog({

@@ -1296,14 +1296,14 @@ export const createPostgresStorage = async ({
         await queryOne("SELECT * FROM users WHERE email = $1 LIMIT 1", [normalizedEmail])
       );
 
-      if (!existingUser || existingUser.role === "SUPER_ADMIN") {
+      if (!existingUser || existingUser.role === "OWNER" || existingUser.role === "SUPER_ADMIN") {
         return existingUser;
       }
 
       await pool.query(
         `
           UPDATE users
-          SET role = 'SUPER_ADMIN',
+          SET role = 'OWNER',
               two_factor_required = TRUE
           WHERE email = $1
         `,

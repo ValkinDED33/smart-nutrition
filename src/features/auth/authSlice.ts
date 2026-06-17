@@ -41,7 +41,7 @@ type RestoreRaceResult =
   | { kind: "remote"; data: Awaited<ReturnType<typeof restoreSession>> }
   | { kind: "timeout" };
 
-const STARTUP_SESSION_TIMEOUT_MS = 6_000;
+const STARTUP_SESSION_TIMEOUT_MS = 3_500;
 
 interface AuthState {
   user: User | null;

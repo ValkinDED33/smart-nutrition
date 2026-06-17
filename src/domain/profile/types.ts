@@ -118,8 +118,11 @@ export interface AssistantCustomization {
 export interface AssistantOnboardingProfile {
   preferredName: string;
   primaryGoalNote: string;
+  goalSelections: string[];
   mainFriction: AssistantDietFriction;
+  mainFrictions: AssistantDietFriction[];
   motivationStyle: AssistantMotivationStyle;
+  motivationStyles: AssistantMotivationStyle[];
   supportNote: string;
   completedAt: string | null;
 }

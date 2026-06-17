@@ -176,8 +176,11 @@ describe("profileSlice assistant onboarding", () => {
         onboarding: {
           preferredName: "Ira",
           primaryGoalNote: "steady evenings",
+          goalSelections: ["cut", "healthy"],
           mainFriction: "evening_snacking",
+          mainFrictions: ["evening_snacking", "chaotic_schedule"],
           motivationStyle: "direct",
+          motivationStyles: ["direct", "gentle"],
           supportNote: "keep it practical",
           completedAt: "2026-05-23T12:00:00.000Z",
         },
@@ -187,8 +190,11 @@ describe("profileSlice assistant onboarding", () => {
     expect(state.assistant.onboarding).toMatchObject({
       preferredName: "Ira",
       primaryGoalNote: "steady evenings",
+      goalSelections: ["cut", "healthy"],
       mainFriction: "evening_snacking",
+      mainFrictions: ["evening_snacking", "chaotic_schedule"],
       motivationStyle: "direct",
+      motivationStyles: ["direct", "gentle"],
       supportNote: "keep it practical",
     });
 
@@ -203,7 +209,9 @@ describe("profileSlice assistant onboarding", () => {
 
     expect(normalized.assistant.onboarding).toMatchObject({
       mainFriction: "unknown",
+      mainFrictions: [],
       motivationStyle: "gentle",
+      motivationStyles: ["gentle"],
     });
   });
 });

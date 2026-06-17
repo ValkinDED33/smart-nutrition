@@ -14,10 +14,17 @@ export type Goal = "cut" | "maintain" | "bulk";
 export type UserRole =
   | "USER"
   | "VERIFIED_USER"
+  | "HELPER"
   | "NUTRITIONIST"
   | "MODERATOR"
   | "ADMIN"
+  | "OWNER"
   | "SUPER_ADMIN";
+export type CommunityMemberStatus =
+  | "NEW_MEMBER"
+  | "ACTIVE_MEMBER"
+  | "TRUSTED_MEMBER"
+  | "COMMUNITY_EXPERT";
 export type VerificationChannel = "email";
 
 export interface User {
@@ -34,6 +41,8 @@ export interface User {
   activity: ActivityLevel;
   goal: Goal;
   role: UserRole;
+  communityStatus?: CommunityMemberStatus;
+  reputationScore?: number;
   isBanned?: boolean;
   bannedAt?: string | null;
   bannedReason?: string | null;

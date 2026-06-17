@@ -3,17 +3,10 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  BookOpen,
-  BarChart3,
-  Bot,
   Globe2,
   LogOut,
   Moon,
-  ShieldCheck,
   Sun,
-  Utensils,
-  UserRound,
-  UsersRound,
 } from "lucide-react";
 import {
   AppBar,
@@ -57,25 +50,11 @@ import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { pageTransitionVariants } from "@shared/ui/motion";
-
-const mobileTabs = [
-  { value: "/meals", labelKey: "navigation.food", icon: Utensils },
-  { value: "/recipes", labelKey: "navigation.recipes", icon: BookOpen },
-  { value: "/coach", labelKey: "navigation.coach", icon: Bot },
-  { value: "/community", labelKey: "navigation.community", icon: UsersRound },
-  { value: "/progress", labelKey: "navigation.progress", icon: BarChart3 },
-  { value: "/profile", labelKey: "navigation.profile", icon: UserRound },
-];
-
-const desktopTabs = [
-  { value: "/dashboard", labelKey: "navigation.dashboard" },
-  { value: "/meals", labelKey: "navigation.food" },
-  { value: "/recipes", labelKey: "navigation.recipes" },
-  { value: "/coach", labelKey: "navigation.coach" },
-  { value: "/community", labelKey: "navigation.community" },
-  { value: "/progress", labelKey: "navigation.progress" },
-  { value: "/profile", labelKey: "navigation.profile" },
-];
+import {
+  desktopNavigationItems,
+  getVisibleNavigationItems,
+  mobileNavigationItems,
+} from "@app/navigation/appNavigation";
 
 const languageOptions: Array<{ value: AppLanguage; code: string }> = [
   { value: "pl", code: "🇵🇱" },
@@ -115,25 +94,18 @@ const Layout = () => {
     navigate("/");
   };
 
-  const activeTab =
-    mobileTabs.find((tab) => location.pathname.startsWith(tab.value))?.value ??
-    "/dashboard";
   const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
-  const canAccessAdmin =
-    user &&
-    ["NUTRITIONIST", "MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(user.role);
-  const visibleDesktopTabs = canAccessAdmin
-    ? [...desktopTabs, { value: "/admin", labelKey: "navigation.admin" }]
-    : desktopTabs;
-  const visibleMobileTabs = canAccessAdmin
-    ? [
-        ...mobileTabs,
-        { value: "/admin", labelKey: "navigation.admin", icon: ShieldCheck },
-      ]
-    : mobileTabs;
+  const visibleDesktopTabs = getVisibleNavigationItems(
+    desktopNavigationItems,
+    user?.role
+  );
+  const visibleMobileTabs = getVisibleNavigationItems(
+    mobileNavigationItems,
+    user?.role
+  );
   const activeMobileTab =
     visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))
-      ?.value ?? activeTab;
+      ?.value ?? "/dashboard";
 
   return (
     <Box
@@ -523,7 +495,11 @@ const Layout = () => {
                   key={tab.value}
                   value={tab.value}
                   label={t(tab.labelKey)}
-                  icon={<Icon size={21} strokeWidth={2.2} aria-hidden="true" />}
+                  icon={
+                    Icon ? (
+                      <Icon size={21} strokeWidth={2.2} aria-hidden="true" />
+                    ) : null
+                  }
                   sx={{
                     px: 0.4,
                     "& .MuiBottomNavigationAction-label": {

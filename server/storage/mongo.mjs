@@ -34,9 +34,11 @@ const isSource = (value) =>
 const mongoRoleByAppRole = {
   USER: "user",
   VERIFIED_USER: "user",
+  HELPER: "moderator",
   NUTRITIONIST: "moderator",
   MODERATOR: "moderator",
   ADMIN: "admin",
+  OWNER: "admin",
   SUPER_ADMIN: "admin",
 };
 const appRoleByMongoRole = {
@@ -89,9 +91,14 @@ const toMongoUserRole = (value, fallback = "user") => {
 const createMongoRoleQuery = (role) => {
   const appRole = toAppUserRole(role);
 
-  if (appRole === "SUPER_ADMIN") {
+  if (appRole === "OWNER" || appRole === "SUPER_ADMIN") {
     return {
-      $or: [{ appRole }, { role: appRole }],
+      $or: [
+        { appRole: "OWNER" },
+        { appRole: "SUPER_ADMIN" },
+        { role: "OWNER" },
+        { role: "SUPER_ADMIN" },
+      ],
     };
   }
 
@@ -167,6 +174,8 @@ const mapUserDoc = (doc) => {
     measurements: doc.measurements,
     createdAt: doc.createdAt,
     role: appRole,
+    communityStatus: doc.communityStatus,
+    reputationScore: toNonNegativeNumber(doc.reputationScore, 0),
     bannedAt: doc.bannedAt ?? null,
     bannedReason: doc.bannedReason ?? null,
     twoFactorEnabled: Boolean(doc.twoFactorEnabled),
@@ -1100,7 +1109,7 @@ export const createMongoStorage = async (config) => {
         {
           $set: {
             role: "admin",
-            appRole: "SUPER_ADMIN",
+            appRole: "OWNER",
             twoFactorRequired: true,
           },
         }

@@ -7,6 +7,7 @@ interface Props {
   title: string;
   actionLabel: string;
   recoveringLabel: string;
+  resetKey: string;
 }
 
 interface WrapperProps {
@@ -19,6 +20,7 @@ interface State {
 }
 
 const STALE_BUILD_RECOVERY_KEY = "smart-nutrition.stale-build-recovery";
+const STALE_BUILD_RECOVERY_TTL_MS = 15_000;
 
 const staleBuildErrorPattern =
   /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i;
@@ -32,27 +34,61 @@ const isLikelyStaleBuildError = (error: unknown) => {
   return staleBuildErrorPattern.test(message);
 };
 
+const getSessionStorageItem = (key: string) => {
+  try {
+    return typeof window === "undefined" ? null : window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setSessionStorageItem = (key: string, value: string) => {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // Recovery must keep working in restricted mobile storage modes.
+  }
+};
+
+const removeSessionStorageItem = (key: string) => {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Best-effort cleanup only.
+  }
+};
+
+const isRecoveryRecentlyAttempted = () => {
+  const rawValue = getSessionStorageItem(STALE_BUILD_RECOVERY_KEY);
+  const attemptedAt = rawValue ? Number(rawValue) : Number.NaN;
+
+  return Number.isFinite(attemptedAt)
+    ? Date.now() - attemptedAt < STALE_BUILD_RECOVERY_TTL_MS
+    : rawValue !== null;
+};
+
 const clearRuntimeCaches = async () => {
-  await Promise.all([
-    "serviceWorker" in navigator
-      ? navigator.serviceWorker
-          .getRegistrations()
-          .then((registrations) =>
-            Promise.all(registrations.map((registration) => registration.unregister()))
-          )
-      : Promise.resolve(),
-    "caches" in window
-      ? caches
-          .keys()
-          .then((keys) =>
-            Promise.all(
-              keys
-                .filter((key) => key.startsWith("smart-nutrition-"))
-                .map((key) => caches.delete(key))
-            )
-          )
-      : Promise.resolve(),
-  ]);
+  const clearServiceWorkers = async () => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => registration.unregister())
+    );
+  };
+
+  const clearOriginCaches = async () => {
+    if (typeof window === "undefined" || !("caches" in window)) {
+      return;
+    }
+
+    const keys = await window.caches.keys();
+    await Promise.all(keys.map((key) => window.caches.delete(key)));
+  };
+
+  await Promise.allSettled([clearServiceWorkers(), clearOriginCaches()]);
 };
 
 class ErrorBoundaryInner extends Component<Props, State> {
@@ -67,19 +103,29 @@ class ErrorBoundaryInner extends Component<Props, State> {
 
   componentDidMount() {
     window.setTimeout(() => {
-      sessionStorage.removeItem(STALE_BUILD_RECOVERY_KEY);
-    }, 5000);
+      removeSessionStorageItem(STALE_BUILD_RECOVERY_KEY);
+    }, STALE_BUILD_RECOVERY_TTL_MS);
+  }
+
+  componentDidUpdate(previousProps: Props) {
+    if (
+      previousProps.resetKey !== this.props.resetKey &&
+      this.state.hasError &&
+      !this.state.isRecovering
+    ) {
+      this.setState({ hasError: false, isRecovering: false });
+    }
   }
 
   componentDidCatch(error: unknown) {
     if (
       !isLikelyStaleBuildError(error) ||
-      sessionStorage.getItem(STALE_BUILD_RECOVERY_KEY)
+      isRecoveryRecentlyAttempted()
     ) {
       return;
     }
 
-    sessionStorage.setItem(STALE_BUILD_RECOVERY_KEY, "true");
+    setSessionStorageItem(STALE_BUILD_RECOVERY_KEY, String(Date.now()));
     this.setState({ isRecovering: true });
     void this.recoverApplication();
   }
@@ -91,7 +137,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
 
   recoverApplication = async () => {
     await clearRuntimeCaches();
-    window.location.reload();
+    window.location.replace(window.location.href);
   };
 
   render() {
@@ -127,13 +173,14 @@ class ErrorBoundaryInner extends Component<Props, State> {
 }
 
 const ErrorBoundary = ({ children }: WrapperProps) => {
-  const { t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
 
   return (
     <ErrorBoundaryInner
       title={t("errorBoundary.title")}
       actionLabel={t("errorBoundary.action")}
       recoveringLabel={t("errorBoundary.recovering")}
+      resetKey={appLanguage}
     >
       {children}
     </ErrorBoundaryInner>

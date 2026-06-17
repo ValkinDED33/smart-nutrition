@@ -106,9 +106,11 @@ const isSource = (value) =>
 const isUserRole = (value) =>
   value === "USER" ||
   value === "VERIFIED_USER" ||
+  value === "HELPER" ||
   value === "NUTRITIONIST" ||
   value === "MODERATOR" ||
   value === "ADMIN" ||
+  value === "OWNER" ||
   value === "SUPER_ADMIN";
 const isVerificationChannel = (value) => value === "email";
 
@@ -2937,7 +2939,7 @@ export const createSqliteStorage = async ({
         database.prepare("SELECT * FROM users WHERE email = ? LIMIT 1").get(normalizedEmail)
       );
 
-      if (!user || user.role === "SUPER_ADMIN") {
+      if (!user || user.role === "OWNER" || user.role === "SUPER_ADMIN") {
         return user;
       }
 
@@ -2945,7 +2947,7 @@ export const createSqliteStorage = async ({
         .prepare(
           `
             UPDATE users
-            SET role = 'SUPER_ADMIN',
+            SET role = 'OWNER',
                 two_factor_required = 1
             WHERE email = ?
           `

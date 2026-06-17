@@ -4,7 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import type { AssistantMotivationStyle } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
-import { cardSx, shellSx, stepPaths, type OnboardingStepProps } from "./types";
+import {
+  cardSx,
+  shellSx,
+  stepPaths,
+  toggleArrayValue,
+  type OnboardingStepProps,
+} from "./types";
 
 const motivationOptions: AssistantMotivationStyle[] = [
   "gentle",
@@ -18,12 +24,30 @@ export const OnboardingMotivationPage = ({
 }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [selectedMotivationStyle, setSelectedMotivationStyle] = useState(state.motivationStyle);
+  const [selectedMotivationStyles, setSelectedMotivationStyles] = useState<
+    AssistantMotivationStyle[]
+  >(
+    state.motivationStyles.length > 0
+      ? state.motivationStyles
+      : [state.motivationStyle]
+  );
   const [supportNote, setSupportNote] = useState(state.supportNote);
+  const allMotivationStylesSelected = motivationOptions.every((style) =>
+    selectedMotivationStyles.includes(style)
+  );
 
-  const selectMotivationStyle = (nextStyle: AssistantMotivationStyle) => {
-    setSelectedMotivationStyle(nextStyle);
-    updateState({ motivationStyle: nextStyle });
+  const updateSelectedMotivationStyles = (
+    motivationStyles: AssistantMotivationStyle[]
+  ) => {
+    const motivationStyle = motivationStyles[0] ?? "gentle";
+    setSelectedMotivationStyles(motivationStyles);
+    updateState({ motivationStyle, motivationStyles });
+  };
+
+  const toggleMotivationStyle = (nextStyle: AssistantMotivationStyle) => {
+    updateSelectedMotivationStyles(
+      toggleArrayValue(selectedMotivationStyles, nextStyle)
+    );
   };
 
   const updateSupportNote = (nextNote: string) => {
@@ -33,7 +57,11 @@ export const OnboardingMotivationPage = ({
 
   const continueToFinish = () => {
     flushSync(() =>
-      updateState({ motivationStyle: selectedMotivationStyle, supportNote })
+      updateState({
+        motivationStyle: selectedMotivationStyles[0] ?? "gentle",
+        motivationStyles: selectedMotivationStyles,
+        supportNote,
+      })
     );
     navigate(stepPaths.finish);
   };
@@ -51,16 +79,33 @@ export const OnboardingMotivationPage = ({
             </Typography>
           </Stack>
 
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant={allMotivationStylesSelected ? "contained" : "outlined"}
+              onClick={() => updateSelectedMotivationStyles(motivationOptions)}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.selectAll")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => updateSelectedMotivationStyles([])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.clearSelection")}
+            </Button>
+          </Stack>
+
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             {motivationOptions.map((motivationStyle) => (
               <Button
                 key={motivationStyle}
                 variant={
-                  selectedMotivationStyle === motivationStyle
+                  selectedMotivationStyles.includes(motivationStyle)
                     ? "contained"
                     : "outlined"
                 }
-                onClick={() => selectMotivationStyle(motivationStyle)}
+                onClick={() => toggleMotivationStyle(motivationStyle)}
                 sx={{ flex: 1, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {t(`onboarding.motivationStyles.${motivationStyle}`)}
@@ -94,6 +139,7 @@ export const OnboardingMotivationPage = ({
             <Button
               variant="contained"
               onClick={continueToFinish}
+              disabled={selectedMotivationStyles.length === 0}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

@@ -35,6 +35,7 @@ import {
   selectDailyMacroProgress,
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
+import { communityStatusLabels, resolveCommunityStatus } from "@domain/user/roles";
 
 const profileCopy = {
   uk: {
@@ -60,6 +61,10 @@ const profileCopy = {
     supportLabel: "Підтримка",
     petLabel: "Поруч",
     roleLabel: "Роль",
+    emailLabel: "Email",
+    emailVerified: "підтверджено",
+    emailUnverified: "не підтверджено",
+    statusLabel: "Статус",
     adaptiveAuto: "Адаптивні калорії оновлюються автоматично.",
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
     macroTitle: "Цілі за макроелементами",
@@ -95,6 +100,10 @@ const profileCopy = {
     supportLabel: "Wsparcie",
     petLabel: "Obok",
     roleLabel: "Rola",
+    emailLabel: "Email",
+    emailVerified: "potwierdzony",
+    emailUnverified: "niepotwierdzony",
+    statusLabel: "Status",
     adaptiveAuto: "Adaptacyjne kalorie aktualizują się automatycznie.",
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
     macroTitle: "Cele makroskładników",
@@ -130,6 +139,10 @@ const profileCopy = {
     supportLabel: "Support",
     petLabel: "Nearby",
     roleLabel: "Role",
+    emailLabel: "Email",
+    emailVerified: "verified",
+    emailUnverified: "not verified",
+    statusLabel: "Status",
     adaptiveAuto: "Adaptive calories update automatically.",
     adaptiveManual: "Adaptive calories stay manual until you apply a recommendation.",
     macroTitle: "Macro targets",
@@ -148,26 +161,32 @@ const roleLabels = {
   uk: {
     USER: "User",
     VERIFIED_USER: "Verified User",
+    HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    SUPER_ADMIN: "Super Admin",
+    OWNER: "Owner",
+    SUPER_ADMIN: "Owner",
   },
   pl: {
     USER: "User",
     VERIFIED_USER: "Verified User",
+    HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    SUPER_ADMIN: "Super Admin",
+    OWNER: "Owner",
+    SUPER_ADMIN: "Owner",
   },
   en: {
     USER: "User",
     VERIFIED_USER: "Verified User",
+    HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    SUPER_ADMIN: "Super Admin",
+    OWNER: "Owner",
+    SUPER_ADMIN: "Owner",
   },
 } as const;
 
@@ -369,6 +388,8 @@ const ProfilePage = () => {
     );
   }
 
+  const communityStatus =
+    user.communityStatus ?? resolveCommunityStatus(user.reputationScore);
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
@@ -437,6 +458,17 @@ const ProfilePage = () => {
               label={`${copy.roleLabel}: ${roleLabels[appLanguage][user.role]}`}
               color={user.role === "USER" ? "default" : "primary"}
               variant={user.role === "USER" ? "outlined" : "filled"}
+            />
+            <Chip
+              label={`${copy.emailLabel}: ${
+                user.emailVerified ? copy.emailVerified : copy.emailUnverified
+              }`}
+              color={user.emailVerified ? "success" : "warning"}
+              variant="outlined"
+            />
+            <Chip
+              label={`${copy.statusLabel}: ${communityStatusLabels[communityStatus]}`}
+              variant="outlined"
             />
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
             <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />

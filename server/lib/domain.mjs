@@ -90,25 +90,31 @@ export class StateApiError extends Error {
 export const userRoles = [
   "USER",
   "VERIFIED_USER",
+  "HELPER",
   "NUTRITIONIST",
   "MODERATOR",
   "ADMIN",
+  "OWNER",
   "SUPER_ADMIN",
 ];
 
 export const isUserRole = (value) => userRoles.includes(value);
 
+export const isOwnerRole = (role) => role === "OWNER" || role === "SUPER_ADMIN";
+
 const roleRank = {
   USER: 0,
-  VERIFIED_USER: 1,
+  VERIFIED_USER: 0,
+  HELPER: 1,
   NUTRITIONIST: 2,
   MODERATOR: 3,
   ADMIN: 4,
+  OWNER: 5,
   SUPER_ADMIN: 5,
 };
 
 export const hasRoleAtLeast = (role, minimumRole) =>
-  roleRank[role] >= roleRank[minimumRole];
+  Number(roleRank[role] ?? -1) >= Number(roleRank[minimumRole] ?? 999);
 
 const base64UrlEncode = (value) => Buffer.from(value).toString("base64url");
 
@@ -786,6 +792,10 @@ export const toPublicUser = (user) => ({
   goal: user.goal,
   measurements: user.measurements,
   role: isUserRole(user.role) ? user.role : "USER",
+  communityStatus: user.communityStatus,
+  reputationScore: Number.isFinite(Number(user.reputationScore))
+    ? Math.max(Number(user.reputationScore), 0)
+    : undefined,
   isBanned: Boolean(user.bannedAt),
   bannedAt: user.bannedAt ?? null,
   bannedReason: user.bannedReason ?? null,

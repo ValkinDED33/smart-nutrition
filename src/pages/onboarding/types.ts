@@ -13,6 +13,9 @@ export type PersonalityPreset =
   | "calm"
   | "scientific";
 
+export type OnboardingGoalChoice = Goal | "healthy";
+export type OnboardingFrictionChoice = Exclude<AssistantDietFriction, "unknown">;
+
 export interface OnboardingState {
   assistantName: string;
   assistantAvatar: AssistantCompanionKind;
@@ -22,9 +25,12 @@ export interface OnboardingState {
   gender: Gender;
   height: number;
   goal: Goal;
+  selectedGoals: OnboardingGoalChoice[];
   primaryGoalNote: string;
   mainFriction: AssistantDietFriction;
+  mainFrictions: OnboardingFrictionChoice[];
   motivationStyle: AssistantMotivationStyle;
+  motivationStyles: AssistantMotivationStyle[];
   supportNote: string;
   weight: number;
 }
@@ -63,7 +69,7 @@ export const shellSx = {
   placeItems: "center",
 } satisfies SxProps<Theme>;
 
-export const goalOptions: Array<Goal | "healthy"> = ["cut", "bulk", "maintain", "healthy"];
+export const goalOptions: OnboardingGoalChoice[] = ["cut", "bulk", "maintain", "healthy"];
 
 export const personalityValues: Record<
   PersonalityPreset,
@@ -92,3 +98,34 @@ export const assistantAvatarOptions: AssistantCompanionKind[] = [
 
 export const clampNumber = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+
+export const toggleArrayValue = <T extends string>(items: T[], item: T) =>
+  items.includes(item)
+    ? items.filter((current) => current !== item)
+    : [...items, item];
+
+export const normalizeSelectedGoals = (
+  selectedGoals: readonly string[]
+): OnboardingGoalChoice[] =>
+  goalOptions.filter((goal) => selectedGoals.includes(goal));
+
+export const derivePrimaryGoal = (selectedGoals: OnboardingGoalChoice[]) => {
+  const primaryGoal = selectedGoals.find((goal): goal is Goal => goal !== "healthy");
+
+  return {
+    goal: primaryGoal ?? "maintain",
+    primaryGoalNote:
+      selectedGoals.includes("healthy") && selectedGoals.length === 1 ? "healthy" : "",
+  };
+};
+
+export const parseOnboardingNumber = (value: string) => {
+  const normalized = value.trim().replace(",", ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+};

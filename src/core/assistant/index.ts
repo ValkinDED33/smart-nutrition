@@ -110,12 +110,39 @@ export const isAssistantMotivationStyle = (
 ): value is AssistantMotivationStyle =>
   assistantMotivationStyles.includes(value as AssistantMotivationStyle);
 
+const normalizeOnboardingStringArray = (value: unknown, maxItems = 8) =>
+  Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim().replace(/\s+/g, " ").slice(0, 80))
+        .filter(Boolean)
+        .slice(0, maxItems)
+    : [];
+
+const normalizeFrictionSelection = (value: unknown) =>
+  Array.isArray(value)
+    ? value
+        .filter(isAssistantDietFriction)
+        .filter((item) => item !== "unknown")
+        .filter((item, index, items) => items.indexOf(item) === index)
+    : [];
+
+const normalizeMotivationSelection = (value: unknown) =>
+  Array.isArray(value)
+    ? value
+        .filter(isAssistantMotivationStyle)
+        .filter((item, index, items) => items.indexOf(item) === index)
+    : [];
+
 export const createDefaultAssistantOnboardingProfile =
   (): AssistantOnboardingProfile => ({
     preferredName: "",
     primaryGoalNote: "",
+    goalSelections: [],
     mainFriction: "unknown",
+    mainFrictions: [],
     motivationStyle: "gentle",
+    motivationStyles: ["gentle"],
     supportNote: "",
     completedAt: null,
   });
@@ -125,22 +152,36 @@ export const normalizeAssistantOnboardingProfile = (
 ): AssistantOnboardingProfile => {
   const fallback = createDefaultAssistantOnboardingProfile();
   const record = isRecord(value) ? value : {};
+  const mainFriction = isAssistantDietFriction(record.mainFriction)
+    ? record.mainFriction
+    : fallback.mainFriction;
+  const motivationStyle = isAssistantMotivationStyle(record.motivationStyle)
+    ? record.motivationStyle
+    : fallback.motivationStyle;
+  const mainFrictions = normalizeFrictionSelection(record.mainFrictions);
+  const motivationStyles = normalizeMotivationSelection(record.motivationStyles);
+  const primaryGoalNote =
+    typeof record.primaryGoalNote === "string"
+      ? record.primaryGoalNote.trim().slice(0, 180)
+      : fallback.primaryGoalNote;
 
   return {
     preferredName:
       typeof record.preferredName === "string"
         ? record.preferredName.trim().slice(0, 60)
         : fallback.preferredName,
-    primaryGoalNote:
-      typeof record.primaryGoalNote === "string"
-        ? record.primaryGoalNote.trim().slice(0, 180)
-        : fallback.primaryGoalNote,
-    mainFriction: isAssistantDietFriction(record.mainFriction)
-      ? record.mainFriction
-      : fallback.mainFriction,
-    motivationStyle: isAssistantMotivationStyle(record.motivationStyle)
-      ? record.motivationStyle
-      : fallback.motivationStyle,
+    primaryGoalNote,
+    goalSelections: normalizeOnboardingStringArray(record.goalSelections),
+    mainFriction,
+    mainFrictions:
+      mainFrictions.length > 0
+        ? mainFrictions
+        : mainFriction === "unknown"
+          ? fallback.mainFrictions
+          : [mainFriction],
+    motivationStyle,
+    motivationStyles:
+      motivationStyles.length > 0 ? motivationStyles : [motivationStyle],
     supportNote:
       typeof record.supportNote === "string"
         ? record.supportNote.trim().slice(0, 180)
@@ -405,10 +446,18 @@ export const buildAssistantPersonalizationPlan = (
   language: AppLanguage
 ): AssistantPersonalizationPlan => {
   const copy = personalizationCopy[language];
+  const frictionLabel =
+    onboarding.mainFrictions.length > 0
+      ? onboarding.mainFrictions.map((friction) => copy.friction[friction]).join(", ")
+      : copy.friction[onboarding.mainFriction];
+  const motivationLabel =
+    onboarding.motivationStyles.length > 0
+      ? onboarding.motivationStyles.map((style) => copy.motivation[style]).join(", ")
+      : copy.motivation[onboarding.motivationStyle];
 
   return {
-    frictionLabel: copy.friction[onboarding.mainFriction],
-    motivationLabel: copy.motivation[onboarding.motivationStyle],
+    frictionLabel,
+    motivationLabel,
     homeLine: copy.home[onboarding.mainFriction],
     actionHint: copy.action[onboarding.motivationStyle],
     notificationBody: copy.notification[onboarding.motivationStyle],
@@ -536,11 +585,17 @@ export const createAssistantMemoryProfile = ({
   emotion: AssistantCoreEmotion;
 }): AssistantMemory => {
   const onboarding = assistant.onboarding;
-  const goals = [goalMemoryLabels[goal], onboarding.primaryGoalNote].filter(
+  const goals = [
+    goalMemoryLabels[goal],
+    onboarding.primaryGoalNote,
+    ...onboarding.goalSelections,
+  ].filter(
     (item): item is string => item.trim().length > 0
   );
   const struggles = [
-    frictionMemoryLabels[onboarding.mainFriction],
+    ...(onboarding.mainFrictions.length > 0
+      ? onboarding.mainFrictions.map((friction) => frictionMemoryLabels[friction])
+      : [frictionMemoryLabels[onboarding.mainFriction]]),
     onboarding.supportNote,
   ].filter((item): item is string => item.trim().length > 0);
   const habits = [
@@ -549,9 +604,10 @@ export const createAssistantMemoryProfile = ({
   ].filter(
     (item): item is string => item.length > 0
   );
-  const motivationTriggers = [
-    motivationMemoryLabels[onboarding.motivationStyle],
-  ];
+  const motivationTriggers =
+    onboarding.motivationStyles.length > 0
+      ? onboarding.motivationStyles.map((style) => motivationMemoryLabels[style])
+      : [motivationMemoryLabels[onboarding.motivationStyle]];
 
   return {
     userId,

@@ -2,6 +2,7 @@ import {
   PlatformApiError,
   createId,
   hasRoleAtLeast,
+  isOwnerRole,
   isUserRole,
   toPublicUser,
 } from "../lib/domain.mjs";
@@ -92,21 +93,46 @@ const normalizeImageUrl = (value) => {
   }
 };
 
+const assignableRoles = ["USER", "HELPER", "MODERATOR", "ADMIN"];
+
+const canModerate = (role) =>
+  role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR");
+
+const canReviewReports = (role) => role === "HELPER" || canModerate(role);
+
+const canAssignRole = (actorRole, nextRole) => {
+  if (!assignableRoles.includes(nextRole)) {
+    return false;
+  }
+
+  if (isOwnerRole(actorRole)) {
+    return true;
+  }
+
+  return actorRole === "ADMIN" && nextRole !== "ADMIN";
+};
+
 const createPermissions = (role) => ({
-  moderateContent: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
-  reviewReports: hasRoleAtLeast(role, "MODERATOR"),
-  reviewCatalog: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
+  moderateContent: canModerate(role),
+  reviewReports: canReviewReports(role),
+  reviewCatalog: canModerate(role),
   manageModerators: hasRoleAtLeast(role, "ADMIN"),
-  manageAdmins: hasRoleAtLeast(role, "SUPER_ADMIN"),
+  manageAdmins: isOwnerRole(role),
   banUsers: hasRoleAtLeast(role, "ADMIN"),
   manageSystem: hasRoleAtLeast(role, "ADMIN"),
   viewAuditLogs: hasRoleAtLeast(role, "ADMIN"),
-  accessAdminCenter: role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR"),
+  accessAdminCenter: role === "HELPER" || canModerate(role),
 });
 
 const assertModerationAccess = (user) => {
-  if (user.role !== "NUTRITIONIST" && !hasRoleAtLeast(user.role, "MODERATOR")) {
+  if (!canModerate(user.role)) {
     throw new PlatformApiError("FORBIDDEN", "Moderator access is required.");
+  }
+};
+
+const assertReportAccess = (user) => {
+  if (!canReviewReports(user.role)) {
+    throw new PlatformApiError("FORBIDDEN", "Report review access is required.");
   }
 };
 
@@ -524,7 +550,7 @@ export const createPlatformService = ({
     },
 
     listContentReports: async (currentUser, query = {}) => {
-      assertModerationAccess(currentUser);
+      assertReportAccess(currentUser);
 
       return (await platformRepository.listAuditLogs(
         readListLimit(query.limit, { fallback: 80, max: 200 })
@@ -547,10 +573,10 @@ export const createPlatformService = ({
 
       const nextRole = payload?.role;
 
-      if (!isUserRole(nextRole) || nextRole === "SUPER_ADMIN") {
+      if (!isUserRole(nextRole) || !assignableRoles.includes(nextRole)) {
         throw new PlatformApiError(
           "INVALID_ROLE",
-          "Role must be USER, VERIFIED_USER, NUTRITIONIST, MODERATOR, or ADMIN."
+          "Role must be USER, HELPER, MODERATOR, or ADMIN."
         );
       }
 
@@ -560,24 +586,24 @@ export const createPlatformService = ({
         throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
       }
 
-      if (targetUser.role === "SUPER_ADMIN") {
+      if (targetUser.id === currentUser.id || isOwnerRole(targetUser.role)) {
         throw new PlatformApiError(
           "ROLE_CHANGE_NOT_ALLOWED",
-          "The super admin account cannot be changed."
+          "This account cannot be changed from the admin center."
         );
       }
 
-      if (currentUser.role === "ADMIN" && nextRole === "ADMIN") {
+      if (!canAssignRole(currentUser.role, nextRole)) {
         throw new PlatformApiError(
           "ROLE_CHANGE_NOT_ALLOWED",
-          "Only the super admin can assign admin access."
+          "This role change is not allowed for the current account."
         );
       }
 
-      if (currentUser.role === "ADMIN" && targetUser.role === "ADMIN") {
+      if (currentUser.role === "ADMIN" && hasRoleAtLeast(targetUser.role, "ADMIN")) {
         throw new PlatformApiError(
           "ROLE_CHANGE_NOT_ALLOWED",
-          "Admins cannot change other admins."
+          "Admins cannot change other admins or owners."
         );
       }
 
@@ -614,7 +640,7 @@ export const createPlatformService = ({
         throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
       }
 
-      if (targetUser.role === "SUPER_ADMIN" || targetUser.id === currentUser.id) {
+      if (isOwnerRole(targetUser.role) || targetUser.id === currentUser.id) {
         throw new PlatformApiError(
           "ROLE_CHANGE_NOT_ALLOWED",
           "This account cannot be banned from the admin center."

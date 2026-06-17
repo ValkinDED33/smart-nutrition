@@ -4,9 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import type { AssistantDietFriction } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
-import { cardSx, shellSx, stepPaths, type OnboardingStepProps } from "./types";
+import {
+  cardSx,
+  shellSx,
+  stepPaths,
+  toggleArrayValue,
+  type OnboardingFrictionChoice,
+  type OnboardingStepProps,
+} from "./types";
 
-const frictionOptions: Exclude<AssistantDietFriction, "unknown">[] = [
+const frictionOptions: OnboardingFrictionChoice[] = [
   "emotional_eating",
   "chaotic_schedule",
   "evening_snacking",
@@ -20,15 +27,34 @@ export const OnboardingFrictionPage = ({
 }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [selectedFriction, setSelectedFriction] = useState(state.mainFriction);
+  const [selectedFrictions, setSelectedFrictions] = useState<OnboardingFrictionChoice[]>(
+    state.mainFrictions.length > 0
+      ? state.mainFrictions
+      : state.mainFriction === "unknown"
+        ? []
+        : [state.mainFriction]
+  );
+  const allFrictionsSelected = frictionOptions.every((friction) =>
+    selectedFrictions.includes(friction)
+  );
 
-  const selectFriction = (mainFriction: AssistantDietFriction) => {
-    setSelectedFriction(mainFriction);
-    updateState({ mainFriction });
+  const updateSelectedFrictions = (mainFrictions: OnboardingFrictionChoice[]) => {
+    const mainFriction: AssistantDietFriction = mainFrictions[0] ?? "unknown";
+    setSelectedFrictions(mainFrictions);
+    updateState({ mainFriction, mainFrictions });
+  };
+
+  const toggleFriction = (friction: OnboardingFrictionChoice) => {
+    updateSelectedFrictions(toggleArrayValue(selectedFrictions, friction));
   };
 
   const continueToMotivation = () => {
-    flushSync(() => updateState({ mainFriction: selectedFriction }));
+    flushSync(() =>
+      updateState({
+        mainFriction: selectedFrictions[0] ?? "unknown",
+        mainFrictions: selectedFrictions,
+      })
+    );
     navigate(stepPaths.motivation);
   };
 
@@ -45,13 +71,30 @@ export const OnboardingFrictionPage = ({
             </Typography>
           </Stack>
 
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant={allFrictionsSelected ? "contained" : "outlined"}
+              onClick={() => updateSelectedFrictions(frictionOptions)}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.selectAll")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => updateSelectedFrictions([])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {t("onboarding.clearSelection")}
+            </Button>
+          </Stack>
+
           <Stack spacing={1.2}>
             {frictionOptions.map((friction) => (
               <Button
                 key={friction}
-                variant={selectedFriction === friction ? "contained" : "outlined"}
+                variant={selectedFrictions.includes(friction) ? "contained" : "outlined"}
                 size="large"
-                onClick={() => selectFriction(friction)}
+                onClick={() => toggleFriction(friction)}
                 sx={{
                   justifyContent: "flex-start",
                   borderRadius: 1,
@@ -75,7 +118,7 @@ export const OnboardingFrictionPage = ({
             <Button
               variant="contained"
               onClick={continueToMotivation}
-              disabled={selectedFriction === "unknown"}
+              disabled={selectedFrictions.length === 0}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

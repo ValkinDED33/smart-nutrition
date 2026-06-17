@@ -82,7 +82,7 @@ describe("authSlice", () => {
 
     const resultPromise = store.dispatch(initializeAuth());
 
-    await vi.advanceTimersByTimeAsync(6_000);
+    await vi.advanceTimersByTimeAsync(3_500);
     await resultPromise;
 
     expect(store.getState().auth).toMatchObject({
@@ -108,7 +108,7 @@ describe("authSlice", () => {
 
     const resultPromise = store.dispatch(initializeAuth());
 
-    await vi.advanceTimersByTimeAsync(6_000);
+    await vi.advanceTimersByTimeAsync(3_500);
     await resultPromise;
 
     resolveSession({

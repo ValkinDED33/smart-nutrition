@@ -25,6 +25,13 @@ import type {
 } from "../../shared/types/platform";
 import type { UserRole } from "@domain/user/types";
 import {
+  type AssignableUserRole,
+  canAccessAdminCenter,
+  getAssignableRolesForActor,
+  isProtectedOwnerRole,
+  roleLabels as userRoleLabels,
+} from "@domain/user/roles";
+import {
   PlatformApiError,
   deleteAdminUser,
   getAdminPlatformStats,
@@ -40,7 +47,7 @@ import {
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
-type AdminTab = "stats" | "queue" | "users" | "audit" | "system";
+type AdminTab = "reports" | "queue" | "stats" | "users" | "audit" | "system";
 
 const adminCopy = {
   uk: {
@@ -50,6 +57,7 @@ const adminCopy = {
     backendUnavailable:
       "Cloud backend недоступний, тому admin center зараз не може підвантажити дані.",
     tabs: {
+      reports: "Скарги",
       queue: "Модерація",
       stats: "Статистика",
       users: "Користувачі",
@@ -86,6 +94,7 @@ const adminCopy = {
     aiPolicy: "AI відповідає як wellness companion, без медичних діагнозів і з м'якими попередженнями.",
     logsReady: "Події ролей, модерації та блокувань вже пишуться в audit log.",
     pendingEmpty: "Черга модерації зараз порожня.",
+    reportsEmpty: "Нових скарг зараз немає.",
     approve: "Підтвердити",
     reject: "Відхилити",
     role: "Роль",
@@ -108,6 +117,7 @@ const adminCopy = {
     backendUnavailable:
       "Backend cloud jest niedostępny, więc admin center nie może teraz pobrać danych.",
     tabs: {
+      reports: "Zgłoszenia",
       queue: "Moderacja",
       stats: "Statystyka",
       users: "Użytkownicy",
@@ -144,6 +154,7 @@ const adminCopy = {
     aiPolicy: "AI odpowiada jak wellness companion, bez diagnoz medycznych i z łagodnymi ostrzeżeniami.",
     logsReady: "Zdarzenia ról, moderacji i blokad są już zapisywane w audit logu.",
     pendingEmpty: "Kolejka moderacji jest teraz pusta.",
+    reportsEmpty: "Nie ma teraz nowych zgłoszeń.",
     approve: "Zatwierdź",
     reject: "Odrzuć",
     role: "Rola",
@@ -166,6 +177,7 @@ const adminCopy = {
     backendUnavailable:
       "Cloud backend is unavailable, so Admin Center cannot load data right now.",
     tabs: {
+      reports: "Reports",
       queue: "Moderation",
       stats: "Stats",
       users: "Users",
@@ -203,6 +215,7 @@ const adminCopy = {
       "AI responds as a wellness companion, without medical diagnoses and with gentle warnings.",
     logsReady: "Role, moderation, and ban events are already written to audit log.",
     pendingEmpty: "Moderation queue is empty right now.",
+    reportsEmpty: "There are no new reports right now.",
     approve: "Approve",
     reject: "Reject",
     role: "Role",
@@ -232,19 +245,48 @@ const formatDateTime = (value: string, language: AppLanguage) =>
     timeStyle: "short",
   });
 
+const assignableRoleValues: AssignableUserRole[] = [
+  "USER",
+  "HELPER",
+  "MODERATOR",
+  "ADMIN",
+];
+
+const toAssignableRole = (role: UserRole): AssignableUserRole =>
+  assignableRoleValues.includes(role as AssignableUserRole)
+    ? (role as AssignableUserRole)
+    : "USER";
+
+const getVisibleAdminTabs = (access: AccessOverview | null): AdminTab[] => {
+  if (!access) {
+    return [];
+  }
+
+  return [
+    access.permissions.reviewReports ? "reports" : null,
+    access.permissions.reviewCatalog ? "queue" : null,
+    access.permissions.manageSystem ? "stats" : null,
+    access.permissions.manageModerators || access.permissions.manageAdmins
+      ? "users"
+      : null,
+    access.permissions.viewAuditLogs ? "audit" : null,
+    access.permissions.manageAdmins ? "system" : null,
+  ].filter(Boolean) as AdminTab[];
+};
+
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { appLanguage } = useLanguage();
   const copy = adminCopy[appLanguage];
   const backendUnavailableMessage = adminCopy[appLanguage].backendUnavailable;
-  const [tab, setTab] = useState<AdminTab>("queue");
+  const [tab, setTab] = useState<AdminTab>("reports");
   const [access, setAccess] = useState<AccessOverview | null>(null);
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
   const [queue, setQueue] = useState<CatalogProductItem[]>([]);
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
   const [reports, setReports] = useState<ContentReportItem[]>([]);
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, Exclude<UserRole, "SUPER_ADMIN">>>({});
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, AssignableUserRole>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -269,7 +311,7 @@ export const AdminCenterCard = () => {
           }
         }
 
-        if (nextAccess.permissions.accessAdminCenter) {
+        if (nextAccess.permissions.reviewCatalog) {
           const queueItems = await listModerationQueue();
 
           if (active) {
@@ -293,12 +335,12 @@ export const AdminCenterCard = () => {
             setRoleDrafts(
               Object.fromEntries(
                 userItems
-                  .filter((item) => item.role !== "SUPER_ADMIN")
+                  .filter((item) => !isProtectedOwnerRole(item.role))
                   .map((item) => [
                     item.id,
-                    item.role as Exclude<UserRole, "SUPER_ADMIN">,
+                    toAssignableRole(item.role),
                   ])
-              ) as Record<string, Exclude<UserRole, "SUPER_ADMIN">>
+              ) as Record<string, AssignableUserRole>
             );
           }
         }
@@ -328,13 +370,13 @@ export const AdminCenterCard = () => {
     };
   }, [backendUnavailableMessage]);
 
-  if (!currentUser || currentUser.role === "USER" || currentUser.role === "VERIFIED_USER") {
+  if (!currentUser || !canAccessAdminCenter(currentUser.role)) {
     return null;
   }
 
-  const allowedRoles = access?.permissions.manageAdmins
-    ? (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR", "ADMIN"] as const)
-    : (["USER", "VERIFIED_USER", "NUTRITIONIST", "MODERATOR"] as const);
+  const allowedRoles = getAssignableRolesForActor(access?.role ?? currentUser.role);
+  const visibleTabs = getVisibleAdminTabs(access);
+  const activeTab = visibleTabs.includes(tab) ? tab : (visibleTabs[0] ?? "reports");
   const latestAudit = audit[0];
   const handlePlatformMutationError = (nextError: unknown) => {
     setError(
@@ -364,7 +406,7 @@ export const AdminCenterCard = () => {
 
         {access && (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={access.role} color="primary" />
+            <Chip label={userRoleLabels[access.role]} color="primary" />
             <Chip
               label={`${copy.twoFactor}: ${access.twoFactorRequired ? copy.required : copy.optional}`}
               variant="outlined"
@@ -374,24 +416,20 @@ export const AdminCenterCard = () => {
 
         {error && <Alert severity="warning">{error}</Alert>}
 
-        <Tabs
-          value={tab}
-          onChange={(_, value: AdminTab) => setTab(value)}
-          variant="scrollable"
-          allowScrollButtonsMobile
-        >
-          <Tab value="queue" label={copy.tabs.queue} />
-          {access?.permissions.manageSystem && (
-            <Tab value="stats" label={copy.tabs.stats} />
-          )}
-          {(access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
-            <Tab value="users" label={copy.tabs.users} />
-          )}
-          {access?.permissions.viewAuditLogs && <Tab value="audit" label={copy.tabs.audit} />}
-          {access?.permissions.manageSystem && <Tab value="system" label={copy.tabs.system} />}
-        </Tabs>
+        {visibleTabs.length > 0 && (
+          <Tabs
+            value={activeTab}
+            onChange={(_, value: AdminTab) => setTab(value)}
+            variant="scrollable"
+            allowScrollButtonsMobile
+          >
+            {visibleTabs.map((tabId) => (
+              <Tab key={tabId} value={tabId} label={copy.tabs[tabId]} />
+            ))}
+          </Tabs>
+        )}
 
-        {tab === "stats" && access?.permissions.manageSystem && (
+        {activeTab === "stats" && access?.permissions.manageSystem && (
           <Stack spacing={1.4}>
             <Stack spacing={0.3}>
               <Typography sx={{ fontWeight: 900 }}>{copy.statsTitle}</Typography>
@@ -451,20 +489,30 @@ export const AdminCenterCard = () => {
           </Stack>
         )}
 
-        {tab === "queue" && (
+        {activeTab === "reports" && access?.permissions.reviewReports && (
           <Stack spacing={1.2}>
-            {reports.length > 0 && (
-              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
-                <Stack spacing={1}>
-                  <Typography sx={{ fontWeight: 900 }}>{copy.reportsLabel}</Typography>
-                  {reports.map((report) => (
-                    <Alert key={report.id} severity="warning">
-                      <strong>{report.targetType}</strong> · {report.reason}
-                    </Alert>
-                  ))}
-                </Stack>
-              </Paper>
+            {reports.length === 0 ? (
+              <Alert severity="info">{copy.reportsEmpty}</Alert>
+            ) : (
+              reports.map((report) => (
+                <Paper key={report.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                  <Stack spacing={0.5}>
+                    <Typography sx={{ fontWeight: 900 }}>
+                      {report.targetType} · {report.reporterName}
+                    </Typography>
+                    <Typography color="text.secondary">{report.reason}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {formatDateTime(report.createdAt, appLanguage)}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              ))
             )}
+          </Stack>
+        )}
+
+        {activeTab === "queue" && access?.permissions.reviewCatalog && (
+          <Stack spacing={1.2}>
             {queue.length === 0 ? (
               <Alert severity="info">{copy.pendingEmpty}</Alert>
             ) : (
@@ -550,10 +598,22 @@ export const AdminCenterCard = () => {
           </Stack>
         )}
 
-        {tab === "users" && (access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
+        {activeTab === "users" && (access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
           <Stack spacing={1.2}>
             {users.map((user) => (
               <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                {(() => {
+                  const roleDraft = roleDrafts[user.id] ?? toAssignableRole(user.role);
+                  const roleOptions = allowedRoles.includes(roleDraft)
+                    ? allowedRoles
+                    : [roleDraft, ...allowedRoles];
+                  const canChangeRole =
+                    user.id !== currentUser.id &&
+                    !isProtectedOwnerRole(user.role) &&
+                    allowedRoles.length > 0 &&
+                    (access?.permissions.manageAdmins || user.role !== "ADMIN");
+
+                  return (
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   spacing={1.2}
@@ -576,33 +636,27 @@ export const AdminCenterCard = () => {
                       select
                       size="small"
                       label={copy.role}
-                      value={roleDrafts[user.id] ?? user.role}
-                      disabled={user.id === currentUser.id}
+                      value={roleDraft}
+                      disabled={!canChangeRole}
                       onChange={(event) =>
                         setRoleDrafts((current) => ({
                           ...current,
-                          [user.id]: event.target.value as Exclude<UserRole, "SUPER_ADMIN">,
+                          [user.id]: event.target.value as AssignableUserRole,
                         }))
                       }
                       sx={{ minWidth: 180 }}
                     >
-                      {allowedRoles.map((role) => (
+                      {roleOptions.map((role) => (
                         <MenuItem key={role} value={role}>
-                          {role}
+                          {userRoleLabels[role]}
                         </MenuItem>
                       ))}
                     </TextField>
                     <Button
-                      disabled={user.id === currentUser.id}
+                      disabled={!canChangeRole}
                       startIcon={<ShieldCheck size={16} />}
                       onClick={() => {
-                        const nextRole = roleDrafts[user.id];
-
-                        if (!nextRole) {
-                          return;
-                        }
-
-                        void updateAdminUserRole(user.id, nextRole)
+                        void updateAdminUserRole(user.id, roleDraft)
                           .then((updatedUser) => {
                             setUsers((current) =>
                               current.map((entry) =>
@@ -619,7 +673,7 @@ export const AdminCenterCard = () => {
                     {access?.permissions.banUsers && (
                       <Button
                       color={user.isBanned ? "success" : "error"}
-                      disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
+                      disabled={user.id === currentUser.id || isProtectedOwnerRole(user.role)}
                       startIcon={<Ban size={16} />}
                       onClick={() => {
                           void updateAdminUserBan(user.id, {
@@ -643,7 +697,7 @@ export const AdminCenterCard = () => {
                     {access?.permissions.manageAdmins && (
                       <Button
                         color="error"
-                        disabled={user.id === currentUser.id || user.role === "SUPER_ADMIN"}
+                        disabled={user.id === currentUser.id || isProtectedOwnerRole(user.role)}
                         startIcon={<Trash2 size={16} />}
                         onClick={() => {
                           if (!window.confirm(copy.confirmDelete)) {
@@ -679,12 +733,14 @@ export const AdminCenterCard = () => {
                     )}
                   </Stack>
                 </Stack>
+                  );
+                })()}
               </Paper>
             ))}
           </Stack>
         )}
 
-        {tab === "audit" && access?.permissions.viewAuditLogs && (
+        {activeTab === "audit" && access?.permissions.viewAuditLogs && (
           <Stack spacing={1.2}>
             {audit.length === 0 ? (
               <Alert severity="info">{copy.noAudit}</Alert>
@@ -703,7 +759,7 @@ export const AdminCenterCard = () => {
           </Stack>
         )}
 
-        {tab === "system" && access?.permissions.manageSystem && (
+        {activeTab === "system" && access?.permissions.manageSystem && (
           <Stack spacing={1.2}>
             <Stack spacing={0.4}>
               <Typography sx={{ fontWeight: 900 }}>{copy.systemTitle}</Typography>

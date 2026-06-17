@@ -21,7 +21,11 @@ import { OnboardingMotivationPage } from "./onboarding/OnboardingMotivationPage"
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
 import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
-import { stepPaths, type OnboardingState } from "./onboarding/types";
+import {
+  normalizeSelectedGoals,
+  stepPaths,
+  type OnboardingState,
+} from "./onboarding/types";
 
 const OnboardingPage = () => {
   const user = useSelector((rootState: RootState) => rootState.auth.user);
@@ -58,6 +62,17 @@ const OnboardingPage = () => {
           user?.goal ??
           profile.goal ??
           (!onboardingCompleted && hasDraft ? draft.goal : "maintain"),
+        selectedGoals: normalizeSelectedGoals(
+          !onboardingCompleted && hasDraft
+            ? draft.selectedGoals
+            : profile.assistant.onboarding.goalSelections.length > 0
+              ? profile.assistant.onboarding.goalSelections
+              : [
+                  profile.assistant.onboarding.primaryGoalNote === "healthy"
+                    ? "healthy"
+                    : (user?.goal ?? profile.goal ?? "maintain"),
+                ]
+        ),
         primaryGoalNote:
           !onboardingCompleted && hasDraft
             ? draft.primaryGoalNote
@@ -66,10 +81,20 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft
             ? draft.mainFriction
             : profile.assistant.onboarding.mainFriction,
+        mainFrictions:
+          !onboardingCompleted && hasDraft
+            ? draft.mainFrictions
+            : profile.assistant.onboarding.mainFrictions.filter(
+                (friction) => friction !== "unknown"
+              ),
         motivationStyle:
           !onboardingCompleted && hasDraft
             ? draft.motivationStyle
             : profile.assistant.onboarding.motivationStyle,
+        motivationStyles:
+          !onboardingCompleted && hasDraft
+            ? draft.motivationStyles
+            : profile.assistant.onboarding.motivationStyles,
         supportNote:
           !onboardingCompleted && hasDraft
             ? draft.supportNote
@@ -119,9 +144,12 @@ const OnboardingPage = () => {
       height: state.height,
       weight: state.weight,
       goal: state.goal,
+      selectedGoals: state.selectedGoals,
       primaryGoalNote: state.primaryGoalNote,
       mainFriction: state.mainFriction,
+      mainFrictions: state.mainFrictions,
       motivationStyle: state.motivationStyle,
+      motivationStyles: state.motivationStyles,
       supportNote: state.supportNote,
     });
   }, [appLanguage, onboardingCompleted, state]);

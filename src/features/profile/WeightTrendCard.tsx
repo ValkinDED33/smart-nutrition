@@ -162,10 +162,13 @@ export const WeightTrendCard = () => {
           <Box
             sx={{
               width: "100%",
-              height: 260,
+              minWidth: 0,
+              height: { xs: 220, sm: 240, md: 260 },
+              minHeight: 220,
+              overflow: "hidden",
             }}
           >
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart
                 data={entries}
                 margin={{ top: 10, right: 12, bottom: 0, left: -18 }}

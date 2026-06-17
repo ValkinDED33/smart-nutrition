@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import {
+  Button,
   FormControlLabel,
   MenuItem,
   Paper,
@@ -44,6 +45,8 @@ const assistantCopy = {
     supportNote: "Що помічнику варто пам'ятати",
     mainFriction: "Що найчастіше збиває",
     motivationStyle: "Як підтримувати",
+    selectAll: "Вибрати всі",
+    clearSelection: "Очистити",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
@@ -94,6 +97,8 @@ const assistantCopy = {
     supportNote: "Co asystent ma pamiętać",
     mainFriction: "Co najczęściej wybija rytm",
     motivationStyle: "Jak wspierać",
+    selectAll: "Wybierz wszystkie",
+    clearSelection: "Wyczyść",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
@@ -144,6 +149,8 @@ const assistantCopy = {
     supportNote: "What the assistant should remember",
     mainFriction: "What usually breaks rhythm",
     motivationStyle: "How to support you",
+    selectAll: "Select all",
+    clearSelection: "Clear",
     roleFriend: "Friend",
     roleAssistant: "Assistant",
     roleCoach: "Coach",
@@ -198,6 +205,44 @@ export const AssistantCustomizationCard = () => {
     assistant.onboarding.primaryGoalNote === "healthy"
       ? copy.healthyGoalNote
       : assistant.onboarding.primaryGoalNote;
+  const selectedFrictions =
+    assistant.onboarding.mainFrictions.length > 0
+      ? assistant.onboarding.mainFrictions.filter((friction) => friction !== "unknown")
+      : assistant.onboarding.mainFriction === "unknown"
+        ? []
+        : [assistant.onboarding.mainFriction];
+  const selectedMotivationStyles =
+    assistant.onboarding.motivationStyles.length > 0
+      ? assistant.onboarding.motivationStyles
+      : [assistant.onboarding.motivationStyle];
+
+  const updateFrictionSelections = (
+    nextFrictions: Exclude<AssistantDietFriction, "unknown">[]
+  ) => {
+    dispatch(
+      setAssistantCustomization({
+        onboarding: {
+          ...assistant.onboarding,
+          mainFriction: nextFrictions[0] ?? "unknown",
+          mainFrictions: nextFrictions,
+        },
+      })
+    );
+  };
+
+  const updateMotivationSelections = (
+    nextStyles: AssistantMotivationStyle[]
+  ) => {
+    dispatch(
+      setAssistantCustomization({
+        onboarding: {
+          ...assistant.onboarding,
+          motivationStyle: nextStyles[0] ?? "gentle",
+          motivationStyles: nextStyles.length > 0 ? nextStyles : ["gentle"],
+        },
+      })
+    );
+  };
 
   return (
     <Paper
@@ -303,56 +348,92 @@ export const AssistantCustomizationCard = () => {
 
         <BoxHeader title={copy.memoryTitle} subtitle={copy.memorySubtitle} />
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <TextField
-            select
-            fullWidth
-            label={copy.mainFriction}
-            value={assistant.onboarding.mainFriction}
-            onChange={(event) =>
-              dispatch(
-                setAssistantCustomization({
-                  onboarding: {
-                    ...assistant.onboarding,
-                    mainFriction: event.target.value as AssistantDietFriction,
-                  },
-                })
-              )
-            }
-          >
-            {frictionOptions.map((friction) => (
-              <MenuItem key={friction} value={friction}>
-                {copy.frictions[friction]}
-              </MenuItem>
-            ))}
-          </TextField>
+        <Stack spacing={1}>
+          <Typography sx={{ fontWeight: 800 }}>{copy.mainFriction}</Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant={selectedFrictions.length === frictionOptions.length ? "contained" : "outlined"}
+              onClick={() => updateFrictionSelections(frictionOptions.filter((friction) => friction !== "unknown"))}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {copy.selectAll}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => updateFrictionSelections([])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {copy.clearSelection}
+            </Button>
+            {frictionOptions
+              .filter((friction) => friction !== "unknown")
+              .map((friction) => {
+                const selected = selectedFrictions.includes(friction);
+                return (
+                  <Button
+                    key={friction}
+                    variant={selected ? "contained" : "outlined"}
+                    onClick={() =>
+                      updateFrictionSelections(
+                        selected
+                          ? selectedFrictions.filter((item) => item !== friction)
+                          : [...selectedFrictions, friction]
+                      )
+                    }
+                    sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}
+                  >
+                    {copy.frictions[friction]}
+                  </Button>
+                );
+              })}
+          </Stack>
+        </Stack>
 
-          <TextField
-            select
-            fullWidth
-            label={copy.motivationStyle}
-            value={assistant.onboarding.motivationStyle}
-            onChange={(event) =>
-              dispatch(
-                setAssistantCustomization({
-                  onboarding: {
-                    ...assistant.onboarding,
-                    motivationStyle: event.target.value as AssistantMotivationStyle,
-                  },
-                })
-              )
-            }
-          >
-            {motivationStyleOptions.map((style) => (
-              <MenuItem key={style} value={style}>
-                {style === "gentle"
-                  ? copy.motivationGentle
-                  : style === "direct"
-                    ? copy.motivationDirect
-                    : copy.motivationEnergetic}
-              </MenuItem>
-            ))}
-          </TextField>
+        <Stack spacing={1}>
+          <Typography sx={{ fontWeight: 800 }}>{copy.motivationStyle}</Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant={
+                selectedMotivationStyles.length === motivationStyleOptions.length
+                  ? "contained"
+                  : "outlined"
+              }
+              onClick={() => updateMotivationSelections([...motivationStyleOptions])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {copy.selectAll}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => updateMotivationSelections(["gentle"])}
+              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+            >
+              {copy.clearSelection}
+            </Button>
+            {motivationStyleOptions.map((style) => {
+              const selected = selectedMotivationStyles.includes(style);
+              return (
+                <Button
+                  key={style}
+                  variant={selected ? "contained" : "outlined"}
+                  onClick={() =>
+                    updateMotivationSelections(
+                      selected
+                        ? selectedMotivationStyles.filter((item) => item !== style)
+                        : [...selectedMotivationStyles, style]
+                    )
+                  }
+                  sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}
+                >
+                  {style === "gentle"
+                    ? copy.motivationGentle
+                    : style === "direct"
+                      ? copy.motivationDirect
+                      : copy.motivationEnergetic}
+                </Button>
+              );
+            })}
+          </Stack>
         </Stack>
 
         <TextField

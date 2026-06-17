@@ -1,12 +1,16 @@
 const adminRoleMap = {
   user: "USER",
+  helper: "HELPER",
   moderator: "MODERATOR",
   admin: "ADMIN",
   USER: "USER",
   VERIFIED_USER: "VERIFIED_USER",
+  HELPER: "HELPER",
   NUTRITIONIST: "NUTRITIONIST",
   MODERATOR: "MODERATOR",
   ADMIN: "ADMIN",
+  OWNER: "OWNER",
+  SUPER_ADMIN: "SUPER_ADMIN",
 };
 
 const normalizeAdminRole = (role) => adminRoleMap[String(role ?? "").trim()] ?? "USER";

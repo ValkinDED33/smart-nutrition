@@ -21,9 +21,12 @@ describe("onboardingDraft", () => {
       height: 168,
       weight: 64,
       goal: "cut",
+      selectedGoals: ["cut", "healthy"],
       primaryGoalNote: "Менше вечірніх перекусів",
       mainFriction: "evening_snacking",
+      mainFrictions: ["evening_snacking", "low_energy"],
       motivationStyle: "direct",
+      motivationStyles: ["direct", "gentle"],
       supportNote: "Не тиснути, коли день пішов не за планом",
     });
 
@@ -33,8 +36,11 @@ describe("onboardingDraft", () => {
     expect(draft.assistantName).toBe("Мія");
     expect(draft.assistantAvatar).toBe("panda");
     expect(draft.userName).toBe("Олена");
+    expect(draft.selectedGoals).toEqual(["cut", "healthy"]);
     expect(draft.mainFriction).toBe("evening_snacking");
+    expect(draft.mainFrictions).toEqual(["evening_snacking", "low_energy"]);
     expect(draft.motivationStyle).toBe("direct");
+    expect(draft.motivationStyles).toEqual(["direct", "gentle"]);
     expect(draft.supportNote).toBe("Не тиснути, коли день пішов не за планом");
   });
 

@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { useLanguage } from "../../shared/language";
 import {
   cardSx,
   clampNumber,
+  parseOnboardingNumber,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
@@ -12,6 +14,28 @@ import {
 export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [ageInput, setAgeInput] = useState(String(state.age));
+  const parsedAge = parseOnboardingNumber(ageInput);
+  const ageValid = parsedAge !== null && parsedAge >= 10 && parsedAge <= 120;
+
+  const updateAgeInput = (nextValue: string) => {
+    const safeValue = nextValue.replace(/[^\d]/g, "").slice(0, 3);
+    setAgeInput(safeValue);
+
+    const parsedValue = parseOnboardingNumber(safeValue);
+    if (parsedValue !== null && parsedValue >= 10 && parsedValue <= 120) {
+      updateState({ age: clampNumber(parsedValue, 10, 120) });
+    }
+  };
+
+  const continueToGender = () => {
+    if (parsedAge === null) {
+      return;
+    }
+
+    updateState({ age: clampNumber(parsedAge, 10, 120) });
+    navigate(stepPaths.gender);
+  };
 
   return (
     <Box sx={shellSx}>
@@ -23,12 +47,20 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
           <TextField
             autoFocus
             fullWidth
-            type="number"
-            value={state.age}
-            onChange={(event) =>
-              updateState({ age: clampNumber(Number(event.target.value) || 18, 10, 120) })
-            }
-            inputProps={{ min: 10, max: 120, inputMode: "numeric" }}
+            type="text"
+            value={ageInput}
+            onChange={(event) => updateAgeInput(event.target.value)}
+            onFocus={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && ageValid) {
+                continueToGender();
+              }
+            }}
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*",
+              enterKeyHint: "next",
+            }}
           />
           <Stack direction="row" spacing={1.2}>
             <Button
@@ -40,7 +72,8 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.gender)}
+              onClick={continueToGender}
+              disabled={!ageValid}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

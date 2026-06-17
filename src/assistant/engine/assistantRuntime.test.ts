@@ -177,8 +177,11 @@ const createContext = (): AssistantRuntimeContext => ({
   onboarding: {
     preferredName: "Ira",
     primaryGoalNote: "steady fat loss",
+    goalSelections: ["cut", "healthy"],
     mainFriction: "evening_snacking",
+    mainFrictions: ["evening_snacking", "low_energy"],
     motivationStyle: "gentle",
+    motivationStyles: ["gentle"],
     supportNote: "prefers short check-ins",
     completedAt: "2026-04-01T00:00:00.000Z",
   },

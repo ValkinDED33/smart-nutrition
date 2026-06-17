@@ -2,8 +2,10 @@ import { hasRoleAtLeast, PlatformApiError } from "./domain.mjs";
 
 const roleAliases = {
   user: "USER",
+  helper: "HELPER",
   moderator: "MODERATOR",
   admin: "ADMIN",
+  owner: "OWNER",
   super_admin: "SUPER_ADMIN",
 };
 

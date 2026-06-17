@@ -36,6 +36,7 @@ import {
 import { submitContentReport } from "../../shared/api/platform";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
 import { sanitizeHtml } from "@integration/runtime/content";
+import { canModerateCommunity } from "@domain/user/roles";
 import type { AppLanguage } from "../../shared/types/i18n";
 
 const communityCopy = {
@@ -318,11 +319,7 @@ export const CommunityHubCard = () => {
 
   const level = Math.max(1, Math.floor(community.score / 120) + 1);
   const authorName = user?.name ?? "You";
-  const isModerator =
-    user?.role === "NUTRITIONIST" ||
-    user?.role === "MODERATOR" ||
-    user?.role === "ADMIN" ||
-    user?.role === "SUPER_ADMIN";
+  const isModerator = canModerateCommunity(user?.role);
   const selectedFriend =
     community.friends.find((item) => item.id === selectedFriendId) ?? null;
   const conversation = useMemo(

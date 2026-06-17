@@ -578,7 +578,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (i18n.language !== appLanguage) {
-      void i18n.changeLanguage(appLanguage);
+      void i18n.changeLanguage(appLanguage).catch(() => undefined);
     }
   }, [i18n, appLanguage]);
 
@@ -588,9 +588,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       appLanguage,
       languageLabels,
       setLanguage: (nextLanguage) => {
+        if (!isAppLanguage(nextLanguage)) {
+          return;
+        }
+
         setHasExplicitChoice(true);
         setLanguageState(nextLanguage);
-        void i18n.changeLanguage(nextLanguage);
+        void i18n.changeLanguage(nextLanguage).catch(() => undefined);
         setClientStorageItem(STORAGE_KEY, nextLanguage);
       },
       hasExplicitChoice,
@@ -612,7 +616,11 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         setClientStorageItem(getOnboardingStorageKey(onboardingUserId), "true");
       },
       t: (key, vars) => {
-        return String(i18n.t(key, vars));
+        try {
+          return String(i18n.t(key, vars));
+        } catch {
+          return String(key);
+        }
       },
     }),
     [appLanguage, hasCompletedOnboarding, hasExplicitChoice, i18n, language, onboardingUserId]

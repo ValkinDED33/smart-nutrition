@@ -9,7 +9,7 @@ import type {
   ContentReportItem,
   ContentReportPayload,
 } from "../types/platform";
-import type { UserRole } from "@domain/user/types";
+import type { AssignableUserRole } from "@domain/user/roles";
 import { getRemoteAuthBaseUrl } from "./auth";
 
 export class PlatformApiError extends Error {
@@ -131,7 +131,7 @@ export const getAdminPlatformStats = () =>
 
 export const updateAdminUserRole = (
   userId: string,
-  role: Exclude<UserRole, "SUPER_ADMIN">
+  role: AssignableUserRole
 ) =>
   requestPlatform<AdminUserSummary>(`/api/admin/users/${encodeURIComponent(userId)}/role`, {
     method: "PATCH",

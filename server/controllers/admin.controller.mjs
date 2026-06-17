@@ -1,4 +1,4 @@
-import { createId, PlatformApiError, toPublicUser } from "../lib/domain.mjs";
+import { createId, isOwnerRole, PlatformApiError, toPublicUser } from "../lib/domain.mjs";
 import { readJsonBody, sendJson, sendNoContent } from "../lib/http.mjs";
 import { assertRole } from "../lib/requireRole.mjs";
 
@@ -12,7 +12,7 @@ const assertMutableUser = ({ currentUser, targetUser }) => {
     throw new PlatformApiError("USER_NOT_FOUND", "Target user was not found.");
   }
 
-  if (targetUser.id === currentUser.id || targetUser.role === "SUPER_ADMIN") {
+  if (targetUser.id === currentUser.id || isOwnerRole(targetUser.role)) {
     throw new PlatformApiError(
       "ROLE_CHANGE_NOT_ALLOWED",
       "This account cannot be changed from the admin center."
@@ -58,7 +58,7 @@ export const createAdminController = ({
   },
 
   deleteUser: async (context) => {
-    assertRole(context.auth.user, "admin");
+    assertRole(context.auth.user, "owner");
     const body =
       context.request.method === "DELETE"
         ? {}

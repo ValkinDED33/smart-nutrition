@@ -96,13 +96,22 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       assistantPersonality: assistantTone === "supportive" ? "gentle" : assistantTone,
       assistantMood: "happy",
       assistantMemory: {
-        goals: [state.goal, state.primaryGoalNote].filter(Boolean),
+        goals: [
+          state.goal,
+          state.primaryGoalNote,
+          ...state.selectedGoals,
+        ].filter(Boolean),
         preferences: [
           trimmedName ? `prefers being called ${trimmedName}` : "",
           `assistant avatar: ${state.assistantAvatar}`,
           `communication style: ${state.personality}`,
+          state.motivationStyles.length > 0
+            ? `support styles: ${state.motivationStyles.join(", ")}`
+            : "",
         ].filter(Boolean),
-        conversationHighlights: [],
+        conversationHighlights: state.mainFrictions.map(
+          (friction) => `onboarding friction: ${friction}`
+        ),
         lastSyncedAt: completedAt,
       },
       humorEnabled: personality.humor >= 0.4,
@@ -110,8 +119,11 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       onboarding: {
         preferredName: trimmedName,
         primaryGoalNote: state.primaryGoalNote,
+        goalSelections: state.selectedGoals,
         mainFriction: state.mainFriction,
+        mainFrictions: state.mainFrictions,
         motivationStyle: state.motivationStyle,
+        motivationStyles: state.motivationStyles,
         supportNote: state.supportNote,
         completedAt,
       },
@@ -158,8 +170,11 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       captureRuntimeEvent("onboarding_completed", {
         nextPath,
         goal: state.goal,
+        selectedGoals: state.selectedGoals.join(","),
         mainFriction: state.mainFriction,
+        mainFrictions: state.mainFrictions.join(","),
         motivationStyle: state.motivationStyle,
+        motivationStyles: state.motivationStyles.join(","),
         assistantAvatar: state.assistantAvatar,
         assistantPersonality: state.personality,
         hasPrimaryGoalNote: Boolean(state.primaryGoalNote.trim()),

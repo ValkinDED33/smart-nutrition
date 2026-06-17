@@ -10,6 +10,7 @@ import Loader from "./shared/components/Loader/PacmanLoader";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
+import { adminRouteRoles } from "@app/navigation/appNavigation";
 
 const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
 const loadLandingPage = () => import("./pages/LandingPage");
@@ -283,12 +284,7 @@ function App() {
                 path="/admin"
                 element={
                   <ProtectedRoute
-                    roles={[
-                      "NUTRITIONIST",
-                      "MODERATOR",
-                      "ADMIN",
-                      "SUPER_ADMIN",
-                    ]}
+                    roles={adminRouteRoles}
                   >
                     {shouldShowOnboarding ? (
                       <Navigate to="/onboarding" replace />

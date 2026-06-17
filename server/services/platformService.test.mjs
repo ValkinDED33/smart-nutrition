@@ -43,6 +43,11 @@ const user = {
   role: "USER",
 };
 
+const helper = {
+  id: "helper-1",
+  role: "HELPER",
+};
+
 const nutritionist = {
   id: "nutritionist-1",
   role: "NUTRITIONIST",
@@ -56,6 +61,11 @@ const moderator = {
 const admin = {
   id: "admin-1",
   role: "ADMIN",
+};
+
+const owner = {
+  id: "owner-1",
+  role: "OWNER",
 };
 
 describe("platformService", () => {
@@ -180,7 +190,7 @@ describe("platformService", () => {
     );
   });
 
-  it.each([user, nutritionist, moderator])(
+  it.each([user, helper, nutritionist, moderator])(
     "blocks %s from strict admin operations",
     async (actor) => {
       const { service } = createPlatformFixture();
@@ -235,5 +245,55 @@ describe("platformService", () => {
       })
     );
     expect(platformRepository.listAuditLogs).toHaveBeenCalledWith(80);
+  });
+
+  it("allows only owners to assign admin access", async () => {
+    const { service } = createPlatformFixture();
+
+    await expect(
+      service.updateUserRole(admin, "target-user-1", { role: "ADMIN" })
+    ).rejects.toMatchObject({
+      code: "ROLE_CHANGE_NOT_ALLOWED",
+    });
+
+    await expect(
+      service.updateUserRole(owner, "target-user-1", { role: "ADMIN" })
+    ).resolves.toMatchObject({
+      role: "ADMIN",
+    });
+  });
+
+  it("does not allow email verification to be assigned as a role", async () => {
+    const { service } = createPlatformFixture();
+
+    await expect(
+      service.updateUserRole(owner, "target-user-1", { role: "VERIFIED_USER" })
+    ).rejects.toMatchObject({
+      code: "INVALID_ROLE",
+    });
+  });
+
+  it("lets helpers review content reports without catalog moderation access", async () => {
+    const { platformRepository, service } = createPlatformFixture();
+    platformRepository.listAuditLogs.mockResolvedValue([
+      {
+        id: "report-1",
+        actorUserId: "user-1",
+        actorRole: "USER",
+        action: "content.report_created",
+        targetType: "post",
+        targetId: "post-1",
+        details: {
+          reason: "Spam",
+          reporterName: "Marta",
+        },
+        createdAt: "2026-01-02T00:00:00.000Z",
+      },
+    ]);
+
+    await expect(service.listContentReports(helper)).resolves.toHaveLength(1);
+    await expect(service.listModerationQueue(helper)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });

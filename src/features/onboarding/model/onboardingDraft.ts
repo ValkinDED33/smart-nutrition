@@ -25,9 +25,12 @@ export interface PreAuthOnboardingDraft {
   height: number;
   weight: number;
   goal: Goal;
+  selectedGoals: Array<Goal | "healthy">;
   primaryGoalNote: string;
   mainFriction: AssistantDietFriction;
+  mainFrictions: Exclude<AssistantDietFriction, "unknown">[];
   motivationStyle: AssistantMotivationStyle;
+  motivationStyles: AssistantMotivationStyle[];
   supportNote: string;
 }
 
@@ -44,9 +47,12 @@ export const defaultPreAuthOnboardingDraft = (
   height: 175,
   weight: 70,
   goal: "maintain",
+  selectedGoals: ["maintain"],
   primaryGoalNote: "",
   mainFriction: "unknown",
+  mainFrictions: [],
   motivationStyle: "gentle",
+  motivationStyles: ["gentle"],
   supportNote: "",
 });
 
@@ -88,10 +94,51 @@ const isMotivationStyle = (value: unknown): value is AssistantMotivationStyle =>
 const isGender = (value: unknown): value is Gender => value === "male" || value === "female";
 const isGoal = (value: unknown): value is Goal =>
   value === "cut" || value === "maintain" || value === "bulk";
+const isGoalChoice = (value: unknown): value is Goal | "healthy" =>
+  isGoal(value) || value === "healthy";
 
 const toNumber = (value: unknown, fallback: number, min: number, max: number) => {
   const nextValue = typeof value === "number" && Number.isFinite(value) ? value : fallback;
   return Math.max(min, Math.min(max, nextValue));
+};
+
+const normalizeGoalChoices = (value: unknown, fallback: Array<Goal | "healthy">) => {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  const selected = value
+    .filter(isGoalChoice)
+    .filter((item, index, items) => items.indexOf(item) === index);
+
+  return selected.length > 0 ? selected : fallback;
+};
+
+const normalizeFrictionChoices = (value: unknown, fallback: AssistantDietFriction) => {
+  if (!Array.isArray(value)) {
+    return fallback === "unknown" ? [] : [fallback];
+  }
+
+  return value
+    .filter((item): item is Exclude<AssistantDietFriction, "unknown"> =>
+      isFriction(item) && item !== "unknown"
+    )
+    .filter((item, index, items) => items.indexOf(item) === index);
+};
+
+const normalizeMotivationStyles = (
+  value: unknown,
+  fallback: AssistantMotivationStyle
+) => {
+  if (!Array.isArray(value)) {
+    return [fallback];
+  }
+
+  const selected = value
+    .filter(isMotivationStyle)
+    .filter((item, index, items) => items.indexOf(item) === index);
+
+  return selected.length > 0 ? selected : [fallback];
 };
 
 export const normalizePreAuthOnboardingDraft = (
@@ -100,6 +147,13 @@ export const normalizePreAuthOnboardingDraft = (
 ): PreAuthOnboardingDraft => {
   const fallback = defaultPreAuthOnboardingDraft(language);
   const record = isRecord(value) ? value : {};
+  const goal = isGoal(record.goal) ? record.goal : fallback.goal;
+  const mainFriction = isFriction(record.mainFriction)
+    ? record.mainFriction
+    : fallback.mainFriction;
+  const motivationStyle = isMotivationStyle(record.motivationStyle)
+    ? record.motivationStyle
+    : fallback.motivationStyle;
 
   return {
     language: isLanguage(record.language) ? record.language : fallback.language,
@@ -119,15 +173,16 @@ export const normalizePreAuthOnboardingDraft = (
     gender: isGender(record.gender) ? record.gender : fallback.gender,
     height: toNumber(record.height, fallback.height, 120, 250),
     weight: toNumber(record.weight, fallback.weight, 30, 300),
-    goal: isGoal(record.goal) ? record.goal : fallback.goal,
+    goal,
+    selectedGoals: normalizeGoalChoices(record.selectedGoals, [
+      record.primaryGoalNote === "healthy" ? "healthy" : goal,
+    ]),
     primaryGoalNote:
       typeof record.primaryGoalNote === "string" ? record.primaryGoalNote.slice(0, 120) : "",
-    mainFriction: isFriction(record.mainFriction)
-      ? record.mainFriction
-      : fallback.mainFriction,
-    motivationStyle: isMotivationStyle(record.motivationStyle)
-      ? record.motivationStyle
-      : fallback.motivationStyle,
+    mainFriction,
+    mainFrictions: normalizeFrictionChoices(record.mainFrictions, mainFriction),
+    motivationStyle,
+    motivationStyles: normalizeMotivationStyles(record.motivationStyles, motivationStyle),
     supportNote:
       typeof record.supportNote === "string" ? record.supportNote.slice(0, 220) : "",
   };

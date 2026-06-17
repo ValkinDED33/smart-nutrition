@@ -157,15 +157,21 @@ const Material = ({
   color,
   roughness = 0.72,
   metalness = 0.04,
+  transparent,
+  opacity,
 }: {
   color: string;
   roughness?: number;
   metalness?: number;
+  transparent?: boolean;
+  opacity?: number;
 }) => (
   <meshStandardMaterial
     color={color}
     roughness={roughness}
     metalness={metalness}
+    transparent={transparent}
+    opacity={opacity}
   />
 );
 
@@ -216,6 +222,25 @@ const Cone = ({
 }) => (
   <mesh position={position} rotation={rotation} scale={scale}>
     <coneGeometry args={[1, 1, radialSegments]} />
+    <Material color={color} />
+  </mesh>
+);
+
+const Cylinder = ({
+  color,
+  position,
+  scale,
+  rotation = [0, 0, 0],
+  radialSegments = 16,
+}: {
+  color: string;
+  position: Vector3Tuple;
+  scale: Vector3Tuple;
+  rotation?: Vector3Tuple;
+  radialSegments?: number;
+}) => (
+  <mesh position={position} rotation={rotation} scale={scale}>
+    <cylinderGeometry args={[1, 1, 1, radialSegments]} />
     <Material color={color} />
   </mesh>
 );
@@ -287,6 +312,179 @@ const Mouth = ({
   );
 };
 
+const BellyPatch = ({
+  variant,
+  palette,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+}) => {
+  if (variant === "robot" || variant === "human") {
+    return null;
+  }
+
+  const scale: Vector3Tuple =
+    variant === "owl"
+      ? [0.34, 0.42, 0.025]
+      : variant === "dragon"
+        ? [0.26, 0.34, 0.025]
+        : [0.3, 0.32, 0.025];
+
+  return (
+    <Sphere
+      color={palette.muzzle}
+      position={[0, -0.43, 0.39]}
+      scale={scale}
+    />
+  );
+};
+
+const Cheeks = ({
+  variant,
+  palette,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+}) => {
+  if (variant === "robot" || variant === "human") {
+    return null;
+  }
+
+  return (
+    <>
+      <Sphere
+        color={palette.muzzle}
+        position={[-0.2, 0.06, 0.49]}
+        scale={[0.11, 0.09, 0.025]}
+      />
+      <Sphere
+        color={palette.muzzle}
+        position={[0.2, 0.06, 0.49]}
+        scale={[0.11, 0.09, 0.025]}
+      />
+    </>
+  );
+};
+
+const Snout = ({
+  variant,
+  palette,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+}) => {
+  if (variant === "robot" || variant === "human" || variant === "owl") {
+    return null;
+  }
+
+  if (variant === "dragon") {
+    return (
+      <>
+        <Sphere
+          color={palette.muzzle}
+          position={[0, 0.07, 0.55]}
+          scale={[0.24, 0.13, 0.09]}
+        />
+        <Sphere
+          color={palette.detail}
+          position={[-0.08, 0.11, 0.64]}
+          scale={[0.025, 0.018, 0.014]}
+        />
+        <Sphere
+          color={palette.detail}
+          position={[0.08, 0.11, 0.64]}
+          scale={[0.025, 0.018, 0.014]}
+        />
+      </>
+    );
+  }
+
+  return (
+    <Sphere
+      color={palette.muzzle}
+      position={[0, 0.04, 0.53]}
+      scale={[0.18, 0.11, 0.075]}
+    />
+  );
+};
+
+const Whiskers = ({
+  variant,
+  palette,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+}) => {
+  if (variant !== "cat" && variant !== "fox") {
+    return null;
+  }
+
+  return (
+    <>
+      {[-1, 1].map((side) =>
+        [-0.06, 0.03].map((y, index) => (
+          <BoxPart
+            key={`${side}-${index}`}
+            color={palette.detail}
+            position={[side * 0.31, y, 0.55]}
+            rotation={[0, 0, side * (index === 0 ? 0.12 : -0.08)]}
+            scale={[0.2, 0.01, 0.01]}
+          />
+        ))
+      )}
+    </>
+  );
+};
+
+const Paws = ({
+  variant,
+  palette,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+}) => {
+  if (variant === "robot" || variant === "human") {
+    return null;
+  }
+
+  const armColor = variant === "panda" ? palette.accent : palette.body;
+  const footColor = variant === "dragon" ? palette.accent : palette.muzzle;
+
+  return (
+    <>
+      <Sphere
+        color={armColor}
+        position={[-0.42, -0.36, 0.12]}
+        scale={[0.12, 0.24, 0.08]}
+      />
+      <Sphere
+        color={armColor}
+        position={[0.42, -0.36, 0.12]}
+        scale={[0.12, 0.24, 0.08]}
+      />
+      <Sphere
+        color={footColor}
+        position={[-0.2, -0.78, 0.25]}
+        scale={[0.15, 0.08, 0.09]}
+      />
+      <Sphere
+        color={footColor}
+        position={[0.2, -0.78, 0.25]}
+        scale={[0.15, 0.08, 0.09]}
+      />
+    </>
+  );
+};
+
+const RobotLimbs = ({ palette }: { palette: ModelPalette }) => (
+  <>
+    <BoxPart color={palette.detail} position={[-0.44, -0.34, 0.08]} scale={[0.09, 0.3, 0.09]} />
+    <BoxPart color={palette.detail} position={[0.44, -0.34, 0.08]} scale={[0.09, 0.3, 0.09]} />
+    <BoxPart color={palette.accent} position={[-0.2, -0.78, 0.22]} scale={[0.18, 0.08, 0.09]} />
+    <BoxPart color={palette.accent} position={[0.2, -0.78, 0.22]} scale={[0.18, 0.08, 0.09]} />
+  </>
+);
+
 const AnimalEars = ({
   variant,
   palette,
@@ -331,22 +529,26 @@ const OwlDetails = ({ palette }: { palette: ModelPalette }) => (
     <Sphere color={palette.accent} position={[-0.18, 0.28, 0.45]} scale={[0.16, 0.14, 0.02]} />
     <Sphere color={palette.accent} position={[0.18, 0.28, 0.45]} scale={[0.16, 0.14, 0.02]} />
     <Cone color={palette.detail} position={[0, 0.15, 0.52]} rotation={[Math.PI, 0, 0]} scale={[0.08, 0.12, 0.07]} radialSegments={3} />
+    <Sphere color={palette.accent} position={[-0.4, -0.34, 0.06]} scale={[0.16, 0.34, 0.06]} />
+    <Sphere color={palette.accent} position={[0.4, -0.34, 0.06]} scale={[0.16, 0.34, 0.06]} />
   </>
 );
 
 const DragonDetails = ({ palette }: { palette: ModelPalette }) => (
   <>
-    <Cone color={palette.accent} position={[-0.28, 0.64, 0.02]} rotation={[0, 0, -0.18]} scale={[0.08, 0.28, 0.08]} />
-    <Cone color={palette.accent} position={[0.28, 0.64, 0.02]} rotation={[0, 0, 0.18]} scale={[0.08, 0.28, 0.08]} />
-    <Cone color={palette.detail} position={[-0.62, -0.12, -0.04]} rotation={[0, 0.18, 1.18]} scale={[0.42, 0.56, 0.04]} radialSegments={3} />
-    <Cone color={palette.detail} position={[0.62, -0.12, -0.04]} rotation={[0, -0.18, -1.18]} scale={[0.42, 0.56, 0.04]} radialSegments={3} />
-    {[0, 1, 2].map((index) => (
+    <Cone color={palette.accent} position={[-0.26, 0.68, 0.04]} rotation={[0.14, 0, -0.2]} scale={[0.09, 0.34, 0.09]} />
+    <Cone color={palette.accent} position={[0.26, 0.68, 0.04]} rotation={[0.14, 0, 0.2]} scale={[0.09, 0.34, 0.09]} />
+    <Cone color={palette.detail} position={[-0.52, -0.18, -0.12]} rotation={[0, 0.18, 1.08]} scale={[0.48, 0.66, 0.05]} radialSegments={3} />
+    <Cone color={palette.detail} position={[0.52, -0.18, -0.12]} rotation={[0, -0.18, -1.08]} scale={[0.48, 0.66, 0.05]} radialSegments={3} />
+    <Sphere color={palette.accent} position={[-0.34, 0.16, 0.42]} scale={[0.08, 0.05, 0.03]} />
+    <Sphere color={palette.accent} position={[0.34, 0.16, 0.42]} scale={[0.08, 0.05, 0.03]} />
+    {[0, 1, 2, 3].map((index) => (
       <Cone
         key={index}
         color={palette.accent}
-        position={[0, 0.48 - index * 0.19, -0.35]}
+        position={[0, 0.5 - index * 0.18, -0.36]}
         rotation={[Math.PI / 2, 0, 0]}
-        scale={[0.06, 0.14, 0.06]}
+        scale={[0.055, 0.15, 0.055]}
         radialSegments={3}
       />
     ))}
@@ -377,7 +579,10 @@ const Tail = ({
 }) => {
   if (variant === "dragon") {
     return (
-      <Cone color={palette.detail} position={[0.52, -0.54, -0.18]} rotation={[0, 0, -1.18]} scale={[0.12, 0.7, 0.12]} />
+      <>
+        <Cone color={palette.detail} position={[0.55, -0.54, -0.16]} rotation={[0, 0, -1.1]} scale={[0.13, 0.72, 0.13]} />
+        <Cone color={palette.accent} position={[0.85, -0.3, -0.13]} rotation={[0, 0, -1.05]} scale={[0.05, 0.18, 0.05]} radialSegments={3} />
+      </>
     );
   }
 
@@ -392,7 +597,7 @@ const Tail = ({
 
   if (variant === "cat" || variant === "dog" || variant === "capybara") {
     return (
-      <Sphere color={palette.accent} position={[0.48, -0.46, -0.18]} scale={[0.1, 0.42, 0.08]} />
+      <Sphere color={palette.accent} position={[0.5, -0.45, -0.18]} scale={[0.11, 0.44, 0.08]} />
     );
   }
 
@@ -462,27 +667,43 @@ const CompanionModel = ({
     >
       <group ref={groupRef} scale={0.9}>
         <Tail variant={variant} palette={palette} />
+        {variant === "robot" ? <RobotLimbs palette={palette} /> : null}
         <Sphere
           color={palette.body}
           position={[0, -0.42, 0]}
           scale={bodyScaleByVariant[variant]}
         />
+        <BellyPatch variant={variant} palette={palette} />
         <Sphere
           color={palette.head}
           position={[0, 0.18, 0]}
           scale={headScaleByVariant[variant]}
         />
         <SpeciesDetails variant={variant} palette={palette} />
-        <Sphere color={palette.muzzle} position={[0, 0.02, 0.47]} scale={[0.22, 0.14, 0.04]} />
+        <Snout variant={variant} palette={palette} />
+        <Cheeks variant={variant} palette={palette} />
         <Eye side="left" palette={palette} mood={mood} lookOffset={lookOffset} />
         <Eye side="right" palette={palette} mood={mood} lookOffset={lookOffset} />
+        <Whiskers variant={variant} palette={palette} />
         <Mouth palette={palette} mood={mood} />
-        <Sphere color={palette.accent} position={[-0.2, -0.78, 0.24]} scale={[0.14, 0.08, 0.08]} />
-        <Sphere color={palette.accent} position={[0.2, -0.78, 0.24]} scale={[0.14, 0.08, 0.08]} />
+        <Paws variant={variant} palette={palette} />
+        {variant === "human" ? (
+          <>
+            <Cylinder color={palette.detail} position={[-0.35, -0.38, 0.08]} rotation={[0, 0, -0.18]} scale={[0.05, 0.34, 0.05]} />
+            <Cylinder color={palette.detail} position={[0.35, -0.38, 0.08]} rotation={[0, 0, 0.18]} scale={[0.05, 0.34, 0.05]} />
+            <Sphere color={palette.accent} position={[-0.17, -0.78, 0.22]} scale={[0.13, 0.07, 0.08]} />
+            <Sphere color={palette.accent} position={[0.17, -0.78, 0.22]} scale={[0.13, 0.07, 0.08]} />
+          </>
+        ) : null}
       </group>
       <mesh position={[0, -0.95, -0.15]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.62, 48]} />
-        <meshBasicMaterial color={palette.shadow} transparent opacity={0.5} side={DoubleSide} />
+        <meshBasicMaterial
+          color={palette.body}
+          transparent
+          opacity={0.18}
+          side={DoubleSide}
+        />
       </mesh>
       {name ? null : null}
     </Float>
