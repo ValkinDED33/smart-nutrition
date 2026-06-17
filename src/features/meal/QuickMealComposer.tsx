@@ -106,11 +106,16 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const [contributionOpen, setContributionOpen] = useState(false);
   const activeRow = rows.find((row) => row.id === activeRowId) ?? rows[0] ?? null;
   const activeSearchText = activeRow?.productQuery.trim() ?? "";
+  const shouldLookupProducts = debouncedSearchText.trim().length >= 2;
   const productsQuery = useQuery({
     queryKey: ["composer-products", debouncedSearchText],
     queryFn: () => searchProducts(debouncedSearchText),
+    enabled: shouldLookupProducts,
+    retry: 1,
+    refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
+  const lookupFailed = shouldLookupProducts && productsQuery.isError;
   const availableProducts = useMemo(
     () =>
       (productsQuery.data ?? []).filter((product) =>
@@ -185,7 +190,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const canOfferContribution =
     activeSearchText.length >= 3 &&
     !productsQuery.isFetching &&
-    !productsQuery.isError &&
+    !lookupFailed &&
     availableProducts.length === 0;
   const googleSearchUrl =
     activeSearchText.length >= 3
@@ -219,7 +224,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
 
-        {productsQuery.isError ? (
+        {lookupFailed ? (
           <Alert
             severity="warning"
             action={
@@ -260,14 +265,14 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           const isActiveRow = activeRow?.id === row.id;
           const rowQuery = row.productQuery.trim();
           const rowOptions = isActiveRow ? availableProducts : [];
-          const noOptionsText = productsQuery.isError
+          const noOptionsText = lookupFailed
             ? copy.unavailable
             : productsQuery.isFetching
               ? copy.searching
               : rowQuery.length >= 2
                 ? copy.noMatch
                 : copy.noOptions;
-          const helperText = productsQuery.isError
+          const helperText = lookupFailed
             ? copy.unavailable
             : selectedProduct
               ? `${selectedProduct.source} • ${Math.round(

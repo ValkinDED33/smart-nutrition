@@ -26,6 +26,24 @@ const createProductPayload = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const createOpenFoodFactsPayload = (overrides: Record<string, unknown> = {}) => ({
+  product_name: "Fallback oats",
+  brands: "Open Brand",
+  code: "1234567890123",
+  image_front_url: "https://images.openfoodfacts.org/product.jpg",
+  categories_tags: ["en:breakfast-cereals"],
+  nutriments: {
+    "energy-kcal_100g": 370,
+    proteins_100g: 13,
+    fat_100g: 7,
+    carbohydrates_100g: 59,
+    fiber_100g: 10,
+    sugars_100g: 1,
+    sodium_100g: 0.01,
+  },
+  ...overrides,
+});
+
 describe("products api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -94,10 +112,10 @@ describe("products api", () => {
     await expect(fetchProductByBarcode("4820000730030")).resolves.toBeNull();
   });
 
-  it("throws a typed error when backend product lookup fails", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
+  it("uses OpenFoodFacts directly when backend product lookup fails for search", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
             code: "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE",
@@ -106,6 +124,81 @@ describe("products api", () => {
           { status: 502 }
         )
       )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            products: [createOpenFoodFactsPayload()],
+          }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const results = await searchProducts("oats");
+
+    expect(results[0]).toMatchObject({
+      id: "openfoodfacts-1234567890123",
+      name: "Fallback oats",
+      source: "OpenFoodFacts",
+      barcode: "1234567890123",
+      nutrients: expect.objectContaining({
+        calories: 370,
+        protein: 13,
+        fat: 7,
+        carbs: 59,
+      }),
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("world.openfoodfacts.org/cgi/search.pl"),
+      expect.any(Object)
+    );
+  });
+
+  it("uses OpenFoodFacts directly when backend product lookup fails for barcode", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Provider unavailable." }), {
+          status: 502,
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: 1,
+            product: createOpenFoodFactsPayload({ product_name: "Barcode oats" }),
+          }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const product = await fetchProductByBarcode("1234567890123");
+
+    expect(product?.name).toBe("Barcode oats");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("world.openfoodfacts.org/api/v2/product/1234567890123.json"),
+      expect.any(Object)
+    );
+  });
+
+  it("throws a typed error when backend and direct online lookup both fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              code: "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE",
+              message: "External product lookup is unavailable.",
+            }),
+            { status: 502 }
+          )
+        )
+        .mockResolvedValueOnce(new Response("Service unavailable", { status: 503 }))
     );
 
     await expect(searchProducts("oats")).rejects.toMatchObject({
