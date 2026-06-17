@@ -12,8 +12,15 @@ const resolveModel = (pathname: string) =>
     prefersReducedMotion: false,
   });
 
+const resolveMobileModel = (pathname: string) =>
+  resolveGlobalAssistantLayerModel(pathname, {
+    viewport: "mobile",
+    inputFocused: false,
+    prefersReducedMotion: false,
+  });
+
 describe("GlobalAssistantLayer", () => {
-  it("uses compact public companion mode on auth routes and hides on onboarding", () => {
+  it("uses guided public companion mode on auth routes and hides on onboarding", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {
         expect(shouldHideAssistantLayer(pathname)).toBe(false);
@@ -21,11 +28,20 @@ describe("GlobalAssistantLayer", () => {
           area: "auth",
           presence: expect.objectContaining({
             visible: true,
+            mode: "bubble",
+            reason: "desktop-public-route",
+            allowSpeechBubble: true,
+          }),
+          isVisibleOnAuthenticatedRoute: true,
+        });
+        expect(resolveMobileModel(pathname)).toMatchObject({
+          area: "auth",
+          presence: expect.objectContaining({
+            visible: true,
             mode: "compact",
             reason: "public-route",
             allowSpeechBubble: false,
           }),
-          isVisibleOnAuthenticatedRoute: false,
         });
       }
     );

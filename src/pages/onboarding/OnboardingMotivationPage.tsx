@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import type { AssistantMotivationStyle } from "@domain/profile/types";
@@ -16,6 +18,25 @@ export const OnboardingMotivationPage = ({
 }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [selectedMotivationStyle, setSelectedMotivationStyle] = useState(state.motivationStyle);
+  const [supportNote, setSupportNote] = useState(state.supportNote);
+
+  const selectMotivationStyle = (nextStyle: AssistantMotivationStyle) => {
+    setSelectedMotivationStyle(nextStyle);
+    updateState({ motivationStyle: nextStyle });
+  };
+
+  const updateSupportNote = (nextNote: string) => {
+    setSupportNote(nextNote);
+    updateState({ supportNote: nextNote });
+  };
+
+  const continueToFinish = () => {
+    flushSync(() =>
+      updateState({ motivationStyle: selectedMotivationStyle, supportNote })
+    );
+    navigate(stepPaths.finish);
+  };
 
   return (
     <Box sx={shellSx}>
@@ -35,9 +56,11 @@ export const OnboardingMotivationPage = ({
               <Button
                 key={motivationStyle}
                 variant={
-                  state.motivationStyle === motivationStyle ? "contained" : "outlined"
+                  selectedMotivationStyle === motivationStyle
+                    ? "contained"
+                    : "outlined"
                 }
-                onClick={() => updateState({ motivationStyle })}
+                onClick={() => selectMotivationStyle(motivationStyle)}
                 sx={{ flex: 1, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {t(`onboarding.motivationStyles.${motivationStyle}`)}
@@ -53,9 +76,9 @@ export const OnboardingMotivationPage = ({
               fullWidth
               multiline
               minRows={3}
-              value={state.supportNote}
+              value={supportNote}
               placeholder={t("onboarding.supportNotePlaceholder")}
-              onChange={(event) => updateState({ supportNote: event.target.value })}
+              onChange={(event) => updateSupportNote(event.target.value)}
               inputProps={{ maxLength: 220 }}
             />
           </Stack>
@@ -70,7 +93,7 @@ export const OnboardingMotivationPage = ({
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.finish)}
+              onClick={continueToFinish}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

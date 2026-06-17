@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import type { AssistantDietFriction } from "@domain/profile/types";
@@ -18,6 +20,17 @@ export const OnboardingFrictionPage = ({
 }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [selectedFriction, setSelectedFriction] = useState(state.mainFriction);
+
+  const selectFriction = (mainFriction: AssistantDietFriction) => {
+    setSelectedFriction(mainFriction);
+    updateState({ mainFriction });
+  };
+
+  const continueToMotivation = () => {
+    flushSync(() => updateState({ mainFriction: selectedFriction }));
+    navigate(stepPaths.motivation);
+  };
 
   return (
     <Box sx={shellSx}>
@@ -36,9 +49,9 @@ export const OnboardingFrictionPage = ({
             {frictionOptions.map((friction) => (
               <Button
                 key={friction}
-                variant={state.mainFriction === friction ? "contained" : "outlined"}
+                variant={selectedFriction === friction ? "contained" : "outlined"}
                 size="large"
-                onClick={() => updateState({ mainFriction: friction })}
+                onClick={() => selectFriction(friction)}
                 sx={{
                   justifyContent: "flex-start",
                   borderRadius: 1,
@@ -61,7 +74,8 @@ export const OnboardingFrictionPage = ({
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.motivation)}
+              onClick={continueToMotivation}
+              disabled={selectedFriction === "unknown"}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

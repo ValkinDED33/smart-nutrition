@@ -22,6 +22,9 @@ describe("onboardingDraft", () => {
       weight: 64,
       goal: "cut",
       primaryGoalNote: "Менше вечірніх перекусів",
+      mainFriction: "evening_snacking",
+      motivationStyle: "direct",
+      supportNote: "Не тиснути, коли день пішов не за планом",
     });
 
     const draft = readPreAuthOnboardingDraft("uk");
@@ -30,6 +33,9 @@ describe("onboardingDraft", () => {
     expect(draft.assistantName).toBe("Мія");
     expect(draft.assistantAvatar).toBe("panda");
     expect(draft.userName).toBe("Олена");
+    expect(draft.mainFriction).toBe("evening_snacking");
+    expect(draft.motivationStyle).toBe("direct");
+    expect(draft.supportNote).toBe("Не тиснути, коли день пішов не за планом");
   });
 
   it("normalizes newer companion variants from stored data", () => {

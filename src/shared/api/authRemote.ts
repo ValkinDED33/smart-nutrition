@@ -76,6 +76,7 @@ const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const PUBLIC_REMOTE_API_BASE_URL =
   "https://smart-nutrition-sk5r.onrender.com/api";
 const REMOTE_HEALTH_TIMEOUT_MS = 3_500;
+const REMOTE_STARTUP_HEALTH_TIMEOUT_MS = 2_000;
 const REMOTE_AUTH_REFRESH_TIMEOUT_MS = 12_000;
 const REMOTE_REQUEST_TIMEOUT_MS = 18_000;
 const REMOTE_LONG_REQUEST_TIMEOUT_MS = 45_000;
@@ -463,7 +464,7 @@ export const refreshRemoteSession = async () => {
   const baseUrl =
     getStoredRemoteBaseUrl() ??
     (await probeRemoteBaseUrl()) ??
-    (await probeRemoteBaseUrl(true));
+    (await probeRemoteBaseUrl({ force: true }));
 
   if (!baseUrl) {
     return false;
@@ -496,14 +497,30 @@ const isRemoteHealthPayload = (value: unknown) =>
     (value as { provider?: unknown }).provider ===
       "smart-nutrition-mongodb-api");
 
-const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
-  if (!force && remoteBaseProbePromise) {
+interface RemoteProbeOptions {
+  force?: boolean;
+  signal?: AbortSignal | null;
+  timeoutMs?: number;
+}
+
+const probeRemoteBaseUrl = async ({
+  force = false,
+  signal = null,
+  timeoutMs = REMOTE_HEALTH_TIMEOUT_MS,
+}: RemoteProbeOptions = {}): Promise<string | null> => {
+  const canReuseSharedProbe = !force && !signal && timeoutMs === REMOTE_HEALTH_TIMEOUT_MS;
+
+  if (canReuseSharedProbe && remoteBaseProbePromise) {
     return remoteBaseProbePromise;
   }
 
-  remoteBaseProbePromise = (async () => {
+  const probePromise = (async () => {
     for (const baseUrl of getCandidateBaseUrls()) {
-      const timeout = createTimedAbortSignal(REMOTE_HEALTH_TIMEOUT_MS);
+      if (signal?.aborted) {
+        return null;
+      }
+
+      const timeout = createTimedAbortSignal(timeoutMs, signal);
 
       try {
         const response = await fetch(`${baseUrl}/health`, {
@@ -520,6 +537,10 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
           return baseUrl;
         }
       } catch {
+        if (signal?.aborted) {
+          return null;
+        }
+
         continue;
       } finally {
         timeout.clear();
@@ -529,9 +550,13 @@ const probeRemoteBaseUrl = async (force = false): Promise<string | null> => {
     return null;
   })();
 
-  const baseUrl = await remoteBaseProbePromise;
+  if (canReuseSharedProbe) {
+    remoteBaseProbePromise = probePromise;
+  }
 
-  if (!baseUrl) {
+  const baseUrl = await probePromise;
+
+  if (canReuseSharedProbe && !baseUrl) {
     remoteBaseProbePromise = null;
   }
 
@@ -553,10 +578,11 @@ const requestRemote = async <T>(
     timeoutMs?: number;
   } = {}
 ): Promise<{ data: T; baseUrl: string }> => {
+  const upstreamSignal = init.signal ?? null;
   const baseUrl =
     getStoredRemoteBaseUrl() ??
-    (await probeRemoteBaseUrl()) ??
-    (await probeRemoteBaseUrl(true));
+    (await probeRemoteBaseUrl({ signal: upstreamSignal, timeoutMs })) ??
+    (await probeRemoteBaseUrl({ force: true, signal: upstreamSignal, timeoutMs }));
 
   if (!baseUrl) {
     throw new AuthApiError(
@@ -645,7 +671,7 @@ const requestRemote = async <T>(
 };
 
 export const checkRemoteBackendAvailability = async (force = false) =>
-  Boolean(await probeRemoteBaseUrl(force));
+  Boolean(await probeRemoteBaseUrl({ force }));
 
 export const isRemoteAuthAvailable = async () =>
   checkRemoteBackendAvailability();
@@ -1080,7 +1106,13 @@ export const remoteAuthProvider: AuthProvider = {
       );
     }
 
-    if (!getStoredRemoteBaseUrl() && !(await probeRemoteBaseUrl())) {
+    if (
+      !getStoredRemoteBaseUrl() &&
+      !(await probeRemoteBaseUrl({
+        signal,
+        timeoutMs: Math.min(timeoutMs, REMOTE_STARTUP_HEALTH_TIMEOUT_MS),
+      }))
+    ) {
       return null;
     }
 

@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { AuthApiError, resetPassword } from "../shared/api/auth";
-import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { useLanguage } from "../shared/language";
 
@@ -78,12 +78,13 @@ const ResetPasswordPage = () => {
     setServerError(null);
 
     try {
-      const result = await resetPassword(token, data.password);
-      setSuccessMessage(result.message);
+      await resetPassword(token, data.password);
+      const localizedSuccessMessage = t("auth.resetSuccess");
+      setSuccessMessage(localizedSuccessMessage);
       window.setTimeout(() => {
         navigate("/login", {
           replace: true,
-          state: { notice: result.message },
+          state: { notice: localizedSuccessMessage },
         });
       }, 900);
     } catch (error) {

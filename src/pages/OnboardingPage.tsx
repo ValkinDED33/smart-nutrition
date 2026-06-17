@@ -62,9 +62,18 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft
             ? draft.primaryGoalNote
             : profile.assistant.onboarding.primaryGoalNote,
-        mainFriction: profile.assistant.onboarding.mainFriction,
-        motivationStyle: profile.assistant.onboarding.motivationStyle,
-        supportNote: profile.assistant.onboarding.supportNote,
+        mainFriction:
+          !onboardingCompleted && hasDraft
+            ? draft.mainFriction
+            : profile.assistant.onboarding.mainFriction,
+        motivationStyle:
+          !onboardingCompleted && hasDraft
+            ? draft.motivationStyle
+            : profile.assistant.onboarding.motivationStyle,
+        supportNote:
+          !onboardingCompleted && hasDraft
+            ? draft.supportNote
+            : profile.assistant.onboarding.supportNote,
         weight:
           user?.weight ??
           profile.weightHistory.at(-1)?.weight ??
@@ -111,6 +120,9 @@ const OnboardingPage = () => {
       weight: state.weight,
       goal: state.goal,
       primaryGoalNote: state.primaryGoalNote,
+      mainFriction: state.mainFriction,
+      motivationStyle: state.motivationStyle,
+      supportNote: state.supportNote,
     });
   }, [appLanguage, onboardingCompleted, state]);
 

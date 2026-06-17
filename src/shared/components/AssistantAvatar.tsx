@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { Box } from "@mui/material";
-import type { AssistantCompanionKind } from "@domain/profile/types";
 import {
   assistantAvatarHover,
   assistantAvatarRootVariants,
   assistantEyeBlinkTransition,
 } from "@shared/ui/motion/assistant";
+import type { AssistantAvatarMood, AssistantAvatarProps } from "./assistantAvatarTypes";
 import {
+  CompanionBodyParts,
   CompanionFaceParts,
   CompanionHeadParts,
 } from "./assistantAvatarParts";
@@ -16,25 +17,7 @@ import {
   isLetterCompanion,
 } from "./assistantAvatarVisuals";
 
-export type AssistantAvatarMood =
-  | "idle"
-  | "happy"
-  | "coach"
-  | "concerned"
-  | "sleepy"
-  | "celebrate";
-
-interface AssistantAvatarProps {
-  name: string;
-  size?: number;
-  variant?: AssistantCompanionKind;
-  mood?: AssistantAvatarMood;
-  lookOffset?: {
-    x: number;
-    y: number;
-  };
-  active?: boolean;
-}
+export type { AssistantAvatarMood, AssistantAvatarProps } from "./assistantAvatarTypes";
 
 const clampLookOffset = (value: number) => Math.max(Math.min(value, 1), -1);
 
@@ -142,6 +125,7 @@ export const AssistantAvatar = ({
         },
       }}
     >
+      <CompanionBodyParts variant={variant} size={size} visual={visual} />
       <CompanionHeadParts variant={variant} size={size} visual={visual} />
       <CompanionFaceParts variant={variant} size={size} visual={visual} />
 

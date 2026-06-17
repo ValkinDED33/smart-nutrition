@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   canUseRemoteBaseUrlInCurrentBrowser,
   checkRemoteBackendAvailability,
+  remoteAuthProvider,
 } from "./authRemote";
 
 const loopbackHostname = ["local", "host"].join("");
@@ -107,6 +108,44 @@ describe("remote API base URL guards", () => {
     await vi.runOnlyPendingTimersAsync();
 
     await expect(availabilityPromise).resolves.toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let restore session block on a stalled startup health probe", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-topaz.vercel.app",
+        origin: "https://smart-nutrition-topaz.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+
+          if (!signal) {
+            reject(new Error("Expected startup probe request to receive AbortSignal."));
+            return;
+          }
+
+          signal.addEventListener(
+            "abort",
+            () => {
+              const abortError = new Error("Aborted");
+              abortError.name = "AbortError";
+              reject(abortError);
+            },
+            { once: true }
+          );
+        })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const sessionPromise = remoteAuthProvider.restoreSession({ timeoutMs: 6_000 });
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    await expect(sessionPromise).resolves.toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { useLanguage } from "../../shared/language";
 import {
   cardSx,

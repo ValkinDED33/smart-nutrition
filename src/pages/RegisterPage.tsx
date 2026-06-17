@@ -43,7 +43,7 @@ import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
-import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 

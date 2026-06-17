@@ -12,7 +12,7 @@ import {
   type CompanionCatalogItem,
   type CompanionCatalogLocale,
 } from "../../companion";
-import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { useLanguage } from "../../shared/language";
 import { equipCompanionItem, purchaseCompanionItem } from "../companion/model/store";
 import { setAssistantCustomization } from "./profileSlice";

@@ -11,7 +11,8 @@ import {
 import { selectDailyMacroTargets } from "@features/profile/selectors";
 import { detectWeightPlateau, getDaysSince } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "@shared/language";
-import { AssistantAvatar, type AssistantAvatarMood } from "@shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import type { AssistantAvatarMood } from "@shared/components/AssistantAvatar";
 import {
   buildAssistantCoreSnapshot,
   buildAssistantPersonalizationPlan,

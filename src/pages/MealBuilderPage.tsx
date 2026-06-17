@@ -72,6 +72,7 @@ const mealInputCopy = {
       search: "Пошук",
       favorites: "Обране",
       composer: "Конструктор",
+      scanner: "Сканер",
     },
     modes: {
       photo: {
@@ -108,6 +109,7 @@ const mealInputCopy = {
       search: "Szukaj",
       favorites: "Ulubione",
       composer: "Konstruktor",
+      scanner: "Skaner",
     },
     modes: {
       photo: {
@@ -144,6 +146,7 @@ const mealInputCopy = {
       search: "Search",
       favorites: "Favorites",
       composer: "Builder",
+      scanner: "Scanner",
     },
     modes: {
       photo: {
@@ -170,7 +173,7 @@ type MealSection =
   | "history"
   | "templates"
   | "recommendations";
-type AddTool = "search" | "favorites" | "composer";
+type AddTool = "search" | "favorites" | "composer" | "scanner";
 
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -244,6 +247,7 @@ const MealBuilderPage = () => {
     { id: "search", label: copy.addTools.search },
     { id: "favorites", label: copy.addTools.favorites },
     { id: "composer", label: copy.addTools.composer },
+    { id: "scanner", label: copy.addTools.scanner },
   ];
 
   const mealTypeSelector = (
@@ -444,6 +448,11 @@ const MealBuilderPage = () => {
               {activeAddTool === "search" ? <ProductSearch mealType={mealType} /> : null}
               {activeAddTool === "favorites" ? <QuickProductShelf mealType={mealType} /> : null}
               {activeAddTool === "composer" ? <QuickMealComposer mealType={mealType} /> : null}
+              {activeAddTool === "scanner" ? (
+                <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+                  <BarcodeScanner mealType={mealType} />
+                </Suspense>
+              ) : null}
             </Stack>
           ) : null}
 

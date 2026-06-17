@@ -16,7 +16,7 @@ import type { RootState } from "@app/store";
 import type { AssistantArea } from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
-import { AssistantAvatar } from "@shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
 import {

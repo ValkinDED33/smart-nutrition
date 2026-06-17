@@ -3,6 +3,9 @@ import { navigation } from "./navigation";
 import { onboarding } from "./onboarding";
 
 export const uk = {
+  "errorBoundary.title": "Щось пішло не так",
+  "errorBoundary.action": "Перезавантажити застосунок",
+  "errorBoundary.recovering": "Оновлюємо застосунок і очищаємо старий кеш...",
   "auth.forgotPassword": "Забули пароль?",
   "auth.showPassword": "Показати пароль",
   "auth.hidePassword": "Сховати пароль",
@@ -29,6 +32,8 @@ export const uk = {
     "Введіть email акаунта, і ми підготуємо посилання для скидання пароля.",
   "auth.forgotSubmit": "Надіслати посилання",
   "auth.forgotSending": "Готую посилання...",
+  "auth.forgotSuccess":
+    "Якщо акаунт з таким email існує, ми надіслали посилання для скидання пароля.",
   "auth.backToLogin": "Повернутися до входу",
   "auth.forgotGenericError": "Не вдалося підготувати посилання.",
   "auth.resetDeliveryUnavailable":
@@ -38,6 +43,7 @@ export const uk = {
     "Встановіть новий пароль. Посилання для скидання одноразове і має обмежений час дії.",
   "auth.resetSubmit": "Зберегти новий пароль",
   "auth.resetSaving": "Зберігаю...",
+  "auth.resetSuccess": "Пароль оновлено. Тепер можна увійти з новим паролем.",
   "auth.invalidResetToken": "Посилання для скидання недійсне або вже прострочене.",
   "auth.weakResetPassword":
     "Пароль має містити щонайменше 10 символів, велику, малу літеру, цифру та символ.",

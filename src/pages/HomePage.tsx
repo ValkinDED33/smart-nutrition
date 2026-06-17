@@ -31,7 +31,7 @@ import {
 } from "../features/meal/selectors";
 import { incrementWater } from "../features/water/waterSlice";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
-import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { buildDailyContext } from "@domain/meal/dailyContext";
 import {
   buildAssistantHomeIntelligence,

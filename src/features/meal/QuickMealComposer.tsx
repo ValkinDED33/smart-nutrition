@@ -56,6 +56,7 @@ const composerStatusCopy = {
     searching: "Шукаю в онлайн-каталозі...",
     onlineHint: "Пишіть назву — варіанти підтягнуться з backend-каталогу та зовнішніх баз.",
     noMatch: "Не знайшли. Спробуйте іншу назву або додайте продукт у спільну базу нижче.",
+    googleSearch: "Шукати в Google",
     addMissing: "Додати продукт в онлайн-базу",
     closeContribution: "Сховати форму",
   },
@@ -67,6 +68,7 @@ const composerStatusCopy = {
     searching: "Szukam w katalogu online...",
     onlineHint: "Wpisuj nazwę — propozycje przyjdą z katalogu backendu i baz zewnętrznych.",
     noMatch: "Nie znaleziono. Spróbuj innej nazwy albo dodaj produkt do wspólnej bazy niżej.",
+    googleSearch: "Szukaj w Google",
     addMissing: "Dodaj produkt do bazy online",
     closeContribution: "Ukryj formularz",
   },
@@ -78,6 +80,7 @@ const composerStatusCopy = {
     searching: "Searching the online catalog...",
     onlineHint: "Type a name — suggestions come from the backend catalog and external databases.",
     noMatch: "No match yet. Try another name or add the product to the shared database below.",
+    googleSearch: "Search Google",
     addMissing: "Add product to online database",
     closeContribution: "Hide form",
   },
@@ -184,6 +187,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     !productsQuery.isFetching &&
     !productsQuery.isError &&
     availableProducts.length === 0;
+  const googleSearchUrl =
+    activeSearchText.length >= 3
+      ? `https://www.google.com/search?q=${encodeURIComponent(
+          `${activeSearchText} nutrition facts calories protein`
+        )}`
+      : "#";
 
   const getProductLabel = (product: Product) => {
     const name = getProductDisplayName(product, appLanguage);
@@ -198,7 +207,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 2, md: 3 },
         borderRadius: 1,
         border: "1px solid rgba(15, 23, 42, 0.08)",
         backgroundColor: "rgba(255,255,255,0.86)",
@@ -214,16 +223,31 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           <Alert
             severity="warning"
             action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => {
-                  void productsQuery.refetch();
-                }}
-                sx={{ textTransform: "none", fontWeight: 800 }}
-              >
-                {copy.retry}
-              </Button>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    void productsQuery.refetch();
+                  }}
+                  sx={{ textTransform: "none", fontWeight: 800 }}
+                >
+                  {copy.retry}
+                </Button>
+                {activeSearchText.length >= 3 ? (
+                  <Button
+                    color="inherit"
+                    component="a"
+                    href={googleSearchUrl}
+                    rel="noreferrer"
+                    size="small"
+                    target="_blank"
+                    sx={{ textTransform: "none", fontWeight: 800 }}
+                  >
+                    {copy.googleSearch}
+                  </Button>
+                ) : null}
+              </Stack>
             }
           >
             {copy.unavailable}
@@ -262,6 +286,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 fullWidth
                 autoHighlight
                 clearOnBlur={false}
+                freeSolo
                 handleHomeEndKeys
                 loading={productsQuery.isFetching}
                 openOnFocus
@@ -271,8 +296,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 value={selectedProduct}
                 inputValue={row.productQuery}
                 filterOptions={(options) => options}
-                getOptionLabel={(product) => getProductLabel(product)}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
+                getOptionLabel={(product) =>
+                  typeof product === "string" ? product : getProductLabel(product)
+                }
+                isOptionEqualToValue={(option, value) =>
+                  typeof value !== "string" && option.id === value.id
+                }
                 onOpen={() => setActiveRowId(row.id)}
                 onInputChange={(_, value, reason) => {
                   setActiveRowId(row.id);
@@ -290,8 +319,13 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 onChange={(_, product) => {
                   setActiveRowId(row.id);
                   updateRow(row.id, {
-                    product,
-                    productQuery: product ? getProductLabel(product) : "",
+                    product: typeof product === "string" ? null : product,
+                    productQuery:
+                      typeof product === "string"
+                        ? product
+                        : product
+                          ? getProductLabel(product)
+                          : "",
                   });
                 }}
                 renderOption={(props, product) => {
@@ -379,14 +413,27 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           <Alert
             severity="info"
             action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => setContributionOpen((current) => !current)}
-                sx={{ textTransform: "none", fontWeight: 900 }}
-              >
-                {contributionOpen ? copy.closeContribution : copy.addMissing}
-              </Button>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  color="inherit"
+                  component="a"
+                  href={googleSearchUrl}
+                  rel="noreferrer"
+                  size="small"
+                  target="_blank"
+                  sx={{ textTransform: "none", fontWeight: 900 }}
+                >
+                  {copy.googleSearch}
+                </Button>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => setContributionOpen((current) => !current)}
+                  sx={{ textTransform: "none", fontWeight: 900 }}
+                >
+                  {contributionOpen ? copy.closeContribution : copy.addMissing}
+                </Button>
+              </Stack>
             }
           >
             {copy.noMatch}

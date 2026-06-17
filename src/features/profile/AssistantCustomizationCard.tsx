@@ -11,7 +11,7 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { setAssistantCustomization } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
-import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { CompanionProgressCard } from "../companion";
 import {
   assistantDietFrictions,
@@ -40,6 +40,7 @@ const assistantCopy = {
     memorySubtitle:
       "Це той контекст, який робить помічника постійним companion, а не окремим чатом.",
     primaryGoalNote: "Що саме важливо змінити",
+    healthyGoalNote: "Харчуватись здоровіше",
     supportNote: "Що помічнику варто пам'ятати",
     mainFriction: "Що найчастіше збиває",
     motivationStyle: "Як підтримувати",
@@ -89,6 +90,7 @@ const assistantCopy = {
     memorySubtitle:
       "To kontekst, który robi z asystenta stałego companion, nie osobny chat.",
     primaryGoalNote: "Co konkretnie ma się zmienić",
+    healthyGoalNote: "Jeść zdrowiej",
     supportNote: "Co asystent ma pamiętać",
     mainFriction: "Co najczęściej wybija rytm",
     motivationStyle: "Jak wspierać",
@@ -138,6 +140,7 @@ const assistantCopy = {
     memorySubtitle:
       "This context makes the assistant feel like a persistent companion, not a separate chat.",
     primaryGoalNote: "What should change",
+    healthyGoalNote: "Eat healthier",
     supportNote: "What the assistant should remember",
     mainFriction: "What usually breaks rhythm",
     motivationStyle: "How to support you",
@@ -191,6 +194,10 @@ export const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = assistantCopy[appLanguage];
+  const primaryGoalNoteValue =
+    assistant.onboarding.primaryGoalNote === "healthy"
+      ? copy.healthyGoalNote
+      : assistant.onboarding.primaryGoalNote;
 
   return (
     <Paper
@@ -350,7 +357,7 @@ export const AssistantCustomizationCard = () => {
 
         <TextField
           label={copy.primaryGoalNote}
-          value={assistant.onboarding.primaryGoalNote}
+          value={primaryGoalNoteValue}
           multiline
           minRows={2}
           onChange={(event) =>

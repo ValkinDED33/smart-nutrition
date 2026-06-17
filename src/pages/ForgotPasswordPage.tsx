@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import {
   AuthApiError,
   requestPasswordReset,
@@ -107,7 +107,7 @@ const ForgotPasswordPage = () => {
           </Stack>
 
           {serverError && <Alert severity="error">{serverError}</Alert>}
-          {result && <Alert severity="success">{result.message}</Alert>}
+          {result && <Alert severity="success">{t("auth.forgotSuccess")}</Alert>}
 
           <Stack
             component="form"

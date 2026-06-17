@@ -18,7 +18,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import { AssistantAvatar, type AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import type { AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
 import {
   incrementWater,
   setWaterConsumed,

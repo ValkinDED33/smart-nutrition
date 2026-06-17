@@ -6,13 +6,30 @@ import {
 } from "./assistantPresence";
 
 describe("assistantPresence", () => {
-  it("uses compact companion mode on public routes", () => {
+  it("uses bubble companion mode on desktop public routes", () => {
     const context = resolveAssistantContext("/login");
 
     expect(
       resolveAssistantPresence(context, {
         pathname: "/login",
         viewport: "desktop",
+      })
+    ).toMatchObject({
+      visible: true,
+      mode: "bubble",
+      reason: "desktop-public-route",
+      allowSpeechBubble: true,
+      priority: "normal",
+    });
+  });
+
+  it("uses compact companion mode on mobile public routes", () => {
+    const context = resolveAssistantContext("/login");
+
+    expect(
+      resolveAssistantPresence(context, {
+        pathname: "/login",
+        viewport: "mobile",
       })
     ).toMatchObject({
       visible: true,

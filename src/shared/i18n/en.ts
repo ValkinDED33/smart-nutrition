@@ -5,6 +5,9 @@ import { onboarding } from "./onboarding";
 export const en = {
   "brand.name": "Smart Nutrition",
   "brand.tagline": "Smart nutrition without chaos",
+  "errorBoundary.title": "Something went wrong",
+  "errorBoundary.action": "Refresh app",
+  "errorBoundary.recovering": "Refreshing the app and clearing the old cache...",
   "nav.dashboard": "Dashboard",
   "nav.meals": "Meals",
   "nav.profile": "Profile",
@@ -54,6 +57,8 @@ export const en = {
     "Enter the account email and we will prepare a password reset link.",
   "auth.forgotSubmit": "Send link",
   "auth.forgotSending": "Preparing link...",
+  "auth.forgotSuccess":
+    "If an account with that email exists, we sent a password reset link.",
   "auth.backToLogin": "Back to login",
   "auth.forgotGenericError": "Could not prepare the reset link.",
   "auth.resetDeliveryUnavailable":
@@ -63,6 +68,7 @@ export const en = {
     "Set a new password. The reset link is single-use and valid for a limited time.",
   "auth.resetSubmit": "Save new password",
   "auth.resetSaving": "Saving...",
+  "auth.resetSuccess": "Password has been updated. You can log in with the new password.",
   "auth.invalidResetToken": "The reset link is invalid or has expired.",
   "auth.weakResetPassword":
     "Password must have at least 10 characters, an uppercase letter, a lowercase letter, a digit, and a symbol.",

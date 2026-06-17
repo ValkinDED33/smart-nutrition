@@ -1,5 +1,34 @@
-const CACHE_NAME = "smart-nutrition-shell-v2";
-const SHELL_ASSETS = ["/", "/manifest.webmanifest", "/favicon.svg"];
+const CACHE_NAME = "smart-nutrition-runtime-v3";
+const SHELL_ASSETS = ["/manifest.webmanifest", "/favicon.svg"];
+
+const createOfflineResponse = () =>
+  new Response(
+    "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Smart Nutrition</title></head><body><main style=\"font-family:system-ui,sans-serif;padding:24px\"><h1>Smart Nutrition</h1><p>The app is online-only. Check your connection and refresh.</p></main></body></html>",
+    {
+      status: 503,
+      statusText: "Offline",
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    }
+  );
+
+const createOfflineAssetResponse = () =>
+  new Response("", {
+    status: 503,
+    statusText: "Offline",
+    headers: {
+      "Cache-Control": "no-store",
+    },
+  });
+
+const shouldCacheStaticRequest = (request, url) =>
+  url.origin === self.location.origin &&
+  !url.pathname.startsWith("/assets/") &&
+  (request.destination === "image" ||
+    request.destination === "font" ||
+    request.destination === "manifest");
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -30,55 +59,32 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/")));
+    event.respondWith(fetch(request).catch(createOfflineResponse));
     return;
   }
 
   if (url.pathname.startsWith("/assets/")) {
-    event.respondWith(
-      fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type === "opaque") {
-          return response;
-        }
-
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
-
-        return response;
-      }).catch(() => caches.match(request))
-    );
+    event.respondWith(fetch(request, { cache: "no-store" }).catch(createOfflineAssetResponse));
     return;
   }
 
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type === "opaque") {
-          return response;
+    fetch(request)
+      .then((response) => {
+        if (
+          response &&
+          response.status === 200 &&
+          response.type !== "opaque" &&
+          shouldCacheStaticRequest(request, url)
+        ) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
         }
-
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache);
-        });
 
         return response;
-      }).catch(() => {
-        if (request.destination === "document") {
-          return caches.match("/");
-        }
-
-        return new Response("", {
-          status: 503,
-          statusText: "Offline",
-        });
-      });
-    })
+      })
+      .catch(() => caches.match(request).then((cachedResponse) => cachedResponse ?? createOfflineAssetResponse()))
   );
 });

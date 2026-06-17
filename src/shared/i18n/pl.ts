@@ -3,6 +3,9 @@ import { navigation } from "./navigation";
 import { onboarding } from "./onboarding";
 
 export const pl = {
+  "errorBoundary.title": "Coś poszło nie tak",
+  "errorBoundary.action": "Przeładuj aplikację",
+  "errorBoundary.recovering": "Odświeżamy aplikację i czyścimy stary cache...",
   "auth.forgotPassword": "Zapomniałeś hasła?",
   "auth.showPassword": "Pokaż hasło",
   "auth.hidePassword": "Ukryj hasło",
@@ -29,6 +32,8 @@ export const pl = {
     "Podaj email konta, a przygotujemy link do ustawienia nowego hasła.",
   "auth.forgotSubmit": "Wyślij link resetu",
   "auth.forgotSending": "Przygotowuję link...",
+  "auth.forgotSuccess":
+    "Jeśli konto z tym adresem email istnieje, wysłaliśmy link resetu hasła.",
   "auth.backToLogin": "Wróć do logowania",
   "auth.forgotGenericError": "Nie udało się przygotować linku resetu.",
   "auth.resetDeliveryUnavailable":
@@ -38,6 +43,7 @@ export const pl = {
     "Ustaw nowe hasło. Link resetu jest jednorazowy i ma ograniczony czas ważności.",
   "auth.resetSubmit": "Zapisz nowe hasło",
   "auth.resetSaving": "Zapisuję...",
+  "auth.resetSuccess": "Hasło zostało zaktualizowane. Możesz zalogować się nowym hasłem.",
   "auth.invalidResetToken": "Link resetu jest nieprawidłowy albo już wygasł.",
   "auth.weakResetPassword":
     "Hasło musi mieć co najmniej 10 znaków, wielką, małą literę, cyfrę i symbol.",

@@ -20,10 +20,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import {
-  AssistantAvatar,
-  type AssistantAvatarMood,
-} from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import type { AssistantAvatarMood } from "../shared/components/AssistantAvatar";
 import type { AssistantCompanionKind } from "@domain/profile/types";
 import { useLanguage } from "../shared/language";
 

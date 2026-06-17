@@ -12,6 +12,13 @@ export const registerServiceWorker = () => {
   window.addEventListener("load", () => {
     const workbox = new Workbox("/sw.js");
 
+    workbox.addEventListener("waiting", () => {
+      workbox.messageSkipWaiting();
+    });
+    workbox.addEventListener("controlling", () => {
+      window.location.reload();
+    });
+
     workbox.register().catch(() => {
       // PWA install support is optional; the app must keep working without it.
     });

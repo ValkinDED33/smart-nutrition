@@ -13,7 +13,7 @@ import {
 } from "../features/meal/selectors";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
 import { getAssistantRuntimeStatus } from "@shared/api/assistant";
-import { AssistantAvatar } from "../shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { useLanguage } from "../shared/language";
 import { PageShell, SectionTabs } from "@shared/ui";
 import type { AssistantRuntimeStatus } from "@domain/assistant/types";

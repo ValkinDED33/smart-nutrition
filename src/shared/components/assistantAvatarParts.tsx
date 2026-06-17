@@ -238,6 +238,95 @@ export const CompanionHeadParts = (props: CompanionPartsProps) => {
   return <AnimalEars {...props} />;
 };
 
+const bodyVariants = new Set<AssistantCompanionKind>([
+  "cat",
+  "dog",
+  "fox",
+  "panda",
+  "owl",
+  "capybara",
+  "dragon",
+]);
+
+const tailVariants = new Set<AssistantCompanionKind>([
+  "cat",
+  "dog",
+  "fox",
+  "capybara",
+  "dragon",
+]);
+
+const BodyPaws = ({ variant, size, visual }: CompanionPartsProps) => {
+  if (!bodyVariants.has(variant)) {
+    return null;
+  }
+
+  return (
+    <>
+      {(["left", "right"] as const).map((side) => (
+        <Part
+          key={`paw-${side}`}
+          sx={{
+            position: "absolute",
+            bottom: -scaled(size, 0.035),
+            [side]: scaled(size, 0.22),
+            width: scaled(size, variant === "dragon" ? 0.2 : 0.18),
+            height: scaled(size, 0.14),
+            borderRadius: "58% 58% 46% 46%",
+            background:
+              variant === "panda"
+                ? "rgba(15,23,42,0.82)"
+                : `linear-gradient(180deg, ${visual.detail} 0%, ${visual.muzzle} 100%)`,
+            border: SHINE_BORDER,
+            boxShadow: "0 8px 16px rgba(15,23,42,0.14)",
+            transform: `rotate(${side === "left" ? -8 : 8}deg)`,
+            zIndex: 2,
+          }}
+        />
+      ))}
+    </>
+  );
+};
+
+const BodyTail = ({ variant, size, visual }: CompanionPartsProps) => {
+  if (!tailVariants.has(variant)) {
+    return null;
+  }
+
+  const isDragon = variant === "dragon";
+  const isFox = variant === "fox";
+
+  return (
+    <Part
+      sx={{
+        position: "absolute",
+        right: isDragon ? -scaled(size, 0.2) : -scaled(size, 0.14),
+        bottom: isDragon ? scaled(size, 0.04) : scaled(size, 0.02),
+        width: scaled(size, isDragon ? 0.48 : 0.38),
+        height: scaled(size, isDragon ? 0.26 : 0.2),
+        borderRadius: isDragon ? "10% 80% 80% 20%" : "999px",
+        borderTop: `${scaled(size, isDragon ? 0.075 : 0.08, 3)}px solid ${
+          isFox ? "rgba(255,237,213,0.95)" : visual.detail
+        }`,
+        borderRight: `${scaled(size, isDragon ? 0.055 : 0.065, 2)}px solid ${
+          isDragon ? "rgba(124,58,237,0.82)" : visual.detail
+        }`,
+        transform: `rotate(${isDragon ? 22 : 20}deg)`,
+        filter: "drop-shadow(0 8px 12px rgba(15,23,42,0.16))",
+        opacity: 0.94,
+        zIndex: 0,
+      }}
+    />
+  );
+};
+
+export const CompanionBodyParts = (props: CompanionPartsProps) => (
+  <>
+    <BodyTail {...props} />
+    <BodyPaws {...props} />
+  </>
+);
+
 const getMainMuzzleBackground = (
   variant: AssistantCompanionKind,
   visual: CompanionVisual

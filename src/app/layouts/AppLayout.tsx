@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bot,
   Globe2,
+  LogOut,
   Moon,
   ShieldCheck,
   Sun,
@@ -375,6 +376,24 @@ const Layout = () => {
                   <Avatar src={user.avatar} sx={{ width: 36, height: 36 }}>
                     {user.name[0]}
                   </Avatar>
+                  <Tooltip title={t("nav.logout")}>
+                    <IconButton
+                      aria-label={t("nav.logout")}
+                      onClick={handleLogout}
+                      size="small"
+                      sx={{
+                        display: { xs: "inline-flex", sm: "none" },
+                        width: 38,
+                        height: 38,
+                        color: isDarkMode ? "#5eead4" : "#0f766e",
+                        border: isDarkMode
+                          ? "1px solid rgba(94, 234, 212, 0.28)"
+                          : "1px solid rgba(15, 118, 110, 0.24)",
+                      }}
+                    >
+                      <LogOut size={18} />
+                    </IconButton>
+                  </Tooltip>
                   <Button
                     onClick={handleLogout}
                     size="small"

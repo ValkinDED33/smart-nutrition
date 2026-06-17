@@ -116,11 +116,22 @@ export const resolveAssistantPresence = (
       return hiddenPresence("mobile-public-input-focused", prefersReducedMotion);
     }
 
-    return compactPresence({
-      reason: "public-route",
-      prefersReducedMotion,
-      priority: "low",
-    });
+    if (inputFocused || options.viewport !== "desktop") {
+      return compactPresence({
+        reason: "public-route",
+        prefersReducedMotion,
+        priority: "low",
+      });
+    }
+
+    return {
+      visible: true,
+      mode: "bubble",
+      reason: "desktop-public-route",
+      allowSpeechBubble: true,
+      allowMotion: !prefersReducedMotion,
+      priority: "normal",
+    };
   }
 
   if (routeKind === "onboarding" || context.visibility === "onboarding") {

@@ -104,6 +104,13 @@ export default defineConfig({
             return "scanner-vendor";
           }
 
+          if (
+            normalizedId.includes("/node_modules/three/") ||
+            normalizedId.includes("/node_modules/@react-three/")
+          ) {
+            return "three-vendor";
+          }
+
           if (normalizedId.includes("/node_modules/recharts/")) {
             return "charts-vendor";
           }

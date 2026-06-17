@@ -1,5 +1,10 @@
 import type { AppLanguage } from "@shared/types/i18n";
-import type { AssistantCompanionKind, AssistantTone } from "@domain/profile/types";
+import type {
+  AssistantCompanionKind,
+  AssistantDietFriction,
+  AssistantMotivationStyle,
+  AssistantTone,
+} from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
 import {
   getClientStorageItem,
@@ -21,6 +26,9 @@ export interface PreAuthOnboardingDraft {
   weight: number;
   goal: Goal;
   primaryGoalNote: string;
+  mainFriction: AssistantDietFriction;
+  motivationStyle: AssistantMotivationStyle;
+  supportNote: string;
 }
 
 export const defaultPreAuthOnboardingDraft = (
@@ -37,6 +45,9 @@ export const defaultPreAuthOnboardingDraft = (
   weight: 70,
   goal: "maintain",
   primaryGoalNote: "",
+  mainFriction: "unknown",
+  motivationStyle: "gentle",
+  supportNote: "",
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -62,6 +73,17 @@ const isTone = (value: unknown): value is AssistantTone =>
   value === "focused" ||
   value === "calm" ||
   value === "scientific";
+
+const isFriction = (value: unknown): value is AssistantDietFriction =>
+  value === "unknown" ||
+  value === "emotional_eating" ||
+  value === "chaotic_schedule" ||
+  value === "evening_snacking" ||
+  value === "low_energy" ||
+  value === "social_pressure";
+
+const isMotivationStyle = (value: unknown): value is AssistantMotivationStyle =>
+  value === "gentle" || value === "direct" || value === "energetic";
 
 const isGender = (value: unknown): value is Gender => value === "male" || value === "female";
 const isGoal = (value: unknown): value is Goal =>
@@ -100,6 +122,14 @@ export const normalizePreAuthOnboardingDraft = (
     goal: isGoal(record.goal) ? record.goal : fallback.goal,
     primaryGoalNote:
       typeof record.primaryGoalNote === "string" ? record.primaryGoalNote.slice(0, 120) : "",
+    mainFriction: isFriction(record.mainFriction)
+      ? record.mainFriction
+      : fallback.mainFriction,
+    motivationStyle: isMotivationStyle(record.motivationStyle)
+      ? record.motivationStyle
+      : fallback.motivationStyle,
+    supportNote:
+      typeof record.supportNote === "string" ? record.supportNote.slice(0, 220) : "",
   };
 };
 

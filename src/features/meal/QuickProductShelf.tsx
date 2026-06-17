@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import { ProductCard } from "./ProductCard";
@@ -6,12 +7,16 @@ import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import type { RootState } from "../../app/store";
 import { productMatchesPreferences } from "@domain/user/preferences";
+import { SectionTabs } from "../../shared/ui/SectionTabs";
 
 interface Props {
   mealType: MealType;
 }
 
+type ShelfSection = "saved" | "recent";
+
 export const QuickProductShelf = ({ mealType }: Props) => {
+  const [activeSection, setActiveSection] = useState<ShelfSection>("saved");
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const preferences = useSelector((state: RootState) => ({
@@ -28,12 +33,29 @@ export const QuickProductShelf = ({ mealType }: Props) => {
     .filter((product) => productMatchesPreferences(product, preferences))
     .slice(0, 6);
 
+  const sections = [
+    {
+      id: "saved",
+      label: t("quickShelf.saved"),
+      badge: filteredSavedProducts.length,
+    },
+    {
+      id: "recent",
+      label: t("quickShelf.recent"),
+      badge: filteredRecentProducts.length,
+    },
+  ];
+  const activeProducts =
+    activeSection === "saved" ? filteredSavedProducts : filteredRecentProducts;
+  const activeEmptyText =
+    activeSection === "saved" ? t("quickShelf.savedEmpty") : t("quickShelf.recentEmpty");
+
   const renderGrid = (products: typeof savedProducts) => (
     <Box
       sx={{
         display: "grid",
         gridTemplateColumns:
-          "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+          "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
         gap: { xs: 1.4, md: 1.75 },
         alignItems: "start",
       }}
@@ -60,28 +82,23 @@ export const QuickProductShelf = ({ mealType }: Props) => {
         backgroundColor: "rgba(255,255,255,0.86)",
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={2}>
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("quickShelf.title")}
         </Typography>
 
-        <Stack spacing={1.5}>
-          <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.saved")}</Typography>
-          {filteredSavedProducts.length === 0 ? (
-            <Typography color="text.secondary">{t("quickShelf.savedEmpty")}</Typography>
-          ) : (
-            renderGrid(filteredSavedProducts)
-          )}
-        </Stack>
+        <SectionTabs
+          sections={sections}
+          activeSection={activeSection}
+          onChange={(sectionId) => setActiveSection(sectionId as ShelfSection)}
+          ariaLabel="Quick product shelf sections"
+        />
 
-        <Stack spacing={1.5}>
-          <Typography sx={{ fontWeight: 700 }}>{t("quickShelf.recent")}</Typography>
-          {filteredRecentProducts.length === 0 ? (
-            <Typography color="text.secondary">{t("quickShelf.recentEmpty")}</Typography>
-          ) : (
-            renderGrid(filteredRecentProducts)
-          )}
-        </Stack>
+        {activeProducts.length === 0 ? (
+          <Typography color="text.secondary">{activeEmptyText}</Typography>
+        ) : (
+          renderGrid(activeProducts)
+        )}
       </Stack>
     </Paper>
   );
