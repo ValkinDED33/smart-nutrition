@@ -171,7 +171,14 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
               label={`${t("meal.quantity")} (${editor.selectedProduct.unit})`}
               value={editor.quantity}
               onChange={(event) => editor.updateQuantityInput(event.target.value)}
-              inputProps={{ min: 1, step: editor.selectedProduct.unit === "piece" ? 1 : 0.1 }}
+              onFocus={(event) => event.target.select()}
+              slotProps={{
+                htmlInput: {
+                  inputMode: "decimal",
+                  min: 1,
+                  step: editor.selectedProduct.unit === "piece" ? 1 : 0.1,
+                },
+              }}
             />
 
             <Stack spacing={1}>

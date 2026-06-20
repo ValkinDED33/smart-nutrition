@@ -43,6 +43,7 @@ import {
   createManualDraft,
   isSafeManualImageDataUrl,
   isSupportedManualPhotoFile,
+  normalizeManualNumericValue,
   normalizeBarcode,
   normalizeManualImageUrl,
   type CatalogNotice,
@@ -267,7 +268,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [quantity, setQuantity] = useState(100);
+  const [quantity, setQuantity] = useState<number | "">(100);
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [showManualForm, setShowManualForm] = useState(false);
@@ -306,6 +307,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     () => createBarcodeSearchUrls(barcodeInput),
     [barcodeInput]
   );
+  const selectedQuantity =
+    typeof quantity === "number" && Number.isFinite(quantity) && quantity > 0
+      ? quantity
+      : null;
 
   const findKnownProductByBarcode = useCallback(
     (barcode: string) =>
@@ -439,10 +444,16 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         playScanSuccessSound();
 
         if (autoAdd) {
+          if (selectedQuantity === null) {
+            setMessage(copy.grams);
+            playScanErrorSound();
+            return;
+          }
+
           dispatch(
             addProduct({
               product,
-              quantity,
+              quantity: selectedQuantity,
               mealType,
               origin: "barcode",
             })
@@ -467,7 +478,15 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setIsSearching(false);
       }
     },
-    [appLanguage, copy, dispatch, findKnownProductByBarcode, mealType, quantity, stopScanner]
+    [
+      appLanguage,
+      copy,
+      dispatch,
+      findKnownProductByBarcode,
+      mealType,
+      selectedQuantity,
+      stopScanner,
+    ]
   );
 
   useEffect(() => {
@@ -574,13 +593,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
   const handleManualChange =
     (field: keyof ManualDraft) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value;
+      const parsedValue = Number(rawValue);
       const nextValue =
         field === "name" ||
         field === "brand" ||
         field === "category" ||
         field === "imageUrl"
-          ? event.target.value
-          : Math.max(0, Number(event.target.value) || 0);
+          ? rawValue
+          : rawValue === "" || !Number.isFinite(parsedValue)
+            ? ""
+            : Math.max(0, parsedValue);
 
       setManualDraft((current) => ({
         ...current,
@@ -635,6 +658,12 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       return;
     }
 
+    if (selectedQuantity === null) {
+      setMessage(copy.grams);
+      playScanErrorSound();
+      return;
+    }
+
     setCatalogNotice(null);
     const normalizedBarcodeForId = normalizeBarcode(barcodeInput);
     const manualProduct = createManualBarcodeProduct({
@@ -654,7 +683,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     dispatch(
       addProduct({
         product,
-        quantity,
+        quantity: selectedQuantity,
         mealType,
         origin: "manual",
       })
@@ -670,10 +699,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       barcode: normalizedBarcode || undefined,
       category: category || undefined,
       imageUrl: catalogImageUrl,
-      calories: manualDraft.calories,
-      protein: manualDraft.protein,
-      fat: manualDraft.fat,
-      carbs: manualDraft.carbs,
+      calories: normalizeManualNumericValue(manualDraft.calories),
+      protein: normalizeManualNumericValue(manualDraft.protein),
+      fat: normalizeManualNumericValue(manualDraft.fat),
+      carbs: normalizeManualNumericValue(manualDraft.carbs),
       unit: "g",
     })
       .then(() => {
@@ -731,15 +760,23 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             type="number"
             label={copy.grams}
             value={quantity}
-            onChange={(event) =>
-              setQuantity(Math.max(1, Number(event.target.value) || 1))
-            }
+            slotProps={{ htmlInput: { inputMode: "decimal", min: 0, step: 1 } }}
+            onFocus={(event) => event.target.select()}
+            onChange={(event) => {
+              const value = event.target.value;
+              const nextQuantity = Number(value);
+              setQuantity(
+                value === "" || !Number.isFinite(nextQuantity)
+                  ? ""
+                  : Math.max(0, nextQuantity)
+              );
+            }}
             sx={{ width: { xs: "100%", md: 180 } }}
           />
           <Button
             variant="outlined"
             onClick={() => void handleLookup(barcodeInput, true)}
-            disabled={isSearching}
+            disabled={isSearching || selectedQuantity === null}
             sx={{ width: { xs: "100%", md: 220 } }}
           >
             {copy.search}
@@ -1055,6 +1092,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   type="number"
                   label={copy.manualCalories}
                   value={manualDraft.calories}
+                  slotProps={{
+                    htmlInput: { inputMode: "decimal", min: 0, step: 1 },
+                  }}
+                  onFocus={(event) => event.target.select()}
                   onChange={handleManualChange("calories")}
                 />
                 <TextField
@@ -1062,6 +1103,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   type="number"
                   label={copy.manualProtein}
                   value={manualDraft.protein}
+                  slotProps={{
+                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                  }}
+                  onFocus={(event) => event.target.select()}
                   onChange={handleManualChange("protein")}
                 />
               </Stack>
@@ -1072,6 +1117,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   type="number"
                   label={copy.manualFat}
                   value={manualDraft.fat}
+                  slotProps={{
+                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                  }}
+                  onFocus={(event) => event.target.select()}
                   onChange={handleManualChange("fat")}
                 />
                 <TextField
@@ -1079,11 +1128,19 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   type="number"
                   label={copy.manualCarbs}
                   value={manualDraft.carbs}
+                  slotProps={{
+                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                  }}
+                  onFocus={(event) => event.target.select()}
                   onChange={handleManualChange("carbs")}
                 />
               </Stack>
 
-              <Button variant="contained" onClick={handleCreateManualProduct}>
+              <Button
+                variant="contained"
+                onClick={handleCreateManualProduct}
+                disabled={!manualDraft.name.trim() || selectedQuantity === null}
+              >
                 {copy.manualAdd}
               </Button>
             </Stack>

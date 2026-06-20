@@ -4,6 +4,14 @@ import {
   type AssistantAvatarProps,
 } from "@shared/components/AssistantAvatar";
 import { CompanionErrorBoundary } from "./CompanionErrorBoundary";
+import {
+  shouldUseCompanionCanvas,
+  type CompanionAvatarRenderMode,
+} from "./companionAvatarModel";
+
+export interface CompanionAvatarProps extends AssistantAvatarProps {
+  renderMode?: CompanionAvatarRenderMode;
+}
 
 const CompanionCanvas = lazy(() =>
   import("./CompanionCanvas").then((module) => ({
@@ -35,11 +43,20 @@ const canUseCompanionCanvas = () => {
   return cachedWebGlSupport;
 };
 
-export const CompanionAvatar = (props: AssistantAvatarProps) => {
+export const CompanionAvatar = ({
+  renderMode = "2d",
+  ...props
+}: CompanionAvatarProps) => {
   const size = props.size ?? 64;
   const fallback = <CompanionFallback2D {...props} />;
 
-  if (size < 48 || !canUseCompanionCanvas()) {
+  if (
+    !shouldUseCompanionCanvas({
+      canUseCanvas: canUseCompanionCanvas(),
+      renderMode,
+      size,
+    })
+  ) {
     return fallback;
   }
 

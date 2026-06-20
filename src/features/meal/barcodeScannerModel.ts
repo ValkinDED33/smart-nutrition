@@ -2,15 +2,17 @@ import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { Product } from "@domain/products/types";
 import { normalizeBarcode } from "./productIdentity";
 
+export type ManualNumericDraftValue = number | "";
+
 export type ManualDraft = {
   name: string;
   brand: string;
   category: string;
   imageUrl: string;
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
+  calories: ManualNumericDraftValue;
+  protein: ManualNumericDraftValue;
+  fat: ManualNumericDraftValue;
+  carbs: ManualNumericDraftValue;
 };
 
 export type CatalogNotice = {
@@ -33,11 +35,15 @@ export const createManualDraft = (): ManualDraft => ({
   brand: "",
   category: "",
   imageUrl: "",
-  calories: 0,
-  protein: 0,
-  fat: 0,
-  carbs: 0,
+  calories: "",
+  protein: "",
+  fat: "",
+  carbs: "",
 });
+
+export const normalizeManualNumericValue = (
+  value: ManualNumericDraftValue
+) => (typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : 0);
 
 export { normalizeBarcode } from "./productIdentity";
 
@@ -120,10 +126,10 @@ export const createManualBarcodeProduct = ({
   const catalogImageUrl = normalizeCatalogImageUrl(imageUrl);
   const nutrients = createEmptyNutrients();
 
-  nutrients.calories = draft.calories;
-  nutrients.protein = draft.protein;
-  nutrients.fat = draft.fat;
-  nutrients.carbs = draft.carbs;
+  nutrients.calories = normalizeManualNumericValue(draft.calories);
+  nutrients.protein = normalizeManualNumericValue(draft.protein);
+  nutrients.fat = normalizeManualNumericValue(draft.fat);
+  nutrients.carbs = normalizeManualNumericValue(draft.carbs);
 
   const product: Product = {
     id,

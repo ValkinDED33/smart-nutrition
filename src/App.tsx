@@ -11,6 +11,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
 import { adminRouteRoles } from "@app/navigation/appNavigation";
+import { canAccessAdminCenter } from "@domain/user/roles";
 
 const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
 const loadLandingPage = () => import("./pages/LandingPage");
@@ -52,7 +53,14 @@ const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, isInitialized, user } = useSelector(selectAuth);
+  const {
+    error: authError,
+    hasSessionHint,
+    isAuthenticated,
+    isInitialized,
+    isLoading,
+    user,
+  } = useSelector(selectAuth);
   const profileOnboardingCompleted = useSelector((state: RootState) =>
     Boolean(state.profile.assistant.onboarding.completedAt)
   );
@@ -60,27 +68,62 @@ function App() {
   const shouldShowOnboarding = isAuthenticated && !profileOnboardingCompleted;
 
   useEffect(() => {
-    dispatch(initializeAuth());
-  }, [dispatch]);
+    if (!isInitialized && !isLoading) {
+      dispatch(initializeAuth());
+      return undefined;
+    }
+
+    if (
+      hasSessionHint &&
+      isInitialized &&
+      !isLoading &&
+      authError === "REMOTE_API_UNAVAILABLE"
+    ) {
+      const retryId = globalThis.setTimeout(() => {
+        dispatch(initializeAuth());
+      }, 5_000);
+
+      return () => {
+        globalThis.clearTimeout(retryId);
+      };
+    }
+
+    return undefined;
+  }, [authError, dispatch, hasSessionHint, isInitialized, isLoading]);
 
   useEffect(() => {
     setOnboardingUser(isAuthenticated ? (user?.id ?? null) : null);
   }, [isAuthenticated, setOnboardingUser, user?.id]);
 
   useEffect(() => {
-    if (!isInitialized || typeof window === "undefined") {
+    if (
+      !isInitialized ||
+      !isAuthenticated ||
+      shouldShowOnboarding ||
+      typeof window === "undefined"
+    ) {
       return;
     }
 
+    const routeLoaders = [
+      loadDashboardPage,
+      loadMealsPage,
+      loadProgressPage,
+      loadCoachPage,
+      loadRecipesPage,
+      loadCommunityPage,
+      loadProfilePage,
+      ...(canAccessAdminCenter(user?.role) ? [loadAdminPage] : []),
+    ];
+    const routeTimeoutIds: ReturnType<typeof globalThis.setTimeout>[] = [];
+
     const preloadRoutes = () => {
-      void loadDashboardPage();
-      void loadMealsPage();
-      void loadRecipesPage();
-      void loadCommunityPage();
-      void loadCoachPage();
-      void loadProgressPage();
-      void loadProfilePage();
-      void loadAdminPage();
+      routeLoaders.forEach((loadRoute, index) => {
+        const timeoutId = globalThis.setTimeout(() => {
+          void loadRoute();
+        }, index * 350);
+        routeTimeoutIds.push(timeoutId);
+      });
     };
     const idleWindow = window as Window & {
       requestIdleCallback?: (callback: IdleRequestCallback) => number;
@@ -96,14 +139,20 @@ function App() {
       });
       return () => {
         idleWindow.cancelIdleCallback?.(idleId);
+        routeTimeoutIds.forEach((timeoutId) => {
+          globalThis.clearTimeout(timeoutId);
+        });
       };
     }
 
-    const timeoutId = globalThis.setTimeout(preloadRoutes, 1200);
+    const timeoutId = globalThis.setTimeout(preloadRoutes, 2_400);
     return () => {
       globalThis.clearTimeout(timeoutId);
+      routeTimeoutIds.forEach((routeTimeoutId) => {
+        globalThis.clearTimeout(routeTimeoutId);
+      });
     };
-  }, [isInitialized]);
+  }, [isAuthenticated, isInitialized, shouldShowOnboarding, user?.role]);
 
   return (
     <ErrorBoundary>

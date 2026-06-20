@@ -337,6 +337,7 @@ export const AssistantCustomizationCard = () => {
             name={assistant.name}
             variant={assistant.companionKind}
             mood="happy"
+            renderMode="3d"
             active
           />
           <Typography color="text.secondary">

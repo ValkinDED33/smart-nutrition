@@ -399,7 +399,12 @@ const AiCompanionPage = () => {
         }}
         >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
-          <AssistantAvatar name={assistant.name} variant={assistant.companionKind} size={76} />
+          <AssistantAvatar
+            name={assistant.name}
+            variant={assistant.companionKind}
+            size={76}
+            renderMode="3d"
+          />
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
             <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
               {assistant.name}

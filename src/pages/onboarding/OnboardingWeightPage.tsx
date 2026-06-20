@@ -61,9 +61,11 @@ export const OnboardingWeightPage = ({ state, updateState }: OnboardingStepProps
                 continueToGoal();
               }
             }}
-            inputProps={{
-              inputMode: "decimal",
-              enterKeyHint: "next",
+            slotProps={{
+              htmlInput: {
+                inputMode: "decimal",
+                enterKeyHint: "next",
+              },
             }}
           />
           <Stack direction="row" spacing={1.2}>

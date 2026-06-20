@@ -11,11 +11,15 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, roles }: ProtectedRouteProps) => {
-  const { user, isLoading, isInitialized } = useSelector(
+  const { error, hasSessionHint, isLoading, isInitialized, user } = useSelector(
     (state: RootState) => state.auth
   );
 
-  if (!isInitialized || isLoading) {
+  if (
+    !isInitialized ||
+    isLoading ||
+    (hasSessionHint && error === "REMOTE_API_UNAVAILABLE")
+  ) {
     return <PacmanLoader />;
   }
 

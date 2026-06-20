@@ -62,6 +62,10 @@ describe("clientPersistence", () => {
     const { localStorage, sessionStorage } = installStorage();
     localStorage.setItem("smart-nutrition.language", "en");
     localStorage.setItem("smart-nutrition.color-mode", "dark");
+    localStorage.setItem(
+      "smart-nutrition.auth-session-hint",
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     localStorage.setItem("smart-nutrition.remote-snapshot", "{ private: true }");
     sessionStorage.setItem("smart-nutrition.remote-snapshot", "{ private: true }");
 
@@ -71,9 +75,15 @@ describe("clientPersistence", () => {
 
     expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("en");
     expect(persistence.getClientStorageItem("smart-nutrition.color-mode")).toBe("dark");
+    expect(persistence.getClientStorageItem("smart-nutrition.auth-session-hint")).toBe(
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     expect(persistence.getClientStorageItem("smart-nutrition.remote-snapshot")).toBeNull();
     expect(localStorage.getItem("smart-nutrition.language")).toBe("en");
     expect(localStorage.getItem("smart-nutrition.color-mode")).toBe("dark");
+    expect(localStorage.getItem("smart-nutrition.auth-session-hint")).toBe(
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     expect(localStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
     expect(sessionStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
   });
@@ -84,13 +94,23 @@ describe("clientPersistence", () => {
 
     await persistence.initializeClientPersistence();
     persistence.setClientStorageItem("smart-nutrition.language", "pl");
+    persistence.setClientStorageItem(
+      "smart-nutrition.auth-session-hint",
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     persistence.setClientStorageItem("smart-nutrition.remote-snapshot", "{ private: true }");
 
     expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("pl");
+    expect(persistence.getClientStorageItem("smart-nutrition.auth-session-hint")).toBe(
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     expect(persistence.getClientStorageItem("smart-nutrition.remote-snapshot")).toBe(
       "{ private: true }"
     );
     expect(localStorage.getItem("smart-nutrition.language")).toBe("pl");
+    expect(localStorage.getItem("smart-nutrition.auth-session-hint")).toBe(
+      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    );
     expect(localStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
 
     persistence.removeClientStorageItem("smart-nutrition.language");

@@ -242,6 +242,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");
   const [analysisMode, setAnalysisMode] = useState<"cloud" | null>(null);
   const [selectedItemIndexes, setSelectedItemIndexes] = useState<number[]>([]);
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -274,6 +275,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setFeedback(null);
     setAnalysis(null);
     setAnalysisMode(null);
+    setQuantityDrafts({});
 
     try {
       const dataUrl = await readPhotoFileAsDataUrl(file);
@@ -293,6 +295,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         setPortionSize("regular");
         setAnalysis(nextAnalysis);
         setSelectedItemIndexes(nextAnalysis.items.map((_, index) => index));
+        setQuantityDrafts({});
         setAnalysisMode("cloud");
       } catch {
         setError(copy.analysisError);
@@ -316,6 +319,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setAnalysis(null);
     setAnalysisMode(null);
     setSelectedItemIndexes([]);
+    setQuantityDrafts({});
     setError(null);
     setFeedback(null);
   };
@@ -326,6 +330,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     }
 
     setAnalysis(rescalePhotoMealAnalysis(analysis, portionSize, value));
+    setQuantityDrafts({});
     setPortionSize(value);
   };
 
@@ -359,6 +364,29 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             }
           : item
       ),
+    });
+  };
+
+  const handleSuggestionQuantityInputChange = (index: number, value: string) => {
+    const safeValue = value
+      .replace(/[^\d,.]/g, "")
+      .replace(".", ",")
+      .replace(/(,.*),/g, "$1")
+      .slice(0, 5);
+    const parsedValue = Number(safeValue.replace(",", "."));
+
+    setQuantityDrafts((current) => ({ ...current, [index]: safeValue }));
+
+    if (safeValue !== "" && Number.isFinite(parsedValue) && parsedValue > 0) {
+      handleSuggestionChange(index, { quantityGrams: parsedValue });
+    }
+  };
+
+  const resetSuggestionQuantityDraft = (index: number) => {
+    setQuantityDrafts((current) => {
+      const nextDrafts = { ...current };
+      delete nextDrafts[index];
+      return nextDrafts;
     });
   };
 
@@ -597,15 +625,23 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                             />
                             <TextField
                               size="small"
-                              type="number"
+                              type="text"
                               label={copy.itemGrams}
-                              value={Math.round(item.quantityGrams)}
-                              inputProps={{ min: 5, step: 5 }}
-                              onChange={(event) =>
-                                handleSuggestionChange(index, {
-                                  quantityGrams: Number(event.target.value),
-                                })
+                              value={
+                                quantityDrafts[index] ??
+                                String(Math.round(item.quantityGrams))
                               }
+                              slotProps={{
+                                htmlInput: { inputMode: "decimal", min: 5, step: 5 },
+                              }}
+                              onFocus={(event) => event.target.select()}
+                              onChange={(event) =>
+                                handleSuggestionQuantityInputChange(
+                                  index,
+                                  event.target.value
+                                )
+                              }
+                              onBlur={() => resetSuggestionQuantityDraft(index)}
                               sx={{ maxWidth: 180 }}
                             />
                           <Typography variant="body2" color="text.secondary">

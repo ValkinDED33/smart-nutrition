@@ -3,6 +3,7 @@ const LEGACY_DB_NAME = "smart-nutrition-client";
 const DURABLE_PREFERENCE_KEYS = new Set([
   "smart-nutrition.language",
   "smart-nutrition.color-mode",
+  "smart-nutrition.auth-session-hint",
 ]);
 
 const memoryStore = new Map<string, string>();

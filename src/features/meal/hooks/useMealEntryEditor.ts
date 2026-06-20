@@ -76,7 +76,12 @@ export const useMealEntryEditor = (entry: MealEntry) => {
   }, []);
 
   const updateQuantityInput = useCallback((value: string) => {
-    setQuantity(value === "" ? "" : Math.max(1, Number(value) || 1));
+    const parsedValue = Number(value);
+    setQuantity(
+      value === "" || !Number.isFinite(parsedValue)
+        ? ""
+        : Math.max(1, parsedValue)
+    );
   }, []);
 
   const candidateProducts = useMemo(() => {

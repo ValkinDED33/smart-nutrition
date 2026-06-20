@@ -13,6 +13,31 @@ const languageFlags: Record<AppLanguage, string> = {
   en: "🇬🇧",
 };
 
+const languageButtonSx = {
+  justifyContent: "flex-start",
+  py: 1.5,
+  borderRadius: 1,
+  textTransform: "none",
+  fontWeight: 900,
+  fontSize: "1.04rem",
+  opacity: 1,
+  "&.MuiButton-outlined": {
+    color: "#1f2937",
+    borderColor: "rgba(15, 118, 110, 0.34)",
+    bgcolor: "rgba(255,255,255,0.92)",
+  },
+  "&.MuiButton-outlined:hover": {
+    borderColor: "rgba(15, 118, 110, 0.56)",
+    bgcolor: "rgba(240,253,250,0.96)",
+  },
+  "&.Mui-disabled": {
+    color: "rgba(31, 41, 55, 0.72)",
+    borderColor: "rgba(15, 118, 110, 0.2)",
+    bgcolor: "rgba(248,250,252,0.84)",
+    opacity: 1,
+  },
+} as const;
+
 const LanguageSetupPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -58,14 +83,7 @@ const LanguageSetupPage = () => {
                 variant={appLanguage === language ? "contained" : "outlined"}
                 size="large"
                 onClick={() => selectLanguage(language)}
-                sx={{
-                  justifyContent: "flex-start",
-                  py: 1.5,
-                  borderRadius: 1,
-                  textTransform: "none",
-                  fontWeight: 900,
-                  fontSize: "1.04rem",
-                }}
+                sx={languageButtonSx}
               >
                 {languageFlags[language]} {languageLabels[language]}
               </Button>

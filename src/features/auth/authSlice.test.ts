@@ -39,7 +39,12 @@ const authApiMock = vi.hoisted(() => ({
   },
 }));
 
+const sessionHintMock = vi.hoisted(() => ({
+  hasRecentAuthSessionHint: vi.fn(() => false),
+}));
+
 vi.mock("../../shared/api/auth", () => authApiMock);
+vi.mock("../../shared/lib/authSessionHint", () => sessionHintMock);
 
 const createTestStore = () =>
   configureStore({
@@ -72,6 +77,7 @@ describe("authSlice", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    sessionHintMock.hasRecentAuthSessionHint.mockReturnValue(false);
   });
 
   it("finishes initialization when remote restore exceeds startup timeout", async () => {
@@ -122,6 +128,61 @@ describe("authSlice", () => {
       isAuthenticated: false,
       isInitialized: true,
       isLoading: false,
+    });
+  });
+
+  it("keeps returning users in restore mode longer before showing an auth failure", async () => {
+    vi.useFakeTimers();
+    sessionHintMock.hasRecentAuthSessionHint.mockReturnValue(true);
+    const store = createTestStore();
+
+    authApiMock.restoreSession.mockReturnValue(new Promise(() => undefined));
+
+    const resultPromise = store.dispatch(initializeAuth());
+
+    await vi.advanceTimersByTimeAsync(3_500);
+    expect(store.getState().auth).toMatchObject({
+      isLoading: true,
+      isInitialized: false,
+      hasSessionHint: true,
+    });
+
+    await vi.advanceTimersByTimeAsync(71_500);
+    await resultPromise;
+
+    expect(store.getState().auth).toMatchObject({
+      user: null,
+      error: "REMOTE_API_UNAVAILABLE",
+      isAuthenticated: false,
+      isInitialized: true,
+      isLoading: false,
+      hasSessionHint: true,
+    });
+  });
+
+  it("allows retrying session restore for returning users after backend timeout", async () => {
+    vi.useFakeTimers();
+    sessionHintMock.hasRecentAuthSessionHint.mockReturnValue(true);
+    const store = createTestStore();
+    const user = createUser("restored-after-retry");
+
+    authApiMock.restoreSession
+      .mockReturnValueOnce(new Promise(() => undefined))
+      .mockResolvedValueOnce({ user, snapshot: null });
+
+    const timeoutResult = store.dispatch(initializeAuth());
+
+    await vi.advanceTimersByTimeAsync(75_000);
+    await timeoutResult;
+
+    await store.dispatch(initializeAuth());
+
+    expect(store.getState().auth).toMatchObject({
+      user,
+      isAuthenticated: true,
+      isInitialized: true,
+      isLoading: false,
+      hasSessionHint: true,
     });
   });
 

@@ -7,6 +7,7 @@ interface PostHogConfig {
 
 export type RuntimeAnalyticsEvent =
   | "screen_viewed"
+  | "brand_home_clicked"
   | "language_changed"
   | "mobile_navigation_selected"
   | "signup_started"

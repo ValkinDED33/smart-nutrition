@@ -129,9 +129,13 @@ const InlineEditPanel = ({
           value={quantity}
           onChange={(e) => {
             const value = e.target.value;
-            setQuantity(value === "" ? "" : Number(value));
+            const nextQuantity = Number(value);
+            setQuantity(
+              value === "" || !Number.isFinite(nextQuantity) ? "" : nextQuantity
+            );
           }}
-          inputProps={{ min: 1, step: 0.1 }}
+          onFocus={(event) => event.target.select()}
+          slotProps={{ htmlInput: { inputMode: "decimal", min: 1, step: 0.1 } }}
           fullWidth
         />
         <TextField

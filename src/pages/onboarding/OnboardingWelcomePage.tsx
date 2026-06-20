@@ -45,6 +45,12 @@ export const OnboardingWelcomePage = () => {
             <FormControl fullWidth>
               <Select
                 value={appLanguage}
+                sx={{
+                  "& .MuiSelect-select": {
+                    color: "text.primary",
+                    fontWeight: 800,
+                  },
+                }}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   if (nextValue === "uk" || nextValue === "pl" || nextValue === "en") {
@@ -55,7 +61,15 @@ export const OnboardingWelcomePage = () => {
                 <MenuItem value="pl">🇵🇱 {languageLabels.pl}</MenuItem>
                 <MenuItem value="uk">🇺🇦 {languageLabels.uk}</MenuItem>
                 <MenuItem value="en">🇬🇧 {languageLabels.en}</MenuItem>
-                <MenuItem disabled value="add">
+                <MenuItem
+                  disabled
+                  value="add"
+                  sx={{
+                    opacity: "1 !important",
+                    color: "text.secondary",
+                    fontWeight: 800,
+                  }}
+                >
                   + {t("language.add")}
                 </MenuItem>
               </Select>

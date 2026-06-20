@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Stack } from "@mui/material";
 import { SectionTabs } from "@shared/ui";
 
@@ -12,13 +13,38 @@ interface ProfileSectionTabsProps {
   sections: ProfileSectionTab[];
 }
 
+const getSectionIdFromHash = (hash: string) => {
+  if (!hash.startsWith("#")) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(hash.slice(1));
+  } catch {
+    return hash.slice(1);
+  }
+};
+
 export const ProfileSectionTabs = ({ sections }: ProfileSectionTabsProps) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const firstSectionId = sections[0]?.id ?? "";
-  const [activeSection, setActiveSection] = useState(firstSectionId);
   const sectionIds = useMemo(() => new Set(sections.map((section) => section.id)), [sections]);
-  const safeActiveSection = sectionIds.has(activeSection) ? activeSection : firstSectionId;
+  const hashSectionId = getSectionIdFromHash(location.hash);
+  const safeActiveSection = sectionIds.has(hashSectionId) ? hashSectionId : firstSectionId;
   const selectedSection =
     sections.find((section) => section.id === safeActiveSection) ?? sections[0];
+
+  const handleSectionChange = (sectionId: string) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: sectionId,
+      },
+      { replace: true }
+    );
+  };
 
   if (!selectedSection) {
     return null;
@@ -29,11 +55,11 @@ export const ProfileSectionTabs = ({ sections }: ProfileSectionTabsProps) => {
       <SectionTabs
         sections={sections.map(({ id, label }) => ({ id, label }))}
         activeSection={safeActiveSection}
-        onChange={setActiveSection}
+        onChange={handleSectionChange}
         ariaLabel="Profile sections"
       />
 
-      <Box>{selectedSection.content}</Box>
+      <Box id={safeActiveSection}>{selectedSection.content}</Box>
     </Stack>
   );
 };

@@ -1,12 +1,32 @@
-import { Component, type ReactNode } from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useLanguage } from "../language";
+import {
+  buildErrorRecoveryDiagnostic,
+  clearRuntimeCaches,
+  clearVolatileBrowserState,
+  getSessionStorageItem,
+  isLikelyStaleBuildError,
+  isRecoveryRecentlyAttempted,
+  persistErrorRecoveryDiagnostic,
+  removeSessionStorageItem,
+  setSessionStorageItem,
+  STALE_BUILD_RECOVERY_KEY,
+  STALE_BUILD_RECOVERY_TTL_MS,
+  type ErrorRecoveryDiagnostic,
+} from "@shared/lib/errorRecovery";
 
 interface Props {
   children: ReactNode;
   title: string;
+  subtitle: string;
   actionLabel: string;
+  retryLabel: string;
+  safeResetLabel: string;
+  homeLabel: string;
+  diagnosticLabel: string;
   recoveringLabel: string;
+  resettingLabel: string;
   resetKey: string;
 }
 
@@ -15,86 +35,18 @@ interface WrapperProps {
 }
 
 interface State {
+  diagnostic: ErrorRecoveryDiagnostic | null;
   hasError: boolean;
   isRecovering: boolean;
+  recoveryMode: "refresh" | "reset";
 }
-
-const STALE_BUILD_RECOVERY_KEY = "smart-nutrition.stale-build-recovery";
-const STALE_BUILD_RECOVERY_TTL_MS = 15_000;
-
-const staleBuildErrorPattern =
-  /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i;
-
-const isLikelyStaleBuildError = (error: unknown) => {
-  const message =
-    error instanceof Error
-      ? `${error.name} ${error.message} ${error.stack ?? ""}`
-      : String(error);
-
-  return staleBuildErrorPattern.test(message);
-};
-
-const getSessionStorageItem = (key: string) => {
-  try {
-    return typeof window === "undefined" ? null : window.sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const setSessionStorageItem = (key: string, value: string) => {
-  try {
-    window.sessionStorage.setItem(key, value);
-  } catch {
-    // Recovery must keep working in restricted mobile storage modes.
-  }
-};
-
-const removeSessionStorageItem = (key: string) => {
-  try {
-    window.sessionStorage.removeItem(key);
-  } catch {
-    // Best-effort cleanup only.
-  }
-};
-
-const isRecoveryRecentlyAttempted = () => {
-  const rawValue = getSessionStorageItem(STALE_BUILD_RECOVERY_KEY);
-  const attemptedAt = rawValue ? Number(rawValue) : Number.NaN;
-
-  return Number.isFinite(attemptedAt)
-    ? Date.now() - attemptedAt < STALE_BUILD_RECOVERY_TTL_MS
-    : rawValue !== null;
-};
-
-const clearRuntimeCaches = async () => {
-  const clearServiceWorkers = async () => {
-    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
-      return;
-    }
-
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(
-      registrations.map((registration) => registration.unregister())
-    );
-  };
-
-  const clearOriginCaches = async () => {
-    if (typeof window === "undefined" || !("caches" in window)) {
-      return;
-    }
-
-    const keys = await window.caches.keys();
-    await Promise.all(keys.map((key) => window.caches.delete(key)));
-  };
-
-  await Promise.allSettled([clearServiceWorkers(), clearOriginCaches()]);
-};
 
 class ErrorBoundaryInner extends Component<Props, State> {
   state: State = {
+    diagnostic: null,
     hasError: false,
     isRecovering: false,
+    recoveryMode: "refresh",
   };
 
   static getDerivedStateFromError() {
@@ -113,29 +65,78 @@ class ErrorBoundaryInner extends Component<Props, State> {
       this.state.hasError &&
       !this.state.isRecovering
     ) {
-      this.setState({ hasError: false, isRecovering: false });
+      this.setState({
+        diagnostic: null,
+        hasError: false,
+        isRecovering: false,
+        recoveryMode: "refresh",
+      });
     }
   }
 
-  componentDidCatch(error: unknown) {
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    const diagnostic = buildErrorRecoveryDiagnostic(
+      error,
+      typeof window === "undefined"
+        ? "/"
+        : `${window.location.pathname}${window.location.search}`,
+      new Date(),
+      typeof navigator === "undefined" ? undefined : navigator.userAgent
+    );
+
+    persistErrorRecoveryDiagnostic(diagnostic);
+    console.warn("Smart Nutrition UI recovery diagnostic", {
+      ...diagnostic,
+      componentStackLines: errorInfo.componentStack
+        ? errorInfo.componentStack.trim().split("\n").slice(0, 4)
+        : [],
+    });
+    this.setState({ diagnostic });
+
     if (
       !isLikelyStaleBuildError(error) ||
-      isRecoveryRecentlyAttempted()
+      isRecoveryRecentlyAttempted(getSessionStorageItem(STALE_BUILD_RECOVERY_KEY))
     ) {
       return;
     }
 
     setSessionStorageItem(STALE_BUILD_RECOVERY_KEY, String(Date.now()));
-    this.setState({ isRecovering: true });
-    void this.recoverApplication();
+    this.setState({ isRecovering: true, recoveryMode: "refresh" });
+    void this.recoverApplication({ clearVolatileState: false });
+  }
+
+  handleRetry = () => {
+    this.setState({
+      diagnostic: null,
+      hasError: false,
+      isRecovering: false,
+      recoveryMode: "refresh",
+    });
   }
 
   handleReload = () => {
-    this.setState({ isRecovering: true });
-    void this.recoverApplication();
+    this.setState({ isRecovering: true, recoveryMode: "refresh" });
+    void this.recoverApplication({ clearVolatileState: false });
   };
 
-  recoverApplication = async () => {
+  handleSafeReset = () => {
+    this.setState({ isRecovering: true, recoveryMode: "reset" });
+    void this.recoverApplication({ clearVolatileState: true });
+  };
+
+  handleHome = () => {
+    window.location.assign("/");
+  };
+
+  recoverApplication = async ({
+    clearVolatileState,
+  }: {
+    clearVolatileState: boolean;
+  }) => {
+    if (clearVolatileState) {
+      clearVolatileBrowserState();
+    }
+
     await clearRuntimeCaches();
     window.location.replace(window.location.href);
   };
@@ -147,23 +148,93 @@ class ErrorBoundaryInner extends Component<Props, State> {
           sx={{
             minHeight: "100vh",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 2,
-            px: 3,
+            px: { xs: 2, sm: 3 },
+            py: 4,
+            bgcolor: "background.default",
           }}
         >
-          <Typography component="h1" variant="h5" textAlign="center">
-            {this.state.isRecovering ? this.props.recoveringLabel : this.props.title}
-          </Typography>
-          <Button
-            variant="contained"
-            disabled={this.state.isRecovering}
-            onClick={this.handleReload}
+          <Paper
+            elevation={0}
+            sx={{
+              width: "min(100%, 560px)",
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 4,
+              p: { xs: 2.5, sm: 4 },
+            }}
           >
-            {this.props.actionLabel}
-          </Button>
+            <Stack spacing={2.5}>
+              <Stack spacing={1}>
+                <Typography component="h1" variant="h4">
+                  {this.state.isRecovering
+                    ? this.state.recoveryMode === "reset"
+                      ? this.props.resettingLabel
+                      : this.props.recoveringLabel
+                    : this.props.title}
+                </Typography>
+                <Typography color="text.secondary" variant="body1">
+                  {this.props.subtitle}
+                </Typography>
+              </Stack>
+
+              {this.state.diagnostic ? (
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  <Chip
+                    label={`${this.props.diagnosticLabel}: ${this.state.diagnostic.id}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                  {this.state.diagnostic.staleBuildLikely ? (
+                    <Chip label="stale build" size="small" color="warning" />
+                  ) : null}
+                </Stack>
+              ) : null}
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.25}
+                sx={{
+                  "& > .MuiButton-root": {
+                    minHeight: 44,
+                  },
+                }}
+              >
+                <Button
+                  variant="contained"
+                  disabled={this.state.isRecovering}
+                  onClick={this.handleRetry}
+                >
+                  {this.props.retryLabel}
+                </Button>
+                <Button
+                  variant="outlined"
+                  disabled={this.state.isRecovering}
+                  onClick={this.handleReload}
+                >
+                  {this.props.actionLabel}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  disabled={this.state.isRecovering}
+                  onClick={this.handleSafeReset}
+                >
+                  {this.props.safeResetLabel}
+                </Button>
+              </Stack>
+
+              <Button
+                variant="text"
+                disabled={this.state.isRecovering}
+                onClick={this.handleHome}
+                sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+              >
+                {this.props.homeLabel}
+              </Button>
+            </Stack>
+          </Paper>
         </Box>
       );
     }
@@ -178,8 +249,14 @@ const ErrorBoundary = ({ children }: WrapperProps) => {
   return (
     <ErrorBoundaryInner
       title={t("errorBoundary.title")}
+      subtitle={t("errorBoundary.subtitle")}
       actionLabel={t("errorBoundary.action")}
+      retryLabel={t("errorBoundary.retry")}
+      safeResetLabel={t("errorBoundary.safeReset")}
+      homeLabel={t("errorBoundary.home")}
+      diagnosticLabel={t("errorBoundary.diagnostic")}
       recoveringLabel={t("errorBoundary.recovering")}
+      resettingLabel={t("errorBoundary.resetting")}
       resetKey={appLanguage}
     >
       {children}

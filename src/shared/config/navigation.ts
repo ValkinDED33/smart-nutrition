@@ -16,6 +16,8 @@ export const navigation = {
     themeDark: "Темна тема",
     switchToLight: "Увімкнути світлу тему",
     switchToDark: "Увімкнути темну тему",
+    brandHome: "На головну",
+    accountSettings: "Налаштування акаунта",
   },
   pl: {
     dashboard: "Główna",
@@ -34,6 +36,8 @@ export const navigation = {
     themeDark: "Ciemny motyw",
     switchToLight: "Włącz jasny motyw",
     switchToDark: "Włącz ciemny motyw",
+    brandHome: "Do strony głównej",
+    accountSettings: "Ustawienia konta",
   },
   en: {
     dashboard: "Home",
@@ -52,5 +56,7 @@ export const navigation = {
     themeDark: "Dark theme",
     switchToLight: "Switch to light theme",
     switchToDark: "Switch to dark theme",
+    brandHome: "Go home",
+    accountSettings: "Account settings",
   },
 } as const;

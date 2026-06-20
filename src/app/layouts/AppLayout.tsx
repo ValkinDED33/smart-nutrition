@@ -2,12 +2,7 @@ import { useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  Globe2,
-  LogOut,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import {
   AppBar,
   Avatar,
@@ -15,14 +10,13 @@ import {
   BottomNavigationAction,
   Box,
   Button,
+  ButtonBase,
   Container,
   IconButton,
   Paper,
   Stack,
   Toolbar,
   Tooltip,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import {
@@ -37,6 +31,7 @@ import SyncStatusChip from "@widgets/SyncStatusChip";
 import SyncFeedbackAlert from "@widgets/SyncFeedbackAlert";
 import HabitReminderAgent from "@widgets/HabitReminderAgent";
 import GlobalAssistantLayer from "@widgets/GlobalAssistantLayer";
+import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
 import { createAssistantScreenContext } from "@features/assistant/assistantScreen";
 import {
   resolveAssistantContext,
@@ -55,12 +50,6 @@ import {
   getVisibleNavigationItems,
   mobileNavigationItems,
 } from "@app/navigation/appNavigation";
-
-const languageOptions: Array<{ value: AppLanguage; code: string }> = [
-  { value: "pl", code: "🇵🇱" },
-  { value: "uk", code: "🇺🇦" },
-  { value: "en", code: "🇬🇧" },
-];
 
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -92,6 +81,35 @@ const Layout = () => {
     clearSyncOutbox();
     dispatch(resetAppState());
     navigate("/");
+  };
+
+  const handleLanguageSelect = (nextLanguage: AppLanguage) => {
+    if (nextLanguage === appLanguage) {
+      return;
+    }
+
+    setLanguage(nextLanguage);
+    dispatch(setProfileLanguage(nextLanguage));
+    captureRuntimeEvent("language_changed", {
+      language: nextLanguage,
+    });
+  };
+
+  const handleBrandClick = () => {
+    const homePath = user ? "/dashboard" : "/";
+
+    captureRuntimeEvent("brand_home_clicked", {
+      targetPath: homePath,
+      currentPath: location.pathname,
+      authenticated: Boolean(user),
+    });
+
+    if (location.pathname === homePath) {
+      window.location.reload();
+      return;
+    }
+
+    navigate(homePath);
   };
 
   const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
@@ -139,56 +157,69 @@ const Layout = () => {
               justifyContent: "space-between",
             }}
           >
-            <Stack
-              direction="row"
-              spacing={1.2}
-              alignItems="center"
-              minWidth={0}
+            <ButtonBase
+              aria-label={t("navigation.brandHome")}
+              onClick={handleBrandClick}
+              sx={{
+                borderRadius: 2,
+                minWidth: 0,
+                textAlign: "left",
+                "&:focus-visible": {
+                  outline: "3px solid rgba(20,184,166,0.28)",
+                  outlineOffset: 3,
+                },
+              }}
             >
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "14px",
-                  background:
-                    "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "white",
-                  fontWeight: 900,
-                  flexShrink: 0,
-                }}
+              <Stack
+                direction="row"
+                spacing={1.2}
+                alignItems="center"
+                minWidth={0}
               >
-                SN
-              </Box>
-              <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
-                <Typography
-                  component={Link}
-                  to={user ? "/dashboard" : "/"}
+                <Box
                   sx={{
-                    display: "inline-block",
-                    textDecoration: "none",
-                    color: "inherit",
+                    width: 40,
+                    height: 40,
+                    borderRadius: "14px",
+                    background:
+                      "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "white",
                     fontWeight: 900,
-                    fontSize: { xs: 18, sm: 20 },
-                    letterSpacing: 0,
+                    flexShrink: 0,
                   }}
                 >
-                  {t("brand.name")}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    color: isDarkMode
-                      ? "rgba(226,232,240,0.68)"
-                      : "rgba(20,33,61,0.65)",
-                  }}
-                >
-                  {t("brand.tagline")}
-                </Typography>
-              </Box>
-            </Stack>
+                  SN
+                </Box>
+                <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      display: "inline-block",
+                      color: "inherit",
+                      fontWeight: 900,
+                      fontSize: { xs: 18, sm: 20 },
+                      letterSpacing: 0,
+                    }}
+                  >
+                    {t("brand.name")}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      color: isDarkMode
+                        ? "rgba(226,232,240,0.68)"
+                        : "rgba(20,33,61,0.65)",
+                    }}
+                  >
+                    {t("brand.tagline")}
+                  </Typography>
+                </Box>
+              </Stack>
+            </ButtonBase>
 
             {user && (
               <Stack
@@ -272,82 +303,38 @@ const Layout = () => {
                 </IconButton>
               </Tooltip>
 
-              <Stack
-                direction="row"
-                spacing={0.6}
-                alignItems="center"
-                sx={{
-                  px: 0.6,
-                  py: 0.4,
-                  borderRadius: 999,
-                  border: "1px solid",
-                  borderColor: isDarkMode
-                    ? "rgba(148, 163, 184, 0.32)"
-                    : "rgba(15, 118, 110, 0.18)",
-                  bgcolor: isDarkMode
-                    ? "rgba(15, 23, 42, 0.9)"
-                    : "rgba(255,255,255,0.9)",
-                }}
-              >
-                <Globe2 size={16} aria-hidden="true" />
-                <ToggleButtonGroup
-                  exclusive
-                  size="small"
-                  value={appLanguage}
-                  aria-label={t("navigation.languageAria")}
-                  onChange={(_, nextLanguage) => {
-                    if (
-                      nextLanguage === "uk" ||
-                      nextLanguage === "pl" ||
-                      nextLanguage === "en"
-                    ) {
-                      setLanguage(nextLanguage);
-                      dispatch(setProfileLanguage(nextLanguage));
-                      captureRuntimeEvent("language_changed", {
-                        language: nextLanguage,
-                      });
-                    }
-                  }}
-                  sx={{
-                    gap: 0.25,
-                    "& .MuiToggleButtonGroup-grouped": {
-                      width: 34,
-                      height: 30,
-                      border: 0,
-                      borderRadius: "999px !important",
-                      m: 0,
-                      px: 0,
-                      color: isDarkMode ? "#cbd5e1" : "#334155",
-                      fontWeight: 900,
-                      fontSize: 12,
-                      "&.Mui-selected": {
-                        color: "#ffffff",
-                        bgcolor: "#0f766e",
-                        "&:hover": { bgcolor: "#115e59" },
-                      },
-                    },
-                  }}
-                >
-                  {languageOptions.map((option) => (
-                    <ToggleButton
-                      key={option.value}
-                      value={option.value}
-                      aria-label={languageLabels[option.value]}
-                    >
-                      {option.code}
-                    </ToggleButton>
-                  ))}
-                </ToggleButtonGroup>
-              </Stack>
+              <LanguageMenuButton
+                id="language-menu-button"
+                value={appLanguage}
+                labels={languageLabels}
+                ariaLabel={t("navigation.languageAria")}
+                onChange={handleLanguageSelect}
+              />
 
               {user ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Box sx={{ display: { xs: "none", lg: "block" } }}>
                     <SyncStatusChip />
                   </Box>
-                  <Avatar src={user.avatar} sx={{ width: 36, height: 36 }}>
-                    {user.name[0]}
-                  </Avatar>
+                  <Tooltip title={t("navigation.accountSettings")}>
+                    <IconButton
+                      component={Link}
+                      to="/profile#security"
+                      aria-label={t("navigation.accountSettings")}
+                      size="small"
+                      sx={{
+                        p: 0.25,
+                        "&:focus-visible": {
+                          outline: "3px solid rgba(20,184,166,0.28)",
+                          outlineOffset: 2,
+                        },
+                      }}
+                    >
+                      <Avatar src={user.avatar} sx={{ width: 36, height: 36 }}>
+                        {user.name[0]}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title={t("nav.logout")}>
                     <IconButton
                       aria-label={t("nav.logout")}

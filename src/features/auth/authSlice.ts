@@ -28,6 +28,7 @@ import {
   getSyncOutboxMeta,
   type SyncOutboxMeta,
 } from "../../shared/lib/syncOutbox";
+import { hasRecentAuthSessionHint } from "../../shared/lib/authSessionHint";
 import { replaceCommunityState, type CommunityState } from "../community/communitySlice";
 import { hydrateCompanionState } from "../companion/model/store";
 import { replaceFridgeState, type FridgeState } from "../fridge/fridgeSlice";
@@ -42,6 +43,7 @@ type RestoreRaceResult =
   | { kind: "timeout" };
 
 const STARTUP_SESSION_TIMEOUT_MS = 3_500;
+const RETURNING_SESSION_TIMEOUT_MS = 75_000;
 
 interface AuthState {
   user: User | null;
@@ -56,6 +58,7 @@ interface AuthState {
   cloudMeta: AppSnapshotMeta | null;
   syncOutbox: SyncOutboxMeta;
   syncToast: { id: number; kind: "retry-success" | "outbox-flushed" } | null;
+  hasSessionHint: boolean;
 }
 
 interface AuthRootState {
@@ -120,6 +123,7 @@ const initialState: AuthState = {
   cloudMeta: null,
   syncOutbox: createEmptySyncOutboxMeta(),
   syncToast: null,
+  hasSessionHint: hasRecentAuthSessionHint(),
 };
 
 export const initializeAuth = createAsyncThunk<
@@ -166,16 +170,20 @@ export const initializeAuth = createAsyncThunk<
     let startupTimeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
 
     try {
+      const hasSessionHint = hasRecentAuthSessionHint();
+      const startupTimeoutMs = hasSessionHint
+        ? RETURNING_SESSION_TIMEOUT_MS
+        : STARTUP_SESSION_TIMEOUT_MS;
       const sessionAbortController = new AbortController();
       const sessionPromise = restoreSession({
         signal: sessionAbortController.signal,
-        timeoutMs: STARTUP_SESSION_TIMEOUT_MS,
+        timeoutMs: startupTimeoutMs,
       });
       const timeoutPromise = new Promise<RestoreRaceResult>((resolve) => {
         startupTimeoutId = globalThis.setTimeout(() => {
           sessionAbortController.abort();
           resolve({ kind: "timeout" });
-        }, STARTUP_SESSION_TIMEOUT_MS);
+        }, startupTimeoutMs);
       });
       const startupResult = await Promise.race<RestoreRaceResult>([
         sessionPromise.then((data) => ({ kind: "remote", data })),
@@ -212,7 +220,12 @@ export const initializeAuth = createAsyncThunk<
     condition: (_, { getState }) => {
       const state = getState() as AuthRootState;
 
-      return !state.auth.isInitialized && !state.auth.isLoading;
+      return (
+        !state.auth.isLoading &&
+        (!state.auth.isInitialized ||
+          (state.auth.error === "REMOTE_API_UNAVAILABLE" &&
+            state.auth.hasSessionHint))
+      );
     },
   }
 );
@@ -391,10 +404,12 @@ const authSlice = createSlice({
       state.cloudMeta = null;
       state.syncOutbox = createEmptySyncOutboxMeta();
       state.syncToast = null;
+      state.hasSessionHint = false;
     },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
       state.isAuthenticated = true;
+      state.hasSessionHint = true;
     },
     setCredentials(
       state,
@@ -420,6 +435,7 @@ const authSlice = createSlice({
       state.syncError = getSyncError(action.payload.syncOutbox);
       state.cloudMeta = action.payload.cloudMeta ?? null;
       state.syncToast = null;
+      state.hasSessionHint = true;
     },
     markSyncStarted(state) {
       if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
@@ -477,6 +493,8 @@ const authSlice = createSlice({
     builder
       .addCase(initializeAuth.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
+        state.hasSessionHint = hasRecentAuthSessionHint();
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.user = action.payload.user;
@@ -493,6 +511,7 @@ const authSlice = createSlice({
         state.syncError = getSyncError(action.payload.syncOutbox);
         state.cloudMeta = action.payload.cloudMeta;
         state.syncToast = null;
+        state.hasSessionHint = true;
       })
       .addCase(initializeAuth.rejected, (state, action) => {
         const syncMode = getAuthRuntimeInfo().mode;
@@ -510,6 +529,10 @@ const authSlice = createSlice({
         state.cloudMeta = null;
         state.syncOutbox = syncOutbox;
         state.syncToast = null;
+        state.hasSessionHint =
+          action.payload === "REMOTE_API_UNAVAILABLE"
+            ? state.hasSessionHint || hasRecentAuthSessionHint()
+            : false;
       })
       .addCase(retryCloudSync.pending, (state) => {
         if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {

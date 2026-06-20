@@ -29,6 +29,12 @@ import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useMealSearchStore } from "@features/meal/model/searchStore";
 import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
+import {
+  selectPersonalBarcodeProducts,
+  selectRecentProducts,
+  selectSavedProducts,
+} from "./selectors";
+import { getProductSuggestions } from "./productSuggestionModel";
 
 interface Props {
   mealType: MealType;
@@ -134,6 +140,9 @@ export const ProductSearch = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
+  const savedProducts = useSelector(selectSavedProducts);
+  const recentProducts = useSelector(selectRecentProducts);
+  const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
   const { appLanguage, t } = useLanguage();
   const [showContributionForm, setShowContributionForm] = useState(false);
@@ -153,7 +162,24 @@ export const ProductSearch = ({ mealType }: Props) => {
     queryFn: () => searchProducts(debouncedQuery),
   });
 
-  const results = useMemo(() => productQuery.data ?? [], [productQuery.data]);
+  const results = useMemo(
+    () =>
+      getProductSuggestions({
+        query: normalizedQuery,
+        onlineProducts: productQuery.data ?? [],
+        savedProducts,
+        recentProducts,
+        personalBarcodeProducts,
+        limit: normalizedQuery ? 18 : 12,
+      }),
+    [
+      normalizedQuery,
+      personalBarcodeProducts,
+      productQuery.data,
+      recentProducts,
+      savedProducts,
+    ]
+  );
   const isLoading =
     normalizedQuery.length > 0 &&
     (normalizedQuery !== debouncedQuery ||
@@ -249,10 +275,10 @@ export const ProductSearch = ({ mealType }: Props) => {
   }, [activeCategoryFilter, displayResults]);
 
   useEffect(() => {
-    if (debouncedQuery && results.length > 0) {
+    if (debouncedQuery && (productQuery.data?.length ?? 0) > 0) {
       rememberQuery(debouncedQuery);
     }
-  }, [debouncedQuery, rememberQuery, results.length]);
+  }, [debouncedQuery, productQuery.data?.length, rememberQuery]);
 
   const handleQueryChange = (value: string) => {
     setQuery(value);

@@ -266,8 +266,15 @@ const uk = {
   "scanner.cameraIdle":
     "Після запуску сканера тут з'явиться камера.",
   "errorBoundary.title": "Щось пішло не так",
+  "errorBoundary.subtitle":
+    "Можна спробувати повернути екран без перезавантаження або безпечно очистити старий UI-кеш. Сесія акаунта не видаляється.",
   "errorBoundary.action": "Перезавантажити застосунок",
+  "errorBoundary.retry": "Спробувати ще раз",
+  "errorBoundary.safeReset": "Безпечно відновити",
+  "errorBoundary.home": "На головну",
+  "errorBoundary.diagnostic": "Код діагностики",
   "errorBoundary.recovering": "Оновлюємо застосунок і очищаємо старий кеш...",
+  "errorBoundary.resetting": "Очищаємо UI-стан і старий кеш...",
   "common.kcal": "ккал",
   "common.kg": "кг",
   "common.cm": "см",
@@ -510,8 +517,15 @@ const pl: Record<keyof typeof uk, string> = {
   "scanner.cameraIdle":
     "Po uruchomieniu skanera pojawi się tutaj podgląd kamery.",
   "errorBoundary.title": "Coś poszło nie tak",
+  "errorBoundary.subtitle":
+    "Możesz spróbować wrócić do ekranu, odświeżyć aplikację albo bezpiecznie wyczyścić stary cache UI. Sesja konta nie zostanie usunięta.",
   "errorBoundary.action": "Przeładuj aplikację",
+  "errorBoundary.retry": "Spróbuj ponownie",
+  "errorBoundary.safeReset": "Bezpiecznie napraw",
+  "errorBoundary.home": "Na stronę główną",
+  "errorBoundary.diagnostic": "Kod diagnostyczny",
   "errorBoundary.recovering": "Odświeżamy aplikację i czyścimy stary cache...",
+  "errorBoundary.resetting": "Czyścimy stan UI i stary cache...",
   "common.kcal": "kcal",
   "common.kg": "kg",
   "common.cm": "cm",

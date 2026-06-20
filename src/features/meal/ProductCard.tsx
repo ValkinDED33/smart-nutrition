@@ -192,7 +192,13 @@ export const ProductCard = ({
               setQty(event.target.value);
               setQuantityError(null);
             }}
-            inputProps={{ min: 1, step: product.unit === "piece" ? 1 : 0.1 }}
+            slotProps={{
+              htmlInput: {
+                inputMode: "decimal",
+                min: 1,
+                step: product.unit === "piece" ? 1 : 0.1,
+              },
+            }}
           />
 
           <Stack spacing={0.8}>

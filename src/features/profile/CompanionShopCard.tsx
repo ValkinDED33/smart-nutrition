@@ -216,6 +216,7 @@ const CompanionShopCard = () => {
                 variant={activePreview?.companionKind ?? assistant.companionKind}
                 mood="happy"
                 size={96}
+                renderMode="3d"
                 active
               />
               <Stack spacing={0.6}>

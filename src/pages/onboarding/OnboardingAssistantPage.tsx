@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
 import { useLanguage } from "../../shared/language";
 import {
   cardSx,
@@ -54,15 +55,9 @@ const assistantAvatarLabels = {
   },
 } as const;
 
-const languageOptions = [
-  { value: "pl" as const, label: "Polski", flag: "🇵🇱" },
-  { value: "uk" as const, label: "Українська", flag: "🇺🇦" },
-  { value: "en" as const, label: "English", flag: "🇬🇧" },
-];
-
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
-  const { appLanguage, setLanguage, t } = useLanguage();
+  const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const avatarLabels = assistantAvatarLabels[appLanguage];
   const personalityOptions: PersonalityPreset[] = [
     "supportive",
@@ -152,31 +147,25 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
 
           <Stack spacing={1}>
             <Typography sx={{ fontWeight: 900 }}>{t("onboarding.languageTitle")}</Typography>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
+            <Box
               sx={{
-                "& .MuiButton-root": {
-                  borderRadius: 1,
-                  textTransform: "none",
-                  fontWeight: 900,
-                  justifyContent: "flex-start",
-                },
+                display: "flex",
+                justifyContent: "flex-start",
               }}
             >
-              {languageOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={appLanguage === option.value ? "contained" : "outlined"}
-                  onClick={() => setLanguage(option.value)}
-                >
-                  {option.flag} {option.label}
-                </Button>
-              ))}
-              <Button variant="outlined" disabled>
-                {t("onboarding.languageAdd")}
-              </Button>
-            </Stack>
+              <LanguageMenuButton
+                id="onboarding-language-menu-button"
+                value={appLanguage}
+                labels={languageLabels}
+                ariaLabel={t("navigation.languageAria")}
+                onChange={setLanguage}
+                sx={{
+                  minWidth: 104,
+                  borderRadius: 1,
+                  justifyContent: "center",
+                }}
+              />
+            </Box>
           </Stack>
 
           <Stack direction="row" spacing={1.2}>

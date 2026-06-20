@@ -56,10 +56,12 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
                 continueToGender();
               }
             }}
-            inputProps={{
-              inputMode: "numeric",
-              pattern: "[0-9]*",
-              enterKeyHint: "next",
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                enterKeyHint: "next",
+              },
             }}
           />
           <Stack direction="row" spacing={1.2}>

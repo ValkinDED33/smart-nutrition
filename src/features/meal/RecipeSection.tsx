@@ -49,6 +49,10 @@ interface Props {
   mealType: MealType;
 }
 
+type BuilderItem = Omit<MealTemplateItem, "quantity"> & {
+  quantity: number | "";
+};
+
 const createEntryId = () =>
   globalThis.crypto?.randomUUID?.() ??
   `recipe-meal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -70,7 +74,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const [ingredientQuery, setIngredientQuery] = useState("");
   const deferredIngredientQuery = useDeferredValue(ingredientQuery);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [builderItems, setBuilderItems] = useState<MealTemplateItem[]>([]);
+  const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
 
   useEffect(() => {
     let isActive = true;
@@ -151,10 +155,22 @@ export const RecipeSection = ({ mealType }: Props) => {
         }),
     [mealType, preferences, templates]
   );
+  const validBuilderItems = useMemo<MealTemplateItem[]>(
+    () =>
+      builderItems
+        .filter((item): item is MealTemplateItem =>
+          typeof item.quantity === "number" && item.quantity > 0
+        )
+        .map((item) => ({
+          product: item.product,
+          quantity: item.quantity,
+        })),
+    [builderItems]
+  );
   const builderNutrients = useMemo(
     () =>
       calculateMealTotalNutrients(
-        builderItems.map((item) => ({
+        validBuilderItems.map((item) => ({
           id: createEntryId(),
           product: item.product,
           quantity: item.quantity,
@@ -163,7 +179,7 @@ export const RecipeSection = ({ mealType }: Props) => {
           origin: "recipe" as const,
         }))
       ),
-    [builderItems, mealType]
+    [mealType, validBuilderItems]
   );
 
   const handleAddRecipe = (recipeId: string) => {
@@ -192,7 +208,11 @@ export const RecipeSection = ({ mealType }: Props) => {
       if (existingItem) {
         return current.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 100 }
+            ? {
+                ...item,
+                quantity:
+                  typeof item.quantity === "number" ? item.quantity + 100 : 100,
+              }
             : item
         );
       }
@@ -206,7 +226,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const handleSaveBuilderRecipe = () => {
     const normalizedName = recipeName.trim();
 
-    if (!normalizedName || builderItems.length === 0) {
+    if (!normalizedName || validBuilderItems.length === 0) {
       return;
     }
 
@@ -214,20 +234,20 @@ export const RecipeSection = ({ mealType }: Props) => {
       saveMealTemplate({
         name: `${CUSTOM_RECIPE_PREFIX}${normalizedName}`,
         mealType,
-        items: builderItems,
+        items: validBuilderItems,
       })
     );
     setRecipeName("");
   };
 
   const handleAddBuilderNow = () => {
-    if (builderItems.length === 0) {
+    if (validBuilderItems.length === 0) {
       return;
     }
 
     dispatch(
       addMealEntries(
-        builderItems.map((ingredient) => ({
+        validBuilderItems.map((ingredient) => ({
           id: createEntryId(),
           product: ingredient.product,
           quantity: ingredient.quantity,
@@ -333,8 +353,17 @@ export const RecipeSection = ({ mealType }: Props) => {
                       type="number"
                       label="Qty"
                       value={item.quantity}
+                      slotProps={{
+                        htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                      }}
+                      onFocus={(event) => event.target.select()}
                       onChange={(event) => {
-                        const nextQuantity = Math.max(1, Number(event.target.value) || 1);
+                        const value = event.target.value;
+                        const parsedValue = Number(value);
+                        const nextQuantity =
+                          value === "" || !Number.isFinite(parsedValue)
+                            ? ""
+                            : Math.max(0, parsedValue);
                         setBuilderItems((current) =>
                           current.map((currentItem) =>
                             currentItem.product.id === item.product.id
@@ -367,13 +396,17 @@ export const RecipeSection = ({ mealType }: Props) => {
               </Stack>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-                <Button variant="contained" onClick={handleAddBuilderNow}>
+                <Button
+                  variant="contained"
+                  onClick={handleAddBuilderNow}
+                  disabled={validBuilderItems.length === 0}
+                >
                   Add recipe now
                 </Button>
                 <Button
                   variant="outlined"
                   onClick={handleSaveBuilderRecipe}
-                  disabled={!recipeName.trim()}
+                  disabled={!recipeName.trim() || validBuilderItems.length === 0}
                 >
                   Save as reusable recipe
                 </Button>

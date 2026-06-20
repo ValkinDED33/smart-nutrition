@@ -124,7 +124,7 @@ export const OnboardingMotivationPage = ({
               value={supportNote}
               placeholder={t("onboarding.supportNotePlaceholder")}
               onChange={(event) => updateSupportNote(event.target.value)}
-              inputProps={{ maxLength: 220 }}
+              slotProps={{ htmlInput: { maxLength: 220 } }}
             />
           </Stack>
 

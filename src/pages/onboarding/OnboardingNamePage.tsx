@@ -38,7 +38,7 @@ export const OnboardingNamePage = ({ state, updateState }: OnboardingStepProps) 
             placeholder={t("onboarding.namePlaceholder")}
             onChange={(event) => updateState({ name: event.target.value })}
             autoComplete="name"
-            inputProps={{ maxLength: 60 }}
+            slotProps={{ htmlInput: { maxLength: 60, enterKeyHint: "next" } }}
           />
           <Stack direction="row" spacing={1.2}>
             <Button

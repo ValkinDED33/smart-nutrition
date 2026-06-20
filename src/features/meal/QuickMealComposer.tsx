@@ -13,7 +13,12 @@ import {
   Typography,
 } from "@mui/material";
 import { addProduct } from "./mealSlice";
-import { selectFavoriteProductIds } from "./selectors";
+import {
+  selectFavoriteProductIds,
+  selectPersonalBarcodeProducts,
+  selectRecentProducts,
+  selectSavedProducts,
+} from "./selectors";
 import { searchProducts } from "../../shared/api/products";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
@@ -26,6 +31,7 @@ import {
   getProductPortionPresets,
 } from "@domain/products/productPortions";
 import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
+import { getProductSuggestions } from "./productSuggestionModel";
 
 interface Props {
   mealType: MealType;
@@ -91,6 +97,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const { appLanguage, t } = useLanguage();
   const copy = composerStatusCopy[appLanguage];
   const favorites = useSelector(selectFavoriteProductIds);
+  const savedProducts = useSelector(selectSavedProducts);
+  const recentProducts = useSelector(selectRecentProducts);
+  const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -118,10 +127,22 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const lookupFailed = shouldLookupProducts && productsQuery.isError;
   const availableProducts = useMemo(
     () =>
-      (productsQuery.data ?? []).filter((product) =>
-        productMatchesPreferences(product, preferences)
-      ),
-    [preferences, productsQuery.data]
+      getProductSuggestions({
+        query: activeSearchText,
+        onlineProducts: productsQuery.data ?? [],
+        savedProducts,
+        recentProducts,
+        personalBarcodeProducts,
+        limit: 12,
+      }).filter((product) => productMatchesPreferences(product, preferences)),
+    [
+      activeSearchText,
+      personalBarcodeProducts,
+      preferences,
+      productsQuery.data,
+      recentProducts,
+      savedProducts,
+    ]
   );
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -187,10 +208,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const hasValidMealRows = rows.some(
     (row) => row.product && typeof row.quantity === "number" && row.quantity > 0
   );
+  const hasOnlineLookupResult = (productsQuery.data ?? []).length > 0;
   const canOfferContribution =
     activeSearchText.length >= 3 &&
     !productsQuery.isFetching &&
     !lookupFailed &&
+    !hasOnlineLookupResult &&
     availableProducts.length === 0;
   const googleSearchUrl =
     activeSearchText.length >= 3
@@ -293,7 +316,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 clearOnBlur={false}
                 freeSolo
                 handleHomeEndKeys
-                loading={productsQuery.isFetching}
+                loading={shouldLookupProducts && productsQuery.isFetching}
                 openOnFocus
                 options={rowOptions}
                 selectOnFocus
@@ -373,10 +396,16 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                 type="number"
                 label={t("composer.quantity")}
                 value={row.quantity}
+                slotProps={{ htmlInput: { inputMode: "decimal", min: 0 } }}
+                onFocus={(event) => event.target.select()}
                 onChange={(event) => {
                   const value = event.target.value;
+                  const parsedValue = Number(value);
                   updateRow(row.id, {
-                    quantity: value === "" ? "" : Math.max(0, Number(value)),
+                    quantity:
+                      value === "" || !Number.isFinite(parsedValue)
+                        ? ""
+                        : Math.max(0, parsedValue),
                   });
                 }}
                 sx={{ minWidth: { md: 140 } }}

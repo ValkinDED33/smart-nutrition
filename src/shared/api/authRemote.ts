@@ -20,6 +20,10 @@ import {
   removeClientStorageItem,
   setClientStorageItem,
 } from "../lib/clientPersistence";
+import {
+  clearAuthSessionHint,
+  writeAuthSessionHint,
+} from "../lib/authSessionHint";
 import { AuthApiError } from "./authProvider";
 import type {
   AccountBackupPayload,
@@ -245,6 +249,7 @@ export const purgeLegacyBrowserAuthStorage = () => {
 const setRemoteSession = (baseUrl: string) => {
   purgeLegacyBrowserAuthStorage();
   setClientStorageItem(REMOTE_BASE_URL_KEY, baseUrl);
+  writeAuthSessionHint(baseUrl);
   remoteSessionActive = true;
 };
 
@@ -255,6 +260,7 @@ const rememberRemoteBaseUrl = (baseUrl: string) => {
 const clearRemoteSession = () => {
   remoteSessionActive = false;
   removeClientStorageItem(REMOTE_BASE_URL_KEY);
+  clearAuthSessionHint();
   clearCachedRemoteState();
   purgeLegacyBrowserAuthStorage();
 };
