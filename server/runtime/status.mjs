@@ -27,6 +27,10 @@ export const getPublicTelegramStatus = (telegramStatus = {}) => ({
   provider: telegramStatus.provider ?? "telegram",
   botUsername: telegramStatus.botUsername ?? null,
   polling: Boolean(telegramStatus.polling),
+  medicationReminders: {
+    enabled: Boolean(telegramStatus.medicationReminders?.enabled),
+    polling: Boolean(telegramStatus.medicationReminders?.polling),
+  },
 });
 
 export const getPublicProductLookupStatus = (productLookupStatus = {}) => ({

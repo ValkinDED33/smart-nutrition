@@ -1,0 +1,14 @@
+{
+  "ignoreMatches": [
+    "@app/*",
+    "@domain/*",
+    "@features/*",
+    "@shared/*",
+    "@integration/*",
+    "@state/*",
+    "@assistant/*",
+    "@core/*",
+    "@widgets/*",
+    "@data/*"
+  ]
+}

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Telegraf } from "telegraf";
 import { AuthApiError, calculateMealTotalNutrients } from "../lib/domain.mjs";
+import { createTelegramMedicationReminderRuntime } from "./telegramMedicationReminders.mjs";
 
 const TELEGRAM_CONNECT_PURPOSE = "telegram_connect";
 
@@ -76,11 +77,14 @@ export const buildTelegramAssistantCapabilitiesMessage = () =>
     "📈 Прогрес — вага, тренди, звіти й пояснення змін.",
     "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
     "🎮 Companion — рівень, XP, досягнення.",
+    "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
     "",
     "Команди:",
     "/today — короткий статус дня",
     "/water — вода",
     "/nutrition — калорії та нутрієнти",
+    "/meds — активні нагадування про ліки",
+    "/addmed <текст> — створити нагадування про ліки",
     "/profile — статус підключення",
     "/disconnect — відключити Telegram",
   ].join("\n");
@@ -224,6 +228,7 @@ export const createTelegramService = ({
   config,
   authRepository,
   stateService = null,
+  medicationReminderService = null,
   logger = console,
   TelegrafClass = Telegraf,
 } = {}) => {
@@ -233,6 +238,7 @@ export const createTelegramService = ({
   let bot = null;
   let launchPromise = null;
   let launched = false;
+  let medicationReminderRuntime = null;
 
   const getBot = () => {
     if (!configured) {
@@ -298,6 +304,22 @@ export const createTelegramService = ({
 
     const snapshot = await stateService.getSnapshot(user);
     await ctx.reply(buildMessage(snapshot));
+  };
+
+  const getMedicationReminderRuntime = () => {
+    if (!medicationReminderRuntime) {
+      medicationReminderRuntime = createTelegramMedicationReminderRuntime({
+        configured,
+        authRepository,
+        medicationReminderService,
+        getConnectedUser,
+        writeAuditLog,
+        sendTelegramMessage,
+        logger,
+      });
+    }
+
+    return medicationReminderRuntime;
   };
 
   const registerBotHandlers = (nextBot) => {
@@ -392,6 +414,8 @@ export const createTelegramService = ({
 
       await ctx.reply("Telegram отключён от Smart Nutrition.");
     });
+
+    getMedicationReminderRuntime().registerHandlers(nextBot);
 
     nextBot.catch((error) => {
       logger.warn?.("[telegram] bot handler failed", {
@@ -491,6 +515,7 @@ export const createTelegramService = ({
       .launch()
       .then(() => {
         launched = true;
+        getMedicationReminderRuntime().start();
         logger.info?.("[telegram] bot polling started", {
           provider: "telegram",
           botUsername,
@@ -516,6 +541,8 @@ export const createTelegramService = ({
   };
 
   const stop = (reason = "Smart Nutrition API shutdown") => {
+    getMedicationReminderRuntime().stop();
+
     if (bot && launched) {
       bot.stop(reason);
       launched = false;
@@ -528,6 +555,7 @@ export const createTelegramService = ({
     botUsername: configured ? botUsername : null,
     polling: launched,
     connectTokenTtlMs: config?.telegramConnectTokenTtlMs ?? null,
+    medicationReminders: getMedicationReminderRuntime().getStatus(),
   });
 
   return {

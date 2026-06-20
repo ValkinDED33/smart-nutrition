@@ -124,6 +124,20 @@ const normalizeQuickQuestionId = (value) =>
     ? value
     : null;
 
+const normalizeInteractionChannel = (value) => {
+  const normalized = normalizeText(value, { maxLength: 40 }).toLowerCase();
+
+  if (normalized === "telegram") {
+    return "telegram";
+  }
+
+  if (normalized === "mobile" || normalized === "capacitor" || normalized === "native") {
+    return "mobile";
+  }
+
+  return "web";
+};
+
 const normalizePersonalDetails = (value) => {
   const record = isRecord(value) ? value : {};
   const readOption = (nextValue, allowedValues, fallback) =>
@@ -512,6 +526,9 @@ const normalizeContext = (payload, currentUser) => {
     language: normalizeLanguage(record.language),
     screen: normalizeScreenId(record.screen),
     currentPath,
+    interactionChannel: normalizeInteractionChannel(
+      record.interactionChannel ?? record.channel ?? record.uiMode
+    ),
     userName: normalizeText(record.userName, {
       maxLength: 60,
       fallback: currentUser.name ?? "User",

@@ -1,16 +1,11 @@
 import { AssistantApiError } from "../../lib/domain.mjs";
+import { buildAssistantSystemPrompt } from "./assistantOrchestrationPrompt.mjs";
 
 export const DEFAULT_PROVIDER_MAX_TOKENS = 512;
 
 export const normalizeText = (value, { maxLength = 600, fallback = "" } = {}) => {
   const nextValue = String(value ?? "").trim().replace(/\s+/g, " ");
   return nextValue ? nextValue.slice(0, maxLength) : fallback;
-};
-
-const assistantLanguageLabels = {
-  uk: "Ukrainian",
-  pl: "Polish",
-  en: "English",
 };
 
 const formatList = (value) =>
@@ -74,28 +69,11 @@ const formatPromptContextLine = (context) => {
   ].join("\n");
 };
 
-const buildSystemPrompt = (context) =>
-  [
-    `You are ${context.assistantName}, the Smart Nutrition assistant.`,
-    `Reply in ${assistantLanguageLabels[context.language] ?? "Ukrainian"}.`,
-    `Communication style: ${context.communicationStyle}. Personality sliders: ${formatPersonality(
-      context.assistantPersonality
-    )}.`,
-    "Be concise, practical, and emotionally aware.",
-    "Use only the current nutrition context and the conversation memory provided below.",
-    "Use onboarding friction and motivation style explicitly when choosing tone, recommendation priority, and next step.",
-    "Use assistant prompt context to respect the current screen area, duties, capabilities, tone, and default action.",
-    "Do not invent calories, macros, diagnoses, or certainty.",
-    "Use relationship, support, and pet context only to adapt tone and practical contact style.",
-    "Do not make medical or nutrition claims from blood group or eye color.",
-    "If the logged data looks incomplete, say so directly.",
-    "Prefer 2-5 short sentences or a very short bullet list when it helps.",
-  ].join(" ");
-
 const buildContextBlock = (context) =>
   [
     "Current Smart Nutrition context:",
     `- Current app screen: ${context.screen ?? "unknown"} (${context.currentPath ?? "/"})`,
+    `- Interaction channel: ${context.interactionChannel ?? "web"}`,
     formatPromptContextLine(context),
     `- User: ${context.userName}`,
     `- Goal: ${context.goal}`,
@@ -188,7 +166,7 @@ export const buildOpenAiCompatibleMessages = ({
 }) => [
   {
     role: "system",
-    content: buildSystemPrompt(context),
+    content: buildAssistantSystemPrompt(context),
   },
   {
     role: "system",
@@ -205,7 +183,7 @@ export const buildOpenAiCompatibleMessages = ({
 ];
 
 export const buildGoogleSystemInstruction = (context) =>
-  `${buildSystemPrompt(context)}\n\n${buildContextBlock(context)}`;
+  `${buildAssistantSystemPrompt(context)}\n\n${buildContextBlock(context)}`;
 
 export const buildGoogleNativeContents = ({ history, question, quickQuestionId }) => [
   ...history.map((message) => ({

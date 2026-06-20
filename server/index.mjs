@@ -29,6 +29,7 @@ import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createBrevoService } from "./services/brevoService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
+import { createMedicationReminderService } from "./services/medicationReminderService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createProductLookupService } from "./services/productLookupService.mjs";
@@ -120,10 +121,14 @@ const platformService = createPlatformService({
   cacheRepository: redisCache,
 });
 const stateService = createStateService({ stateRepository });
+const medicationReminderService = createMedicationReminderService({
+  authRepository,
+});
 const telegramService = createTelegramService({
   config: serverConfig,
   authRepository,
   stateService,
+  medicationReminderService,
 });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);

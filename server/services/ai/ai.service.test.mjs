@@ -149,7 +149,16 @@ describe("ai.service", () => {
     expect(result.text).toContain("protein");
     expect(result.providerLabel).toBe("OpenAI");
     expect(result.followUpQuestionIds).toEqual(["protein_help", "water_help"]);
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).max_tokens).toBe(512);
+    const providerBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+
+    expect(providerBody.max_tokens).toBe(512);
+    expect(providerBody.messages[0].content).toContain(
+      "Smart Nutrition assistant operating contract"
+    );
+    expect(providerBody.messages[0].content).toContain("You are Diana");
+    expect(providerBody.messages[0].content).toContain("Reply language: Polish");
+    expect(providerBody.messages[0].content).toContain("must not prescribe");
+    expect(providerBody.messages[1].content).toContain("Interaction channel: web");
     expect(aiRepository.insertConversationMessage).toHaveBeenCalledTimes(2);
     expect(aiRepository.pruneConversationMessages).toHaveBeenCalledWith(currentUser.id, 16);
     expect(aiRepository.insertUsageEvent).toHaveBeenCalledWith(

@@ -60,6 +60,8 @@ SMART_NUTRITION_TELEGRAM_CONNECT_TOKEN_TTL_MS=1800000
 
 Telegram is optional. If it is not configured, registration, auth, sync, and assistant UI must keep working.
 
+Medication reminders are delivered by the backend Telegram worker. For time-critical reminders, keep the Render service awake with a paid always-on instance or an external uptime monitor. If Render sleeps, reminders are sent only after the backend wakes again.
+
 Optional online product lookup:
 
 ```env
@@ -124,8 +126,10 @@ Run after every production deploy:
 14. Open profile account settings and connect Telegram if the Telegram env is enabled.
 15. Confirm the Telegram bot opens and `/start` connects the account.
 16. In Telegram, check `/help`, `/today`, `/water`, and `/nutrition`.
-17. Confirm disconnect works from the profile.
-18. If analytics is enabled, confirm key events appear in PostHog/provider logs.
+17. Create a medication reminder with `/addmed Вітамін D 1 капсула щодня о 09:00`.
+18. Check `/meds` shows the active medication reminder.
+19. Confirm disconnect works from the profile.
+20. If analytics is enabled, confirm key events appear in PostHog/provider logs.
 
 ## Auth Smoke Test
 
@@ -155,6 +159,7 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - Resend delivery unavailable means sender domain, API key, or `SMART_NUTRITION_EMAIL_FROM_ADDRESS` needs checking.
 - Telegram disabled in profile means `SMART_NUTRITION_TELEGRAM_BOT_TOKEN` or `SMART_NUTRITION_TELEGRAM_BOT_USERNAME` is missing on Render.
 - Telegram link expired means the user should press **Connect Telegram** again in profile.
+- Medication reminders arriving late usually means the Render instance slept, Telegram polling stopped, or the bot token was rotated without redeploying.
 - `/api/ready` failing in production usually means storage, cache, static build, or required email config is not ready.
 - Brevo failures should not block registration verification; check logs and Brevo env/domain/list setup.
 

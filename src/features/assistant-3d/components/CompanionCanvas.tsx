@@ -1,7 +1,5 @@
 import { useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei/core/ContactShadows";
-import { Float } from "@react-three/drei/core/Float";
 import { Box } from "@mui/material";
 import { DoubleSide, type Group } from "three";
 import type { AssistantCompanionKind } from "@domain/profile/types";
@@ -631,12 +629,11 @@ const SpeciesDetails = ({
 };
 
 const CompanionModel = ({
-  name,
   variant,
   mood,
   lookOffset,
   active,
-}: Required<Pick<AssistantAvatarProps, "name" | "variant" | "mood" | "lookOffset" | "active">>) => {
+}: Required<Pick<AssistantAvatarProps, "variant" | "mood" | "lookOffset" | "active">>) => {
   const groupRef = useRef<Group>(null);
   const palette = palettes[variant];
   const intensity = getMotionIntensity(mood, active);
@@ -660,11 +657,7 @@ const CompanionModel = ({
   });
 
   return (
-    <Float
-      speed={mood === "sleepy" ? 0.65 : 1.2}
-      rotationIntensity={mood === "sleepy" ? 0.08 : 0.18}
-      floatIntensity={mood === "celebrate" ? 0.36 : 0.18}
-    >
+    <group>
       <group ref={groupRef} scale={0.9}>
         <Tail variant={variant} palette={palette} />
         {variant === "robot" ? <RobotLimbs palette={palette} /> : null}
@@ -705,8 +698,7 @@ const CompanionModel = ({
           side={DoubleSide}
         />
       </mesh>
-      {name ? null : null}
-    </Float>
+    </group>
   );
 };
 
@@ -743,18 +735,10 @@ export const CompanionCanvas = ({
         <directionalLight position={[2, 3, 4]} intensity={1.4} />
         <pointLight position={[-2, 1.5, 3]} intensity={0.8} color="#ccfbf1" />
         <CompanionModel
-          name={name}
           variant={variant}
           mood={mood}
           lookOffset={lookOffset}
           active={active}
-        />
-        <ContactShadows
-          position={[0, -1.05, 0]}
-          opacity={0.22}
-          scale={2.2}
-          blur={1.5}
-          far={1.8}
         />
       </Canvas>
       {showInitial ? (
