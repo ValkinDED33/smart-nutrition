@@ -50,6 +50,16 @@ SMART_NUTRITION_BREVO_API_KEY=
 SMART_NUTRITION_BREVO_LIST_ID=
 ```
 
+Optional Telegram assistant:
+
+```env
+SMART_NUTRITION_TELEGRAM_BOT_TOKEN=
+SMART_NUTRITION_TELEGRAM_BOT_USERNAME=@SmartNutritionAssistBot
+SMART_NUTRITION_TELEGRAM_CONNECT_TOKEN_TTL_MS=1800000
+```
+
+Telegram is optional. If it is not configured, registration, auth, sync, and assistant UI must keep working.
+
 Optional online product lookup:
 
 ```env
@@ -111,7 +121,11 @@ Run after every production deploy:
 11. Add water.
 12. Update weight.
 13. Open the global assistant.
-14. If analytics is enabled, confirm key events appear in PostHog/provider logs.
+14. Open profile account settings and connect Telegram if the Telegram env is enabled.
+15. Confirm the Telegram bot opens and `/start` connects the account.
+16. In Telegram, check `/help`, `/today`, `/water`, and `/nutrition`.
+17. Confirm disconnect works from the profile.
+18. If analytics is enabled, confirm key events appear in PostHog/provider logs.
 
 ## Auth Smoke Test
 
@@ -139,6 +153,8 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - "Cloud backend unavailable" usually means `VITE_SMART_NUTRITION_API_BASE_URL` is wrong or missing `/api`.
 - Empty product search usually means external lookup is disabled, OpenFoodFacts is unreachable, or USDA key/timeout needs checking.
 - Resend delivery unavailable means sender domain, API key, or `SMART_NUTRITION_EMAIL_FROM_ADDRESS` needs checking.
+- Telegram disabled in profile means `SMART_NUTRITION_TELEGRAM_BOT_TOKEN` or `SMART_NUTRITION_TELEGRAM_BOT_USERNAME` is missing on Render.
+- Telegram link expired means the user should press **Connect Telegram** again in profile.
 - `/api/ready` failing in production usually means storage, cache, static build, or required email config is not ready.
 - Brevo failures should not block registration verification; check logs and Brevo env/domain/list setup.
 
@@ -166,5 +182,6 @@ Env rollback checklist:
 - cookie SameSite/Secure env
 - Resend API key and sender
 - Brevo API key/list id
+- Telegram bot token/username
 - product lookup env
 - AI provider keys/models/order

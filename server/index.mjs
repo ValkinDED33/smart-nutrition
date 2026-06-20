@@ -24,6 +24,7 @@ import { createApiRouter } from "./routes/index.mjs";
 import { createAccountController } from "./routes/account.routes.mjs";
 import { createAuthController } from "./routes/auth.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
+import { createTelegramController } from "./routes/telegram.routes.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createBrevoService } from "./services/brevoService.mjs";
@@ -32,6 +33,7 @@ import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs"
 import { createPlatformService } from "./services/platformService.mjs";
 import { createProductLookupService } from "./services/productLookupService.mjs";
 import { createStateService } from "./services/stateService.mjs";
+import { createTelegramService } from "./services/telegramService.mjs";
 import { createStorage } from "./storage/index.mjs";
 import { createAuthSessionHelpers } from "./runtime/authCookies.mjs";
 import {
@@ -58,6 +60,7 @@ import {
   getPublicEmailStatus,
   getPublicProductLookupStatus,
   getPublicStorageStatus,
+  getPublicTelegramStatus,
 } from "./runtime/status.mjs";
 import { createStateStreamRuntime } from "./runtime/stateStreams.mjs";
 import { createStaticFileServer } from "./runtime/staticFiles.mjs";
@@ -117,6 +120,11 @@ const platformService = createPlatformService({
   cacheRepository: redisCache,
 });
 const stateService = createStateService({ stateRepository });
+const telegramService = createTelegramService({
+  config: serverConfig,
+  authRepository,
+  stateService,
+});
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);
 const { staticAvailable, tryServeStatic } = await createStaticFileServer({
@@ -135,6 +143,7 @@ const getReadinessSnapshot = createReadinessSnapshot({
   redisCache,
   emailService,
   brevoService,
+  telegramService,
   productLookupService,
   aiService,
   serverConfig,
@@ -187,6 +196,7 @@ const healthController = createHealthController({
   getWarnings: () => serverConfig.warnings,
   getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
   getBrevoStatus: () => getPublicBrevoStatus(brevoService.getStatus()),
+  getTelegramStatus: () => getPublicTelegramStatus(telegramService.getStatus()),
   getProductLookupStatus: () =>
     getPublicProductLookupStatus(productLookupService.getStatus()),
   getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
@@ -208,6 +218,9 @@ const accountController = createAccountController({
   authService,
   clearAuthCookies,
 });
+const telegramController = createTelegramController({
+  telegramService,
+});
 const publicApiRouter = createApiRouter({
   healthController,
   authController,
@@ -217,6 +230,7 @@ const apiRouter = createApiRouter({
   authController,
   authRouteScope: "protected",
   accountController,
+  telegramController,
   stateController,
   aiController,
   adminController,
@@ -411,6 +425,8 @@ const closeRuntime = async () => {
     clearTimeout(tokenCleanupTimeout);
   }
 
+  telegramService.stop?.("Smart Nutrition API shutdown");
+
   await Promise.allSettled([
     sentryRuntime.flush?.(),
     redisCache.close?.(),
@@ -459,6 +475,7 @@ server.listen(serverConfig.port, () => {
   );
 
   console.log(`Smart Nutrition API listening on port ${serverConfig.port}`);
+  void telegramService.start();
 
   if (serverConfig.serveStatic) {
     console.log(

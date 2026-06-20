@@ -13,12 +13,16 @@ import {
 import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
 import {
   deleteAccount,
+  createTelegramConnectLink,
+  disconnectTelegram,
   exportRemoteAccountData,
   getAuthRuntimeInfo,
   getRemoteAccountBackup,
   getRemoteAccountBackups,
+  getRemoteTelegramStatus,
   logoutEverywhere,
   type AccountBackupSummary,
+  type TelegramConnectionStatus,
 } from "../../shared/api/auth";
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
@@ -64,6 +68,22 @@ const accountCopy = {
     confirmCancel: "Скасувати",
     confirmDelete: "Так, видалити все",
     syncRemote: "Хмарна синхронізація активна",
+    telegramTitle: "Telegram-помічник",
+    telegramSubtitle:
+      "Підключіть бота, щоб отримувати нагадування, підказки та майбутні повідомлення асистента в Telegram.",
+    telegramConnected: "Підключено",
+    telegramDisconnected: "Не підключено",
+    telegramUnavailable: "Telegram ще не налаштований на сервері.",
+    telegramLoading: "Перевіряємо Telegram...",
+    telegramConnect: "Підключити Telegram",
+    telegramConnecting: "Готуємо посилання...",
+    telegramDisconnect: "Відключити",
+    telegramDisconnecting: "Відключаємо...",
+    telegramConnectSuccess: "Відкрили Telegram для підключення.",
+    telegramConnectError: "Не вдалося створити посилання Telegram.",
+    telegramDisconnectSuccess: "Telegram відключено.",
+    telegramDisconnectError: "Не вдалося відключити Telegram.",
+    telegramBot: "Бот",
   },
   pl: {
     title: "Konto i dane",
@@ -104,6 +124,22 @@ const accountCopy = {
     confirmCancel: "Anuluj",
     confirmDelete: "Tak, usun wszystko",
     syncRemote: "Synchronizacja z chmura aktywna",
+    telegramTitle: "Asystent Telegram",
+    telegramSubtitle:
+      "Podlacz bota, aby dostawac przypomnienia, wskazowki i przyszle wiadomosci asystenta w Telegramie.",
+    telegramConnected: "Polaczono",
+    telegramDisconnected: "Nie polaczono",
+    telegramUnavailable: "Telegram nie jest jeszcze skonfigurowany na serwerze.",
+    telegramLoading: "Sprawdzamy Telegram...",
+    telegramConnect: "Podlacz Telegram",
+    telegramConnecting: "Przygotowujemy link...",
+    telegramDisconnect: "Odlacz",
+    telegramDisconnecting: "Odlaczanie...",
+    telegramConnectSuccess: "Otworzylismy Telegram do podlaczenia.",
+    telegramConnectError: "Nie udalo sie utworzyc linku Telegram.",
+    telegramDisconnectSuccess: "Telegram odlaczony.",
+    telegramDisconnectError: "Nie udalo sie odlaczyc Telegram.",
+    telegramBot: "Bot",
   },
   en: {
     title: "Account and data",
@@ -145,6 +181,22 @@ const accountCopy = {
     confirmCancel: "Cancel",
     confirmDelete: "Yes, delete everything",
     syncRemote: "Cloud sync is active",
+    telegramTitle: "Telegram assistant",
+    telegramSubtitle:
+      "Connect the bot to receive reminders, nudges, and future assistant messages in Telegram.",
+    telegramConnected: "Connected",
+    telegramDisconnected: "Not connected",
+    telegramUnavailable: "Telegram is not configured on the server yet.",
+    telegramLoading: "Checking Telegram...",
+    telegramConnect: "Connect Telegram",
+    telegramConnecting: "Preparing link...",
+    telegramDisconnect: "Disconnect",
+    telegramDisconnecting: "Disconnecting...",
+    telegramConnectSuccess: "Telegram opened for connection.",
+    telegramConnectError: "Could not create Telegram link.",
+    telegramDisconnectSuccess: "Telegram disconnected.",
+    telegramDisconnectError: "Could not disconnect Telegram.",
+    telegramBot: "Bot",
   },
 } as const;
 
@@ -189,6 +241,10 @@ export const AccountDataCard = () => {
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [telegramStatus, setTelegramStatus] =
+    useState<TelegramConnectionStatus | null>(null);
+  const [telegramLoading, setTelegramLoading] = useState(true);
+  const [telegramBusy, setTelegramBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,6 +270,31 @@ export const AccountDataCard = () => {
       cancelled = true;
     };
   }, [copy.backupError]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getRemoteTelegramStatus()
+      .then((status) => {
+        if (!cancelled) {
+          setTelegramStatus(status);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTelegramStatus(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setTelegramLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -301,6 +382,43 @@ export const AccountDataCard = () => {
     }
   };
 
+  const handleTelegramConnect = async () => {
+    setTelegramBusy(true);
+    setNotice(null);
+
+    try {
+      const status = await createTelegramConnectLink();
+      setTelegramStatus(status);
+      window.open(status.url, "_blank", "noopener,noreferrer");
+      setNotice({ type: "success", message: copy.telegramConnectSuccess });
+    } catch {
+      setNotice({ type: "error", message: copy.telegramConnectError });
+    } finally {
+      setTelegramBusy(false);
+    }
+  };
+
+  const handleTelegramDisconnect = async () => {
+    setTelegramBusy(true);
+    setNotice(null);
+
+    try {
+      const status = await disconnectTelegram();
+      setTelegramStatus(status);
+      setNotice({ type: "success", message: copy.telegramDisconnectSuccess });
+    } catch {
+      setNotice({ type: "error", message: copy.telegramDisconnectError });
+    } finally {
+      setTelegramBusy(false);
+    }
+  };
+
+  const telegramConfigured = Boolean(telegramStatus?.configured);
+  const telegramConnected = Boolean(telegramStatus?.connected);
+  const telegramBotUsername = telegramStatus?.botUsername
+    ? `@${telegramStatus.botUsername.replace(/^@+/, "")}`
+    : null;
+
   return (
     <Paper
       elevation={0}
@@ -333,6 +451,79 @@ export const AccountDataCard = () => {
         <Alert severity="info" sx={{ borderRadius: 3 }}>
           {copy.remoteNotice}
         </Alert>
+
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.5}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", md: "center" }}
+          >
+            <Stack spacing={0.8}>
+              <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                <Typography sx={{ fontWeight: 800 }}>{copy.telegramTitle}</Typography>
+                <Chip
+                  size="small"
+                  color={telegramConnected ? "success" : "default"}
+                  label={
+                    telegramLoading
+                      ? copy.telegramLoading
+                      : telegramConnected
+                        ? copy.telegramConnected
+                        : copy.telegramDisconnected
+                  }
+                />
+                {telegramBotUsername && (
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`${copy.telegramBot}: ${telegramBotUsername}`}
+                  />
+                )}
+              </Stack>
+              <Typography color="text.secondary">{copy.telegramSubtitle}</Typography>
+              {!telegramLoading && !telegramConfigured && (
+                <Typography variant="body2" color="warning.main">
+                  {copy.telegramUnavailable}
+                </Typography>
+              )}
+              {telegramConnected && telegramStatus?.connectedAt && (
+                <Typography variant="body2" color="text.secondary">
+                  {formatBackupTimestamp(telegramStatus.connectedAt, appLanguage)}
+                </Typography>
+              )}
+            </Stack>
+            <Button
+              variant={telegramConnected ? "outlined" : "contained"}
+              disabled={telegramLoading || telegramBusy || !telegramConfigured}
+              onClick={() => {
+                void (telegramConnected
+                  ? handleTelegramDisconnect()
+                  : handleTelegramConnect());
+              }}
+              sx={{
+                borderRadius: 999,
+                textTransform: "none",
+                fontWeight: 800,
+                whiteSpace: "nowrap",
+                ...(telegramConnected
+                  ? {}
+                  : {
+                      background:
+                        "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                    }),
+              }}
+            >
+              {telegramBusy
+                ? telegramConnected
+                  ? copy.telegramDisconnecting
+                  : copy.telegramConnecting
+                : telegramConnected
+                  ? copy.telegramDisconnect
+                  : copy.telegramConnect}
+            </Button>
+          </Stack>
+        </Paper>
 
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
           <Stack spacing={1.2}>

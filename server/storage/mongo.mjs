@@ -180,6 +180,11 @@ const mapUserDoc = (doc) => {
     bannedReason: doc.bannedReason ?? null,
     twoFactorEnabled: Boolean(doc.twoFactorEnabled),
     twoFactorRequired: Boolean(doc.twoFactorRequired),
+    telegramChatId: doc.telegramChatId ?? null,
+    telegramConnectedAt: doc.telegramConnectedAt ?? null,
+    medicationReminders: Array.isArray(doc.medicationReminders)
+      ? doc.medicationReminders
+      : [],
     tokenVersion: Math.max(toNumber(doc.tokenVersion, 0), 0),
     passwordHash: doc.passwordHash,
     passwordSalt: doc.passwordSalt,
@@ -575,6 +580,10 @@ export const createMongoStorage = async (config) => {
     collections.users.createIndex({ id: 1 }, { unique: true }),
     collections.users.createIndex({ email: 1 }, { unique: true }),
     collections.users.createIndex({ role: 1 }),
+    collections.users.createIndex(
+      { telegramChatId: 1 },
+      { unique: true, sparse: true }
+    ),
     collections.sessions.createIndex({ token: 1 }, { unique: true }),
     collections.sessions.createIndex({ userId: 1 }),
     collections.sessions.createIndex({ expiresAt: 1 }),
@@ -1024,6 +1033,9 @@ export const createMongoStorage = async (config) => {
 
     findUserById: async (userId) => getResolvedUser(userId),
 
+    findUserByTelegramChatId: async (telegramChatId) =>
+      mapUserDoc(await collections.users.findOne({ telegramChatId: String(telegramChatId) })),
+
     hasUserWithRole: async (role) =>
       Boolean(await collections.users.findOne(createMongoRoleQuery(role))),
 
@@ -1080,6 +1092,93 @@ export const createMongoStorage = async (config) => {
         }
       );
       return getResolvedUser(userId);
+    },
+
+    updateUserTelegramConnection: async ({
+      userId,
+      telegramChatId,
+      telegramConnectedAt = new Date().toISOString(),
+    }) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return getResolvedUser(userId);
+      }
+
+      await collections.users.updateMany(
+        {
+          telegramChatId: normalizedChatId,
+          id: { $ne: userId },
+        },
+        {
+          $unset: {
+            telegramChatId: "",
+            telegramConnectedAt: "",
+          },
+        }
+      );
+      await collections.users.updateOne(
+        { id: userId },
+        {
+          $set: {
+            telegramChatId: normalizedChatId,
+            telegramConnectedAt,
+          },
+        }
+      );
+
+      return getResolvedUser(userId);
+    },
+
+    updateUserMedicationReminders: async (userId, reminders) => {
+      await collections.users.updateOne(
+        { id: userId },
+        {
+          $set: {
+            medicationReminders: Array.isArray(reminders) ? reminders : [],
+          },
+        }
+      );
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectUserTelegram: async (userId) => {
+      await collections.users.updateOne(
+        { id: userId },
+        {
+          $unset: {
+            telegramChatId: "",
+            telegramConnectedAt: "",
+          },
+        }
+      );
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectTelegramChat: async (telegramChatId) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return null;
+      }
+
+      const user = mapUserDoc(
+        await collections.users.findOne({ telegramChatId: normalizedChatId })
+      );
+
+      await collections.users.updateOne(
+        { telegramChatId: normalizedChatId },
+        {
+          $unset: {
+            telegramChatId: "",
+            telegramConnectedAt: "",
+          },
+        }
+      );
+
+      return user;
     },
 
     incrementUserTokenVersion: async (userId) => {

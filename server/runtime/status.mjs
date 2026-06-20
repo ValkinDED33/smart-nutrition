@@ -22,6 +22,13 @@ export const getPublicBrevoStatus = (brevoStatus = {}) => ({
   listIdConfigured: Boolean(brevoStatus.listIdConfigured),
 });
 
+export const getPublicTelegramStatus = (telegramStatus = {}) => ({
+  configured: Boolean(telegramStatus.configured),
+  provider: telegramStatus.provider ?? "telegram",
+  botUsername: telegramStatus.botUsername ?? null,
+  polling: Boolean(telegramStatus.polling),
+});
+
 export const getPublicProductLookupStatus = (productLookupStatus = {}) => ({
   configured: Boolean(productLookupStatus.configured),
   provider: productLookupStatus.provider ?? "external-products",
@@ -49,6 +56,7 @@ export const createReadinessSnapshot = ({
   redisCache,
   emailService,
   brevoService,
+  telegramService,
   productLookupService,
   aiService,
   serverConfig,
@@ -58,6 +66,7 @@ export const createReadinessSnapshot = ({
   const cacheStatus = getPublicCacheStatus(redisCache.getStatus());
   const emailStatus = getPublicEmailStatus(emailService.getStatus());
   const brevoStatus = getPublicBrevoStatus(brevoService?.getStatus?.());
+  const telegramStatus = getPublicTelegramStatus(telegramService?.getStatus?.());
   const productLookupStatus = getPublicProductLookupStatus(
     productLookupService?.getStatus?.()
   );
@@ -82,6 +91,7 @@ export const createReadinessSnapshot = ({
     },
     email: emailStatus,
     brevo: brevoStatus,
+    telegram: telegramStatus,
     products: productLookupStatus,
     ai: aiStatus,
   };

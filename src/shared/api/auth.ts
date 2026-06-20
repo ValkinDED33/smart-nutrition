@@ -3,10 +3,13 @@ import {
   analyzeRemoteMealPhoto,
   addRemoteMealTemplate,
   checkRemoteBackendAvailability,
+  createRemoteTelegramConnectLink,
+  disconnectRemoteTelegram,
   fetchRemoteAccountBackup,
   fetchRemoteAccountExport,
   fetchRemoteAppState,
   fetchRemoteStateMeta,
+  fetchRemoteTelegramStatus,
   getRemoteBaseUrl,
   getRemoteSessionToken,
   isRemoteAuthMode,
@@ -24,6 +27,8 @@ import {
   remoteAuthProvider,
   purgeLegacyBrowserAuthStorage,
   type RemoteSyncResult,
+  type TelegramConnectLink,
+  type TelegramConnectionStatus,
   upsertRemoteMealProduct,
 } from "./authRemote";
 import { AuthApiError } from "./authProvider";
@@ -46,6 +51,7 @@ export type {
   RegistrationVerificationResendPayload,
 } from "./authProvider";
 export type { RemoteSyncResult };
+export type { TelegramConnectionStatus, TelegramConnectLink };
 export { AuthApiError };
 
 export const restoreSession = async (options?: {
@@ -130,3 +136,6 @@ export const refreshRemoteAccessSession = refreshRemoteSession;
 export const exportRemoteAccountData = fetchRemoteAccountExport;
 export const getRemoteAccountBackups = listRemoteAccountBackups;
 export const getRemoteAccountBackup = fetchRemoteAccountBackup;
+export const getRemoteTelegramStatus = fetchRemoteTelegramStatus;
+export const createTelegramConnectLink = createRemoteTelegramConnectLink;
+export const disconnectTelegram = disconnectRemoteTelegram;

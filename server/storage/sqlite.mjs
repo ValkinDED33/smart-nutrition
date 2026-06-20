@@ -949,6 +949,9 @@ const mapUserRow = (row) => {
     bannedReason: row.banned_reason ?? null,
     twoFactorEnabled: toBoolean(row.two_factor_enabled, false),
     twoFactorRequired: toBoolean(row.two_factor_required, false),
+    telegramChatId: row.telegram_chat_id ?? null,
+    telegramConnectedAt: row.telegram_connected_at ?? null,
+    medicationReminders: parseJson(row.medication_reminders_json, []),
     tokenVersion: Math.max(toNumber(row.token_version, 0), 0),
     passwordHash: row.password_hash,
     passwordSalt: row.password_salt,
@@ -1144,6 +1147,9 @@ const createSchema = (database) => {
       banned_reason TEXT,
       two_factor_enabled INTEGER NOT NULL DEFAULT 0,
       two_factor_required INTEGER NOT NULL DEFAULT 0,
+      telegram_chat_id TEXT,
+      telegram_connected_at TEXT,
+      medication_reminders_json TEXT NOT NULL DEFAULT '[]',
       token_version INTEGER NOT NULL DEFAULT 0,
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
@@ -1353,6 +1359,7 @@ const createIndexes = (database) => {
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_users_banned_at ON users(banned_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_chat_id ON users(telegram_chat_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
     CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user ON password_reset_tokens(user_id, expires_at);
@@ -2112,6 +2119,9 @@ export const createSqliteStorage = async ({
   ensureColumn(database, "users", "banned_reason", "TEXT");
   ensureColumn(database, "users", "two_factor_enabled", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "users", "two_factor_required", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(database, "users", "telegram_chat_id", "TEXT");
+  ensureColumn(database, "users", "telegram_connected_at", "TEXT");
+  ensureColumn(database, "users", "medication_reminders_json", "TEXT NOT NULL DEFAULT '[]'");
   ensureColumn(database, "users", "token_version", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn(database, "profile_states", "diet_style", "TEXT NOT NULL DEFAULT 'balanced'");
   ensureColumn(database, "profile_states", "allergies_json", "TEXT NOT NULL DEFAULT '[]'");
@@ -2742,6 +2752,13 @@ export const createSqliteStorage = async ({
         database.prepare("SELECT * FROM users WHERE id = ? LIMIT 1").get(userId)
       ),
 
+    findUserByTelegramChatId: (telegramChatId) =>
+      mapUserRow(
+        database
+          .prepare("SELECT * FROM users WHERE telegram_chat_id = ? LIMIT 1")
+          .get(String(telegramChatId))
+      ),
+
     hasUserWithRole: (role) => {
       if (!isUserRole(role)) {
         return false;
@@ -2870,6 +2887,86 @@ export const createSqliteStorage = async ({
         .run(passwordHash, passwordSalt, passwordVersion, userId);
 
       return getResolvedUser(userId);
+    },
+
+    updateUserTelegramConnection: ({
+      userId,
+      telegramChatId,
+      telegramConnectedAt = new Date().toISOString(),
+    }) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return getResolvedUser(userId);
+      }
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET telegram_chat_id = NULL,
+                telegram_connected_at = NULL
+            WHERE telegram_chat_id = ?
+              AND id <> ?
+          `
+        )
+        .run(normalizedChatId, userId);
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET telegram_chat_id = ?,
+                telegram_connected_at = ?
+            WHERE id = ?
+          `
+        )
+        .run(normalizedChatId, telegramConnectedAt, userId);
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectUserTelegram: (userId) => {
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET telegram_chat_id = NULL,
+                telegram_connected_at = NULL
+            WHERE id = ?
+          `
+        )
+        .run(userId);
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectTelegramChat: (telegramChatId) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return null;
+      }
+
+      const user = getResolvedUser(
+        mapUserRow(
+          database
+            .prepare("SELECT * FROM users WHERE telegram_chat_id = ? LIMIT 1")
+            .get(normalizedChatId)
+        )?.id
+      );
+
+      database
+        .prepare(
+          `
+            UPDATE users
+            SET telegram_chat_id = NULL,
+                telegram_connected_at = NULL
+            WHERE telegram_chat_id = ?
+          `
+        )
+        .run(normalizedChatId);
+
+      return user;
     },
 
     incrementUserTokenVersion: (userId) => {

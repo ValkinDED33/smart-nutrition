@@ -28,6 +28,8 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_RESEND_API_KEY",
   "SMART_NUTRITION_BREVO_API_KEY",
   "SMART_NUTRITION_BREVO_LIST_ID",
+  "SMART_NUTRITION_TELEGRAM_BOT_TOKEN",
+  "SMART_NUTRITION_TELEGRAM_BOT_USERNAME",
   "SMART_NUTRITION_SENTRY_DSN",
   "SMART_NUTRITION_DATABASE_URL",
   "SMART_NUTRITION_MONGO_URI",
@@ -1098,6 +1100,25 @@ export const createServerConfig = (rawEnv = process.env) => {
     );
   }
 
+  const telegramBotToken = toTrimmedString(env.SMART_NUTRITION_TELEGRAM_BOT_TOKEN) || null;
+  const telegramBotUsername =
+    toTrimmedString(env.SMART_NUTRITION_TELEGRAM_BOT_USERNAME, "SmartNutritionBot") ||
+    "SmartNutritionBot";
+  const telegramConnectTokenTtlMs = readPositiveInteger(
+    env.SMART_NUTRITION_TELEGRAM_CONNECT_TOKEN_TTL_MS,
+    1000 * 60 * 30,
+    "SMART_NUTRITION_TELEGRAM_CONNECT_TOKEN_TTL_MS",
+    errors,
+    { min: 60_000 }
+  );
+  const telegramConfigured = Boolean(telegramBotToken && telegramBotUsername);
+
+  if (telegramBotToken && !toTrimmedString(env.SMART_NUTRITION_TELEGRAM_BOT_USERNAME)) {
+    warnings.push(
+      "SMART_NUTRITION_TELEGRAM_BOT_TOKEN is configured without SMART_NUTRITION_TELEGRAM_BOT_USERNAME. Falling back to SmartNutritionBot."
+    );
+  }
+
   const explicitAssistantApiKey =
     toTrimmedString(env.SMART_NUTRITION_ASSISTANT_API_KEY) || null;
   const explicitAssistantModel =
@@ -1329,6 +1350,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     brevoApiKey,
     brevoListId,
     brevoConfigured,
+    telegramBotToken,
+    telegramBotUsername,
+    telegramConnectTokenTtlMs,
+    telegramConfigured,
     assistantApiKey,
     assistantModel,
     assistantBaseUrl,

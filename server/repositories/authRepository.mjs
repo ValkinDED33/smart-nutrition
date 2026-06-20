@@ -1,9 +1,18 @@
 export const createAuthRepository = (storage) => ({
   findUserByEmail: (email) => storage.findUserByEmail(email),
   findUserById: (userId) => storage.findUserById(userId),
+  findUserByTelegramChatId: (telegramChatId) =>
+    storage.findUserByTelegramChatId?.(telegramChatId) ?? null,
   hasUserWithRole: (role) => storage.hasUserWithRole(role),
   insertUser: (user) => storage.insertUser(user),
   updateUser: (user) => storage.updateUser(user),
+  updateUserTelegramConnection: (payload) =>
+    storage.updateUserTelegramConnection?.(payload) ?? null,
+  updateUserMedicationReminders: (userId, reminders) =>
+    storage.updateUserMedicationReminders?.(userId, reminders) ?? null,
+  disconnectUserTelegram: (userId) => storage.disconnectUserTelegram?.(userId) ?? null,
+  disconnectTelegramChat: (telegramChatId) =>
+    storage.disconnectTelegramChat?.(telegramChatId) ?? null,
   updateUserPassword: (payload) => storage.updateUserPassword(payload),
   updateUserRole: (payload) => storage.updateUserRole(payload),
   listUsers: () => storage.listUsers(),

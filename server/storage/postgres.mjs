@@ -258,6 +258,11 @@ const mapUserRow = (row) => {
     bannedReason: row.banned_reason ?? null,
     twoFactorEnabled: toBoolean(row.two_factor_enabled, false),
     twoFactorRequired: toBoolean(row.two_factor_required, false),
+    telegramChatId: row.telegram_chat_id ?? null,
+    telegramConnectedAt: row.telegram_connected_at ?? null,
+    medicationReminders: Array.isArray(row.medication_reminders_json)
+      ? row.medication_reminders_json
+      : [],
     tokenVersion: Math.max(toNumber(row.token_version, 0), 0),
     passwordHash: row.password_hash,
     passwordSalt: row.password_salt,
@@ -568,6 +573,27 @@ export const POSTGRES_SCHEMA_MIGRATIONS = [
     sql: `
       ALTER TABLE snapshots
         ADD COLUMN IF NOT EXISTS companion_json JSONB;
+    `,
+  },
+  {
+    id: "202606200001",
+    name: "telegram_account_connection",
+    sql: `
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT,
+        ADD COLUMN IF NOT EXISTS telegram_connected_at TEXT;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_chat_id
+        ON users(telegram_chat_id)
+      WHERE telegram_chat_id IS NOT NULL;
+    `,
+  },
+  {
+    id: "202606200002",
+    name: "medication_reminders_user_state",
+    sql: `
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS medication_reminders_json JSONB NOT NULL DEFAULT '[]'::jsonb;
     `,
   },
 ];
@@ -1139,6 +1165,13 @@ export const createPostgresStorage = async ({
 
     findUserById: async (userId) => getResolvedUser(userId),
 
+    findUserByTelegramChatId: async (telegramChatId) =>
+      mapUserRow(
+        await queryOne("SELECT * FROM users WHERE telegram_chat_id = $1 LIMIT 1", [
+          String(telegramChatId),
+        ])
+      ),
+
     hasUserWithRole: async (role) => {
       if (!isUserRole(role)) {
         return false;
@@ -1155,10 +1188,12 @@ export const createPostgresStorage = async ({
             id, email, name, email_verified, verification_channel,
             avatar, age, weight, height, gender, activity, goal, measurements_json,
             created_at, role, banned_at, banned_reason, two_factor_enabled,
-            two_factor_required, token_version, password_hash, password_salt, password_version
+            two_factor_required, token_version, password_hash, password_salt, password_version,
+            medication_reminders_json
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-            $13::jsonb, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
+            $13::jsonb, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23,
+            $24::jsonb
           )
         `,
         [
@@ -1185,6 +1220,7 @@ export const createPostgresStorage = async ({
           user.passwordHash,
           user.passwordSalt,
           user.passwordVersion,
+          toJsonParam(Array.isArray(user.medicationReminders) ? user.medicationReminders : []),
         ]
       );
 
@@ -1241,6 +1277,101 @@ export const createPostgresStorage = async ({
       );
 
       return getResolvedUser(userId);
+    },
+
+    updateUserTelegramConnection: async ({
+      userId,
+      telegramChatId,
+      telegramConnectedAt = new Date().toISOString(),
+    }) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return getResolvedUser(userId);
+      }
+
+      await pool.query("BEGIN");
+
+      try {
+        await pool.query(
+          `
+            UPDATE users
+            SET telegram_chat_id = NULL,
+                telegram_connected_at = NULL
+            WHERE telegram_chat_id = $1
+              AND id <> $2
+          `,
+          [normalizedChatId, userId]
+        );
+        await pool.query(
+          `
+            UPDATE users
+            SET telegram_chat_id = $1,
+                telegram_connected_at = $2
+            WHERE id = $3
+          `,
+          [normalizedChatId, telegramConnectedAt, userId]
+        );
+        await pool.query("COMMIT");
+      } catch (error) {
+        await pool.query("ROLLBACK");
+        throw error;
+      }
+
+      return getResolvedUser(userId);
+    },
+
+    updateUserMedicationReminders: async (userId, reminders) => {
+      await pool.query(
+        `
+          UPDATE users
+          SET medication_reminders_json = $1::jsonb
+          WHERE id = $2
+        `,
+        [toJsonParam(Array.isArray(reminders) ? reminders : []), userId]
+      );
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectUserTelegram: async (userId) => {
+      await pool.query(
+        `
+          UPDATE users
+          SET telegram_chat_id = NULL,
+              telegram_connected_at = NULL
+          WHERE id = $1
+        `,
+        [userId]
+      );
+
+      return getResolvedUser(userId);
+    },
+
+    disconnectTelegramChat: async (telegramChatId) => {
+      const normalizedChatId = String(telegramChatId ?? "").trim();
+
+      if (!normalizedChatId) {
+        return null;
+      }
+
+      const user = mapUserRow(
+        await queryOne("SELECT * FROM users WHERE telegram_chat_id = $1 LIMIT 1", [
+          normalizedChatId,
+        ])
+      );
+
+      await pool.query(
+        `
+          UPDATE users
+          SET telegram_chat_id = NULL,
+              telegram_connected_at = NULL
+          WHERE telegram_chat_id = $1
+        `,
+        [normalizedChatId]
+      );
+
+      return user;
     },
 
     incrementUserTokenVersion: async (userId) => {

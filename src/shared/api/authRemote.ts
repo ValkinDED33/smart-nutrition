@@ -44,6 +44,19 @@ export interface RemoteSyncResult {
   meta?: AppSnapshotMeta | null;
 }
 
+export interface TelegramConnectionStatus {
+  configured: boolean;
+  provider: "telegram";
+  botUsername: string | null;
+  connected: boolean;
+  connectedAt: string | null;
+}
+
+export interface TelegramConnectLink extends TelegramConnectionStatus {
+  url: string;
+  expiresAt: string;
+}
+
 interface RemoteMutationResponse {
   ok: true;
   meta: AppSnapshotMeta | null;
@@ -1081,6 +1094,39 @@ export const fetchRemoteAccountBackup = async (
 
   return data;
 };
+
+export const fetchRemoteTelegramStatus =
+  async (): Promise<TelegramConnectionStatus> => {
+    const { data } = await requestRemote<TelegramConnectionStatus>(
+      "/telegram/status",
+      { method: "GET" },
+      { requireAuth: true }
+    );
+
+    return data;
+  };
+
+export const createRemoteTelegramConnectLink =
+  async (): Promise<TelegramConnectLink> => {
+    const { data } = await requestRemote<TelegramConnectLink>(
+      "/telegram/connect",
+      { method: "POST" },
+      { requireAuth: true }
+    );
+
+    return data;
+  };
+
+export const disconnectRemoteTelegram =
+  async (): Promise<TelegramConnectionStatus> => {
+    const { data } = await requestRemote<TelegramConnectionStatus>(
+      "/telegram/disconnect",
+      { method: "POST" },
+      { requireAuth: true }
+    );
+
+    return data;
+  };
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
   setRemoteSession(baseUrl);
