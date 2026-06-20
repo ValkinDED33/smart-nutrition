@@ -27,6 +27,16 @@ export const getPublicTelegramStatus = (telegramStatus = {}) => ({
   provider: telegramStatus.provider ?? "telegram",
   botUsername: telegramStatus.botUsername ?? null,
   polling: Boolean(telegramStatus.polling),
+  starting: Boolean(telegramStatus.starting),
+  retryScheduled: Boolean(telegramStatus.retryScheduled),
+  lastStartAttemptAt: telegramStatus.lastStartAttemptAt ?? null,
+  lastStartedAt: telegramStatus.lastStartedAt ?? null,
+  lastStartError: telegramStatus.lastStartError
+    ? {
+        code: telegramStatus.lastStartError.code ?? "TELEGRAM_START_FAILED",
+        message: telegramStatus.lastStartError.message ?? "Telegram polling failed.",
+      }
+    : null,
   medicationReminders: {
     enabled: Boolean(telegramStatus.medicationReminders?.enabled),
     polling: Boolean(telegramStatus.medicationReminders?.polling),

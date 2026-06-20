@@ -159,6 +159,7 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - Resend delivery unavailable means sender domain, API key, or `SMART_NUTRITION_EMAIL_FROM_ADDRESS` needs checking.
 - Telegram disabled in profile means `SMART_NUTRITION_TELEGRAM_BOT_TOKEN` or `SMART_NUTRITION_TELEGRAM_BOT_USERNAME` is missing on Render.
 - Telegram link expired means the user should press **Connect Telegram** again in profile.
+- If `/api/health` shows `telegram.polling=false`, check `telegram.starting`, `telegram.retryScheduled`, and `telegram.lastStartError`. A `409 Conflict` usually means the same bot token is running somewhere else or an old webhook/poller is still active.
 - Medication reminders arriving late usually means the Render instance slept, Telegram polling stopped, or the bot token was rotated without redeploying.
 - `/api/ready` failing in production usually means storage, cache, static build, or required email config is not ready.
 - Brevo failures should not block registration verification; check logs and Brevo env/domain/list setup.

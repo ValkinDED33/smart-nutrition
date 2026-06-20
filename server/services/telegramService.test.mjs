@@ -205,4 +205,96 @@ describe("telegramService", () => {
       })
     );
   });
+
+  it("starts Telegram polling through the launch callback without waiting forever", async () => {
+    const instances = [];
+    class TestBot {
+      constructor(token) {
+        this.token = token;
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((options, onLaunch) => {
+        this.launchOptions = options;
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository(),
+      medicationReminderService: {
+        sendDueReminders: vi.fn(async () => []),
+      },
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await expect(service.start()).resolves.toMatchObject({
+      ok: true,
+      skipped: false,
+      starting: true,
+    });
+
+    expect(instances).toHaveLength(1);
+    expect(instances[0].launchOptions).toEqual({ dropPendingUpdates: false });
+    expect(service.getStatus()).toMatchObject({
+      configured: true,
+      polling: true,
+      starting: false,
+      retryScheduled: false,
+      lastStartError: null,
+      medicationReminders: {
+        enabled: true,
+        polling: true,
+      },
+    });
+
+    service.stop("test shutdown");
+  });
+
+  it("records safe Telegram polling failures and schedules retry", async () => {
+    class FailingBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn(() => Promise.reject(new Error("409 Conflict: webhook is active")));
+    }
+
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository(),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: FailingBot,
+    });
+
+    await service.start();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(service.getStatus()).toMatchObject({
+      configured: true,
+      polling: false,
+      retryScheduled: true,
+      lastStartError: {
+        code: "Error",
+        message: "409 Conflict: webhook is active",
+      },
+    });
+
+    service.stop("test shutdown");
+  });
 });

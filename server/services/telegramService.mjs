@@ -4,6 +4,7 @@ import { AuthApiError, calculateMealTotalNutrients } from "../lib/domain.mjs";
 import { createTelegramMedicationReminderRuntime } from "./telegramMedicationReminders.mjs";
 
 const TELEGRAM_CONNECT_PURPOSE = "telegram_connect";
+const TELEGRAM_START_RETRY_DELAY_MS = 60_000;
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -238,6 +239,11 @@ export const createTelegramService = ({
   let bot = null;
   let launchPromise = null;
   let launched = false;
+  let startRetryTimeout = null;
+  let isStopping = false;
+  let lastStartAttemptAt = null;
+  let lastStartedAt = null;
+  let lastStartError = null;
   let medicationReminderRuntime = null;
 
   const getBot = () => {
@@ -501,46 +507,92 @@ export const createTelegramService = ({
     }
   };
 
+  const clearStartRetry = () => {
+    if (startRetryTimeout) {
+      clearTimeout(startRetryTimeout);
+      startRetryTimeout = null;
+    }
+  };
+
+  const markPollingStopped = () => {
+    launched = false;
+    launchPromise = null;
+    getMedicationReminderRuntime().stop();
+  };
+
+  const scheduleStartRetry = () => {
+    if (!configured || isStopping || launched || startRetryTimeout) {
+      return;
+    }
+
+    startRetryTimeout = setTimeout(() => {
+      startRetryTimeout = null;
+      void start();
+    }, TELEGRAM_START_RETRY_DELAY_MS);
+    startRetryTimeout.unref?.();
+  };
+
+  const handlePollingStarted = () => {
+    launched = true;
+    lastStartedAt = new Date().toISOString();
+    lastStartError = null;
+    getMedicationReminderRuntime().start();
+    logger.info?.("[telegram] bot polling started", {
+      provider: "telegram",
+      botUsername,
+    });
+  };
+
   const start = async () => {
     if (!configured) {
       logger.info?.("[telegram] integration disabled");
       return { ok: true, skipped: true };
     }
 
-    if (launchPromise) {
-      return launchPromise;
+    if (launched) {
+      return { ok: true, skipped: true, polling: true };
     }
 
+    if (launchPromise) {
+      return { ok: true, skipped: true, starting: true };
+    }
+
+    isStopping = false;
+    clearStartRetry();
+    lastStartAttemptAt = new Date().toISOString();
+
     launchPromise = getBot()
-      .launch()
+      .launch({ dropPendingUpdates: false }, handlePollingStarted)
       .then(() => {
-        launched = true;
-        getMedicationReminderRuntime().start();
-        logger.info?.("[telegram] bot polling started", {
-          provider: "telegram",
-          botUsername,
-        });
-        return { ok: true, skipped: false };
+        if (!isStopping) {
+          markPollingStopped();
+          logger.warn?.("[telegram] bot polling stopped unexpectedly", {
+            provider: "telegram",
+            botUsername,
+          });
+          scheduleStartRetry();
+        }
       })
       .catch((error) => {
-        launched = false;
-        launchPromise = null;
-        logger.warn?.("[telegram] bot polling failed", {
-          provider: "telegram",
+        markPollingStopped();
+        lastStartError = {
           code: toSafeErrorCode(error),
           message: toSafeErrorMessage(error),
-        });
-        return {
-          ok: false,
-          skipped: false,
-          code: "TELEGRAM_START_FAILED",
         };
+        logger.warn?.("[telegram] bot polling failed", {
+          provider: "telegram",
+          code: lastStartError.code,
+          message: lastStartError.message,
+        });
+        scheduleStartRetry();
       });
 
-    return launchPromise;
+    return { ok: true, skipped: false, starting: true };
   };
 
   const stop = (reason = "Smart Nutrition API shutdown") => {
+    isStopping = true;
+    clearStartRetry();
     getMedicationReminderRuntime().stop();
 
     if (bot && launched) {
@@ -554,6 +606,11 @@ export const createTelegramService = ({
     provider: "telegram",
     botUsername: configured ? botUsername : null,
     polling: launched,
+    starting: Boolean(launchPromise && !launched),
+    retryScheduled: Boolean(startRetryTimeout),
+    lastStartAttemptAt,
+    lastStartedAt,
+    lastStartError,
     connectTokenTtlMs: config?.telegramConnectTokenTtlMs ?? null,
     medicationReminders: getMedicationReminderRuntime().getStatus(),
   });
