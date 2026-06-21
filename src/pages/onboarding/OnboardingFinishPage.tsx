@@ -16,6 +16,7 @@ import {
   applyProfileTargets,
   setAssistantCustomization,
   setProfileLanguage,
+  updateWomenHealth,
 } from "../../features/profile/profileSlice";
 import { syncRemoteProfileState, updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
@@ -139,12 +140,46 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       excludedIngredients: [],
       adaptiveMode: "automatic" as const,
     };
+    const womenHealthProfile =
+      state.gender === "female"
+        ? {
+            mode: state.womenHealthMode,
+            pregnancyWeek:
+              state.womenHealthMode === "pregnant" ? state.pregnancyWeek : null,
+            dueDate:
+              state.womenHealthMode === "pregnant" && state.dueDate
+                ? new Date(state.dueDate).toISOString()
+                : null,
+            lastPeriodStartDate:
+              (state.womenHealthMode === "pregnant" ||
+                state.womenHealthMode === "trying_to_conceive") &&
+              state.lastPeriodStartDate
+                ? new Date(state.lastPeriodStartDate).toISOString()
+                : null,
+            doctorConfirmed:
+              state.womenHealthMode === "pregnant" ||
+              state.womenHealthMode === "trying_to_conceive"
+                ? state.doctorConfirmed
+                : false,
+            notes: state.womenHealthNotes,
+          }
+        : {
+            mode: "none" as const,
+            pregnancyWeek: null,
+            dueDate: null,
+            lastPeriodStartDate: null,
+            doctorConfirmed: false,
+            notes: "",
+          };
     const nextProfile = profileReducer(
       profileReducer(
-        profileReducer(profile, setProfileLanguage(appLanguage)),
-        setAssistantCustomization(assistantCustomization)
+        profileReducer(
+          profileReducer(profile, setProfileLanguage(appLanguage)),
+          setAssistantCustomization(assistantCustomization)
+        ),
+        applyProfileTargets(profileTargets)
       ),
-      applyProfileTargets(profileTargets)
+      updateWomenHealth(womenHealthProfile)
     );
 
     try {
@@ -152,6 +187,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       dispatch(setProfileLanguage(appLanguage));
       dispatch(setAssistantCustomization(assistantCustomization));
       dispatch(applyProfileTargets(profileTargets));
+      dispatch(updateWomenHealth(womenHealthProfile));
       dispatch(markSyncStarted());
 
       await updateStoredProfile(nextUser);
@@ -175,6 +211,8 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         mainFrictions: state.mainFrictions.join(","),
         motivationStyle: state.motivationStyle,
         motivationStyles: state.motivationStyles.join(","),
+        womenHealthMode: state.gender === "female" ? state.womenHealthMode : "none",
+        doctorConfirmed: state.gender === "female" && state.doctorConfirmed,
         assistantAvatar: state.assistantAvatar,
         assistantPersonality: state.personality,
         hasPrimaryGoalNote: Boolean(state.primaryGoalNote.trim()),

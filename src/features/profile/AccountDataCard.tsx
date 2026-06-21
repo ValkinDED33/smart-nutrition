@@ -22,6 +22,7 @@ import {
   getRemoteTelegramStatus,
   logoutEverywhere,
   type AccountBackupSummary,
+  type TelegramConnectLink,
   type TelegramConnectionStatus,
 } from "../../shared/api/auth";
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
@@ -84,6 +85,11 @@ const accountCopy = {
     telegramDisconnectSuccess: "Telegram відключено.",
     telegramDisconnectError: "Не вдалося відключити Telegram.",
     telegramBot: "Бот",
+    telegramConnectInstruction:
+      "Якщо Telegram не відкрився автоматично, натисніть персональне посилання нижче. Звичайний /start без цього посилання не підключає акаунт.",
+    telegramOpenPersonalLink: "Відкрити персональне посилання",
+    telegramCopyLink: "Скопіювати посилання",
+    telegramCopySuccess: "Посилання Telegram скопійовано.",
   },
   pl: {
     title: "Konto i dane",
@@ -140,6 +146,11 @@ const accountCopy = {
     telegramDisconnectSuccess: "Telegram odlaczony.",
     telegramDisconnectError: "Nie udalo sie odlaczyc Telegram.",
     telegramBot: "Bot",
+    telegramConnectInstruction:
+      "Jesli Telegram nie otworzyl sie automatycznie, nacisnij osobisty link ponizej. Zwykle /start bez tego linku nie polaczy konta.",
+    telegramOpenPersonalLink: "Otworz osobisty link",
+    telegramCopyLink: "Skopiuj link",
+    telegramCopySuccess: "Link Telegram skopiowany.",
   },
   en: {
     title: "Account and data",
@@ -197,6 +208,11 @@ const accountCopy = {
     telegramDisconnectSuccess: "Telegram disconnected.",
     telegramDisconnectError: "Could not disconnect Telegram.",
     telegramBot: "Bot",
+    telegramConnectInstruction:
+      "If Telegram did not open automatically, use the personal link below. Plain /start without this link cannot connect your account.",
+    telegramOpenPersonalLink: "Open personal link",
+    telegramCopyLink: "Copy link",
+    telegramCopySuccess: "Telegram link copied.",
   },
 } as const;
 
@@ -243,6 +259,8 @@ export const AccountDataCard = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [telegramStatus, setTelegramStatus] =
     useState<TelegramConnectionStatus | null>(null);
+  const [telegramConnectLink, setTelegramConnectLink] =
+    useState<TelegramConnectLink | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(true);
   const [telegramBusy, setTelegramBusy] = useState(false);
 
@@ -385,16 +403,41 @@ export const AccountDataCard = () => {
   const handleTelegramConnect = async () => {
     setTelegramBusy(true);
     setNotice(null);
+    const pendingWindow = window.open("about:blank", "_blank");
+    if (pendingWindow) {
+      pendingWindow.opener = null;
+    }
 
     try {
       const status = await createTelegramConnectLink();
       setTelegramStatus(status);
-      window.open(status.url, "_blank", "noopener,noreferrer");
+      setTelegramConnectLink(status);
+
+      if (pendingWindow) {
+        pendingWindow.location.href = status.url;
+      } else {
+        window.location.assign(status.url);
+      }
+
       setNotice({ type: "success", message: copy.telegramConnectSuccess });
     } catch {
+      pendingWindow?.close();
       setNotice({ type: "error", message: copy.telegramConnectError });
     } finally {
       setTelegramBusy(false);
+    }
+  };
+
+  const handleTelegramCopyLink = async () => {
+    if (!telegramConnectLink?.url) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(telegramConnectLink.url);
+      setNotice({ type: "success", message: copy.telegramCopySuccess });
+    } catch {
+      setNotice({ type: "error", message: copy.telegramConnectError });
     }
   };
 
@@ -491,6 +534,44 @@ export const AccountDataCard = () => {
                 <Typography variant="body2" color="text.secondary">
                   {formatBackupTimestamp(telegramStatus.connectedAt, appLanguage)}
                 </Typography>
+              )}
+              {!telegramConnected && telegramConnectLink?.url && (
+                <Alert severity="info" sx={{ borderRadius: 3 }}>
+                  <Stack spacing={1.2}>
+                    <Typography variant="body2">
+                      {copy.telegramConnectInstruction}
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap>
+                      <Button
+                        component="a"
+                        href={telegramConnectLink.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="contained"
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {copy.telegramOpenPersonalLink}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          void handleTelegramCopyLink();
+                        }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {copy.telegramCopyLink}
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Alert>
               )}
             </Stack>
             <Button

@@ -36,6 +36,7 @@ export const createHealthController = ({
   getEmailStatus,
   getBrevoStatus,
   getTelegramStatus,
+  getKeepAliveStatus,
   getProductLookupStatus,
   getAiStatus,
   getReadiness,
@@ -56,6 +57,7 @@ export const createHealthController = ({
       email: getEmailStatus(),
       brevo: getBrevoStatus?.() ?? null,
       telegram: getTelegramStatus?.() ?? null,
+      keepAlive: getKeepAliveStatus?.() ?? null,
       products: getProductLookupStatus?.() ?? null,
       ai: getAiStatus(),
     });

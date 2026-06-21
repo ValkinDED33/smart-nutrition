@@ -141,6 +141,27 @@ const normalizeHttpUrl = (value, fallback, name, errors) => {
   return fallback;
 };
 
+const normalizeOptionalHttpUrl = (value, name, errors) => {
+  const rawValue = toTrimmedString(value);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(rawValue);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // Fall through to the shared validation error below.
+  }
+
+  errors.push(`${name} must be a valid http/https URL.`);
+  return null;
+};
+
 const normalizeRuntimePath = (value, fallback) => {
   const nextValue = toTrimmedString(value, fallback) || fallback;
 
@@ -1040,6 +1061,36 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 0, max: 1 }
   );
+  const keepAliveEnabled = readBooleanFlag(
+    env.SMART_NUTRITION_KEEPALIVE_ENABLED,
+    false
+  );
+  const keepAliveUrl = normalizeOptionalHttpUrl(
+    env.SMART_NUTRITION_KEEPALIVE_URL,
+    "SMART_NUTRITION_KEEPALIVE_URL",
+    errors
+  );
+  const keepAliveIntervalMs = readPositiveInteger(
+    env.SMART_NUTRITION_KEEPALIVE_INTERVAL_MS,
+    10 * 60 * 1000,
+    "SMART_NUTRITION_KEEPALIVE_INTERVAL_MS",
+    errors,
+    { min: 60_000 }
+  );
+  const keepAliveTimeoutMs = readPositiveInteger(
+    env.SMART_NUTRITION_KEEPALIVE_TIMEOUT_MS,
+    8_000,
+    "SMART_NUTRITION_KEEPALIVE_TIMEOUT_MS",
+    errors,
+    { min: 1_000 }
+  );
+
+  if (keepAliveEnabled && !keepAliveUrl) {
+    warnings.push(
+      "SMART_NUTRITION_KEEPALIVE_ENABLED is true, but SMART_NUTRITION_KEEPALIVE_URL is missing. Keepalive runtime will stay disabled."
+    );
+  }
+
   const defaultAppBaseUrl = PUBLIC_FRONTEND_ORIGIN;
   const appBaseUrl = normalizeAppBaseUrl(
     env.SMART_NUTRITION_APP_BASE_URL,
@@ -1318,6 +1369,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     aiDebugLogging,
     sentryDsn,
     sentryTracesSampleRate,
+    keepAliveEnabled,
+    keepAliveUrl,
+    keepAliveIntervalMs,
+    keepAliveTimeoutMs,
     backupDir,
     backupIntervalMs,
     maxBackupFilesPerUser,

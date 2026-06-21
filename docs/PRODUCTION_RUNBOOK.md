@@ -62,6 +62,17 @@ Telegram is optional. If it is not configured, registration, auth, sync, and ass
 
 Medication reminders are delivered by the backend Telegram worker. For time-critical reminders, keep the Render service awake with a paid always-on instance or an external uptime monitor. If Render sleeps, reminders are sent only after the backend wakes again.
 
+Optional Render keepalive for test/free-tier deployments:
+
+```env
+SMART_NUTRITION_KEEPALIVE_ENABLED=true
+SMART_NUTRITION_KEEPALIVE_URL=https://smart-nutrition-sk5r.onrender.com/api/health
+SMART_NUTRITION_KEEPALIVE_INTERVAL_MS=600000
+SMART_NUTRITION_KEEPALIVE_TIMEOUT_MS=8000
+```
+
+This internal keepalive can keep an already awake free Render instance warm by pinging `/api/health` every 10 minutes. It is not a replacement for a paid always-on instance or an external monitor, because it cannot run while the instance is already asleep.
+
 Optional online product lookup:
 
 ```env
@@ -128,8 +139,10 @@ Run after every production deploy:
 16. In Telegram, check `/help`, `/today`, `/water`, and `/nutrition`.
 17. Create a medication reminder with `/addmed Вітамін D 1 капсула щодня о 09:00`.
 18. Check `/meds` shows the active medication reminder.
-19. Confirm disconnect works from the profile.
-20. If analytics is enabled, confirm key events appear in PostHog/provider logs.
+19. Send free text `Я випив 300 мл води` and confirm the assistant agent adds water.
+20. Send free text `Що по воді?` and confirm the bot returns hydration status.
+21. Confirm disconnect works from the profile.
+22. If analytics is enabled, confirm key events appear in PostHog/provider logs.
 
 ## Auth Smoke Test
 
@@ -161,6 +174,7 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - Telegram link expired means the user should press **Connect Telegram** again in profile.
 - If `/api/health` shows `telegram.polling=false`, check `telegram.starting`, `telegram.retryScheduled`, and `telegram.lastStartError`. A `409 Conflict` usually means the same bot token is running somewhere else or an old webhook/poller is still active.
 - Medication reminders arriving late usually means the Render instance slept, Telegram polling stopped, or the bot token was rotated without redeploying.
+- If `/api/health` shows `keepAlive.enabled=true` but `keepAlive.running=false`, verify `SMART_NUTRITION_KEEPALIVE_URL` and redeploy Render. If `keepAlive.lastError` is set, check the returned status code and timeout.
 - `/api/ready` failing in production usually means storage, cache, static build, or required email config is not ready.
 - Brevo failures should not block registration verification; check logs and Brevo env/domain/list setup.
 
@@ -189,5 +203,6 @@ Env rollback checklist:
 - Resend API key and sender
 - Brevo API key/list id
 - Telegram bot token/username
+- keepalive env
 - product lookup env
 - AI provider keys/models/order

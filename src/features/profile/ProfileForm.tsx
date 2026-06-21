@@ -1,5 +1,5 @@
 import { type ChangeEvent, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,6 +8,8 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
+  FormControlLabel,
   MenuItem,
   Paper,
   Stack,
@@ -16,7 +18,11 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
-import { applyProfileTargets, updatePersonalDetails } from "./profileSlice";
+import {
+  applyProfileTargets,
+  updatePersonalDetails,
+  updateWomenHealth,
+} from "./profileSlice";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
@@ -30,7 +36,7 @@ import {
   parsePreferenceList,
 } from "@domain/user/preferences";
 import type { AppLanguage } from "../../shared/types/i18n";
-import type { AdaptiveMode, DietStyle } from "@domain/profile/types";
+import type { AdaptiveMode, DietStyle, WomenHealthMode } from "@domain/profile/types";
 import type {
   BloodGroup,
   EyeColor,
@@ -38,6 +44,7 @@ import type {
   RelationshipStatus,
   SupportSystem,
 } from "@domain/profile/types";
+import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 
 type FormData = {
   gender: "male" | "female";
@@ -56,6 +63,12 @@ type FormData = {
   relationshipStatus: RelationshipStatus;
   supportSystem: SupportSystem;
   petCompanion: PetCompanion;
+  womenHealthMode: WomenHealthMode;
+  pregnancyWeek?: number;
+  dueDate: string;
+  lastPeriodStartDate: string;
+  doctorConfirmed: boolean;
+  womenHealthNotes: string;
 };
 
 const profileCopy = {
@@ -87,6 +100,21 @@ const profileCopy = {
     relationshipLabel: "Статус",
     supportLabel: "Підтримка",
     petLabel: "Поруч є",
+    womenHealthTitle: "Жіноче здоров'я",
+    womenHealthSubtitle:
+      "Цей блок бачать тільки профілі з жіночою статтю. Помічник використовує його лише для безпечних нагадувань і контексту, не для медичних призначень.",
+    womenHealthModeLabel: "Режим",
+    womenHealthNone: "Не потрібно",
+    womenHealthTrying: "Готуюся до вагітності",
+    womenHealthPregnant: "Вагітна",
+    womenHealthPostpartum: "Після пологів",
+    pregnancyWeekLabel: "Орієнтовний тиждень",
+    dueDateLabel: "Орієнтовна дата пологів",
+    lastPeriodLabel: "Дата останньої менструації",
+    doctorConfirmedLabel: "Є підтвердження / план від лікаря",
+    womenHealthNotesLabel: "Що важливо пам'ятати",
+    womenHealthSafety:
+      "Ліки, добавки, дозування і тривожні симптоми завжди перевіряються з лікарем.",
   },
   pl: {
     sectionBasics: "Dane podstawowe",
@@ -116,6 +144,21 @@ const profileCopy = {
     relationshipLabel: "Status",
     supportLabel: "Wsparcie",
     petLabel: "Kto jest obok",
+    womenHealthTitle: "Zdrowie kobiet",
+    womenHealthSubtitle:
+      "Ten blok widzą tylko profile z płcią żeńską. Asystent używa go do bezpiecznego kontekstu i przypomnień, nie do zaleceń medycznych.",
+    womenHealthModeLabel: "Tryb",
+    womenHealthNone: "Nie dotyczy",
+    womenHealthTrying: "Przygotowuję się do ciąży",
+    womenHealthPregnant: "Jestem w ciąży",
+    womenHealthPostpartum: "Po porodzie",
+    pregnancyWeekLabel: "Orientacyjny tydzień",
+    dueDateLabel: "Przewidywany termin porodu",
+    lastPeriodLabel: "Data ostatniej miesiączki",
+    doctorConfirmedLabel: "Mam potwierdzenie / plan od lekarza",
+    womenHealthNotesLabel: "Co warto pamiętać",
+    womenHealthSafety:
+      "Leki, suplementy, dawki i niepokojące objawy zawsze konsultuj z lekarzem.",
   },
   en: {
     sectionBasics: "Basic data",
@@ -145,6 +188,21 @@ const profileCopy = {
     relationshipLabel: "Relationship status",
     supportLabel: "Support",
     petLabel: "Nearby companion",
+    womenHealthTitle: "Women health",
+    womenHealthSubtitle:
+      "This block is shown only for female profiles. The assistant uses it for safe context and reminders, not for medical prescriptions.",
+    womenHealthModeLabel: "Mode",
+    womenHealthNone: "Not needed",
+    womenHealthTrying: "Preparing for pregnancy",
+    womenHealthPregnant: "Pregnant",
+    womenHealthPostpartum: "Postpartum",
+    pregnancyWeekLabel: "Estimated week",
+    dueDateLabel: "Estimated due date",
+    lastPeriodLabel: "Last period start date",
+    doctorConfirmedLabel: "Doctor confirmation / plan exists",
+    womenHealthNotesLabel: "Important context",
+    womenHealthSafety:
+      "Medication, supplements, dosages, and worrying symptoms must always be checked with a clinician.",
   },
 } as const;
 
@@ -319,6 +377,9 @@ const petLabels: Record<AppLanguage, Record<PetCompanion, string>> = {
   },
 };
 
+const toDateInputValue = (value: string | null) =>
+  value && !Number.isNaN(Date.parse(value)) ? value.slice(0, 10) : "";
+
 const ProfileForm = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -329,6 +390,7 @@ const ProfileForm = () => {
     excludedIngredients,
     adaptiveMode,
     personalDetails,
+    womenHealth,
     assistant,
   } = useSelector((state: RootState) => state.profile);
   const { t, appLanguage } = useLanguage();
@@ -416,6 +478,17 @@ const ProfileForm = () => {
           "prefer_not",
         ]),
         petCompanion: z.enum(["none", "cat", "dog", "cat_and_dog", "other"]),
+        womenHealthMode: z.enum([
+          "none",
+          "trying_to_conceive",
+          "pregnant",
+          "postpartum",
+        ]),
+        pregnancyWeek: z.number().min(1).max(42).optional(),
+        dueDate: z.string(),
+        lastPeriodStartDate: z.string(),
+        doctorConfirmed: z.boolean(),
+        womenHealthNotes: z.string().max(220),
       }),
     [copy.targetWeightMax, t]
   );
@@ -423,6 +496,7 @@ const ProfileForm = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -443,8 +517,23 @@ const ProfileForm = () => {
       relationshipStatus: personalDetails.relationshipStatus,
       supportSystem: personalDetails.supportSystem,
       petCompanion: personalDetails.petCompanion,
+      womenHealthMode: womenHealth.mode,
+      pregnancyWeek: womenHealth.pregnancyWeek ?? undefined,
+      dueDate: toDateInputValue(womenHealth.dueDate),
+      lastPeriodStartDate: toDateInputValue(womenHealth.lastPeriodStartDate),
+      doctorConfirmed: womenHealth.doctorConfirmed,
+      womenHealthNotes: womenHealth.notes,
     },
   });
+  const selectedGender = useWatch({ control, name: "gender" });
+  const selectedWomenHealthMode = useWatch({ control, name: "womenHealthMode" });
+  const shouldShowWomenHealth = selectedGender === "female";
+  const shouldShowPregnancyFields =
+    shouldShowWomenHealth && selectedWomenHealthMode === "pregnant";
+  const shouldShowCycleFields =
+    shouldShowWomenHealth &&
+    (selectedWomenHealthMode === "pregnant" ||
+      selectedWomenHealthMode === "trying_to_conceive");
 
   if (!user) return null;
 
@@ -481,8 +570,38 @@ const ProfileForm = () => {
         relationshipStatus,
         supportSystem,
         petCompanion,
+        womenHealthMode,
+        pregnancyWeek,
+        dueDate,
+        lastPeriodStartDate,
+        doctorConfirmed,
+        womenHealthNotes,
         ...userProfileData
       } = data;
+      const nextWomenHealth =
+        data.gender === "female"
+          ? {
+              mode: womenHealthMode,
+              pregnancyWeek:
+                womenHealthMode === "pregnant" ? pregnancyWeek ?? null : null,
+              dueDate:
+                womenHealthMode === "pregnant" && dueDate
+                  ? new Date(dueDate).toISOString()
+                  : null,
+              lastPeriodStartDate:
+                (womenHealthMode === "pregnant" ||
+                  womenHealthMode === "trying_to_conceive") &&
+                lastPeriodStartDate
+                  ? new Date(lastPeriodStartDate).toISOString()
+                  : null,
+              doctorConfirmed:
+                womenHealthMode === "pregnant" ||
+                womenHealthMode === "trying_to_conceive"
+                  ? doctorConfirmed
+                  : false,
+              notes: womenHealthNotes,
+            }
+          : createDefaultWomenHealthState();
       const updatedUser = await updateStoredProfile({
         ...user,
         ...userProfileData,
@@ -513,6 +632,7 @@ const ProfileForm = () => {
           petCompanion,
         })
       );
+      dispatch(updateWomenHealth(nextWomenHealth));
       setSuccessMessage(t("profile.saved"));
     } catch {
       setServerError(t("error.genericProfile"));
@@ -770,6 +890,111 @@ const ProfileForm = () => {
             </Stack>
           </Stack>
         </Paper>
+
+        {shouldShowWomenHealth && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2.25,
+              borderRadius: 5,
+              backgroundColor: "rgba(240,253,250,0.72)",
+              borderColor: "rgba(20, 184, 166, 0.28)",
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  {copy.womenHealthTitle}
+                </Typography>
+                <Typography color="text.secondary">
+                  {copy.womenHealthSubtitle}
+                </Typography>
+              </Stack>
+
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <TextField
+                  select
+                  fullWidth
+                  label={copy.womenHealthModeLabel}
+                  defaultValue={womenHealth.mode}
+                  {...register("womenHealthMode")}
+                  error={Boolean(errors.womenHealthMode)}
+                  helperText={errors.womenHealthMode?.message}
+                >
+                  <MenuItem value="none">{copy.womenHealthNone}</MenuItem>
+                  <MenuItem value="trying_to_conceive">
+                    {copy.womenHealthTrying}
+                  </MenuItem>
+                  <MenuItem value="pregnant">{copy.womenHealthPregnant}</MenuItem>
+                  <MenuItem value="postpartum">{copy.womenHealthPostpartum}</MenuItem>
+                </TextField>
+
+                {shouldShowPregnancyFields && (
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label={copy.pregnancyWeekLabel}
+                    {...register("pregnancyWeek", {
+                      setValueAs: (value) =>
+                        value === "" ? undefined : Number(value),
+                    })}
+                    error={Boolean(errors.pregnancyWeek)}
+                    helperText={errors.pregnancyWeek?.message}
+                    inputProps={{ min: 1, max: 42, step: 1, inputMode: "numeric" }}
+                  />
+                )}
+              </Stack>
+
+              {shouldShowCycleFields && (
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  {shouldShowPregnancyFields && (
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label={copy.dueDateLabel}
+                      InputLabelProps={{ shrink: true }}
+                      {...register("dueDate")}
+                      error={Boolean(errors.dueDate)}
+                      helperText={errors.dueDate?.message}
+                    />
+                  )}
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label={copy.lastPeriodLabel}
+                    InputLabelProps={{ shrink: true }}
+                    {...register("lastPeriodStartDate")}
+                    error={Boolean(errors.lastPeriodStartDate)}
+                    helperText={errors.lastPeriodStartDate?.message}
+                  />
+                </Stack>
+              )}
+
+              {selectedWomenHealthMode !== "none" && (
+                <>
+                  <FormControlLabel
+                    control={<Checkbox {...register("doctorConfirmed")} />}
+                    label={copy.doctorConfirmedLabel}
+                  />
+                  <TextField
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    label={copy.womenHealthNotesLabel}
+                    {...register("womenHealthNotes")}
+                    error={Boolean(errors.womenHealthNotes)}
+                    helperText={
+                      errors.womenHealthNotes?.message ?? copy.womenHealthSafety
+                    }
+                  />
+                  <Alert severity="info" sx={{ borderRadius: 3 }}>
+                    {copy.womenHealthSafety}
+                  </Alert>
+                </>
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField

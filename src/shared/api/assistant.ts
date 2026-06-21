@@ -42,7 +42,7 @@ const parseAiResponse = async (
 
   return {
     text: payload.text.trim(),
-    mode: payload.mode === "remote-cloud" ? "remote-cloud" : "remote-cloud",
+    mode: payload.mode === "agent-action" ? "agent-action" : "remote-cloud",
     followUpQuestionIds: Array.isArray(payload.followUpQuestionIds)
       ? payload.followUpQuestionIds.filter(isAssistantQuickQuestionId)
       : [],
@@ -86,7 +86,7 @@ const parseAiHistory = async (
         id: item.id,
         role: item.role,
         text,
-        mode: item.mode === "remote-cloud" ? "remote-cloud" : "remote-cloud",
+        mode: item.mode === "agent-action" ? "agent-action" : "remote-cloud",
         followUpQuestionIds: Array.isArray(item.followUpQuestionIds)
           ? item.followUpQuestionIds.filter((value): value is (typeof assistantQuickQuestionIds)[number] =>
               isAssistantQuickQuestionId(value)

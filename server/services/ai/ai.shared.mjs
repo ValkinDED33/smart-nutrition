@@ -69,9 +69,62 @@ const formatPromptContextLine = (context) => {
   ].join("\n");
 };
 
+const formatWomenHealthLine = (context) => {
+  const womenHealth = context.womenHealth ?? {};
+  const gender = context.gender ?? context.profile?.gender ?? "unknown";
+  const mode =
+    gender === "female" && womenHealth.mode && womenHealth.mode !== "none"
+      ? womenHealth.mode
+      : "not_applicable";
+
+  if (mode === "not_applicable") {
+    return "- Women health mode: not applicable";
+  }
+
+  return [
+    `- Women health mode: ${mode}`,
+    `- Pregnancy week: ${womenHealth.pregnancyWeek ?? "unknown"}`,
+    `- Pregnancy doctor confirmed: ${womenHealth.doctorConfirmed ? "yes" : "no"}`,
+    `- Pregnancy due date: ${womenHealth.dueDate ?? "unknown"}`,
+    `- Women health note: ${womenHealth.notes || "none"}`,
+    "- Women health safety: do not prescribe medication, supplements, dosages, pregnancy diets, or clinical decisions; recommend clinician guidance for medical questions.",
+  ].join("\n");
+};
+
 const buildContextBlock = (context) =>
   [
-    "Current Smart Nutrition context:",
+    "CURRENT_CONTEXT:",
+    `language: ${context.language ?? "uk"}`,
+    `channel: ${context.interactionChannel ?? "web"}`,
+    `screen: ${context.screen ?? "unknown"}`,
+    `goal: ${context.goal ?? "maintain"}`,
+    `weightGoal: ${context.profile?.goal ?? context.goal ?? "maintain"}`,
+    `activityLevel: ${context.profile?.activityLevel ?? "unknown"}`,
+    `dietStyle: ${context.profile?.dietStyle ?? "balanced"}`,
+    `currentCalories: ${Math.round(
+      context.nutritionState?.caloriesConsumed ?? context.caloriesConsumed ?? 0
+    )}`,
+    `currentProtein: ${Math.round(
+      context.nutritionState?.proteinConsumed ?? context.proteinConsumed ?? 0
+    )}`,
+    `waterToday: ${Math.round(
+      context.nutritionState?.waterConsumedMl ?? context.waterConsumedMl ?? 0
+    )} / ${Math.round(context.nutritionState?.waterTargetMl ?? context.waterTargetMl ?? 0)} ml`,
+    `streakDays: ${context.motivation?.level ?? 1}`,
+    `recentMeals: ${context.mealEntriesToday ?? 0} entries today`,
+    `lastWorkout: ${context.profile?.lastWorkout ?? "unknown"}`,
+    `companionMood: ${context.memory?.lastMood ?? "unknown"}`,
+    `memorySummary: goals=${formatList(context.memory?.goals)}; struggles=${formatList(
+      context.memory?.struggles
+    )}; habits=${formatList(context.memory?.habits)}`,
+    `assistantMode: ${context.promptContext?.area ?? context.screen ?? "assistant"}`,
+    `womenHealthMode: ${
+      context.gender === "female" && context.womenHealth?.mode
+        ? context.womenHealth.mode
+        : "not_applicable"
+    }`,
+    "",
+    "Expanded Smart Nutrition context:",
     `- Current app screen: ${context.screen ?? "unknown"} (${context.currentPath ?? "/"})`,
     `- Interaction channel: ${context.interactionChannel ?? "web"}`,
     formatPromptContextLine(context),
@@ -134,6 +187,7 @@ const buildContextBlock = (context) =>
     `- Relationship status: ${context.personalDetails?.relationshipStatus ?? "prefer_not"}`,
     `- Support system: ${context.personalDetails?.supportSystem ?? "self"}`,
     `- Pet companion: ${context.personalDetails?.petCompanion ?? "none"}`,
+    formatWomenHealthLine(context),
     `- Coach insight: ${context.coachPrimaryInsight}`,
     `- Coach score: ${context.coach.score}/100`,
     `- Coach weekly averages: ${Math.round(context.coach.averageCalories)} kcal, ${Math.round(

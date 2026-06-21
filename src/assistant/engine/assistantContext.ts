@@ -77,6 +77,7 @@ export const createAssistantRuntimeContext = ({
     screen,
     currentPath,
     userName: user?.name ?? "",
+    gender: user?.gender ?? null,
     goal: profile.goal,
     dietStyle: profile.dietStyle,
     dailyCalories: profile.dailyCalories,
@@ -99,6 +100,18 @@ export const createAssistantRuntimeContext = ({
     assistantPersonality,
     communicationStyle,
     personalDetails: profile.personalDetails,
+    womenHealth:
+      user?.gender === "female"
+        ? profile.womenHealth
+        : {
+            mode: "none",
+            pregnancyWeek: null,
+            dueDate: null,
+            lastPeriodStartDate: null,
+            doctorConfirmed: false,
+            notes: "",
+            updatedAt: null,
+          },
     motivation: profile.motivation,
     coach,
     coachPrimaryInsight: coachPrimaryInsight ?? coach.insights[0]?.code ?? "on_track",

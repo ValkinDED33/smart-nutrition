@@ -6,15 +6,16 @@ import type {
   DietStyle,
   MotivationState,
   PersonalProfileDetails,
+  WomenHealthState,
 } from "./profile";
 import type {
   NutritionCoachAnalysis,
   NutritionCoachInsightCode,
 } from "@domain/meal/nutritionCoach";
 import type { DailyContext } from "@domain/meal/dailyContext";
-import type { Goal } from "./user";
+import type { Gender, Goal } from "./user";
 
-export type AssistantRuntimeMode = "guided" | "remote-cloud";
+export type AssistantRuntimeMode = "guided" | "remote-cloud" | "agent-action";
 
 export type AssistantScreenId =
   | "dashboard"
@@ -98,6 +99,7 @@ export interface AssistantRuntimeContext {
   screen: AssistantScreenId;
   currentPath: string;
   userName: string;
+  gender: Gender | null;
   goal: Goal;
   dietStyle: DietStyle;
   dailyCalories: number;
@@ -120,6 +122,7 @@ export interface AssistantRuntimeContext {
   assistantPersonality: AssistantPersonality;
   communicationStyle: AssistantCommunicationStyle;
   personalDetails: PersonalProfileDetails;
+  womenHealth: WomenHealthState;
   motivation: MotivationState;
   coach: NutritionCoachAnalysis;
   coachPrimaryInsight: NutritionCoachInsightCode;

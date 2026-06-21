@@ -230,6 +230,7 @@ export const createTelegramService = ({
   authRepository,
   stateService = null,
   medicationReminderService = null,
+  assistantAgent = null,
   logger = console,
   TelegrafClass = Telegraf,
 } = {}) => {
@@ -334,8 +335,26 @@ export const createTelegramService = ({
       const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
 
       if (!payloadToken) {
+        const connectedUser = chatId ? await getUserByTelegramChatId(chatId) : null;
+
+        if (connectedUser) {
+          await ctx.reply(
+            [
+              `Telegram уже подключён к Smart Nutrition: ${connectedUser.name}.`,
+              "",
+              buildTelegramAssistantCapabilitiesMessage(),
+            ].join("\n")
+          );
+          return;
+        }
+
         await ctx.reply(
-          "Откройте подключение Telegram из профиля Smart Nutrition и нажмите Start по персональной ссылке."
+          [
+            "Чтобы подключить Telegram, нужен персональный линк из профиля Smart Nutrition.",
+            "",
+            "Откройте Smart Nutrition → Профиль → Безопасность / Акаунт і дані → Підключити Telegram.",
+            "Обычный /start без персональной ссылки не подключает аккаунт.",
+          ].join("\n")
         );
         return;
       }
@@ -369,7 +388,14 @@ export const createTelegramService = ({
         details: { provider: "telegram" },
       });
 
-      await ctx.reply("Telegram успешно подключён к Smart Nutrition.");
+      await ctx.reply(
+        [
+          "Telegram успешно подключён к Smart Nutrition.",
+          "",
+          "Теперь можно использовать /help, /today, /water, /nutrition и /meds.",
+          "Для лекарства: /addmed Вітамін D 1 капсула щодня о 09:00",
+        ].join("\n")
+      );
     });
 
     nextBot.command("help", async (ctx) => {
@@ -422,6 +448,47 @@ export const createTelegramService = ({
     });
 
     getMedicationReminderRuntime().registerHandlers(nextBot);
+
+    nextBot.on("text", async (ctx) => {
+      const message = toTrimmedString(ctx.message?.text);
+
+      if (!message || message.startsWith("/")) {
+        return;
+      }
+
+      const user = await getConnectedUser(ctx);
+
+      if (!user) {
+        return;
+      }
+
+      const agentResult = await assistantAgent?.run?.({
+        user,
+        message,
+        context: {
+          interactionChannel: "telegram",
+          language: "uk",
+        },
+      });
+
+      if (agentResult?.handled) {
+        await ctx.reply(agentResult.text);
+        return;
+      }
+
+      await ctx.reply(
+        [
+          "Я на зв'язку. Можу швидко виконувати дії по Smart Nutrition.",
+          "",
+          "Приклади:",
+          "💧 Я випив 300 мл води",
+          "💊 Нагадуй пити Вітамін D щодня о 09:00",
+          "📊 Що по воді?",
+          "",
+          "Для списку команд: /help",
+        ].join("\n")
+      );
+    });
 
     nextBot.catch((error) => {
       logger.warn?.("[telegram] bot handler failed", {

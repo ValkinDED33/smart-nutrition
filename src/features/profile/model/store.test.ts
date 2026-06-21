@@ -14,6 +14,7 @@ import reducer, {
   setAssistantCustomization,
   startPremiumTrial,
   updatePersonalDetails,
+  updateWomenHealth,
 } from "./store";
 
 const createSelectorState = ({
@@ -165,6 +166,55 @@ describe("profileSlice personal details", () => {
       supportSystem: "low_support",
       petCompanion: "dog",
     });
+  });
+});
+
+describe("profileSlice women health", () => {
+  it("normalizes missing and invalid women health profile safely", () => {
+    const emptyState = normalizeProfileState({});
+    expect(emptyState.womenHealth).toMatchObject({
+      mode: "none",
+      pregnancyWeek: null,
+      doctorConfirmed: false,
+    });
+
+    const invalidState = normalizeProfileState({
+      womenHealth: {
+        mode: "pregnant",
+        pregnancyWeek: 80,
+        dueDate: "not-a-date",
+        doctorConfirmed: true,
+        notes: "x".repeat(260),
+      },
+    });
+
+    expect(invalidState.womenHealth).toMatchObject({
+      mode: "pregnant",
+      pregnancyWeek: null,
+      dueDate: null,
+      doctorConfirmed: true,
+    });
+    expect(invalidState.womenHealth.notes).toHaveLength(220);
+  });
+
+  it("updates women health mode for pregnancy context", () => {
+    const state = reducer(
+      undefined,
+      updateWomenHealth({
+        mode: "pregnant",
+        pregnancyWeek: 12,
+        doctorConfirmed: true,
+        notes: "doctor plan exists",
+      })
+    );
+
+    expect(state.womenHealth).toMatchObject({
+      mode: "pregnant",
+      pregnancyWeek: 12,
+      doctorConfirmed: true,
+      notes: "doctor plan exists",
+    });
+    expect(state.womenHealth.updatedAt).toEqual(expect.any(String));
   });
 });
 

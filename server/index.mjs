@@ -1,4 +1,5 @@
 import http from "node:http";
+import { createAssistantAgentService } from "./agent/agent.service.mjs";
 import { serverConfig } from "./config.mjs";
 import { createRedisCache } from "./cache/redisCache.mjs";
 import {
@@ -43,6 +44,7 @@ import {
   logStartupDiagnostics,
 } from "./runtime/diagnostics.mjs";
 import { handleRouteError } from "./runtime/errorHandler.mjs";
+import { createKeepAliveRuntime } from "./runtime/keepAlive.mjs";
 import { createRequestMetrics } from "./runtime/metrics.mjs";
 import {
   getClientAddress,
@@ -59,6 +61,7 @@ import {
   getPublicBrevoStatus,
   getPublicCacheStatus,
   getPublicEmailStatus,
+  getPublicKeepAliveStatus,
   getPublicProductLookupStatus,
   getPublicStorageStatus,
   getPublicTelegramStatus,
@@ -68,6 +71,12 @@ import { createStaticFileServer } from "./runtime/staticFiles.mjs";
 
 const redisCache = await createRedisCache(serverConfig);
 const sentryRuntime = createSentryRuntime({ config: serverConfig });
+const keepAliveRuntime = createKeepAliveRuntime({
+  enabled: serverConfig.keepAliveEnabled,
+  url: serverConfig.keepAliveUrl,
+  intervalMs: serverConfig.keepAliveIntervalMs,
+  timeoutMs: serverConfig.keepAliveTimeoutMs,
+});
 const storage = await createStorage(serverConfig);
 const requestDiagnostics = createRequestDiagnostics();
 const assistantMemoryRepository = await createAssistantMemoryRepository({
@@ -102,11 +111,6 @@ const brevoService = createBrevoService({
 const productLookupService = createProductLookupService({
   config: serverConfig,
 });
-const aiService = createAiService({
-  aiRepository,
-  assistantMemoryRepository,
-  config: serverConfig,
-});
 const authService = createAuthService({
   authRepository,
   stateRepository,
@@ -124,11 +128,23 @@ const stateService = createStateService({ stateRepository });
 const medicationReminderService = createMedicationReminderService({
   authRepository,
 });
+const assistantAgent = createAssistantAgentService({
+  stateService,
+  medicationReminderService,
+  assistantMemoryRepository,
+});
+const aiService = createAiService({
+  aiRepository,
+  assistantMemoryRepository,
+  assistantAgent,
+  config: serverConfig,
+});
 const telegramService = createTelegramService({
   config: serverConfig,
   authRepository,
   stateService,
   medicationReminderService,
+  assistantAgent,
 });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);
@@ -149,6 +165,7 @@ const getReadinessSnapshot = createReadinessSnapshot({
   emailService,
   brevoService,
   telegramService,
+  keepAliveRuntime,
   productLookupService,
   aiService,
   serverConfig,
@@ -202,6 +219,7 @@ const healthController = createHealthController({
   getEmailStatus: () => getPublicEmailStatus(emailService.getStatus()),
   getBrevoStatus: () => getPublicBrevoStatus(brevoService.getStatus()),
   getTelegramStatus: () => getPublicTelegramStatus(telegramService.getStatus()),
+  getKeepAliveStatus: () => getPublicKeepAliveStatus(keepAliveRuntime.getStatus()),
   getProductLookupStatus: () =>
     getPublicProductLookupStatus(productLookupService.getStatus()),
   getAiStatus: () => getPublicAiStatus(aiService.getRuntimeStatus()),
@@ -431,6 +449,7 @@ const closeRuntime = async () => {
   }
 
   telegramService.stop?.("Smart Nutrition API shutdown");
+  keepAliveRuntime.stop?.();
 
   await Promise.allSettled([
     sentryRuntime.flush?.(),
@@ -481,6 +500,7 @@ server.listen(serverConfig.port, () => {
 
   console.log(`Smart Nutrition API listening on port ${serverConfig.port}`);
   void telegramService.start();
+  keepAliveRuntime.start();
 
   if (serverConfig.serveStatic) {
     console.log(

@@ -21,6 +21,7 @@ import { OnboardingMotivationPage } from "./onboarding/OnboardingMotivationPage"
 import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
 import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
+import { OnboardingWomenHealthPage } from "./onboarding/OnboardingWomenHealthPage";
 import {
   normalizeSelectedGoals,
   stepPaths,
@@ -57,6 +58,30 @@ const OnboardingPage = () => {
             : preferredName || user?.name || "",
         age: user?.age ?? (!onboardingCompleted && hasDraft ? draft.age : 25),
         gender: user?.gender ?? (!onboardingCompleted && hasDraft ? draft.gender : "male"),
+        womenHealthMode:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.womenHealthMode
+            : "none",
+        pregnancyWeek:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.pregnancyWeek
+            : null,
+        dueDate:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.dueDate
+            : "",
+        lastPeriodStartDate:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.lastPeriodStartDate
+            : "",
+        doctorConfirmed:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.doctorConfirmed
+            : false,
+        womenHealthNotes:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.womenHealthNotes
+            : "",
         height: user?.height ?? (!onboardingCompleted && hasDraft ? draft.height : 175),
         goal:
           user?.goal ??
@@ -141,6 +166,28 @@ const OnboardingPage = () => {
       userName: state.name.trim(),
       age: state.age,
       gender: state.gender,
+      womenHealthMode: state.gender === "female" ? state.womenHealthMode : "none",
+      pregnancyWeek:
+        state.gender === "female" && state.womenHealthMode === "pregnant"
+          ? state.pregnancyWeek
+          : null,
+      dueDate:
+        state.gender === "female" && state.womenHealthMode === "pregnant"
+          ? state.dueDate
+          : "",
+      lastPeriodStartDate:
+        state.gender === "female" &&
+        (state.womenHealthMode === "pregnant" ||
+          state.womenHealthMode === "trying_to_conceive")
+          ? state.lastPeriodStartDate
+          : "",
+      doctorConfirmed:
+        state.gender === "female" &&
+        (state.womenHealthMode === "pregnant" ||
+          state.womenHealthMode === "trying_to_conceive")
+          ? state.doctorConfirmed
+          : false,
+      womenHealthNotes: state.gender === "female" ? state.womenHealthNotes : "",
       height: state.height,
       weight: state.weight,
       goal: state.goal,
@@ -168,6 +215,7 @@ const OnboardingPage = () => {
         <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
         <Route path="age" element={<OnboardingAgePage {...stepProps} />} />
         <Route path="gender" element={<OnboardingGenderPage {...stepProps} />} />
+        <Route path="women-health" element={<OnboardingWomenHealthPage {...stepProps} />} />
         <Route path="height" element={<OnboardingHeightPage {...stepProps} />} />
         <Route path="goal" element={<OnboardingGoalPage {...stepProps} />} />
         <Route path="weight" element={<OnboardingWeightPage {...stepProps} />} />

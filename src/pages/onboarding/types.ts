@@ -3,6 +3,7 @@ import type {
   AssistantCompanionKind,
   AssistantDietFriction,
   AssistantMotivationStyle,
+  WomenHealthMode,
 } from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
 
@@ -23,6 +24,12 @@ export interface OnboardingState {
   name: string;
   age: number;
   gender: Gender;
+  womenHealthMode: WomenHealthMode;
+  pregnancyWeek: number | null;
+  dueDate: string;
+  lastPeriodStartDate: string;
+  doctorConfirmed: boolean;
+  womenHealthNotes: string;
   height: number;
   goal: Goal;
   selectedGoals: OnboardingGoalChoice[];
@@ -46,6 +53,7 @@ export const stepPaths = {
   name: "/onboarding/name",
   age: "/onboarding/age",
   gender: "/onboarding/gender",
+  womenHealth: "/onboarding/women-health",
   height: "/onboarding/height",
   goal: "/onboarding/goal",
   friction: "/onboarding/friction",

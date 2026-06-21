@@ -43,6 +43,27 @@ export const getPublicTelegramStatus = (telegramStatus = {}) => ({
   },
 });
 
+export const getPublicKeepAliveStatus = (keepAliveStatus = {}) => ({
+  enabled: Boolean(keepAliveStatus.enabled),
+  configured: Boolean(keepAliveStatus.configured),
+  running: Boolean(keepAliveStatus.running),
+  urlConfigured: Boolean(keepAliveStatus.urlConfigured),
+  intervalMs: keepAliveStatus.intervalMs ?? null,
+  timeoutMs: keepAliveStatus.timeoutMs ?? null,
+  lastPingAt: keepAliveStatus.lastPingAt ?? null,
+  lastSuccessAt: keepAliveStatus.lastSuccessAt ?? null,
+  lastStatusCode: keepAliveStatus.lastStatusCode ?? null,
+  lastDurationMs: keepAliveStatus.lastDurationMs ?? null,
+  totalPings: keepAliveStatus.totalPings ?? 0,
+  failedPings: keepAliveStatus.failedPings ?? 0,
+  lastError: keepAliveStatus.lastError
+    ? {
+        code: keepAliveStatus.lastError.code ?? "KEEPALIVE_FAILED",
+        message: keepAliveStatus.lastError.message ?? "Keepalive ping failed.",
+      }
+    : null,
+});
+
 export const getPublicProductLookupStatus = (productLookupStatus = {}) => ({
   configured: Boolean(productLookupStatus.configured),
   provider: productLookupStatus.provider ?? "external-products",
@@ -71,6 +92,7 @@ export const createReadinessSnapshot = ({
   emailService,
   brevoService,
   telegramService,
+  keepAliveRuntime,
   productLookupService,
   aiService,
   serverConfig,
@@ -81,6 +103,7 @@ export const createReadinessSnapshot = ({
   const emailStatus = getPublicEmailStatus(emailService.getStatus());
   const brevoStatus = getPublicBrevoStatus(brevoService?.getStatus?.());
   const telegramStatus = getPublicTelegramStatus(telegramService?.getStatus?.());
+  const keepAliveStatus = getPublicKeepAliveStatus(keepAliveRuntime?.getStatus?.());
   const productLookupStatus = getPublicProductLookupStatus(
     productLookupService?.getStatus?.()
   );
@@ -106,6 +129,7 @@ export const createReadinessSnapshot = ({
     email: emailStatus,
     brevo: brevoStatus,
     telegram: telegramStatus,
+    keepAlive: keepAliveStatus,
     products: productLookupStatus,
     ai: aiStatus,
   };

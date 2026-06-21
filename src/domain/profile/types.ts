@@ -71,6 +71,11 @@ export type SupportSystem =
   | "low_support"
   | "prefer_not";
 export type PetCompanion = "none" | "cat" | "dog" | "cat_and_dog" | "other";
+export type WomenHealthMode =
+  | "none"
+  | "trying_to_conceive"
+  | "pregnant"
+  | "postpartum";
 
 export interface MacroTargets {
   protein: number;
@@ -133,6 +138,16 @@ export interface PersonalProfileDetails {
   relationshipStatus: RelationshipStatus;
   supportSystem: SupportSystem;
   petCompanion: PetCompanion;
+}
+
+export interface WomenHealthState {
+  mode: WomenHealthMode;
+  pregnancyWeek: number | null;
+  dueDate: string | null;
+  lastPeriodStartDate: string | null;
+  doctorConfirmed: boolean;
+  notes: string;
+  updatedAt: string | null;
 }
 
 export interface MeasurementHistoryItem {

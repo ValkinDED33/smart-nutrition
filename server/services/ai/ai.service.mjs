@@ -746,7 +746,12 @@ const toProviderFailureSummary = (provider, error) => {
   };
 };
 
-export const createAiService = ({ aiRepository, assistantMemoryRepository = null, config }) => {
+export const createAiService = ({
+  aiRepository,
+  assistantMemoryRepository = null,
+  assistantAgent = null,
+  config,
+}) => {
   const configuredProviders = buildConfiguredProviderList(config);
   const providerRuntimeState = new Map(
     configuredProviders.map((provider) => [provider.id, createProviderState()])
@@ -1200,13 +1205,6 @@ export const createAiService = ({ aiRepository, assistantMemoryRepository = null
     getRuntimeStatus,
 
     askQuestion: async (currentUser, payload) => {
-      if (!configuredProviders.length) {
-        throw new AssistantApiError(
-          "ASSISTANT_RUNTIME_UNAVAILABLE",
-          "Remote assistant runtime is not configured on this server."
-        );
-      }
-
       const question = normalizeText(payload?.question, { maxLength: 800 });
 
       if (!question) {
@@ -1218,6 +1216,73 @@ export const createAiService = ({ aiRepository, assistantMemoryRepository = null
 
       const quickQuestionId = normalizeQuickQuestionId(payload?.quickQuestionId);
       const context = normalizeContext(payload?.context, currentUser);
+
+      const agentResult = await assistantAgent?.run?.({
+        user: currentUser,
+        message: question,
+        quickQuestionId,
+        context,
+      });
+
+      if (agentResult?.handled) {
+        const userMessageCreatedAt = new Date().toISOString();
+        const assistantMessageCreatedAt = new Date(Date.now() + 1).toISOString();
+
+        await aiRepository.insertConversationMessage({
+          id: createId("assistant-msg"),
+          userId: currentUser.id,
+          role: "user",
+          text: question,
+          createdAt: userMessageCreatedAt,
+        });
+        await aiRepository.insertConversationMessage({
+          id: createId("assistant-msg"),
+          userId: currentUser.id,
+          role: "assistant",
+          text: agentResult.text,
+          createdAt: assistantMessageCreatedAt,
+        });
+        await aiRepository.pruneConversationMessages(
+          currentUser.id,
+          config.assistantMemoryMessageLimit
+        );
+        await aiRepository.createAuditLog?.({
+          id: createId("audit"),
+          actorUserId: currentUser.id,
+          actorRole: currentUser.role ?? "USER",
+          action: "assistant.agent.handled",
+          targetType: "assistant_agent_action",
+          targetId: agentResult.intent?.intent ?? "unknown",
+          details: {
+            intent: agentResult.intent?.intent ?? "unknown",
+            reason: agentResult.intent?.reason ?? null,
+            actions: agentResult.actions ?? [],
+            memoryUpdated: Boolean(agentResult.memoryUpdated),
+          },
+          createdAt: assistantMessageCreatedAt,
+        });
+
+        return {
+          text: agentResult.text,
+          mode: agentResult.mode,
+          providerId: agentResult.providerId,
+          providerLabel: agentResult.providerLabel,
+          followUpQuestionIds: agentResult.followUpQuestionIds,
+          agent: {
+            intent: agentResult.intent,
+            actions: agentResult.actions,
+            memoryUpdated: Boolean(agentResult.memoryUpdated),
+          },
+        };
+      }
+
+      if (!configuredProviders.length) {
+        throw new AssistantApiError(
+          "ASSISTANT_RUNTIME_UNAVAILABLE",
+          "Remote assistant runtime is not configured on this server."
+        );
+      }
+
       context.memory = await resolveAssistantMemory(currentUser, context);
       const history = await aiRepository.listConversationMessages(
         currentUser.id,

@@ -47,6 +47,8 @@ describe("createServerConfig", () => {
     expect(config.debugStartupEnabled).toBe(false);
     expect(config.aiDebugLogging).toBe(false);
     expect(config.sentryDsn).toBe(null);
+    expect(config.keepAliveEnabled).toBe(false);
+    expect(config.keepAliveUrl).toBe(null);
     expect(config.authRateLimits).toEqual({
       register: 5,
       login: 10,
@@ -89,12 +91,23 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_DEBUG_STARTUP_ENABLED: "true",
       SMART_NUTRITION_SENTRY_DSN: "https://public@example.ingest.sentry.io/1",
       SMART_NUTRITION_SENTRY_TRACES_SAMPLE_RATE: "0.25",
+      SMART_NUTRITION_KEEPALIVE_ENABLED: "true",
+      SMART_NUTRITION_KEEPALIVE_URL:
+        "https://smart-nutrition-sk5r.onrender.com/api/health",
+      SMART_NUTRITION_KEEPALIVE_INTERVAL_MS: "600000",
+      SMART_NUTRITION_KEEPALIVE_TIMEOUT_MS: "5000",
     });
 
     expect(config.aiDebugLogging).toBe(true);
     expect(config.debugStartupEnabled).toBe(true);
     expect(config.sentryDsn).toBe("https://public@example.ingest.sentry.io/1");
     expect(config.sentryTracesSampleRate).toBe(0.25);
+    expect(config.keepAliveEnabled).toBe(true);
+    expect(config.keepAliveUrl).toBe(
+      "https://smart-nutrition-sk5r.onrender.com/api/health"
+    );
+    expect(config.keepAliveIntervalMs).toBe(600000);
+    expect(config.keepAliveTimeoutMs).toBe(5000);
   });
 
   it("enables online product lookup with OpenFoodFacts by default and optional USDA key", () => {

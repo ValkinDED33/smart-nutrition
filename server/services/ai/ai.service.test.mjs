@@ -15,6 +15,7 @@ const createAiServiceFixture = ({
   usageSummary = undefined,
   configOverrides = {},
   assistantMemoryRepository = null,
+  assistantAgent = null,
 } = {}) => {
   const aiRepository = {
     listConversationMessages: vi.fn(() => history),
@@ -57,6 +58,7 @@ const createAiServiceFixture = ({
     service: createAiService({
       aiRepository,
       assistantMemoryRepository,
+      assistantAgent,
       config,
     }),
   };
@@ -68,6 +70,59 @@ afterEach(() => {
 });
 
 describe("ai.service", () => {
+  it("lets the assistant agent execute safe tool actions before calling remote AI", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Готово 💧 Додав 300 мл води.",
+        mode: "agent-action",
+        providerId: "assistant-agent",
+        providerLabel: "Smart Nutrition Agent",
+        intent: { intent: "add_water", reason: "water_amount_detected" },
+        actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+        memoryUpdated: true,
+        followUpQuestionIds: ["day_status", "water_help"],
+      })),
+    };
+    const { aiRepository, service } = createAiServiceFixture({
+      configured: false,
+      assistantAgent,
+    });
+
+    const result = await service.askQuestion(currentUser, {
+      question: "Я выпил 300 мл воды",
+      context: {
+        userName: "Ira",
+      },
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(assistantAgent.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: currentUser,
+        message: "Я выпил 300 мл воды",
+      })
+    );
+    expect(result).toMatchObject({
+      mode: "agent-action",
+      providerId: "assistant-agent",
+      agent: {
+        intent: { intent: "add_water" },
+        memoryUpdated: true,
+      },
+    });
+    expect(aiRepository.insertConversationMessage).toHaveBeenCalledTimes(2);
+    expect(aiRepository.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: currentUser.id,
+        action: "assistant.agent.handled",
+        targetType: "assistant_agent_action",
+      })
+    );
+  });
+
   it("returns remote assistant replies and persists the turn", async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,
@@ -156,8 +211,16 @@ describe("ai.service", () => {
       "Smart Nutrition assistant operating contract"
     );
     expect(providerBody.messages[0].content).toContain("You are Diana");
-    expect(providerBody.messages[0].content).toContain("Reply language: Polish");
-    expect(providerBody.messages[0].content).toContain("must not prescribe");
+    expect(providerBody.messages[0].content).toContain("reply language: Polish");
+    expect(providerBody.messages[0].content).toContain(
+      "medication changes require a clinician"
+    );
+    expect(providerBody.messages[0].content).toContain("AGENT_TOOL_PROMPT");
+    expect(providerBody.messages[0].content).toContain("SELF_REFLECTION_PROMPT");
+    expect(providerBody.messages[1].content).toContain("CURRENT_CONTEXT:");
+    expect(providerBody.messages[1].content).toContain("language: pl");
+    expect(providerBody.messages[1].content).toContain("currentCalories: 1600");
+    expect(providerBody.messages[1].content).toContain("waterToday: 1000 / 2200 ml");
     expect(providerBody.messages[1].content).toContain("Interaction channel: web");
     expect(aiRepository.insertConversationMessage).toHaveBeenCalledTimes(2);
     expect(aiRepository.pruneConversationMessages).toHaveBeenCalledWith(currentUser.id, 16);

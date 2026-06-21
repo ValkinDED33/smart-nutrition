@@ -10,6 +10,7 @@ const createContext = (): AssistantRuntimeContext => ({
   screen: "food",
   currentPath: "/meals",
   userName: "Ira",
+  gender: "female",
   goal: "cut",
   dietStyle: "balanced",
   dailyCalories: 2000,
@@ -42,6 +43,15 @@ const createContext = (): AssistantRuntimeContext => ({
     relationshipStatus: "single",
     supportSystem: "self",
     petCompanion: "dog",
+  },
+  womenHealth: {
+    mode: "none",
+    pregnancyWeek: null,
+    dueDate: null,
+    lastPeriodStartDate: null,
+    doctorConfirmed: false,
+    notes: "",
+    updatedAt: null,
   },
   motivation: {
     points: 65,

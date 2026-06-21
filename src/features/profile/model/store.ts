@@ -42,10 +42,15 @@ import type {
   RelationshipStatus,
   ReminderTimes,
   SupportSystem,
+  WomenHealthState,
   WeeklyCheckInState,
 } from "@domain/profile/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { normalizeAssistantOnboardingProfile } from "@core/assistant";
+import {
+  createDefaultWomenHealthState,
+  normalizeWomenHealthState,
+} from "@domain/profile/womenHealth";
 
 interface WeightHistoryItem {
   date: string;
@@ -76,6 +81,7 @@ export interface ProfileState {
   assistant: AssistantCustomization;
   premium: PremiumSubscriptionState;
   personalDetails: PersonalProfileDetails;
+  womenHealth: WomenHealthState;
 }
 
 interface ProfileTargetsPayload {
@@ -569,6 +575,7 @@ export const createInitialProfileState = (): ProfileState => ({
   assistant: createDefaultAssistantCustomization(),
   premium: createDefaultPremiumSubscription(),
   personalDetails: createDefaultPersonalDetails(),
+  womenHealth: createDefaultWomenHealthState(),
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -616,6 +623,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     assistant: normalizeAssistantCustomization(value.assistant),
     premium: normalizePremiumSubscription(value.premium),
     personalDetails: normalizePersonalDetails(value.personalDetails),
+    womenHealth: normalizeWomenHealthState(value.womenHealth),
   };
 };
 
@@ -797,6 +805,14 @@ const profileSlice = createSlice({
       });
     },
 
+    updateWomenHealth(state, action: PayloadAction<Partial<WomenHealthState>>) {
+      state.womenHealth = normalizeWomenHealthState({
+        ...state.womenHealth,
+        ...action.payload,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+
     refreshMotivationTasks(state, action: PayloadAction<string | undefined>) {
       state.motivation = refreshMotivationState(
         state.motivation,
@@ -924,6 +940,7 @@ const profileSlice = createSlice({
       state.assistant = createDefaultAssistantCustomization();
       state.premium = createDefaultPremiumSubscription();
       state.personalDetails = createDefaultPersonalDetails();
+      state.womenHealth = createDefaultWomenHealthState();
     },
   },
 });
@@ -943,6 +960,7 @@ export const {
   setProfileLanguage,
   setAssistantCustomization,
   updatePersonalDetails,
+  updateWomenHealth,
   refreshMotivationTasks,
   completeMotivationTask,
   activateWeeklyDayOff,

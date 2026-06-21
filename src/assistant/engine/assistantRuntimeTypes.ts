@@ -59,6 +59,7 @@ export interface AssistantContextSource {
     | "motivation"
     | "assistant"
     | "personalDetails"
+    | "womenHealth"
     | "weightHistory"
     | "weeklyCheckIn"
   >;

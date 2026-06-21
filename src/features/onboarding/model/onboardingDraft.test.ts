@@ -18,6 +18,12 @@ describe("onboardingDraft", () => {
       userName: "Олена",
       age: 31,
       gender: "female",
+      womenHealthMode: "pregnant",
+      pregnancyWeek: 12,
+      dueDate: "2026-12-20",
+      lastPeriodStartDate: "2026-03-20",
+      doctorConfirmed: true,
+      womenHealthNotes: "Нагадувати тільки за планом лікаря",
       height: 168,
       weight: 64,
       goal: "cut",
@@ -36,6 +42,9 @@ describe("onboardingDraft", () => {
     expect(draft.assistantName).toBe("Мія");
     expect(draft.assistantAvatar).toBe("panda");
     expect(draft.userName).toBe("Олена");
+    expect(draft.womenHealthMode).toBe("pregnant");
+    expect(draft.pregnancyWeek).toBe(12);
+    expect(draft.doctorConfirmed).toBe(true);
     expect(draft.selectedGoals).toEqual(["cut", "healthy"]);
     expect(draft.mainFriction).toBe("evening_snacking");
     expect(draft.mainFrictions).toEqual(["evening_snacking", "low_energy"]);

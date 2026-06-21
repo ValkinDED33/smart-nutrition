@@ -9,6 +9,24 @@ const genderOptions: Gender[] = ["male", "female"];
 export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const handleGenderSelect = (gender: Gender) => {
+    updateState(
+      gender === "female"
+        ? { gender }
+        : {
+            gender,
+            womenHealthMode: "none",
+            pregnancyWeek: null,
+            dueDate: "",
+            lastPeriodStartDate: "",
+            doctorConfirmed: false,
+            womenHealthNotes: "",
+          }
+    );
+  };
+  const handleNext = () => {
+    navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.height);
+  };
 
   return (
     <Box sx={shellSx}>
@@ -23,7 +41,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
                 key={gender}
                 variant={state.gender === gender ? "contained" : "outlined"}
                 size="large"
-                onClick={() => updateState({ gender })}
+                onClick={() => handleGenderSelect(gender)}
                 sx={{ justifyContent: "flex-start", borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {t(`option.gender.${gender}`)}
@@ -40,7 +58,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.height)}
+              onClick={handleNext}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

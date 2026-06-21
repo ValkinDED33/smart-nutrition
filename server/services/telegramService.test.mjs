@@ -260,6 +260,167 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("explains personal Telegram link requirement for plain start messages", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn((handler) => {
+        this.startHandler = handler;
+      });
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => null),
+      }),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].startHandler({
+      startPayload: "",
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("персональный линк"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Обычный /start"));
+
+    service.stop("test shutdown");
+  });
+
+  it("answers plain start as connected when the Telegram chat is already linked", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn((handler) => {
+        this.startHandler = handler;
+      });
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => ({
+          id: "user-1",
+          name: "Ihor",
+          role: "USER",
+          telegramChatId: "42",
+        })),
+      }),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].startHandler({
+      startPayload: "",
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("уже подключён"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("/meds"));
+
+    service.stop("test shutdown");
+  });
+
+  it("routes connected free-text messages through the assistant agent", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Готово 💧 Додав 300 мл води.",
+      })),
+    };
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Я випив 300 мл води" },
+      reply,
+    });
+
+    expect(assistantAgent.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: connectedUser,
+        message: "Я випив 300 мл води",
+        context: {
+          interactionChannel: "telegram",
+          language: "uk",
+        },
+      })
+    );
+    expect(reply).toHaveBeenCalledWith("Готово 💧 Додав 300 мл води.");
+
+    service.stop("test shutdown");
+  });
+
   it("records safe Telegram polling failures and schedules retry", async () => {
     class FailingBot {
       constructor() {
