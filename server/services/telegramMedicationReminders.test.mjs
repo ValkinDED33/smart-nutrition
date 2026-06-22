@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildMedicationReminderListMessage,
+  buildReminderListMessage,
   createTelegramMedicationReminderRuntime,
 } from "./telegramMedicationReminders.mjs";
 
@@ -37,6 +38,22 @@ describe("telegramMedicationReminders", () => {
     expect(message).toContain("Вітамін D");
     expect(message).toContain("09:00");
     expect(message).toContain("1 капсула");
+  });
+
+  it("keeps medication list focused and renders ordinary reminders in the full list", () => {
+    const taskReminder = createReminder({
+      id: "task-call",
+      type: "task",
+      title: "Подзвонити лікарю",
+      dose: "",
+    });
+
+    expect(buildMedicationReminderListMessage([taskReminder])).not.toContain(
+      "Подзвонити лікарю"
+    );
+    expect(buildReminderListMessage([createReminder(), taskReminder])).toContain(
+      "Задача: Подзвонити лікарю"
+    );
   });
 
   it("creates a reminder through /addmed and writes an audit log", async () => {
@@ -77,6 +94,145 @@ describe("telegramMedicationReminders", () => {
     expect(ctx.reply.mock.calls[0][0]).toContain("нагадування створено");
   });
 
+  it("creates an ordinary task reminder through /addtask", async () => {
+    const { bot, commands } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({
+      id: "task-call",
+      type: "task",
+      title: "Подзвонити лікарю",
+      dose: "",
+      repeat: "once",
+    });
+    const medicationReminderService = {
+      createTaskReminderFromText: vi.fn(async () => ({ ok: true, reminder, user })),
+      getUserReminders: vi.fn(() => [reminder]),
+    };
+    const writeAuditLog = vi.fn(async () => {});
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      medicationReminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog,
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      message: { text: "/addtask Подзвонити лікарю о 10:00" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await commands.addtask(ctx);
+
+    expect(medicationReminderService.createTaskReminderFromText).toHaveBeenCalledWith(
+      user,
+      "Подзвонити лікарю о 10:00"
+    );
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "telegram.task_reminder.created",
+      })
+    );
+    expect(ctx.reply.mock.calls[0][0]).toContain("Задача: Подзвонити лікарю");
+  });
+
+  it("creates typed water reminders through /addwater", async () => {
+    const { bot, commands } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({
+      id: "water-1",
+      type: "water",
+      title: "Пити воду",
+      dose: "250 мл",
+      repeat: "daily",
+    });
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async () => ({ ok: true, reminder, user })),
+      getUserReminders: vi.fn(() => [reminder]),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      message: { text: "/addwater Склянка води щодня о 09:00" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await commands.addwater(ctx);
+
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(user, {
+      type: "water",
+      text: "Склянка води щодня о 09:00",
+    });
+    expect(ctx.reply.mock.calls[0][0]).toContain("Вода: Пити воду");
+  });
+
+  it("passes non-medication free text to the next Telegram handler", async () => {
+    const { bot, events } = createBotHarness();
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      medicationReminderService: {
+        createReminderFromText: vi.fn(),
+      },
+      getConnectedUser: vi.fn(),
+      writeAuditLog: vi.fn(),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const next = vi.fn(async () => {});
+
+    runtime.registerHandlers(bot);
+    await events.text(
+      {
+        message: { text: "Я выпил 300 мл воды" },
+      },
+      next
+    );
+
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it("handles medication-looking free text without passing it to the generic agent", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder();
+    const medicationReminderService = {
+      createReminderFromText: vi.fn(async () => ({ ok: true, reminder, user })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      medicationReminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const next = vi.fn(async () => {});
+
+    runtime.registerHandlers(bot);
+    await events.text(
+      {
+        message: { text: "Вітамін D 1 капсула щодня о 09:00" },
+        reply: vi.fn(async () => {}),
+      },
+      next
+    );
+
+    expect(medicationReminderService.createReminderFromText).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("records callback actions for sent reminders", async () => {
     const { bot, events } = createBotHarness();
     const user = { id: "user-1", telegramChatId: "123" };
@@ -107,5 +263,47 @@ describe("telegramMedicationReminders", () => {
       expect.any(Date)
     );
     expect(ctx.answerCbQuery).toHaveBeenCalledWith("Записано: прийнято.");
+  });
+
+  it("records task callback actions without using medication labels", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const medicationReminderService = {
+      recordReminderAction: vi.fn(async () => ({
+        ok: true,
+        user,
+        reminder: createReminder({ type: "task" }),
+      })),
+    };
+    const writeAuditLog = vi.fn(async () => {});
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      medicationReminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog,
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      callbackQuery: { data: "rem:done:task-call" },
+      answerCbQuery: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.callback_query(ctx);
+
+    expect(medicationReminderService.recordReminderAction).toHaveBeenCalledWith(
+      user,
+      "task-call",
+      "done",
+      expect.any(Date)
+    );
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "telegram.task_reminder.done",
+      })
+    );
+    expect(ctx.answerCbQuery).toHaveBeenCalledWith("Записано: зроблено.");
   });
 });

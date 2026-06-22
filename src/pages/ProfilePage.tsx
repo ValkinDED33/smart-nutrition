@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import ProfileForm from "../features/profile/ProfileForm";
 import { NotificationSettingsCard } from "../features/profile/NotificationSettingsCard";
+import ReminderManagementCard from "../features/profile/ReminderManagementCard";
 import { WeightTrendCard } from "../features/profile/WeightTrendCard";
 import { AccountDataCard } from "../features/profile/AccountDataCard";
 import { CloudSyncStatusCard } from "../features/profile/CloudSyncStatusCard";
@@ -742,6 +743,7 @@ const ProfilePage = () => {
             content: (
               <Stack spacing={3}>
                 <NotificationSettingsCard />
+                <ReminderManagementCard />
                 <CloudSyncStatusCard />
                 <AccountDataCard />
                 <AdminCenterCard />

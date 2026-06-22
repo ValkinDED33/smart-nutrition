@@ -41,7 +41,12 @@ SMART_NUTRITION_AUTH_COOKIE_SECURE=true
 SMART_NUTRITION_RESEND_API_KEY=
 SMART_NUTRITION_EMAIL_FROM_ADDRESS=noreply@smart-nutrition.club
 SMART_NUTRITION_EMAIL_FROM_NAME=Smart Nutrition
+SMART_NUTRITION_SUPER_ADMIN_EMAIL=skrpkigor@gmail.com
 ```
+
+`SMART_NUTRITION_SUPER_ADMIN_EMAIL` is the owner bootstrap. On backend start,
+the matching existing user is promoted to `OWNER`; if the account is created later
+and no owner exists yet, registration bootstraps it as `OWNER`.
 
 Optional marketing:
 
@@ -203,6 +208,7 @@ Env rollback checklist:
 - Resend API key and sender
 - Brevo API key/list id
 - Telegram bot token/username
+- owner bootstrap email
 - keepalive env
 - product lookup env
 - AI provider keys/models/order

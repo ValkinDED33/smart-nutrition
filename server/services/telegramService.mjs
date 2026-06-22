@@ -257,7 +257,9 @@ export const buildTelegramAssistantCapabilitiesMessage = () =>
     "/water — вода",
     "/nutrition — калорії та нутрієнти",
     "/meds — активні нагадування про ліки",
+    "/reminders — усі активні нагадування",
     "/addmed <текст> — створити нагадування про ліки",
+    "/addtask <текст> — створити звичайне нагадування",
     "/profile — статус підключення",
     "/disconnect — відключити Telegram",
   ].join("\n");
@@ -462,11 +464,13 @@ export const createTelegramService = ({
   config,
   authRepository,
   stateService = null,
+  reminderService = null,
   medicationReminderService = null,
   assistantAgent = null,
   logger = console,
   TelegrafClass = Telegraf,
 } = {}) => {
+  const reminders = reminderService ?? medicationReminderService;
   const botUsername = normalizeBotUsername(config?.telegramBotUsername);
   const botToken = toTrimmedString(config?.telegramBotToken) || null;
   const configured = Boolean(botToken && botUsername);
@@ -551,7 +555,7 @@ export const createTelegramService = ({
       medicationReminderRuntime = createTelegramMedicationReminderRuntime({
         configured,
         authRepository,
-        medicationReminderService,
+        reminderService: reminders,
         getConnectedUser,
         writeAuditLog,
         sendTelegramMessage,
@@ -948,19 +952,24 @@ export const createTelegramService = ({
     }
   };
 
-  const getStatus = () => ({
-    configured,
-    provider: "telegram",
-    botUsername: configured ? botUsername : null,
-    polling: launched,
-    starting: Boolean(launchPromise && !launched),
-    retryScheduled: Boolean(startRetryTimeout),
-    lastStartAttemptAt,
-    lastStartedAt,
-    lastStartError,
-    connectTokenTtlMs: config?.telegramConnectTokenTtlMs ?? null,
-    medicationReminders: getMedicationReminderRuntime().getStatus(),
-  });
+  const getStatus = () => {
+    const reminderRuntimeStatus = getMedicationReminderRuntime().getStatus();
+
+    return {
+      configured,
+      provider: "telegram",
+      botUsername: configured ? botUsername : null,
+      polling: launched,
+      starting: Boolean(launchPromise && !launched),
+      retryScheduled: Boolean(startRetryTimeout),
+      lastStartAttemptAt,
+      lastStartedAt,
+      lastStartError,
+      connectTokenTtlMs: config?.telegramConnectTokenTtlMs ?? null,
+      reminders: reminderRuntimeStatus,
+      medicationReminders: reminderRuntimeStatus,
+    };
+  };
 
   return {
     isConfigured: () => configured,

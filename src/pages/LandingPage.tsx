@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { TypeAnimation } from "react-type-animation";
+import { motion } from "framer-motion";
 import {
+  Bell,
   Bot,
   Camera,
+  Droplets,
+  HeartPulse,
   MessageSquareText,
   RotateCcw,
   ScanBarcode,
   ShieldCheck,
   Sparkles,
+  Utensils,
 } from "lucide-react";
 import {
   Box,
   Button,
   Chip,
-  Divider,
   LinearProgress,
   Paper,
   Stack,
@@ -30,13 +34,37 @@ type LandingLanguage = "uk" | "pl" | "en";
 const landingCopy = {
   uk: {
     eyebrow: "AI wellness ecosystem",
+    brandTitle: "Smart Nutrition",
     title: "AI-помічник харчування і здоров'я",
+    heroTyping: [
+      "Поруч, коли треба випити воду.",
+      "Пам'ятає твої звички і стиль підтримки.",
+      "Реагує на день, а не просто рахує цифри.",
+    ],
     subtitle:
-      "Слідкуйте за їжею, водою, звичками і прогресом разом із живим AI-компаньйоном, який пояснює день простою мовою.",
+      "Живий AI-компаньйон для їжі, води, ліків, прогресу і м'якої мотивації. Він не просто трекає, а веде день разом із вами.",
     primary: "Почати безкоштовно",
-    secondary: "Спробувати AI",
+    secondary: "Побачити companion",
     navOverview: "Огляд продукту",
-    proof: ["AI-компаньйон", "Вода і білок", "Community", "PWA"],
+    proof: ["AI companion", "пам'ять", "proactive nudges", "Telegram поруч"],
+    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    sceneCards: [
+      {
+        title: "Ранковий фокус",
+        body: "Вода, білок і таблетка о 09:00 вже у плані.",
+        tone: "calm",
+      },
+      {
+        title: "AI помітив",
+        body: "Вчора зрив був увечері, тому сьогодні підказка прийде раніше.",
+        tone: "coach",
+      },
+      {
+        title: "Telegram retention",
+        body: "Швидкий лог води або ліків без відкриття застосунку.",
+        tone: "warm",
+      },
+    ],
     heroStats: [
       {
         label: "Калорії",
@@ -114,13 +142,37 @@ const landingCopy = {
   },
   pl: {
     eyebrow: "AI wellness ecosystem",
+    brandTitle: "Smart Nutrition",
     title: "AI asystent żywienia i zdrowia",
+    heroTyping: [
+      "Jest obok, gdy warto wypić wodę.",
+      "Pamięta nawyki i styl wsparcia.",
+      "Reaguje na dzień, a nie tylko liczy liczby.",
+    ],
     subtitle:
-      "Śledź jedzenie, wodę, nawyki i progres razem z żywym AI companionem, który tłumaczy dzień prostym językiem.",
+      "Żywy AI companion do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.",
     primary: "Zacznij za darmo",
-    secondary: "Wypróbuj AI",
+    secondary: "Zobacz companion",
     navOverview: "Przegląd produktu",
-    proof: ["AI pupil", "Woda i białko", "Community", "PWA"],
+    proof: ["AI companion", "pamięć", "proactive nudges", "Telegram obok"],
+    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    sceneCards: [
+      {
+        title: "Poranny fokus",
+        body: "Woda, białko i tabletka o 09:00 są już w planie.",
+        tone: "calm",
+      },
+      {
+        title: "AI zauważył",
+        body: "Wczoraj trudniej było wieczorem, więc dziś podpowiedź przyjdzie wcześniej.",
+        tone: "coach",
+      },
+      {
+        title: "Telegram retention",
+        body: "Szybki log wody lub leków bez otwierania aplikacji.",
+        tone: "warm",
+      },
+    ],
     heroStats: [
       {
         label: "Kalorie",
@@ -198,13 +250,37 @@ const landingCopy = {
   },
   en: {
     eyebrow: "AI wellness ecosystem",
+    brandTitle: "Smart Nutrition",
     title: "AI nutrition and health assistant",
+    heroTyping: [
+      "Nearby when water is due.",
+      "Remembers habits and support style.",
+      "Reacts to the day, not just the numbers.",
+    ],
     subtitle:
-      "Track food, water, habits, and progress with a living AI companion that explains your day in plain language.",
+      "A living AI companion for food, water, medication, progress, and gentle motivation. It does not just track data; it moves through the day with you.",
     primary: "Start free",
-    secondary: "Try AI",
+    secondary: "See companion",
     navOverview: "Product overview",
-    proof: ["AI companion", "Water and protein", "Community", "PWA"],
+    proof: ["AI companion", "memory", "proactive nudges", "Telegram nearby"],
+    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    sceneCards: [
+      {
+        title: "Morning focus",
+        body: "Water, protein, and a 09:00 medication reminder are already in the plan.",
+        tone: "calm",
+      },
+      {
+        title: "AI noticed",
+        body: "Yesterday slipped in the evening, so today the nudge arrives earlier.",
+        tone: "coach",
+      },
+      {
+        title: "Telegram retention",
+        body: "Quick water or medication logging without opening the app.",
+        tone: "warm",
+      },
+    ],
     heroStats: [
       {
         label: "Calories",
@@ -345,84 +421,27 @@ const iconButtonSx = {
   borderColor: "rgba(15,23,42,0.12)",
 } as const;
 
-const HeroDashboard = ({
-  copy,
-}: {
-  copy: (typeof landingCopy)[LandingLanguage];
-}) => (
-  <Paper
-    elevation={0}
-    sx={{
-      width: { xs: "100%", sm: 420 },
-      p: 2,
-      borderRadius: 1,
-      border: "1px solid rgba(15,23,42,0.08)",
-      bgcolor: "rgba(255,255,255,0.86)",
-      backdropFilter: "blur(18px)",
-      boxShadow: "0 24px 70px rgba(15,23,42,0.16)",
-    }}
-  >
-    <Stack spacing={1.6}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography
-            variant="overline"
-            sx={{ color: "#0f766e", fontWeight: 900 }}
-          >
-            Smart Nutrition
-          </Typography>
-          <Typography sx={{ fontSize: 22, fontWeight: 900 }}>
-            {copy.navOverview}
-          </Typography>
-        </Box>
-        <Chip label="AI online" color="success" variant="outlined" />
-      </Stack>
-      <Divider />
-      {copy.heroStats.map((metric) => (
-        <Box key={metric.label}>
-          <Stack direction="row" justifyContent="space-between" spacing={2}>
-            <Typography sx={{ fontWeight: 900 }}>{metric.label}</Typography>
-            <Typography sx={{ color: metric.color, fontWeight: 900 }}>
-              {metric.value}
-            </Typography>
-          </Stack>
-          <LinearProgress
-            variant="determinate"
-            value={metric.progress}
-            sx={{
-              mt: 0.8,
-              height: 10,
-              borderRadius: 999,
-              bgcolor: "rgba(15,23,42,0.08)",
-              "& .MuiLinearProgress-bar": { bgcolor: metric.color },
-            }}
-          />
-        </Box>
-      ))}
-      <Box
-        sx={{
-          p: 1.4,
-          borderRadius: 1,
-          color: "#083344",
-          bgcolor: "#ecfeff",
-          border: "1px solid rgba(8,145,178,0.18)",
-        }}
-      >
-        <Typography sx={{ fontWeight: 900 }}>{copy.mascot.title}</Typography>
-        <Typography sx={{ mt: 0.4, lineHeight: 1.55 }}>
-          {copy.mascot.body}
-        </Typography>
-      </Box>
-    </Stack>
-  </Paper>
-);
+const companionSceneIcons = [HeartPulse, Bell, Droplets] as const;
 
-const LandingMascot = ({
+const sceneToneSx = {
+  calm: {
+    border: "rgba(34,197,94,0.24)",
+    bg: "rgba(240,253,244,0.86)",
+    icon: "#16a34a",
+  },
+  coach: {
+    border: "rgba(45,212,191,0.26)",
+    bg: "rgba(236,254,255,0.88)",
+    icon: "#0f766e",
+  },
+  warm: {
+    border: "rgba(245,158,11,0.28)",
+    bg: "rgba(255,251,235,0.9)",
+    icon: "#d97706",
+  },
+} as const;
+
+const CompanionExperienceScene = ({
   copy,
 }: {
   copy: (typeof landingCopy)[LandingLanguage];
@@ -443,48 +462,194 @@ const LandingMascot = ({
   }, []);
 
   return (
-    <Paper
+    <Box
       id="ai-overview"
-      elevation={0}
       sx={{
-        p: 2,
-        borderRadius: 1,
-        border: "1px solid rgba(255,255,255,0.42)",
-        bgcolor: "rgba(15,23,42,0.84)",
-        color: "white",
-        backdropFilter: "blur(18px)",
-        boxShadow: "0 28px 70px rgba(15,23,42,0.28)",
-        width: { xs: "100%", sm: 340 },
+        position: { xs: "relative", md: "absolute" },
+        zIndex: 2,
+        right: { md: 0 },
+        bottom: { md: 0 },
+        minHeight: { xs: 320, sm: 430, md: 548 },
+        width: { xs: "100%", md: "64%" },
+        mt: { xs: 1, md: 0 },
+        display: "grid",
+        placeItems: "center",
+        pointerEvents: "none",
       }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="center">
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: { xs: "10% 0 4%", md: "4% 6% 2%" },
+          borderRadius: 1,
+          background:
+            "linear-gradient(135deg, rgba(240,253,244,0.82), rgba(236,254,255,0.78) 48%, rgba(255,247,237,0.76))",
+          border: "1px solid rgba(255,255,255,0.34)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.38)",
+          transform: "skewY(-1.2deg)",
+        }}
+      />
+
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: 22, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.72, ease: "easeOut" }}
+        sx={{
+          position: "relative",
+          zIndex: 2,
+          display: "grid",
+          placeItems: "center",
+          width: { xs: 190, sm: 280, md: 360 },
+          height: { xs: 190, sm: 280, md: 360 },
+          borderRadius: "50%",
+          bgcolor: "rgba(255,255,255,0.72)",
+          border: "1px solid rgba(15,118,110,0.14)",
+          boxShadow:
+            "0 34px 120px rgba(15,118,110,0.24), inset 0 1px 0 rgba(255,255,255,0.72)",
+          backdropFilter: "blur(18px)",
+        }}
+      >
+        <Box
+          aria-hidden
+          component={motion.div}
+          animate={{ scale: [0.98, 1.06, 0.98], opacity: [0.42, 0.2, 0.42] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+          sx={{
+            position: "absolute",
+            inset: { xs: 20, sm: 30 },
+            borderRadius: "50%",
+            border: "1px solid rgba(20,184,166,0.46)",
+          }}
+        />
         <AssistantAvatar
           name={copy.mascot.name}
           variant={companion}
           mood={mood}
           lookOffset={lookOffset}
           active
-          size={86}
+          size={136}
         />
-        <Stack spacing={0.8} sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 900, fontSize: 22 }}>
-            {copy.mascot.name}
-          </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.78)" }}>
-            {copy.mascot.body}
-          </Typography>
-          <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-            <Chip
-              size="small"
-              label={copy.mascot.mood}
-              sx={{ color: "white", borderColor: "rgba(255,255,255,0.26)" }}
-              variant="outlined"
-            />
-            <Chip size="small" label={copy.mascot.xps} color="success" />
-          </Stack>
-        </Stack>
+        <Chip
+          label={copy.mascot.mood}
+          sx={{
+            position: "absolute",
+            bottom: { xs: 24, sm: 36 },
+            bgcolor: "#0f766e",
+            color: "white",
+            fontWeight: 900,
+          }}
+        />
+      </Box>
+
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
+        justifyContent="center"
+        sx={{ position: "absolute", zIndex: 3, bottom: { xs: 8, md: 22 } }}
+      >
+        {copy.presencePills.map((pill) => (
+          <Chip
+            key={pill}
+            label={pill}
+            size="small"
+            sx={{
+              bgcolor: "rgba(15,23,42,0.78)",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.18)",
+              backdropFilter: "blur(10px)",
+            }}
+          />
+        ))}
       </Stack>
-    </Paper>
+
+      {copy.sceneCards.map((card, index) => {
+        const Icon = companionSceneIcons[index] ?? Sparkles;
+        const tone = sceneToneSx[card.tone];
+        const placement =
+          index === 0
+            ? {
+              left: { xs: 0, md: 56 },
+                top: { xs: 0, md: 46 },
+              }
+            : index === 1
+              ? {
+                  right: { xs: 0, md: 36 },
+                  top: { xs: 128, sm: 78, md: 78 },
+                }
+              : {
+                  left: { xs: 0, sm: 30, md: 120 },
+                  bottom: { xs: 70, sm: 86, md: 74 },
+                };
+
+        return (
+          <Paper
+            key={card.title}
+            component={motion.div}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: [0, -7, 0] }}
+            transition={{
+              opacity: { delay: 0.24 + index * 0.1, duration: 0.36 },
+              y: {
+                delay: index * 0.2,
+                duration: 4 + index * 0.35,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+            }}
+            elevation={0}
+            sx={{
+              position: "absolute",
+              display: { xs: "none", sm: "block" },
+              zIndex: 4,
+              width: { xs: 210, sm: 250, md: 282 },
+              p: { xs: 1.3, sm: 1.6 },
+              borderRadius: 1,
+              border: `1px solid ${tone.border}`,
+              bgcolor: tone.bg,
+              backdropFilter: "blur(14px)",
+              boxShadow: "0 18px 56px rgba(15,23,42,0.12)",
+              ...placement,
+            }}
+          >
+            <Stack direction="row" spacing={1.1} alignItems="flex-start">
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  color: tone.icon,
+                  bgcolor: "rgba(255,255,255,0.72)",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={18} aria-hidden="true" />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontWeight: 900, color: "#102a43" }}>
+                  {card.title}
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.4,
+                    color: "#475569",
+                    lineHeight: 1.45,
+                    fontSize: { xs: 13, sm: 14 },
+                  }}
+                >
+                  {card.body}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        );
+      })}
+    </Box>
   );
 };
 
@@ -493,16 +658,18 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
     component="section"
     sx={{
       position: "relative",
-      minHeight: { xs: 720, md: 650 },
+      minHeight: { xs: "calc(100svh - 132px)", md: "calc(100svh - 118px)" },
+      maxHeight: { md: 720 },
       overflow: "hidden",
       borderRadius: 1,
       px: { xs: 2, sm: 3, md: 5 },
-      py: { xs: 4, md: 5 },
+      py: { xs: 3, md: 4 },
       display: "flex",
-      flexDirection: { xs: "column", md: "row" },
-      alignItems: "center",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      color: "white",
       background:
-        "linear-gradient(135deg, #ecfeff 0%, #f0fdf4 42%, #fff7ed 100%)",
+        "linear-gradient(150deg, #07111f 0%, #0f172a 36%, #0f766e 70%, #f8fafc 100%)",
       border: "1px solid rgba(15,23,42,0.08)",
     }}
   >
@@ -511,44 +678,83 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
         position: "absolute",
         inset: 0,
         background:
-          "linear-gradient(120deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.68) 44%, rgba(255,255,255,0.18) 100%)",
+          "linear-gradient(180deg, rgba(7,17,31,0.92) 0%, rgba(7,17,31,0.68) 42%, rgba(248,250,252,0.15) 100%)",
+      }}
+    />
+    <Box
+      aria-hidden
+      sx={{
+        position: "absolute",
+        inset: 0,
+        opacity: 0.24,
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+        backgroundSize: "42px 42px",
+        maskImage:
+          "linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.1))",
       }}
     />
     <Stack
-      spacing={2.3}
+      spacing={2}
       sx={{
         position: "relative",
-        zIndex: 2,
-        width: { xs: "100%", md: "58%" },
-        maxWidth: 760,
+        zIndex: 3,
+        maxWidth: { xs: 980, md: 760 },
+        pt: { xs: 1, md: 2 },
+        pb: { md: 3 },
       }}
     >
       <Chip
         label={copy.eyebrow}
-        sx={{ alignSelf: "flex-start", bgcolor: "#0f766e", color: "white" }}
+        sx={{
+          alignSelf: "flex-start",
+          bgcolor: "rgba(20,184,166,0.18)",
+          color: "#ccfbf1",
+          border: "1px solid rgba(94,234,212,0.28)",
+          fontWeight: 900,
+        }}
       />
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 42, sm: 58, md: 76 },
-          lineHeight: 0.98,
+          fontSize: { xs: 44, sm: 76, md: 104 },
+          lineHeight: 0.9,
           fontWeight: 900,
           letterSpacing: 0,
-          color: "#102a43",
-          maxWidth: 760,
+          maxWidth: 920,
+          textShadow: "0 18px 80px rgba(0,0,0,0.28)",
+        }}
+      >
+        {copy.brandTitle}
+      </Typography>
+      <Typography
+        component="p"
+        sx={{
+          minHeight: { xs: 62, sm: 36 },
+          fontSize: { xs: 23, md: 32 },
+          lineHeight: 1.15,
+          fontWeight: 900,
+          color: "#d9f99d",
         }}
       >
         <TypeAnimation
-          key={copy.title}
-          sequence={[copy.title]}
-          speed={62}
-          cursor={false}
+          key={copy.heroTyping.join("|")}
+          sequence={[
+            copy.heroTyping[0],
+            1700,
+            copy.heroTyping[1],
+            1700,
+            copy.heroTyping[2],
+            1700,
+          ]}
+          speed={54}
+          repeat={Infinity}
         />
       </Typography>
       <Typography
         sx={{
-          maxWidth: 660,
-          color: "#334155",
+          maxWidth: 760,
+          color: "rgba(255,255,255,0.82)",
           fontSize: { xs: 17, md: 20 },
           lineHeight: 1.65,
           fontWeight: 600,
@@ -563,9 +769,10 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
             label={item}
             variant="outlined"
             sx={{
-              borderColor: "rgba(15,118,110,0.24)",
-              color: "#0f766e",
-              bgcolor: "rgba(255,255,255,0.68)",
+              borderColor: "rgba(255,255,255,0.24)",
+              color: "rgba(255,255,255,0.88)",
+              bgcolor: "rgba(255,255,255,0.08)",
+              backdropFilter: "blur(10px)",
             }}
           />
         ))}
@@ -576,7 +783,13 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
           to="/register"
           variant="contained"
           size="large"
-          sx={{ px: 3.2, py: 1.4 }}
+          sx={{
+            px: 3.2,
+            py: 1.4,
+            bgcolor: "#f8fafc",
+            color: "#0f172a",
+            "&:hover": { bgcolor: "#ecfeff" },
+          }}
         >
           {copy.primary}
         </Button>
@@ -585,28 +798,35 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
           href="#ai-overview"
           variant="outlined"
           size="large"
-          sx={{ px: 3.2, py: 1.4, bgcolor: "rgba(255,255,255,0.72)" }}
+          sx={{
+            px: 3.2,
+            py: 1.4,
+            color: "white",
+            borderColor: "rgba(255,255,255,0.32)",
+            bgcolor: "rgba(255,255,255,0.08)",
+          }}
         >
           {copy.secondary}
         </Button>
       </Stack>
     </Stack>
 
+    <CompanionExperienceScene copy={copy} />
+
     <Stack
-      spacing={2}
-      alignItems="flex-end"
+      direction="row"
+      spacing={1}
+      alignItems="center"
       sx={{
-        position: { xs: "relative", md: "absolute" },
-        zIndex: 1,
-        right: { xs: "auto", md: 38 },
-        bottom: { xs: "auto", md: 42 },
-        mt: { xs: 4, md: 0 },
-        ml: { xs: 0, md: 4 },
-        width: { xs: "100%", md: 470 },
+        position: "relative",
+        zIndex: 3,
+        color: "rgba(15,23,42,0.8)",
+        alignSelf: "flex-end",
+        display: { xs: "none", md: "flex" },
       }}
     >
-      <HeroDashboard copy={copy} />
-      <LandingMascot copy={copy} />
+      <Utensils size={18} aria-hidden="true" />
+      <Typography sx={{ fontWeight: 900 }}>{copy.title}</Typography>
     </Stack>
   </Box>
 );

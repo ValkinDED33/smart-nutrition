@@ -1,7 +1,15 @@
 const WATER_WORD_PATTERN =
   /(water|drink|drank|hydration|вода|воды|води|водичк|пил|пила|выпил|выпила|випив|випила|пью|склянк|стакан|glass)/i;
 const MEDICATION_WORD_PATTERN =
-  /(таблет|ліки|лекарств|препарат|витамин|вітамін|магний|магній|омега|доза|капсул|пить|пити|принимать|приймати|напомни|нагадуй|remind|med|meds)/i;
+  /(таблет|ліки|лекарств|препарат|витамин|вітамін|магний|магній|омега|доза|капсул|пить|пити|принимать|приймати|med|meds)/i;
+const PREGNANCY_SUPPLEMENT_WORD_PATTERN =
+  /(беремен|вагіт|pregnan|prenatal|пренатал|фолиев|фолієв|folic|йод|iodine)/i;
+const HABIT_WORD_PATTERN =
+  /(звичк|привычк|habit|routine|рутин|прогулянк|walk|сон|sleep)/i;
+const REMINDER_WORD_PATTERN =
+  /(напомни|напоминай|нагадай|нагадуй|remind me|remind|reminder|нагадування|напоминание)/i;
+const REMINDER_SCHEDULE_PATTERN =
+  /(\d{1,2}[:.]\d{2}|(?:^|\s)(?:в|о|at)\s*\d{1,2}(?:\s|$)|утром|ранку|вечером|вечір|morning|evening|night)/i;
 const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
 const NUTRITION_WORD_PATTERN =
@@ -93,6 +101,41 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   }
 
   const amountMl = readAmountMl(normalized);
+  const hasReminderSchedule =
+    REMINDER_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized);
+
+  if (hasReminderSchedule && WATER_WORD_PATTERN.test(normalized)) {
+    return {
+      intent: "create_water_reminder",
+      confidence: 0.9,
+      entities: {
+        text: normalized,
+      },
+      reason: "water_reminder_request",
+    };
+  }
+
+  if (hasReminderSchedule && PREGNANCY_SUPPLEMENT_WORD_PATTERN.test(normalized)) {
+    return {
+      intent: "create_pregnancy_supplement_reminder",
+      confidence: 0.91,
+      entities: {
+        text: normalized,
+      },
+      reason: "pregnancy_supplement_reminder_request",
+    };
+  }
+
+  if (hasReminderSchedule && HABIT_WORD_PATTERN.test(normalized)) {
+    return {
+      intent: "create_habit_reminder",
+      confidence: 0.88,
+      entities: {
+        text: normalized,
+      },
+      reason: "habit_reminder_request",
+    };
+  }
 
   if (WATER_WORD_PATTERN.test(normalized) && (amountMl || /(воду|воды|води|water)/i.test(normalized))) {
     return {
@@ -110,12 +153,30 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
     (MEDICATION_WORD_PATTERN.test(normalized) && /(напомни|нагадуй|remind|кажд|щодня|о\s+\d{1,2}|at\s+\d{1,2})/i.test(normalized))
   ) {
     return {
-      intent: "create_medication_reminder",
+      intent: /(?:курс|course|дн(?:я|ей|ів|і)?|days?)/iu.test(normalized)
+        ? "create_medication_course_reminder"
+        : "create_medication_reminder",
       confidence: 0.9,
       entities: {
         text: normalized.replace(/^\/?addmed\b/i, "").trim() || normalized,
       },
-      reason: "medication_reminder_request",
+      reason: /(?:курс|course|дн(?:я|ей|ів|і)?|days?)/iu.test(normalized)
+        ? "medication_course_reminder_request"
+        : "medication_reminder_request",
+    };
+  }
+
+  if (
+    /^\/?(?:addtask|task|reminder)\b/i.test(normalized) ||
+    (REMINDER_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized))
+  ) {
+    return {
+      intent: "create_task_reminder",
+      confidence: 0.86,
+      entities: {
+        text: normalized.replace(/^\/?(?:addtask|task|reminder)\b/i, "").trim() || normalized,
+      },
+      reason: "task_reminder_request",
     };
   }
 

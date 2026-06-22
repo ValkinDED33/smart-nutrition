@@ -26,6 +26,30 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects ordinary task reminders separately from medication", () => {
+    expect(detectAgentIntent("Напомни позвонить врачу о 10:00")).toMatchObject({
+      intent: "create_task_reminder",
+      entities: {
+        text: "Напомни позвонить врачу о 10:00",
+      },
+    });
+  });
+
+  it("detects water reminder requests before treating the text as water logging", () => {
+    expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
+      intent: "create_water_reminder",
+      entities: {
+        text: "Напоминай пить воду каждый день о 09:00",
+      },
+    });
+  });
+
+  it("detects pregnancy supplement reminders as a typed reminder", () => {
+    expect(detectAgentIntent("Нагадуй фолієву кислоту щодня о 09:00")).toMatchObject({
+      intent: "create_pregnancy_supplement_reminder",
+    });
+  });
+
   it("detects meal logging with product and grams", () => {
     expect(detectAgentIntent("добавь chicken breast 150 г на обед")).toMatchObject({
       intent: "add_meal",

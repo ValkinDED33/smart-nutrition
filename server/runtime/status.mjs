@@ -37,6 +37,15 @@ export const getPublicTelegramStatus = (telegramStatus = {}) => ({
         message: telegramStatus.lastStartError.message ?? "Telegram polling failed.",
       }
     : null,
+  reminders: {
+    enabled: Boolean(
+      telegramStatus.reminders?.enabled ?? telegramStatus.medicationReminders?.enabled
+    ),
+    polling: Boolean(
+      telegramStatus.reminders?.polling ?? telegramStatus.medicationReminders?.polling
+    ),
+    capabilities: telegramStatus.reminders?.capabilities ?? null,
+  },
   medicationReminders: {
     enabled: Boolean(telegramStatus.medicationReminders?.enabled),
     polling: Boolean(telegramStatus.medicationReminders?.polling),

@@ -34,6 +34,33 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "task_reminder_created") {
+    return {
+      userId: user?.id,
+      habits: ["uses assistant task reminders"],
+      motivationTriggers: ["proactive follow-up reminders"],
+      lastMood: "focused",
+    };
+  }
+
+  if (toolResult.type === "reminder_created") {
+    const reminderKind = toolResult.reminderKind ?? toolResult.reminder?.type ?? "task";
+    const habitByKind = {
+      medication_course: "uses medication course reminders",
+      pregnancy_supplement: "uses pregnancy supplement reminders",
+      water: "uses hydration reminders",
+      habit: "uses habit reminders",
+      task: "uses assistant task reminders",
+    };
+
+    return {
+      userId: user?.id,
+      habits: [habitByKind[reminderKind] ?? "uses assistant reminders"],
+      motivationTriggers: ["proactive follow-up reminders"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "meal_added") {
     return {
       userId: user?.id,

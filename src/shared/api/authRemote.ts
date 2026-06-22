@@ -582,7 +582,7 @@ const probeRemoteBaseUrl = async ({
   return baseUrl;
 };
 
-const requestRemote = async <T>(
+export const requestRemote = async <T>(
   path: string,
   init: RequestInit = {},
   {

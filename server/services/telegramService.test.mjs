@@ -362,6 +362,14 @@ describe("telegramService", () => {
       starting: false,
       retryScheduled: false,
       lastStartError: null,
+      reminders: {
+        enabled: true,
+        polling: true,
+        capabilities: {
+          medication: false,
+          task: false,
+        },
+      },
       medicationReminders: {
         enabled: true,
         polling: true,

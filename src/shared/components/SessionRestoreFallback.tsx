@@ -1,0 +1,99 @@
+import { Button, Paper, Stack, Typography } from "@mui/material";
+import { RefreshCw, ShieldCheck } from "lucide-react";
+import { useLanguage } from "../language";
+import { AssistantAvatar } from "./AssistantAvatar";
+
+const restoreCopy = {
+  uk: {
+    title: "Відновлюю вхід",
+    body:
+      "Схоже, хмарний сервер прокидається. Я пробую повернути вашу сесію без повторної реєстрації.",
+    retry: "Спробувати ще раз",
+    forget: "Увійти вручну",
+  },
+  pl: {
+    title: "Przywracam logowanie",
+    body:
+      "Wygląda na to, że serwer w chmurze się budzi. Próbuję przywrócić sesję bez ponownej rejestracji.",
+    retry: "Spróbuj ponownie",
+    forget: "Zaloguj ręcznie",
+  },
+  en: {
+    title: "Restoring your session",
+    body:
+      "The cloud server looks like it is waking up. I am trying to bring your session back without registration.",
+    retry: "Try again",
+    forget: "Log in manually",
+  },
+} as const;
+
+interface SessionRestoreFallbackProps {
+  onForgetSession: () => void;
+  onRetry: () => void;
+}
+
+export const SessionRestoreFallback = ({
+  onForgetSession,
+  onRetry,
+}: SessionRestoreFallbackProps) => {
+  const { appLanguage } = useLanguage();
+  const copy = restoreCopy[appLanguage];
+
+  return (
+    <Stack
+      alignItems="center"
+      justifyContent="center"
+      sx={{
+        minHeight: "min(100vh, 720px)",
+        px: { xs: 2, sm: 3 },
+        py: 6,
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          width: "min(100%, 520px)",
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: 2,
+          border: "1px solid rgba(15, 23, 42, 0.1)",
+          bgcolor: "rgba(255,255,255,0.92)",
+        }}
+      >
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={1.4} alignItems="center">
+            <AssistantAvatar
+              name="Smart Nutrition"
+              variant="robot"
+              mood="coach"
+              active
+              size={54}
+            />
+            <Stack spacing={0.25} minWidth={0}>
+              <Stack direction="row" spacing={0.8} alignItems="center">
+                <ShieldCheck size={21} color="#0f766e" />
+                <Typography component="h1" variant="h5" sx={{ fontWeight: 950 }}>
+                  {copy.title}
+                </Typography>
+              </Stack>
+            </Stack>
+          </Stack>
+          <Typography color="text.secondary">{copy.body}</Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Button
+              variant="contained"
+              startIcon={<RefreshCw size={17} />}
+              onClick={onRetry}
+            >
+              {copy.retry}
+            </Button>
+            <Button variant="outlined" onClick={onForgetSession}>
+              {copy.forget}
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+    </Stack>
+  );
+};
+
+export default SessionRestoreFallback;

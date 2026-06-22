@@ -4,6 +4,20 @@ const DEFAULT_TIMEZONE = "Europe/Warsaw";
 const DEFAULT_SNOOZE_MINUTES = 10;
 const MAX_REMINDERS_PER_USER = 30;
 const MAX_EVENTS_PER_REMINDER = 120;
+const REMINDER_TYPE_MEDICATION = "medication";
+const REMINDER_TYPE_MEDICATION_COURSE = "medication_course";
+const REMINDER_TYPE_PREGNANCY_SUPPLEMENT = "pregnancy_supplement";
+const REMINDER_TYPE_TASK = "task";
+const REMINDER_TYPE_WATER = "water";
+const REMINDER_TYPE_HABIT = "habit";
+const REMINDER_TYPES = new Set([
+  REMINDER_TYPE_MEDICATION,
+  REMINDER_TYPE_MEDICATION_COURSE,
+  REMINDER_TYPE_PREGNANCY_SUPPLEMENT,
+  REMINDER_TYPE_TASK,
+  REMINDER_TYPE_WATER,
+  REMINDER_TYPE_HABIT,
+]);
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
@@ -147,12 +161,34 @@ const extractDurationDays = (text) => {
   return Number.isInteger(days) && days > 0 && days <= 365 ? days : null;
 };
 
+const hasDailyRepeatIntent = (text) =>
+  /(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день)(?:\s|$)/iu.test(
+    String(text ?? "")
+  );
+
 const extractDose = (text) => {
   const match = text.match(
     /(?:^|\s)(\d+(?:[,.]\d+)?)\s*(мг|mg|мл|ml|таблет(?:ка|ки|ок|ку|ке)?|табл\.?|капсул(?:а|ы|у|е|ок)?|капс\.?)(?:\s|$|,|\.)/iu
   );
 
   return match ? `${match[1].replace(",", ".")} ${match[2]}` : "";
+};
+
+const extractWaterAmountMl = (text) => {
+  const normalized = String(text ?? "").toLowerCase();
+  const litersMatch = normalized.match(/(\d+(?:[,.]\d+)?)\s*(?:л|l|литр|літр|liter|litre)\b/iu);
+
+  if (litersMatch) {
+    return Math.min(Math.max(Math.round(Number(litersMatch[1].replace(",", ".")) * 1000), 50), 3000);
+  }
+
+  const mlMatch = normalized.match(/(\d{2,4})\s*(?:мл|ml|милл|мілі)\b/iu);
+
+  if (mlMatch) {
+    return Math.min(Math.max(Math.round(Number(mlMatch[1])), 50), 3000);
+  }
+
+  return /(склянк|стакан|glass)/iu.test(normalized) ? 250 : 250;
 };
 
 const cleanTitle = (text) => {
@@ -173,6 +209,38 @@ const cleanTitle = (text) => {
   return normalizeText(withoutPrefix || firstChunk || text, 96);
 };
 
+const cleanTaskTitle = (text) => {
+  const firstChunk = text.split(/[,.]/)[0] ?? text;
+  const withoutPrefix = firstChunk
+    .replace(/^(?:напоминай|напомни|нагадуй|нагадай|remind me to|remind me|remind)\s+/iu, "")
+    .replace(/\b\d{1,2}[:.]\d{2}\b/giu, "")
+    .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|днем|днём|обед|обід|вечером|вечір|вечора|вечера|morning|afternoon|evening|night)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:в|о|at|по|by)(?:\s|$)/giu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalizeText(withoutPrefix || firstChunk || text, 96);
+};
+
+const calculateReminderEndsAt = (reminder) => {
+  const explicitEndsAt = reminder?.endsAt ? new Date(reminder.endsAt).getTime() : NaN;
+
+  if (Number.isFinite(explicitEndsAt)) {
+    return explicitEndsAt;
+  }
+
+  const durationDays = Number(reminder?.durationDays ?? 0) || null;
+  const createdAt = reminder?.createdAt ? new Date(reminder.createdAt).getTime() : NaN;
+
+  if (!durationDays || !Number.isFinite(createdAt)) {
+    return null;
+  }
+
+  return createdAt + durationDays * 24 * 60 * 60 * 1000;
+};
+
 export const calculateNextMedicationRunAt = (
   reminder,
   { from = new Date(), includeNow = false } = {}
@@ -180,8 +248,8 @@ export const calculateNextMedicationRunAt = (
   const times = Array.isArray(reminder?.times) ? reminder.times : [];
   const timeZone = reminder?.timezone || DEFAULT_TIMEZONE;
   const fromDate = from instanceof Date ? from : new Date(from);
-  const durationDays = Number(reminder?.durationDays ?? 0) || null;
-  const searchDays = Math.max(durationDays ?? 370, 1);
+  const endsAtMs = calculateReminderEndsAt(reminder);
+  const searchDays = Math.max(Number(reminder?.durationDays ?? 0) || 370, 1);
 
   if (Number.isNaN(fromDate.getTime()) || times.length === 0) {
     return null;
@@ -198,6 +266,10 @@ export const calculateNextMedicationRunAt = (
         minute,
         timeZone,
       });
+
+      if (endsAtMs && candidate.getTime() > endsAtMs) {
+        return null;
+      }
 
       if (includeNow ? candidate.getTime() >= fromDate.getTime() : candidate > fromDate) {
         return candidate.toISOString();
@@ -227,7 +299,7 @@ export const parseMedicationReminderText = (
 
   const reminder = {
     id: `med-${crypto.randomUUID()}`,
-    type: "medication",
+    type: REMINDER_TYPE_MEDICATION,
     title: cleanTitle(rawText),
     dose: extractDose(rawText),
     sourceText: rawText,
@@ -237,12 +309,157 @@ export const parseMedicationReminderText = (
     active: true,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
+    endsAt: null,
+    nextRunAt: null,
+    events: [],
+  };
+  reminder.endsAt = reminder.durationDays
+    ? new Date(now.getTime() + reminder.durationDays * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  reminder.nextRunAt = calculateNextMedicationRunAt(reminder, { from: now });
+
+  return reminder.nextRunAt ? reminder : null;
+};
+
+export const parseMedicationCourseReminderText = (
+  text,
+  options = {}
+) => {
+  const reminder = parseMedicationReminderText(text, options);
+
+  return reminder
+    ? {
+        ...reminder,
+        id: reminder.id.replace(/^med-/u, "med-course-"),
+        type: REMINDER_TYPE_MEDICATION_COURSE,
+      }
+    : null;
+};
+
+export const parsePregnancySupplementReminderText = (
+  text,
+  options = {}
+) => {
+  const reminder = parseMedicationReminderText(text, options);
+
+  return reminder
+    ? {
+        ...reminder,
+        id: reminder.id.replace(/^med-/u, "preg-supplement-"),
+        type: REMINDER_TYPE_PREGNANCY_SUPPLEMENT,
+        safetyMode: "doctor_plan_only",
+      }
+    : null;
+};
+
+export const parseTaskReminderText = (
+  text,
+  { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
+) => {
+  const rawText = normalizeText(text, 500);
+  const times = extractTimes(rawText);
+
+  if (!rawText || times.length === 0) {
+    return null;
+  }
+
+  const repeatsDaily = hasDailyRepeatIntent(rawText);
+  const durationDays = extractDurationDays(rawText) ?? (repeatsDaily ? null : 1);
+  const reminder = {
+    id: `task-${crypto.randomUUID()}`,
+    type: REMINDER_TYPE_TASK,
+    title: cleanTaskTitle(rawText),
+    dose: "",
+    sourceText: rawText,
+    times,
+    timezone,
+    durationDays,
+    repeat: repeatsDaily ? "daily" : "once",
+    active: true,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    endsAt: durationDays
+      ? new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+      : null,
+    nextRunAt: null,
+    events: [],
+  };
+  reminder.nextRunAt = calculateNextMedicationRunAt(reminder, { from: now });
+
+  return reminder.nextRunAt && reminder.title ? reminder : null;
+};
+
+export const parseWaterReminderText = (
+  text,
+  { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
+) => {
+  const rawText = normalizeText(text, 500);
+  const explicitTimes = extractTimes(rawText);
+  const countPerDay = extractCountPerDay(rawText);
+  const times = explicitTimes.length > 0
+    ? explicitTimes
+    : countPerDay
+      ? defaultTimesForCount(countPerDay)
+      : [];
+
+  if (!rawText || times.length === 0) {
+    return null;
+  }
+
+  const amountMl = extractWaterAmountMl(rawText);
+  const reminder = {
+    id: `water-${crypto.randomUUID()}`,
+    type: REMINDER_TYPE_WATER,
+    title: "Пити воду",
+    dose: `${amountMl} мл`,
+    sourceText: rawText,
+    times,
+    timezone,
+    durationDays: null,
+    repeat: "daily",
+    active: true,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    endsAt: null,
     nextRunAt: null,
     events: [],
   };
   reminder.nextRunAt = calculateNextMedicationRunAt(reminder, { from: now });
 
   return reminder.nextRunAt ? reminder : null;
+};
+
+export const parseHabitReminderText = (
+  text,
+  { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
+) => {
+  const taskReminder = parseTaskReminderText(text, { now, timezone });
+
+  return taskReminder
+    ? {
+        ...taskReminder,
+        id: taskReminder.id.replace(/^task-/u, "habit-"),
+        type: REMINDER_TYPE_HABIT,
+        repeat: "daily",
+        durationDays: null,
+        endsAt: null,
+        nextRunAt: calculateNextMedicationRunAt(
+          {
+            ...taskReminder,
+            repeat: "daily",
+            durationDays: null,
+            endsAt: null,
+          },
+          { from: now }
+        ),
+      }
+    : null;
+};
+
+const normalizeReminderType = (value) => {
+  const type = normalizeText(value, 40);
+
+  return REMINDER_TYPES.has(type) ? type : REMINDER_TYPE_MEDICATION;
 };
 
 export const normalizeMedicationReminder = (value) => {
@@ -266,7 +483,7 @@ export const normalizeMedicationReminder = (value) => {
 
   return {
     id: normalizeText(value.id, 80),
-    type: "medication",
+    type: normalizeReminderType(value.type),
     title: normalizeText(value.title, 96),
     dose: normalizeText(value.dose, 80),
     sourceText: normalizeText(value.sourceText, 500),
@@ -279,6 +496,8 @@ export const normalizeMedicationReminder = (value) => {
     active: value.active !== false,
     createdAt: normalizeText(value.createdAt, 40) || new Date().toISOString(),
     updatedAt: normalizeText(value.updatedAt, 40) || new Date().toISOString(),
+    endsAt: normalizeText(value.endsAt, 40) || null,
+    repeat: value.repeat === "once" ? "once" : "daily",
     nextRunAt: normalizeText(value.nextRunAt, 40) || null,
     lastSentAt: normalizeText(value.lastSentAt, 40) || null,
     events: Array.isArray(value.events)
@@ -341,6 +560,68 @@ export const createMedicationReminderService = ({
     return { ok: true, reminder, user: updatedUser ?? { ...user, medicationReminders: reminders } };
   };
 
+  const createTaskReminderFromText = async (user, text, now = new Date()) => {
+    const reminder = parseTaskReminderText(text, { now, timezone });
+
+    if (!reminder) {
+      return { ok: false, code: "TASK_REMINDER_PARSE_FAILED" };
+    }
+
+    const reminders = [reminder, ...getUserReminders(user)].slice(0, MAX_REMINDERS_PER_USER);
+    const updatedUser = await persistReminders(user, reminders);
+
+    return { ok: true, reminder, user: updatedUser ?? { ...user, medicationReminders: reminders } };
+  };
+
+  const createParsedReminderFromText = async (user, text, parser, failureCode, now = new Date()) => {
+    const reminder = parser(text, { now, timezone });
+
+    if (!reminder) {
+      return { ok: false, code: failureCode };
+    }
+
+    const reminders = [reminder, ...getUserReminders(user)].slice(0, MAX_REMINDERS_PER_USER);
+    const updatedUser = await persistReminders(user, reminders);
+
+    return { ok: true, reminder, user: updatedUser ?? { ...user, medicationReminders: reminders } };
+  };
+
+  const createMedicationCourseReminderFromText = (user, text, now = new Date()) =>
+    createParsedReminderFromText(
+      user,
+      text,
+      parseMedicationCourseReminderText,
+      "MEDICATION_COURSE_REMINDER_PARSE_FAILED",
+      now
+    );
+
+  const createPregnancySupplementReminderFromText = (user, text, now = new Date()) =>
+    createParsedReminderFromText(
+      user,
+      text,
+      parsePregnancySupplementReminderText,
+      "PREGNANCY_SUPPLEMENT_REMINDER_PARSE_FAILED",
+      now
+    );
+
+  const createWaterReminderFromText = (user, text, now = new Date()) =>
+    createParsedReminderFromText(
+      user,
+      text,
+      parseWaterReminderText,
+      "WATER_REMINDER_PARSE_FAILED",
+      now
+    );
+
+  const createHabitReminderFromText = (user, text, now = new Date()) =>
+    createParsedReminderFromText(
+      user,
+      text,
+      parseHabitReminderText,
+      "HABIT_REMINDER_PARSE_FAILED",
+      now
+    );
+
   const deactivateReminder = async (user, reminderId, now = new Date()) => {
     const reminders = getUserReminders(user);
     const reminder = reminders.find((item) => item.id === reminderId);
@@ -394,9 +675,12 @@ export const createMedicationReminderService = ({
       {
         ...reminder,
         lastSentAt: now.toISOString(),
-        nextRunAt: calculateNextMedicationRunAt(reminder, {
-          from: new Date(now.getTime() + 60_000),
-        }),
+        nextRunAt:
+          reminder.repeat === "once"
+            ? null
+            : calculateNextMedicationRunAt(reminder, {
+                from: new Date(now.getTime() + 60_000),
+              }),
       },
       "sent",
       now,
@@ -439,8 +723,14 @@ export const createMedicationReminderService = ({
   return {
     getUserReminders,
     createReminderFromText,
+    createMedicationCourseReminderFromText,
+    createPregnancySupplementReminderFromText,
+    createWaterReminderFromText,
+    createHabitReminderFromText,
+    createTaskReminderFromText,
     deactivateReminder,
     recordDoseAction,
+    recordReminderAction: recordDoseAction,
     markReminderSent,
     sendDueReminders,
   };

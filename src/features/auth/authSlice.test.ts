@@ -131,7 +131,7 @@ describe("authSlice", () => {
     });
   });
 
-  it("keeps returning users in restore mode longer before showing an auth failure", async () => {
+  it("keeps returning users in restore mode briefly before showing reconnect state", async () => {
     vi.useFakeTimers();
     sessionHintMock.hasRecentAuthSessionHint.mockReturnValue(true);
     const store = createTestStore();
@@ -147,7 +147,7 @@ describe("authSlice", () => {
       hasSessionHint: true,
     });
 
-    await vi.advanceTimersByTimeAsync(71_500);
+    await vi.advanceTimersByTimeAsync(5_500);
     await resultPromise;
 
     expect(store.getState().auth).toMatchObject({
@@ -172,7 +172,7 @@ describe("authSlice", () => {
 
     const timeoutResult = store.dispatch(initializeAuth());
 
-    await vi.advanceTimersByTimeAsync(75_000);
+    await vi.advanceTimersByTimeAsync(9_000);
     await timeoutResult;
 
     await store.dispatch(initializeAuth());

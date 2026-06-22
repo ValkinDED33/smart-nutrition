@@ -25,15 +25,16 @@ import { createApiRouter } from "./routes/index.mjs";
 import { createAccountController } from "./routes/account.routes.mjs";
 import { createAuthController } from "./routes/auth.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
+import { createReminderController } from "./routes/reminder.routes.mjs";
 import { createTelegramController } from "./routes/telegram.routes.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
 import { createAuthService } from "./services/authService.mjs";
 import { createBrevoService } from "./services/brevoService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
-import { createMedicationReminderService } from "./services/medicationReminderService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
 import { createProductLookupService } from "./services/productLookupService.mjs";
+import { createReminderService } from "./services/reminderService.mjs";
 import { createStateService } from "./services/stateService.mjs";
 import { createTelegramService } from "./services/telegramService.mjs";
 import { createStorage } from "./storage/index.mjs";
@@ -125,13 +126,13 @@ const platformService = createPlatformService({
   cacheRepository: redisCache,
 });
 const stateService = createStateService({ stateRepository });
-const medicationReminderService = createMedicationReminderService({
+const reminderService = createReminderService({
   authRepository,
 });
 const assistantAgent = createAssistantAgentService({
   stateService,
   platformService,
-  medicationReminderService,
+  reminderService,
   assistantMemoryRepository,
 });
 const aiService = createAiService({
@@ -144,7 +145,7 @@ const telegramService = createTelegramService({
   config: serverConfig,
   authRepository,
   stateService,
-  medicationReminderService,
+  reminderService,
   assistantAgent,
 });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
@@ -245,6 +246,10 @@ const accountController = createAccountController({
 const telegramController = createTelegramController({
   telegramService,
 });
+const reminderController = createReminderController({
+  reminderService,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+});
 const publicApiRouter = createApiRouter({
   healthController,
   authController,
@@ -255,6 +260,7 @@ const apiRouter = createApiRouter({
   authRouteScope: "protected",
   accountController,
   telegramController,
+  reminderController,
   stateController,
   aiController,
   adminController,

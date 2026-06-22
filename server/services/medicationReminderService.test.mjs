@@ -3,6 +3,7 @@ import {
   calculateNextMedicationRunAt,
   createMedicationReminderService,
   parseMedicationReminderText,
+  parseTaskReminderText,
 } from "./medicationReminderService.mjs";
 
 const createUser = (overrides = {}) => ({
@@ -59,6 +60,22 @@ describe("medicationReminderService", () => {
     expect(parseMedicationReminderText("Магний")).toBeNull();
   });
 
+  it("parses ordinary task reminders without treating them as medication", () => {
+    const reminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+
+    expect(reminder).toMatchObject({
+      type: "task",
+      title: "позвонить врачу",
+      times: ["10:00"],
+      repeat: "once",
+      durationDays: 1,
+    });
+    expect(reminder.dose).toBe("");
+    expect(reminder.nextRunAt).toBeTruthy();
+  });
+
   it("calculates next run from local reminder times", () => {
     const nextRunAt = calculateNextMedicationRunAt(
       {
@@ -69,6 +86,27 @@ describe("medicationReminderService", () => {
     );
 
     expect(nextRunAt).toBe("2026-06-20T18:00:00.000Z");
+  });
+
+  it("stops course reminders after their fixed duration window", () => {
+    const reminder = {
+      times: ["08:00"],
+      timezone: "Europe/Warsaw",
+      durationDays: 1,
+      createdAt: "2026-06-20T05:00:00.000Z",
+      endsAt: "2026-06-21T05:00:00.000Z",
+    };
+
+    expect(
+      calculateNextMedicationRunAt(reminder, {
+        from: new Date("2026-06-20T05:30:00.000Z"),
+      })
+    ).toBe("2026-06-20T06:00:00.000Z");
+    expect(
+      calculateNextMedicationRunAt(reminder, {
+        from: new Date("2026-06-20T06:01:00.000Z"),
+      })
+    ).toBeNull();
   });
 
   it("creates reminders and persists them on the user record", async () => {
@@ -91,6 +129,58 @@ describe("medicationReminderService", () => {
       "user-1",
       expect.arrayContaining([expect.objectContaining({ title: "Магний" })])
     );
+  });
+
+  it("creates task reminders and persists them with medication reminders", async () => {
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...createUser({ id: userId }),
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.createTaskReminderFromText(
+      createUser(),
+      "Напомни позвонить врачу о 10:00",
+      new Date("2026-06-20T05:00:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      type: "task",
+      title: "позвонить врачу",
+      repeat: "once",
+    });
+    expect(repository.updateUserMedicationReminders).toHaveBeenCalledWith(
+      "user-1",
+      expect.arrayContaining([expect.objectContaining({ type: "task" })])
+    );
+  });
+
+  it("marks one-time task reminders inactive after the first successful send", async () => {
+    const initialReminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const sendReminder = vi.fn(async () => {});
+
+    await service.sendDueReminders({
+      users: [user],
+      sendReminder,
+      now: new Date(initialReminder.nextRunAt),
+    });
+
+    const persistedReminder = repository.updateUserMedicationReminders.mock.calls[0][1][0];
+    expect(persistedReminder.active).toBe(false);
+    expect(persistedReminder.nextRunAt).toBeNull();
   });
 
   it("records dose actions without duplicating reminders", async () => {

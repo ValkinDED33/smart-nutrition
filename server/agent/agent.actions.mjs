@@ -22,6 +22,16 @@ const formatReminderTimes = (reminder) =>
 const getMedicationReminderTitle = (reminder) =>
   String(reminder?.title ?? reminder?.name ?? "нагадування").trim() || "нагадування";
 
+const getReminderKindLabel = (reminderKind) => {
+  if (reminderKind === "medication_course") return "курс ліків";
+  if (reminderKind === "pregnancy_supplement") return "нагадування для вагітності / supplement";
+  if (reminderKind === "water") return "нагадування про воду";
+  if (reminderKind === "habit") return "нагадування про звичку";
+  if (reminderKind === "task") return "нагадування";
+
+  return "нагадування про ліки";
+};
+
 const getProductTitle = (product) =>
   [product?.brand, product?.name]
     .map((value) => String(value ?? "").trim())
@@ -53,6 +63,25 @@ export const buildAgentReply = ({ intent, toolResult }) => {
       return [
         "Я не зміг безпечно розібрати розклад ліків.",
         "Напишіть так: /addmed Вітамін D 1 капсула щодня о 09:00",
+      ].join("\n");
+    }
+
+    if (intent.intent === "create_task_reminder") {
+      return [
+        "Я не зміг безпечно розібрати час нагадування.",
+        "Напишіть так: /addtask Подзвонити лікарю о 10:00",
+      ].join("\n");
+    }
+
+    if (
+      intent.intent === "create_water_reminder" ||
+      intent.intent === "create_habit_reminder" ||
+      intent.intent === "create_medication_course_reminder" ||
+      intent.intent === "create_pregnancy_supplement_reminder"
+    ) {
+      return [
+        "Я зрозумів тип нагадування, але не зміг безпечно розібрати розклад.",
+        "Напишіть з конкретним часом: щодня о 09:00, 13:00 або 21:00.",
       ].join("\n");
     }
 
@@ -130,6 +159,38 @@ export const buildAgentReply = ({ intent, toolResult }) => {
         ? "Оскільки увімкнений режим вагітності / підготовки, я триматимуся тільки плану лікаря і не змінюватиму дозування."
         : null,
       "Важливо: я не замінюю лікаря і не змінюю дозування самостійно.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (toolResult.type === "task_reminder_created") {
+    const reminder = toolResult.reminder;
+
+    return [
+      "Готово. Нагадування створено.",
+      `${getMedicationReminderTitle(reminder)} — ${formatReminderTimes(reminder)}`,
+      reminder.repeat === "once" ? "Повтор: один раз." : "Повтор: щодня.",
+      "Я нагадаю в Telegram і дам кнопки: зроблено, пізніше або пропустити.",
+    ].join("\n");
+  }
+
+  if (toolResult.type === "reminder_created") {
+    const reminder = toolResult.reminder;
+    const reminderKind = toolResult.reminderKind ?? reminder?.type;
+    const doseLine = reminder?.dose ? `Деталі: ${reminder.dose}.` : null;
+    const safetyLine =
+      reminderKind === "pregnancy_supplement"
+        ? "Я буду триматися тільки вашого плану лікаря і не змінюватиму дозування самостійно."
+        : null;
+
+    return [
+      `Готово. Створено ${getReminderKindLabel(reminderKind)}.`,
+      `${getMedicationReminderTitle(reminder)} — ${formatReminderTimes(reminder)}`,
+      doseLine,
+      reminder?.repeat === "once" ? "Повтор: один раз." : "Повтор: щодня.",
+      safetyLine,
+      "Я нагадаю в Telegram і дам кнопки: зроблено/прийнято, пізніше або пропустити.",
     ]
       .filter(Boolean)
       .join("\n");

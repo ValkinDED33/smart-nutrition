@@ -43,7 +43,7 @@ type RestoreRaceResult =
   | { kind: "timeout" };
 
 const STARTUP_SESSION_TIMEOUT_MS = 3_500;
-const RETURNING_SESSION_TIMEOUT_MS = 75_000;
+const RETURNING_SESSION_TIMEOUT_MS = 9_000;
 
 interface AuthState {
   user: User | null;
@@ -406,6 +406,14 @@ const authSlice = createSlice({
       state.syncToast = null;
       state.hasSessionHint = false;
     },
+    clearSavedSessionHint(state) {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.isLoading = false;
+      state.isInitialized = true;
+      state.error = null;
+      state.hasSessionHint = false;
+    },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
       state.isAuthenticated = true;
@@ -623,6 +631,7 @@ const authSlice = createSlice({
 });
 
 export const {
+  clearSavedSessionHint,
   logout,
   setUser,
   setCredentials,

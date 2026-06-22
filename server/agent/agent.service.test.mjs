@@ -112,6 +112,118 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("creates ordinary task reminders through the reminder tool", async () => {
+    const reminderService = {
+      createTaskReminderFromText: vi.fn(async () => ({
+        ok: true,
+        reminder: {
+          id: "task-1",
+          type: "task",
+          title: "позвонить врачу",
+          times: ["10:00"],
+          repeat: "once",
+        },
+      })),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "Напомни позвонить врачу о 10:00",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_task_reminder" },
+      actions: [
+        {
+          id: "create_task_reminder",
+          ok: true,
+          resultType: "task_reminder_created",
+        },
+      ],
+      memoryUpdated: true,
+    });
+    expect(result.text).toContain("Нагадування створено");
+    expect(result.text).toContain("позвонить врачу");
+    expect(reminderService.createTaskReminderFromText).toHaveBeenCalledWith(
+      user,
+      "Напомни позвонить врачу о 10:00",
+      fixedNow
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["uses assistant task reminders"]),
+      })
+    );
+  });
+
+  it("creates typed water reminders through the canonical reminder tool", async () => {
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async () => ({
+        ok: true,
+        reminder: {
+          id: "water-1",
+          type: "water",
+          title: "Пити воду",
+          dose: "250 мл",
+          times: ["09:00"],
+          repeat: "daily",
+        },
+      })),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "Напоминай пить воду каждый день о 09:00",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_water_reminder" },
+      actions: [
+        {
+          id: "create_water_reminder",
+          ok: true,
+          resultType: "reminder_created",
+        },
+      ],
+      memoryUpdated: true,
+    });
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(
+      user,
+      {
+        type: "water",
+        text: "Напоминай пить воду каждый день о 09:00",
+      },
+      fixedNow
+    );
+    expect(result.text).toContain("нагадування про воду");
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["uses hydration reminders"]),
+      })
+    );
+  });
+
+
   it("adds meals through online catalog search and state tool", async () => {
     const stateService = {
       addMealEntries: vi.fn(async () => undefined),

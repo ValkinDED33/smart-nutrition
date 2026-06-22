@@ -98,9 +98,12 @@ const createSnapshotSummary = async ({ user, stateService, now }) => {
 export const createAgentTools = ({
   stateService = null,
   platformService = null,
+  reminderService = null,
   medicationReminderService = null,
   now = () => new Date(),
 } = {}) => {
+  const reminders = reminderService ?? medicationReminderService;
+
   const addWater = async (user, { amountMl }) => {
     if (!stateService?.getWaterState || !stateService?.saveWaterState) {
       return { ok: false, code: "WATER_TOOL_UNAVAILABLE" };
@@ -209,11 +212,14 @@ export const createAgentTools = ({
   };
 
   const createMedicationReminder = async (user, { text }) => {
-    if (!medicationReminderService?.createReminderFromText) {
+    const createMedicationReminderFromText =
+      reminders?.createMedicationReminderFromText ?? reminders?.createReminderFromText;
+
+    if (!createMedicationReminderFromText) {
       return { ok: false, code: "MEDICATION_TOOL_UNAVAILABLE" };
     }
 
-    const result = await medicationReminderService.createReminderFromText(user, text, now());
+    const result = await createMedicationReminderFromText(user, text, now());
     const profile = await stateService?.getProfileState?.(user).catch(() => null);
     const womenHealth = profile?.womenHealth ?? null;
 
@@ -234,6 +240,54 @@ export const createAgentTools = ({
       },
     };
   };
+
+  const createTaskReminder = async (user, { text }) => {
+    if (!reminders?.createTaskReminderFromText) {
+      return { ok: false, code: "TASK_REMINDER_TOOL_UNAVAILABLE" };
+    }
+
+    const result = await reminders.createTaskReminderFromText(
+      user,
+      text,
+      now()
+    );
+
+    if (!result?.ok) {
+      return {
+        ok: false,
+        code: result?.code ?? "TASK_REMINDER_PARSE_FAILED",
+      };
+    }
+
+    return {
+      ok: true,
+      type: "task_reminder_created",
+      reminder: result.reminder,
+    };
+  };
+
+  const createTypedReminder = async (user, { type, text }) => {
+    if (!reminders?.createReminderFromUserText) {
+      return { ok: false, code: "REMINDER_TOOL_UNAVAILABLE" };
+    }
+
+    const result = await reminders.createReminderFromUserText(user, { type, text }, now());
+
+    if (!result?.ok) {
+      return {
+        ok: false,
+        code: result?.code ?? "REMINDER_PARSE_FAILED",
+      };
+    }
+
+    return {
+      ok: true,
+      type: "reminder_created",
+      reminderKind: result.reminder?.type ?? type,
+      reminder: result.reminder,
+    };
+  };
+
 
   const getDayStatus = async (user) => {
     const summary = await createSnapshotSummary({ user, stateService, now: now() });
@@ -287,6 +341,8 @@ export const createAgentTools = ({
     addMeal,
     searchProducts,
     createMedicationReminder,
+    createTaskReminder,
+    createTypedReminder,
     getDayStatus,
     getWaterStatus,
     getNutritionStatus,
