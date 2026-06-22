@@ -1,0 +1,440 @@
+import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { Camera, Plus, ScanBarcode, Search, Sparkles } from "lucide-react";
+import type { MealType } from "@domain/meal/types";
+import type { Product } from "@domain/products/types";
+import { getProductDisplayName } from "@domain/products/productDisplay";
+import { getProductPortionPresets, formatProductPortion } from "@domain/products/productPortions";
+import { productMatchesPreferences } from "@domain/user/preferences";
+import type { AppDispatch, RootState } from "../../app/store";
+import { searchProducts } from "../../shared/api/products";
+import { useLanguage } from "../../shared/language";
+import { addProduct, rememberRecentProduct } from "./mealSlice";
+import { getProductSuggestions } from "./productSuggestionModel";
+import {
+  selectPersonalBarcodeProducts,
+  selectRecentProducts,
+  selectSavedProducts,
+} from "./selectors";
+
+type FoodCommandTarget = "search" | "photo" | "barcode" | "composer";
+
+interface FoodCommandCenterProps {
+  mealType: MealType;
+  onOpenTarget: (target: FoodCommandTarget) => void;
+}
+
+const commandCopy = {
+  uk: {
+    title: "Додати їжу",
+    subtitle:
+      "Один швидкий вхід: напишіть продукт, додайте улюблене або відкрийте фото/скан.",
+    searchLabel: "Що ви їли?",
+    searchPlaceholder: "Наприклад: chicken breast, рис, йогурт",
+    quickModes: "Швидкі режими",
+    photo: "Фото",
+    barcode: "Сканер",
+    composer: "Конструктор",
+    searching: "Шукаю в онлайн-базі...",
+    empty: "Почніть вводити назву — я підтягну варіанти з онлайн-каталогу.",
+    unavailable:
+      "Онлайн-пошук зараз недоступний. Можна відкрити повний пошук або додати продукт у базу.",
+    added: "Додано",
+    grams: "г",
+    openSearch: "Повний пошук",
+    source: "джерело",
+    recent: "Недавнє",
+    saved: "Збережене",
+  },
+  pl: {
+    title: "Dodaj jedzenie",
+    subtitle:
+      "Jedno szybkie wejście: wpisz produkt, dodaj ulubione albo otwórz zdjęcie/skaner.",
+    searchLabel: "Co jadłeś?",
+    searchPlaceholder: "Np. chicken breast, ryż, jogurt",
+    quickModes: "Szybkie tryby",
+    photo: "Zdjęcie",
+    barcode: "Skaner",
+    composer: "Konstruktor",
+    searching: "Szukam w bazie online...",
+    empty: "Zacznij wpisywać nazwę — pobiorę propozycje z katalogu online.",
+    unavailable:
+      "Wyszukiwanie online jest teraz niedostępne. Możesz otworzyć pełne wyszukiwanie albo dodać produkt do bazy.",
+    added: "Dodano",
+    grams: "g",
+    openSearch: "Pełne wyszukiwanie",
+    source: "źródło",
+    recent: "Ostatnie",
+    saved: "Zapisane",
+  },
+  en: {
+    title: "Add food",
+    subtitle:
+      "One fast entry: type a product, add a favorite, or open photo/barcode logging.",
+    searchLabel: "What did you eat?",
+    searchPlaceholder: "For example: chicken breast, rice, yogurt",
+    quickModes: "Quick modes",
+    photo: "Photo",
+    barcode: "Scanner",
+    composer: "Builder",
+    searching: "Searching the online database...",
+    empty: "Start typing a name — I will pull options from the online catalog.",
+    unavailable:
+      "Online search is unavailable right now. You can open full search or add the product to the database.",
+    added: "Added",
+    grams: "g",
+    openSearch: "Full search",
+    source: "source",
+    recent: "Recent",
+    saved: "Saved",
+  },
+} as const;
+
+const normalizeQuery = (value: string) => value.trim().replace(/\s+/g, " ");
+
+const getProductKey = (product: Product) =>
+  product.barcode?.trim() ||
+  `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
+
+export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterProps) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const savedProducts = useSelector(selectSavedProducts);
+  const recentProducts = useSelector(selectRecentProducts);
+  const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
+  const preferences = useSelector((state: RootState) => ({
+    dietStyle: state.profile.dietStyle,
+    allergies: state.profile.allergies,
+    excludedIngredients: state.profile.excludedIngredients,
+    adaptiveMode: state.profile.adaptiveMode,
+  }));
+  const { appLanguage } = useLanguage();
+  const copy = commandCopy[appLanguage];
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState<number | "">(100);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const normalizedQuery = normalizeQuery(query);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedQuery(normalizedQuery);
+    }, 220);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [normalizedQuery]);
+
+  useEffect(() => {
+    if (!feedback) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setFeedback(null), 2200);
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
+
+  const productQuery = useQuery({
+    queryKey: ["food-command-products", debouncedQuery],
+    queryFn: () => searchProducts(debouncedQuery),
+    enabled: debouncedQuery.length >= 2,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
+  });
+
+  const suggestions = useMemo(
+    () =>
+      getProductSuggestions({
+        query: normalizedQuery,
+        onlineProducts: productQuery.data ?? [],
+        savedProducts,
+        recentProducts,
+        personalBarcodeProducts,
+        limit: normalizedQuery ? 8 : 6,
+      }).filter((product) => productMatchesPreferences(product, preferences)),
+    [
+      normalizedQuery,
+      personalBarcodeProducts,
+      preferences,
+      productQuery.data,
+      recentProducts,
+      savedProducts,
+    ]
+  );
+
+  const quickProducts = useMemo(() => {
+    const seen = new Set<string>();
+    const items: Array<{ product: Product; source: string }> = [];
+
+    [
+      ...savedProducts.map((product) => ({ product, source: copy.saved })),
+      ...recentProducts.map((product) => ({ product, source: copy.recent })),
+    ].forEach((item) => {
+      const key = getProductKey(item.product);
+
+      if (seen.has(key) || !productMatchesPreferences(item.product, preferences)) {
+        return;
+      }
+
+      seen.add(key);
+      items.push(item);
+    });
+
+    return items.slice(0, 5);
+  }, [copy.recent, copy.saved, preferences, recentProducts, savedProducts]);
+
+  const selectedQuantity =
+    typeof quantity === "number" && Number.isFinite(quantity) && quantity > 0
+      ? quantity
+      : null;
+  const selectedPortions = getProductPortionPresets(selectedProduct?.unit ?? "g");
+  const isSearching =
+    normalizedQuery.length >= 2 &&
+    (normalizedQuery !== debouncedQuery || productQuery.isFetching);
+
+  const addSelectedProduct = (product = selectedProduct, amount = selectedQuantity) => {
+    if (!product || amount === null) {
+      return;
+    }
+
+    dispatch(
+      addProduct({
+        product,
+        quantity: amount,
+        mealType,
+        origin: "manual",
+      })
+    );
+    dispatch(rememberRecentProduct(product));
+    setSelectedProduct(product);
+    setQuery(getProductDisplayName(product, appLanguage));
+    setFeedback(
+      `${copy.added}: ${getProductDisplayName(product, appLanguage)} +${formatProductPortion(
+        amount,
+        product.unit
+      )}`
+    );
+  };
+
+  const chooseProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setQuery(getProductDisplayName(product, appLanguage));
+    dispatch(rememberRecentProduct(product));
+  };
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 2, md: 3 },
+        borderRadius: 1,
+        border: "1px solid rgba(15, 23, 42, 0.08)",
+        background:
+          "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(240,253,250,0.92) 100%)",
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={1.2} alignItems="flex-start">
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              borderRadius: 1,
+              display: "grid",
+              placeItems: "center",
+              color: "#0f766e",
+              bgcolor: "rgba(20,184,166,0.1)",
+              flexShrink: 0,
+            }}
+          >
+            <Sparkles size={22} />
+          </Box>
+          <Stack spacing={0.4} sx={{ minWidth: 0 }}>
+            <Typography component="h2" variant="h5" sx={{ fontWeight: 950 }}>
+              {copy.title}
+            </Typography>
+            <Typography color="text.secondary">{copy.subtitle}</Typography>
+          </Stack>
+        </Stack>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) 150px auto" },
+            gap: 1,
+            alignItems: "start",
+          }}
+        >
+          <TextField
+            fullWidth
+            value={query}
+            label={copy.searchLabel}
+            placeholder={copy.searchPlaceholder}
+            autoComplete="off"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedProduct(null);
+            }}
+            InputProps={{
+              startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.7 }} />,
+              endAdornment: isSearching ? <CircularProgress size={18} /> : null,
+            }}
+          />
+          <TextField
+            type="number"
+            label={selectedProduct ? `${selectedProduct.unit}` : copy.grams}
+            value={quantity}
+            slotProps={{
+              htmlInput: {
+                inputMode: "decimal",
+                min: 0,
+                step: selectedProduct?.unit === "piece" ? 1 : 5,
+              },
+            }}
+            onFocus={(event) => event.target.select()}
+            onChange={(event) => {
+              const value = event.target.value;
+              const nextValue = Number(value);
+              setQuantity(
+                value === "" || !Number.isFinite(nextValue)
+                  ? ""
+                  : Math.max(0, nextValue)
+              );
+            }}
+          />
+          <Button
+            variant="contained"
+            startIcon={<Plus size={18} />}
+            onClick={() => addSelectedProduct()}
+            disabled={!selectedProduct || selectedQuantity === null}
+            sx={{ minHeight: 56, px: 2.4 }}
+          >
+            {copy.title}
+          </Button>
+        </Box>
+
+        {selectedProduct ? (
+          <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+            {selectedPortions.map((portion) => (
+              <Chip
+                key={portion}
+                label={formatProductPortion(portion, selectedProduct.unit)}
+                clickable
+                color={quantity === portion ? "primary" : "default"}
+                variant={quantity === portion ? "filled" : "outlined"}
+                onClick={() => setQuantity(portion)}
+              />
+            ))}
+            <Chip
+              label={`${copy.source}: ${selectedProduct.source}`}
+              variant="outlined"
+            />
+          </Stack>
+        ) : null}
+
+        {normalizedQuery.length < 2 ? (
+          <Typography color="text.secondary">{copy.empty}</Typography>
+        ) : null}
+
+        {productQuery.isError ? (
+          <Alert
+            severity="warning"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => onOpenTarget("search")}
+                sx={{ fontWeight: 800 }}
+              >
+                {copy.openSearch}
+              </Button>
+            }
+          >
+            {copy.unavailable}
+          </Alert>
+        ) : null}
+
+        {suggestions.length > 0 ? (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            {suggestions.map((product) => (
+              <Chip
+                key={getProductKey(product)}
+                label={getProductDisplayName(product, appLanguage)}
+                clickable
+                color={
+                  selectedProduct && getProductKey(selectedProduct) === getProductKey(product)
+                    ? "primary"
+                    : "default"
+                }
+                variant={
+                  selectedProduct && getProductKey(selectedProduct) === getProductKey(product)
+                    ? "filled"
+                    : "outlined"
+                }
+                onClick={() => chooseProduct(product)}
+              />
+            ))}
+          </Stack>
+        ) : null}
+
+        {quickProducts.length > 0 && !normalizedQuery ? (
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 800 }}>{copy.recent}</Typography>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {quickProducts.map(({ product, source }) => (
+                <Chip
+                  key={`${source}-${getProductKey(product)}`}
+                  label={`${getProductDisplayName(product, appLanguage)} · ${source}`}
+                  clickable
+                  variant="outlined"
+                  onClick={() => chooseProduct(product)}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        ) : null}
+
+        <Stack spacing={1}>
+          <Typography sx={{ fontWeight: 800 }}>{copy.quickModes}</Typography>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Button
+              variant="outlined"
+              startIcon={<Camera size={18} />}
+              onClick={() => onOpenTarget("photo")}
+            >
+              {copy.photo}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ScanBarcode size={18} />}
+              onClick={() => onOpenTarget("barcode")}
+            >
+              {copy.barcode}
+            </Button>
+            <Button variant="outlined" onClick={() => onOpenTarget("composer")}>
+              {copy.composer}
+            </Button>
+            <Button variant="text" onClick={() => onOpenTarget("search")}>
+              {copy.openSearch}
+            </Button>
+          </Stack>
+        </Stack>
+
+        {feedback ? <Alert severity="success">{feedback}</Alert> : null}
+      </Stack>
+    </Paper>
+  );
+};
+

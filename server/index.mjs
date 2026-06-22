@@ -130,6 +130,7 @@ const medicationReminderService = createMedicationReminderService({
 });
 const assistantAgent = createAssistantAgentService({
   stateService,
+  platformService,
   medicationReminderService,
   assistantMemoryRepository,
 });

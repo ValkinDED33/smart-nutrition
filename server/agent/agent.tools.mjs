@@ -1,4 +1,8 @@
-import { calculateMealTotalNutrients, createInitialWaterState } from "../lib/domain.mjs";
+import crypto from "node:crypto";
+import {
+  calculateMealTotalNutrients,
+  createInitialWaterState,
+} from "../lib/domain.mjs";
 
 const createDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
 
@@ -6,6 +10,22 @@ const toPositiveInteger = (value, fallback) => {
   const nextValue = Number(value);
   return Number.isFinite(nextValue) && nextValue > 0 ? Math.round(nextValue) : fallback;
 };
+
+const normalizeSearchQuery = (value) =>
+  String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
+
+const toMealType = (value) =>
+  value === "breakfast" || value === "lunch" || value === "dinner" || value === "snack"
+    ? value
+    : "snack";
+
+const createMealEntryId = () => `meal-${crypto.randomUUID()}`;
+
+const calculateEntryNutrients = (entry) =>
+  calculateMealTotalNutrients([entry]);
 
 const normalizeWaterGoal = (waterState) =>
   Math.min(
@@ -77,6 +97,7 @@ const createSnapshotSummary = async ({ user, stateService, now }) => {
 
 export const createAgentTools = ({
   stateService = null,
+  platformService = null,
   medicationReminderService = null,
   now = () => new Date(),
 } = {}) => {
@@ -107,6 +128,83 @@ export const createAgentTools = ({
       type: "water_added",
       amountMl: normalizedAmountMl,
       water: toWaterStatus(nextWaterState),
+    };
+  };
+
+  const searchProducts = async (_user, { productQuery, limit = 5 }) => {
+    if (!platformService?.listVisibleCatalogProducts) {
+      return { ok: false, code: "PRODUCT_SEARCH_TOOL_UNAVAILABLE" };
+    }
+
+    const search = normalizeSearchQuery(productQuery);
+
+    if (!search) {
+      return { ok: false, code: "PRODUCT_QUERY_REQUIRED" };
+    }
+
+    const products = await platformService.listVisibleCatalogProducts(_user, {
+      search,
+      limit: Math.max(1, Math.min(Number(limit) || 5, 8)),
+    });
+
+    return {
+      ok: true,
+      type: "product_search",
+      query: search,
+      products: Array.isArray(products) ? products.slice(0, 8) : [],
+    };
+  };
+
+  const addMeal = async (user, { productQuery, quantity, mealType }) => {
+    if (!stateService?.addMealEntries) {
+      return { ok: false, code: "MEAL_TOOL_UNAVAILABLE" };
+    }
+
+    const productResult = await searchProducts(user, {
+      productQuery,
+      limit: 4,
+    });
+
+    if (!productResult.ok) {
+      return productResult;
+    }
+
+    const product = productResult.products[0] ?? null;
+
+    if (!product) {
+      return {
+        ok: false,
+        code: "PRODUCT_NOT_FOUND",
+        query: productResult.query,
+      };
+    }
+
+    const normalizedQuantity = Math.min(toPositiveInteger(quantity, 100), 5000);
+    const entry = {
+      id: createMealEntryId(),
+      product,
+      quantity: normalizedQuantity,
+      mealType: toMealType(mealType),
+      eatenAt: now().toISOString(),
+      origin: "manual",
+    };
+
+    await stateService.addMealEntries(
+      user,
+      {
+        entries: [entry],
+      },
+      { source: "assistant-agent" }
+    );
+
+    return {
+      ok: true,
+      type: "meal_added",
+      entry,
+      product,
+      quantity: normalizedQuantity,
+      mealType: entry.mealType,
+      nutrients: calculateEntryNutrients(entry),
     };
   };
 
@@ -186,6 +284,8 @@ export const createAgentTools = ({
 
   return {
     addWater,
+    addMeal,
+    searchProducts,
     createMedicationReminder,
     getDayStatus,
     getWaterStatus,

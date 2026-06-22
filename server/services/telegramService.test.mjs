@@ -131,6 +131,30 @@ describe("telegramService", () => {
     ).toBeNull();
   });
 
+  it("creates Telegram-safe connect payloads that fit deep-link limits", () => {
+    const now = Date.UTC(2026, 5, 20, 10, 0, 0);
+    const { token } = createTelegramConnectToken({
+      userId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
+      secret: "secret",
+      ttlMs: 60_000,
+      now,
+    });
+
+    expect(token.length).toBeLessThanOrEqual(64);
+    expect(token).toMatch(/^[\w-]{1,64}$/);
+    expect(token).not.toContain(".");
+    expect(
+      verifyTelegramConnectToken({
+        token,
+        secret: "secret",
+        now: now + 1_000,
+      })
+    ).toEqual({
+      userId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
+      expiresAt: now + 60_000,
+    });
+  });
+
   it("stays disabled without Telegram config and does not send", async () => {
     const service = createTelegramService({
       config: createConfig({ telegramBotToken: null }),
@@ -177,8 +201,95 @@ describe("telegramService", () => {
       botUsername: "SmartNutritionAssistBot",
     });
     expect(link.url).toMatch(/^https:\/\/t\.me\/SmartNutritionAssistBot\?start=/);
+    const payload = new URL(link.url).searchParams.get("start");
+    expect(payload).toMatch(/^[\w-]{1,64}$/);
     expect(link.url).not.toContain("telegram-token");
     expect(repository.findUserById).toHaveBeenCalledWith("user-1");
+  });
+
+  it("links Telegram account from start payload and confirms success", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn((handler) => {
+        this.startHandler = handler;
+      });
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const token = createTelegramConnectToken({
+      userId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
+      secret: "test-jwt-secret",
+      ttlMs: 60_000,
+      now: Date.now(),
+    }).token;
+    const repository = createAuthRepository({
+      findUserById: vi.fn(async (userId) => ({
+        id: userId,
+        name: "Ihor",
+        role: "USER",
+        telegramChatId: null,
+        telegramConnectedAt: null,
+      })),
+      updateUserTelegramConnection: vi.fn(async ({ userId, telegramChatId }) => ({
+        id: userId,
+        name: "Ihor",
+        role: "USER",
+        telegramChatId,
+        telegramConnectedAt: "2026-06-20T10:01:00.000Z",
+      })),
+    });
+    const logger = { info: vi.fn(), warn: vi.fn() };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: repository,
+      logger,
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].startHandler({
+      payload: token,
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(repository.findUserById).toHaveBeenCalledWith(
+      "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c"
+    );
+    expect(repository.updateUserTelegramConnection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
+        telegramChatId: "42",
+      })
+    );
+    expect(repository.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "telegram.connected",
+        targetId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
+      })
+    );
+    expect(reply).toHaveBeenCalledWith("Telegram connected ✅");
+    expect(logger.info).toHaveBeenCalledWith(
+      "[telegram] connect payload verification result",
+      expect.objectContaining({
+        ok: true,
+      })
+    );
+
+    service.stop("test shutdown");
   });
 
   it("disconnects the current user through the repository", async () => {

@@ -21,6 +21,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["protein_help", "next_meal"];
   }
 
+  if (intent === "add_meal" || intent === "search_product") {
+    return ["day_status", "protein_help", "water_help"];
+  }
+
   if (intent === "create_medication_reminder") {
     return ["day_status", "coach_focus"];
   }
@@ -30,6 +34,7 @@ const getFollowUpsForIntent = (intent) => {
 
 export const createAssistantAgentService = ({
   stateService = null,
+  platformService = null,
   medicationReminderService = null,
   assistantMemoryRepository = null,
   logger = console,
@@ -37,6 +42,7 @@ export const createAssistantAgentService = ({
 } = {}) => {
   const tools = createAgentTools({
     stateService,
+    platformService,
     medicationReminderService,
     now,
   });
@@ -48,6 +54,14 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "create_medication_reminder") {
       return tools.createMedicationReminder(user, intent.entities);
+    }
+
+    if (intent.intent === "search_product") {
+      return tools.searchProducts(user, intent.entities);
+    }
+
+    if (intent.intent === "add_meal") {
+      return tools.addMeal(user, intent.entities);
     }
 
     if (intent.intent === "show_day_status") {

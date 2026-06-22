@@ -26,6 +26,27 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects meal logging with product and grams", () => {
+    expect(detectAgentIntent("добавь chicken breast 150 г на обед")).toMatchObject({
+      intent: "add_meal",
+      confidence: 0.9,
+      entities: {
+        productQuery: "chicken breast",
+        quantity: 150,
+        mealType: "lunch",
+      },
+    });
+  });
+
+  it("detects product search requests without adding food", () => {
+    expect(detectAgentIntent("найди Greek yogurt")).toMatchObject({
+      intent: "search_product",
+      entities: {
+        productQuery: "Greek yogurt",
+      },
+    });
+  });
+
   it("falls back to status intents for quick questions", () => {
     expect(detectAgentIntent("что по воде?", { quickQuestionId: "water_help" })).toMatchObject({
       intent: "show_water_status",

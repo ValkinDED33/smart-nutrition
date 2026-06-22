@@ -34,6 +34,23 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "meal_added") {
+    return {
+      userId: user?.id,
+      habits: ["logs meals through assistant"],
+      motivationTriggers: ["instant meal feedback"],
+      lastMood: "engaged",
+    };
+  }
+
+  if (toolResult.type === "product_search") {
+    return {
+      userId: user?.id,
+      habits: ["asks assistant to search foods"],
+      lastMood: "curious",
+    };
+  }
+
   if (toolResult.type === "day_status" || toolResult.type === "nutrition_status") {
     return {
       userId: user?.id,

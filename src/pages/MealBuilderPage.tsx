@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { RootState } from "../app/store";
+import { FoodCommandCenter } from "../features/meal/FoodCommandCenter";
 import { ProductSearch } from "../features/meal/ProductSearch";
 import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
 import { RecipeSection } from "../features/meal/RecipeSection";
@@ -234,6 +235,25 @@ const MealBuilderPage = () => {
     setActiveSection("scan");
   };
 
+  const openFoodCommandTarget = (
+    target: "search" | "photo" | "barcode" | "composer"
+  ) => {
+    if (target === "barcode") {
+      openScanner();
+      return;
+    }
+
+    setActiveSection("add");
+
+    if (target === "photo") {
+      handleInputModeChange("photo");
+      return;
+    }
+
+    handleInputModeChange("search");
+    setActiveAddTool(target === "composer" ? "composer" : "search");
+  };
+
   const sections = [
     { id: "day", label: copy.sections.day },
     { id: "add", label: copy.sections.add },
@@ -339,6 +359,11 @@ const MealBuilderPage = () => {
           />
         </Stack>
       </Paper>
+
+      <FoodCommandCenter
+        mealType={mealType}
+        onOpenTarget={openFoodCommandTarget}
+      />
 
       <SectionTabs
         sections={sections}

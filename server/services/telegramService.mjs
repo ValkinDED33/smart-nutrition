@@ -5,6 +5,11 @@ import { createTelegramMedicationReminderRuntime } from "./telegramMedicationRem
 
 const TELEGRAM_CONNECT_PURPOSE = "telegram_connect";
 const TELEGRAM_START_RETRY_DELAY_MS = 60_000;
+const TELEGRAM_CONNECT_COMPACT_PREFIX = "c1";
+const TELEGRAM_CONNECT_GENERIC_PREFIX = "g1";
+const TELEGRAM_CONNECT_SIGNATURE_LENGTH = 16;
+const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
+const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -23,8 +28,21 @@ const toSafeErrorMessage = (error) =>
 const base64UrlEncodeJson = (value) =>
   Buffer.from(JSON.stringify(value)).toString("base64url");
 
+const base64UrlEncodeString = (value) =>
+  Buffer.from(String(value)).toString("base64url");
+
+const base64UrlDecodeString = (value) =>
+  Buffer.from(String(value), "base64url").toString("utf8");
+
 const signPayload = (encodedPayload, secret) =>
   crypto.createHmac("sha256", secret).update(encodedPayload).digest("base64url");
+
+const signCompactPayload = (payload, secret) =>
+  crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex")
+    .slice(0, TELEGRAM_CONNECT_SIGNATURE_LENGTH);
 
 const timingSafeEqualString = (left, right) => {
   const leftBuffer = Buffer.from(String(left ?? ""));
@@ -38,6 +56,160 @@ const timingSafeEqualString = (left, right) => {
 
 const normalizeBotUsername = (value) =>
   toTrimmedString(value, "SmartNutritionBot").replace(/^@+/, "") || "SmartNutritionBot";
+
+const maskTelegramPayload = (value) => {
+  const payload = toTrimmedString(value);
+
+  if (!payload) {
+    return { length: 0, preview: "" };
+  }
+
+  return {
+    length: payload.length,
+    preview:
+      payload.length <= 18
+        ? payload
+        : `${payload.slice(0, 8)}...${payload.slice(-6)}`,
+  };
+};
+
+const toCompactUserId = (userId) => {
+  const match = /^user-([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i.exec(
+    String(userId ?? "")
+  );
+
+  return match ? match.slice(1).join("").toLowerCase() : null;
+};
+
+const fromCompactUserId = (value) => {
+  const normalized = String(value ?? "").toLowerCase();
+
+  if (!/^[0-9a-f]{32}$/.test(normalized)) {
+    return null;
+  }
+
+  return `user-${normalized.slice(0, 8)}-${normalized.slice(8, 12)}-${normalized.slice(
+    12,
+    16
+  )}-${normalized.slice(16, 20)}-${normalized.slice(20)}`;
+};
+
+const toBase36ExpiresAt = (value) =>
+  Math.floor(Number(value) / 1000).toString(36);
+
+const fromBase36ExpiresAt = (value) => {
+  const seconds = Number.parseInt(String(value ?? ""), 36);
+
+  return Number.isFinite(seconds) ? seconds * 1000 : NaN;
+};
+
+const createTelegramSafeConnectToken = ({ userId, secret, expiresAt }) => {
+  const compactUserId = toCompactUserId(userId);
+  const expiresAtBase36 = toBase36ExpiresAt(expiresAt);
+
+  if (compactUserId) {
+    const payload = `${compactUserId}_${expiresAtBase36}`;
+    const signature = signCompactPayload(
+      `${TELEGRAM_CONNECT_COMPACT_PREFIX}_${payload}`,
+      secret
+    );
+    return `${TELEGRAM_CONNECT_COMPACT_PREFIX}_${payload}_${signature}`;
+  }
+
+  const encodedUserId = base64UrlEncodeString(userId);
+  const payload = `${encodedUserId}_${expiresAtBase36}`;
+  const signature = signCompactPayload(
+    `${TELEGRAM_CONNECT_GENERIC_PREFIX}_${payload}`,
+    secret
+  );
+  const token = `${TELEGRAM_CONNECT_GENERIC_PREFIX}_${payload}_${signature}`;
+
+  return TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN.test(token) ? token : null;
+};
+
+const extractTelegramStartPayload = (ctx) => {
+  const candidates = [
+    ["payload", ctx?.payload],
+    ["startPayload", ctx?.startPayload],
+  ];
+
+  for (const [source, value] of candidates) {
+    const payload = toTrimmedString(value);
+
+    if (payload) {
+      return { payload, source };
+    }
+  }
+
+  const text = toTrimmedString(ctx?.message?.text ?? ctx?.update?.message?.text);
+  const match = /^\/start(?:@\w+)?(?:\s+(.+))?$/i.exec(text);
+  const payload = toTrimmedString(match?.[1]);
+
+  return payload ? { payload, source: "message.text" } : { payload: "", source: "none" };
+};
+
+const verifyCompactTelegramConnectToken = ({ token, secret, now }) => {
+  const parts = String(token ?? "").split("_");
+
+  if (parts.length < 4) {
+    return {
+      ok: false,
+      reason: "invalid_compact_shape",
+    };
+  }
+
+  const prefix = parts[0];
+  const signature = parts.at(-1);
+  const expiresAtBase36 = parts.at(-2);
+  const encodedUserId = parts.slice(1, -2).join("_");
+  const expectedSignature = signCompactPayload(
+    `${prefix}_${encodedUserId}_${expiresAtBase36}`,
+    secret
+  );
+
+  if (!timingSafeEqualString(signature, expectedSignature)) {
+    return {
+      ok: false,
+      reason: "signature_mismatch",
+      decoded: { prefix },
+    };
+  }
+
+  const expiresAt = fromBase36ExpiresAt(expiresAtBase36);
+
+  if (!Number.isFinite(expiresAt) || expiresAt <= now) {
+    return {
+      ok: false,
+      reason: "expired",
+      decoded: { prefix, expiresAt: Number.isFinite(expiresAt) ? expiresAt : null },
+    };
+  }
+
+  const userId =
+    prefix === TELEGRAM_CONNECT_COMPACT_PREFIX
+      ? fromCompactUserId(encodedUserId)
+      : base64UrlDecodeString(encodedUserId);
+
+  if (!userId) {
+    return {
+      ok: false,
+      reason: "invalid_user_id",
+      decoded: { prefix, expiresAt },
+    };
+  }
+
+  return {
+    ok: true,
+    userId,
+    expiresAt,
+    decoded: {
+      prefix,
+      userId,
+      expiresAt,
+      purpose: TELEGRAM_CONNECT_PURPOSE,
+    },
+  };
+};
 
 const formatNumber = (value, digits = 0) => {
   const numberValue = Number(value);
@@ -165,6 +337,15 @@ export const createTelegramConnectToken = ({
   now = Date.now(),
 }) => {
   const expiresAt = now + ttlMs;
+  const compactToken = createTelegramSafeConnectToken({ userId, secret, expiresAt });
+
+  if (compactToken) {
+    return {
+      token: compactToken,
+      expiresAt,
+    };
+  }
+
   const encodedPayload = base64UrlEncodeJson({
     sub: userId,
     purpose: TELEGRAM_CONNECT_PURPOSE,
@@ -180,25 +361,48 @@ export const createTelegramConnectToken = ({
   };
 };
 
-export const verifyTelegramConnectToken = ({
+export const verifyTelegramConnectTokenDetailed = ({
   token,
   secret,
   now = Date.now(),
 }) => {
-  if (typeof token !== "string" || !token.includes(".")) {
-    return null;
+  if (typeof token !== "string" || !token.trim()) {
+    return {
+      ok: false,
+      reason: "missing_token",
+    };
+  }
+
+  if (
+    token.startsWith(`${TELEGRAM_CONNECT_COMPACT_PREFIX}_`) ||
+    token.startsWith(`${TELEGRAM_CONNECT_GENERIC_PREFIX}_`)
+  ) {
+    return verifyCompactTelegramConnectToken({ token, secret, now });
+  }
+
+  if (!token.includes(".")) {
+    return {
+      ok: false,
+      reason: "invalid_legacy_shape",
+    };
   }
 
   const [encodedPayload, signature] = token.split(".");
 
   if (!encodedPayload || !signature) {
-    return null;
+    return {
+      ok: false,
+      reason: "invalid_legacy_parts",
+    };
   }
 
   const expectedSignature = signPayload(encodedPayload, secret);
 
   if (!timingSafeEqualString(signature, expectedSignature)) {
-    return null;
+    return {
+      ok: false,
+      reason: "signature_mismatch",
+    };
   }
 
   let payload = null;
@@ -206,7 +410,10 @@ export const verifyTelegramConnectToken = ({
   try {
     payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
   } catch {
-    return null;
+    return {
+      ok: false,
+      reason: "decode_failed",
+    };
   }
 
   if (
@@ -216,13 +423,39 @@ export const verifyTelegramConnectToken = ({
     typeof payload.exp !== "number" ||
     payload.exp * 1000 <= now
   ) {
-    return null;
+    return {
+      ok: false,
+      reason:
+        payload?.exp * 1000 <= now ? "expired" : "invalid_legacy_payload",
+      decoded: {
+        userId: typeof payload?.sub === "string" ? payload.sub : null,
+        expiresAt: typeof payload?.exp === "number" ? payload.exp * 1000 : null,
+        purpose: payload?.purpose ?? null,
+      },
+    };
   }
 
   return {
+    ok: true,
     userId: payload.sub,
     expiresAt: payload.exp * 1000,
+    decoded: {
+      userId: payload.sub,
+      expiresAt: payload.exp * 1000,
+      purpose: payload.purpose,
+    },
   };
+};
+
+export const verifyTelegramConnectToken = (payload) => {
+  const result = verifyTelegramConnectTokenDetailed(payload);
+
+  return result.ok
+    ? {
+        userId: result.userId,
+        expiresAt: result.expiresAt,
+      }
+    : null;
 };
 
 export const createTelegramService = ({
@@ -331,8 +564,17 @@ export const createTelegramService = ({
 
   const registerBotHandlers = (nextBot) => {
     nextBot.start(async (ctx) => {
-      const payloadToken = toTrimmedString(ctx.startPayload);
+      const { payload: payloadToken, source: payloadSource } =
+        extractTelegramStartPayload(ctx);
       const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
+
+      logger.info?.("[telegram] connect payload received", {
+        provider: "telegram",
+        chatId,
+        source: payloadSource,
+        hasPayload: Boolean(payloadToken),
+        payload: maskTelegramPayload(payloadToken),
+      });
 
       if (!payloadToken) {
         const connectedUser = chatId ? await getUserByTelegramChatId(chatId) : null;
@@ -359,17 +601,40 @@ export const createTelegramService = ({
         return;
       }
 
-      const verifiedToken = verifyTelegramConnectToken({
+      const verifiedToken = verifyTelegramConnectTokenDetailed({
         token: payloadToken,
         secret: config.jwtSecret,
       });
 
-      if (!verifiedToken) {
+      logger.info?.("[telegram] connect payload verification result", {
+        provider: "telegram",
+        ok: Boolean(verifiedToken.ok),
+        reason: verifiedToken.reason ?? null,
+        decoded: verifiedToken.decoded
+          ? {
+              prefix: verifiedToken.decoded.prefix ?? "legacy",
+              purpose: verifiedToken.decoded.purpose ?? null,
+              userId: verifiedToken.decoded.userId ?? null,
+              expiresAt: verifiedToken.decoded.expiresAt
+                ? new Date(verifiedToken.decoded.expiresAt).toISOString()
+                : null,
+            }
+          : null,
+      });
+
+      if (!verifiedToken.ok) {
         await ctx.reply("Ссылка подключения истекла или недействительна. Создайте новую в профиле.");
         return;
       }
 
       const user = await authRepository.findUserById(verifiedToken.userId);
+
+      logger.info?.("[telegram] connect user lookup result", {
+        provider: "telegram",
+        userId: verifiedToken.userId,
+        found: Boolean(user),
+        chatId,
+      });
 
       if (!user || !chatId) {
         await ctx.reply("Не удалось найти аккаунт Smart Nutrition для этой ссылки.");
@@ -382,20 +647,25 @@ export const createTelegramService = ({
         telegramConnectedAt: new Date().toISOString(),
       });
 
+      logger.info?.("[telegram] connect database update result", {
+        provider: "telegram",
+        userId: user.id,
+        linkedUserId: updatedUser?.id ?? null,
+        chatId,
+        updated: Boolean(updatedUser),
+        persisted:
+          String(updatedUser?.telegramChatId ?? "") === chatId ||
+          String(updatedUser?.telegramId ?? "") === chatId,
+        connectedAt: updatedUser?.telegramConnectedAt ?? null,
+      });
+
       await writeAuditLog({
         user: updatedUser ?? user,
         action: "telegram.connected",
         details: { provider: "telegram" },
       });
 
-      await ctx.reply(
-        [
-          "Telegram успешно подключён к Smart Nutrition.",
-          "",
-          "Теперь можно использовать /help, /today, /water, /nutrition и /meds.",
-          "Для лекарства: /addmed Вітамін D 1 капсула щодня о 09:00",
-        ].join("\n")
-      );
+      await ctx.reply("Telegram connected ✅");
     });
 
     nextBot.command("help", async (ctx) => {
@@ -512,6 +782,16 @@ export const createTelegramService = ({
       userId: user.id,
       secret: config.jwtSecret,
       ttlMs: config.telegramConnectTokenTtlMs,
+    });
+
+    logger.info?.("[telegram] connect link created", {
+      provider: "telegram",
+      userId: user.id,
+      botUsername,
+      token: maskTelegramPayload(token),
+      telegramSafePayload: TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN.test(token),
+      maxPayloadLength: TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH,
+      expiresAt: new Date(expiresAt).toISOString(),
     });
 
     return {

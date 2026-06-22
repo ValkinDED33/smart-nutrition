@@ -22,8 +22,33 @@ const formatReminderTimes = (reminder) =>
 const getMedicationReminderTitle = (reminder) =>
   String(reminder?.title ?? reminder?.name ?? "нагадування").trim() || "нагадування";
 
+const getProductTitle = (product) =>
+  [product?.brand, product?.name]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .trim() || "продукт";
+
+const formatMealType = (mealType) => {
+  if (mealType === "breakfast") return "сніданок";
+  if (mealType === "lunch") return "обід";
+  if (mealType === "dinner") return "вечеря";
+  return "перекус";
+};
+
 export const buildAgentReply = ({ intent, toolResult }) => {
   if (!toolResult?.ok) {
+    if (intent.intent === "add_meal" || intent.intent === "search_product") {
+      if (toolResult?.code === "PRODUCT_NOT_FOUND") {
+        return [
+          `Я не знайшов продукт "${toolResult.query ?? intent.entities?.productQuery}" в онлайн-базі.`,
+          "Відкрийте пошук їжі або додайте продукт у спільну базу, щоб я міг використовувати його наступного разу.",
+        ].join("\n");
+      }
+
+      return "Я зрозумів дію з їжею, але зараз не зміг безпечно виконати пошук у каталозі.";
+    }
+
     if (intent.intent === "create_medication_reminder") {
       return [
         "Я не зміг безпечно розібрати розклад ліків.",
@@ -48,6 +73,46 @@ export const buildAgentReply = ({ intent, toolResult }) => {
       remaining > 0
         ? `До цілі лишилось приблизно ${formatNumber(remaining)} мл.`
         : "Ціль по воді вже закрита. Гарний ритм.",
+    ].join("\n");
+  }
+
+  if (toolResult.type === "product_search") {
+    const products = Array.isArray(toolResult.products) ? toolResult.products : [];
+
+    if (products.length === 0) {
+      return [
+        `Я пошукав "${toolResult.query}", але не знайшов готовий продукт.`,
+        "Можна додати його в спільну базу через пошук їжі.",
+      ].join("\n");
+    }
+
+    return [
+      `Знайшов ${products.length} варіант(и) для "${toolResult.query}":`,
+      ...products.slice(0, 5).map((product, index) =>
+        `${index + 1}. ${getProductTitle(product)} — ${formatNumber(
+          product?.nutrients?.calories
+        )} ккал / 100 ${product?.unit ?? "г"}`
+      ),
+      "Напишіть: додай назву і кількість, наприклад “додай chicken breast 150 г”.",
+    ].join("\n");
+  }
+
+  if (toolResult.type === "meal_added") {
+    const product = toolResult.product;
+    const nutrients = toolResult.nutrients ?? {};
+
+    return [
+      `Готово 🥗 Додав ${getProductTitle(product)} — ${formatNumber(
+        toolResult.quantity
+      )} ${product?.unit ?? "г"}.`,
+      `Прийом: ${formatMealType(toolResult.mealType)}.`,
+      `Орієнтовно: ${formatNumber(nutrients.calories)} ккал, білок ${formatNumber(
+        nutrients.protein,
+        1
+      )} г, жири ${formatNumber(nutrients.fat, 1)} г, вуглеводи ${formatNumber(
+        nutrients.carbs,
+        1
+      )} г.`,
     ].join("\n");
   }
 

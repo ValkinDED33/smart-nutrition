@@ -55,7 +55,6 @@
     "src/integration/runtime/index.ts",
     "src/integration/shared/errors.ts",
     "src/integration/shared/index.ts",
-    "src/pages/FoodPage.tsx",
     "src/pages/index.ts",
     "src/pages/WaterPage.tsx",
     "src/processes/index.ts",
