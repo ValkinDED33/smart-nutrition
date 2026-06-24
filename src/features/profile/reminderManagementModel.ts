@@ -59,3 +59,36 @@ export const sortReminders = (items: ReminderItem[]) =>
 
     return aTime - bTime;
   });
+
+const fallbackReminderTimeZone = "Europe/Warsaw";
+
+export const formatReminderDateTime = (
+  reminder: Pick<ReminderItem, "nextRunAt" | "timezone">,
+  locale: string
+) => {
+  if (!reminder.nextRunAt) {
+    return "";
+  }
+
+  const date = new Date(reminder.nextRunAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const timeZone = reminder.timezone.trim() || fallbackReminderTimeZone;
+  const options: Intl.DateTimeFormatOptions = {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone,
+  };
+
+  try {
+    return new Intl.DateTimeFormat(locale, options).format(date);
+  } catch {
+    return new Intl.DateTimeFormat(locale, {
+      ...options,
+      timeZone: fallbackReminderTimeZone,
+    }).format(date);
+  }
+};

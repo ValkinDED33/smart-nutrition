@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildMedicationReminderCreatedMessage,
   buildMedicationReminderListMessage,
   buildReminderListMessage,
+  buildTaskReminderCreatedMessage,
   createTelegramMedicationReminderRuntime,
 } from "./telegramMedicationReminders.mjs";
 
@@ -54,6 +56,27 @@ describe("telegramMedicationReminders", () => {
     expect(buildReminderListMessage([createReminder(), taskReminder])).toContain(
       "Задача: Подзвонити лікарю"
     );
+  });
+
+  it("formats next reminder time in the reminder timezone instead of server UTC", () => {
+    const reminder = createReminder({
+      times: ["10:00"],
+      timezone: "Europe/Warsaw",
+      nextRunAt: "2026-06-23T08:00:00.000Z",
+    });
+
+    expect(buildMedicationReminderCreatedMessage(reminder)).toContain(
+      "Найближче нагадування: 23.06.2026, 10:00:00"
+    );
+    expect(
+      buildTaskReminderCreatedMessage({
+        ...reminder,
+        type: "task",
+        title: "Подзвонити лікарю",
+        dose: "",
+        repeat: "once",
+      })
+    ).toContain("Найближче нагадування: 23.06.2026, 10:00:00");
   });
 
   it("creates a reminder through /addmed and writes an audit log", async () => {
@@ -419,5 +442,293 @@ describe("telegramMedicationReminders", () => {
       })
     );
     expect(ctx.answerCbQuery).toHaveBeenCalledWith("Записано: зроблено.");
+  });
+
+  it("shows reminder list with management buttons from natural text", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({
+      id: "task-call",
+      type: "task",
+      title: "Подзвонити лікарю",
+      dose: "",
+      repeat: "once",
+      timezone: "Europe/Warsaw",
+    });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      message: { text: "что у меня по напоминаниям" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.text(ctx, vi.fn(async () => {}));
+
+    expect(ctx.reply.mock.calls[0][0]).toContain("Активні нагадування");
+    expect(ctx.reply.mock.calls[1][0]).toContain("Подзвонити лікарю");
+    expect(ctx.reply.mock.calls[1][1].reply_markup.inline_keyboard.flat()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ callback_data: "rem:done:task-call" }),
+        expect.objectContaining({ callback_data: "rem:snooze15:task-call" }),
+        expect.objectContaining({ callback_data: "rem:edit:task-call" }),
+        expect.objectContaining({ callback_data: "rem:pause:task-call" }),
+        expect.objectContaining({ callback_data: "rem:delete:task-call" }),
+      ])
+    );
+  });
+
+  it("runs a stateful edit flow from inline buttons", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({ id: "med-magnesium", title: "Магній" });
+    const updatedReminder = createReminder({
+      id: "med-magnesium",
+      title: "Магній",
+      times: ["22:00"],
+    });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      updateReminderSchedule: vi.fn(async () => ({
+        ok: true,
+        reminder: updatedReminder,
+        user,
+      })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const callbackCtx = {
+      chat: { id: 123 },
+      callbackQuery: { data: "rem:edit:med-magnesium" },
+      answerCbQuery: vi.fn(async () => {}),
+      reply: vi.fn(async () => {}),
+    };
+    const textCtx = {
+      chat: { id: 123 },
+      message: { text: "22:00" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.callback_query(callbackCtx);
+    await events.text(textCtx, vi.fn(async () => {}));
+
+    expect(callbackCtx.reply.mock.calls[0][0]).toContain("Що змінити");
+    expect(callbackCtx.reply.mock.calls[0][0]).toContain("/settime med-magnesium 22:00");
+    expect(reminderService.updateReminderSchedule).toHaveBeenCalledWith(
+      user,
+      "med-magnesium",
+      "22:00"
+    );
+    expect(textCtx.reply.mock.calls[0][0]).toContain("оновив час");
+    expect(textCtx.reply.mock.calls[0][0]).toContain("22:00");
+  });
+
+  it("pauses and resumes reminders through inline buttons", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({ id: "med-magnesium", title: "Магній" });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      pauseReminder: vi.fn(async () => ({ ok: true, reminder, user })),
+      resumeReminder: vi.fn(async () => ({ ok: true, reminder, user })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+
+    runtime.registerHandlers(bot);
+    await events.callback_query({
+      callbackQuery: { data: "rem:pause:med-magnesium" },
+      answerCbQuery: vi.fn(async () => {}),
+    });
+    await events.callback_query({
+      callbackQuery: { data: "rem:resume:med-magnesium" },
+      answerCbQuery: vi.fn(async () => {}),
+    });
+
+    expect(reminderService.pauseReminder).toHaveBeenCalledWith(
+      user,
+      "med-magnesium",
+      expect.any(Date)
+    );
+    expect(reminderService.resumeReminder).toHaveBeenCalledWith(
+      user,
+      "med-magnesium",
+      expect.any(Date)
+    );
+  });
+
+  it("asks for confirmation before deleting and then deletes from storage", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({ id: "med-vitamin-d", title: "Вітамін D" });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      deleteReminder: vi.fn(async () => ({ ok: true, reminder, user })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const deleteCtx = {
+      callbackQuery: { data: "rem:delete:med-vitamin-d" },
+      answerCbQuery: vi.fn(async () => {}),
+      reply: vi.fn(async () => {}),
+    };
+    const confirmCtx = {
+      callbackQuery: { data: "rem:confirm_delete:med-vitamin-d" },
+      answerCbQuery: vi.fn(async () => {}),
+      editMessageReplyMarkup: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.callback_query(deleteCtx);
+    await events.callback_query(confirmCtx);
+
+    expect(deleteCtx.reply.mock.calls[0][0]).toContain("Видалити нагадування");
+    expect(reminderService.deleteReminder).toHaveBeenCalledWith(
+      user,
+      "med-vitamin-d",
+      expect.any(Date)
+    );
+    expect(confirmCtx.answerCbQuery).toHaveBeenCalledWith("Нагадування видалено.");
+  });
+
+  it("snoozes reminders for 15 minutes from Telegram buttons", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({ id: "task-call", type: "task" });
+    const reminderService = {
+      snoozeReminder: vi.fn(async () => ({ ok: true, reminder, user })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      callbackQuery: { data: "rem:snooze15:task-call" },
+      answerCbQuery: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.callback_query(ctx);
+
+    expect(reminderService.snoozeReminder).toHaveBeenCalledWith(
+      user,
+      "task-call",
+      15,
+      expect.any(Date)
+    );
+    expect(ctx.answerCbQuery).toHaveBeenCalledWith("Нагадаю через 15 хвилин.");
+  });
+
+  it("updates a named reminder from natural text", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({ id: "med-magnesium", title: "Магній" });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      updateReminderSchedule: vi.fn(async () => ({
+        ok: true,
+        reminder: createReminder({ ...reminder, times: ["22:00"] }),
+        user,
+      })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      message: { text: "измени магній на 22:00" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.text(ctx, vi.fn(async () => {}));
+
+    expect(reminderService.updateReminderSchedule).toHaveBeenCalledWith(
+      user,
+      "med-magnesium",
+      "измени магній на 22:00"
+    );
+  });
+
+  it("updates a reminder through restart-safe /settime command without edit session memory", async () => {
+    const { bot, commands } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123" };
+    const reminder = createReminder({
+      id: "med-magnesium",
+      title: "Магній",
+      times: ["22:00"],
+    });
+    const reminderService = {
+      updateReminderSchedule: vi.fn(async () => ({
+        ok: true,
+        reminder,
+        user,
+      })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      message: { text: "/settime med-magnesium 22:00" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await commands.settime(ctx);
+
+    expect(reminderService.updateReminderSchedule).toHaveBeenCalledWith(
+      user,
+      "med-magnesium",
+      "22:00"
+    );
+    expect(ctx.reply.mock.calls[0][0]).toContain("оновив час");
   });
 });

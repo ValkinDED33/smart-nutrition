@@ -22,9 +22,8 @@ import {
   type ReminderType,
 } from "@shared/api/reminders";
 import {
+  formatReminderDateTime,
   getReminderPrimaryAction,
-  getReminderPrimaryActionLabelKey,
-  getReminderQuantityLabelKey,
   isMedicationLikeReminderType,
   reminderTypeOptions,
   sortReminders,
@@ -157,28 +156,25 @@ const reminderCopy = {
   },
 } as const;
 
-const formatDateTime = (value: string | null, locale: string) => {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-};
-
 const localeByLanguage = {
   uk: "uk-UA",
   pl: "pl-PL",
   en: "en-US",
 } as const;
+
+const getReminderCopy = (language: keyof typeof reminderCopy) => {
+  if (language === "pl") return reminderCopy.pl;
+  if (language === "en") return reminderCopy.en;
+
+  return reminderCopy.uk;
+};
+
+const getReminderLocale = (language: keyof typeof localeByLanguage) => {
+  if (language === "pl") return localeByLanguage.pl;
+  if (language === "en") return localeByLanguage.en;
+
+  return localeByLanguage.uk;
+};
 
 const getReminderTypeLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
@@ -222,10 +218,40 @@ const getReminderIcon = (reminderType: ReminderType) => {
   return <ListChecks size={14} />;
 };
 
+const getReminderQuantityLabel = (
+  copy: (typeof reminderCopy)[keyof typeof reminderCopy],
+  reminderType: ReminderType
+) => {
+  if (isMedicationLikeReminderType(reminderType)) {
+    return copy.dose;
+  }
+
+  if (reminderType === "water") {
+    return copy.portion;
+  }
+
+  return "";
+};
+
+const getReminderPrimaryActionLabel = (
+  copy: (typeof reminderCopy)[keyof typeof reminderCopy],
+  reminderType: ReminderType
+) => {
+  if (isMedicationLikeReminderType(reminderType)) {
+    return copy.taken;
+  }
+
+  if (reminderType === "water") {
+    return copy.waterLogged;
+  }
+
+  return copy.done;
+};
+
 export const ReminderManagementCard = () => {
   const { appLanguage } = useLanguage();
-  const copy = reminderCopy[appLanguage];
-  const locale = localeByLanguage[appLanguage];
+  const copy = getReminderCopy(appLanguage);
+  const locale = getReminderLocale(appLanguage);
   const [items, setItems] = useState<ReminderItem[]>([]);
   const [type, setType] = useState<ReminderType>("task");
   const [text, setText] = useState("");
@@ -418,8 +444,8 @@ export const ReminderManagementCard = () => {
             {sortedItems.map((reminder) => {
               const isBusy = busyReminderId === reminder.id;
               const primaryAction: ReminderAction = getReminderPrimaryAction(reminder.type);
-              const primaryActionLabel = copy[getReminderPrimaryActionLabelKey(reminder.type)];
-              const quantityLabelKey = getReminderQuantityLabelKey(reminder.type);
+              const primaryActionLabel = getReminderPrimaryActionLabel(copy, reminder.type);
+              const quantityLabel = getReminderQuantityLabel(copy, reminder.type);
 
               return (
                 <Box
@@ -456,13 +482,13 @@ export const ReminderManagementCard = () => {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {reminder.times.join(", ")}
-                          {reminder.dose && quantityLabelKey
-                            ? ` · ${copy[quantityLabelKey]}: ${reminder.dose}`
+                          {reminder.dose && quantityLabel
+                            ? ` · ${quantityLabel}: ${reminder.dose}`
                             : ""}
                         </Typography>
                         {reminder.nextRunAt && (
                           <Typography variant="body2" color="text.secondary">
-                            {copy.next}: {formatDateTime(reminder.nextRunAt, locale)}
+                            {copy.next}: {formatReminderDateTime(reminder, locale)}
                           </Typography>
                         )}
                       </Stack>

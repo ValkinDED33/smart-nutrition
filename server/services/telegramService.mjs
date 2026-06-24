@@ -10,6 +10,20 @@ const TELEGRAM_CONNECT_GENERIC_PREFIX = "g1";
 const TELEGRAM_CONNECT_SIGNATURE_LENGTH = 16;
 const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
 const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
+const TELEGRAM_NOT_CONNECTED_MESSAGE =
+  "Telegram ещё не подключён. Откройте профиль Smart Nutrition и нажмите Start по персональной ссылке.";
+const TELEGRAM_BOT_COMMANDS = [
+  { command: "help", description: "Що вміє Smart Nutrition AI" },
+  { command: "today", description: "Підсумок дня" },
+  { command: "nutrition", description: "Харчування і нутрієнти" },
+  { command: "water", description: "Вода сьогодні" },
+  { command: "reminders", description: "Reminders / Tasks" },
+  { command: "addtask", description: "Додати задачу" },
+  { command: "addmed", description: "Додати нагадування про ліки" },
+  { command: "settime", description: "Змінити час нагадування" },
+  { command: "profile", description: "Підключений акаунт" },
+  { command: "disconnect", description: "Відключити Telegram" },
+];
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -541,7 +555,7 @@ export const createTelegramService = ({
     const user = chatId ? await getUserByTelegramChatId(chatId) : null;
 
     if (!user) {
-      await ctx.reply("Telegram ще не підключено. Підключіть його з профілю Smart Nutrition.");
+      await ctx.reply(TELEGRAM_NOT_CONNECTED_MESSAGE);
       return null;
     }
 
@@ -664,6 +678,9 @@ export const createTelegramService = ({
         telegramChatId: chatId,
         telegramConnectedAt: new Date().toISOString(),
       });
+      const telegramPersisted =
+        String(updatedUser?.telegramChatId ?? "") === chatId ||
+        String(updatedUser?.telegramId ?? "") === chatId;
 
       logger.info?.("[telegram] connect database update result", {
         provider: "telegram",
@@ -671,14 +688,26 @@ export const createTelegramService = ({
         linkedUserId: updatedUser?.id ?? null,
         chatId: maskTelegramChatId(chatId),
         updated: Boolean(updatedUser),
-        persisted:
-          String(updatedUser?.telegramChatId ?? "") === chatId ||
-          String(updatedUser?.telegramId ?? "") === chatId,
+        persisted: telegramPersisted,
         connectedAt: updatedUser?.telegramConnectedAt ?? null,
       });
 
+      if (!updatedUser || !telegramPersisted) {
+        logger.warn?.("[telegram] connect database update failed", {
+          provider: "telegram",
+          userId: user.id,
+          chatId: maskTelegramChatId(chatId),
+          updated: Boolean(updatedUser),
+          persisted: telegramPersisted,
+        });
+        await ctx.reply(
+          "Не удалось сохранить подключение Telegram. Попробуйте создать новую ссылку в профиле."
+        );
+        return;
+      }
+
       await writeAuditLog({
-        user: updatedUser ?? user,
+        user: updatedUser,
         action: "telegram.connected",
         details: { provider: "telegram" },
       });
@@ -707,7 +736,7 @@ export const createTelegramService = ({
       const user = chatId ? await getUserByTelegramChatId(chatId) : null;
 
       if (!user) {
-        await ctx.reply("Telegram ещё не подключён. Подключите его из профиля Smart Nutrition.");
+        await ctx.reply(TELEGRAM_NOT_CONNECTED_MESSAGE);
         return;
       }
 
@@ -897,6 +926,18 @@ export const createTelegramService = ({
     startRetryTimeout.unref?.();
   };
 
+  const configureBotCommands = async (currentBot) => {
+    try {
+      await currentBot.telegram?.setMyCommands?.(TELEGRAM_BOT_COMMANDS);
+    } catch (error) {
+      logger.warn?.("[telegram] set commands failed", {
+        provider: "telegram",
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+    }
+  };
+
   const handlePollingStarted = () => {
     launched = true;
     lastStartedAt = new Date().toISOString();
@@ -926,7 +967,10 @@ export const createTelegramService = ({
     clearStartRetry();
     lastStartAttemptAt = new Date().toISOString();
 
-    launchPromise = getBot()
+    const currentBot = getBot();
+    await configureBotCommands(currentBot);
+
+    launchPromise = currentBot
       .launch({ dropPendingUpdates: false }, handlePollingStarted)
       .then(() => {
         if (!isStopping) {

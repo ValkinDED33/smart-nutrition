@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { ReminderItem } from "@shared/api/reminders";
 import {
+  formatReminderDateTime,
   getReminderPrimaryAction,
   getReminderPrimaryActionLabelKey,
   getReminderQuantityLabelKey,
   sortReminders,
   toReminderType,
 } from "./reminderManagementModel";
+
+const testTimestamp = "2026-06-23T08:00:00.000Z";
 
 const createReminder = (overrides: Partial<ReminderItem>): ReminderItem => ({
   id: "reminder-1",
@@ -20,8 +23,8 @@ const createReminder = (overrides: Partial<ReminderItem>): ReminderItem => ({
   active: true,
   nextRunAt: null,
   lastSentAt: null,
-  createdAt: "2026-06-23T08:00:00.000Z",
-  updatedAt: "2026-06-23T08:00:00.000Z",
+  createdAt: testTimestamp,
+  updatedAt: testTimestamp,
   events: [],
   ...overrides,
 });
@@ -58,5 +61,14 @@ describe("reminderManagementModel", () => {
     ]);
 
     expect(sorted.map((item) => item.id)).toEqual(["first", "second", "no-next"]);
+  });
+
+  it("formats next run in the reminder timezone", () => {
+    const reminder = createReminder({
+      timezone: "Europe/Warsaw",
+      nextRunAt: testTimestamp,
+    });
+
+    expect(formatReminderDateTime(reminder, "uk-UA")).toContain("10:00");
   });
 });

@@ -660,6 +660,114 @@ export const createMedicationReminderService = ({
     return { ok: true, reminder: updatedReminder, user: updatedUser };
   };
 
+  const pauseReminder = async (user, reminderId, now = new Date()) => {
+    const reminders = getUserReminders(user);
+    const reminder = reminders.find((item) => item.id === reminderId);
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    const updatedReminder = addReminderEvent(
+      { ...reminder, active: false, nextRunAt: null },
+      "paused",
+      now,
+      reminder.nextRunAt
+    );
+    const updatedReminders = upsertReminder(reminders, updatedReminder);
+    const updatedUser = await persistReminders(user, updatedReminders);
+
+    return {
+      ok: true,
+      reminder: updatedReminder,
+      user: updatedUser ?? { ...user, medicationReminders: updatedReminders },
+    };
+  };
+
+  const resumeReminder = async (user, reminderId, now = new Date()) => {
+    const reminders = getUserReminders(user);
+    const reminder = reminders.find((item) => item.id === reminderId);
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    const resumedReminder = addReminderEvent(
+      { ...reminder, active: true, nextRunAt: null },
+      "resumed",
+      now,
+      reminder.nextRunAt
+    );
+    const updatedReminder = {
+      ...resumedReminder,
+      nextRunAt: calculateNextMedicationRunAt(resumedReminder, {
+        from: now,
+        includeNow: true,
+      }),
+    };
+
+    if (!updatedReminder.nextRunAt) {
+      return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
+    }
+
+    const updatedReminders = upsertReminder(reminders, updatedReminder);
+    const updatedUser = await persistReminders(user, updatedReminders);
+
+    return {
+      ok: true,
+      reminder: updatedReminder,
+      user: updatedUser ?? { ...user, medicationReminders: updatedReminders },
+    };
+  };
+
+  const deleteReminder = async (user, reminderId) => {
+    const reminders = getUserReminders(user);
+    const reminder = reminders.find((item) => item.id === reminderId);
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    const updatedReminders = reminders.filter((item) => item.id !== reminderId);
+    const updatedUser = await persistReminders(user, updatedReminders);
+
+    return {
+      ok: true,
+      reminder: { ...reminder, active: false, nextRunAt: null },
+      user: updatedUser ?? { ...user, medicationReminders: updatedReminders },
+    };
+  };
+
+  const snoozeReminder = async (user, reminderId, minutes = snoozeMinutes, now = new Date()) => {
+    const safeMinutes = Number(minutes);
+
+    if (!Number.isFinite(safeMinutes) || safeMinutes < 1 || safeMinutes > 24 * 60) {
+      return { ok: false, code: "REMINDER_SNOOZE_INVALID" };
+    }
+
+    const reminders = getUserReminders(user);
+    const reminder = reminders.find((item) => item.id === reminderId);
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    const nextReminder = addReminderEvent(reminder, "snoozed", now, reminder.nextRunAt);
+    const updatedReminder = {
+      ...nextReminder,
+      active: true,
+      nextRunAt: new Date(now.getTime() + safeMinutes * 60_000).toISOString(),
+    };
+    const updatedReminders = upsertReminder(reminders, updatedReminder);
+    const updatedUser = await persistReminders(user, updatedReminders);
+
+    return {
+      ok: true,
+      reminder: updatedReminder,
+      user: updatedUser ?? { ...user, medicationReminders: updatedReminders },
+    };
+  };
+
   const updateReminderSchedule = async (user, reminderId, textOrTimes, now = new Date()) => {
     const reminders = getUserReminders(user);
     const reminder = reminders.find((item) => item.id === reminderId);
@@ -801,6 +909,10 @@ export const createMedicationReminderService = ({
     createHabitReminderFromText,
     createTaskReminderFromText,
     deactivateReminder,
+    pauseReminder,
+    resumeReminder,
+    deleteReminder,
+    snoozeReminder,
     updateReminderSchedule,
     updateLatestReminderSchedule,
     recordDoseAction,

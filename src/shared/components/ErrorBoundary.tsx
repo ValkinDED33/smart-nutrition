@@ -12,6 +12,7 @@ import {
   removeSessionStorageItem,
   setSessionStorageItem,
   shouldAttemptStaleBuildRecovery,
+  shouldRecoverOnManualRetry,
   STALE_BUILD_RECOVERY_KEY,
   STALE_BUILD_RECOVERY_TTL_MS,
   type ErrorRecoveryDiagnostic,
@@ -123,6 +124,11 @@ class ErrorBoundaryInner extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    if (shouldRecoverOnManualRetry(this.state.diagnostic)) {
+      this.handleReload();
+      return;
+    }
+
     this.setState({
       diagnostic: null,
       hasError: false,

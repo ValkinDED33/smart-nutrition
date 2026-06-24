@@ -71,6 +71,21 @@ export const createReminderService = (options = {}) => {
     return legacyReminderService.recordReminderAction(user, reminderId, reminderAction, now);
   };
 
+  const pauseReminder = (user, reminderId, now = new Date()) =>
+    legacyReminderService.pauseReminder(user, reminderId, now);
+
+  const resumeReminder = (user, reminderId, now = new Date()) =>
+    legacyReminderService.resumeReminder(user, reminderId, now);
+
+  const deleteReminder = (user, reminderId, now = new Date()) =>
+    legacyReminderService.deleteReminder(user, reminderId, now);
+
+  const snoozeReminder = (user, reminderId, minutes = 15, now = new Date()) =>
+    legacyReminderService.snoozeReminder(user, reminderId, minutes, now);
+
+  const updateReminderSchedule = (user, reminderId, textOrTimes, now = new Date()) =>
+    legacyReminderService.updateReminderSchedule(user, reminderId, textOrTimes, now);
+
   return {
     ...legacyReminderService,
     listReminders,
@@ -84,6 +99,11 @@ export const createReminderService = (options = {}) => {
     createHabitReminderFromText: legacyReminderService.createHabitReminderFromText,
     recordMedicationAction: legacyReminderService.recordDoseAction,
     recordReminderAction,
+    pauseReminder,
+    resumeReminder,
+    deleteReminder,
+    snoozeReminder,
+    updateReminderSchedule,
     getStatus: () => ({
       enabled: Boolean(options.authRepository?.updateUserMedicationReminders),
       storageKey: BACKWARD_COMPATIBLE_STORAGE_KEY,

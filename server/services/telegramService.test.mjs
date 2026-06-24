@@ -302,6 +302,89 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("does not confirm Telegram connection when database update is not persisted", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn((handler) => {
+        this.startHandler = handler;
+      });
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const token = createTelegramConnectToken({
+      userId: "user-2b7f6f5c-5e74-4df4-91c7-56af99338f11",
+      secret: "test-jwt-secret",
+      ttlMs: 60_000,
+      now: Date.now(),
+    }).token;
+    const repository = createAuthRepository({
+      findUserById: vi.fn(async (userId) => ({
+        id: userId,
+        name: "Ihor",
+        role: "USER",
+        telegramChatId: null,
+        telegramConnectedAt: null,
+      })),
+      updateUserTelegramConnection: vi.fn(async ({ userId }) => ({
+        id: userId,
+        name: "Ihor",
+        role: "USER",
+        telegramChatId: null,
+        telegramConnectedAt: null,
+      })),
+    });
+    const logger = { info: vi.fn(), warn: vi.fn() };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: repository,
+      logger,
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].startHandler({
+      payload: token,
+      chat: { id: 123456789 },
+      reply,
+    });
+
+    expect(reply).not.toHaveBeenCalledWith("Telegram connected ✅");
+    expect(reply).toHaveBeenCalledWith(
+      "Не удалось сохранить подключение Telegram. Попробуйте создать новую ссылку в профиле."
+    );
+    expect(repository.createAuditLog).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[telegram] connect database update failed",
+      expect.objectContaining({
+        provider: "telegram",
+        updated: true,
+        persisted: false,
+        chatId: {
+          present: true,
+          length: 9,
+          suffix: "6789",
+        },
+      })
+    );
+    expect(JSON.stringify(logger.warn.mock.calls)).not.toContain("123456789");
+    expect(JSON.stringify(logger.info.mock.calls)).not.toContain(token);
+
+    service.stop("test shutdown");
+  });
+
   it("disconnects the current user through the repository", async () => {
     const repository = createAuthRepository();
     const service = createTelegramService({
@@ -332,7 +415,7 @@ describe("telegramService", () => {
     class TestBot {
       constructor(token) {
         this.token = token;
-        this.telegram = { sendMessage: vi.fn() };
+        this.telegram = { sendMessage: vi.fn(), setMyCommands: vi.fn(async () => {}) };
         instances.push(this);
       }
 
@@ -365,6 +448,14 @@ describe("telegramService", () => {
     });
 
     expect(instances).toHaveLength(1);
+    expect(instances[0].telegram.setMyCommands).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: "reminders",
+          description: "Reminders / Tasks",
+        }),
+      ])
+    );
     expect(instances[0].launchOptions).toEqual({ dropPendingUpdates: false });
     expect(service.getStatus()).toMatchObject({
       configured: true,
@@ -546,6 +637,58 @@ describe("telegramService", () => {
       })
     );
     expect(reply).toHaveBeenCalledWith("Готово 💧 Додав 300 мл води.");
+
+    service.stop("test shutdown");
+  });
+
+  it("explains connection requirement for free-text messages before linking", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const assistantAgent = {
+      run: vi.fn(),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => null),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "привет" },
+      reply,
+    });
+
+    expect(assistantAgent.run).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledTimes(1);
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Telegram ещё не подключён"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("персональной ссылке"));
 
     service.stop("test shutdown");
   });

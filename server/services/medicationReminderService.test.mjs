@@ -305,6 +305,89 @@ describe("medicationReminderService", () => {
     expect(result.reminder.events.at(-1)).toMatchObject({ action: "schedule_updated" });
   });
 
+  it("pauses and resumes reminders with recalculated next run", async () => {
+    const initialReminder = parseMedicationReminderText("Магний 1 капсула в 21:00", {
+      now: new Date("2026-06-20T10:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+
+    const paused = await service.pauseReminder(
+      user,
+      initialReminder.id,
+      new Date("2026-06-20T12:00:00.000Z")
+    );
+    const resumed = await service.resumeReminder(
+      { ...user, medicationReminders: [paused.reminder] },
+      initialReminder.id,
+      new Date("2026-06-20T12:05:00.000Z")
+    );
+
+    expect(paused.reminder).toMatchObject({
+      active: false,
+      nextRunAt: null,
+    });
+    expect(paused.reminder.events.at(-1)).toMatchObject({ action: "paused" });
+    expect(resumed.reminder).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-20T19:00:00.000Z",
+    });
+    expect(resumed.reminder.events.at(-1)).toMatchObject({ action: "resumed" });
+  });
+
+  it("deletes reminders from persistent storage", async () => {
+    const initialReminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.deleteReminder(user, initialReminder.id);
+
+    expect(result.ok).toBe(true);
+    expect(repository.updateUserMedicationReminders).toHaveBeenCalledWith("user-1", []);
+  });
+
+  it("snoozes reminders for an explicit number of minutes", async () => {
+    const initialReminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.snoozeReminder(
+      user,
+      initialReminder.id,
+      15,
+      new Date("2026-06-20T08:00:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-20T08:15:00.000Z",
+    });
+  });
+
   it("sends due reminders and advances the next run only after a successful send", async () => {
     const initialReminder = {
       ...parseMedicationReminderText("Магний 1 капсула в 21:00", {

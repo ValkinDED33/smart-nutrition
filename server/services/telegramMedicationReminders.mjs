@@ -1,4 +1,8 @@
 const MEDICATION_REMINDER_SCAN_INTERVAL_MS = 60_000;
+const DEFAULT_REMINDER_TIMEZONE = "Europe/Warsaw";
+const TELEGRAM_SNOOZE_MINUTES = 15;
+const MEDICATION_SAFETY_NOTE =
+  "Медична безпека: я тільки нагадую і веду журнал. Дозування, призначення або зміну лікування погоджуйте з лікарем.";
 
 const toSafeErrorCode = (error) =>
   String(error?.code ?? error?.name ?? "TELEGRAM_MEDICATION_ERROR")
@@ -19,6 +23,38 @@ const formatMedicationReminderTimes = (reminder) =>
 const formatMedicationReminderDose = (reminder) =>
   reminder?.dose ? `\nДоза: ${reminder.dose}` : "";
 
+const formatReminderDateTime = (reminder, value) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const timeZone =
+    typeof reminder?.timezone === "string" && reminder.timezone.trim()
+      ? reminder.timezone.trim()
+      : DEFAULT_REMINDER_TIMEZONE;
+  const options = {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  };
+
+  try {
+    return new Intl.DateTimeFormat("uk-UA", options).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("uk-UA", {
+      ...options,
+      timeZone: DEFAULT_REMINDER_TIMEZONE,
+    }).format(date);
+  }
+};
+
 const MEDICATION_LIKE_REMINDER_TYPES = new Set([
   "medication",
   "medication_course",
@@ -27,6 +63,44 @@ const MEDICATION_LIKE_REMINDER_TYPES = new Set([
 
 const isMedicationReminder = (reminder) =>
   MEDICATION_LIKE_REMINDER_TYPES.has(String(reminder?.type ?? "medication"));
+
+const normalizeSearchText = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[^\p{L}\p{N}\s:-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getReminderStatusLabel = (reminder) => (reminder?.active ? "активне" : "пауза");
+
+const getReminderTimeZone = (reminder) =>
+  typeof reminder?.timezone === "string" && reminder.timezone.trim()
+    ? reminder.timezone.trim()
+    : DEFAULT_REMINDER_TIMEZONE;
+
+const formatReminderNextRun = (reminder) =>
+  reminder?.active && reminder?.nextRunAt
+    ? formatReminderDateTime(reminder, reminder.nextRunAt)
+    : "не заплановано";
+
+const buildReminderDetailsMessage = (reminder) =>
+  [
+    `${formatReminderKindTitle(reminder)}: ${reminder.title}`,
+    `Час: ${formatMedicationReminderTimes(reminder)}`,
+    `Часовий пояс: ${getReminderTimeZone(reminder)}`,
+    `Статус: ${getReminderStatusLabel(reminder)}`,
+    `Найближче: ${formatReminderNextRun(reminder)}`,
+    reminder.dose ? `Доза: ${reminder.dose}` : null,
+    reminder.repeat === "once" ? "Повтор: один раз" : "Повтор: щодня",
+    reminder.durationDays ? `Тривалість: ${reminder.durationDays} дн.` : null,
+    isMedicationReminder(reminder) ? `\n${MEDICATION_SAFETY_NOTE}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+const getListableReminders = (reminders, { medicationsOnly = false } = {}) =>
+  reminders.filter((reminder) => !medicationsOnly || isMedicationReminder(reminder));
 
 const getLegacyReminderCreator = (reminders, kind) => {
   if (!reminders) {
@@ -112,10 +186,12 @@ export const buildMedicationReminderCreatedMessage = (reminder) =>
     reminder.dose ? `Доза: ${reminder.dose}` : null,
     reminder.durationDays ? `Тривалість: ${reminder.durationDays} дн.` : null,
     reminder.nextRunAt
-      ? `Найближче нагадування: ${new Date(reminder.nextRunAt).toLocaleString("uk-UA")}`
+      ? `Найближче нагадування: ${formatReminderDateTime(reminder, reminder.nextRunAt)}`
       : null,
     "",
-    "Коли прийде нагадування, можна натиснути: прийняла, через 10 хвилин або пропустити.",
+    "Коли прийде нагадування, можна натиснути: прийняла, через 15 хвилин або пропустити.",
+    "",
+    isMedicationReminder(reminder) ? MEDICATION_SAFETY_NOTE : null,
   ]
     .filter(Boolean)
     .join("\n");
@@ -138,9 +214,7 @@ export const buildMedicationReminderNotificationMessage = (reminder) =>
     .join("\n");
 
 export const buildMedicationReminderListMessage = (reminders) => {
-  const activeReminders = reminders.filter(
-    (reminder) => reminder.active && isMedicationReminder(reminder)
-  );
+  const activeReminders = getListableReminders(reminders, { medicationsOnly: true });
 
   if (activeReminders.length === 0) {
     return [
@@ -158,6 +232,9 @@ export const buildMedicationReminderListMessage = (reminders) => {
       [
         `${index + 1}. ${reminder.title}`,
         `   Час: ${formatMedicationReminderTimes(reminder)}`,
+        `   Часовий пояс: ${getReminderTimeZone(reminder)}`,
+        `   Статус: ${getReminderStatusLabel(reminder)}`,
+        `   Найближче: ${formatReminderNextRun(reminder)}`,
         reminder.dose ? `   Доза: ${reminder.dose}` : null,
         reminder.durationDays ? `   Тривалість: ${reminder.durationDays} дн.` : null,
       ]
@@ -165,12 +242,12 @@ export const buildMedicationReminderListMessage = (reminders) => {
         .join("\n")
     ),
     "",
-    "Щоб видалити конкретне нагадування, дочекайтесь повідомлення або створіть нове з правильним графіком.",
+    MEDICATION_SAFETY_NOTE,
   ].join("\n");
 };
 
 export const buildReminderListMessage = (reminders) => {
-  const activeReminders = reminders.filter((reminder) => reminder.active);
+  const activeReminders = getListableReminders(reminders);
 
   if (activeReminders.length === 0) {
     return [
@@ -189,6 +266,9 @@ export const buildReminderListMessage = (reminders) => {
       [
         `${index + 1}. ${formatReminderKindTitle(reminder)}: ${reminder.title}`,
         `   Час: ${formatMedicationReminderTimes(reminder)}`,
+        `   Часовий пояс: ${getReminderTimeZone(reminder)}`,
+        `   Статус: ${getReminderStatusLabel(reminder)}`,
+        `   Найближче: ${formatReminderNextRun(reminder)}`,
         reminder.dose ? `   Доза: ${reminder.dose}` : null,
         reminder.repeat === "once" ? "   Повтор: один раз" : null,
         reminder.durationDays ? `   Тривалість: ${reminder.durationDays} дн.` : null,
@@ -199,35 +279,44 @@ export const buildReminderListMessage = (reminders) => {
   ].join("\n");
 };
 
-const buildMedicationReminderKeyboard = (reminder) => ({
+const buildReminderManagementKeyboard = (reminder) => ({
   reply_markup: {
     inline_keyboard: [
       [
-        { text: "Прийняла", callback_data: `med:taken:${reminder.id}` },
-        { text: "Через 10 хв", callback_data: `med:snooze:${reminder.id}` },
+        {
+          text: isMedicationReminder(reminder) ? "✅ Прийняла" : "✅ Зроблено",
+          callback_data: `rem:${isMedicationReminder(reminder) ? "taken" : "done"}:${reminder.id}`,
+        },
+        { text: "⏰ Через 15 хв", callback_data: `rem:snooze15:${reminder.id}` },
       ],
       [
-        { text: "Пропустити", callback_data: `med:skipped:${reminder.id}` },
-        { text: "Видалити", callback_data: `med:delete:${reminder.id}` },
+        { text: "✏️ Змінити", callback_data: `rem:edit:${reminder.id}` },
+        {
+          text: reminder.active ? "⏸ Пауза" : "▶️ Увімкнути",
+          callback_data: `rem:${reminder.active ? "pause" : "resume"}:${reminder.id}`,
+        },
+      ],
+      [
+        { text: "Пропустити", callback_data: `rem:skipped:${reminder.id}` },
+        { text: "🗑 Видалити", callback_data: `rem:delete:${reminder.id}` },
       ],
     ],
   },
 });
 
-const buildTaskReminderKeyboard = (reminder) => ({
+const buildDeleteConfirmationKeyboard = (reminder) => ({
   reply_markup: {
     inline_keyboard: [
       [
-        { text: "Зроблено", callback_data: `rem:done:${reminder.id}` },
-        { text: "Через 10 хв", callback_data: `rem:snooze:${reminder.id}` },
-      ],
-      [
-        { text: "Пропустити", callback_data: `rem:skipped:${reminder.id}` },
-        { text: "Видалити", callback_data: `rem:delete:${reminder.id}` },
+        { text: "Так, видалити", callback_data: `rem:confirm_delete:${reminder.id}` },
+        { text: "Скасувати", callback_data: `rem:cancel_delete:${reminder.id}` },
       ],
     ],
   },
 });
+
+const buildMedicationReminderKeyboard = buildReminderManagementKeyboard;
+const buildTaskReminderKeyboard = buildReminderManagementKeyboard;
 
 export const buildTaskReminderCreatedMessage = (reminder) =>
   [
@@ -238,7 +327,7 @@ export const buildTaskReminderCreatedMessage = (reminder) =>
     reminder.repeat === "once" ? "Повтор: один раз" : "Повтор: щодня",
     reminder.durationDays ? `Тривалість: ${reminder.durationDays} дн.` : null,
     reminder.nextRunAt
-      ? `Найближче нагадування: ${new Date(reminder.nextRunAt).toLocaleString("uk-UA")}`
+      ? `Найближче нагадування: ${formatReminderDateTime(reminder, reminder.nextRunAt)}`
       : null,
     "",
     "Коли прийде нагадування, можна натиснути: зроблено, пізніше або пропустити.",
@@ -263,7 +352,7 @@ export const buildReminderScheduleUpdatedMessage = (reminder) =>
     `${formatReminderKindTitle(reminder)}: ${reminder.title}`,
     `Новий час: ${formatMedicationReminderTimes(reminder)}`,
     reminder.nextRunAt
-      ? `Найближче нагадування: ${new Date(reminder.nextRunAt).toLocaleString("uk-UA")}`
+      ? `Найближче нагадування: ${formatReminderDateTime(reminder, reminder.nextRunAt)}`
       : null,
   ]
     .filter(Boolean)
@@ -302,6 +391,103 @@ const looksLikeScheduleCorrectionText = (text) =>
     String(text ?? "").trim()
   );
 
+const looksLikeReminderListText = (text) =>
+  /(?:^|\s)(?:что|шо|що|покажи|покажы|список|list|show)(?:\s|$)/iu.test(
+    String(text ?? "")
+  ) &&
+  /(?:напомин|нагадув|reminder|таблет|ліки|лекар|медикамент)/iu.test(String(text ?? ""));
+
+const looksLikeMedicationListText = (text) =>
+  /(?:таблет|ліки|лекар|медикамент|витамин|вітамін|магний|магній)/iu.test(
+    String(text ?? "")
+  );
+
+const getReminderManagementIntent = (text) => {
+  const normalized = String(text ?? "").trim();
+
+  if (/^(?:удали|удалить|видали|видалити|delete|remove)(?:\s|$)/iu.test(normalized)) {
+    return "delete";
+  }
+
+  if (
+    /^(?:отключи|выключи|пауза|поставь на паузу|зупини|вимкни|pause)(?:\s|$)/iu.test(normalized)
+  ) {
+    return "pause";
+  }
+
+  if (
+    /^(?:включи|увімкни|возобнови|віднови|resume|enable)(?:\s|$)/iu.test(normalized)
+  ) {
+    return "resume";
+  }
+
+  if (
+    /^(?:измени|изменить|поменяй|перенеси|зміні|змінити|update|edit)(?:\s|$)/iu.test(normalized)
+  ) {
+    return "edit";
+  }
+
+  return null;
+};
+
+const stripReminderManagementWords = (text) =>
+  normalizeSearchText(text)
+    .replace(
+      /(?:^|\s)(?:удали|удалить|видали|видалити|delete|remove|отключи|выключи|пауза|поставь|на|зупини|вимкни|pause|включи|увімкни|возобнови|віднови|resume|enable|измени|изменить|поменяй|перенеси|зміні|змінити|update|edit|напоминание|напоминания|нагадування|reminder|таблетки|таблетку|таблеток|ліки|лекарство|лекарства)(?=\s|$)/giu,
+      " "
+    )
+    .replace(/(?:^|\s)(?:[01]?\d|2[0-3])[:.][0-5]\d(?=\s|$)/gu, " ")
+    .replace(/(?:^|\s)(?:[01]?\d|2[0-3])(?=\s|$)/gu, " ")
+    .replace(/(?:^|\s)(?:в|о|at|на|to)(?=\s|$)/giu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const findReminderByText = (reminders, text, { medicationsOnly = false } = {}) => {
+  const candidates = getListableReminders(reminders, { medicationsOnly });
+  const target = stripReminderManagementWords(text);
+
+  if (!target) {
+    return { ok: false, code: "REMINDER_TARGET_MISSING" };
+  }
+
+  const matches = candidates.filter((reminder) =>
+    normalizeSearchText(reminder.title).includes(target)
+  );
+
+  if (matches.length === 1) {
+    return { ok: true, reminder: matches[0] };
+  }
+
+  if (matches.length > 1) {
+    return { ok: false, code: "REMINDER_TARGET_AMBIGUOUS" };
+  }
+
+  return { ok: false, code: "REMINDER_NOT_FOUND" };
+};
+
+const buildReminderLookupFailureMessage = (code) => {
+  if (code === "REMINDER_TARGET_MISSING") {
+    return "Напишіть назву нагадування. Наприклад: змінити магній на 22:00.";
+  }
+
+  if (code === "REMINDER_TARGET_AMBIGUOUS") {
+    return "Знайшов кілька схожих нагадувань. Відкрийте /reminders і натисніть кнопку біля потрібного.";
+  }
+
+  return "Не знайшов таке нагадування. Відкрийте /reminders і перевірте назву.";
+};
+
+const buildReminderEditPrompt = (reminder) =>
+  [
+    `Що змінити для "${reminder.title}"?`,
+    "Напишіть новий час, наприклад: 22:00 або о 9 ранку.",
+    "Якщо бот перезапуститься або відповідь загубиться, використайте команду:",
+    `/settime ${reminder.id} 22:00`,
+    isMedicationReminder(reminder) ? MEDICATION_SAFETY_NOTE : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
 export const createTelegramMedicationReminderRuntime = ({
   configured,
   authRepository,
@@ -315,6 +501,14 @@ export const createTelegramMedicationReminderRuntime = ({
   const reminders = reminderService ?? medicationReminderService;
   let interval = null;
   let scanRunning = false;
+  const editSessions = new Map();
+
+  const getChatSessionKey = (ctx) =>
+    ctx.chat?.id === undefined
+      ? ctx.callbackQuery?.message?.chat?.id === undefined
+        ? ""
+        : String(ctx.callbackQuery.message.chat.id)
+      : String(ctx.chat.id);
 
   const replyWithList = async (ctx, { medicationsOnly = false } = {}) => {
     const user = await getConnectedUser(ctx);
@@ -328,11 +522,18 @@ export const createTelegramMedicationReminderRuntime = ({
       return;
     }
 
+    const userReminders = reminders.getUserReminders(user);
+    const visibleReminders = getListableReminders(userReminders, { medicationsOnly });
+
     await ctx.reply(
       medicationsOnly
-        ? buildMedicationReminderListMessage(reminders.getUserReminders(user))
-        : buildReminderListMessage(reminders.getUserReminders(user))
+        ? buildMedicationReminderListMessage(userReminders)
+        : buildReminderListMessage(userReminders)
     );
+
+    for (const reminder of visibleReminders.slice(0, 10)) {
+      await ctx.reply(buildReminderDetailsMessage(reminder), buildReminderManagementKeyboard(reminder));
+    }
   };
 
   const createFromText = async (ctx, text, { kind = "medication" } = {}) => {
@@ -410,9 +611,123 @@ export const createTelegramMedicationReminderRuntime = ({
     return true;
   };
 
+  const updateReminderScheduleFromText = async (ctx, reminderId, text) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return false;
+    }
+
+    if (!reminders?.updateReminderSchedule) {
+      await ctx.reply("Зміна часу нагадувань тимчасово недоступна.");
+      return true;
+    }
+
+    const result = await reminders.updateReminderSchedule(user, reminderId, text);
+
+    if (!result.ok) {
+      await ctx.reply(
+        "Не зміг розпізнати новий час. Напишіть, наприклад: 22:00 або о 9 ранку."
+      );
+      return true;
+    }
+
+    await writeAuditLog?.({
+      user: result.user ?? user,
+      action: `telegram.${result.reminder?.type ?? "reminder"}_reminder.schedule_updated`,
+      details: {
+        provider: "telegram",
+        reminderId: result.reminder.id,
+        times: result.reminder.times,
+      },
+    });
+    await ctx.reply(buildReminderScheduleUpdatedMessage(result.reminder));
+
+    return true;
+  };
+
+  const handleReminderManagementText = async (ctx, text) => {
+    const intent = getReminderManagementIntent(text);
+
+    if (!intent) {
+      return false;
+    }
+
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return true;
+    }
+
+    if (!reminders?.getUserReminders) {
+      await ctx.reply("Нагадування тимчасово недоступні.");
+      return true;
+    }
+
+    const lookup = findReminderByText(reminders.getUserReminders(user), text, {
+      medicationsOnly: looksLikeMedicationListText(text),
+    });
+
+    if (!lookup.ok) {
+      await ctx.reply(buildReminderLookupFailureMessage(lookup.code));
+      return true;
+    }
+
+    if (intent === "edit") {
+      if (/\b([01]?\d|2[0-3])[:.]?([0-5]\d)?\b/u.test(text)) {
+        return updateReminderScheduleFromText(ctx, lookup.reminder.id, text);
+      }
+
+      const sessionKey = getChatSessionKey(ctx);
+      editSessions.set(sessionKey, {
+        reminderId: lookup.reminder.id,
+        createdAt: Date.now(),
+      });
+      await ctx.reply(buildReminderEditPrompt(lookup.reminder));
+      return true;
+    }
+
+    if (intent === "delete") {
+      await ctx.reply(
+        `Видалити нагадування "${lookup.reminder.title}"?`,
+        buildDeleteConfirmationKeyboard(lookup.reminder)
+      );
+      return true;
+    }
+
+    const action =
+      intent === "pause" ? reminders.pauseReminder : reminders.resumeReminder;
+
+    if (!action) {
+      await ctx.reply("Ця дія для нагадувань тимчасово недоступна.");
+      return true;
+    }
+
+    const result = await action(user, lookup.reminder.id, new Date());
+
+    if (!result.ok) {
+      await ctx.reply("Не зміг оновити нагадування. Відкрийте /reminders і спробуйте ще раз.");
+      return true;
+    }
+
+    await writeAuditLog?.({
+      user: result.user ?? user,
+      action: `telegram.${result.reminder?.type ?? "reminder"}_reminder.${intent}`,
+      details: {
+        provider: "telegram",
+        reminderId: result.reminder.id,
+      },
+    });
+    await ctx.reply(intent === "pause" ? "Нагадування поставлено на паузу." : "Нагадування увімкнено.");
+
+    return true;
+  };
+
   const handleCallback = async (ctx) => {
     const data = String(ctx.callbackQuery?.data ?? "");
-    const match = data.match(/^(med|rem):(taken|done|snooze|skipped|delete):(.+)$/u);
+    const match = data.match(
+      /^(med|rem):(taken|done|snooze|snooze15|skipped|delete|confirm_delete|cancel_delete|edit|pause|resume):(.+)$/u
+    );
 
     if (!match) {
       return false;
@@ -431,20 +746,69 @@ export const createTelegramMedicationReminderRuntime = ({
       return true;
     }
 
+    if (action === "cancel_delete") {
+      await ctx.answerCbQuery?.("Не видаляю.");
+      await ctx.reply("Добре, нагадування залишилось.");
+      return true;
+    }
+
+    const reminder = reminders.getUserReminders?.(user)?.find((item) => item.id === reminderId);
+
+    if ((action === "delete" || action === "edit") && !reminder) {
+      await ctx.answerCbQuery?.("Нагадування не знайдено.");
+      return true;
+    }
+
+    if (action === "delete") {
+      await ctx.answerCbQuery?.("Потрібне підтвердження.");
+      await ctx.reply(
+        `Видалити нагадування "${reminder.title}"?`,
+        buildDeleteConfirmationKeyboard(reminder)
+      );
+      return true;
+    }
+
+    if (action === "edit") {
+      const sessionKey = getChatSessionKey(ctx);
+      editSessions.set(sessionKey, {
+        reminderId,
+        createdAt: Date.now(),
+      });
+      await ctx.answerCbQuery?.("Напишіть новий час.");
+      await ctx.reply(buildReminderEditPrompt(reminder));
+      return true;
+    }
+
     const now = new Date();
     const recordAction =
       reminders.recordReminderAction ??
       reminders.recordMedicationAction ??
       reminders.recordDoseAction;
-    const result =
-      action === "delete"
-        ? await reminders.deactivateReminder(user, reminderId, now)
-        : await recordAction(
-            user,
-            reminderId,
-            action === "snooze" ? "snoozed" : action,
-            now
-          );
+    let result = null;
+
+    if (action === "confirm_delete") {
+      const deleteAction = reminders.deleteReminder ?? reminders.deactivateReminder;
+      result = await deleteAction(user, reminderId, now);
+    } else if (action === "pause") {
+      result = reminders.pauseReminder
+        ? await reminders.pauseReminder(user, reminderId, now)
+        : await reminders.deactivateReminder(user, reminderId, now);
+    } else if (action === "resume") {
+      result = reminders.resumeReminder
+        ? await reminders.resumeReminder(user, reminderId, now)
+        : { ok: false, code: "REMINDER_RESUME_UNSUPPORTED" };
+    } else if (action === "snooze15" && reminders.snoozeReminder) {
+      result = await reminders.snoozeReminder(user, reminderId, TELEGRAM_SNOOZE_MINUTES, now);
+    } else if (!recordAction) {
+      result = { ok: false, code: "REMINDER_ACTION_UNSUPPORTED" };
+    } else {
+      result = await recordAction(
+        user,
+        reminderId,
+        action === "snooze" || action === "snooze15" ? "snoozed" : action,
+        now
+      );
+    }
 
     if (!result.ok) {
       await ctx.answerCbQuery?.("Нагадування не знайдено.");
@@ -454,9 +818,12 @@ export const createTelegramMedicationReminderRuntime = ({
     const answerByAction = {
       taken: "Записано: прийнято.",
       done: "Записано: зроблено.",
-      snooze: "Нагадаю через 10 хвилин.",
+      snooze: "Нагадаю пізніше.",
+      snooze15: "Нагадаю через 15 хвилин.",
       skipped: "Записано: пропущено.",
-      delete: "Нагадування вимкнено.",
+      confirm_delete: "Нагадування видалено.",
+      pause: "Нагадування на паузі.",
+      resume: "Нагадування увімкнено.",
     };
 
     const auditReminderType =
@@ -472,7 +839,7 @@ export const createTelegramMedicationReminderRuntime = ({
     });
     await ctx.answerCbQuery?.(answerByAction[action] ?? "Готово.");
 
-    if (action === "delete") {
+    if (action === "confirm_delete") {
       try {
         await ctx.editMessageReplyMarkup?.({ inline_keyboard: [] });
       } catch {
@@ -635,6 +1002,25 @@ export const createTelegramMedicationReminderRuntime = ({
       });
     });
 
+    bot.command("settime", async (ctx) => {
+      const text = getCommandArgument(ctx);
+      const match = text.match(/^(\S+)\s+(.+)$/u);
+
+      if (!match) {
+        await ctx.reply(
+          [
+            "Напишіть так:",
+            "/settime <id-нагадування> 22:00",
+            "",
+            "ID є у повідомленні після кнопки ✏️ Змінити.",
+          ].join("\n")
+        );
+        return;
+      }
+
+      await updateReminderScheduleFromText(ctx, match[1], match[2]);
+    });
+
     bot.on("callback_query", async (ctx) => {
       await handleCallback(ctx);
     });
@@ -647,12 +1033,33 @@ export const createTelegramMedicationReminderRuntime = ({
         return;
       }
 
+      const sessionKey = getChatSessionKey(ctx);
+      const editSession = editSessions.get(sessionKey);
+
+      if (editSession) {
+        editSessions.delete(sessionKey);
+        const updated = await updateReminderScheduleFromText(ctx, editSession.reminderId, text);
+
+        if (updated) {
+          return;
+        }
+      }
+
       if (looksLikeScheduleCorrectionText(text)) {
         const updated = await updateLatestScheduleFromText(ctx, text);
 
         if (updated) {
           return;
         }
+      }
+
+      if (looksLikeReminderListText(text)) {
+        await replyWithList(ctx, { medicationsOnly: looksLikeMedicationListText(text) });
+        return;
+      }
+
+      if (await handleReminderManagementText(ctx, text)) {
+        return;
       }
 
       if (looksLikeWaterReminderText(text)) {

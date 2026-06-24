@@ -23,6 +23,10 @@ import { searchProducts } from "../../shared/api/products";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { addProduct, rememberRecentProduct } from "./mealSlice";
+import {
+  createNutritionGoogleSearchUrl,
+  shouldShowQuickSearchDeadEnd,
+} from "./foodCommandCenterModel";
 import { getProductSuggestions } from "./productSuggestionModel";
 import {
   selectPersonalBarcodeProducts,
@@ -53,9 +57,13 @@ const commandCopy = {
     empty: "Почніть вводити назву — я підтягну варіанти з онлайн-каталогу.",
     unavailable:
       "Онлайн-пошук зараз недоступний. Можна відкрити повний пошук або додати продукт у базу.",
+    noMatch:
+      "Не знайшов у швидкому підборі. Відкрийте повний пошук, перевірте Google або додайте продукт у спільну базу.",
     added: "Додано",
     grams: "г",
     openSearch: "Повний пошук",
+    googleSearch: "Google",
+    addToCatalog: "Додати в базу",
     source: "джерело",
     recent: "Недавнє",
     saved: "Збережене",
@@ -75,9 +83,13 @@ const commandCopy = {
     empty: "Zacznij wpisywać nazwę — pobiorę propozycje z katalogu online.",
     unavailable:
       "Wyszukiwanie online jest teraz niedostępne. Możesz otworzyć pełne wyszukiwanie albo dodać produkt do bazy.",
+    noMatch:
+      "Nie znalazłem w szybkim wyborze. Otwórz pełne wyszukiwanie, sprawdź Google albo dodaj produkt do wspólnej bazy.",
     added: "Dodano",
     grams: "g",
     openSearch: "Pełne wyszukiwanie",
+    googleSearch: "Google",
+    addToCatalog: "Dodaj do bazy",
     source: "źródło",
     recent: "Ostatnie",
     saved: "Zapisane",
@@ -97,9 +109,13 @@ const commandCopy = {
     empty: "Start typing a name — I will pull options from the online catalog.",
     unavailable:
       "Online search is unavailable right now. You can open full search or add the product to the database.",
+    noMatch:
+      "I did not find this in quick search. Open full search, check Google, or add it to the shared database.",
     added: "Added",
     grams: "g",
     openSearch: "Full search",
+    googleSearch: "Google",
+    addToCatalog: "Add to database",
     source: "source",
     recent: "Recent",
     saved: "Saved",
@@ -107,6 +123,13 @@ const commandCopy = {
 } as const;
 
 const normalizeQuery = (value: string) => value.trim().replace(/\s+/g, " ");
+
+const getCommandCopy = (language: keyof typeof commandCopy) => {
+  if (language === "pl") return commandCopy.pl;
+  if (language === "en") return commandCopy.en;
+
+  return commandCopy.uk;
+};
 
 const getProductKey = (product: Product) =>
   product.barcode?.trim() ||
@@ -124,7 +147,7 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
     adaptiveMode: state.profile.adaptiveMode,
   }));
   const { appLanguage } = useLanguage();
-  const copy = commandCopy[appLanguage];
+  const copy = getCommandCopy(appLanguage);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -207,6 +230,13 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
   const isSearching =
     normalizedQuery.length >= 2 &&
     (normalizedQuery !== debouncedQuery || productQuery.isFetching);
+  const hasQuickSearchDeadEnd = shouldShowQuickSearchDeadEnd({
+    query: normalizedQuery,
+    isSearching,
+    isError: productQuery.isError,
+    suggestionCount: suggestions.length,
+  });
+  const googleSearchUrl = createNutritionGoogleSearchUrl(normalizedQuery);
 
   const addSelectedProduct = (product = selectedProduct, amount = selectedQuantity) => {
     if (!product || amount === null) {
@@ -397,6 +427,45 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
               />
             ))}
           </Stack>
+        ) : null}
+
+        {hasQuickSearchDeadEnd ? (
+          <Alert
+            severity="info"
+            action={
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => onOpenTarget("search")}
+                  sx={{ fontWeight: 800, textTransform: "none" }}
+                >
+                  {copy.openSearch}
+                </Button>
+                <Button
+                  color="inherit"
+                  component="a"
+                  href={googleSearchUrl}
+                  rel="noreferrer"
+                  size="small"
+                  target="_blank"
+                  sx={{ fontWeight: 800, textTransform: "none" }}
+                >
+                  {copy.googleSearch}
+                </Button>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => onOpenTarget("search")}
+                  sx={{ fontWeight: 800, textTransform: "none" }}
+                >
+                  {copy.addToCatalog}
+                </Button>
+              </Stack>
+            }
+          >
+            {copy.noMatch}
+          </Alert>
         ) : null}
 
         {quickProducts.length > 0 && !normalizedQuery ? (

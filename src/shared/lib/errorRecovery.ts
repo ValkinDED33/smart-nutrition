@@ -123,6 +123,10 @@ export const shouldAttemptStaleBuildRecovery = (
   now = Date.now()
 ) => isLikelyStaleBuildError(error) && !isRecoveryRecentlyAttempted(rawAttemptedAt, now);
 
+export const shouldRecoverOnManualRetry = (
+  diagnostic: Pick<ErrorRecoveryDiagnostic, "staleBuildLikely"> | null
+) => Boolean(diagnostic?.staleBuildLikely);
+
 export const isRecoveryRecentlyAttempted = (
   rawValue: string | null,
   now = Date.now()

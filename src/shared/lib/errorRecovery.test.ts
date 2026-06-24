@@ -9,6 +9,7 @@ import {
   sanitizeDiagnosticText,
   shouldAttemptStaleBuildRecovery,
   shouldPreserveSmartNutritionStorageKey,
+  shouldRecoverOnManualRetry,
 } from "./errorRecovery";
 
 class FakeStorage {
@@ -66,6 +67,12 @@ describe("errorRecovery", () => {
     expect(shouldAttemptStaleBuildRecovery(new Error("Validation failed"), null, now)).toBe(
       false
     );
+  });
+
+  it("uses cache recovery for manual retry only when the diagnostic points to a stale build", () => {
+    expect(shouldRecoverOnManualRetry(null)).toBe(false);
+    expect(shouldRecoverOnManualRetry({ staleBuildLikely: false })).toBe(false);
+    expect(shouldRecoverOnManualRetry({ staleBuildLikely: true })).toBe(true);
   });
 
   it("preserves durable app keys and removes volatile smart-nutrition storage", () => {
