@@ -24,6 +24,12 @@ describe("detectAgentIntent", () => {
         text: "Напомни пить витамин D каждый день о 09:00",
       },
     });
+    expect(detectAgentIntent("Мне надо пить магний в 22:00")).toMatchObject({
+      intent: "create_medication_reminder",
+      entities: {
+        text: "Мне надо пить магний в 22:00",
+      },
+    });
   });
 
   it("detects ordinary task reminders separately from medication", () => {

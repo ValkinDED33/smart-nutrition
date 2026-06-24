@@ -74,7 +74,7 @@ describe("assistantPresence", () => {
     });
   });
 
-  it("keeps a compact low-priority companion on dense mobile product surfaces", () => {
+  it("hides the global companion on dense mobile product surfaces", () => {
     ["/meals", "/coach", "/progress", "/profile", "/community", "/recipes", "/water"].forEach(
       (pathname) => {
         expect(
@@ -83,13 +83,19 @@ describe("assistantPresence", () => {
             viewport: "mobile",
           })
         ).toMatchObject({
-          visible: true,
-          mode: "compact",
-          reason: "compact-dense-surface",
+          visible: false,
+          mode: "hidden",
+          reason: "mobile-dense-surface-hidden",
           allowSpeechBubble: false,
           priority: "low",
         });
+      }
+    );
+  });
 
+  it("keeps a compact low-priority companion on dense tablet product surfaces", () => {
+    ["/meals", "/coach", "/progress", "/profile", "/community", "/recipes", "/water"].forEach(
+      (pathname) => {
         expect(
           resolveAssistantPresence(resolveAssistantContext(pathname), {
             pathname,

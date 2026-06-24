@@ -1,5 +1,5 @@
 const WATER_WORD_PATTERN =
-  /(water|drink|drank|hydration|вода|воды|води|водичк|пил|пила|выпил|выпила|випив|випила|пью|склянк|стакан|glass)/i;
+  /(water|drink|drank|hydration|вода|воды|воду|води|водичк|пил|пила|выпил|выпила|випив|випила|пью|склянк|стакан|glass)/i;
 const MEDICATION_WORD_PATTERN =
   /(таблет|ліки|лекарств|препарат|витамин|вітамін|магний|магній|омега|доза|капсул|пить|пити|принимать|приймати|med|meds)/i;
 const PREGNANCY_SUPPLEMENT_WORD_PATTERN =
@@ -88,6 +88,10 @@ const cleanFoodQuery = (message) => {
   return cleaned.length >= 2 ? cleaned.slice(0, 120) : "";
 };
 
+const hasMedicationCourseIntent = (message) =>
+  /(?:^|\s)(?:курс|course)(?:\s|$)/iu.test(message) ||
+  /(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/iu.test(message);
+
 export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   const normalized = normalizeMessage(message);
 
@@ -150,17 +154,19 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
 
   if (
     /^\/?addmed\b/i.test(normalized) ||
-    (MEDICATION_WORD_PATTERN.test(normalized) && /(напомни|нагадуй|remind|кажд|щодня|о\s+\d{1,2}|at\s+\d{1,2})/i.test(normalized))
+    (MEDICATION_WORD_PATTERN.test(normalized) && /(напомни|нагадуй|remind|кажд|щодня|(?:^|\s)[во]\s+\d{1,2}|at\s+\d{1,2})/i.test(normalized))
   ) {
+    const medicationCourseIntent = hasMedicationCourseIntent(normalized);
+
     return {
-      intent: /(?:курс|course|дн(?:я|ей|ів|і)?|days?)/iu.test(normalized)
+      intent: medicationCourseIntent
         ? "create_medication_course_reminder"
         : "create_medication_reminder",
       confidence: 0.9,
       entities: {
         text: normalized.replace(/^\/?addmed\b/i, "").trim() || normalized,
       },
-      reason: /(?:курс|course|дн(?:я|ей|ів|і)?|days?)/iu.test(normalized)
+      reason: medicationCourseIntent
         ? "medication_course_reminder_request"
         : "medication_reminder_request",
     };

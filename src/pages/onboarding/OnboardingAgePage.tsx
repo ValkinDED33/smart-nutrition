@@ -6,6 +6,8 @@ import {
   cardSx,
   clampNumber,
   parseOnboardingNumber,
+  sanitizeOnboardingIntegerInput,
+  selectOnboardingInputValue,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
@@ -19,7 +21,7 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
   const ageValid = parsedAge !== null && parsedAge >= 10 && parsedAge <= 120;
 
   const updateAgeInput = (nextValue: string) => {
-    const safeValue = nextValue.replace(/[^\d]/g, "").slice(0, 3);
+    const safeValue = sanitizeOnboardingIntegerInput(nextValue);
     setAgeInput(safeValue);
 
     const parsedValue = parseOnboardingNumber(safeValue);
@@ -50,7 +52,8 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
             type="text"
             value={ageInput}
             onChange={(event) => updateAgeInput(event.target.value)}
-            onFocus={(event) => event.currentTarget.select()}
+            onFocus={(event) => selectOnboardingInputValue(event.target)}
+            onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && ageValid) {
                 continueToGender();

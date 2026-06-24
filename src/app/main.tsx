@@ -11,26 +11,47 @@ import { LanguageProvider } from "../shared/language";
 import { initializeClientPersistence } from "../shared/lib/clientPersistence";
 import { registerServiceWorker } from "../shared/lib/registerServiceWorker";
 import { AppThemeProvider } from "../shared/theme/AppThemeProvider";
+import {
+  installGlobalClientErrorReporting,
+  renderBootstrapFailureFallback,
+  reportClientRuntimeError,
+} from "./runtime/clientErrorReporting";
 
-const container = document.getElementById("root")!;
-const root = createRoot(container);
+installGlobalClientErrorReporting();
 
-const bootstrap = async () => {
-  await initializeClientPersistence();
+const container = document.getElementById("root");
 
-  root.render(
-    <StrictMode>
-      <Provider store={store}>
-        <AppThemeProvider>
-          <LanguageProvider>
-            <App />
-          </LanguageProvider>
-        </AppThemeProvider>
-      </Provider>
-    </StrictMode>
+if (!container) {
+  const fallbackContainer = document.createElement("div");
+  document.body.appendChild(fallbackContainer);
+  const diagnostic = reportClientRuntimeError(
+    new Error("Smart Nutrition root container was not found."),
+    { source: "bootstrap" }
   );
+  renderBootstrapFailureFallback(fallbackContainer, diagnostic);
+} else {
+  const root = createRoot(container);
 
-  registerServiceWorker();
-};
+  const bootstrap = async () => {
+    await initializeClientPersistence();
 
-bootstrap();
+    root.render(
+      <StrictMode>
+        <Provider store={store}>
+          <AppThemeProvider>
+            <LanguageProvider>
+              <App />
+            </LanguageProvider>
+          </AppThemeProvider>
+        </Provider>
+      </StrictMode>
+    );
+
+    registerServiceWorker();
+  };
+
+  bootstrap().catch((error: unknown) => {
+    const diagnostic = reportClientRuntimeError(error, { source: "bootstrap" });
+    renderBootstrapFailureFallback(container, diagnostic);
+  });
+}

@@ -326,6 +326,12 @@ export const ProductSearch = ({ mealType }: Props) => {
             label={copy.searchLabel}
             placeholder={t("productSearch.placeholder")}
             autoComplete="off"
+            slotProps={{
+              htmlInput: {
+                inputMode: "search",
+                enterKeyHint: "search",
+              },
+            }}
           />
           <Button
             variant="outlined"

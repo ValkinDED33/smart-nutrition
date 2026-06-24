@@ -6,6 +6,7 @@ import type {
   WomenHealthMode,
 } from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
+import { selectInputValue } from "@shared/lib/inputSelection";
 
 export type PersonalityPreset =
   | "supportive"
@@ -107,6 +108,16 @@ export const assistantAvatarOptions: AssistantCompanionKind[] = [
 export const clampNumber = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
+export const sanitizeOnboardingIntegerInput = (value: string, maxLength = 3) =>
+  value.replace(/[^\d]/g, "").slice(0, maxLength);
+
+export const sanitizeOnboardingDecimalInput = (value: string, maxLength = 5) =>
+  value
+    .replace(/[^\d,.]/g, "")
+    .replace(".", ",")
+    .replace(/(,.*),/g, "$1")
+    .slice(0, maxLength);
+
 export const toggleArrayValue = <T extends string>(items: T[], item: T) =>
   items.includes(item)
     ? items.filter((current) => current !== item)
@@ -137,3 +148,5 @@ export const parseOnboardingNumber = (value: string) => {
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
+export const selectOnboardingInputValue = selectInputValue;

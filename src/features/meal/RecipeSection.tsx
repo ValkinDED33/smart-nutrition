@@ -44,6 +44,7 @@ import {
 import { searchProducts } from "../../shared/api/products";
 import { calculateMealTotalNutrients } from "./mealSlice";
 import { selectMealTemplates } from "./selectors";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 
 interface Props {
   mealType: MealType;
@@ -350,13 +351,14 @@ export const RecipeSection = ({ mealType }: Props) => {
                       {getProductDisplayName(item.product, appLanguage)}
                     </Typography>
                     <TextField
-                      type="number"
+                      type="text"
                       label="Qty"
                       value={item.quantity}
                       slotProps={{
-                        htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                        htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
                       }}
-                      onFocus={(event) => event.target.select()}
+                      onFocus={(event) => selectInputValue(event.target)}
+                      onClick={(event) => selectInputValue(event.currentTarget)}
                       onChange={(event) => {
                         const value = event.target.value;
                         const parsedValue = Number(value);

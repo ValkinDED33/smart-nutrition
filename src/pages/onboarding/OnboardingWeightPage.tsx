@@ -6,6 +6,8 @@ import {
   cardSx,
   clampNumber,
   parseOnboardingNumber,
+  sanitizeOnboardingDecimalInput,
+  selectOnboardingInputValue,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
@@ -20,11 +22,7 @@ export const OnboardingWeightPage = ({ state, updateState }: OnboardingStepProps
     parsedWeight !== null && parsedWeight >= 30 && parsedWeight <= 300;
 
   const updateWeightInput = (nextValue: string) => {
-    const safeValue = nextValue
-      .replace(/[^\d,.]/g, "")
-      .replace(".", ",")
-      .replace(/(,.*),/g, "$1")
-      .slice(0, 5);
+    const safeValue = sanitizeOnboardingDecimalInput(nextValue);
     setWeightInput(safeValue);
 
     const parsedValue = parseOnboardingNumber(safeValue);
@@ -55,7 +53,8 @@ export const OnboardingWeightPage = ({ state, updateState }: OnboardingStepProps
             type="text"
             value={weightInput}
             onChange={(event) => updateWeightInput(event.target.value)}
-            onFocus={(event) => event.currentTarget.select()}
+            onFocus={(event) => selectOnboardingInputValue(event.target)}
+            onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && weightValid) {
                 continueToGoal();

@@ -25,6 +25,7 @@ import {
 } from "./profileSlice";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import {
   avatarPresets,
@@ -932,7 +933,7 @@ const ProfileForm = () => {
                 {shouldShowPregnancyFields && (
                   <TextField
                     fullWidth
-                    type="number"
+                    type="text"
                     label={copy.pregnancyWeekLabel}
                     {...register("pregnancyWeek", {
                       setValueAs: (value) =>
@@ -940,7 +941,15 @@ const ProfileForm = () => {
                     })}
                     error={Boolean(errors.pregnancyWeek)}
                     helperText={errors.pregnancyWeek?.message}
-                    inputProps={{ min: 1, max: 42, step: 1, inputMode: "numeric" }}
+                    onFocus={(event) => selectInputValue(event.target)}
+                    onClick={(event) => selectInputValue(event.currentTarget)}
+                    slotProps={{
+                      htmlInput: {
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
+                        enterKeyHint: "next",
+                      },
+                    }}
                   />
                 )}
               </Stack>
@@ -999,34 +1008,63 @@ const ProfileForm = () => {
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={t("form.age")}
-            {...register("age", { valueAsNumber: true })}
+            {...register("age", {
+              setValueAs: (value) => (value === "" ? undefined : Number(value)),
+            })}
             error={Boolean(errors.age)}
             helperText={errors.age?.message}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                enterKeyHint: "next",
+              },
+            }}
           />
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={t("form.weight")}
-            {...register("weight", { valueAsNumber: true })}
+            {...register("weight", {
+              setValueAs: (value) => (value === "" ? undefined : Number(value)),
+            })}
             error={Boolean(errors.weight)}
             helperText={errors.weight?.message}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
+            }}
           />
         </Stack>
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={t("form.height")}
-            {...register("height", { valueAsNumber: true })}
+            {...register("height", {
+              setValueAs: (value) => (value === "" ? undefined : Number(value)),
+            })}
             error={Boolean(errors.height)}
             helperText={errors.height?.message}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                enterKeyHint: "next",
+              },
+            }}
           />
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.targetWeightLabel}
             placeholder="65"
             {...register("targetWeight", {
@@ -1034,7 +1072,11 @@ const ProfileForm = () => {
             })}
             error={Boolean(errors.targetWeight)}
             helperText={errors.targetWeight?.message ?? copy.targetWeightHint}
-            inputProps={{ min: 30, max: 300, step: 0.1 }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+            }}
           />
         </Stack>
 

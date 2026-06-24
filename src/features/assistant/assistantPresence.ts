@@ -159,7 +159,14 @@ export const resolveAssistantPresence = (
   }
 
   if (
-    (options.viewport === "mobile" || options.viewport === "tablet") &&
+    options.viewport === "mobile" &&
+    mobileDenseAssistantAreas.has(context.area)
+  ) {
+    return hiddenPresence("mobile-dense-surface-hidden", prefersReducedMotion);
+  }
+
+  if (
+    options.viewport === "tablet" &&
     mobileDenseAssistantAreas.has(context.area)
   ) {
     return compactPresence({

@@ -6,6 +6,8 @@ import {
   cardSx,
   clampNumber,
   parseOnboardingNumber,
+  sanitizeOnboardingIntegerInput,
+  selectOnboardingInputValue,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
@@ -20,7 +22,7 @@ export const OnboardingHeightPage = ({ state, updateState }: OnboardingStepProps
     parsedHeight !== null && parsedHeight >= 120 && parsedHeight <= 250;
 
   const updateHeightInput = (nextValue: string) => {
-    const safeValue = nextValue.replace(/[^\d]/g, "").slice(0, 3);
+    const safeValue = sanitizeOnboardingIntegerInput(nextValue);
     setHeightInput(safeValue);
 
     const parsedValue = parseOnboardingNumber(safeValue);
@@ -51,7 +53,8 @@ export const OnboardingHeightPage = ({ state, updateState }: OnboardingStepProps
             type="text"
             value={heightInput}
             onChange={(event) => updateHeightInput(event.target.value)}
-            onFocus={(event) => event.currentTarget.select()}
+            onFocus={(event) => selectOnboardingInputValue(event.target)}
+            onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && heightValid) {
                 continueToWeight();

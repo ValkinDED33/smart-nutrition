@@ -39,4 +39,46 @@ describe("shouldUseCompanionCanvas", () => {
       })
     ).toBe(false);
   });
+
+  it("keeps the mobile avatar lightweight even when 3D is requested", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        isMobileViewport: true,
+        renderMode: "3d",
+        size: 76,
+      })
+    ).toBe(false);
+  });
+
+  it("respects reduced motion and data saver preferences", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        prefersReducedMotion: true,
+        renderMode: "3d",
+        size: 76,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        saveData: true,
+        renderMode: "3d",
+        size: 76,
+      })
+    ).toBe(false);
+  });
+
+  it("falls back to 2D on low power devices", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        lowPowerDevice: true,
+        renderMode: "3d",
+        size: 76,
+      })
+    ).toBe(false);
+  });
 });

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildClientErrorReportPayload,
   buildErrorRecoveryDiagnostic,
+  buildRecoveryReloadUrl,
   clearVolatileSmartNutritionStorage,
   isLikelyStaleBuildError,
   isRecoveryRecentlyAttempted,
   sanitizeDiagnosticText,
+  shouldAttemptStaleBuildRecovery,
   shouldPreserveSmartNutritionStorageKey,
 } from "./errorRecovery";
 
@@ -47,6 +50,22 @@ describe("errorRecovery", () => {
     expect(isRecoveryRecentlyAttempted(String(now - 20_000), now)).toBe(false);
     expect(isRecoveryRecentlyAttempted("not-a-number", now)).toBe(true);
     expect(isRecoveryRecentlyAttempted(null, now)).toBe(false);
+  });
+
+  it("attempts stale build recovery only for likely stale chunks and only once per TTL", () => {
+    const now = 1_772_000_000_000;
+    const staleChunkError = new Error("Failed to fetch dynamically imported module");
+
+    expect(shouldAttemptStaleBuildRecovery(staleChunkError, null, now)).toBe(true);
+    expect(
+      shouldAttemptStaleBuildRecovery(staleChunkError, String(now - 1_000), now)
+    ).toBe(false);
+    expect(
+      shouldAttemptStaleBuildRecovery(staleChunkError, String(now - 20_000), now)
+    ).toBe(true);
+    expect(shouldAttemptStaleBuildRecovery(new Error("Validation failed"), null, now)).toBe(
+      false
+    );
   });
 
   it("preserves durable app keys and removes volatile smart-nutrition storage", () => {
@@ -95,5 +114,51 @@ describe("errorRecovery", () => {
     expect(diagnostic.route).toBe("/verify-email?token=[redacted]");
     expect(diagnostic.userAgent?.length).toBeLessThanOrEqual(120);
     expect(diagnostic.id).toMatch(/^sn-/);
+  });
+
+  it("builds a compact client error report payload", () => {
+    const diagnostic = buildErrorRecoveryDiagnostic(
+      new Error("Broken route /reset-password?token=secret"),
+      "/verify-email?token=another-secret",
+      new Date("2026-06-18T10:00:00.000Z"),
+      "Mozilla/5.0"
+    );
+    const payload = buildClientErrorReportPayload(
+      diagnostic,
+      [
+        "at ResetPasswordPage (/reset-password?token=secret)",
+        "at App",
+        "at Root",
+      ].join("\n"),
+      "react-error-boundary",
+      {
+        viewport: { width: 393, height: 851, devicePixelRatio: 2.75 },
+        online: false,
+        language: "uk-UA",
+      }
+    );
+
+    expect(payload.source).toBe("react-error-boundary");
+    expect(payload.route).toBe("/verify-email?token=[redacted]");
+    expect(payload.componentStackLines).toEqual([
+      "at ResetPasswordPage (/reset-password?token=[redacted])",
+      "at App",
+      "at Root",
+    ]);
+    expect(payload.runtimeContext).toEqual({
+      viewport: { width: 393, height: 851, devicePixelRatio: 2.75 },
+      online: false,
+      language: "uk-UA",
+    });
+  });
+
+  it("builds a cache-busting recovery URL while preserving existing params", () => {
+    expect(
+      buildRecoveryReloadUrl(
+        "https://smart-nutrition.club/reset-password?token=secret#top",
+        12345
+      )
+    ).toBe("https://smart-nutrition.club/reset-password?token=secret&sn_recovery=12345#top");
+    expect(buildRecoveryReloadUrl("not a url", 12345)).toBe("/");
   });
 });

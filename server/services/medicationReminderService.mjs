@@ -112,6 +112,8 @@ const getLocalDayOffset = (date, offsetDays, timeZone = DEFAULT_TIMEZONE) => {
 const extractTimes = (text) => {
   const explicitTimes = [...text.matchAll(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/g)]
     .map((match) => normalizeTime(match[1], match[2]));
+  const standaloneHourTimes = [...text.matchAll(/(?:^|\s)(?:в|о|at)\s*([01]?\d|2[0-3])(?:\s|$|[,.!?])/giu)]
+    .map((match) => normalizeTime(match[1], "00"));
   const phraseTimes = [];
   const normalized = text.toLowerCase();
   const morningHour = normalized.match(/(?:^|\s)(?:в|о|at)?\s*([01]?\d|2[0-3])\s*(?:утра|ранку|morning)(?:\s|$)/u);
@@ -133,7 +135,7 @@ const extractTimes = (text) => {
     phraseTimes.push("21:00");
   }
 
-  return dedupe([...explicitTimes, ...phraseTimes]).sort();
+  return dedupe([...explicitTimes, ...standaloneHourTimes, ...phraseTimes]).sort();
 };
 
 const extractCountPerDay = (text) => {
@@ -194,16 +196,20 @@ const extractWaterAmountMl = (text) => {
 const cleanTitle = (text) => {
   const firstChunk = text.split(/[,.]/)[0] ?? text;
   const withoutPrefix = firstChunk
-    .replace(/^(?:напоминай|нагадуй|remind me to|remind me|пить|пити|принимать|приймати|выпить)\s+/iu, "")
-    .replace(/^(?:пить|пити|принимать|приймати|выпить)\s+/iu, "")
+    .replace(/^(?:и|та|а|ой|ой,|ну|ну,)\s+/iu, "")
+    .replace(/^(?:(?:мне|мені|мени)\s+)?(?:надо|нужно|потрібно|треба)\s+/iu, "")
+    .replace(/^(?:напоминай|напомни|нагадуй|нагадай|remind me to|remind me|пить|пити|принимать|приймати|выпить|випити)\s+/iu, "")
+    .replace(/^(?:пить|пити|принимать|приймати|выпить|випити)\s+/iu, "")
     .replace(/\b\d{1,2}[:.]\d{2}\b/giu, "")
     .replace(/(?:^|\s)\d{1,2}\s*(?:раз(?:а)?|разів|times?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)\d+(?:[,.]\d+)?\s*(?:мг|mg|мл|ml|таблет(?:ка|ки|ок|ку|ке)?|табл\.?|капсул(?:а|ы|у|е|ок)?|капс\.?)(?:\s|$|,|\.)/giu, " ")
     .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|вечером|вечір|вечора|вечера|morning|evening|night)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:пить|пити|принимать|приймати|выпить|випити)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:по|by)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по|by|каждый|кожен|щодня|ежедневно|день)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:и|та|і|and)(?:\s|$)/giu, " ")
     .trim();
 
   return normalizeText(withoutPrefix || firstChunk || text, 96);
@@ -212,12 +218,15 @@ const cleanTitle = (text) => {
 const cleanTaskTitle = (text) => {
   const firstChunk = text.split(/[,.]/)[0] ?? text;
   const withoutPrefix = firstChunk
+    .replace(/^(?:и|та|а|ой|ой,|ну|ну,)\s+/iu, "")
+    .replace(/^(?:(?:мне|мені|мени)\s+)?(?:надо|нужно|потрібно|треба)\s+/iu, "")
     .replace(/^(?:напоминай|напомни|нагадуй|нагадай|remind me to|remind me|remind)\s+/iu, "")
     .replace(/\b\d{1,2}[:.]\d{2}\b/giu, "")
     .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|днем|днём|обед|обід|вечером|вечір|вечора|вечера|morning|afternoon|evening|night)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по|by)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:и|та|і|and)(?:\s|$)/giu, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -536,6 +545,16 @@ const addReminderEvent = (reminder, action, now = new Date(), scheduledFor = nul
 const upsertReminder = (reminders, reminder) =>
   reminders.map((item) => (item.id === reminder.id ? reminder : item));
 
+const findLatestEditableReminder = (reminders) =>
+  [...reminders]
+    .filter((reminder) => reminder.active)
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+      const bTime = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+
+      return bTime - aTime;
+    })[0] ?? null;
+
 export const createMedicationReminderService = ({
   authRepository,
   logger = console,
@@ -641,6 +660,58 @@ export const createMedicationReminderService = ({
     return { ok: true, reminder: updatedReminder, user: updatedUser };
   };
 
+  const updateReminderSchedule = async (user, reminderId, textOrTimes, now = new Date()) => {
+    const reminders = getUserReminders(user);
+    const reminder = reminders.find((item) => item.id === reminderId);
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    const times = Array.isArray(textOrTimes)
+      ? dedupe(textOrTimes.map((time) => {
+          const match = String(time).match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+          return match ? normalizeTime(match[1], match[2]) : null;
+        })).sort()
+      : extractTimes(String(textOrTimes ?? ""));
+
+    if (times.length === 0) {
+      return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
+    }
+
+    const updatedReminder = addReminderEvent(
+      {
+        ...reminder,
+        times,
+        updatedAt: now.toISOString(),
+        nextRunAt: null,
+      },
+      "schedule_updated",
+      now,
+      reminder.nextRunAt
+    );
+    updatedReminder.nextRunAt = calculateNextMedicationRunAt(updatedReminder, { from: now });
+
+    if (!updatedReminder.nextRunAt) {
+      return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
+    }
+
+    const updatedReminders = upsertReminder(reminders, updatedReminder);
+    const updatedUser = await persistReminders(user, updatedReminders);
+
+    return { ok: true, reminder: updatedReminder, user: updatedUser };
+  };
+
+  const updateLatestReminderSchedule = async (user, textOrTimes, now = new Date()) => {
+    const reminder = findLatestEditableReminder(getUserReminders(user));
+
+    if (!reminder) {
+      return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
+    }
+
+    return updateReminderSchedule(user, reminder.id, textOrTimes, now);
+  };
+
   const recordDoseAction = async (
     user,
     reminderId,
@@ -660,6 +731,7 @@ export const createMedicationReminderService = ({
       action === "snoozed"
         ? {
             ...nextReminder,
+            active: true,
             nextRunAt: new Date(now.getTime() + snoozeMinutes * 60_000).toISOString(),
           }
         : nextReminder;
@@ -729,6 +801,8 @@ export const createMedicationReminderService = ({
     createHabitReminderFromText,
     createTaskReminderFromText,
     deactivateReminder,
+    updateReminderSchedule,
+    updateLatestReminderSchedule,
     recordDoseAction,
     recordReminderAction: recordDoseAction,
     markReminderSent,

@@ -28,6 +28,54 @@ const MEDICATION_LIKE_REMINDER_TYPES = new Set([
 const isMedicationReminder = (reminder) =>
   MEDICATION_LIKE_REMINDER_TYPES.has(String(reminder?.type ?? "medication"));
 
+const getLegacyReminderCreator = (reminders, kind) => {
+  if (!reminders) {
+    return null;
+  }
+
+  if (kind === "medication") {
+    return reminders.createMedicationReminderFromText ?? reminders.createReminderFromText ?? null;
+  }
+
+  if (kind === "medication_course") {
+    return reminders.createMedicationCourseReminderFromText ?? null;
+  }
+
+  if (kind === "pregnancy_supplement") {
+    return reminders.createPregnancySupplementReminderFromText ?? null;
+  }
+
+  if (kind === "water") {
+    return reminders.createWaterReminderFromText ?? null;
+  }
+
+  if (kind === "habit") {
+    return reminders.createHabitReminderFromText ?? null;
+  }
+
+  if (kind === "task") {
+    return reminders.createTaskReminderFromText ?? null;
+  }
+
+  return null;
+};
+
+const getReminderCreator = (reminders, kind) => {
+  if (reminders?.createReminderFromUserText) {
+    return (connectedUser, reminderText) =>
+      reminders.createReminderFromUserText(connectedUser, {
+        type: kind,
+        text: reminderText,
+      });
+  }
+
+  const legacyCreator = getLegacyReminderCreator(reminders, kind);
+
+  return legacyCreator
+    ? (connectedUser, reminderText) => legacyCreator(connectedUser, reminderText)
+    : null;
+};
+
 const formatReminderKindTitle = (reminder) => {
   if (reminder?.type === "medication_course") return "Курс ліків";
   if (reminder?.type === "pregnancy_supplement") return "Вагітність";
@@ -59,7 +107,7 @@ export const buildMedicationReminderCreatedMessage = (reminder) =>
   [
     "Готово, нагадування створено.",
     "",
-    `Ліки: ${reminder.title}`,
+    `${formatReminderKindTitle(reminder)}: ${reminder.title}`,
     `Час: ${formatMedicationReminderTimes(reminder)}`,
     reminder.dose ? `Доза: ${reminder.dose}` : null,
     reminder.durationDays ? `Тривалість: ${reminder.durationDays} дн.` : null,
@@ -74,9 +122,13 @@ export const buildMedicationReminderCreatedMessage = (reminder) =>
 
 export const buildMedicationReminderNotificationMessage = (reminder) =>
   [
-    "Пора прийняти ліки.",
+    reminder?.type === "pregnancy_supplement"
+      ? "Час для добавки за вашим планом."
+      : reminder?.type === "medication_course"
+        ? "Час прийому з курсу ліків."
+        : "Пора прийняти ліки.",
     "",
-    `Ліки: ${reminder.title}`,
+    `${formatReminderKindTitle(reminder)}: ${reminder.title}`,
     `Час: ${formatMedicationReminderTimes(reminder)}`,
     formatMedicationReminderDose(reminder).trim() || null,
     "",
@@ -204,6 +256,19 @@ export const buildTaskReminderNotificationMessage = (reminder) =>
     "Позначте дію кнопкою нижче, щоб я не губив контекст.",
   ].join("\n");
 
+export const buildReminderScheduleUpdatedMessage = (reminder) =>
+  [
+    "Готово, я оновив час останнього нагадування.",
+    "",
+    `${formatReminderKindTitle(reminder)}: ${reminder.title}`,
+    `Новий час: ${formatMedicationReminderTimes(reminder)}`,
+    reminder.nextRunAt
+      ? `Найближче нагадування: ${new Date(reminder.nextRunAt).toLocaleString("uk-UA")}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
 const getCommandArgument = (ctx) =>
   String(ctx.message?.text ?? "")
     .replace(/^\/[\w_]+(?:@\w+)?\s*/u, "")
@@ -230,6 +295,11 @@ const looksLikeHabitReminderText = (text) =>
   /(звичк|привычк|habit|routine|рутин)/iu.test(String(text ?? "")) &&
   /(\d{1,2}[:.]\d{2}|утром|ранку|вечером|вечір|morning|evening|щодня|каждый|daily)/iu.test(
     String(text ?? "")
+  );
+
+const looksLikeScheduleCorrectionText = (text) =>
+  /^(?:ой|ой,|сорри|sorry|краще|лучше|а|и|та)?\s*(?:в|о|at)?\s*(?:[01]?\d|2[0-3])(?::[0-5]\d)?\s*[.!?]*$/iu.test(
+    String(text ?? "").trim()
   );
 
 export const createTelegramMedicationReminderRuntime = ({
@@ -272,15 +342,7 @@ export const createTelegramMedicationReminderRuntime = ({
       return;
     }
 
-    const createReminder = reminders?.createReminderFromUserText
-      ? (connectedUser, reminderText) =>
-          reminders.createReminderFromUserText(connectedUser, {
-            type: kind,
-            text: reminderText,
-          })
-      : kind === "task"
-        ? reminders?.createTaskReminderFromText
-        : reminders?.createMedicationReminderFromText ?? reminders?.createReminderFromText;
+    const createReminder = getReminderCreator(reminders, kind);
 
     if (!createReminder) {
       await ctx.reply("Нагадування тимчасово недоступні.");
@@ -315,6 +377,37 @@ export const createTelegramMedicationReminderRuntime = ({
         ? buildTaskReminderCreatedMessage(result.reminder)
         : buildMedicationReminderCreatedMessage(result.reminder)
     );
+  };
+
+  const updateLatestScheduleFromText = async (ctx, text) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return false;
+    }
+
+    if (!reminders?.updateLatestReminderSchedule) {
+      return false;
+    }
+
+    const result = await reminders.updateLatestReminderSchedule(user, text);
+
+    if (!result.ok) {
+      return false;
+    }
+
+    await writeAuditLog?.({
+      user: result.user ?? user,
+      action: `telegram.${result.reminder?.type ?? "reminder"}_reminder.schedule_updated`,
+      details: {
+        provider: "telegram",
+        reminderId: result.reminder.id,
+        times: result.reminder.times,
+      },
+    });
+    await ctx.reply(buildReminderScheduleUpdatedMessage(result.reminder));
+
+    return true;
   };
 
   const handleCallback = async (ctx) => {
@@ -552,6 +645,14 @@ export const createTelegramMedicationReminderRuntime = ({
       if (!text || text.startsWith("/")) {
         await next?.();
         return;
+      }
+
+      if (looksLikeScheduleCorrectionText(text)) {
+        const updated = await updateLatestScheduleFromText(ctx, text);
+
+        if (updated) {
+          return;
+        }
       }
 
       if (looksLikeWaterReminderText(text)) {

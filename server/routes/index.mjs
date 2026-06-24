@@ -2,6 +2,7 @@ import { createAiRoutes } from "./ai.routes.mjs";
 import { createAdminRoutes } from "./admin.routes.mjs";
 import { createAccountRoutes } from "./account.routes.mjs";
 import { createAuthRoutes } from "./auth.routes.mjs";
+import { createClientErrorRoutes } from "./clientError.routes.mjs";
 import { createHealthRoutes } from "./health.routes.mjs";
 import { createReminderRoutes } from "./reminder.routes.mjs";
 import { createStateRoutes } from "./state.routes.mjs";
@@ -10,6 +11,7 @@ import { createTelegramRoutes } from "./telegram.routes.mjs";
 export const createApiRouter = (dependencies) => {
   const routes = [
     ...createHealthRoutes(dependencies),
+    ...createClientErrorRoutes(dependencies),
     ...createAuthRoutes(dependencies),
     ...createAccountRoutes(dependencies),
     ...createTelegramRoutes(dependencies),

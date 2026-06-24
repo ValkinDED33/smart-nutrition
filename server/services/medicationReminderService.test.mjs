@@ -56,6 +56,25 @@ describe("medicationReminderService", () => {
     });
   });
 
+  it("cleans natural Telegram medication wording into a useful title", () => {
+    expect(
+      parseMedicationReminderText("Мне надо пить витамины в 10:00", {
+        now: new Date("2026-06-20T05:00:00.000Z"),
+      })
+    ).toMatchObject({
+      title: "витамины",
+      times: ["10:00"],
+    });
+    expect(
+      parseMedicationReminderText("И в 22:00 выпить магний", {
+        now: new Date("2026-06-20T05:00:00.000Z"),
+      })
+    ).toMatchObject({
+      title: "магний",
+      times: ["22:00"],
+    });
+  });
+
   it("does not create a reminder without a usable schedule", () => {
     expect(parseMedicationReminderText("Магний")).toBeNull();
   });
@@ -74,6 +93,18 @@ describe("medicationReminderService", () => {
     });
     expect(reminder.dose).toBe("");
     expect(reminder.nextRunAt).toBeTruthy();
+  });
+
+  it("removes dangling conjunctions after multiple times in family task reminders", () => {
+    const reminder = parseTaskReminderText("Напомни маме измерить давление в 8:00 и 20:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+
+    expect(reminder).toMatchObject({
+      type: "task",
+      title: "маме измерить давление",
+      times: ["08:00", "20:00"],
+    });
   });
 
   it("calculates next run from local reminder times", () => {
@@ -183,6 +214,42 @@ describe("medicationReminderService", () => {
     expect(persistedReminder.nextRunAt).toBeNull();
   });
 
+  it("reactivates a sent one-time task reminder when it is snoozed", async () => {
+    const sentReminder = {
+      ...parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+        now: new Date("2026-06-20T05:00:00.000Z"),
+      }),
+      active: false,
+      nextRunAt: null,
+      lastSentAt: "2026-06-20T08:00:00.000Z",
+    };
+    const user = createUser({ medicationReminders: [sentReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.recordReminderAction(
+      user,
+      sentReminder.id,
+      "snoozed",
+      new Date("2026-06-20T08:01:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-20T08:11:00.000Z",
+    });
+    expect(repository.updateUserMedicationReminders.mock.calls[0][1][0]).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-20T08:11:00.000Z",
+    });
+  });
+
   it("records dose actions without duplicating reminders", async () => {
     const initialReminder = parseMedicationReminderText("Магний 1 капсула в 21:00", {
       now: new Date("2026-06-20T10:00:00.000Z"),
@@ -207,6 +274,35 @@ describe("medicationReminderService", () => {
     expect(result.reminder.events).toHaveLength(1);
     expect(result.reminder.events[0]).toMatchObject({ action: "taken" });
     expect(repository.updateUserMedicationReminders.mock.calls[0][1]).toHaveLength(1);
+  });
+
+  it("updates the latest reminder schedule from a short correction message", async () => {
+    const firstReminder = parseMedicationReminderText("Магний 1 капсула в 22:00", {
+      now: new Date("2026-06-20T10:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [firstReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.updateLatestReminderSchedule(
+      user,
+      "Ой в 23",
+      new Date("2026-06-20T19:05:00.000Z")
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      reminder: {
+        title: "Магний",
+        times: ["23:00"],
+      },
+    });
+    expect(result.reminder.events.at(-1)).toMatchObject({ action: "schedule_updated" });
   });
 
   it("sends due reminders and advances the next run only after a successful send", async () => {

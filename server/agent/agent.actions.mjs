@@ -32,6 +32,22 @@ const getReminderKindLabel = (reminderKind) => {
   return "нагадування про ліки";
 };
 
+const getReminderActionPhrase = (reminderKind) => {
+  if (
+    reminderKind === "medication" ||
+    reminderKind === "medication_course" ||
+    reminderKind === "pregnancy_supplement"
+  ) {
+    return "прийнято, пізніше або пропустити";
+  }
+
+  if (reminderKind === "water") {
+    return "випито, пізніше або пропустити";
+  }
+
+  return "зроблено, пізніше або пропустити";
+};
+
 const getProductTitle = (product) =>
   [product?.brand, product?.name]
     .map((value) => String(value ?? "").trim())
@@ -190,7 +206,7 @@ export const buildAgentReply = ({ intent, toolResult }) => {
       doseLine,
       reminder?.repeat === "once" ? "Повтор: один раз." : "Повтор: щодня.",
       safetyLine,
-      "Я нагадаю в Telegram і дам кнопки: зроблено/прийнято, пізніше або пропустити.",
+      `Я нагадаю в Telegram і дам кнопки: ${getReminderActionPhrase(reminderKind)}.`,
     ]
       .filter(Boolean)
       .join("\n");

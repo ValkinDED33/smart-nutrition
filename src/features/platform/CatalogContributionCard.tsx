@@ -17,6 +17,7 @@ import {
   listOwnCatalogSubmissions,
   submitCatalogSubmission,
 } from "../../shared/api/platform";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { getKnownProductCategoryOptions } from "@domain/products/productCategory";
 
@@ -363,38 +364,50 @@ export const CatalogContributionCard = ({
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.calories}
             size={compact ? "small" : "medium"}
             value={form.calories}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             onChange={(event) =>
               setForm((current) => ({ ...current, calories: event.target.value }))
             }
           />
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.protein}
             size={compact ? "small" : "medium"}
             value={form.protein}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             onChange={(event) =>
               setForm((current) => ({ ...current, protein: event.target.value }))
             }
           />
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.fat}
             size={compact ? "small" : "medium"}
             value={form.fat}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             onChange={(event) => setForm((current) => ({ ...current, fat: event.target.value }))}
           />
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.carbs}
             size={compact ? "small" : "medium"}
             value={form.carbs}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "done" } }}
             onChange={(event) =>
               setForm((current) => ({ ...current, carbs: event.target.value }))
             }

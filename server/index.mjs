@@ -24,6 +24,7 @@ import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
 import { createAccountController } from "./routes/account.routes.mjs";
 import { createAuthController } from "./routes/auth.routes.mjs";
+import { createClientErrorController } from "./routes/clientError.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
 import { createReminderController } from "./routes/reminder.routes.mjs";
 import { createTelegramController } from "./routes/telegram.routes.mjs";
@@ -187,6 +188,10 @@ const aiController = createAiController({
   aiService,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
 });
+const clientErrorController = createClientErrorController({
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+  sentryRuntime,
+});
 const adminController = createAdminController({
   platformService,
   adminRepository,
@@ -252,6 +257,7 @@ const reminderController = createReminderController({
 });
 const publicApiRouter = createApiRouter({
   healthController,
+  clientErrorController,
   authController,
   authRouteScope: "public",
 });

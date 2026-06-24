@@ -236,7 +236,7 @@ const MealBuilderPage = () => {
   };
 
   const openFoodCommandTarget = (
-    target: "search" | "photo" | "barcode" | "composer"
+    target: "search" | "photo" | "barcode" | "composer" | "favorites"
   ) => {
     if (target === "barcode") {
       openScanner();
@@ -251,7 +251,9 @@ const MealBuilderPage = () => {
     }
 
     handleInputModeChange("search");
-    setActiveAddTool(target === "composer" ? "composer" : "search");
+    setActiveAddTool(
+      target === "composer" ? "composer" : target === "favorites" ? "favorites" : "search"
+    );
   };
 
   const sections = [

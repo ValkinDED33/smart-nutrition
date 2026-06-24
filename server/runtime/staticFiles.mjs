@@ -40,14 +40,28 @@ const isInsideDirectory = (rootDir, candidatePath) => {
 const getContentType = (filePath) =>
   mimeTypes.get(path.extname(filePath).toLowerCase()) ?? "application/octet-stream";
 
+const getCacheControl = (filePath) => {
+  const isAsset = filePath.includes(`${path.sep}assets${path.sep}`);
+  const fileName = path.basename(filePath).toLowerCase();
+
+  if (isAsset) {
+    return "public, max-age=31536000, immutable";
+  }
+
+  if (fileName === "index.html" || fileName === "sw.js") {
+    return "no-store, max-age=0";
+  }
+
+  return "no-cache";
+};
+
 const sendStaticFile = async (request, response, filePath) => {
   const body = await fs.readFile(filePath);
-  const isAsset = filePath.includes(`${path.sep}assets${path.sep}`);
 
   response.writeHead(200, {
     "Content-Type": getContentType(filePath),
     "Content-Length": String(body.byteLength),
-    "Cache-Control": isAsset ? "public, max-age=31536000, immutable" : "no-cache",
+    "Cache-Control": getCacheControl(filePath),
   });
 
   if (request.method === "HEAD") {
@@ -56,6 +70,10 @@ const sendStaticFile = async (request, response, filePath) => {
   }
 
   response.end(body);
+};
+
+export const staticFileRuntimeInternals = {
+  getCacheControl,
 };
 
 export const createStaticFileServer = async ({ staticDir, serveStatic }) => {

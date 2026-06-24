@@ -20,6 +20,7 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import type { AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
   incrementWater,
   setWaterConsumed,
@@ -604,20 +605,36 @@ export const WaterTracker = () => {
           }}
         >
           <TextField
-            type="number"
+            type="text"
             label={`${copy.target} (ml)`}
             value={water.dailyWaterGoal}
             onChange={(event) => dispatch(setWaterTarget(Number(event.target.value) || 0))}
-            inputProps={{ min: 250, step: 50 }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                enterKeyHint: "next",
+              },
+            }}
           />
           <TextField
-            type="number"
+            type="text"
             label={`${copy.glassSize} (ml)`}
             value={water.glassSizeMl}
             onChange={(event) =>
               dispatch(setWaterGlassSize(Number(event.target.value) || 0))
             }
-            inputProps={{ min: 100, step: 50 }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            slotProps={{
+              htmlInput: {
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+                enterKeyHint: "next",
+              },
+            }}
           />
         </Box>
 
@@ -737,11 +754,19 @@ export const WaterTracker = () => {
                 <Typography color="text.secondary">{copy.partialHint}</Typography>
               </Stack>
               <TextField
-                type="number"
+                type="text"
                 label={copy.amount}
                 value={partialAmountMl}
                 onChange={(event) => setPartialAmountMl(Number(event.target.value) || 0)}
-                inputProps={{ min: 0, max: water.glassSizeMl, step: 10 }}
+                onFocus={(event) => selectInputValue(event.target)}
+                onClick={(event) => selectInputValue(event.currentTarget)}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    pattern: "[0-9]*",
+                    enterKeyHint: "done",
+                  },
+                }}
               />
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 {quickAmounts.map((amount) => (

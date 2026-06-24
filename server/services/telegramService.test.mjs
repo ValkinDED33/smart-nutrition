@@ -262,7 +262,7 @@ describe("telegramService", () => {
     const reply = vi.fn();
     await instances[0].startHandler({
       payload: token,
-      chat: { id: 42 },
+      chat: { id: 123456789 },
       reply,
     });
 
@@ -272,7 +272,7 @@ describe("telegramService", () => {
     expect(repository.updateUserTelegramConnection).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
-        telegramChatId: "42",
+        telegramChatId: "123456789",
       })
     );
     expect(repository.createAuditLog).toHaveBeenCalledWith(
@@ -288,6 +288,16 @@ describe("telegramService", () => {
         ok: true,
       })
     );
+    expect(logger.info.mock.calls.map(([, details]) => details)).toContainEqual(
+      expect.objectContaining({
+        chatId: {
+          present: true,
+          length: 9,
+          suffix: "6789",
+        },
+      })
+    );
+    expect(JSON.stringify(logger.info.mock.calls)).not.toContain("123456789");
 
     service.stop("test shutdown");
   });

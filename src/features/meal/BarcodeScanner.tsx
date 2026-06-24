@@ -36,6 +36,7 @@ import {
   getProductCategoryLabel,
 } from "@domain/products/productCategory";
 import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
@@ -751,17 +752,21 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             onChange={(event) => handleBarcodeChange(event.target.value)}
             slotProps={{
               htmlInput: {
+                enterKeyHint: "search",
                 inputMode: "numeric",
                 pattern: "[0-9]*",
               },
             }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
           />
           <TextField
-            type="number"
+            type="text"
             label={copy.grams}
             value={quantity}
-            slotProps={{ htmlInput: { inputMode: "decimal", min: 0, step: 1 } }}
-            onFocus={(event) => event.target.select()}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
             onChange={(event) => {
               const value = event.target.value;
               const nextQuantity = Number(value);
@@ -1089,24 +1094,26 @@ export const BarcodeScanner = ({ mealType }: Props) => {
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <TextField
                   fullWidth
-                  type="number"
+                  type="text"
                   label={copy.manualCalories}
                   value={manualDraft.calories}
                   slotProps={{
-                    htmlInput: { inputMode: "decimal", min: 0, step: 1 },
+                    htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
                   }}
-                  onFocus={(event) => event.target.select()}
+                  onFocus={(event) => selectInputValue(event.target)}
+                  onClick={(event) => selectInputValue(event.currentTarget)}
                   onChange={handleManualChange("calories")}
                 />
                 <TextField
                   fullWidth
-                  type="number"
+                  type="text"
                   label={copy.manualProtein}
                   value={manualDraft.protein}
                   slotProps={{
-                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                    htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
                   }}
-                  onFocus={(event) => event.target.select()}
+                  onFocus={(event) => selectInputValue(event.target)}
+                  onClick={(event) => selectInputValue(event.currentTarget)}
                   onChange={handleManualChange("protein")}
                 />
               </Stack>
@@ -1114,24 +1121,26 @@ export const BarcodeScanner = ({ mealType }: Props) => {
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <TextField
                   fullWidth
-                  type="number"
+                  type="text"
                   label={copy.manualFat}
                   value={manualDraft.fat}
                   slotProps={{
-                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                    htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
                   }}
-                  onFocus={(event) => event.target.select()}
+                  onFocus={(event) => selectInputValue(event.target)}
+                  onClick={(event) => selectInputValue(event.currentTarget)}
                   onChange={handleManualChange("fat")}
                 />
                 <TextField
                   fullWidth
-                  type="number"
+                  type="text"
                   label={copy.manualCarbs}
                   value={manualDraft.carbs}
                   slotProps={{
-                    htmlInput: { inputMode: "decimal", min: 0, step: 0.1 },
+                    htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
                   }}
-                  onFocus={(event) => event.target.select()}
+                  onFocus={(event) => selectInputValue(event.target)}
+                  onClick={(event) => selectInputValue(event.currentTarget)}
                   onChange={handleManualChange("carbs")}
                 />
               </Stack>

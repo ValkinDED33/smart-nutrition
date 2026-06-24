@@ -30,6 +30,7 @@ import {
   formatProductPortion,
   getProductPortionPresets,
 } from "@domain/products/productPortions";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 
 interface Props {
   product: Product;
@@ -181,13 +182,14 @@ export const ProductCard = ({
           <TextField
             fullWidth
             size="small"
-            type="number"
+            type="text"
             label={`${t("meal.quantity")} (${product.unit})`}
             placeholder="100"
             value={qty}
             error={Boolean(quantityError)}
             helperText={quantityError}
-            onFocus={(event) => event.target.select()}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
             onChange={(event) => {
               setQty(event.target.value);
               setQuantityError(null);
@@ -195,8 +197,7 @@ export const ProductCard = ({
             slotProps={{
               htmlInput: {
                 inputMode: "decimal",
-                min: 1,
-                step: product.unit === "piece" ? 1 : 0.1,
+                enterKeyHint: "done",
               },
             }}
           />

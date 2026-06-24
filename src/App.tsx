@@ -12,6 +12,14 @@ import PublicRoute from "./routes/PublicRoute";
 import { useLanguage } from "./shared/language";
 import { adminRouteRoles } from "@app/navigation/appNavigation";
 import { canAccessAdminCenter } from "@domain/user/roles";
+import {
+  buildRecoveryReloadUrl,
+  clearRuntimeCaches,
+  getSessionStorageItem,
+  setSessionStorageItem,
+  shouldAttemptStaleBuildRecovery,
+  STALE_BUILD_RECOVERY_KEY,
+} from "@shared/lib/errorRecovery";
 
 const loadLanguageSetupPage = () => import("./pages/LanguageSetupPage");
 const loadLandingPage = () => import("./pages/LandingPage");
@@ -50,6 +58,12 @@ const ResetPasswordPage = lazy(loadResetPasswordPage);
 const NotFoundPage = lazy(loadNotFoundPage);
 
 const RouteFallback = () => <Loader fullScreen={false} size={80} />;
+
+const recoverApplicationAfterStaleBuild = (currentHref: string) => {
+  void clearRuntimeCaches().finally(() => {
+    window.location.replace(buildRecoveryReloadUrl(currentHref));
+  });
+};
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -116,11 +130,27 @@ function App() {
       ...(canAccessAdminCenter(user?.role) ? [loadAdminPage] : []),
     ];
     const routeTimeoutIds: ReturnType<typeof globalThis.setTimeout>[] = [];
+    const recoverFromRoutePreloadFailure = (error: unknown) => {
+      if (
+        !shouldAttemptStaleBuildRecovery(
+          error,
+          getSessionStorageItem(STALE_BUILD_RECOVERY_KEY)
+        )
+      ) {
+        return;
+      }
+
+      setSessionStorageItem(STALE_BUILD_RECOVERY_KEY, String(Date.now()));
+      recoverApplicationAfterStaleBuild(window.location.href);
+    };
+    const preloadRouteSafely = (loadRoute: () => Promise<unknown>) => {
+      void loadRoute().catch(recoverFromRoutePreloadFailure);
+    };
 
     const preloadRoutes = () => {
       routeLoaders.forEach((loadRoute, index) => {
         const timeoutId = globalThis.setTimeout(() => {
-          void loadRoute();
+          preloadRouteSafely(loadRoute);
         }, index * 350);
         routeTimeoutIds.push(timeoutId);
       });

@@ -7,6 +7,8 @@ const SMART_NUTRITION_KEY_PREFIX = "smart-nutrition.";
 const LEGACY_DB_NAME = "smart-nutrition-client";
 const DIAGNOSTIC_TEXT_LIMIT = 180;
 const DIAGNOSTIC_USER_AGENT_LIMIT = 120;
+const DIAGNOSTIC_COMPONENT_STACK_LINE_LIMIT = 180;
+const DIAGNOSTIC_COMPONENT_STACK_MAX_LINES = 8;
 
 const DURABLE_RECOVERY_KEYS = new Set([
   "smart-nutrition.auth-session-hint",
@@ -20,7 +22,7 @@ const staleBuildErrorPattern =
   /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i;
 
 const sensitiveQueryPattern =
-  /([?&](?:access_)?token|[?&]code|[?&]key|[?&]password|[?&]email)=([^&#\s]+)/gi;
+  /([?&](?:access_)?token|[?&]code|[?&]key|[?&]password|[?&]email)=([^&#\s)\]}>"']+)/gi;
 
 export interface StorageLike {
   readonly length: number;
@@ -38,6 +40,49 @@ export interface ErrorRecoveryDiagnostic {
   route: string;
   staleBuildLikely: boolean;
   userAgent?: string;
+}
+
+export interface ClientErrorRuntimeContext {
+  viewport?: {
+    width?: number;
+    height?: number;
+    devicePixelRatio?: number;
+  };
+  screen?: {
+    width?: number;
+    height?: number;
+  };
+  online?: boolean;
+  language?: string;
+  timezone?: string;
+  visibilityState?: string;
+  colorScheme?: "dark" | "light" | "unknown";
+  reducedMotion?: boolean;
+  standalone?: boolean;
+  serviceWorkerControlled?: boolean;
+  connection?: {
+    effectiveType?: string;
+    saveData?: boolean;
+    downlinkMbps?: number;
+    rttMs?: number;
+  };
+  build?: {
+    mode?: string;
+    baseUrl?: string;
+    production?: boolean;
+  };
+}
+
+export type ClientErrorReportSource =
+  | "react-error-boundary"
+  | "window-error"
+  | "unhandled-rejection"
+  | "bootstrap";
+
+export interface ClientErrorReportPayload extends ErrorRecoveryDiagnostic {
+  source: ClientErrorReportSource;
+  componentStackLines: string[];
+  runtimeContext?: ClientErrorRuntimeContext;
 }
 
 type BrowserStorageName = "local" | "session";
@@ -71,6 +116,12 @@ const createDiagnosticId = (createdAt: string, message: string) => {
 
 export const isLikelyStaleBuildError = (error: unknown) =>
   staleBuildErrorPattern.test(getErrorText(error));
+
+export const shouldAttemptStaleBuildRecovery = (
+  error: unknown,
+  rawAttemptedAt: string | null,
+  now = Date.now()
+) => isLikelyStaleBuildError(error) && !isRecoveryRecentlyAttempted(rawAttemptedAt, now);
 
 export const isRecoveryRecentlyAttempted = (
   rawValue: string | null,
@@ -123,6 +174,24 @@ export const buildErrorRecoveryDiagnostic = (
     userAgent: userAgent ? truncate(userAgent, DIAGNOSTIC_USER_AGENT_LIMIT) : undefined,
   };
 };
+
+export const buildClientErrorReportPayload = (
+  diagnostic: ErrorRecoveryDiagnostic,
+  componentStack?: string | null,
+  source: ClientErrorReportSource = "react-error-boundary",
+  runtimeContext?: ClientErrorRuntimeContext
+): ClientErrorReportPayload => ({
+  ...diagnostic,
+  source,
+  componentStackLines: String(componentStack ?? "")
+    .trim()
+    .split("\n")
+    .map((line) => sanitizeDiagnosticText(line.trim()))
+    .filter(Boolean)
+    .slice(0, DIAGNOSTIC_COMPONENT_STACK_MAX_LINES)
+    .map((line) => truncate(line, DIAGNOSTIC_COMPONENT_STACK_LINE_LIMIT)),
+  runtimeContext,
+});
 
 const getBrowserStorage = (name: BrowserStorageName): StorageLike | null => {
   if (typeof window === "undefined") {
@@ -226,4 +295,18 @@ export const clearRuntimeCaches = async () => {
     clearOriginCaches(),
     clearLegacyDatabase(),
   ]);
+};
+
+export const buildRecoveryReloadUrl = (
+  currentHref: string,
+  now = Date.now()
+) => {
+  try {
+    const url = new URL(currentHref);
+    url.searchParams.set("sn_recovery", String(now));
+
+    return url.toString();
+  } catch {
+    return "/";
+  }
 };

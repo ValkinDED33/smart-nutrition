@@ -18,6 +18,7 @@ import { setUser } from "../auth/authSlice";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { recordMeasurementCheckIn } from "./profileSlice";
 
@@ -215,15 +216,20 @@ export const MeasurementsCheckInCard = () => {
         <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <TextField
-              type="number"
+              type="text"
               fullWidth
               label={t("form.weight")}
-              {...register("weight", { valueAsNumber: true })}
+              {...register("weight", {
+                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+              })}
               error={Boolean(errors.weight)}
               helperText={errors.weight?.message}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
+              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             />
             <TextField
-              type="number"
+              type="text"
               fullWidth
               label={copy.waist}
               {...register("waist", {
@@ -231,9 +237,12 @@ export const MeasurementsCheckInCard = () => {
               })}
               error={Boolean(errors.waist)}
               helperText={errors.waist?.message}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
+              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             />
             <TextField
-              type="number"
+              type="text"
               fullWidth
               label={copy.abdomen}
               {...register("abdomen", {
@@ -241,12 +250,15 @@ export const MeasurementsCheckInCard = () => {
               })}
               error={Boolean(errors.abdomen)}
               helperText={errors.abdomen?.message}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
+              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             />
           </Stack>
 
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <TextField
-              type="number"
+              type="text"
               fullWidth
               label={copy.hip}
               {...register("hip", {
@@ -254,9 +266,12 @@ export const MeasurementsCheckInCard = () => {
               })}
               error={Boolean(errors.hip)}
               helperText={errors.hip?.message}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
+              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
             />
             <TextField
-              type="number"
+              type="text"
               fullWidth
               label={copy.chest}
               {...register("chest", {
@@ -264,6 +279,9 @@ export const MeasurementsCheckInCard = () => {
               })}
               error={Boolean(errors.chest)}
               helperText={errors.chest?.message}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
+              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "done" } }}
             />
           </Stack>
 

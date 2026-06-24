@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Camera, Plus, ScanBarcode, Search, Sparkles } from "lucide-react";
+import { Camera, Plus, ScanBarcode, Search, Sparkles, Star } from "lucide-react";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import { getProductDisplayName } from "@domain/products/productDisplay";
@@ -20,6 +20,7 @@ import { getProductPortionPresets, formatProductPortion } from "@domain/products
 import { productMatchesPreferences } from "@domain/user/preferences";
 import type { AppDispatch, RootState } from "../../app/store";
 import { searchProducts } from "../../shared/api/products";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { addProduct, rememberRecentProduct } from "./mealSlice";
 import { getProductSuggestions } from "./productSuggestionModel";
@@ -29,7 +30,7 @@ import {
   selectSavedProducts,
 } from "./selectors";
 
-type FoodCommandTarget = "search" | "photo" | "barcode" | "composer";
+type FoodCommandTarget = "search" | "photo" | "barcode" | "composer" | "favorites";
 
 interface FoodCommandCenterProps {
   mealType: MealType;
@@ -47,6 +48,7 @@ const commandCopy = {
     photo: "Фото",
     barcode: "Сканер",
     composer: "Конструктор",
+    favorites: "Обране",
     searching: "Шукаю в онлайн-базі...",
     empty: "Почніть вводити назву — я підтягну варіанти з онлайн-каталогу.",
     unavailable:
@@ -68,6 +70,7 @@ const commandCopy = {
     photo: "Zdjęcie",
     barcode: "Skaner",
     composer: "Konstruktor",
+    favorites: "Ulubione",
     searching: "Szukam w bazie online...",
     empty: "Zacznij wpisywać nazwę — pobiorę propozycje z katalogu online.",
     unavailable:
@@ -89,6 +92,7 @@ const commandCopy = {
     photo: "Photo",
     barcode: "Scanner",
     composer: "Builder",
+    favorites: "Favorites",
     searching: "Searching the online database...",
     empty: "Start typing a name — I will pull options from the online catalog.",
     unavailable:
@@ -291,19 +295,25 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
               startAdornment: <Search size={18} style={{ marginRight: 8, opacity: 0.7 }} />,
               endAdornment: isSearching ? <CircularProgress size={18} /> : null,
             }}
+            slotProps={{
+              htmlInput: {
+                inputMode: "search",
+                enterKeyHint: "search",
+              },
+            }}
           />
           <TextField
-            type="number"
+            type="text"
             label={selectedProduct ? `${selectedProduct.unit}` : copy.grams}
             value={quantity}
             slotProps={{
               htmlInput: {
                 inputMode: "decimal",
-                min: 0,
-                step: selectedProduct?.unit === "piece" ? 1 : 5,
+                enterKeyHint: "done",
               },
             }}
-            onFocus={(event) => event.target.select()}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
             onChange={(event) => {
               const value = event.target.value;
               const nextValue = Number(value);
@@ -426,6 +436,13 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
             <Button variant="outlined" onClick={() => onOpenTarget("composer")}>
               {copy.composer}
             </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Star size={18} />}
+              onClick={() => onOpenTarget("favorites")}
+            >
+              {copy.favorites}
+            </Button>
             <Button variant="text" onClick={() => onOpenTarget("search")}>
               {copy.openSearch}
             </Button>
@@ -437,4 +454,3 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
     </Paper>
   );
 };
-

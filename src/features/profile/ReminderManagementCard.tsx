@@ -21,6 +21,15 @@ import {
   type ReminderItem,
   type ReminderType,
 } from "@shared/api/reminders";
+import {
+  getReminderPrimaryAction,
+  getReminderPrimaryActionLabelKey,
+  getReminderQuantityLabelKey,
+  isMedicationLikeReminderType,
+  reminderTypeOptions,
+  sortReminders,
+  toReminderType,
+} from "./reminderManagementModel";
 
 const reminderCopy = {
   uk: {
@@ -54,6 +63,7 @@ const reminderCopy = {
     deleted: "Нагадування вимкнено.",
     done: "Зроблено",
     taken: "Прийнято",
+    waterLogged: "Випито",
     snooze: "Через 10 хв",
     skip: "Пропустити",
     delete: "Видалити",
@@ -61,6 +71,7 @@ const reminderCopy = {
     daily: "Щодня",
     next: "Наступне",
     dose: "Доза",
+    portion: "Порція",
   },
   pl: {
     title: "Przypomnienia asystenta",
@@ -93,6 +104,7 @@ const reminderCopy = {
     deleted: "Przypomnienie wyłączone.",
     done: "Zrobione",
     taken: "Przyjęte",
+    waterLogged: "Wypite",
     snooze: "Za 10 min",
     skip: "Pomiń",
     delete: "Usuń",
@@ -100,6 +112,7 @@ const reminderCopy = {
     daily: "Codziennie",
     next: "Następne",
     dose: "Dawka",
+    portion: "Porcja",
   },
   en: {
     title: "Assistant reminders",
@@ -132,6 +145,7 @@ const reminderCopy = {
     deleted: "Reminder disabled.",
     done: "Done",
     taken: "Taken",
+    waterLogged: "Logged",
     snooze: "In 10 min",
     skip: "Skip",
     delete: "Delete",
@@ -139,6 +153,7 @@ const reminderCopy = {
     daily: "Daily",
     next: "Next",
     dose: "Dose",
+    portion: "Serving",
   },
 } as const;
 
@@ -164,24 +179,6 @@ const localeByLanguage = {
   pl: "pl-PL",
   en: "en-US",
 } as const;
-
-const reminderTypeOptions: ReminderType[] = [
-  "task",
-  "medication",
-  "medication_course",
-  "pregnancy_supplement",
-  "water",
-  "habit",
-];
-
-const doseActionTypes = new Set<ReminderType>([
-  "medication",
-  "medication_course",
-  "pregnancy_supplement",
-]);
-
-const toReminderType = (value: string): ReminderType =>
-  reminderTypeOptions.includes(value as ReminderType) ? (value as ReminderType) : "task";
 
 const getReminderTypeLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
@@ -218,20 +215,12 @@ const getReminderIcon = (reminderType: ReminderType) => {
     return <HeartPulse size={14} />;
   }
 
-  if (doseActionTypes.has(reminderType)) {
+  if (isMedicationLikeReminderType(reminderType)) {
     return <Bell size={14} />;
   }
 
   return <ListChecks size={14} />;
 };
-
-const sortReminders = (items: ReminderItem[]) =>
-  [...items].sort((a, b) => {
-    const aTime = a.nextRunAt ? new Date(a.nextRunAt).getTime() : Number.MAX_SAFE_INTEGER;
-    const bTime = b.nextRunAt ? new Date(b.nextRunAt).getTime() : Number.MAX_SAFE_INTEGER;
-
-    return aTime - bTime;
-  });
 
 export const ReminderManagementCard = () => {
   const { appLanguage } = useLanguage();
@@ -428,8 +417,9 @@ export const ReminderManagementCard = () => {
           <Stack spacing={1.2}>
             {sortedItems.map((reminder) => {
               const isBusy = busyReminderId === reminder.id;
-              const primaryAction: ReminderAction =
-                doseActionTypes.has(reminder.type) ? "taken" : "done";
+              const primaryAction: ReminderAction = getReminderPrimaryAction(reminder.type);
+              const primaryActionLabel = copy[getReminderPrimaryActionLabelKey(reminder.type)];
+              const quantityLabelKey = getReminderQuantityLabelKey(reminder.type);
 
               return (
                 <Box
@@ -466,7 +456,9 @@ export const ReminderManagementCard = () => {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {reminder.times.join(", ")}
-                          {reminder.dose ? ` · ${copy.dose}: ${reminder.dose}` : ""}
+                          {reminder.dose && quantityLabelKey
+                            ? ` · ${copy[quantityLabelKey]}: ${reminder.dose}`
+                            : ""}
                         </Typography>
                         {reminder.nextRunAt && (
                           <Typography variant="body2" color="text.secondary">
@@ -487,7 +479,7 @@ export const ReminderManagementCard = () => {
                         }}
                         sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
                       >
-                        {doseActionTypes.has(reminder.type) ? copy.taken : copy.done}
+                        {primaryActionLabel}
                       </Button>
                       <Button
                         variant="outlined"

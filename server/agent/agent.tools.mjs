@@ -95,6 +95,39 @@ const createSnapshotSummary = async ({ user, stateService, now }) => {
   };
 };
 
+const getTypedReminderCreator = (reminders, type) => {
+  if (reminders?.createReminderFromUserText) {
+    return (user, text, currentNow) =>
+      reminders.createReminderFromUserText(user, { type, text }, currentNow);
+  }
+
+  if (type === "medication") {
+    return reminders?.createMedicationReminderFromText ?? reminders?.createReminderFromText ?? null;
+  }
+
+  if (type === "medication_course") {
+    return reminders?.createMedicationCourseReminderFromText ?? null;
+  }
+
+  if (type === "pregnancy_supplement") {
+    return reminders?.createPregnancySupplementReminderFromText ?? null;
+  }
+
+  if (type === "water") {
+    return reminders?.createWaterReminderFromText ?? null;
+  }
+
+  if (type === "habit") {
+    return reminders?.createHabitReminderFromText ?? null;
+  }
+
+  if (type === "task") {
+    return reminders?.createTaskReminderFromText ?? null;
+  }
+
+  return null;
+};
+
 export const createAgentTools = ({
   stateService = null,
   platformService = null,
@@ -267,11 +300,13 @@ export const createAgentTools = ({
   };
 
   const createTypedReminder = async (user, { type, text }) => {
-    if (!reminders?.createReminderFromUserText) {
+    const createReminder = getTypedReminderCreator(reminders, type);
+
+    if (!createReminder) {
       return { ok: false, code: "REMINDER_TOOL_UNAVAILABLE" };
     }
 
-    const result = await reminders.createReminderFromUserText(user, { type, text }, now());
+    const result = await createReminder(user, text, now());
 
     if (!result?.ok) {
       return {

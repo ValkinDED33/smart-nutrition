@@ -19,6 +19,7 @@ import type { AppDispatch, RootState } from "../../app/store";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import type { CommunityPost } from "../../shared/types/community";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { searchProducts } from "../../shared/api/products";
 import { recipes } from "@domain/meal/recipes";
@@ -326,10 +327,15 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                     {item.product.name}
                   </Typography>
                   <TextField
-                    type="number"
+                    type="text"
                     size="small"
                     label={`${copy.quantity} (${item.product.unit})`}
                     value={item.quantity}
+                    onFocus={(event) => selectInputValue(event.target)}
+                    onClick={(event) => selectInputValue(event.currentTarget)}
+                    slotProps={{
+                      htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+                    }}
                     onChange={(event) =>
                       dispatch(
                         updateFridgeItemQuantity({

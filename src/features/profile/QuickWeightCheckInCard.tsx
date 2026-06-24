@@ -14,6 +14,7 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { calculateBmi, getBmiStatus } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { updateWeight } from "./profileSlice";
@@ -242,20 +243,27 @@ export const QuickWeightCheckInCard = () => {
         >
           <TextField
             fullWidth
-            type="number"
+            type="text"
             label={copy.input}
             value={weightDraft}
             onChange={(event) => {
               setWeightDraft(event.target.value);
               setSaved(false);
             }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
             error={weightDraft.length > 0 && !isValidWeight}
             helperText={
               weightDraft.length > 0 && !isValidWeight
                 ? copy.invalid
                 : `${copy.lastCheckIn}: ${lastCheckInLabel}`
             }
-            inputProps={{ min: 30, max: 300, step: 0.1 }}
+            slotProps={{
+              htmlInput: {
+                inputMode: "decimal",
+                enterKeyHint: "done",
+              },
+            }}
           />
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={() => adjustDraft(-0.5)}>

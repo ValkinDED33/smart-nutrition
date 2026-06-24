@@ -73,6 +73,20 @@ const maskTelegramPayload = (value) => {
   };
 };
 
+const maskTelegramChatId = (value) => {
+  const chatId = toTrimmedString(value === null || value === undefined ? "" : String(value));
+
+  if (!chatId) {
+    return { present: false };
+  }
+
+  return {
+    present: true,
+    length: chatId.length,
+    suffix: chatId.slice(-4),
+  };
+};
+
 const toCompactUserId = (userId) => {
   const match = /^user-([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i.exec(
     String(userId ?? "")
@@ -574,7 +588,7 @@ export const createTelegramService = ({
 
       logger.info?.("[telegram] connect payload received", {
         provider: "telegram",
-        chatId,
+        chatId: maskTelegramChatId(chatId),
         source: payloadSource,
         hasPayload: Boolean(payloadToken),
         payload: maskTelegramPayload(payloadToken),
@@ -637,7 +651,7 @@ export const createTelegramService = ({
         provider: "telegram",
         userId: verifiedToken.userId,
         found: Boolean(user),
-        chatId,
+        chatId: maskTelegramChatId(chatId),
       });
 
       if (!user || !chatId) {
@@ -655,7 +669,7 @@ export const createTelegramService = ({
         provider: "telegram",
         userId: user.id,
         linkedUserId: updatedUser?.id ?? null,
-        chatId,
+        chatId: maskTelegramChatId(chatId),
         updated: Boolean(updatedUser),
         persisted:
           String(updatedUser?.telegramChatId ?? "") === chatId ||

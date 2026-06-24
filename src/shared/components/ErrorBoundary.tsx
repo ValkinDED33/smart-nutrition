@@ -1,16 +1,17 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { reportClientErrorDiagnostic } from "@shared/api/clientErrors";
 import { useLanguage } from "../language";
 import {
   buildErrorRecoveryDiagnostic,
+  buildRecoveryReloadUrl,
   clearRuntimeCaches,
   clearVolatileBrowserState,
   getSessionStorageItem,
-  isLikelyStaleBuildError,
-  isRecoveryRecentlyAttempted,
   persistErrorRecoveryDiagnostic,
   removeSessionStorageItem,
   setSessionStorageItem,
+  shouldAttemptStaleBuildRecovery,
   STALE_BUILD_RECOVERY_KEY,
   STALE_BUILD_RECOVERY_TTL_MS,
   type ErrorRecoveryDiagnostic,
@@ -40,6 +41,19 @@ interface State {
   isRecovering: boolean;
   recoveryMode: "refresh" | "reset";
 }
+
+const reportErrorBoundaryDiagnostic = (
+  diagnostic: ErrorRecoveryDiagnostic,
+  componentStack?: string | null
+) => {
+  void (async () => {
+    try {
+      await reportClientErrorDiagnostic(diagnostic, componentStack);
+    } catch {
+      // Error reporting must never block the recovery UI.
+    }
+  })();
+};
 
 class ErrorBoundaryInner extends Component<Props, State> {
   state: State = {
@@ -91,11 +105,14 @@ class ErrorBoundaryInner extends Component<Props, State> {
         ? errorInfo.componentStack.trim().split("\n").slice(0, 4)
         : [],
     });
+    reportErrorBoundaryDiagnostic(diagnostic, errorInfo.componentStack);
     this.setState({ diagnostic });
 
     if (
-      !isLikelyStaleBuildError(error) ||
-      isRecoveryRecentlyAttempted(getSessionStorageItem(STALE_BUILD_RECOVERY_KEY))
+      !shouldAttemptStaleBuildRecovery(
+        error,
+        getSessionStorageItem(STALE_BUILD_RECOVERY_KEY)
+      )
     ) {
       return;
     }
@@ -138,7 +155,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
     }
 
     await clearRuntimeCaches();
-    window.location.replace(window.location.href);
+    window.location.replace(buildRecoveryReloadUrl(window.location.href));
   };
 
   render() {
@@ -189,6 +206,12 @@ class ErrorBoundaryInner extends Component<Props, State> {
                   {this.state.diagnostic.staleBuildLikely ? (
                     <Chip label="stale build" size="small" color="warning" />
                   ) : null}
+                  <Chip
+                    label={`${this.state.diagnostic.errorName}: ${this.state.diagnostic.message}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ maxWidth: "100%", "& .MuiChip-label": { whiteSpace: "normal" } }}
+                  />
                 </Stack>
               ) : null}
 

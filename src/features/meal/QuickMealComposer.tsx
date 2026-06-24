@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Autocomplete,
+  Box,
   Button,
+  Chip,
   CircularProgress,
   Collapse,
   Paper,
@@ -31,6 +33,7 @@ import {
   getProductPortionPresets,
 } from "@domain/products/productPortions";
 import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductSuggestions } from "./productSuggestionModel";
 
 interface Props {
@@ -65,6 +68,8 @@ const composerStatusCopy = {
     googleSearch: "Шукати в Google",
     addMissing: "Додати продукт в онлайн-базу",
     closeContribution: "Сховати форму",
+    inlineSuggestions: "Варіанти з бази",
+    choose: "Обрати",
   },
   pl: {
     unavailable:
@@ -77,6 +82,8 @@ const composerStatusCopy = {
     googleSearch: "Szukaj w Google",
     addMissing: "Dodaj produkt do bazy online",
     closeContribution: "Ukryj formularz",
+    inlineSuggestions: "Propozycje z bazy",
+    choose: "Wybierz",
   },
   en: {
     unavailable:
@@ -89,6 +96,8 @@ const composerStatusCopy = {
     googleSearch: "Search Google",
     addMissing: "Add product to online database",
     closeContribution: "Hide form",
+    inlineSuggestions: "Database suggestions",
+    choose: "Choose",
   },
 } as const;
 
@@ -231,6 +240,13 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       : name;
   };
 
+  const selectProductForRow = (rowId: string, product: Product) => {
+    updateRow(rowId, {
+      product,
+      productQuery: getProductLabel(product),
+    });
+  };
+
   return (
     <Paper
       elevation={0}
@@ -304,142 +320,220 @@ export const QuickMealComposer = ({ mealType }: Props) => {
               : copy.onlineHint;
 
           return (
-            <Stack
+            <Paper
               key={row.id}
-              direction={{ xs: "column", md: "row" }}
-              spacing={1.5}
-              alignItems={{ xs: "stretch", md: "center" }}
+              variant="outlined"
+              sx={{
+                p: { xs: 1.25, md: 1.5 },
+                borderRadius: 1,
+                borderColor: isActiveRow ? "primary.main" : "rgba(15, 23, 42, 0.1)",
+                bgcolor: isActiveRow ? "rgba(240,253,250,0.54)" : "rgba(255,255,255,0.64)",
+              }}
             >
-              <Autocomplete
-                fullWidth
-                autoHighlight
-                clearOnBlur={false}
-                freeSolo
-                handleHomeEndKeys
-                loading={shouldLookupProducts && productsQuery.isFetching}
-                openOnFocus
-                options={rowOptions}
-                selectOnFocus
-                noOptionsText={noOptionsText}
-                value={selectedProduct}
-                inputValue={row.productQuery}
-                filterOptions={(options) => options}
-                getOptionLabel={(product) =>
-                  typeof product === "string" ? product : getProductLabel(product)
-                }
-                isOptionEqualToValue={(option, value) =>
-                  typeof value !== "string" && option.id === value.id
-                }
-                onOpen={() => setActiveRowId(row.id)}
-                onInputChange={(_, value, reason) => {
-                  setActiveRowId(row.id);
-                  if (reason === "input" || reason === "clear") {
-                    setContributionOpen(false);
-                  }
-                  updateRow(row.id, {
-                    productQuery: value,
-                    product:
-                      reason === "clear" || reason === "input" || value.trim() === ""
-                        ? null
-                        : row.product,
-                  });
-                }}
-                onChange={(_, product) => {
-                  setActiveRowId(row.id);
-                  updateRow(row.id, {
-                    product: typeof product === "string" ? null : product,
-                    productQuery:
-                      typeof product === "string"
-                        ? product
-                        : product
-                          ? getProductLabel(product)
-                          : "",
-                  });
-                }}
-                renderOption={(props, product) => {
-                  const isFavorited = favorites.has(
-                    product.barcode?.trim() ||
-                    `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
-                  );
-
-                  return (
-                    <li {...props} key={product.barcode?.trim() || product.id}>
-                      {isFavorited ? "⭐ " : ""}
-                      {getProductLabel(product)}
-                    </li>
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label={`${t("composer.ingredient")} ${index + 1}`}
-                    placeholder={t("productSearch.placeholder")}
-                    autoComplete="off"
-                    helperText={helperText}
-                    onFocus={() => setActiveRowId(row.id)}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {productsQuery.isFetching ? (
-                            <CircularProgress color="inherit" size={18} />
-                          ) : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
+              <Stack spacing={1.25}>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={1.5}
+                  alignItems={{ xs: "stretch", md: "center" }}
+                >
+                  <Autocomplete
+                    fullWidth
+                    autoHighlight
+                    clearOnBlur={false}
+                    freeSolo
+                    handleHomeEndKeys
+                    loading={shouldLookupProducts && productsQuery.isFetching}
+                    openOnFocus
+                    options={rowOptions}
+                    selectOnFocus
+                    noOptionsText={noOptionsText}
+                    value={selectedProduct}
+                    inputValue={row.productQuery}
+                    filterOptions={(options) => options}
+                    getOptionLabel={(product) =>
+                      typeof product === "string" ? product : getProductLabel(product)
+                    }
+                    isOptionEqualToValue={(option, value) =>
+                      typeof value !== "string" && option.id === value.id
+                    }
+                    onOpen={() => setActiveRowId(row.id)}
+                    onInputChange={(_, value, reason) => {
+                      setActiveRowId(row.id);
+                      if (reason === "input" || reason === "clear") {
+                        setContributionOpen(false);
+                      }
+                      updateRow(row.id, {
+                        productQuery: value,
+                        product:
+                          reason === "clear" || reason === "input" || value.trim() === ""
+                            ? null
+                            : row.product,
+                      });
                     }}
+                    onChange={(_, product) => {
+                      setActiveRowId(row.id);
+                      updateRow(row.id, {
+                        product: typeof product === "string" ? null : product,
+                        productQuery:
+                          typeof product === "string"
+                            ? product
+                            : product
+                              ? getProductLabel(product)
+                              : "",
+                      });
+                    }}
+                    slotProps={{
+                      popper: { sx: { zIndex: 1700 } },
+                      paper: {
+                        sx: {
+                          borderRadius: 1,
+                          boxShadow: "0 18px 48px rgba(15, 23, 42, 0.18)",
+                        },
+                      },
+                    }}
+                    renderOption={(props, product) => {
+                      const isFavorited = favorites.has(
+                        product.barcode?.trim() ||
+                        `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`
+                      );
+
+                      return (
+                        <li {...props} key={product.barcode?.trim() || product.id}>
+                          {isFavorited ? "⭐ " : ""}
+                          {getProductLabel(product)}
+                        </li>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={`${t("composer.ingredient")} ${index + 1}`}
+                        placeholder={t("productSearch.placeholder")}
+                        autoComplete="off"
+                        helperText={helperText}
+                        inputProps={{
+                          ...params.inputProps,
+                          inputMode: "search",
+                          enterKeyHint: "search",
+                        }}
+                        onFocus={() => setActiveRowId(row.id)}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {productsQuery.isFetching ? (
+                                <CircularProgress color="inherit" size={18} />
+                              ) : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        }}
+                      />
+                    )}
                   />
-                )}
-              />
 
-              <TextField
-                type="number"
-                label={t("composer.quantity")}
-                value={row.quantity}
-                slotProps={{ htmlInput: { inputMode: "decimal", min: 0 } }}
-                onFocus={(event) => event.target.select()}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  const parsedValue = Number(value);
-                  updateRow(row.id, {
-                    quantity:
-                      value === "" || !Number.isFinite(parsedValue)
-                        ? ""
-                        : Math.max(0, parsedValue),
-                  });
-                }}
-                sx={{ minWidth: { md: 140 } }}
-              />
+                  <TextField
+                    type="text"
+                    label={t("composer.quantity")}
+                    value={row.quantity}
+                    slotProps={{
+                      htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+                    }}
+                    onFocus={(event) => selectInputValue(event.target)}
+                    onClick={(event) => selectInputValue(event.currentTarget)}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      const parsedValue = Number(value);
+                      updateRow(row.id, {
+                        quantity:
+                          value === "" || !Number.isFinite(parsedValue)
+                            ? ""
+                            : Math.max(0, parsedValue),
+                      });
+                    }}
+                    sx={{ minWidth: { md: 140 } }}
+                  />
 
-              <Stack
-                direction="row"
-                spacing={0.75}
-                useFlexGap
-                flexWrap="wrap"
-                sx={{ minWidth: { md: 220 } }}
-              >
-                {portionPresets.map((preset) => (
-                  <Button
-                    key={preset}
-                    size="small"
-                    variant={row.quantity === preset ? "contained" : "outlined"}
-                    onClick={() => updateRow(row.id, { quantity: preset })}
-                    sx={{ minWidth: 48 }}
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    useFlexGap
+                    flexWrap="wrap"
+                    sx={{ minWidth: { md: 220 } }}
                   >
-                    {formatProductPortion(preset, selectedProduct?.unit ?? "g")}
-                  </Button>
-                ))}
-              </Stack>
+                    {portionPresets.map((preset) => (
+                      <Button
+                        key={preset}
+                        size="small"
+                        variant={row.quantity === preset ? "contained" : "outlined"}
+                        onClick={() => updateRow(row.id, { quantity: preset })}
+                        sx={{ minWidth: 48 }}
+                      >
+                        {formatProductPortion(preset, selectedProduct?.unit ?? "g")}
+                      </Button>
+                    ))}
+                  </Stack>
 
-              <Button
-                color="error"
-                onClick={() => removeRow(row.id)}
-                disabled={rows.length === 1}
-                sx={{ alignSelf: { xs: "flex-end", md: "center" } }}
-              >
-                {t("composer.remove")}
-              </Button>
-            </Stack>
+                  <Button
+                    color="error"
+                    onClick={() => removeRow(row.id)}
+                    disabled={rows.length === 1}
+                    sx={{ alignSelf: { xs: "flex-end", md: "center" } }}
+                  >
+                    {t("composer.remove")}
+                  </Button>
+                </Stack>
+
+                {isActiveRow && rowQuery.length >= 2 && rowOptions.length > 0 ? (
+                  <Stack spacing={1}>
+                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                      {copy.inlineSuggestions}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(min(100%, 210px), 1fr))",
+                        gap: 0.8,
+                      }}
+                    >
+                      {rowOptions.slice(0, 8).map((product) => (
+                        <Button
+                          key={product.barcode?.trim() || product.id}
+                          variant="outlined"
+                          onClick={() => selectProductForRow(row.id, product)}
+                          sx={{
+                            justifyContent: "flex-start",
+                            textAlign: "left",
+                            minHeight: 56,
+                            px: 1.2,
+                            textTransform: "none",
+                          }}
+                        >
+                          <Stack spacing={0.3} sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 900, overflowWrap: "anywhere" }}
+                            >
+                              {getProductLabel(product)}
+                            </Typography>
+                            <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
+                              <Chip
+                                size="small"
+                                label={`${Math.round(product.nutrients.calories)} ${t(
+                                  "common.kcal"
+                                )}`}
+                              />
+                              <Chip size="small" label={product.source} variant="outlined" />
+                            </Stack>
+                          </Stack>
+                        </Button>
+                      ))}
+                    </Box>
+                  </Stack>
+                ) : null}
+              </Stack>
+            </Paper>
           );
         })}
 

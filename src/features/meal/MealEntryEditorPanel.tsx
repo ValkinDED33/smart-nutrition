@@ -13,6 +13,7 @@ import { useLanguage } from "../../shared/language";
 import {
   formatProductPortion,
 } from "@domain/products/productPortions";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useMealEntryEditor } from "./hooks/useMealEntryEditor";
 import { createProductKey } from "./productIdentity";
 import type { AppLanguage } from "@shared/types/i18n";
@@ -167,16 +168,16 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
             </Paper>
 
             <TextField
-              type="number"
+              type="text"
               label={`${t("meal.quantity")} (${editor.selectedProduct.unit})`}
               value={editor.quantity}
               onChange={(event) => editor.updateQuantityInput(event.target.value)}
-              onFocus={(event) => event.target.select()}
+              onFocus={(event) => selectInputValue(event.target)}
+              onClick={(event) => selectInputValue(event.currentTarget)}
               slotProps={{
                 htmlInput: {
                   inputMode: "decimal",
-                  min: 1,
-                  step: editor.selectedProduct.unit === "piece" ? 1 : 0.1,
+                  enterKeyHint: "done",
                 },
               }}
             />

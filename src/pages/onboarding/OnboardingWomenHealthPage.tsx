@@ -16,6 +16,8 @@ import type { WomenHealthMode } from "@domain/profile/types";
 import {
   cardSx,
   parseOnboardingNumber,
+  sanitizeOnboardingIntegerInput,
+  selectOnboardingInputValue,
   shellSx,
   stepPaths,
   type OnboardingStepProps,
@@ -149,17 +151,26 @@ export const OnboardingWomenHealthPage = ({
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
               <TextField
                 fullWidth
-                type="number"
+                type="text"
                 label={text.week}
                 value={weekValue}
                 onChange={(event) => {
-                  const parsed = parseOnboardingNumber(event.target.value);
+                  const safeValue = sanitizeOnboardingIntegerInput(event.target.value, 2);
+                  const parsed = parseOnboardingNumber(safeValue);
                   updateState({
                     pregnancyWeek:
                       parsed === null ? null : Math.max(1, Math.min(42, Math.round(parsed))),
                   });
                 }}
-                inputProps={{ min: 1, max: 42, step: 1, inputMode: "numeric" }}
+                onFocus={(event) => selectOnboardingInputValue(event.target)}
+                onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    pattern: "[0-9]*",
+                    enterKeyHint: "next",
+                  },
+                }}
               />
               <TextField
                 fullWidth

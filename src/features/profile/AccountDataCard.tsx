@@ -28,6 +28,10 @@ import {
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import {
+  TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS,
+  shouldPollTelegramConnectStatus,
+} from "./telegramConnectStatusModel";
 
 const accountCopy = {
   uk: {
@@ -263,6 +267,14 @@ export const AccountDataCard = () => {
     useState<TelegramConnectLink | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(true);
   const [telegramBusy, setTelegramBusy] = useState(false);
+  const [telegramConnectStartedAtMs, setTelegramConnectStartedAtMs] = useState<number | null>(
+    null
+  );
+  const telegramConfigured = Boolean(telegramStatus?.configured);
+  const telegramConnected = Boolean(telegramStatus?.connected);
+  const telegramBotUsername = telegramStatus?.botUsername
+    ? `@${telegramStatus.botUsername.replace(/^@+/, "")}`
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -313,6 +325,86 @@ export const AccountDataCard = () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const hasConnectLink = Boolean(telegramConnectLink?.url);
+    const shouldPoll = () =>
+      shouldPollTelegramConnectStatus({
+        connected: telegramConnected,
+        hasConnectLink,
+        startedAtMs: telegramConnectStartedAtMs,
+        nowMs: Date.now(),
+      });
+
+    if (!shouldPoll()) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const refreshStatus = async () => {
+      if (!shouldPoll()) {
+        if (intervalId !== null) {
+          window.clearInterval(intervalId);
+        }
+        setTelegramConnectStartedAtMs(null);
+        return;
+      }
+
+      try {
+        const status = await getRemoteTelegramStatus();
+
+        if (cancelled) {
+          return;
+        }
+
+        setTelegramStatus(status);
+
+        if (status.connected) {
+          setTelegramConnectLink(null);
+          setTelegramConnectStartedAtMs(null);
+          setNotice({ type: "success", message: copy.telegramConnected });
+
+          if (intervalId !== null) {
+            window.clearInterval(intervalId);
+          }
+        }
+      } catch {
+        // The profile card keeps the personal link visible; the next poll/focus can recover.
+      }
+    };
+
+    const handleFocus = () => {
+      void refreshStatus();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void refreshStatus();
+      }
+    };
+
+    intervalId = window.setInterval(() => {
+      void refreshStatus();
+    }, TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    void refreshStatus();
+
+    return () => {
+      cancelled = true;
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    copy.telegramConnected,
+    telegramConnectLink?.url,
+    telegramConnectStartedAtMs,
+    telegramConnected,
+  ]);
 
   if (!user) return null;
 
@@ -412,6 +504,7 @@ export const AccountDataCard = () => {
       const status = await createTelegramConnectLink();
       setTelegramStatus(status);
       setTelegramConnectLink(status);
+      setTelegramConnectStartedAtMs(Date.now());
 
       if (pendingWindow) {
         pendingWindow.location.href = status.url;
@@ -448,6 +541,8 @@ export const AccountDataCard = () => {
     try {
       const status = await disconnectTelegram();
       setTelegramStatus(status);
+      setTelegramConnectLink(null);
+      setTelegramConnectStartedAtMs(null);
       setNotice({ type: "success", message: copy.telegramDisconnectSuccess });
     } catch {
       setNotice({ type: "error", message: copy.telegramDisconnectError });
@@ -455,12 +550,6 @@ export const AccountDataCard = () => {
       setTelegramBusy(false);
     }
   };
-
-  const telegramConfigured = Boolean(telegramStatus?.configured);
-  const telegramConnected = Boolean(telegramStatus?.connected);
-  const telegramBotUsername = telegramStatus?.botUsername
-    ? `@${telegramStatus.botUsername.replace(/^@+/, "")}`
-    : null;
 
   return (
     <Paper

@@ -30,6 +30,7 @@ import type {
 } from "../../shared/types/photo";
 import type { Product } from "@domain/products/types";
 import { addMealEntries } from "./mealSlice";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -632,9 +633,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                                 String(Math.round(item.quantityGrams))
                               }
                               slotProps={{
-                                htmlInput: { inputMode: "decimal", min: 5, step: 5 },
+                                htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
                               }}
-                              onFocus={(event) => event.target.select()}
+                              onFocus={(event) => selectInputValue(event.target)}
+                              onClick={(event) => selectInputValue(event.currentTarget)}
                               onChange={(event) =>
                                 handleSuggestionQuantityInputChange(
                                   index,

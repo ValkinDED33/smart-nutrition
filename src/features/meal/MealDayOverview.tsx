@@ -16,6 +16,7 @@ import { removeProduct, updateMealEntry, addMealEntries } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
+import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { EmptyState } from "@shared/ui";
@@ -124,7 +125,7 @@ const InlineEditPanel = ({
           {copy.editTitle}: {getProductDisplayName(item.product, appLanguage)}
         </Typography>
         <TextField
-          type="number"
+          type="text"
           label={`${t("meal.quantity")} (${item.product.unit})`}
           value={quantity}
           onChange={(e) => {
@@ -134,8 +135,9 @@ const InlineEditPanel = ({
               value === "" || !Number.isFinite(nextQuantity) ? "" : nextQuantity
             );
           }}
-          onFocus={(event) => event.target.select()}
-          slotProps={{ htmlInput: { inputMode: "decimal", min: 1, step: 0.1 } }}
+          onFocus={(event) => selectInputValue(event.target)}
+          onClick={(event) => selectInputValue(event.currentTarget)}
+          slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "done" } }}
           fullWidth
         />
         <TextField
