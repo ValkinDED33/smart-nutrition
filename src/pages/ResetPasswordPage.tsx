@@ -8,15 +8,15 @@ import {
   Box,
   Button,
   InputAdornment,
-  Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { AuthApiError, resetPassword } from "../shared/api/auth";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { useLanguage } from "../shared/language";
+import { AuthSurface } from "@shared/ui";
 
 type FormData = {
   password: string;
@@ -107,19 +107,7 @@ const ResetPasswordPage = () => {
   };
 
   return (
-    <Box sx={{ display: "grid", placeItems: "center", minHeight: "75vh" }}>
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 540,
-          p: { xs: 3, md: 4.5 },
-          borderRadius: 7,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(247,250,252,0.9) 100%)",
-        }}
-      >
+    <AuthSurface>
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} alignItems="center">
             <AssistantAvatar name="Alex" variant="dragon" mood="coach" size={72} />
@@ -232,8 +220,7 @@ const ResetPasswordPage = () => {
             </Box>
           </Typography>
         </Stack>
-      </Paper>
-    </Box>
+    </AuthSurface>
   );
 };
 

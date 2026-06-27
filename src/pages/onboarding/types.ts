@@ -68,8 +68,9 @@ export const cardSx = {
   maxWidth: 560,
   p: { xs: 2.5, sm: 3.5 },
   borderRadius: 1,
-  border: "1px solid rgba(15, 23, 42, 0.08)",
-  backgroundColor: "rgba(255,255,255,0.92)",
+  border: "1px solid var(--sn-border-soft)",
+  backgroundColor: "var(--sn-surface-glass)",
+  boxShadow: "var(--sn-shadow-card)",
 } satisfies SxProps<Theme>;
 
 export const shellSx = {

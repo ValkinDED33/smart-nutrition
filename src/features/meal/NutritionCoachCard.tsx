@@ -274,15 +274,15 @@ const statusColor = {
 const insightAccent = {
   success: {
     borderColor: "rgba(34, 197, 94, 0.3)",
-    backgroundColor: "rgba(240, 253, 244, 0.82)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
   },
   warning: {
     borderColor: "rgba(245, 158, 11, 0.35)",
-    backgroundColor: "rgba(255, 251, 235, 0.82)",
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
   },
   info: {
     borderColor: "rgba(59, 130, 246, 0.22)",
-    backgroundColor: "rgba(248,250,252,0.92)",
+    backgroundColor: "var(--sn-surface-elevated)",
   },
 } as const;
 
@@ -321,9 +321,9 @@ export const NutritionCoachCard = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2}>
@@ -365,7 +365,7 @@ export const NutritionCoachCard = () => {
           variant="outlined"
           sx={{
             p: 2,
-            borderRadius: 4,
+            borderRadius: 1,
             borderColor: "rgba(15, 23, 42, 0.08)",
             background:
               "linear-gradient(135deg, rgba(240,249,255,0.86) 0%, rgba(236,253,245,0.88) 100%)",
@@ -400,7 +400,7 @@ export const NutritionCoachCard = () => {
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 4,
+                  borderRadius: 1,
                   ...insightAccent[insight.severity],
                 }}
               >

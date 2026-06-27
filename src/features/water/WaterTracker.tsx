@@ -18,8 +18,10 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
-import type { AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import {
+  AssistantAvatar,
+  type AssistantAvatarMood,
+} from "../../shared/components/AssistantAvatar";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
   incrementWater,
@@ -33,6 +35,7 @@ import {
 } from "./waterSlice";
 import { useLanguage } from "../../shared/language";
 import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
+import { SectionCard } from "@shared/ui";
 import {
   createWaterGlassSlots,
   createWeeklyWaterRecords,
@@ -448,15 +451,7 @@ export const WaterTracker = () => {
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: { xs: 2, md: 3 },
-        borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
-      }}
-    >
+    <SectionCard>
       <Stack spacing={2.5}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
@@ -518,7 +513,7 @@ export const WaterTracker = () => {
                 position: "absolute",
                 inset: 16,
                 borderRadius: "50%",
-                backgroundColor: "rgba(255,255,255,0.96)",
+                backgroundColor: "var(--sn-surface-elevated)",
                 display: "grid",
                 placeItems: "center",
                 textAlign: "center",
@@ -574,8 +569,8 @@ export const WaterTracker = () => {
               sx={{
                 p: 1.5,
                 borderRadius: 1,
-                border: "1px solid rgba(14,165,233,0.18)",
-                bgcolor: "rgba(236,254,255,0.72)",
+                border: "1px solid var(--sn-border-soft)",
+                bgcolor: "var(--sn-accent-soft)",
               }}
             >
               <Stack direction="row" spacing={1.3} alignItems="center">
@@ -953,7 +948,7 @@ export const WaterTracker = () => {
           </Stack>
         </Paper>
       </Stack>
-    </Paper>
+    </SectionCard>
   );
 };
 

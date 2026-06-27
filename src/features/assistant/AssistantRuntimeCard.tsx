@@ -479,8 +479,11 @@ export const AssistantRuntimeCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        background:
+          "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+        boxShadow: "var(--sn-shadow-soft)",
+        backdropFilter: "blur(20px)",
       }}
     >
       <Stack spacing={2}>
@@ -569,12 +572,12 @@ export const AssistantRuntimeCard = () => {
                       message.role === "user" ? { xs: "100%", md: "78%" } : "100%",
                     borderColor:
                       message.role === "user"
-                        ? "rgba(15, 118, 110, 0.2)"
-                        : "rgba(15, 23, 42, 0.08)",
+                        ? "var(--sn-border-strong)"
+                        : "var(--sn-border-soft)",
                     background:
                       message.role === "user"
-                        ? "linear-gradient(135deg, rgba(240,249,255,0.94) 0%, rgba(236,253,245,0.92) 100%)"
-                        : "rgba(248,250,252,0.9)",
+                        ? "linear-gradient(135deg, var(--sn-accent-soft), var(--sn-surface-elevated))"
+                        : "var(--sn-surface-glass)",
                   }}
                 >
                   <Stack spacing={0.6}>
@@ -582,7 +585,7 @@ export const AssistantRuntimeCard = () => {
                       variant="caption"
                       sx={{
                         fontWeight: 800,
-                        color: message.role === "user" ? "#0f766e" : "#475569",
+                        color: message.role === "user" ? "var(--sn-accent)" : "text.secondary",
                       }}
                     >
                       {message.role === "user" ? user.name : profile.assistant.name}
@@ -592,7 +595,7 @@ export const AssistantRuntimeCard = () => {
                     ) : (
                       <Typography
                         sx={{
-                          color: "#0f172a",
+                          color: "text.primary",
                           whiteSpace: "pre-wrap",
                         }}
                       >

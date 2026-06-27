@@ -6,7 +6,6 @@ import {
   Button,
   Chip,
   LinearProgress,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -22,6 +21,7 @@ import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
+import { SectionCard } from "@shared/ui";
 
 const quickWeightCopy = {
   uk: {
@@ -172,15 +172,7 @@ export const QuickWeightCheckInCard = () => {
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: { xs: 2, md: 3 },
-        borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
-      }}
-    >
+    <SectionCard>
       <Stack spacing={2}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
@@ -294,7 +286,7 @@ export const QuickWeightCheckInCard = () => {
           {copy.save}
         </Button>
       </Stack>
-    </Paper>
+    </SectionCard>
   );
 };
 

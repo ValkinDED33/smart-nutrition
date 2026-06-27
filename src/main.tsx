@@ -14,13 +14,40 @@ import { registerServiceWorker } from "./shared/lib/registerServiceWorker";
 import { AppThemeProvider } from "./shared/theme/AppThemeProvider";
 import { SmoothScrollAgent } from "./shared/components/SmoothScrollAgent";
 import { queryClient } from "./shared/query/client";
-import { initializeRuntimeIntegrations } from "./integration/runtime/native";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
 
 await initializeClientPersistence();
-void initializeRuntimeIntegrations();
+
+const initializeRuntimeIntegrationsAfterPaint = () => {
+  const start = () => {
+    void import("./integration/runtime/native")
+      .then(({ initializeRuntimeIntegrations }) =>
+        initializeRuntimeIntegrations()
+      )
+      .catch((error: unknown) => {
+        console.warn(
+          "[runtime] optional integrations failed to initialize",
+          error instanceof Error ? error.message : "unknown error"
+        );
+      });
+  };
+
+  const idleWindow = window as Window & {
+    requestIdleCallback?: (
+      callback: IdleRequestCallback,
+      options?: IdleRequestOptions
+    ) => number;
+  };
+
+  if (typeof idleWindow.requestIdleCallback === "function") {
+    idleWindow.requestIdleCallback(start, { timeout: 2_500 });
+    return;
+  }
+
+  window.setTimeout(start, 0);
+};
 
 root.render(
   <StrictMode>
@@ -41,4 +68,5 @@ root.render(
   </StrictMode>
 );
 
+initializeRuntimeIntegrationsAfterPaint();
 registerServiceWorker();

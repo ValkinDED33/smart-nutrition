@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
 import { useLanguage } from "../../shared/language";
 import {

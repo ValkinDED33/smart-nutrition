@@ -80,7 +80,11 @@ export default defineConfig({
             normalizedId.includes("/node_modules/react-dom/") ||
             normalizedId.includes("/node_modules/react-router-dom/") ||
             normalizedId.includes("/node_modules/react-redux/") ||
-            normalizedId.includes("/node_modules/@reduxjs/toolkit/")
+            normalizedId.includes("/node_modules/@reduxjs/toolkit/") ||
+            normalizedId.includes("/node_modules/redux/") ||
+            normalizedId.includes("/node_modules/redux-thunk/") ||
+            normalizedId.includes("/node_modules/reselect/") ||
+            normalizedId.includes("/node_modules/immer/")
           ) {
             return "react-vendor";
           }
@@ -112,10 +116,6 @@ export default defineConfig({
             return "three-core-vendor";
           }
 
-          if (normalizedId.includes("/node_modules/recharts/")) {
-            return "charts-vendor";
-          }
-
           if (
             normalizedId.includes("/node_modules/framer-motion/") ||
             normalizedId.includes("/node_modules/@react-spring/") ||
@@ -138,23 +138,12 @@ export default defineConfig({
           }
 
           if (
-            normalizedId.includes("/node_modules/browser-image-compression/") ||
-            normalizedId.includes("/node_modules/react-easy-crop/") ||
-            normalizedId.includes("/node_modules/canvas-confetti/") ||
-            normalizedId.includes("/node_modules/howler/") ||
-            normalizedId.includes("/node_modules/use-sound/")
-          ) {
-            return "media-vendor";
-          }
-
-          if (
             normalizedId.includes("/node_modules/@dnd-kit/") ||
             normalizedId.includes("/node_modules/fuse.js/") ||
             normalizedId.includes("/node_modules/react-virtuoso/") ||
             normalizedId.includes("/node_modules/react-swipeable/") ||
             normalizedId.includes("/node_modules/screenfull/") ||
-            normalizedId.includes("/node_modules/copy-to-clipboard/") ||
-            normalizedId.includes("/node_modules/zustand/")
+            normalizedId.includes("/node_modules/copy-to-clipboard/")
           ) {
             return "interaction-vendor";
           }

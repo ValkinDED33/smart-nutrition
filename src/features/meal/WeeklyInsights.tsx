@@ -52,9 +52,9 @@ export const WeeklyInsights = () => {
         elevation={0}
         sx={{
           p: 3,
-          borderRadius: 6,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
+          borderRadius: 1,
+          border: "1px solid var(--sn-border-soft)",
+          backgroundColor: "var(--sn-surface-glass)",
         }}
       >
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
@@ -70,9 +70,9 @@ export const WeeklyInsights = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2.5}>
@@ -87,19 +87,19 @@ export const WeeklyInsights = () => {
             gap: 2,
           }}
         >
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.average")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {(totalWeekCalories / 7).toFixed(0)} {t("common.kcal")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.protein")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {(totalWeekProtein / 7).toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.bestDay")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               {bestDay?.label} - {bestDay?.calories.toFixed(0)} {t("common.kcal")}

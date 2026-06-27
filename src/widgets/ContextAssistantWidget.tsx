@@ -11,8 +11,10 @@ import {
 import { selectDailyMacroTargets } from "@features/profile/selectors";
 import { detectWeightPlateau, getDaysSince } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "@shared/language";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
-import type { AssistantAvatarMood } from "@shared/components/AssistantAvatar";
+import {
+  AssistantAvatar,
+  type AssistantAvatarMood,
+} from "@shared/components/AssistantAvatar";
 import {
   buildAssistantCoreSnapshot,
   buildAssistantPersonalizationPlan,
@@ -502,10 +504,12 @@ export const ContextAssistantWidget = () => {
               display: { xs: "none", xl: "block" },
               width: { xs: 280, sm: 340 },
               p: 2,
-              borderRadius: 4,
-              border: "1px solid rgba(15, 23, 42, 0.08)",
+              borderRadius: 1,
+              border: "1px solid var(--sn-border-soft)",
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.94) 100%)",
+                "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+              boxShadow: "var(--sn-shadow-strong)",
+              backdropFilter: "blur(22px)",
             }}
           >
             <Stack

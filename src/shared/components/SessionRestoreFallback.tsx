@@ -1,7 +1,6 @@
-import { Button, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { RefreshCw, ShieldCheck } from "lucide-react";
 import { useLanguage } from "../language";
-import { AssistantAvatar } from "./AssistantAvatar";
 
 const restoreCopy = {
   uk: {
@@ -54,20 +53,33 @@ export const SessionRestoreFallback = ({
         sx={{
           width: "min(100%, 520px)",
           p: { xs: 2.5, sm: 3 },
-          borderRadius: 2,
-          border: "1px solid rgba(15, 23, 42, 0.1)",
-          bgcolor: "rgba(255,255,255,0.92)",
+          borderRadius: 1,
+          border: "1px solid var(--sn-border-soft)",
+          bgcolor: "var(--sn-surface-glass)",
+          boxShadow: "var(--sn-shadow-card)",
         }}
       >
         <Stack spacing={2}>
           <Stack direction="row" spacing={1.4} alignItems="center">
-            <AssistantAvatar
-              name="Smart Nutrition"
-              variant="robot"
-              mood="coach"
-              active
-              size={54}
-            />
+            <Box
+              aria-hidden
+              sx={{
+                width: 54,
+                height: 54,
+                borderRadius: "18px",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+                color: "#ffffff",
+                fontWeight: 950,
+                letterSpacing: 0,
+                background:
+                  "radial-gradient(circle at 35% 24%, rgba(255,255,255,0.42), transparent 24%), linear-gradient(135deg, #0f766e 0%, #2563eb 58%, #65a30d 100%)",
+                boxShadow: "0 18px 36px rgba(15, 118, 110, 0.22)",
+              }}
+            >
+              SN
+            </Box>
             <Stack spacing={0.25} minWidth={0}>
               <Stack direction="row" spacing={0.8} alignItems="center">
                 <ShieldCheck size={21} color="#0f766e" />

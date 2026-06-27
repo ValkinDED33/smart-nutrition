@@ -274,7 +274,7 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
+        border: "1px solid var(--sn-border-soft)",
         background:
           "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(240,253,250,0.92) 100%)",
       }}

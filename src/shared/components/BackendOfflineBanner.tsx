@@ -116,7 +116,7 @@ const BackendOfflineBanner = () => {
     <Collapse in={shouldShow} unmountOnExit>
       <Alert
         severity="warning"
-        sx={{ borderRadius: 4, mb: 3, alignItems: "center" }}
+        sx={{ borderRadius: 1, mb: 3, alignItems: "center" }}
         action={
           <Button
             color="inherit"

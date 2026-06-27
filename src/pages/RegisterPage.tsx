@@ -10,7 +10,6 @@ import {
   Button,
   CircularProgress,
   InputAdornment,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -43,9 +42,10 @@ import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
 import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
+import { AuthSurface } from "@shared/ui";
 
 type FormData = {
   name: string;
@@ -277,19 +277,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 520,
-          p: { xs: 3, md: 4 },
-          borderRadius: 7,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,250,252,0.92) 100%)",
-        }}
-      >
+    <AuthSurface maxWidth={520} minHeight="70vh">
         <Stack spacing={2.5}>
           <Stack direction="row" spacing={2} alignItems="center">
             <AssistantAvatar name="Alex" variant="dragon" mood="happy" size={72} />
@@ -450,8 +438,7 @@ const RegisterPage = () => {
             </Box>
           </Typography>
         </Stack>
-      </Paper>
-    </Box>
+    </AuthSurface>
   );
 };
 

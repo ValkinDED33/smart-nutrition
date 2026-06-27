@@ -94,8 +94,10 @@ export const CompanionProgressCard = ({ embedded = false }: CompanionProgressCar
               sx={{
                 p: 1.4,
                 borderRadius: 1,
-                border: "1px solid rgba(15, 23, 42, 0.08)",
-                backgroundColor: embedded ? "rgba(248,250,252,0.82)" : "rgba(255,255,255,0.74)",
+                border: "1px solid var(--sn-border-soft)",
+                backgroundColor: embedded
+                  ? "var(--sn-surface-elevated)"
+                  : "var(--sn-surface-glass)",
                 minWidth: 0,
               }}
             >

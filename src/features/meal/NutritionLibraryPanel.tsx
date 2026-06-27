@@ -354,8 +354,8 @@ export const NutritionLibraryPanel = ({
                             sx={{
                               p: 1.25,
                               borderRadius: 1,
-                              border: "1px solid rgba(15,23,42,0.08)",
-                              bgcolor: "rgba(255,255,255,0.72)",
+                              border: "1px solid var(--sn-border-soft)",
+                              bgcolor: "var(--sn-surface-elevated)",
                               minWidth: 0,
                             }}
                           >
@@ -438,8 +438,8 @@ export const NutritionLibraryPanel = ({
                       sx={{
                         p: 1.35,
                         borderRadius: 1,
-                        border: "1px solid rgba(15,23,42,0.08)",
-                        bgcolor: "rgba(255,255,255,0.72)",
+                        border: "1px solid var(--sn-border-soft)",
+                        bgcolor: "var(--sn-surface-elevated)",
                       }}
                     >
                       <Stack spacing={1}>
@@ -500,8 +500,8 @@ export const NutritionLibraryPanel = ({
                           sx={{
                             p: 1.35,
                             borderRadius: 1,
-                            border: "1px solid rgba(15,23,42,0.08)",
-                            bgcolor: "rgba(255,255,255,0.72)",
+                            border: "1px solid var(--sn-border-soft)",
+                            bgcolor: "var(--sn-surface-elevated)",
                           }}
                         >
                           <Stack spacing={1}>
@@ -546,8 +546,8 @@ export const NutritionLibraryPanel = ({
                     sx={{
                       p: 1.35,
                       borderRadius: 1,
-                      border: "1px solid rgba(15,23,42,0.08)",
-                      bgcolor: "rgba(255,255,255,0.72)",
+                      border: "1px solid var(--sn-border-soft)",
+                      bgcolor: "var(--sn-surface-elevated)",
                     }}
                   >
                     <Stack spacing={1}>

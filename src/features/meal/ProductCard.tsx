@@ -117,7 +117,7 @@ export const ProductCard = ({
         alignSelf: "start",
         overflow: "hidden",
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
+        border: "1px solid var(--sn-border-soft)",
         boxShadow: "none",
         "& .MuiButton-root": {
           minWidth: 0,
@@ -230,8 +230,8 @@ export const ProductCard = ({
             sx={{
               p: 1.2,
               borderRadius: 1,
-              backgroundColor: "rgba(248,250,252,0.92)",
-              border: "1px solid rgba(15, 23, 42, 0.06)",
+              backgroundColor: "var(--sn-surface-elevated)",
+              border: "1px solid var(--sn-border-soft)",
             }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700 }}>

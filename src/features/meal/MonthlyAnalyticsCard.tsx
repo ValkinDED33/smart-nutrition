@@ -189,8 +189,8 @@ export const MonthlyAnalyticsCard = () => {
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
+          border: "1px solid var(--sn-border-soft)",
+          backgroundColor: "var(--sn-surface-glass)",
         }}
       >
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
@@ -234,8 +234,8 @@ export const MonthlyAnalyticsCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2.5}>
@@ -306,7 +306,7 @@ export const MonthlyAnalyticsCard = () => {
                 sx={{
                   minHeight: 46,
                   borderRadius: 1,
-                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                  border: "1px solid var(--sn-border-soft)",
                   backgroundColor: getCalorieColor(day.calorieRatio),
                   p: 0.75,
                   display: "flex",

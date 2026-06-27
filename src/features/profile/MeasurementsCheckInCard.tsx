@@ -177,9 +177,9 @@ export const MeasurementsCheckInCard = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2.2}>
@@ -314,7 +314,7 @@ export const MeasurementsCheckInCard = () => {
               }}
             >
               {recentEntries.map((entry) => (
-                <Paper key={`${entry.date}-${entry.weight}`} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                <Paper key={`${entry.date}-${entry.weight}`} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                   <Stack spacing={0.7}>
                     <Typography sx={{ fontWeight: 700 }}>
                       {formatLocalDateKey(getLocalDateKey(entry.date), appLanguage, {

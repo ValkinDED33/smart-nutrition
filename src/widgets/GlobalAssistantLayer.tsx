@@ -16,7 +16,7 @@ import type { RootState } from "@app/store";
 import type { AssistantArea } from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
 import {
@@ -466,10 +466,11 @@ export const GlobalAssistantLayer = () => {
             width: 330,
             p: 2,
             borderRadius: 1,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
+            border: "1px solid var(--sn-border-soft)",
             background:
-              "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(240,249,255,0.94) 100%)",
-            boxShadow: "0 18px 48px rgba(15,23,42,0.16)",
+              "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+            boxShadow: "var(--sn-shadow-strong)",
+            backdropFilter: "blur(22px)",
             pointerEvents: "auto",
           }}
         >

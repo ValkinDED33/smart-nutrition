@@ -38,6 +38,7 @@ import { buildAssistantPersonalizationPlan } from "@core/assistant";
 import { sanitizeHtml } from "@integration/runtime/content";
 import { canModerateCommunity } from "@domain/user/roles";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { SectionCard } from "@shared/ui";
 
 const communityCopy = {
   uk: {
@@ -466,15 +467,7 @@ export const CommunityHubCard = () => {
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
-      }}
-    >
+    <SectionCard>
       <Stack spacing={2}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
@@ -536,7 +529,16 @@ export const CommunityHubCard = () => {
               <Alert severity="info">{copy.noFriends}</Alert>
             ) : (
               community.friends.map((friend) => (
-                <Paper key={friend.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                <Paper
+                  key={friend.id}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: "var(--sn-surface-elevated)",
+                    borderColor: "var(--sn-border-soft)",
+                  }}
+                >
                   <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={1}
@@ -580,7 +582,16 @@ export const CommunityHubCard = () => {
             ) : (
               <Stack spacing={1}>
                 {community.roomMessages.map((message) => (
-                  <Paper key={message.id} variant="outlined" sx={{ p: 1.3, borderRadius: 2 }}>
+                  <Paper
+                    key={message.id}
+                    variant="outlined"
+                    sx={{
+                      p: 1.3,
+                      borderRadius: 1,
+                      bgcolor: "var(--sn-surface-elevated)",
+                      borderColor: "var(--sn-border-soft)",
+                    }}
+                  >
                     <Stack spacing={0.4}>
                       <Typography sx={{ fontWeight: 700 }}>{message.authorName}</Typography>
                       <Typography>{message.text}</Typography>
@@ -620,12 +631,13 @@ export const CommunityHubCard = () => {
                       variant="outlined"
                       sx={{
                         p: 1.3,
-                        borderRadius: 4,
+                        borderRadius: 1,
                         alignSelf: message.author === "self" ? "flex-end" : "stretch",
                         backgroundColor:
                           message.author === "self"
-                            ? "rgba(236,253,245,0.9)"
-                            : "rgba(248,250,252,0.9)",
+                            ? "var(--sn-accent-soft)"
+                            : "var(--sn-surface-elevated)",
+                        borderColor: "var(--sn-border-soft)",
                       }}
                     >
                       <Typography color="text.primary">{message.text}</Typography>
@@ -887,7 +899,11 @@ export const CommunityHubCard = () => {
                             <Paper
                               key={comment.id}
                               variant="outlined"
-                              sx={{ p: 1.2, borderRadius: 2, backgroundColor: "rgba(248,250,252,0.8)" }}
+                              sx={{
+                                p: 1.2,
+                                borderRadius: 1,
+                                backgroundColor: "var(--sn-surface-elevated)",
+                              }}
                             >
                               <Stack spacing={0.3}>
                                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -1012,6 +1028,6 @@ export const CommunityHubCard = () => {
           </Stack>
         )}
       </Stack>
-    </Paper>
+    </SectionCard>
   );
 };

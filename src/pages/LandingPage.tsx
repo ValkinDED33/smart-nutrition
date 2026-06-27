@@ -12,6 +12,7 @@ import {
   ScanBarcode,
   ShieldCheck,
   Sparkles,
+  Star,
   Utensils,
 } from "lucide-react";
 import {
@@ -24,10 +25,13 @@ import {
   Typography,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
-import type { AssistantAvatarMood } from "../shared/components/AssistantAvatar";
+import {
+  AssistantAvatar,
+  type AssistantAvatarMood,
+} from "../shared/components/AssistantAvatar";
 import type { AssistantCompanionKind } from "@domain/profile/types";
 import { useLanguage } from "../shared/language";
+import { useAppColorMode } from "../shared/theme/colorMode";
 
 type LandingLanguage = "uk" | "pl" | "en";
 
@@ -35,6 +39,11 @@ const landingCopy = {
   uk: {
     eyebrow: "AI wellness ecosystem",
     brandTitle: "Smart Nutrition",
+    headline: {
+      prefix: "Твій AI-компаньйон для",
+      accent: "здоровішого",
+      suffix: "дня.",
+    },
     title: "AI-помічник харчування і здоров'я",
     heroTyping: [
       "Поруч, коли треба випити воду.",
@@ -45,7 +54,9 @@ const landingCopy = {
       "Живий AI-компаньйон для їжі, води, ліків, прогресу і м'якої мотивації. Він не просто трекає, а веде день разом із вами.",
     primary: "Почати безкоштовно",
     secondary: "Побачити companion",
+    telegramCta: "Підключити Telegram",
     navOverview: "Огляд продукту",
+    socialProof: "10 000+ користувачів будують звички разом з companion",
     proof: ["AI companion", "пам'ять", "proactive nudges", "Telegram поруч"],
     presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
     sceneCards: [
@@ -83,6 +94,14 @@ const landingCopy = {
       xps: "+25 XP за серію",
     },
     quickActions: ["Фото їжі", "Штрихкод", "Повторити вчора", "Ручний ввід"],
+    featureRail: [
+      { title: "AI food scanner", body: "Фото їжі і швидкий аналіз" },
+      { title: "Hydration tracker", body: "Вода без ручного хаосу" },
+      { title: "Calorie & macro", body: "Калорії, білок, жири, вуглеводи" },
+      { title: "AI coaching", body: "Підказки під твій день" },
+      { title: "Progress insights", body: "Зміни без сухої статистики" },
+      { title: "Smart reminders", body: "Вода, їжа, ліки і звички" },
+    ],
     sectionEyebrow: "За 5 секунд зрозуміло, що робити",
     ecosystemTitle: "Не калькулятор, а companion-платформа",
     ecosystemBody:
@@ -143,6 +162,11 @@ const landingCopy = {
   pl: {
     eyebrow: "AI wellness ecosystem",
     brandTitle: "Smart Nutrition",
+    headline: {
+      prefix: "Twój AI companion dla",
+      accent: "zdrowszego",
+      suffix: "dnia.",
+    },
     title: "AI asystent żywienia i zdrowia",
     heroTyping: [
       "Jest obok, gdy warto wypić wodę.",
@@ -153,7 +177,9 @@ const landingCopy = {
       "Żywy AI companion do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.",
     primary: "Zacznij za darmo",
     secondary: "Zobacz companion",
+    telegramCta: "Połącz Telegram",
     navOverview: "Przegląd produktu",
+    socialProof: "10 000+ użytkowników buduje nawyki z companion",
     proof: ["AI companion", "pamięć", "proactive nudges", "Telegram obok"],
     presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
     sceneCards: [
@@ -191,6 +217,14 @@ const landingCopy = {
       xps: "+25 XP za serię",
     },
     quickActions: ["Zdjęcie", "Kod kreskowy", "Powtórz wczoraj", "Ręczny wpis"],
+    featureRail: [
+      { title: "AI food scanner", body: "Zdjęcie posiłku i szybka analiza" },
+      { title: "Hydration tracker", body: "Woda bez ręcznego chaosu" },
+      { title: "Calorie & macro", body: "Kalorie, białko, tłuszcz, węgle" },
+      { title: "AI coaching", body: "Podpowiedzi pod Twój dzień" },
+      { title: "Progress insights", body: "Zmiany bez suchej statystyki" },
+      { title: "Smart reminders", body: "Woda, jedzenie, leki i nawyki" },
+    ],
     sectionEyebrow: "W 5 sekund wiadomo, co zrobić",
     ecosystemTitle: "Nie kalkulator, tylko companion-platforma",
     ecosystemBody:
@@ -251,6 +285,11 @@ const landingCopy = {
   en: {
     eyebrow: "AI wellness ecosystem",
     brandTitle: "Smart Nutrition",
+    headline: {
+      prefix: "Your AI companion for a",
+      accent: "healthier",
+      suffix: "you.",
+    },
     title: "AI nutrition and health assistant",
     heroTyping: [
       "Nearby when water is due.",
@@ -261,7 +300,9 @@ const landingCopy = {
       "A living AI companion for food, water, medication, progress, and gentle motivation. It does not just track data; it moves through the day with you.",
     primary: "Start free",
     secondary: "See companion",
+    telegramCta: "Connect Telegram",
     navOverview: "Product overview",
+    socialProof: "10,000+ users building habits with their companion",
     proof: ["AI companion", "memory", "proactive nudges", "Telegram nearby"],
     presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
     sceneCards: [
@@ -299,6 +340,14 @@ const landingCopy = {
       xps: "+25 XP streak",
     },
     quickActions: ["Food photo", "Barcode", "Repeat yesterday", "Manual entry"],
+    featureRail: [
+      { title: "AI food scanner", body: "Food photo and quick analysis" },
+      { title: "Hydration tracker", body: "Water without manual chaos" },
+      { title: "Calorie & macro", body: "Calories, protein, fats, carbs" },
+      { title: "AI coaching", body: "Guidance for your day" },
+      { title: "Progress insights", body: "Changes without dry stats" },
+      { title: "Smart reminders", body: "Water, meals, medication, habits" },
+    ],
     sectionEyebrow: "Clear next actions in 5 seconds",
     ecosystemTitle: "Not a calculator, a companion platform",
     ecosystemBody:
@@ -358,11 +407,90 @@ const landingCopy = {
   },
 } as const;
 
+type LandingCopy = (typeof landingCopy)[LandingLanguage];
+
+const getLandingScene = (isDarkMode: boolean) => ({
+  heroBackground: isDarkMode
+    ? "radial-gradient(circle at 76% 30%, rgba(163,230,53,0.22), transparent 28%), radial-gradient(circle at 86% 68%, rgba(20,184,166,0.18), transparent 32%), linear-gradient(135deg, #020617 0%, #061321 42%, #071a16 100%)"
+    : "radial-gradient(circle at 78% 24%, rgba(255,255,255,0.9), transparent 22%), radial-gradient(circle at 86% 72%, rgba(14,165,233,0.2), transparent 34%), linear-gradient(135deg, #f8fffb 0%, #effdfa 38%, #e7f5ff 100%)",
+  heroOverlay: isDarkMode
+    ? "linear-gradient(90deg, rgba(2,6,23,0.9) 0%, rgba(7,17,31,0.7) 42%, rgba(2,6,23,0.16) 100%), linear-gradient(180deg, rgba(7,17,31,0.68) 0%, rgba(7,17,31,0.32) 56%, rgba(20,184,166,0.12) 100%)"
+    : "linear-gradient(90deg, rgba(248,255,251,0.94) 0%, rgba(236,253,245,0.82) 42%, rgba(240,249,255,0.3) 100%), linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(236,254,255,0.2) 54%, rgba(20,184,166,0.1) 100%)",
+  heroText: isDarkMode ? "#ffffff" : "#102a43",
+  mutedText: isDarkMode ? "rgba(255,255,255,0.82)" : "rgba(15,23,42,0.68)",
+  titleShadow: isDarkMode
+    ? "0 18px 80px rgba(0,0,0,0.28)"
+    : "0 22px 80px rgba(15,118,110,0.12)",
+  accentColor: isDarkMode ? "#a3e635" : "#0f766e",
+  accentShadow: isDarkMode
+    ? "0 0 34px rgba(163,230,53,0.36)"
+    : "0 0 32px rgba(20,184,166,0.2)",
+  typingColor: isDarkMode ? "#d9f99d" : "#0f766e",
+  eyebrowBg: isDarkMode ? "rgba(20,184,166,0.18)" : "rgba(15,118,110,0.1)",
+  eyebrowColor: isDarkMode ? "#ccfbf1" : "#0f766e",
+  eyebrowBorder: isDarkMode
+    ? "rgba(94,234,212,0.28)"
+    : "rgba(20,184,166,0.22)",
+  gridOpacity: isDarkMode ? 0.24 : 0.18,
+  gridLines: isDarkMode
+    ? "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)"
+    : "linear-gradient(rgba(15,118,110,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.08) 1px, transparent 1px)",
+  proofBorder: isDarkMode ? "rgba(255,255,255,0.24)" : "rgba(15,118,110,0.18)",
+  proofColor: isDarkMode ? "rgba(255,255,255,0.88)" : "rgba(15,23,42,0.76)",
+  proofBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.56)",
+  mobilePanelBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+  mobilePanelBorder: isDarkMode
+    ? "rgba(255,255,255,0.14)"
+    : "rgba(20,184,166,0.16)",
+  secondaryButtonColor: isDarkMode ? "#ffffff" : "#0f766e",
+  secondaryButtonBorder: isDarkMode
+    ? "rgba(255,255,255,0.32)"
+    : "rgba(15,118,110,0.24)",
+  secondaryButtonBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.72)",
+  socialColor: isDarkMode ? "rgba(255,255,255,0.76)" : "rgba(15,23,42,0.7)",
+  sceneBackdrop: isDarkMode
+    ? "linear-gradient(135deg, rgba(240,253,244,0.2), rgba(20,184,166,0.16) 48%, rgba(132,204,22,0.18))"
+    : "linear-gradient(135deg, rgba(255,255,255,0.58), rgba(186,230,253,0.24) 46%, rgba(187,247,208,0.34))",
+  sceneBorder: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(20,184,166,0.18)",
+  avatarStageBg: isDarkMode
+    ? "radial-gradient(circle at 50% 40%, rgba(236,254,255,0.74), rgba(20,184,166,0.16) 52%, rgba(2,6,23,0.18) 100%)"
+    : "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.95), rgba(204,251,241,0.54) 54%, rgba(186,230,253,0.3) 100%)",
+  avatarStageShadow: isDarkMode
+    ? "0 34px 120px rgba(20,184,166,0.28), 0 0 80px rgba(132,204,22,0.12), inset 0 1px 0 rgba(255,255,255,0.56)"
+    : "0 34px 120px rgba(14,165,233,0.22), 0 0 90px rgba(34,197,94,0.14), inset 0 1px 0 rgba(255,255,255,0.86)",
+  presenceBg: isDarkMode ? "rgba(15,23,42,0.78)" : "rgba(255,255,255,0.72)",
+  presenceColor: isDarkMode ? "#ffffff" : "#0f766e",
+  presenceBorder: isDarkMode ? "rgba(255,255,255,0.18)" : "rgba(15,118,110,0.18)",
+  sceneCardBg: isDarkMode ? "rgba(15,23,42,0.76)" : "rgba(255,255,255,0.78)",
+  sceneCardText: isDarkMode ? "#f8fafc" : "#102a43",
+  sceneCardMuted: isDarkMode ? "rgba(226,232,240,0.74)" : "#475569",
+  featureRailBg: isDarkMode ? "rgba(2,6,23,0.28)" : "rgba(255,255,255,0.64)",
+  featureRailBorder: isDarkMode ? "rgba(255,255,255,0.14)" : "rgba(15,118,110,0.16)",
+  featureCardBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.58)",
+  featureCardBorder: isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(15,118,110,0.12)",
+  featureIconBg: isDarkMode ? "rgba(163,230,53,0.1)" : "rgba(20,184,166,0.1)",
+  featureIconColor: isDarkMode ? "#a3e635" : "#0f766e",
+  featureIconShadow: isDarkMode
+    ? "0 0 28px rgba(163,230,53,0.14)"
+    : "0 0 28px rgba(20,184,166,0.12)",
+  featureText: isDarkMode ? "#ffffff" : "#102a43",
+  featureMuted: isDarkMode ? "rgba(255,255,255,0.62)" : "rgba(15,23,42,0.58)",
+});
+
 const quickActionIcons = [
   Camera,
   ScanBarcode,
   RotateCcw,
   MessageSquareText,
+] as const;
+
+const featureRailIcons = [
+  Camera,
+  Droplets,
+  Utensils,
+  Bot,
+  HeartPulse,
+  Bell,
 ] as const;
 
 const companionKinds: AssistantCompanionKind[] = [
@@ -425,27 +553,44 @@ const companionSceneIcons = [HeartPulse, Bell, Droplets] as const;
 
 const sceneToneSx = {
   calm: {
-    border: "rgba(34,197,94,0.24)",
-    bg: "rgba(240,253,244,0.86)",
-    icon: "#16a34a",
+    border: "rgba(132,204,22,0.34)",
+    bg: "rgba(240,253,244,0.78)",
+    icon: "#65a30d",
   },
   coach: {
-    border: "rgba(45,212,191,0.26)",
-    bg: "rgba(236,254,255,0.88)",
-    icon: "#0f766e",
+    border: "rgba(45,212,191,0.34)",
+    bg: "rgba(236,254,255,0.76)",
+    icon: "#14b8a6",
   },
   warm: {
-    border: "rgba(245,158,11,0.28)",
-    bg: "rgba(255,251,235,0.9)",
+    border: "rgba(245,158,11,0.32)",
+    bg: "rgba(255,251,235,0.76)",
     icon: "#d97706",
   },
 } as const;
 
+const landingGlassPanelSx = {
+  borderRadius: 1,
+  border: "1px solid var(--sn-border-soft)",
+  backgroundColor: "var(--sn-surface-glass)",
+  boxShadow: "var(--sn-shadow-soft)",
+  backdropFilter: "blur(20px)",
+} as const;
+
+const landingSectionTitleSx = {
+  fontWeight: 900,
+  fontSize: { xs: 34, md: 46 },
+  letterSpacing: 0,
+} as const;
+
 const CompanionExperienceScene = ({
   copy,
+  isDarkMode,
 }: {
-  copy: (typeof landingCopy)[LandingLanguage];
+  copy: LandingCopy;
+  isDarkMode: boolean;
 }) => {
+  const scene = getLandingScene(isDarkMode);
   const lookOffset = usePointerLook();
   const [moodIndex, setMoodIndex] = useState(0);
   const [companionIndex, setCompanionIndex] = useState(0);
@@ -472,7 +617,7 @@ const CompanionExperienceScene = ({
         minHeight: { xs: 320, sm: 430, md: 548 },
         width: { xs: "100%", md: "64%" },
         mt: { xs: 1, md: 0 },
-        display: "grid",
+        display: { xs: "none", sm: "grid" },
         placeItems: "center",
         pointerEvents: "none",
       }}
@@ -483,9 +628,8 @@ const CompanionExperienceScene = ({
           position: "absolute",
           inset: { xs: "10% 0 4%", md: "4% 6% 2%" },
           borderRadius: 1,
-          background:
-            "linear-gradient(135deg, rgba(240,253,244,0.82), rgba(236,254,255,0.78) 48%, rgba(255,247,237,0.76))",
-          border: "1px solid rgba(255,255,255,0.34)",
+          background: scene.sceneBackdrop,
+          border: `1px solid ${scene.sceneBorder}`,
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.38)",
           transform: "skewY(-1.2deg)",
         }}
@@ -504,10 +648,9 @@ const CompanionExperienceScene = ({
           width: { xs: 190, sm: 280, md: 360 },
           height: { xs: 190, sm: 280, md: 360 },
           borderRadius: "50%",
-          bgcolor: "rgba(255,255,255,0.72)",
-          border: "1px solid rgba(15,118,110,0.14)",
-          boxShadow:
-            "0 34px 120px rgba(15,118,110,0.24), inset 0 1px 0 rgba(255,255,255,0.72)",
+          background: scene.avatarStageBg,
+          border: "1px solid rgba(94,234,212,0.26)",
+          boxShadow: scene.avatarStageShadow,
           backdropFilter: "blur(18px)",
         }}
       >
@@ -536,9 +679,10 @@ const CompanionExperienceScene = ({
           sx={{
             position: "absolute",
             bottom: { xs: 24, sm: 36 },
-            bgcolor: "#0f766e",
+            background: "linear-gradient(135deg, #0f766e, #65a30d)",
             color: "white",
             fontWeight: 900,
+            boxShadow: "var(--sn-glow)",
           }}
         />
       </Box>
@@ -557,9 +701,9 @@ const CompanionExperienceScene = ({
             label={pill}
             size="small"
             sx={{
-              bgcolor: "rgba(15,23,42,0.78)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.18)",
+              bgcolor: scene.presenceBg,
+              color: scene.presenceColor,
+              border: `1px solid ${scene.presenceBorder}`,
               backdropFilter: "blur(10px)",
             }}
           />
@@ -609,9 +753,9 @@ const CompanionExperienceScene = ({
               p: { xs: 1.3, sm: 1.6 },
               borderRadius: 1,
               border: `1px solid ${tone.border}`,
-              bgcolor: tone.bg,
+              bgcolor: isDarkMode ? scene.sceneCardBg : tone.bg,
               backdropFilter: "blur(14px)",
-              boxShadow: "0 18px 56px rgba(15,23,42,0.12)",
+              boxShadow: "0 18px 56px rgba(15,23,42,0.18)",
               ...placement,
             }}
           >
@@ -631,13 +775,13 @@ const CompanionExperienceScene = ({
                 <Icon size={18} aria-hidden="true" />
               </Box>
               <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 900, color: "#102a43" }}>
+                <Typography sx={{ fontWeight: 900, color: scene.sceneCardText }}>
                   {card.title}
                 </Typography>
                 <Typography
                   sx={{
                     mt: 0.4,
-                    color: "#475569",
+                    color: scene.sceneCardMuted,
                     lineHeight: 1.45,
                     fontSize: { xs: 13, sm: 14 },
                   }}
@@ -653,32 +797,40 @@ const CompanionExperienceScene = ({
   );
 };
 
-const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
-  <Box
-    component="section"
-    sx={{
-      position: "relative",
-      minHeight: { xs: "calc(100svh - 132px)", md: "calc(100svh - 118px)" },
-      maxHeight: { md: 720 },
-      overflow: "hidden",
-      borderRadius: 1,
-      px: { xs: 2, sm: 3, md: 5 },
-      py: { xs: 3, md: 4 },
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      color: "white",
-      background:
-        "linear-gradient(150deg, #07111f 0%, #0f172a 36%, #0f766e 70%, #f8fafc 100%)",
-      border: "1px solid rgba(15,23,42,0.08)",
-    }}
-  >
+const Hero = ({
+  copy,
+  isDarkMode,
+}: {
+  copy: LandingCopy;
+  isDarkMode: boolean;
+}) => {
+  const scene = getLandingScene(isDarkMode);
+
+  return (
+    <Box
+      component="section"
+      sx={{
+        position: "relative",
+        minHeight: { xs: "calc(100svh - 132px)", md: "calc(100svh - 118px)" },
+        maxHeight: { md: 720 },
+        overflow: "hidden",
+        borderRadius: 1,
+        px: { xs: 2, sm: 3, md: 5 },
+        py: { xs: 3, md: 4 },
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        color: scene.heroText,
+        background: scene.heroBackground,
+        border: `1px solid ${scene.featureRailBorder}`,
+        boxShadow: "var(--sn-shadow-strong)",
+      }}
+    >
     <Box
       sx={{
         position: "absolute",
         inset: 0,
-        background:
-          "linear-gradient(180deg, rgba(7,17,31,0.92) 0%, rgba(7,17,31,0.68) 42%, rgba(248,250,252,0.15) 100%)",
+        background: scene.heroOverlay,
       }}
     />
     <Box
@@ -686,9 +838,8 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
       sx={{
         position: "absolute",
         inset: 0,
-        opacity: 0.24,
-        backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+        opacity: scene.gridOpacity,
+        backgroundImage: scene.gridLines,
         backgroundSize: "42px 42px",
         maskImage:
           "linear-gradient(180deg, rgba(0,0,0,0.86), rgba(0,0,0,0.1))",
@@ -708,24 +859,38 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
         label={copy.eyebrow}
         sx={{
           alignSelf: "flex-start",
-          bgcolor: "rgba(20,184,166,0.18)",
-          color: "#ccfbf1",
-          border: "1px solid rgba(94,234,212,0.28)",
+          bgcolor: scene.eyebrowBg,
+          color: scene.eyebrowColor,
+          border: `1px solid ${scene.eyebrowBorder}`,
           fontWeight: 900,
+          backdropFilter: "blur(14px)",
         }}
       />
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 44, sm: 76, md: 104 },
-          lineHeight: 0.9,
+          fontSize: { xs: 42, sm: 68, md: 82 },
+          lineHeight: 0.98,
           fontWeight: 900,
           letterSpacing: 0,
-          maxWidth: 920,
-          textShadow: "0 18px 80px rgba(0,0,0,0.28)",
+          maxWidth: 760,
+          textShadow: scene.titleShadow,
+          "@media (min-width: 900px) and (max-height: 760px)": {
+            fontSize: 62,
+          },
         }}
       >
-        {copy.brandTitle}
+        {copy.headline.prefix}{" "}
+        <Box
+          component="span"
+          sx={{
+            color: scene.accentColor,
+            textShadow: scene.accentShadow,
+          }}
+        >
+          {copy.headline.accent}
+        </Box>{" "}
+        {copy.headline.suffix}
       </Typography>
       <Typography
         component="p"
@@ -734,7 +899,7 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
           fontSize: { xs: 23, md: 32 },
           lineHeight: 1.15,
           fontWeight: 900,
-          color: "#d9f99d",
+          color: scene.typingColor,
         }}
       >
         <TypeAnimation
@@ -754,7 +919,7 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
       <Typography
         sx={{
           maxWidth: 760,
-          color: "rgba(255,255,255,0.82)",
+          color: scene.mutedText,
           fontSize: { xs: 17, md: 20 },
           lineHeight: 1.65,
           fontWeight: 600,
@@ -762,20 +927,64 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
       >
         {copy.subtitle}
       </Typography>
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
+        sx={{
+          display: { xs: "none", sm: "flex" },
+          "@media (min-width: 900px) and (max-height: 760px)": {
+            display: "none",
+          },
+        }}
+      >
         {copy.proof.map((item) => (
           <Chip
             key={item}
             label={item}
             variant="outlined"
             sx={{
-              borderColor: "rgba(255,255,255,0.24)",
-              color: "rgba(255,255,255,0.88)",
-              bgcolor: "rgba(255,255,255,0.08)",
+              borderColor: scene.proofBorder,
+              color: scene.proofColor,
+              bgcolor: scene.proofBg,
               backdropFilter: "blur(10px)",
             }}
           />
         ))}
+      </Stack>
+      <Stack
+        direction="row"
+        spacing={1.2}
+        alignItems="center"
+        sx={{
+          display: { xs: "flex", sm: "none" },
+          p: 1.1,
+          borderRadius: 1,
+          border: `1px solid ${scene.mobilePanelBorder}`,
+          backgroundColor: scene.mobilePanelBg,
+          backdropFilter: "blur(14px)",
+        }}
+      >
+        <AssistantAvatar
+          name={copy.mascot.name}
+          variant="robot"
+          mood="happy"
+          size={58}
+          active
+        />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontWeight: 900 }}>{copy.mascot.title}</Typography>
+          <Typography
+            sx={{
+              color: scene.mutedText,
+              fontSize: 13,
+              lineHeight: 1.45,
+            }}
+          >
+            {copy.mascot.body}
+          </Typography>
+        </Box>
       </Stack>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4}>
         <Button
@@ -786,50 +995,149 @@ const Hero = ({ copy }: { copy: (typeof landingCopy)[LandingLanguage] }) => (
           sx={{
             px: 3.2,
             py: 1.4,
-            bgcolor: "#f8fafc",
-            color: "#0f172a",
-            "&:hover": { bgcolor: "#ecfeff" },
+            color: "#ffffff",
           }}
         >
           {copy.primary}
         </Button>
         <Button
-          component="a"
-          href="#ai-overview"
+          component={Link}
+          to="/register"
           variant="outlined"
           size="large"
+          startIcon={<MessageSquareText size={18} aria-hidden="true" />}
           sx={{
             px: 3.2,
             py: 1.4,
-            color: "white",
-            borderColor: "rgba(255,255,255,0.32)",
-            bgcolor: "rgba(255,255,255,0.08)",
+            color: scene.secondaryButtonColor,
+            borderColor: scene.secondaryButtonBorder,
+            bgcolor: scene.secondaryButtonBg,
           }}
         >
-          {copy.secondary}
+          {copy.telegramCta}
         </Button>
+      </Stack>
+      <Stack
+        direction="row"
+        spacing={1.2}
+        alignItems="center"
+        useFlexGap
+        flexWrap="wrap"
+        sx={{
+          color: scene.socialColor,
+          display: { xs: "none", sm: "flex" },
+          "@media (min-width: 900px) and (max-height: 760px)": {
+            display: "none",
+          },
+        }}
+      >
+        <Stack direction="row" spacing={-0.5} aria-hidden="true">
+          {["I", "A", "M", "S"].map((initial, index) => (
+            <Box
+              key={initial}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                display: "grid",
+                placeItems: "center",
+                border: "2px solid rgba(255,255,255,0.72)",
+                color: "#ffffff",
+                fontSize: 12,
+                fontWeight: 900,
+                background:
+                  index % 2 === 0
+                    ? "linear-gradient(135deg, #0f766e, #65a30d)"
+                    : "linear-gradient(135deg, #14b8a6, #2563eb)",
+              }}
+            >
+              {initial}
+            </Box>
+          ))}
+        </Stack>
+        <Stack direction="row" spacing={0.3} aria-hidden="true">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Star
+              key={index}
+              size={16}
+              fill="#facc15"
+              color="#facc15"
+              aria-hidden="true"
+            />
+          ))}
+        </Stack>
+        <Typography sx={{ fontWeight: 800, fontSize: 13 }}>
+          {copy.socialProof}
+        </Typography>
       </Stack>
     </Stack>
 
-    <CompanionExperienceScene copy={copy} />
+    <CompanionExperienceScene copy={copy} isDarkMode={isDarkMode} />
 
     <Stack
-      direction="row"
-      spacing={1}
-      alignItems="center"
+      direction={{ xs: "column", md: "row" }}
+      spacing={1.2}
       sx={{
         position: "relative",
         zIndex: 3,
-        color: "rgba(15,23,42,0.8)",
-        alignSelf: "flex-end",
-        display: { xs: "none", md: "flex" },
+        display: { xs: "none", md: "grid" },
+        "@media (max-height: 760px)": {
+          display: "none",
+        },
+        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+        alignItems: "stretch",
+        width: "100%",
+        p: 1,
+        borderRadius: 1,
+        border: `1px solid ${scene.featureRailBorder}`,
+        backgroundColor: scene.featureRailBg,
+        backdropFilter: "blur(18px)",
       }}
     >
-      <Utensils size={18} aria-hidden="true" />
-      <Typography sx={{ fontWeight: 900 }}>{copy.title}</Typography>
+      {copy.featureRail.map((feature, index) => {
+        const Icon = featureRailIcons[index] ?? Sparkles;
+
+        return (
+        <Box
+          key={feature.title}
+          sx={{
+            p: 1.4,
+            borderRadius: 1,
+            border: `1px solid ${scene.featureCardBorder}`,
+            backgroundColor: scene.featureCardBg,
+          }}
+        >
+          <Stack spacing={0.7}>
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                display: "grid",
+                placeItems: "center",
+                color: scene.featureIconColor,
+                backgroundColor: scene.featureIconBg,
+                boxShadow: scene.featureIconShadow,
+              }}
+            >
+              <Icon size={18} aria-hidden="true" />
+            </Box>
+            <Typography
+              sx={{ fontWeight: 900, fontSize: 14, color: scene.featureText }}
+            >
+              {feature.title}
+            </Typography>
+            <Typography sx={{ color: scene.featureMuted, fontSize: 12 }}>
+              {feature.body}
+            </Typography>
+          </Stack>
+        </Box>
+        );
+      })}
     </Stack>
-  </Box>
-);
+    </Box>
+  );
+};
 
 const QuickFoodPanel = ({
   copy,
@@ -837,6 +1145,7 @@ const QuickFoodPanel = ({
   copy: (typeof landingCopy)[LandingLanguage];
 }) => (
   <Box
+    id="nutrition"
     component="section"
     sx={{
       display: "grid",
@@ -852,7 +1161,7 @@ const QuickFoodPanel = ({
       <Typography
         component="h2"
         variant="h3"
-        sx={{ fontWeight: 900, fontSize: { xs: 34, md: 46 } }}
+        sx={landingSectionTitleSx}
       >
         {copy.foodTitle}
       </Typography>
@@ -892,11 +1201,9 @@ const QuickFoodPanel = ({
           key={food.title}
           elevation={0}
           sx={{
+            ...landingGlassPanelSx,
             p: 2,
             minHeight: 186,
-            borderRadius: 1,
-            border: "1px solid rgba(15,23,42,0.08)",
-            bgcolor: "rgba(255,255,255,0.9)",
           }}
         >
           <Stack spacing={1.2}>
@@ -932,12 +1239,12 @@ const EcosystemGrid = ({
 }: {
   copy: (typeof landingCopy)[LandingLanguage];
 }) => (
-  <Box component="section">
+  <Box id="features" component="section">
     <Stack spacing={1.2} sx={{ mb: 2 }}>
       <Typography
         component="h2"
         variant="h3"
-        sx={{ fontWeight: 900, fontSize: { xs: 34, md: 46 } }}
+        sx={landingSectionTitleSx}
       >
         {copy.ecosystemTitle}
       </Typography>
@@ -960,11 +1267,9 @@ const EcosystemGrid = ({
           key={feature.title}
           elevation={0}
           sx={{
+            ...landingGlassPanelSx,
             p: 2.4,
             minHeight: 190,
-            borderRadius: 1,
-            border: "1px solid rgba(15,23,42,0.08)",
-            bgcolor: "rgba(255,255,255,0.9)",
           }}
         >
           <Stack spacing={1.2}>
@@ -998,14 +1303,15 @@ const AnalyticsPanel = ({
   copy: (typeof landingCopy)[LandingLanguage];
 }) => (
   <Paper
+    id="reminders"
     component="section"
     elevation={0}
     sx={{
+      ...landingGlassPanelSx,
       p: { xs: 2.4, md: 3 },
-      borderRadius: 1,
-      border: "1px solid rgba(15,23,42,0.08)",
       color: "white",
-      bgcolor: "#102a43",
+      background:
+        "radial-gradient(circle at 88% 10%, rgba(132,204,22,0.22), transparent 28%), linear-gradient(135deg, #07111f 0%, #102a43 52%, #0f766e 100%)",
       overflow: "hidden",
     }}
   >
@@ -1013,7 +1319,7 @@ const AnalyticsPanel = ({
       <Typography
         component="h2"
         variant="h3"
-        sx={{ fontWeight: 900, fontSize: { xs: 34, md: 46 } }}
+        sx={landingSectionTitleSx}
       >
         {copy.analyticsTitle}
       </Typography>
@@ -1081,6 +1387,7 @@ const MobileCommunityPanel = ({
   copy: (typeof landingCopy)[LandingLanguage];
 }) => (
   <Box
+    id="community"
     component="section"
     sx={{
       display: "grid",
@@ -1093,7 +1400,7 @@ const MobileCommunityPanel = ({
       <Typography
         component="h2"
         variant="h3"
-        sx={{ fontWeight: 900, fontSize: { xs: 34, md: 46 } }}
+        sx={landingSectionTitleSx}
       >
         {copy.mobileTitle}
       </Typography>
@@ -1106,10 +1413,8 @@ const MobileCommunityPanel = ({
       <Paper
         elevation={0}
         sx={{
+          ...landingGlassPanelSx,
           p: 2,
-          borderRadius: 1,
-          border: "1px solid rgba(15,23,42,0.08)",
-          bgcolor: "rgba(255,255,255,0.9)",
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
@@ -1127,10 +1432,8 @@ const MobileCommunityPanel = ({
       <Paper
         elevation={0}
         sx={{
+          ...landingGlassPanelSx,
           p: 2,
-          borderRadius: 1,
-          border: "1px solid rgba(15,23,42,0.08)",
-          bgcolor: "rgba(255,255,255,0.9)",
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
@@ -1163,7 +1466,7 @@ const MobileCommunityPanel = ({
       <Box
         sx={{
           minHeight: 610,
-          borderRadius: 6,
+          borderRadius: 1,
           p: 2,
           bgcolor: "#f8fafc",
           overflow: "hidden",
@@ -1233,13 +1536,12 @@ const FinalCta = ({
   copy: (typeof landingCopy)[LandingLanguage];
 }) => (
   <Paper
+    id="about"
     component="section"
     elevation={0}
     sx={{
+      ...landingGlassPanelSx,
       p: { xs: 2.5, md: 3.5 },
-      borderRadius: 1,
-      border: "1px solid rgba(15,23,42,0.08)",
-      bgcolor: "rgba(255,255,255,0.9)",
     }}
   >
     <Stack
@@ -1274,16 +1576,28 @@ const FinalCta = ({
 
 const LandingPage = () => {
   const { appLanguage } = useLanguage();
+  const { isDarkMode } = useAppColorMode();
   const copy = landingCopy[appLanguage];
 
   return (
     <Stack spacing={{ xs: 4, md: 5 }}>
-      <Hero copy={copy} />
-      <EcosystemGrid copy={copy} />
-      <QuickFoodPanel copy={copy} />
-      <AnalyticsPanel copy={copy} />
-      <MobileCommunityPanel copy={copy} />
-      <FinalCta copy={copy} />
+      <Hero copy={copy} isDarkMode={isDarkMode} />
+      <Stack
+        spacing={{ xs: 4, md: 5 }}
+        sx={{
+          width: "100%",
+          maxWidth: 1440,
+          mx: "auto",
+          px: { xs: 2, sm: 3, md: 5 },
+          pb: { xs: 4, md: 6 },
+        }}
+      >
+        <EcosystemGrid copy={copy} />
+        <QuickFoodPanel copy={copy} />
+        <AnalyticsPanel copy={copy} />
+        <MobileCommunityPanel copy={copy} />
+        <FinalCta copy={copy} />
+      </Stack>
     </Stack>
   );
 };

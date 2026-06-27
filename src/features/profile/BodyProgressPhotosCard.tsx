@@ -220,9 +220,9 @@ export const BodyProgressPhotosCard = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2.2}>
@@ -313,7 +313,7 @@ export const BodyProgressPhotosCard = () => {
             sx={{
               flex: 1,
               minHeight: 220,
-              borderRadius: 4,
+              borderRadius: 1,
               border: "1px dashed rgba(15, 23, 42, 0.18)",
               overflow: "hidden",
               display: "grid",
@@ -361,7 +361,7 @@ export const BodyProgressPhotosCard = () => {
                 <Paper
                   key={photo.id}
                   variant="outlined"
-                  sx={{ borderRadius: 4, overflow: "hidden" }}
+                  sx={{ borderRadius: 1, overflow: "hidden" }}
                 >
                   <Box
                     component="img"

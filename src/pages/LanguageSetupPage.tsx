@@ -22,18 +22,18 @@ const languageButtonSx = {
   fontSize: "1.04rem",
   opacity: 1,
   "&.MuiButton-outlined": {
-    color: "#1f2937",
-    borderColor: "rgba(15, 118, 110, 0.34)",
-    bgcolor: "rgba(255,255,255,0.92)",
+    color: "text.primary",
+    borderColor: "var(--sn-border-strong)",
+    bgcolor: "var(--sn-surface-elevated)",
   },
   "&.MuiButton-outlined:hover": {
-    borderColor: "rgba(15, 118, 110, 0.56)",
-    bgcolor: "rgba(240,253,250,0.96)",
+    borderColor: "primary.main",
+    bgcolor: "var(--sn-accent-soft)",
   },
   "&.Mui-disabled": {
-    color: "rgba(31, 41, 55, 0.72)",
-    borderColor: "rgba(15, 118, 110, 0.2)",
-    bgcolor: "rgba(248,250,252,0.84)",
+    color: "text.secondary",
+    borderColor: "var(--sn-border-soft)",
+    bgcolor: "var(--sn-surface-muted)",
     opacity: 1,
   },
 } as const;
@@ -64,8 +64,9 @@ const LanguageSetupPage = () => {
           maxWidth: 520,
           p: { xs: 3, sm: 4 },
           borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.94)",
+          border: "1px solid var(--sn-border-soft)",
+          backgroundColor: "var(--sn-surface-glass)",
+          boxShadow: "var(--sn-shadow-card)",
         }}
       >
         <Stack spacing={3}>

@@ -452,9 +452,9 @@ export const ReminderManagementCard = () => {
                   key={reminder.id}
                   sx={{
                     p: 1.5,
-                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    border: "1px solid var(--sn-border-soft)",
                     borderRadius: 1,
-                    bgcolor: "rgba(255,255,255,0.78)",
+                    bgcolor: "var(--sn-surface-elevated)",
                   }}
                 >
                   <Stack spacing={1.2}>

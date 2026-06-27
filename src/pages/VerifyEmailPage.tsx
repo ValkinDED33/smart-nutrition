@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Alert, Box, Button, CircularProgress, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import { replaceCommunityState } from "../features/community/communitySlice";
@@ -21,6 +21,7 @@ import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 import type { AppSnapshot } from "../shared/types/appSnapshot";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { AuthSurface } from "@shared/ui";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -127,19 +128,7 @@ const VerifyEmailPage = () => {
   }, [appLanguage, dispatch, navigate, t, token]);
 
   return (
-    <Box sx={{ display: "grid", placeItems: "center", minHeight: "70vh" }}>
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 520,
-          p: { xs: 3, md: 4 },
-          borderRadius: 7,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,250,252,0.92) 100%)",
-        }}
-      >
+    <AuthSurface maxWidth={520} minHeight="70vh">
         <Stack spacing={2.5} alignItems="flex-start">
           <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
             {t("brand.name")}
@@ -168,8 +157,7 @@ const VerifyEmailPage = () => {
             </>
           )}
         </Stack>
-      </Paper>
-    </Box>
+    </AuthSurface>
   );
 };
 

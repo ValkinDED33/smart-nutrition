@@ -194,8 +194,8 @@ export const MotivationHubCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={3}>
@@ -250,8 +250,8 @@ export const MotivationHubCard = () => {
                 sx={{
                   p: 2,
                   borderRadius: 1,
-                  border: "1px solid rgba(15, 23, 42, 0.08)",
-                  backgroundColor: "rgba(248,250,252,0.9)",
+                  border: "1px solid var(--sn-border-soft)",
+                  backgroundColor: "var(--sn-surface-elevated)",
                 }}
               >
                 <Stack
@@ -387,8 +387,8 @@ export const MotivationHubCard = () => {
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    border: "1px solid rgba(15, 23, 42, 0.06)",
-                    backgroundColor: "rgba(248,250,252,0.85)",
+                    border: "1px solid var(--sn-border-soft)",
+                    backgroundColor: "var(--sn-surface-elevated)",
                   }}
                 >
                   <Stack direction="row" justifyContent="space-between" spacing={2}>

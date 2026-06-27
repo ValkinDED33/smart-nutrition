@@ -52,7 +52,6 @@ export const LanguageMenuButton = ({
   const buttonId = id ?? `language-menu-button-${getSafeDomId(generatedId)}`;
   const menuId = `${buttonId}-menu`;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const isDarkMode = theme.palette.mode === "dark";
   const isOpen = Boolean(anchorEl);
   const activeLanguageOption =
     languageOptions.find((option) => option.value === value) ??
@@ -93,25 +92,17 @@ export const LanguageMenuButton = ({
               height: 40,
               px: { xs: 1, sm: 1.15 },
               borderRadius: 999,
-              color: isDarkMode ? "#e2e8f0" : "#0f766e",
-              borderColor: isDarkMode
-                ? "rgba(148, 163, 184, 0.32)"
-                : "rgba(15, 118, 110, 0.24)",
-              bgcolor: isDarkMode
-                ? "rgba(15, 23, 42, 0.9)"
-                : "rgba(255,255,255,0.9)",
+              color: "primary.main",
+              borderColor: "var(--sn-border-soft)",
+              bgcolor: "var(--sn-surface-glass)",
               textTransform: "none",
               fontWeight: 900,
               "& .MuiButton-startIcon": {
                 mr: 0.45,
               },
               "&:hover": {
-                borderColor: isDarkMode
-                  ? "rgba(94, 234, 212, 0.42)"
-                  : "rgba(15, 118, 110, 0.38)",
-                bgcolor: isDarkMode
-                  ? "rgba(20, 184, 166, 0.16)"
-                  : "rgba(240,253,250,0.96)",
+                borderColor: "var(--sn-border-strong)",
+                bgcolor: "var(--sn-accent-soft)",
               },
             },
             ...customSx,
@@ -147,15 +138,10 @@ export const LanguageMenuButton = ({
             sx: {
               mt: 1,
               minWidth: 180,
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: isDarkMode
-                ? "rgba(148, 163, 184, 0.22)"
-                : "rgba(15, 118, 110, 0.14)",
-              bgcolor: isDarkMode ? "#0f172a" : "#ffffff",
-              boxShadow: isDarkMode
-                ? "0 18px 50px rgba(0,0,0,0.34)"
-                : "0 18px 50px rgba(15,23,42,0.14)",
+              borderRadius: 1,
+              border: "1px solid var(--sn-border-soft)",
+              bgcolor: "var(--sn-surface-elevated)",
+              boxShadow: "var(--sn-shadow-card)",
             },
           },
         }}
@@ -171,14 +157,14 @@ export const LanguageMenuButton = ({
               sx={{
                 gap: 1,
                 minHeight: 42,
-                color: isDarkMode ? "#e2e8f0" : "#14213d",
+                color: "text.primary",
                 fontWeight: selected ? 900 : 800,
                 "&.Mui-selected": {
-                  color: "#ffffff",
-                  bgcolor: "#0f766e",
+                  color: theme.palette.primary.contrastText,
+                  bgcolor: "primary.main",
                 },
                 "&.Mui-selected:hover": {
-                  bgcolor: "#115e59",
+                  bgcolor: "primary.dark",
                 },
               }}
             >

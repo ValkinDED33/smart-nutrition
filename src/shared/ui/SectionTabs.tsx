@@ -39,8 +39,10 @@ export const SectionTabs = ({
         minWidth: "max-content",
         p: 0.5,
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        bgcolor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        bgcolor: "var(--sn-surface-glass)",
+        boxShadow: "var(--sn-shadow-soft)",
+        backdropFilter: "blur(18px)",
       }}
     >
       {sections.map((section) => {
@@ -59,12 +61,14 @@ export const SectionTabs = ({
               px: { xs: 1.25, sm: 1.6 },
               borderRadius: 1,
               border: "1px solid",
-              borderColor: active ? "rgba(15,118,110,0.34)" : "transparent",
-              color: active ? "#0f766e" : "text.secondary",
-              bgcolor: active ? "rgba(240,253,250,0.96)" : "transparent",
-              transition: "background-color 140ms ease, border-color 140ms ease",
+              borderColor: active ? "var(--sn-border-strong)" : "transparent",
+              color: active ? "var(--sn-accent)" : "text.secondary",
+              bgcolor: active ? "var(--sn-accent-soft)" : "transparent",
+              boxShadow: active ? "var(--sn-glow)" : "none",
+              transition:
+                "background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease",
               "&:hover": {
-                bgcolor: active ? "rgba(240,253,250,0.96)" : "rgba(248,250,252,0.92)",
+                bgcolor: active ? "var(--sn-accent-soft)" : "rgba(20,184,166,0.08)",
               },
               "&:focus-visible": {
                 outline: "3px solid rgba(20,184,166,0.28)",

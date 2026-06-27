@@ -253,9 +253,9 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2}>
@@ -317,7 +317,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
             <Alert severity="info">{copy.selectedEmpty}</Alert>
           ) : (
             fridgeItems.map((item) => (
-              <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+              <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 <Stack
                   direction={{ xs: "column", md: "row" }}
                   spacing={1.2}
@@ -361,7 +361,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
             <Alert severity="info">{copy.noSuggestions}</Alert>
           ) : (
             suggestions.map((item) => (
-              <Paper key={item.id} variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+              <Paper key={item.id} variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
                 <Stack spacing={1.2}>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                     <Chip

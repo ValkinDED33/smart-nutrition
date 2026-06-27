@@ -647,9 +647,10 @@ const ProfileForm = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.84)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
+        boxShadow: "var(--sn-shadow-card)",
       }}
     >
       <Stack spacing={2.5} component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -664,8 +665,8 @@ const ProfileForm = () => {
           variant="outlined"
           sx={{
             p: 2.25,
-            borderRadius: 5,
-            backgroundColor: "rgba(248,250,252,0.86)",
+            borderRadius: 1,
+            backgroundColor: "var(--sn-surface-elevated)",
           }}
         >
           <Stack spacing={2}>
@@ -715,10 +716,10 @@ const ProfileForm = () => {
                         borderRadius: 3,
                         border: isSelected
                           ? "2px solid rgba(15, 118, 110, 0.92)"
-                          : "1px solid rgba(15, 23, 42, 0.08)",
+                          : "1px solid var(--sn-border-soft)",
                         backgroundColor: isSelected
                           ? "rgba(236, 253, 245, 0.86)"
-                          : "rgba(255,255,255,0.9)",
+                          : "var(--sn-surface-glass)",
                         cursor: "pointer",
                         display: "grid",
                         placeItems: "center",
@@ -792,7 +793,7 @@ const ProfileForm = () => {
           variant="outlined"
           sx={{
             p: 2.25,
-            borderRadius: 5,
+            borderRadius: 1,
             backgroundColor: "rgba(248,250,252,0.86)",
           }}
         >
@@ -897,7 +898,7 @@ const ProfileForm = () => {
             variant="outlined"
             sx={{
               p: 2.25,
-              borderRadius: 5,
+              borderRadius: 1,
               backgroundColor: "rgba(240,253,250,0.72)",
               borderColor: "rgba(20, 184, 166, 0.28)",
             }}

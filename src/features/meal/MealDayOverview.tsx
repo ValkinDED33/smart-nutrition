@@ -19,7 +19,7 @@ import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/d
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
-import { EmptyState } from "@shared/ui";
+import { EmptyState, SectionCard } from "@shared/ui";
 import type { AppLanguage } from "@shared/types/i18n";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -309,15 +309,7 @@ export const MealDayOverview = () => {
 
   return (
     <>
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          borderRadius: 6,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
+      <SectionCard>
         <Stack spacing={2}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -358,7 +350,16 @@ export const MealDayOverview = () => {
                 );
 
                 return (
-                  <Paper key={mealType} variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+                  <Paper
+                    key={mealType}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 1,
+                      bgcolor: "var(--sn-surface-elevated)",
+                      borderColor: "var(--sn-border-soft)",
+                    }}
+                  >
                     <Stack spacing={1.2}>
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
@@ -454,7 +455,7 @@ export const MealDayOverview = () => {
             </Stack>
           )}
         </Stack>
-      </Paper>
+      </SectionCard>
 
       <InlineEditPanel
         key={editingItem?.id ?? "empty"}

@@ -10,7 +10,6 @@ import {
   Button,
   CircularProgress,
   InputAdornment,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -34,6 +33,7 @@ import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/auth
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
+import { AuthSurface } from "@shared/ui";
 
 type FormData = {
   email: string;
@@ -132,20 +132,7 @@ const LoginPage = () => {
   };
 
   return (
-    <Box sx={{ display: "grid", placeItems: "center", minHeight: "75vh" }}>
-      <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 540,
-          p: { xs: 3, md: 4.5 },
-          borderRadius: 7,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(247,250,252,0.9) 100%)",
-          backdropFilter: "blur(10px)",
-        }}
-      >
+    <AuthSurface>
         <Stack spacing={3}>
           <Box>
             <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
@@ -259,8 +246,7 @@ const LoginPage = () => {
             </Box>
           </Typography>
         </Stack>
-      </Paper>
-    </Box>
+    </AuthSurface>
   );
 };
 

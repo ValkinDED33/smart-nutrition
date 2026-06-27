@@ -294,9 +294,9 @@ export const RecipeSection = ({ mealType }: Props) => {
         elevation={0}
         sx={{
           p: 2.5,
-          borderRadius: 5,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
+          borderRadius: 1,
+          border: "1px solid var(--sn-border-soft)",
+          backgroundColor: "var(--sn-surface-glass)",
         }}
       >
         <Stack spacing={1.5}>
@@ -341,7 +341,7 @@ export const RecipeSection = ({ mealType }: Props) => {
           {builderItems.length > 0 && (
             <Stack spacing={1.2}>
               {builderItems.map((item) => (
-                <Paper key={item.product.id} variant="outlined" sx={{ p: 1.5, borderRadius: 4 }}>
+                <Paper key={item.product.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                   <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={1.2}
@@ -424,8 +424,8 @@ export const RecipeSection = ({ mealType }: Props) => {
         <Card
           key={recipe.id}
           sx={{
-            borderRadius: 5,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
+            borderRadius: 1,
+            border: "1px solid var(--sn-border-soft)",
             boxShadow: "none",
           }}
         >

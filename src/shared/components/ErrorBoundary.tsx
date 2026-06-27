@@ -184,7 +184,7 @@ class ErrorBoundaryInner extends Component<Props, State> {
               width: "min(100%, 560px)",
               border: 1,
               borderColor: "divider",
-              borderRadius: 4,
+              borderRadius: 1,
               p: { xs: 2.5, sm: 4 },
             }}
           >

@@ -167,7 +167,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
         variant="outlined"
         sx={{
           p: 1.5,
-          borderRadius: 4,
+          borderRadius: 1,
           borderColor: "rgba(15, 23, 42, 0.08)",
           background:
             "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",

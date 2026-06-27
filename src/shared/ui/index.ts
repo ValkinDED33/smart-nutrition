@@ -1,4 +1,5 @@
 export * from "./cn";
+export * from "./AuthSurface";
 export * from "./EmptyState";
 export * from "./LoadingSkeleton";
 export * from "./PageShell";

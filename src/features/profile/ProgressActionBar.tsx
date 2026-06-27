@@ -16,9 +16,10 @@ const pulse = keyframes`
 `;
 
 const ToolbarPanel = styled(Paper)`
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--sn-border-soft);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--sn-surface-glass);
+  box-shadow: var(--sn-shadow-card);
   padding: 16px;
 `;
 

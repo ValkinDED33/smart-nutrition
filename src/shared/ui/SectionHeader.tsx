@@ -19,7 +19,10 @@ export const SectionHeader = ({ title, description, action }: SectionHeaderProps
         {title}
       </Typography>
       {description ? (
-        <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+        <Typography
+          color="text.secondary"
+          sx={{ lineHeight: 1.6, maxWidth: 760 }}
+        >
           {description}
         </Typography>
       ) : null}

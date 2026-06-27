@@ -14,9 +14,10 @@ const NotFoundPage = () => {
           width: "100%",
           p: { xs: 3, md: 5 },
           textAlign: "center",
-          borderRadius: 7,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.88)",
+          borderRadius: 1,
+          border: "1px solid var(--sn-border-soft)",
+          backgroundColor: "var(--sn-surface-glass)",
+          boxShadow: "var(--sn-shadow-card)",
         }}
       >
         <Stack spacing={2} alignItems="center">

@@ -253,8 +253,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2}>
@@ -326,8 +326,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
               sx={{
                 p: { xs: 1.25, md: 1.5 },
                 borderRadius: 1,
-                borderColor: isActiveRow ? "primary.main" : "rgba(15, 23, 42, 0.1)",
-                bgcolor: isActiveRow ? "rgba(240,253,250,0.54)" : "rgba(255,255,255,0.64)",
+                borderColor: isActiveRow ? "primary.main" : "var(--sn-border-soft)",
+                bgcolor: isActiveRow ? "var(--sn-accent-soft)" : "var(--sn-surface-elevated)",
               }}
             >
               <Stack spacing={1.25}>

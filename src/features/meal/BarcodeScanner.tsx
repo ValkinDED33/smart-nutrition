@@ -729,9 +729,9 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 5,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2}>
@@ -793,7 +793,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             sx={{
               position: "relative",
               overflow: "hidden",
-              borderRadius: 4,
+              borderRadius: 1,
               backgroundColor: "#000",
               minHeight: 240,
             }}
@@ -825,7 +825,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           <Box
             sx={{
               minHeight: 220,
-              borderRadius: 4,
+              borderRadius: 1,
               border: "1px dashed rgba(15, 23, 42, 0.18)",
               background:
                 "linear-gradient(135deg, rgba(240,249,255,0.86) 0%, rgba(236,253,245,0.88) 100%)",
@@ -1020,7 +1020,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             variant="outlined"
             sx={{
               p: 2,
-              borderRadius: 4,
+              borderRadius: 1,
               borderColor: "rgba(15, 23, 42, 0.12)",
             }}
           >

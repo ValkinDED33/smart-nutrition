@@ -31,7 +31,7 @@ import {
 } from "../features/meal/selectors";
 import { incrementWater } from "../features/water/waterSlice";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { buildDailyContext } from "@domain/meal/dailyContext";
 import {
   buildAssistantHomeIntelligence,
@@ -394,7 +394,7 @@ const HomePage = () => {
                 color: "#0f172a",
                 bgcolor: "#ffffff",
                 border: "1px solid rgba(255,255,255,0.4)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
+                "&:hover": { bgcolor: "var(--sn-surface-elevated)" },
               }}
             >
               <Stack spacing={0.4}>
@@ -527,7 +527,7 @@ const HomePage = () => {
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
-                bgcolor: "rgba(255,255,255,0.9)",
+                bgcolor: "var(--sn-surface-elevated)",
                 borderColor: "rgba(15,23,42,0.1)",
                 "&:hover": {
                   borderColor: "primary.main",

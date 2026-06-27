@@ -37,7 +37,7 @@ import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import Loader from "../shared/components/Loader/PacmanLoader";
-import { PageShell, SectionTabs } from "@shared/ui";
+import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
 
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({
@@ -273,15 +273,7 @@ const MealBuilderPage = () => {
   ];
 
   const mealTypeSelector = (
-    <Paper
-      elevation={0}
-      sx={{
-        p: { xs: 1.5, md: 2 },
-        borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
-      }}
-    >
+    <SectionCard>
       <Stack spacing={{ xs: 1.25, md: 2 }}>
         <Typography
           component="h2"
@@ -316,7 +308,68 @@ const MealBuilderPage = () => {
           ))}
         </ToggleButtonGroup>
       </Stack>
-    </Paper>
+    </SectionCard>
+  );
+
+  const diaryContent = (
+    <Stack spacing={2}>
+      <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+        {t("mealBuilder.diary")}
+      </Typography>
+
+      {(Object.keys(groupedEntries) as MealType[]).map((group) => (
+        <Stack key={group} spacing={1.2}>
+          <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+            <Typography sx={{ fontWeight: 800 }}>{mealLabels[group]}</Typography>
+            <Chip
+              label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
+              size="small"
+            />
+          </Stack>
+
+          {groupedEntries[group].length === 0 ? (
+            <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
+          ) : (
+            groupedEntries[group].map((item) => {
+              const entryCalories =
+                (item.product.nutrients.calories * item.quantity) / 100;
+
+              return (
+                <Paper
+                  key={item.id}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: "var(--sn-surface-elevated)",
+                    borderColor: "var(--sn-border-soft)",
+                  }}
+                >
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    spacing={1}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {getProductDisplayName(item.product, appLanguage)}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
+                        {t("common.kcal")}
+                      </Typography>
+                    </Box>
+                    <MealEntryEditorPanel entry={item} />
+                  </Stack>
+                </Paper>
+              );
+            })
+          )}
+
+          <Divider />
+        </Stack>
+      ))}
+    </Stack>
   );
 
   return (
@@ -340,15 +393,7 @@ const MealBuilderPage = () => {
       }
       maxWidth={1480}
     >
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
-      >
+      <SectionCard tone="premium">
         <Stack spacing={{ xs: 1, md: 1.5 }}>
           <Typography variant="body2">
             {t("mealBuilder.calories")}: {totals.calories.toFixed(0)} / {dailyCalories}{" "}
@@ -360,7 +405,7 @@ const MealBuilderPage = () => {
             sx={{ height: 12, borderRadius: 999 }}
           />
         </Stack>
-      </Paper>
+      </SectionCard>
 
       <FoodCommandCenter
         mealType={mealType}
@@ -376,34 +421,18 @@ const MealBuilderPage = () => {
 
       {activeSection === "add" ? (
         <Stack spacing={3}>
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 1.5, md: 2 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
+      <SectionCard
+        title={copy.inputTitle}
+        description={copy.inputSubtitle}
+        action={
+          <Chip
+            label={`${totals.calories.toFixed(0)} / ${dailyCalories} ${t("common.kcal")}`}
+            color={caloriePercent > 92 ? "warning" : "success"}
+            variant="outlined"
+          />
+        }
       >
         <Stack spacing={1.5}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            justifyContent="space-between"
-            alignItems={{ xs: "flex-start", md: "center" }}
-          >
-            <Stack spacing={0.4}>
-              <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
-                {copy.inputTitle}
-              </Typography>
-              <Typography color="text.secondary">{copy.inputSubtitle}</Typography>
-            </Stack>
-            <Chip
-              label={`${totals.calories.toFixed(0)} / ${dailyCalories} ${t("common.kcal")}`}
-              color={caloriePercent > 92 ? "warning" : "success"}
-              variant="outlined"
-            />
-          </Stack>
           <Box
             sx={{
               display: "grid",
@@ -427,8 +456,8 @@ const MealBuilderPage = () => {
                     borderRadius: 1,
                     cursor: "pointer",
                     textAlign: "left",
-                    backgroundColor: active ? "rgba(240,253,250,0.9)" : "rgba(248,250,252,0.78)",
-                    borderColor: active ? "primary.main" : "rgba(15, 23, 42, 0.1)",
+                    backgroundColor: active ? "var(--sn-accent-soft)" : "var(--sn-surface-elevated)",
+                    borderColor: active ? "var(--sn-border-strong)" : "var(--sn-border-soft)",
                     "&:hover": {
                       borderColor: "primary.main",
                     },
@@ -445,7 +474,7 @@ const MealBuilderPage = () => {
             })}
           </Box>
         </Stack>
-      </Paper>
+      </SectionCard>
 
       {mealTypeSelector}
 
@@ -491,81 +520,18 @@ const MealBuilderPage = () => {
         </Stack>
 
         <Stack spacing={3} sx={{ display: { xs: "none", lg: "block" } }}>
-          <Paper
-            elevation={0}
+          <SectionCard>
+            <Box
             sx={{
-              p: { lg: 2, xl: 2.25 },
-              borderRadius: 1,
-              border: "1px solid rgba(15, 23, 42, 0.08)",
-              backgroundColor: "rgba(255,255,255,0.86)",
               position: { lg: "sticky" },
               top: { lg: 96 },
               maxHeight: { lg: "calc(100vh - 120px)" },
               overflowY: { lg: "auto" },
             }}
           >
-            <Stack spacing={2}>
-              <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-                {t("mealBuilder.diary")}
-              </Typography>
-
-              {(Object.keys(groupedEntries) as MealType[]).map((group) => (
-                <Stack key={group} spacing={1.2}>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    useFlexGap
-                    flexWrap="wrap"
-                  >
-                    <Typography sx={{ fontWeight: 800 }}>
-                      {mealLabels[group]}
-                    </Typography>
-                    <Chip
-                      label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
-                      size="small"
-                    />
-                  </Stack>
-
-                  {groupedEntries[group].length === 0 ? (
-                    <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
-                  ) : (
-                    groupedEntries[group].map((item) => {
-                      const entryCalories =
-                        (item.product.nutrients.calories * item.quantity) / 100;
-
-                      return (
-                        <Paper
-                          key={item.id}
-                          variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 1 }}
-                        >
-                          <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            justifyContent="space-between"
-                            spacing={1}
-                          >
-                            <Box sx={{ minWidth: 0 }}>
-                              <Typography sx={{ fontWeight: 700 }}>
-                                {getProductDisplayName(item.product, appLanguage)}
-                              </Typography>
-                              <Typography color="text.secondary" variant="body2">
-                                {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
-                                {t("common.kcal")}
-                              </Typography>
-                            </Box>
-                            <MealEntryEditorPanel entry={item} />
-                          </Stack>
-                        </Paper>
-                      );
-                    })
-                  )}
-
-                  <Divider />
-                </Stack>
-              ))}
-            </Stack>
-          </Paper>
+            {diaryContent}
+            </Box>
+          </SectionCard>
         </Stack>
       </Box>
         </Stack>
@@ -581,65 +547,7 @@ const MealBuilderPage = () => {
       ) : null}
 
       {activeSection === "day" ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            borderRadius: 1,
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255,255,255,0.86)",
-          }}
-        >
-          <Stack spacing={2}>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-              {t("mealBuilder.diary")}
-            </Typography>
-
-            {(Object.keys(groupedEntries) as MealType[]).map((group) => (
-              <Stack key={group} spacing={1.2}>
-                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                  <Typography sx={{ fontWeight: 800 }}>{mealLabels[group]}</Typography>
-                  <Chip
-                    label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
-                    size="small"
-                  />
-                </Stack>
-
-                {groupedEntries[group].length === 0 ? (
-                  <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
-                ) : (
-                  groupedEntries[group].map((item) => {
-                    const entryCalories =
-                      (item.product.nutrients.calories * item.quantity) / 100;
-
-                    return (
-                      <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
-                        <Stack
-                          direction={{ xs: "column", sm: "row" }}
-                          justifyContent="space-between"
-                          spacing={1}
-                        >
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography sx={{ fontWeight: 700 }}>
-                              {getProductDisplayName(item.product, appLanguage)}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
-                              {t("common.kcal")}
-                            </Typography>
-                          </Box>
-                          <MealEntryEditorPanel entry={item} />
-                        </Stack>
-                      </Paper>
-                    );
-                  })
-                )}
-
-                <Divider />
-              </Stack>
-            ))}
-          </Stack>
-        </Paper>
+        <SectionCard>{diaryContent}</SectionCard>
       ) : null}
 
       {activeSection === "history" ? <DailyHistoryExplorer /> : null}
@@ -649,22 +557,11 @@ const MealBuilderPage = () => {
       ) : null}
 
       {activeSection === "templates" ? (
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 2, md: 2.5 },
-          borderRadius: 1,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255,255,255,0.86)",
-        }}
+      <SectionCard
+        title={copy.advancedTitle}
+        description={copy.advancedSubtitle}
       >
         <Stack spacing={2}>
-          <Stack spacing={0.4}>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
-              {copy.advancedTitle}
-            </Typography>
-            <Typography color="text.secondary">{copy.advancedSubtitle}</Typography>
-          </Stack>
           <Box
             sx={{
               display: "grid",
@@ -684,7 +581,7 @@ const MealBuilderPage = () => {
             </Stack>
           </Box>
         </Stack>
-      </Paper>
+      </SectionCard>
       ) : null}
 
       {activeSection === "recommendations" ? <SmartRecommendations /> : null}

@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Box, Paper, Stack, Typography } from "@mui/material";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
-import type { AssistantAvatarMood } from "../../shared/components/AssistantAvatar";
+import {
+  AssistantAvatar,
+  type AssistantAvatarMood,
+} from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
 import {
   onboardingGuideAvatarVariants,

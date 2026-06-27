@@ -1,6 +1,5 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, Moon, Sun } from "lucide-react";
 import {
@@ -30,26 +29,69 @@ import BackendOfflineBanner from "@shared/components/BackendOfflineBanner";
 import SyncStatusChip from "@widgets/SyncStatusChip";
 import SyncFeedbackAlert from "@widgets/SyncFeedbackAlert";
 import HabitReminderAgent from "@widgets/HabitReminderAgent";
-import GlobalAssistantLayer from "@widgets/GlobalAssistantLayer";
 import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
 import { createAssistantScreenContext } from "@features/assistant/assistantScreen";
 import {
   resolveAssistantContext,
   serializeAssistantDuties,
 } from "@features/assistant/assistantContext";
-import { useAssistantChatStore } from "@features/assistant/model/store";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
-import { pageTransitionVariants } from "@shared/ui/motion";
 import {
   desktopNavigationItems,
   getVisibleNavigationItems,
   mobileNavigationItems,
 } from "@app/navigation/appNavigation";
+
+const GlobalAssistantLayer = lazy(() => import("@widgets/GlobalAssistantLayer"));
+
+const LANDING_AI_HREF = "/#ai-overview";
+const LANDING_NUTRITION_HREF = "/#nutrition";
+const LANDING_REMINDERS_HREF = "/#reminders";
+const LANDING_COMMUNITY_HREF = "/#community";
+const LANDING_FEATURES_HREF = "/#features";
+const LANDING_ABOUT_HREF = "/#about";
+const NAV_BACKDROP_FILTER = "blur(18px)";
+const NAV_SURFACE_BACKGROUND = "var(--sn-nav-surface)";
+
+const getLandingNavigationItems = (
+  language: AppLanguage,
+): Array<{ label: string; href: string }> => {
+  if (language === "pl") {
+    return [
+      { label: "AI companion", href: LANDING_AI_HREF },
+      { label: "Odżywianie", href: LANDING_NUTRITION_HREF },
+      { label: "Przypomnienia", href: LANDING_REMINDERS_HREF },
+      { label: "Community", href: LANDING_COMMUNITY_HREF },
+      { label: "Funkcje", href: LANDING_FEATURES_HREF },
+      { label: "O produkcie", href: LANDING_ABOUT_HREF },
+    ];
+  }
+
+  if (language === "en") {
+    return [
+      { label: "AI Companion", href: LANDING_AI_HREF },
+      { label: "Nutrition", href: LANDING_NUTRITION_HREF },
+      { label: "Reminders", href: LANDING_REMINDERS_HREF },
+      { label: "Community", href: LANDING_COMMUNITY_HREF },
+      { label: "Features", href: LANDING_FEATURES_HREF },
+      { label: "About", href: LANDING_ABOUT_HREF },
+    ];
+  }
+
+  return [
+    { label: "AI companion", href: LANDING_AI_HREF },
+    { label: "Харчування", href: LANDING_NUTRITION_HREF },
+    { label: "Нагадування", href: LANDING_REMINDERS_HREF },
+    { label: "Community", href: LANDING_COMMUNITY_HREF },
+    { label: "Можливості", href: LANDING_FEATURES_HREF },
+    { label: "Про продукт", href: LANDING_ABOUT_HREF },
+  ];
+};
 
 const Layout = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -58,14 +100,26 @@ const Layout = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
-  const setAssistantCurrentScreen = useAssistantChatStore(
-    (state) => state.setCurrentScreen,
-  );
+  const logoutLabel = t("nav.logout");
 
   useEffect(() => {
     const assistantContext = resolveAssistantContext(location.pathname);
+    const screenContext = createAssistantScreenContext(location.pathname);
+    let cancelled = false;
 
-    setAssistantCurrentScreen(createAssistantScreenContext(location.pathname));
+    void import("@features/assistant/model/store")
+      .then(({ useAssistantChatStore }) => {
+        if (!cancelled) {
+          useAssistantChatStore.getState().setCurrentScreen(screenContext);
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn(
+          "[assistant] screen context sync failed",
+          error instanceof Error ? error.message : "unknown error"
+        );
+      });
+
     captureRuntimeEvent("screen_viewed", {
       path: location.pathname,
       authenticated: Boolean(user),
@@ -74,7 +128,11 @@ const Layout = () => {
       assistantScreenName: assistantContext.screenName,
       assistantTone: assistantContext.tone,
     });
-  }, [location.pathname, setAssistantCurrentScreen, user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, user]);
 
   const handleLogout = async () => {
     await logoutSession();
@@ -112,7 +170,9 @@ const Layout = () => {
     navigate(homePath);
   };
 
-  const contentMaxWidth = user || location.pathname === "/" ? "xl" : "sm";
+  const isLandingRoute = location.pathname === "/";
+  const contentMaxWidth = isLandingRoute ? false : user ? "xl" : "sm";
+  const landingTabs = getLandingNavigationItems(appLanguage);
   const visibleDesktopTabs = getVisibleNavigationItems(
     desktopNavigationItems,
     user?.role
@@ -129,23 +189,18 @@ const Layout = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: isDarkMode
-          ? "radial-gradient(circle at top left, rgba(20,184,166,0.14), transparent 24%), radial-gradient(circle at top right, rgba(132,204,22,0.1), transparent 30%), linear-gradient(180deg, #020617 0%, #0f172a 100%)"
-          : "radial-gradient(circle at top left, rgba(30,136,229,0.18), transparent 24%), radial-gradient(circle at top right, rgba(34,197,94,0.18), transparent 30%), linear-gradient(180deg, #f8fafc 0%, #eefaf4 100%)",
+        background: "var(--sn-page-gradient)",
       }}
     >
       <AppBar
         position="sticky"
         elevation={0}
         sx={{
-          backdropFilter: "blur(18px)",
-          backgroundColor: isDarkMode
-            ? "rgba(2, 6, 23, 0.82)"
-            : "rgba(248, 250, 252, 0.82)",
-          color: isDarkMode ? "#e5eef7" : "#14213d",
-          borderBottom: isDarkMode
-            ? "1px solid rgba(148, 163, 184, 0.16)"
-            : "1px solid rgba(20, 33, 61, 0.08)",
+          backdropFilter: NAV_BACKDROP_FILTER,
+          backgroundColor: NAV_SURFACE_BACKGROUND,
+          color: "var(--sn-text-primary)",
+          borderBottom: "1px solid var(--sn-border-soft)",
+          boxShadow: "var(--sn-shadow-soft)",
         }}
       >
         <Container maxWidth="xl">
@@ -264,6 +319,53 @@ const Layout = () => {
               </Stack>
             )}
 
+            {!user && isLandingRoute ? (
+              <Stack
+                component="nav"
+                aria-label="Product sections"
+                direction="row"
+                spacing={0.4}
+                alignItems="center"
+                sx={{
+                  display: { xs: "none", lg: "flex" },
+                  position: "absolute",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  px: 1,
+                  py: 0.6,
+                  borderRadius: 999,
+                  border: "1px solid var(--sn-border-soft)",
+                  backgroundColor: isDarkMode
+                    ? "rgba(2, 6, 23, 0.32)"
+                    : "rgba(255,255,255,0.36)",
+                  backdropFilter: NAV_BACKDROP_FILTER,
+                }}
+              >
+                {landingTabs.map((tab) => (
+                  <Button
+                    key={tab.href}
+                    component={Link}
+                    to={tab.href}
+                    size="small"
+                    sx={{
+                      px: 1.2,
+                      minHeight: 34,
+                      color: isDarkMode ? "#e5eef7" : "#334155",
+                      fontWeight: 850,
+                      "&:hover": {
+                        color: isDarkMode ? "#d9f99d" : "#0f766e",
+                        bgcolor: isDarkMode
+                          ? "rgba(94, 234, 212, 0.1)"
+                          : "rgba(15, 118, 110, 0.08)",
+                      },
+                    }}
+                  >
+                    {tab.label}
+                  </Button>
+                ))}
+              </Stack>
+            ) : null}
+
             <Stack
               direction="row"
               spacing={{ xs: 0.5, sm: 1 }}
@@ -335,9 +437,9 @@ const Layout = () => {
                       </Avatar>
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={t("nav.logout")}>
+                  <Tooltip title={logoutLabel}>
                     <IconButton
-                      aria-label={t("nav.logout")}
+                      aria-label={logoutLabel}
                       onClick={handleLogout}
                       size="small"
                       sx={{
@@ -365,7 +467,7 @@ const Layout = () => {
                         : "rgba(15, 118, 110, 0.24)",
                     }}
                   >
-                    {t("nav.logout")}
+                    {logoutLabel}
                   </Button>
                 </Stack>
               ) : (
@@ -405,27 +507,26 @@ const Layout = () => {
       <Container
         component="main"
         maxWidth={contentMaxWidth}
+        disableGutters={isLandingRoute}
         sx={{
-          px: { xs: 2, sm: 3 },
-          py: { xs: 2, md: location.pathname === "/" ? 3 : 4 },
-          pb: user ? { xs: 16, md: 5 } : { xs: 3, md: 5 },
+          px: isLandingRoute ? 0 : { xs: 2, sm: 3 },
+          py: isLandingRoute ? 0 : { xs: 2, md: 4 },
+          pb: user
+            ? { xs: 16, md: 5 }
+            : isLandingRoute
+              ? 0
+              : { xs: 3, md: 5 },
         }}
       >
         <BackendOfflineBanner />
         <SyncFeedbackAlert />
-        <AnimatePresence mode="wait" initial={false}>
-          <Box
-            key={location.pathname}
-            component={motion.div}
-            variants={pageTransitionVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            sx={{ minWidth: 0 }}
-          >
-            <Outlet />
-          </Box>
-        </AnimatePresence>
+        <Box
+          key={location.pathname}
+          className="sn-page-transition"
+          sx={{ minWidth: 0 }}
+        >
+          <Outlet />
+        </Box>
       </Container>
 
       {user && (
@@ -443,11 +544,11 @@ const Layout = () => {
             borderRadius: 999,
             overflow: "hidden",
             border: "1px solid rgba(20, 33, 61, 0.08)",
-            backdropFilter: "blur(18px)",
-            backgroundColor: "rgba(255,255,255,0.88)",
+            backdropFilter: NAV_BACKDROP_FILTER,
+            backgroundColor: NAV_SURFACE_BACKGROUND,
             ...(isDarkMode && {
-              backgroundColor: "rgba(15, 23, 42, 0.9)",
-              borderColor: "rgba(148, 163, 184, 0.18)",
+              backgroundColor: NAV_SURFACE_BACKGROUND,
+              borderColor: "var(--sn-border-soft)",
             }),
           }}
         >
@@ -503,7 +604,9 @@ const Layout = () => {
 
       <ProfileLanguageAgent />
       <HabitReminderAgent />
-      <GlobalAssistantLayer />
+      <Suspense fallback={null}>
+        <GlobalAssistantLayer />
+      </Suspense>
     </Box>
   );
 };

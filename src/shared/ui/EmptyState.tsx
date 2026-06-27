@@ -26,8 +26,8 @@ export const EmptyState = ({
       {
         p: compact ? 2 : { xs: 2.25, md: 3 },
         borderRadius: 1,
-        border: "1px dashed rgba(15, 23, 42, 0.18)",
-        backgroundColor: "rgba(248,250,252,0.78)",
+        border: "1px dashed var(--sn-border-strong)",
+        backgroundColor: "var(--sn-surface-muted)",
       },
       ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
     ]}

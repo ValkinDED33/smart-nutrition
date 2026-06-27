@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import Lenis from "lenis";
 
 export const SmoothScrollAgent = () => {
   useEffect(() => {
@@ -7,14 +6,35 @@ export const SmoothScrollAgent = () => {
       return undefined;
     }
 
-    const lenis = new Lenis({
-      autoRaf: true,
-      lerp: 0.09,
-      wheelMultiplier: 0.85,
-    });
+    let cancelled = false;
+    let destroySmoothScroll: (() => void) | undefined;
+
+    void import("lenis")
+      .then(({ default: Lenis }) => {
+        if (cancelled) {
+          return;
+        }
+
+        const lenis = new Lenis({
+          autoRaf: true,
+          lerp: 0.09,
+          wheelMultiplier: 0.85,
+        });
+
+        destroySmoothScroll = () => {
+          lenis.destroy();
+        };
+      })
+      .catch((error: unknown) => {
+        console.warn(
+          "[runtime] smooth scroll failed to initialize",
+          error instanceof Error ? error.message : "unknown error"
+        );
+      });
 
     return () => {
-      lenis.destroy();
+      cancelled = true;
+      destroySmoothScroll?.();
     };
   }, []);
 

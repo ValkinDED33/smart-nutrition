@@ -556,9 +556,10 @@ export const AccountDataCard = () => {
       elevation={0}
       sx={{
         p: 3,
-        borderRadius: 6,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.84)",
+        borderRadius: 1,
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
+        boxShadow: "var(--sn-shadow-card)",
       }}
     >
       <Stack spacing={2.5}>
@@ -584,7 +585,7 @@ export const AccountDataCard = () => {
           {copy.remoteNotice}
         </Alert>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={1.5}
@@ -695,7 +696,7 @@ export const AccountDataCard = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 4 }}>
+        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
           <Stack spacing={1.2}>
             <Stack spacing={0.4}>
               <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>

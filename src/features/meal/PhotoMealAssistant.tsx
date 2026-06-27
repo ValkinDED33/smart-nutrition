@@ -429,8 +429,8 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        backgroundColor: "rgba(255,255,255,0.86)",
+        border: "1px solid var(--sn-border-soft)",
+        backgroundColor: "var(--sn-surface-glass)",
       }}
     >
       <Stack spacing={2}>
@@ -566,8 +566,8 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    borderColor: "rgba(15, 23, 42, 0.06)",
-                    backgroundColor: "rgba(255,255,255,0.8)",
+                    borderColor: "var(--sn-border-soft)",
+                    backgroundColor: "var(--sn-surface-elevated)",
                   }}
                 >
                   <Stack spacing={0.5}>

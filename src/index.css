@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #14213d;
-  background-color: #f5f7fb;
+  background-color: var(--sn-bg-app, #f8fbff);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,11 +18,27 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f5f7fb;
+  background: var(--sn-page-gradient, #f8fbff);
 }
 
 #root {
   min-height: 100vh;
+}
+
+@keyframes snPageEnter {
+  from {
+    opacity: 0.96;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sn-page-transition {
+  animation: snPageEnter 220ms ease-out both;
 }
 
 a {
@@ -41,4 +57,10 @@ select {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sn-page-transition {
+    animation: none;
+  }
 }
