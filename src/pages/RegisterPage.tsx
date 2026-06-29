@@ -16,20 +16,18 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
-import { replaceCommunityState } from "../features/community/communitySlice";
+import {
+  applyRemoteSnapshotToStore,
+  getRemoteSnapshotMeta,
+} from "@features/auth/sessionSnapshot";
 import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
-  hydrateCompanionState,
 } from "../features/companion";
-import { replaceFridgeState } from "../features/fridge/fridgeSlice";
-import { replaceMealState } from "../features/meal/mealSlice";
 import {
   applyProfileTargets,
-  replaceProfileState,
   setProfileLanguage,
 } from "../features/profile/profileSlice";
-import { replaceWaterState } from "../features/water/waterSlice";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import {
   AuthApiError,
@@ -40,7 +38,6 @@ import {
 } from "../shared/api/auth";
 import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
-import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
@@ -130,17 +127,12 @@ const RegisterPage = () => {
         user,
         syncMode: getAuthRuntimeInfo().mode,
         syncOutbox: getSyncOutboxMeta(),
-        cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
+        cloudMeta: getRemoteSnapshotMeta(snapshot),
       })
     );
 
     if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
-      dispatch(replaceProfileState(snapshot.profile));
-      dispatch(replaceMealState(snapshot.meal));
-      dispatch(replaceWaterState(snapshot.water));
-      dispatch(replaceFridgeState(snapshot.fridge));
-      dispatch(replaceCommunityState(snapshot.community));
-      dispatch(hydrateCompanionState(snapshot.companion));
+      applyRemoteSnapshotToStore(dispatch, snapshot);
     } else {
       const profileBootstrap = {
         age: user.age,

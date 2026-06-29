@@ -16,18 +16,15 @@ import {
 } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
-import { replaceCommunityState } from "../features/community/communitySlice";
-import { hydrateCompanionState } from "../features/companion";
-import { replaceFridgeState } from "../features/fridge/fridgeSlice";
-import { replaceMealState } from "../features/meal/mealSlice";
-import { replaceProfileState } from "../features/profile/profileSlice";
-import { replaceWaterState } from "../features/water/waterSlice";
+import {
+  applyRemoteSnapshotToStore,
+  getRemoteSnapshotMeta,
+} from "@features/auth/sessionSnapshot";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
   login as loginApi,
 } from "../shared/api/auth";
-import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
@@ -90,17 +87,12 @@ const LoginPage = () => {
           user,
           syncMode: getAuthRuntimeInfo().mode,
           syncOutbox: getSyncOutboxMeta(),
-          cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
+          cloudMeta: getRemoteSnapshotMeta(snapshot),
         })
       );
 
       if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
-        dispatch(replaceProfileState(snapshot.profile));
-        dispatch(replaceMealState(snapshot.meal));
-        dispatch(replaceWaterState(snapshot.water));
-        dispatch(replaceFridgeState(snapshot.fridge));
-        dispatch(replaceCommunityState(snapshot.community));
-        dispatch(hydrateCompanionState(snapshot.companion));
+        applyRemoteSnapshotToStore(dispatch, snapshot);
       }
 
       captureRuntimeEvent("login_completed", {

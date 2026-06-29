@@ -120,8 +120,12 @@ export const isLikelyStaleBuildError = (error: unknown) =>
 export const shouldAttemptStaleBuildRecovery = (
   error: unknown,
   rawAttemptedAt: string | null,
-  now = Date.now()
-) => isLikelyStaleBuildError(error) && !isRecoveryRecentlyAttempted(rawAttemptedAt, now);
+  now = Date.now(),
+  currentHref = ""
+) =>
+  isLikelyStaleBuildError(error) &&
+  !hasRecoveryReloadMarker(currentHref) &&
+  !isRecoveryRecentlyAttempted(rawAttemptedAt, now);
 
 export const shouldRecoverOnManualRetry = (
   diagnostic: Pick<ErrorRecoveryDiagnostic, "staleBuildLikely"> | null
@@ -136,6 +140,14 @@ export const isRecoveryRecentlyAttempted = (
   return Number.isFinite(attemptedAt)
     ? now - attemptedAt < STALE_BUILD_RECOVERY_TTL_MS
     : rawValue !== null;
+};
+
+export const hasRecoveryReloadMarker = (currentHref: string) => {
+  try {
+    return new URL(currentHref).searchParams.has("sn_recovery");
+  } catch {
+    return false;
+  }
 };
 
 export const shouldPreserveSmartNutritionStorageKey = (key: string) =>

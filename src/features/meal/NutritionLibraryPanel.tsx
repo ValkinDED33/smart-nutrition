@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Alert,
   Box,
   Button,
   Chip,
+  CircularProgress,
   Divider,
   InputAdornment,
   Stack,
@@ -28,6 +30,10 @@ import {
   selectSavedProducts,
 } from "./selectors";
 import { searchProducts } from "../../shared/api/products";
+import {
+  normalizeProductLookupQuery,
+  shouldRunOnlineProductLookup,
+} from "./productLookupUiModel";
 
 type LibraryMode = "library" | "saved";
 type InnerTab = "products" | "dishes" | "articles";
@@ -59,6 +65,12 @@ const copy = {
     noSavedDishes: "Збережених страв ще немає.",
     noSavedArticles: "Збережених матеріалів ще немає.",
     noResults: "Нічого не знайдено. Спробуйте іншу назву продукту або страви.",
+    startSearch: "Почніть вводити назву, щоб підтягнути продукти з онлайн-каталогу.",
+    loading: "Шукаю в онлайн-каталозі...",
+    unavailableTitle: "Онлайн-каталог тимчасово недоступний",
+    unavailableBody:
+      "Це не порожня база: backend або зовнішній каталог не відповів. Спробуйте ще раз.",
+    retry: "Спробувати ще раз",
     add100: "Додати 100",
     save: "Зберегти",
     apply: "Застосувати",
@@ -89,6 +101,12 @@ const copy = {
     noSavedDishes: "Nie masz jeszcze zapisanych dań.",
     noSavedArticles: "Nie masz jeszcze zapisanych materiałów.",
     noResults: "Brak wyników. Spróbuj innej nazwy produktu lub dania.",
+    startSearch: "Zacznij wpisywać nazwę, aby pobrać produkty z katalogu online.",
+    loading: "Szukam w katalogu online...",
+    unavailableTitle: "Katalog online jest chwilowo niedostępny",
+    unavailableBody:
+      "To nie jest pusta baza: backend albo zewnętrzny katalog nie odpowiedział. Spróbuj ponownie.",
+    retry: "Spróbuj ponownie",
     add100: "Dodaj 100",
     save: "Zapisz",
     apply: "Użyj",
@@ -119,6 +137,12 @@ const copy = {
     noSavedDishes: "No saved dishes yet.",
     noSavedArticles: "No saved materials yet.",
     noResults: "Nothing found. Try another product or dish name.",
+    startSearch: "Start typing a name to load products from the online catalog.",
+    loading: "Searching the online catalog...",
+    unavailableTitle: "Online catalog is temporarily unavailable",
+    unavailableBody:
+      "This is not an empty database: the backend or external catalog did not respond. Try again.",
+    retry: "Try again",
     add100: "Add 100",
     save: "Save",
     apply: "Apply",
@@ -174,12 +198,29 @@ export const NutritionLibraryPanel = ({
     adaptiveMode: state.profile.adaptiveMode,
   }));
   const normalizedQuery = normalizeSearchText(query);
+  const normalizedLookupQuery = normalizeProductLookupQuery(query);
+  const debouncedLookupQuery = normalizeProductLookupQuery(debouncedQuery);
+  const shouldLookupOnlineProducts =
+    mode === "library" && shouldRunOnlineProductLookup(debouncedLookupQuery);
   const onlineProductsQuery = useQuery({
-    queryKey: ["nutrition-library-products", debouncedQuery],
-    queryFn: () => searchProducts(debouncedQuery),
-    enabled: mode === "library",
+    queryKey: ["nutrition-library-products", debouncedLookupQuery],
+    queryFn: () => searchProducts(debouncedLookupQuery),
+    enabled: shouldLookupOnlineProducts,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
   });
   const onlineProducts = onlineProductsQuery.data ?? [];
+  const onlineLookupState = {
+    isIdle: mode === "library" && !shouldRunOnlineProductLookup(normalizedLookupQuery),
+    isSearching:
+      mode === "library" &&
+      shouldRunOnlineProductLookup(normalizedLookupQuery) &&
+      (normalizedLookupQuery !== debouncedLookupQuery ||
+        onlineProductsQuery.isLoading ||
+        onlineProductsQuery.isFetching),
+    isError: shouldLookupOnlineProducts && onlineProductsQuery.isError,
+  };
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -268,8 +309,16 @@ export const NutritionLibraryPanel = ({
     mode === "saved"
       ? [{ title: labels.savedProducts, products: visibleProducts, empty: labels.noSavedProducts }]
       : [
-          { title: labels.readyMeals, products: visibleReadyMeals, empty: labels.noResults },
-          { title: labels.onlineProducts, products: visibleOnlineProducts, empty: labels.noResults },
+          {
+            title: labels.readyMeals,
+            products: visibleReadyMeals,
+            empty: onlineLookupState.isIdle ? labels.startSearch : labels.noResults,
+          },
+          {
+            title: labels.onlineProducts,
+            products: visibleOnlineProducts,
+            empty: onlineLookupState.isIdle ? labels.startSearch : labels.noResults,
+          },
           {
             title: labels.savedProducts,
             products: savedProducts.filter(filterProduct).slice(0, 8),
@@ -326,6 +375,36 @@ export const NutritionLibraryPanel = ({
             ),
           }}
         />
+
+        {onlineLookupState.isSearching ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={18} />
+            <Typography color="text.secondary">{labels.loading}</Typography>
+          </Stack>
+        ) : null}
+
+        {onlineLookupState.isError ? (
+          <Alert
+            severity="warning"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  void onlineProductsQuery.refetch();
+                }}
+                sx={{ textTransform: "none", fontWeight: 800 }}
+              >
+                {labels.retry}
+              </Button>
+            }
+          >
+            <Stack spacing={0.5}>
+              <Typography sx={{ fontWeight: 800 }}>{labels.unavailableTitle}</Typography>
+              <Typography>{labels.unavailableBody}</Typography>
+            </Stack>
+          </Alert>
+        ) : null}
 
         {activeTab === "products" ? (
           <Stack spacing={2}>

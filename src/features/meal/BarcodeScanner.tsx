@@ -47,6 +47,7 @@ import {
   normalizeManualNumericValue,
   normalizeBarcode,
   normalizeManualImageUrl,
+  resolveBarcodeScannerAvailability,
   type CatalogNotice,
   type ManualDraft,
 } from "./barcodeScannerModel";
@@ -84,6 +85,9 @@ const scannerCopy = {
     cameraIdle: "Після запуску сканера тут з'явиться камера.",
     cameraFailed:
       "Не вдалося запустити камеру. Перевірте доступ до камери або скористайтеся ручним пошуком.",
+    cameraUnavailableTitle: "Камера недоступна в цьому браузері",
+    cameraUnavailableBody:
+      "Можна ввести штрихкод вручну або одразу додати продукт у спільну базу без сканування.",
     lowLightTitle: "Погане світло?",
     lowLightBody:
       "Підсвітіть упаковку, протріть камеру і тримайте код рівно в рамці. Якщо телефон підтримує ліхтарик, увімкніть його нижче.",
@@ -145,6 +149,9 @@ const scannerCopy = {
     cameraIdle: "Po uruchomieniu skanera pojawi się tutaj podgląd kamery.",
     cameraFailed:
       "Nie udało się uruchomić kamery. Sprawdź dostęp do kamery albo skorzystaj z wyszukiwania ręcznego.",
+    cameraUnavailableTitle: "Kamera jest niedostępna w tej przeglądarce",
+    cameraUnavailableBody:
+      "Możesz wpisać kod ręcznie albo od razu dodać produkt do wspólnej bazy bez skanowania.",
     lowLightTitle: "Słabe światło?",
     lowLightBody:
       "Doświetl opakowanie, przetrzyj kamerę i trzymaj kod równo w ramce. Jeśli telefon obsługuje latarkę, włącz ją poniżej.",
@@ -206,6 +213,9 @@ const scannerCopy = {
     cameraIdle: "Camera preview will appear here after starting the scanner.",
     cameraFailed:
       "Could not start the camera. Check camera access or use manual search.",
+    cameraUnavailableTitle: "Camera is unavailable in this browser",
+    cameraUnavailableBody:
+      "You can enter the barcode manually or add the product to the shared database without scanning.",
     lowLightTitle: "Bad lighting?",
     lowLightBody:
       "Light the package, clean the camera, and keep the code straight in the frame. If the phone supports torch, turn it on below.",
@@ -282,6 +292,14 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const categoryOptions = useMemo(
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
+  );
+  const cameraAvailability = useMemo(
+    () =>
+      resolveBarcodeScannerAvailability({
+        hasMediaDevices: Boolean(globalThis.navigator?.mediaDevices?.getUserMedia),
+        isSecureContext: globalThis.isSecureContext !== false,
+      }),
+    []
   );
 
   useAutoDismiss(Boolean(message), 2800, () => setMessage(null));
@@ -553,9 +571,12 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           return;
         }
 
-        console.error(error);
+        console.warn("Barcode scanner camera start failed", {
+          name: error instanceof Error ? error.name : "unknown",
+        });
         setLookupState("error");
         setMessage(copy.cameraFailed);
+        setShowManualForm(true);
         playScanErrorSound();
         setScanning(false);
         resetScanLock();
@@ -578,6 +599,14 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   ]);
 
   const handleStartScanner = () => {
+    if (!cameraAvailability.available) {
+      setLookupState("error");
+      setMessage(copy.cameraUnavailableTitle);
+      setShowManualForm(true);
+      playScanErrorSound();
+      return;
+    }
+
     setMessage(null);
     resetLookupUi();
     resetScanLock();
@@ -743,6 +772,22 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         <Typography color="text.secondary" variant="body2">
           {copy.cameraHint}
         </Typography>
+
+        {!cameraAvailability.available ? (
+          <Alert severity="warning">
+            <AlertTitle>{copy.cameraUnavailableTitle}</AlertTitle>
+            <Stack spacing={1}>
+              <Typography variant="body2">{copy.cameraUnavailableBody}</Typography>
+              <Button
+                variant="outlined"
+                onClick={() => setShowManualForm(true)}
+                sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+              >
+                {copy.manualOpen}
+              </Button>
+            </Stack>
+          </Alert>
+        ) : null}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <TextField

@@ -4,6 +4,7 @@ import {
   buildErrorRecoveryDiagnostic,
   buildRecoveryReloadUrl,
   clearVolatileSmartNutritionStorage,
+  hasRecoveryReloadMarker,
   isLikelyStaleBuildError,
   isRecoveryRecentlyAttempted,
   sanitizeDiagnosticText,
@@ -64,9 +65,25 @@ describe("errorRecovery", () => {
     expect(
       shouldAttemptStaleBuildRecovery(staleChunkError, String(now - 20_000), now)
     ).toBe(true);
+    expect(
+      shouldAttemptStaleBuildRecovery(
+        staleChunkError,
+        null,
+        now,
+        "https://smart-nutrition.club/meals?sn_recovery=12345"
+      )
+    ).toBe(false);
     expect(shouldAttemptStaleBuildRecovery(new Error("Validation failed"), null, now)).toBe(
       false
     );
+  });
+
+  it("detects cache-busted recovery URLs", () => {
+    expect(
+      hasRecoveryReloadMarker("https://smart-nutrition.club/home?sn_recovery=123")
+    ).toBe(true);
+    expect(hasRecoveryReloadMarker("https://smart-nutrition.club/home")).toBe(false);
+    expect(hasRecoveryReloadMarker("not a url")).toBe(false);
   });
 
   it("uses cache recovery for manual retry only when the diagnostic points to a stale build", () => {

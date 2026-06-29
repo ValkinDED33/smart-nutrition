@@ -52,6 +52,11 @@ import {
   playWaterLogSound,
   uiTickSoundDataUrl,
 } from "../../shared/lib/sound";
+import {
+  getSafeNotificationPermission,
+  requestSafeNotificationPermission,
+  showSafeNotification,
+} from "@shared/lib/notifications";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { EmptyState } from "@shared/ui";
 import {
@@ -309,9 +314,7 @@ export const WaterTracker = () => {
       dispatch(markWaterReminderShown(new Date().toISOString()));
       setReminderMessage(text);
 
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(copy.remindersTitle, { body: text });
-      }
+      void showSafeNotification(copy.remindersTitle, { body: text });
     }, 60_000);
 
     return () => {
@@ -428,8 +431,8 @@ export const WaterTracker = () => {
   };
 
   const handleReminderToggle = async (enabled: boolean) => {
-    if (enabled && "Notification" in window && Notification.permission === "default") {
-      await Notification.requestPermission();
+    if (enabled) {
+      await requestSafeNotificationPermission();
     }
 
     dispatch(setWaterReminders({ enabled }));
@@ -845,7 +848,7 @@ export const WaterTracker = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Stack>
-            {"Notification" in window && Notification.permission !== "granted" ? (
+            {getSafeNotificationPermission() === "default" ? (
               <Alert severity="info">{copy.reminderPermission}</Alert>
             ) : null}
           </Stack>

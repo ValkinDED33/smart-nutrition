@@ -29,12 +29,12 @@ import {
   type SyncOutboxMeta,
 } from "../../shared/lib/syncOutbox";
 import { hasRecentAuthSessionHint } from "../../shared/lib/authSessionHint";
-import { replaceCommunityState, type CommunityState } from "../community/communitySlice";
-import { hydrateCompanionState } from "../companion/model/store";
-import { replaceFridgeState, type FridgeState } from "../fridge/fridgeSlice";
-import { replaceProfileState, type ProfileState } from "../profile/profileSlice";
-import { replaceMealState, type MealState } from "../meal/mealSlice";
-import { replaceWaterState, type WaterState } from "../water/waterSlice";
+import type { CommunityState } from "../community/communitySlice";
+import type { FridgeState } from "../fridge/fridgeSlice";
+import type { ProfileState } from "../profile/profileSlice";
+import type { MealState } from "../meal/mealSlice";
+import type { WaterState } from "../water/waterSlice";
+import { applyRemoteSnapshotToStore } from "./sessionSnapshot";
 
 export type SyncMode = "remote-cloud";
 export type SyncStatus = "syncing" | "synced" | "error";
@@ -143,12 +143,7 @@ export const initializeAuth = createAsyncThunk<
       data: NonNullable<Awaited<ReturnType<typeof restoreSession>>>
     ) => {
       if (data.snapshot && syncOutbox.pendingChanges === 0) {
-        dispatch(replaceProfileState(data.snapshot.profile));
-        dispatch(replaceMealState(data.snapshot.meal));
-        dispatch(replaceWaterState(data.snapshot.water));
-        dispatch(replaceFridgeState(data.snapshot.fridge));
-        dispatch(replaceCommunityState(data.snapshot.community));
-        dispatch(hydrateCompanionState(data.snapshot.companion));
+        applyRemoteSnapshotToStore(dispatch, data.snapshot);
       }
 
       const cloudMeta =
@@ -358,12 +353,7 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
       return rejectWithValue("Could not pull the latest cloud snapshot.");
     }
 
-    dispatch(replaceProfileState(snapshot.profile));
-    dispatch(replaceMealState(snapshot.meal));
-    dispatch(replaceWaterState(snapshot.water));
-    dispatch(replaceFridgeState(snapshot.fridge));
-    dispatch(replaceCommunityState(snapshot.community));
-    dispatch(hydrateCompanionState(snapshot.companion));
+    applyRemoteSnapshotToStore(dispatch, snapshot);
     writeCachedRemoteSnapshot(snapshot);
 
     const syncOutbox = payload?.discardQueuedChanges

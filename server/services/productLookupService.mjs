@@ -4,6 +4,41 @@ const OPEN_FOOD_FACTS_BASE_URL = "https://world.openfoodfacts.org";
 const USDA_SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 const FEATURED_QUERIES = ["oats", "chicken breast", "greek yogurt", "banana"];
 const BARCODE_PATTERN = /^\d{8,14}$/;
+const COMMON_PRODUCT_QUERY_ALIASES = new Map([
+  ["куриное филе", ["chicken breast", "chicken fillet"]],
+  ["куряче філе", ["chicken breast", "chicken fillet"]],
+  ["куряче филе", ["chicken breast", "chicken fillet"]],
+  ["куриная грудка", ["chicken breast"]],
+  ["куряча грудка", ["chicken breast"]],
+  ["рис вареный", ["cooked rice", "rice cooked"]],
+  ["рис варений", ["cooked rice", "rice cooked"]],
+  ["вареный рис", ["cooked rice", "rice cooked"]],
+  ["варений рис", ["cooked rice", "rice cooked"]],
+  ["огурец", ["cucumber"]],
+  ["огірок", ["cucumber"]],
+  ["помидор", ["tomato"]],
+  ["помідор", ["tomato"]],
+  ["томат", ["tomato"]],
+  ["яйцо", ["egg"]],
+  ["яйце", ["egg"]],
+  ["гречка", ["buckwheat"]],
+  ["гречана каша", ["buckwheat cooked"]],
+  ["овсянка", ["oats", "oatmeal"]],
+  ["вівсянка", ["oats", "oatmeal"]],
+  ["творог", ["cottage cheese"]],
+  ["сир кисломолочний", ["cottage cheese"]],
+  ["картофель", ["potato"]],
+  ["картопля", ["potato"]],
+  ["яблоко", ["apple"]],
+  ["яблуко", ["apple"]],
+  ["банан", ["banana"]],
+  ["лосось", ["salmon"]],
+  ["тунец", ["tuna"]],
+  ["тунець", ["tuna"]],
+  ["молоко", ["milk"]],
+  ["сыр", ["cheese"]],
+  ["сир", ["cheese"]],
+]);
 
 export class ProductLookupProviderError extends Error {
   constructor(message = "External product lookup is unavailable.") {
@@ -21,6 +56,41 @@ const toSafeErrorMessage = (value) => {
 
 const normalizeText = (value, { maxLength = 160 } = {}) =>
   String(value ?? "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+
+const normalizeLookupKey = (value) =>
+  normalizeText(value, { maxLength: 120 })
+    .toLocaleLowerCase("uk-UA")
+    .replace(/ё/g, "е")
+    .replace(/[’']/g, "")
+    .trim();
+
+const uniqueSearchQueries = (queries) => {
+  const seen = new Set();
+
+  return queries.filter((query) => {
+    const normalized = normalizeLookupKey(query);
+
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+
+    seen.add(normalized);
+    return true;
+  });
+};
+
+const expandSearchQueries = (search) => {
+  const normalizedSearch = normalizeText(search, { maxLength: 120 });
+
+  if (!normalizedSearch) {
+    return FEATURED_QUERIES.slice(0, Math.min(FEATURED_QUERIES.length, 4));
+  }
+
+  const aliasKey = normalizeLookupKey(normalizedSearch);
+  const aliases = COMMON_PRODUCT_QUERY_ALIASES.get(aliasKey) ?? [];
+
+  return uniqueSearchQueries([normalizedSearch, ...aliases]).slice(0, 4);
+};
 
 const normalizeOptionalText = (value, maxLength = 160) => {
   const nextValue = normalizeText(value, { maxLength });
@@ -398,9 +468,7 @@ export const createProductLookupService = ({
     const normalizedLimit = readPositiveInteger(limit, 24);
     const barcode = normalizedSearch.replace(/\D/g, "");
     const isBarcodeSearch = BARCODE_PATTERN.test(barcode);
-    const searchQueries = normalizedSearch
-      ? [normalizedSearch]
-      : FEATURED_QUERIES.slice(0, Math.min(FEATURED_QUERIES.length, 4));
+    const searchQueries = expandSearchQueries(normalizedSearch);
     const perQueryLimit = Math.max(4, Math.ceil(normalizedLimit / searchQueries.length) + 2);
     const providerCalls = [];
 
@@ -440,6 +508,13 @@ export const createProductLookupService = ({
     const products = mergeProductsByIdentity(
       providerResults.flatMap((result) => result.products)
     );
+    logger?.debug?.("[products] external lookup completed", {
+      queryLength: normalizedSearch.length,
+      queryVariants: searchQueries.length,
+      providerCalls: providerResults.length,
+      failedProviderCalls: providerResults.filter((result) => result.failed).length,
+      resultCount: products.length,
+    });
 
     if (products.length === 0 && providerResults.every((result) => result.failed)) {
       throw new ProductLookupProviderError();

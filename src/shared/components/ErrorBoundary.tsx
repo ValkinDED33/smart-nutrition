@@ -112,7 +112,9 @@ class ErrorBoundaryInner extends Component<Props, State> {
     if (
       !shouldAttemptStaleBuildRecovery(
         error,
-        getSessionStorageItem(STALE_BUILD_RECOVERY_KEY)
+        getSessionStorageItem(STALE_BUILD_RECOVERY_KEY),
+        Date.now(),
+        typeof window === "undefined" ? "" : window.location.href
       )
     ) {
       return;

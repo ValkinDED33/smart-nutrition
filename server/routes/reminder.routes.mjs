@@ -42,12 +42,39 @@ const sendReminderMutationFailure = (response, result) => {
     return;
   }
 
+  if (code === "REMINDER_SNOOZE_INVALID") {
+    sendError(response, 400, code, "Reminder snooze duration is invalid.");
+    return;
+  }
+
   if (code === "MEDICATION_REMINDER_NOT_FOUND") {
     sendError(response, 404, code, "Reminder was not found.");
     return;
   }
 
   sendError(response, 500, code, "Reminder operation failed.");
+};
+
+const readSchedulePayload = (body) => {
+  if (Array.isArray(body.times)) {
+    return body.times;
+  }
+
+  if (typeof body.text === "string") {
+    return body.text;
+  }
+
+  if (typeof body.timeText === "string") {
+    return body.timeText;
+  }
+
+  return "";
+};
+
+const getSnoozeMinutes = (body) => {
+  const minutes = Number(body.minutes);
+
+  return Number.isFinite(minutes) ? minutes : undefined;
 };
 
 export const createReminderRoutes = ({ reminderController } = {}) =>
@@ -106,11 +133,34 @@ export const createReminderController = ({ reminderService, bodyLimitBytes }) =>
   recordReminderAction: async ({ request, response, auth, params }) => {
     const body = await readJsonBody(request, bodyLimitBytes);
     const reminderId = decodeRouteParam(params.reminderId);
-    const result = await reminderService.recordReminderAction(
-      auth.user,
-      reminderId,
-      body.action
-    );
+    const action = String(body.action ?? "").trim();
+    let result = null;
+
+    if (action === "pause") {
+      result = reminderService.pauseReminder
+        ? await reminderService.pauseReminder(auth.user, reminderId)
+        : { ok: false, code: "REMINDER_ACTION_INVALID" };
+    } else if (action === "resume") {
+      result = reminderService.resumeReminder
+        ? await reminderService.resumeReminder(auth.user, reminderId)
+        : { ok: false, code: "REMINDER_ACTION_INVALID" };
+    } else if (action === "schedule") {
+      result = reminderService.updateReminderSchedule
+        ? await reminderService.updateReminderSchedule(
+            auth.user,
+            reminderId,
+            readSchedulePayload(body)
+          )
+        : { ok: false, code: "REMINDER_ACTION_INVALID" };
+    } else if (action === "snoozed" && reminderService.snoozeReminder) {
+      result = await reminderService.snoozeReminder(
+        auth.user,
+        reminderId,
+        getSnoozeMinutes(body)
+      );
+    } else {
+      result = await reminderService.recordReminderAction(auth.user, reminderId, action);
+    }
 
     if (!result.ok) {
       sendReminderMutationFailure(response, result);
@@ -124,7 +174,8 @@ export const createReminderController = ({ reminderService, bodyLimitBytes }) =>
 
   deleteReminder: async ({ response, auth, params }) => {
     const reminderId = decodeRouteParam(params.reminderId);
-    const result = await reminderService.deactivateReminder(auth.user, reminderId);
+    const deleteReminder = reminderService.deleteReminder ?? reminderService.deactivateReminder;
+    const result = await deleteReminder(auth.user, reminderId);
 
     if (!result.ok) {
       sendReminderMutationFailure(response, result);

@@ -8,6 +8,7 @@ import {
   isSupportedManualPhotoFile,
   normalizeBarcode,
   normalizeManualImageUrl,
+  resolveBarcodeScannerAvailability,
 } from "./barcodeScannerModel";
 
 describe("barcodeScannerModel", () => {
@@ -93,5 +94,28 @@ describe("barcodeScannerModel", () => {
         carbs: 8,
       },
     });
+  });
+
+  it("detects camera scanner availability before starting browser APIs", () => {
+    expect(
+      resolveBarcodeScannerAvailability({
+        hasMediaDevices: true,
+        isSecureContext: true,
+      })
+    ).toEqual({ available: true, reason: "camera_available" });
+
+    expect(
+      resolveBarcodeScannerAvailability({
+        hasMediaDevices: false,
+        isSecureContext: true,
+      })
+    ).toEqual({ available: false, reason: "camera_api_missing" });
+
+    expect(
+      resolveBarcodeScannerAvailability({
+        hasMediaDevices: true,
+        isSecureContext: false,
+      })
+    ).toEqual({ available: false, reason: "insecure_context" });
   });
 });

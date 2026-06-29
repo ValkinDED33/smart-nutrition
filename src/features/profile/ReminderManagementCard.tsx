@@ -9,13 +9,28 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Bell, Check, Clock, Droplets, HeartPulse, ListChecks, Plus, Trash2 } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Clock,
+  Droplets,
+  HeartPulse,
+  ListChecks,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useLanguage } from "@shared/language";
 import { SectionCard } from "@shared/ui";
 import {
   createRemoteReminder,
   deleteRemoteReminder,
   listRemoteReminders,
+  updateRemoteReminderSchedule,
   updateRemoteReminderAction,
   type ReminderAction,
   type ReminderItem,
@@ -59,13 +74,24 @@ const reminderCopy = {
       "Не вдалося створити нагадування. Перевірте, чи є час у тексті: о 10:00, 21:00 або щодня о 09:00.",
     actionError: "Не вдалося оновити нагадування.",
     created: "Нагадування створено.",
-    deleted: "Нагадування вимкнено.",
+    updated: "Нагадування оновлено.",
+    deleted: "Нагадування видалено.",
     done: "Зроблено",
     taken: "Прийнято",
     waterLogged: "Випито",
     snooze: "Через 10 хв",
     skip: "Пропустити",
+    pause: "Пауза",
+    resume: "Увімкнути",
+    editTime: "Змінити час",
+    saveTime: "Зберегти",
+    cancel: "Скасувати",
     delete: "Видалити",
+    confirmDelete: "Так, видалити",
+    deleteConfirm: "Точно видалити?",
+    timePlaceholder: "Наприклад: 22:00 або о 9 ранку",
+    statusActive: "Активне",
+    statusPaused: "Пауза",
     oneTime: "Один раз",
     daily: "Щодня",
     next: "Наступне",
@@ -100,13 +126,24 @@ const reminderCopy = {
       "Nie udało się utworzyć przypomnienia. Sprawdź, czy tekst zawiera czas: o 10:00, 21:00 albo codziennie o 09:00.",
     actionError: "Nie udało się zaktualizować przypomnienia.",
     created: "Przypomnienie utworzone.",
-    deleted: "Przypomnienie wyłączone.",
+    updated: "Przypomnienie zaktualizowane.",
+    deleted: "Przypomnienie usunięte.",
     done: "Zrobione",
     taken: "Przyjęte",
     waterLogged: "Wypite",
     snooze: "Za 10 min",
     skip: "Pomiń",
+    pause: "Pauza",
+    resume: "Wznów",
+    editTime: "Zmień czas",
+    saveTime: "Zapisz",
+    cancel: "Anuluj",
     delete: "Usuń",
+    confirmDelete: "Tak, usuń",
+    deleteConfirm: "Na pewno usunąć?",
+    timePlaceholder: "Np. 22:00 albo o 9 rano",
+    statusActive: "Aktywne",
+    statusPaused: "Pauza",
     oneTime: "Jednorazowo",
     daily: "Codziennie",
     next: "Następne",
@@ -141,13 +178,24 @@ const reminderCopy = {
       "Could not create the reminder. Make sure the text includes a time: at 10:00, 21:00, or daily at 09:00.",
     actionError: "Could not update the reminder.",
     created: "Reminder created.",
-    deleted: "Reminder disabled.",
+    updated: "Reminder updated.",
+    deleted: "Reminder deleted.",
     done: "Done",
     taken: "Taken",
     waterLogged: "Logged",
     snooze: "In 10 min",
     skip: "Skip",
+    pause: "Pause",
+    resume: "Resume",
+    editTime: "Edit time",
+    saveTime: "Save",
+    cancel: "Cancel",
     delete: "Delete",
+    confirmDelete: "Yes, delete",
+    deleteConfirm: "Delete this reminder?",
+    timePlaceholder: "Example: 22:00 or at 9 in the morning",
+    statusActive: "Active",
+    statusPaused: "Paused",
     oneTime: "One time",
     daily: "Daily",
     next: "Next",
@@ -258,6 +306,9 @@ export const ReminderManagementCard = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [busyReminderId, setBusyReminderId] = useState<string | null>(null);
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(
     null
   );
@@ -271,7 +322,7 @@ export const ReminderManagementCard = () => {
     setNotice(null);
 
     try {
-      setItems(await listRemoteReminders({ activeOnly: true }));
+      setItems(await listRemoteReminders({ activeOnly: false }));
     } catch {
       setNotice({ type: "error", text: copy.loadError });
     } finally {

@@ -35,6 +35,10 @@ import {
   selectSavedProducts,
 } from "./selectors";
 import { getProductSuggestions } from "./productSuggestionModel";
+import {
+  normalizeProductLookupQuery,
+  shouldRunOnlineProductLookup,
+} from "./productLookupUiModel";
 
 interface Props {
   mealType: MealType;
@@ -146,7 +150,7 @@ export const ProductSearch = ({ mealType }: Props) => {
   const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
   const { appLanguage, t } = useLanguage();
   const [showContributionForm, setShowContributionForm] = useState(false);
-  const normalizedQuery = query.trim();
+  const normalizedQuery = normalizeProductLookupQuery(query);
   const copy = suggestionCopy[appLanguage];
 
   useEffect(() => {
@@ -157,9 +161,14 @@ export const ProductSearch = ({ mealType }: Props) => {
     return () => window.clearTimeout(timeoutId);
   }, [normalizedQuery]);
 
+  const shouldLookupProducts = shouldRunOnlineProductLookup(debouncedQuery);
   const productQuery = useQuery({
     queryKey: ["product-search", debouncedQuery],
     queryFn: () => searchProducts(debouncedQuery),
+    enabled: shouldLookupProducts,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
   });
 
   const results = useMemo(
@@ -181,7 +190,7 @@ export const ProductSearch = ({ mealType }: Props) => {
     ]
   );
   const isLoading =
-    normalizedQuery.length > 0 &&
+    shouldRunOnlineProductLookup(normalizedQuery) &&
     (normalizedQuery !== debouncedQuery ||
       productQuery.isLoading ||
       productQuery.isFetching);
@@ -465,7 +474,7 @@ export const ProductSearch = ({ mealType }: Props) => {
           </Stack>
         ) : null}
 
-        {productQuery.isError ? (
+        {shouldLookupProducts && productQuery.isError ? (
           <Alert
             severity="warning"
             icon={<AssistantAvatar name={assistantName} size={34} mood="concerned" active />}

@@ -189,6 +189,9 @@ const Layout = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        width: "100%",
+        maxWidth: "100vw",
+        overflowX: "hidden",
         background: "var(--sn-page-gradient)",
       }}
     >

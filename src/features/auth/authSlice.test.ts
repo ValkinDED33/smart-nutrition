@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import authReducer, { initializeAuth, setCredentials } from "./authSlice";
 import type { User } from "@domain/user/types";
-import profileReducer from "../profile/profileSlice";
+import profileReducer, { setAssistantCustomization } from "../profile/profileSlice";
 import mealReducer from "../meal/mealSlice";
 import waterReducer from "../water/waterSlice";
 import fridgeReducer from "../fridge/fridgeSlice";
@@ -183,6 +183,51 @@ describe("authSlice", () => {
       isInitialized: true,
       isLoading: false,
       hasSessionHint: true,
+    });
+  });
+
+  it("does not overwrite completed onboarding with an empty remote profile slice", async () => {
+    const store = createTestStore();
+    const completedAt = "2026-06-20T10:00:00.000Z";
+    const user = createUser("completed-user");
+
+    store.dispatch(
+      setAssistantCustomization({
+        onboarding: {
+          preferredName: "Igor",
+          primaryGoalNote: "steady",
+          goalSelections: ["maintain"],
+          mainFriction: "chaotic_schedule",
+          mainFrictions: ["chaotic_schedule"],
+          motivationStyle: "gentle",
+          motivationStyles: ["gentle"],
+          supportNote: "",
+          completedAt,
+        },
+      })
+    );
+    authApiMock.restoreSession.mockResolvedValue({
+      user,
+      snapshot: {
+        profile: null,
+        meal: null,
+        water: null,
+        fridge: null,
+        community: null,
+        companion: null,
+        updatedAt: "2026-06-20T10:01:00.000Z",
+      },
+    });
+
+    await store.dispatch(initializeAuth());
+
+    expect(store.getState().profile.assistant.onboarding.completedAt).toBe(
+      completedAt
+    );
+    expect(store.getState().auth).toMatchObject({
+      user,
+      isAuthenticated: true,
+      isInitialized: true,
     });
   });
 

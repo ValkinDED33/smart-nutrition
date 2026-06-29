@@ -84,6 +84,39 @@ describe("productLookupService", () => {
     expect(fetchImpl.mock.calls[0][0]).toContain("world.openfoodfacts.org/cgi/search.pl");
   });
 
+  it("expands localized common food queries before calling external providers", async () => {
+    const fetchImpl = vi.fn(async (url) => {
+      if (String(url).includes("search_terms=chicken+breast")) {
+        return createResponse({
+          body: {
+            products: [openFoodFactsProduct],
+          },
+        });
+      }
+
+      return createResponse({ body: { products: [] } });
+    });
+    const service = createProductLookupService({
+      config: {
+        openFoodFactsEnabled: true,
+      },
+      fetchImpl,
+    });
+
+    const results = await service.searchProducts({ search: "куряче філе", limit: 6 });
+
+    expect(results[0]).toMatchObject({
+      name: "Greek yogurt",
+      source: "OpenFoodFacts",
+    });
+    expect(fetchImpl.mock.calls.some(([url]) =>
+      String(url).includes("search_terms=%D0%BA%D1%83%D1%80%D1%8F%D1%87%D0%B5")
+    )).toBe(true);
+    expect(fetchImpl.mock.calls.some(([url]) =>
+      String(url).includes("search_terms=chicken+breast")
+    )).toBe(true);
+  });
+
   it("uses the OpenFoodFacts barcode endpoint for barcode queries", async () => {
     const fetchImpl = vi.fn(async () =>
       createResponse({

@@ -13,6 +13,11 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import {
+  canUseWebNotifications,
+  getSafeNotificationPermission,
+  requestSafeNotificationPermission,
+} from "@shared/lib/notifications";
 import { updateNotificationPreferences } from "./profileSlice";
 
 const notificationCopy = {
@@ -100,19 +105,17 @@ export const NotificationSettingsCard = () => {
   } = useSelector((state: RootState) => state.profile);
   const { appLanguage } = useLanguage();
   const [permission, setPermission] = useState<PermissionState>(() =>
-    typeof window !== "undefined" && "Notification" in window
-      ? Notification.permission
-      : "unsupported"
+    getSafeNotificationPermission()
   );
   const copy = notificationCopy[appLanguage];
 
   useEffect(() => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
+    if (typeof window === "undefined" || !canUseWebNotifications()) {
       return;
     }
 
     const syncPermission = () => {
-      setPermission(Notification.permission);
+      setPermission(getSafeNotificationPermission());
     };
 
     syncPermission();
@@ -126,13 +129,9 @@ export const NotificationSettingsCard = () => {
   }, []);
 
   const requestPermission = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setPermission("unsupported");
-      return false;
-    }
-
-    const nextPermission = await Notification.requestPermission();
+    const nextPermission = await requestSafeNotificationPermission();
     setPermission(nextPermission);
+
     return nextPermission === "granted";
   };
 

@@ -8,7 +8,13 @@ export type ReminderType =
   | "habit"
   | "task";
 export type ReminderRepeat = "daily" | "once";
-export type ReminderAction = "taken" | "done" | "snoozed" | "skipped";
+export type ReminderAction =
+  | "taken"
+  | "done"
+  | "snoozed"
+  | "skipped"
+  | "pause"
+  | "resume";
 
 export type ReminderEvent = {
   id: string;
@@ -136,13 +142,30 @@ export const createRemoteReminder = async ({
 
 export const updateRemoteReminderAction = async (
   reminderId: string,
-  action: ReminderAction
+  action: ReminderAction,
+  options: { minutes?: number } = {}
 ) => {
   const { data } = await requestRemote<ReminderMutationResponse>(
     `/reminders/${encodeURIComponent(reminderId)}`,
     {
       method: "PATCH",
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...options }),
+    },
+    { requireAuth: true }
+  );
+
+  return requireReminderItem(data.item);
+};
+
+export const updateRemoteReminderSchedule = async (
+  reminderId: string,
+  text: string
+) => {
+  const { data } = await requestRemote<ReminderMutationResponse>(
+    `/reminders/${encodeURIComponent(reminderId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ action: "schedule", text }),
     },
     { requireAuth: true }
   );

@@ -8,6 +8,10 @@ import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
 import type { AppLanguage } from "@shared/types/i18n";
+import {
+  getSafeNotificationPermission,
+  showSafeNotification,
+} from "@shared/lib/notifications";
 
 const notificationLog = new Set<string>();
 
@@ -44,7 +48,7 @@ const maybeSendNotification = (key: string, title: string, body: string) => {
   }
 
   notificationLog.add(key);
-  new Notification(title, { body, silent: true });
+  void showSafeNotification(title, { body, silent: true });
 };
 
 const mealNotificationCopy = {
@@ -287,8 +291,7 @@ const HabitReminderAgent = () => {
       typeof window === "undefined" ||
       !user ||
       !notificationsEnabled ||
-      !("Notification" in window) ||
-      Notification.permission !== "granted"
+      getSafeNotificationPermission() !== "granted"
     ) {
       return;
     }

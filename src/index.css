@@ -12,17 +12,26 @@
 
 html {
   min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
   background: var(--sn-page-gradient, #f8fbff);
 }
 
 #root {
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 @keyframes snPageEnter {
@@ -57,6 +66,12 @@ select {
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

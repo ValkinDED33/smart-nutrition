@@ -4,42 +4,22 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
-import { replaceCommunityState } from "../features/community/communitySlice";
+import {
+  applyRemoteSnapshotToStore,
+  getRemoteSnapshotMeta,
+  hasCompletedOnboardingSnapshot,
+} from "@features/auth/sessionSnapshot";
 import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
-  hydrateCompanionState,
 } from "../features/companion";
-import { replaceFridgeState } from "../features/fridge/fridgeSlice";
-import { replaceMealState } from "../features/meal/mealSlice";
-import { replaceProfileState, setProfileLanguage } from "../features/profile/profileSlice";
-import { replaceWaterState } from "../features/water/waterSlice";
+import { setProfileLanguage } from "../features/profile/profileSlice";
 import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
-import { getSnapshotMetaFromSnapshot } from "@domain/appSnapshot";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
-import type { AppSnapshot } from "../shared/types/appSnapshot";
 import { captureRuntimeEvent } from "@integration/runtime/analytics";
 import { AuthSurface } from "@shared/ui";
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const hasCompletedOnboardingSnapshot = (snapshot?: AppSnapshot | null) => {
-  if (!isRecord(snapshot?.profile)) {
-    return false;
-  }
-
-  const { assistant } = snapshot.profile;
-
-  if (!isRecord(assistant) || !isRecord(assistant.onboarding)) {
-    return false;
-  }
-
-  return typeof assistant.onboarding.completedAt === "string" &&
-    assistant.onboarding.completedAt.trim().length > 0;
-};
 
 const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -76,17 +56,12 @@ const VerifyEmailPage = () => {
             user,
             syncMode: getAuthRuntimeInfo().mode,
             syncOutbox: getSyncOutboxMeta(),
-            cloudMeta: getSnapshotMetaFromSnapshot(snapshot),
+            cloudMeta: getRemoteSnapshotMeta(snapshot),
           })
         );
 
         if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
-          dispatch(replaceProfileState(snapshot.profile));
-          dispatch(replaceMealState(snapshot.meal));
-          dispatch(replaceWaterState(snapshot.water));
-          dispatch(replaceFridgeState(snapshot.fridge));
-          dispatch(replaceCommunityState(snapshot.community));
-          dispatch(hydrateCompanionState(snapshot.companion));
+          applyRemoteSnapshotToStore(dispatch, snapshot);
         }
 
         dispatch(setProfileLanguage(appLanguage));

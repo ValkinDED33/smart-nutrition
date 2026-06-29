@@ -20,6 +20,16 @@ export type CatalogNotice = {
   text: string;
 };
 
+export type BarcodeScannerAvailability =
+  | {
+      available: true;
+      reason: "camera_available";
+    }
+  | {
+      available: false;
+      reason: "camera_api_missing" | "insecure_context";
+    };
+
 export const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
 export const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
 
@@ -40,6 +50,33 @@ export const createManualDraft = (): ManualDraft => ({
   fat: "",
   carbs: "",
 });
+
+export const resolveBarcodeScannerAvailability = ({
+  hasMediaDevices,
+  isSecureContext,
+}: {
+  hasMediaDevices: boolean;
+  isSecureContext: boolean;
+}): BarcodeScannerAvailability => {
+  if (!isSecureContext) {
+    return {
+      available: false,
+      reason: "insecure_context",
+    };
+  }
+
+  if (!hasMediaDevices) {
+    return {
+      available: false,
+      reason: "camera_api_missing",
+    };
+  }
+
+  return {
+    available: true,
+    reason: "camera_available",
+  };
+};
 
 export const normalizeManualNumericValue = (
   value: ManualNumericDraftValue

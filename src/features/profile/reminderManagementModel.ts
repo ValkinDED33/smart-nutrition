@@ -54,6 +54,10 @@ export const getReminderQuantityLabelKey = (
 
 export const sortReminders = (items: ReminderItem[]) =>
   [...items].sort((a, b) => {
+    if (a.active !== b.active) {
+      return a.active ? -1 : 1;
+    }
+
     const aTime = a.nextRunAt ? new Date(a.nextRunAt).getTime() : Number.MAX_SAFE_INTEGER;
     const bTime = b.nextRunAt ? new Date(b.nextRunAt).getTime() : Number.MAX_SAFE_INTEGER;
 
