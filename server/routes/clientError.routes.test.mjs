@@ -1,7 +1,9 @@
 import { Readable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
+import { createAdminRoutes } from "./admin.routes.mjs";
 import {
   createClientErrorController,
+  createClientErrorMemoryStore,
   createClientErrorRoutes,
   sanitizeClientErrorReport,
   sanitizeClientErrorRuntimeContext,
@@ -43,6 +45,22 @@ describe("client error routes", () => {
     ).toEqual([["POST", "/api/client-errors"]]);
   });
 
+  it("keeps client error diagnostics lookup behind admin routes", () => {
+    expect(
+      createClientErrorRoutes({
+        clientErrorController: createClientErrorController(),
+      }).some((route) => route.pathname === "/api/admin/client-errors")
+    ).toBe(false);
+    expect(
+      createAdminRoutes({
+        adminController: { listClientErrors: vi.fn() },
+      }).some(
+        (route) =>
+          route.method === "GET" && route.pathname === "/api/admin/client-errors"
+      )
+    ).toBe(true);
+  });
+
   it("sanitizes sensitive client error fields", () => {
     const report = sanitizeClientErrorReport({
       id: "sn-test",
@@ -63,7 +81,12 @@ describe("client error routes", () => {
   it("logs sanitized reports and returns accepted", async () => {
     const logger = { warn: vi.fn() };
     const sentryRuntime = { captureException: vi.fn() };
-    const controller = createClientErrorController({ logger, sentryRuntime });
+    const clientErrorStore = createClientErrorMemoryStore();
+    const controller = createClientErrorController({
+      logger,
+      sentryRuntime,
+      clientErrorStore,
+    });
     const response = new MemoryResponse();
 
     await controller.reportClientError({
@@ -118,6 +141,27 @@ describe("client error routes", () => {
         runtimeContext: expect.objectContaining({ language: "uk-UA" }),
       })
     );
+    expect(clientErrorStore.list({ id: "sn-mobile" })).toEqual([
+      expect.objectContaining({
+        id: "sn-mobile",
+        message: "Broken at /reset-password?token=[redacted]",
+        receivedAt: expect.any(String),
+      }),
+    ]);
+  });
+
+  it("keeps only the newest sanitized client error reports", () => {
+    const store = createClientErrorMemoryStore({ maxItems: 2 });
+
+    store.add(sanitizeClientErrorReport({ id: "old", message: "Old" }));
+    store.add(sanitizeClientErrorReport({ id: "middle", message: "Middle" }));
+    store.add(sanitizeClientErrorReport({ id: "new", message: "New" }));
+
+    expect(store.list()).toEqual([
+      expect.objectContaining({ id: "new" }),
+      expect.objectContaining({ id: "middle" }),
+    ]);
+    expect(store.list({ id: "old" })).toEqual([]);
   });
 
   it("sanitizes runtime context with an allowlist", () => {

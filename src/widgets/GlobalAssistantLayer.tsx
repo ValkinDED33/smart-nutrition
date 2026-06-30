@@ -16,7 +16,7 @@ import type { RootState } from "@app/store";
 import type { AssistantArea } from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
-import { AssistantAvatar } from "@shared/components/AssistantAvatar";
+import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
 import {
@@ -24,7 +24,7 @@ import {
   assistantSpeechStaggerVariants,
   fadeUpVariants,
 } from "@shared/ui/motion";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveGlobalAssistantLayerModel } from "./globalAssistantLayerModel";
 
 const layerCopy = {
@@ -394,6 +394,7 @@ export const GlobalAssistantLayer = () => {
   const isPublicCompanion = !user && area === "auth";
   const companionName = user ? assistant.name : "Smart";
   const companionKind = user ? assistant.companionKind : "dragon";
+  const companionSize = isDenseMobileCompanion ? 58 : isMobile ? 64 : 76;
 
   if (
     (!user && !isPublicCompanion) ||
@@ -405,7 +406,7 @@ export const GlobalAssistantLayer = () => {
   }
 
   const handleOpenAssistant = () => {
-    captureRuntimeEvent("global_assistant_opened", {
+    trackRuntimeEvent("global_assistant_opened", {
       area,
       path: location.pathname,
       capability: primaryCapability?.id ?? "unknown",
@@ -543,8 +544,8 @@ export const GlobalAssistantLayer = () => {
           onClick={handleOpenAssistant}
           aria-label={copy.mobileLabel}
           sx={{
-            width: { xs: isDenseMobileCompanion ? 50 : 58, md: 66 },
-            height: { xs: isDenseMobileCompanion ? 50 : 58, md: 66 },
+            width: companionSize,
+            height: companionSize,
             border: "none",
             borderRadius: "50%",
             cursor: "pointer",
@@ -556,8 +557,9 @@ export const GlobalAssistantLayer = () => {
           <AssistantAvatar
             name={companionName}
             variant={companionKind}
-            size={isDenseMobileCompanion ? 50 : undefined}
+            size={companionSize}
             mood={layerModel.emotion.mood}
+            renderMode="3d"
             active
           />
         </Box>

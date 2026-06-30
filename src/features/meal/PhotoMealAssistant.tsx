@@ -1,5 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import imageCompression from "browser-image-compression";
 import {
   Alert,
@@ -14,7 +14,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import type { AppDispatch } from "../../app/store";
+import type { AppDispatch, RootState } from "../../app/store";
 import { analyzeMealPhoto } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
@@ -29,8 +29,8 @@ import type {
   PhotoPortionSize,
 } from "../../shared/types/photo";
 import type { Product } from "@domain/products/types";
-import { addMealEntries } from "./mealSlice";
 import { selectInputValue } from "../../shared/lib/inputSelection";
+import { addMealEntriesToCloud } from "./mealCloudSync";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -236,6 +236,7 @@ type Props = {
 
 export const PhotoMealAssistant = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
+  const meal = useSelector((state: RootState) => state.meal);
   const { appLanguage, t } = useLanguage();
   const copy = photoCopy[appLanguage];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -391,7 +392,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     });
   };
 
-  const handleAddDraft = () => {
+  const handleAddDraft = async () => {
     if (!analysis) {
       return;
     }
@@ -419,8 +420,12 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       return;
     }
 
-    dispatch(addMealEntries(entries));
-    setFeedback(copy.added);
+    try {
+      await addMealEntriesToCloud(dispatch, meal, entries);
+      setFeedback(copy.added);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : copy.analysisError);
+    }
   };
 
   return (
@@ -690,7 +695,9 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
               <Button
                 variant="contained"
-                onClick={handleAddDraft}
+                onClick={() => {
+                  void handleAddDraft();
+                }}
                 disabled={analysis.items.length === 0}
                 sx={{
                   alignSelf: "flex-start",

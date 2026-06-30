@@ -32,6 +32,7 @@ export type RuntimeAnalyticsProperties = Record<
 >;
 
 let posthogClient: PostHog | null = null;
+let posthogInitPromise: Promise<PostHog | null> | null = null;
 
 export const readPostHogConfig = (): PostHogConfig | null => {
   const key = import.meta.env.VITE_POSTHOG_KEY;
@@ -51,22 +52,33 @@ export const initializePostHog = async () => {
     return posthogClient;
   }
 
+  if (posthogInitPromise) {
+    return posthogInitPromise;
+  }
+
   const config = readPostHogConfig();
 
   if (!config || typeof window === "undefined") {
     return null;
   }
 
-  const { default: posthog } = await import("posthog-js");
+  posthogInitPromise = import("posthog-js")
+    .then(({ default: posthog }) => {
+      posthog.init(config.key, {
+        api_host: config.apiHost,
+        capture_pageview: false,
+        autocapture: false,
+      });
 
-  posthog.init(config.key, {
-    api_host: config.apiHost,
-    capture_pageview: false,
-    autocapture: false,
-  });
+      posthogClient = posthog;
+      return posthogClient;
+    })
+    .catch((error: unknown) => {
+      posthogInitPromise = null;
+      throw error;
+    });
 
-  posthogClient = posthog;
-  return posthogClient;
+  return posthogInitPromise;
 };
 
 export const captureRuntimeEvent = (

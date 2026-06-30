@@ -333,7 +333,7 @@ export const ReminderManagementCard = () => {
   useEffect(() => {
     let active = true;
 
-    void listRemoteReminders({ activeOnly: true })
+    void listRemoteReminders({ activeOnly: false })
       .then((reminders) => {
         if (active) {
           setItems(reminders);
@@ -382,10 +382,46 @@ export const ReminderManagementCard = () => {
     try {
       const item = await updateRemoteReminderAction(reminder.id, action);
       setItems((current) =>
-        item.active
-          ? sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
-          : current.filter((entry) => entry.id !== item.id)
+        sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
       );
+      setNotice({ type: "success", text: copy.updated });
+    } catch {
+      setNotice({ type: "error", text: copy.actionError });
+    } finally {
+      setBusyReminderId(null);
+    }
+  };
+
+  const startEditing = (reminder: ReminderItem) => {
+    setEditingReminderId(reminder.id);
+    setEditingText(reminder.times.join(", "));
+    setConfirmingDeleteId(null);
+    setNotice(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingReminderId(null);
+    setEditingText("");
+  };
+
+  const handleSaveSchedule = async (reminder: ReminderItem) => {
+    const scheduleText = editingText.trim();
+
+    if (!scheduleText) {
+      setNotice({ type: "error", text: copy.actionError });
+      return;
+    }
+
+    setBusyReminderId(reminder.id);
+    setNotice(null);
+
+    try {
+      const item = await updateRemoteReminderSchedule(reminder.id, scheduleText);
+      setItems((current) =>
+        sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
+      );
+      cancelEditing();
+      setNotice({ type: "success", text: copy.updated });
     } catch {
       setNotice({ type: "error", text: copy.actionError });
     } finally {
@@ -405,6 +441,7 @@ export const ReminderManagementCard = () => {
       setNotice({ type: "error", text: copy.actionError });
     } finally {
       setBusyReminderId(null);
+      setConfirmingDeleteId(null);
     }
   };
 
@@ -494,6 +531,8 @@ export const ReminderManagementCard = () => {
           <Stack spacing={1.2}>
             {sortedItems.map((reminder) => {
               const isBusy = busyReminderId === reminder.id;
+              const isEditing = editingReminderId === reminder.id;
+              const isConfirmingDelete = confirmingDeleteId === reminder.id;
               const primaryAction: ReminderAction = getReminderPrimaryAction(reminder.type);
               const primaryActionLabel = getReminderPrimaryActionLabel(copy, reminder.type);
               const quantityLabel = getReminderQuantityLabel(copy, reminder.type);
@@ -527,6 +566,12 @@ export const ReminderManagementCard = () => {
                             label={reminder.repeat === "once" ? copy.oneTime : copy.daily}
                             variant="outlined"
                           />
+                          <Chip
+                            size="small"
+                            color={reminder.active ? "success" : "default"}
+                            label={reminder.active ? copy.statusActive : copy.statusPaused}
+                            variant={reminder.active ? "filled" : "outlined"}
+                          />
                         </Stack>
                         <Typography sx={{ fontWeight: 900, wordBreak: "break-word" }}>
                           {reminder.title}
@@ -545,12 +590,62 @@ export const ReminderManagementCard = () => {
                       </Stack>
                     </Stack>
 
+                    {isEditing && (
+                      <Box
+                        component="form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void handleSaveSchedule(reminder);
+                        }}
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto auto" },
+                          gap: 1,
+                          alignItems: "center",
+                        }}
+                      >
+                        <TextField
+                          size="small"
+                          label={copy.editTime}
+                          value={editingText}
+                          onChange={(event) => setEditingText(event.target.value)}
+                          placeholder={copy.timePlaceholder}
+                          disabled={isBusy}
+                          inputProps={{
+                            autoComplete: "off",
+                            inputMode: "text",
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          size="small"
+                          startIcon={<Save size={16} />}
+                          disabled={isBusy || !editingText.trim()}
+                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        >
+                          {copy.saveTime}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="text"
+                          size="small"
+                          startIcon={<X size={16} />}
+                          disabled={isBusy}
+                          onClick={cancelEditing}
+                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        >
+                          {copy.cancel}
+                        </Button>
+                      </Box>
+                    )}
+
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Button
                         variant="contained"
                         size="small"
                         startIcon={<Check size={16} />}
-                        disabled={isBusy}
+                        disabled={isBusy || !reminder.active}
                         onClick={() => {
                           void handleAction(reminder, primaryAction);
                         }}
@@ -562,7 +657,7 @@ export const ReminderManagementCard = () => {
                         variant="outlined"
                         size="small"
                         startIcon={<Clock size={16} />}
-                        disabled={isBusy}
+                        disabled={isBusy || !reminder.active}
                         onClick={() => {
                           void handleAction(reminder, "snoozed");
                         }}
@@ -573,7 +668,7 @@ export const ReminderManagementCard = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        disabled={isBusy}
+                        disabled={isBusy || !reminder.active}
                         onClick={() => {
                           void handleAction(reminder, "skipped");
                         }}
@@ -582,18 +677,62 @@ export const ReminderManagementCard = () => {
                         {copy.skip}
                       </Button>
                       <Button
-                        variant="text"
+                        variant="outlined"
+                        size="small"
+                        startIcon={reminder.active ? <Pause size={16} /> : <Play size={16} />}
+                        disabled={isBusy}
+                        onClick={() => {
+                          void handleAction(reminder, reminder.active ? "pause" : "resume");
+                        }}
+                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                      >
+                        {reminder.active ? copy.pause : copy.resume}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Pencil size={16} />}
+                        disabled={isBusy}
+                        onClick={() => startEditing(reminder)}
+                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                      >
+                        {copy.editTime}
+                      </Button>
+                      <Button
+                        variant={isConfirmingDelete ? "contained" : "text"}
                         color="error"
                         size="small"
                         startIcon={<Trash2 size={16} />}
                         disabled={isBusy}
                         onClick={() => {
-                          void handleDelete(reminder);
+                          if (isConfirmingDelete) {
+                            void handleDelete(reminder);
+                            return;
+                          }
+
+                          setConfirmingDeleteId(reminder.id);
+                          setEditingReminderId(null);
+                          setNotice({ type: "error", text: copy.deleteConfirm });
                         }}
                         sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
                       >
-                        {copy.delete}
+                        {isConfirmingDelete ? copy.confirmDelete : copy.delete}
                       </Button>
+                      {isConfirmingDelete && (
+                        <Button
+                          variant="text"
+                          size="small"
+                          startIcon={<X size={16} />}
+                          disabled={isBusy}
+                          onClick={() => {
+                            setConfirmingDeleteId(null);
+                            setNotice(null);
+                          }}
+                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        >
+                          {copy.cancel}
+                        </Button>
+                      )}
                     </Stack>
                   </Stack>
                 </Box>

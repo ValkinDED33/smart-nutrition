@@ -17,10 +17,18 @@ const getBrowserStorage = (name: BrowserStorageName) => {
     return null;
   }
 
-  const propertyName = [name, "Storage"].join("");
-  const storage = (window as unknown as Record<string, Storage | undefined>)[propertyName];
+  try {
+    const propertyName = [name, "Storage"].join("");
+    const storage = (window as unknown as Record<string, Storage | undefined>)[
+      propertyName
+    ];
 
-  return typeof Storage !== "undefined" && storage instanceof Storage ? storage : null;
+    return typeof Storage !== "undefined" && storage instanceof Storage
+      ? storage
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 const purgeLegacyBrowserStorage = (name: BrowserStorageName) => {
@@ -52,9 +60,15 @@ const purgeLegacyBrowserStorage = (name: BrowserStorageName) => {
 
 const deleteLegacyDatabase = async () => {
   const propertyName = ["indexed", "DB"].join("");
-  const indexedDbRef = (globalThis as unknown as Record<string, IDBFactory | undefined>)[
-    propertyName
-  ];
+  let indexedDbRef: IDBFactory | undefined;
+
+  try {
+    indexedDbRef = (globalThis as unknown as Record<string, IDBFactory | undefined>)[
+      propertyName
+    ];
+  } catch {
+    return;
+  }
 
   if (!indexedDbRef?.deleteDatabase) {
     return;

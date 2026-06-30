@@ -24,6 +24,7 @@ export const createAdminController = ({
   platformService,
   adminRepository,
   bodyLimitBytes,
+  clientErrorStore = null,
 }) => ({
   getUsers: async ({ response, auth }) => {
     assertRole(auth.user, "admin");
@@ -118,6 +119,16 @@ export const createAdminController = ({
       items: await platformService.listAuditLogs(auth.user, {
         limit: url.searchParams.get("limit") ?? undefined,
       }),
+    });
+  },
+
+  listClientErrors: async ({ response, auth, url }) => {
+    assertRole(auth.user, "admin");
+    sendJson(response, 200, {
+      items: clientErrorStore?.list?.({
+        id: url.searchParams.get("id") ?? undefined,
+        limit: url.searchParams.get("limit") ?? undefined,
+      }) ?? [],
     });
   },
 

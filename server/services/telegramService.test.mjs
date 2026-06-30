@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildTelegramAssistantCapabilitiesMessage,
   buildTelegramDailySummary,
+  buildTelegramMainMenuMessage,
   buildTelegramNutritionSummary,
   buildTelegramWaterSummary,
   createTelegramConnectToken,
@@ -89,6 +90,16 @@ describe("telegramService", () => {
     expect(message).toContain("Вода");
     expect(message).toContain("Нутрієнти");
     expect(message).toContain("/today");
+  });
+
+  it("builds a Telegram workspace menu around real commands", () => {
+    const message = buildTelegramMainMenuMessage({ name: "Ihor" });
+
+    expect(message).toContain("Smart Nutrition поруч, Ihor");
+    expect(message).toContain("/today");
+    expect(message).toContain("/reminders");
+    expect(message).toContain("/addtask");
+    expect(message).toContain("/addmed");
   });
 
   it("builds daily, water and nutrition summaries from the app snapshot", () => {
@@ -569,6 +580,66 @@ describe("telegramService", () => {
 
     expect(reply).toHaveBeenCalledWith(expect.stringContaining("уже подключён"));
     expect(reply).toHaveBeenCalledWith(expect.stringContaining("/meds"));
+
+    service.stop("test shutdown");
+  });
+
+  it("shows the main Telegram workspace menu for linked users", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.commands = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn((name, handler) => {
+        this.commands[name] = handler;
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].commands.menu({
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Smart Nutrition поруч, Ihor"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          keyboard: expect.arrayContaining([
+            expect.arrayContaining([expect.objectContaining({ text: "/reminders" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "/addtask" })]),
+          ]),
+          resize_keyboard: true,
+        }),
+      })
+    );
 
     service.stop("test shutdown");
   });

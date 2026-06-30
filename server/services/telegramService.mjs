@@ -13,6 +13,7 @@ const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
 const TELEGRAM_NOT_CONNECTED_MESSAGE =
   "Telegram ещё не подключён. Откройте профиль Smart Nutrition и нажмите Start по персональной ссылке.";
 const TELEGRAM_BOT_COMMANDS = [
+  { command: "menu", description: "Головне меню Smart Nutrition" },
   { command: "help", description: "Що вміє Smart Nutrition AI" },
   { command: "today", description: "Підсумок дня" },
   { command: "nutrition", description: "Харчування і нутрієнти" },
@@ -24,6 +25,20 @@ const TELEGRAM_BOT_COMMANDS = [
   { command: "profile", description: "Підключений акаунт" },
   { command: "disconnect", description: "Відключити Telegram" },
 ];
+
+const TELEGRAM_MAIN_MENU_KEYBOARD = {
+  reply_markup: {
+    keyboard: [
+      [{ text: "/today" }, { text: "/reminders" }],
+      [{ text: "/water" }, { text: "/nutrition" }],
+      [{ text: "/addtask" }, { text: "/addmed" }],
+      [{ text: "/profile" }, { text: "/help" }],
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: false,
+    input_field_placeholder: "Напишіть дію або оберіть кнопку",
+  },
+};
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -290,6 +305,21 @@ export const buildTelegramAssistantCapabilitiesMessage = () =>
     "/addtask <текст> — створити звичайне нагадування",
     "/profile — статус підключення",
     "/disconnect — відключити Telegram",
+  ].join("\n");
+
+export const buildTelegramMainMenuMessage = (user = null) =>
+  [
+    `Smart Nutrition поруч${user?.name ? `, ${user.name}` : ""}.`,
+    "",
+    "Що можна зробити зараз:",
+    "📊 /today — швидкий підсумок дня",
+    "⏰ /reminders — нагадування і задачі з кнопками керування",
+    "💧 /water — вода сьогодні",
+    "🧬 /nutrition — калорії, БЖВ і нутрієнти",
+    "➕ /addtask — додати задачу за часом",
+    "💊 /addmed — додати нагадування про ліки",
+    "",
+    "Можна писати людською мовою: “нагадуй пити магній о 22:00” або “що у мене по напоминаниям”.",
   ].join("\n");
 
 export const buildTelegramDailySummary = (snapshot = {}, now = new Date()) => {
@@ -578,6 +608,10 @@ export const createTelegramService = ({
     await ctx.reply(buildMessage(snapshot));
   };
 
+  const replyWithMainMenu = async (ctx, user = null) => {
+    await ctx.reply(buildTelegramMainMenuMessage(user), TELEGRAM_MAIN_MENU_KEYBOARD);
+  };
+
   const getMedicationReminderRuntime = () => {
     if (!medicationReminderRuntime) {
       medicationReminderRuntime = createTelegramMedicationReminderRuntime({
@@ -619,6 +653,7 @@ export const createTelegramService = ({
               buildTelegramAssistantCapabilitiesMessage(),
             ].join("\n")
           );
+          await replyWithMainMenu(ctx, connectedUser);
           return;
         }
 
@@ -713,10 +748,21 @@ export const createTelegramService = ({
       });
 
       await ctx.reply("Telegram connected ✅");
+      await replyWithMainMenu(ctx, updatedUser);
+    });
+
+    nextBot.command("menu", async (ctx) => {
+      const user = await getConnectedUser(ctx);
+
+      if (!user) {
+        return;
+      }
+
+      await replyWithMainMenu(ctx, user);
     });
 
     nextBot.command("help", async (ctx) => {
-      await ctx.reply(buildTelegramAssistantCapabilitiesMessage());
+      await ctx.reply(buildTelegramAssistantCapabilitiesMessage(), TELEGRAM_MAIN_MENU_KEYBOARD);
     });
 
     nextBot.command("today", async (ctx) => {
@@ -770,6 +816,16 @@ export const createTelegramService = ({
       const message = toTrimmedString(ctx.message?.text);
 
       if (!message || message.startsWith("/")) {
+        return;
+      }
+
+      if (/^(меню|menu|главное меню|головне меню)$/iu.test(message)) {
+        const user = await getConnectedUser(ctx);
+
+        if (user) {
+          await replyWithMainMenu(ctx, user);
+        }
+
         return;
       }
 

@@ -4,36 +4,31 @@
  * Connects UI to use cases and Redux state
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@app/store";
-import {
-  setLoading,
-  setError,
-  addMealOptimistically,
-  clearError,
-} from "@state/meal/slice";
-import { selectTodayMeals } from "@state/meal/selectors";
 import { AddMealUseCase } from "../usecases/addMeal";
 import type { Product } from "@domain/meal";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
+import { getLocalDateKey } from "@shared/lib/date";
+import { addMealEntriesToCloud } from "../mealCloudSync";
 
 export function useMealOperations() {
   const dispatch = useDispatch<AppDispatch>();
-  const currentMeals = useSelector(selectTodayMeals);
+  const meal = useSelector((state: RootState) => state.meal);
+  const currentMeals = useSelector((state: RootState) => {
+    const todayKey = getLocalDateKey(new Date());
+    return state.meal.items.filter(
+      (item) => getLocalDateKey(item.eatenAt) === todayKey
+    );
+  });
   const profile = useSelector((state: RootState) => state.profile);
-  const loading = useSelector(
-    (state: RootState) =>
-      ((state.meal as unknown as { loading?: boolean }).loading ?? false)
-  );
-  const error = useSelector(
-    (state: RootState) =>
-      ((state.meal as unknown as { error?: string | null }).error ?? null)
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const addMeal = useCallback(
     async (
@@ -41,8 +36,8 @@ export function useMealOperations() {
       quantity: number,
       mealType: "breakfast" | "lunch" | "dinner" | "snack"
     ) => {
-      dispatch(clearError());
-      dispatch(setLoading(true));
+      setError(null);
+      setLoading(true);
 
       try {
         const useCase = new AddMealUseCase(
@@ -75,36 +70,37 @@ export function useMealOperations() {
         });
 
         if (result.isOk && result.value) {
-          dispatch(addMealOptimistically(result.value));
+          const mealEntry = result.value;
+          await addMealEntriesToCloud(dispatch, meal, [mealEntry]);
           dispatch(awardCompanionReward("meal_added"));
-          captureRuntimeEvent("meal_added", {
-            mealType: result.value.mealType,
-            productId: result.value.product.id,
-            productName: result.value.product.name,
-            productSource: result.value.product.source,
-            quantity: result.value.quantity,
-            unit: result.value.product.unit,
+          trackRuntimeEvent("meal_added", {
+            mealType: mealEntry.mealType,
+            productId: mealEntry.product.id,
+            productName: mealEntry.product.name,
+            productSource: mealEntry.product.source,
+            quantity: mealEntry.quantity,
+            unit: mealEntry.product.unit,
             calories: Math.round(
-              (result.value.product.nutrients.calories * result.value.quantity) / 100
+              (mealEntry.product.nutrients.calories * mealEntry.quantity) / 100
             ),
             ...createCompanionRewardAnalyticsPayload("meal_added"),
           });
         } else {
-          dispatch(setError(result.errors?.[0] || "Failed to add meal"));
+          setError(result.errors?.[0] || "Failed to add meal");
         }
       } catch (err) {
-        dispatch(setError(err instanceof Error ? err.message : "Unknown error"));
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
-        dispatch(setLoading(false));
+        setLoading(false);
       }
     },
-    [dispatch, currentMeals, profile]
+    [dispatch, currentMeals, meal, profile]
   );
 
   return {
     addMeal,
     loading,
     error,
-    clearError: () => dispatch(clearError()),
+    clearError: () => setError(null),
   };
 }

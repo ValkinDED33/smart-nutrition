@@ -40,7 +40,18 @@ describe("shouldUseCompanionCanvas", () => {
     ).toBe(false);
   });
 
-  it("keeps the mobile avatar lightweight even when 3D is requested", () => {
+  it("keeps automatic mobile avatars lightweight", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        isMobileViewport: true,
+        renderMode: "auto",
+        size: 76,
+      })
+    ).toBe(false);
+  });
+
+  it("honors explicit 3D mode on capable mobile devices", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
@@ -48,7 +59,7 @@ describe("shouldUseCompanionCanvas", () => {
         renderMode: "3d",
         size: 76,
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("respects reduced motion and data saver preferences", () => {

@@ -152,4 +152,81 @@ describe("reminderService", () => {
       },
     });
   });
+
+  it("keeps the complete lifecycle storage-backed for generic reminders", async () => {
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...createUser({ id: userId }),
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createReminderService({ authRepository: repository });
+    const now = new Date("2026-06-20T05:00:00.000Z");
+    const createResult = await service.createReminderFromUserText(
+      createUser(),
+      {
+        type: "task",
+        text: "Напомни позвонить врачу о 10:00",
+      },
+      now
+    );
+
+    const paused = await service.pauseReminder(
+      createResult.user,
+      createResult.reminder.id,
+      new Date("2026-06-20T06:00:00.000Z")
+    );
+    const resumed = await service.resumeReminder(
+      paused.user,
+      createResult.reminder.id,
+      new Date("2026-06-20T07:00:00.000Z")
+    );
+    const snoozed = await service.snoozeReminder(
+      resumed.user,
+      createResult.reminder.id,
+      15,
+      new Date("2026-06-20T07:30:00.000Z")
+    );
+    const updated = await service.updateReminderSchedule(
+      snoozed.user,
+      createResult.reminder.id,
+      "22:00",
+      new Date("2026-06-20T08:00:00.000Z")
+    );
+    const deleted = await service.deleteReminder(
+      updated.user,
+      createResult.reminder.id,
+      new Date("2026-06-20T09:00:00.000Z")
+    );
+
+    expect(paused).toMatchObject({
+      ok: true,
+      reminder: {
+        active: false,
+        nextRunAt: null,
+      },
+    });
+    expect(resumed).toMatchObject({
+      ok: true,
+      reminder: {
+        active: true,
+      },
+    });
+    expect(snoozed.reminder.nextRunAt).toBe("2026-06-20T07:45:00.000Z");
+    expect(updated).toMatchObject({
+      ok: true,
+      reminder: {
+        times: ["22:00"],
+      },
+    });
+    expect(deleted).toMatchObject({
+      ok: true,
+      reminder: {
+        active: false,
+        nextRunAt: null,
+      },
+    });
+    expect(deleted.user.medicationReminders).toHaveLength(0);
+    expect(repository.updateUserMedicationReminders).toHaveBeenCalledTimes(6);
+  });
 });

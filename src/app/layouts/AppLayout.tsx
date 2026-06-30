@@ -40,7 +40,7 @@ import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import {
   desktopNavigationItems,
   getVisibleNavigationItems,
@@ -120,7 +120,7 @@ const Layout = () => {
         );
       });
 
-    captureRuntimeEvent("screen_viewed", {
+    trackRuntimeEvent("screen_viewed", {
       path: location.pathname,
       authenticated: Boolean(user),
       assistantArea: assistantContext.area,
@@ -148,7 +148,7 @@ const Layout = () => {
 
     setLanguage(nextLanguage);
     dispatch(setProfileLanguage(nextLanguage));
-    captureRuntimeEvent("language_changed", {
+    trackRuntimeEvent("language_changed", {
       language: nextLanguage,
     });
   };
@@ -156,7 +156,7 @@ const Layout = () => {
   const handleBrandClick = () => {
     const homePath = user ? "/dashboard" : "/";
 
-    captureRuntimeEvent("brand_home_clicked", {
+    trackRuntimeEvent("brand_home_clicked", {
       targetPath: homePath,
       currentPath: location.pathname,
       authenticated: Boolean(user),
@@ -561,7 +561,7 @@ const Layout = () => {
             value={activeMobileTab}
             onChange={(_, nextValue) => {
               if (typeof nextValue === "string") {
-                captureRuntimeEvent("mobile_navigation_selected", {
+                trackRuntimeEvent("mobile_navigation_selected", {
                   path: nextValue,
                 });
                 navigate(nextValue);

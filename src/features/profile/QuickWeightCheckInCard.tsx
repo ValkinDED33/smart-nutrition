@@ -11,17 +11,21 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
+import { setUser } from "../auth/authSlice";
+import { updateStoredProfile } from "../../shared/api/auth";
 import { calculateBmi, getBmiStatus } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
-import { updateWeight } from "./profileSlice";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
+import { replaceProfileState } from "./profileSlice";
 import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
 import { SectionCard } from "@shared/ui";
+import { saveProfileStateToCloud } from "./profileCloudSync";
+import { buildProfileStateAfterWeightSave } from "./profileSaveModel";
 
 const quickWeightCopy = {
   uk: {
@@ -37,6 +41,7 @@ const quickWeightCopy = {
     input: "Вага (кг)",
     save: "Записати вагу",
     saved: "Вага додана в історію.",
+    saveError: "Не вдалося зберегти вагу в хмарі.",
     invalid: "Введіть вагу від 30 до 300 кг.",
     underweight: "Нижче норми",
     normal: "Норма",
@@ -57,6 +62,7 @@ const quickWeightCopy = {
     input: "Waga (kg)",
     save: "Zapisz wagę",
     saved: "Waga dodana do historii.",
+    saveError: "Nie udało się zapisać wagi w chmurze.",
     invalid: "Wpisz wagę od 30 do 300 kg.",
     underweight: "Poniżej normy",
     normal: "Norma",
@@ -77,6 +83,7 @@ const quickWeightCopy = {
     input: "Weight (kg)",
     save: "Log weight",
     saved: "Weight added to history.",
+    saveError: "Could not save weight to cloud.",
     invalid: "Enter a weight from 30 to 300 kg.",
     underweight: "Underweight",
     normal: "Normal",
@@ -116,9 +123,8 @@ const calculateGoalProgress = ({
 export const QuickWeightCheckInCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { targetWeight, targetWeightStart, weightHistory } = useSelector(
-    (state: RootState) => state.profile
-  );
+  const profile = useSelector((state: RootState) => state.profile);
+  const { targetWeight, targetWeightStart, weightHistory } = profile;
   const { appLanguage } = useLanguage();
   const copy = quickWeightCopy[appLanguage];
   const latestEntry = weightHistory.at(-1);
@@ -127,6 +133,8 @@ export const QuickWeightCheckInCard = () => {
     latestWeight > 0 ? latestWeight.toFixed(1) : ""
   );
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const nextWeight = Number(weightDraft);
   const isValidWeight =
@@ -150,25 +158,46 @@ export const QuickWeightCheckInCard = () => {
     const base = isValidWeight ? nextWeight : latestWeight || 70;
     setWeightDraft(clamp(base + delta, 30, 300).toFixed(1));
     setSaved(false);
+    setSaveError(null);
   };
 
-  const handleSave = () => {
-    if (!isValidWeight) {
+  const handleSave = async () => {
+    if (!isValidWeight || !user) {
       setSaved(false);
       return;
     }
 
-    dispatch(updateWeight(Math.round(nextWeight * 10) / 10));
-    dispatch(awardCompanionReward("weight_updated"));
-    captureRuntimeEvent("weight_updated", {
-      weightKg: Math.round(nextWeight * 10) / 10,
-      previousWeightKg: latestWeight || null,
-      targetWeightKg: targetWeight,
-      hasTarget: Boolean(targetWeight),
-      ...createCompanionRewardAnalyticsPayload("weight_updated"),
-    });
-    setWeightDraft(nextWeight.toFixed(1));
-    setSaved(true);
+    const roundedWeight = Math.round(nextWeight * 10) / 10;
+    const nextProfile = buildProfileStateAfterWeightSave(profile, roundedWeight);
+
+    setSubmitting(true);
+    setSaved(false);
+    setSaveError(null);
+
+    try {
+      const updatedUser = await updateStoredProfile({
+        ...user,
+        weight: roundedWeight,
+      });
+
+      await saveProfileStateToCloud(dispatch, nextProfile);
+      dispatch(setUser(updatedUser));
+      dispatch(replaceProfileState(nextProfile));
+      dispatch(awardCompanionReward("weight_updated"));
+      trackRuntimeEvent("weight_updated", {
+        weightKg: roundedWeight,
+        previousWeightKg: latestWeight || null,
+        targetWeightKg: targetWeight,
+        hasTarget: Boolean(targetWeight),
+        ...createCompanionRewardAnalyticsPayload("weight_updated"),
+      });
+      setWeightDraft(roundedWeight.toFixed(1));
+      setSaved(true);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : copy.saveError);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -241,6 +270,7 @@ export const QuickWeightCheckInCard = () => {
             onChange={(event) => {
               setWeightDraft(event.target.value);
               setSaved(false);
+              setSaveError(null);
             }}
             onFocus={(event) => selectInputValue(event.target)}
             onClick={(event) => selectInputValue(event.currentTarget)}
@@ -268,10 +298,11 @@ export const QuickWeightCheckInCard = () => {
         </Box>
 
         {saved && <Alert severity="success">{copy.saved}</Alert>}
+        {saveError && <Alert severity="error">{saveError}</Alert>}
 
         <Button
           variant="contained"
-          disabled={!isValidWeight}
+          disabled={!isValidWeight || submitting}
           onClick={handleSave}
           sx={{
             alignSelf: "flex-start",

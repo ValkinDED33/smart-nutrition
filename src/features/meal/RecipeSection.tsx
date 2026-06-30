@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useDispatch } from "react-redux";
 import {
+  Alert,
   Button,
   Card,
   CardContent,
@@ -18,7 +19,6 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  addMealEntries,
   applyMealTemplate,
   deleteMealTemplate,
   saveMealTemplate,
@@ -43,6 +43,7 @@ import {
 } from "@domain/user/preferences";
 import { searchProducts } from "../../shared/api/products";
 import { calculateMealTotalNutrients } from "./mealSlice";
+import { addMealEntriesToCloud } from "./mealCloudSync";
 import { selectMealTemplates } from "./selectors";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 
@@ -64,6 +65,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, t } = useLanguage();
   const templates = useSelector(selectMealTemplates);
+  const meal = useSelector((state: RootState) => state.meal);
   const user = useSelector((state: RootState) => state.auth.user);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -76,6 +78,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const deferredIngredientQuery = useDeferredValue(ingredientQuery);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
+  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -183,7 +186,7 @@ export const RecipeSection = ({ mealType }: Props) => {
     [mealType, validBuilderItems]
   );
 
-  const handleAddRecipe = (recipeId: string) => {
+  const handleAddRecipe = async (recipeId: string) => {
     const recipe =
       recipes.find((item) => item.id === recipeId) ??
       customRecipes.find((item) => item.id === recipeId);
@@ -199,7 +202,15 @@ export const RecipeSection = ({ mealType }: Props) => {
       origin: "recipe",
     }));
 
-    dispatch(addMealEntries(entries));
+    setMealSaveError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, entries);
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
   };
 
   const handleAddBuilderIngredient = (product: Product) => {
@@ -241,23 +252,29 @@ export const RecipeSection = ({ mealType }: Props) => {
     setRecipeName("");
   };
 
-  const handleAddBuilderNow = () => {
+  const handleAddBuilderNow = async () => {
     if (validBuilderItems.length === 0) {
       return;
     }
 
-    dispatch(
-      addMealEntries(
-        validBuilderItems.map((ingredient) => ({
-          id: createEntryId(),
-          product: ingredient.product,
-          quantity: ingredient.quantity,
-          mealType,
-          eatenAt: new Date().toISOString(),
-          origin: "recipe",
-        }))
-      )
-    );
+    const entries: MealEntry[] = validBuilderItems.map((ingredient) => ({
+      id: createEntryId(),
+      product: ingredient.product,
+      quantity: ingredient.quantity,
+      mealType,
+      eatenAt: new Date().toISOString(),
+      origin: "recipe",
+    }));
+
+    setMealSaveError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, entries);
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
   };
 
   const handlePublishRecipe = (recipe: Recipe) => {
@@ -290,6 +307,11 @@ export const RecipeSection = ({ mealType }: Props) => {
       <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
         {t("recipes.title")}
       </Typography>
+      {mealSaveError ? (
+        <Alert severity="error" onClose={() => setMealSaveError(null)}>
+          {mealSaveError}
+        </Alert>
+      ) : null}
       <Paper
         elevation={0}
         sx={{
@@ -400,7 +422,9 @@ export const RecipeSection = ({ mealType }: Props) => {
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <Button
                   variant="contained"
-                  onClick={handleAddBuilderNow}
+                  onClick={() => {
+                    void handleAddBuilderNow();
+                  }}
                   disabled={validBuilderItems.length === 0}
                 >
                   Add recipe now
@@ -452,7 +476,9 @@ export const RecipeSection = ({ mealType }: Props) => {
               </Typography>
               <Button
                 variant="contained"
-                onClick={() => handleAddRecipe(recipe.id)}
+                onClick={() => {
+                  void handleAddRecipe(recipe.id);
+                }}
                 sx={{ alignSelf: "flex-start" }}
               >
                 {t("recipes.add")}

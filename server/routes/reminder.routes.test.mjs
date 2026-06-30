@@ -140,7 +140,7 @@ describe("reminder routes", () => {
   it("records reminder actions and deletes reminders", async () => {
     const reminderService = {
       recordReminderAction: vi.fn(async () => ({ ok: true, reminder })),
-      deactivateReminder: vi.fn(async () => ({ ok: true, reminder })),
+      deleteReminder: vi.fn(async () => ({ ok: true, reminder })),
     };
     const controller = createReminderController({ reminderService, bodyLimitBytes: 4096 });
     const actionResponse = new MemoryResponse();
@@ -163,8 +163,81 @@ describe("reminder routes", () => {
       "task-1",
       "done"
     );
-    expect(reminderService.deactivateReminder).toHaveBeenCalledWith(auth.user, "task-1");
+    expect(reminderService.deleteReminder).toHaveBeenCalledWith(auth.user, "task-1");
     expect(actionResponse.statusCode).toBe(200);
     expect(deleteResponse.statusCode).toBe(204);
+  });
+
+  it("routes lifecycle actions to dedicated reminder service methods", async () => {
+    const reminderService = {
+      pauseReminder: vi.fn(async () => ({ ok: true, reminder: { ...reminder, active: false } })),
+      resumeReminder: vi.fn(async () => ({ ok: true, reminder })),
+      snoozeReminder: vi.fn(async () => ({ ok: true, reminder })),
+      updateReminderSchedule: vi.fn(async () => ({
+        ok: true,
+        reminder: { ...reminder, times: ["22:00"] },
+      })),
+    };
+    const controller = createReminderController({ reminderService, bodyLimitBytes: 4096 });
+
+    const pauseResponse = new MemoryResponse();
+    const resumeResponse = new MemoryResponse();
+    const snoozeResponse = new MemoryResponse();
+    const scheduleResponse = new MemoryResponse();
+
+    await controller.recordReminderAction({
+      request: createJsonRequest({ action: "pause" }),
+      response: pauseResponse,
+      auth,
+      params: { reminderId: "task-1" },
+    });
+    await controller.recordReminderAction({
+      request: createJsonRequest({ action: "resume" }),
+      response: resumeResponse,
+      auth,
+      params: { reminderId: "task-1" },
+    });
+    await controller.recordReminderAction({
+      request: createJsonRequest({ action: "snoozed", minutes: 15 }),
+      response: snoozeResponse,
+      auth,
+      params: { reminderId: "task-1" },
+    });
+    await controller.recordReminderAction({
+      request: createJsonRequest({ action: "schedule", text: "22:00" }),
+      response: scheduleResponse,
+      auth,
+      params: { reminderId: "task-1" },
+    });
+
+    expect(reminderService.pauseReminder).toHaveBeenCalledWith(auth.user, "task-1");
+    expect(reminderService.resumeReminder).toHaveBeenCalledWith(auth.user, "task-1");
+    expect(reminderService.snoozeReminder).toHaveBeenCalledWith(auth.user, "task-1", 15);
+    expect(reminderService.updateReminderSchedule).toHaveBeenCalledWith(
+      auth.user,
+      "task-1",
+      "22:00"
+    );
+    expect(pauseResponse.statusCode).toBe(200);
+    expect(resumeResponse.statusCode).toBe(200);
+    expect(snoozeResponse.statusCode).toBe(200);
+    expect(scheduleResponse.statusCode).toBe(200);
+  });
+
+  it("falls back to deactivation when physical delete is not available", async () => {
+    const reminderService = {
+      deactivateReminder: vi.fn(async () => ({ ok: true, reminder })),
+    };
+    const controller = createReminderController({ reminderService, bodyLimitBytes: 4096 });
+    const response = new MemoryResponse();
+
+    await controller.deleteReminder({
+      response,
+      auth,
+      params: { reminderId: "task-1" },
+    });
+
+    expect(reminderService.deactivateReminder).toHaveBeenCalledWith(auth.user, "task-1");
+    expect(response.statusCode).toBe(204);
   });
 });

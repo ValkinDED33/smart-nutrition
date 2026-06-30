@@ -155,12 +155,16 @@ const Material = ({
   color,
   roughness = 0.72,
   metalness = 0.04,
+  emissive,
+  emissiveIntensity,
   transparent,
   opacity,
 }: {
   color: string;
   roughness?: number;
   metalness?: number;
+  emissive?: string;
+  emissiveIntensity?: number;
   transparent?: boolean;
   opacity?: number;
 }) => (
@@ -168,6 +172,8 @@ const Material = ({
     color={color}
     roughness={roughness}
     metalness={metalness}
+    emissive={emissive}
+    emissiveIntensity={emissiveIntensity}
     transparent={transparent}
     opacity={opacity}
   />
@@ -264,7 +270,12 @@ const Eye = ({
     <group position={[x + lookX, 0.3 + lookY, 0.47]}>
       <mesh scale={[0.07, sleepy ? 0.018 : 0.07, 0.026]}>
         <sphereGeometry args={[1, 20, 12]} />
-        <Material color={palette.eye} roughness={0.44} />
+        <Material
+          color={palette.eye}
+          roughness={0.34}
+          emissive={palette.eye}
+          emissiveIntensity={0.45}
+        />
       </mesh>
       {concerned ? (
         <BoxPart
@@ -277,6 +288,170 @@ const Eye = ({
     </group>
   );
 };
+
+const Visor = ({
+  palette,
+  mood,
+  lookOffset,
+}: {
+  palette: ModelPalette;
+  mood: AssistantAvatarMood;
+  lookOffset: { x: number; y: number };
+}) => {
+  const sleepy = mood === "sleepy";
+  const concerned = mood === "concerned";
+  const lookX = clampLookOffset(lookOffset.x) * 0.04;
+  const lookY = clampLookOffset(lookOffset.y) * 0.025;
+
+  return (
+    <group position={[0, 0.25, 0.48]}>
+      <mesh scale={[0.4, 0.17, 0.035]}>
+        <sphereGeometry args={[1, 32, 16]} />
+        <Material
+          color="#020617"
+          roughness={0.2}
+          metalness={0.22}
+          emissive={palette.detail}
+          emissiveIntensity={0.08}
+        />
+      </mesh>
+      {(["left", "right"] as const).map((side) => (
+        <mesh
+          key={side}
+          position={[side === "left" ? -0.15 + lookX : 0.15 + lookX, 0.01 + lookY, 0.04]}
+          scale={[0.07, sleepy ? 0.018 : 0.068, 0.018]}
+          rotation={[0, 0, concerned ? (side === "left" ? -0.18 : 0.18) : 0]}
+        >
+          <sphereGeometry args={[1, 24, 12]} />
+          <Material
+            color={palette.eye}
+            roughness={0.22}
+            emissive={palette.eye}
+            emissiveIntensity={0.9}
+          />
+        </mesh>
+      ))}
+      <mesh
+        position={[0, mood === "concerned" ? -0.08 : -0.06, 0.045]}
+        rotation={[0, 0, mood === "concerned" ? -0.12 : Math.PI]}
+        scale={[1, mood === "happy" || mood === "celebrate" ? 1.06 : 0.72, 1]}
+      >
+        <torusGeometry args={[0.11, 0.009, 8, 24, Math.PI]} />
+        <Material
+          color={palette.eye}
+          roughness={0.3}
+          emissive={palette.eye}
+          emissiveIntensity={0.7}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const HeartCore = ({
+  palette,
+  mood,
+}: {
+  palette: ModelPalette;
+  mood: AssistantAvatarMood;
+}) => {
+  const scale = mood === "celebrate" ? 1.18 : mood === "concerned" ? 0.92 : 1;
+
+  return (
+    <group position={[0, -0.38, 0.43]} scale={[scale, scale, scale]}>
+      <Sphere
+        color={palette.accent}
+        position={[-0.055, 0.035, 0]}
+        scale={[0.06, 0.06, 0.018]}
+      />
+      <Sphere
+        color={palette.accent}
+        position={[0.055, 0.035, 0]}
+        scale={[0.06, 0.06, 0.018]}
+      />
+      <Cone
+        color={palette.accent}
+        position={[0, -0.035, 0]}
+        rotation={[0, 0, Math.PI]}
+        scale={[0.075, 0.12, 0.018]}
+        radialSegments={3}
+      />
+      <mesh position={[0, 0, -0.01]} scale={[0.16, 0.16, 0.01]}>
+        <sphereGeometry args={[1, 24, 12]} />
+        <Material
+          color={palette.accent}
+          transparent
+          opacity={0.22}
+          emissive={palette.accent}
+          emissiveIntensity={0.55}
+        />
+      </mesh>
+    </group>
+  );
+};
+
+const CompanionArms = ({
+  variant,
+  palette,
+  mood,
+}: {
+  variant: AssistantCompanionKind;
+  palette: ModelPalette;
+  mood: AssistantAvatarMood;
+}) => {
+  const isCelebrating = mood === "celebrate";
+  const color = variant === "panda" ? palette.accent : palette.body;
+  const lift = isCelebrating ? 0.16 : 0;
+  const rotation = isCelebrating ? 0.72 : 0.34;
+
+  return (
+    <>
+      <Cylinder
+        color={color}
+        position={[-0.42, -0.34 + lift, 0.11]}
+        rotation={[0, 0, rotation]}
+        scale={[0.055, 0.3, 0.055]}
+      />
+      <Cylinder
+        color={color}
+        position={[0.42, -0.34 + lift, 0.11]}
+        rotation={[0, 0, -rotation]}
+        scale={[0.055, 0.3, 0.055]}
+      />
+      <Sphere
+        color={palette.muzzle}
+        position={[-0.52, -0.46 + lift * 1.4, 0.18]}
+        scale={[0.075, 0.075, 0.06]}
+      />
+      <Sphere
+        color={palette.muzzle}
+        position={[0.52, -0.46 + lift * 1.4, 0.18]}
+        scale={[0.075, 0.075, 0.06]}
+      />
+    </>
+  );
+};
+
+const HaloRing = ({
+  palette,
+  mood,
+}: {
+  palette: ModelPalette;
+  mood: AssistantAvatarMood;
+}) => (
+  <mesh
+    position={[0, -0.98, -0.12]}
+    rotation={[-Math.PI / 2, 0, mood === "celebrate" ? 0.18 : 0]}
+  >
+    <torusGeometry args={[0.52, 0.018, 10, 72]} />
+    <meshBasicMaterial
+      color={palette.accent}
+      transparent
+      opacity={mood === "sleepy" ? 0.18 : 0.34}
+      side={DoubleSide}
+    />
+  </mesh>
+);
 
 const Mouth = ({
   palette,
@@ -658,27 +833,43 @@ const CompanionModel = ({
 
   return (
     <group>
-      <group ref={groupRef} scale={0.9}>
+      <group ref={groupRef} scale={1.04}>
         <Tail variant={variant} palette={palette} />
         {variant === "robot" ? <RobotLimbs palette={palette} /> : null}
+        <CompanionArms variant={variant} palette={palette} mood={mood} />
         <Sphere
           color={palette.body}
-          position={[0, -0.42, 0]}
-          scale={bodyScaleByVariant[variant]}
+          position={[0, -0.48, 0]}
+          scale={[
+            bodyScaleByVariant[variant][0] * 1.05,
+            bodyScaleByVariant[variant][1] * 1.1,
+            bodyScaleByVariant[variant][2],
+          ]}
         />
         <BellyPatch variant={variant} palette={palette} />
+        <HeartCore palette={palette} mood={mood} />
         <Sphere
           color={palette.head}
-          position={[0, 0.18, 0]}
-          scale={headScaleByVariant[variant]}
+          position={[0, 0.22, 0]}
+          scale={[
+            headScaleByVariant[variant][0] * 1.08,
+            headScaleByVariant[variant][1] * 1.04,
+            headScaleByVariant[variant][2],
+          ]}
         />
         <SpeciesDetails variant={variant} palette={palette} />
         <Snout variant={variant} palette={palette} />
         <Cheeks variant={variant} palette={palette} />
-        <Eye side="left" palette={palette} mood={mood} lookOffset={lookOffset} />
-        <Eye side="right" palette={palette} mood={mood} lookOffset={lookOffset} />
-        <Whiskers variant={variant} palette={palette} />
-        <Mouth palette={palette} mood={mood} />
+        {variant === "robot" || variant === "human" ? (
+          <Visor palette={palette} mood={mood} lookOffset={lookOffset} />
+        ) : (
+          <>
+            <Eye side="left" palette={palette} mood={mood} lookOffset={lookOffset} />
+            <Eye side="right" palette={palette} mood={mood} lookOffset={lookOffset} />
+            <Whiskers variant={variant} palette={palette} />
+            <Mouth palette={palette} mood={mood} />
+          </>
+        )}
         <Paws variant={variant} palette={palette} />
         {variant === "human" ? (
           <>
@@ -689,6 +880,7 @@ const CompanionModel = ({
           </>
         ) : null}
       </group>
+      <HaloRing palette={palette} mood={mood} />
       <mesh position={[0, -0.95, -0.15]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.62, 48]} />
         <meshBasicMaterial
@@ -727,13 +919,15 @@ export const CompanionCanvas = ({
     >
       <Canvas
         dpr={[1, 1.8]}
-        camera={{ position: [0, 0.1, 4.2], fov: 32 }}
+        camera={{ position: [0, 0.06, 3.8], fov: 34 }}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100%" }}
       >
-        <ambientLight intensity={1.35} />
-        <directionalLight position={[2, 3, 4]} intensity={1.4} />
-        <pointLight position={[-2, 1.5, 3]} intensity={0.8} color="#ccfbf1" />
+        <ambientLight intensity={1.45} />
+        <directionalLight position={[2.4, 3.2, 4]} intensity={1.55} />
+        <directionalLight position={[-2, 1, 2]} intensity={0.55} color="#d9f99d" />
+        <pointLight position={[-2, 1.5, 3]} intensity={0.95} color="#ccfbf1" />
+        <pointLight position={[1.4, -0.6, 2.4]} intensity={0.55} color={palettes[variant].accent} />
         <CompanionModel
           variant={variant}
           mood={mood}

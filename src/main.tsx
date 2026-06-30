@@ -14,11 +14,15 @@ import { registerServiceWorker } from "./shared/lib/registerServiceWorker";
 import { AppThemeProvider } from "./shared/theme/AppThemeProvider";
 import { SmoothScrollAgent } from "./shared/components/SmoothScrollAgent";
 import { queryClient } from "./shared/query/client";
+import {
+  installGlobalClientErrorReporting,
+  renderBootstrapFailureFallback,
+  reportClientRuntimeError,
+} from "./app/runtime/clientErrorReporting";
 
-const container = document.getElementById("root")!;
-const root = createRoot(container);
+installGlobalClientErrorReporting();
 
-await initializeClientPersistence();
+const container = document.getElementById("root");
 
 const initializeRuntimeIntegrationsAfterPaint = () => {
   const start = () => {
@@ -49,24 +53,45 @@ const initializeRuntimeIntegrationsAfterPaint = () => {
   window.setTimeout(start, 0);
 };
 
-root.render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <HelmetProvider>
-          <AppThemeProvider>
-            <LanguageProvider>
-              <SmoothScrollAgent />
-              <App />
-              <SonnerToaster richColors closeButton position="top-right" />
-              <HotToaster position="bottom-center" />
-            </LanguageProvider>
-          </AppThemeProvider>
-        </HelmetProvider>
-      </Provider>
-    </QueryClientProvider>
-  </StrictMode>
-);
+if (!container) {
+  const fallbackContainer = document.createElement("div");
+  document.body.appendChild(fallbackContainer);
+  const diagnostic = reportClientRuntimeError(
+    new Error("Smart Nutrition root container was not found."),
+    { source: "bootstrap" }
+  );
+  renderBootstrapFailureFallback(fallbackContainer, diagnostic);
+} else {
+  const root = createRoot(container);
 
-initializeRuntimeIntegrationsAfterPaint();
-registerServiceWorker();
+  const bootstrap = async () => {
+    await initializeClientPersistence();
+
+    root.render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <Provider store={store}>
+            <HelmetProvider>
+              <AppThemeProvider>
+                <LanguageProvider>
+                  <SmoothScrollAgent />
+                  <App />
+                  <SonnerToaster richColors closeButton position="top-right" />
+                  <HotToaster position="bottom-center" />
+                </LanguageProvider>
+              </AppThemeProvider>
+            </HelmetProvider>
+          </Provider>
+        </QueryClientProvider>
+      </StrictMode>
+    );
+
+    initializeRuntimeIntegrationsAfterPaint();
+    registerServiceWorker();
+  };
+
+  bootstrap().catch((error: unknown) => {
+    const diagnostic = reportClientRuntimeError(error, { source: "bootstrap" });
+    renderBootstrapFailureFallback(container, diagnostic);
+  });
+}

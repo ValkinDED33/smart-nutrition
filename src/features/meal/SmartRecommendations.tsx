@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQueries } from "@tanstack/react-query";
-import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
@@ -11,7 +11,7 @@ import {
   productMatchesPreferences,
   recipeMatchesPreferences,
 } from "@domain/user/preferences";
-import { addMealEntries, addProduct } from "./mealSlice";
+import { addMealEntriesToCloud } from "./mealCloudSync";
 import type { MealEntry } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import type { NutritionPreferences } from "@domain/profile/types";
@@ -276,11 +276,13 @@ const groupRecommendationProducts = (
 export const SmartRecommendations = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
+  const meal = useSelector((state: RootState) => state.meal);
   const profile = useSelector((state: RootState) => state.profile);
   const water = useSelector((state: RootState) => state.water);
   const items = useSelector(selectMealItems);
   const { appLanguage, t } = useLanguage();
   const copy = recommendationCopy[appLanguage];
+  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
   const macroTargets = useMemo(
     () =>
       calculateMacroTargets({
@@ -609,6 +611,11 @@ export const SmartRecommendations = () => {
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("recommendations.title")}
         </Typography>
+        {mealSaveError ? (
+          <Alert severity="error" onClose={() => setMealSaveError(null)}>
+            {mealSaveError}
+          </Alert>
+        ) : null}
         {recommendations.length === 0 ? (
           <Typography color="text.secondary">{t("recommendations.empty")}</Typography>
         ) : (
@@ -662,6 +669,7 @@ export const SmartRecommendations = () => {
                       variant="outlined"
                       sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
                       onClick={() => {
+                        setMealSaveError(null);
                         if (recommendation.actionRecipe) {
                           const eatenAt = new Date().toISOString();
                           const entries: MealEntry[] =
@@ -674,18 +682,32 @@ export const SmartRecommendations = () => {
                               origin: "recipe",
                             }));
 
-                          dispatch(addMealEntries(entries));
+                          void addMealEntriesToCloud(dispatch, meal, entries).catch((error) => {
+                            setMealSaveError(
+                              error instanceof Error
+                                ? error.message
+                                : "Could not save meal to cloud."
+                            );
+                          });
                           return;
                         }
 
-                        dispatch(
-                          addProduct({
-                            product: recommendation.actionProduct!,
-                            quantity: recommendation.actionQuantity!,
-                            mealType: dailyContext.suggestedMealType,
-                            origin: "manual",
-                          })
-                        );
+                        const entry: MealEntry = {
+                          id: createEntryId(),
+                          product: recommendation.actionProduct!,
+                          quantity: recommendation.actionQuantity!,
+                          mealType: dailyContext.suggestedMealType,
+                          eatenAt: new Date().toISOString(),
+                          origin: "manual",
+                        };
+
+                        void addMealEntriesToCloud(dispatch, meal, [entry]).catch((error) => {
+                          setMealSaveError(
+                            error instanceof Error
+                              ? error.message
+                              : "Could not save meal to cloud."
+                          );
+                        });
                       }}
                     >
                       {recommendation.actionLabel}

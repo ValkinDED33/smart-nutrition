@@ -20,7 +20,9 @@ import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
-import { recordMeasurementCheckIn } from "./profileSlice";
+import { replaceProfileState } from "./profileSlice";
+import { saveProfileStateToCloud } from "./profileCloudSync";
+import { buildProfileStateAfterMeasurementSave } from "./profileSaveModel";
 
 type FormData = {
   weight: number;
@@ -90,9 +92,8 @@ const checkInCopy = {
 export const MeasurementsCheckInCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { measurementHistory, weeklyCheckIn } = useSelector(
-    (state: RootState) => state.profile
-  );
+  const profile = useSelector((state: RootState) => state.profile);
+  const { measurementHistory, weeklyCheckIn } = profile;
   const { t, appLanguage } = useLanguage();
   const copy = checkInCopy[appLanguage];
   const [submitting, setSubmitting] = useState(false);
@@ -143,6 +144,17 @@ export const MeasurementsCheckInCard = () => {
     setSuccessMessage(null);
 
     try {
+      const measurementPayload = {
+        weight: data.weight,
+        waist: data.waist,
+        abdomen: data.abdomen,
+        hip: data.hip,
+        chest: data.chest,
+      };
+      const nextProfile = buildProfileStateAfterMeasurementSave(
+        profile,
+        measurementPayload
+      );
       const updatedUser = await updateStoredProfile({
         ...user,
         weight: data.weight,
@@ -154,19 +166,12 @@ export const MeasurementsCheckInCard = () => {
         },
       });
 
+      await saveProfileStateToCloud(dispatch, nextProfile);
       dispatch(setUser(updatedUser));
-      dispatch(
-        recordMeasurementCheckIn({
-          weight: data.weight,
-          waist: data.waist,
-          abdomen: data.abdomen,
-          hip: data.hip,
-          chest: data.chest,
-        })
-      );
+      dispatch(replaceProfileState(nextProfile));
       setSuccessMessage(copy.saved);
-    } catch {
-      setServerError(copy.saveError);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : copy.saveError);
     } finally {
       setSubmitting(false);
     }

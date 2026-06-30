@@ -4,6 +4,7 @@ const CLIENT_ERROR_BODY_LIMIT_BYTES = 16_384;
 const TEXT_LIMIT = 220;
 const STACK_LINE_LIMIT = 220;
 const STACK_MAX_LINES = 8;
+const CLIENT_ERROR_MEMORY_LIMIT = 80;
 
 const sensitiveTextPattern =
   /([?&](?:access_)?token|[?&]code|[?&]key|[?&]password|[?&]email)=([^&#\s)\]}>"']+)/gi;
@@ -154,6 +155,34 @@ export const sanitizeClientErrorReport = (body = {}) => {
   };
 };
 
+export const createClientErrorMemoryStore = ({
+  maxItems = CLIENT_ERROR_MEMORY_LIMIT,
+} = {}) => {
+  const items = [];
+  const normalizedMaxItems = Math.max(1, Math.min(Number(maxItems) || CLIENT_ERROR_MEMORY_LIMIT, 500));
+
+  return {
+    add: (report) => {
+      items.unshift({
+        ...report,
+        receivedAt: new Date().toISOString(),
+      });
+
+      if (items.length > normalizedMaxItems) {
+        items.length = normalizedMaxItems;
+      }
+    },
+    list: ({ id, limit } = {}) => {
+      const normalizedLimit = Math.max(1, Math.min(Number(limit) || 40, normalizedMaxItems));
+      const filteredItems = id
+        ? items.filter((item) => item.id === toSafeString(id, 80))
+        : items;
+
+      return filteredItems.slice(0, normalizedLimit);
+    },
+  };
+};
+
 export const createClientErrorRoutes = ({ clientErrorController } = {}) =>
   clientErrorController
     ? [
@@ -169,6 +198,7 @@ export const createClientErrorController = ({
   bodyLimitBytes = CLIENT_ERROR_BODY_LIMIT_BYTES,
   logger = console,
   sentryRuntime = null,
+  clientErrorStore = null,
 } = {}) => ({
   reportClientError: async ({ request, response }) => {
     const body = await readJsonBody(
@@ -178,6 +208,7 @@ export const createClientErrorController = ({
     const report = sanitizeClientErrorReport(body);
 
     logger.warn?.("[client-error] ui crash reported", report);
+    clientErrorStore?.add?.(report);
 
     sentryRuntime?.captureException?.(
       new Error(`[client-error] ${report.errorName}: ${report.message}`),

@@ -19,10 +19,10 @@ import {
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
 import {
-  applyProfileTargets,
-  updatePersonalDetails,
-  updateWomenHealth,
+  replaceProfileState,
 } from "./profileSlice";
+import { saveProfileStateToCloud } from "./profileCloudSync";
+import { buildProfileStateAfterFullSave } from "./profileSaveModel";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { updateStoredProfile } from "../../shared/api/auth";
 import { selectInputValue } from "../../shared/lib/inputSelection";
@@ -384,6 +384,7 @@ const toDateInputValue = (value: string | null) =>
 const ProfileForm = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
+  const profile = useSelector((state: RootState) => state.profile);
   const {
     targetWeight,
     dietStyle,
@@ -393,7 +394,7 @@ const ProfileForm = () => {
     personalDetails,
     womenHealth,
     assistant,
-  } = useSelector((state: RootState) => state.profile);
+  } = profile;
   const { t, appLanguage } = useLanguage();
   const copy = profileCopy[appLanguage];
   const dietLabels = dietStyleLabels[appLanguage];
@@ -609,34 +610,38 @@ const ProfileForm = () => {
         avatar: avatarDraft || getDefaultAvatar(user.email),
       });
       const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
+      const profileTargets = {
+        goal: data.goal,
+        weight: data.weight,
+        maintenanceCalories,
+        targetCalories,
+        targetWeight: nextTargetWeight ?? null,
+        dietStyle: data.dietStyle,
+        allergies: parsePreferenceList(data.allergies),
+        excludedIngredients: parsePreferenceList(data.excludedIngredients),
+        adaptiveMode: data.adaptiveMode,
+      };
+      const personalDetailsPatch = {
+        bloodGroup,
+        eyeColor,
+        relationshipStatus,
+        supportSystem,
+        petCompanion,
+      };
+      const nextProfile = buildProfileStateAfterFullSave(profile, {
+        targets: profileTargets,
+        personalDetails: personalDetailsPatch,
+        womenHealth: nextWomenHealth,
+      });
 
+      await saveProfileStateToCloud(dispatch, nextProfile);
       dispatch(setUser(updatedUser));
-      dispatch(
-        applyProfileTargets({
-          goal: data.goal,
-          weight: data.weight,
-          maintenanceCalories,
-          targetCalories,
-          targetWeight: nextTargetWeight ?? null,
-          dietStyle: data.dietStyle,
-          allergies: parsePreferenceList(data.allergies),
-          excludedIngredients: parsePreferenceList(data.excludedIngredients),
-          adaptiveMode: data.adaptiveMode,
-        })
-      );
-      dispatch(
-        updatePersonalDetails({
-          bloodGroup,
-          eyeColor,
-          relationshipStatus,
-          supportSystem,
-          petCompanion,
-        })
-      );
-      dispatch(updateWomenHealth(nextWomenHealth));
+      dispatch(replaceProfileState(nextProfile));
       setSuccessMessage(t("profile.saved"));
-    } catch {
-      setServerError(t("error.genericProfile"));
+    } catch (error) {
+      setServerError(
+        error instanceof Error ? error.message : t("error.genericProfile")
+      );
     } finally {
       setSubmitting(false);
     }

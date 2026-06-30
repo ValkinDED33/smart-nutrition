@@ -18,7 +18,7 @@ import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AuthSurface } from "@shared/ui";
 
 const VerifyEmailPage = () => {
@@ -70,7 +70,7 @@ const VerifyEmailPage = () => {
         const nextPath = hasCompletedOnboardingSnapshot(snapshot)
           ? "/dashboard"
           : "/onboarding";
-        captureRuntimeEvent("signup_completed", {
+        trackRuntimeEvent("signup_completed", {
           authMode: getAuthRuntimeInfo().mode,
           requiresVerification: true,
           verified: true,

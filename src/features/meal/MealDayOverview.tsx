@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
+  Alert,
   Chip,
   Paper,
   Stack,
@@ -12,7 +13,7 @@ import {
 import type { AppDispatch } from "../../app/store";
 import type { RootState } from "../../app/store";
 import { publishCommunityPost } from "../community/communitySlice";
-import { removeProduct, updateMealEntry, addMealEntries } from "./mealSlice";
+import { removeProduct, updateMealEntry } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
@@ -21,6 +22,7 @@ import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { EmptyState, SectionCard } from "@shared/ui";
 import type { AppLanguage } from "@shared/types/i18n";
+import { addMealEntriesToCloud } from "./mealCloudSync";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -176,12 +178,14 @@ const InlineEditPanel = ({
 export const MealDayOverview = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
+  const meal = useSelector((state: RootState) => state.meal);
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, t } = useLanguage();
   const copy = overviewCopy[appLanguage];
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [editingItem, setEditingItem] = useState<MealEntry | null>(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
+  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -257,7 +261,7 @@ export const MealDayOverview = () => {
     }
   };
 
-  const handleRepeatMealType = (mealType: MealType) => {
+  const handleRepeatMealType = async (mealType: MealType) => {
     const yesterdayMeals = items.filter(
       (item) =>
         getLocalDateKey(item.eatenAt) === yesterdayKey && item.mealType === mealType
@@ -275,7 +279,15 @@ export const MealDayOverview = () => {
       eatenAt: new Date().toISOString(),
     }));
 
-    dispatch(addMealEntries(newEntries));
+    setMealSaveError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, newEntries);
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
   };
 
   const handleShareMealType = (mealType: MealType, entries: MealEntry[]) => {
@@ -332,6 +344,12 @@ export const MealDayOverview = () => {
               sx={{ textTransform: "capitalize" }}
             />
           </Stack>
+
+          {mealSaveError ? (
+            <Alert severity="error" onClose={() => setMealSaveError(null)}>
+              {mealSaveError}
+            </Alert>
+          ) : null}
 
           {todayEntries.length === 0 ? (
             <EmptyState

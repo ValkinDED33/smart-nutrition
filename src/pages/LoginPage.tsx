@@ -27,7 +27,7 @@ import {
 } from "../shared/api/auth";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 import { AuthSurface } from "@shared/ui";
@@ -95,7 +95,7 @@ const LoginPage = () => {
         applyRemoteSnapshotToStore(dispatch, snapshot);
       }
 
-      captureRuntimeEvent("login_completed", {
+      trackRuntimeEvent("login_completed", {
         authMode: getAuthRuntimeInfo().mode,
         hasCloudSnapshot: Boolean(snapshot),
         pendingSyncChanges: getSyncOutboxMeta().pendingChanges,

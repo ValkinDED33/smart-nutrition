@@ -16,11 +16,21 @@ export const shouldUseCompanionCanvas = ({
   prefersReducedMotion?: boolean;
   saveData?: boolean;
   lowPowerDevice?: boolean;
-}) =>
-  renderMode !== "2d" &&
-  size >= 48 &&
-  canUseCanvas &&
-  !isMobileViewport &&
-  !prefersReducedMotion &&
-  !saveData &&
-  !lowPowerDevice;
+}) => {
+  if (
+    renderMode === "2d" ||
+    size < 48 ||
+    !canUseCanvas ||
+    prefersReducedMotion ||
+    saveData ||
+    lowPowerDevice
+  ) {
+    return false;
+  }
+
+  if (renderMode === "auto") {
+    return !isMobileViewport;
+  }
+
+  return true;
+};

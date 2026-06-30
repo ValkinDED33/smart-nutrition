@@ -38,7 +38,7 @@ import {
 } from "../shared/api/auth";
 import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
@@ -169,7 +169,7 @@ const RegisterPage = () => {
     setSubmitting(true);
     setServerError(null);
     setPendingVerification(null);
-    captureRuntimeEvent("signup_started", {
+    trackRuntimeEvent("signup_started", {
       authMode: getAuthRuntimeInfo().mode,
       language: appLanguage,
     });
@@ -183,7 +183,7 @@ const RegisterPage = () => {
       });
 
       if (isVerificationPending(response)) {
-        captureRuntimeEvent("signup_completed", {
+        trackRuntimeEvent("signup_completed", {
           authMode: getAuthRuntimeInfo().mode,
           requiresVerification: true,
           language: appLanguage,
@@ -193,7 +193,7 @@ const RegisterPage = () => {
       }
 
       applyAuthenticatedSession(response);
-      captureRuntimeEvent("signup_completed", {
+      trackRuntimeEvent("signup_completed", {
         authMode: getAuthRuntimeInfo().mode,
         requiresVerification: false,
         hasCloudSnapshot: Boolean(response.snapshot),

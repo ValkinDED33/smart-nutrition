@@ -21,7 +21,7 @@ import {
 import { syncRemoteProfileState, updateStoredProfile } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import type { AssistantCustomization } from "@domain/profile/types";
 import {
   awardCompanionReward,
@@ -203,7 +203,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       clearPreAuthOnboardingDraft();
       completeOnboarding();
       dispatch(awardCompanionReward("onboarding_completed"));
-      captureRuntimeEvent("onboarding_completed", {
+      trackRuntimeEvent("onboarding_completed", {
         nextPath,
         goal: state.goal,
         selectedGoals: state.selectedGoals.join(","),

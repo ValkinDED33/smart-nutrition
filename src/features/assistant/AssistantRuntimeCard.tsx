@@ -47,7 +47,7 @@ import {
   fadeUpVariants,
   pageSectionVariants,
 } from "@shared/ui/motion";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveAssistantPromptContext } from "./assistantPromptContext";
 
 const createId = (prefix: string) =>
@@ -458,7 +458,7 @@ export const AssistantRuntimeCard = () => {
     (latestAssistantMessage ? assistantQuickQuestionIds : []);
 
   const handleFollowUpClick = (id: AssistantQuickQuestionId) => {
-    captureRuntimeEvent("assistant_followup_clicked", {
+    trackRuntimeEvent("assistant_followup_clicked", {
       quickQuestionId: id,
       area: context.promptContext.area,
       screenName: context.promptContext.screenName,

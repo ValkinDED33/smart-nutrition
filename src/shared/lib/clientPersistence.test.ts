@@ -118,4 +118,35 @@ describe("clientPersistence", () => {
     expect(persistence.getClientStorageItem("smart-nutrition.language")).toBeNull();
     expect(localStorage.getItem("smart-nutrition.language")).toBeNull();
   });
+
+  it("keeps bootstrapping when browser storage access is blocked", async () => {
+    Object.defineProperty(globalThis, "Storage", {
+      configurable: true,
+      value: FakeStorage,
+    });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {},
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("Storage access denied");
+      },
+    });
+    Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
+      get() {
+        throw new Error("Storage access denied");
+      },
+    });
+
+    const persistence = await import("./clientPersistence");
+
+    await expect(persistence.initializeClientPersistence()).resolves.toBeUndefined();
+
+    persistence.setClientStorageItem("smart-nutrition.language", "uk");
+
+    expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("uk");
+  });
 });

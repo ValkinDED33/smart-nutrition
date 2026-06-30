@@ -24,7 +24,10 @@ import { createStateRepository } from "./repositories/stateRepository.mjs";
 import { createApiRouter } from "./routes/index.mjs";
 import { createAccountController } from "./routes/account.routes.mjs";
 import { createAuthController } from "./routes/auth.routes.mjs";
-import { createClientErrorController } from "./routes/clientError.routes.mjs";
+import {
+  createClientErrorController,
+  createClientErrorMemoryStore,
+} from "./routes/clientError.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
 import { createReminderController } from "./routes/reminder.routes.mjs";
 import { createTelegramController } from "./routes/telegram.routes.mjs";
@@ -151,6 +154,7 @@ const telegramService = createTelegramService({
 });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);
+const clientErrorStore = createClientErrorMemoryStore();
 const { staticAvailable, tryServeStatic } = await createStaticFileServer({
   staticDir: serverConfig.staticDir,
   serveStatic: serverConfig.serveStatic,
@@ -191,11 +195,13 @@ const aiController = createAiController({
 const clientErrorController = createClientErrorController({
   bodyLimitBytes: serverConfig.bodyLimitBytes,
   sentryRuntime,
+  clientErrorStore,
 });
 const adminController = createAdminController({
   platformService,
   adminRepository,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
+  clientErrorStore,
 });
 const stateController = createStateController({
   stateService,

@@ -63,6 +63,23 @@ describe("reminderManagementModel", () => {
     expect(sorted.map((item) => item.id)).toEqual(["first", "second", "no-next"]);
   });
 
+  it("keeps paused reminders visible but after active reminders", () => {
+    const sorted = sortReminders([
+      createReminder({
+        id: "paused",
+        active: false,
+        nextRunAt: "2026-06-23T08:00:00.000Z",
+      }),
+      createReminder({
+        id: "active",
+        active: true,
+        nextRunAt: "2026-06-23T09:00:00.000Z",
+      }),
+    ]);
+
+    expect(sorted.map((item) => item.id)).toEqual(["active", "paused"]);
+  });
+
   it("formats next run in the reminder timezone", () => {
     const reminder = createReminder({
       timezone: "Europe/Warsaw",

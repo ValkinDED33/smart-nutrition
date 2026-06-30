@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { animated, useSpring } from "@react-spring/web";
 import confetti from "canvas-confetti";
@@ -23,16 +23,7 @@ import {
   type AssistantAvatarMood,
 } from "../../shared/components/AssistantAvatar";
 import { selectInputValue } from "../../shared/lib/inputSelection";
-import {
-  incrementWater,
-  setWaterConsumed,
-  setWaterGlassSize,
-  setWaterReminders,
-  setWaterTarget,
-  syncWaterTargetFromWeight,
-  syncWaterDay,
-  markWaterReminderShown,
-} from "./waterSlice";
+import { replaceWaterState, type WaterState } from "./waterSlice";
 import { useLanguage } from "../../shared/language";
 import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
 import { SectionCard } from "@shared/ui";
@@ -57,12 +48,23 @@ import {
   requestSafeNotificationPermission,
   showSafeNotification,
 } from "@shared/lib/notifications";
-import { captureRuntimeEvent } from "@integration/runtime/analytics";
+import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { EmptyState } from "@shared/ui";
 import {
   awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
+import { saveWaterStateToCloud } from "./waterCloudSync";
+import {
+  buildWaterStateAfterDaySync,
+  buildWaterStateAfterGlassSizeChange,
+  buildWaterStateAfterIncrement,
+  buildWaterStateAfterReminderChange,
+  buildWaterStateAfterReminderShown,
+  buildWaterStateAfterSetAmount,
+  buildWaterStateAfterTargetChange,
+  buildWaterStateAfterWeightTargetSync,
+} from "./waterSaveModel";
 
 const waterCopy = {
   uk: {
@@ -110,6 +112,7 @@ const waterCopy = {
     amount: "Об'єм (мл)",
     save: "Зберегти",
     cancel: "Скасувати",
+    saveError: "Не вдалося зберегти воду в хмарі.",
   },
   pl: {
     title: "Woda na dzień",
@@ -156,6 +159,7 @@ const waterCopy = {
     amount: "Objętość (ml)",
     save: "Zapisz",
     cancel: "Anuluj",
+    saveError: "Nie udało się zapisać wody w chmurze.",
   },
   en: {
     title: "Water today",
@@ -201,6 +205,7 @@ const waterCopy = {
     amount: "Amount (ml)",
     save: "Save",
     cancel: "Cancel",
+    saveError: "Could not save water to cloud.",
   },
 } as const;
 
@@ -217,18 +222,83 @@ export const WaterTracker = () => {
   const copy = waterCopy[appLanguage];
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [partialAmountMl, setPartialAmountMl] = useState<number>(water.glassSizeMl);
+  const [targetDraft, setTargetDraft] = useState<string | null>(null);
+  const [glassSizeDraft, setGlassSizeDraft] = useState<string | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingWater, setSavingWater] = useState(false);
   const [playTapSound] = useSound(uiTickSoundDataUrl, { volume: 0.18 });
+  const didSyncWaterDay = useRef(false);
+  const lastAutoTargetWeightRef = useRef<number | null>(null);
+  const targetInputValue = targetDraft ?? String(water.dailyWaterGoal);
+  const glassSizeInputValue = glassSizeDraft ?? String(water.glassSizeMl);
 
   useAutoDismiss(Boolean(reminderMessage), 5000, () => setReminderMessage(null));
 
-  useEffect(() => {
-    dispatch(syncWaterDay());
-  }, [dispatch]);
+  const saveWaterState = useCallback(
+    async (nextWater: WaterState) => {
+      setSavingWater(true);
+      setSaveError(null);
+
+      try {
+        await saveWaterStateToCloud(dispatch, nextWater);
+        dispatch(replaceWaterState(nextWater));
+        return true;
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : copy.saveError);
+        return false;
+      } finally {
+        setSavingWater(false);
+      }
+    },
+    [copy.saveError, dispatch]
+  );
+
+  const persistAutomaticWaterState = useCallback(
+    async (nextWater: WaterState) => {
+      try {
+        await saveWaterStateToCloud(dispatch, nextWater);
+        dispatch(replaceWaterState(nextWater));
+      } catch {
+        // The sync slice already stores the cloud error; automatic maintenance
+        // should not interrupt the user's current screen with local draft state.
+      }
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
-    dispatch(syncWaterTargetFromWeight(latestWeight));
-  }, [dispatch, latestWeight]);
+    if (didSyncWaterDay.current) {
+      return;
+    }
+
+    didSyncWaterDay.current = true;
+    const nextWater = buildWaterStateAfterDaySync(water);
+
+    if (nextWater === water || nextWater.lastLoggedOn === water.lastLoggedOn) {
+      return;
+    }
+
+    void persistAutomaticWaterState(nextWater);
+  }, [persistAutomaticWaterState, water]);
+
+  useEffect(() => {
+    if (lastAutoTargetWeightRef.current === latestWeight) {
+      return;
+    }
+
+    lastAutoTargetWeightRef.current = latestWeight;
+    const nextWater = buildWaterStateAfterWeightTargetSync(water, latestWeight);
+
+    if (
+      nextWater.dailyWaterGoal === water.dailyWaterGoal &&
+      nextWater.consumedMl === water.consumedMl
+    ) {
+      return;
+    }
+
+    void persistAutomaticWaterState(nextWater);
+  }, [latestWeight, persistAutomaticWaterState, water]);
 
   const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const progress = water.dailyWaterGoal
@@ -311,10 +381,19 @@ export const WaterTracker = () => {
       }
 
       const text = copy.reminderDue.replace("{value}", remainingMl.toFixed(0));
-      dispatch(markWaterReminderShown(new Date().toISOString()));
-      setReminderMessage(text);
+      const nextWater = buildWaterStateAfterReminderShown(
+        water,
+        new Date().toISOString()
+      );
 
-      void showSafeNotification(copy.remindersTitle, { body: text });
+      void saveWaterState(nextWater).then((saved) => {
+        if (!saved) {
+          return;
+        }
+
+        setReminderMessage(text);
+        void showSafeNotification(copy.remindersTitle, { body: text });
+      });
     }, 60_000);
 
     return () => {
@@ -323,8 +402,9 @@ export const WaterTracker = () => {
   }, [
     copy.reminderDue,
     copy.remindersTitle,
-    dispatch,
     remainingMl,
+    saveWaterState,
+    water,
     water.reminders.enabled,
     water.reminders.endTime,
     water.reminders.intervalMinutes,
@@ -378,7 +458,7 @@ export const WaterTracker = () => {
     }
 
     dispatch(awardCompanionReward("water_logged"));
-    captureRuntimeEvent("water_added", {
+    trackRuntimeEvent("water_added", {
       amountMl,
       source,
       consumedMlAfter,
@@ -389,16 +469,38 @@ export const WaterTracker = () => {
 
   const setWaterAmount = (amountMl: number, source = "set_amount") => {
     const previousConsumedMl = water.consumedMl;
-    playWaterFeedback(amountMl);
-    dispatch(setWaterConsumed(amountMl));
-    trackWaterAdded(amountMl - previousConsumedMl, source, amountMl);
+    const nextWater = buildWaterStateAfterSetAmount(water, amountMl);
+
+    void saveWaterState(nextWater).then((saved) => {
+      if (!saved) {
+        return;
+      }
+
+      playWaterFeedback(nextWater.consumedMl, previousConsumedMl);
+      trackWaterAdded(
+        nextWater.consumedMl - previousConsumedMl,
+        source,
+        nextWater.consumedMl
+      );
+    });
   };
 
   const addWaterAmount = (amountMl: number, source = "increment") => {
-    const nextConsumedMl = Math.max(water.consumedMl + amountMl, 0);
-    playWaterFeedback(nextConsumedMl);
-    dispatch(incrementWater(amountMl));
-    trackWaterAdded(Math.min(amountMl, nextConsumedMl), source, nextConsumedMl);
+    const previousConsumedMl = water.consumedMl;
+    const nextWater = buildWaterStateAfterIncrement(water, amountMl);
+
+    void saveWaterState(nextWater).then((saved) => {
+      if (!saved) {
+        return;
+      }
+
+      playWaterFeedback(nextWater.consumedMl, previousConsumedMl);
+      trackWaterAdded(
+        nextWater.consumedMl - previousConsumedMl,
+        source,
+        nextWater.consumedMl
+      );
+    });
   };
 
   const handleGlassClick = (index: number, fill: number) => {
@@ -435,7 +537,37 @@ export const WaterTracker = () => {
       await requestSafeNotificationPermission();
     }
 
-    dispatch(setWaterReminders({ enabled }));
+    await saveWaterState(buildWaterStateAfterReminderChange(water, { enabled }));
+  };
+
+  const saveWaterTargetDraft = () => {
+    const nextTarget = Number(targetInputValue);
+
+    if (!Number.isFinite(nextTarget)) {
+      setTargetDraft(null);
+      return;
+    }
+
+    void saveWaterState(buildWaterStateAfterTargetChange(water, nextTarget)).then(
+      () => {
+        setTargetDraft(null);
+      }
+    );
+  };
+
+  const saveGlassSizeDraft = () => {
+    const nextGlassSize = Number(glassSizeInputValue);
+
+    if (!Number.isFinite(nextGlassSize)) {
+      setGlassSizeDraft(null);
+      return;
+    }
+
+    void saveWaterState(
+      buildWaterStateAfterGlassSizeChange(water, nextGlassSize)
+    ).then(() => {
+      setGlassSizeDraft(null);
+    });
   };
 
   const savePartialGlass = () => {
@@ -466,6 +598,11 @@ export const WaterTracker = () => {
         {reminderMessage ? (
           <Alert severity="info" variant="filled" onClose={() => setReminderMessage(null)}>
             {reminderMessage}
+          </Alert>
+        ) : null}
+        {saveError ? (
+          <Alert severity="error" onClose={() => setSaveError(null)}>
+            {saveError}
           </Alert>
         ) : null}
 
@@ -605,8 +742,15 @@ export const WaterTracker = () => {
           <TextField
             type="text"
             label={`${copy.target} (ml)`}
-            value={water.dailyWaterGoal}
-            onChange={(event) => dispatch(setWaterTarget(Number(event.target.value) || 0))}
+            value={targetInputValue}
+            disabled={savingWater}
+            onChange={(event) => setTargetDraft(event.target.value)}
+            onBlur={saveWaterTargetDraft}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              }
+            }}
             onFocus={(event) => selectInputValue(event.target)}
             onClick={(event) => selectInputValue(event.currentTarget)}
             slotProps={{
@@ -620,10 +764,15 @@ export const WaterTracker = () => {
           <TextField
             type="text"
             label={`${copy.glassSize} (ml)`}
-            value={water.glassSizeMl}
-            onChange={(event) =>
-              dispatch(setWaterGlassSize(Number(event.target.value) || 0))
-            }
+            value={glassSizeInputValue}
+            disabled={savingWater}
+            onChange={(event) => setGlassSizeDraft(event.target.value)}
+            onBlur={saveGlassSizeDraft}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              }
+            }}
             onFocus={(event) => selectInputValue(event.target)}
             onClick={(event) => selectInputValue(event.currentTarget)}
             slotProps={{
@@ -643,6 +792,7 @@ export const WaterTracker = () => {
               <Button
                 key={amount}
                 variant={amount === water.glassSizeMl ? "contained" : "outlined"}
+                disabled={savingWater}
                 onClick={() => addWaterAmount(amount, "quick_amount")}
                 sx={{ minWidth: 82 }}
               >
@@ -710,6 +860,7 @@ export const WaterTracker = () => {
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button
             variant="contained"
+            disabled={savingWater}
             onClick={() => addWaterAmount(water.glassSizeMl, "add_glass")}
             sx={{
               textTransform: "none",
@@ -722,6 +873,7 @@ export const WaterTracker = () => {
           </Button>
           <Button
             variant="outlined"
+            disabled={savingWater}
             onClick={openPartialPanel}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
           >
@@ -729,6 +881,7 @@ export const WaterTracker = () => {
           </Button>
           <Button
             variant="text"
+            disabled={savingWater}
             onClick={() => addWaterAmount(-water.glassSizeMl, "remove_glass")}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
@@ -800,6 +953,7 @@ export const WaterTracker = () => {
               control={
                 <Switch
                   checked={water.reminders.enabled}
+                  disabled={savingWater}
                   onChange={(event) => {
                     void handleReminderToggle(event.target.checked);
                   }}
@@ -813,9 +967,10 @@ export const WaterTracker = () => {
                 fullWidth
                 label={copy.reminderInterval}
                 value={water.reminders.intervalMinutes}
+                disabled={savingWater}
                 onChange={(event) =>
-                  dispatch(
-                    setWaterReminders({
+                  void saveWaterState(
+                    buildWaterStateAfterReminderChange(water, {
                       intervalMinutes: Number(event.target.value),
                     })
                   )
@@ -832,8 +987,13 @@ export const WaterTracker = () => {
                 type="time"
                 label={copy.reminderStart}
                 value={water.reminders.startTime}
+                disabled={savingWater}
                 onChange={(event) =>
-                  dispatch(setWaterReminders({ startTime: event.target.value }))
+                  void saveWaterState(
+                    buildWaterStateAfterReminderChange(water, {
+                      startTime: event.target.value,
+                    })
+                  )
                 }
                 InputLabelProps={{ shrink: true }}
               />
@@ -842,8 +1002,13 @@ export const WaterTracker = () => {
                 type="time"
                 label={copy.reminderEnd}
                 value={water.reminders.endTime}
+                disabled={savingWater}
                 onChange={(event) =>
-                  dispatch(setWaterReminders({ endTime: event.target.value }))
+                  void saveWaterState(
+                    buildWaterStateAfterReminderChange(water, {
+                      endTime: event.target.value,
+                    })
+                  )
                 }
                 InputLabelProps={{ shrink: true }}
               />

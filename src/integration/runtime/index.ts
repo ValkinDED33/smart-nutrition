@@ -1,3 +1,4 @@
+export * from "./analyticsEvent";
 export * from "./analytics";
 export * from "./content";
 export * from "./firebase";

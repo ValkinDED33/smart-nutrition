@@ -1,10 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Stack } from "@mui/material";
-import { addMealEntries } from "./mealSlice";
+import { useState } from "react";
+import { Alert, Button, Stack } from "@mui/material";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { getLocalDateKey } from "../../shared/lib/date";
-import type { AppDispatch } from "../../app/store";
+import type { AppDispatch, RootState } from "../../app/store";
+import { addMealEntriesToCloud } from "./mealCloudSync";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -13,7 +14,9 @@ const createId = (prefix: string) =>
 export const YesterdayRepeater = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
+  const meal = useSelector((state: RootState) => state.meal);
   const { t } = useLanguage();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -22,7 +25,7 @@ export const YesterdayRepeater = () => {
   const yesterdayItems = items.filter((item) => getLocalDateKey(item.eatenAt) === yesterdayKey);
   const hasYesterdayData = yesterdayItems.length > 0;
 
-  const handleRepeatYesterday = () => {
+  const handleRepeatYesterday = async () => {
     if (!hasYesterdayData) return;
 
     const newEntries = yesterdayItems.map((item) => ({
@@ -31,14 +34,25 @@ export const YesterdayRepeater = () => {
       eatenAt: new Date().toISOString(),
     }));
 
-    dispatch(addMealEntries(newEntries));
+    setSaveError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, newEntries);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
   };
 
   return (
     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+      {saveError ? <Alert severity="error">{saveError}</Alert> : null}
       <Button
         variant="outlined"
-        onClick={handleRepeatYesterday}
+        onClick={() => {
+          void handleRepeatYesterday();
+        }}
         disabled={!hasYesterdayData}
         fullWidth
       >
