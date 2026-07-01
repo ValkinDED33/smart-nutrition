@@ -22,14 +22,13 @@ export const shouldUseCompanionCanvas = ({
     size < 48 ||
     !canUseCanvas ||
     prefersReducedMotion ||
-    saveData ||
-    lowPowerDevice
+    saveData
   ) {
     return false;
   }
 
   if (renderMode === "auto") {
-    return !isMobileViewport;
+    return !isMobileViewport && !lowPowerDevice;
   }
 
   return true;

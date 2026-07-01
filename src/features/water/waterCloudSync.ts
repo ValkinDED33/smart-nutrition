@@ -1,3 +1,4 @@
+import type { AnyAction } from "@reduxjs/toolkit";
 import {
   hydrateSyncOutbox,
   markSyncError,
@@ -5,6 +6,10 @@ import {
   markSyncSuccess,
   setCloudMeta,
 } from "@features/auth/authSlice";
+import {
+  isCloudStateConflict,
+  recoverLatestCloudSnapshotAfterConflict,
+} from "@features/auth/cloudConflictRecovery";
 import { syncRemoteWaterState } from "@shared/api/auth";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import type { WaterState } from "./waterSlice";
@@ -14,7 +19,8 @@ type WaterSyncAction =
   | ReturnType<typeof markSyncError>
   | ReturnType<typeof markSyncStarted>
   | ReturnType<typeof markSyncSuccess>
-  | ReturnType<typeof setCloudMeta>;
+  | ReturnType<typeof setCloudMeta>
+  | AnyAction;
 
 type WaterSyncDispatch = (action: WaterSyncAction) => unknown;
 
@@ -35,6 +41,13 @@ export const saveWaterStateToCloud = async (
   const result = await syncRemoteWaterState(water);
 
   if (!result.ok) {
+    if (isCloudStateConflict(result)) {
+      await recoverLatestCloudSnapshotAfterConflict(dispatch);
+      throw new Error(
+        "Cloud data changed on another device. The latest cloud version has been loaded; please log water again."
+      );
+    }
+
     const message = getWaterSyncErrorMessage(result);
     dispatch(markSyncError(message));
     throw new Error(message);

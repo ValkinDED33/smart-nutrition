@@ -1,19 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import type { AppDispatch } from "../app/store";
+import type { AppDispatch, RootState } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import {
   applyRemoteSnapshotToStore,
   getRemoteSnapshotMeta,
   hasCompletedOnboardingSnapshot,
 } from "@features/auth/sessionSnapshot";
-import {
-  awardCompanionReward,
-  createCompanionRewardAnalyticsPayload,
-} from "../features/companion";
-import { setProfileLanguage } from "../features/profile/profileSlice";
+import { buildSessionProfileState } from "@features/auth/authSessionProfile";
+import { createCompanionRewardAnalyticsPayload } from "../features/companion";
+import { applyCompanionRewardInCloud } from "../features/companion/companionCloudSync";
+import { normalizeCompanionState } from "../features/companion/model/store";
+import { replaceProfileState } from "../features/profile/profileSlice";
+import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
 import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
@@ -23,6 +24,7 @@ import { AuthSurface } from "@shared/ui";
 
 const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const companion = useSelector((state: RootState) => state.companion);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, appLanguage } = useLanguage();
@@ -60,12 +62,45 @@ const VerifyEmailPage = () => {
           })
         );
 
-        if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
+        const canApplySnapshot = snapshot && getSyncOutboxMeta().pendingChanges === 0;
+
+        if (canApplySnapshot) {
           applyRemoteSnapshotToStore(dispatch, snapshot);
         }
 
-        dispatch(setProfileLanguage(appLanguage));
-        dispatch(awardCompanionReward("registration_completed"));
+        const sessionProfile = buildSessionProfileState({
+          user,
+          snapshot: canApplySnapshot ? snapshot : null,
+          language: appLanguage,
+        });
+
+        try {
+          await saveProfileStateToCloud(dispatch, sessionProfile);
+          dispatch(replaceProfileState(sessionProfile));
+        } catch {
+          // Email verification/session succeeded. The sync slice records the
+          // profile language failure without showing unsaved profile data.
+        }
+
+        let companionRewardPayload = {};
+        const sessionCompanion =
+          snapshot && "companion" in snapshot
+            ? normalizeCompanionState(snapshot.companion)
+            : companion;
+
+        try {
+          await applyCompanionRewardInCloud(
+            dispatch,
+            { companion: sessionCompanion },
+            "registration_completed"
+          );
+          companionRewardPayload =
+            createCompanionRewardAnalyticsPayload("registration_completed");
+        } catch {
+          // Verification/session succeeded. The sync slice records companion
+          // reward failures without blocking the user from entering the app.
+        }
+
         setStatus("success");
         const nextPath = hasCompletedOnboardingSnapshot(snapshot)
           ? "/dashboard"
@@ -76,7 +111,7 @@ const VerifyEmailPage = () => {
           verified: true,
           hasCloudSnapshot: Boolean(snapshot),
           language: appLanguage,
-          ...createCompanionRewardAnalyticsPayload("registration_completed"),
+          ...companionRewardPayload,
         });
         window.setTimeout(() => {
           navigate(nextPath, { replace: true });
@@ -100,7 +135,7 @@ const VerifyEmailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [appLanguage, dispatch, navigate, t, token]);
+  }, [appLanguage, companion, dispatch, navigate, t, token]);
 
   return (
     <AuthSurface maxWidth={520} minHeight="70vh">

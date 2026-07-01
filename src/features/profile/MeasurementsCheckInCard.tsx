@@ -15,13 +15,12 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
-import { updateStoredProfile } from "../../shared/api/auth";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { replaceProfileState } from "./profileSlice";
-import { saveProfileStateToCloud } from "./profileCloudSync";
+import { saveProfileAndUserToCloud } from "./profileCloudSync";
 import { buildProfileStateAfterMeasurementSave } from "./profileSaveModel";
 
 type FormData = {
@@ -155,7 +154,7 @@ export const MeasurementsCheckInCard = () => {
         profile,
         measurementPayload
       );
-      const updatedUser = await updateStoredProfile({
+      const updatedUser = await saveProfileAndUserToCloud(dispatch, {
         ...user,
         weight: data.weight,
         measurements: {
@@ -164,9 +163,8 @@ export const MeasurementsCheckInCard = () => {
           hip: data.hip,
           chest: data.chest,
         },
-      });
+      }, nextProfile);
 
-      await saveProfileStateToCloud(dispatch, nextProfile);
       dispatch(setUser(updatedUser));
       dispatch(replaceProfileState(nextProfile));
       setSuccessMessage(copy.saved);

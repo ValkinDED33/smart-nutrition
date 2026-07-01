@@ -330,7 +330,7 @@ export const buildTaskReminderCreatedMessage = (reminder) =>
       ? `Найближче нагадування: ${formatReminderDateTime(reminder, reminder.nextRunAt)}`
       : null,
     "",
-    "Коли прийде нагадування, можна натиснути: зроблено, пізніше або пропустити.",
+    "Коли прийде нагадування, можна натиснути: зроблено, через 15 хвилин або пропустити.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -1102,7 +1102,7 @@ export const createTelegramMedicationReminderRuntime = ({
         ),
         water: Boolean(reminders?.createWaterReminderFromText ?? reminders?.createReminderFromUserText),
         habit: Boolean(reminders?.createHabitReminderFromText ?? reminders?.createReminderFromUserText),
-        task: Boolean(reminders?.createTaskReminderFromText),
+        task: Boolean(reminders?.createTaskReminderFromText ?? reminders?.createReminderFromUserText),
       },
     }),
   };

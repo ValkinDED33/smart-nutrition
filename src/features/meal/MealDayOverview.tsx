@@ -13,7 +13,6 @@ import {
 import type { AppDispatch } from "../../app/store";
 import type { RootState } from "../../app/store";
 import { publishCommunityPost } from "../community/communitySlice";
-import { removeProduct, updateMealEntry } from "./mealSlice";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
@@ -22,7 +21,11 @@ import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { EmptyState, SectionCard } from "@shared/ui";
 import type { AppLanguage } from "@shared/types/i18n";
-import { addMealEntriesToCloud } from "./mealCloudSync";
+import {
+  addMealEntriesToCloud,
+  removeMealEntryFromCloud,
+  updateMealEntryInCloud,
+} from "./mealCloudSync";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -106,7 +109,6 @@ const InlineEditPanel = ({
   const handleSave = () => {
     if (typeof quantity === "number" && quantity > 0) {
       onSave(quantity, mealType);
-      onClose();
     }
   };
 
@@ -242,22 +244,38 @@ export const MealDayOverview = () => {
     setShowEditPanel(true);
   };
 
-  const handleDeleteClick = (item: MealEntry) => {
-    dispatch(removeProduct(item.id));
+  const handleDeleteClick = async (item: MealEntry) => {
+    setMealSaveError(null);
+
+    try {
+      await removeMealEntryFromCloud(dispatch, meal, item.id);
+      return true;
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+      return false;
+    }
   };
 
-  const handleSaveEdit = (quantity: number, mealType: MealType) => {
+  const handleSaveEdit = async (quantity: number, mealType: MealType) => {
     if (editingItem) {
-      dispatch(
-        updateMealEntry({
+      setMealSaveError(null);
+
+      try {
+        await updateMealEntryInCloud(dispatch, meal, {
           id: editingItem.id,
           product: editingItem.product,
           quantity,
           mealType,
-        })
-      );
-      setShowEditPanel(false);
-      setEditingItem(null);
+        });
+        setShowEditPanel(false);
+        setEditingItem(null);
+      } catch (error) {
+        setMealSaveError(
+          error instanceof Error ? error.message : "Could not save meal to cloud."
+        );
+      }
     }
   };
 
@@ -486,9 +504,12 @@ export const MealDayOverview = () => {
         onSave={handleSaveEdit}
         onDelete={() => {
           if (editingItem) {
-            handleDeleteClick(editingItem);
-            setShowEditPanel(false);
-            setEditingItem(null);
+            void handleDeleteClick(editingItem).then((saved) => {
+              if (saved) {
+                setShowEditPanel(false);
+                setEditingItem(null);
+              }
+            });
           }
         }}
         mealTypes={mealLabels}

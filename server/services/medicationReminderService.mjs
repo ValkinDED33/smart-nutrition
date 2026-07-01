@@ -820,6 +820,43 @@ export const createMedicationReminderService = ({
     return updateReminderSchedule(user, reminder.id, textOrTimes, now);
   };
 
+  const resolveCompletedReminderSchedule = (reminder, now = new Date()) => {
+    if (reminder.repeat === "once") {
+      return {
+        active: false,
+        nextRunAt: null,
+      };
+    }
+
+    const currentTime = now.getTime();
+    const nextRunTime = reminder.nextRunAt ? new Date(reminder.nextRunAt).getTime() : NaN;
+    const lastSentTime = reminder.lastSentAt ? new Date(reminder.lastSentAt).getTime() : NaN;
+    const alreadyAdvancedBySend =
+      Number.isFinite(lastSentTime) &&
+      currentTime >= lastSentTime &&
+      currentTime - lastSentTime <= 24 * 60 * 60 * 1000 &&
+      Number.isFinite(nextRunTime) &&
+      nextRunTime > currentTime;
+
+    if (alreadyAdvancedBySend) {
+      return {
+        active: true,
+        nextRunAt: reminder.nextRunAt,
+      };
+    }
+
+    const baseTime =
+      Number.isFinite(nextRunTime) && nextRunTime > currentTime ? nextRunTime : currentTime;
+    const nextRunAt = calculateNextMedicationRunAt(reminder, {
+      from: new Date(baseTime + 60_000),
+    });
+
+    return {
+      active: Boolean(nextRunAt),
+      nextRunAt,
+    };
+  };
+
   const recordDoseAction = async (
     user,
     reminderId,
@@ -842,7 +879,10 @@ export const createMedicationReminderService = ({
             active: true,
             nextRunAt: new Date(now.getTime() + snoozeMinutes * 60_000).toISOString(),
           }
-        : nextReminder;
+        : {
+            ...nextReminder,
+            ...resolveCompletedReminderSchedule(nextReminder, now),
+          };
     const updatedReminders = upsertReminder(reminders, updatedReminder);
     const updatedUser = await persistReminders(user, updatedReminders);
 

@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import {
   Box,
   Button,
@@ -10,20 +9,16 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { AppDispatch } from "../../app/store";
-import { setProfileLanguage } from "../../features/profile/profileSlice";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { cardSx, shellSx, stepPaths } from "./types";
 
 export const OnboardingWelcomePage = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
 
   const handleLanguageChange = (value: AppLanguage) => {
     setLanguage(value);
-    dispatch(setProfileLanguage(value));
   };
 
   return (

@@ -33,6 +33,7 @@ import {
   sendDirectMessage,
   toggleFavoritePost,
 } from "./communitySlice";
+import { applyCommunityActionInCloud } from "./communityCloudSync";
 import { submitContentReport } from "../../shared/api/platform";
 import { buildAssistantPersonalizationPlan } from "@core/assistant";
 import { sanitizeHtml } from "@integration/runtime/content";
@@ -289,6 +290,11 @@ const formatDateTime = (value: string, language: AppLanguage) =>
 const sanitizeCommunityText = (value: string) =>
   sanitizeHtml(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
 
+const getCommunityErrorMessage = (error: unknown) =>
+  error instanceof Error && error.message
+    ? error.message
+    : "Could not save community changes. Please try again.";
+
 export const CommunityHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -317,6 +323,10 @@ export const CommunityHubCard = () => {
   const [progressMetricValue, setProgressMetricValue] = useState("");
   const [progressCaption, setProgressCaption] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [communityFeedback, setCommunityFeedback] = useState<{
+    severity: "success" | "warning" | "error";
+    message: string;
+  } | null>(null);
 
   const level = Math.max(1, Math.floor(community.score / 120) + 1);
   const authorName = user?.name ?? "You";
@@ -366,7 +376,45 @@ export const CommunityHubCard = () => {
     });
   }, [community.posts, forumView, isModerator, user?.id]);
 
-  const publishPost = () => {
+  const commitCommunityAction = async (
+    action: ReturnType<
+      | typeof addFriend
+      | typeof sendCommunityMessage
+      | typeof sendDirectMessage
+      | typeof publishCommunityPost
+      | typeof commentCommunityPost
+      | typeof publishProgressCard
+      | typeof reportCommunityContent
+      | typeof reviewCommunityPost
+      | typeof deleteCommunityPostAsSpam
+      | typeof deleteCommunityCommentAsModerator
+      | typeof mergeCommunityPosts
+      | typeof toggleFavoritePost
+      | typeof likeCommunityPost
+      | typeof likeProgressCard
+    >,
+    successMessage?: string
+  ) => {
+    setCommunityFeedback(null);
+
+    try {
+      await applyCommunityActionInCloud(dispatch, community, action);
+
+      if (successMessage) {
+        setCommunityFeedback({ severity: "success", message: successMessage });
+      }
+
+      return true;
+    } catch (error) {
+      setCommunityFeedback({
+        severity: "error",
+        message: getCommunityErrorMessage(error),
+      });
+      return false;
+    }
+  };
+
+  const publishPost = async () => {
     const safeTitle = sanitizeCommunityText(postTitle);
     const safeBody = sanitizeCommunityText(postBody);
     const ingredients = postIngredients
@@ -386,7 +434,7 @@ export const CommunityHubCard = () => {
       return;
     }
 
-    dispatch(
+    const saved = await commitCommunityAction(
       publishCommunityPost({
         type: postType,
         title: safeTitle,
@@ -394,26 +442,33 @@ export const CommunityHubCard = () => {
         authorId: user.id,
         authorName: user.name,
         ingredients,
-      })
+      }),
+      copy.queued
     );
+
+    if (!saved) {
+      return;
+    }
+
     setPostTitle("");
     setPostBody("");
     setPostIngredients("");
     setDuplicateWarning(copy.queued);
   };
 
-  const sendRoomMessage = () => {
+  const sendRoomMessage = async () => {
     const safeMessage = sanitizeCommunityText(roomMessageDraft);
 
     if (!safeMessage) {
       return;
     }
 
-    dispatch(sendCommunityMessage({ text: safeMessage, authorName }));
-    setRoomMessageDraft("");
+    if (await commitCommunityAction(sendCommunityMessage({ text: safeMessage, authorName }))) {
+      setRoomMessageDraft("");
+    }
   };
 
-  const publishComment = (postId: string) => {
+  const publishComment = async (postId: string) => {
     const text = commentDrafts[postId] ?? "";
 
     const safeText = sanitizeCommunityText(text);
@@ -422,11 +477,16 @@ export const CommunityHubCard = () => {
       return;
     }
 
-    dispatch(commentCommunityPost({ postId, text: safeText, authorName }));
-    setCommentDrafts((drafts) => ({ ...drafts, [postId]: "" }));
+    if (
+      await commitCommunityAction(
+        commentCommunityPost({ postId, text: safeText, authorName })
+      )
+    ) {
+      setCommentDrafts((drafts) => ({ ...drafts, [postId]: "" }));
+    }
   };
 
-  const shareProgressCard = () => {
+  const shareProgressCard = async () => {
     if (
       !progressMetricLabel.trim() ||
       !progressMetricValue.trim() ||
@@ -435,7 +495,7 @@ export const CommunityHubCard = () => {
       return;
     }
 
-    dispatch(
+    const saved = await commitCommunityAction(
       publishProgressCard({
         authorName,
         metricLabel: progressMetricLabel,
@@ -443,27 +503,45 @@ export const CommunityHubCard = () => {
         caption: progressCaption,
       })
     );
+
+    if (!saved) {
+      return;
+    }
+
     setProgressMetricLabel("");
     setProgressMetricValue("");
     setProgressCaption("");
   };
 
-  const reportPost = (postId: string) => {
-    dispatch(
+  const reportPost = async (postId: string) => {
+    const saved = await commitCommunityAction(
       reportCommunityContent({
         targetType: "post",
         targetId: postId,
         reason: `Reported by ${authorName}`,
         reporterId: user?.id,
         reporterName: authorName,
-      })
+      }),
+      copy.reportSent
     );
-    void submitContentReport({
-      targetType: "post",
-      targetId: postId,
-      reason: `Reported by ${authorName}`,
-      reporterName: authorName,
-    }).catch(() => undefined);
+
+    if (!saved) {
+      return;
+    }
+
+    try {
+      await submitContentReport({
+        targetType: "post",
+        targetId: postId,
+        reason: `Reported by ${authorName}`,
+        reporterName: authorName,
+      });
+    } catch {
+      setCommunityFeedback({
+        severity: "warning",
+        message: "Report was saved locally in your community state, but the moderation inbox could not be notified.",
+      });
+    }
   };
 
   return (
@@ -487,6 +565,12 @@ export const CommunityHubCard = () => {
           <Chip label={`${copy.points}: ${community.score}`} />
           <Chip label={`${copy.favorites}: ${community.favoritePostIds.length}`} variant="outlined" />
         </Stack>
+
+        {communityFeedback && (
+          <Alert severity={communityFeedback.severity}>
+            {communityFeedback.message}
+          </Alert>
+        )}
 
         <Tabs
           value={tab}
@@ -516,8 +600,13 @@ export const CommunityHubCard = () => {
                     return;
                   }
 
-                  dispatch(addFriend({ name: friendName }));
-                  setFriendName("");
+                  void commitCommunityAction(addFriend({ name: friendName })).then(
+                    (saved) => {
+                      if (saved) {
+                        setFriendName("");
+                      }
+                    }
+                  );
                 }}
                 sx={{ textTransform: "none", fontWeight: 700 }}
               >
@@ -658,13 +747,16 @@ export const CommunityHubCard = () => {
                         return;
                       }
 
-                      dispatch(
+                      void commitCommunityAction(
                         sendDirectMessage({
                           friendId: selectedFriendId,
                           text: messageDraft,
                         })
-                      );
-                      setMessageDraft("");
+                      ).then((saved) => {
+                        if (saved) {
+                          setMessageDraft("");
+                        }
+                      });
                     }}
                     sx={{ textTransform: "none", fontWeight: 700 }}
                   >
@@ -756,7 +848,7 @@ export const CommunityHubCard = () => {
                           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                             <Button
                               onClick={() =>
-                                dispatch(
+                                void commitCommunityAction(
                                   reviewCommunityPost({
                                     postId: post.id,
                                     decision: "approve",
@@ -770,7 +862,7 @@ export const CommunityHubCard = () => {
                             <Button
                               color="error"
                               onClick={() =>
-                                dispatch(
+                                void commitCommunityAction(
                                   reviewCommunityPost({
                                     postId: post.id,
                                     decision: "reject",
@@ -785,7 +877,7 @@ export const CommunityHubCard = () => {
                             <Button
                               color="error"
                               onClick={() =>
-                                dispatch(
+                                void commitCommunityAction(
                                   deleteCommunityPostAsSpam({
                                     postId: post.id,
                                     moderatorName: authorName,
@@ -798,7 +890,7 @@ export const CommunityHubCard = () => {
                             {duplicateTarget && (
                               <Button
                                 onClick={() =>
-                                  dispatch(
+                                  void commitCommunityAction(
                                     mergeCommunityPosts({
                                       sourcePostId: post.id,
                                       targetPostId: duplicateTarget.id,
@@ -878,10 +970,18 @@ export const CommunityHubCard = () => {
                       {canInteract && (
                         <>
                           <Stack direction="row" spacing={1}>
-                            <Button onClick={() => dispatch(likeCommunityPost(post.id))}>
+                            <Button
+                              onClick={() =>
+                                void commitCommunityAction(likeCommunityPost(post.id))
+                              }
+                            >
                               {copy.like}
                             </Button>
-                            <Button onClick={() => dispatch(toggleFavoritePost(post.id))}>
+                            <Button
+                              onClick={() =>
+                                void commitCommunityAction(toggleFavoritePost(post.id))
+                              }
+                            >
                               {saved ? copy.unsave : copy.save}
                             </Button>
                             <Button
@@ -915,7 +1015,7 @@ export const CommunityHubCard = () => {
                                     color="error"
                                     size="small"
                                     onClick={() =>
-                                      dispatch(
+                                      void commitCommunityAction(
                                         deleteCommunityCommentAsModerator({
                                           commentId: comment.id,
                                           moderatorName: authorName,
@@ -1016,7 +1116,9 @@ export const CommunityHubCard = () => {
                       {formatDateTime(card.createdAt, appLanguage)}
                     </Typography>
                     <Button
-                      onClick={() => dispatch(likeProgressCard(card.id))}
+                      onClick={() =>
+                        void commitCommunityAction(likeProgressCard(card.id))
+                      }
                       sx={{ alignSelf: "flex-start" }}
                     >
                       {copy.like}

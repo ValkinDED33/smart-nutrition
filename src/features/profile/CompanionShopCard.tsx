@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
@@ -14,8 +14,7 @@ import {
 } from "../../companion";
 import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { useLanguage } from "../../shared/language";
-import { equipCompanionItem, purchaseCompanionItem } from "../companion/model/store";
-import { setAssistantCustomization } from "./profileSlice";
+import { applyCompanionShopSelectionInCloud } from "../companion/companionCloudSync";
 
 const shopCopy = {
   uk: {
@@ -31,6 +30,8 @@ const shopCopy = {
     comingSoon: "Скоро",
     owned: "Куплено",
     available: "Доступно",
+    saving: "Зберігаю...",
+    saveError: "Не вдалося зберегти образ у хмарі. Спробуйте ще раз.",
     coins: "монет",
     preview: "Поточний образ",
     profileLook: "Образ із профілю",
@@ -57,6 +58,8 @@ const shopCopy = {
     comingSoon: "Wkrótce",
     owned: "Kupione",
     available: "Dostępne",
+    saving: "Zapisuję...",
+    saveError: "Nie udało się zapisać wyglądu w chmurze. Spróbuj ponownie.",
     coins: "monet",
     preview: "Obecny wygląd",
     profileLook: "Wygląd z profilu",
@@ -83,6 +86,8 @@ const shopCopy = {
     comingSoon: "Soon",
     owned: "Owned",
     available: "Available",
+    saving: "Saving...",
+    saveError: "Could not save the look to cloud. Try again.",
     coins: "coins",
     preview: "Current look",
     profileLook: "Profile look",
@@ -118,8 +123,16 @@ const getStatusTone = ({
 
 const CompanionShopCard = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const profile = useSelector((state: RootState) => state.profile);
+  const assistant = profile.assistant;
+  const authMeta = useSelector((state: RootState) => state.auth.cloudMeta);
+  const meal = useSelector((state: RootState) => state.meal);
+  const water = useSelector((state: RootState) => state.water);
+  const fridge = useSelector((state: RootState) => state.fridge);
+  const community = useSelector((state: RootState) => state.community);
   const companion = useSelector((state: RootState) => state.companion);
+  const [savingItemId, setSavingItemId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
   const copy = shopCopy[locale];
@@ -132,11 +145,15 @@ const CompanionShopCard = () => {
     companionShopCatalog.find((item) => item.companionKind === assistant.companionKind) ??
     null;
 
-  const handleItemAction = (item: CompanionCatalogItem) => {
+  const handleItemAction = async (item: CompanionCatalogItem) => {
     const isOwned = hasCompanionItem(companion, item.id);
     const canBuy = canPurchaseCompanionItem(companion, item);
 
-    if (!item.available || isCompanionItemEquipped(companion, item.id)) {
+    if (
+      savingItemId !== null ||
+      !item.available ||
+      isCompanionItemEquipped(companion, item.id)
+    ) {
       return;
     }
 
@@ -144,19 +161,27 @@ const CompanionShopCard = () => {
       return;
     }
 
-    if (!isOwned) {
-      dispatch(purchaseCompanionItem(item.id));
-    }
+    setSavingItemId(item.id);
+    setSaveError(null);
 
-    dispatch(equipCompanionItem(item.id));
-
-    if (item.companionKind) {
-      dispatch(
-        setAssistantCustomization({
-          companionKind: item.companionKind,
-          assistantAvatar: item.companionKind,
-        })
+    try {
+      await applyCompanionShopSelectionInCloud(
+        dispatch,
+        {
+          auth: { cloudMeta: authMeta },
+          profile,
+          meal,
+          water,
+          fridge,
+          community,
+          companion,
+        },
+        item
       );
+    } catch {
+      setSaveError(copy.saveError);
+    } finally {
+      setSavingItemId(null);
     }
   };
 
@@ -191,6 +216,11 @@ const CompanionShopCard = () => {
             />
           </Stack>
         </Stack>
+        {saveError ? (
+          <Typography color="error" variant="body2" sx={{ fontWeight: 800 }}>
+            {saveError}
+          </Typography>
+        ) : null}
 
         <Box
           sx={{
@@ -253,7 +283,9 @@ const CompanionShopCard = () => {
                       ? copy.locked
                       : copy.available;
               const actionLabel = isOwned ? copy.choose : copy.buyAndChoose;
-              const buttonDisabled = isEquipped || isComingSoon || isLocked;
+              const isSaving = savingItemId === item.id;
+              const buttonDisabled =
+                savingItemId !== null || isEquipped || isComingSoon || isLocked;
 
               return (
                 <Paper
@@ -304,10 +336,14 @@ const CompanionShopCard = () => {
                         size="small"
                         variant={isEquipped ? "contained" : "outlined"}
                         disabled={buttonDisabled}
-                        onClick={() => handleItemAction(item)}
+                        onClick={() => void handleItemAction(item)}
                         sx={{ textTransform: "none", fontWeight: 800 }}
                       >
-                        {isEquipped ? copy.equipped : actionLabel}
+                        {isSaving
+                          ? copy.saving
+                          : isEquipped
+                            ? copy.equipped
+                            : actionLabel}
                       </Button>
                     </Stack>
                   </Stack>

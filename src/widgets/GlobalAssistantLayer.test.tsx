@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolveGlobalAssistantAvatarRenderMode,
   resolveGlobalAssistantDisplayAction,
   resolveGlobalAssistantLayerModel,
   shouldHideAssistantLayer,
@@ -94,5 +95,59 @@ describe("GlobalAssistantLayer", () => {
     expect(model.presence.mode).toBe("compact");
     expect(model.presence.allowSpeechBubble).toBe(false);
     expect(model.displayAction?.route).toBe("/coach");
+    expect(model.avatarRenderMode).toBe("auto");
+  });
+
+  it("allows compact global assistants to opt into lazy 3D when they will not cover inputs", () => {
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "mobile",
+        presenceMode: "compact",
+      })
+    ).toBe("3d");
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "tablet",
+        presenceMode: "compact",
+      })
+    ).toBe("3d");
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "desktop",
+        presenceMode: "compact",
+      })
+    ).toBe("auto");
+  });
+
+  it("keeps global assistant avatars lightweight while the user is editing inputs", () => {
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "mobile",
+        presenceMode: "compact",
+        inputFocused: true,
+      })
+    ).toBe("2d");
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "desktop",
+        presenceMode: "bubble",
+        inputFocused: true,
+      })
+    ).toBe("2d");
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "tablet",
+        presenceMode: "bubble",
+      })
+    ).toBe("auto");
+  });
+
+  it("allows the global desktop assistant bubble to opt into lazy 3D", () => {
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "desktop",
+        presenceMode: "bubble",
+      })
+    ).toBe("auto");
   });
 });

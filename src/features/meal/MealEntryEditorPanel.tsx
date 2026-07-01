@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   MenuItem,
   Paper,
@@ -143,6 +144,10 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
           }}
         >
           <Stack spacing={2}>
+            {editor.saveError ? (
+              <Alert severity="error">{editor.saveError}</Alert>
+            ) : null}
+
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1}

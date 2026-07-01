@@ -6,8 +6,10 @@ import {
 import {
   resolveAssistantPresence,
   type AssistantPresenceOptions,
+  type AssistantViewport,
 } from "@features/assistant/assistantPresence";
 import type { AssistantDefaultAction } from "@features/assistant/assistantManifest";
+import type { CompanionAvatarRenderMode } from "@features/assistant-3d";
 
 export const hiddenGlobalAssistantRoutePrefixes = [
   "/onboarding",
@@ -54,6 +56,26 @@ export const resolveGlobalAssistantDisplayAction = (
   };
 };
 
+export const resolveGlobalAssistantAvatarRenderMode = ({
+  viewport,
+  presenceMode,
+  inputFocused = false,
+}: {
+  viewport: AssistantViewport;
+  presenceMode: ReturnType<typeof resolveAssistantPresence>["mode"];
+  inputFocused?: boolean;
+}): CompanionAvatarRenderMode => {
+  if (presenceMode === "hidden" || inputFocused) {
+    return "2d";
+  }
+
+  if (presenceMode === "compact") {
+    return viewport === "desktop" ? "auto" : "3d";
+  }
+
+  return "auto";
+};
+
 export const resolveGlobalAssistantLayerModel = (
   pathname: string,
   presenceOptions: Omit<AssistantPresenceOptions, "pathname">,
@@ -78,6 +100,11 @@ export const resolveGlobalAssistantLayerModel = (
     ),
     presence,
     emotion,
+    avatarRenderMode: resolveGlobalAssistantAvatarRenderMode({
+      viewport: presenceOptions.viewport,
+      presenceMode: presence.mode,
+      inputFocused: presenceOptions.inputFocused,
+    }),
     isVisibleOnAuthenticatedRoute:
       presence.visible && presence.reason !== "public-route",
   };

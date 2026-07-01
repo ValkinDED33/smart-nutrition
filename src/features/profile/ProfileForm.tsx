@@ -21,10 +21,9 @@ import { setUser } from "../auth/authSlice";
 import {
   replaceProfileState,
 } from "./profileSlice";
-import { saveProfileStateToCloud } from "./profileCloudSync";
+import { saveProfileAndUserToCloud } from "./profileCloudSync";
 import { buildProfileStateAfterFullSave } from "./profileSaveModel";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
-import { updateStoredProfile } from "../../shared/api/auth";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import {
@@ -604,11 +603,6 @@ const ProfileForm = () => {
               notes: womenHealthNotes,
             }
           : createDefaultWomenHealthState();
-      const updatedUser = await updateStoredProfile({
-        ...user,
-        ...userProfileData,
-        avatar: avatarDraft || getDefaultAvatar(user.email),
-      });
       const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
       const profileTargets = {
         goal: data.goal,
@@ -634,7 +628,11 @@ const ProfileForm = () => {
         womenHealth: nextWomenHealth,
       });
 
-      await saveProfileStateToCloud(dispatch, nextProfile);
+      const updatedUser = await saveProfileAndUserToCloud(dispatch, {
+        ...user,
+        ...userProfileData,
+        avatar: avatarDraft || getDefaultAvatar(user.email),
+      }, nextProfile);
       dispatch(setUser(updatedUser));
       dispatch(replaceProfileState(nextProfile));
       setSuccessMessage(t("profile.saved"));

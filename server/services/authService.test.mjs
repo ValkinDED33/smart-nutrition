@@ -688,6 +688,88 @@ describe("authService", () => {
     ).rejects.toThrow(/Weight/);
   });
 
+  it("validates profile user fields before saving profile state in combined updates", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-invalid",
+      email: "profile-state-invalid@example.com",
+      name: "Profile State Invalid",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+    };
+    const saveProfileState = vi.fn();
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, weight: 500 },
+          profile: { dailyCalories: 2200 },
+        },
+        currentUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toThrow(/Weight/);
+
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("saves profile state and user profile through the combined profile update flow", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state",
+      email: "profile-state@example.com",
+      name: "Profile State",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const nextUser = {
+      ...currentUser,
+      weight: 77,
+    };
+    const profileState = { dailyCalories: 2200 };
+    const meta = {
+      updatedAt: "2026-07-01T08:20:00.000Z",
+      deviceId: "device-1",
+    };
+    const saveProfileState = vi.fn(async () => undefined);
+    const getProfileMeta = vi.fn(async () => meta);
+    authRepository.updateUser.mockResolvedValue(nextUser);
+
+    const result = await service.updateUserProfileAndState({
+      body: {
+        user: nextUser,
+        profile: profileState,
+      },
+      currentUser,
+      saveProfileState,
+      getProfileMeta,
+    });
+
+    expect(saveProfileState).toHaveBeenCalledWith(profileState);
+    expect(authRepository.updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({ id: currentUser.id, weight: 77 })
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: currentUser.id, weight: 77 },
+      meta,
+    });
+  });
+
   it("resets the password, revokes sessions, and bumps token version", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {

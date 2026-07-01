@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Button,
@@ -10,7 +11,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
-import { setAssistantCustomization } from "./profileSlice";
+import { setAssistantCustomization, type ProfileState } from "./profileSlice";
+import { applyProfileActionInCloud } from "./profileCloudSync";
 import { useLanguage } from "../../shared/language";
 import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
 import { CompanionProgressCard } from "../companion";
@@ -47,6 +49,10 @@ const assistantCopy = {
     motivationStyle: "Як підтримувати",
     selectAll: "Вибрати всі",
     clearSelection: "Очистити",
+    saveSettings: "Зберегти зміни",
+    saving: "Зберігаю...",
+    saved: "Збережено в хмарі",
+    saveError: "Не вдалося зберегти. Спробуйте ще раз.",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
@@ -99,6 +105,10 @@ const assistantCopy = {
     motivationStyle: "Jak wspierać",
     selectAll: "Wybierz wszystkie",
     clearSelection: "Wyczyść",
+    saveSettings: "Zapisz zmiany",
+    saving: "Zapisuję...",
+    saved: "Zapisano w chmurze",
+    saveError: "Nie udało się zapisać. Spróbuj ponownie.",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
@@ -151,6 +161,10 @@ const assistantCopy = {
     motivationStyle: "How to support you",
     selectAll: "Select all",
     clearSelection: "Clear",
+    saveSettings: "Save changes",
+    saving: "Saving...",
+    saved: "Saved to cloud",
+    saveError: "Could not save. Try again.",
     roleFriend: "Friend",
     roleAssistant: "Assistant",
     roleCoach: "Coach",
@@ -195,9 +209,22 @@ const companionKinds: AssistantCompanionKind[] = [
 
 const frictionOptions = assistantDietFrictions;
 const motivationStyleOptions = assistantMotivationStyles;
+type AssistantCopy = (typeof assistantCopy)[keyof typeof assistantCopy];
+type AssistantCustomizationPayload = Parameters<
+  typeof setAssistantCustomization
+>[0];
+type AssistantTextDraftFieldsProps = {
+  copy: AssistantCopy;
+  initialName: string;
+  initialPrimaryGoalNote: string;
+  initialSupportNote: string;
+  onboarding: ProfileState["assistant"]["onboarding"];
+  onSave: (payload: AssistantCustomizationPayload) => Promise<ProfileState>;
+};
 
 export const AssistantCustomizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const profile = useSelector((state: RootState) => state.profile);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = assistantCopy[appLanguage];
@@ -216,32 +243,37 @@ export const AssistantCustomizationCard = () => {
       ? assistant.onboarding.motivationStyles
       : [assistant.onboarding.motivationStyle];
 
+  const commitAssistantCustomization = (
+    payload: Parameters<typeof setAssistantCustomization>[0]
+  ) =>
+    applyProfileActionInCloud(
+      dispatch,
+      profile,
+      setAssistantCustomization(payload)
+    );
+
   const updateFrictionSelections = (
     nextFrictions: Exclude<AssistantDietFriction, "unknown">[]
   ) => {
-    dispatch(
-      setAssistantCustomization({
-        onboarding: {
-          ...assistant.onboarding,
-          mainFriction: nextFrictions[0] ?? "unknown",
-          mainFrictions: nextFrictions,
-        },
-      })
-    );
+    void commitAssistantCustomization({
+      onboarding: {
+        ...assistant.onboarding,
+        mainFriction: nextFrictions[0] ?? "unknown",
+        mainFrictions: nextFrictions,
+      },
+    });
   };
 
   const updateMotivationSelections = (
     nextStyles: AssistantMotivationStyle[]
   ) => {
-    dispatch(
-      setAssistantCustomization({
-        onboarding: {
-          ...assistant.onboarding,
-          motivationStyle: nextStyles[0] ?? "gentle",
-          motivationStyles: nextStyles.length > 0 ? nextStyles : ["gentle"],
-        },
-      })
-    );
+    void commitAssistantCustomization({
+      onboarding: {
+        ...assistant.onboarding,
+        motivationStyle: nextStyles[0] ?? "gentle",
+        motivationStyles: nextStyles.length > 0 ? nextStyles : ["gentle"],
+      },
+    });
   };
 
   return (
@@ -257,18 +289,14 @@ export const AssistantCustomizationCard = () => {
       <Stack spacing={2}>
         <BoxHeader title={copy.title} subtitle={copy.subtitle} />
 
-        <TextField
-          label={copy.name}
-          value={assistant.name}
-          onChange={(event) =>
-            dispatch(
-              setAssistantCustomization({
-                name: event.target.value,
-                assistantName: event.target.value,
-              })
-            )
-          }
-          inputProps={{ maxLength: 32 }}
+        <AssistantTextDraftFields
+          key={`${assistant.name}|${primaryGoalNoteValue}|${assistant.onboarding.supportNote}`}
+          copy={copy}
+          initialName={assistant.name}
+          initialPrimaryGoalNote={primaryGoalNoteValue}
+          initialSupportNote={assistant.onboarding.supportNote}
+          onboarding={assistant.onboarding}
+          onSave={commitAssistantCustomization}
         />
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
@@ -278,12 +306,10 @@ export const AssistantCustomizationCard = () => {
             label={copy.companion}
             value={assistant.companionKind}
             onChange={(event) =>
-              dispatch(
-                setAssistantCustomization({
-                  companionKind: event.target.value as AssistantCompanionKind,
-                  assistantAvatar: event.target.value as AssistantCompanionKind,
-                })
-              )
+              void commitAssistantCustomization({
+                companionKind: event.target.value as AssistantCompanionKind,
+                assistantAvatar: event.target.value as AssistantCompanionKind,
+              })
             }
           >
             {companionKinds.map((kind) => (
@@ -299,11 +325,9 @@ export const AssistantCustomizationCard = () => {
             label={copy.role}
             value={assistant.role}
             onChange={(event) =>
-              dispatch(
-                setAssistantCustomization({
-                  role: event.target.value as "friend" | "assistant" | "coach",
-                })
-              )
+              void commitAssistantCustomization({
+                role: event.target.value as "friend" | "assistant" | "coach",
+              })
             }
           >
             <MenuItem value="friend">{copy.roleFriend}</MenuItem>
@@ -317,12 +341,10 @@ export const AssistantCustomizationCard = () => {
             label={copy.tone}
             value={assistant.tone}
             onChange={(event) =>
-              dispatch(
-                setAssistantCustomization({
-                  tone: event.target.value as AssistantTone,
-                  assistantPersonality: event.target.value as AssistantTone,
-                })
-              )
+              void commitAssistantCustomization({
+                tone: event.target.value as AssistantTone,
+                assistantPersonality: event.target.value as AssistantTone,
+              })
             }
           >
             <MenuItem value="gentle">{copy.toneGentle}</MenuItem>
@@ -437,48 +459,12 @@ export const AssistantCustomizationCard = () => {
           </Stack>
         </Stack>
 
-        <TextField
-          label={copy.primaryGoalNote}
-          value={primaryGoalNoteValue}
-          multiline
-          minRows={2}
-          onChange={(event) =>
-            dispatch(
-              setAssistantCustomization({
-                onboarding: {
-                  ...assistant.onboarding,
-                  primaryGoalNote: event.target.value,
-                },
-              })
-            )
-          }
-          inputProps={{ maxLength: 180 }}
-        />
-
-        <TextField
-          label={copy.supportNote}
-          value={assistant.onboarding.supportNote}
-          multiline
-          minRows={2}
-          onChange={(event) =>
-            dispatch(
-              setAssistantCustomization({
-                onboarding: {
-                  ...assistant.onboarding,
-                  supportNote: event.target.value,
-                },
-              })
-            )
-          }
-          inputProps={{ maxLength: 180 }}
-        />
-
         <FormControlLabel
           control={
             <Switch
               checked={assistant.humorEnabled}
               onChange={(_, checked) =>
-                dispatch(setAssistantCustomization({ humorEnabled: checked }))
+                void commitAssistantCustomization({ humorEnabled: checked })
               }
             />
           }
@@ -490,7 +476,7 @@ export const AssistantCustomizationCard = () => {
             <Switch
               checked={assistant.widgetEnabled}
               onChange={(_, checked) =>
-                dispatch(setAssistantCustomization({ widgetEnabled: checked }))
+                void commitAssistantCustomization({ widgetEnabled: checked })
               }
             />
           }
@@ -503,7 +489,7 @@ export const AssistantCustomizationCard = () => {
               checked={assistant.proactiveHintsEnabled}
               disabled={!assistant.widgetEnabled}
               onChange={(_, checked) =>
-                dispatch(setAssistantCustomization({ proactiveHintsEnabled: checked }))
+                void commitAssistantCustomization({ proactiveHintsEnabled: checked })
               }
             />
           }
@@ -522,5 +508,124 @@ const BoxHeader = ({ title, subtitle }: { title: string; subtitle: string }) => 
     <Typography color="text.secondary">{subtitle}</Typography>
   </Stack>
 );
+
+const AssistantTextDraftFields = ({
+  copy,
+  initialName,
+  initialPrimaryGoalNote,
+  initialSupportNote,
+  onboarding,
+  onSave,
+}: AssistantTextDraftFieldsProps) => {
+  const [nameDraft, setNameDraft] = useState(initialName);
+  const [primaryGoalNoteDraft, setPrimaryGoalNoteDraft] = useState(
+    initialPrimaryGoalNote
+  );
+  const [supportNoteDraft, setSupportNoteDraft] = useState(initialSupportNote);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+
+  const resetSaveStatus = () => {
+    if (saveStatus !== "idle") {
+      setSaveStatus("idle");
+    }
+  };
+
+  const normalizedNameDraft = nameDraft.trim();
+  const normalizedPrimaryGoalNoteDraft = primaryGoalNoteDraft.trim();
+  const normalizedSupportNoteDraft = supportNoteDraft.trim();
+  const hasTextDraftChanges =
+    (normalizedNameDraft.length > 0 && normalizedNameDraft !== initialName) ||
+    normalizedPrimaryGoalNoteDraft !== initialPrimaryGoalNote ||
+    normalizedSupportNoteDraft !== initialSupportNote;
+
+  const saveAssistantTextDraft = async () => {
+    const nextName = normalizedNameDraft || initialName;
+
+    setSaveStatus("saving");
+
+    try {
+      await onSave({
+        name: nextName,
+        assistantName: nextName,
+        onboarding: {
+          ...onboarding,
+          primaryGoalNote: normalizedPrimaryGoalNoteDraft,
+          supportNote: normalizedSupportNoteDraft,
+        },
+      });
+
+      setNameDraft(nextName);
+      setPrimaryGoalNoteDraft(normalizedPrimaryGoalNoteDraft);
+      setSupportNoteDraft(normalizedSupportNoteDraft);
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+    }
+  };
+
+  return (
+    <Stack spacing={2}>
+      <TextField
+        label={copy.name}
+        value={nameDraft}
+        onChange={(event) => {
+          resetSaveStatus();
+          setNameDraft(event.target.value);
+        }}
+        inputProps={{ maxLength: 32 }}
+      />
+
+      <TextField
+        label={copy.primaryGoalNote}
+        value={primaryGoalNoteDraft}
+        multiline
+        minRows={2}
+        onChange={(event) => {
+          resetSaveStatus();
+          setPrimaryGoalNoteDraft(event.target.value);
+        }}
+        inputProps={{ maxLength: 180 }}
+      />
+
+      <TextField
+        label={copy.supportNote}
+        value={supportNoteDraft}
+        multiline
+        minRows={2}
+        onChange={(event) => {
+          resetSaveStatus();
+          setSupportNoteDraft(event.target.value);
+        }}
+        inputProps={{ maxLength: 180 }}
+      />
+
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        alignItems={{ xs: "stretch", sm: "center" }}
+      >
+        <Button
+          variant="contained"
+          disabled={!hasTextDraftChanges || saveStatus === "saving"}
+          onClick={() => void saveAssistantTextDraft()}
+          sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+        >
+          {saveStatus === "saving" ? copy.saving : copy.saveSettings}
+        </Button>
+        {(saveStatus === "saved" || saveStatus === "error") && (
+          <Typography
+            variant="body2"
+            color={saveStatus === "error" ? "error" : "success.main"}
+            sx={{ fontWeight: 700 }}
+          >
+            {saveStatus === "error" ? copy.saveError : copy.saved}
+          </Typography>
+        )}
+      </Stack>
+    </Stack>
+  );
+};
 
 export default AssistantCustomizationCard;

@@ -10,6 +10,7 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  Alert,
   Button,
   Card,
   CardContent,
@@ -18,8 +19,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch } from "../../app/store";
-import { applyMealTemplate, deleteMealTemplate, saveMealTemplate } from "./mealSlice";
+import type { AppDispatch, RootState } from "../../app/store";
 import { selectMealTemplates, selectTodayMealItems } from "./selectors";
 import type { MealTemplate, MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
@@ -27,6 +27,12 @@ import { getProductDisplayName } from "@domain/products/productDisplay";
 import { toast } from "sonner";
 import { reorderItems } from "@integration/runtime/interaction";
 import type { AppLanguage } from "@shared/types/i18n";
+import {
+  applyMealTemplateInCloud,
+  deleteMealTemplateFromCloud,
+  saveMealTemplateToCloud,
+} from "./mealCloudSync";
+import { createTemplateEntries } from "./mealSaveModel";
 
 interface Props {
   mealType: MealType;
@@ -133,10 +139,13 @@ const normalizeOrderIds = (ids: string[], templates: MealTemplate[]) => [
 export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectTodayMealItems);
+  const meal = useSelector((state: RootState) => state.meal);
   const templates = useSelector(selectMealTemplates);
   const { appLanguage, t } = useLanguage();
   const [templateName, setTemplateName] = useState("");
   const [orderedTemplateIds, setOrderedTemplateIds] = useState<string[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingAction, setSavingAction] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const currentMealEntries = useMemo(
@@ -161,32 +170,76 @@ export const TemplateVault = ({ mealType }: Props) => {
     return [...orderedTemplates, ...missingTemplates];
   }, [currentMealTemplates, orderedTemplateIds]);
 
-  const handleSaveTemplate = () => {
+  const runTemplateAction = async (actionId: string, action: () => Promise<unknown>) => {
+    setSaveError(null);
+    setSavingAction(actionId);
+
+    try {
+      await action();
+      return true;
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+      return false;
+    } finally {
+      setSavingAction(null);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
     const normalizedName = templateName.trim();
     if (!normalizedName || currentMealEntries.length === 0) return;
 
-    dispatch(
-      saveMealTemplate({
-        name: normalizedName,
-        mealType,
-        items: currentMealEntries.map((item) => ({
+    const template: MealTemplate = {
+      id:
+        globalThis.crypto?.randomUUID?.() ??
+        `template-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: normalizedName,
+      mealType,
+      items: currentMealEntries.map((item) => ({
           product: item.product,
           quantity: item.quantity,
         })),
-      })
+      createdAt: new Date().toISOString(),
+    };
+
+    const saved = await runTemplateAction("save", () =>
+      saveMealTemplateToCloud(dispatch, meal, template)
     );
-    setTemplateName("");
-    toast.success(t("templates.save"));
+
+    if (saved) {
+      setTemplateName("");
+      toast.success(t("templates.save"));
+    }
   };
 
-  const handleApplyTemplate = (templateId: string) => {
-    dispatch(applyMealTemplate(templateId));
-    toast.success(t("templates.apply"));
+  const handleApplyTemplate = async (templateId: string) => {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) return;
+
+    const saved = await runTemplateAction(`apply-${templateId}`, () =>
+      applyMealTemplateInCloud(
+        dispatch,
+        meal,
+        templateId,
+        createTemplateEntries(template)
+      )
+    );
+
+    if (saved) {
+      toast.success(t("templates.apply"));
+    }
   };
 
-  const handleDeleteTemplate = (templateId: string) => {
-    dispatch(deleteMealTemplate(templateId));
-    toast.success(t("templates.remove"));
+  const handleDeleteTemplate = async (templateId: string) => {
+    const saved = await runTemplateAction(`delete-${templateId}`, () =>
+      deleteMealTemplateFromCloud(dispatch, meal, templateId)
+    );
+
+    if (saved) {
+      toast.success(t("templates.remove"));
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -218,6 +271,12 @@ export const TemplateVault = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("templates.subtitle")}</Typography>
 
+        {saveError ? (
+          <Alert severity="error" onClose={() => setSaveError(null)}>
+            {saveError}
+          </Alert>
+        ) : null}
+
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <TextField
             fullWidth
@@ -227,8 +286,12 @@ export const TemplateVault = ({ mealType }: Props) => {
           />
           <Button
             variant="contained"
-            onClick={handleSaveTemplate}
-            disabled={!templateName.trim() || currentMealEntries.length === 0}
+            onClick={() => void handleSaveTemplate()}
+            disabled={
+              !templateName.trim() ||
+              currentMealEntries.length === 0 ||
+              savingAction === "save"
+            }
           >
             {t("templates.save")}
           </Button>

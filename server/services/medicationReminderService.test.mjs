@@ -276,6 +276,99 @@ describe("medicationReminderService", () => {
     expect(repository.updateUserMedicationReminders.mock.calls[0][1]).toHaveLength(1);
   });
 
+  it("advances daily reminders after a manual completed action", async () => {
+    const initialReminder = parseMedicationReminderText("Магний 1 капсула в 21:00", {
+      now: new Date("2026-06-20T10:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.recordDoseAction(
+      user,
+      initialReminder.id,
+      "taken",
+      new Date("2026-06-20T19:05:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-21T19:00:00.000Z",
+    });
+    expect(repository.updateUserMedicationReminders.mock.calls[0][1][0]).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-21T19:00:00.000Z",
+    });
+  });
+
+  it("keeps the already advanced schedule when a sent Telegram reminder is marked completed", async () => {
+    const sentReminder = {
+      ...parseMedicationReminderText("Магний 1 капсула в 21:00", {
+        now: new Date("2026-06-19T10:00:00.000Z"),
+      }),
+      lastSentAt: "2026-06-20T19:00:00.000Z",
+      nextRunAt: "2026-06-21T19:00:00.000Z",
+    };
+    const user = createUser({ medicationReminders: [sentReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.recordDoseAction(
+      user,
+      sentReminder.id,
+      "taken",
+      new Date("2026-06-20T19:05:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      active: true,
+      nextRunAt: "2026-06-21T19:00:00.000Z",
+    });
+  });
+
+  it("deactivates one-time task reminders after they are marked done", async () => {
+    const initialReminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...user,
+        id: userId,
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const result = await service.recordDoseAction(
+      user,
+      initialReminder.id,
+      "done",
+      new Date("2026-06-20T08:05:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.reminder).toMatchObject({
+      active: false,
+      nextRunAt: null,
+    });
+    expect(repository.updateUserMedicationReminders.mock.calls[0][1][0]).toMatchObject({
+      active: false,
+      nextRunAt: null,
+    });
+  });
+
   it("updates the latest reminder schedule from a short correction message", async () => {
     const firstReminder = parseMedicationReminderText("Магний 1 капсула в 22:00", {
       now: new Date("2026-06-20T10:00:00.000Z"),

@@ -62,6 +62,10 @@ interface RemoteMutationResponse {
   meta: AppSnapshotMeta | null;
 }
 
+interface RemoteProfileAndStateResponse extends RemoteMutationResponse {
+  user: User;
+}
+
 interface RemoteBackupListResponse {
   items: AccountBackupSummary[];
 }
@@ -784,6 +788,51 @@ const preserveCachedCompanionState = (snapshot: AppSnapshot | null) => {
       };
 };
 
+export const pushRemoteAppSnapshot = async (
+  snapshot: AppSnapshot
+): Promise<RemoteSyncResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  const result = await getRemoteMutationResult("/state", {
+    method: "PUT",
+    body: JSON.stringify(snapshot),
+  });
+
+  if (result.ok) {
+    writeCachedRemoteSnapshot({
+      ...snapshot,
+      updatedAt: result.meta?.updatedAt ?? snapshot.updatedAt ?? null,
+      profileUpdatedAt:
+        result.meta?.profileUpdatedAt ??
+        result.meta?.updatedAt ??
+        snapshot.profileUpdatedAt ??
+        null,
+      mealUpdatedAt:
+        result.meta?.mealUpdatedAt ??
+        result.meta?.updatedAt ??
+        snapshot.mealUpdatedAt ??
+        null,
+      waterUpdatedAt:
+        result.meta?.waterUpdatedAt ??
+        result.meta?.updatedAt ??
+        snapshot.waterUpdatedAt ??
+        null,
+      backupEnabled: result.meta?.backupEnabled ?? snapshot.backupEnabled,
+      lastWriterDeviceId:
+        result.meta?.lastWriterDeviceId ?? snapshot.lastWriterDeviceId ?? null,
+    });
+  }
+
+  return result;
+};
+
 const getRemoteMutationResult = async (
   path: string,
   init: RequestInit
@@ -823,6 +872,43 @@ export const pushRemoteProfileState = async (
     method: "PUT",
     body: JSON.stringify(profile),
   });
+};
+
+export const updateRemoteProfileWithState = async (
+  user: User,
+  profile: unknown
+): Promise<RemoteSyncResult & { user?: User }> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  try {
+    const { data } = await requestRemote<RemoteProfileAndStateResponse>(
+      "/auth/profile-state",
+      {
+        method: "PATCH",
+        body: JSON.stringify({ user, profile }),
+      },
+      { requireAuth: true, withSyncContext: true }
+    );
+
+    if (data.meta) {
+      writeCachedRemoteMeta(data.meta);
+    }
+
+    return {
+      ok: true,
+      user: data.user,
+      meta: data.meta,
+    };
+  } catch (error) {
+    return toRemoteSyncResult(error);
+  }
 };
 
 export const pushRemoteMealState = async (

@@ -465,6 +465,26 @@ describe("telegramService", () => {
           command: "reminders",
           description: "Reminders / Tasks",
         }),
+        expect.objectContaining({
+          command: "meds",
+          description: "Активні нагадування про ліки",
+        }),
+        expect.objectContaining({
+          command: "add",
+          description: "Додати нагадування автоматично",
+        }),
+        expect.objectContaining({
+          command: "addwater",
+          description: "Додати нагадування про воду",
+        }),
+        expect.objectContaining({
+          command: "addhabit",
+          description: "Додати нагадування про звичку",
+        }),
+        expect.objectContaining({
+          command: "addsupplement",
+          description: "Додати нагадування про добавку",
+        }),
       ])
     );
     expect(instances[0].launchOptions).toEqual({ dropPendingUpdates: false });
@@ -638,6 +658,99 @@ describe("telegramService", () => {
           ]),
           resize_keyboard: true,
         }),
+      })
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("handles reminder inline buttons from callback query chat context", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.handlers = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        this.handlers[eventName] = handler;
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const reminder = {
+      id: "task-1",
+      type: "task",
+      title: "Позвонить врачу",
+      times: ["10:00"],
+      timezone: "Europe/Warsaw",
+      active: true,
+      nextRunAt: "2026-06-20T08:00:00.000Z",
+      createdAt: "2026-06-20T07:00:00.000Z",
+      updatedAt: "2026-06-20T07:00:00.000Z",
+      events: [],
+    };
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+      medicationReminders: [reminder],
+    };
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      pauseReminder: vi.fn(async () => ({
+        ok: true,
+        reminder: { ...reminder, active: false, nextRunAt: null },
+        user: connectedUser,
+      })),
+      sendDueReminders: vi.fn(async () => []),
+    };
+    const repository = createAuthRepository({
+      findUserByTelegramChatId: vi.fn(async (chatId) =>
+        chatId === "42" ? connectedUser : null
+      ),
+    });
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: repository,
+      reminderService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const answerCbQuery = vi.fn();
+    await instances[0].handlers.callback_query({
+      callbackQuery: {
+        data: "rem:pause:task-1",
+        message: {
+          chat: { id: 42 },
+        },
+      },
+      answerCbQuery,
+      reply: vi.fn(),
+    });
+
+    expect(repository.findUserByTelegramChatId).toHaveBeenCalledWith("42");
+    expect(reminderService.pauseReminder).toHaveBeenCalledWith(
+      connectedUser,
+      "task-1",
+      expect.any(Date)
+    );
+    expect(answerCbQuery).toHaveBeenCalledWith("Нагадування на паузі.");
+    expect(repository.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "telegram.task_reminder.pause",
+        targetId: "user-1",
       })
     );
 

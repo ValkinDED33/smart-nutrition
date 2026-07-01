@@ -18,15 +18,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  applyMealTemplate,
-  deleteMealTemplate,
-  saveMealTemplate,
-} from "./mealSlice";
 import { publishCommunityPost } from "../community/communitySlice";
 import { recipes } from "@domain/meal/recipes";
 import type {
   MealEntry,
+  MealTemplate,
   MealTemplateItem,
   MealType,
   Recipe,
@@ -43,9 +39,15 @@ import {
 } from "@domain/user/preferences";
 import { searchProducts } from "../../shared/api/products";
 import { calculateMealTotalNutrients } from "./mealSlice";
-import { addMealEntriesToCloud } from "./mealCloudSync";
+import {
+  addMealEntriesToCloud,
+  applyMealTemplateInCloud,
+  deleteMealTemplateFromCloud,
+  saveMealTemplateToCloud,
+} from "./mealCloudSync";
 import { selectMealTemplates } from "./selectors";
 import { selectInputValue } from "../../shared/lib/inputSelection";
+import { createTemplateEntries } from "./mealSaveModel";
 
 interface Props {
   mealType: MealType;
@@ -235,21 +237,65 @@ export const RecipeSection = ({ mealType }: Props) => {
     setSearchResults([]);
   };
 
-  const handleSaveBuilderRecipe = () => {
+  const handleSaveBuilderRecipe = async () => {
     const normalizedName = recipeName.trim();
 
     if (!normalizedName || validBuilderItems.length === 0) {
       return;
     }
 
-    dispatch(
-      saveMealTemplate({
-        name: `${CUSTOM_RECIPE_PREFIX}${normalizedName}`,
-        mealType,
-        items: validBuilderItems,
-      })
-    );
-    setRecipeName("");
+    const template: MealTemplate = {
+      id:
+        globalThis.crypto?.randomUUID?.() ??
+        `template-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      name: `${CUSTOM_RECIPE_PREFIX}${normalizedName}`,
+      mealType,
+      items: validBuilderItems,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMealSaveError(null);
+
+    try {
+      await saveMealTemplateToCloud(dispatch, meal, template);
+      setRecipeName("");
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
+  };
+
+  const handleReuseTemplateRecipe = async (recipeId: string) => {
+    const template = templates.find((item) => item.id === recipeId);
+    if (!template) return;
+
+    setMealSaveError(null);
+
+    try {
+      await applyMealTemplateInCloud(
+        dispatch,
+        meal,
+        recipeId,
+        createTemplateEntries(template)
+      );
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
+  };
+
+  const handleDeleteTemplateRecipe = async (recipeId: string) => {
+    setMealSaveError(null);
+
+    try {
+      await deleteMealTemplateFromCloud(dispatch, meal, recipeId);
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
   };
 
   const handleAddBuilderNow = async () => {
@@ -431,7 +477,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={handleSaveBuilderRecipe}
+                  onClick={() => void handleSaveBuilderRecipe()}
                   disabled={!recipeName.trim() || validBuilderItems.length === 0}
                 >
                   Save as reusable recipe
@@ -485,13 +531,16 @@ export const RecipeSection = ({ mealType }: Props) => {
               </Button>
               {customRecipes.some((item) => item.id === recipe.id) && (
                 <Stack direction="row" spacing={1}>
-                  <Button onClick={() => dispatch(applyMealTemplate(recipe.id))}>
+                  <Button onClick={() => void handleReuseTemplateRecipe(recipe.id)}>
                     Reuse
                   </Button>
                   <Button onClick={() => handlePublishRecipe(recipe)} disabled={!user}>
                     Publish recipe
                   </Button>
-                  <Button color="error" onClick={() => dispatch(deleteMealTemplate(recipe.id))}>
+                  <Button
+                    color="error"
+                    onClick={() => void handleDeleteTemplateRecipe(recipe.id)}
+                  >
                     Remove
                   </Button>
                 </Stack>

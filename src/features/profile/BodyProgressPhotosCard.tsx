@@ -16,6 +16,7 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
+import { applyProfileActionInCloud } from "./profileCloudSync";
 
 const MAX_PHOTO_BYTES = 8_000_000;
 const MAX_COMPRESSED_PHOTO_MB = 1.2;
@@ -77,6 +78,7 @@ const progressPhotoCopy = {
     replace: "Замінити фото",
     note: "Нотатка",
     save: "Зберегти фото",
+    saving: "Зберігаю...",
     crop: "Кадрувати",
     applyCrop: "Застосувати кадр",
     zoom: "Масштаб",
@@ -87,6 +89,7 @@ const progressPhotoCopy = {
     empty: "Фото прогресу ще не додані.",
     tooLarge: "Фото завелике. Виберіть файл до 8 MB.",
     invalid: "Не вдалося прочитати фото.",
+    saveError: "Не вдалося зберегти фото в хмарі. Спробуйте ще раз.",
     remove: "Видалити",
   },
   pl: {
@@ -96,6 +99,7 @@ const progressPhotoCopy = {
     replace: "Zmień zdjęcie",
     note: "Notatka",
     save: "Zapisz zdjęcie",
+    saving: "Zapisuję...",
     crop: "Kadruj",
     applyCrop: "Zastosuj kadr",
     zoom: "Zoom",
@@ -106,6 +110,7 @@ const progressPhotoCopy = {
     empty: "Nie dodano jeszcze zdjęć progresu.",
     tooLarge: "Zdjęcie jest zbyt duże. Wybierz plik do 8 MB.",
     invalid: "Nie udało się odczytać zdjęcia.",
+    saveError: "Nie udało się zapisać zdjęcia w chmurze. Spróbuj ponownie.",
     remove: "Usuń",
   },
   en: {
@@ -115,6 +120,7 @@ const progressPhotoCopy = {
     replace: "Replace photo",
     note: "Note",
     save: "Save photo",
+    saving: "Saving...",
     crop: "Crop",
     applyCrop: "Apply crop",
     zoom: "Zoom",
@@ -125,13 +131,15 @@ const progressPhotoCopy = {
     empty: "No progress photos yet.",
     tooLarge: "Photo is too large. Choose a file up to 8 MB.",
     invalid: "Could not read the photo.",
+    saveError: "Could not save the photo to cloud. Try again.",
     remove: "Remove",
   },
 } as const;
 
 export const BodyProgressPhotosCard = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const photos = useSelector((state: RootState) => state.profile.progressPhotos);
+  const profile = useSelector((state: RootState) => state.profile);
+  const photos = profile.progressPhotos;
   const { appLanguage } = useLanguage();
   const copy = progressPhotoCopy[appLanguage];
   const [rawPreview, setRawPreview] = useState<string | null>(null);
@@ -141,6 +149,8 @@ export const BodyProgressPhotosCard = () => {
   const [zoom, setZoom] = useState(1);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
 
   const sortedPhotos = useMemo(
     () =>
@@ -203,16 +213,51 @@ export const BodyProgressPhotosCard = () => {
   };
 
   const handleSave = async () => {
-    if (!preview && !rawPreview) {
+    if (isSaving || (!preview && !rawPreview)) {
       return;
     }
 
-    const imageDataUrl = preview ?? (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
+    setIsSaving(true);
+    setError(null);
 
-    dispatch(addProgressPhoto({ imageDataUrl, note }));
-    setRawPreview(null);
-    setPreview(null);
-    setNote("");
+    try {
+      const imageDataUrl =
+        preview ?? (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
+
+      await applyProfileActionInCloud(
+        dispatch,
+        profile,
+        addProgressPhoto({ imageDataUrl, note })
+      );
+      setRawPreview(null);
+      setPreview(null);
+      setNote("");
+    } catch {
+      setError(copy.saveError);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemove = async (photoId: string) => {
+    if (removingPhotoId !== null) {
+      return;
+    }
+
+    setRemovingPhotoId(photoId);
+    setError(null);
+
+    try {
+      await applyProfileActionInCloud(
+        dispatch,
+        profile,
+        removeProgressPhoto(photoId)
+      );
+    } catch {
+      setError(copy.saveError);
+    } finally {
+      setRemovingPhotoId(null);
+    }
   };
 
   return (
@@ -293,7 +338,7 @@ export const BodyProgressPhotosCard = () => {
             )}
             <Button
               variant="contained"
-              disabled={!preview && !rawPreview}
+              disabled={isSaving || (!preview && !rawPreview)}
               onClick={() => {
                 void handleSave();
               }}
@@ -305,7 +350,7 @@ export const BodyProgressPhotosCard = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {copy.save}
+              {isSaving ? copy.saving : copy.save}
             </Button>
           </Stack>
 
@@ -419,10 +464,13 @@ export const BodyProgressPhotosCard = () => {
                       <Button
                         size="small"
                         color="error"
-                        onClick={() => dispatch(removeProgressPhoto(photo.id))}
+                        disabled={removingPhotoId !== null}
+                        onClick={() => {
+                          void handleRemove(photo.id);
+                        }}
                         sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
                       >
-                        {copy.remove}
+                        {removingPhotoId === photo.id ? copy.saving : copy.remove}
                       </Button>
                     </Stack>
                   </Paper>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import hotToast from "react-hot-toast";
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -13,7 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { addProduct, removeSavedProduct, saveProduct } from "./mealSlice";
 import { selectSavedProducts } from "./selectors";
 import type { AppDispatch, RootState } from "../../app/store";
 import type { Product } from "@domain/products/types";
@@ -31,6 +31,12 @@ import {
   getProductPortionPresets,
 } from "@domain/products/productPortions";
 import { selectInputValue } from "../../shared/lib/inputSelection";
+import {
+  addMealEntriesToCloud,
+  removeSavedMealProductFromCloud,
+  saveMealProductToCloud,
+} from "./mealCloudSync";
+import { createMealEntryDraft } from "./mealSaveModel";
 
 interface Props {
   product: Product;
@@ -53,8 +59,11 @@ export const ProductCard = ({
 }: Props) => {
   const [qty, setQty] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
   const { t, appLanguage } = useLanguage();
   const displayName = getProductDisplayName(product, appLanguage);
@@ -64,18 +73,31 @@ export const ProductCard = ({
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
 
-  const handleAddQuantity = (quantity: number, clearInput = true) => {
+  const handleAddQuantity = async (quantity: number, clearInput = true) => {
     if (Number.isNaN(quantity) || quantity <= 0) {
       setQuantityError(t("meal.invalidQuantity"));
       return;
     }
 
-    dispatch(addProduct({ product, quantity, mealType, origin }));
-    hotToast.success(`${displayName}: +${formatProductPortion(quantity, product.unit)}`);
-    setQuantityError(null);
+    setSaving(true);
+    setSaveError(null);
 
-    if (clearInput) {
-      setQty("");
+    try {
+      await addMealEntriesToCloud(dispatch, meal, [
+        createMealEntryDraft({ product, quantity, mealType, origin }),
+      ]);
+      hotToast.success(`${displayName}: +${formatProductPortion(quantity, product.unit)}`);
+      setQuantityError(null);
+
+      if (clearInput) {
+        setQty("");
+      }
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -85,18 +107,29 @@ export const ProductCard = ({
       return;
     }
 
-    handleAddQuantity(Number(qty));
+    void handleAddQuantity(Number(qty));
   };
 
-  const handleToggleSave = () => {
-    if (isSaved) {
-      dispatch(removeSavedProduct(savedKey));
-      hotToast.success(t("productCard.remove"));
-      return;
-    }
+  const handleToggleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
 
-    dispatch(saveProduct(product));
-    hotToast.success(t("productCard.save"));
+    try {
+      if (isSaved) {
+        await removeSavedMealProductFromCloud(dispatch, meal, savedKey);
+        hotToast.success(t("productCard.remove"));
+        return;
+      }
+
+      await saveMealProductToCloud(dispatch, meal, product);
+      hotToast.success(t("productCard.save"));
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const nutrients = product.nutrients;
@@ -138,6 +171,12 @@ export const ProductCard = ({
       />
       <CardContent sx={{ p: { xs: compact ? 1.1 : 1.35, md: compact ? 1.25 : 1.6 } }}>
         <Stack spacing={compact ? 0.8 : 1.05}>
+          {saveError ? (
+            <Alert severity="error" onClose={() => setSaveError(null)}>
+              {saveError}
+            </Alert>
+          ) : null}
+
           <Stack direction="row" spacing={0.5} alignItems="flex-start" justifyContent="space-between">
             <Typography
               component="h3"
@@ -251,7 +290,8 @@ export const ProductCard = ({
                   key={`quick-add-${preset}`}
                   size="small"
                   variant="outlined"
-                  onClick={() => handleAddQuantity(preset, false)}
+                  onClick={() => void handleAddQuantity(preset, false)}
+                  disabled={saving}
                   sx={{ minWidth: 72, px: 1 }}
                 >
                   +{formatProductPortion(preset, product.unit)}
@@ -272,6 +312,7 @@ export const ProductCard = ({
               variant="contained"
               fullWidth
               onClick={handleAdd}
+              disabled={saving}
               sx={{
                 alignSelf: "stretch",
                 minHeight: 40,
@@ -286,7 +327,8 @@ export const ProductCard = ({
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={handleToggleSave}
+                onClick={() => void handleToggleSave()}
+                disabled={saving}
                 sx={{
                   alignSelf: "stretch",
                   minHeight: 40,

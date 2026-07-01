@@ -19,6 +19,7 @@ import {
   requestSafeNotificationPermission,
 } from "@shared/lib/notifications";
 import { updateNotificationPreferences } from "./profileSlice";
+import { applyProfileActionInCloud } from "./profileCloudSync";
 
 const notificationCopy = {
   uk: {
@@ -103,6 +104,7 @@ export const NotificationSettingsCard = () => {
     calorieAlertsEnabled,
     reminderTimes,
   } = useSelector((state: RootState) => state.profile);
+  const profile = useSelector((state: RootState) => state.profile);
   const { appLanguage } = useLanguage();
   const [permission, setPermission] = useState<PermissionState>(() =>
     getSafeNotificationPermission()
@@ -137,19 +139,31 @@ export const NotificationSettingsCard = () => {
 
   const handleNotificationsToggle = async (nextEnabled: boolean) => {
     if (!nextEnabled) {
-      dispatch(updateNotificationPreferences({ notificationsEnabled: false }));
+      await applyProfileActionInCloud(
+        dispatch,
+        profile,
+        updateNotificationPreferences({ notificationsEnabled: false })
+      );
       return;
     }
 
     if (permission === "granted") {
-      dispatch(updateNotificationPreferences({ notificationsEnabled: true }));
+      await applyProfileActionInCloud(
+        dispatch,
+        profile,
+        updateNotificationPreferences({ notificationsEnabled: true })
+      );
       return;
     }
 
     const granted = await requestPermission();
 
     if (granted) {
-      dispatch(updateNotificationPreferences({ notificationsEnabled: true }));
+      await applyProfileActionInCloud(
+        dispatch,
+        profile,
+        updateNotificationPreferences({ notificationsEnabled: true })
+      );
     }
   };
 
@@ -257,7 +271,9 @@ export const NotificationSettingsCard = () => {
                 checked={mealRemindersEnabled}
                 disabled={!notificationsEnabled}
                 onChange={(_, checked) => {
-                  dispatch(
+                  void applyProfileActionInCloud(
+                    dispatch,
+                    profile,
                     updateNotificationPreferences({ mealRemindersEnabled: checked })
                   );
                 }}
@@ -271,7 +287,9 @@ export const NotificationSettingsCard = () => {
                 checked={calorieAlertsEnabled}
                 disabled={!notificationsEnabled}
                 onChange={(_, checked) => {
-                  dispatch(
+                  void applyProfileActionInCloud(
+                    dispatch,
+                    profile,
                     updateNotificationPreferences({ calorieAlertsEnabled: checked })
                   );
                 }}
@@ -291,7 +309,9 @@ export const NotificationSettingsCard = () => {
               value={reminderTimes[item.key]}
               disabled={!notificationsEnabled || !mealRemindersEnabled}
               onChange={(event) => {
-                dispatch(
+                void applyProfileActionInCloud(
+                  dispatch,
+                  profile,
                   updateNotificationPreferences({
                     reminderTimes: {
                       [item.key]: event.target.value,

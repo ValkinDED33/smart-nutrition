@@ -50,10 +50,8 @@ import {
 } from "@shared/lib/notifications";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { EmptyState } from "@shared/ui";
-import {
-  awardCompanionReward,
-  createCompanionRewardAnalyticsPayload,
-} from "@features/companion";
+import { createCompanionRewardAnalyticsPayload } from "@features/companion";
+import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
 import { saveWaterStateToCloud } from "./waterCloudSync";
 import {
   buildWaterStateAfterDaySync,
@@ -212,6 +210,7 @@ const waterCopy = {
 export const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
+  const companion = useSelector((state: RootState) => state.companion);
   const latestWeightHistoryWeight = useSelector((state: RootState) =>
     state.profile.weightHistory.at(-1)?.weight
   );
@@ -448,7 +447,7 @@ export const WaterTracker = () => {
     playGentleClickSound();
   };
 
-  const trackWaterAdded = (
+  const trackWaterAdded = async (
     amountMl: number,
     source: string,
     consumedMlAfter: number
@@ -457,13 +456,30 @@ export const WaterTracker = () => {
       return;
     }
 
-    dispatch(awardCompanionReward("water_logged"));
+    let companionRewardPayload = {};
+
+    try {
+      await applyCompanionRewardInCloud(
+        dispatch,
+        { companion },
+        "water_logged"
+      );
+      companionRewardPayload =
+        createCompanionRewardAnalyticsPayload("water_logged");
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? `Water saved, but companion progress could not sync: ${error.message}`
+          : "Water saved, but companion progress could not sync."
+      );
+    }
+
     trackRuntimeEvent("water_added", {
       amountMl,
       source,
       consumedMlAfter,
       dailyGoalMl: water.dailyWaterGoal,
-      ...createCompanionRewardAnalyticsPayload("water_logged"),
+      ...companionRewardPayload,
     });
   };
 
@@ -477,7 +493,7 @@ export const WaterTracker = () => {
       }
 
       playWaterFeedback(nextWater.consumedMl, previousConsumedMl);
-      trackWaterAdded(
+      void trackWaterAdded(
         nextWater.consumedMl - previousConsumedMl,
         source,
         nextWater.consumedMl
@@ -495,7 +511,7 @@ export const WaterTracker = () => {
       }
 
       playWaterFeedback(nextWater.consumedMl, previousConsumedMl);
-      trackWaterAdded(
+      void trackWaterAdded(
         nextWater.consumedMl - previousConsumedMl,
         source,
         nextWater.consumedMl

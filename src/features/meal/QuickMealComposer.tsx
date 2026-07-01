@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { addProduct } from "./mealSlice";
 import {
   selectFavoriteProductIds,
   selectPersonalBarcodeProducts,
@@ -35,6 +34,8 @@ import {
 import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductSuggestions } from "./productSuggestionModel";
+import { addMealEntriesToCloud } from "./mealCloudSync";
+import { createMealEntryDraft } from "./mealSaveModel";
 
 interface Props {
   mealType: MealType;
@@ -109,6 +110,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
+  const meal = useSelector((state: RootState) => state.meal);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -122,6 +124,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [contributionOpen, setContributionOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSavingMeal, setIsSavingMeal] = useState(false);
   const activeRow = rows.find((row) => row.id === activeRowId) ?? rows[0] ?? null;
   const activeSearchText = activeRow?.productQuery.trim() ?? "";
   const shouldLookupProducts = debouncedSearchText.trim().length >= 2;
@@ -193,25 +197,46 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     setActiveRowId(nextRow.id);
   };
 
-  const handleSaveMeal = () => {
-    rows.forEach((row) => {
-      const product = row.product;
-      const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
-      if (!product || quantity <= 0) return;
+  const handleSaveMeal = async () => {
+    const entries = rows
+      .map((row) => {
+        const product = row.product;
+        const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
 
-      dispatch(
-        addProduct({
+        if (!product || quantity <= 0) {
+          return null;
+        }
+
+        return createMealEntryDraft({
           product,
           quantity,
           mealType,
           origin: "manual",
-        })
+        });
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+    if (entries.length === 0) {
+      return;
+    }
+
+    setSaveError(null);
+    setIsSavingMeal(true);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, entries);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
       );
-    });
+      setIsSavingMeal(false);
+      return;
+    }
 
     const nextRow = createRow();
     setRows([nextRow]);
     setActiveRowId(nextRow.id);
+    setIsSavingMeal(false);
   };
 
   const hasValidMealRows = rows.some(
@@ -295,6 +320,12 @@ export const QuickMealComposer = ({ mealType }: Props) => {
             }
           >
             {copy.unavailable}
+          </Alert>
+        ) : null}
+
+        {saveError ? (
+          <Alert severity="error" onClose={() => setSaveError(null)}>
+            {saveError}
           </Alert>
         ) : null}
 
@@ -578,8 +609,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           </Button>
           <Button
             variant="contained"
-            onClick={handleSaveMeal}
-            disabled={!hasValidMealRows}
+            onClick={() => void handleSaveMeal()}
+            disabled={!hasValidMealRows || isSavingMeal}
           >
             {t("composer.saveMeal")}
           </Button>

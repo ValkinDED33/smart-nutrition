@@ -15,6 +15,7 @@ const PUBLIC_AUTH_ROUTES = [
 
 const PROTECTED_AUTH_ROUTES = [
   ["PATCH", "/api/auth/profile", "updateProfile"],
+  ["PATCH", "/api/auth/profile-state", "updateProfileAndState"],
   ["POST", "/api/auth/logout-all", "logoutAll"],
 ];
 
@@ -44,7 +45,9 @@ export const createAuthRoutes = ({ authController, authRouteScope = "all" } = {}
 
 export const createAuthController = ({
   authService,
+  stateService = null,
   bodyLimitBytes,
+  getSyncContext = () => undefined,
   sendAuthSession,
   clearAuthCookies,
 }) => ({
@@ -115,6 +118,24 @@ export const createAuthController = ({
   updateProfile: async ({ request, response, auth }) => {
     const body = await readJsonBody(request, bodyLimitBytes);
     sendJson(response, 200, await authService.updateUserProfile(body, auth.user));
+  },
+
+  updateProfileAndState: async ({ request, response, auth }) => {
+    if (!stateService?.saveProfileState || !stateService?.getSnapshotMeta) {
+      sendError(response, 503, "STATE_SYNC_UNAVAILABLE", "Cloud profile sync is unavailable.");
+      return;
+    }
+
+    const body = await readJsonBody(request, bodyLimitBytes);
+    const result = await authService.updateUserProfileAndState({
+      body,
+      currentUser: auth.user,
+      saveProfileState: (profileState) =>
+        stateService.saveProfileState(auth.user, profileState, getSyncContext(request)),
+      getProfileMeta: () => stateService.getSnapshotMeta(auth.user),
+    });
+
+    sendJson(response, 200, result);
   },
 
   logoutAll: async ({ response, auth }) => {

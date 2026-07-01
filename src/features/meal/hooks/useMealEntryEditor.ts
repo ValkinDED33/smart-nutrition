@@ -8,9 +8,9 @@ import {
 } from "@domain/products/productPortions";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
-import { removeProduct, updateMealEntry } from "../mealSlice";
 import { selectRecentProducts, selectSavedProducts } from "../selectors";
 import { uniqueProductsByIdentity } from "../productIdentity";
+import { removeMealEntryFromCloud, updateMealEntryInCloud } from "../mealCloudSync";
 
 const selectProductPreferences = (state: RootState) => ({
   dietStyle: state.profile.dietStyle,
@@ -23,8 +23,10 @@ export const useMealEntryEditor = (entry: MealEntry) => {
   const dispatch = useDispatch<AppDispatch>();
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
+  const meal = useSelector((state: RootState) => state.meal);
   const preferences = useSelector(selectProductPreferences, shallowEqual);
   const [open, setOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState<number | "">(entry.quantity);
@@ -68,6 +70,7 @@ export const useMealEntryEditor = (entry: MealEntry) => {
 
   const openEditor = useCallback(() => {
     resetDraft();
+    setSaveError(null);
     setOpen(true);
   }, [resetDraft]);
 
@@ -104,25 +107,40 @@ export const useMealEntryEditor = (entry: MealEntry) => {
     searchResults,
   ]);
 
-  const saveEditor = useCallback(() => {
+  const saveEditor = useCallback(async () => {
     if (typeof quantity !== "number" || quantity <= 0) {
       return;
     }
 
-    dispatch(
-      updateMealEntry({
+    setSaveError(null);
+
+    try {
+      await updateMealEntryInCloud(dispatch, meal, {
         id: entry.id,
         product: selectedProduct,
         quantity,
         mealType,
-      })
-    );
-    setOpen(false);
-  }, [dispatch, entry.id, mealType, quantity, selectedProduct]);
+      });
+      setOpen(false);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
+  }, [dispatch, entry.id, meal, mealType, quantity, selectedProduct]);
 
-  const removeEntry = useCallback(() => {
-    dispatch(removeProduct(entry.id));
-  }, [dispatch, entry.id]);
+  const removeEntry = useCallback(async () => {
+    setSaveError(null);
+
+    try {
+      await removeMealEntryFromCloud(dispatch, meal, entry.id);
+      setOpen(false);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
+  }, [dispatch, entry.id, meal]);
 
   return {
     candidateProducts,
@@ -137,6 +155,7 @@ export const useMealEntryEditor = (entry: MealEntry) => {
     saveEditor,
     searchQuery,
     selectedProduct,
+    saveError,
     setMealType,
     setQuantity,
     setSearchQuery,

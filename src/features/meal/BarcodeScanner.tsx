@@ -24,7 +24,6 @@ import { fetchProductByBarcode } from "../../shared/api/products";
 import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import { ProductCard } from "./ProductCard";
-import { addProduct, rememberRecentProduct, saveProduct } from "./mealSlice";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import {
@@ -51,6 +50,12 @@ import {
   type CatalogNotice,
   type ManualDraft,
 } from "./barcodeScannerModel";
+import {
+  addMealEntriesToCloud,
+  rememberRecentMealProductInCloud,
+  saveMealProductToCloud,
+} from "./mealCloudSync";
+import { createMealEntryDraft } from "./mealSaveModel";
 
 interface Props {
   mealType: MealType;
@@ -268,6 +273,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const lastScanRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
   const dispatch = useDispatch<AppDispatch>();
+  const meal = useSelector((state: RootState) => state.meal);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
   const knownProducts = useSelector((state: RootState) => [
     ...state.meal.personalBarcodeProducts,
@@ -285,6 +291,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualDraft, setManualDraft] = useState<ManualDraft>(createManualDraft);
   const [catalogNotice, setCatalogNotice] = useState<CatalogNotice | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const { appLanguage } = useLanguage();
@@ -436,6 +443,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       setIsSearching(true);
       setLookupState("idle");
       setFoundProduct(null);
+      setSaveError(null);
 
       try {
         const knownProduct = findKnownProductByBarcode(normalizedBarcode);
@@ -459,7 +467,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setLookupState("success");
         setShowManualForm(false);
         setFoundProduct(product);
-        dispatch(rememberRecentProduct(product));
+        const nextMeal = await rememberRecentMealProductInCloud(dispatch, meal, product);
         playScanSuccessSound();
 
         if (autoAdd) {
@@ -469,14 +477,14 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             return;
           }
 
-          dispatch(
-            addProduct({
+          await addMealEntriesToCloud(dispatch, nextMeal, [
+            createMealEntryDraft({
               product,
               quantity: selectedQuantity,
               mealType,
               origin: "barcode",
-            })
-          );
+            }),
+          ]);
           stopScanner();
         }
 
@@ -484,6 +492,9 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setMessage(autoAdd ? `${copy.added}: ${displayName}` : displayName);
       } catch (error) {
         console.error(error);
+        setSaveError(
+          error instanceof Error ? error.message : "Could not save meal to cloud."
+        );
         setLookupState("error");
         setFoundProduct(null);
         setShowManualForm(true);
@@ -502,6 +513,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       copy,
       dispatch,
       findKnownProductByBarcode,
+      meal,
       mealType,
       selectedQuantity,
       stopScanner,
@@ -679,7 +691,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateManualProduct = () => {
+  const handleCreateManualProduct = async () => {
     const name = manualDraft.name.trim();
 
     if (!name) {
@@ -705,19 +717,30 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     });
     const { catalogImageUrl, category, normalizedBarcode, product } = manualProduct;
 
-    setFoundProduct(product);
-    setLookupState("success");
-    setShowManualForm(false);
-    dispatch(rememberRecentProduct(product));
-    dispatch(saveProduct(product));
-    dispatch(
-      addProduct({
+    setSaveError(null);
+
+    try {
+      let nextMeal = await rememberRecentMealProductInCloud(dispatch, meal, product);
+      nextMeal = await saveMealProductToCloud(dispatch, nextMeal, product);
+      await addMealEntriesToCloud(dispatch, nextMeal, [
+        createMealEntryDraft({
         product,
         quantity: selectedQuantity,
         mealType,
         origin: "manual",
-      })
-    );
+        }),
+      ]);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+      playScanErrorSound();
+      return;
+    }
+
+    setFoundProduct(product);
+    setLookupState("success");
+    setShowManualForm(false);
     playScanSuccessSound();
     setMessage(`${copy.manualAdded}: ${name}`);
     setManualDraft(createManualDraft());
@@ -772,6 +795,12 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         <Typography color="text.secondary" variant="body2">
           {copy.cameraHint}
         </Typography>
+
+        {saveError ? (
+          <Alert severity="error" onClose={() => setSaveError(null)}>
+            {saveError}
+          </Alert>
+        ) : null}
 
         {!cameraAvailability.available ? (
           <Alert severity="warning">
@@ -974,7 +1003,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                           setBarcodeInput(barcode);
                           setFoundProduct(product);
                           setLookupState("success");
-                          dispatch(rememberRecentProduct(product));
+                          void rememberRecentMealProductInCloud(
+                            dispatch,
+                            meal,
+                            product
+                          ).catch((error) => {
+                            setSaveError(
+                              error instanceof Error
+                                ? error.message
+                                : "Could not save meal to cloud."
+                            );
+                          });
                         }}
                       >
                         {copy.useHistoryItem}
@@ -1192,7 +1231,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
               <Button
                 variant="contained"
-                onClick={handleCreateManualProduct}
+                onClick={() => void handleCreateManualProduct()}
                 disabled={!manualDraft.name.trim() || selectedQuantity === null}
               >
                 {copy.manualAdd}

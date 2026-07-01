@@ -65,7 +65,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(createOfflineResponse));
+    event.respondWith(fetch(request, { cache: "reload" }).catch(createOfflineResponse));
     return;
   }
 

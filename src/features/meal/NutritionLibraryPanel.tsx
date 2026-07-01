@@ -24,7 +24,6 @@ import { useLanguage } from "../../shared/language";
 import { SectionCard } from "../../shared/ui/SectionCard";
 import { SectionHeader } from "../../shared/ui/SectionHeader";
 import { SectionTabs } from "../../shared/ui/SectionTabs";
-import { addProduct, applyMealTemplate, saveProduct } from "./mealSlice";
 import {
   selectMealTemplates,
   selectSavedProducts,
@@ -34,6 +33,12 @@ import {
   normalizeProductLookupQuery,
   shouldRunOnlineProductLookup,
 } from "./productLookupUiModel";
+import {
+  addMealEntriesToCloud,
+  applyMealTemplateInCloud,
+  saveMealProductToCloud,
+} from "./mealCloudSync";
+import { createMealEntryDraft, createTemplateEntries } from "./mealSaveModel";
 
 type LibraryMode = "library" | "saved";
 type InnerTab = "products" | "dishes" | "articles";
@@ -188,6 +193,7 @@ export const NutritionLibraryPanel = ({
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const savedProducts = useSelector(selectSavedProducts);
+  const meal = useSelector((state: RootState) => state.meal);
   const templates = useSelector(selectMealTemplates);
   const communityPosts = useSelector((state: RootState) => state.community.posts);
   const favoritePostIds = useSelector((state: RootState) => state.community.favoritePostIds);
@@ -210,6 +216,8 @@ export const NutritionLibraryPanel = ({
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const onlineProducts = onlineProductsQuery.data ?? [];
   const onlineLookupState = {
     isIdle: mode === "library" && !shouldRunOnlineProductLookup(normalizedLookupQuery),
@@ -347,6 +355,21 @@ export const NutritionLibraryPanel = ({
     },
   ];
 
+  const runMealAction = async (id: string, action: () => Promise<unknown>) => {
+    setActionError(null);
+    setSavingId(id);
+
+    try {
+      await action();
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <SectionCard
       tone={mode === "saved" ? "premium" : "default"}
@@ -375,6 +398,12 @@ export const NutritionLibraryPanel = ({
             ),
           }}
         />
+
+        {actionError ? (
+          <Alert severity="error" onClose={() => setActionError(null)}>
+            {actionError}
+          </Alert>
+        ) : null}
 
         {onlineLookupState.isSearching ? (
           <Stack direction="row" spacing={1} alignItems="center">
@@ -471,16 +500,30 @@ export const NutritionLibraryPanel = ({
                                   variant="contained"
                                   startIcon={<Plus size={15} />}
                                   onClick={() =>
-                                    dispatch(addProduct({ product, quantity: 100, mealType }))
+                                    void runMealAction(`add-${productKey(product)}`, () =>
+                                      addMealEntriesToCloud(dispatch, meal, [
+                                        createMealEntryDraft({
+                                          product,
+                                          quantity: 100,
+                                          mealType,
+                                          origin: "manual",
+                                        }),
+                                      ])
+                                    )
                                   }
+                                  disabled={savingId === `add-${productKey(product)}`}
                                 >
                                   {labels.add100} {product.unit}
                                 </Button>
                                 <Button
                                   size="small"
                                   variant="outlined"
-                                  onClick={() => dispatch(saveProduct(product))}
-                                  disabled={isSaved}
+                                  onClick={() =>
+                                    void runMealAction(`save-${productKey(product)}`, () =>
+                                      saveMealProductToCloud(dispatch, meal, product)
+                                    )
+                                  }
+                                  disabled={isSaved || savingId === `save-${productKey(product)}`}
                                 >
                                   {labels.save}
                                 </Button>
@@ -547,7 +590,17 @@ export const NutritionLibraryPanel = ({
                         <Button
                           variant="contained"
                           size="small"
-                          onClick={() => dispatch(applyMealTemplate(template.id))}
+                          onClick={() =>
+                            void runMealAction(`template-${template.id}`, () =>
+                              applyMealTemplateInCloud(
+                                dispatch,
+                                meal,
+                                template.id,
+                                createTemplateEntries(template)
+                              )
+                            )
+                          }
+                          disabled={savingId === `template-${template.id}`}
                         >
                           {labels.apply}
                         </Button>

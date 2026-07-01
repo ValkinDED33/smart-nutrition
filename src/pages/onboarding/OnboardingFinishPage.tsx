@@ -6,29 +6,27 @@ import type { AppDispatch, RootState } from "../../app/store";
 import {
   hydrateSyncOutbox,
   markSyncError,
-  markSyncStarted,
-  markSyncSuccess,
-  setCloudMeta,
   setUser,
 } from "../../features/auth/authSlice";
 import profileReducer from "../../features/profile/profileSlice";
 import {
   applyProfileTargets,
+  replaceProfileState,
   setAssistantCustomization,
   setProfileLanguage,
   updateWomenHealth,
 } from "../../features/profile/profileSlice";
-import { syncRemoteProfileState, updateStoredProfile } from "../../shared/api/auth";
+import { saveProfileAndUserToCloud } from "../../features/profile/profileCloudSync";
 import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import type { AssistantCustomization } from "@domain/profile/types";
 import {
-  awardCompanionReward,
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
+import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
 import { clearPreAuthOnboardingDraft } from "../../features/onboarding/model/onboardingDraft";
-import { clearSyncOutbox, enqueueSyncOutbox } from "../../shared/lib/syncOutbox";
+import { enqueueSyncOutbox } from "../../shared/lib/syncOutbox";
 import {
   cardSx,
   personalityValues,
@@ -41,6 +39,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const user = useSelector((rootState: RootState) => rootState.auth.user);
   const profile = useSelector((rootState: RootState) => rootState.profile);
+  const companion = useSelector((rootState: RootState) => rootState.companion);
   const { appLanguage, completeOnboarding, t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -183,26 +182,32 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
     );
 
     try {
-      dispatch(setUser(nextUser));
-      dispatch(setProfileLanguage(appLanguage));
-      dispatch(setAssistantCustomization(assistantCustomization));
-      dispatch(applyProfileTargets(profileTargets));
-      dispatch(updateWomenHealth(womenHealthProfile));
-      dispatch(markSyncStarted());
+      const updatedUser = await saveProfileAndUserToCloud(
+        dispatch,
+        nextUser,
+        nextProfile,
+        completedAt
+      );
 
-      await updateStoredProfile(nextUser);
-      const syncResult = await syncRemoteProfileState(nextProfile);
-
-      if (!syncResult.ok) {
-        throw new Error(syncResult.message ?? "Cloud sync could not save onboarding.");
-      }
-
-      dispatch(hydrateSyncOutbox(clearSyncOutbox()));
-      dispatch(setCloudMeta(syncResult.meta ?? null));
-      dispatch(markSyncSuccess(syncResult.meta?.updatedAt ?? completedAt));
+      dispatch(setUser(updatedUser));
+      dispatch(replaceProfileState(nextProfile));
       clearPreAuthOnboardingDraft();
       completeOnboarding();
-      dispatch(awardCompanionReward("onboarding_completed"));
+      let companionRewardPayload = {};
+
+      try {
+        await applyCompanionRewardInCloud(
+          dispatch,
+          { companion },
+          "onboarding_completed"
+        );
+        companionRewardPayload =
+          createCompanionRewardAnalyticsPayload("onboarding_completed");
+      } catch {
+        // Profile/onboarding were saved successfully. The sync slice carries
+        // the companion reward failure, so we do not block entry into the app.
+      }
+
       trackRuntimeEvent("onboarding_completed", {
         nextPath,
         goal: state.goal,
@@ -217,7 +222,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         assistantPersonality: state.personality,
         hasPrimaryGoalNote: Boolean(state.primaryGoalNote.trim()),
         hasSupportNote: Boolean(state.supportNote.trim()),
-        ...createCompanionRewardAnalyticsPayload("onboarding_completed"),
+        ...companionRewardPayload,
       });
       navigate(nextPath, { replace: true });
     } catch (error) {

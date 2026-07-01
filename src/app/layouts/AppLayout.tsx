@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, Moon, Sun } from "lucide-react";
@@ -38,6 +38,7 @@ import {
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
+import { applyProfileActionInCloud } from "@features/profile/profileCloudSync";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
@@ -98,9 +99,11 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state: RootState) => state.auth.user);
+  const profile = useSelector((state: RootState) => state.profile);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
   const logoutLabel = t("nav.logout");
+  const [isSavingLanguage, setIsSavingLanguage] = useState(false);
 
   useEffect(() => {
     const assistantContext = resolveAssistantContext(location.pathname);
@@ -142,15 +145,34 @@ const Layout = () => {
   };
 
   const handleLanguageSelect = (nextLanguage: AppLanguage) => {
-    if (nextLanguage === appLanguage) {
+    if (nextLanguage === appLanguage || isSavingLanguage) {
       return;
     }
 
-    setLanguage(nextLanguage);
-    dispatch(setProfileLanguage(nextLanguage));
-    trackRuntimeEvent("language_changed", {
-      language: nextLanguage,
-    });
+    if (!user) {
+      setLanguage(nextLanguage);
+      trackRuntimeEvent("language_changed", {
+        language: nextLanguage,
+      });
+      return;
+    }
+
+    setIsSavingLanguage(true);
+    void applyProfileActionInCloud(
+      dispatch,
+      profile,
+      setProfileLanguage(nextLanguage)
+    )
+      .then(() => {
+        setLanguage(nextLanguage);
+        trackRuntimeEvent("language_changed", {
+          language: nextLanguage,
+        });
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        setIsSavingLanguage(false);
+      });
   };
 
   const handleBrandClick = () => {

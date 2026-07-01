@@ -559,7 +559,8 @@ export const GlobalAssistantLayer = () => {
             variant={companionKind}
             size={companionSize}
             mood={layerModel.emotion.mood}
-            renderMode="3d"
+            renderMode={layerModel.avatarRenderMode}
+            defer3dUntilVisible={false}
             active
           />
         </Box>

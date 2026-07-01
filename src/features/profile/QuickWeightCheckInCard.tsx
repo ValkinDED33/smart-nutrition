@@ -12,19 +12,16 @@ import {
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { setUser } from "../auth/authSlice";
-import { updateStoredProfile } from "../../shared/api/auth";
 import { calculateBmi, getBmiStatus } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { replaceProfileState } from "./profileSlice";
-import {
-  awardCompanionReward,
-  createCompanionRewardAnalyticsPayload,
-} from "@features/companion";
+import { createCompanionRewardAnalyticsPayload } from "@features/companion";
+import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
 import { SectionCard } from "@shared/ui";
-import { saveProfileStateToCloud } from "./profileCloudSync";
+import { saveProfileAndUserToCloud } from "./profileCloudSync";
 import { buildProfileStateAfterWeightSave } from "./profileSaveModel";
 
 const quickWeightCopy = {
@@ -124,6 +121,7 @@ export const QuickWeightCheckInCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
+  const companion = useSelector((state: RootState) => state.companion);
   const { targetWeight, targetWeightStart, weightHistory } = profile;
   const { appLanguage } = useLanguage();
   const copy = quickWeightCopy[appLanguage];
@@ -175,21 +173,36 @@ export const QuickWeightCheckInCard = () => {
     setSaveError(null);
 
     try {
-      const updatedUser = await updateStoredProfile({
+      const updatedUser = await saveProfileAndUserToCloud(dispatch, {
         ...user,
         weight: roundedWeight,
-      });
+      }, nextProfile);
+      let companionRewardPayload = {};
 
-      await saveProfileStateToCloud(dispatch, nextProfile);
+      try {
+        await applyCompanionRewardInCloud(
+          dispatch,
+          { companion },
+          "weight_updated"
+        );
+        companionRewardPayload =
+          createCompanionRewardAnalyticsPayload("weight_updated");
+      } catch (rewardError) {
+        setSaveError(
+          rewardError instanceof Error
+            ? `Weight saved, but companion progress could not sync: ${rewardError.message}`
+            : "Weight saved, but companion progress could not sync."
+        );
+      }
+
       dispatch(setUser(updatedUser));
       dispatch(replaceProfileState(nextProfile));
-      dispatch(awardCompanionReward("weight_updated"));
       trackRuntimeEvent("weight_updated", {
         weightKg: roundedWeight,
         previousWeightKg: latestWeight || null,
         targetWeightKg: targetWeight,
         hasTarget: Boolean(targetWeight),
-        ...createCompanionRewardAnalyticsPayload("weight_updated"),
+        ...companionRewardPayload,
       });
       setWeightDraft(roundedWeight.toFixed(1));
       setSaved(true);

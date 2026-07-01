@@ -15,8 +15,14 @@ import {
   buyMonthlyDayOff,
   completeMotivationTask,
   refreshMotivationTasks,
+  replaceProfileState,
   resetMotivationProgress,
 } from "./profileSlice";
+import {
+  applyProfileActionInCloud,
+  buildProfileStateAfterAction,
+  saveProfileStateToCloud,
+} from "./profileCloudSync";
 import { useLanguage } from "../../shared/language";
 import {
   calculatePaidDayOffCost,
@@ -62,6 +68,8 @@ const copyByLanguage = {
     emptyHistory: "Поки що немає мотиваційних дій.",
     pointsSuffix: "балів",
     paidCostHint: "Вартість платного day off",
+    saving: "Зберігаю...",
+    saveError: "Не вдалося зберегти зміни в хмарі. Спробуйте ще раз.",
   },
   pl: {
     title: "Centrum motywacji",
@@ -97,6 +105,8 @@ const copyByLanguage = {
     emptyHistory: "Nie ma jeszcze działań motywacyjnych.",
     pointsSuffix: "pkt",
     paidCostHint: "Koszt płatnego day off",
+    saving: "Zapisuję...",
+    saveError: "Nie udało się zapisać zmian w chmurze. Spróbuj ponownie.",
   },
   en: {
     title: "Motivation Center",
@@ -132,6 +142,8 @@ const copyByLanguage = {
     emptyHistory: "No motivation activity yet.",
     pointsSuffix: "pts",
     paidCostHint: "Paid day off cost",
+    saving: "Saving...",
+    saveError: "Could not save changes to cloud. Try again.",
   },
 } as const;
 
@@ -139,10 +151,14 @@ type PendingAction = "free" | "paid" | "reset" | null;
 
 export const MotivationHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { motivation, goal } = useSelector((state: RootState) => state.profile);
+  const profile = useSelector((state: RootState) => state.profile);
+  const { motivation, goal } = profile;
   const { appLanguage } = useLanguage();
   const copy = copyByLanguage[appLanguage];
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+  const [savingAction, setSavingAction] = useState<PendingAction>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(refreshMotivationTasks(undefined));
@@ -162,17 +178,66 @@ export const MotivationHubCard = () => {
   };
   const locale = localeByLanguage[appLanguage];
 
-  const handleConfirm = () => {
-    if (pendingAction === "free") {
-      dispatch(activateWeeklyDayOff(undefined));
-    } else if (pendingAction === "paid") {
-      dispatch(buyMonthlyDayOff(undefined));
-    } else if (pendingAction === "reset") {
-      dispatch(resetMotivationProgress());
-      dispatch(refreshMotivationTasks(undefined));
+  const saveMotivationAction = async (
+    action: ReturnType<
+      | typeof activateWeeklyDayOff
+      | typeof buyMonthlyDayOff
+      | typeof completeMotivationTask
+    >
+  ) => {
+    await applyProfileActionInCloud(dispatch, profile, action);
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    if (savingTaskId !== null || savingAction !== null) {
+      return;
     }
 
-    setPendingAction(null);
+    setSavingTaskId(taskId);
+    setSaveError(null);
+
+    try {
+      await saveMotivationAction(completeMotivationTask({ taskId }));
+    } catch {
+      setSaveError(copy.saveError);
+    } finally {
+      setSavingTaskId(null);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!pendingAction || savingAction !== null || savingTaskId !== null) {
+      return;
+    }
+
+    setSavingAction(pendingAction);
+    setSaveError(null);
+
+    try {
+      if (pendingAction === "free") {
+        await saveMotivationAction(activateWeeklyDayOff(undefined));
+      } else if (pendingAction === "paid") {
+        await saveMotivationAction(buyMonthlyDayOff(undefined));
+      } else if (pendingAction === "reset") {
+        const resetProfile = buildProfileStateAfterAction(
+          profile,
+          resetMotivationProgress()
+        );
+        const refreshedProfile = buildProfileStateAfterAction(
+          resetProfile,
+          refreshMotivationTasks(undefined)
+        );
+
+        await saveProfileStateToCloud(dispatch, refreshedProfile);
+        dispatch(replaceProfileState(refreshedProfile));
+      }
+
+      setPendingAction(null);
+    } catch {
+      setSaveError(copy.saveError);
+    } finally {
+      setSavingAction(null);
+    }
   };
 
   const confirmTitle =
@@ -221,6 +286,8 @@ export const MotivationHubCard = () => {
         </Stack>
 
         <Stack spacing={1}>
+          {saveError ? <Alert severity="error">{saveError}</Alert> : null}
+
           <Typography sx={{ fontWeight: 700 }}>
             {copy.level}: {motivation.level}
           </Typography>
@@ -273,14 +340,15 @@ export const MotivationHubCard = () => {
 
                   <Button
                     variant={isDone ? "outlined" : "contained"}
-                    disabled={isDone || isSkipped}
-                    onClick={() =>
-                      dispatch(
-                        completeMotivationTask({
-                          taskId: task.id,
-                        })
-                      )
+                    disabled={
+                      isDone ||
+                      isSkipped ||
+                      savingTaskId !== null ||
+                      savingAction !== null
                     }
+                    onClick={() => {
+                      void handleCompleteTask(task.id);
+                    }}
                     sx={{
                       minWidth: 180,
                       alignSelf: { xs: "stretch", md: "center" },
@@ -288,7 +356,13 @@ export const MotivationHubCard = () => {
                       borderRadius: 999,
                     }}
                   >
-                    {isDone ? copy.done : isSkipped ? copy.skipped : copy.complete}
+                    {savingTaskId === task.id
+                      ? copy.saving
+                      : isDone
+                        ? copy.done
+                        : isSkipped
+                          ? copy.skipped
+                          : copy.complete}
                   </Button>
                 </Stack>
               </Paper>
@@ -299,7 +373,7 @@ export const MotivationHubCard = () => {
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           <Button
             variant="outlined"
-            disabled={!freeDayAvailable}
+            disabled={!freeDayAvailable || savingTaskId !== null || savingAction !== null}
             onClick={() => setPendingAction("free")}
             sx={{ textTransform: "none", borderRadius: 999 }}
           >
@@ -307,7 +381,12 @@ export const MotivationHubCard = () => {
           </Button>
           <Button
             variant="outlined"
-            disabled={!paidDayAvailable || motivation.points < paidDayCost}
+            disabled={
+              !paidDayAvailable ||
+              motivation.points < paidDayCost ||
+              savingTaskId !== null ||
+              savingAction !== null
+            }
             onClick={() => setPendingAction("paid")}
             sx={{ textTransform: "none", borderRadius: 999 }}
           >
@@ -316,6 +395,7 @@ export const MotivationHubCard = () => {
           <Button
             color="error"
             variant="text"
+            disabled={savingTaskId !== null || savingAction !== null}
             onClick={() => setPendingAction("reset")}
             sx={{ textTransform: "none", borderRadius: 999 }}
           >
@@ -425,8 +505,14 @@ export const MotivationHubCard = () => {
               <Typography color="text.secondary">{confirmBody}</Typography>
               <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
                 <Button onClick={() => setPendingAction(null)}>{copy.cancel}</Button>
-                <Button onClick={handleConfirm} variant="contained">
-                  {copy.confirm}
+                <Button
+                  onClick={() => {
+                    void handleConfirm();
+                  }}
+                  disabled={savingAction !== null}
+                  variant="contained"
+                >
+                  {savingAction === pendingAction ? copy.saving : copy.confirm}
                 </Button>
               </Stack>
             </Stack>

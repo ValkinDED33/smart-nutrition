@@ -1,8 +1,5 @@
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
-import type { AppDispatch } from "../app/store";
-import { setProfileLanguage } from "../features/profile/profileSlice";
 import { appLanguages } from "../shared/i18n";
 import { useLanguage } from "../shared/language";
 import type { AppLanguage } from "../shared/types/i18n";
@@ -39,13 +36,11 @@ const languageButtonSx = {
 } as const;
 
 const LanguageSetupPage = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
 
   const selectLanguage = (nextLanguage: AppLanguage) => {
     setLanguage(nextLanguage);
-    dispatch(setProfileLanguage(nextLanguage));
     navigate("/register", { replace: true });
   };
 

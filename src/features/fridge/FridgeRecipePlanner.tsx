@@ -23,13 +23,13 @@ import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { searchProducts } from "../../shared/api/products";
 import { recipes } from "@domain/meal/recipes";
-import { addMealEntries } from "../meal/mealSlice";
+import { addMealEntriesToCloud } from "../meal/mealCloudSync";
 import { selectSavedProducts } from "../meal/selectors";
 import {
-  removeFridgeItem,
-  updateFridgeItemQuantity,
-  upsertFridgeItem,
-} from "./fridgeSlice";
+  removeFridgeItemFromCloud,
+  updateFridgeItemQuantityInCloud,
+  upsertFridgeItemInCloud,
+} from "./fridgeCloudSync";
 
 const fridgeCopy = {
   uk: {
@@ -51,6 +51,7 @@ const fridgeCopy = {
     missing: "Ще потрібні",
     cookNow: "Додати як прийом їжі",
     remove: "Видалити",
+    saveFailed: "Не вдалося зберегти холодильник у хмарі.",
   },
   pl: {
     title: "Co jest w lodówce",
@@ -71,6 +72,7 @@ const fridgeCopy = {
     missing: "Brakuje jeszcze",
     cookNow: "Dodaj jako posiłek",
     remove: "Usuń",
+    saveFailed: "Nie udalo sie zapisac lodowki w chmurze.",
   },
   en: {
     title: "What is in the fridge",
@@ -91,6 +93,7 @@ const fridgeCopy = {
     missing: "Still needed",
     cookNow: "Add as meal",
     remove: "Remove",
+    saveFailed: "Could not save fridge to cloud.",
   },
 } as const;
 
@@ -146,6 +149,8 @@ interface Props {
 
 export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
+  const meal = useSelector((state: RootState) => state.meal);
+  const fridge = useSelector((state: RootState) => state.fridge);
   const fridgeItems = useSelector((state: RootState) => state.fridge.items);
   const savedProducts = useSelector(selectSavedProducts);
   const communityPosts = useSelector((state: RootState) => state.community.posts);
@@ -153,6 +158,10 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const copy = fridgeCopy[appLanguage];
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
+  const [fridgeSaveError, setFridgeSaveError] = useState<string | null>(null);
+  const [savingFridgeAction, setSavingFridgeAction] = useState<string | null>(null);
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
@@ -225,27 +234,85 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       .slice(0, 5);
   }, [communityPosts, mealType, pantryTokens]);
 
-  const handleCookRecipe = (recipeId: string) => {
+  const handleCookRecipe = async (recipeId: string) => {
     const recipe = recipes.find((item) => item.id === recipeId);
 
     if (!recipe) {
       return;
     }
 
-    dispatch(
-      addMealEntries(
-        recipe.ingredients.map((ingredient) => ({
-          id:
-            globalThis.crypto?.randomUUID?.() ??
-            `fridge-recipe-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          product: ingredient.product,
-          quantity: ingredient.quantity,
-          mealType,
-          eatenAt: new Date().toISOString(),
-          origin: "recipe",
-        }))
-      )
-    );
+    const entries = recipe.ingredients.map((ingredient) => ({
+      id:
+        globalThis.crypto?.randomUUID?.() ??
+        `fridge-recipe-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      product: ingredient.product,
+      quantity: ingredient.quantity,
+      mealType,
+      eatenAt: new Date().toISOString(),
+      origin: "recipe" as const,
+    }));
+
+    setMealSaveError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, entries);
+    } catch (error) {
+      setMealSaveError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    }
+  };
+
+  const runFridgeAction = async (
+    actionId: string,
+    action: () => Promise<unknown>
+  ) => {
+    setFridgeSaveError(null);
+    setSavingFridgeAction(actionId);
+
+    try {
+      await action();
+    } catch (error) {
+      setFridgeSaveError(
+        error instanceof Error ? error.message : copy.saveFailed
+      );
+    } finally {
+      setSavingFridgeAction(null);
+    }
+  };
+
+  const getQuantityDraft = (itemId: string, fallback: number) =>
+    quantityDrafts[itemId] ?? String(fallback);
+
+  const commitQuantityDraft = (itemId: string) => {
+    const item = fridge.items.find((entry) => entry.id === itemId);
+
+    if (!item) {
+      return;
+    }
+
+    const quantity = Number(getQuantityDraft(itemId, item.quantity));
+
+    if (!Number.isFinite(quantity) || quantity <= 0 || quantity === item.quantity) {
+      setQuantityDrafts((current) => {
+        const { [itemId]: _removed, ...rest } = current;
+        void _removed;
+        return rest;
+      });
+      return;
+    }
+
+    void runFridgeAction(`quantity-${item.id}`, async () => {
+      await updateFridgeItemQuantityInCloud(dispatch, fridge, {
+        itemId: item.id,
+        quantity,
+      });
+      setQuantityDrafts((current) => {
+        const { [itemId]: _removed, ...rest } = current;
+        void _removed;
+        return rest;
+      });
+    });
   };
 
   return (
@@ -266,6 +333,18 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
           <Typography color="text.secondary">{copy.subtitle}</Typography>
         </Stack>
 
+        {mealSaveError ? (
+          <Alert severity="error" onClose={() => setMealSaveError(null)}>
+            {mealSaveError}
+          </Alert>
+        ) : null}
+
+        {fridgeSaveError ? (
+          <Alert severity="error" onClose={() => setFridgeSaveError(null)}>
+            {fridgeSaveError}
+          </Alert>
+        ) : null}
+
         <TextField
           fullWidth
           label={copy.search}
@@ -282,9 +361,15 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                 <Chip
                   key={`saved-${product.id}`}
                   clickable
+                  disabled={Boolean(savingFridgeAction)}
                   label={product.name}
                   onClick={() => {
-                    dispatch(upsertFridgeItem({ product, quantity: 100 }));
+                    void runFridgeAction(`saved-${product.id}`, () =>
+                      upsertFridgeItemInCloud(dispatch, fridge, {
+                        product,
+                        quantity: 100,
+                      })
+                    );
                   }}
                 />
               ))}
@@ -298,13 +383,19 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
               <Chip
                 key={`search-${product.id}`}
                 clickable
+                disabled={Boolean(savingFridgeAction)}
                 color="info"
                 variant="outlined"
                 label={product.name}
                 onClick={() => {
-                  dispatch(upsertFridgeItem({ product, quantity: 100 }));
-                  setQuery("");
-                  setResults([]);
+                  void runFridgeAction(`search-${product.id}`, async () => {
+                    await upsertFridgeItemInCloud(dispatch, fridge, {
+                      product,
+                      quantity: 100,
+                    });
+                    setQuery("");
+                    setResults([]);
+                  });
                 }}
               />
             ))}
@@ -330,23 +421,35 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                     type="text"
                     size="small"
                     label={`${copy.quantity} (${item.product.unit})`}
-                    value={item.quantity}
+                    value={getQuantityDraft(item.id, item.quantity)}
                     onFocus={(event) => selectInputValue(event.target)}
                     onClick={(event) => selectInputValue(event.currentTarget)}
                     slotProps={{
                       htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
                     }}
-                    onChange={(event) =>
-                      dispatch(
-                        updateFridgeItemQuantity({
-                          itemId: item.id,
-                          quantity: Number(event.target.value) || 1,
-                        })
-                      )
-                    }
+                    onChange={(event) => {
+                      setQuantityDrafts((current) => ({
+                        ...current,
+                        [item.id]: event.target.value,
+                      }));
+                    }}
+                    onBlur={() => commitQuantityDraft(item.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.currentTarget.blur();
+                      }
+                    }}
                     sx={{ width: { xs: "100%", md: 180 } }}
                   />
-                  <Button color="error" onClick={() => dispatch(removeFridgeItem(item.id))}>
+                  <Button
+                    color="error"
+                    disabled={savingFridgeAction === `remove-${item.id}`}
+                    onClick={() =>
+                      void runFridgeAction(`remove-${item.id}`, () =>
+                        removeFridgeItemFromCloud(dispatch, fridge, item.id)
+                      )
+                    }
+                  >
                     {copy.remove}
                   </Button>
                 </Stack>
@@ -386,7 +489,9 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                   {item.recipeId && (
                     <Button
                       variant="contained"
-                      onClick={() => handleCookRecipe(item.recipeId!)}
+                      onClick={() => {
+                        void handleCookRecipe(item.recipeId!);
+                      }}
                       sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
                     >
                       {copy.cookNow}

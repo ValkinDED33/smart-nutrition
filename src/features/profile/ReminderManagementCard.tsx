@@ -79,7 +79,7 @@ const reminderCopy = {
     done: "Зроблено",
     taken: "Прийнято",
     waterLogged: "Випито",
-    snooze: "Через 10 хв",
+    snooze: "Через 15 хв",
     skip: "Пропустити",
     pause: "Пауза",
     resume: "Увімкнути",
@@ -131,7 +131,7 @@ const reminderCopy = {
     done: "Zrobione",
     taken: "Przyjęte",
     waterLogged: "Wypite",
-    snooze: "Za 10 min",
+    snooze: "Za 15 min",
     skip: "Pomiń",
     pause: "Pauza",
     resume: "Wznów",
@@ -183,7 +183,7 @@ const reminderCopy = {
     done: "Done",
     taken: "Taken",
     waterLogged: "Logged",
-    snooze: "In 10 min",
+    snooze: "In 15 min",
     skip: "Skip",
     pause: "Pause",
     resume: "Resume",
@@ -375,12 +375,16 @@ export const ReminderManagementCard = () => {
     }
   };
 
-  const handleAction = async (reminder: ReminderItem, action: ReminderAction) => {
+  const handleAction = async (
+    reminder: ReminderItem,
+    action: ReminderAction,
+    options: { minutes?: number } = {}
+  ) => {
     setBusyReminderId(reminder.id);
     setNotice(null);
 
     try {
-      const item = await updateRemoteReminderAction(reminder.id, action);
+      const item = await updateRemoteReminderAction(reminder.id, action, options);
       setItems((current) =>
         sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
       );
@@ -659,7 +663,7 @@ export const ReminderManagementCard = () => {
                         startIcon={<Clock size={16} />}
                         disabled={isBusy || !reminder.active}
                         onClick={() => {
-                          void handleAction(reminder, "snoozed");
+                          void handleAction(reminder, "snoozed", { minutes: 15 });
                         }}
                         sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
                       >

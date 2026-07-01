@@ -4,6 +4,7 @@ import { saveWaterStateToCloud } from "./waterCloudSync";
 
 const authApiMock = vi.hoisted(() => ({
   syncRemoteWaterState: vi.fn(),
+  pullRemoteAppSnapshot: vi.fn(),
 }));
 
 vi.mock("@shared/api/auth", () => authApiMock);
@@ -43,6 +44,47 @@ describe("waterCloudSync", () => {
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       "auth/markSyncStarted",
       "auth/markSyncError",
+    ]);
+  });
+
+  it("pulls and applies the latest cloud snapshot when water save conflicts", async () => {
+    const dispatch = vi.fn();
+    const cloudWater = createInitialWaterState();
+    authApiMock.syncRemoteWaterState.mockResolvedValueOnce({
+      ok: false,
+      code: "STATE_CONFLICT",
+      message: "conflict",
+      meta: null,
+    });
+    authApiMock.pullRemoteAppSnapshot.mockResolvedValueOnce({
+      profile: null,
+      meal: null,
+      water: cloudWater,
+      fridge: null,
+      community: null,
+      companion: null,
+      updatedAt: "2026-06-30T12:30:00.000Z",
+      profileUpdatedAt: null,
+      mealUpdatedAt: null,
+      waterUpdatedAt: "2026-06-30T12:30:00.000Z",
+    });
+
+    await expect(
+      saveWaterStateToCloud(dispatch, {
+        ...cloudWater,
+        consumedMl: cloudWater.consumedMl + 250,
+      })
+    ).rejects.toThrow("latest cloud version has been loaded");
+
+    expect(authApiMock.pullRemoteAppSnapshot).toHaveBeenCalledWith({ force: true });
+    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+      "auth/markSyncStarted",
+      "auth/markSyncStarted",
+      "water/replaceWaterState",
+      "companion/hydrateCompanionState",
+      "auth/hydrateSyncOutbox",
+      "auth/setCloudMeta",
+      "auth/markSyncSuccess",
     ]);
   });
 });

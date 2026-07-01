@@ -22,7 +22,6 @@ import type { AppDispatch, RootState } from "../../app/store";
 import { searchProducts } from "../../shared/api/products";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
-import { addProduct, rememberRecentProduct } from "./mealSlice";
 import {
   createNutritionGoogleSearchUrl,
   shouldShowQuickSearchDeadEnd,
@@ -33,6 +32,11 @@ import {
   selectRecentProducts,
   selectSavedProducts,
 } from "./selectors";
+import {
+  addMealEntriesToCloud,
+  rememberRecentMealProductInCloud,
+} from "./mealCloudSync";
+import { createMealEntryDraft } from "./mealSaveModel";
 
 type FoodCommandTarget = "search" | "photo" | "barcode" | "composer" | "favorites";
 
@@ -137,6 +141,7 @@ const getProductKey = (product: Product) =>
 
 export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterProps) => {
   const dispatch = useDispatch<AppDispatch>();
+  const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
@@ -153,6 +158,8 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<number | "">(100);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const normalizedQuery = normalizeQuery(query);
 
   useEffect(() => {
@@ -238,34 +245,51 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
   });
   const googleSearchUrl = createNutritionGoogleSearchUrl(normalizedQuery);
 
-  const addSelectedProduct = (product = selectedProduct, amount = selectedQuantity) => {
+  const addSelectedProduct = async (
+    product = selectedProduct,
+    amount = selectedQuantity
+  ) => {
     if (!product || amount === null) {
       return;
     }
 
-    dispatch(
-      addProduct({
-        product,
-        quantity: amount,
-        mealType,
-        origin: "manual",
-      })
-    );
-    dispatch(rememberRecentProduct(product));
-    setSelectedProduct(product);
-    setQuery(getProductDisplayName(product, appLanguage));
-    setFeedback(
-      `${copy.added}: ${getProductDisplayName(product, appLanguage)} +${formatProductPortion(
-        amount,
-        product.unit
-      )}`
-    );
+    setIsSaving(true);
+    setActionError(null);
+
+    try {
+      await addMealEntriesToCloud(dispatch, meal, [
+        createMealEntryDraft({
+          product,
+          quantity: amount,
+          mealType,
+          origin: "manual",
+        }),
+      ]);
+      setSelectedProduct(product);
+      setQuery(getProductDisplayName(product, appLanguage));
+      setFeedback(
+        `${copy.added}: ${getProductDisplayName(product, appLanguage)} +${formatProductPortion(
+          amount,
+          product.unit
+        )}`
+      );
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const chooseProduct = (product: Product) => {
     setSelectedProduct(product);
     setQuery(getProductDisplayName(product, appLanguage));
-    dispatch(rememberRecentProduct(product));
+    void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
+      setActionError(
+        error instanceof Error ? error.message : "Could not save meal to cloud."
+      );
+    });
   };
 
   return (
@@ -357,8 +381,8 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
-            onClick={() => addSelectedProduct()}
-            disabled={!selectedProduct || selectedQuantity === null}
+            onClick={() => void addSelectedProduct()}
+            disabled={!selectedProduct || selectedQuantity === null || isSaving}
             sx={{ minHeight: 56, px: 2.4 }}
           >
             {copy.title}
@@ -403,6 +427,12 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
             }
           >
             {copy.unavailable}
+          </Alert>
+        ) : null}
+
+        {actionError ? (
+          <Alert severity="error" onClose={() => setActionError(null)}>
+            {actionError}
           </Alert>
         ) : null}
 

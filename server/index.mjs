@@ -246,7 +246,9 @@ const healthController = createHealthController({
 });
 const authController = createAuthController({
   authService,
+  stateService,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
+  getSyncContext,
   sendAuthSession,
   clearAuthCookies,
 });

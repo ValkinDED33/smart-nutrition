@@ -4,6 +4,7 @@ import { Button, Paper, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../../app/store";
 import { selectMealItems } from "../meal/selectors";
 import { setAdaptiveCalories } from "./profileSlice";
+import { applyProfileActionInCloud } from "./profileCloudSync";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
@@ -16,6 +17,7 @@ export const AdaptiveGoalCard = () => {
   const { maintenanceCalories, goal, adaptiveCalories, weightHistory, adaptiveMode } = useSelector(
     (state: RootState) => state.profile
   );
+  const profile = useSelector((state: RootState) => state.profile);
   const items = useSelector(selectMealItems);
 
   const averageIntake = calculateAverageDailyCalories(items);
@@ -64,7 +66,13 @@ export const AdaptiveGoalCard = () => {
         </Typography>
         <Button
           variant="contained"
-          onClick={() => dispatch(setAdaptiveCalories(suggestedCalories))}
+          onClick={() => {
+            void applyProfileActionInCloud(
+              dispatch,
+              profile,
+              setAdaptiveCalories(suggestedCalories)
+            );
+          }}
           sx={{ alignSelf: "flex-start" }}
         >
           {t("adaptive.apply")}

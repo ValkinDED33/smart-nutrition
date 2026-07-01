@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -14,21 +14,20 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch } from "../app/store";
+import type { AppDispatch, RootState } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import {
   applyRemoteSnapshotToStore,
   getRemoteSnapshotMeta,
 } from "@features/auth/sessionSnapshot";
+import { buildSessionProfileState } from "@features/auth/authSessionProfile";
+import { createCompanionRewardAnalyticsPayload } from "../features/companion";
+import { applyCompanionRewardInCloud } from "../features/companion/companionCloudSync";
 import {
-  awardCompanionReward,
-  createCompanionRewardAnalyticsPayload,
-} from "../features/companion";
-import {
-  applyProfileTargets,
-  setProfileLanguage,
+  replaceProfileState,
 } from "../features/profile/profileSlice";
-import { calculateProfileTargets } from "@domain/profile/profileTargets";
+import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
+import { normalizeCompanionState } from "../features/companion/model/store";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
@@ -69,6 +68,7 @@ const isVerificationPending = (
 
 const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const companion = useSelector((state: RootState) => state.companion);
   const navigate = useNavigate();
   const { t, appLanguage, resetOnboarding } = useLanguage();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -121,7 +121,7 @@ const RegisterPage = () => {
   const passwordField = register("password");
   const confirmPasswordField = register("confirmPassword");
 
-  const applyAuthenticatedSession = ({ user, snapshot }: AuthResponse) => {
+  const applyAuthenticatedSession = async ({ user, snapshot }: AuthResponse) => {
     dispatch(
       setCredentials({
         user,
@@ -131,38 +131,44 @@ const RegisterPage = () => {
       })
     );
 
-    if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
+    const canApplySnapshot = snapshot && getSyncOutboxMeta().pendingChanges === 0;
+
+    if (canApplySnapshot) {
       applyRemoteSnapshotToStore(dispatch, snapshot);
-    } else {
-      const profileBootstrap = {
-        age: user.age,
-        weight: user.weight,
-        height: user.height,
-        gender: user.gender,
-        activity: user.activity,
-        goal: user.goal,
-      };
-      const { maintenanceCalories, targetCalories } = calculateProfileTargets(
-        profileBootstrap
-      );
-      dispatch(
-        applyProfileTargets({
-          goal: profileBootstrap.goal,
-          weight: profileBootstrap.weight,
-          maintenanceCalories,
-          targetCalories,
-          targetWeight: null,
-          dietStyle: "balanced",
-          allergies: [],
-          excludedIngredients: [],
-          adaptiveMode: "automatic",
-        })
-      );
     }
 
-    dispatch(setProfileLanguage(appLanguage));
+    const sessionProfile = buildSessionProfileState({
+      user,
+      snapshot: canApplySnapshot ? snapshot : null,
+      language: appLanguage,
+    });
+
+    try {
+      await saveProfileStateToCloud(dispatch, sessionProfile);
+      dispatch(replaceProfileState(sessionProfile));
+    } catch {
+      // Registration/session succeeded. The sync slice records the profile
+      // language failure, and we avoid showing unsaved profile data locally.
+    }
+
     resetOnboarding();
-    dispatch(awardCompanionReward("registration_completed"));
+
+    const sessionCompanion =
+      snapshot && "companion" in snapshot
+        ? normalizeCompanionState(snapshot.companion)
+        : companion;
+
+    try {
+      await applyCompanionRewardInCloud(
+        dispatch,
+        { companion: sessionCompanion },
+        "registration_completed"
+      );
+
+      return createCompanionRewardAnalyticsPayload("registration_completed");
+    } catch {
+      return {};
+    }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -192,13 +198,13 @@ const RegisterPage = () => {
         return;
       }
 
-      applyAuthenticatedSession(response);
+      const companionRewardPayload = await applyAuthenticatedSession(response);
       trackRuntimeEvent("signup_completed", {
         authMode: getAuthRuntimeInfo().mode,
         requiresVerification: false,
         hasCloudSnapshot: Boolean(response.snapshot),
         language: appLanguage,
-        ...createCompanionRewardAnalyticsPayload("registration_completed"),
+        ...companionRewardPayload,
       });
       navigate("/onboarding");
     } catch (error) {

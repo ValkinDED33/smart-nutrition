@@ -1,14 +1,9 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { RootState } from "../../app/store";
 import type { PremiumPlanId } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
-import {
-  activatePremiumPlan,
-  cancelPremiumSubscription,
-  startPremiumTrial,
-} from "./profileSlice";
 
 const premiumCopy = {
   uk: {
@@ -17,10 +12,13 @@ const premiumCopy = {
     status: "Статус",
     renews: "Наступне оновлення",
     trialEnds: "Trial до",
-    startTrial: "Start 7-day trial",
-    activatePro: "Activate Pro",
-    activateCoach: "Activate Coach",
-    cancel: "Cancel",
+    startTrial: "Запустити 7-денний trial",
+    activatePro: "Увімкнути Pro",
+    activateCoach: "Увімкнути Coach",
+    cancel: "Скасувати",
+    unavailable:
+      "Premium-оплата ще не підключена. Зміна доступу має приходити із сервера, а не з локальної кнопки.",
+    comingSoon: "Скоро",
     current: "Current",
     plans: {
       free: {
@@ -50,6 +48,9 @@ const premiumCopy = {
     activatePro: "Activate Pro",
     activateCoach: "Activate Coach",
     cancel: "Cancel",
+    unavailable:
+      "Płatności Premium nie są jeszcze podłączone. Zmiana dostępu musi przyjść z serwera, nie z lokalnego przycisku.",
+    comingSoon: "Wkrótce",
     current: "Current",
     plans: {
       free: {
@@ -79,6 +80,9 @@ const premiumCopy = {
     activatePro: "Activate Pro",
     activateCoach: "Activate Coach",
     cancel: "Cancel",
+    unavailable:
+      "Premium billing is not connected yet. Access changes must come from the server, not a local button.",
+    comingSoon: "Coming soon",
     current: "Current",
     plans: {
       free: {
@@ -116,7 +120,6 @@ const formatDate = (value: string | null, language: AppLanguage) =>
     : null;
 
 export const PremiumAccessCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const premium = useSelector((state: RootState) => state.profile.premium);
   const { appLanguage } = useLanguage();
   const copy = premiumCopy[appLanguage];
@@ -190,26 +193,30 @@ export const PremiumAccessCard = () => {
           })}
         </Stack>
 
+        <Typography color="text.secondary" variant="body2">
+          {copy.unavailable}
+        </Typography>
+
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           {!isPaid ? (
             <Button
               variant="contained"
-              onClick={() => dispatch(startPremiumTrial())}
+              disabled
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
-              {copy.startTrial}
+              {copy.comingSoon}
             </Button>
           ) : null}
           <Button
             variant={premium.plan === "pro" && isPaid ? "outlined" : "contained"}
-            onClick={() => dispatch(activatePremiumPlan({ plan: "pro" }))}
+            disabled
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {copy.activatePro}
           </Button>
           <Button
             variant={premium.plan === "coach" && isPaid ? "outlined" : "contained"}
-            onClick={() => dispatch(activatePremiumPlan({ plan: "coach" }))}
+            disabled
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {copy.activateCoach}
@@ -217,7 +224,7 @@ export const PremiumAccessCard = () => {
           {isPaid ? (
             <Button
               color="error"
-              onClick={() => dispatch(cancelPremiumSubscription())}
+              disabled
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
               {copy.cancel}

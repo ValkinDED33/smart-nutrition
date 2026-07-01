@@ -19,8 +19,13 @@ const TELEGRAM_BOT_COMMANDS = [
   { command: "nutrition", description: "Харчування і нутрієнти" },
   { command: "water", description: "Вода сьогодні" },
   { command: "reminders", description: "Reminders / Tasks" },
+  { command: "meds", description: "Активні нагадування про ліки" },
+  { command: "add", description: "Додати нагадування автоматично" },
   { command: "addtask", description: "Додати задачу" },
   { command: "addmed", description: "Додати нагадування про ліки" },
+  { command: "addwater", description: "Додати нагадування про воду" },
+  { command: "addhabit", description: "Додати нагадування про звичку" },
+  { command: "addsupplement", description: "Додати нагадування про добавку" },
   { command: "settime", description: "Змінити час нагадування" },
   { command: "profile", description: "Підключений акаунт" },
   { command: "disconnect", description: "Відключити Telegram" },
@@ -114,6 +119,18 @@ const maskTelegramChatId = (value) => {
     length: chatId.length,
     suffix: chatId.slice(-4),
   };
+};
+
+const getTelegramChatIdFromContext = (ctx) => {
+  const chatId =
+    ctx?.chat?.id ??
+    ctx?.callbackQuery?.message?.chat?.id ??
+    ctx?.update?.callback_query?.message?.chat?.id ??
+    ctx?.message?.chat?.id ??
+    ctx?.update?.message?.chat?.id ??
+    null;
+
+  return chatId === null || chatId === undefined ? null : String(chatId);
 };
 
 const toCompactUserId = (userId) => {
@@ -581,7 +598,7 @@ export const createTelegramService = ({
   };
 
   const getConnectedUser = async (ctx) => {
-    const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
+    const chatId = getTelegramChatIdFromContext(ctx);
     const user = chatId ? await getUserByTelegramChatId(chatId) : null;
 
     if (!user) {

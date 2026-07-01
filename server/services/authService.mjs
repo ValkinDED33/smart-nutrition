@@ -910,6 +910,42 @@ export const createAuthService = ({
       return toPublicUser(updatedUser);
     },
 
+    updateUserProfileAndState: async ({
+      body,
+      currentUser,
+      saveProfileState,
+      getProfileMeta,
+    }) => {
+      const profileInput = readProfileInput(body?.user ?? {}, currentUser);
+
+      if (typeof saveProfileState !== "function") {
+        throw new AuthApiError("INVALID_PROFILE", "Cloud profile sync is unavailable.");
+      }
+
+      await saveProfileState(body?.profile);
+      const updatedUser = await authRepository.updateUser({
+        ...currentUser,
+        ...profileInput,
+      });
+
+      await writeAuditLog({
+        actorUserId: currentUser.id,
+        actorRole: currentUser.role,
+        action: "auth.profile_and_state_updated",
+        targetType: "user",
+        targetId: currentUser.id,
+      });
+
+      return {
+        ok: true,
+        user: toPublicUser(updatedUser),
+        meta:
+          typeof getProfileMeta === "function"
+            ? await getProfileMeta()
+            : null,
+      };
+    },
+
     deleteAccount: async (currentUser) => {
       if (isOwnerRole(currentUser.role)) {
         throw new AuthApiError("FORBIDDEN", "The owner account cannot be deleted.");

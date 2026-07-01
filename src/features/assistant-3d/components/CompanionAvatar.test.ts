@@ -82,7 +82,18 @@ describe("shouldUseCompanionCanvas", () => {
     ).toBe(false);
   });
 
-  it("falls back to 2D on low power devices", () => {
+  it("keeps automatic avatars lightweight on low power devices", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        lowPowerDevice: true,
+        renderMode: "auto",
+        size: 76,
+      })
+    ).toBe(false);
+  });
+
+  it("keeps explicit 3D mode authoritative on capable low power devices", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
@@ -90,6 +101,6 @@ describe("shouldUseCompanionCanvas", () => {
         renderMode: "3d",
         size: 76,
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 });

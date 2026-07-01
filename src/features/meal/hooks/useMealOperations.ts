@@ -10,16 +10,15 @@ import type { AppDispatch, RootState } from "@app/store";
 import { AddMealUseCase } from "../usecases/addMeal";
 import type { Product } from "@domain/meal";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
-import {
-  awardCompanionReward,
-  createCompanionRewardAnalyticsPayload,
-} from "@features/companion";
+import { createCompanionRewardAnalyticsPayload } from "@features/companion";
 import { getLocalDateKey } from "@shared/lib/date";
 import { addMealEntriesToCloud } from "../mealCloudSync";
+import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
 
 export function useMealOperations() {
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
+  const companion = useSelector((state: RootState) => state.companion);
   const currentMeals = useSelector((state: RootState) => {
     const todayKey = getLocalDateKey(new Date());
     return state.meal.items.filter(
@@ -72,7 +71,24 @@ export function useMealOperations() {
         if (result.isOk && result.value) {
           const mealEntry = result.value;
           await addMealEntriesToCloud(dispatch, meal, [mealEntry]);
-          dispatch(awardCompanionReward("meal_added"));
+          let companionRewardPayload = {};
+
+          try {
+            await applyCompanionRewardInCloud(
+              dispatch,
+              { companion },
+              "meal_added"
+            );
+            companionRewardPayload =
+              createCompanionRewardAnalyticsPayload("meal_added");
+          } catch (rewardError) {
+            setError(
+              rewardError instanceof Error
+                ? `Meal saved, but companion progress could not sync: ${rewardError.message}`
+                : "Meal saved, but companion progress could not sync."
+            );
+          }
+
           trackRuntimeEvent("meal_added", {
             mealType: mealEntry.mealType,
             productId: mealEntry.product.id,
@@ -83,7 +99,7 @@ export function useMealOperations() {
             calories: Math.round(
               (mealEntry.product.nutrients.calories * mealEntry.quantity) / 100
             ),
-            ...createCompanionRewardAnalyticsPayload("meal_added"),
+            ...companionRewardPayload,
           });
         } else {
           setError(result.errors?.[0] || "Failed to add meal");
@@ -94,7 +110,7 @@ export function useMealOperations() {
         setLoading(false);
       }
     },
-    [dispatch, currentMeals, meal, profile]
+    [companion, currentMeals, dispatch, meal, profile]
   );
 
   return {
