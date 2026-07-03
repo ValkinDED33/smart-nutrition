@@ -17,8 +17,7 @@ import {
 import type { AppDispatch } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import {
-  applyRemoteSnapshotToStore,
-  getRemoteSnapshotMeta,
+  applyRemoteSnapshotWithSyncPolicy,
 } from "@features/auth/sessionSnapshot";
 import {
   AuthApiError,
@@ -28,7 +27,6 @@ import {
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
-import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 import { AuthSurface } from "@shared/ui";
 
@@ -78,6 +76,8 @@ const LoginPage = () => {
 
     try {
       const { user, snapshot } = await loginApi(data.email, data.password);
+      const hydrationResult = applyRemoteSnapshotWithSyncPolicy(dispatch, snapshot);
+
       writeAuthIdentityHint({
         name: user.name,
         email: user.email,
@@ -86,19 +86,15 @@ const LoginPage = () => {
         setCredentials({
           user,
           syncMode: getAuthRuntimeInfo().mode,
-          syncOutbox: getSyncOutboxMeta(),
-          cloudMeta: getRemoteSnapshotMeta(snapshot),
+          syncOutbox: hydrationResult.syncOutbox,
+          cloudMeta: hydrationResult.cloudMeta,
         })
       );
-
-      if (snapshot && getSyncOutboxMeta().pendingChanges === 0) {
-        applyRemoteSnapshotToStore(dispatch, snapshot);
-      }
 
       trackRuntimeEvent("login_completed", {
         authMode: getAuthRuntimeInfo().mode,
         hasCloudSnapshot: Boolean(snapshot),
-        pendingSyncChanges: getSyncOutboxMeta().pendingChanges,
+        pendingSyncChanges: hydrationResult.syncOutbox.pendingChanges,
       });
 
       navigate("/home");

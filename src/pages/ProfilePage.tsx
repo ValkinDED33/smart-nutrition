@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import {
@@ -10,33 +11,88 @@ import {
   Typography,
 } from "@mui/material";
 import ProfileForm from "../features/profile/ProfileForm";
-import { NotificationSettingsCard } from "../features/profile/NotificationSettingsCard";
-import ReminderManagementCard from "../features/profile/ReminderManagementCard";
-import { WeightTrendCard } from "../features/profile/WeightTrendCard";
-import { AccountDataCard } from "../features/profile/AccountDataCard";
-import { CloudSyncStatusCard } from "../features/profile/CloudSyncStatusCard";
 import { ProfileSectionTabs } from "../features/profile/ProfileSectionTabs";
-import MotivationHubCard from "../features/profile/MotivationHubCard";
-import AssistantCustomizationCard from "../features/profile/AssistantCustomizationCard";
-import CompanionShopCard from "../features/profile/CompanionShopCard";
-import { BehaviorPersonalizationCard } from "../features/profile/BehaviorPersonalizationCard";
-import { MeasurementsCheckInCard } from "../features/profile/MeasurementsCheckInCard";
-import { BodyProgressPhotosCard } from "../features/profile/BodyProgressPhotosCard";
-import { BodyWeeklyReportCard } from "../features/profile/BodyWeeklyReportCard";
-import { PremiumAccessCard } from "../features/profile/PremiumAccessCard";
 import { useLanguage } from "../shared/language";
-import { EmptyState, PageShell } from "@shared/ui";
-import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
+import { EmptyState, LoadingSkeleton, PageShell } from "@shared/ui";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
-import { MealDayOverview } from "../features/meal/MealDayOverview";
-import { CommunityHubCard } from "../features/community/CommunityHubCard";
-import { AdminCenterCard } from "../features/platform/AdminCenterCard";
 import {
   selectCurrentWeight,
   selectDailyMacroProgress,
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
 import { communityStatusLabels, resolveCommunityStatus } from "@domain/user/roles";
+
+const WeightTrendCard = lazy(() =>
+  import("../features/profile/WeightTrendCard").then((module) => ({
+    default: module.WeightTrendCard,
+  }))
+);
+const MeasurementsCheckInCard = lazy(() =>
+  import("../features/profile/MeasurementsCheckInCard").then((module) => ({
+    default: module.MeasurementsCheckInCard,
+  }))
+);
+const BodyProgressPhotosCard = lazy(() =>
+  import("../features/profile/BodyProgressPhotosCard").then((module) => ({
+    default: module.BodyProgressPhotosCard,
+  }))
+);
+const BodyWeeklyReportCard = lazy(() =>
+  import("../features/profile/BodyWeeklyReportCard").then((module) => ({
+    default: module.BodyWeeklyReportCard,
+  }))
+);
+const MealDayOverview = lazy(() =>
+  import("../features/meal/MealDayOverview").then((module) => ({
+    default: module.MealDayOverview,
+  }))
+);
+const DailyHistoryExplorer = lazy(() =>
+  import("../features/meal/DailyHistoryExplorer").then((module) => ({
+    default: module.DailyHistoryExplorer,
+  }))
+);
+const AssistantCustomizationCard = lazy(
+  () => import("../features/profile/AssistantCustomizationCard")
+);
+const CompanionShopCard = lazy(() => import("../features/profile/CompanionShopCard"));
+const CommunityHubCard = lazy(() =>
+  import("../features/community/CommunityHubCard").then((module) => ({
+    default: module.CommunityHubCard,
+  }))
+);
+const BehaviorPersonalizationCard = lazy(
+  () => import("../features/profile/BehaviorPersonalizationCard")
+);
+const MotivationHubCard = lazy(() => import("../features/profile/MotivationHubCard"));
+const PremiumAccessCard = lazy(() =>
+  import("../features/profile/PremiumAccessCard").then((module) => ({
+    default: module.PremiumAccessCard,
+  }))
+);
+const NotificationSettingsCard = lazy(() =>
+  import("../features/profile/NotificationSettingsCard").then((module) => ({
+    default: module.NotificationSettingsCard,
+  }))
+);
+const ReminderManagementCard = lazy(
+  () => import("../features/profile/ReminderManagementCard")
+);
+const CloudSyncStatusCard = lazy(() =>
+  import("../features/profile/CloudSyncStatusCard").then((module) => ({
+    default: module.CloudSyncStatusCard,
+  }))
+);
+const AccountDataCard = lazy(() =>
+  import("../features/profile/AccountDataCard").then((module) => ({
+    default: module.AccountDataCard,
+  }))
+);
+const AdminCenterCard = lazy(() =>
+  import("../features/platform/AdminCenterCard").then((module) => ({
+    default: module.AdminCenterCard,
+  }))
+);
 
 const profileCopy = {
   uk: {
@@ -506,9 +562,13 @@ const ProfilePage = () => {
             content: (
               <Stack spacing={3}>
                 <ProfileForm />
-                <WeightTrendCard />
-                <MeasurementsCheckInCard />
-                <BodyProgressPhotosCard />
+                <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+                  <Stack spacing={3}>
+                    <WeightTrendCard />
+                    <MeasurementsCheckInCard />
+                    <BodyProgressPhotosCard />
+                  </Stack>
+                </Suspense>
               </Stack>
             ),
           },
@@ -709,9 +769,13 @@ const ProfilePage = () => {
                   </Stack>
                 </Paper>
 
-                <BodyWeeklyReportCard />
-                <MealDayOverview />
-                <DailyHistoryExplorer />
+                <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+                  <Stack spacing={3}>
+                    <BodyWeeklyReportCard />
+                    <MealDayOverview />
+                    <DailyHistoryExplorer />
+                  </Stack>
+                </Suspense>
               </Stack>
             ),
           },
@@ -719,35 +783,41 @@ const ProfilePage = () => {
             id: "assistant",
             label: copy.tabs.assistant,
             content: (
-              <Stack spacing={3}>
-                <AssistantCustomizationCard />
-                <CompanionShopCard />
-                <CommunityHubCard />
-              </Stack>
+              <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
+                <Stack spacing={3}>
+                  <AssistantCustomizationCard />
+                  <CompanionShopCard />
+                  <CommunityHubCard />
+                </Stack>
+              </Suspense>
             ),
           },
           {
             id: "motivation",
             label: copy.tabs.motivation,
             content: (
-              <Stack spacing={3}>
-                <BehaviorPersonalizationCard />
-                <MotivationHubCard />
-                <PremiumAccessCard />
-              </Stack>
+              <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
+                <Stack spacing={3}>
+                  <BehaviorPersonalizationCard />
+                  <MotivationHubCard />
+                  <PremiumAccessCard />
+                </Stack>
+              </Suspense>
             ),
           },
           {
             id: "security",
             label: copy.tabs.security,
             content: (
-              <Stack spacing={3}>
-                <NotificationSettingsCard />
-                <ReminderManagementCard />
-                <CloudSyncStatusCard />
-                <AccountDataCard />
-                <AdminCenterCard />
-              </Stack>
+              <Suspense fallback={<LoadingSkeleton cards={4} bodyRows={3} />}>
+                <Stack spacing={3}>
+                  <NotificationSettingsCard />
+                  <ReminderManagementCard />
+                  <CloudSyncStatusCard />
+                  <AccountDataCard />
+                  <AdminCenterCard />
+                </Stack>
+              </Suspense>
             ),
           },
         ]}

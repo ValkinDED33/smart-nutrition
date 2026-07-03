@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   resolveGlobalAssistantAvatarRenderMode,
@@ -21,6 +22,16 @@ const resolveMobileModel = (pathname: string) =>
   });
 
 describe("GlobalAssistantLayer", () => {
+  it("does not import the 3D assistant runtime from the global shell", async () => {
+    const source = await readFile(
+      new URL("./GlobalAssistantLayer.tsx", import.meta.url),
+      "utf8"
+    );
+
+    expect(source).not.toContain("@features/assistant-3d");
+    expect(source).not.toContain("renderMode=");
+  });
+
   it("uses guided public companion mode on auth routes and hides on onboarding", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {
@@ -95,28 +106,34 @@ describe("GlobalAssistantLayer", () => {
     expect(model.presence.mode).toBe("compact");
     expect(model.presence.allowSpeechBubble).toBe(false);
     expect(model.displayAction?.route).toBe("/coach");
-    expect(model.avatarRenderMode).toBe("auto");
+    expect(model.avatarRenderMode).toBe("2d");
   });
 
-  it("allows compact global assistants to opt into lazy 3D when they will not cover inputs", () => {
+  it("keeps every global assistant surface on the 2D avatar contract", () => {
     expect(
       resolveGlobalAssistantAvatarRenderMode({
         viewport: "mobile",
         presenceMode: "compact",
       })
-    ).toBe("3d");
+    ).toBe("2d");
     expect(
       resolveGlobalAssistantAvatarRenderMode({
         viewport: "tablet",
         presenceMode: "compact",
       })
-    ).toBe("3d");
+    ).toBe("2d");
     expect(
       resolveGlobalAssistantAvatarRenderMode({
         viewport: "desktop",
         presenceMode: "compact",
       })
-    ).toBe("auto");
+    ).toBe("2d");
+    expect(
+      resolveGlobalAssistantAvatarRenderMode({
+        viewport: "desktop",
+        presenceMode: "bubble",
+      })
+    ).toBe("2d");
   });
 
   it("keeps global assistant avatars lightweight while the user is editing inputs", () => {
@@ -139,15 +156,6 @@ describe("GlobalAssistantLayer", () => {
         viewport: "tablet",
         presenceMode: "bubble",
       })
-    ).toBe("auto");
-  });
-
-  it("allows the global desktop assistant bubble to opt into lazy 3D", () => {
-    expect(
-      resolveGlobalAssistantAvatarRenderMode({
-        viewport: "desktop",
-        presenceMode: "bubble",
-      })
-    ).toBe("auto");
+    ).toBe("2d");
   });
 });

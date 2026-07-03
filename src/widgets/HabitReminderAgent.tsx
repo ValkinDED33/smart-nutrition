@@ -6,7 +6,7 @@ import { useLanguage } from "@shared/language";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AppLanguage } from "@shared/types/i18n";
 import {
   getSafeNotificationPermission,

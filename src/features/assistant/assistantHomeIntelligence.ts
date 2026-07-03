@@ -1,6 +1,6 @@
 import type { DailyContext, DailyContextFocus } from "./dailyContext";
 import type { AppLanguage } from "../types/i18n";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AssistantOnboardingProfile } from "@domain/profile/types";
 
 export type AssistantHomePhase = "morning" | "day" | "evening";

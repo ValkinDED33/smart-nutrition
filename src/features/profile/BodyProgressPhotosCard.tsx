@@ -1,5 +1,5 @@
 import { type ChangeEvent, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import imageCompression from "browser-image-compression";
 import Cropper, { type Area } from "react-easy-crop";
 import {
@@ -12,11 +12,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { RootState } from "../../app/store";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
-import { applyProfileActionInCloud } from "./profileCloudSync";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const MAX_PHOTO_BYTES = 8_000_000;
 const MAX_COMPRESSED_PHOTO_MB = 1.2;
@@ -137,8 +137,8 @@ const progressPhotoCopy = {
 } as const;
 
 export const BodyProgressPhotosCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile);
+  const profileAction = useProfileCloudAction();
   const photos = profile.progressPhotos;
   const { appLanguage } = useLanguage();
   const copy = progressPhotoCopy[appLanguage];
@@ -149,7 +149,6 @@ export const BodyProgressPhotosCard = () => {
   const [zoom, setZoom] = useState(1);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [removingPhotoId, setRemovingPhotoId] = useState<string | null>(null);
 
   const sortedPhotos = useMemo(
@@ -213,46 +212,50 @@ export const BodyProgressPhotosCard = () => {
   };
 
   const handleSave = async () => {
-    if (isSaving || (!preview && !rawPreview)) {
+    if (profileAction.saving || (!preview && !rawPreview)) {
       return;
     }
 
-    setIsSaving(true);
     setError(null);
+    profileAction.clearError();
 
     try {
       const imageDataUrl =
         preview ?? (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
 
-      await applyProfileActionInCloud(
-        dispatch,
-        profile,
+      const nextProfile = await profileAction.runProfileAction(
         addProgressPhoto({ imageDataUrl, note })
       );
+
+      if (!nextProfile) {
+        throw new Error(copy.saveError);
+      }
+
       setRawPreview(null);
       setPreview(null);
       setNote("");
     } catch {
       setError(copy.saveError);
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleRemove = async (photoId: string) => {
-    if (removingPhotoId !== null) {
+    if (removingPhotoId !== null || profileAction.saving) {
       return;
     }
 
     setRemovingPhotoId(photoId);
     setError(null);
+    profileAction.clearError();
 
     try {
-      await applyProfileActionInCloud(
-        dispatch,
-        profile,
+      const nextProfile = await profileAction.runProfileAction(
         removeProgressPhoto(photoId)
       );
+
+      if (!nextProfile) {
+        throw new Error(copy.saveError);
+      }
     } catch {
       setError(copy.saveError);
     } finally {
@@ -278,7 +281,18 @@ export const BodyProgressPhotosCard = () => {
           <Typography color="text.secondary">{copy.subtitle}</Typography>
         </Stack>
 
-        {error && <Alert severity="error">{error}</Alert>}
+        {profileAction.saving ? (
+          <Alert severity="info">{copy.saving}</Alert>
+        ) : null}
+
+        {error || profileAction.hasError ? (
+          <Alert severity="error" onClose={() => {
+            setError(null);
+            profileAction.clearError();
+          }}>
+            {error ?? copy.saveError}
+          </Alert>
+        ) : null}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Stack spacing={1.5} sx={{ flex: 1 }}>
@@ -299,6 +313,7 @@ export const BodyProgressPhotosCard = () => {
             <TextField
               label={copy.note}
               value={note}
+              disabled={profileAction.saving}
               onChange={(event) => setNote(event.target.value.slice(0, 160))}
               multiline
               minRows={2}
@@ -338,7 +353,7 @@ export const BodyProgressPhotosCard = () => {
             )}
             <Button
               variant="contained"
-              disabled={isSaving || (!preview && !rawPreview)}
+              disabled={profileAction.saving || (!preview && !rawPreview)}
               onClick={() => {
                 void handleSave();
               }}
@@ -350,7 +365,7 @@ export const BodyProgressPhotosCard = () => {
                 background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
               }}
             >
-              {isSaving ? copy.saving : copy.save}
+              {profileAction.saving ? copy.saving : copy.save}
             </Button>
           </Stack>
 
@@ -464,7 +479,7 @@ export const BodyProgressPhotosCard = () => {
                       <Button
                         size="small"
                         color="error"
-                        disabled={removingPhotoId !== null}
+                        disabled={removingPhotoId !== null || profileAction.saving}
                         onClick={() => {
                           void handleRemove(photo.id);
                         }}

@@ -16,7 +16,7 @@ import type { RootState } from "@app/store";
 import type { AssistantArea } from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
 import {
@@ -559,8 +559,6 @@ export const GlobalAssistantLayer = () => {
             variant={companionKind}
             size={companionSize}
             mood={layerModel.emotion.mood}
-            renderMode={layerModel.avatarRenderMode}
-            defer3dUntilVisible={false}
             active
           />
         </Box>

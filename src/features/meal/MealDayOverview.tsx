@@ -26,6 +26,7 @@ import {
   removeMealEntryFromCloud,
   updateMealEntryInCloud,
 } from "./mealCloudSync";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -45,6 +46,14 @@ const overviewCopy = {
     editTitle: "Редагування запису",
     share: "Поділитися блюдом",
     shared: "Страва з щоденника",
+    saving: "Зберігаю зміни прийому їжі в хмару...",
+    confirmedEdit: "Запис оновлено і підтверджено backend.",
+    confirmedDelete: "Запис видалено і підтверджено backend.",
+    confirmedRepeat: "Вчорашній прийом додано до сьогодні і підтверджено backend.",
+    failedEdit: "Не вдалося оновити запис.",
+    failedDelete: "Не вдалося видалити запис.",
+    failedRepeat: "Не вдалося повторити прийом їжі.",
+    retry: "Спробувати ще раз",
   },
   pl: {
     title: "Dzisiejsze posiłki",
@@ -61,6 +70,14 @@ const overviewCopy = {
     editTitle: "Edycja wpisu",
     share: "Udostępnij posiłek",
     shared: "Posiłek z dziennika",
+    saving: "Zapisuję zmiany posiłku w chmurze...",
+    confirmedEdit: "Wpis zaktualizowany i potwierdzony przez backend.",
+    confirmedDelete: "Wpis usunięty i potwierdzony przez backend.",
+    confirmedRepeat: "Wczorajszy posiłek dodany do dziś i potwierdzony przez backend.",
+    failedEdit: "Nie udało się zaktualizować wpisu.",
+    failedDelete: "Nie udało się usunąć wpisu.",
+    failedRepeat: "Nie udało się powtórzyć posiłku.",
+    retry: "Spróbuj ponownie",
   },
   en: {
     title: "Today's meals",
@@ -77,6 +94,14 @@ const overviewCopy = {
     editTitle: "Edit entry",
     share: "Share meal",
     shared: "Diary meal",
+    saving: "Saving meal changes to cloud...",
+    confirmedEdit: "Entry updated and confirmed by the backend.",
+    confirmedDelete: "Entry deleted and confirmed by the backend.",
+    confirmedRepeat: "Yesterday's meal was added to today and confirmed by the backend.",
+    failedEdit: "Could not update the entry.",
+    failedDelete: "Could not delete the entry.",
+    failedRepeat: "Could not repeat the meal.",
+    retry: "Try again",
   },
 } as const;
 
@@ -88,6 +113,7 @@ const InlineEditPanel = ({
   onClose,
   onSave,
   onDelete,
+  saving = false,
   mealTypes,
   t,
   appLanguage,
@@ -98,6 +124,7 @@ const InlineEditPanel = ({
   onClose: () => void;
   onSave: (quantity: number, mealType: MealType) => void;
   onDelete: () => void;
+  saving?: boolean;
   mealTypes: Record<MealType, string>;
   t: (key: string) => string;
   appLanguage: AppLanguage;
@@ -158,18 +185,18 @@ const InlineEditPanel = ({
           ))}
         </TextField>
       <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
-        <Button onClick={onDelete} color="error" variant="text">
+        <Button onClick={onDelete} color="error" variant="text" disabled={saving}>
           {copy.delete}
         </Button>
-        <Button onClick={onClose} variant="text">
+        <Button onClick={onClose} variant="text" disabled={saving}>
           {copy.cancel}
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={typeof quantity !== "number" || quantity <= 0}
+          disabled={saving || typeof quantity !== "number" || quantity <= 0}
         >
-          {copy.save}
+          {saving ? copy.saving : copy.save}
         </Button>
       </Stack>
       </Stack>
@@ -187,7 +214,42 @@ export const MealDayOverview = () => {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [editingItem, setEditingItem] = useState<MealEntry | null>(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
-  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
+  const {
+    notice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.saving,
+      edit: copy.saving,
+      delete: copy.saving,
+      repeat: copy.saving,
+      saveTemplate: copy.saving,
+      applyTemplate: copy.saving,
+      saveProduct: copy.saving,
+    },
+    confirmed: {
+      add: copy.confirmedRepeat,
+      edit: copy.confirmedEdit,
+      delete: copy.confirmedDelete,
+      repeat: copy.confirmedRepeat,
+      saveTemplate: copy.confirmedEdit,
+      applyTemplate: copy.confirmedRepeat,
+      saveProduct: copy.confirmedEdit,
+    },
+    failed: {
+      add: copy.failedRepeat,
+      edit: copy.failedEdit,
+      delete: copy.failedDelete,
+      repeat: copy.failedRepeat,
+      saveTemplate: copy.failedEdit,
+      applyTemplate: copy.failedRepeat,
+      saveProduct: copy.failedEdit,
+    },
+    retry: copy.retry,
+  });
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -245,36 +307,30 @@ export const MealDayOverview = () => {
   };
 
   const handleDeleteClick = async (item: MealEntry) => {
-    setMealSaveError(null);
-
-    try {
-      await removeMealEntryFromCloud(dispatch, meal, item.id);
-      return true;
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-      return false;
-    }
+    return runMealAction({
+      actionId: `delete-${item.id}`,
+      kind: "delete",
+      action: () => removeMealEntryFromCloud(dispatch, meal, item.id),
+    });
   };
 
   const handleSaveEdit = async (quantity: number, mealType: MealType) => {
     if (editingItem) {
-      setMealSaveError(null);
-
-      try {
-        await updateMealEntryInCloud(dispatch, meal, {
+      const saved = await runMealAction({
+        actionId: `edit-${editingItem.id}`,
+        kind: "edit",
+        action: () =>
+          updateMealEntryInCloud(dispatch, meal, {
           id: editingItem.id,
           product: editingItem.product,
           quantity,
           mealType,
-        });
+          }),
+      });
+
+      if (saved) {
         setShowEditPanel(false);
         setEditingItem(null);
-      } catch (error) {
-        setMealSaveError(
-          error instanceof Error ? error.message : "Could not save meal to cloud."
-        );
       }
     }
   };
@@ -297,15 +353,11 @@ export const MealDayOverview = () => {
       eatenAt: new Date().toISOString(),
     }));
 
-    setMealSaveError(null);
-
-    try {
-      await addMealEntriesToCloud(dispatch, meal, newEntries);
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    }
+    await runMealAction({
+      actionId: `repeat-${mealType}`,
+      kind: "repeat",
+      action: () => addMealEntriesToCloud(dispatch, meal, newEntries),
+    });
   };
 
   const handleShareMealType = (mealType: MealType, entries: MealEntry[]) => {
@@ -363,9 +415,24 @@ export const MealDayOverview = () => {
             />
           </Stack>
 
-          {mealSaveError ? (
-            <Alert severity="error" onClose={() => setMealSaveError(null)}>
-              {mealSaveError}
+          {notice ? (
+            <Alert
+              severity={notice.severity}
+              action={
+                notice.retryable ? (
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => void retryMealAction()}
+                    sx={{ textTransform: "none", fontWeight: 800 }}
+                  >
+                    {copy.retry}
+                  </Button>
+                ) : undefined
+              }
+              onClose={clearFeedback}
+            >
+              {notice.text}
             </Alert>
           ) : null}
 
@@ -411,7 +478,10 @@ export const MealDayOverview = () => {
                             size="small"
                             variant="text"
                             onClick={() => handleRepeatMealType(mealType)}
-                            disabled={!repeatableMealTypes.has(mealType)}
+                            disabled={
+                              !repeatableMealTypes.has(mealType) ||
+                              isSavingAction(`repeat-${mealType}`)
+                            }
                             sx={{ textTransform: "none" }}
                           >
                             {copy.repeat}
@@ -468,6 +538,7 @@ export const MealDayOverview = () => {
                                 <Button
                                   size="small"
                                   onClick={() => handleEditClick(item)}
+                                  disabled={isSavingAction(`delete-${item.id}`)}
                                   sx={{ minWidth: "auto", p: 0.5 }}
                                 >
                                   {copy.edit}
@@ -475,6 +546,7 @@ export const MealDayOverview = () => {
                                 <Button
                                   size="small"
                                   onClick={() => handleDeleteClick(item)}
+                                  disabled={isSavingAction(`delete-${item.id}`)}
                                   sx={{ minWidth: "auto", p: 0.5, color: "error.main" }}
                                 >
                                   {copy.delete}
@@ -516,6 +588,11 @@ export const MealDayOverview = () => {
         t={t}
         appLanguage={appLanguage}
         copy={copy}
+        saving={
+          Boolean(editingItem) &&
+          (isSavingAction(`edit-${editingItem?.id}`) ||
+            isSavingAction(`delete-${editingItem?.id}`))
+        }
       />
     </>
   );

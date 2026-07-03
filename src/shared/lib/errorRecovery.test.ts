@@ -42,6 +42,10 @@ describe("errorRecovery", () => {
     expect(
       isLikelyStaleBuildError(new Error("Failed to fetch dynamically imported module"))
     ).toBe(true);
+    expect(isLikelyStaleBuildError(new Error("Unable to preload CSS for /assets/App.css"))).toBe(
+      true
+    );
+    expect(isLikelyStaleBuildError(new TypeError("Load failed"))).toBe(true);
     expect(isLikelyStaleBuildError(new Error("Validation failed"))).toBe(false);
   });
 

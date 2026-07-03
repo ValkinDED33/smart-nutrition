@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -31,31 +31,29 @@ import {
   formatProductPortion,
   getProductPortionPresets,
 } from "@domain/products/productPortions";
-import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductSuggestions } from "./productSuggestionModel";
 import { addMealEntriesToCloud } from "./mealCloudSync";
 import { createMealEntryDraft } from "./mealSaveModel";
+import {
+  createQuickMealComposerRow,
+  buildQuickMealEntryDrafts,
+  createInitialQuickMealSaveState,
+  hasValidComposerMealRows,
+  resolveQuickMealSaveNotice,
+  type QuickMealComposerRow,
+} from "./quickMealComposerModel";
+import type { MealEntry } from "@domain/meal/types";
+
+const CatalogContributionCard = lazy(() =>
+  import("@features/platform/CatalogContributionCard").then((module) => ({
+    default: module.CatalogContributionCard,
+  }))
+);
 
 interface Props {
   mealType: MealType;
 }
-
-interface ComposerRow {
-  id: string;
-  product: Product | null;
-  productQuery: string;
-  quantity: number | "";
-}
-
-const createRow = (product: Product | null = null): ComposerRow => ({
-  id:
-    globalThis.crypto?.randomUUID?.() ??
-    `composer-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  product,
-  productQuery: "",
-  quantity: 100,
-});
 
 const composerStatusCopy = {
   uk: {
@@ -71,6 +69,11 @@ const composerStatusCopy = {
     closeContribution: "Сховати форму",
     inlineSuggestions: "Варіанти з бази",
     choose: "Обрати",
+    savingMeal: "Зберігаю прийом їжі в хмару...",
+    mealSaved:
+      "Додано до поточного прийому їжі та підтверджено backend. Позицій: {count}.",
+    mealSaveFailed: "Не вдалося зберегти прийом їжі в хмару.",
+    retryMealSave: "Повторити збереження",
   },
   pl: {
     unavailable:
@@ -85,6 +88,11 @@ const composerStatusCopy = {
     closeContribution: "Ukryj formularz",
     inlineSuggestions: "Propozycje z bazy",
     choose: "Wybierz",
+    savingMeal: "Zapisuję posiłek w chmurze...",
+    mealSaved:
+      "Dodano do bieżącego posiłku i potwierdzono przez backend. Pozycji: {count}.",
+    mealSaveFailed: "Nie udało się zapisać posiłku w chmurze.",
+    retryMealSave: "Ponów zapis",
   },
   en: {
     unavailable:
@@ -99,6 +107,11 @@ const composerStatusCopy = {
     closeContribution: "Hide form",
     inlineSuggestions: "Database suggestions",
     choose: "Choose",
+    savingMeal: "Saving meal to cloud...",
+    mealSaved:
+      "Added to the current meal and confirmed by the backend. Items: {count}.",
+    mealSaveFailed: "Could not save the meal to cloud.",
+    retryMealSave: "Retry save",
   },
 } as const;
 
@@ -117,15 +130,15 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
-  const [rows, setRows] = useState<ComposerRow[]>(() => [
-    createRow(),
-    { ...createRow(), quantity: 80 },
+  const [rows, setRows] = useState<QuickMealComposerRow[]>(() => [
+    createQuickMealComposerRow(),
   ]);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
   const [contributionOpen, setContributionOpen] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isSavingMeal, setIsSavingMeal] = useState(false);
+  const [saveState, setSaveState] = useState(() =>
+    createInitialQuickMealSaveState()
+  );
   const activeRow = rows.find((row) => row.id === activeRowId) ?? rows[0] ?? null;
   const activeSearchText = activeRow?.productQuery.trim() ?? "";
   const shouldLookupProducts = debouncedSearchText.trim().length >= 2;
@@ -181,7 +194,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     { calories: 0, protein: 0, fat: 0, carbs: 0 }
   );
 
-  const updateRow = (id: string, patch: Partial<ComposerRow>) => {
+  const updateRow = (id: string, patch: Partial<QuickMealComposerRow>) => {
     setRows((currentRows) =>
       currentRows.map((row) => (row.id === id ? { ...row, ...patch } : row))
     );
@@ -192,56 +205,49 @@ export const QuickMealComposer = ({ mealType }: Props) => {
   };
 
   const addRow = () => {
-    const nextRow = createRow();
+    const nextRow = createQuickMealComposerRow();
     setRows((currentRows) => [...currentRows, nextRow]);
     setActiveRowId(nextRow.id);
   };
 
-  const handleSaveMeal = async () => {
-    const entries = rows
-      .map((row) => {
-        const product = row.product;
-        const quantity = typeof row.quantity === "string" ? 0 : row.quantity;
-
-        if (!product || quantity <= 0) {
-          return null;
-        }
-
-        return createMealEntryDraft({
-          product,
-          quantity,
-          mealType,
-          origin: "manual",
-        });
-      })
-      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
-
+  const saveEntries = useCallback(async (entries: MealEntry[]) => {
     if (entries.length === 0) {
       return;
     }
 
-    setSaveError(null);
-    setIsSavingMeal(true);
+    setSaveState({ status: "saving", entries });
 
     try {
       await addMealEntriesToCloud(dispatch, meal, entries);
     } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-      setIsSavingMeal(false);
+      setSaveState({
+        status: "failed",
+        entries,
+        message:
+          error instanceof Error ? error.message : "Could not save meal to cloud.",
+      });
       return;
     }
 
-    const nextRow = createRow();
+    const nextRow = createQuickMealComposerRow();
     setRows([nextRow]);
     setActiveRowId(nextRow.id);
-    setIsSavingMeal(false);
+    setSaveState({ status: "saved", entryCount: entries.length });
+  }, [dispatch, meal]);
+
+  const handleSaveMeal = async () => {
+    const entries = buildQuickMealEntryDrafts(rows, mealType, createMealEntryDraft);
+
+    await saveEntries(entries);
   };
 
-  const hasValidMealRows = rows.some(
-    (row) => row.product && typeof row.quantity === "number" && row.quantity > 0
-  );
+  const hasValidMealRows = hasValidComposerMealRows(rows);
+  const saveNotice = resolveQuickMealSaveNotice(saveState, {
+    saving: copy.savingMeal,
+    saved: copy.mealSaved,
+    failed: copy.mealSaveFailed,
+    retry: copy.retryMealSave,
+  });
   const hasOnlineLookupResult = (productsQuery.data ?? []).length > 0;
   const canOfferContribution =
     activeSearchText.length >= 3 &&
@@ -323,9 +329,28 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           </Alert>
         ) : null}
 
-        {saveError ? (
-          <Alert severity="error" onClose={() => setSaveError(null)}>
-            {saveError}
+        {saveNotice ? (
+          <Alert
+            severity={saveNotice.severity}
+            action={
+              saveState.status === "failed" ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void saveEntries(saveState.entries)}
+                  sx={{ textTransform: "none", fontWeight: 900 }}
+                >
+                  {copy.retryMealSave}
+                </Button>
+              ) : undefined
+            }
+            onClose={
+              saveState.status === "saving"
+                ? undefined
+                : () => setSaveState(createInitialQuickMealSaveState())
+            }
+          >
+            {saveNotice.text}
           </Alert>
         ) : null}
 
@@ -600,7 +625,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         ) : null}
 
         <Collapse in={contributionOpen && canOfferContribution} timeout="auto" unmountOnExit>
-          <CatalogContributionCard key={activeSearchText} compact initialName={activeSearchText} />
+          <Suspense fallback={<CircularProgress size={24} />}>
+            <CatalogContributionCard key={activeSearchText} compact initialName={activeSearchText} />
+          </Suspense>
         </Collapse>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
@@ -610,9 +637,9 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           <Button
             variant="contained"
             onClick={() => void handleSaveMeal()}
-            disabled={!hasValidMealRows || isSavingMeal}
+            disabled={!hasValidMealRows || saveState.status === "saving"}
           >
-            {t("composer.saveMeal")}
+            {saveState.status === "saving" ? copy.savingMeal : t("composer.saveMeal")}
           </Button>
         </Stack>
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { Component, lazy, Suspense, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ScanBarcode } from "lucide-react";
@@ -16,23 +16,11 @@ import {
 } from "@mui/material";
 import type { RootState } from "../app/store";
 import { FoodCommandCenter } from "../features/meal/FoodCommandCenter";
-import { ProductSearch } from "../features/meal/ProductSearch";
-import { PhotoMealAssistant } from "../features/meal/PhotoMealAssistant";
-import { RecipeSection } from "../features/meal/RecipeSection";
-import { QuickMealComposer } from "../features/meal/QuickMealComposer";
-import { QuickProductShelf } from "../features/meal/QuickProductShelf";
-import { NutritionLibraryPanel } from "../features/meal/NutritionLibraryPanel";
-import { DailyHistoryExplorer } from "../features/meal/DailyHistoryExplorer";
-import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
-import { CatalogContributionCard } from "../features/platform/CatalogContributionCard";
 import { MealEntryEditorPanel } from "../features/meal/MealEntryEditorPanel";
 import {
   selectTodayMealItems,
   selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
-import { TemplateVault } from "../features/meal/TemplateVault";
-import { YesterdayRepeater } from "../features/meal/YesterdayRepeater";
-import { SmartRecommendations } from "../features/meal/SmartRecommendations";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
@@ -42,6 +30,66 @@ import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({
     default: module.BarcodeScanner,
+  }))
+);
+const PhotoMealAssistant = lazy(() =>
+  import("../features/meal/PhotoMealAssistant").then((module) => ({
+    default: module.PhotoMealAssistant,
+  }))
+);
+const ProductSearch = lazy(() =>
+  import("../features/meal/ProductSearch").then((module) => ({
+    default: module.ProductSearch,
+  }))
+);
+const QuickMealComposer = lazy(() =>
+  import("../features/meal/QuickMealComposer").then((module) => ({
+    default: module.QuickMealComposer,
+  }))
+);
+const QuickProductShelf = lazy(() =>
+  import("../features/meal/QuickProductShelf").then((module) => ({
+    default: module.QuickProductShelf,
+  }))
+);
+const NutritionLibraryPanel = lazy(() =>
+  import("../features/meal/NutritionLibraryPanel").then((module) => ({
+    default: module.NutritionLibraryPanel,
+  }))
+);
+const DailyHistoryExplorer = lazy(() =>
+  import("../features/meal/DailyHistoryExplorer").then((module) => ({
+    default: module.DailyHistoryExplorer,
+  }))
+);
+const FridgeRecipePlanner = lazy(() =>
+  import("../features/fridge/FridgeRecipePlanner").then((module) => ({
+    default: module.FridgeRecipePlanner,
+  }))
+);
+const CatalogContributionCard = lazy(() =>
+  import("../features/platform/CatalogContributionCard").then((module) => ({
+    default: module.CatalogContributionCard,
+  }))
+);
+const RecipeSection = lazy(() =>
+  import("../features/meal/RecipeSection").then((module) => ({
+    default: module.RecipeSection,
+  }))
+);
+const TemplateVault = lazy(() =>
+  import("../features/meal/TemplateVault").then((module) => ({
+    default: module.TemplateVault,
+  }))
+);
+const YesterdayRepeater = lazy(() =>
+  import("../features/meal/YesterdayRepeater").then((module) => ({
+    default: module.YesterdayRepeater,
+  }))
+);
+const SmartRecommendations = lazy(() =>
+  import("../features/meal/SmartRecommendations").then((module) => ({
+    default: module.SmartRecommendations,
   }))
 );
 
@@ -60,6 +108,11 @@ const mealInputCopy = {
     advancedSubtitle:
       "Шаблони, повтори, холодильник і рецепти залишаються нижче, коли потрібна точніша збірка.",
     scanAction: "Відкрити сканер",
+    loadingModule: "Завантажуємо інструмент",
+    moduleErrorTitle: "Інструмент не завантажився",
+    moduleErrorBody:
+      "Можливо, мережа або кеш отримали старий chunk. Оновіть модуль і спробуйте ще раз.",
+    reloadModule: "Оновити",
     sections: {
       day: "День",
       add: "Додати",
@@ -97,6 +150,11 @@ const mealInputCopy = {
     advancedSubtitle:
       "Szablony, powtórki, lodówka i przepisy zostają niżej, gdy potrzeba dokładniejszego składania.",
     scanAction: "Otwórz skaner",
+    loadingModule: "Ładujemy narzędzie",
+    moduleErrorTitle: "Narzędzie się nie załadowało",
+    moduleErrorBody:
+      "Sieć albo cache mogły zachować stary chunk. Odśwież moduł i spróbuj ponownie.",
+    reloadModule: "Odśwież",
     sections: {
       day: "Dzień",
       add: "Dodaj",
@@ -134,6 +192,11 @@ const mealInputCopy = {
     advancedSubtitle:
       "Templates, repeats, fridge planning, and recipes stay below when you need a more precise setup.",
     scanAction: "Open scanner",
+    loadingModule: "Loading tool",
+    moduleErrorTitle: "Tool did not load",
+    moduleErrorBody:
+      "The network or cache may have kept an old chunk. Refresh the module and try again.",
+    reloadModule: "Refresh",
     sections: {
       day: "Day",
       add: "Add",
@@ -175,6 +238,59 @@ type MealSection =
   | "templates"
   | "recommendations";
 type AddTool = "search" | "favorites" | "composer" | "scanner";
+
+type MealBuilderLazyBoundaryProps = {
+  title: string;
+  errorTitle: string;
+  errorBody: string;
+  reloadLabel: string;
+  children: ReactNode;
+};
+
+class MealBuilderLazyBoundary extends Component<
+  MealBuilderLazyBoundaryProps,
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(previousProps: MealBuilderLazyBoundaryProps) {
+    if (previousProps.title !== this.props.title && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn("Meal builder module failed to load", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
+  render() {
+    if (!this.state.hasError) {
+      return this.props.children;
+    }
+
+    return (
+      <SectionCard tone="warning">
+        <Stack spacing={1.25}>
+          <Typography sx={{ fontWeight: 900 }}>{this.props.errorTitle}</Typography>
+          <Typography color="text.secondary">{this.props.errorBody}</Typography>
+          <Button
+            variant="outlined"
+            onClick={() => window.location.reload()}
+            sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+          >
+            {this.props.reloadLabel}
+          </Button>
+        </Stack>
+      </SectionCard>
+    );
+  }
+}
 
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -271,6 +387,29 @@ const MealBuilderPage = () => {
     { id: "composer", label: copy.addTools.composer },
     { id: "scanner", label: copy.addTools.scanner },
   ];
+  const renderLazyModule = (title: string, children: ReactNode) => (
+    <MealBuilderLazyBoundary
+      title={title}
+      errorTitle={copy.moduleErrorTitle}
+      errorBody={copy.moduleErrorBody}
+      reloadLabel={copy.reloadModule}
+    >
+      <Suspense
+        fallback={
+          <SectionCard>
+            <Stack spacing={1.25} alignItems="center" sx={{ py: 1.5 }}>
+              <Loader fullScreen={false} size={54} />
+              <Typography color="text.secondary" sx={{ fontWeight: 800 }}>
+                {copy.loadingModule}: {title}
+              </Typography>
+            </Stack>
+          </SectionCard>
+        }
+      >
+        {children}
+      </Suspense>
+    </MealBuilderLazyBoundary>
+  );
 
   const mealTypeSelector = (
     <SectionCard>
@@ -420,7 +559,7 @@ const MealBuilderPage = () => {
       />
 
       {activeSection === "add" ? (
-        <Stack spacing={3}>
+        <Stack spacing={3} sx={{ minWidth: 0 }}>
       <SectionCard
         title={copy.inputTitle}
         description={copy.inputSubtitle}
@@ -436,8 +575,9 @@ const MealBuilderPage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(3, minmax(0, 1fr))" },
               gap: 1,
+              minWidth: 0,
             }}
           >
             {mealInputModes.map((mode) => {
@@ -482,44 +622,63 @@ const MealBuilderPage = () => {
         sx={{
           display: "grid",
           gridTemplateColumns: {
-            xs: "1fr",
+            xs: "minmax(0, 1fr)",
             lg: "minmax(0, 1fr) minmax(300px, 340px)",
             xl: "minmax(0, 1fr) 360px",
           },
           gap: { xs: 2, lg: 2.5 },
           alignItems: "start",
+          minWidth: 0,
+          width: "100%",
+          overflowX: "hidden",
         }}
       >
-        <Stack spacing={3}>
-          {inputMode === "photo" ? <PhotoMealAssistant mealType={mealType} /> : null}
+        <Stack spacing={3} sx={{ minWidth: 0 }}>
+          {inputMode === "photo" ? (
+            renderLazyModule(copy.modes.photo.title, (
+              <PhotoMealAssistant mealType={mealType} />
+            ))
+          ) : null}
 
           {inputMode === "search" ? (
-            <Stack spacing={2}>
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
               <SectionTabs
                 sections={addToolSections}
                 activeSection={activeAddTool}
                 onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
                 ariaLabel="Meal add tools"
               />
-              {activeAddTool === "search" ? <ProductSearch mealType={mealType} /> : null}
-              {activeAddTool === "favorites" ? <QuickProductShelf mealType={mealType} /> : null}
-              {activeAddTool === "composer" ? <QuickMealComposer mealType={mealType} /> : null}
+              {activeAddTool === "search"
+                ? renderLazyModule(copy.addTools.search, (
+                    <ProductSearch mealType={mealType} />
+                  ))
+                : null}
+              {activeAddTool === "favorites" ? (
+                renderLazyModule(copy.addTools.favorites, (
+                  <QuickProductShelf mealType={mealType} />
+                ))
+              ) : null}
+              {activeAddTool === "composer" ? (
+                renderLazyModule(copy.addTools.composer, (
+                  <QuickMealComposer mealType={mealType} />
+                ))
+              ) : null}
               {activeAddTool === "scanner" ? (
-                <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+                renderLazyModule(copy.addTools.scanner, (
                   <BarcodeScanner mealType={mealType} />
-                </Suspense>
+                ))
               ) : null}
             </Stack>
           ) : null}
 
           {inputMode === "barcode" ? (
-            <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+            renderLazyModule(copy.modes.barcode.title, (
               <BarcodeScanner mealType={mealType} />
-            </Suspense>
+            ))
           ) : null}
         </Stack>
 
-        <Stack spacing={3} sx={{ display: { xs: "none", lg: "block" } }}>
+        <Stack spacing={3} sx={{ display: { xs: "none", lg: "block" }, minWidth: 0 }}>
           <SectionCard>
             <Box
             sx={{
@@ -540,9 +699,9 @@ const MealBuilderPage = () => {
       {activeSection === "scan" ? (
         <Stack spacing={3}>
           {mealTypeSelector}
-          <Suspense fallback={<Loader fullScreen={false} size={70} />}>
+          {renderLazyModule(copy.sections.scan, (
             <BarcodeScanner mealType={mealType} />
-          </Suspense>
+          ))}
         </Stack>
       ) : null}
 
@@ -550,10 +709,16 @@ const MealBuilderPage = () => {
         <SectionCard>{diaryContent}</SectionCard>
       ) : null}
 
-      {activeSection === "history" ? <DailyHistoryExplorer /> : null}
+      {activeSection === "history" ? (
+        renderLazyModule(copy.sections.history, (
+          <DailyHistoryExplorer />
+        ))
+      ) : null}
 
       {activeSection === "saved" ? (
-        <NutritionLibraryPanel mealType={mealType} mode="saved" />
+        renderLazyModule(copy.sections.saved, (
+          <NutritionLibraryPanel mealType={mealType} mode="saved" />
+        ))
       ) : null}
 
       {activeSection === "templates" ? (
@@ -561,30 +726,44 @@ const MealBuilderPage = () => {
         title={copy.advancedTitle}
         description={copy.advancedSubtitle}
       >
-        <Stack spacing={2}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
-              gap: 2,
-              alignItems: "start",
-            }}
-          >
-            <Stack spacing={2}>
-              <YesterdayRepeater />
-              <TemplateVault mealType={mealType} />
-              <CatalogContributionCard compact />
-            </Stack>
-            <Stack spacing={2}>
-              <FridgeRecipePlanner mealType={mealType} />
-              <RecipeSection mealType={mealType} />
-            </Stack>
-          </Box>
-        </Stack>
+        {renderLazyModule(copy.sections.templates, (
+          <Stack spacing={2} sx={{ minWidth: 0 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(2, minmax(0, 1fr))" },
+                gap: 2,
+                alignItems: "start",
+                minWidth: 0,
+              }}
+            >
+              <Stack spacing={2} sx={{ minWidth: 0 }}>
+                <YesterdayRepeater />
+                <TemplateVault mealType={mealType} />
+                <CatalogContributionCard compact />
+              </Stack>
+              <Stack spacing={2} sx={{ minWidth: 0 }}>
+                <FridgeRecipePlanner mealType={mealType} />
+                <RecipeSection mealType={mealType} />
+              </Stack>
+            </Box>
+          </Stack>
+        ))}
       </SectionCard>
       ) : null}
 
-      {activeSection === "recommendations" ? <SmartRecommendations /> : null}
+      {activeSection === "recommendations" ? (
+        renderLazyModule(copy.sections.recommendations, (
+          <SmartRecommendations />
+        ))
+      ) : null}
+      <Box
+        aria-hidden="true"
+        sx={{
+          display: { xs: "block", md: "none" },
+          height: "calc(88px + env(safe-area-inset-bottom))",
+        }}
+      />
     </PageShell>
   );
 };

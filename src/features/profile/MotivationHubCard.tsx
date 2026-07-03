@@ -15,14 +15,10 @@ import {
   buyMonthlyDayOff,
   completeMotivationTask,
   refreshMotivationTasks,
-  replaceProfileState,
   resetMotivationProgress,
 } from "./profileSlice";
-import {
-  applyProfileActionInCloud,
-  buildProfileStateAfterAction,
-  saveProfileStateToCloud,
-} from "./profileCloudSync";
+import { buildProfileStateAfterAction } from "./profileCloudSync";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 import { useLanguage } from "../../shared/language";
 import {
   calculatePaidDayOffCost,
@@ -155,6 +151,7 @@ export const MotivationHubCard = () => {
   const { motivation, goal } = profile;
   const { appLanguage } = useLanguage();
   const copy = copyByLanguage[appLanguage];
+  const profileAction = useProfileCloudAction();
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
   const [savingAction, setSavingAction] = useState<PendingAction>(null);
@@ -185,11 +182,15 @@ export const MotivationHubCard = () => {
       | typeof completeMotivationTask
     >
   ) => {
-    await applyProfileActionInCloud(dispatch, profile, action);
+    const nextProfile = await profileAction.runProfileAction(action);
+
+    if (!nextProfile) {
+      throw new Error(copy.saveError);
+    }
   };
 
   const handleCompleteTask = async (taskId: string) => {
-    if (savingTaskId !== null || savingAction !== null) {
+    if (savingTaskId !== null || savingAction !== null || profileAction.saving) {
       return;
     }
 
@@ -206,7 +207,12 @@ export const MotivationHubCard = () => {
   };
 
   const handleConfirm = async () => {
-    if (!pendingAction || savingAction !== null || savingTaskId !== null) {
+    if (
+      !pendingAction ||
+      savingAction !== null ||
+      savingTaskId !== null ||
+      profileAction.saving
+    ) {
       return;
     }
 
@@ -228,8 +234,11 @@ export const MotivationHubCard = () => {
           refreshMotivationTasks(undefined)
         );
 
-        await saveProfileStateToCloud(dispatch, refreshedProfile);
-        dispatch(replaceProfileState(refreshedProfile));
+        const savedProfile = await profileAction.runProfileStateSave(refreshedProfile);
+
+        if (!savedProfile) {
+          throw new Error(copy.saveError);
+        }
       }
 
       setPendingAction(null);
@@ -286,7 +295,17 @@ export const MotivationHubCard = () => {
         </Stack>
 
         <Stack spacing={1}>
-          {saveError ? <Alert severity="error">{saveError}</Alert> : null}
+          {profileAction.saving ? (
+            <Alert severity="info">{copy.saving}</Alert>
+          ) : null}
+          {saveError || profileAction.hasError ? (
+            <Alert severity="error" onClose={() => {
+              setSaveError(null);
+              profileAction.clearError();
+            }}>
+              {saveError ?? copy.saveError}
+            </Alert>
+          ) : null}
 
           <Typography sx={{ fontWeight: 700 }}>
             {copy.level}: {motivation.level}
@@ -344,7 +363,8 @@ export const MotivationHubCard = () => {
                       isDone ||
                       isSkipped ||
                       savingTaskId !== null ||
-                      savingAction !== null
+                      savingAction !== null ||
+                      profileAction.saving
                     }
                     onClick={() => {
                       void handleCompleteTask(task.id);
@@ -385,7 +405,8 @@ export const MotivationHubCard = () => {
               !paidDayAvailable ||
               motivation.points < paidDayCost ||
               savingTaskId !== null ||
-              savingAction !== null
+              savingAction !== null ||
+              profileAction.saving
             }
             onClick={() => setPendingAction("paid")}
             sx={{ textTransform: "none", borderRadius: 999 }}
@@ -395,7 +416,7 @@ export const MotivationHubCard = () => {
           <Button
             color="error"
             variant="text"
-            disabled={savingTaskId !== null || savingAction !== null}
+            disabled={savingTaskId !== null || savingAction !== null || profileAction.saving}
             onClick={() => setPendingAction("reset")}
             sx={{ textTransform: "none", borderRadius: 999 }}
           >
@@ -509,7 +530,7 @@ export const MotivationHubCard = () => {
                   onClick={() => {
                     void handleConfirm();
                   }}
-                  disabled={savingAction !== null}
+                  disabled={savingAction !== null || profileAction.saving}
                   variant="contained"
                 >
                   {savingAction === pendingAction ? copy.saving : copy.confirm}

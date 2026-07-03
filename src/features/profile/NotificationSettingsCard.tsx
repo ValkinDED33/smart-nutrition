@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   Alert,
   Button,
@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import {
   canUseWebNotifications,
@@ -19,7 +19,7 @@ import {
   requestSafeNotificationPermission,
 } from "@shared/lib/notifications";
 import { updateNotificationPreferences } from "./profileSlice";
-import { applyProfileActionInCloud } from "./profileCloudSync";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const notificationCopy = {
   uk: {
@@ -44,6 +44,8 @@ const notificationCopy = {
     permissionNeeded: "Потрібен дозвіл",
     enabled: "Увімкнено",
     muted: "Без звуку",
+    saving: "Зберігаю в хмарі...",
+    saveError: "Не вдалося зберегти налаштування. Спробуйте ще раз.",
   },
   pl: {
     title: "Powiadomienia i nawyki",
@@ -67,6 +69,8 @@ const notificationCopy = {
     permissionNeeded: "Potrzebna zgoda",
     enabled: "Włączone",
     muted: "Wyciszone",
+    saving: "Zapisuję w chmurze...",
+    saveError: "Nie udało się zapisać ustawień. Spróbuj ponownie.",
   },
   en: {
     title: "Notifications and habits",
@@ -91,21 +95,22 @@ const notificationCopy = {
     permissionNeeded: "Permission needed",
     enabled: "Enabled",
     muted: "Muted",
+    saving: "Saving to cloud...",
+    saveError: "Could not save settings. Try again.",
   },
 } as const;
 
 type PermissionState = NotificationPermission | "unsupported";
 
 export const NotificationSettingsCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const {
     notificationsEnabled,
     mealRemindersEnabled,
     calorieAlertsEnabled,
     reminderTimes,
   } = useSelector((state: RootState) => state.profile);
-  const profile = useSelector((state: RootState) => state.profile);
   const { appLanguage } = useLanguage();
+  const profileAction = useProfileCloudAction();
   const [permission, setPermission] = useState<PermissionState>(() =>
     getSafeNotificationPermission()
   );
@@ -139,18 +144,14 @@ export const NotificationSettingsCard = () => {
 
   const handleNotificationsToggle = async (nextEnabled: boolean) => {
     if (!nextEnabled) {
-      await applyProfileActionInCloud(
-        dispatch,
-        profile,
+      await profileAction.runProfileAction(
         updateNotificationPreferences({ notificationsEnabled: false })
       );
       return;
     }
 
     if (permission === "granted") {
-      await applyProfileActionInCloud(
-        dispatch,
-        profile,
+      await profileAction.runProfileAction(
         updateNotificationPreferences({ notificationsEnabled: true })
       );
       return;
@@ -159,9 +160,7 @@ export const NotificationSettingsCard = () => {
     const granted = await requestPermission();
 
     if (granted) {
-      await applyProfileActionInCloud(
-        dispatch,
-        profile,
+      await profileAction.runProfileAction(
         updateNotificationPreferences({ notificationsEnabled: true })
       );
     }
@@ -234,6 +233,18 @@ export const NotificationSettingsCard = () => {
           {permissionMessage}
         </Alert>
 
+        {profileAction.saving ? (
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            {copy.saving}
+          </Alert>
+        ) : null}
+
+        {profileAction.hasError ? (
+          <Alert severity="error" sx={{ borderRadius: 3 }} onClose={profileAction.clearError}>
+            {copy.saveError}
+          </Alert>
+        ) : null}
+
         {permission !== "granted" && permission !== "unsupported" && (
           <Button
             variant="contained"
@@ -257,9 +268,9 @@ export const NotificationSettingsCard = () => {
             control={
               <Switch
                 checked={notificationsEnabled}
-                disabled={permission === "unsupported"}
+                disabled={permission === "unsupported" || profileAction.saving}
                 onChange={(_, checked) => {
-                  void handleNotificationsToggle(checked);
+                  void handleNotificationsToggle(checked).catch(() => undefined);
                 }}
               />
             }
@@ -269,13 +280,11 @@ export const NotificationSettingsCard = () => {
             control={
               <Switch
                 checked={mealRemindersEnabled}
-                disabled={!notificationsEnabled}
+                disabled={!notificationsEnabled || profileAction.saving}
                 onChange={(_, checked) => {
-                  void applyProfileActionInCloud(
-                    dispatch,
-                    profile,
+                  void profileAction.runProfileAction(
                     updateNotificationPreferences({ mealRemindersEnabled: checked })
-                  );
+                  ).catch(() => undefined);
                 }}
               />
             }
@@ -285,13 +294,11 @@ export const NotificationSettingsCard = () => {
             control={
               <Switch
                 checked={calorieAlertsEnabled}
-                disabled={!notificationsEnabled}
+                disabled={!notificationsEnabled || profileAction.saving}
                 onChange={(_, checked) => {
-                  void applyProfileActionInCloud(
-                    dispatch,
-                    profile,
+                  void profileAction.runProfileAction(
                     updateNotificationPreferences({ calorieAlertsEnabled: checked })
-                  );
+                  ).catch(() => undefined);
                 }}
               />
             }
@@ -307,17 +314,15 @@ export const NotificationSettingsCard = () => {
               type="time"
               label={item.label}
               value={reminderTimes[item.key]}
-              disabled={!notificationsEnabled || !mealRemindersEnabled}
+              disabled={!notificationsEnabled || !mealRemindersEnabled || profileAction.saving}
               onChange={(event) => {
-                void applyProfileActionInCloud(
-                  dispatch,
-                  profile,
+                void profileAction.runProfileAction(
                   updateNotificationPreferences({
                     reminderTimes: {
                       [item.key]: event.target.value,
                     },
                   })
-                );
+                ).catch(() => undefined);
               }}
               InputLabelProps={{ shrink: true }}
             />

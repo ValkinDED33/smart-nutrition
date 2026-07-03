@@ -21,6 +21,7 @@ import type {
   AdaptiveMode,
   AssistantCustomization,
   AssistantCompanionKind,
+  AssistantCompanionRenderMode,
   AssistantMemoryProfile,
   AssistantMood,
   AssistantRole,
@@ -154,6 +155,9 @@ const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKi
   value === "capybara" ||
   value === "dragon" ||
   value === "robot";
+const isAssistantCompanionRenderMode = (
+  value: unknown
+): value is AssistantCompanionRenderMode => value === "2d" || value === "3d";
 const isTaskCategory = (value: unknown): value is MotivationTaskCategory =>
   value === "nutrition" || value === "consistency" || value === "reflection";
 const isBloodGroup = (value: unknown): value is BloodGroup =>
@@ -516,6 +520,11 @@ const normalizeAssistantCustomization = (value: unknown): AssistantCustomization
     assistantName: name,
     companionKind,
     assistantAvatar: companionKind,
+    preferredCompanionRenderMode: isAssistantCompanionRenderMode(
+      value.preferredCompanionRenderMode
+    )
+      ? value.preferredCompanionRenderMode
+      : fallback.preferredCompanionRenderMode,
     role: isAssistantRole(value.role) ? value.role : fallback.role,
     tone,
     assistantPersonality: tone,

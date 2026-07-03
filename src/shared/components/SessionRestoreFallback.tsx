@@ -1,26 +1,38 @@
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { Cloud, RefreshCw, ShieldCheck } from "lucide-react";
 import { useLanguage } from "../language";
 
 const restoreCopy = {
   uk: {
     title: "Відновлюю вхід",
+    checkingTitle: "Повертаю вашу сесію",
     body:
       "Схоже, хмарний сервер прокидається. Я пробую повернути вашу сесію без повторної реєстрації.",
+    checkingBody:
+      "Безпечно перевіряю cookie-сесію та хмарні дані. Приватні дії відкриються одразу після підтвердження входу.",
+    status: "Backend прокидається · сесія перевіряється",
     retry: "Спробувати ще раз",
     forget: "Увійти вручну",
   },
   pl: {
     title: "Przywracam logowanie",
+    checkingTitle: "Przywracam Twoją sesję",
     body:
       "Wygląda na to, że serwer w chmurze się budzi. Próbuję przywrócić sesję bez ponownej rejestracji.",
+    checkingBody:
+      "Bezpiecznie sprawdzam sesję cookie i dane w chmurze. Prywatne akcje odblokują się po potwierdzeniu logowania.",
+    status: "Backend się budzi · sesja jest sprawdzana",
     retry: "Spróbuj ponownie",
     forget: "Zaloguj ręcznie",
   },
   en: {
     title: "Restoring your session",
+    checkingTitle: "Bringing your session back",
     body:
       "The cloud server looks like it is waking up. I am trying to bring your session back without registration.",
+    checkingBody:
+      "Safely checking your cookie session and cloud data. Private actions unlock as soon as sign-in is confirmed.",
+    status: "Backend waking up · session check in progress",
     retry: "Try again",
     forget: "Log in manually",
   },
@@ -29,14 +41,17 @@ const restoreCopy = {
 interface SessionRestoreFallbackProps {
   onForgetSession: () => void;
   onRetry: () => void;
+  status?: "checking" | "unavailable";
 }
 
 export const SessionRestoreFallback = ({
   onForgetSession,
   onRetry,
+  status = "unavailable",
 }: SessionRestoreFallbackProps) => {
   const { appLanguage } = useLanguage();
   const copy = restoreCopy[appLanguage];
+  const isChecking = status === "checking";
 
   return (
     <Stack
@@ -82,19 +97,40 @@ export const SessionRestoreFallback = ({
             </Box>
             <Stack spacing={0.25} minWidth={0}>
               <Stack direction="row" spacing={0.8} alignItems="center">
-                <ShieldCheck size={21} color="#0f766e" />
+                {isChecking ? (
+                  <Cloud size={21} color="#0f766e" />
+                ) : (
+                  <ShieldCheck size={21} color="#0f766e" />
+                )}
                 <Typography component="h1" variant="h5" sx={{ fontWeight: 950 }}>
-                  {copy.title}
+                  {isChecking ? copy.checkingTitle : copy.title}
                 </Typography>
               </Stack>
             </Stack>
           </Stack>
-          <Typography color="text.secondary">{copy.body}</Typography>
+          <Typography color="text.secondary">
+            {isChecking ? copy.checkingBody : copy.body}
+          </Typography>
+          <Box
+            sx={{
+              px: 1.2,
+              py: 0.8,
+              borderRadius: 999,
+              width: "fit-content",
+              color: "#0f766e",
+              bgcolor: "rgba(20,184,166,0.1)",
+              fontSize: 13,
+              fontWeight: 800,
+            }}
+          >
+            {copy.status}
+          </Box>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Button
               variant="contained"
               startIcon={<RefreshCw size={17} />}
               onClick={onRetry}
+              disabled={isChecking}
             >
               {copy.retry}
             </Button>

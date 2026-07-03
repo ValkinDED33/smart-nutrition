@@ -17,8 +17,7 @@ import {
 import type { AppDispatch, RootState } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import {
-  applyRemoteSnapshotToStore,
-  getRemoteSnapshotMeta,
+  applyRemoteSnapshotWithSyncPolicy,
 } from "@features/auth/sessionSnapshot";
 import { buildSessionProfileState } from "@features/auth/authSessionProfile";
 import { createCompanionRewardAnalyticsPayload } from "../features/companion";
@@ -40,7 +39,6 @@ import { useLanguage } from "../shared/language";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
-import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { AuthSurface } from "@shared/ui";
 
 type FormData = {
@@ -122,24 +120,20 @@ const RegisterPage = () => {
   const confirmPasswordField = register("confirmPassword");
 
   const applyAuthenticatedSession = async ({ user, snapshot }: AuthResponse) => {
+    const hydrationResult = applyRemoteSnapshotWithSyncPolicy(dispatch, snapshot);
+
     dispatch(
       setCredentials({
         user,
         syncMode: getAuthRuntimeInfo().mode,
-        syncOutbox: getSyncOutboxMeta(),
-        cloudMeta: getRemoteSnapshotMeta(snapshot),
+        syncOutbox: hydrationResult.syncOutbox,
+        cloudMeta: hydrationResult.cloudMeta,
       })
     );
 
-    const canApplySnapshot = snapshot && getSyncOutboxMeta().pendingChanges === 0;
-
-    if (canApplySnapshot) {
-      applyRemoteSnapshotToStore(dispatch, snapshot);
-    }
-
     const sessionProfile = buildSessionProfileState({
       user,
-      snapshot: canApplySnapshot ? snapshot : null,
+      snapshot: hydrationResult.useSnapshotForSessionBootstrap ? snapshot : null,
       language: appLanguage,
     });
 

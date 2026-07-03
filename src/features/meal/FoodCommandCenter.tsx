@@ -23,6 +23,7 @@ import { searchProducts } from "../../shared/api/products";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import {
+  createInitialFoodCommandQuantity,
   createNutritionGoogleSearchUrl,
   shouldShowQuickSearchDeadEnd,
 } from "./foodCommandCenterModel";
@@ -60,14 +61,14 @@ const commandCopy = {
     searching: "Шукаю в онлайн-базі...",
     empty: "Почніть вводити назву — я підтягну варіанти з онлайн-каталогу.",
     unavailable:
-      "Онлайн-пошук зараз недоступний. Можна відкрити повний пошук або додати продукт у базу.",
+      "Онлайн-пошук зараз недоступний: backend або зовнішній каталог не відповів. Можна повторити в повному пошуку або додати продукт у спільну базу.",
     noMatch:
-      "Не знайшов у швидкому підборі. Відкрийте повний пошук, перевірте Google або додайте продукт у спільну базу.",
-    added: "Додано",
+      "Не знайшов у backend/online результатах. Відкрийте повний пошук, перевірте Google або додайте продукт у спільну базу.",
+    added: "Додано до поточного прийому їжі",
     grams: "г",
     openSearch: "Повний пошук",
     googleSearch: "Google",
-    addToCatalog: "Додати в базу",
+    addToCatalog: "Форма каталогу",
     source: "джерело",
     recent: "Недавнє",
     saved: "Збережене",
@@ -86,14 +87,14 @@ const commandCopy = {
     searching: "Szukam w bazie online...",
     empty: "Zacznij wpisywać nazwę — pobiorę propozycje z katalogu online.",
     unavailable:
-      "Wyszukiwanie online jest teraz niedostępne. Możesz otworzyć pełne wyszukiwanie albo dodać produkt do bazy.",
+      "Wyszukiwanie online jest teraz niedostępne: backend albo zewnętrzny katalog nie odpowiedział. Możesz spróbować w pełnym wyszukiwaniu albo dodać produkt do wspólnej bazy.",
     noMatch:
-      "Nie znalazłem w szybkim wyborze. Otwórz pełne wyszukiwanie, sprawdź Google albo dodaj produkt do wspólnej bazy.",
-    added: "Dodano",
+      "Nie znalazłem tego w wynikach backend/online. Otwórz pełne wyszukiwanie, sprawdź Google albo dodaj produkt do wspólnej bazy.",
+    added: "Dodano do bieżącego posiłku",
     grams: "g",
     openSearch: "Pełne wyszukiwanie",
     googleSearch: "Google",
-    addToCatalog: "Dodaj do bazy",
+    addToCatalog: "Formularz katalogu",
     source: "źródło",
     recent: "Ostatnie",
     saved: "Zapisane",
@@ -112,14 +113,14 @@ const commandCopy = {
     searching: "Searching the online database...",
     empty: "Start typing a name — I will pull options from the online catalog.",
     unavailable:
-      "Online search is unavailable right now. You can open full search or add the product to the database.",
+      "Online search is unavailable right now: the backend or external catalog did not respond. You can retry in full search or add the product to the shared database.",
     noMatch:
-      "I did not find this in quick search. Open full search, check Google, or add it to the shared database.",
-    added: "Added",
+      "I did not find this in backend/online results. Open full search, check Google, or add it to the shared database.",
+    added: "Added to the current meal",
     grams: "g",
     openSearch: "Full search",
     googleSearch: "Google",
-    addToCatalog: "Add to database",
+    addToCatalog: "Catalog form",
     source: "source",
     recent: "Recent",
     saved: "Saved",
@@ -156,7 +157,7 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [quantity, setQuantity] = useState<number | "">(100);
+  const [quantity, setQuantity] = useState<number | "">(createInitialFoodCommandQuantity);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -196,6 +197,7 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
         savedProducts,
         recentProducts,
         personalBarcodeProducts,
+        includeStarterCatalog: !normalizedQuery,
         limit: normalizedQuery ? 8 : 6,
       }).filter((product) => productMatchesPreferences(product, preferences)),
     [

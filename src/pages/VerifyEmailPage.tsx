@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import type { AppDispatch, RootState } from "../app/store";
 import { setCredentials } from "../features/auth/authSlice";
 import {
-  applyRemoteSnapshotToStore,
-  getRemoteSnapshotMeta,
+  applyRemoteSnapshotWithSyncPolicy,
   hasCompletedOnboardingSnapshot,
 } from "@features/auth/sessionSnapshot";
 import { buildSessionProfileState } from "@features/auth/authSessionProfile";
@@ -17,7 +16,6 @@ import { replaceProfileState } from "../features/profile/profileSlice";
 import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
 import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
-import { getSyncOutboxMeta } from "../shared/lib/syncOutbox";
 import { useLanguage } from "../shared/language";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AuthSurface } from "@shared/ui";
@@ -25,12 +23,18 @@ import { AuthSurface } from "@shared/ui";
 const VerifyEmailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const companion = useSelector((state: RootState) => state.companion);
+  const companionRef = useRef(companion);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, appLanguage } = useLanguage();
   const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const verifiedTokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    companionRef.current = companion;
+  }, [companion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +45,12 @@ const VerifyEmailPage = () => {
         setErrorMessage(t("auth.invalidConfirmationLink"));
         return;
       }
+
+      if (verifiedTokenRef.current === token) {
+        return;
+      }
+
+      verifiedTokenRef.current = token;
 
       try {
         const { user, snapshot } = await verifyRegistration({ token });
@@ -53,24 +63,20 @@ const VerifyEmailPage = () => {
           name: user.name,
           email: user.email,
         });
+        const hydrationResult = applyRemoteSnapshotWithSyncPolicy(dispatch, snapshot);
+
         dispatch(
           setCredentials({
             user,
             syncMode: getAuthRuntimeInfo().mode,
-            syncOutbox: getSyncOutboxMeta(),
-            cloudMeta: getRemoteSnapshotMeta(snapshot),
+            syncOutbox: hydrationResult.syncOutbox,
+            cloudMeta: hydrationResult.cloudMeta,
           })
         );
 
-        const canApplySnapshot = snapshot && getSyncOutboxMeta().pendingChanges === 0;
-
-        if (canApplySnapshot) {
-          applyRemoteSnapshotToStore(dispatch, snapshot);
-        }
-
         const sessionProfile = buildSessionProfileState({
           user,
-          snapshot: canApplySnapshot ? snapshot : null,
+          snapshot: hydrationResult.useSnapshotForSessionBootstrap ? snapshot : null,
           language: appLanguage,
         });
 
@@ -86,7 +92,7 @@ const VerifyEmailPage = () => {
         const sessionCompanion =
           snapshot && "companion" in snapshot
             ? normalizeCompanionState(snapshot.companion)
-            : companion;
+            : companionRef.current;
 
         try {
           await applyCompanionRewardInCloud(
@@ -121,6 +127,8 @@ const VerifyEmailPage = () => {
           return;
         }
 
+        verifiedTokenRef.current = null;
+
         setStatus("error");
         setErrorMessage(
           error instanceof AuthApiError && error.code === "INVALID_VERIFICATION_LINK"
@@ -135,7 +143,7 @@ const VerifyEmailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [appLanguage, companion, dispatch, navigate, t, token]);
+  }, [appLanguage, dispatch, navigate, t, token]);
 
   return (
     <AuthSurface maxWidth={520} minHeight="70vh">

@@ -19,7 +19,7 @@ const DURABLE_RECOVERY_KEYS = new Set([
 ]);
 
 const staleBuildErrorPattern =
-  /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script/i;
+  /ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed|Failed to fetch dynamically imported module|module script|Unable to preload CSS|CSS chunk|TypeError Load failed|TypeError Failed to fetch/i;
 
 const sensitiveQueryPattern =
   /([?&](?:access_)?token|[?&]code|[?&]key|[?&]password|[?&]email)=([^&#\s)\]}>"']+)/gi;

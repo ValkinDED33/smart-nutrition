@@ -1,5 +1,5 @@
 import { canUseFreeDay, canUsePaidDay } from "@domain/profile/motivation";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { DietStyle } from "@domain/profile/types";
 import type {
   AssistantQuestionInput,

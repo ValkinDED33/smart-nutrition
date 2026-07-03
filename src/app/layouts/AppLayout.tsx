@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LogOut, Moon, Sun } from "lucide-react";
@@ -38,7 +38,7 @@ import {
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
-import { applyProfileActionInCloud } from "@features/profile/profileCloudSync";
+import { useProfileCloudAction } from "@features/profile/useProfileCloudAction";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
@@ -99,11 +99,10 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state: RootState) => state.auth.user);
-  const profile = useSelector((state: RootState) => state.profile);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
   const logoutLabel = t("nav.logout");
-  const [isSavingLanguage, setIsSavingLanguage] = useState(false);
+  const languageProfileAction = useProfileCloudAction();
 
   useEffect(() => {
     const assistantContext = resolveAssistantContext(location.pathname);
@@ -145,7 +144,7 @@ const Layout = () => {
   };
 
   const handleLanguageSelect = (nextLanguage: AppLanguage) => {
-    if (nextLanguage === appLanguage || isSavingLanguage) {
+    if (nextLanguage === appLanguage || languageProfileAction.saving) {
       return;
     }
 
@@ -153,25 +152,29 @@ const Layout = () => {
       setLanguage(nextLanguage);
       trackRuntimeEvent("language_changed", {
         language: nextLanguage,
+        persisted: false,
       });
       return;
     }
 
-    setIsSavingLanguage(true);
-    void applyProfileActionInCloud(
-      dispatch,
-      profile,
-      setProfileLanguage(nextLanguage)
-    )
-      .then(() => {
-        setLanguage(nextLanguage);
+    void languageProfileAction
+      .runProfileAction(setProfileLanguage(nextLanguage))
+      .then((nextProfile) => {
+        if (!nextProfile) {
+          return;
+        }
+
+        setLanguage(nextProfile.languagePreference);
         trackRuntimeEvent("language_changed", {
-          language: nextLanguage,
+          language: nextProfile.languagePreference,
+          persisted: true,
         });
       })
-      .catch(() => undefined)
-      .finally(() => {
-        setIsSavingLanguage(false);
+      .catch((error: unknown) => {
+        console.warn(
+          "[profile] language cloud sync failed",
+          error instanceof Error ? error.message : "unknown error"
+        );
       });
   };
 
@@ -436,6 +439,7 @@ const Layout = () => {
                 labels={languageLabels}
                 ariaLabel={t("navigation.languageAria")}
                 onChange={handleLanguageSelect}
+                disabled={languageProfileAction.saving}
               />
 
               {user ? (

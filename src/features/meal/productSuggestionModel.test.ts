@@ -50,4 +50,18 @@ describe("productSuggestionModel", () => {
       suggestions.some((product) => product.name.toLowerCase().includes("chicken"))
     ).toBe(true);
   });
+
+  it("can keep starter catalog out of typed backend search results", () => {
+    const suggestions = getProductSuggestions({
+      query: "chicken",
+      onlineProducts: [],
+      savedProducts: [],
+      recentProducts: [],
+      personalBarcodeProducts: [],
+      includeStarterCatalog: false,
+      limit: 5,
+    });
+
+    expect(suggestions).toEqual([]);
+  });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQueries } from "@tanstack/react-query";
 import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
@@ -17,8 +17,9 @@ import type { Product } from "@domain/products/types";
 import type { NutritionPreferences } from "@domain/profile/types";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
 import { buildDailyContext } from "@domain/meal/dailyContext";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import { searchProducts } from "../../shared/api/products";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 const recommendationCopy = {
   uk: {
@@ -68,6 +69,10 @@ const recommendationCopy = {
     addAction: (quantity: number, unit: string, productName: string) =>
       `Додати ${quantity.toFixed(0)} ${unit === "piece" ? "шт." : unit === "ml" ? "мл" : "г"} ${productName}`,
     addRecipeAction: (title: string) => `Додати рецепт: ${title}`,
+    savingMeal: "Зберігаємо рекомендацію в щоденник...",
+    confirmedMeal: "Рекомендацію додано до щоденника.",
+    failedMeal: "Не вдалося зберегти рекомендацію.",
+    retry: "Спробувати ще раз",
   },
   pl: {
     priority: "Priorytet",
@@ -116,6 +121,10 @@ const recommendationCopy = {
     addAction: (quantity: number, unit: string, productName: string) =>
       `Dodaj ${quantity.toFixed(0)} ${unit === "piece" ? "szt." : unit === "ml" ? "ml" : "g"} ${productName}`,
     addRecipeAction: (title: string) => `Dodaj przepis: ${title}`,
+    savingMeal: "Zapisujemy rekomendację w dzienniku...",
+    confirmedMeal: "Rekomendacja została dodana do dziennika.",
+    failedMeal: "Nie udało się zapisać rekomendacji.",
+    retry: "Spróbuj ponownie",
   },
   en: {
     priority: "Priority",
@@ -164,6 +173,10 @@ const recommendationCopy = {
     addAction: (quantity: number, unit: string, productName: string) =>
       `Add ${quantity.toFixed(0)} ${unit === "piece" ? "pc." : unit === "ml" ? "ml" : "g"} ${productName}`,
     addRecipeAction: (title: string) => `Add recipe: ${title}`,
+    savingMeal: "Saving recommendation to your diary...",
+    confirmedMeal: "Recommendation added to your diary.",
+    failedMeal: "Could not save this recommendation.",
+    retry: "Try again",
   },
 } as const;
 
@@ -282,7 +295,42 @@ export const SmartRecommendations = () => {
   const items = useSelector(selectMealItems);
   const { appLanguage, t } = useLanguage();
   const copy = recommendationCopy[appLanguage];
-  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
+  const {
+    notice: mealActionNotice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.savingMeal,
+      edit: copy.savingMeal,
+      delete: copy.savingMeal,
+      repeat: copy.savingMeal,
+      saveTemplate: copy.savingMeal,
+      applyTemplate: copy.savingMeal,
+      saveProduct: copy.savingMeal,
+    },
+    confirmed: {
+      add: copy.confirmedMeal,
+      edit: copy.confirmedMeal,
+      delete: copy.confirmedMeal,
+      repeat: copy.confirmedMeal,
+      saveTemplate: copy.confirmedMeal,
+      applyTemplate: copy.confirmedMeal,
+      saveProduct: copy.confirmedMeal,
+    },
+    failed: {
+      add: copy.failedMeal,
+      edit: copy.failedMeal,
+      delete: copy.failedMeal,
+      repeat: copy.failedMeal,
+      saveTemplate: copy.failedMeal,
+      applyTemplate: copy.failedMeal,
+      saveProduct: copy.failedMeal,
+    },
+    retry: copy.retry,
+  });
   const macroTargets = useMemo(
     () =>
       calculateMacroTargets({
@@ -582,11 +630,8 @@ export const SmartRecommendations = () => {
     macroTargets.protein,
     preferences,
     profile.adaptiveMode,
-    profile.allergies,
     profile.assistant.onboarding,
     profile.dailyCalories,
-    profile.dietStyle,
-    profile.excludedIngredients,
     profile.goal,
     proteinProducts,
     todayKey,
@@ -611,9 +656,19 @@ export const SmartRecommendations = () => {
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("recommendations.title")}
         </Typography>
-        {mealSaveError ? (
-          <Alert severity="error" onClose={() => setMealSaveError(null)}>
-            {mealSaveError}
+        {mealActionNotice ? (
+          <Alert
+            severity={mealActionNotice.severity}
+            onClose={clearFeedback}
+            action={
+              mealActionNotice.retryable ? (
+                <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+                  {copy.retry}
+                </Button>
+              ) : undefined
+            }
+          >
+            {mealActionNotice.text}
           </Alert>
         ) : null}
         {recommendations.length === 0 ? (
@@ -668,8 +723,12 @@ export const SmartRecommendations = () => {
                     <Button
                       variant="outlined"
                       sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
+                      disabled={isSavingAction(
+                        recommendation.actionRecipe
+                          ? `recommendation-recipe-${recommendation.actionRecipe.id}`
+                          : `recommendation-product-${recommendation.actionProduct?.id ?? recommendation.title}`
+                      )}
                       onClick={() => {
-                        setMealSaveError(null);
                         if (recommendation.actionRecipe) {
                           const eatenAt = new Date().toISOString();
                           const entries: MealEntry[] =
@@ -682,12 +741,10 @@ export const SmartRecommendations = () => {
                               origin: "recipe",
                             }));
 
-                          void addMealEntriesToCloud(dispatch, meal, entries).catch((error) => {
-                            setMealSaveError(
-                              error instanceof Error
-                                ? error.message
-                                : "Could not save meal to cloud."
-                            );
+                          void runMealAction({
+                            actionId: `recommendation-recipe-${recommendation.actionRecipe.id}`,
+                            kind: "add",
+                            action: () => addMealEntriesToCloud(dispatch, meal, entries),
                           });
                           return;
                         }
@@ -701,12 +758,10 @@ export const SmartRecommendations = () => {
                           origin: "manual",
                         };
 
-                        void addMealEntriesToCloud(dispatch, meal, [entry]).catch((error) => {
-                          setMealSaveError(
-                            error instanceof Error
-                              ? error.message
-                              : "Could not save meal to cloud."
-                          );
+                        void runMealAction({
+                          actionId: `recommendation-product-${recommendation.actionProduct!.id}`,
+                          kind: "add",
+                          action: () => addMealEntriesToCloud(dispatch, meal, [entry]),
                         });
                       }}
                     >

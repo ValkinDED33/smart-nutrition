@@ -33,6 +33,7 @@ type LanguageMenuButtonProps = {
   labels?: Record<AppLanguage, string>;
   size?: ButtonProps["size"];
   sx?: SxProps<Theme>;
+  disabled?: boolean;
 };
 
 const getSafeDomId = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, "");
@@ -45,6 +46,7 @@ export const LanguageMenuButton = ({
   labels = defaultLanguageLabels,
   size = "small",
   sx,
+  disabled = false,
 }: LanguageMenuButtonProps) => {
   const theme = useTheme();
   const generatedId = useId();
@@ -83,6 +85,7 @@ export const LanguageMenuButton = ({
           aria-haspopup="menu"
           aria-label={ariaLabel}
           onClick={handleOpen}
+          disabled={disabled}
           size={size}
           variant="outlined"
           startIcon={<Globe2 size={16} aria-hidden="true" />}

@@ -10,6 +10,8 @@ export const shouldShowQuickSearchDeadEnd = ({
   suggestionCount: number;
 }) => query.trim().length >= 3 && !isSearching && !isError && suggestionCount === 0;
 
+export const createInitialFoodCommandQuantity = (): number | "" => "";
+
 export const createNutritionGoogleSearchUrl = (query: string) => {
   const normalizedQuery = query.trim().replace(/\s+/g, " ");
 

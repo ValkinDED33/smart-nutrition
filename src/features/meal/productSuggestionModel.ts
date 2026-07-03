@@ -8,6 +8,7 @@ interface ProductSuggestionInput {
   savedProducts?: Product[];
   recentProducts?: Product[];
   personalBarcodeProducts?: Product[];
+  includeStarterCatalog?: boolean;
   limit?: number;
 }
 
@@ -67,6 +68,7 @@ export const getProductSuggestions = ({
   savedProducts = [],
   recentProducts = [],
   personalBarcodeProducts = [],
+  includeStarterCatalog = true,
   limit = 12,
 }: ProductSuggestionInput): Product[] => {
   const normalizedQuery = normalizeSearchText(query);
@@ -79,7 +81,7 @@ export const getProductSuggestions = ({
   pushUniqueProducts(result, seen, recentProducts, normalizedQuery, safeLimit);
   pushUniqueProducts(result, seen, personalBarcodeProducts, normalizedQuery, safeLimit);
 
-  if (result.length < safeLimit) {
+  if (includeStarterCatalog && result.length < safeLimit) {
     pushUniqueProducts(
       result,
       seen,

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AssistantAvatar as CompanionFallback2D,
   type AssistantAvatarProps,
@@ -12,6 +12,8 @@ import {
 export interface CompanionAvatarProps extends AssistantAvatarProps {
   renderMode?: CompanionAvatarRenderMode;
   defer3dUntilVisible?: boolean;
+  loadingFallback?: ReactNode;
+  on3dLoadError?: () => void;
 }
 
 const CompanionCanvas = lazy(() =>
@@ -21,8 +23,13 @@ const CompanionCanvas = lazy(() =>
 );
 
 let cachedWebGlSupport: boolean | null = null;
+let companionCanvasDisabledAfterFailure = false;
 
 const canUseCompanionCanvas = () => {
+  if (companionCanvasDisabledAfterFailure) {
+    return false;
+  }
+
   if (cachedWebGlSupport !== null) {
     return cachedWebGlSupport;
   }
@@ -85,6 +92,8 @@ const canObserveViewport = () =>
 export const CompanionAvatar = ({
   renderMode = "2d",
   defer3dUntilVisible = true,
+  loadingFallback,
+  on3dLoadError,
   ...props
 }: CompanionAvatarProps) => {
   const size = props.size ?? 64;
@@ -92,11 +101,18 @@ export const CompanionAvatar = ({
   const containerRef = useRef<HTMLSpanElement | null>(null);
   const canDeferCanvas = defer3dUntilVisible && canObserveViewport();
   const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
+  const [canvasFailed, setCanvasFailed] = useState(false);
   const shouldRenderCanvas = shouldUseCompanionCanvas({
     ...getCompanionCanvasRuntimeGuards(),
     renderMode,
     size,
-  });
+  }) && !canvasFailed;
+
+  const handleCanvasError = () => {
+    companionCanvasDisabledAfterFailure = true;
+    setCanvasFailed(true);
+    on3dLoadError?.();
+  };
 
   useEffect(() => {
     if (!shouldRenderCanvas || !canDeferCanvas || hasEnteredViewport) {
@@ -138,8 +154,8 @@ export const CompanionAvatar = ({
 
   return (
     <span ref={containerRef} style={{ display: "inline-flex", lineHeight: 0 }}>
-      <CompanionErrorBoundary fallback={fallback}>
-        <Suspense fallback={fallback}>
+      <CompanionErrorBoundary fallback={fallback} onError={handleCanvasError}>
+        <Suspense fallback={loadingFallback ?? fallback}>
           <CompanionCanvas {...props} />
         </Suspense>
       </CompanionErrorBoundary>

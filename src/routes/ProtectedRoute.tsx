@@ -19,17 +19,39 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, roles }: ProtectedRouteProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { error, hasSessionHint, isLoading, isInitialized, user } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const {
+    error,
+    hasSessionHint,
+    isLoading,
+    isInitialized,
+    sessionRestoreStatus,
+    user,
+  } = useSelector((state: RootState) => state.auth);
 
   if (!isInitialized || isLoading) {
+    if (hasSessionHint) {
+      return (
+        <SessionRestoreFallback
+          status={sessionRestoreStatus === "unavailable" ? "unavailable" : "checking"}
+          onRetry={() => {
+            void dispatch(initializeAuth());
+          }}
+          onForgetSession={() => {
+            clearAuthSessionHint();
+            dispatch(clearSavedSessionHint());
+            navigate("/login", { replace: true });
+          }}
+        />
+      );
+    }
+
     return <PacmanLoader />;
   }
 
   if (hasSessionHint && error === "REMOTE_API_UNAVAILABLE") {
     return (
       <SessionRestoreFallback
+        status="unavailable"
         onRetry={() => {
           void dispatch(initializeAuth());
         }}

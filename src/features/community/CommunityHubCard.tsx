@@ -35,7 +35,7 @@ import {
 } from "./communitySlice";
 import { applyCommunityActionInCloud } from "./communityCloudSync";
 import { submitContentReport } from "../../shared/api/platform";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import { sanitizeHtml } from "@integration/runtime/content";
 import { canModerateCommunity } from "@domain/user/roles";
 import type { AppLanguage } from "../../shared/types/i18n";

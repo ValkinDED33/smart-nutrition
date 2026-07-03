@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,15 +13,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
-import { setUser } from "../auth/authSlice";
+import type { RootState } from "../../app/store";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
-import { replaceProfileState } from "./profileSlice";
-import { saveProfileAndUserToCloud } from "./profileCloudSync";
 import { buildProfileStateAfterMeasurementSave } from "./profileSaveModel";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 
 type FormData = {
   weight: number;
@@ -88,14 +86,23 @@ const checkInCopy = {
   },
 } as const;
 
+const createMeasurementFormValues = (
+  user: RootState["auth"]["user"]
+): FormData => ({
+  weight: user?.weight ?? 70,
+  waist: user?.measurements?.waist,
+  abdomen: user?.measurements?.abdomen,
+  hip: user?.measurements?.hip,
+  chest: user?.measurements?.chest,
+});
+
 export const MeasurementsCheckInCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
+  const profileAction = useProfileCloudAction();
   const { measurementHistory, weeklyCheckIn } = profile;
   const { t, appLanguage } = useLanguage();
   const copy = checkInCopy[appLanguage];
-  const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -114,17 +121,20 @@ export const MeasurementsCheckInCard = () => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      weight: user?.weight ?? 70,
-      waist: user?.measurements?.waist,
-      abdomen: user?.measurements?.abdomen,
-      hip: user?.measurements?.hip,
-      chest: user?.measurements?.chest,
-    },
+    defaultValues: createMeasurementFormValues(user),
   });
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    reset(createMeasurementFormValues(user));
+  }, [reset, user]);
 
   if (!user) {
     return null;
@@ -138,9 +148,9 @@ export const MeasurementsCheckInCard = () => {
   const recentEntries = measurementHistory.slice(0, 4);
 
   const onSubmit = async (data: FormData) => {
-    setSubmitting(true);
     setServerError(null);
     setSuccessMessage(null);
+    profileAction.clearError();
 
     try {
       const measurementPayload = {
@@ -154,24 +164,22 @@ export const MeasurementsCheckInCard = () => {
         profile,
         measurementPayload
       );
-      const updatedUser = await saveProfileAndUserToCloud(dispatch, {
-        ...user,
-        weight: data.weight,
-        measurements: {
-          waist: data.waist,
-          abdomen: data.abdomen,
-          hip: data.hip,
-          chest: data.chest,
+      await profileAction.runProfileAndUserSave(
+        {
+          ...user,
+          weight: data.weight,
+          measurements: {
+            waist: data.waist,
+            abdomen: data.abdomen,
+            hip: data.hip,
+            chest: data.chest,
+          },
         },
-      }, nextProfile);
-
-      dispatch(setUser(updatedUser));
-      dispatch(replaceProfileState(nextProfile));
+        nextProfile
+      );
       setSuccessMessage(copy.saved);
     } catch (error) {
       setServerError(error instanceof Error ? error.message : copy.saveError);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -194,7 +202,9 @@ export const MeasurementsCheckInCard = () => {
         </Stack>
 
         {successMessage && <Alert severity="success">{successMessage}</Alert>}
-        {serverError && <Alert severity="error">{serverError}</Alert>}
+        {(serverError || profileAction.error) && (
+          <Alert severity="error">{serverError ?? profileAction.error}</Alert>
+        )}
         <Alert severity={daysSinceLastCheckIn >= weeklyCheckIn.remindIntervalDays ? "info" : "success"}>
           {daysSinceLastCheckIn >= weeklyCheckIn.remindIntervalDays
             ? copy.dueNow
@@ -291,7 +301,7 @@ export const MeasurementsCheckInCard = () => {
           <Button
             type="submit"
             variant="contained"
-            disabled={submitting}
+            disabled={profileAction.saving}
             sx={{
               alignSelf: "flex-start",
               textTransform: "none",
@@ -300,7 +310,7 @@ export const MeasurementsCheckInCard = () => {
               background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
             }}
           >
-            {submitting ? copy.saving : copy.submit}
+            {profileAction.saving ? copy.saving : copy.submit}
           </Button>
         </Stack>
 

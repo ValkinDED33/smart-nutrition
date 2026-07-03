@@ -219,6 +219,37 @@ describe("profileSlice women health", () => {
 });
 
 describe("profileSlice assistant onboarding", () => {
+  it("defaults and normalizes the companion render mode preference", () => {
+    const defaultState = normalizeProfileState({});
+
+    expect(defaultState.assistant.preferredCompanionRenderMode).toBe("2d");
+
+    const restoredState = normalizeProfileState({
+      assistant: {
+        preferredCompanionRenderMode: "3d",
+      },
+    });
+
+    expect(restoredState.assistant.preferredCompanionRenderMode).toBe("3d");
+
+    const invalidState = normalizeProfileState({
+      assistant: {
+        preferredCompanionRenderMode: "auto",
+      },
+    });
+
+    expect(invalidState.assistant.preferredCompanionRenderMode).toBe("2d");
+  });
+
+  it("persists companion render mode through assistant customization", () => {
+    const state = reducer(
+      undefined,
+      setAssistantCustomization({ preferredCompanionRenderMode: "3d" })
+    );
+
+    expect(state.assistant.preferredCompanionRenderMode).toBe("3d");
+  });
+
   it("persists and normalizes companion memory inputs", () => {
     const state = reducer(
       undefined,

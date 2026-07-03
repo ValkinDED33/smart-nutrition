@@ -7,7 +7,7 @@
 import type { MealEntry, Product } from "@domain/meal";
 import { validateMealEntry, isValidQuantity } from "@domain/meal";
 import { MealRules } from "@domain/meal";
-import { LocalMealRepository, type IMealRepository } from "@data/meal";
+import type { IMealRepository } from "@data/meal";
 import type { UserProfile } from "@domain/meal";
 
 export interface AddMealCommand {
@@ -26,7 +26,7 @@ export interface Result<T> {
 
 export class AddMealUseCase {
   constructor(
-    private repository: IMealRepository = new LocalMealRepository(),
+    private repository: IMealRepository | null = null,
     private generateId: () => string = () => crypto.randomUUID?.() || `meal-${Date.now()}`
   ) {}
 
@@ -91,7 +91,12 @@ export class AddMealUseCase {
       return this.fail(validation.errors.map((e) => e.message));
     }
 
-    // 7. Persist
+    // 7. Optional persistence boundary. The production web flow persists through
+    // backend-confirmed mealCloudSync so no local repository becomes a second truth.
+    if (!this.repository) {
+      return this.ok(entry);
+    }
+
     try {
       const saved = await this.repository.createMeal(entry);
       return this.ok(saved);

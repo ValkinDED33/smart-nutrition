@@ -8,7 +8,7 @@ export const createMongoAuthRepository = (mongoStorage) => {
     insertUser: (user) =>
       repository.insertUser({
         ...user,
-        role: user.role ?? "user",
+        role: user.role ?? "USER",
       }),
   };
 };

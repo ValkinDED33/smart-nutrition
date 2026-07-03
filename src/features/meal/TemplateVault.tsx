@@ -24,7 +24,6 @@ import { selectMealTemplates, selectTodayMealItems } from "./selectors";
 import type { MealTemplate, MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
-import { toast } from "sonner";
 import { reorderItems } from "@integration/runtime/interaction";
 import type { AppLanguage } from "@shared/types/i18n";
 import {
@@ -33,6 +32,7 @@ import {
   saveMealTemplateToCloud,
 } from "./mealCloudSync";
 import { createTemplateEntries } from "./mealSaveModel";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 interface Props {
   mealType: MealType;
@@ -42,6 +42,8 @@ interface TemplateCardProps {
   appLanguage: AppLanguage;
   onApply: (id: string) => void;
   onRemove: (id: string) => void;
+  isApplying?: boolean;
+  isRemoving?: boolean;
   template: MealTemplate;
   t: (key: string) => string;
 }
@@ -50,6 +52,8 @@ const TemplateCard = ({
   appLanguage,
   onApply,
   onRemove,
+  isApplying = false,
+  isRemoving = false,
   template,
   t,
 }: TemplateCardProps) => {
@@ -100,6 +104,7 @@ const TemplateCard = ({
               <Button
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onApply(template.id)}
+                disabled={isApplying}
               >
                 {t("templates.apply")}
               </Button>
@@ -107,6 +112,7 @@ const TemplateCard = ({
                 color="error"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onRemove(template.id)}
+                disabled={isRemoving}
               >
                 {t("templates.remove")}
               </Button>
@@ -136,16 +142,84 @@ const normalizeOrderIds = (ids: string[], templates: MealTemplate[]) => [
     .filter((id) => !ids.includes(id)),
 ];
 
+const vaultCopy = {
+  uk: {
+    saving: "Зберігаю зміни шаблону в хмару...",
+    savedTemplate: "Шаблон збережено і підтверджено backend.",
+    appliedTemplate: "Шаблон застосовано до поточного дня і підтверджено backend.",
+    deletedTemplate: "Шаблон видалено і підтверджено backend.",
+    failedSaveTemplate: "Не вдалося зберегти шаблон.",
+    failedApplyTemplate: "Не вдалося застосувати шаблон.",
+    failedDeleteTemplate: "Не вдалося видалити шаблон.",
+    retry: "Спробувати ще раз",
+  },
+  pl: {
+    saving: "Zapisuję zmiany szablonu w chmurze...",
+    savedTemplate: "Szablon zapisany i potwierdzony przez backend.",
+    appliedTemplate: "Szablon użyty w dzisiejszym dniu i potwierdzony przez backend.",
+    deletedTemplate: "Szablon usunięty i potwierdzony przez backend.",
+    failedSaveTemplate: "Nie udało się zapisać szablonu.",
+    failedApplyTemplate: "Nie udało się użyć szablonu.",
+    failedDeleteTemplate: "Nie udało się usunąć szablonu.",
+    retry: "Spróbuj ponownie",
+  },
+  en: {
+    saving: "Saving template changes to cloud...",
+    savedTemplate: "Template saved and confirmed by the backend.",
+    appliedTemplate: "Template applied to today and confirmed by the backend.",
+    deletedTemplate: "Template deleted and confirmed by the backend.",
+    failedSaveTemplate: "Could not save the template.",
+    failedApplyTemplate: "Could not apply the template.",
+    failedDeleteTemplate: "Could not delete the template.",
+    retry: "Try again",
+  },
+} as const;
+
 export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectTodayMealItems);
   const meal = useSelector((state: RootState) => state.meal);
   const templates = useSelector(selectMealTemplates);
   const { appLanguage, t } = useLanguage();
+  const copy = vaultCopy[appLanguage];
   const [templateName, setTemplateName] = useState("");
   const [orderedTemplateIds, setOrderedTemplateIds] = useState<string[]>([]);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [savingAction, setSavingAction] = useState<string | null>(null);
+  const {
+    notice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.saving,
+      edit: copy.saving,
+      delete: copy.saving,
+      repeat: copy.saving,
+      saveTemplate: copy.saving,
+      applyTemplate: copy.saving,
+      saveProduct: copy.saving,
+    },
+    confirmed: {
+      add: copy.appliedTemplate,
+      edit: copy.savedTemplate,
+      delete: copy.deletedTemplate,
+      repeat: copy.appliedTemplate,
+      saveTemplate: copy.savedTemplate,
+      applyTemplate: copy.appliedTemplate,
+      saveProduct: copy.savedTemplate,
+    },
+    failed: {
+      add: copy.failedApplyTemplate,
+      edit: copy.failedSaveTemplate,
+      delete: copy.failedDeleteTemplate,
+      repeat: copy.failedApplyTemplate,
+      saveTemplate: copy.failedSaveTemplate,
+      applyTemplate: copy.failedApplyTemplate,
+      saveProduct: copy.failedSaveTemplate,
+    },
+    retry: copy.retry,
+  });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const currentMealEntries = useMemo(
@@ -170,23 +244,6 @@ export const TemplateVault = ({ mealType }: Props) => {
     return [...orderedTemplates, ...missingTemplates];
   }, [currentMealTemplates, orderedTemplateIds]);
 
-  const runTemplateAction = async (actionId: string, action: () => Promise<unknown>) => {
-    setSaveError(null);
-    setSavingAction(actionId);
-
-    try {
-      await action();
-      return true;
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-      return false;
-    } finally {
-      setSavingAction(null);
-    }
-  };
-
   const handleSaveTemplate = async () => {
     const normalizedName = templateName.trim();
     if (!normalizedName || currentMealEntries.length === 0) return;
@@ -204,13 +261,14 @@ export const TemplateVault = ({ mealType }: Props) => {
       createdAt: new Date().toISOString(),
     };
 
-    const saved = await runTemplateAction("save", () =>
-      saveMealTemplateToCloud(dispatch, meal, template)
-    );
+    const saved = await runMealAction({
+      actionId: "save-template",
+      kind: "saveTemplate",
+      action: () => saveMealTemplateToCloud(dispatch, meal, template),
+    });
 
     if (saved) {
       setTemplateName("");
-      toast.success(t("templates.save"));
     }
   };
 
@@ -218,28 +276,25 @@ export const TemplateVault = ({ mealType }: Props) => {
     const template = templates.find((item) => item.id === templateId);
     if (!template) return;
 
-    const saved = await runTemplateAction(`apply-${templateId}`, () =>
-      applyMealTemplateInCloud(
-        dispatch,
-        meal,
-        templateId,
-        createTemplateEntries(template)
-      )
-    );
-
-    if (saved) {
-      toast.success(t("templates.apply"));
-    }
+    await runMealAction({
+      actionId: `apply-${templateId}`,
+      kind: "applyTemplate",
+      action: () =>
+        applyMealTemplateInCloud(
+          dispatch,
+          meal,
+          templateId,
+          createTemplateEntries(template)
+        ),
+    });
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    const saved = await runTemplateAction(`delete-${templateId}`, () =>
-      deleteMealTemplateFromCloud(dispatch, meal, templateId)
-    );
-
-    if (saved) {
-      toast.success(t("templates.remove"));
-    }
+    await runMealAction({
+      actionId: `delete-${templateId}`,
+      kind: "delete",
+      action: () => deleteMealTemplateFromCloud(dispatch, meal, templateId),
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -271,9 +326,24 @@ export const TemplateVault = ({ mealType }: Props) => {
         </Typography>
         <Typography color="text.secondary">{t("templates.subtitle")}</Typography>
 
-        {saveError ? (
-          <Alert severity="error" onClose={() => setSaveError(null)}>
-            {saveError}
+        {notice ? (
+          <Alert
+            severity={notice.severity}
+            action={
+              notice.retryable ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void retryMealAction()}
+                  sx={{ textTransform: "none", fontWeight: 800 }}
+                >
+                  {copy.retry}
+                </Button>
+              ) : undefined
+            }
+            onClose={clearFeedback}
+          >
+            {notice.text}
           </Alert>
         ) : null}
 
@@ -290,10 +360,10 @@ export const TemplateVault = ({ mealType }: Props) => {
             disabled={
               !templateName.trim() ||
               currentMealEntries.length === 0 ||
-              savingAction === "save"
+              isSavingAction("save-template")
             }
           >
-            {t("templates.save")}
+            {isSavingAction("save-template") ? copy.saving : t("templates.save")}
           </Button>
         </Stack>
 
@@ -307,6 +377,8 @@ export const TemplateVault = ({ mealType }: Props) => {
                   <TemplateCard
                     key={template.id}
                     appLanguage={appLanguage}
+                    isApplying={isSavingAction(`apply-${template.id}`)}
+                    isRemoving={isSavingAction(`delete-${template.id}`)}
                     onApply={handleApplyTemplate}
                     onRemove={handleDeleteTemplate}
                     template={template}

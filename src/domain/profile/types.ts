@@ -20,6 +20,7 @@ export type AssistantCompanionKind =
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused" | "calm" | "scientific";
 export type AssistantMood = "idle" | "happy" | "coach" | "concerned" | "sleepy" | "celebrate";
+export type AssistantCompanionRenderMode = "2d" | "3d";
 
 export interface AssistantMemoryProfile {
   goals: string[];
@@ -109,6 +110,7 @@ export interface AssistantCustomization {
   assistantName: string;
   companionKind: AssistantCompanionKind;
   assistantAvatar: AssistantCompanionKind;
+  preferredCompanionRenderMode: AssistantCompanionRenderMode;
   role: AssistantRole;
   tone: AssistantTone;
   assistantPersonality: AssistantTone;

@@ -87,4 +87,42 @@ describe("waterCloudSync", () => {
       "auth/markSyncSuccess",
     ]);
   });
+
+  it("does not let empty local water overwrite valid cloud water on conflict", async () => {
+    const dispatch = vi.fn();
+    const emptyLocalWater = createInitialWaterState();
+    const cloudWater = {
+      ...createInitialWaterState(),
+      consumedMl: 1750,
+      dailyWaterGoal: 2400,
+    };
+
+    authApiMock.syncRemoteWaterState.mockResolvedValueOnce({
+      ok: false,
+      code: "STATE_CONFLICT",
+      message: "conflict",
+      meta: null,
+    });
+    authApiMock.pullRemoteAppSnapshot.mockResolvedValueOnce({
+      profile: null,
+      meal: null,
+      water: cloudWater,
+      fridge: null,
+      community: null,
+      companion: null,
+      updatedAt: "2026-07-03T12:30:00.000Z",
+      profileUpdatedAt: null,
+      mealUpdatedAt: null,
+      waterUpdatedAt: "2026-07-03T12:30:00.000Z",
+    });
+
+    await expect(saveWaterStateToCloud(dispatch, emptyLocalWater)).rejects.toThrow(
+      "latest cloud version has been loaded"
+    );
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "water/replaceWaterState",
+      payload: cloudWater,
+    });
+  });
 });

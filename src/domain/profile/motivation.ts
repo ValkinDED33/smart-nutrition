@@ -29,6 +29,7 @@ export const createDefaultAssistantCustomization = (): AssistantCustomization =>
   assistantName: DEFAULT_ASSISTANT_NAME,
   companionKind: "dragon",
   assistantAvatar: "dragon",
+  preferredCompanionRenderMode: "2d",
   role: "assistant",
   tone: "gentle",
   assistantPersonality: "gentle",

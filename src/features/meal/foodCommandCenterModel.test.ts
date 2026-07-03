@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  createInitialFoodCommandQuantity,
   createNutritionGoogleSearchUrl,
   shouldShowQuickSearchDeadEnd,
 } from "./foodCommandCenterModel";
 
 describe("foodCommandCenterModel", () => {
+  it("starts quantity empty so mobile users can type immediately", () => {
+    expect(createInitialFoodCommandQuantity()).toBe("");
+  });
+
   it("shows a recovery path when quick search has no online or saved suggestions", () => {
     expect(
       shouldShowQuickSearchDeadEnd({

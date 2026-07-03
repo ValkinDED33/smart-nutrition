@@ -2,12 +2,14 @@ import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import authReducer, { initializeAuth, setCredentials } from "./authSlice";
 import type { User } from "@domain/user/types";
+import { createEmptyNutrients } from "@domain/meal/nutrients";
 import profileReducer, { setAssistantCustomization } from "../profile/profileSlice";
 import mealReducer from "../meal/mealSlice";
 import waterReducer from "../water/waterSlice";
 import fridgeReducer from "../fridge/fridgeSlice";
 import communityReducer from "../community/communitySlice";
 import companionReducer from "../companion/model/store";
+import { clearSyncOutbox, enqueueSyncOutbox } from "@shared/lib/syncOutbox";
 
 const authApiMock = vi.hoisted(() => ({
   getAuthRuntimeInfo: vi.fn(() => ({
@@ -73,9 +75,31 @@ const createUser = (id: string): User => ({
   role: "VERIFIED_USER",
 });
 
+const createMealEntry = (id: string) => ({
+  id,
+  product: {
+    id: `product-${id}`,
+    name: `Product ${id}`,
+    unit: "g" as const,
+    source: "Manual" as const,
+    nutrients: {
+      ...createEmptyNutrients(),
+      calories: 120,
+      protein: 12,
+      carbs: 14,
+      fat: 4,
+    },
+  },
+  quantity: 100,
+  mealType: "breakfast" as const,
+  eatenAt: "2026-07-03T08:00:00.000Z",
+  origin: "manual" as const,
+});
+
 describe("authSlice", () => {
   afterEach(() => {
     vi.useRealTimers();
+    clearSyncOutbox();
     vi.clearAllMocks();
     sessionHintMock.hasRecentAuthSessionHint.mockReturnValue(false);
   });
@@ -97,6 +121,7 @@ describe("authSlice", () => {
       isAuthenticated: false,
       isInitialized: true,
       isLoading: false,
+      sessionRestoreStatus: "idle",
     });
   });
 
@@ -145,6 +170,7 @@ describe("authSlice", () => {
       isLoading: true,
       isInitialized: false,
       hasSessionHint: true,
+      sessionRestoreStatus: "checking",
     });
 
     await vi.advanceTimersByTimeAsync(5_500);
@@ -157,6 +183,7 @@ describe("authSlice", () => {
       isInitialized: true,
       isLoading: false,
       hasSessionHint: true,
+      sessionRestoreStatus: "unavailable",
     });
   });
 
@@ -183,6 +210,7 @@ describe("authSlice", () => {
       isInitialized: true,
       isLoading: false,
       hasSessionHint: true,
+      sessionRestoreStatus: "idle",
     });
   });
 
@@ -229,6 +257,139 @@ describe("authSlice", () => {
       isAuthenticated: true,
       isInitialized: true,
     });
+  });
+
+  it("applies cloud snapshot and clears stale pending outbox during restore", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-20T10:00:00.000Z"));
+    enqueueSyncOutbox("Old unsynced change");
+    vi.setSystemTime(new Date("2026-06-20T11:05:00.000Z"));
+
+    const store = createTestStore();
+    const user = createUser("cloud-truth-user");
+    const completedAt = "2026-06-20T10:30:00.000Z";
+
+    authApiMock.restoreSession.mockResolvedValue({
+      user,
+      snapshot: {
+        profile: {
+          assistant: {
+            onboarding: {
+              preferredName: "Igor",
+              goalSelections: ["maintain"],
+              mainFrictions: ["chaotic_schedule"],
+              motivationStyles: ["gentle"],
+              completedAt,
+            },
+          },
+        },
+        meal: null,
+        water: null,
+        fridge: null,
+        community: null,
+        companion: null,
+        updatedAt: "2026-06-20T10:45:00.000Z",
+      },
+    });
+
+    await store.dispatch(initializeAuth());
+
+    expect(store.getState().profile.assistant.onboarding.completedAt).toBe(
+      completedAt
+    );
+    expect(store.getState().auth.syncOutbox.pendingChanges).toBe(0);
+    expect(store.getState().auth.syncStatus).toBe("synced");
+  });
+
+  it("hydrates cloud meals and templates during session restore instead of keeping empty runtime meal state", async () => {
+    const store = createTestStore();
+    const user = createUser("meal-restore-user");
+    const cloudEntry = createMealEntry("cloud-breakfast");
+    const cloudTemplate = {
+      id: "cloud-template",
+      name: "Cloud breakfast",
+      mealType: "breakfast" as const,
+      createdAt: "2026-07-03T09:00:00.000Z",
+      items: [{ product: cloudEntry.product, quantity: 100 }],
+    };
+
+    expect(store.getState().meal.items).toHaveLength(0);
+    expect(store.getState().meal.templates).toHaveLength(0);
+
+    authApiMock.restoreSession.mockResolvedValue({
+      user,
+      snapshot: {
+        profile: null,
+        meal: {
+          items: [cloudEntry],
+          templates: [cloudTemplate],
+          savedProducts: [cloudEntry.product],
+          recentProducts: [cloudEntry.product],
+          personalBarcodeProducts: [],
+        },
+        water: null,
+        fridge: null,
+        community: null,
+        companion: null,
+        updatedAt: "2026-07-03T10:00:00.000Z",
+        mealUpdatedAt: "2026-07-03T10:00:00.000Z",
+      },
+    });
+
+    await store.dispatch(initializeAuth());
+
+    expect(store.getState().meal.items[0]?.id).toBe("cloud-breakfast");
+    expect(store.getState().meal.templates[0]?.id).toBe("cloud-template");
+    expect(store.getState().meal.savedProducts[0]?.id).toBe(
+      "product-cloud-breakfast"
+    );
+    expect(store.getState().auth).toMatchObject({
+      user,
+      isAuthenticated: true,
+      syncStatus: "synced",
+    });
+  });
+
+  it("keeps a fresh local outbox for retry instead of silently discarding it", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-20T10:00:00.000Z"));
+    enqueueSyncOutbox("Recent unsynced change");
+    vi.setSystemTime(new Date("2026-06-20T10:05:00.000Z"));
+
+    const store = createTestStore();
+    const user = createUser("fresh-outbox-user");
+    const completedAt = "2026-06-20T10:03:00.000Z";
+
+    authApiMock.restoreSession.mockResolvedValue({
+      user,
+      snapshot: {
+        profile: {
+          assistant: {
+            onboarding: {
+              preferredName: "Cloud Igor",
+              goalSelections: ["maintain"],
+              mainFrictions: ["chaotic_schedule"],
+              motivationStyles: ["gentle"],
+              completedAt,
+            },
+          },
+        },
+        meal: null,
+        water: null,
+        fridge: null,
+        community: null,
+        companion: null,
+        updatedAt: "2026-06-20T09:55:00.000Z",
+      },
+    });
+
+    await store.dispatch(initializeAuth());
+
+    expect(store.getState().auth.syncOutbox.pendingChanges).toBe(1);
+    expect(store.getState().auth.syncStatus).toBe("error");
+    expect(store.getState().profile.assistant.onboarding.completedAt).not.toBe(
+      completedAt
+    );
   });
 
   it("marks auth initialized when credentials are set explicitly", () => {

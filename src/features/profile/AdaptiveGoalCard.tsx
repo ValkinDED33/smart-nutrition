@@ -1,23 +1,38 @@
 import { useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Button, Paper, Stack, Typography } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import { useSelector } from "react-redux";
+import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
+import type { RootState } from "../../app/store";
 import { selectMealItems } from "../meal/selectors";
 import { setAdaptiveCalories } from "./profileSlice";
-import { applyProfileActionInCloud } from "./profileCloudSync";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
   calculateAdaptiveCalorieTarget,
   calculateAverageDailyCalories,
 } from "@domain/profile/adaptiveGoal";
 import { useLanguage } from "../../shared/language";
 
+const adaptiveGoalSaveCopy = {
+  uk: {
+    saving: "Зберігаю ціль у хмарі...",
+    saveError: "Не вдалося зберегти ціль. Спробуйте ще раз.",
+  },
+  pl: {
+    saving: "Zapisuję cel w chmurze...",
+    saveError: "Nie udało się zapisać celu. Spróbuj ponownie.",
+  },
+  en: {
+    saving: "Saving goal to cloud...",
+    saveError: "Could not save the goal. Try again.",
+  },
+} as const;
+
 export const AdaptiveGoalCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
+  const copy = adaptiveGoalSaveCopy[appLanguage];
+  const profileAction = useProfileCloudAction();
   const { maintenanceCalories, goal, adaptiveCalories, weightHistory, adaptiveMode } = useSelector(
     (state: RootState) => state.profile
   );
-  const profile = useSelector((state: RootState) => state.profile);
   const items = useSelector(selectMealItems);
 
   const averageIntake = calculateAverageDailyCalories(items);
@@ -64,14 +79,23 @@ export const AdaptiveGoalCard = () => {
             ? "Automatic mode keeps the target aligned with your trend."
             : "Manual mode waits for you to apply changes yourself."}
         </Typography>
+        {profileAction.saving ? (
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            {copy.saving}
+          </Alert>
+        ) : null}
+        {profileAction.hasError ? (
+          <Alert severity="error" sx={{ borderRadius: 3 }} onClose={profileAction.clearError}>
+            {copy.saveError}
+          </Alert>
+        ) : null}
         <Button
           variant="contained"
+          disabled={profileAction.saving}
           onClick={() => {
-            void applyProfileActionInCloud(
-              dispatch,
-              profile,
+            void profileAction.runProfileAction(
               setAdaptiveCalories(suggestedCalories)
-            );
+            ).catch(() => undefined);
           }}
           sx={{ alignSelf: "flex-start" }}
         >

@@ -3,12 +3,15 @@ import { createProductKey } from "./productIdentity";
 import {
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
+  createInitialBarcodeQuantity,
+  createManualCatalogSubmissionPayload,
   createManualBarcodeProduct,
   isSafeManualImageDataUrl,
   isSupportedManualPhotoFile,
   normalizeBarcode,
   normalizeManualImageUrl,
   resolveBarcodeScannerAvailability,
+  resolveCatalogNotice,
 } from "./barcodeScannerModel";
 
 describe("barcodeScannerModel", () => {
@@ -30,6 +33,10 @@ describe("barcodeScannerModel", () => {
     expect(urls.google).toContain("590123%20nutrition%20facts");
     expect(urls.auchan).toContain("site%3Azakupy.auchan.pl%20590123");
     expect(urls.biedronka).toContain("site%3Azakupy.biedronka.pl%20590123");
+  });
+
+  it("starts barcode quantity empty so mobile users can type immediately", () => {
+    expect(createInitialBarcodeQuantity()).toBe("");
   });
 
   it("accepts only bounded raster manual photos and safe image urls", () => {
@@ -93,6 +100,83 @@ describe("barcodeScannerModel", () => {
         fat: 4,
         carbs: 8,
       },
+    });
+  });
+
+  it("creates a shared catalog submission payload from a saved manual product", () => {
+    const draft = {
+      name: "  Greek yogurt ",
+      brand: "  Dairy Co ",
+      category: "yogurt",
+      imageUrl: "https://example.com/yogurt.png",
+      calories: 110,
+      protein: 9,
+      fat: 4,
+      carbs: 8,
+    };
+    const manualProduct = createManualBarcodeProduct({
+      id: "manual-1",
+      barcodeInput: "590 123",
+      draft,
+    });
+
+    expect(
+      createManualCatalogSubmissionPayload({
+        ...manualProduct,
+        draft,
+      })
+    ).toEqual({
+      name: "Greek yogurt",
+      brand: "Dairy Co",
+      barcode: "590123",
+      category: "yogurt",
+      imageUrl: "https://example.com/yogurt.png",
+      calories: 110,
+      protein: 9,
+      fat: 4,
+      carbs: 8,
+      unit: "g",
+    });
+  });
+
+  it("keeps shared catalog submission states explicit and retryable", () => {
+    const copy = {
+      catalogSubmitting: "Sending",
+      catalogConfirmed: "Accepted",
+      catalogFailed: "Saved locally for user, catalog failed.",
+      catalogRetry: "Retry",
+    };
+    const payload = {
+      name: "Greek yogurt",
+      calories: 110,
+      protein: 9,
+      fat: 4,
+      carbs: 8,
+      unit: "g" as const,
+    };
+
+    expect(resolveCatalogNotice({ status: "idle" }, copy)).toBeNull();
+    expect(resolveCatalogNotice({ status: "submitting", payload }, copy)).toEqual({
+      severity: "info",
+      text: "Sending",
+    });
+    expect(resolveCatalogNotice({ status: "confirmed" }, copy)).toEqual({
+      severity: "success",
+      text: "Accepted",
+    });
+    expect(
+      resolveCatalogNotice(
+        {
+          status: "failed",
+          payload,
+          message: "Provider unavailable.",
+        },
+        copy
+      )
+    ).toEqual({
+      severity: "warning",
+      text: "Saved locally for user, catalog failed. Provider unavailable.",
+      retryable: true,
     });
   });
 

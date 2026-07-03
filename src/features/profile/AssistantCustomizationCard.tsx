@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
+  Alert,
+  Box,
   Button,
   FormControlLabel,
   MenuItem,
@@ -10,12 +12,17 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
+import type { RootState } from "../../app/store";
 import { setAssistantCustomization, type ProfileState } from "./profileSlice";
-import { applyProfileActionInCloud } from "./profileCloudSync";
 import { useLanguage } from "../../shared/language";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import {
+  Companion3DLoadingFallback,
+  CompanionAvatar as AssistantAvatar,
+  CompanionRenderModeControl,
+} from "@features/assistant-3d";
 import { CompanionProgressCard } from "../companion";
+import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
   assistantDietFrictions,
   assistantMotivationStyles,
@@ -53,6 +60,13 @@ const assistantCopy = {
     saving: "Зберігаю...",
     saved: "Збережено в хмарі",
     saveError: "Не вдалося зберегти. Спробуйте ще раз.",
+    renderModeTitle: "Превʼю companion",
+    renderMode2d: "Швидкий 2D",
+    renderMode3d: "Живий 3D",
+    renderModeHint:
+      "3D вмикається тільки вручну для превʼю і не навантажує звичайний інтерфейс.",
+    renderModeLoading: "Завантажую 3D",
+    renderModeError: "3D не завантажився, показую 2D",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
@@ -109,6 +123,13 @@ const assistantCopy = {
     saving: "Zapisuję...",
     saved: "Zapisano w chmurze",
     saveError: "Nie udało się zapisać. Spróbuj ponownie.",
+    renderModeTitle: "Podgląd companion",
+    renderMode2d: "Szybki 2D",
+    renderMode3d: "Żywy 3D",
+    renderModeHint:
+      "3D włącza się tylko ręcznie dla podglądu i nie obciąża zwykłego interfejsu.",
+    renderModeLoading: "Ładuję 3D",
+    renderModeError: "3D się nie załadowało, pokazuję 2D",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
@@ -165,6 +186,13 @@ const assistantCopy = {
     saving: "Saving...",
     saved: "Saved to cloud",
     saveError: "Could not save. Try again.",
+    renderModeTitle: "Companion preview",
+    renderMode2d: "Fast 2D",
+    renderMode3d: "Live 3D",
+    renderModeHint:
+      "3D is enabled manually for preview and does not burden the normal interface.",
+    renderModeLoading: "Loading 3D",
+    renderModeError: "3D failed, showing 2D",
     roleFriend: "Friend",
     roleAssistant: "Assistant",
     roleCoach: "Coach",
@@ -223,11 +251,11 @@ type AssistantTextDraftFieldsProps = {
 };
 
 export const AssistantCustomizationCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const profile = useSelector((state: RootState) => state.profile);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = assistantCopy[appLanguage];
+  const companionRenderModePreference = useCompanionRenderModePreference();
+  const profileAction = useProfileCloudAction();
   const primaryGoalNoteValue =
     assistant.onboarding.primaryGoalNote === "healthy"
       ? copy.healthyGoalNote
@@ -243,14 +271,19 @@ export const AssistantCustomizationCard = () => {
       ? assistant.onboarding.motivationStyles
       : [assistant.onboarding.motivationStyle];
 
-  const commitAssistantCustomization = (
+  const commitAssistantCustomization = async (
     payload: Parameters<typeof setAssistantCustomization>[0]
-  ) =>
-    applyProfileActionInCloud(
-      dispatch,
-      profile,
+  ) => {
+    const nextProfile = await profileAction.runProfileAction(
       setAssistantCustomization(payload)
     );
+
+    if (!nextProfile) {
+      throw new Error(copy.saveError);
+    }
+
+    return nextProfile;
+  };
 
   const updateFrictionSelections = (
     nextFrictions: Exclude<AssistantDietFriction, "unknown">[]
@@ -261,7 +294,7 @@ export const AssistantCustomizationCard = () => {
         mainFriction: nextFrictions[0] ?? "unknown",
         mainFrictions: nextFrictions,
       },
-    });
+    }).catch(() => undefined);
   };
 
   const updateMotivationSelections = (
@@ -273,9 +306,8 @@ export const AssistantCustomizationCard = () => {
         motivationStyle: nextStyles[0] ?? "gentle",
         motivationStyles: nextStyles.length > 0 ? nextStyles : ["gentle"],
       },
-    });
+    }).catch(() => undefined);
   };
-
   return (
     <Paper
       elevation={0}
@@ -288,6 +320,18 @@ export const AssistantCustomizationCard = () => {
     >
       <Stack spacing={2}>
         <BoxHeader title={copy.title} subtitle={copy.subtitle} />
+
+        {profileAction.saving ? (
+          <Alert severity="info" sx={{ borderRadius: 3 }}>
+            {copy.saving}
+          </Alert>
+        ) : null}
+
+        {profileAction.hasError ? (
+          <Alert severity="error" sx={{ borderRadius: 3 }} onClose={profileAction.clearError}>
+            {copy.saveError}
+          </Alert>
+        ) : null}
 
         <AssistantTextDraftFields
           key={`${assistant.name}|${primaryGoalNoteValue}|${assistant.onboarding.supportNote}`}
@@ -305,11 +349,12 @@ export const AssistantCustomizationCard = () => {
             fullWidth
             label={copy.companion}
             value={assistant.companionKind}
+            disabled={profileAction.saving}
             onChange={(event) =>
               void commitAssistantCustomization({
                 companionKind: event.target.value as AssistantCompanionKind,
                 assistantAvatar: event.target.value as AssistantCompanionKind,
-              })
+              }).catch(() => undefined)
             }
           >
             {companionKinds.map((kind) => (
@@ -324,10 +369,11 @@ export const AssistantCustomizationCard = () => {
             fullWidth
             label={copy.role}
             value={assistant.role}
+            disabled={profileAction.saving}
             onChange={(event) =>
               void commitAssistantCustomization({
                 role: event.target.value as "friend" | "assistant" | "coach",
-              })
+              }).catch(() => undefined)
             }
           >
             <MenuItem value="friend">{copy.roleFriend}</MenuItem>
@@ -340,11 +386,12 @@ export const AssistantCustomizationCard = () => {
             fullWidth
             label={copy.tone}
             value={assistant.tone}
+            disabled={profileAction.saving}
             onChange={(event) =>
               void commitAssistantCustomization({
                 tone: event.target.value as AssistantTone,
                 assistantPersonality: event.target.value as AssistantTone,
-              })
+              }).catch(() => undefined)
             }
           >
             <MenuItem value="gentle">{copy.toneGentle}</MenuItem>
@@ -354,17 +401,61 @@ export const AssistantCustomizationCard = () => {
           </TextField>
         </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <AssistantAvatar
-            name={assistant.name}
-            variant={assistant.companionKind}
-            mood="happy"
-            renderMode="3d"
-            active
-          />
-          <Typography color="text.secondary">
-            {copy.companions[assistant.companionKind]} · {assistant.name}
-          </Typography>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+        >
+          <Box
+            sx={{
+              width: 136,
+              height: 136,
+              flex: "0 0 auto",
+              display: "grid",
+              placeItems: "center",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 50% 58%, rgba(163,230,53,0.2), transparent 46%), radial-gradient(circle at 50% 50%, rgba(45,212,191,0.14), transparent 70%)",
+              boxShadow:
+                "0 18px 46px rgba(15,118,110,0.2), inset 0 0 32px rgba(255,255,255,0.08)",
+            }}
+          >
+            <AssistantAvatar
+              name={assistant.name}
+              variant={assistant.companionKind}
+              size={136}
+              mood="happy"
+              renderMode={companionRenderModePreference.value}
+              loadingFallback={
+                <Companion3DLoadingFallback
+                  label={copy.renderModeLoading}
+                  size={136}
+                />
+              }
+              on3dLoadError={companionRenderModePreference.mark3dRuntimeError}
+              active
+            />
+          </Box>
+          <Stack spacing={1.2} sx={{ minWidth: 0, flex: 1 }}>
+            <Typography color="text.secondary">
+              {copy.companions[assistant.companionKind]} · {assistant.name}
+            </Typography>
+            <CompanionRenderModeControl
+              value={companionRenderModePreference.value}
+              onChange={companionRenderModePreference.changeRenderMode}
+              loading={companionRenderModePreference.saving}
+              error={companionRenderModePreference.hasError}
+              disabled={companionRenderModePreference.saving}
+              labels={{
+                title: copy.renderModeTitle,
+                twoD: copy.renderMode2d,
+                threeD: copy.renderMode3d,
+                hint: copy.renderModeHint,
+                loading: copy.renderModeLoading,
+                error: copy.renderModeError,
+              }}
+            />
+          </Stack>
         </Stack>
 
         <CompanionProgressCard embedded />
@@ -376,6 +467,7 @@ export const AssistantCustomizationCard = () => {
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             <Button
               variant={selectedFrictions.length === frictionOptions.length ? "contained" : "outlined"}
+              disabled={profileAction.saving}
               onClick={() => updateFrictionSelections(frictionOptions.filter((friction) => friction !== "unknown"))}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
@@ -383,6 +475,7 @@ export const AssistantCustomizationCard = () => {
             </Button>
             <Button
               variant="outlined"
+              disabled={profileAction.saving}
               onClick={() => updateFrictionSelections([])}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
@@ -396,6 +489,7 @@ export const AssistantCustomizationCard = () => {
                   <Button
                     key={friction}
                     variant={selected ? "contained" : "outlined"}
+                    disabled={profileAction.saving}
                     onClick={() =>
                       updateFrictionSelections(
                         selected
@@ -421,6 +515,7 @@ export const AssistantCustomizationCard = () => {
                   ? "contained"
                   : "outlined"
               }
+              disabled={profileAction.saving}
               onClick={() => updateMotivationSelections([...motivationStyleOptions])}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
@@ -428,6 +523,7 @@ export const AssistantCustomizationCard = () => {
             </Button>
             <Button
               variant="outlined"
+              disabled={profileAction.saving}
               onClick={() => updateMotivationSelections(["gentle"])}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
@@ -439,6 +535,7 @@ export const AssistantCustomizationCard = () => {
                 <Button
                   key={style}
                   variant={selected ? "contained" : "outlined"}
+                  disabled={profileAction.saving}
                   onClick={() =>
                     updateMotivationSelections(
                       selected
@@ -463,8 +560,9 @@ export const AssistantCustomizationCard = () => {
           control={
             <Switch
               checked={assistant.humorEnabled}
+              disabled={profileAction.saving}
               onChange={(_, checked) =>
-                void commitAssistantCustomization({ humorEnabled: checked })
+                void commitAssistantCustomization({ humorEnabled: checked }).catch(() => undefined)
               }
             />
           }
@@ -475,8 +573,9 @@ export const AssistantCustomizationCard = () => {
           control={
             <Switch
               checked={assistant.widgetEnabled}
+              disabled={profileAction.saving}
               onChange={(_, checked) =>
-                void commitAssistantCustomization({ widgetEnabled: checked })
+                void commitAssistantCustomization({ widgetEnabled: checked }).catch(() => undefined)
               }
             />
           }
@@ -487,9 +586,9 @@ export const AssistantCustomizationCard = () => {
           control={
             <Switch
               checked={assistant.proactiveHintsEnabled}
-              disabled={!assistant.widgetEnabled}
+              disabled={!assistant.widgetEnabled || profileAction.saving}
               onChange={(_, checked) =>
-                void commitAssistantCustomization({ proactiveHintsEnabled: checked })
+                void commitAssistantCustomization({ proactiveHintsEnabled: checked }).catch(() => undefined)
               }
             />
           }

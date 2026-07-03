@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -28,7 +28,6 @@ import { createProductKey } from "./productIdentity";
 import { fuzzySearchProducts } from "../../shared/lib/fuzzySearch";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useMealSearchStore } from "@features/meal/model/searchStore";
-import { CatalogContributionCard } from "@features/platform/CatalogContributionCard";
 import {
   selectPersonalBarcodeProducts,
   selectRecentProducts,
@@ -39,6 +38,12 @@ import {
   normalizeProductLookupQuery,
   shouldRunOnlineProductLookup,
 } from "./productLookupUiModel";
+
+const CatalogContributionCard = lazy(() =>
+  import("@features/platform/CatalogContributionCard").then((module) => ({
+    default: module.CatalogContributionCard,
+  }))
+);
 
 interface Props {
   mealType: MealType;
@@ -179,6 +184,7 @@ export const ProductSearch = ({ mealType }: Props) => {
         savedProducts,
         recentProducts,
         personalBarcodeProducts,
+        includeStarterCatalog: !normalizedQuery,
         limit: normalizedQuery ? 18 : 12,
       }),
     [
@@ -541,11 +547,13 @@ export const ProductSearch = ({ mealType }: Props) => {
         )}
 
         {showContributionForm && (
-          <CatalogContributionCard
-            key={normalizedQuery}
-            compact
-            initialName={normalizedQuery}
-          />
+          <Suspense fallback={<CircularProgress size={24} />}>
+            <CatalogContributionCard
+              key={normalizedQuery}
+              compact
+              initialName={normalizedQuery}
+            />
+          </Suspense>
         )}
 
         {filteredResults.length === 0 ? (

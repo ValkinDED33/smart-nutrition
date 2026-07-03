@@ -1,5 +1,6 @@
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { Product } from "@domain/products/types";
+import type { CatalogProductSubmissionPayload } from "@shared/types/platform";
 import { normalizeBarcode } from "./productIdentity";
 
 export type ManualNumericDraftValue = number | "";
@@ -15,9 +16,28 @@ export type ManualDraft = {
   carbs: ManualNumericDraftValue;
 };
 
+export type CatalogSubmissionState =
+  | {
+      status: "idle";
+    }
+  | {
+      status: "submitting";
+      payload: CatalogProductSubmissionPayload;
+    }
+  | {
+      status: "confirmed";
+      moderationStatus?: string;
+    }
+  | {
+      status: "failed";
+      message: string;
+      payload: CatalogProductSubmissionPayload;
+    };
+
 export type CatalogNotice = {
-  severity: "success" | "warning";
+  severity: "success" | "warning" | "info";
   text: string;
+  retryable?: boolean;
 };
 
 export type BarcodeScannerAvailability =
@@ -49,6 +69,12 @@ export const createManualDraft = (): ManualDraft => ({
   protein: "",
   fat: "",
   carbs: "",
+});
+
+export const createInitialBarcodeQuantity = (): ManualNumericDraftValue => "";
+
+export const createInitialCatalogSubmissionState = (): CatalogSubmissionState => ({
+  status: "idle",
 });
 
 export const resolveBarcodeScannerAvailability = ({
@@ -187,5 +213,66 @@ export const createManualBarcodeProduct = ({
     name,
     normalizedBarcode,
     product,
+  };
+};
+
+export const createManualCatalogSubmissionPayload = ({
+  catalogImageUrl,
+  category,
+  draft,
+  name,
+  normalizedBarcode,
+  product,
+}: {
+  catalogImageUrl?: string;
+  category: string;
+  draft: ManualDraft;
+  name: string;
+  normalizedBarcode: string;
+  product: Product;
+}): CatalogProductSubmissionPayload => ({
+  name,
+  brand: product.brand,
+  barcode: normalizedBarcode || undefined,
+  category: category || undefined,
+  imageUrl: catalogImageUrl,
+  calories: normalizeManualNumericValue(draft.calories),
+  protein: normalizeManualNumericValue(draft.protein),
+  fat: normalizeManualNumericValue(draft.fat),
+  carbs: normalizeManualNumericValue(draft.carbs),
+  unit: "g",
+});
+
+export const resolveCatalogNotice = (
+  state: CatalogSubmissionState,
+  copy: {
+    catalogConfirmed: string;
+    catalogFailed: string;
+    catalogRetry: string;
+    catalogSubmitting: string;
+  }
+): CatalogNotice | null => {
+  if (state.status === "idle") {
+    return null;
+  }
+
+  if (state.status === "submitting") {
+    return {
+      severity: "info",
+      text: copy.catalogSubmitting,
+    };
+  }
+
+  if (state.status === "confirmed") {
+    return {
+      severity: "success",
+      text: copy.catalogConfirmed,
+    };
+  }
+
+  return {
+    severity: "warning",
+    text: `${copy.catalogFailed} ${state.message || copy.catalogRetry}`,
+    retryable: true,
   };
 };

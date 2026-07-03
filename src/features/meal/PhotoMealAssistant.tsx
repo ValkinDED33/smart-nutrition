@@ -31,6 +31,7 @@ import type {
 import type { Product } from "@domain/products/types";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { addMealEntriesToCloud } from "./mealCloudSync";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -131,6 +132,10 @@ const photoCopy = {
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
     cloudDraft:
       "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
+    analyzed: "AI проаналізував фото. Це ще чернетка, не запис у щоденнику.",
+    savingDraft: "Зберігаємо обрані підказки в щоденник...",
+    saveFailed: "Не вдалося додати чернетку до щоденника.",
+    retry: "Спробувати ще раз",
     previewAlt: "Прев'ю фото страви",
     removePhoto: "Прибрати фото",
     detected: "Чернетка розпізнавання",
@@ -168,6 +173,10 @@ const photoCopy = {
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
     cloudDraft:
       "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
+    analyzed: "AI przeanalizował zdjęcie. To nadal szkic, nie wpis w dzienniku.",
+    savingDraft: "Zapisujemy wybrane podpowiedzi w dzienniku...",
+    saveFailed: "Nie udało się dodać szkicu do dziennika.",
+    retry: "Spróbuj ponownie",
     previewAlt: "Podgląd zdjęcia posiłku",
     removePhoto: "Usuń zdjęcie",
     detected: "Szkic rozpoznania",
@@ -205,6 +214,10 @@ const photoCopy = {
       "Could not prepare suggestions for this photo. You can add the meal manually below.",
     cloudDraft:
       "Draft is ready. Check ingredients and portion before adding entries to the diary.",
+    analyzed: "AI analyzed the photo. This is still a draft, not a diary entry.",
+    savingDraft: "Saving selected draft items to your diary...",
+    saveFailed: "Could not add this draft to your diary.",
+    retry: "Try again",
     previewAlt: "Meal photo preview",
     removePhoto: "Remove photo",
     detected: "Recognition draft",
@@ -247,7 +260,42 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const {
+    notice: mealActionNotice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.savingDraft,
+      edit: copy.savingDraft,
+      delete: copy.savingDraft,
+      repeat: copy.savingDraft,
+      saveTemplate: copy.savingDraft,
+      applyTemplate: copy.savingDraft,
+      saveProduct: copy.savingDraft,
+    },
+    confirmed: {
+      add: copy.added,
+      edit: copy.added,
+      delete: copy.added,
+      repeat: copy.added,
+      saveTemplate: copy.added,
+      applyTemplate: copy.added,
+      saveProduct: copy.added,
+    },
+    failed: {
+      add: copy.saveFailed,
+      edit: copy.saveFailed,
+      delete: copy.saveFailed,
+      repeat: copy.saveFailed,
+      saveTemplate: copy.saveFailed,
+      applyTemplate: copy.saveFailed,
+      saveProduct: copy.saveFailed,
+    },
+    retry: copy.retry,
+  });
 
   const totals = useMemo(() => {
     if (!analysis) {
@@ -274,7 +322,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     }
 
     setError(null);
-    setFeedback(null);
+    clearFeedback();
     setAnalysis(null);
     setAnalysisMode(null);
     setQuantityDrafts({});
@@ -323,7 +371,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setSelectedItemIndexes([]);
     setQuantityDrafts({});
     setError(null);
-    setFeedback(null);
+    clearFeedback();
   };
 
   const handlePortionChange = (_: MouseEvent<HTMLElement>, value: PhotoPortionSize | null) => {
@@ -420,12 +468,12 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       return;
     }
 
-    try {
-      await addMealEntriesToCloud(dispatch, meal, entries);
-      setFeedback(copy.added);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : copy.analysisError);
-    }
+    setError(null);
+    await runMealAction({
+      actionId: "photo-draft-add",
+      kind: "add",
+      action: () => addMealEntriesToCloud(dispatch, meal, entries),
+    });
   };
 
   return (
@@ -447,9 +495,25 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         </Stack>
 
         {error && <Alert severity="warning">{error}</Alert>}
-        {feedback && <Alert severity="success">{feedback}</Alert>}
+        {mealActionNotice && (
+          <Alert
+            severity={mealActionNotice.severity}
+            onClose={clearFeedback}
+            action={
+              mealActionNotice.retryable ? (
+                <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+                  {copy.retry}
+                </Button>
+              ) : undefined
+            }
+          >
+            {mealActionNotice.text}
+          </Alert>
+        )}
         {analysisMode === "cloud" && !error && analysis && (
-          <Alert severity="success">{copy.cloudDraft}</Alert>
+          <Alert severity="info">
+            {copy.analyzed} {copy.cloudDraft}
+          </Alert>
         )}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="flex-start">
@@ -698,7 +762,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 onClick={() => {
                   void handleAddDraft();
                 }}
-                disabled={analysis.items.length === 0}
+                disabled={analysis.items.length === 0 || isSavingAction("photo-draft-add")}
                 sx={{
                   alignSelf: "flex-start",
                   borderRadius: 999,

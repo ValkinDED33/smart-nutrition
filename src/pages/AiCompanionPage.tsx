@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
-import { AssistantRuntimeCard } from "../features/assistant/AssistantRuntimeCard";
-import { NutritionCoachCard } from "../features/meal/NutritionCoachCard";
-import { SmartRecommendations } from "../features/meal/SmartRecommendations";
-import { CompanionProgressCard } from "../features/companion";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
 import type { RootState } from "../app/store";
 import {
   selectTodayMealItems,
@@ -13,9 +19,13 @@ import {
 } from "../features/meal/selectors";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
 import { getAssistantRuntimeStatus } from "@shared/api/assistant";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import {
+  Companion3DLoadingFallback,
+  CompanionAvatar as AssistantAvatar,
+  CompanionRenderModeControl,
+} from "@features/assistant-3d";
 import { useLanguage } from "../shared/language";
-import { PageShell, SectionTabs } from "@shared/ui";
+import { LoadingSkeleton, PageShell, SectionTabs } from "@shared/ui";
 import type { AssistantRuntimeStatus } from "@domain/assistant/types";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import {
@@ -24,6 +34,28 @@ import {
   type AssistantCoreState,
   type AssistantRelationshipLevel,
 } from "../core/assistant";
+import { useCompanionRenderModePreference } from "../features/profile/useCompanionRenderModePreference";
+
+const AssistantRuntimeCard = lazy(() =>
+  import("../features/assistant/AssistantRuntimeCard").then((module) => ({
+    default: module.AssistantRuntimeCard,
+  }))
+);
+const NutritionCoachCard = lazy(() =>
+  import("../features/meal/NutritionCoachCard").then((module) => ({
+    default: module.NutritionCoachCard,
+  }))
+);
+const SmartRecommendations = lazy(() =>
+  import("../features/meal/SmartRecommendations").then((module) => ({
+    default: module.SmartRecommendations,
+  }))
+);
+const CompanionProgressCard = lazy(() =>
+  import("../features/companion").then((module) => ({
+    default: module.CompanionProgressCard,
+  }))
+);
 
 const aiCopy = {
   uk: {
@@ -40,6 +72,13 @@ const aiCopy = {
     cloudUnavailable:
       "Хмарний AI зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
     assistantSettings: "Поведінка помічника береться з налаштувань профілю.",
+    renderModeTitle: "Вигляд companion",
+    renderMode2d: "Швидкий 2D",
+    renderMode3d: "Живий 3D",
+    renderModeHint:
+      "3D завантажується тільки після вашого вибору. Якщо щось піде не так, залишиться 2D.",
+    renderModeLoading: "Завантажую 3D",
+    renderModeError: "3D не завантажився, залишив 2D",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
     coreTitle: "Ядро помічника",
     coreSubtitle: "Це не окрема карточка з AI, а поточний стан особистого companion.",
@@ -108,6 +147,13 @@ const aiCopy = {
     cloudUnavailable:
       "Chmurowy AI jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
     assistantSettings: "Zachowanie asystenta bierze się z ustawień profilu.",
+    renderModeTitle: "Wygląd companion",
+    renderMode2d: "Szybki 2D",
+    renderMode3d: "Żywy 3D",
+    renderModeHint:
+      "3D ładuje się dopiero po Twoim wyborze. Jeśli coś pójdzie nie tak, zostaje 2D.",
+    renderModeLoading: "Ładuję 3D",
+    renderModeError: "3D się nie załadowało, zostaje 2D",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
     coreTitle: "Rdzeń asystenta",
     coreSubtitle: "To nie osobna karta z AI, tylko bieżący stan osobistego companion.",
@@ -176,6 +222,13 @@ const aiCopy = {
     cloudUnavailable:
       "Cloud AI is unavailable right now. Basic guidance remains available, but production AI is not active.",
     assistantSettings: "Assistant behavior comes from your profile settings.",
+    renderModeTitle: "Companion view",
+    renderMode2d: "Fast 2D",
+    renderMode3d: "Live 3D",
+    renderModeHint:
+      "3D loads only after your choice. If it fails, the companion stays in 2D.",
+    renderModeLoading: "Loading 3D",
+    renderModeError: "3D failed, staying in 2D",
     greeting: (name: string) => `Hi, ${name}. I am already reading your day.`,
     coreTitle: "Assistant Core",
     coreSubtitle: "This is not a separate AI card, but the current state of your personal companion.",
@@ -247,6 +300,9 @@ const AiCompanionPage = () => {
   const copy = aiCopy[appLanguage];
   const [runtimeStatus, setRuntimeStatus] = useState<AssistantRuntimeStatus | null>(null);
   const [activeSection, setActiveSection] = useState<AiCompanionSection>("companion");
+  const companionRenderModePreference = useCompanionRenderModePreference();
+  const isCompactCompanionStage = useMediaQuery("(max-width: 599.95px)");
+  const companionStageSize = isCompactCompanionStage ? 144 : 220;
 
   useEffect(() => {
     let active = true;
@@ -398,13 +454,41 @@ const AiCompanionPage = () => {
             "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(15,118,110,0.92) 100%)",
         }}
         >
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="flex-start">
-          <AssistantAvatar
-            name={assistant.name}
-            variant={assistant.companionKind}
-            size={76}
-            renderMode="3d"
-          />
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={{ xs: 2.5, md: 3 }}
+          alignItems={{ xs: "center", sm: "flex-start" }}
+        >
+          <Box
+            sx={{
+              width: companionStageSize,
+              height: companionStageSize,
+              flex: "0 0 auto",
+              display: "grid",
+              placeItems: "center",
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 50% 58%, rgba(163,230,53,0.28), transparent 45%), radial-gradient(circle at 50% 50%, rgba(45,212,191,0.18), transparent 68%)",
+              boxShadow:
+                "0 26px 70px rgba(15,118,110,0.32), inset 0 0 52px rgba(255,255,255,0.08)",
+            }}
+          >
+            <AssistantAvatar
+              name={assistant.name}
+              variant={assistant.companionKind}
+              size={companionStageSize}
+              renderMode={companionRenderModePreference.value}
+              loadingFallback={
+                <Companion3DLoadingFallback
+                  label={copy.renderModeLoading}
+                  size={companionStageSize}
+                />
+              }
+              on3dLoadError={companionRenderModePreference.mark3dRuntimeError}
+              mood={assistantCore.emotion === "celebrating" ? "celebrate" : "happy"}
+              active
+            />
+          </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
             <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
               {assistant.name}
@@ -458,6 +542,21 @@ const AiCompanionPage = () => {
                 }}
               />
             </Stack>
+            <CompanionRenderModeControl
+              value={companionRenderModePreference.value}
+              onChange={companionRenderModePreference.changeRenderMode}
+              loading={companionRenderModePreference.saving}
+              error={companionRenderModePreference.hasError}
+              disabled={companionRenderModePreference.saving}
+              labels={{
+                title: copy.renderModeTitle,
+                twoD: copy.renderMode2d,
+                threeD: copy.renderMode3d,
+                hint: copy.renderModeHint,
+                loading: copy.renderModeLoading,
+                error: copy.renderModeError,
+              }}
+            />
           </Stack>
         </Stack>
       </Paper>
@@ -644,16 +743,20 @@ const AiCompanionPage = () => {
           )}
         </Stack>
       </Paper>
-          <AssistantRuntimeCard />
+          <Suspense fallback={<LoadingSkeleton cards={1} bodyRows={3} />}>
+            <AssistantRuntimeCard />
+          </Suspense>
         </Stack>
       ) : null}
 
       {activeSection === "progress" ? (
-        <Stack spacing={2.5}>
-          <CompanionProgressCard />
-          <SmartRecommendations />
-          <NutritionCoachCard />
-        </Stack>
+        <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+          <Stack spacing={2.5}>
+            <CompanionProgressCard />
+            <SmartRecommendations />
+            <NutritionCoachCard />
+          </Stack>
+        </Suspense>
       ) : null}
     </PageShell>
   );

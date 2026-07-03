@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import hotToast from "react-hot-toast";
 import {
   Alert,
   Box,
@@ -37,6 +36,7 @@ import {
   saveMealProductToCloud,
 } from "./mealCloudSync";
 import { createMealEntryDraft } from "./mealSaveModel";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 interface Props {
   product: Product;
@@ -50,6 +50,39 @@ const getProductKey = (product: Product) =>
   product.barcode?.trim() ||
   `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
 
+const productCardCopy = {
+  uk: {
+    addedToMeal: "Додано до поточного прийому їжі",
+    savedToLibrary: "Збережено у вашій бібліотеці",
+    removedFromLibrary: "Прибрано з вашої бібліотеки",
+    savingAdd: "Зберігаємо продукт у щоденник...",
+    savingLibrary: "Оновлюємо вашу бібліотеку...",
+    failedAdd: "Не вдалося додати продукт до щоденника.",
+    failedLibrary: "Не вдалося оновити вашу бібліотеку.",
+    retry: "Спробувати ще раз",
+  },
+  pl: {
+    addedToMeal: "Dodano do bieżącego posiłku",
+    savedToLibrary: "Zapisano w Twojej bibliotece",
+    removedFromLibrary: "Usunięto z Twojej biblioteki",
+    savingAdd: "Zapisujemy produkt w dzienniku...",
+    savingLibrary: "Aktualizujemy Twoją bibliotekę...",
+    failedAdd: "Nie udało się dodać produktu do dziennika.",
+    failedLibrary: "Nie udało się zaktualizować biblioteki.",
+    retry: "Spróbuj ponownie",
+  },
+  en: {
+    addedToMeal: "Added to the current meal",
+    savedToLibrary: "Saved to your library",
+    removedFromLibrary: "Removed from your library",
+    savingAdd: "Saving product to your diary...",
+    savingLibrary: "Updating your library...",
+    failedAdd: "Could not add product to your diary.",
+    failedLibrary: "Could not update your library.",
+    retry: "Try again",
+  },
+} as const;
+
 export const ProductCard = ({
   product,
   mealType = "snack",
@@ -59,19 +92,57 @@ export const ProductCard = ({
 }: Props) => {
   const [qty, setQty] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
   const { t, appLanguage } = useLanguage();
+  const copy = productCardCopy[appLanguage];
   const displayName = getProductDisplayName(product, appLanguage);
   const categoryKey = getProductCategoryKey(product);
   const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);
   const portionPresets = getProductPortionPresets(product.unit);
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
+  const {
+    notice: mealActionNotice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.savingAdd,
+      edit: copy.savingAdd,
+      delete: copy.savingLibrary,
+      repeat: copy.savingAdd,
+      saveTemplate: copy.savingLibrary,
+      applyTemplate: copy.savingAdd,
+      saveProduct: copy.savingLibrary,
+    },
+    confirmed: {
+      add: `${copy.addedToMeal}: ${displayName}`,
+      edit: `${copy.addedToMeal}: ${displayName}`,
+      delete: copy.removedFromLibrary,
+      repeat: `${copy.addedToMeal}: ${displayName}`,
+      saveTemplate: copy.savedToLibrary,
+      applyTemplate: `${copy.addedToMeal}: ${displayName}`,
+      saveProduct: isSaved ? copy.removedFromLibrary : copy.savedToLibrary,
+    },
+    failed: {
+      add: copy.failedAdd,
+      edit: copy.failedAdd,
+      delete: copy.failedLibrary,
+      repeat: copy.failedAdd,
+      saveTemplate: copy.failedLibrary,
+      applyTemplate: copy.failedAdd,
+      saveProduct: copy.failedLibrary,
+    },
+    retry: copy.retry,
+  });
+  const addActionId = `product-add-${savedKey}-${mealType}`;
+  const saveActionId = `product-save-${savedKey}`;
+  const saving = isSavingAction(addActionId) || isSavingAction(saveActionId);
 
   const handleAddQuantity = async (quantity: number, clearInput = true) => {
     if (Number.isNaN(quantity) || quantity <= 0) {
@@ -79,25 +150,20 @@ export const ProductCard = ({
       return;
     }
 
-    setSaving(true);
-    setSaveError(null);
-
-    try {
-      await addMealEntriesToCloud(dispatch, meal, [
+    const saved = await runMealAction({
+      actionId: addActionId,
+      kind: "add",
+      action: () => addMealEntriesToCloud(dispatch, meal, [
         createMealEntryDraft({ product, quantity, mealType, origin }),
-      ]);
-      hotToast.success(`${displayName}: +${formatProductPortion(quantity, product.unit)}`);
+      ]),
+    });
+
+    if (saved) {
       setQuantityError(null);
 
       if (clearInput) {
         setQty("");
       }
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -111,25 +177,14 @@ export const ProductCard = ({
   };
 
   const handleToggleSave = async () => {
-    setSaving(true);
-    setSaveError(null);
-
-    try {
-      if (isSaved) {
-        await removeSavedMealProductFromCloud(dispatch, meal, savedKey);
-        hotToast.success(t("productCard.remove"));
-        return;
-      }
-
-      await saveMealProductToCloud(dispatch, meal, product);
-      hotToast.success(t("productCard.save"));
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    } finally {
-      setSaving(false);
-    }
+    await runMealAction({
+      actionId: saveActionId,
+      kind: isSaved ? "delete" : "saveProduct",
+      action: () =>
+        isSaved
+          ? removeSavedMealProductFromCloud(dispatch, meal, savedKey)
+          : saveMealProductToCloud(dispatch, meal, product),
+    });
   };
 
   const nutrients = product.nutrients;
@@ -171,9 +226,19 @@ export const ProductCard = ({
       />
       <CardContent sx={{ p: { xs: compact ? 1.1 : 1.35, md: compact ? 1.25 : 1.6 } }}>
         <Stack spacing={compact ? 0.8 : 1.05}>
-          {saveError ? (
-            <Alert severity="error" onClose={() => setSaveError(null)}>
-              {saveError}
+          {mealActionNotice ? (
+            <Alert
+              severity={mealActionNotice.severity}
+              onClose={clearFeedback}
+              action={
+                mealActionNotice.retryable ? (
+                  <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+                    {copy.retry}
+                  </Button>
+                ) : undefined
+              }
+            >
+              {mealActionNotice.text}
             </Alert>
           ) : null}
 

@@ -53,6 +53,63 @@ describe("profileCloudSync", () => {
     ]);
   });
 
+  it("saves companion render mode preference through the profile cloud contract", async () => {
+    const dispatch = vi.fn();
+    authApiMock.syncRemoteProfileState.mockResolvedValueOnce({
+      ok: true,
+      meta: {
+        updatedAt: "2026-07-01T08:25:00.000Z",
+        deviceId: "device-1",
+      },
+    });
+
+    const nextProfile = await applyProfileActionInCloud(
+      dispatch,
+      normalizeProfileState({}),
+      setAssistantCustomization({ preferredCompanionRenderMode: "3d" }),
+      "2026-07-01T08:24:00.000Z"
+    );
+
+    expect(nextProfile.assistant.preferredCompanionRenderMode).toBe("3d");
+    expect(authApiMock.syncRemoteProfileState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assistant: expect.objectContaining({
+          preferredCompanionRenderMode: "3d",
+        }),
+      })
+    );
+    expect(dispatch.mock.calls.at(-1)?.[0]).toMatchObject({
+      type: "profile/replaceProfileState",
+      payload: expect.objectContaining({
+        assistant: expect.objectContaining({
+          preferredCompanionRenderMode: "3d",
+        }),
+      }),
+    });
+  });
+
+  it("does not apply companion render mode locally when cloud save fails", async () => {
+    const dispatch = vi.fn();
+    authApiMock.syncRemoteProfileState.mockResolvedValueOnce({
+      ok: false,
+      code: "SYNC_FAILED",
+      message: "profile failed",
+    });
+
+    await expect(
+      applyProfileActionInCloud(
+        dispatch,
+        normalizeProfileState({}),
+        setAssistantCustomization({ preferredCompanionRenderMode: "3d" })
+      )
+    ).rejects.toThrow("profile failed");
+
+    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+      "auth/markSyncStarted",
+      "auth/markSyncError",
+    ]);
+  });
+
   it("marks profile sync success only after the remote profile state is saved", async () => {
     const dispatch = vi.fn();
     const profile = normalizeProfileState({ dailyCalories: 2100 });

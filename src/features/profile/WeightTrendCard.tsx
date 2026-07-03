@@ -1,15 +1,6 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import {
@@ -107,6 +98,61 @@ export const WeightTrendCard = () => {
   const bmiStatus = getBmiStatus(bmi);
   const plateau = detectWeightPlateau(weightHistory);
   const bmiStatusLabel = copy[bmiStatus];
+  const chart = useMemo(() => {
+    if (entries.length < 2) {
+      return null;
+    }
+
+    const width = 640;
+    const height = 240;
+    const padding = {
+      top: 20,
+      right: 18,
+      bottom: 36,
+      left: 58,
+    };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const minY = minWeight - range * 0.12;
+    const maxY = maxWeight + range * 0.12;
+    const ySpan = Math.max(maxY - minY, 1);
+    const denominator = Math.max(entries.length - 1, 1);
+    const points = entries.map((entry, index) => {
+      const x = padding.left + (chartWidth * index) / denominator;
+      const y = padding.top + chartHeight - ((entry.weight - minY) / ySpan) * chartHeight;
+
+      return {
+        ...entry,
+        x,
+        y,
+      };
+    });
+    const linePath = points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+      .join(" ");
+    const areaPath = [
+      `M ${points[0]?.x.toFixed(1)} ${padding.top + chartHeight}`,
+      linePath.replace(/^M /, "L "),
+      `L ${points.at(-1)?.x.toFixed(1)} ${padding.top + chartHeight}`,
+      "Z",
+    ].join(" ");
+    const yTicks = [maxY, minY + ySpan / 2, minY].map((value) => ({
+      value,
+      y: padding.top + chartHeight - ((value - minY) / ySpan) * chartHeight,
+    }));
+
+    return {
+      width,
+      height,
+      padding,
+      chartWidth,
+      chartHeight,
+      points,
+      linePath,
+      areaPath,
+      yTicks,
+    };
+  }, [entries, maxWeight, minWeight, range]);
 
   return (
     <Paper
@@ -168,10 +214,14 @@ export const WeightTrendCard = () => {
               overflow: "hidden",
             }}
           >
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <AreaChart
-                data={entries}
-                margin={{ top: 10, right: 12, bottom: 0, left: -18 }}
+            {chart ? (
+              <Box
+                component="svg"
+                role="img"
+                aria-label={`${copy.title}: ${entries.length} ${copy.checkIns.toLowerCase()}`}
+                viewBox={`0 0 ${chart.width} ${chart.height}`}
+                preserveAspectRatio="none"
+                sx={{ width: "100%", height: "100%", display: "block" }}
               >
                 <defs>
                   <linearGradient id="weightTrendFill" x1="0" x2="0" y1="0" y2="1">
@@ -179,35 +229,60 @@ export const WeightTrendCard = () => {
                     <stop offset="100%" stopColor="#65a30d" stopOpacity={0.04} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(148,163,184,0.22)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                <YAxis
-                  width={56}
-                  domain={[minWeight - range * 0.12, maxWeight + range * 0.12]}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value: number) => value.toFixed(1)}
-                />
-                <Tooltip
-                  formatter={(value) => {
-                    const numericValue =
-                      typeof value === "number" ? value : Number(value ?? 0);
-
-                    return [`${numericValue.toFixed(1)} kg`, copy.latest];
-                  }}
-                  labelStyle={{ color: "#0f172a", fontWeight: 800 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="weight"
+                {chart.yTicks.map((tick) => (
+                  <g key={tick.value.toFixed(2)}>
+                    <line
+                      x1={chart.padding.left}
+                      x2={chart.padding.left + chart.chartWidth}
+                      y1={tick.y}
+                      y2={tick.y}
+                      stroke="rgba(148,163,184,0.22)"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={chart.padding.left - 12}
+                      y={tick.y + 4}
+                      textAnchor="end"
+                      fontSize="13"
+                      fill="rgba(15,23,42,0.58)"
+                    >
+                      {tick.value.toFixed(1)}
+                    </text>
+                  </g>
+                ))}
+                <path d={chart.areaPath} fill="url(#weightTrendFill)" />
+                <path
+                  d={chart.linePath}
+                  fill="none"
                   stroke="#0f766e"
-                  strokeWidth={3}
-                  fill="url(#weightTrendFill)"
-                  dot={{ r: 4, strokeWidth: 2, fill: "#ffffff" }}
-                  activeDot={{ r: 6 }}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="3.5"
                 />
-              </AreaChart>
-            </ResponsiveContainer>
+                {chart.points.map((point) => (
+                  <g key={`${point.date}-${point.weight}`}>
+                    <title>{`${point.label}: ${point.weight.toFixed(1)} kg`}</title>
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="4.5"
+                      fill="#ffffff"
+                      stroke="#0f766e"
+                      strokeWidth="2.5"
+                    />
+                    <text
+                      x={point.x}
+                      y={chart.height - 9}
+                      textAnchor="middle"
+                      fontSize="13"
+                      fill="rgba(15,23,42,0.58)"
+                    >
+                      {point.label}
+                    </text>
+                  </g>
+                ))}
+              </Box>
+            ) : null}
           </Box>
         )}
       </Stack>

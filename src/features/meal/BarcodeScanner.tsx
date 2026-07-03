@@ -39,15 +39,18 @@ import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
+  createInitialBarcodeQuantity,
+  createInitialCatalogSubmissionState,
+  createManualCatalogSubmissionPayload,
   createManualBarcodeProduct,
   createManualDraft,
   isSafeManualImageDataUrl,
   isSupportedManualPhotoFile,
-  normalizeManualNumericValue,
   normalizeBarcode,
   normalizeManualImageUrl,
+  resolveCatalogNotice,
   resolveBarcodeScannerAvailability,
-  type CatalogNotice,
+  type CatalogSubmissionState,
   type ManualDraft,
 } from "./barcodeScannerModel";
 import {
@@ -126,10 +129,12 @@ const scannerCopy = {
     manualFat: "Жири на 100 г",
     manualCarbs: "Вуглеводи на 100 г",
     manualAdd: "Створити і додати",
-    manualAdded: "Ручний продукт додано",
-    catalogQueued: "Продукт також надіслано в загальну базу на модерацію.",
-    catalogSkipped:
-      "Продукт додано до поточного списку, але загальна база зараз недоступна.",
+    manualAdded: "Продукт додано до прийому їжі та вашої бібліотеки",
+    catalogSubmitting: "Відправляю продукт у спільну базу...",
+    catalogConfirmed: "Спільна база прийняла продукт на модерацію.",
+    catalogFailed:
+      "Продукт збережено у вас, але спільна база зараз не прийняла зміни.",
+    catalogRetry: "Спробувати ще раз",
     manualNameRequired: "Вкажіть назву продукту",
     detectedCode: "Розпізнаний код",
     scanHistory: "Історія сканів",
@@ -190,10 +195,12 @@ const scannerCopy = {
     manualFat: "Tłuszcz na 100 g",
     manualCarbs: "Węglowodany na 100 g",
     manualAdd: "Utwórz i dodaj",
-    manualAdded: "Ręczny produkt został dodany",
-    catalogQueued: "Produkt wysłano też do wspólnej bazy do moderacji.",
-    catalogSkipped:
-      "Produkt dodano do bieżącej listy, ale wspólna baza jest teraz niedostępna.",
+    manualAdded: "Produkt dodano do posiłku i Twojej biblioteki",
+    catalogSubmitting: "Wysyłam produkt do wspólnej bazy...",
+    catalogConfirmed: "Wspólna baza przyjęła produkt do moderacji.",
+    catalogFailed:
+      "Produkt został zapisany u Ciebie, ale wspólna baza nie przyjęła teraz zmian.",
+    catalogRetry: "Spróbuj ponownie",
     manualNameRequired: "Podaj nazwę produktu",
     detectedCode: "Rozpoznany kod",
     scanHistory: "Historia skanów",
@@ -254,10 +261,12 @@ const scannerCopy = {
     manualFat: "Fat per 100 g",
     manualCarbs: "Carbs per 100 g",
     manualAdd: "Create and add",
-    manualAdded: "Manual product added",
-    catalogQueued: "Product was also sent to the shared database for moderation.",
-    catalogSkipped:
-      "Product was added to the current list, but the shared database is unavailable right now.",
+    manualAdded: "Product added to the meal and your library",
+    catalogSubmitting: "Sending product to the shared catalog...",
+    catalogConfirmed: "Shared catalog accepted the product for moderation.",
+    catalogFailed:
+      "Product is saved for you, but the shared catalog did not accept it right now.",
+    catalogRetry: "Try again",
     manualNameRequired: "Enter product name",
     detectedCode: "Detected code",
     scanHistory: "Scan history",
@@ -285,12 +294,13 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [quantity, setQuantity] = useState<number | "">(100);
+  const [quantity, setQuantity] = useState<number | "">(createInitialBarcodeQuantity);
   const [foundProduct, setFoundProduct] = useState<Product | null>(null);
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualDraft, setManualDraft] = useState<ManualDraft>(createManualDraft);
-  const [catalogNotice, setCatalogNotice] = useState<CatalogNotice | null>(null);
+  const [catalogSubmissionState, setCatalogSubmissionState] =
+    useState<CatalogSubmissionState>(createInitialCatalogSubmissionState);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
@@ -299,6 +309,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const categoryOptions = useMemo(
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
+  );
+  const catalogNotice = useMemo(
+    () => resolveCatalogNotice(catalogSubmissionState, copy),
+    [catalogSubmissionState, copy]
   );
   const cameraAvailability = useMemo(
     () =>
@@ -424,8 +438,27 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setLookupState("idle");
     setFoundProduct(null);
     setShowManualForm(false);
-    setCatalogNotice(null);
+    setCatalogSubmissionState(createInitialCatalogSubmissionState());
   }, []);
+
+  const submitManualProductToCatalog = useCallback(
+    async (payload: Parameters<typeof submitCatalogSubmission>[0]) => {
+      setCatalogSubmissionState({ status: "submitting", payload });
+
+      try {
+        await submitCatalogSubmission(payload);
+        setCatalogSubmissionState({ status: "confirmed" });
+      } catch (error) {
+        setCatalogSubmissionState({
+          status: "failed",
+          payload,
+          message:
+            error instanceof PlatformApiError ? error.message : copy.catalogRetry,
+        });
+      }
+    },
+    [copy.catalogRetry]
+  );
 
   const handleLookup = useCallback(
     async (rawBarcode: string, autoAdd = false) => {
@@ -706,7 +739,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       return;
     }
 
-    setCatalogNotice(null);
+    setCatalogSubmissionState(createInitialCatalogSubmissionState());
     const normalizedBarcodeForId = normalizeBarcode(barcodeInput);
     const manualProduct = createManualBarcodeProduct({
       barcodeInput,
@@ -746,31 +779,16 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setManualDraft(createManualDraft());
     stopScanner();
 
-    void submitCatalogSubmission({
-      name,
-      brand: product.brand,
-      barcode: normalizedBarcode || undefined,
-      category: category || undefined,
-      imageUrl: catalogImageUrl,
-      calories: normalizeManualNumericValue(manualDraft.calories),
-      protein: normalizeManualNumericValue(manualDraft.protein),
-      fat: normalizeManualNumericValue(manualDraft.fat),
-      carbs: normalizeManualNumericValue(manualDraft.carbs),
-      unit: "g",
-    })
-      .then(() => {
-        setCatalogNotice({ severity: "success", text: copy.catalogQueued });
+    void submitManualProductToCatalog(
+      createManualCatalogSubmissionPayload({
+        catalogImageUrl,
+        category,
+        draft: manualDraft,
+        name,
+        normalizedBarcode,
+        product,
       })
-      .catch((error) => {
-        console.error(error);
-        setCatalogNotice({
-          severity: "warning",
-          text:
-            error instanceof PlatformApiError
-              ? error.message
-              : copy.catalogSkipped,
-        });
-      });
+    );
   };
 
   const showFallback = (lookupState === "not_found" || lookupState === "error") && barcodeInput;
@@ -1096,7 +1114,26 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         ) : null}
 
         {catalogNotice ? (
-          <Alert severity={catalogNotice.severity}>{catalogNotice.text}</Alert>
+          <Alert
+            severity={catalogNotice.severity}
+            action={
+              catalogNotice.retryable &&
+              catalogSubmissionState.status === "failed" ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() =>
+                    void submitManualProductToCatalog(catalogSubmissionState.payload)
+                  }
+                  sx={{ fontWeight: 800, textTransform: "none" }}
+                >
+                  {copy.catalogRetry}
+                </Button>
+              ) : undefined
+            }
+          >
+            {catalogNotice.text}
+          </Alert>
         ) : null}
 
         {showManualForm ? (

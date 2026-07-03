@@ -4,7 +4,7 @@ import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 
 const bodyReportCopy = {
   uk: {

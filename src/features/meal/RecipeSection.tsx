@@ -48,6 +48,7 @@ import {
 import { selectMealTemplates } from "./selectors";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { createTemplateEntries } from "./mealSaveModel";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 interface Props {
   mealType: MealType;
@@ -62,6 +63,45 @@ const createEntryId = () =>
   `recipe-meal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const CUSTOM_RECIPE_PREFIX = "Recipe: ";
+
+const recipeActionCopy = {
+  uk: {
+    saving: "Зберігаємо рецепт у хмару...",
+    confirmedAdd: "Рецепт додано до щоденника.",
+    confirmedSave: "Рецепт збережено як шаблон.",
+    confirmedApply: "Шаблон рецепта застосовано.",
+    confirmedDelete: "Шаблон рецепта видалено.",
+    failedAdd: "Не вдалося додати рецепт до щоденника.",
+    failedSave: "Не вдалося зберегти рецепт.",
+    failedApply: "Не вдалося застосувати рецепт.",
+    failedDelete: "Не вдалося видалити рецепт.",
+    retry: "Спробувати ще раз",
+  },
+  pl: {
+    saving: "Zapisujemy przepis w chmurze...",
+    confirmedAdd: "Przepis został dodany do dziennika.",
+    confirmedSave: "Przepis zapisano jako szablon.",
+    confirmedApply: "Szablon przepisu został zastosowany.",
+    confirmedDelete: "Szablon przepisu został usunięty.",
+    failedAdd: "Nie udało się dodać przepisu do dziennika.",
+    failedSave: "Nie udało się zapisać przepisu.",
+    failedApply: "Nie udało się zastosować przepisu.",
+    failedDelete: "Nie udało się usunąć przepisu.",
+    retry: "Spróbuj ponownie",
+  },
+  en: {
+    saving: "Saving recipe to cloud...",
+    confirmedAdd: "Recipe added to your diary.",
+    confirmedSave: "Recipe saved as a reusable template.",
+    confirmedApply: "Recipe template applied.",
+    confirmedDelete: "Recipe template removed.",
+    failedAdd: "Could not add recipe to your diary.",
+    failedSave: "Could not save recipe.",
+    failedApply: "Could not apply recipe.",
+    failedDelete: "Could not remove recipe.",
+    retry: "Try again",
+  },
+} as const;
 
 export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -80,7 +120,43 @@ export const RecipeSection = ({ mealType }: Props) => {
   const deferredIngredientQuery = useDeferredValue(ingredientQuery);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
-  const [mealSaveError, setMealSaveError] = useState<string | null>(null);
+  const copy = recipeActionCopy[appLanguage];
+  const {
+    notice: mealActionNotice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: copy.saving,
+      edit: copy.saving,
+      delete: copy.saving,
+      repeat: copy.saving,
+      saveTemplate: copy.saving,
+      applyTemplate: copy.saving,
+      saveProduct: copy.saving,
+    },
+    confirmed: {
+      add: copy.confirmedAdd,
+      edit: copy.confirmedSave,
+      delete: copy.confirmedDelete,
+      repeat: copy.confirmedApply,
+      saveTemplate: copy.confirmedSave,
+      applyTemplate: copy.confirmedApply,
+      saveProduct: copy.confirmedSave,
+    },
+    failed: {
+      add: copy.failedAdd,
+      edit: copy.failedSave,
+      delete: copy.failedDelete,
+      repeat: copy.failedApply,
+      saveTemplate: copy.failedSave,
+      applyTemplate: copy.failedApply,
+      saveProduct: copy.failedSave,
+    },
+    retry: copy.retry,
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -204,15 +280,11 @@ export const RecipeSection = ({ mealType }: Props) => {
       origin: "recipe",
     }));
 
-    setMealSaveError(null);
-
-    try {
-      await addMealEntriesToCloud(dispatch, meal, entries);
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    }
+    await runMealAction({
+      actionId: `recipe-add-${recipe.id}`,
+      kind: "add",
+      action: () => addMealEntriesToCloud(dispatch, meal, entries),
+    });
   };
 
   const handleAddBuilderIngredient = (product: Product) => {
@@ -254,15 +326,14 @@ export const RecipeSection = ({ mealType }: Props) => {
       createdAt: new Date().toISOString(),
     };
 
-    setMealSaveError(null);
+    const saved = await runMealAction({
+      actionId: "recipe-builder-save",
+      kind: "saveTemplate",
+      action: () => saveMealTemplateToCloud(dispatch, meal, template),
+    });
 
-    try {
-      await saveMealTemplateToCloud(dispatch, meal, template);
+    if (saved) {
       setRecipeName("");
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
     }
   };
 
@@ -270,32 +341,24 @@ export const RecipeSection = ({ mealType }: Props) => {
     const template = templates.find((item) => item.id === recipeId);
     if (!template) return;
 
-    setMealSaveError(null);
-
-    try {
-      await applyMealTemplateInCloud(
+    await runMealAction({
+      actionId: `recipe-template-apply-${recipeId}`,
+      kind: "applyTemplate",
+      action: () => applyMealTemplateInCloud(
         dispatch,
         meal,
         recipeId,
         createTemplateEntries(template)
-      );
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    }
+      ),
+    });
   };
 
   const handleDeleteTemplateRecipe = async (recipeId: string) => {
-    setMealSaveError(null);
-
-    try {
-      await deleteMealTemplateFromCloud(dispatch, meal, recipeId);
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    }
+    await runMealAction({
+      actionId: `recipe-template-delete-${recipeId}`,
+      kind: "delete",
+      action: () => deleteMealTemplateFromCloud(dispatch, meal, recipeId),
+    });
   };
 
   const handleAddBuilderNow = async () => {
@@ -312,15 +375,11 @@ export const RecipeSection = ({ mealType }: Props) => {
       origin: "recipe",
     }));
 
-    setMealSaveError(null);
-
-    try {
-      await addMealEntriesToCloud(dispatch, meal, entries);
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    }
+    await runMealAction({
+      actionId: "recipe-builder-add-now",
+      kind: "add",
+      action: () => addMealEntriesToCloud(dispatch, meal, entries),
+    });
   };
 
   const handlePublishRecipe = (recipe: Recipe) => {
@@ -353,9 +412,19 @@ export const RecipeSection = ({ mealType }: Props) => {
       <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
         {t("recipes.title")}
       </Typography>
-      {mealSaveError ? (
-        <Alert severity="error" onClose={() => setMealSaveError(null)}>
-          {mealSaveError}
+      {mealActionNotice ? (
+        <Alert
+          severity={mealActionNotice.severity}
+          onClose={clearFeedback}
+          action={
+            mealActionNotice.retryable ? (
+              <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+                {copy.retry}
+              </Button>
+            ) : undefined
+          }
+        >
+          {mealActionNotice.text}
         </Alert>
       ) : null}
       <Paper
@@ -471,14 +540,21 @@ export const RecipeSection = ({ mealType }: Props) => {
                   onClick={() => {
                     void handleAddBuilderNow();
                   }}
-                  disabled={validBuilderItems.length === 0}
+                  disabled={
+                    validBuilderItems.length === 0 ||
+                    isSavingAction("recipe-builder-add-now")
+                  }
                 >
                   Add recipe now
                 </Button>
                 <Button
                   variant="outlined"
                   onClick={() => void handleSaveBuilderRecipe()}
-                  disabled={!recipeName.trim() || validBuilderItems.length === 0}
+                  disabled={
+                    !recipeName.trim() ||
+                    validBuilderItems.length === 0 ||
+                    isSavingAction("recipe-builder-save")
+                  }
                 >
                   Save as reusable recipe
                 </Button>
@@ -525,13 +601,17 @@ export const RecipeSection = ({ mealType }: Props) => {
                 onClick={() => {
                   void handleAddRecipe(recipe.id);
                 }}
+                disabled={isSavingAction(`recipe-add-${recipe.id}`)}
                 sx={{ alignSelf: "flex-start" }}
               >
                 {t("recipes.add")}
               </Button>
               {customRecipes.some((item) => item.id === recipe.id) && (
                 <Stack direction="row" spacing={1}>
-                  <Button onClick={() => void handleReuseTemplateRecipe(recipe.id)}>
+                  <Button
+                    onClick={() => void handleReuseTemplateRecipe(recipe.id)}
+                    disabled={isSavingAction(`recipe-template-apply-${recipe.id}`)}
+                  >
                     Reuse
                   </Button>
                   <Button onClick={() => handlePublishRecipe(recipe)} disabled={!user}>
@@ -540,6 +620,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                   <Button
                     color="error"
                     onClick={() => void handleDeleteTemplateRecipe(recipe.id)}
+                    disabled={isSavingAction(`recipe-template-delete-${recipe.id}`)}
                   >
                     Remove
                   </Button>

@@ -20,6 +20,14 @@ import {
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import { getKnownProductCategoryOptions } from "@domain/products/productCategory";
+import {
+  buildCatalogContributionPayload,
+  canSubmitCatalogContribution,
+  createInitialCatalogContributionForm,
+  createInitialCatalogContributionSubmissionState,
+  resolveCatalogContributionNotice,
+  type CatalogContributionSubmissionState,
+} from "./catalogContributionModel";
 
 const catalogCopy = {
   uk: {
@@ -44,7 +52,10 @@ const catalogCopy = {
     duplicates: "Можливі дублікати",
     duplicateAssistant:
       "це блюдо вже є. Краще використати готове або перевірити дубль перед створенням нового.",
-    submitted: "Продукт відправлено.",
+    submitting: "Відправляю продукт у спільну базу...",
+    accepted: "Спільна база прийняла продукт на модерацію.",
+    failed: "Спільна база зараз не прийняла зміни.",
+    retry: "Спробувати ще раз",
     backendUnavailable:
       "Cloud backend недоступний, тому каталог і модерація зараз працювати не зможуть.",
     status: {
@@ -75,7 +86,10 @@ const catalogCopy = {
     duplicates: "Możliwe duplikaty",
     duplicateAssistant:
       "to danie już istnieje. Lepiej użyć gotowego wpisu albo sprawdzić duplikat przed utworzeniem nowego.",
-    submitted: "Produkt został wysłany.",
+    submitting: "Wysyłam produkt do wspólnej bazy...",
+    accepted: "Wspólna baza przyjęła produkt do moderacji.",
+    failed: "Wspólna baza nie przyjęła teraz zmian.",
+    retry: "Spróbuj ponownie",
     backendUnavailable:
       "Backend cloud jest niedostępny, więc katalog i moderacja nie będą teraz działać.",
     status: {
@@ -106,7 +120,10 @@ const catalogCopy = {
     duplicates: "Possible duplicates",
     duplicateAssistant:
       "this dish already exists. It is better to use the existing item or check the duplicate before creating a new one.",
-    submitted: "Product was submitted.",
+    submitting: "Sending product to the shared catalog...",
+    accepted: "Shared catalog accepted the product for moderation.",
+    failed: "Shared catalog did not accept the changes right now.",
+    retry: "Try again",
     backendUnavailable:
       "Cloud backend is unavailable, so catalog and moderation will not work right now.",
     status: {
@@ -116,23 +133,6 @@ const catalogCopy = {
     },
   },
 } as const;
-
-const initialForm = {
-  name: "",
-  category: "",
-  brand: "",
-  barcode: "",
-  imageUrl: "",
-  calories: "",
-  protein: "",
-  fat: "",
-  carbs: "",
-};
-
-const createInitialForm = (initialName = "") => ({
-  ...initialForm,
-  name: initialName.trim(),
-});
 
 interface CatalogContributionCardProps {
   initialName?: string;
@@ -149,23 +149,31 @@ export const CatalogContributionCard = ({
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
   );
-  const [form, setForm] = useState(() => createInitialForm(initialName));
+  const [form, setForm] = useState(() =>
+    createInitialCatalogContributionForm(initialName)
+  );
   const [submissions, setSubmissions] = useState<CatalogProductItem[]>([]);
   const [duplicates, setDuplicates] = useState<CatalogProductItem[]>([]);
   const [showOptionalDetails, setShowOptionalDetails] = useState(!compact);
   const [showSubmissions, setShowSubmissions] = useState(!compact);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submissionState, setSubmissionState] =
+    useState<CatalogContributionSubmissionState>(
+      createInitialCatalogContributionSubmissionState
+    );
+  const submissionNotice = useMemo(
+    () => resolveCatalogContributionNotice(submissionState, copy),
+    [copy, submissionState]
+  );
 
   const loadSubmissions = useCallback(async () => {
     try {
       const items = await listOwnCatalogSubmissions();
       setSubmissions(items);
-      setError(null);
+      setLoadError(null);
     } catch (nextError) {
       setSubmissions([]);
-      setError(
+      setLoadError(
         nextError instanceof PlatformApiError
           ? nextError.message
           : copy.backendUnavailable
@@ -212,53 +220,39 @@ export const CatalogContributionCard = ({
     };
   }, [form.barcode, form.name]);
 
-  const canSubmit = useMemo(
-    () =>
-      Boolean(
-        form.name.trim() &&
-          form.calories.trim() &&
-          form.protein.trim() &&
-          form.fat.trim() &&
-          form.carbs.trim()
-      ),
-    [form]
+  const canSubmit = useMemo(() => canSubmitCatalogContribution(form), [form]);
+
+  const submitCatalogPayload = useCallback(
+    async (payload: NonNullable<ReturnType<typeof buildCatalogContributionPayload>>) => {
+      setSubmissionState({ status: "submitting", payload });
+
+      try {
+        const response = await submitCatalogSubmission(payload);
+
+        setDuplicates(response.possibleDuplicates);
+        setForm(createInitialCatalogContributionForm());
+        setSubmissionState({ status: "accepted" });
+        await loadSubmissions();
+      } catch (nextError) {
+        setSubmissionState({
+          status: "failed",
+          payload,
+          message:
+            nextError instanceof PlatformApiError ? nextError.message : copy.retry,
+        });
+      }
+    },
+    [copy.retry, loadSubmissions]
   );
 
   const handleSubmit = async () => {
-    if (!canSubmit) {
+    const payload = buildCatalogContributionPayload(form);
+
+    if (!payload) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      const response = await submitCatalogSubmission({
-        name: form.name.trim(),
-        category: form.category.trim() || undefined,
-        brand: form.brand.trim() || undefined,
-        barcode: form.barcode.replace(/\D/g, "") || undefined,
-        imageUrl: form.imageUrl.trim() || undefined,
-        calories: Number(form.calories),
-        protein: Number(form.protein),
-        fat: Number(form.fat),
-        carbs: Number(form.carbs),
-      });
-
-      setDuplicates(response.possibleDuplicates);
-      setForm(initialForm);
-      setSuccessMessage(copy.submitted);
-      await loadSubmissions();
-    } catch (nextError) {
-      setError(
-        nextError instanceof PlatformApiError
-          ? nextError.message
-          : copy.backendUnavailable
-      );
-    } finally {
-      setLoading(false);
-    }
+    await submitCatalogPayload(payload);
   };
 
   return (
@@ -285,8 +279,30 @@ export const CatalogContributionCard = ({
           </Typography>
         </Stack>
 
-        {error && <Alert severity="warning">{error}</Alert>}
-        {successMessage && <Alert severity="success">{successMessage}</Alert>}
+        {loadError && (
+          <Alert severity="warning" onClose={() => setLoadError(null)}>
+            {loadError}
+          </Alert>
+        )}
+        {submissionNotice ? (
+          <Alert
+            severity={submissionNotice.severity}
+            action={
+              submissionNotice.retryable && submissionState.status === "failed" ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void submitCatalogPayload(submissionState.payload)}
+                  sx={{ fontWeight: 800, textTransform: "none" }}
+                >
+                  {copy.retry}
+                </Button>
+              ) : undefined
+            }
+          >
+            {submissionNotice.text}
+          </Alert>
+        ) : null}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
           <TextField
@@ -416,7 +432,7 @@ export const CatalogContributionCard = ({
 
         <Button
           variant="contained"
-          disabled={!canSubmit || loading}
+          disabled={!canSubmit || submissionState.status === "submitting"}
           onClick={() => {
             void handleSubmit();
           }}

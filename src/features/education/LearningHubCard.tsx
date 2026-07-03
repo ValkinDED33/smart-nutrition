@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { useLanguage } from "../../shared/language";
 import type { RootState } from "../../app/store";
-import { buildAssistantPersonalizationPlan } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AssistantDietFriction } from "@domain/profile/types";
 
 const learningCopy = {

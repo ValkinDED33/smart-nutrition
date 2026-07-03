@@ -3,6 +3,7 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 interface CompanionErrorBoundaryProps {
   fallback: ReactNode;
   children: ReactNode;
+  onError?: () => void;
 }
 
 interface CompanionErrorBoundaryState {
@@ -26,6 +27,7 @@ export class CompanionErrorBoundary extends Component<
       message: error.message,
       componentStack: errorInfo.componentStack,
     });
+    this.props.onError?.();
   }
 
   render() {

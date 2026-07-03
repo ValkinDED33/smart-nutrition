@@ -17,9 +17,9 @@ import {
 } from "@shared/components/AssistantAvatar";
 import {
   buildAssistantCoreSnapshot,
-  buildAssistantPersonalizationPlan,
   type AssistantCoreEmotion,
 } from "@core/assistant";
+import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import {
   assistantSpeechBubbleVariants,
   assistantSpeechStaggerVariants,

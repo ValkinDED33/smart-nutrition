@@ -1,8 +1,8 @@
-import { type ChangeEvent, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   Alert,
   Avatar,
@@ -16,12 +16,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../../app/store";
-import { setUser } from "../auth/authSlice";
-import {
-  replaceProfileState,
-} from "./profileSlice";
-import { saveProfileAndUserToCloud } from "./profileCloudSync";
+import type { RootState } from "../../app/store";
+import type { User } from "@domain/user/types";
+import type { ProfileState } from "./profileSlice";
 import { buildProfileStateAfterFullSave } from "./profileSaveModel";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { selectInputValue } from "../../shared/lib/inputSelection";
@@ -45,6 +42,7 @@ import type {
   SupportSystem,
 } from "@domain/profile/types";
 import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 
 type FormData = {
   gender: "male" | "female";
@@ -115,6 +113,7 @@ const profileCopy = {
     womenHealthNotesLabel: "Що важливо пам'ятати",
     womenHealthSafety:
       "Ліки, добавки, дозування і тривожні симптоми завжди перевіряються з лікарем.",
+    saving: "Зберігаю...",
   },
   pl: {
     sectionBasics: "Dane podstawowe",
@@ -159,6 +158,7 @@ const profileCopy = {
     womenHealthNotesLabel: "Co warto pamiętać",
     womenHealthSafety:
       "Leki, suplementy, dawki i niepokojące objawy zawsze konsultuj z lekarzem.",
+    saving: "Zapisuję...",
   },
   en: {
     sectionBasics: "Basic data",
@@ -203,6 +203,7 @@ const profileCopy = {
     womenHealthNotesLabel: "Important context",
     womenHealthSafety:
       "Medication, supplements, dosages, and worrying symptoms must always be checked with a clinician.",
+    saving: "Saving...",
   },
 } as const;
 
@@ -380,15 +381,40 @@ const petLabels: Record<AppLanguage, Record<PetCompanion, string>> = {
 const toDateInputValue = (value: string | null) =>
   value && !Number.isNaN(Date.parse(value)) ? value.slice(0, 10) : "";
 
+const createProfileFormValues = (
+  user: User | null | undefined,
+  profile: ProfileState
+): FormData => ({
+  gender: user?.gender ?? "male",
+  weight: user?.weight ?? 70,
+  height: user?.height ?? 175,
+  age: user?.age ?? 25,
+  activity: user?.activity ?? "moderate",
+  goal: user?.goal ?? "maintain",
+  targetWeight: profile.targetWeight ?? undefined,
+  dietStyle: profile.dietStyle,
+  allergies: formatPreferenceList(profile.allergies),
+  excludedIngredients: formatPreferenceList(profile.excludedIngredients),
+  adaptiveMode: profile.adaptiveMode,
+  bloodGroup: profile.personalDetails.bloodGroup,
+  eyeColor: profile.personalDetails.eyeColor,
+  relationshipStatus: profile.personalDetails.relationshipStatus,
+  supportSystem: profile.personalDetails.supportSystem,
+  petCompanion: profile.personalDetails.petCompanion,
+  womenHealthMode: profile.womenHealth.mode,
+  pregnancyWeek: profile.womenHealth.pregnancyWeek ?? undefined,
+  dueDate: toDateInputValue(profile.womenHealth.dueDate),
+  lastPeriodStartDate: toDateInputValue(profile.womenHealth.lastPeriodStartDate),
+  doctorConfirmed: profile.womenHealth.doctorConfirmed,
+  womenHealthNotes: profile.womenHealth.notes,
+});
+
 const ProfileForm = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
+  const profileAction = useProfileCloudAction();
   const {
-    targetWeight,
     dietStyle,
-    allergies,
-    excludedIngredients,
     adaptiveMode,
     personalDetails,
     womenHealth,
@@ -404,7 +430,6 @@ const ProfileForm = () => {
   const petOptions = petLabels[appLanguage];
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [avatarDraft, setAvatarDraft] = useState(
     user?.avatar ?? getDefaultAvatar(user?.email ?? user?.name ?? "smart-nutrition")
   );
@@ -498,33 +523,11 @@ const ProfileForm = () => {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      gender: user?.gender ?? "male",
-      weight: user?.weight ?? 70,
-      height: user?.height ?? 175,
-      age: user?.age ?? 25,
-      activity: user?.activity ?? "moderate",
-      goal: user?.goal ?? "maintain",
-      targetWeight: targetWeight ?? undefined,
-      dietStyle,
-      allergies: formatPreferenceList(allergies),
-      excludedIngredients: formatPreferenceList(excludedIngredients),
-      adaptiveMode,
-      bloodGroup: personalDetails.bloodGroup,
-      eyeColor: personalDetails.eyeColor,
-      relationshipStatus: personalDetails.relationshipStatus,
-      supportSystem: personalDetails.supportSystem,
-      petCompanion: personalDetails.petCompanion,
-      womenHealthMode: womenHealth.mode,
-      pregnancyWeek: womenHealth.pregnancyWeek ?? undefined,
-      dueDate: toDateInputValue(womenHealth.dueDate),
-      lastPeriodStartDate: toDateInputValue(womenHealth.lastPeriodStartDate),
-      doctorConfirmed: womenHealth.doctorConfirmed,
-      womenHealthNotes: womenHealth.notes,
-    },
+    defaultValues: createProfileFormValues(user, profile),
   });
   const selectedGender = useWatch({ control, name: "gender" });
   const selectedWomenHealthMode = useWatch({ control, name: "womenHealthMode" });
@@ -535,6 +538,14 @@ const ProfileForm = () => {
     shouldShowWomenHealth &&
     (selectedWomenHealthMode === "pregnant" ||
       selectedWomenHealthMode === "trying_to_conceive");
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    reset(createProfileFormValues(user, profile));
+  }, [profile, reset, user]);
 
   if (!user) return null;
 
@@ -558,10 +569,10 @@ const ProfileForm = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    setSubmitting(true);
     setServerError(null);
     setSuccessMessage(null);
     setAvatarError(null);
+    profileAction.clearError();
 
     try {
       const {
@@ -628,20 +639,19 @@ const ProfileForm = () => {
         womenHealth: nextWomenHealth,
       });
 
-      const updatedUser = await saveProfileAndUserToCloud(dispatch, {
-        ...user,
-        ...userProfileData,
-        avatar: avatarDraft || getDefaultAvatar(user.email),
-      }, nextProfile);
-      dispatch(setUser(updatedUser));
-      dispatch(replaceProfileState(nextProfile));
+      await profileAction.runProfileAndUserSave(
+        {
+          ...user,
+          ...userProfileData,
+          avatar: avatarDraft || getDefaultAvatar(user.email),
+        },
+        nextProfile
+      );
       setSuccessMessage(t("profile.saved"));
     } catch (error) {
       setServerError(
         error instanceof Error ? error.message : t("error.genericProfile")
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -662,7 +672,9 @@ const ProfileForm = () => {
         </Typography>
 
         {successMessage && <Alert severity="success">{successMessage}</Alert>}
-        {serverError && <Alert severity="error">{serverError}</Alert>}
+        {(serverError || profileAction.error) && (
+          <Alert severity="error">{serverError ?? profileAction.error}</Alert>
+        )}
 
         <Paper
           variant="outlined"
@@ -1135,7 +1147,7 @@ const ProfileForm = () => {
         <Button
           type="submit"
           variant="contained"
-          disabled={submitting}
+          disabled={profileAction.saving}
           sx={{
             alignSelf: "flex-start",
             px: 3,
@@ -1146,7 +1158,7 @@ const ProfileForm = () => {
             background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
           }}
         >
-          {t("form.save")}
+          {profileAction.saving ? copy.saving : t("form.save")}
         </Button>
       </Stack>
     </Paper>

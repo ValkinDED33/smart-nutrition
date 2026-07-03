@@ -39,6 +39,7 @@ import {
   saveMealProductToCloud,
 } from "./mealCloudSync";
 import { createMealEntryDraft, createTemplateEntries } from "./mealSaveModel";
+import { useMealActionFeedback } from "./useMealActionFeedback";
 
 type LibraryMode = "library" | "saved";
 type InnerTab = "products" | "dishes" | "articles";
@@ -84,6 +85,13 @@ const copy = {
     community: "Спільнота",
     online: "Онлайн",
     scanner: "Сканер",
+    saving: "Зберігаю в хмару...",
+    confirmedAdd: "Додано до поточного прийому їжі та підтверджено backend.",
+    confirmedSave: "Збережено у вашій бібліотеці та підтверджено backend.",
+    confirmedApply: "Шаблон застосовано і підтверджено backend.",
+    failedAdd: "Не вдалося додати продукт.",
+    failedSave: "Не вдалося зберегти продукт.",
+    failedApply: "Не вдалося застосувати шаблон.",
   },
   pl: {
     libraryTitle: "Katalog online",
@@ -120,6 +128,13 @@ const copy = {
     community: "Społeczność",
     online: "Online",
     scanner: "Skaner",
+    saving: "Zapisuję w chmurze...",
+    confirmedAdd: "Dodano do bieżącego posiłku i potwierdzono przez backend.",
+    confirmedSave: "Zapisano w Twojej bibliotece i potwierdzono przez backend.",
+    confirmedApply: "Szablon użyty i potwierdzony przez backend.",
+    failedAdd: "Nie udało się dodać produktu.",
+    failedSave: "Nie udało się zapisać produktu.",
+    failedApply: "Nie udało się użyć szablonu.",
   },
   en: {
     libraryTitle: "Online catalog",
@@ -156,6 +171,13 @@ const copy = {
     community: "Community",
     online: "Online",
     scanner: "Scanner",
+    saving: "Saving to cloud...",
+    confirmedAdd: "Added to the current meal and confirmed by the backend.",
+    confirmedSave: "Saved to your library and confirmed by the backend.",
+    confirmedApply: "Template applied and confirmed by the backend.",
+    failedAdd: "Could not add the product.",
+    failedSave: "Could not save the product.",
+    failedApply: "Could not apply the template.",
   },
 } as const;
 
@@ -216,8 +238,42 @@ export const NutritionLibraryPanel = ({
     refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const {
+    notice: mealActionNotice,
+    runMealAction,
+    retryMealAction,
+    clearFeedback,
+    isSavingAction,
+  } = useMealActionFeedback({
+    saving: {
+      add: labels.saving,
+      edit: labels.saving,
+      delete: labels.saving,
+      repeat: labels.saving,
+      saveTemplate: labels.saving,
+      applyTemplate: labels.saving,
+      saveProduct: labels.saving,
+    },
+    confirmed: {
+      add: labels.confirmedAdd,
+      edit: labels.confirmedAdd,
+      delete: labels.confirmedAdd,
+      repeat: labels.confirmedApply,
+      saveTemplate: labels.confirmedSave,
+      applyTemplate: labels.confirmedApply,
+      saveProduct: labels.confirmedSave,
+    },
+    failed: {
+      add: labels.failedAdd,
+      edit: labels.failedAdd,
+      delete: labels.failedAdd,
+      repeat: labels.failedApply,
+      saveTemplate: labels.failedSave,
+      applyTemplate: labels.failedApply,
+      saveProduct: labels.failedSave,
+    },
+    retry: labels.retry,
+  });
   const onlineProducts = onlineProductsQuery.data ?? [];
   const onlineLookupState = {
     isIdle: mode === "library" && !shouldRunOnlineProductLookup(normalizedLookupQuery),
@@ -355,21 +411,6 @@ export const NutritionLibraryPanel = ({
     },
   ];
 
-  const runMealAction = async (id: string, action: () => Promise<unknown>) => {
-    setActionError(null);
-    setSavingId(id);
-
-    try {
-      await action();
-    } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
-    } finally {
-      setSavingId(null);
-    }
-  };
-
   return (
     <SectionCard
       tone={mode === "saved" ? "premium" : "default"}
@@ -399,9 +440,24 @@ export const NutritionLibraryPanel = ({
           }}
         />
 
-        {actionError ? (
-          <Alert severity="error" onClose={() => setActionError(null)}>
-            {actionError}
+        {mealActionNotice ? (
+          <Alert
+            severity={mealActionNotice.severity}
+            action={
+              mealActionNotice.retryable ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void retryMealAction()}
+                  sx={{ textTransform: "none", fontWeight: 800 }}
+                >
+                  {labels.retry}
+                </Button>
+              ) : undefined
+            }
+            onClose={clearFeedback}
+          >
+            {mealActionNotice.text}
           </Alert>
         ) : null}
 
@@ -500,18 +556,21 @@ export const NutritionLibraryPanel = ({
                                   variant="contained"
                                   startIcon={<Plus size={15} />}
                                   onClick={() =>
-                                    void runMealAction(`add-${productKey(product)}`, () =>
-                                      addMealEntriesToCloud(dispatch, meal, [
-                                        createMealEntryDraft({
-                                          product,
-                                          quantity: 100,
-                                          mealType,
-                                          origin: "manual",
-                                        }),
-                                      ])
-                                    )
+                                    void runMealAction({
+                                      actionId: `add-${productKey(product)}`,
+                                      kind: "add",
+                                      action: () =>
+                                        addMealEntriesToCloud(dispatch, meal, [
+                                          createMealEntryDraft({
+                                            product,
+                                            quantity: 100,
+                                            mealType,
+                                            origin: "manual",
+                                          }),
+                                        ]),
+                                    })
                                   }
-                                  disabled={savingId === `add-${productKey(product)}`}
+                                  disabled={isSavingAction(`add-${productKey(product)}`)}
                                 >
                                   {labels.add100} {product.unit}
                                 </Button>
@@ -519,11 +578,17 @@ export const NutritionLibraryPanel = ({
                                   size="small"
                                   variant="outlined"
                                   onClick={() =>
-                                    void runMealAction(`save-${productKey(product)}`, () =>
-                                      saveMealProductToCloud(dispatch, meal, product)
-                                    )
+                                    void runMealAction({
+                                      actionId: `save-${productKey(product)}`,
+                                      kind: "saveProduct",
+                                      action: () =>
+                                        saveMealProductToCloud(dispatch, meal, product),
+                                    })
                                   }
-                                  disabled={isSaved || savingId === `save-${productKey(product)}`}
+                                  disabled={
+                                    isSaved ||
+                                    isSavingAction(`save-${productKey(product)}`)
+                                  }
                                 >
                                   {labels.save}
                                 </Button>
@@ -591,16 +656,19 @@ export const NutritionLibraryPanel = ({
                           variant="contained"
                           size="small"
                           onClick={() =>
-                            void runMealAction(`template-${template.id}`, () =>
-                              applyMealTemplateInCloud(
-                                dispatch,
-                                meal,
-                                template.id,
-                                createTemplateEntries(template)
-                              )
-                            )
+                            void runMealAction({
+                              actionId: `template-${template.id}`,
+                              kind: "applyTemplate",
+                              action: () =>
+                                applyMealTemplateInCloud(
+                                  dispatch,
+                                  meal,
+                                  template.id,
+                                  createTemplateEntries(template)
+                                ),
+                            })
                           }
-                          disabled={savingId === `template-${template.id}`}
+                          disabled={isSavingAction(`template-${template.id}`)}
                         >
                           {labels.apply}
                         </Button>

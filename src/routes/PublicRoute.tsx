@@ -6,7 +6,6 @@ import {
   clearSavedSessionHint,
   initializeAuth,
 } from "../features/auth/authSlice";
-import PacmanLoader from "../shared/components/Loader/PacmanLoader";
 import SessionRestoreFallback from "../shared/components/SessionRestoreFallback";
 import { clearAuthSessionHint } from "../shared/lib/authSessionHint";
 
@@ -17,17 +16,35 @@ interface PublicRouteProps {
 const PublicRoute = ({ children }: PublicRouteProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { error, hasSessionHint, isInitialized, isLoading, user } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const {
+    error,
+    hasSessionHint,
+    isInitialized,
+    isLoading,
+    sessionRestoreStatus,
+    user,
+  } = useSelector((state: RootState) => state.auth);
 
   if (hasSessionHint && (!isInitialized || isLoading)) {
-    return <PacmanLoader />;
+    return (
+      <SessionRestoreFallback
+        status={sessionRestoreStatus === "unavailable" ? "unavailable" : "checking"}
+        onRetry={() => {
+          void dispatch(initializeAuth());
+        }}
+        onForgetSession={() => {
+          clearAuthSessionHint();
+          dispatch(clearSavedSessionHint());
+          navigate("/login", { replace: true });
+        }}
+      />
+    );
   }
 
   if (hasSessionHint && error === "REMOTE_API_UNAVAILABLE") {
     return (
       <SessionRestoreFallback
+        status="unavailable"
         onRetry={() => {
           void dispatch(initializeAuth());
         }}

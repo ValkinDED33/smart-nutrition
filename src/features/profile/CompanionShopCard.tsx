@@ -12,9 +12,14 @@ import {
   type CompanionCatalogItem,
   type CompanionCatalogLocale,
 } from "../../companion";
-import { CompanionAvatar as AssistantAvatar } from "@features/assistant-3d";
+import {
+  Companion3DLoadingFallback,
+  CompanionAvatar as AssistantAvatar,
+  CompanionRenderModeControl,
+} from "@features/assistant-3d";
 import { useLanguage } from "../../shared/language";
 import { applyCompanionShopSelectionInCloud } from "../companion/companionCloudSync";
+import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
 
 const shopCopy = {
   uk: {
@@ -36,6 +41,13 @@ const shopCopy = {
     preview: "Поточний образ",
     profileLook: "Образ із профілю",
     futureItem: "Буде доступно пізніше",
+    renderModeTitle: "Превʼю",
+    renderMode2d: "Швидкий 2D",
+    renderMode3d: "Живий 3D",
+    renderModeHint:
+      "3D відкривається тільки для перегляду образу, звичайний інтерфейс лишається легким.",
+    renderModeLoading: "Завантажую 3D",
+    renderModeError: "3D не завантажився, показую 2D",
     categories: {
       outfit: "Одяг",
       emotion: "Емоція",
@@ -64,6 +76,13 @@ const shopCopy = {
     preview: "Obecny wygląd",
     profileLook: "Wygląd z profilu",
     futureItem: "Dostępne później",
+    renderModeTitle: "Podgląd",
+    renderMode2d: "Szybki 2D",
+    renderMode3d: "Żywy 3D",
+    renderModeHint:
+      "3D otwiera się tylko do podglądu wyglądu, zwykły interfejs zostaje lekki.",
+    renderModeLoading: "Ładuję 3D",
+    renderModeError: "3D się nie załadowało, pokazuję 2D",
     categories: {
       outfit: "Ubranie",
       emotion: "Emocja",
@@ -92,6 +111,13 @@ const shopCopy = {
     preview: "Current look",
     profileLook: "Profile look",
     futureItem: "Available later",
+    renderModeTitle: "Preview",
+    renderMode2d: "Fast 2D",
+    renderMode3d: "Live 3D",
+    renderModeHint:
+      "3D opens only for previewing the look, while the normal interface stays lightweight.",
+    renderModeLoading: "Loading 3D",
+    renderModeError: "3D failed, showing 2D",
     categories: {
       outfit: "Outfit",
       emotion: "Emotion",
@@ -133,6 +159,7 @@ const CompanionShopCard = () => {
   const companion = useSelector((state: RootState) => state.companion);
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const companionRenderModePreference = useCompanionRenderModePreference();
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
   const copy = shopCopy[locale];
@@ -184,7 +211,6 @@ const CompanionShopCard = () => {
       setSavingItemId(null);
     }
   };
-
   return (
     <Paper
       elevation={0}
@@ -246,7 +272,14 @@ const CompanionShopCard = () => {
                 variant={activePreview?.companionKind ?? assistant.companionKind}
                 mood="happy"
                 size={96}
-                renderMode="3d"
+                renderMode={companionRenderModePreference.value}
+                loadingFallback={
+                  <Companion3DLoadingFallback
+                    label={copy.renderModeLoading}
+                    size={96}
+                  />
+                }
+                on3dLoadError={companionRenderModePreference.mark3dRuntimeError}
                 active
               />
               <Stack spacing={0.6}>
@@ -257,6 +290,21 @@ const CompanionShopCard = () => {
                   {activePreview?.description[locale] ?? assistant.name}
                 </Typography>
               </Stack>
+              <CompanionRenderModeControl
+                value={companionRenderModePreference.value}
+                onChange={companionRenderModePreference.changeRenderMode}
+                loading={companionRenderModePreference.saving}
+                error={companionRenderModePreference.hasError}
+                disabled={companionRenderModePreference.saving}
+                labels={{
+                  title: copy.renderModeTitle,
+                  twoD: copy.renderMode2d,
+                  threeD: copy.renderMode3d,
+                  hint: copy.renderModeHint,
+                  loading: copy.renderModeLoading,
+                  error: copy.renderModeError,
+                }}
+              />
             </Stack>
           </Paper>
 
