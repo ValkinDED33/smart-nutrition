@@ -1,4 +1,5 @@
-import { StateApiError } from "../lib/domain.mjs";
+import crypto from "node:crypto";
+import { createEmptyNutrients, StateApiError } from "../lib/domain.mjs";
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 
@@ -29,6 +30,128 @@ const requireEntries = (value) => {
   }
 
   return value;
+};
+
+const mealTypes = new Set(["breakfast", "lunch", "dinner", "snack"]);
+const intakeSources = new Set(["barcode", "search", "manual", "recommendation", "photo"]);
+
+const toSafeIdPart = (value) =>
+  String(value ?? "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 96);
+
+const createIntakeEntryId = (idempotencyKey) => {
+  const safeKey = toSafeIdPart(idempotencyKey);
+
+  if (safeKey) {
+    return `meal-intake-${safeKey}`;
+  }
+
+  return `meal-intake-${crypto.randomUUID()}`;
+};
+
+const toNumber = (value) => {
+  const nextValue = Number(value);
+  return Number.isFinite(nextValue) ? nextValue : 0;
+};
+
+const normalizeNutrients = (value) => {
+  const raw = isRecord(value) ? value : {};
+  const nutrients = createEmptyNutrients();
+
+  Object.keys(nutrients).forEach((key) => {
+    nutrients[key] = Math.min(Math.max(toNumber(raw[key]), 0), 100000);
+  });
+
+  return nutrients;
+};
+
+const requireProductPayload = (value) => {
+  const product = requireRecord(value, "INVALID_PRODUCT", "Product payload is required.");
+  const id = String(product.id ?? "").trim() || `manual-${crypto.randomUUID()}`;
+  const name = String(product.name ?? "").trim().replace(/\s+/g, " ").slice(0, 160);
+
+  if (!name) {
+    throw new StateApiError("INVALID_PRODUCT", "Product name is required.");
+  }
+
+  const nutrients = normalizeNutrients(product.nutrients);
+
+  if (
+    nutrients.calories <= 0 &&
+    nutrients.protein <= 0 &&
+    nutrients.fat <= 0 &&
+    nutrients.carbs <= 0
+  ) {
+    throw new StateApiError(
+      "INVALID_PRODUCT_NUTRITION",
+      "Product nutrition must include calories or macros."
+    );
+  }
+
+  return {
+    id,
+    name,
+    unit: ["g", "ml", "piece"].includes(product.unit) ? product.unit : "g",
+    source: ["USDA", "OpenFoodFacts", "Manual", "Recipe"].includes(product.source)
+      ? product.source
+      : "Manual",
+    nutrients,
+    brand: String(product.brand ?? "").trim().slice(0, 120) || undefined,
+    barcode: String(product.barcode ?? "").trim().slice(0, 64) || undefined,
+    category: String(product.category ?? "").trim().slice(0, 120) || undefined,
+    imageUrl: String(product.imageUrl ?? "").trim().slice(0, 1700000) || undefined,
+    facts: isRecord(product.facts) ? product.facts : undefined,
+  };
+};
+
+const requireProductIntakeRequest = (body) => {
+  const request = requireRecord(
+    body,
+    "INVALID_PRODUCT_INTAKE",
+    "Product intake payload is required."
+  );
+  const source = String(request.source ?? "").trim();
+  const mealType = String(request.mealType ?? request.mealTarget?.mealType ?? "snack").trim();
+  const quantity = toNumber(request.quantity ?? request.mealTarget?.quantity);
+  const idempotencyKey = String(request.idempotencyKey ?? "").trim();
+  const options = isRecord(request.options) ? request.options : {};
+
+  if (!intakeSources.has(source)) {
+    throw new StateApiError("INVALID_INTAKE_SOURCE", "Product intake source is invalid.");
+  }
+
+  if (!mealTypes.has(mealType)) {
+    throw new StateApiError("INVALID_MEAL_TYPE", "Meal type is invalid.");
+  }
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    throw new StateApiError("INVALID_QUANTITY", "Meal quantity must be positive.");
+  }
+
+  if (!idempotencyKey) {
+    throw new StateApiError("INVALID_IDEMPOTENCY_KEY", "Idempotency key is required.");
+  }
+
+  return {
+    source,
+    mealType,
+    quantity: Math.min(Math.max(quantity, 0.1), 100000),
+    eatenAt:
+      typeof request.eatenAt === "string" && request.eatenAt.trim()
+        ? request.eatenAt.trim()
+        : new Date().toISOString(),
+    product: request.product ? requireProductPayload(request.product) : null,
+    barcode: String(request.barcode ?? "").replace(/\D/g, ""),
+    query: String(request.query ?? "").trim().slice(0, 120),
+    idempotencyKey,
+    options: {
+      saveToLibrary: options.saveToLibrary === true,
+      submitToCatalog: options.submitToCatalog === true,
+    },
+  };
 };
 
 const requireMealProductBucket = (bucket) => {
@@ -130,6 +253,94 @@ export const createStateService = ({ stateRepository }) => ({
 
   addMealEntries: async (user, requestBody, syncContext = undefined) =>
     stateRepository.addMealEntries(user.id, requireEntries(requestBody?.entries), syncContext),
+
+  addProductIntake: async (
+    user,
+    requestBody,
+    { resolveProduct, submitCatalog } = {},
+    syncContext = undefined
+  ) => {
+    const intake = requireProductIntakeRequest(requestBody);
+    let product = intake.product;
+
+    if (!product && resolveProduct) {
+      product = await resolveProduct({
+        barcode: intake.barcode,
+        query: intake.query,
+        source: intake.source,
+      });
+    }
+
+    if (!product) {
+      throw new StateApiError("PRODUCT_NOT_FOUND", "Product could not be resolved.");
+    }
+
+    product = requireProductPayload(product);
+
+    const entry = {
+      id: createIntakeEntryId(intake.idempotencyKey),
+      product,
+      quantity: intake.quantity,
+      mealType: intake.mealType,
+      eatenAt: intake.eatenAt,
+      origin: intake.source === "barcode" ? "barcode" : "manual",
+    };
+
+    let catalogStatus = {
+      requested: intake.options.submitToCatalog,
+      accepted: false,
+      failed: false,
+      retryable: false,
+      message: null,
+    };
+
+    const meal = await stateRepository.addMealEntries(user.id, [entry], syncContext);
+
+    if (intake.options.saveToLibrary) {
+      await stateRepository.upsertMealProduct(user.id, "saved", product, undefined);
+    }
+
+    if (intake.options.submitToCatalog && submitCatalog) {
+      try {
+        await submitCatalog(product);
+        catalogStatus = {
+          requested: true,
+          accepted: true,
+          failed: false,
+          retryable: false,
+          message: null,
+        };
+      } catch (error) {
+        catalogStatus = {
+          requested: true,
+          accepted: false,
+          failed: true,
+          retryable: true,
+          message: error instanceof Error ? error.message : "Catalog submission failed.",
+        };
+      }
+    }
+
+    const canonicalMeal = (await stateRepository.getMealStateByUserId(user.id)) ?? meal;
+    const mealAdded = canonicalMeal?.items?.some((item) => item.id === entry.id) === true;
+    const librarySaved = intake.options.saveToLibrary
+      ? canonicalMeal?.savedProducts?.some((item) => item.id === product.id) === true
+      : false;
+
+    return {
+      ok: true,
+      meal: canonicalMeal ?? meal,
+      entry,
+      product,
+      outcomes: {
+        mealAdded,
+        librarySaved,
+        catalogAccepted: catalogStatus.accepted,
+        catalogFailedRetryable: catalogStatus.failed && catalogStatus.retryable,
+      },
+      catalog: catalogStatus,
+    };
+  },
 
   removeMealEntry: async (user, entryId, syncContext = undefined) =>
     stateRepository.removeMealEntry(

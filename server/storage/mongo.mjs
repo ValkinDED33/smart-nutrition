@@ -1662,12 +1662,16 @@ export const createMongoStorage = async (config) => {
         (await collections.meals.findOne({ userId }))?.state
       );
       const normalizedEntries = normalizeMealEntries(entries);
+      const existingEntryIds = new Set(currentMealState.items.map((item) => item.id));
+      const entriesToAdd = normalizedEntries.filter(
+        (entry) => !existingEntryIds.has(entry.id)
+      );
       const nextMealState = {
         ...currentMealState,
-        items: [...normalizedEntries, ...currentMealState.items],
+        items: [...entriesToAdd, ...currentMealState.items],
       };
 
-      normalizedEntries.forEach((entry) => {
+      entriesToAdd.forEach((entry) => {
         nextMealState.recentProducts = [
           entry.product,
           ...nextMealState.recentProducts.filter(

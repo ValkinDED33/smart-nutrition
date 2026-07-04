@@ -38,6 +38,7 @@ export const createStateRoutes = ({ stateController } = {}) =>
         { method: "GET", pathname: "/api/companion-state", handler: stateController.getCompanionState },
         { method: "PUT", pathname: "/api/companion-state", handler: stateController.saveCompanionState },
         { method: "POST", pathname: "/api/meal-entries", handler: stateController.addMealEntries },
+        { method: "POST", pathname: "/api/meal/product-intake", handler: stateController.addProductIntake },
         {
           method: "DELETE",
           match: matchPath(/^\/api\/meal-entries\/(?<entryId>[^/]+)$/),

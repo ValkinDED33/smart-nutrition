@@ -3836,12 +3836,16 @@ export const createSqliteStorage = async ({
     addMealEntries: (userId, entries, syncContext = undefined) =>
       withMealTransaction(userId, (mealState) => {
         const normalizedEntries = normalizeMealEntries(entries);
+        const existingEntryIds = new Set(mealState.items.map((item) => item.id));
+        const entriesToAdd = normalizedEntries.filter(
+          (entry) => !existingEntryIds.has(entry.id)
+        );
         const nextMealState = {
           ...mealState,
-          items: [...normalizedEntries, ...mealState.items],
+          items: [...entriesToAdd, ...mealState.items],
         };
 
-        normalizedEntries.forEach((entry) => {
+        entriesToAdd.forEach((entry) => {
           nextMealState.recentProducts = [
             entry.product,
             ...nextMealState.recentProducts.filter(

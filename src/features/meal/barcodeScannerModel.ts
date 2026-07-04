@@ -50,13 +50,24 @@ export type BarcodeScannerAvailability =
       reason: "camera_api_missing" | "insecure_context";
     };
 
+export const resolveBarcodeTorchAvailable = ({
+  capabilitiesTorch,
+  settingsTorch,
+}: {
+  capabilitiesTorch?: boolean;
+  settingsTorch?: boolean;
+}) => capabilitiesTorch === true || typeof settingsTorch === "boolean";
+
 export const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
 export const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
 export const BARCODE_SCAN_NO_RESULT_TIMEOUT_MS = 12_000;
 export const BARCODE_SCANNER_PREVIEW_ASPECT_RATIO = "4 / 3";
 export const BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX = 220;
-export const BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS =
-  "min(52vh, calc(100svh - 360px), 420px)";
+export const BARCODE_SCANNER_PREVIEW_MOBILE_HEIGHT_CSS =
+  "clamp(220px, 58vw, 320px)";
+export const BARCODE_SCANNER_PREVIEW_TABLET_HEIGHT_CSS =
+  "clamp(260px, 42vw, 380px)";
+export const BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS = "min(42svh, 420px)";
 
 const SUPPORTED_MANUAL_PHOTO_TYPES = new Set([
   "image/jpeg",

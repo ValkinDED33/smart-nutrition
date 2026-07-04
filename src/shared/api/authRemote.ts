@@ -44,6 +44,40 @@ export interface RemoteSyncResult {
   meta?: AppSnapshotMeta | null;
 }
 
+export interface ProductIntakePayload {
+  source: "barcode" | "search" | "manual" | "recommendation" | "photo";
+  product?: Product;
+  barcode?: string;
+  query?: string;
+  quantity: number;
+  mealType: MealEntry["mealType"];
+  eatenAt?: string;
+  idempotencyKey: string;
+  options?: {
+    saveToLibrary?: boolean;
+    submitToCatalog?: boolean;
+  };
+}
+
+export interface ProductIntakeResult extends RemoteSyncResult {
+  meal?: unknown;
+  entry?: MealEntry;
+  product?: Product;
+  outcomes?: {
+    mealAdded: boolean;
+    librarySaved: boolean;
+    catalogAccepted: boolean;
+    catalogFailedRetryable: boolean;
+  };
+  catalog?: {
+    requested: boolean;
+    accepted: boolean;
+    failed: boolean;
+    retryable: boolean;
+    message: string | null;
+  };
+}
+
 export interface TelegramConnectionStatus {
   configured: boolean;
   provider: "telegram";
@@ -1017,6 +1051,54 @@ export const addRemoteMealEntries = async (
     method: "POST",
     body: JSON.stringify({ entries }),
   });
+};
+
+export const addRemoteProductIntake = async (
+  payload: ProductIntakePayload
+): Promise<ProductIntakeResult> => {
+  if (!isRemoteAuthMode()) {
+    return {
+      ok: false,
+      code: "SYNC_DISABLED",
+      message: "Cloud sync is not active for this account.",
+      meta: null,
+    };
+  }
+
+  try {
+    const { data } = await requestRemote<ProductIntakeResult>(
+      "/meal/product-intake",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+      {
+        requireAuth: true,
+        withSyncContext: true,
+      }
+    );
+
+    if (data.meta) {
+      writeCachedRemoteMeta(data.meta);
+    }
+
+    if (data.meal) {
+      const cachedSnapshot = readCachedRemoteSnapshot();
+
+      if (cachedSnapshot) {
+        writeCachedRemoteSnapshot({
+          ...cachedSnapshot,
+          meal: data.meal,
+          mealUpdatedAt: data.meta?.mealUpdatedAt ?? cachedSnapshot.mealUpdatedAt,
+          updatedAt: data.meta?.updatedAt ?? cachedSnapshot.updatedAt,
+        });
+      }
+    }
+
+    return data;
+  } catch (error) {
+    return toRemoteSyncResult(error);
+  }
 };
 
 export const removeRemoteMealEntry = async (

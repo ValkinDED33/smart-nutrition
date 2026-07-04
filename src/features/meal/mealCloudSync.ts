@@ -5,12 +5,14 @@ import {
 } from "@features/auth/cloudConflictRecovery";
 import {
   createRemoteMealEntries,
+  createRemoteProductIntake,
   createRemoteMealTemplate,
   deleteRemoteMealEntry,
   deleteRemoteMealProduct,
   deleteRemoteMealTemplate,
   saveRemoteMealProduct,
   syncRemoteMealState,
+  type ProductIntakePayload,
 } from "@shared/api/auth";
 import type { MealEntry } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
@@ -74,6 +76,23 @@ export const addMealEntriesToCloud = async (
 
   dispatch(replaceMealState(nextMeal));
   return nextMeal;
+};
+
+export const addProductIntakeToCloud = async (
+  dispatch: AppDispatch,
+  payload: ProductIntakePayload
+) => {
+  const result = await createRemoteProductIntake(payload);
+
+  await assertCloudSaved(dispatch, result);
+
+  if (!result.meal) {
+    throw new Error("Product intake did not return canonical meal state.");
+  }
+
+  dispatch(replaceMealState(result.meal));
+
+  return result;
 };
 
 export const removeMealEntryFromCloud = async (

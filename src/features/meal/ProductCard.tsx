@@ -31,11 +31,10 @@ import {
 } from "@domain/products/productPortions";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
-  addMealEntriesToCloud,
+  addProductIntakeToCloud,
   removeSavedMealProductFromCloud,
   saveMealProductToCloud,
 } from "./mealCloudSync";
-import { createMealEntryDraft } from "./mealSaveModel";
 import { useMealActionFeedback } from "./useMealActionFeedback";
 
 interface Props {
@@ -150,12 +149,30 @@ export const ProductCard = ({
       return;
     }
 
+    const idempotencyKey = `${origin}-${mealType}-${savedKey}-${
+      globalThis.crypto?.randomUUID?.() ?? Date.now()
+    }`;
     const saved = await runMealAction({
       actionId: addActionId,
       kind: "add",
-      action: () => addMealEntriesToCloud(dispatch, meal, [
-        createMealEntryDraft({ product, quantity, mealType, origin }),
-      ]),
+      action: async () => {
+        const result = await addProductIntakeToCloud(dispatch, {
+          source: origin === "barcode" ? "barcode" : "search",
+          product,
+          barcode: product.barcode,
+          quantity,
+          mealType,
+          idempotencyKey,
+          options: {
+            saveToLibrary: false,
+            submitToCatalog: false,
+          },
+        });
+
+        if (!result.outcomes?.mealAdded) {
+          throw new Error("Backend did not confirm the meal entry.");
+        }
+      },
     });
 
     if (saved) {

@@ -34,10 +34,9 @@ import {
   selectSavedProducts,
 } from "./selectors";
 import {
-  addMealEntriesToCloud,
+  addProductIntakeToCloud,
   rememberRecentMealProductInCloud,
 } from "./mealCloudSync";
-import { createMealEntryDraft } from "./mealSaveModel";
 
 type FoodCommandTarget = "search" | "photo" | "barcode" | "composer" | "favorites";
 
@@ -259,14 +258,25 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
     setActionError(null);
 
     try {
-      await addMealEntriesToCloud(dispatch, meal, [
-        createMealEntryDraft({
-          product,
-          quantity: amount,
-          mealType,
-          origin: "manual",
-        }),
-      ]);
+      const result = await addProductIntakeToCloud(dispatch, {
+        source: "search",
+        product,
+        barcode: product.barcode,
+        quantity: amount,
+        mealType,
+        idempotencyKey: `command-${mealType}-${product.barcode || product.id}-${
+          globalThis.crypto?.randomUUID?.() ?? Date.now()
+        }`,
+        options: {
+          saveToLibrary: false,
+          submitToCatalog: false,
+        },
+      });
+
+      if (!result.outcomes?.mealAdded) {
+        throw new Error("Backend did not confirm the meal entry.");
+      }
+
       setSelectedProduct(product);
       setQuery(getProductDisplayName(product, appLanguage));
       setFeedback(

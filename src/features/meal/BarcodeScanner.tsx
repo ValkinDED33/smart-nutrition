@@ -40,7 +40,9 @@ import {
   BARCODE_SCAN_NO_RESULT_TIMEOUT_MS,
   BARCODE_SCANNER_PREVIEW_ASPECT_RATIO,
   BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
+  BARCODE_SCANNER_PREVIEW_MOBILE_HEIGHT_CSS,
   BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX,
+  BARCODE_SCANNER_PREVIEW_TABLET_HEIGHT_CSS,
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
   createInitialBarcodeQuantity,
@@ -54,27 +56,42 @@ import {
   normalizeManualImageUrl,
   resolveCatalogNotice,
   resolveBarcodeScannerAvailability,
+  resolveBarcodeTorchAvailable,
   type CatalogSubmissionState,
   type ManualDraft,
 } from "./barcodeScannerModel";
 import {
-  addMealEntriesToCloud,
+  addProductIntakeToCloud,
   rememberRecentMealProductInCloud,
-  saveMealProductToCloud,
 } from "./mealCloudSync";
-import { createMealEntryDraft } from "./mealSaveModel";
 
 interface Props {
   mealType: MealType;
 }
 
 type LookupState = "idle" | "success" | "not_found" | "error";
+type ScannerRuntimeState =
+  | "idle"
+  | "cameraStarting"
+  | "scanning"
+  | "resolving"
+  | "addConfirmed"
+  | "notFound"
+  | "saveFailed";
 
 type TorchMediaTrackCapabilities = MediaTrackCapabilities & {
   torch?: boolean;
 };
 
 type TorchMediaTrackConstraintSet = MediaTrackConstraintSet & {
+  torch?: boolean;
+};
+
+type TorchMediaTrackSettings = MediaTrackSettings & {
+  torch?: boolean;
+};
+
+type TorchMediaTrackConstraints = MediaTrackConstraints & {
   torch?: boolean;
 };
 
@@ -106,6 +123,12 @@ const scannerCopy = {
     torchOn: "Увімкнути світло",
     torchOff: "Вимкнути світло",
     torchUnavailable: "Ліхтарик недоступний у цьому браузері.",
+    torchTurningOn: "Вмикаю світло...",
+    torchTurningOff: "Вимикаю світло...",
+    torchEnabled: "Світло увімкнено.",
+    torchDisabled: "Світло вимкнено.",
+    torchFailed:
+      "Телефон не дозволив увімкнути ліхтарик. Спробуйте більше світла або ручне введення.",
     fallbackTitle: "Товар не знайдено автоматично",
     fallbackBody:
       "Спробуйте пошук у браузері або заповніть базові макроси вручну, щоб усе одно додати продукт.",
@@ -182,6 +205,12 @@ const scannerCopy = {
     torchOn: "Włącz światło",
     torchOff: "Wyłącz światło",
     torchUnavailable: "Latarka nie jest dostępna w tej przeglądarce.",
+    torchTurningOn: "Włączam światło...",
+    torchTurningOff: "Wyłączam światło...",
+    torchEnabled: "Światło włączone.",
+    torchDisabled: "Światło wyłączone.",
+    torchFailed:
+      "Telefon nie pozwolił włączyć latarki. Spróbuj lepszego światła albo wpisz kod ręcznie.",
     fallbackTitle: "Produkt nie został znaleziony automatycznie",
     fallbackBody:
       "Spróbuj wyszukiwania w przeglądarce albo wpisz podstawowe makro ręcznie, żeby mimo wszystko dodać produkt.",
@@ -258,6 +287,12 @@ const scannerCopy = {
     torchOn: "Turn light on",
     torchOff: "Turn light off",
     torchUnavailable: "Torch is unavailable in this browser.",
+    torchTurningOn: "Turning light on...",
+    torchTurningOff: "Turning light off...",
+    torchEnabled: "Light turned on.",
+    torchDisabled: "Light turned off.",
+    torchFailed:
+      "The phone did not allow torch control. Try better lighting or manual entry.",
     fallbackTitle: "Product was not found automatically",
     fallbackBody:
       "Try browser search or fill basic macros manually so you can still add the product.",
@@ -317,17 +352,33 @@ const scannerPreviewSx = {
   background:
     "linear-gradient(135deg, var(--sn-surface-glass) 0%, rgba(15, 118, 110, 0.10) 100%)",
   aspectRatio: BARCODE_SCANNER_PREVIEW_ASPECT_RATIO,
+  height: {
+    xs: BARCODE_SCANNER_PREVIEW_MOBILE_HEIGHT_CSS,
+    sm: BARCODE_SCANNER_PREVIEW_TABLET_HEIGHT_CSS,
+  },
   minHeight: {
     xs: BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX,
     sm: BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX + 20,
   },
-  maxHeight: {
-    xs: BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
-    sm: 420,
-  },
+  maxHeight: BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
   width: "100%",
   display: "grid",
   placeItems: "center",
+  contain: "layout paint",
+} as const;
+
+const scannerVideoStyle = {
+  display: "block",
+  position: "absolute",
+  inset: 0,
+  width: "100%",
+  height: "100%",
+  minWidth: "100%",
+  minHeight: "100%",
+  maxWidth: "100%",
+  maxHeight: "100%",
+  objectFit: "cover",
+  transform: "translateZ(0)",
 } as const;
 
 export const BarcodeScanner = ({ mealType }: Props) => {
@@ -338,6 +389,13 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const noResultSoundPlayedRef = useRef(false);
   const lastScanRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
+  const handleLookupRef = useRef<
+    ((rawBarcode: string, autoAdd?: boolean) => Promise<void>) | null
+  >(null);
+  const playScannerFailureRef = useRef<() => void>(() => undefined);
+  const refreshTorchAvailabilityRef = useRef<() => void>(() => undefined);
+  const cameraFailedMessageRef = useRef("");
+  const pendingManualIntakeKeyRef = useRef<string | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
@@ -362,7 +420,11 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
+  const [torchToggling, setTorchToggling] = useState(false);
+  const [torchMessage, setTorchMessage] = useState<string | null>(null);
   const [scannerSoundEnabled, setScannerSoundEnabled] = useState(true);
+  const [scannerRuntimeState, setScannerRuntimeState] =
+    useState<ScannerRuntimeState>("idle");
   const { appLanguage } = useLanguage();
   const copy = scannerCopy[appLanguage];
   const categoryOptions = useMemo(
@@ -476,31 +538,78 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     const capabilities = track?.getCapabilities?.() as
       | TorchMediaTrackCapabilities
       | undefined;
+    const settings = track?.getSettings?.() as TorchMediaTrackSettings | undefined;
 
-    setTorchAvailable(Boolean(capabilities?.torch));
+    setTorchAvailable(
+      resolveBarcodeTorchAvailable({
+        capabilitiesTorch: capabilities?.torch,
+        settingsTorch: settings?.torch,
+      })
+    );
   }, [getVideoTrack]);
 
   const toggleTorch = useCallback(async () => {
     const track = getVideoTrack();
 
     if (!track) {
+      setTorchAvailable(false);
+      setTorchMessage(copy.torchUnavailable);
       return;
     }
 
     const nextEnabled = !torchEnabled;
+    setTorchToggling(true);
+    setTorchMessage(nextEnabled ? copy.torchTurningOn : copy.torchTurningOff);
 
     try {
       await track.applyConstraints({
         advanced: [{ torch: nextEnabled } as TorchMediaTrackConstraintSet],
       });
+      const settings = track.getSettings?.() as TorchMediaTrackSettings | undefined;
+
+      if (
+        typeof settings?.torch === "boolean" &&
+        settings.torch !== nextEnabled
+      ) {
+        await track.applyConstraints({
+          torch: nextEnabled,
+        } as TorchMediaTrackConstraints);
+      }
+
+      const nextSettings = track.getSettings?.() as
+        | TorchMediaTrackSettings
+        | undefined;
+
+      if (
+        typeof nextSettings?.torch === "boolean" &&
+        nextSettings.torch !== nextEnabled
+      ) {
+        throw new Error("Torch state was not applied");
+      }
+
       setTorchEnabled(nextEnabled);
       setTorchAvailable(true);
+      setTorchMessage(nextEnabled ? copy.torchEnabled : copy.torchDisabled);
     } catch (error) {
-      console.error(error);
+      console.warn("Barcode scanner torch toggle failed", {
+        name: error instanceof Error ? error.name : "unknown",
+      });
       setTorchAvailable(false);
       setTorchEnabled(false);
+      setTorchMessage(copy.torchFailed);
+    } finally {
+      setTorchToggling(false);
     }
-  }, [getVideoTrack, torchEnabled]);
+  }, [
+    copy.torchDisabled,
+    copy.torchEnabled,
+    copy.torchFailed,
+    copy.torchTurningOff,
+    copy.torchTurningOn,
+    copy.torchUnavailable,
+    getVideoTrack,
+    torchEnabled,
+  ]);
 
   const stopScanner = useCallback(() => {
     resetScanLock();
@@ -508,7 +617,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     controlsRef.current = null;
     setTorchAvailable(false);
     setTorchEnabled(false);
+    setTorchToggling(false);
+    setTorchMessage(null);
     setScanTimedOut(false);
+    setScannerRuntimeState("idle");
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -522,7 +634,16 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setFoundProduct(null);
     setShowManualForm(false);
     setCatalogSubmissionState(createInitialCatalogSubmissionState());
+    setScannerRuntimeState("idle");
   }, []);
+
+  const createIntakeIdempotencyKey = useCallback(
+    (source: string, identity: string) =>
+      `${source}-${mealType}-${identity || "product"}-${
+        globalThis.crypto?.randomUUID?.() ?? Date.now()
+      }`,
+    [mealType]
+  );
 
   const submitManualProductToCatalog = useCallback(
     async (payload: Parameters<typeof submitCatalogSubmission>[0]) => {
@@ -549,6 +670,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
       if (!normalizedBarcode) {
         setLookupState("not_found");
+        setScannerRuntimeState("notFound");
         setFoundProduct(null);
         setShowManualForm(true);
         setMessage(copy.notFound);
@@ -557,6 +679,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       }
 
       setIsSearching(true);
+      setScannerRuntimeState("resolving");
       setLookupState("idle");
       setFoundProduct(null);
       setSaveError(null);
@@ -568,6 +691,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
         if (!product) {
           setLookupState("not_found");
+          setScannerRuntimeState("notFound");
           setFoundProduct(null);
           setShowManualForm(true);
           setMessage(copy.notFound);
@@ -583,25 +707,42 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setLookupState("success");
         setShowManualForm(false);
         setFoundProduct(product);
-        const nextMeal = await rememberRecentMealProductInCloud(dispatch, meal, product);
-        playScannerSuccess();
 
         if (autoAdd) {
           if (selectedQuantity === null) {
             setMessage(copy.grams);
+            setScannerRuntimeState("saveFailed");
             playScannerFailure();
             return;
           }
 
-          await addMealEntriesToCloud(dispatch, nextMeal, [
-            createMealEntryDraft({
-              product,
-              quantity: selectedQuantity,
-              mealType,
-              origin: "barcode",
-            }),
-          ]);
+          const intakeResult = await addProductIntakeToCloud(dispatch, {
+            source: "barcode",
+            product,
+            barcode: normalizedBarcode,
+            quantity: selectedQuantity,
+            mealType,
+            idempotencyKey: createIntakeIdempotencyKey("barcode", normalizedBarcode),
+            options: {
+              saveToLibrary: false,
+              submitToCatalog: false,
+            },
+          });
+
+          if (!intakeResult.outcomes?.mealAdded) {
+            throw new Error("Backend did not confirm the meal entry.");
+          }
+
+          playScannerSuccess();
           stopScanner();
+          setScannerRuntimeState("addConfirmed");
+        } else {
+          void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
+            setSaveError(
+              error instanceof Error ? error.message : "Could not save meal to cloud."
+            );
+          });
+          playScannerSuccess();
         }
 
         const displayName = getProductDisplayName(product, appLanguage);
@@ -612,6 +753,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           error instanceof Error ? error.message : "Could not save meal to cloud."
         );
         setLookupState("error");
+        setScannerRuntimeState("saveFailed");
         setFoundProduct(null);
         setShowManualForm(true);
         setMessage(copy.failed);
@@ -633,10 +775,23 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       mealType,
       playScannerFailure,
       playScannerSuccess,
+      createIntakeIdempotencyKey,
       selectedQuantity,
       stopScanner,
     ]
   );
+
+  useEffect(() => {
+    handleLookupRef.current = handleLookup;
+    playScannerFailureRef.current = playScannerFailure;
+    refreshTorchAvailabilityRef.current = refreshTorchAvailability;
+    cameraFailedMessageRef.current = copy.cameraFailed;
+  }, [
+    copy.cameraFailed,
+    handleLookup,
+    playScannerFailure,
+    refreshTorchAvailability,
+  ]);
 
   useEffect(() => {
     if (!scanning || !videoRef.current) {
@@ -654,7 +809,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
         if (!noResultSoundPlayedRef.current) {
           noResultSoundPlayedRef.current = true;
-          playScannerFailure();
+          playScannerFailureRef.current();
         }
       }
     }, BARCODE_SCAN_NO_RESULT_TIMEOUT_MS);
@@ -686,7 +841,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         clearNoResultTimeout();
         setBarcodeInput(code);
 
-        await handleLookup(code, true);
+        await handleLookupRef.current?.(code, true);
 
         if (disposed || !controlsRef.current) {
           resetScanLock();
@@ -708,7 +863,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         }
 
         controlsRef.current = controls;
-        window.setTimeout(refreshTorchAvailability, 250);
+        setScannerRuntimeState("scanning");
+        window.setTimeout(() => {
+          refreshTorchAvailabilityRef.current();
+        }, 250);
       })
       .catch((error) => {
         if (disposed) {
@@ -719,9 +877,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           name: error instanceof Error ? error.name : "unknown",
         });
         setLookupState("error");
-        setMessage(copy.cameraFailed);
+        setScannerRuntimeState("saveFailed");
+        setMessage(cameraFailedMessageRef.current);
         setShowManualForm(true);
-        playScannerFailure();
+        playScannerFailureRef.current();
         setScanning(false);
         clearNoResultTimeout();
         resetScanLock();
@@ -738,10 +897,6 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   }, [
     clearCooldown,
     clearNoResultTimeout,
-    copy.cameraFailed,
-    handleLookup,
-    playScannerFailure,
-    refreshTorchAvailability,
     resetScanLock,
     scanning,
   ]);
@@ -759,6 +914,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     resetLookupUi();
     resetScanLock();
     setScanTimedOut(false);
+    setScannerRuntimeState("cameraStarting");
     setScanning(true);
   };
 
@@ -853,24 +1009,47 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         `manual-barcode-${normalizedBarcodeForId || Date.now()}`,
     });
     const { catalogImageUrl, category, normalizedBarcode, product } = manualProduct;
+    const catalogPayload = createManualCatalogSubmissionPayload({
+      catalogImageUrl,
+      category,
+      draft: manualDraft,
+      name,
+      normalizedBarcode,
+      product,
+    });
 
     setSaveError(null);
+    let intakeCatalog = null as Awaited<ReturnType<typeof addProductIntakeToCloud>>["catalog"] | null;
 
     try {
-      let nextMeal = await rememberRecentMealProductInCloud(dispatch, meal, product);
-      nextMeal = await saveMealProductToCloud(dispatch, nextMeal, product);
-      await addMealEntriesToCloud(dispatch, nextMeal, [
-        createMealEntryDraft({
-          product,
-          quantity: selectedQuantity,
-          mealType,
-          origin: "manual",
-        }),
-      ]);
+      const idempotencyKey =
+        pendingManualIntakeKeyRef.current ??
+        createIntakeIdempotencyKey("manual", normalizedBarcode || product.id);
+      pendingManualIntakeKeyRef.current = idempotencyKey;
+      const intakeResult = await addProductIntakeToCloud(dispatch, {
+        source: "manual",
+        product,
+        barcode: normalizedBarcode,
+        quantity: selectedQuantity,
+        mealType,
+        idempotencyKey,
+        options: {
+          saveToLibrary: true,
+          submitToCatalog: true,
+        },
+      });
+
+      if (!intakeResult.outcomes?.mealAdded) {
+        throw new Error("Backend did not confirm the meal entry.");
+      }
+
+      intakeCatalog = intakeResult.catalog ?? null;
+      pendingManualIntakeKeyRef.current = null;
     } catch (error) {
       setSaveError(
         error instanceof Error ? error.message : "Could not save meal to cloud."
       );
+      setScannerRuntimeState("saveFailed");
       playScannerFailure();
       return;
     }
@@ -882,17 +1061,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     setMessage(`${copy.manualAdded}: ${name}`);
     setManualDraft(createManualDraft());
     stopScanner();
+    setScannerRuntimeState("addConfirmed");
 
-    void submitManualProductToCatalog(
-      createManualCatalogSubmissionPayload({
-        catalogImageUrl,
-        category,
-        draft: manualDraft,
-        name,
-        normalizedBarcode,
-        product,
-      })
-    );
+    if (intakeCatalog?.accepted) {
+      setCatalogSubmissionState({ status: "confirmed" });
+    } else if (intakeCatalog?.failed) {
+      setCatalogSubmissionState({
+        status: "failed",
+        payload: catalogPayload,
+        message: intakeCatalog.message ?? copy.catalogRetry,
+      });
+    }
   };
 
   const showFallback = (lookupState === "not_found" || lookupState === "error") && barcodeInput;
@@ -985,24 +1164,28 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           </Button>
         </Stack>
 
-        <Box sx={scannerPreviewSx}>
+        <Box
+          sx={scannerPreviewSx}
+          data-scanner-preview-shell="stable"
+          data-scanner-state={
+            scanTimedOut ? "no-result" : scannerRuntimeState
+          }
+        >
+          <video
+            ref={videoRef}
+            style={{
+              ...scannerVideoStyle,
+              opacity: scanning ? 1 : 0,
+              pointerEvents: "none",
+            }}
+            aria-hidden={!scanning}
+            autoPlay
+            muted
+            playsInline
+          />
+
           {scanning ? (
             <>
-              <video
-                ref={videoRef}
-                style={{
-                  display: "block",
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  maxHeight: "100%",
-                  objectFit: "cover",
-                }}
-                autoPlay
-                muted
-                playsInline
-              />
               <Box
                 sx={{
                   position: "absolute",
@@ -1096,19 +1279,47 @@ export const BarcodeScanner = ({ mealType }: Props) => {
             <Stack spacing={1}>
               <Typography variant="body2">{copy.lowLightBody}</Typography>
               {torchAvailable ? (
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    void toggleTorch();
-                  }}
-                  sx={{ alignSelf: "flex-start" }}
-                >
-                  {torchEnabled ? copy.torchOff : copy.torchOn}
-                </Button>
+                <Stack spacing={0.75} alignItems="flex-start">
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      void toggleTorch();
+                    }}
+                    disabled={torchToggling}
+                    aria-pressed={torchEnabled}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    {torchToggling
+                      ? torchEnabled
+                        ? copy.torchTurningOff
+                        : copy.torchTurningOn
+                      : torchEnabled
+                        ? copy.torchOff
+                        : copy.torchOn}
+                  </Button>
+                  {torchMessage ? (
+                    <Typography variant="body2" color="text.secondary">
+                      {torchMessage}
+                    </Typography>
+                  ) : null}
+                </Stack>
               ) : (
-                <Typography variant="body2" color="text.secondary">
-                  {copy.torchUnavailable}
-                </Typography>
+                <Stack spacing={0.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    {torchMessage ?? copy.torchUnavailable}
+                  </Typography>
+                  <Button
+                    variant="text"
+                    onClick={refreshTorchAvailability}
+                    sx={{
+                      alignSelf: "flex-start",
+                      textTransform: "none",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {copy.retryScanner}
+                  </Button>
+                </Stack>
               )}
             </Stack>
           </Alert>

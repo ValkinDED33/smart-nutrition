@@ -74,6 +74,22 @@ const normalizeMealEntriesPayload = (body) => {
   return [body];
 };
 
+const toCatalogPayloadFromProduct = (product) => ({
+  name: product.name,
+  brand: product.brand,
+  barcode: product.barcode,
+  category: product.category ?? product.facts?.foodGroup,
+  imageUrl:
+    typeof product.imageUrl === "string" && /^https?:\/\//i.test(product.imageUrl)
+      ? product.imageUrl
+      : undefined,
+  calories: Number(product.nutrients?.calories ?? 0),
+  protein: Number(product.nutrients?.protein ?? 0),
+  fat: Number(product.nutrients?.fat ?? 0),
+  carbs: Number(product.nutrients?.carbs ?? 0),
+  unit: product.unit ?? "g",
+});
+
 const getWeightHistory = (profileState) =>
   Array.isArray(profileState?.weightHistory) ? profileState.weightHistory : [];
 
@@ -334,6 +350,46 @@ export const createStateController = ({
       await stateService.addMealEntries(auth.user, body, getSyncContext(request));
       await broadcastStateMeta(auth.user);
       sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
+    },
+
+    addProductIntake: async ({ request, response, auth }) => {
+      const body = await readJsonBody(request, bodyLimitBytes);
+      const result = await stateService.addProductIntake(
+        auth.user,
+        body,
+        {
+          resolveProduct: async ({ barcode, query }) => {
+            const search = barcode || query;
+
+            if (!search) {
+              return null;
+            }
+
+            const products = await platformService.listVisibleCatalogProducts(auth.user, {
+              search,
+              limit: 18,
+            });
+
+            if (barcode) {
+              return (
+                products.find(
+                  (product) => String(product.barcode ?? "").replace(/\D/g, "") === barcode
+                ) ?? null
+              );
+            }
+
+            return products[0] ?? null;
+          },
+          submitCatalog: (product) =>
+            platformService.submitCatalogProduct(auth.user, toCatalogPayloadFromProduct(product)),
+        },
+        getSyncContext(request)
+      );
+      await broadcastStateMeta(auth.user);
+      sendJson(response, 201, {
+        ...result,
+        meta: await stateService.getSnapshotMeta(auth.user),
+      });
     },
 
     deleteMealEntry: async ({ request, response, auth, params }) => {

@@ -1,5 +1,6 @@
 import {
   addRemoteMealEntries,
+  addRemoteProductIntake,
   analyzeRemoteMealPhoto,
   addRemoteMealTemplate,
   checkRemoteBackendAvailability,
@@ -29,6 +30,8 @@ import {
   remoteAuthProvider,
   purgeLegacyBrowserAuthStorage,
   type RemoteSyncResult,
+  type ProductIntakePayload,
+  type ProductIntakeResult,
   type TelegramConnectLink,
   type TelegramConnectionStatus,
   upsertRemoteMealProduct,
@@ -53,6 +56,7 @@ export type {
   RegistrationVerificationResendPayload,
 } from "./authProvider";
 export type { RemoteSyncResult };
+export type { ProductIntakePayload, ProductIntakeResult };
 export type { TelegramConnectionStatus, TelegramConnectLink };
 export { AuthApiError };
 
@@ -125,6 +129,7 @@ export const syncRemoteCommunityState = pushRemoteCommunityState;
 export const syncRemoteCompanionState = pushRemoteCompanionState;
 export const syncRemoteAppSnapshot = pushRemoteAppSnapshot;
 export const createRemoteMealEntries = addRemoteMealEntries;
+export const createRemoteProductIntake = addRemoteProductIntake;
 export const deleteRemoteMealEntry = removeRemoteMealEntry;
 export const createRemoteMealTemplate = addRemoteMealTemplate;
 export const deleteRemoteMealTemplate = removeRemoteMealTemplate;

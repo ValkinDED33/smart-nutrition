@@ -1935,12 +1935,16 @@ export const createPostgresStorage = async ({
           syncContext,
           (snapshot) => {
             const normalizedEntries = normalizeMealEntries(entries);
+            const existingEntryIds = new Set(snapshot.meal.items.map((item) => item.id));
+            const entriesToAdd = normalizedEntries.filter(
+              (entry) => !existingEntryIds.has(entry.id)
+            );
             const nextMealState = {
               ...snapshot.meal,
-              items: [...normalizedEntries, ...snapshot.meal.items],
+              items: [...entriesToAdd, ...snapshot.meal.items],
             };
 
-            normalizedEntries.forEach((entry) => {
+            entriesToAdd.forEach((entry) => {
               nextMealState.recentProducts = [
                 entry.product,
                 ...snapshot.meal.recentProducts.filter(
