@@ -19,8 +19,12 @@ import { analyzeMealPhoto } from "../../shared/api/auth";
 import { useLanguage } from "../../shared/language";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import {
+  chooseBestPhotoProductMatch,
+  createBlankPhotoSuggestion,
+  requiresPhotoMealConfirmation,
   rescalePhotoMealAnalysis,
   scalePhotoMealAnalysis,
+  shouldStartWithSuggestionsOnly,
 } from "@features/meal/photo/photoDraft";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import type {
@@ -32,6 +36,7 @@ import type { Product } from "@domain/products/types";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { addMealEntriesToCloud } from "./mealCloudSync";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+import { searchProducts } from "../../shared/api/products";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -81,8 +86,26 @@ const calculateSuggestionCalories = (suggestion: PhotoMealSuggestion) =>
 
 const createPhotoProduct = (
   suggestion: PhotoMealSuggestion,
-  previewUrl: string | null
+  previewUrl: string | null,
+  matchedProduct: Product | null = null
 ): Product => {
+  if (matchedProduct) {
+    return {
+      ...matchedProduct,
+      id: createId("photo-product-match"),
+      name: suggestion.name,
+      imageUrl: matchedProduct.imageUrl ?? previewUrl ?? undefined,
+      facts: {
+        ...matchedProduct.facts,
+        extraCompounds: [
+          ...(matchedProduct.facts?.extraCompounds ?? []),
+          "photo-product-match:online",
+          `photo-product-source:${matchedProduct.source}`,
+        ],
+      },
+    };
+  }
+
   const nutrients = createEmptyNutrients();
 
   nutrients.calories = suggestion.estimatedNutritionPer100g.calories;
@@ -103,19 +126,55 @@ const createPhotoProduct = (
 const createDraftEntries = (
   analysis: PhotoMealAnalysis,
   mealType: MealType,
-  previewUrl: string | null
+  previewUrl: string | null,
+  matchedProducts: Array<Product | null> = []
 ): MealEntry[] => {
   const eatenAt = new Date().toISOString();
 
-  return analysis.items.map((suggestion) => ({
+  return analysis.items.map((suggestion, index) => ({
     id: createId("photo-entry"),
-    product: createPhotoProduct(suggestion, previewUrl),
+    product: createPhotoProduct(suggestion, previewUrl, matchedProducts[index] ?? null),
     quantity: Math.max(Math.round(suggestion.quantityGrams), 5),
     mealType,
     eatenAt,
     origin: "manual",
   }));
 };
+
+const createConfirmedPhotoEntries = (
+  analysis: PhotoMealAnalysis,
+  mealType: MealType,
+  previewUrl: string | null,
+  matchedProducts: Array<Product | null> = []
+): MealEntry[] =>
+  createDraftEntries(analysis, mealType, previewUrl, matchedProducts).map((entry, index) => {
+    const suggestion = analysis.items[index];
+    const matchedProduct = matchedProducts[index] ?? null;
+    const originalName = suggestion?.originalName?.trim();
+    const correctedName = suggestion?.name?.trim();
+    const correctionLabel =
+      originalName && correctedName && originalName !== correctedName
+        ? `photo-feedback:replaced:${originalName}->${correctedName}`.slice(0, 120)
+        : "photo-feedback:confirmed";
+
+    return {
+      ...entry,
+      product: {
+        ...entry.product,
+        facts: {
+          ...entry.product.facts,
+          extraCompounds: [
+            ...(entry.product.facts?.extraCompounds ?? []),
+            "photo-feedback:user-confirmed",
+            "photo-ai-estimate",
+            matchedProduct ? "photo-product-match:confirmed" : "photo-product-match:estimate-only",
+            correctionLabel,
+            `photo-confidence:${Math.round((suggestion?.confidence ?? 0) * 100)}`,
+          ],
+        },
+      },
+    };
+  });
 
 const photoCopy = {
   uk: {
@@ -131,14 +190,19 @@ const photoCopy = {
     analysisError:
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
     cloudDraft:
-      "Чернетка готова. Перевірте склад, порцію і лише потім додавайте записи в щоденник.",
-    analyzed: "AI проаналізував фото. Це ще чернетка, не запис у щоденнику.",
+      "AI estimate, please confirm. Перевірте склад, приховані інгредієнти і порцію перед збереженням.",
+    analyzed: "AI проаналізував фото, але це оцінка, а не факт і не запис у щоденнику.",
+    lowConfidence:
+      "Низька впевненість: показую варіанти для вибору, а не готові картки продуктів.",
     savingDraft: "Зберігаємо обрані підказки в щоденник...",
     saveFailed: "Не вдалося додати чернетку до щоденника.",
     retry: "Спробувати ще раз",
     previewAlt: "Прев'ю фото страви",
     removePhoto: "Прибрати фото",
     detected: "Чернетка розпізнавання",
+    candidates: "Можливі варіанти",
+    uncertain: "Невпевнені інгредієнти",
+    hiddenQuestions: "Що потрібно підтвердити",
     portions: "Порція",
     portionLight: "Легка",
     portionRegular: "Стандарт",
@@ -148,12 +212,21 @@ const photoCopy = {
     manualReview: "Потрібна ручна перевірка",
     macros: "Орієнтовні макро за фото",
     suggestions: "Що додамо в щоденник",
+    notThis: "Не це",
+    addMissing: "Додати пропущений інгредієнт",
+    removeWrong: "Прибрати",
+    replaceHint: "Замініть назву або грами — я збережу саме виправлений варіант.",
     selected: "Обрано",
     itemName: "Назва",
     itemGrams: "Грами",
     empty: "Підказки не сформувалися. Скористайтеся ручним додаванням нижче.",
     nothingSelected: "Оберіть хоча б один пункт із чернетки.",
-    addDraft: "Додати всі підказки",
+    incompleteCorrection: "Заповніть назву для кожного обраного інгредієнта перед збереженням.",
+    resolvingProducts: "Підтягуємо нутрієнти з online/backend бази...",
+    productLookupPartial:
+      "Частину інгредієнтів не знайдено в online/backend базі, тому вони збережені як підтверджена AI-оцінка.",
+    productLookupMatched: "Нутрієнти підтягнуті з online/backend бази для обраних інгредієнтів.",
+    addDraft: "Підтвердити і додати",
     added: "Чернетку додано до щоденника.",
     itemCalories: "{value} ккал",
     itemMacros: "Б {protein} г • Ж {fat} г • В {carbs} г",
@@ -172,14 +245,19 @@ const photoCopy = {
     analysisError:
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
     cloudDraft:
-      "Szkic jest gotowy. Sprawdź skład, porcję i dopiero wtedy dodaj wpisy do dziennika.",
-    analyzed: "AI przeanalizował zdjęcie. To nadal szkic, nie wpis w dzienniku.",
+      "AI estimate, please confirm. Sprawdź skład, ukryte dodatki i porcję przed zapisem.",
+    analyzed: "AI przeanalizował zdjęcie, ale to szacunek, nie fakt ani wpis w dzienniku.",
+    lowConfidence:
+      "Niska pewność: pokazuję propozycje do wyboru, nie gotowe karty produktów.",
     savingDraft: "Zapisujemy wybrane podpowiedzi w dzienniku...",
     saveFailed: "Nie udało się dodać szkicu do dziennika.",
     retry: "Spróbuj ponownie",
     previewAlt: "Podgląd zdjęcia posiłku",
     removePhoto: "Usuń zdjęcie",
     detected: "Szkic rozpoznania",
+    candidates: "Możliwe warianty",
+    uncertain: "Niepewne składniki",
+    hiddenQuestions: "Co trzeba potwierdzić",
     portions: "Porcja",
     portionLight: "Lekka",
     portionRegular: "Standard",
@@ -189,12 +267,22 @@ const photoCopy = {
     manualReview: "Wymaga ręcznego sprawdzenia",
     macros: "Szacowane makro ze zdjęcia",
     suggestions: "Co trafi do dziennika",
+    notThis: "To nie to",
+    addMissing: "Dodaj brakujący składnik",
+    removeWrong: "Usuń",
+    replaceHint: "Zmień nazwę albo gramy — zapiszę dokładnie poprawioną wersję.",
     selected: "Wybrane",
     itemName: "Nazwa",
     itemGrams: "Gramy",
     empty: "Nie udało się zbudować podpowiedzi. Skorzystaj z ręcznego dodawania poniżej.",
     nothingSelected: "Wybierz przynajmniej jedną pozycję ze szkicu.",
-    addDraft: "Dodaj wszystkie podpowiedzi",
+    incompleteCorrection: "Uzupełnij nazwę każdego wybranego składnika przed zapisem.",
+    resolvingProducts: "Pobieramy wartości odżywcze z bazy online/backend...",
+    productLookupPartial:
+      "Części składników nie znaleziono w bazie online/backend, więc zapisano je jako potwierdzony szacunek AI.",
+    productLookupMatched:
+      "Wartości odżywcze zostały pobrane z bazy online/backend dla wybranych składników.",
+    addDraft: "Potwierdź i dodaj",
     added: "Szkic został dodany do dziennika.",
     itemCalories: "{value} kcal",
     itemMacros: "B {protein} g • T {fat} g • W {carbs} g",
@@ -213,14 +301,19 @@ const photoCopy = {
     analysisError:
       "Could not prepare suggestions for this photo. You can add the meal manually below.",
     cloudDraft:
-      "Draft is ready. Check ingredients and portion before adding entries to the diary.",
-    analyzed: "AI analyzed the photo. This is still a draft, not a diary entry.",
+      "AI estimate, please confirm. Check ingredients, hidden items, and portions before saving.",
+    analyzed: "AI analyzed the photo, but this is an estimate, not a fact or diary entry.",
+    lowConfidence:
+      "Low confidence: showing suggestions to choose from, not finalized product cards.",
     savingDraft: "Saving selected draft items to your diary...",
     saveFailed: "Could not add this draft to your diary.",
     retry: "Try again",
     previewAlt: "Meal photo preview",
     removePhoto: "Remove photo",
     detected: "Recognition draft",
+    candidates: "Possible interpretations",
+    uncertain: "Uncertain ingredients",
+    hiddenQuestions: "Confirm hidden ingredients",
     portions: "Portion",
     portionLight: "Light",
     portionRegular: "Regular",
@@ -230,12 +323,22 @@ const photoCopy = {
     manualReview: "Manual review needed",
     macros: "Estimated macros from photo",
     suggestions: "What will be added to the diary",
+    notThis: "Not this",
+    addMissing: "Add missing ingredient",
+    removeWrong: "Remove",
+    replaceHint: "Edit the name or grams — the corrected version is what gets saved.",
     selected: "Selected",
     itemName: "Name",
     itemGrams: "Grams",
     empty: "No suggestions were created. Use manual adding below.",
     nothingSelected: "Select at least one item from the draft.",
-    addDraft: "Add all suggestions",
+    incompleteCorrection: "Fill in the name for every selected ingredient before saving.",
+    resolvingProducts: "Matching nutrients from the online/backend database...",
+    productLookupPartial:
+      "Some ingredients were not found in the online/backend database, so they were saved as confirmed AI estimates.",
+    productLookupMatched:
+      "Nutrients were matched from the online/backend database for the selected ingredients.",
+    addDraft: "Confirm and add",
     added: "Draft was added to the diary.",
     itemCalories: "{value} kcal",
     itemMacros: "P {protein} g • F {fat} g • C {carbs} g",
@@ -259,6 +362,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const [selectedItemIndexes, setSelectedItemIndexes] = useState<number[]>([]);
   const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [isResolvingProducts, setIsResolvingProducts] = useState(false);
+  const [productResolutionNotice, setProductResolutionNotice] = useState<{
+    severity: "info" | "warning" | "success";
+    text: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const {
     notice: mealActionNotice,
@@ -326,6 +434,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setAnalysis(null);
     setAnalysisMode(null);
     setQuantityDrafts({});
+    setProductResolutionNotice(null);
 
     try {
       const dataUrl = await readPhotoFileAsDataUrl(file);
@@ -344,7 +453,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
         setPortionSize("regular");
         setAnalysis(nextAnalysis);
-        setSelectedItemIndexes(nextAnalysis.items.map((_, index) => index));
+        setSelectedItemIndexes(
+          shouldStartWithSuggestionsOnly(nextAnalysis)
+            ? []
+            : nextAnalysis.items.map((_, index) => index)
+        );
         setQuantityDrafts({});
         setAnalysisMode("cloud");
       } catch {
@@ -370,6 +483,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     setAnalysisMode(null);
     setSelectedItemIndexes([]);
     setQuantityDrafts({});
+    setProductResolutionNotice(null);
     setError(null);
     clearFeedback();
   };
@@ -389,6 +503,84 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       current.includes(index)
         ? current.filter((item) => item !== index)
         : [...current, index].sort((left, right) => left - right)
+    );
+  };
+
+  const handleUseCandidate = (candidateIndex: number) => {
+    const candidate = analysis?.interpretations?.[candidateIndex];
+
+    if (!analysis || !candidate) {
+      return;
+    }
+
+    setAnalysis({
+      ...analysis,
+      dishName: candidate.title,
+      confidence: candidate.confidence,
+      summary: candidate.reason,
+      manualReviewRequired: true,
+      items: candidate.items,
+    });
+    setSelectedItemIndexes(
+      shouldStartWithSuggestionsOnly({ ...analysis, confidence: candidate.confidence })
+        ? []
+        : candidate.items.map((_, index) => index)
+    );
+    setQuantityDrafts({});
+  };
+
+  const handleNotThis = () => {
+    if (!analysis) {
+      return;
+    }
+
+    setAnalysis({
+      ...analysis,
+      confidence: 0,
+      manualReviewRequired: true,
+      items: [createBlankPhotoSuggestion()],
+    });
+    setSelectedItemIndexes([0]);
+    setQuantityDrafts({});
+  };
+
+  const handleAddMissingIngredient = () => {
+    if (!analysis) {
+      return;
+    }
+
+    const nextItems = [...analysis.items, createBlankPhotoSuggestion()];
+    setAnalysis({
+      ...analysis,
+      manualReviewRequired: true,
+      items: nextItems,
+    });
+    setSelectedItemIndexes((current) =>
+      [...new Set([...current, nextItems.length - 1])].sort((left, right) => left - right)
+    );
+  };
+
+  const handleRemoveSuggestion = (index: number) => {
+    if (!analysis) {
+      return;
+    }
+
+    const nextItems = analysis.items.filter((_, itemIndex) => itemIndex !== index);
+    setAnalysis({ ...analysis, items: nextItems });
+    setSelectedItemIndexes((current) =>
+      current
+        .filter((itemIndex) => itemIndex !== index)
+        .map((itemIndex) => (itemIndex > index ? itemIndex - 1 : itemIndex))
+    );
+    setQuantityDrafts((current) =>
+      Object.fromEntries(
+        Object.entries(current)
+          .filter(([key]) => Number(key) !== index)
+          .map(([key, value]) => [
+            String(Number(key) > index ? Number(key) - 1 : Number(key)),
+            value,
+          ])
+      )
     );
   };
 
@@ -440,6 +632,17 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     });
   };
 
+  const resolveConfirmedPhotoProducts = async (items: PhotoMealSuggestion[]) => {
+    const results = await Promise.allSettled(
+      items.map(async (item) => {
+        const products = await searchProducts(item.name);
+        return chooseBestPhotoProductMatch(products, item);
+      })
+    );
+
+    return results.map((result) => (result.status === "fulfilled" ? result.value : null));
+  };
+
   const handleAddDraft = async () => {
     if (!analysis) {
       return;
@@ -454,25 +657,36 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       return;
     }
 
-    const entries = createDraftEntries(
+    if (selectedItems.some((item) => !item.name.trim())) {
+      setError(copy.incompleteCorrection);
+      return;
+    }
+
+    setError(null);
+    setProductResolutionNotice(null);
+    setIsResolvingProducts(true);
+    const matchedProducts = await resolveConfirmedPhotoProducts(selectedItems);
+    const matchedCount = matchedProducts.filter(Boolean).length;
+    setIsResolvingProducts(false);
+    setProductResolutionNotice(
+      matchedCount === selectedItems.length
+        ? { severity: "success", text: copy.productLookupMatched }
+        : { severity: matchedCount > 0 ? "warning" : "info", text: copy.productLookupPartial }
+    );
+    const resolvedEntries = createConfirmedPhotoEntries(
       {
         ...analysis,
         items: selectedItems,
       },
       mealType,
-      previewUrl
+      previewUrl,
+      matchedProducts
     );
 
-    if (entries.length === 0) {
-      setError(copy.analysisError);
-      return;
-    }
-
-    setError(null);
     await runMealAction({
       actionId: "photo-draft-add",
       kind: "add",
-      action: () => addMealEntriesToCloud(dispatch, meal, entries),
+      action: () => addMealEntriesToCloud(dispatch, meal, resolvedEntries),
     });
   };
 
@@ -513,6 +727,15 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         {analysisMode === "cloud" && !error && analysis && (
           <Alert severity="info">
             {copy.analyzed} {copy.cloudDraft}
+          </Alert>
+        )}
+        {analysis && shouldStartWithSuggestionsOnly(analysis) && (
+          <Alert severity="warning">{copy.lowConfidence}</Alert>
+        )}
+        {isResolvingProducts && <Alert severity="info">{copy.resolvingProducts}</Alert>}
+        {productResolutionNotice && (
+          <Alert severity={productResolutionNotice.severity}>
+            {productResolutionNotice.text}
           </Alert>
         )}
 
@@ -604,6 +827,13 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                         variant="outlined"
                       />
                     )}
+                    {requiresPhotoMealConfirmation(analysis) && (
+                      <Chip
+                        label="AI estimate, please confirm"
+                        size="small"
+                        color="warning"
+                      />
+                    )}
                   </Stack>
                 </Stack>
 
@@ -654,13 +884,82 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 </Paper>
               )}
 
+              {Array.isArray(analysis.interpretations) && analysis.interpretations.length > 0 && (
+                <Stack spacing={1}>
+                  <Typography sx={{ fontWeight: 700 }}>{copy.candidates}</Typography>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    {analysis.interpretations.slice(0, 3).map((candidate, index) => (
+                      <Button
+                        key={candidate.id}
+                        size="small"
+                        variant={index === 0 ? "contained" : "outlined"}
+                        onClick={() => handleUseCandidate(index)}
+                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 700 }}
+                      >
+                        {candidate.title} · {(candidate.confidence * 100).toFixed(0)}%
+                      </Button>
+                    ))}
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {analysis.interpretations[0]?.reason}
+                  </Typography>
+                </Stack>
+              )}
+
+              {Array.isArray(analysis.uncertainIngredients) &&
+                analysis.uncertainIngredients.length > 0 && (
+                  <Stack spacing={1}>
+                    <Typography sx={{ fontWeight: 700 }}>{copy.uncertain}</Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      {analysis.uncertainIngredients.slice(0, 8).map((item) => (
+                        <Chip key={item} label={item} size="small" variant="outlined" />
+                      ))}
+                    </Stack>
+                  </Stack>
+                )}
+
+              {Array.isArray(analysis.hiddenIngredientQuestions) &&
+                analysis.hiddenIngredientQuestions.length > 0 && (
+                  <Alert severity="warning">
+                    <Stack spacing={0.5}>
+                      <Typography sx={{ fontWeight: 800 }}>{copy.hiddenQuestions}</Typography>
+                      {analysis.hiddenIngredientQuestions.slice(0, 3).map((question) => (
+                        <Typography key={question} variant="body2">
+                          • {question}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Alert>
+                )}
+
               <Stack spacing={1.2}>
                 <Typography sx={{ fontWeight: 700 }}>{copy.suggestions}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {copy.replaceHint}
+                </Typography>
                 <Chip
                   label={`${copy.selected}: ${selectedItemIndexes.length}/${analysis.items.length}`}
                   size="small"
                   sx={{ alignSelf: "flex-start" }}
                 />
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleNotThis}
+                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 700 }}
+                  >
+                    {copy.notThis}
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={handleAddMissingIngredient}
+                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 700 }}
+                  >
+                    {copy.addMissing}
+                  </Button>
+                </Stack>
                 {analysis.items.length === 0 ? (
                   <Alert severity="warning">{copy.empty}</Alert>
                 ) : (
@@ -750,6 +1049,20 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                           <Typography variant="body2" color="text.secondary">
                             {`${copy.confidence}: ${(item.confidence * 100).toFixed(0)}%`}
                           </Typography>
+                          {item.portionRangeGrams && (
+                            <Typography variant="body2" color="text.secondary">
+                              {`${item.portionRangeGrams.min}-${item.portionRangeGrams.max} г`}
+                            </Typography>
+                          )}
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="text"
+                            onClick={() => handleRemoveSuggestion(index)}
+                            sx={{ textTransform: "none", fontWeight: 700 }}
+                          >
+                            {copy.removeWrong}
+                          </Button>
                         </Stack>
                       </Stack>
                     </Paper>
@@ -762,7 +1075,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 onClick={() => {
                   void handleAddDraft();
                 }}
-                disabled={analysis.items.length === 0 || isSavingAction("photo-draft-add")}
+                disabled={
+                  analysis.items.length === 0 ||
+                  isResolvingProducts ||
+                  isSavingAction("photo-draft-add")
+                }
                 sx={{
                   alignSelf: "flex-start",
                   borderRadius: 999,

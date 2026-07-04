@@ -2,6 +2,8 @@ export * from "./cn";
 export * from "./AuthSurface";
 export * from "./EmptyState";
 export * from "./LoadingSkeleton";
+export * from "./LazyModuleBoundary";
+export * from "./lazyModuleRecovery";
 export * from "./PageShell";
 export * from "./SectionCard";
 export * from "./SectionHeader";

@@ -12,4 +12,15 @@ describe("service worker recovery contract", () => {
     expect(source).toContain('fetch(request, { cache: "reload" })');
     expect(source).toContain('fetch(request, { cache: "no-store" })');
   });
+
+  it("does not force takeover during install before the app asks to update", () => {
+    const source = serviceWorkerSource();
+    const installBlock = source.slice(
+      source.indexOf('self.addEventListener("install"'),
+      source.indexOf('self.addEventListener("activate"')
+    );
+
+    expect(installBlock).not.toContain("skipWaiting()");
+    expect(source).toContain('event.data?.type === "SKIP_WAITING"');
+  });
 });

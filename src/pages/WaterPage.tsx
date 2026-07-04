@@ -6,7 +6,14 @@ import { Droplets } from "lucide-react";
 import type { AppDispatch, RootState } from "../app/store";
 import { incrementWater } from "../features/water/waterSlice";
 import { useLanguage } from "../shared/language";
-import { LoadingSkeleton, PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import {
+  buildLazyModuleRecoveryCopy,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+  PageShell,
+  SectionCard,
+  SectionTabs,
+} from "@shared/ui";
 
 const WaterTracker = lazy(() =>
   import("../features/water/WaterTracker").then((module) => ({
@@ -67,6 +74,10 @@ const WaterPage = () => {
   const { appLanguage } = useLanguage();
   const [activeSection, setActiveSection] = useState<WaterSection>("today");
   const copy = waterPageCopy[appLanguage];
+  const recoveryCopy = buildLazyModuleRecoveryCopy(
+    appLanguage,
+    copy.sections[activeSection]
+  );
   const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const addAmountMl = water.glassSizeMl || 250;
   const sections = [
@@ -76,9 +87,16 @@ const WaterPage = () => {
     { id: "reminders", label: copy.sections.reminders },
   ];
   const tracker = (
-    <Suspense fallback={<LoadingSkeleton titleRows={1} cards={3} chart bodyRows={3} />}>
-      <WaterTracker />
-    </Suspense>
+    <LazyModuleBoundary
+      errorTitle={recoveryCopy.errorTitle}
+      errorBody={recoveryCopy.errorBody}
+      reloadLabel={recoveryCopy.reloadLabel}
+      resetKey={`water:${activeSection}`}
+    >
+      <Suspense fallback={<LoadingSkeleton titleRows={1} cards={3} chart bodyRows={3} />}>
+        <WaterTracker />
+      </Suspense>
+    </LazyModuleBoundary>
   );
 
   return (

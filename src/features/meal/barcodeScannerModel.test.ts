@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createProductKey } from "./productIdentity";
 import {
+  BARCODE_SCANNER_PREVIEW_ASPECT_RATIO,
+  BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
+  BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX,
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
   createInitialBarcodeQuantity,
@@ -201,5 +204,11 @@ describe("barcodeScannerModel", () => {
         isSecureContext: false,
       })
     ).toEqual({ available: false, reason: "insecure_context" });
+  });
+
+  it("keeps scanner preview dimensions deterministic before camera metadata loads", () => {
+    expect(BARCODE_SCANNER_PREVIEW_ASPECT_RATIO).toBe("4 / 3");
+    expect(BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX).toBeGreaterThanOrEqual(200);
+    expect(BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS).toContain("100svh");
   });
 });

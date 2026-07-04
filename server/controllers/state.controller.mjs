@@ -389,7 +389,10 @@ export const createStateController = ({
         200,
         await photoAnalysisService.analyzePhoto(
           await stateService.getProfileState(auth.user),
-          body
+          body,
+          {
+            mealState: await stateService.getMealState(auth.user),
+          }
         )
       );
     },

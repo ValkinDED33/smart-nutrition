@@ -52,6 +52,11 @@ export type BarcodeScannerAvailability =
 
 export const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
 export const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
+export const BARCODE_SCAN_NO_RESULT_TIMEOUT_MS = 12_000;
+export const BARCODE_SCANNER_PREVIEW_ASPECT_RATIO = "4 / 3";
+export const BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX = 220;
+export const BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS =
+  "min(52vh, calc(100svh - 360px), 420px)";
 
 const SUPPORTED_MANUAL_PHOTO_TYPES = new Set([
   "image/jpeg",

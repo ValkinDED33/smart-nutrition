@@ -103,8 +103,9 @@ export const playScanSuccessSound = () =>
 
 export const playScanErrorSound = () =>
   void playSequence([
-    { frequency: 310, durationMs: 120, type: "sawtooth", gain: 0.05 },
-    { frequency: 220, durationMs: 180, type: "sawtooth", gain: 0.045 },
+    { frequency: 392, durationMs: 150, type: "sine", gain: 0.034 },
+    { frequency: 330, durationMs: 190, type: "triangle", gain: 0.03 },
+    { frequency: 294, durationMs: 220, type: "sine", gain: 0.024 },
   ]);
 
 export const playGentleClickSound = () =>

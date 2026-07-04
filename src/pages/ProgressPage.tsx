@@ -3,7 +3,13 @@ import { Box, Stack } from "@mui/material";
 import { ProgressActionBar } from "../features/profile/ProgressActionBar";
 import { QuickWeightCheckInCard } from "../features/profile/QuickWeightCheckInCard";
 import { useLanguage } from "../shared/language";
-import { LoadingSkeleton, PageShell, SectionTabs } from "@shared/ui";
+import {
+  buildLazyModuleRecoveryCopy,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+  PageShell,
+  SectionTabs,
+} from "@shared/ui";
 
 const WaterTracker = lazy(() =>
   import("../features/water/WaterTracker").then((module) => ({
@@ -83,6 +89,10 @@ const ProgressPage = () => {
   const { appLanguage } = useLanguage();
   const [activeSection, setActiveSection] = useState<ProgressSection>("weight");
   const copy = progressPageCopy[appLanguage];
+  const recoveryCopy = buildLazyModuleRecoveryCopy(
+    appLanguage,
+    copy.sections[activeSection]
+  );
   const sections = [
     { id: "weight", label: copy.sections.weight },
     { id: "water", label: copy.sections.water },
@@ -104,44 +114,72 @@ const ProgressPage = () => {
       {activeSection === "weight" ? (
         <Stack spacing={2.5}>
           <QuickWeightCheckInCard />
-          <Suspense fallback={<LoadingSkeleton cards={1} chart bodyRows={2} />}>
-            <WeightTrendCard />
-          </Suspense>
+          <LazyModuleBoundary
+            errorTitle={recoveryCopy.errorTitle}
+            errorBody={recoveryCopy.errorBody}
+            reloadLabel={recoveryCopy.reloadLabel}
+            resetKey="progress:weight"
+          >
+            <Suspense fallback={<LoadingSkeleton cards={1} chart bodyRows={2} />}>
+              <WeightTrendCard />
+            </Suspense>
+          </LazyModuleBoundary>
         </Stack>
       ) : null}
 
       {activeSection === "water" ? (
-        <Suspense fallback={<LoadingSkeleton cards={2} bodyRows={3} />}>
-          <WaterTracker />
-        </Suspense>
+        <LazyModuleBoundary
+          errorTitle={recoveryCopy.errorTitle}
+          errorBody={recoveryCopy.errorBody}
+          reloadLabel={recoveryCopy.reloadLabel}
+          resetKey="progress:water"
+        >
+          <Suspense fallback={<LoadingSkeleton cards={2} bodyRows={3} />}>
+            <WaterTracker />
+          </Suspense>
+        </LazyModuleBoundary>
       ) : null}
 
       {activeSection === "body" ? (
-        <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
-          <Stack spacing={2.5}>
-            <BodyWeeklyReportCard />
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
-                gap: 2.5,
-                alignItems: "start",
-              }}
-            >
-              <MeasurementsCheckInCard />
-              <BodyProgressPhotosCard />
-            </Box>
-          </Stack>
-        </Suspense>
+        <LazyModuleBoundary
+          errorTitle={recoveryCopy.errorTitle}
+          errorBody={recoveryCopy.errorBody}
+          reloadLabel={recoveryCopy.reloadLabel}
+          resetKey="progress:body"
+        >
+          <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
+            <Stack spacing={2.5}>
+              <BodyWeeklyReportCard />
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                  gap: 2.5,
+                  alignItems: "start",
+                }}
+              >
+                <MeasurementsCheckInCard />
+                <BodyProgressPhotosCard />
+              </Box>
+            </Stack>
+          </Suspense>
+        </LazyModuleBoundary>
       ) : null}
 
       {activeSection === "trends" ? (
-        <Suspense fallback={<LoadingSkeleton cards={2} chart bodyRows={3} />}>
-          <Stack spacing={2.5}>
-            <WeeklyInsights />
-            <MonthlyAnalyticsCard />
-          </Stack>
-        </Suspense>
+        <LazyModuleBoundary
+          errorTitle={recoveryCopy.errorTitle}
+          errorBody={recoveryCopy.errorBody}
+          reloadLabel={recoveryCopy.reloadLabel}
+          resetKey="progress:trends"
+        >
+          <Suspense fallback={<LoadingSkeleton cards={2} chart bodyRows={3} />}>
+            <Stack spacing={2.5}>
+              <WeeklyInsights />
+              <MonthlyAnalyticsCard />
+            </Stack>
+          </Suspense>
+        </LazyModuleBoundary>
       ) : null}
     </PageShell>
   );

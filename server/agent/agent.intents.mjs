@@ -1,5 +1,9 @@
 const WATER_WORD_PATTERN =
-  /(water|drink|drank|hydration|вода|воды|воду|води|водичк|пил|пила|выпил|выпила|випив|випила|пью|склянк|стакан|glass)/i;
+  /(water|drink|drank|hydration|вода|воды|воде|водой|водою|воду|води|воді|водою|водичк|пил|пила|выпил|выпила|випив|випила|пью|склянк|стакан|glass)/i;
+const WATER_STATUS_PATTERN =
+  /(что|шо|що|сколько|скільки|скока|статус|status|прогресс|прогрес|скільки|how much|how many|today|сегодня|сьогодні).*(вод|water|hydration)|(?:вод|water|hydration).*(что|шо|що|сколько|скільки|статус|status|прогресс|прогрес|today|сегодня|сьогодні)/i;
+const WATER_ADD_ACTION_PATTERN =
+  /(^|\s)(добавь|добави|додай|додати|запиши|занеси|залей|выпил|выпила|випив|випила|пил|пила|пью|log|add|drank)(\s|$)/i;
 const MEDICATION_WORD_PATTERN =
   /(таблет|ліки|лекарств|препарат|витамин|вітамін|магний|магній|омега|доза|капсул|пить|пити|принимать|приймати|med|meds)/i;
 const PREGNANCY_SUPPLEMENT_WORD_PATTERN =
@@ -141,7 +145,19 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
     };
   }
 
-  if (WATER_WORD_PATTERN.test(normalized) && (amountMl || /(воду|воды|води|water)/i.test(normalized))) {
+  if (WATER_WORD_PATTERN.test(normalized) && WATER_STATUS_PATTERN.test(normalized) && !amountMl) {
+    return {
+      intent: "show_water_status",
+      confidence: 0.86,
+      entities: {},
+      reason: "water_status_request",
+    };
+  }
+
+  if (
+    WATER_WORD_PATTERN.test(normalized) &&
+    (amountMl || WATER_ADD_ACTION_PATTERN.test(normalized))
+  ) {
     return {
       intent: "add_water",
       confidence: amountMl ? 0.94 : 0.82,

@@ -45,6 +45,32 @@ const TELEGRAM_MAIN_MENU_KEYBOARD = {
   },
 };
 
+const TELEGRAM_WATER_QUICK_AMOUNTS_ML = [250, 500];
+
+const buildTelegramWaterActionKeyboard = ({ retryAmountMl = null } = {}) => ({
+  reply_markup: {
+    inline_keyboard: [
+      [
+        ...TELEGRAM_WATER_QUICK_AMOUNTS_ML.map((amountMl) => ({
+          text: `+${amountMl} мл`,
+          callback_data: `water:add:${amountMl}`,
+        })),
+      ],
+      [{ text: "💧 Статус води", callback_data: "water:status" }],
+      ...(retryAmountMl
+        ? [
+            [
+              {
+                text: `↻ Спробувати +${retryAmountMl} мл ще раз`,
+                callback_data: `water:retry:${retryAmountMl}`,
+              },
+            ],
+          ]
+        : []),
+    ],
+  },
+});
+
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
 
@@ -625,6 +651,81 @@ export const createTelegramService = ({
     await ctx.reply(buildMessage(snapshot));
   };
 
+  const replyWithWaterSnapshot = async (ctx) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return;
+    }
+
+    if (!stateService?.getSnapshot) {
+      await ctx.reply("Дані води тимчасово недоступні. Спробуйте трохи пізніше.");
+      return;
+    }
+
+    const snapshot = await stateService.getSnapshot(user);
+    await ctx.reply(buildTelegramWaterSummary(snapshot), buildTelegramWaterActionKeyboard());
+  };
+
+  const getWaterRetryAmountFromAgentResult = (agentResult) => {
+    const amountMl = Number(agentResult?.intent?.entities?.amountMl);
+
+    return Number.isFinite(amountMl) && amountMl > 0 ? Math.round(amountMl) : null;
+  };
+
+  const getTelegramAgentReplyOptions = (agentResult) => {
+    const intent = agentResult?.intent?.intent;
+
+    if (intent === "show_water_status") {
+      return buildTelegramWaterActionKeyboard();
+    }
+
+    if (intent !== "add_water") {
+      return undefined;
+    }
+
+    const waterAction = Array.isArray(agentResult?.actions)
+      ? agentResult.actions.find((action) => action?.id === "add_water")
+      : null;
+
+    return waterAction?.ok
+      ? buildTelegramWaterActionKeyboard()
+      : buildTelegramWaterActionKeyboard({
+          retryAmountMl: getWaterRetryAmountFromAgentResult(agentResult),
+        });
+  };
+
+  const runTelegramAgentAction = async ({ ctx, user, message }) => {
+    if (!assistantAgent?.run) {
+      await ctx.reply("Асистент тимчасово недоступний. Спробуйте трохи пізніше.");
+      return null;
+    }
+
+    const agentResult = await assistantAgent.run({
+      user,
+      message,
+      context: {
+        interactionChannel: "telegram",
+        language: "uk",
+      },
+    });
+
+    if (!agentResult?.handled) {
+      await ctx.reply("Я не зміг безпечно виконати цю дію. Спробуйте написати конкретніше.");
+      return agentResult ?? null;
+    }
+
+    const replyOptions = getTelegramAgentReplyOptions(agentResult);
+
+    if (replyOptions) {
+      await ctx.reply(agentResult.text, replyOptions);
+    } else {
+      await ctx.reply(agentResult.text);
+    }
+
+    return agentResult;
+  };
+
   const replyWithMainMenu = async (ctx, user = null) => {
     await ctx.reply(buildTelegramMainMenuMessage(user), TELEGRAM_MAIN_MENU_KEYBOARD);
   };
@@ -787,7 +888,7 @@ export const createTelegramService = ({
     });
 
     nextBot.command("water", async (ctx) => {
-      await replyWithSnapshot(ctx, buildTelegramWaterSummary);
+      await replyWithWaterSnapshot(ctx);
     });
 
     nextBot.command("nutrition", async (ctx) => {
@@ -829,6 +930,61 @@ export const createTelegramService = ({
 
     getMedicationReminderRuntime().registerHandlers(nextBot);
 
+    nextBot.action?.(/^water:(add|retry):(\d+)$/u, async (ctx) => {
+      const action = String(ctx.match?.[1] ?? "");
+      const amountMl = Math.max(Math.round(Number(ctx.match?.[2]) || 0), 0);
+      const user = await getConnectedUser(ctx);
+
+      if (!user) {
+        await ctx.answerCbQuery?.("Підключіть Telegram у профілі.");
+        return;
+      }
+
+      if (!amountMl) {
+        await ctx.answerCbQuery?.("Некоректна кількість води.");
+        await ctx.reply("Не зміг визначити кількість води. Напишіть, наприклад: я випив 300 мл.");
+        return;
+      }
+
+      const agentResult = await runTelegramAgentAction({
+        ctx,
+        user,
+        message: `додай ${amountMl} мл води`,
+      });
+      const saved = agentResult?.actions?.some(
+        (item) => item?.id === "add_water" && item?.ok
+      );
+
+      await ctx.answerCbQuery?.(
+        saved
+          ? action === "retry"
+            ? "Воду збережено після повтору."
+            : "Воду збережено."
+          : "Не збереглося. Спробуйте ще раз."
+      );
+    });
+
+    nextBot.action?.("water:status", async (ctx) => {
+      const user = await getConnectedUser(ctx);
+
+      if (!user) {
+        await ctx.answerCbQuery?.("Підключіть Telegram у профілі.");
+        return;
+      }
+
+      const agentResult = await runTelegramAgentAction({
+        ctx,
+        user,
+        message: "скільки води сьогодні",
+      });
+
+      await ctx.answerCbQuery?.(
+        agentResult?.actions?.some((item) => item?.id === "show_water_status" && item?.ok)
+          ? "Статус оновлено."
+          : "Статус води тимчасово недоступний."
+      );
+    });
+
     nextBot.on("text", async (ctx) => {
       const message = toTrimmedString(ctx.message?.text);
 
@@ -862,7 +1018,14 @@ export const createTelegramService = ({
       });
 
       if (agentResult?.handled) {
-        await ctx.reply(agentResult.text);
+        const replyOptions = getTelegramAgentReplyOptions(agentResult);
+
+        if (replyOptions) {
+          await ctx.reply(agentResult.text, replyOptions);
+        } else {
+          await ctx.reply(agentResult.text);
+        }
+
         return;
       }
 

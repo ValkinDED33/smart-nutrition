@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import {
@@ -13,7 +13,13 @@ import {
 import ProfileForm from "../features/profile/ProfileForm";
 import { ProfileSectionTabs } from "../features/profile/ProfileSectionTabs";
 import { useLanguage } from "../shared/language";
-import { EmptyState, LoadingSkeleton, PageShell } from "@shared/ui";
+import {
+  buildLazyModuleRecoveryCopy,
+  EmptyState,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+  PageShell,
+} from "@shared/ui";
 import { selectTodayMealTotalNutrients } from "../features/meal/selectors";
 import {
   selectCurrentWeight,
@@ -433,6 +439,25 @@ const ProfilePage = () => {
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, appLanguage, languageLabels } = useLanguage();
   const copy = profileCopy[appLanguage];
+  const renderLazySection = (
+    tabKey: string,
+    tabLabel: string,
+    fallback: ReactNode,
+    children: ReactNode
+  ) => {
+    const recoveryCopy = buildLazyModuleRecoveryCopy(appLanguage, tabLabel);
+
+    return (
+      <LazyModuleBoundary
+        errorTitle={recoveryCopy.errorTitle}
+        errorBody={recoveryCopy.errorBody}
+        reloadLabel={recoveryCopy.reloadLabel}
+        resetKey={`profile:${tabKey}`}
+      >
+        <Suspense fallback={fallback}>{children}</Suspense>
+      </LazyModuleBoundary>
+    );
+  };
   const localizedDietLabels = dietStyleLabels[appLanguage];
   const localizedPersonalDetails = personalDetailLabels[appLanguage];
 
@@ -562,13 +587,16 @@ const ProfilePage = () => {
             content: (
               <Stack spacing={3}>
                 <ProfileForm />
-                <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+                {renderLazySection(
+                  "data",
+                  copy.tabs.data,
+                  <LoadingSkeleton cards={3} chart bodyRows={3} />,
                   <Stack spacing={3}>
                     <WeightTrendCard />
                     <MeasurementsCheckInCard />
                     <BodyProgressPhotosCard />
                   </Stack>
-                </Suspense>
+                )}
               </Stack>
             ),
           },
@@ -769,13 +797,16 @@ const ProfilePage = () => {
                   </Stack>
                 </Paper>
 
-                <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+                {renderLazySection(
+                  "goal",
+                  copy.tabs.goal,
+                  <LoadingSkeleton cards={3} chart bodyRows={3} />,
                   <Stack spacing={3}>
                     <BodyWeeklyReportCard />
                     <MealDayOverview />
                     <DailyHistoryExplorer />
                   </Stack>
-                </Suspense>
+                )}
               </Stack>
             ),
           },
@@ -783,33 +814,42 @@ const ProfilePage = () => {
             id: "assistant",
             label: copy.tabs.assistant,
             content: (
-              <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
+              renderLazySection(
+                "assistant",
+                copy.tabs.assistant,
+                <LoadingSkeleton cards={3} bodyRows={3} />,
                 <Stack spacing={3}>
                   <AssistantCustomizationCard />
                   <CompanionShopCard />
                   <CommunityHubCard />
                 </Stack>
-              </Suspense>
+              )
             ),
           },
           {
             id: "motivation",
             label: copy.tabs.motivation,
             content: (
-              <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
+              renderLazySection(
+                "motivation",
+                copy.tabs.motivation,
+                <LoadingSkeleton cards={3} bodyRows={3} />,
                 <Stack spacing={3}>
                   <BehaviorPersonalizationCard />
                   <MotivationHubCard />
                   <PremiumAccessCard />
                 </Stack>
-              </Suspense>
+              )
             ),
           },
           {
             id: "security",
             label: copy.tabs.security,
             content: (
-              <Suspense fallback={<LoadingSkeleton cards={4} bodyRows={3} />}>
+              renderLazySection(
+                "security",
+                copy.tabs.security,
+                <LoadingSkeleton cards={4} bodyRows={3} />,
                 <Stack spacing={3}>
                   <NotificationSettingsCard />
                   <ReminderManagementCard />
@@ -817,7 +857,7 @@ const ProfilePage = () => {
                   <AccountDataCard />
                   <AdminCenterCard />
                 </Stack>
-              </Suspense>
+              )
             ),
           },
         ]}

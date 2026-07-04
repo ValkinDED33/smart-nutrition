@@ -25,7 +25,13 @@ import {
   CompanionRenderModeControl,
 } from "@features/assistant-3d";
 import { useLanguage } from "../shared/language";
-import { LoadingSkeleton, PageShell, SectionTabs } from "@shared/ui";
+import {
+  buildLazyModuleRecoveryCopy,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+  PageShell,
+  SectionTabs,
+} from "@shared/ui";
 import type { AssistantRuntimeStatus } from "@domain/assistant/types";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import {
@@ -300,6 +306,10 @@ const AiCompanionPage = () => {
   const copy = aiCopy[appLanguage];
   const [runtimeStatus, setRuntimeStatus] = useState<AssistantRuntimeStatus | null>(null);
   const [activeSection, setActiveSection] = useState<AiCompanionSection>("companion");
+  const recoveryCopy = buildLazyModuleRecoveryCopy(
+    appLanguage,
+    copy.sections[activeSection]
+  );
   const companionRenderModePreference = useCompanionRenderModePreference();
   const isCompactCompanionStage = useMediaQuery("(max-width: 599.95px)");
   const companionStageSize = isCompactCompanionStage ? 144 : 220;
@@ -743,20 +753,34 @@ const AiCompanionPage = () => {
           )}
         </Stack>
       </Paper>
-          <Suspense fallback={<LoadingSkeleton cards={1} bodyRows={3} />}>
-            <AssistantRuntimeCard />
-          </Suspense>
+          <LazyModuleBoundary
+            errorTitle={recoveryCopy.errorTitle}
+            errorBody={recoveryCopy.errorBody}
+            reloadLabel={recoveryCopy.reloadLabel}
+            resetKey="ai-companion:settings-runtime"
+          >
+            <Suspense fallback={<LoadingSkeleton cards={1} bodyRows={3} />}>
+              <AssistantRuntimeCard />
+            </Suspense>
+          </LazyModuleBoundary>
         </Stack>
       ) : null}
 
       {activeSection === "progress" ? (
-        <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
-          <Stack spacing={2.5}>
-            <CompanionProgressCard />
-            <SmartRecommendations />
-            <NutritionCoachCard />
-          </Stack>
-        </Suspense>
+        <LazyModuleBoundary
+          errorTitle={recoveryCopy.errorTitle}
+          errorBody={recoveryCopy.errorBody}
+          reloadLabel={recoveryCopy.reloadLabel}
+          resetKey="ai-companion:progress"
+        >
+          <Suspense fallback={<LoadingSkeleton cards={3} chart bodyRows={3} />}>
+            <Stack spacing={2.5}>
+              <CompanionProgressCard />
+              <SmartRecommendations />
+              <NutritionCoachCard />
+            </Stack>
+          </Suspense>
+        </LazyModuleBoundary>
       ) : null}
     </PageShell>
   );

@@ -42,6 +42,145 @@ describe("photoAnalysisService", () => {
         normalizedFormat: "jpeg",
       },
       manualReviewRequired: true,
+      summary: expect.stringContaining("AI estimate, please confirm"),
+      interpretations: expect.arrayContaining([
+        expect.objectContaining({
+          confidence: expect.any(Number),
+          reason: expect.any(String),
+          items: expect.arrayContaining([
+            expect.objectContaining({
+              portionRangeGrams: expect.objectContaining({
+                min: expect.any(Number),
+                max: expect.any(Number),
+              }),
+              uncertain: true,
+            }),
+          ]),
+        }),
+      ]),
+      hiddenIngredientQuestions: expect.arrayContaining([
+        expect.stringContaining("sauces"),
+      ]),
     });
+  });
+
+  it("uses previous confirmed photo corrections as future low-confidence candidates", async () => {
+    const service = createPhotoAnalysisService();
+    const result = await service.analyzePhoto(
+      { dietStyle: "balanced" },
+      { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "lunch" },
+      {
+        mealState: {
+          items: [
+            {
+              quantity: 140,
+              product: {
+                name: "Turkey wrap",
+                facts: {
+                  extraCompounds: ["photo-feedback:user-confirmed"],
+                },
+                nutrients: {
+                  calories: 210,
+                  protein: 16,
+                  fat: 8,
+                  carbs: 22,
+                },
+              },
+            },
+          ],
+        },
+      }
+    );
+
+    expect(result.items[0]).toMatchObject({
+      name: "Turkey wrap",
+      confidence: expect.any(Number),
+      reason: expect.stringContaining("Previously confirmed"),
+    });
+    expect(result.confidence).toBeLessThan(0.7);
+    expect(result.interpretations?.[0]).toMatchObject({
+      id: "user-confirmed-history",
+    });
+  });
+
+  it("uses a configured vision provider without trusting fake certainty", async () => {
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      dishName: "Chicken wrap",
+                      summary: "Looks like a wrap with visible protein.",
+                      confidence: 0.99,
+                      uncertainIngredients: ["sauce"],
+                      hiddenIngredientQuestions: ["Is there sauce inside the wrap?"],
+                      interpretations: [
+                        {
+                          id: "wrap",
+                          title: "Chicken wrap",
+                          confidence: 0.99,
+                          reason: "Visible tortilla and sliced filling.",
+                          items: [
+                            {
+                              name: "Tortilla wrap",
+                              portionRangeGrams: { min: 60, max: 90 },
+                              confidence: 0.99,
+                              reason: "Visible wrap bread.",
+                              uncertain: false,
+                              estimatedNutritionPer100g: {
+                                calories: 310,
+                                protein: 8,
+                                fat: 8,
+                                carbs: 52,
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+
+    try {
+      const service = createPhotoAnalysisService({
+        config: {
+          assistantProviders: [
+            {
+              id: "google",
+              apiKey: "test-key",
+              model: "gemini-test",
+              baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+              timeoutMs: 1_000,
+            },
+          ],
+        },
+      });
+      const result = await service.analyzePhoto(
+        { dietStyle: "balanced" },
+        { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "lunch" }
+      );
+
+      expect(result.summary).toContain("AI estimate, please confirm");
+      expect(result.manualReviewRequired).toBe(true);
+      expect(result.confidence).toBeLessThan(0.9);
+      expect(result.items[0]).toMatchObject({
+        name: "Tortilla wrap",
+        portionRangeGrams: { min: 60, max: 90 },
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

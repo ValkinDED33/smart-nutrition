@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Paper, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { FridgeRecipePlanner } from "../features/fridge/FridgeRecipePlanner";
-import { NutritionLibraryPanel } from "../features/meal/NutritionLibraryPanel";
-import { RecipeSection } from "../features/meal/RecipeSection";
-import { SmartRecommendations } from "../features/meal/SmartRecommendations";
-import { PageShell } from "../shared/ui/PageShell";
-import { SectionTabs } from "../shared/ui/SectionTabs";
+import {
+  buildLazyModuleRecoveryCopy,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+  PageShell,
+  SectionTabs,
+} from "../shared/ui";
 import { useLanguage } from "../shared/language";
 import type { MealType } from "@domain/meal/types";
+
+const FridgeRecipePlanner = lazy(() =>
+  import("../features/fridge/FridgeRecipePlanner").then((module) => ({
+    default: module.FridgeRecipePlanner,
+  }))
+);
+const NutritionLibraryPanel = lazy(() =>
+  import("../features/meal/NutritionLibraryPanel").then((module) => ({
+    default: module.NutritionLibraryPanel,
+  }))
+);
+const RecipeSection = lazy(() =>
+  import("../features/meal/RecipeSection").then((module) => ({
+    default: module.RecipeSection,
+  }))
+);
+const SmartRecommendations = lazy(() =>
+  import("../features/meal/SmartRecommendations").then((module) => ({
+    default: module.SmartRecommendations,
+  }))
+);
 
 const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 type RecipesSection = "library" | "saved" | "recipes" | "fridge" | "recommendations";
@@ -41,6 +63,7 @@ const RecipesPage = () => {
   const [activeSection, setActiveSection] = useState<RecipesSection>("library");
   const { appLanguage, t } = useLanguage();
   const sections = sectionCopy[appLanguage];
+  const recoveryCopy = buildLazyModuleRecoveryCopy(appLanguage, sections[activeSection]);
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),
     lunch: t("mealType.lunch"),
@@ -101,19 +124,28 @@ const RecipesPage = () => {
         ariaLabel="Recipe page sections"
       />
 
-      {activeSection === "library" ? (
-        <NutritionLibraryPanel mealType={mealType} mode="library" />
-      ) : null}
+      <LazyModuleBoundary
+        errorTitle={recoveryCopy.errorTitle}
+        errorBody={recoveryCopy.errorBody}
+        reloadLabel={recoveryCopy.reloadLabel}
+        resetKey={`recipes:${activeSection}`}
+      >
+        <Suspense fallback={<LoadingSkeleton bodyRows={5} />}>
+          {activeSection === "library" ? (
+            <NutritionLibraryPanel mealType={mealType} mode="library" />
+          ) : null}
 
-      {activeSection === "saved" ? (
-        <NutritionLibraryPanel mealType={mealType} mode="saved" />
-      ) : null}
+          {activeSection === "saved" ? (
+            <NutritionLibraryPanel mealType={mealType} mode="saved" />
+          ) : null}
 
-      {activeSection === "recipes" ? <RecipeSection mealType={mealType} /> : null}
+          {activeSection === "recipes" ? <RecipeSection mealType={mealType} /> : null}
 
-      {activeSection === "fridge" ? <FridgeRecipePlanner mealType={mealType} /> : null}
+          {activeSection === "fridge" ? <FridgeRecipePlanner mealType={mealType} /> : null}
 
-      {activeSection === "recommendations" ? <SmartRecommendations /> : null}
+          {activeSection === "recommendations" ? <SmartRecommendations /> : null}
+        </Suspense>
+      </LazyModuleBoundary>
     </PageShell>
   );
 };

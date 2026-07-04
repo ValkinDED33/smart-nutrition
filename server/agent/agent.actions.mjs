@@ -64,6 +64,13 @@ const formatMealType = (mealType) => {
 
 export const buildAgentReply = ({ intent, toolResult }) => {
   if (!toolResult?.ok) {
+    if (intent.intent === "add_water" || intent.intent === "show_water_status") {
+      return [
+        "Я зрозумів дію з водою, але зараз не зміг підтвердити збереження в Smart Nutrition.",
+        "Спробуйте ще раз трохи пізніше — я не буду показувати це як збережене, поки бекенд не підтвердить.",
+      ].join("\n");
+    }
+
     if (intent.intent === "add_meal" || intent.intent === "search_product") {
       if (toolResult?.code === "PRODUCT_NOT_FOUND") {
         return [

@@ -26,6 +26,7 @@ import {
 import { logout as logoutSession } from "@shared/api/auth";
 import { useLanguage } from "@shared/language";
 import BackendOfflineBanner from "@shared/components/BackendOfflineBanner";
+import PwaUpdateBanner from "@shared/components/PwaUpdateBanner";
 import SyncStatusChip from "@widgets/SyncStatusChip";
 import SyncFeedbackAlert from "@widgets/SyncFeedbackAlert";
 import HabitReminderAgent from "@widgets/HabitReminderAgent";
@@ -547,6 +548,7 @@ const Layout = () => {
               : { xs: 3, md: 5 },
         }}
       >
+        <PwaUpdateBanner />
         <BackendOfflineBanner />
         <SyncFeedbackAlert />
         <Box

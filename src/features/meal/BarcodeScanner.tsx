@@ -37,6 +37,10 @@ import {
 import { useAutoDismiss } from "../../shared/hooks/useAutoDismiss";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
+  BARCODE_SCAN_NO_RESULT_TIMEOUT_MS,
+  BARCODE_SCANNER_PREVIEW_ASPECT_RATIO,
+  BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
+  BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX,
   MAX_MANUAL_PHOTO_BYTES,
   createBarcodeSearchUrls,
   createInitialBarcodeQuantity,
@@ -140,6 +144,16 @@ const scannerCopy = {
     scanHistory: "Історія сканів",
     scanHistoryEmpty: "Після сканування продукти з'являться тут.",
     useHistoryItem: "Використати",
+    noResultTitle: "Код поки не розпізнано",
+    noResultBody:
+      "Можна спробувати ще раз із кращим світлом або перейти до ручного введення без втрати прогресу.",
+    enterManually: "Ввести код вручну",
+    addManually: "Додати продукт вручну",
+    retryScanner: "Повторити сканування",
+    soundOn: "Звук увімкнено",
+    soundOff: "Звук вимкнено",
+    muteSound: "Вимкнути звук сканера",
+    unmuteSound: "Увімкнути звук сканера",
   },
   pl: {
     title: "Skaner kodów kreskowych",
@@ -206,6 +220,16 @@ const scannerCopy = {
     scanHistory: "Historia skanów",
     scanHistoryEmpty: "Po skanowaniu produkty pojawią się tutaj.",
     useHistoryItem: "Użyj",
+    noResultTitle: "Kod nie został jeszcze rozpoznany",
+    noResultBody:
+      "Możesz spróbować ponownie przy lepszym świetle albo przejść do ręcznego wpisania bez utraty postępu.",
+    enterManually: "Wpisz kod ręcznie",
+    addManually: "Dodaj produkt ręcznie",
+    retryScanner: "Skanuj ponownie",
+    soundOn: "Dźwięk włączony",
+    soundOff: "Dźwięk wyciszony",
+    muteSound: "Wycisz dźwięk skanera",
+    unmuteSound: "Włącz dźwięk skanera",
   },
   en: {
     title: "Barcode scanner",
@@ -272,13 +296,46 @@ const scannerCopy = {
     scanHistory: "Scan history",
     scanHistoryEmpty: "Products will appear here after scanning.",
     useHistoryItem: "Use",
+    noResultTitle: "No barcode detected yet",
+    noResultBody:
+      "Try again with better light or switch to manual entry without losing progress.",
+    enterManually: "Enter barcode manually",
+    addManually: "Add product manually",
+    retryScanner: "Retry scanner",
+    soundOn: "Sound on",
+    soundOff: "Sound muted",
+    muteSound: "Mute scanner sound",
+    unmuteSound: "Enable scanner sound",
   },
+} as const;
+
+const scannerPreviewSx = {
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: 1,
+  border: "1px solid var(--sn-border-soft)",
+  background:
+    "linear-gradient(135deg, var(--sn-surface-glass) 0%, rgba(15, 118, 110, 0.10) 100%)",
+  aspectRatio: BARCODE_SCANNER_PREVIEW_ASPECT_RATIO,
+  minHeight: {
+    xs: BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX,
+    sm: BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX + 20,
+  },
+  maxHeight: {
+    xs: BARCODE_SCANNER_PREVIEW_MAX_HEIGHT_CSS,
+    sm: 420,
+  },
+  width: "100%",
+  display: "grid",
+  placeItems: "center",
 } as const;
 
 export const BarcodeScanner = ({ mealType }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const noResultSoundPlayedRef = useRef(false);
   const lastScanRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
   const dispatch = useDispatch<AppDispatch>();
@@ -291,6 +348,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     ...state.meal.items.map((item) => item.product),
   ]);
   const [scanning, setScanning] = useState(false);
+  const [scanTimedOut, setScanTimedOut] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -304,6 +362,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
+  const [scannerSoundEnabled, setScannerSoundEnabled] = useState(true);
   const { appLanguage } = useLanguage();
   const copy = scannerCopy[appLanguage];
   const categoryOptions = useMemo(
@@ -324,6 +383,18 @@ export const BarcodeScanner = ({ mealType }: Props) => {
   );
 
   useAutoDismiss(Boolean(message), 2800, () => setMessage(null));
+
+  const playScannerSuccess = useCallback(() => {
+    if (scannerSoundEnabled) {
+      playScanSuccessSound();
+    }
+  }, [scannerSoundEnabled]);
+
+  const playScannerFailure = useCallback(() => {
+    if (scannerSoundEnabled) {
+      playScanErrorSound();
+    }
+  }, [scannerSoundEnabled]);
 
   const scanHistory = useMemo(() => {
     const seen = new Set<string>();
@@ -373,11 +444,22 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     cooldownRef.current = null;
   }, []);
 
+  const clearNoResultTimeout = useCallback(() => {
+    if (!noResultTimeoutRef.current) {
+      return;
+    }
+
+    clearTimeout(noResultTimeoutRef.current);
+    noResultTimeoutRef.current = null;
+  }, []);
+
   const resetScanLock = useCallback(() => {
     clearCooldown();
+    clearNoResultTimeout();
     lastScanRef.current = null;
     isProcessingRef.current = false;
-  }, [clearCooldown]);
+    noResultSoundPlayedRef.current = false;
+  }, [clearCooldown, clearNoResultTimeout]);
 
   const getVideoTrack = useCallback(() => {
     const stream = videoRef.current?.srcObject;
@@ -426,6 +508,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     controlsRef.current = null;
     setTorchAvailable(false);
     setTorchEnabled(false);
+    setScanTimedOut(false);
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
@@ -469,7 +552,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setFoundProduct(null);
         setShowManualForm(true);
         setMessage(copy.notFound);
-        playScanErrorSound();
+        playScannerFailure();
         return;
       }
 
@@ -488,7 +571,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           setFoundProduct(null);
           setShowManualForm(true);
           setMessage(copy.notFound);
-          playScanErrorSound();
+          playScannerFailure();
 
           if (autoAdd) {
             stopScanner();
@@ -501,12 +584,12 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setShowManualForm(false);
         setFoundProduct(product);
         const nextMeal = await rememberRecentMealProductInCloud(dispatch, meal, product);
-        playScanSuccessSound();
+        playScannerSuccess();
 
         if (autoAdd) {
           if (selectedQuantity === null) {
             setMessage(copy.grams);
-            playScanErrorSound();
+            playScannerFailure();
             return;
           }
 
@@ -532,7 +615,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setFoundProduct(null);
         setShowManualForm(true);
         setMessage(copy.failed);
-        playScanErrorSound();
+        playScannerFailure();
 
         if (autoAdd) {
           stopScanner();
@@ -548,6 +631,8 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       findKnownProductByBarcode,
       meal,
       mealType,
+      playScannerFailure,
+      playScannerSuccess,
       selectedQuantity,
       stopScanner,
     ]
@@ -561,6 +646,18 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     let disposed = false;
     const videoElement = videoRef.current;
     const codeReader = new BrowserMultiFormatReader();
+
+    clearNoResultTimeout();
+    noResultTimeoutRef.current = setTimeout(() => {
+      if (!disposed) {
+        setScanTimedOut(true);
+
+        if (!noResultSoundPlayedRef.current) {
+          noResultSoundPlayedRef.current = true;
+          playScannerFailure();
+        }
+      }
+    }, BARCODE_SCAN_NO_RESULT_TIMEOUT_MS);
 
     codeReader
       .decodeFromConstraints(
@@ -585,6 +682,8 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
         lastScanRef.current = code;
         isProcessingRef.current = true;
+        setScanTimedOut(false);
+        clearNoResultTimeout();
         setBarcodeInput(code);
 
         await handleLookup(code, true);
@@ -622,22 +721,26 @@ export const BarcodeScanner = ({ mealType }: Props) => {
         setLookupState("error");
         setMessage(copy.cameraFailed);
         setShowManualForm(true);
-        playScanErrorSound();
+        playScannerFailure();
         setScanning(false);
+        clearNoResultTimeout();
         resetScanLock();
       });
 
     return () => {
       disposed = true;
       resetScanLock();
+      clearNoResultTimeout();
       controlsRef.current?.stop();
       controlsRef.current = null;
       videoElement.srcObject = null;
     };
   }, [
     clearCooldown,
+    clearNoResultTimeout,
     copy.cameraFailed,
     handleLookup,
+    playScannerFailure,
     refreshTorchAvailability,
     resetScanLock,
     scanning,
@@ -648,13 +751,14 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       setLookupState("error");
       setMessage(copy.cameraUnavailableTitle);
       setShowManualForm(true);
-      playScanErrorSound();
+      playScannerFailure();
       return;
     }
 
     setMessage(null);
     resetLookupUi();
     resetScanLock();
+    setScanTimedOut(false);
     setScanning(true);
   };
 
@@ -700,7 +804,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           ? copy.manualPhotoTooLarge
           : copy.manualPhotoInvalid
       );
-      playScanErrorSound();
+      playScannerFailure();
       return;
     }
 
@@ -715,11 +819,11 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       }
 
       setMessage(copy.manualPhotoInvalid);
-      playScanErrorSound();
+      playScannerFailure();
     });
     reader.addEventListener("error", () => {
       setMessage(copy.manualPhotoInvalid);
-      playScanErrorSound();
+      playScannerFailure();
     });
     reader.readAsDataURL(file);
   };
@@ -729,13 +833,13 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
     if (!name) {
       setMessage(copy.manualNameRequired);
-      playScanErrorSound();
+      playScannerFailure();
       return;
     }
 
     if (selectedQuantity === null) {
       setMessage(copy.grams);
-      playScanErrorSound();
+      playScannerFailure();
       return;
     }
 
@@ -757,24 +861,24 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       nextMeal = await saveMealProductToCloud(dispatch, nextMeal, product);
       await addMealEntriesToCloud(dispatch, nextMeal, [
         createMealEntryDraft({
-        product,
-        quantity: selectedQuantity,
-        mealType,
-        origin: "manual",
+          product,
+          quantity: selectedQuantity,
+          mealType,
+          origin: "manual",
         }),
       ]);
     } catch (error) {
       setSaveError(
         error instanceof Error ? error.message : "Could not save meal to cloud."
       );
-      playScanErrorSound();
+      playScannerFailure();
       return;
     }
 
     setFoundProduct(product);
     setLookupState("success");
     setShowManualForm(false);
-    playScanSuccessSound();
+    playScannerSuccess();
     setMessage(`${copy.manualAdded}: ${name}`);
     setManualDraft(createManualDraft());
     stopScanner();
@@ -798,10 +902,11 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 2, sm: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
+        scrollMarginBottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Stack spacing={2}>
@@ -880,56 +985,110 @@ export const BarcodeScanner = ({ mealType }: Props) => {
           </Button>
         </Stack>
 
-        {scanning ? (
-          <Box
-            sx={{
-              position: "relative",
-              overflow: "hidden",
-              borderRadius: 1,
-              backgroundColor: "#000",
-              minHeight: 240,
-            }}
-          >
-            <video
-              ref={videoRef}
-              style={{
-                display: "block",
-                width: "100%",
-                minHeight: 240,
-                objectFit: "cover",
-              }}
-              autoPlay
-              muted
-              playsInline
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                inset: { xs: 24, sm: 36 },
-                border: "2px solid rgba(255,255,255,0.88)",
-                borderRadius: 3,
-                boxShadow: "0 0 0 999px rgba(0,0,0,0.28)",
-                pointerEvents: "none",
-              }}
-            />
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              minHeight: 220,
-              borderRadius: 1,
-              border: "1px dashed rgba(15, 23, 42, 0.18)",
-              background:
-                "linear-gradient(135deg, rgba(240,249,255,0.86) 0%, rgba(236,253,245,0.88) 100%)",
-              display: "grid",
-              placeItems: "center",
-              px: 2,
-              textAlign: "center",
-            }}
-          >
-            <Typography color="text.secondary">{copy.cameraIdle}</Typography>
-          </Box>
-        )}
+        <Box sx={scannerPreviewSx}>
+          {scanning ? (
+            <>
+              <video
+                ref={videoRef}
+                style={{
+                  display: "block",
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  maxHeight: "100%",
+                  objectFit: "cover",
+                }}
+                autoPlay
+                muted
+                playsInline
+              />
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: { xs: 22, sm: 34 },
+                  border: "2px solid rgba(255,255,255,0.92)",
+                  borderRadius: 3,
+                  boxShadow: "0 0 0 999px rgba(2, 6, 23, 0.38)",
+                  pointerEvents: "none",
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  position: "absolute",
+                  left: 16,
+                  right: 16,
+                  bottom: 12,
+                  px: 1.5,
+                  py: 0.75,
+                  borderRadius: 999,
+                  color: "#ffffff",
+                  textAlign: "center",
+                  fontWeight: 800,
+                  bgcolor: "rgba(2, 6, 23, 0.68)",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                {copy.cameraHint}
+              </Typography>
+            </>
+          ) : (
+            <Stack
+              spacing={1}
+              alignItems="center"
+              sx={{ px: 2, textAlign: "center" }}
+            >
+              <Typography sx={{ fontWeight: 800 }}>
+                {copy.cameraIdle}
+              </Typography>
+              <Typography color="text.secondary" variant="body2">
+                {copy.cameraHint}
+              </Typography>
+            </Stack>
+          )}
+        </Box>
+
+        {scanTimedOut ? (
+          <Alert severity="warning">
+            <AlertTitle>{copy.noResultTitle}</AlertTitle>
+            <Stack spacing={1.2}>
+              <Typography variant="body2">{copy.noResultBody}</Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    resetScanLock();
+                    setScanTimedOut(false);
+                    noResultTimeoutRef.current = setTimeout(() => {
+                      setScanTimedOut(true);
+                    }, BARCODE_SCAN_NO_RESULT_TIMEOUT_MS);
+                  }}
+                >
+                  {copy.retryScanner}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    stopScanner();
+                    setShowManualForm(false);
+                  }}
+                >
+                  {copy.enterManually}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    stopScanner();
+                    setShowManualForm(true);
+                  }}
+                >
+                  {copy.addManually}
+                </Button>
+              </Stack>
+            </Stack>
+          </Alert>
+        ) : null}
 
         {scanning ? (
           <Alert severity="info">
@@ -974,6 +1133,25 @@ export const BarcodeScanner = ({ mealType }: Props) => {
               {copy.stop}
             </Button>
           )}
+          <Button
+            variant="text"
+            onClick={() => setScannerSoundEnabled((current) => !current)}
+            aria-pressed={scannerSoundEnabled}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              textTransform: "none",
+              fontWeight: 800,
+            }}
+          >
+            {scannerSoundEnabled ? copy.muteSound : copy.unmuteSound}
+          </Button>
+          <Chip
+            size="small"
+            label={scannerSoundEnabled ? copy.soundOn : copy.soundOff}
+            color={scannerSoundEnabled ? "success" : "default"}
+            variant={scannerSoundEnabled ? "filled" : "outlined"}
+            sx={{ alignSelf: "center" }}
+          />
         </Box>
 
         <Stack spacing={1}>

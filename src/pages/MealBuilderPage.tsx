@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ScanBarcode } from "lucide-react";
@@ -25,7 +25,7 @@ import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import Loader from "../shared/components/Loader/PacmanLoader";
-import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import { LazyModuleBoundary, PageShell, SectionCard, SectionTabs } from "@shared/ui";
 
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({
@@ -239,59 +239,6 @@ type MealSection =
   | "recommendations";
 type AddTool = "search" | "favorites" | "composer" | "scanner";
 
-type MealBuilderLazyBoundaryProps = {
-  title: string;
-  errorTitle: string;
-  errorBody: string;
-  reloadLabel: string;
-  children: ReactNode;
-};
-
-class MealBuilderLazyBoundary extends Component<
-  MealBuilderLazyBoundaryProps,
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidUpdate(previousProps: MealBuilderLazyBoundaryProps) {
-    if (previousProps.title !== this.props.title && this.state.hasError) {
-      this.setState({ hasError: false });
-    }
-  }
-
-  componentDidCatch(error: unknown) {
-    console.warn("Meal builder module failed to load", {
-      message: error instanceof Error ? error.message : "unknown",
-    });
-  }
-
-  render() {
-    if (!this.state.hasError) {
-      return this.props.children;
-    }
-
-    return (
-      <SectionCard tone="warning">
-        <Stack spacing={1.25}>
-          <Typography sx={{ fontWeight: 900 }}>{this.props.errorTitle}</Typography>
-          <Typography color="text.secondary">{this.props.errorBody}</Typography>
-          <Button
-            variant="outlined"
-            onClick={() => window.location.reload()}
-            sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
-          >
-            {this.props.reloadLabel}
-          </Button>
-        </Stack>
-      </SectionCard>
-    );
-  }
-}
-
 const MealBuilderPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const items = useSelector(selectTodayMealItems);
@@ -388,11 +335,12 @@ const MealBuilderPage = () => {
     { id: "scanner", label: copy.addTools.scanner },
   ];
   const renderLazyModule = (title: string, children: ReactNode) => (
-    <MealBuilderLazyBoundary
-      title={title}
+    <LazyModuleBoundary
       errorTitle={copy.moduleErrorTitle}
       errorBody={copy.moduleErrorBody}
       reloadLabel={copy.reloadModule}
+      resetKey={title}
+      diagnosticLabel={`meal-builder:${title}`}
     >
       <Suspense
         fallback={
@@ -408,7 +356,7 @@ const MealBuilderPage = () => {
       >
         {children}
       </Suspense>
-    </MealBuilderLazyBoundary>
+    </LazyModuleBoundary>
   );
 
   const mealTypeSelector = (

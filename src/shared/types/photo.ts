@@ -2,9 +2,15 @@ export type PhotoPortionSize = "light" | "regular" | "large";
 
 export interface PhotoMealSuggestion {
   name: string;
+  originalName?: string;
   quantityGrams: number;
+  portionRangeGrams?: {
+    min: number;
+    max: number;
+  };
   confidence: number;
   reason: string;
+  uncertain?: boolean;
   estimatedNutritionPer100g: {
     calories: number;
     protein: number;
@@ -13,12 +19,23 @@ export interface PhotoMealSuggestion {
   };
 }
 
+export interface PhotoMealInterpretation {
+  id: string;
+  title: string;
+  confidence: number;
+  reason: string;
+  items: PhotoMealSuggestion[];
+}
+
 export interface PhotoMealAnalysis {
   dishName: string;
   summary: string;
   confidence: number;
   estimatedPortions: number;
   cautions: string[];
+  uncertainIngredients?: string[];
+  hiddenIngredientQuestions?: string[];
+  interpretations?: PhotoMealInterpretation[];
   manualReviewRequired: boolean;
   items: PhotoMealSuggestion[];
 }

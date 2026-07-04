@@ -1,10 +1,22 @@
+import { lazy, Suspense } from "react";
 import { Stack, Typography } from "@mui/material";
 import { CommunityHubCard } from "../features/community/CommunityHubCard";
-import { LearningHubCard } from "../features/education/LearningHubCard";
 import { useLanguage } from "../shared/language";
+import {
+  buildLazyModuleRecoveryCopy,
+  LazyModuleBoundary,
+  LoadingSkeleton,
+} from "../shared/ui";
+
+const LearningHubCard = lazy(() =>
+  import("../features/education/LearningHubCard").then((module) => ({
+    default: module.LearningHubCard,
+  }))
+);
 
 const CommunityPage = () => {
-  const { t } = useLanguage();
+  const { appLanguage, t } = useLanguage();
+  const recoveryCopy = buildLazyModuleRecoveryCopy(appLanguage, "Learning Hub");
 
   return (
     <Stack spacing={2.5}>
@@ -15,7 +27,16 @@ const CommunityPage = () => {
         <Typography color="text.secondary">{t("page.community.subtitle")}</Typography>
       </Stack>
       <CommunityHubCard />
-      <LearningHubCard />
+      <LazyModuleBoundary
+        errorTitle={recoveryCopy.errorTitle}
+        errorBody={recoveryCopy.errorBody}
+        reloadLabel={recoveryCopy.reloadLabel}
+        resetKey="community:learning-hub"
+      >
+        <Suspense fallback={<LoadingSkeleton bodyRows={5} />}>
+          <LearningHubCard />
+        </Suspense>
+      </LazyModuleBoundary>
     </Stack>
   );
 };

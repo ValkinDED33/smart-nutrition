@@ -664,6 +664,241 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("shows water status with storage-backed Telegram quick actions", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.commands = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn((name, handler) => {
+        this.commands[name] = handler;
+      });
+      action = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => snapshot),
+      },
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].commands.water({
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Вода сьогодні"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({ callback_data: "water:add:250" }),
+              expect.objectContaining({ callback_data: "water:add:500" }),
+            ]),
+            expect.arrayContaining([
+              expect.objectContaining({ callback_data: "water:status" }),
+            ]),
+          ]),
+        }),
+      })
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("logs water from Telegram inline button through the assistant agent", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.actions = [];
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn((matcher, handler) => {
+        this.actions.push({ matcher, handler });
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Готово 💧 Додав 250 мл води.",
+        intent: { intent: "add_water", entities: { amountMl: 250 } },
+        actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const addAction = instances[0].actions.find((item) => String(item.matcher).includes("water"));
+    const reply = vi.fn();
+    const answerCbQuery = vi.fn();
+
+    await addAction.handler({
+      match: ["water:add:250", "add", "250"],
+      callbackQuery: {
+        data: "water:add:250",
+        message: { chat: { id: 42 } },
+      },
+      reply,
+      answerCbQuery,
+    });
+
+    expect(assistantAgent.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: connectedUser,
+        message: "додай 250 мл води",
+        context: {
+          interactionChannel: "telegram",
+          language: "uk",
+        },
+      })
+    );
+    expect(reply).toHaveBeenCalledWith(
+      "Готово 💧 Додав 250 мл води.",
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({ callback_data: "water:add:250" }),
+            ]),
+          ]),
+        }),
+      })
+    );
+    expect(answerCbQuery).toHaveBeenCalledWith("Воду збережено.");
+
+    service.stop("test shutdown");
+  });
+
+  it("returns retry feedback when Telegram water save fails", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.actions = [];
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn((matcher, handler) => {
+        this.actions.push({ matcher, handler });
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Я зрозумів дію з водою, але зараз не зміг підтвердити збереження в Smart Nutrition.",
+        intent: { intent: "add_water", entities: { amountMl: 250 } },
+        actions: [{ id: "add_water", ok: false, code: "STATE_DOWN" }],
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => ({
+          id: "user-1",
+          name: "Ihor",
+          role: "USER",
+          telegramChatId: "42",
+        })),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const addAction = instances[0].actions.find((item) => String(item.matcher).includes("water"));
+    const reply = vi.fn();
+    const answerCbQuery = vi.fn();
+
+    await addAction.handler({
+      match: ["water:add:250", "add", "250"],
+      callbackQuery: {
+        data: "water:add:250",
+        message: { chat: { id: 42 } },
+      },
+      reply,
+      answerCbQuery,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("не зміг підтвердити збереження"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({ callback_data: "water:retry:250" }),
+            ]),
+          ]),
+        }),
+      })
+    );
+    expect(answerCbQuery).toHaveBeenCalledWith("Не збереглося. Спробуйте ще раз.");
+
+    service.stop("test shutdown");
+  });
+
   it("handles reminder inline buttons from callback query chat context", async () => {
     const instances = [];
     class TestBot {

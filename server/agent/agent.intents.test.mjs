@@ -17,6 +17,22 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects explicit Telegram water add wording", () => {
+    expect(detectAgentIntent("добавь 250 мл воды")).toMatchObject({
+      intent: "add_water",
+      entities: { amountMl: 250 },
+    });
+  });
+
+  it("does not treat water status questions as water logging", () => {
+    expect(detectAgentIntent("шо с водой")).toMatchObject({
+      intent: "show_water_status",
+    });
+    expect(detectAgentIntent("сколько воды сегодня")).toMatchObject({
+      intent: "show_water_status",
+    });
+  });
+
   it("detects medication reminder requests", () => {
     expect(detectAgentIntent("Напомни пить витамин D каждый день о 09:00")).toMatchObject({
       intent: "create_medication_reminder",

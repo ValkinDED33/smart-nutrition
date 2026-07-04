@@ -72,6 +72,77 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("returns visible failure when backend water save is unavailable", async () => {
+    const stateService = {
+      getWaterState: vi.fn(async () => ({
+        dailyWaterGoal: 2000,
+        consumedMl: 500,
+        glassSizeMl: 250,
+        lastLoggedOn: "2026-06-21",
+        history: [],
+      })),
+      saveWaterState: vi.fn(async () => {
+        throw new Error("database unavailable");
+      }),
+    };
+    const logger = { warn: vi.fn() };
+    const agent = createAssistantAgentService({
+      stateService,
+      logger,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "добавь 250 мл воды",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "add_water" },
+      actions: [{ id: "add_water", ok: false, code: "Error" }],
+    });
+    expect(result.text).toContain("не зміг підтвердити збереження");
+    expect(result.text).toContain("бекенд");
+    expect(stateService.saveWaterState).toHaveBeenCalledOnce();
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[assistant-agent] action failed",
+      expect.objectContaining({
+        intent: "add_water",
+        code: "Error",
+      })
+    );
+  });
+
+  it("shows water status through the same backend state", async () => {
+    const stateService = {
+      getWaterState: vi.fn(async () => ({
+        dailyWaterGoal: 2200,
+        consumedMl: 700,
+        glassSizeMl: 250,
+        lastLoggedOn: "2026-06-21",
+        history: [],
+      })),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "сколько воды сегодня",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "show_water_status" },
+      actions: [{ id: "show_water_status", ok: true, resultType: "water_status" }],
+    });
+    expect(result.text).toContain("700 / 2200");
+    expect(stateService.getWaterState).toHaveBeenCalledWith(user);
+  });
+
   it("creates medication reminders through the medication tool", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({
