@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { Product } from "@domain/products/types";
 import { normalizeFridgeState } from "./fridgeSlice";
-import { upsertFridgeItemInCloud } from "./fridgeCloudSync";
+import {
+  consumeFridgeItemsInCloud,
+  upsertFridgeItemInCloud,
+} from "./fridgeCloudSync";
+
+const replaceFridgeStateAction = "fridge/replaceFridgeState";
 
 const authApiMock = vi.hoisted(() => ({
   syncRemoteFridgeState: vi.fn(),
@@ -35,7 +40,7 @@ describe("fridgeCloudSync", () => {
 
     expect(authApiMock.syncRemoteFridgeState).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "fridge/replaceFridgeState",
+      replaceFridgeStateAction,
     ]);
   });
 
@@ -71,11 +76,47 @@ describe("fridgeCloudSync", () => {
     expect(authApiMock.pullRemoteAppSnapshot).toHaveBeenCalledWith({ force: true });
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       "auth/markSyncStarted",
-      "fridge/replaceFridgeState",
+      replaceFridgeStateAction,
       "companion/hydrateCompanionState",
       "auth/hydrateSyncOutbox",
       "auth/setCloudMeta",
       "auth/markSyncSuccess",
+    ]);
+  });
+
+  it("persists consumed fridge ingredients only after cloud save succeeds", async () => {
+    const dispatch = vi.fn();
+    const initial = normalizeFridgeState({
+      items: [
+        {
+          id: "fridge-rice",
+          product: createProduct("rice"),
+          quantity: 200,
+          createdAt: "2026-06-30T10:00:00.000Z",
+        },
+      ],
+    });
+
+    authApiMock.syncRemoteFridgeState.mockResolvedValueOnce({
+      ok: true,
+      meta: { updatedAt: "2026-06-30T14:10:00.000Z" },
+    });
+
+    const next = await consumeFridgeItemsInCloud(dispatch as never, initial, [
+      { product: createProduct("rice"), quantity: 50 },
+    ]);
+
+    expect(authApiMock.syncRemoteFridgeState).toHaveBeenCalledWith({
+      items: [
+        {
+          ...initial.items[0],
+          quantity: 150,
+        },
+      ],
+    });
+    expect(next.items[0]?.quantity).toBe(150);
+    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+      replaceFridgeStateAction,
     ]);
   });
 });

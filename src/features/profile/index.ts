@@ -11,4 +11,6 @@ export * from "./PremiumAccessCard";
 export * from "./ProfileForm";
 export * from "./profileSlice";
 export * from "./selectors";
+export * from "./SupplementRecommendationCard";
+export * from "./supplementRecommendationModel";
 export * from "./WeightTrendCard";

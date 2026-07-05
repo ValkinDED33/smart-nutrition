@@ -6,6 +6,21 @@ const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+const getProductMatchKey = (product: Pick<Product, "id" | "name" | "brand">) =>
+  [
+    product.id.trim().toLowerCase(),
+    product.name.trim().toLowerCase(),
+    product.brand?.trim().toLowerCase() ?? "",
+  ].join("|");
+
+const isSameProduct = (
+  left: Pick<Product, "id" | "name" | "brand">,
+  right: Pick<Product, "id" | "name" | "brand">
+) =>
+  getProductMatchKey(left) === getProductMatchKey(right) ||
+  left.id === right.id ||
+  left.name.trim().toLowerCase() === right.name.trim().toLowerCase();
+
 export const buildFridgeStateAfterUpsertItem = (
   fridge: FridgeState,
   payload: { product: Product; quantity?: number },
@@ -61,3 +76,33 @@ export const buildFridgeStateAfterRemoveItem = (
   ...fridge,
   items: fridge.items.filter((item) => item.id !== itemId),
 });
+
+export const buildFridgeStateAfterConsumeItems = (
+  fridge: FridgeState,
+  consumedItems: Array<{ product: Product; quantity: number }>
+): FridgeState => {
+  const remainingItems = fridge.items.map((item) => ({ ...item }));
+
+  consumedItems.forEach((consumedItem) => {
+    const quantity = Math.max(Number(consumedItem.quantity) || 0, 0);
+
+    if (quantity <= 0) {
+      return;
+    }
+
+    const matchingItem = remainingItems.find((item) =>
+      isSameProduct(item.product, consumedItem.product)
+    );
+
+    if (!matchingItem) {
+      return;
+    }
+
+    matchingItem.quantity = Math.max(matchingItem.quantity - quantity, 0);
+  });
+
+  return {
+    ...fridge,
+    items: remainingItems.filter((item) => item.quantity > 0),
+  };
+};

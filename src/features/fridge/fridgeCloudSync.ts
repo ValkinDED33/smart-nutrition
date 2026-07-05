@@ -7,6 +7,7 @@ import { syncRemoteFridgeState } from "@shared/api/auth";
 import type { Product } from "@domain/products/types";
 import { replaceFridgeState, type FridgeState } from "./fridgeSlice";
 import {
+  buildFridgeStateAfterConsumeItems,
   buildFridgeStateAfterRemoveItem,
   buildFridgeStateAfterUpdateQuantity,
   buildFridgeStateAfterUpsertItem,
@@ -69,4 +70,14 @@ export const removeFridgeItemFromCloud = async (
   saveFridgeStateToCloud(
     dispatch,
     buildFridgeStateAfterRemoveItem(fridge, itemId)
+  );
+
+export const consumeFridgeItemsInCloud = async (
+  dispatch: AppDispatch,
+  fridge: FridgeState,
+  consumedItems: Array<{ product: Product; quantity: number }>
+) =>
+  saveFridgeStateToCloud(
+    dispatch,
+    buildFridgeStateAfterConsumeItems(fridge, consumedItems)
   );

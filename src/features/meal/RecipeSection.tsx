@@ -3,6 +3,7 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useDispatch } from "react-redux";
@@ -19,6 +20,7 @@ import {
   Typography,
 } from "@mui/material";
 import { publishCommunityPost } from "../community/communitySlice";
+import { applyCommunityActionInCloud } from "../community/communityCloudSync";
 import { recipes } from "@domain/meal/recipes";
 import type {
   MealEntry,
@@ -58,10 +60,6 @@ type BuilderItem = Omit<MealTemplateItem, "quantity"> & {
   quantity: number | "";
 };
 
-const createEntryId = () =>
-  globalThis.crypto?.randomUUID?.() ??
-  `recipe-meal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
 const CUSTOM_RECIPE_PREFIX = "Recipe: ";
 
 const recipeActionCopy = {
@@ -71,10 +69,12 @@ const recipeActionCopy = {
     confirmedSave: "Рецепт збережено як шаблон.",
     confirmedApply: "Шаблон рецепта застосовано.",
     confirmedDelete: "Шаблон рецепта видалено.",
+    confirmedPublish: "Рецепт опубліковано в спільноті.",
     failedAdd: "Не вдалося додати рецепт до щоденника.",
     failedSave: "Не вдалося зберегти рецепт.",
     failedApply: "Не вдалося застосувати рецепт.",
     failedDelete: "Не вдалося видалити рецепт.",
+    failedPublish: "Не вдалося опублікувати рецепт.",
     retry: "Спробувати ще раз",
   },
   pl: {
@@ -83,10 +83,12 @@ const recipeActionCopy = {
     confirmedSave: "Przepis zapisano jako szablon.",
     confirmedApply: "Szablon przepisu został zastosowany.",
     confirmedDelete: "Szablon przepisu został usunięty.",
+    confirmedPublish: "Przepis opublikowano w społeczności.",
     failedAdd: "Nie udało się dodać przepisu do dziennika.",
     failedSave: "Nie udało się zapisać przepisu.",
     failedApply: "Nie udało się zastosować przepisu.",
     failedDelete: "Nie udało się usunąć przepisu.",
+    failedPublish: "Nie udało się opublikować przepisu.",
     retry: "Spróbuj ponownie",
   },
   en: {
@@ -95,10 +97,12 @@ const recipeActionCopy = {
     confirmedSave: "Recipe saved as a reusable template.",
     confirmedApply: "Recipe template applied.",
     confirmedDelete: "Recipe template removed.",
+    confirmedPublish: "Recipe published to the community.",
     failedAdd: "Could not add recipe to your diary.",
     failedSave: "Could not save recipe.",
     failedApply: "Could not apply recipe.",
     failedDelete: "Could not remove recipe.",
+    failedPublish: "Could not publish recipe.",
     retry: "Try again",
   },
 } as const;
@@ -108,6 +112,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const { appLanguage, t } = useLanguage();
   const templates = useSelector(selectMealTemplates);
   const meal = useSelector((state: RootState) => state.meal);
+  const community = useSelector((state: RootState) => state.community);
   const user = useSelector((state: RootState) => state.auth.user);
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
@@ -120,6 +125,8 @@ export const RecipeSection = ({ mealType }: Props) => {
   const deferredIngredientQuery = useDeferredValue(ingredientQuery);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
+  const recipeEntrySequenceRef = useRef(0);
+  const recipeTemplateSequenceRef = useRef(0);
   const copy = recipeActionCopy[appLanguage];
   const {
     notice: mealActionNotice,
@@ -144,7 +151,7 @@ export const RecipeSection = ({ mealType }: Props) => {
       repeat: copy.confirmedApply,
       saveTemplate: copy.confirmedSave,
       applyTemplate: copy.confirmedApply,
-      saveProduct: copy.confirmedSave,
+      saveProduct: copy.confirmedPublish,
     },
     failed: {
       add: copy.failedAdd,
@@ -153,7 +160,7 @@ export const RecipeSection = ({ mealType }: Props) => {
       repeat: copy.failedApply,
       saveTemplate: copy.failedSave,
       applyTemplate: copy.failedApply,
-      saveProduct: copy.failedSave,
+      saveProduct: copy.failedPublish,
     },
     retry: copy.retry,
   });
@@ -249,11 +256,27 @@ export const RecipeSection = ({ mealType }: Props) => {
         })),
     [builderItems]
   );
+  const createRecipeEntryId = () => {
+    recipeEntrySequenceRef.current += 1;
+
+    return (
+      globalThis.crypto?.randomUUID?.() ??
+      `recipe-meal-${recipeEntrySequenceRef.current}`
+    );
+  };
+  const createRecipeTemplateId = () => {
+    recipeTemplateSequenceRef.current += 1;
+
+    return (
+      globalThis.crypto?.randomUUID?.() ??
+      `template-${recipeTemplateSequenceRef.current}`
+    );
+  };
   const builderNutrients = useMemo(
     () =>
       calculateMealTotalNutrients(
-        validBuilderItems.map((item) => ({
-          id: createEntryId(),
+        validBuilderItems.map((item, index) => ({
+          id: `builder-preview-${item.product.id}-${index}`,
           product: item.product,
           quantity: item.quantity,
           mealType,
@@ -272,7 +295,7 @@ export const RecipeSection = ({ mealType }: Props) => {
 
     const eatenAt = new Date().toISOString();
     const entries: MealEntry[] = recipe.ingredients.map((ingredient) => ({
-      id: createEntryId(),
+      id: createRecipeEntryId(),
       product: ingredient.product,
       quantity: ingredient.quantity,
       mealType: recipe.mealType,
@@ -317,9 +340,7 @@ export const RecipeSection = ({ mealType }: Props) => {
     }
 
     const template: MealTemplate = {
-      id:
-        globalThis.crypto?.randomUUID?.() ??
-        `template-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: createRecipeTemplateId(),
       name: `${CUSTOM_RECIPE_PREFIX}${normalizedName}`,
       mealType,
       items: validBuilderItems,
@@ -367,7 +388,7 @@ export const RecipeSection = ({ mealType }: Props) => {
     }
 
     const entries: MealEntry[] = validBuilderItems.map((ingredient) => ({
-      id: createEntryId(),
+      id: createRecipeEntryId(),
       product: ingredient.product,
       quantity: ingredient.quantity,
       mealType,
@@ -382,27 +403,31 @@ export const RecipeSection = ({ mealType }: Props) => {
     });
   };
 
-  const handlePublishRecipe = (recipe: Recipe) => {
+  const handlePublishRecipe = async (recipe: Recipe) => {
     if (!user) {
       return;
     }
 
-    dispatch(
-      publishCommunityPost({
-        type: "recipe",
-        title: recipe.title,
-        body:
-          recipe.description ||
-          `Recipe with ${recipe.ingredients.length} ingredients and ${recipe.calories.toFixed(
-            0
-          )} ${t("common.kcal")}.`,
-        authorId: user.id,
-        authorName: user.name,
-        ingredients: recipe.ingredients.map((ingredient) =>
-          getProductDisplayName(ingredient.product, appLanguage)
-        ),
-      })
-    );
+    const action = publishCommunityPost({
+      type: "recipe",
+      title: recipe.title,
+      body:
+        recipe.description ||
+        `Recipe with ${recipe.ingredients.length} ingredients and ${recipe.calories.toFixed(
+          0
+        )} ${t("common.kcal")}.`,
+      authorId: user.id,
+      authorName: user.name,
+      ingredients: recipe.ingredients.map((ingredient) =>
+        getProductDisplayName(ingredient.product, appLanguage)
+      ),
+    });
+
+    await runMealAction({
+      actionId: `recipe-publish-${recipe.id}`,
+      kind: "saveProduct",
+      action: () => applyCommunityActionInCloud(dispatch, community, action),
+    });
   };
 
   const allRecipes = [...customRecipes, ...filteredRecipes];
@@ -614,7 +639,10 @@ export const RecipeSection = ({ mealType }: Props) => {
                   >
                     Reuse
                   </Button>
-                  <Button onClick={() => handlePublishRecipe(recipe)} disabled={!user}>
+                  <Button
+                    onClick={() => void handlePublishRecipe(recipe)}
+                    disabled={!user || isSavingAction(`recipe-publish-${recipe.id}`)}
+                  >
                     Publish recipe
                   </Button>
                   <Button

@@ -59,9 +59,11 @@ const reminderCopy = {
     habit: "Звичка",
     textLabel: "Що нагадати",
     textPlaceholder: "Наприклад: Подзвонити лікарю о 10:00",
-    medicationPlaceholder: "Наприклад: Вітамін D 1 капсула щодня о 09:00",
+    medicationPlaceholder:
+      "Наприклад: Вітамін D з обідом о 13:00, якщо є жири в їжі",
     medicationCoursePlaceholder: "Наприклад: Амоксиклав 875 мг, 08:00 і 20:00, 7 днів",
-    pregnancySupplementPlaceholder: "Наприклад: Фолієва кислота 1 капсула щодня о 09:00",
+    pregnancySupplementPlaceholder:
+      "Наприклад: Фолієва кислота за планом лікаря щодня о 09:00",
     waterPlaceholder: "Наприклад: Склянка води щодня о 09:00, 13:00 і 18:00",
     habitPlaceholder: "Наприклад: 10 хв прогулянки щодня о 19:00",
     create: "Створити",
@@ -111,9 +113,11 @@ const reminderCopy = {
     habit: "Nawyk",
     textLabel: "Co przypomnieć",
     textPlaceholder: "Np. Zadzwonić do lekarza o 10:00",
-    medicationPlaceholder: "Np. Witamina D 1 kapsułka codziennie o 09:00",
+    medicationPlaceholder:
+      "Np. Witamina D z obiadem o 13:00, jeśli posiłek zawiera tłuszcze",
     medicationCoursePlaceholder: "Np. Amoksiklav 875 mg, 08:00 i 20:00, 7 dni",
-    pregnancySupplementPlaceholder: "Np. Kwas foliowy 1 kapsułka codziennie o 09:00",
+    pregnancySupplementPlaceholder:
+      "Np. Kwas foliowy według planu lekarza codziennie o 09:00",
     waterPlaceholder: "Np. Szklanka wody codziennie o 09:00, 13:00 i 18:00",
     habitPlaceholder: "Np. 10 min spaceru codziennie o 19:00",
     create: "Utwórz",
@@ -163,9 +167,11 @@ const reminderCopy = {
     habit: "Habit",
     textLabel: "What to remind",
     textPlaceholder: "Example: Call the doctor at 10:00",
-    medicationPlaceholder: "Example: Vitamin D 1 capsule daily at 09:00",
+    medicationPlaceholder:
+      "Example: Vitamin D with lunch at 13:00 if the meal has fats",
     medicationCoursePlaceholder: "Example: Amoxiclav 875 mg, 08:00 and 20:00, 7 days",
-    pregnancySupplementPlaceholder: "Example: Folic acid 1 capsule daily at 09:00",
+    pregnancySupplementPlaceholder:
+      "Example: Folic acid by clinician plan daily at 09:00",
     waterPlaceholder: "Example: A glass of water daily at 09:00, 13:00 and 18:00",
     habitPlaceholder: "Example: 10 min walk daily at 19:00",
     create: "Create",

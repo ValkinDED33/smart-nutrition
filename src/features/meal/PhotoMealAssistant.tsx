@@ -21,11 +21,15 @@ import { createEmptyNutrients } from "@domain/meal/nutrients";
 import {
   chooseBestPhotoProductMatch,
   createBlankPhotoSuggestion,
-  requiresPhotoMealConfirmation,
   rescalePhotoMealAnalysis,
   scalePhotoMealAnalysis,
   shouldStartWithSuggestionsOnly,
 } from "@features/meal/photo/photoDraft";
+import {
+  getPhotoReviewState,
+  photoMealSaveButtonSx,
+  shouldShowPhotoInterpretationChoices,
+} from "@features/meal/photo/photoMealAssistantUx";
 import type { MealEntry, MealType } from "@domain/meal/types";
 import type {
   PhotoMealAnalysis,
@@ -180,7 +184,7 @@ const photoCopy = {
   uk: {
     title: "Фото страви",
     subtitle:
-      "Завантажте фото файлом. Система спробує підготувати чернетку складу, а ви перед збереженням швидко перевірите інгредієнти.",
+      "Завантажте фото, швидко перевірте склад і збережіть прийом їжі.",
     upload: "Завантажити фото страви",
     uploaded: "Фото завантажено",
     recognizing: "Аналізуємо фото...",
@@ -189,33 +193,32 @@ const photoCopy = {
     tooLarge: "Фото завелике. Оберіть файл до 12 MB.",
     analysisError:
       "Не вдалося підготувати підказки для цього фото. Нижче можна додати страву вручну.",
-    cloudDraft:
-      "AI estimate, please confirm. Перевірте склад, приховані інгредієнти і порцію перед збереженням.",
-    analyzed: "AI проаналізував фото, але це оцінка, а не факт і не запис у щоденнику.",
-    lowConfidence:
-      "Низька впевненість: показую варіанти для вибору, а не готові картки продуктів.",
+    analyzed: "Склад підготовлено. Перевірте деталі перед збереженням.",
+    needsDetails:
+      "Потрібно перевірити склад. Я підготував основу, ви можете швидко змінити назви та грами.",
     savingDraft: "Зберігаємо обрані підказки в щоденник...",
     saveFailed: "Не вдалося додати чернетку до щоденника.",
     retry: "Спробувати ще раз",
     previewAlt: "Прев'ю фото страви",
     removePhoto: "Прибрати фото",
-    detected: "Чернетка розпізнавання",
-    candidates: "Можливі варіанти",
-    uncertain: "Невпевнені інгредієнти",
-    hiddenQuestions: "Що потрібно підтвердити",
+    detected: "Схоже на",
+    matchOptions: "Можна уточнити",
+    uncertain: "Перевір склад",
+    hiddenQuestions: "Перед збереженням",
     portions: "Порція",
     portionLight: "Легка",
     portionRegular: "Стандарт",
     portionLarge: "Велика",
     portionsValue: "{value} порції",
-    confidence: "Впевненість",
-    manualReview: "Потрібна ручна перевірка",
-    macros: "Орієнтовні макро за фото",
-    suggestions: "Що додамо в щоденник",
+    ready: "Готово до збереження",
+    review: "Перевір перед збереженням",
+    needsDetailsChip: "Потрібно перевірити",
+    macros: "Підсумок прийому",
+    suggestions: "Склад",
     notThis: "Не це",
     addMissing: "Додати пропущений інгредієнт",
     removeWrong: "Прибрати",
-    replaceHint: "Замініть назву або грами — я збережу саме виправлений варіант.",
+    replaceHint: "Можна відредагувати назву або грами.",
     selected: "Обрано",
     itemName: "Назва",
     itemGrams: "Грами",
@@ -224,7 +227,7 @@ const photoCopy = {
     incompleteCorrection: "Заповніть назву для кожного обраного інгредієнта перед збереженням.",
     resolvingProducts: "Підтягуємо нутрієнти з online/backend бази...",
     productLookupPartial:
-      "Частину інгредієнтів не знайдено в online/backend базі, тому вони збережені як підтверджена AI-оцінка.",
+      "Частину інгредієнтів не знайдено в online/backend базі, тому збережено перевірені вами значення.",
     productLookupMatched: "Нутрієнти підтягнуті з online/backend бази для обраних інгредієнтів.",
     addDraft: "Підтвердити і додати",
     added: "Чернетку додано до щоденника.",
@@ -235,7 +238,7 @@ const photoCopy = {
   pl: {
     title: "Zdjęcie posiłku",
     subtitle:
-      "Wgraj zdjęcie plikiem. System spróbuje przygotować roboczą listę składników, a Ty szybko sprawdzisz ją przed zapisaniem.",
+      "Wgraj zdjęcie, szybko sprawdź skład i zapisz posiłek.",
     upload: "Wgraj zdjęcie posiłku",
     uploaded: "Zdjęcie wgrane",
     recognizing: "Analizujemy zdjęcie...",
@@ -244,33 +247,32 @@ const photoCopy = {
     tooLarge: "Zdjęcie jest za duże. Wybierz plik do 12 MB.",
     analysisError:
       "Nie udało się przygotować podpowiedzi dla tego zdjęcia. Niżej możesz dodać posiłek ręcznie.",
-    cloudDraft:
-      "AI estimate, please confirm. Sprawdź skład, ukryte dodatki i porcję przed zapisem.",
-    analyzed: "AI przeanalizował zdjęcie, ale to szacunek, nie fakt ani wpis w dzienniku.",
-    lowConfidence:
-      "Niska pewność: pokazuję propozycje do wyboru, nie gotowe karty produktów.",
+    analyzed: "Skład jest przygotowany. Sprawdź szczegóły przed zapisem.",
+    needsDetails:
+      "Trzeba sprawdzić skład. Przygotowałem podstawę, możesz szybko zmienić nazwy i gramy.",
     savingDraft: "Zapisujemy wybrane podpowiedzi w dzienniku...",
     saveFailed: "Nie udało się dodać szkicu do dziennika.",
     retry: "Spróbuj ponownie",
     previewAlt: "Podgląd zdjęcia posiłku",
     removePhoto: "Usuń zdjęcie",
-    detected: "Szkic rozpoznania",
-    candidates: "Możliwe warianty",
-    uncertain: "Niepewne składniki",
-    hiddenQuestions: "Co trzeba potwierdzić",
+    detected: "Wygląda na",
+    matchOptions: "Możesz doprecyzować",
+    uncertain: "Sprawdź skład",
+    hiddenQuestions: "Przed zapisem",
     portions: "Porcja",
     portionLight: "Lekka",
     portionRegular: "Standard",
     portionLarge: "Duża",
     portionsValue: "{value} porcji",
-    confidence: "Pewność",
-    manualReview: "Wymaga ręcznego sprawdzenia",
-    macros: "Szacowane makro ze zdjęcia",
-    suggestions: "Co trafi do dziennika",
+    ready: "Gotowe do zapisu",
+    review: "Sprawdź przed zapisem",
+    needsDetailsChip: "Trzeba sprawdzić",
+    macros: "Podsumowanie posiłku",
+    suggestions: "Skład",
     notThis: "To nie to",
     addMissing: "Dodaj brakujący składnik",
     removeWrong: "Usuń",
-    replaceHint: "Zmień nazwę albo gramy — zapiszę dokładnie poprawioną wersję.",
+    replaceHint: "Możesz zmienić nazwę albo gramy.",
     selected: "Wybrane",
     itemName: "Nazwa",
     itemGrams: "Gramy",
@@ -279,7 +281,7 @@ const photoCopy = {
     incompleteCorrection: "Uzupełnij nazwę każdego wybranego składnika przed zapisem.",
     resolvingProducts: "Pobieramy wartości odżywcze z bazy online/backend...",
     productLookupPartial:
-      "Części składników nie znaleziono w bazie online/backend, więc zapisano je jako potwierdzony szacunek AI.",
+      "Części składników nie znaleziono w bazie online/backend, więc zapisano sprawdzone przez Ciebie wartości.",
     productLookupMatched:
       "Wartości odżywcze zostały pobrane z bazy online/backend dla wybranych składników.",
     addDraft: "Potwierdź i dodaj",
@@ -291,7 +293,7 @@ const photoCopy = {
   en: {
     title: "Meal photo",
     subtitle:
-      "Upload a photo file. The system will try to prepare an ingredient draft, and you can quickly review it before saving.",
+      "Upload a photo, quickly check the ingredients, and save the meal.",
     upload: "Upload meal photo",
     uploaded: "Photo uploaded",
     recognizing: "Analyzing photo...",
@@ -300,33 +302,32 @@ const photoCopy = {
     tooLarge: "Photo is too large. Choose a file up to 12 MB.",
     analysisError:
       "Could not prepare suggestions for this photo. You can add the meal manually below.",
-    cloudDraft:
-      "AI estimate, please confirm. Check ingredients, hidden items, and portions before saving.",
-    analyzed: "AI analyzed the photo, but this is an estimate, not a fact or diary entry.",
-    lowConfidence:
-      "Low confidence: showing suggestions to choose from, not finalized product cards.",
+    analyzed: "The meal is prepared. Check the details before saving.",
+    needsDetails:
+      "Please check the ingredients. I prepared a starting point, and you can quickly edit names and grams.",
     savingDraft: "Saving selected draft items to your diary...",
     saveFailed: "Could not add this draft to your diary.",
     retry: "Try again",
     previewAlt: "Meal photo preview",
     removePhoto: "Remove photo",
-    detected: "Recognition draft",
-    candidates: "Possible interpretations",
-    uncertain: "Uncertain ingredients",
-    hiddenQuestions: "Confirm hidden ingredients",
+    detected: "Looks like",
+    matchOptions: "Adjust if needed",
+    uncertain: "Check ingredients",
+    hiddenQuestions: "Before saving",
     portions: "Portion",
     portionLight: "Light",
     portionRegular: "Regular",
     portionLarge: "Large",
     portionsValue: "{value} portions",
-    confidence: "Confidence",
-    manualReview: "Manual review needed",
-    macros: "Estimated macros from photo",
-    suggestions: "What will be added to the diary",
+    ready: "Ready to save",
+    review: "Check before saving",
+    needsDetailsChip: "Needs checking",
+    macros: "Meal summary",
+    suggestions: "Ingredients",
     notThis: "Not this",
     addMissing: "Add missing ingredient",
     removeWrong: "Remove",
-    replaceHint: "Edit the name or grams — the corrected version is what gets saved.",
+    replaceHint: "You can edit the name or grams.",
     selected: "Selected",
     itemName: "Name",
     itemGrams: "Grams",
@@ -335,7 +336,7 @@ const photoCopy = {
     incompleteCorrection: "Fill in the name for every selected ingredient before saving.",
     resolvingProducts: "Matching nutrients from the online/backend database...",
     productLookupPartial:
-      "Some ingredients were not found in the online/backend database, so they were saved as confirmed AI estimates.",
+      "Some ingredients were not found in the online/backend database, so your reviewed values were saved.",
     productLookupMatched:
       "Nutrients were matched from the online/backend database for the selected ingredients.",
     addDraft: "Confirm and add",
@@ -424,6 +425,16 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     );
   }, [analysis]);
 
+  const reviewState = analysis ? getPhotoReviewState(analysis) : null;
+  const reviewLabel =
+    reviewState === "ready"
+      ? copy.ready
+      : reviewState === "review"
+        ? copy.review
+        : copy.needsDetailsChip;
+  const reviewColor =
+    reviewState === "ready" ? "success" : reviewState === "review" ? "warning" : "info";
+
   const handleFileChange = async (file: File | null) => {
     if (!file) {
       return;
@@ -506,25 +517,25 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
     );
   };
 
-  const handleUseCandidate = (candidateIndex: number) => {
-    const candidate = analysis?.interpretations?.[candidateIndex];
+  const handleUseInterpretation = (interpretationIndex: number) => {
+    const interpretation = analysis?.interpretations?.[interpretationIndex];
 
-    if (!analysis || !candidate) {
+    if (!analysis || !interpretation) {
       return;
     }
 
     setAnalysis({
       ...analysis,
-      dishName: candidate.title,
-      confidence: candidate.confidence,
-      summary: candidate.reason,
+      dishName: interpretation.title,
+      confidence: interpretation.confidence,
+      summary: interpretation.reason,
       manualReviewRequired: true,
-      items: candidate.items,
+      items: interpretation.items,
     });
     setSelectedItemIndexes(
-      shouldStartWithSuggestionsOnly({ ...analysis, confidence: candidate.confidence })
+      shouldStartWithSuggestionsOnly({ ...analysis, confidence: interpretation.confidence })
         ? []
-        : candidate.items.map((_, index) => index)
+        : interpretation.items.map((_, index) => index)
     );
     setQuantityDrafts({});
   };
@@ -725,12 +736,9 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           </Alert>
         )}
         {analysisMode === "cloud" && !error && analysis && (
-          <Alert severity="info">
-            {copy.analyzed} {copy.cloudDraft}
+          <Alert severity={shouldStartWithSuggestionsOnly(analysis) ? "warning" : "info"}>
+            {shouldStartWithSuggestionsOnly(analysis) ? copy.needsDetails : copy.analyzed}
           </Alert>
-        )}
-        {analysis && shouldStartWithSuggestionsOnly(analysis) && (
-          <Alert severity="warning">{copy.lowConfidence}</Alert>
         )}
         {isResolvingProducts && <Alert severity="info">{copy.resolvingProducts}</Alert>}
         {productResolutionNotice && (
@@ -796,7 +804,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",
             }}
           >
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               <Stack
                 direction={{ xs: "column", md: "row" }}
                 spacing={1.5}
@@ -809,29 +817,16 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   <Typography sx={{ fontWeight: 800 }}>{analysis.dishName}</Typography>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                     <Chip
-                      label={`${copy.confidence}: ${(analysis.confidence * 100).toFixed(0)}%`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                    <Chip
                       label={t("mealType." + mealType)}
                       size="small"
                       variant="outlined"
                     />
-                    {analysis.manualReviewRequired && (
+                    {reviewLabel && (
                       <Chip
-                        label={copy.manualReview}
+                        label={reviewLabel}
                         size="small"
-                        color="warning"
+                        color={reviewColor}
                         variant="outlined"
-                      />
-                    )}
-                    {requiresPhotoMealConfirmation(analysis) && (
-                      <Chip
-                        label="AI estimate, please confirm"
-                        size="small"
-                        color="warning"
                       />
                     )}
                   </Stack>
@@ -884,25 +879,24 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 </Paper>
               )}
 
-              {Array.isArray(analysis.interpretations) && analysis.interpretations.length > 0 && (
+              {shouldShowPhotoInterpretationChoices(analysis) && (
                 <Stack spacing={1}>
-                  <Typography sx={{ fontWeight: 700 }}>{copy.candidates}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>{copy.matchOptions}</Typography>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    {analysis.interpretations.slice(0, 3).map((candidate, index) => (
+                    {analysis.interpretations?.slice(0, 3).map((interpretation, index) => (
                       <Button
-                        key={candidate.id}
+                        key={interpretation.id}
                         size="small"
                         variant={index === 0 ? "contained" : "outlined"}
-                        onClick={() => handleUseCandidate(index)}
+                        onClick={() => handleUseInterpretation(index)}
                         sx={{ borderRadius: 999, textTransform: "none", fontWeight: 700 }}
                       >
-                        {candidate.title} · {(candidate.confidence * 100).toFixed(0)}%
+                        {index === 0
+                          ? `${copy.detected} ${interpretation.title}`
+                          : interpretation.title}
                       </Button>
                     ))}
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    {analysis.interpretations[0]?.reason}
-                  </Typography>
                 </Stack>
               )}
 
@@ -937,12 +931,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 <Typography variant="body2" color="text.secondary">
                   {copy.replaceHint}
                 </Typography>
-                <Chip
-                  label={`${copy.selected}: ${selectedItemIndexes.length}/${analysis.items.length}`}
-                  size="small"
-                  sx={{ alignSelf: "flex-start" }}
-                />
-                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+                  <Chip
+                    label={`${copy.selected}: ${selectedItemIndexes.length}/${analysis.items.length}`}
+                    size="small"
+                  />
                   <Button
                     size="small"
                     variant="outlined"
@@ -1046,9 +1039,6 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                             color="primary"
                             variant="outlined"
                           />
-                          <Typography variant="body2" color="text.secondary">
-                            {`${copy.confidence}: ${(item.confidence * 100).toFixed(0)}%`}
-                          </Typography>
                           {item.portionRangeGrams && (
                             <Typography variant="body2" color="text.secondary">
                               {`${item.portionRangeGrams.min}-${item.portionRangeGrams.max} г`}
@@ -1080,13 +1070,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   isResolvingProducts ||
                   isSavingAction("photo-draft-add")
                 }
-                sx={{
-                  alignSelf: "flex-start",
-                  borderRadius: 999,
-                  textTransform: "none",
-                  fontWeight: 800,
-                  background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-                }}
+                sx={photoMealSaveButtonSx}
               >
                 {copy.addDraft}
               </Button>

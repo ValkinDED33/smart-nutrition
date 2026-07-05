@@ -189,7 +189,7 @@ const waterCopy = {
     remindersTitle: "Water reminders",
     aiTitle: "Companion reaction",
     aiLow:
-      "Water is behind for now. Let's close one small glass without drama.",
+      "Water is running behind. Let's close one small glass without drama.",
     aiMid:
       "Good pace. A little more water and the day will feel lighter.",
     aiDone:

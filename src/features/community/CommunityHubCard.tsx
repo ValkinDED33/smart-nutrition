@@ -218,7 +218,7 @@ const communityCopy = {
     selectFriend: "Choose a friend to see the conversation.",
     globalChat: "Global chat",
     privateChat: "Private chat",
-    noRoomMessages: "The global chat is quiet for now.",
+    noRoomMessages: "The global chat is quiet.",
     typeCommunityMessage: "Message to global chat",
     typeMessage: "Write a message",
     send: "Send",
@@ -539,7 +539,8 @@ export const CommunityHubCard = () => {
     } catch {
       setCommunityFeedback({
         severity: "warning",
-        message: "Report was saved locally in your community state, but the moderation inbox could not be notified.",
+        message:
+          "Report was saved in your community state, but the moderation inbox could not be notified.",
       });
     }
   };

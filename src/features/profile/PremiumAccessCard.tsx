@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import type { PremiumPlanId } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
@@ -12,13 +12,8 @@ const premiumCopy = {
     status: "Статус",
     renews: "Наступне оновлення",
     trialEnds: "Trial до",
-    startTrial: "Запустити 7-денний trial",
-    activatePro: "Увімкнути Pro",
-    activateCoach: "Увімкнути Coach",
-    cancel: "Скасувати",
     unavailable:
-      "Premium-оплата ще не підключена. Зміна доступу має приходити із сервера, а не з локальної кнопки.",
-    comingSoon: "Скоро",
+      "Доступ керується сервером. Якщо тариф зміниться, статус оновиться автоматично після синхронізації акаунта.",
     current: "Current",
     plans: {
       free: {
@@ -44,13 +39,8 @@ const premiumCopy = {
     status: "Status",
     renews: "Odnowienie",
     trialEnds: "Trial do",
-    startTrial: "Start 7-day trial",
-    activatePro: "Activate Pro",
-    activateCoach: "Activate Coach",
-    cancel: "Cancel",
     unavailable:
-      "Płatności Premium nie są jeszcze podłączone. Zmiana dostępu musi przyjść z serwera, nie z lokalnego przycisku.",
-    comingSoon: "Wkrótce",
+      "Dostęp jest zarządzany przez serwer. Po zmianie planu status odświeży się automatycznie po synchronizacji konta.",
     current: "Current",
     plans: {
       free: {
@@ -76,13 +66,8 @@ const premiumCopy = {
     status: "Status",
     renews: "Next renewal",
     trialEnds: "Trial until",
-    startTrial: "Start 7-day trial",
-    activatePro: "Activate Pro",
-    activateCoach: "Activate Coach",
-    cancel: "Cancel",
     unavailable:
-      "Premium billing is not connected yet. Access changes must come from the server, not a local button.",
-    comingSoon: "Coming soon",
+      "Access is managed by the server. When the plan changes, status updates automatically after account sync.",
     current: "Current",
     plans: {
       free: {
@@ -197,40 +182,6 @@ export const PremiumAccessCard = () => {
           {copy.unavailable}
         </Typography>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          {!isPaid ? (
-            <Button
-              variant="contained"
-              disabled
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              {copy.comingSoon}
-            </Button>
-          ) : null}
-          <Button
-            variant={premium.plan === "pro" && isPaid ? "outlined" : "contained"}
-            disabled
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            {copy.activatePro}
-          </Button>
-          <Button
-            variant={premium.plan === "coach" && isPaid ? "outlined" : "contained"}
-            disabled
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            {copy.activateCoach}
-          </Button>
-          {isPaid ? (
-            <Button
-              color="error"
-              disabled
-              sx={{ textTransform: "none", fontWeight: 700 }}
-            >
-              {copy.cancel}
-            </Button>
-          ) : null}
-        </Stack>
       </Stack>
     </Paper>
   );

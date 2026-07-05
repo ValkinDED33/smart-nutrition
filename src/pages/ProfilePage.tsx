@@ -84,6 +84,9 @@ const NotificationSettingsCard = lazy(() =>
 const ReminderManagementCard = lazy(
   () => import("../features/profile/ReminderManagementCard")
 );
+const SupplementRecommendationCard = lazy(
+  () => import("../features/profile/SupplementRecommendationCard")
+);
 const CloudSyncStatusCard = lazy(() =>
   import("../features/profile/CloudSyncStatusCard").then((module) => ({
     default: module.CloudSyncStatusCard,
@@ -852,6 +855,7 @@ const ProfilePage = () => {
                 <LoadingSkeleton cards={4} bodyRows={3} />,
                 <Stack spacing={3}>
                   <NotificationSettingsCard />
+                  <SupplementRecommendationCard />
                   <ReminderManagementCard />
                   <CloudSyncStatusCard />
                   <AccountDataCard />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
@@ -92,6 +92,7 @@ export const ProductCard = ({
   const [qty, setQty] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const idempotencySequenceRef = useRef(0);
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
@@ -143,15 +144,22 @@ export const ProductCard = ({
   const saveActionId = `product-save-${savedKey}`;
   const saving = isSavingAction(addActionId) || isSavingAction(saveActionId);
 
+  const createAddIdempotencyKey = () => {
+    idempotencySequenceRef.current += 1;
+
+    const nonce =
+      globalThis.crypto?.randomUUID?.() ?? `attempt-${idempotencySequenceRef.current}`;
+
+    return `${origin}-${mealType}-${savedKey}-${nonce}`;
+  };
+
   const handleAddQuantity = async (quantity: number, clearInput = true) => {
     if (Number.isNaN(quantity) || quantity <= 0) {
       setQuantityError(t("meal.invalidQuantity"));
       return;
     }
 
-    const idempotencyKey = `${origin}-${mealType}-${savedKey}-${
-      globalThis.crypto?.randomUUID?.() ?? Date.now()
-    }`;
+    const idempotencyKey = createAddIdempotencyKey();
     const saved = await runMealAction({
       actionId: addActionId,
       kind: "add",

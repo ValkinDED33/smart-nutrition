@@ -3,6 +3,7 @@ import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { Product } from "@domain/products/types";
 import { normalizeFridgeState } from "./fridgeSlice";
 import {
+  buildFridgeStateAfterConsumeItems,
   buildFridgeStateAfterRemoveItem,
   buildFridgeStateAfterUpdateQuantity,
   buildFridgeStateAfterUpsertItem,
@@ -60,5 +61,38 @@ describe("fridgeSaveModel", () => {
 
     expect(updated.items[0]?.quantity).toBe(15);
     expect(removed.items).toHaveLength(0);
+  });
+
+  it("consumes matching recipe ingredients from fridge without negative stock", () => {
+    const initial = buildFridgeStateAfterUpsertItem(
+      buildFridgeStateAfterUpsertItem(
+        normalizeFridgeState({}),
+        { product: createProduct("rice"), quantity: 200 }
+      ),
+      { product: createProduct("egg"), quantity: 80 }
+    );
+
+    const next = buildFridgeStateAfterConsumeItems(initial, [
+      { product: createProduct("rice"), quantity: 75 },
+      { product: createProduct("egg"), quantity: 120 },
+      { product: createProduct("missing"), quantity: 50 },
+    ]);
+
+    expect(next.items.find((item) => item.product.id === "rice")?.quantity).toBe(125);
+    expect(next.items.some((item) => item.product.id === "egg")).toBe(false);
+    expect(next.items.some((item) => item.product.id === "missing")).toBe(false);
+  });
+
+  it("matches consumed ingredients by product name when ids differ", () => {
+    const initial = buildFridgeStateAfterUpsertItem(
+      normalizeFridgeState({}),
+      { product: { ...createProduct("custom-chicken"), name: "Chicken breast" }, quantity: 180 }
+    );
+
+    const next = buildFridgeStateAfterConsumeItems(initial, [
+      { product: { ...createProduct("recipe-chicken"), name: "Chicken breast" }, quantity: 100 },
+    ]);
+
+    expect(next.items[0]?.quantity).toBe(80);
   });
 });

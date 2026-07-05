@@ -32,7 +32,6 @@ const shopCopy = {
     buyAndChoose: "Купити",
     equipped: "Активний",
     locked: "Не вистачає",
-    comingSoon: "Скоро",
     owned: "Куплено",
     available: "Доступно",
     saving: "Зберігаю...",
@@ -40,7 +39,6 @@ const shopCopy = {
     coins: "монет",
     preview: "Поточний образ",
     profileLook: "Образ із профілю",
-    futureItem: "Буде доступно пізніше",
     renderModeTitle: "Превʼю",
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
@@ -67,7 +65,6 @@ const shopCopy = {
     buyAndChoose: "Kup",
     equipped: "Aktywny",
     locked: "Za mało",
-    comingSoon: "Wkrótce",
     owned: "Kupione",
     available: "Dostępne",
     saving: "Zapisuję...",
@@ -75,7 +72,6 @@ const shopCopy = {
     coins: "monet",
     preview: "Obecny wygląd",
     profileLook: "Wygląd z profilu",
-    futureItem: "Dostępne później",
     renderModeTitle: "Podgląd",
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
@@ -102,7 +98,6 @@ const shopCopy = {
     buyAndChoose: "Buy",
     equipped: "Active",
     locked: "Not enough",
-    comingSoon: "Soon",
     owned: "Owned",
     available: "Available",
     saving: "Saving...",
@@ -110,7 +105,6 @@ const shopCopy = {
     coins: "coins",
     preview: "Current look",
     profileLook: "Profile look",
-    futureItem: "Available later",
     renderModeTitle: "Preview",
     renderMode2d: "Fast 2D",
     renderMode3d: "Live 3D",
@@ -171,6 +165,10 @@ const CompanionShopCard = () => {
     equippedItems.find((item) => item.slot === "companion") ??
     companionShopCatalog.find((item) => item.companionKind === assistant.companionKind) ??
     null;
+  const visibleCatalogItems = useMemo(
+    () => companionShopCatalog.filter((item) => item.available),
+    []
+  );
 
   const handleItemAction = async (item: CompanionCatalogItem) => {
     const isOwned = hasCompanionItem(companion, item.id);
@@ -315,25 +313,21 @@ const CompanionShopCard = () => {
               gap: 1.2,
             }}
           >
-            {companionShopCatalog.map((item) => {
+            {visibleCatalogItems.map((item) => {
               const isOwned = hasCompanionItem(companion, item.id);
               const isEquipped = isCompanionItemEquipped(companion, item.id);
               const canBuy = canPurchaseCompanionItem(companion, item);
               const isLocked = item.available && !isOwned && !canBuy;
-              const isComingSoon = !item.available;
               const statusLabel = isEquipped
                 ? copy.equipped
-                : isComingSoon
-                  ? copy.comingSoon
-                  : isOwned
-                    ? copy.owned
-                    : isLocked
-                      ? copy.locked
+                : isOwned
+                  ? copy.owned
+                  : isLocked
+                    ? copy.locked
                       : copy.available;
               const actionLabel = isOwned ? copy.choose : copy.buyAndChoose;
               const isSaving = savingItemId === item.id;
-              const buttonDisabled =
-                savingItemId !== null || isEquipped || isComingSoon || isLocked;
+              const buttonDisabled = savingItemId !== null || isEquipped || isLocked;
 
               return (
                 <Paper
@@ -376,9 +370,7 @@ const CompanionShopCard = () => {
                       alignItems="center"
                     >
                       <Typography sx={{ fontWeight: 900 }}>
-                        {isComingSoon
-                          ? copy.futureItem
-                          : `${item.price} ${copy.coins}`}
+                        {`${item.price} ${copy.coins}`}
                       </Typography>
                       <Button
                         size="small"
