@@ -15,6 +15,7 @@ describe("reminder storage contract", () => {
 
       expect(source).toContain("updateUserReminders");
       expect(source).toContain("updateUserMedicationReminders");
+      expect(source).toContain("return this.updateUserReminders(userId, reminders)");
     });
   });
 });

@@ -2939,18 +2939,8 @@ export const createSqliteStorage = async ({
       return getResolvedUser(userId);
     },
 
-    updateUserMedicationReminders: (userId, reminders) => {
-      database
-        .prepare(
-          `
-            UPDATE users
-            SET medication_reminders_json = ?
-            WHERE id = ?
-          `
-        )
-        .run(JSON.stringify(Array.isArray(reminders) ? reminders : []), userId);
-
-      return getResolvedUser(userId);
+    updateUserMedicationReminders(userId, reminders) {
+      return this.updateUserReminders(userId, reminders);
     },
 
     disconnectUserTelegram: (userId) => {
