@@ -162,6 +162,19 @@ const normalizeOptionalHttpUrl = (value, name, errors) => {
   return null;
 };
 
+const isValidRedisUrl = (value) => {
+  if (!value) {
+    return true;
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === "redis:" || parsedUrl.protocol === "rediss:";
+  } catch {
+    return false;
+  }
+};
+
 const normalizeRuntimePath = (value, fallback) => {
   const nextValue = toTrimmedString(value, fallback) || fallback;
 
@@ -262,6 +275,9 @@ const hasPlaceholderValue = (value) => {
     normalized.includes("change_me") ||
     normalized.includes("replace-with") ||
     normalized.includes("your-verified-domain.com") ||
+    normalized.includes("//example.") ||
+    normalized.includes("//example.com") ||
+    normalized.includes(".example") ||
     normalized.endsWith("@example.com") ||
     normalized === "example.com"
   );
@@ -970,6 +986,14 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors.push(
       "SMART_NUTRITION_REFRESH_TTL_MS must be greater than SMART_NUTRITION_ACCESS_TTL_MS."
     );
+  }
+
+  if (redisUrl && !isValidRedisUrl(redisUrl)) {
+    errors.push("SMART_NUTRITION_REDIS_URL must be a valid redis:// or rediss:// URL.");
+  }
+
+  if (isProduction && redisUrl && hasPlaceholderValue(redisUrl)) {
+    errors.push("SMART_NUTRITION_REDIS_URL must not use a placeholder value in production.");
   }
 
   const jwtSecret = toTrimmedString(

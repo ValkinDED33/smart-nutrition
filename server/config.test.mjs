@@ -97,7 +97,7 @@ describe("createServerConfig", () => {
       SMART_NUTRITION_DATABASE_PROVIDER: "mongodb",
       SMART_NUTRITION_AI_DATA_PROVIDER: "mongodb",
       SMART_NUTRITION_MONGO_URI:
-        "mongodb+srv://cluster0.example.mongodb.net/smart-nutrition?retryWrites=true&w=majority",
+        "mongodb+srv://cluster0.smartnutrition.test/smart-nutrition?retryWrites=true&w=majority",
       SMART_NUTRITION_SERVE_STATIC: "false",
       SMART_NUTRITION_APP_BASE_URL: "https://smart-nutrition.club",
       SMART_NUTRITION_CORS_ORIGINS:
@@ -117,6 +117,38 @@ describe("createServerConfig", () => {
       "https://smart-nutrition.club",
       "https://www.smart-nutrition.club",
     ]);
+  });
+
+  it("rejects invalid Redis URLs when Redis is configured", () => {
+    expect(() =>
+      createServerConfig({
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_REDIS_URL: "not-a-redis-url",
+      })
+    ).toThrow(/SMART_NUTRITION_REDIS_URL/);
+  });
+
+  it("rejects placeholder Redis URLs in production", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_REDIS_URL: "redis://example.com",
+      })
+    ).toThrow(/SMART_NUTRITION_REDIS_URL/);
+  });
+
+  it("accepts a production Redis URL for distributed runtime state", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_REDIS_URL: "rediss://cache.internal:6379",
+      SMART_NUTRITION_REDIS_KEY_PREFIX: "smart-prod",
+    });
+
+    expect(config.redisEnabled).toBe(true);
+    expect(config.redisUrl).toBe("rediss://cache.internal:6379");
+    expect(config.redisKeyPrefix).toBe("smart-prod");
   });
 
   it("allows per-route auth rate limit overrides", () => {
