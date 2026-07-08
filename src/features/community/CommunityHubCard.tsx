@@ -91,6 +91,8 @@ const communityCopy = {
     reports: "Скарги",
     report: "Поскаржитися",
     reportSent: "Скаргу відправлено на модерацію",
+    reportSyncWarning:
+      "Скаргу відправлено на модерацію, але локальний статус community не синхронізувався.",
     approve: "Схвалити",
     reject: "Відхилити",
     deleteSpam: "Видалити спам",
@@ -167,6 +169,8 @@ const communityCopy = {
     reports: "Zgłoszenia",
     report: "Zgłoś",
     reportSent: "Zgłoszenie wysłane do moderacji",
+    reportSyncWarning:
+      "Zgłoszenie wysłano do moderacji, ale lokalny status community nie zsynchronizował się.",
     approve: "Zatwierdź",
     reject: "Odrzuć",
     deleteSpam: "Usuń spam",
@@ -243,6 +247,8 @@ const communityCopy = {
     reports: "Reports",
     report: "Report",
     reportSent: "Report sent to moderation",
+    reportSyncWarning:
+      "Report sent to moderation, but the local community status could not sync.",
     approve: "Approve",
     reject: "Reject",
     deleteSpam: "Delete spam",
@@ -514,20 +520,7 @@ export const CommunityHubCard = () => {
   };
 
   const reportPost = async (postId: string) => {
-    const saved = await commitCommunityAction(
-      reportCommunityContent({
-        targetType: "post",
-        targetId: postId,
-        reason: `Reported by ${authorName}`,
-        reporterId: user?.id,
-        reporterName: authorName,
-      }),
-      copy.reportSent
-    );
-
-    if (!saved) {
-      return;
-    }
+    setCommunityFeedback(null);
 
     try {
       await submitContentReport({
@@ -536,11 +529,31 @@ export const CommunityHubCard = () => {
         reason: `Reported by ${authorName}`,
         reporterName: authorName,
       });
+    } catch (error) {
+      setCommunityFeedback({
+        severity: "error",
+        message: getCommunityErrorMessage(error),
+      });
+      return;
+    }
+
+    try {
+      await applyCommunityActionInCloud(
+        dispatch,
+        community,
+        reportCommunityContent({
+          targetType: "post",
+          targetId: postId,
+          reason: `Reported by ${authorName}`,
+          reporterId: user?.id,
+          reporterName: authorName,
+        })
+      );
+      setCommunityFeedback({ severity: "success", message: copy.reportSent });
     } catch {
       setCommunityFeedback({
         severity: "warning",
-        message:
-          "Report was saved in your community state, but the moderation inbox could not be notified.",
+        message: copy.reportSyncWarning,
       });
     }
   };
