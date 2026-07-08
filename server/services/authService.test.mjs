@@ -99,14 +99,12 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
 };
 
 describe("authService", () => {
-  it("promotes the configured owner email through the canonical owner method on startup", () => {
+  it("does not run owner promotion side effects during auth service construction", () => {
     const { authRepository } = createAuthServiceFixture({
       configOverrides: { superAdminEmail: "owner@example.com" },
     });
 
-    expect(authRepository.promoteUserByEmailToOwner).toHaveBeenCalledWith(
-      "owner@example.com"
-    );
+    expect(authRepository.promoteUserByEmailToOwner).not.toHaveBeenCalled();
   });
 
   it("bootstraps the first configured owner registration as OWNER", async () => {

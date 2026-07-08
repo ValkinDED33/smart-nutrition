@@ -88,6 +88,38 @@ describe("platformService", () => {
     );
   });
 
+  it("waits for configured owner promotion before access bootstrap completes", async () => {
+    const { platformRepository } = createPlatformFixture();
+    let completePromotion;
+    platformRepository.promoteUserByEmailToOwner.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          completePromotion = resolve;
+        })
+    );
+    const configuredService = createPlatformService({
+      platformRepository,
+      config: {
+        productSubmissionDailyLimit: 10,
+        superAdminEmail: "owner@example.com",
+        catalogCacheTtlSeconds: 60,
+      },
+    });
+    let completed = false;
+
+    const bootstrapPromise = configuredService.bootstrapAccessControl().then(() => {
+      completed = true;
+    });
+    await Promise.resolve();
+
+    expect(completed).toBe(false);
+
+    completePromotion();
+    await bootstrapPromise;
+
+    expect(completed).toBe(true);
+  });
+
   it("clamps public catalog query limits and trims search", async () => {
     const { platformRepository, service } = createPlatformFixture();
 
