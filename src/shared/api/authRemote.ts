@@ -565,7 +565,7 @@ const isPublicRemoteHealthPayload = (value: object) => {
   };
 
   return (
-    payload.auth === "remote-cloud" &&
+    payload.auth === "httpOnly-cookie-session" &&
     typeof payload.mode === "string" &&
     typeof payload.storage === "object" &&
     payload.storage !== null &&

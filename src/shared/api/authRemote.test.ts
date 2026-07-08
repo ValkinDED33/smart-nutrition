@@ -202,8 +202,8 @@ describe("remote API base URL guards", () => {
       new Response(
         JSON.stringify({
           ok: true,
-          mode: "production",
-          auth: "remote-cloud",
+          mode: "remote-cloud",
+          auth: "httpOnly-cookie-session",
           storage: { engine: "mongodb" },
           static: { enabled: false },
           email: { configured: true },
