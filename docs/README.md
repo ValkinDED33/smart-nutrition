@@ -109,8 +109,8 @@ Set the matching backend variables on the API host:
 
 ```env
 NODE_ENV=production
-SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition-topaz.vercel.app
-SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition-topaz.vercel.app
+SMART_NUTRITION_APP_BASE_URL=https://smart-nutrition.club
+SMART_NUTRITION_CORS_ORIGINS=https://smart-nutrition.club,https://www.smart-nutrition.club
 SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None
 SMART_NUTRITION_AUTH_COOKIE_SECURE=true
 ```

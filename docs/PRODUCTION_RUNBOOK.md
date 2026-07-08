@@ -106,7 +106,9 @@ Note: cookie env names are `SMART_NUTRITION_AUTH_COOKIE_SAME_SITE` and `SMART_NU
 
 - `smart-nutrition.club` points to Vercel.
 - `www.smart-nutrition.club` points to Vercel.
-- Resend sending domain is verified with DKIM/SPF.
+- Resend sending domain must be verified with the DKIM/SPF records shown in the Resend dashboard.
+- `noreply@smart-nutrition.club` is the current production sender.
+- As of 2026-07-08, live DNS showed DKIM and DMARC records, but no root SPF TXT record; one verification email landed in spam. Treat deliverability as a DNS/reputation follow-up, not an app-code bug.
 - Brevo domain is verified if Brevo marketing sync is enabled.
 
 ## Deploy
