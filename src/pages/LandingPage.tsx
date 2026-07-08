@@ -410,12 +410,15 @@ const landingCopy = {
 type LandingCopy = (typeof landingCopy)[LandingLanguage];
 
 const getLandingScene = (isDarkMode: boolean) => ({
+  pageBackground: isDarkMode
+    ? "radial-gradient(circle at 10% 0%, rgba(20,184,166,0.16), transparent 28%), radial-gradient(circle at 90% 8%, rgba(163,230,53,0.1), transparent 32%), linear-gradient(180deg, #020617 0%, #050b18 48%, #07110f 100%)"
+    : "radial-gradient(circle at 12% 0%, rgba(34,197,94,0.16), transparent 28%), radial-gradient(circle at 88% 12%, rgba(14,165,233,0.16), transparent 30%), linear-gradient(180deg, #f8fffb 0%, #effdfa 44%, #f8fbff 100%)",
   heroBackground: isDarkMode
-    ? "radial-gradient(circle at 76% 30%, rgba(163,230,53,0.22), transparent 28%), radial-gradient(circle at 86% 68%, rgba(20,184,166,0.18), transparent 32%), linear-gradient(135deg, #020617 0%, #061321 42%, #071a16 100%)"
-    : "radial-gradient(circle at 78% 24%, rgba(255,255,255,0.9), transparent 22%), radial-gradient(circle at 86% 72%, rgba(14,165,233,0.2), transparent 34%), linear-gradient(135deg, #f8fffb 0%, #effdfa 38%, #e7f5ff 100%)",
+    ? "radial-gradient(circle at 74% 28%, rgba(163,230,53,0.24), transparent 26%), radial-gradient(circle at 88% 68%, rgba(20,184,166,0.18), transparent 32%), radial-gradient(circle at 62% 58%, rgba(15,118,110,0.2), transparent 34%), linear-gradient(135deg, #010409 0%, #03111f 42%, #061a16 100%)"
+    : "radial-gradient(circle at 78% 24%, rgba(255,255,255,0.96), transparent 22%), radial-gradient(circle at 82% 70%, rgba(14,165,233,0.24), transparent 34%), radial-gradient(circle at 60% 52%, rgba(187,247,208,0.46), transparent 34%), linear-gradient(135deg, #fbfffe 0%, #effdfa 38%, #e9f7ff 100%)",
   heroOverlay: isDarkMode
-    ? "linear-gradient(90deg, rgba(2,6,23,0.9) 0%, rgba(7,17,31,0.7) 42%, rgba(2,6,23,0.16) 100%), linear-gradient(180deg, rgba(7,17,31,0.68) 0%, rgba(7,17,31,0.32) 56%, rgba(20,184,166,0.12) 100%)"
-    : "linear-gradient(90deg, rgba(248,255,251,0.94) 0%, rgba(236,253,245,0.82) 42%, rgba(240,249,255,0.3) 100%), linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(236,254,255,0.2) 54%, rgba(20,184,166,0.1) 100%)",
+    ? "linear-gradient(90deg, rgba(1,4,9,0.94) 0%, rgba(3,12,24,0.78) 42%, rgba(2,6,23,0.18) 100%), linear-gradient(180deg, rgba(2,6,23,0.68) 0%, rgba(3,14,23,0.32) 56%, rgba(20,184,166,0.12) 100%)"
+    : "linear-gradient(90deg, rgba(255,255,255,0.86) 0%, rgba(240,253,250,0.64) 42%, rgba(240,249,255,0.12) 100%), linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(236,254,255,0.1) 54%, rgba(20,184,166,0.08) 100%)",
   heroText: isDarkMode ? "#ffffff" : "#102a43",
   mutedText: isDarkMode ? "rgba(255,255,255,0.82)" : "rgba(15,23,42,0.68)",
   titleShadow: isDarkMode
@@ -449,14 +452,14 @@ const getLandingScene = (isDarkMode: boolean) => ({
   secondaryButtonBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.72)",
   socialColor: isDarkMode ? "rgba(255,255,255,0.76)" : "rgba(15,23,42,0.7)",
   sceneBackdrop: isDarkMode
-    ? "linear-gradient(135deg, rgba(240,253,244,0.2), rgba(20,184,166,0.16) 48%, rgba(132,204,22,0.18))"
-    : "linear-gradient(135deg, rgba(255,255,255,0.58), rgba(186,230,253,0.24) 46%, rgba(187,247,208,0.34))",
-  sceneBorder: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(20,184,166,0.18)",
+    ? "linear-gradient(135deg, rgba(2,6,23,0.52), rgba(20,184,166,0.16) 48%, rgba(132,204,22,0.16))"
+    : "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(186,230,253,0.28) 46%, rgba(187,247,208,0.42))",
+  sceneBorder: isDarkMode ? "rgba(94,234,212,0.18)" : "rgba(20,184,166,0.18)",
   avatarStageBg: isDarkMode
-    ? "radial-gradient(circle at 50% 40%, rgba(236,254,255,0.74), rgba(20,184,166,0.16) 52%, rgba(2,6,23,0.18) 100%)"
+    ? "radial-gradient(circle at 50% 40%, rgba(94,234,212,0.18), rgba(20,184,166,0.12) 52%, rgba(2,6,23,0.74) 100%)"
     : "radial-gradient(circle at 50% 38%, rgba(255,255,255,0.95), rgba(204,251,241,0.54) 54%, rgba(186,230,253,0.3) 100%)",
   avatarStageShadow: isDarkMode
-    ? "0 34px 120px rgba(20,184,166,0.28), 0 0 80px rgba(132,204,22,0.12), inset 0 1px 0 rgba(255,255,255,0.56)"
+    ? "0 34px 120px rgba(20,184,166,0.24), 0 0 80px rgba(132,204,22,0.12), inset 0 1px 0 rgba(255,255,255,0.16)"
     : "0 34px 120px rgba(14,165,233,0.22), 0 0 90px rgba(34,197,94,0.14), inset 0 1px 0 rgba(255,255,255,0.86)",
   presenceBg: isDarkMode ? "rgba(15,23,42,0.78)" : "rgba(255,255,255,0.72)",
   presenceColor: isDarkMode ? "#ffffff" : "#0f766e",
@@ -464,9 +467,13 @@ const getLandingScene = (isDarkMode: boolean) => ({
   sceneCardBg: isDarkMode ? "rgba(15,23,42,0.76)" : "rgba(255,255,255,0.78)",
   sceneCardText: isDarkMode ? "#f8fafc" : "#102a43",
   sceneCardMuted: isDarkMode ? "rgba(226,232,240,0.74)" : "#475569",
-  featureRailBg: isDarkMode ? "rgba(2,6,23,0.28)" : "rgba(255,255,255,0.64)",
+  sceneIconBg: isDarkMode ? "rgba(2,6,23,0.74)" : "rgba(255,255,255,0.72)",
+  sceneCardShadow: isDarkMode
+    ? "0 18px 56px rgba(0,0,0,0.36)"
+    : "0 18px 56px rgba(15,23,42,0.18)",
+  featureRailBg: isDarkMode ? "rgba(2,6,23,0.58)" : "rgba(255,255,255,0.64)",
   featureRailBorder: isDarkMode ? "rgba(255,255,255,0.14)" : "rgba(15,118,110,0.16)",
-  featureCardBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.58)",
+  featureCardBg: isDarkMode ? "rgba(15,23,42,0.68)" : "rgba(255,255,255,0.58)",
   featureCardBorder: isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(15,118,110,0.12)",
   featureIconBg: isDarkMode ? "rgba(163,230,53,0.1)" : "rgba(20,184,166,0.1)",
   featureIconColor: isDarkMode ? "#a3e635" : "#0f766e",
@@ -475,6 +482,25 @@ const getLandingScene = (isDarkMode: boolean) => ({
     : "0 0 28px rgba(20,184,166,0.12)",
   featureText: isDarkMode ? "#ffffff" : "#102a43",
   featureMuted: isDarkMode ? "rgba(255,255,255,0.62)" : "rgba(15,23,42,0.58)",
+  portalRing: isDarkMode
+    ? "radial-gradient(circle, transparent 46%, rgba(163,230,53,0.22) 47%, rgba(94,234,212,0.1) 52%, transparent 58%)"
+    : "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.72) 43%, rgba(14,165,233,0.22) 50%, transparent 58%)",
+  heroLandscape: isDarkMode
+    ? "linear-gradient(180deg, transparent 0%, rgba(5,46,22,0.3) 40%, rgba(2,6,23,0.88) 100%)"
+    : "linear-gradient(180deg, transparent 0%, rgba(224,242,254,0.44) 38%, rgba(240,253,250,0.78) 100%)",
+  analyticsBg: isDarkMode
+    ? "radial-gradient(circle at 88% 10%, rgba(132,204,22,0.22), transparent 28%), linear-gradient(135deg, #07111f 0%, #102a43 52%, #0f766e 100%)"
+    : "radial-gradient(circle at 88% 10%, rgba(34,197,94,0.18), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(236,254,255,0.82) 52%, rgba(220,252,231,0.9) 100%)",
+  analyticsText: isDarkMode ? "#ffffff" : "#102a43",
+  analyticsMuted: isDarkMode ? "rgba(255,255,255,0.66)" : "rgba(15,23,42,0.62)",
+  analyticsCardBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+  analyticsCardBorder: isDarkMode ? "rgba(255,255,255,0.14)" : "rgba(15,118,110,0.14)",
+  analyticsAdviceBg: isDarkMode ? "rgba(20,184,166,0.14)" : "rgba(20,184,166,0.1)",
+  analyticsAdviceBorder: isDarkMode ? "rgba(94,234,212,0.22)" : "rgba(15,118,110,0.16)",
+  phoneShellBg: isDarkMode ? "#020617" : "#e2e8f0",
+  phoneScreenBg: isDarkMode ? "#07111f" : "#f8fafc",
+  phoneCardBg: isDarkMode ? "rgba(15,23,42,0.82)" : "#ffffff",
+  phoneCardBorder: isDarkMode ? "rgba(148,163,184,0.22)" : "rgba(15,23,42,0.08)",
 });
 
 const quickActionIcons = [
@@ -634,6 +660,35 @@ const CompanionExperienceScene = ({
           transform: "skewY(-1.2deg)",
         }}
       />
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          zIndex: 1,
+          width: { sm: 420, md: 620 },
+          height: { sm: 420, md: 620 },
+          borderRadius: "50%",
+          right: { sm: 42, md: 72 },
+          top: { sm: 8, md: 10 },
+          background: scene.portalRing,
+          filter: isDarkMode ? "drop-shadow(0 0 42px rgba(163,230,53,0.18))" : "drop-shadow(0 0 58px rgba(14,165,233,0.2))",
+          opacity: isDarkMode ? 0.9 : 0.82,
+        }}
+      />
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          zIndex: 1,
+          left: { sm: "8%", md: "14%" },
+          right: { sm: "2%", md: "8%" },
+          bottom: { sm: 24, md: 34 },
+          height: { sm: 140, md: 190 },
+          borderRadius: "50% 50% 0 0",
+          background: scene.heroLandscape,
+          filter: "blur(1px)",
+        }}
+      />
 
       <Box
         component={motion.div}
@@ -755,7 +810,7 @@ const CompanionExperienceScene = ({
               border: `1px solid ${tone.border}`,
               bgcolor: isDarkMode ? scene.sceneCardBg : tone.bg,
               backdropFilter: "blur(14px)",
-              boxShadow: "0 18px 56px rgba(15,23,42,0.18)",
+              boxShadow: scene.sceneCardShadow,
               ...placement,
             }}
           >
@@ -768,7 +823,7 @@ const CompanionExperienceScene = ({
                   display: "grid",
                   placeItems: "center",
                   color: tone.icon,
-                  bgcolor: "rgba(255,255,255,0.72)",
+                  bgcolor: scene.sceneIconBg,
                   flexShrink: 0,
                 }}
               >
@@ -811,12 +866,13 @@ const Hero = ({
       component="section"
       sx={{
         position: "relative",
-        minHeight: { xs: "calc(100svh - 132px)", md: "calc(100svh - 118px)" },
-        maxHeight: { md: 720 },
+        minHeight: { xs: "100svh", md: "100svh" },
+        maxHeight: { md: 840 },
         overflow: "hidden",
-        borderRadius: 1,
+        borderRadius: { xs: 0, md: 1 },
         px: { xs: 2, sm: 3, md: 5 },
-        py: { xs: 3, md: 4 },
+        pt: { xs: 11, md: 12 },
+        pb: { xs: 3, md: 4 },
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -869,7 +925,7 @@ const Hero = ({
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 42, sm: 68, md: 82 },
+          fontSize: { xs: 42, sm: 68, md: 76, lg: 82 },
           lineHeight: 0.98,
           fontWeight: 900,
           letterSpacing: 0,
@@ -1084,7 +1140,7 @@ const Hero = ({
         "@media (max-height: 760px)": {
           display: "none",
         },
-        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+        gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
         alignItems: "stretch",
         width: "100%",
         p: 1,
@@ -1299,9 +1355,14 @@ const EcosystemGrid = ({
 
 const AnalyticsPanel = ({
   copy,
+  isDarkMode,
 }: {
   copy: (typeof landingCopy)[LandingLanguage];
-}) => (
+  isDarkMode: boolean;
+}) => {
+  const scene = getLandingScene(isDarkMode);
+
+  return (
   <Paper
     id="reminders"
     component="section"
@@ -1309,9 +1370,8 @@ const AnalyticsPanel = ({
     sx={{
       ...landingGlassPanelSx,
       p: { xs: 2.4, md: 3 },
-      color: "white",
-      background:
-        "radial-gradient(circle at 88% 10%, rgba(132,204,22,0.22), transparent 28%), linear-gradient(135deg, #07111f 0%, #102a43 52%, #0f766e 100%)",
+      color: scene.analyticsText,
+      background: scene.analyticsBg,
       overflow: "hidden",
     }}
   >
@@ -1340,11 +1400,11 @@ const AnalyticsPanel = ({
             sx={{
               p: 2,
               borderRadius: 1,
-              border: "1px solid rgba(255,255,255,0.14)",
-              bgcolor: "rgba(255,255,255,0.08)",
+              border: `1px solid ${scene.analyticsCardBorder}`,
+              bgcolor: scene.analyticsCardBg,
             }}
           >
-            <Typography sx={{ color: "rgba(255,255,255,0.66)" }}>
+            <Typography sx={{ color: scene.analyticsMuted }}>
               {item.label}
             </Typography>
             <Typography sx={{ mt: 0.5, fontSize: 28, fontWeight: 900 }}>
@@ -1357,8 +1417,8 @@ const AnalyticsPanel = ({
         sx={{
           p: 2,
           borderRadius: 1,
-          bgcolor: "rgba(20,184,166,0.14)",
-          border: "1px solid rgba(94,234,212,0.22)",
+          bgcolor: scene.analyticsAdviceBg,
+          border: `1px solid ${scene.analyticsAdviceBorder}`,
         }}
       >
         <Stack
@@ -1372,20 +1432,26 @@ const AnalyticsPanel = ({
             mood="coach"
             active
           />
-          <Typography sx={{ color: "rgba(255,255,255,0.86)", lineHeight: 1.7 }}>
+          <Typography sx={{ color: scene.mutedText, lineHeight: 1.7 }}>
             {copy.progressAdvice}
           </Typography>
         </Stack>
       </Box>
     </Stack>
   </Paper>
-);
+  );
+};
 
 const MobileCommunityPanel = ({
   copy,
+  isDarkMode,
 }: {
   copy: (typeof landingCopy)[LandingLanguage];
-}) => (
+  isDarkMode: boolean;
+}) => {
+  const scene = getLandingScene(isDarkMode);
+
+  return (
   <Box
     id="community"
     component="section"
@@ -1459,7 +1525,7 @@ const MobileCommunityPanel = ({
         width: { xs: "min(100%, 340px)", md: 360 },
         p: 1.2,
         borderRadius: 8,
-        bgcolor: "#0f172a",
+        bgcolor: scene.phoneShellBg,
         boxShadow: "0 30px 90px rgba(15,23,42,0.24)",
       }}
     >
@@ -1468,7 +1534,8 @@ const MobileCommunityPanel = ({
           minHeight: 610,
           borderRadius: 1,
           p: 2,
-          bgcolor: "#f8fafc",
+          bgcolor: scene.phoneScreenBg,
+          color: scene.heroText,
           overflow: "hidden",
         }}
       >
@@ -1494,8 +1561,8 @@ const MobileCommunityPanel = ({
               sx={{
                 p: 1.4,
                 borderRadius: 1,
-                bgcolor: "white",
-                border: "1px solid rgba(15,23,42,0.08)",
+                bgcolor: scene.phoneCardBg,
+                border: `1px solid ${scene.phoneCardBorder}`,
               }}
             >
               <Stack direction="row" justifyContent="space-between">
@@ -1528,7 +1595,8 @@ const MobileCommunityPanel = ({
       </Box>
     </Box>
   </Box>
-);
+  );
+};
 
 const FinalCta = ({
   copy,
@@ -1578,9 +1646,17 @@ const LandingPage = () => {
   const { appLanguage } = useLanguage();
   const { isDarkMode } = useAppColorMode();
   const copy = landingCopy[appLanguage];
+  const scene = getLandingScene(isDarkMode);
 
   return (
-    <Stack spacing={{ xs: 4, md: 5 }}>
+    <Stack
+      spacing={{ xs: 4, md: 5 }}
+      sx={{
+        background: scene.pageBackground,
+        color: scene.heroText,
+        transition: "background 240ms ease, color 240ms ease",
+      }}
+    >
       <Hero copy={copy} isDarkMode={isDarkMode} />
       <Stack
         spacing={{ xs: 4, md: 5 }}
@@ -1594,8 +1670,8 @@ const LandingPage = () => {
       >
         <EcosystemGrid copy={copy} />
         <QuickFoodPanel copy={copy} />
-        <AnalyticsPanel copy={copy} />
-        <MobileCommunityPanel copy={copy} />
+        <AnalyticsPanel copy={copy} isDarkMode={isDarkMode} />
+        <MobileCommunityPanel copy={copy} isDarkMode={isDarkMode} />
         <FinalCta copy={copy} />
       </Stack>
     </Stack>

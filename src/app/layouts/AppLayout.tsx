@@ -222,14 +222,24 @@ const Layout = () => {
       }}
     >
       <AppBar
-        position="sticky"
+        position={isLandingRoute && !user ? "absolute" : "sticky"}
         elevation={0}
         sx={{
           backdropFilter: NAV_BACKDROP_FILTER,
-          backgroundColor: NAV_SURFACE_BACKGROUND,
-          color: "var(--sn-text-primary)",
-          borderBottom: "1px solid var(--sn-border-soft)",
-          boxShadow: "var(--sn-shadow-soft)",
+          backgroundColor:
+            isLandingRoute && !user ? "transparent" : NAV_SURFACE_BACKGROUND,
+          color:
+            isLandingRoute && !user && isDarkMode
+              ? "#ffffff"
+              : "var(--sn-text-primary)",
+          borderBottom:
+            isLandingRoute && !user
+              ? "1px solid transparent"
+              : "1px solid var(--sn-border-soft)",
+          boxShadow: isLandingRoute && !user ? "none" : "var(--sn-shadow-soft)",
+          left: 0,
+          right: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
         }}
       >
         <Container maxWidth="xl">
