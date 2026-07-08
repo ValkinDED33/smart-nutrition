@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
@@ -17,6 +17,7 @@ import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
 import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { useLanguage } from "../shared/language";
+import { clearSensitiveSearchParamsFromCurrentUrl } from "../shared/lib/sensitiveUrl";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AuthSurface } from "@shared/ui";
 
@@ -27,10 +28,14 @@ const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, appLanguage } = useLanguage();
-  const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams]);
+  const [token] = useState(() => searchParams.get("token")?.trim() ?? "");
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const verifiedTokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    clearSensitiveSearchParamsFromCurrentUrl(["token"]);
+  }, []);
 
   useEffect(() => {
     companionRef.current = companion;

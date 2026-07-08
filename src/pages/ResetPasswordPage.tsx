@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,7 @@ import { AuthApiError, resetPassword } from "../shared/api/auth";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { useLanguage } from "../shared/language";
+import { clearSensitiveSearchParamsFromCurrentUrl } from "../shared/lib/sensitiveUrl";
 import { AuthSurface } from "@shared/ui";
 
 type FormData = {
@@ -32,7 +33,11 @@ const ResetPasswordPage = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const token = searchParams.get("token")?.trim() ?? "";
+  const [token] = useState(() => searchParams.get("token")?.trim() ?? "");
+
+  useEffect(() => {
+    clearSensitiveSearchParamsFromCurrentUrl(["token"]);
+  }, []);
 
   const schema = useMemo(
     () =>
