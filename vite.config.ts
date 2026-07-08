@@ -62,6 +62,9 @@ export default defineConfig({
   },
 
   build: {
+    // The bundle audit keeps ordinary chunks below 500 KiB and allows only the
+    // lazy, runtime-guarded Three.js companion vendor chunk to use this ceiling.
+    chunkSizeWarningLimit: 760,
     rollupOptions: {
       output: {
         entryFileNames: "assets/[name]-[hash].js",
