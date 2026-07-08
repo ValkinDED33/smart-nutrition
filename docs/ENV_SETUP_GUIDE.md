@@ -31,7 +31,11 @@ SMART_NUTRITION_JWT_SECRET=replace-with-a-long-random-secret-at-least-32-chars
 SMART_NUTRITION_API_PORT=8787
 ```
 
-Если запускаешь production, обязательно поставь свой длинный `SMART_NUTRITION_JWT_SECRET`.
+Если запускаешь production на Render/Docker, обязательно поставь свой длинный
+`SMART_NUTRITION_JWT_SECRET` и `NODE_ENV=production` в environment самого
+сервиса. Для локального `.env`, который читает Vite, не ставь
+`NODE_ENV=production`: `npm run server:check` сам включает production readiness
+mode и не требует этого флага в `.env`.
 
 Для Vercel-фронтенда и отдельного backend-домена не используй `loopback URL` в
 frontend build env. На Vercel поставь:

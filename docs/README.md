@@ -68,8 +68,12 @@ copy .env.example .env
 Set at least:
 
 - `SMART_NUTRITION_JWT_SECRET`
-- `NODE_ENV`
 - `SMART_NUTRITION_DB_PATH` if you do not want the default SQLite location
+
+Keep local `.env` frontend-safe. `npm run server:check` selects production
+readiness mode internally, so local builds do not need `NODE_ENV=production` in
+`.env`. Deployment hosts such as Render or Docker should still set
+`NODE_ENV=production` in their service environment.
 
 Optional assistant runtime upgrade:
 
@@ -132,14 +136,13 @@ npm run test
 ## Notes
 
 - The current build does not require any paid API keys for the default local-preview flow.
-- Open Food Facts works directly from the browser and does not require `.env`.
-- Product lookup is Europe-first: local products first, then Open Food Facts.
+- Product lookup goes through the backend product contract; browser code must not call external food catalogs directly.
+- Product lookup is resilient through backend-owned catalog/provider fallback.
 - Photo logging is now a free draft/review flow rather than paid AI vision recognition.
 - Assistant Runtime now uses a provider layer with honest fallback: local contextual answers stay available, and a remote AI runtime can be enabled through the backend without rewriting the UI.
 - When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/ai`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
 - The assistant backend now supports a provider chain with automatic fallback between Groq, Google AI Studio, OpenRouter, and other OpenAI-compatible runtimes when multiple credentials are configured.
-- `/api/health` now exposes per-provider assistant runtime status, including failure cooldown state for flaky providers.
-- If the backend on `https://smart-nutrition-sk5r.onrender.com` is available, the app prefers remote auth and cloud snapshots automatically.
+- Public `/api/health` and `/api/ready` expose sanitized liveness/readiness only; detailed provider diagnostics belong behind gated debug/admin surfaces.
 - If the backend on `https://smart-nutrition-sk5r.onrender.com` is available, the app prefers remote auth and syncs profile/meal state through dedicated backend endpoints automatically.
 - Remote mode now keeps a cached cloud snapshot/meta locally, so session restore and cloud status stay responsive even through short backend interruptions.
 - The server now validates environment configuration on startup and refuses weak default JWT secrets in `production`.
