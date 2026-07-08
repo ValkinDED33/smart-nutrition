@@ -26,6 +26,16 @@ describe("registerServiceWorker update contract", () => {
     );
 
     expect(controllingBlock).toContain("if (updateRequested)");
-    expect(controllingBlock).toContain("window.location.reload()");
+    expect(controllingBlock).toContain("reloadAfterUpdate()");
+    expect(source).toContain("window.location.reload()");
+  });
+
+  it("keeps a fallback reload path if the service worker handoff stalls", () => {
+    const source = registerServiceWorkerSource();
+
+    expect(source).toContain("PWA_UPDATE_RELOAD_FALLBACK_MS");
+    expect(source).toContain("window.setTimeout");
+    expect(source).toContain("window.clearTimeout");
+    expect(source).toContain("reloadAfterUpdate");
   });
 });
