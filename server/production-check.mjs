@@ -170,11 +170,11 @@ const run = () => {
     }),
     createCheck({
       id: "super-admin-seed",
-      label: "Super admin bootstrap email is configured",
+      label: "Owner bootstrap email is configured",
       ok: Boolean(config.superAdminEmail),
       detail: config.superAdminEmail
         ? `Bootstrap email: ${config.superAdminEmail}`
-        : "Set SMART_NUTRITION_SUPER_ADMIN_EMAIL so the first matching registered account becomes SUPER_ADMIN.",
+        : "Set SMART_NUTRITION_SUPER_ADMIN_EMAIL so the matching account is promoted to OWNER on backend start.",
       required: false,
     }),
     createCheck({

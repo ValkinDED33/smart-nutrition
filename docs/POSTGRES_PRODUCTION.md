@@ -28,7 +28,7 @@ Smart Nutrition applies PostgreSQL schema migrations automatically when the back
 
 ## Production Seed
 
-Set `SMART_NUTRITION_SUPER_ADMIN_EMAIL` before launch. The first registered account with that email is promoted to `SUPER_ADMIN`, and existing matching accounts are promoted again on service bootstrap.
+Set `SMART_NUTRITION_SUPER_ADMIN_EMAIL` before launch. The first matching account with that email is promoted to `OWNER`, and existing matching accounts are promoted again on service bootstrap.
 
 ## Predeploy Check
 
