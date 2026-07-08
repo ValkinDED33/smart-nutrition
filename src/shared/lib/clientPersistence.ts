@@ -7,6 +7,7 @@ const DURABLE_PREFERENCE_KEYS = new Set([
   "smart-nutrition.language",
   "smart-nutrition.color-mode",
   "smart-nutrition.auth-session-hint",
+  "smart-nutrition.remote-device-id",
 ]);
 
 const memoryStore = new Map<string, string>();

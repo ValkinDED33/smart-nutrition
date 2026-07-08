@@ -31,6 +31,7 @@ class FakeStorage {
 const LANGUAGE_KEY = "smart-nutrition.language";
 const COLOR_MODE_KEY = "smart-nutrition.color-mode";
 const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
+const REMOTE_DEVICE_ID_KEY = "smart-nutrition.remote-device-id";
 const REMOTE_SNAPSHOT_KEY = "smart-nutrition.remote-snapshot";
 const ASSISTANT_HISTORY_KEY = "smart-nutrition-assistant-history:user-1";
 const PRIVATE_PAYLOAD = "{ private: true }";
@@ -71,6 +72,7 @@ describe("clientPersistence", () => {
     localStorage.setItem(LANGUAGE_KEY, "en");
     localStorage.setItem(COLOR_MODE_KEY, "dark");
     localStorage.setItem(AUTH_SESSION_HINT_KEY, SAVED_AUTH_HINT);
+    localStorage.setItem(REMOTE_DEVICE_ID_KEY, "device-1");
     localStorage.setItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
     localStorage.setItem(ASSISTANT_HISTORY_KEY, PRIVATE_PAYLOAD);
     sessionStorage.setItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
@@ -85,10 +87,12 @@ describe("clientPersistence", () => {
     expect(persistence.getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBe(
       SAVED_AUTH_HINT
     );
+    expect(persistence.getClientStorageItem(REMOTE_DEVICE_ID_KEY)).toBe("device-1");
     expect(persistence.getClientStorageItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
     expect(localStorage.getItem(LANGUAGE_KEY)).toBe("en");
     expect(localStorage.getItem(COLOR_MODE_KEY)).toBe("dark");
     expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(localStorage.getItem(REMOTE_DEVICE_ID_KEY)).toBe("device-1");
     expect(localStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
     expect(localStorage.getItem(ASSISTANT_HISTORY_KEY)).toBeNull();
     expect(sessionStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
@@ -102,13 +106,16 @@ describe("clientPersistence", () => {
     await persistence.initializeClientPersistence();
     persistence.setClientStorageItem(LANGUAGE_KEY, "pl");
     persistence.setClientStorageItem(AUTH_SESSION_HINT_KEY, SAVED_AUTH_HINT);
+    persistence.setClientStorageItem(REMOTE_DEVICE_ID_KEY, "device-1");
     persistence.setClientStorageItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
 
     expect(persistence.getClientStorageItem(LANGUAGE_KEY)).toBe("pl");
     expect(persistence.getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(persistence.getClientStorageItem(REMOTE_DEVICE_ID_KEY)).toBe("device-1");
     expect(persistence.getClientStorageItem(REMOTE_SNAPSHOT_KEY)).toBe(PRIVATE_PAYLOAD);
     expect(localStorage.getItem(LANGUAGE_KEY)).toBe("pl");
     expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(localStorage.getItem(REMOTE_DEVICE_ID_KEY)).toBe("device-1");
     expect(localStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
 
     persistence.removeClientStorageItem(LANGUAGE_KEY);
