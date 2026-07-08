@@ -16,7 +16,7 @@ describe("explicit 3D companion surface contract", () => {
     ).toBe(false);
   });
 
-  it("allows explicit 3D when the device supports it", () => {
+  it("allows explicit 3D when the desktop-class device supports it", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
@@ -24,6 +24,26 @@ describe("explicit 3D companion surface contract", () => {
         size: 220,
       })
     ).toBe(true);
+  });
+
+  it("does not let explicit 3D preference bypass mobile and low-power runtime guards", () => {
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        isMobileViewport: true,
+        renderMode: "3d",
+        size: 220,
+      })
+    ).toBe(false);
+
+    expect(
+      shouldUseCompanionCanvas({
+        canUseCanvas: true,
+        lowPowerDevice: true,
+        renderMode: "3d",
+        size: 220,
+      })
+    ).toBe(false);
   });
 
   it("keeps explicit 3D surfaces user-controlled with local fallback and error recovery", async () => {

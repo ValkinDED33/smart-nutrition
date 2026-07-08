@@ -1,6 +1,11 @@
 import { reportClientErrorDiagnostic } from "@shared/api/clientErrors";
 import {
   buildErrorRecoveryDiagnostic,
+  getSessionStorageItem,
+  recoverApplicationAfterStaleBuild,
+  setSessionStorageItem,
+  shouldAttemptStaleBuildRecovery,
+  STALE_BUILD_RECOVERY_KEY,
   type ClientErrorReportSource,
   type ErrorRecoveryDiagnostic,
 } from "@shared/lib/errorRecovery";
@@ -32,6 +37,10 @@ const getCurrentRoute = () => {
 
 const getCurrentUserAgent = () =>
   typeof navigator === "undefined" ? undefined : navigator.userAgent;
+
+type VitePreloadErrorEvent = Event & {
+  payload?: unknown;
+};
 
 export const shouldReportClientRuntimeError = (
   diagnostic: ErrorRecoveryDiagnostic,
@@ -109,6 +118,28 @@ export const installGlobalClientErrorReporting = () => {
       toErrorLike(event.reason, "Unhandled promise rejection"),
       { source: "unhandled-rejection" }
     );
+  });
+
+  window.addEventListener("vite:preloadError", (event) => {
+    const preloadEvent = event as VitePreloadErrorEvent;
+    const error = toErrorLike(preloadEvent.payload, "Vite preload failed");
+
+    preloadEvent.preventDefault();
+    reportClientRuntimeError(error, { source: "vite-preload-error" });
+
+    if (
+      !shouldAttemptStaleBuildRecovery(
+        error,
+        getSessionStorageItem(STALE_BUILD_RECOVERY_KEY),
+        Date.now(),
+        window.location.href
+      )
+    ) {
+      return;
+    }
+
+    setSessionStorageItem(STALE_BUILD_RECOVERY_KEY, String(Date.now()));
+    recoverApplicationAfterStaleBuild(window.location.href);
   });
 
   return true;

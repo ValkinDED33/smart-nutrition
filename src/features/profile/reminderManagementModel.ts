@@ -64,6 +64,9 @@ export const sortReminders = (items: ReminderItem[]) =>
     return aTime - bTime;
   });
 
+export const upsertReminderItem = (items: ReminderItem[], item: ReminderItem) =>
+  sortReminders([item, ...items.filter((entry) => entry.id !== item.id)]);
+
 const fallbackReminderTimeZone = "Europe/Warsaw";
 
 export const formatReminderDateTime = (

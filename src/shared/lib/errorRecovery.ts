@@ -77,6 +77,7 @@ export type ClientErrorReportSource =
   | "react-error-boundary"
   | "window-error"
   | "unhandled-rejection"
+  | "vite-preload-error"
   | "bootstrap";
 
 export interface ClientErrorReportPayload extends ErrorRecoveryDiagnostic {
@@ -325,4 +326,10 @@ export const buildRecoveryReloadUrl = (
   } catch {
     return "/";
   }
+};
+
+export const recoverApplicationAfterStaleBuild = (currentHref: string) => {
+  void clearRuntimeCaches().finally(() => {
+    window.location.replace(buildRecoveryReloadUrl(currentHref));
+  });
 };

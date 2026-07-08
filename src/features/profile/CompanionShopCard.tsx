@@ -43,7 +43,7 @@ const shopCopy = {
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
     renderModeHint:
-      "3D відкривається тільки для перегляду образу, звичайний інтерфейс лишається легким.",
+      "3D відкривається для перегляду образу. На телефонах і в режимі економії лишається 2D.",
     renderModeLoading: "Завантажую 3D",
     renderModeError: "3D не завантажився, показую 2D",
     categories: {
@@ -76,7 +76,7 @@ const shopCopy = {
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
     renderModeHint:
-      "3D otwiera się tylko do podglądu wyglądu, zwykły interfejs zostaje lekki.",
+      "3D otwiera się do podglądu wyglądu. Na telefonach i w trybie oszczędzania zostaje 2D.",
     renderModeLoading: "Ładuję 3D",
     renderModeError: "3D się nie załadowało, pokazuję 2D",
     categories: {
@@ -109,7 +109,7 @@ const shopCopy = {
     renderMode2d: "Fast 2D",
     renderMode3d: "Live 3D",
     renderModeHint:
-      "3D opens only for previewing the look, while the normal interface stays lightweight.",
+      "3D opens for previewing the look. Phones and data-saver mode stay in 2D.",
     renderModeLoading: "Loading 3D",
     renderModeError: "3D failed, showing 2D",
     categories: {

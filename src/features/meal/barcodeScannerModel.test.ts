@@ -209,7 +209,7 @@ describe("barcodeScannerModel", () => {
     ).toEqual({ available: false, reason: "insecure_context" });
   });
 
-  it("detects torch support from capabilities or settings", () => {
+  it("detects torch support only from confirmed camera capabilities", () => {
     expect(
       resolveBarcodeTorchAvailable({
         capabilitiesTorch: true,
@@ -220,7 +220,7 @@ describe("barcodeScannerModel", () => {
       resolveBarcodeTorchAvailable({
         settingsTorch: false,
       })
-    ).toBe(true);
+    ).toBe(false);
 
     expect(resolveBarcodeTorchAvailable({})).toBe(false);
   });

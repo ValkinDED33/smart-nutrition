@@ -546,6 +546,9 @@ const isRemoteHealthPayload = (value: unknown) =>
   value !== null &&
   "ok" in value &&
   (value as { ok?: unknown }).ok === true &&
+  (isLegacyRemoteHealthPayload(value) || isPublicRemoteHealthPayload(value));
+
+const isLegacyRemoteHealthPayload = (value: object) =>
   "provider" in value &&
   ((value as { provider?: unknown }).provider ===
     "smart-nutrition-sqlite-api" ||
@@ -553,6 +556,22 @@ const isRemoteHealthPayload = (value: unknown) =>
       "smart-nutrition-postgres-api" ||
     (value as { provider?: unknown }).provider ===
       "smart-nutrition-mongodb-api");
+
+const isPublicRemoteHealthPayload = (value: object) => {
+  const payload = value as {
+    auth?: unknown;
+    mode?: unknown;
+    storage?: { engine?: unknown } | null;
+  };
+
+  return (
+    payload.auth === "remote-cloud" &&
+    typeof payload.mode === "string" &&
+    typeof payload.storage === "object" &&
+    payload.storage !== null &&
+    ["mongodb", "postgres", "sqlite"].includes(String(payload.storage.engine))
+  );
+};
 
 interface RemoteProbeOptions {
   force?: boolean;

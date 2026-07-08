@@ -7,9 +7,12 @@ import {
   getReminderQuantityLabelKey,
   sortReminders,
   toReminderType,
+  upsertReminderItem,
 } from "./reminderManagementModel";
 
 const testTimestamp = "2026-06-23T08:00:00.000Z";
+const firstReminderRunAt = "2026-06-23T09:00:00.000Z";
+const secondReminderRunAt = "2026-06-23T10:00:00.000Z";
 
 const createReminder = (overrides: Partial<ReminderItem>): ReminderItem => ({
   id: "reminder-1",
@@ -56,8 +59,8 @@ describe("reminderManagementModel", () => {
   it("sorts reminders by next run and keeps unscheduled items last", () => {
     const sorted = sortReminders([
       createReminder({ id: "no-next", nextRunAt: null }),
-      createReminder({ id: "second", nextRunAt: "2026-06-23T10:00:00.000Z" }),
-      createReminder({ id: "first", nextRunAt: "2026-06-23T09:00:00.000Z" }),
+      createReminder({ id: "second", nextRunAt: secondReminderRunAt }),
+      createReminder({ id: "first", nextRunAt: firstReminderRunAt }),
     ]);
 
     expect(sorted.map((item) => item.id)).toEqual(["first", "second", "no-next"]);
@@ -68,16 +71,56 @@ describe("reminderManagementModel", () => {
       createReminder({
         id: "paused",
         active: false,
-        nextRunAt: "2026-06-23T08:00:00.000Z",
+        nextRunAt: testTimestamp,
       }),
       createReminder({
         id: "active",
         active: true,
-        nextRunAt: "2026-06-23T09:00:00.000Z",
+        nextRunAt: firstReminderRunAt,
       }),
     ]);
 
     expect(sorted.map((item) => item.id)).toEqual(["active", "paused"]);
+  });
+
+  it("upserts a backend-confirmed reminder without duplicating it", () => {
+    const first = createReminder({
+      id: "first",
+      title: "Old title",
+      nextRunAt: firstReminderRunAt,
+    });
+    const second = createReminder({
+      id: "second",
+      title: "Second",
+      nextRunAt: secondReminderRunAt,
+    });
+    const updatedFirst = createReminder({
+      id: "first",
+      title: "Updated title",
+      nextRunAt: "2026-06-23T08:30:00.000Z",
+    });
+
+    const upserted = upsertReminderItem([first, second], updatedFirst);
+
+    expect(upserted.map((item) => item.id)).toEqual(["first", "second"]);
+    expect(upserted[0]?.title).toBe("Updated title");
+  });
+
+  it("sorts newly upserted reminders with the same production ordering", () => {
+    const current = [
+      createReminder({ id: "later", nextRunAt: "2026-06-23T11:00:00.000Z" }),
+      createReminder({ id: "paused", active: false, nextRunAt: testTimestamp }),
+    ];
+    const created = createReminder({
+      id: "created",
+      nextRunAt: firstReminderRunAt,
+    });
+
+    expect(upsertReminderItem(current, created).map((item) => item.id)).toEqual([
+      "created",
+      "later",
+      "paused",
+    ]);
   });
 
   it("formats next run in the reminder timezone", () => {

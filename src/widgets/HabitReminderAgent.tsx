@@ -367,14 +367,16 @@ const HabitReminderAgent = () => {
         }
       }
 
-      if (nowMinutes >= 18 * 60 && water.dailyWaterGoal > 0) {
-        if (waterConsumedToday < water.dailyWaterGoal * 0.6) {
-          maybeSendNotification(
-            `${todayKey}-water-low`,
-            wellbeingCopy.waterTitle,
-            withPersonalNotificationContext(wellbeingCopy.waterBody, personalContext)
-          );
-        }
+      if (
+        nowMinutes >= 18 * 60 &&
+        water.dailyWaterGoal > 0 &&
+        waterConsumedToday < water.dailyWaterGoal * 0.6
+      ) {
+        maybeSendNotification(
+          `${todayKey}-water-low`,
+          wellbeingCopy.waterTitle,
+          withPersonalNotificationContext(wellbeingCopy.waterBody, personalContext)
+        );
       }
 
       if (

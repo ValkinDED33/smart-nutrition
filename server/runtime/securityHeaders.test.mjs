@@ -30,6 +30,8 @@ describe("security headers runtime", () => {
     expect(response.headers["Content-Security-Policy"]).toContain(
       "default-src 'self'"
     );
+    expect(response.headers["Permissions-Policy"]).toContain("camera=(self)");
+    expect(response.headers["Permissions-Policy"]).toContain("microphone=()");
   });
 
   it("does not overwrite headers that were already set", () => {
@@ -48,5 +50,12 @@ describe("security headers runtime", () => {
     expect(buildContentSecurityPolicy({ isProduction: false })).not.toContain(
       "upgrade-insecure-requests"
     );
+  });
+
+  it("does not allow frontend connections to external product catalog providers", () => {
+    const policy = buildContentSecurityPolicy({ isProduction: true });
+
+    expect(policy).not.toContain("openfoodfacts");
+    expect(policy).not.toContain("fdc.nal.usda.gov");
   });
 });

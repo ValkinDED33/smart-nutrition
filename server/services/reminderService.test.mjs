@@ -12,10 +12,11 @@ const createUser = (overrides = {}) => ({
 describe("reminderService", () => {
   it("exposes a canonical reminder contract while preserving legacy storage", async () => {
     const repository = {
-      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+      updateUserReminders: vi.fn(async (userId, reminders) => ({
         ...createUser({ id: userId }),
         medicationReminders: reminders,
       })),
+      updateUserMedicationReminders: vi.fn(),
     };
     const service = createReminderService({ authRepository: repository });
 
@@ -32,13 +33,15 @@ describe("reminderService", () => {
         title: "позвонить врачу",
       },
     });
-    expect(repository.updateUserMedicationReminders).toHaveBeenCalledWith(
+    expect(repository.updateUserReminders).toHaveBeenCalledWith(
       "user-1",
       expect.arrayContaining([expect.objectContaining({ type: "task" })])
     );
+    expect(repository.updateUserMedicationReminders).not.toHaveBeenCalled();
     expect(service.getStatus()).toEqual({
       enabled: true,
-      storageKey: "medicationReminders",
+      storageKey: "reminders",
+      legacyStorageKey: "medicationReminders",
       backwardCompatibleStorage: true,
       supportedTypes: [
         "medication",
@@ -60,6 +63,31 @@ describe("reminderService", () => {
 
     expect(service.createMedicationReminderFromText).toBe(service.createReminderFromText);
     expect(service.recordMedicationAction).toBe(service.recordDoseAction);
+  });
+
+  it("falls back to the legacy reminder storage method for existing repositories", async () => {
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({
+        ...createUser({ id: userId }),
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createReminderService({ authRepository: repository });
+
+    const result = await service.createReminderFromUserText(
+      createUser(),
+      {
+        type: "task",
+        text: "Напомни позвонить врачу о 10:00",
+      },
+      new Date("2026-06-20T05:00:00.000Z")
+    );
+
+    expect(result.ok).toBe(true);
+    expect(repository.updateUserMedicationReminders).toHaveBeenCalledWith(
+      "user-1",
+      expect.arrayContaining([expect.objectContaining({ type: "task" })])
+    );
   });
 
   it("creates typed water and habit reminders through the canonical contract", async () => {

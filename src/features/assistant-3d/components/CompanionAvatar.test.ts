@@ -51,7 +51,7 @@ describe("shouldUseCompanionCanvas", () => {
     ).toBe(false);
   });
 
-  it("honors explicit 3D mode on capable mobile devices", () => {
+  it("keeps explicit 3D mode lightweight on mobile devices", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
@@ -59,7 +59,7 @@ describe("shouldUseCompanionCanvas", () => {
         renderMode: "3d",
         size: 76,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("respects reduced motion and data saver preferences", () => {
@@ -93,7 +93,7 @@ describe("shouldUseCompanionCanvas", () => {
     ).toBe(false);
   });
 
-  it("keeps explicit 3D mode authoritative on capable low power devices", () => {
+  it("keeps explicit 3D mode lightweight on low power devices", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
@@ -101,6 +101,6 @@ describe("shouldUseCompanionCanvas", () => {
         renderMode: "3d",
         size: 76,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 });

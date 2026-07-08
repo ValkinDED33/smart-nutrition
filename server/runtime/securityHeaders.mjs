@@ -3,7 +3,7 @@ const securityHeaderValues = {
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy":
-    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=()",
+    "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=()",
   "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   "Cross-Origin-Resource-Policy": "same-site",
 };
@@ -33,7 +33,7 @@ export const buildContentSecurityPolicy = ({ isProduction = false } = {}) => {
     "form-action 'self'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://smart-nutrition-sk5r.onrender.com https://*.posthog.com https://*.ingest.sentry.io https://api.openfoodfacts.org https://world.openfoodfacts.org",
+    "connect-src 'self' https://smart-nutrition-sk5r.onrender.com https://*.posthog.com https://*.ingest.sentry.io",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "worker-src 'self' blob:",

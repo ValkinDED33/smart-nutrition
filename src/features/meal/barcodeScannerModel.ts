@@ -52,11 +52,10 @@ export type BarcodeScannerAvailability =
 
 export const resolveBarcodeTorchAvailable = ({
   capabilitiesTorch,
-  settingsTorch,
 }: {
   capabilitiesTorch?: boolean;
   settingsTorch?: boolean;
-}) => capabilitiesTorch === true || typeof settingsTorch === "boolean";
+}) => capabilitiesTorch === true;
 
 export const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
 export const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;

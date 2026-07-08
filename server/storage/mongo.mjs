@@ -1130,6 +1130,19 @@ export const createMongoStorage = async (config) => {
       return getResolvedUser(userId);
     },
 
+    updateUserReminders: async (userId, reminders) => {
+      await collections.users.updateOne(
+        { id: userId },
+        {
+          $set: {
+            medicationReminders: Array.isArray(reminders) ? reminders : [],
+          },
+        }
+      );
+
+      return getResolvedUser(userId);
+    },
+
     updateUserMedicationReminders: async (userId, reminders) => {
       await collections.users.updateOne(
         { id: userId },

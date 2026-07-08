@@ -64,7 +64,7 @@ const assistantCopy = {
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
     renderModeHint:
-      "3D вмикається тільки вручну для превʼю і не навантажує звичайний інтерфейс.",
+      "3D вмикається вручну для превʼю. На телефонах і в режимі економії лишається 2D.",
     renderModeLoading: "Завантажую 3D",
     renderModeError: "3D не завантажився, показую 2D",
     roleFriend: "Друг",
@@ -127,7 +127,7 @@ const assistantCopy = {
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
     renderModeHint:
-      "3D włącza się tylko ręcznie dla podglądu i nie obciąża zwykłego interfejsu.",
+      "3D włącza się ręcznie dla podglądu. Na telefonach i w trybie oszczędzania zostaje 2D.",
     renderModeLoading: "Ładuję 3D",
     renderModeError: "3D się nie załadowało, pokazuję 2D",
     roleFriend: "Znajomy",
@@ -190,7 +190,7 @@ const assistantCopy = {
     renderMode2d: "Fast 2D",
     renderMode3d: "Live 3D",
     renderModeHint:
-      "3D is enabled manually for preview and does not burden the normal interface.",
+      "3D is enabled manually for preview. Phones and data-saver mode stay in 2D.",
     renderModeLoading: "Loading 3D",
     renderModeError: "3D failed, showing 2D",
     roleFriend: "Friend",

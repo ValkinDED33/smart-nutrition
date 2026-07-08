@@ -319,6 +319,12 @@ const MealBuilderPage = () => {
     );
   };
 
+  const openProductSearchFromScanner = () => {
+    setActiveSection("add");
+    handleInputModeChange("search");
+    setActiveAddTool("search");
+  };
+
   const sections = [
     { id: "day", label: copy.sections.day },
     { id: "add", label: copy.sections.add },
@@ -613,7 +619,10 @@ const MealBuilderPage = () => {
               ) : null}
               {activeAddTool === "scanner" ? (
                 renderLazyModule(copy.addTools.scanner, (
-                  <BarcodeScanner mealType={mealType} />
+                  <BarcodeScanner
+                    mealType={mealType}
+                    onOpenProductSearch={openProductSearchFromScanner}
+                  />
                 ))
               ) : null}
             </Stack>
@@ -621,7 +630,10 @@ const MealBuilderPage = () => {
 
           {inputMode === "barcode" ? (
             renderLazyModule(copy.modes.barcode.title, (
-              <BarcodeScanner mealType={mealType} />
+              <BarcodeScanner
+                mealType={mealType}
+                onOpenProductSearch={openProductSearchFromScanner}
+              />
             ))
           ) : null}
         </Stack>
@@ -648,7 +660,10 @@ const MealBuilderPage = () => {
         <Stack spacing={3}>
           {mealTypeSelector}
           {renderLazyModule(copy.sections.scan, (
-            <BarcodeScanner mealType={mealType} />
+            <BarcodeScanner
+              mealType={mealType}
+              onOpenProductSearch={openProductSearchFromScanner}
+            />
           ))}
         </Stack>
       ) : null}

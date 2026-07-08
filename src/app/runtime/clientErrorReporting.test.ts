@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  installGlobalClientErrorReporting,
   reportClientRuntimeError,
   renderBootstrapFailureFallback,
   shouldReportClientRuntimeError,
 } from "./clientErrorReporting";
-import { buildErrorRecoveryDiagnostic } from "@shared/lib/errorRecovery";
+import {
+  buildErrorRecoveryDiagnostic,
+  STALE_BUILD_RECOVERY_KEY,
+} from "@shared/lib/errorRecovery";
 
 const TEST_NOW_ISO = "2026-06-23T10:00:00.000Z";
 const WINDOW_ERROR_SOURCE = "window-error";
@@ -65,5 +69,75 @@ describe("clientErrorReporting", () => {
     expect(container.innerHTML).toContain("Smart Nutrition");
     expect(container.innerHTML).toContain(diagnostic.id);
     expect(container.innerHTML).toContain("Перезавантажити");
+  });
+
+  it("recovers automatically from Vite preload errors without a white screen", async () => {
+    const listeners = new Map<string, EventListener>();
+    const storage = new Map<string, string>();
+    const replace = vi.fn();
+    const preventDefault = vi.fn();
+
+    vi.stubGlobal("window", {
+      addEventListener: vi.fn((type: string, listener: EventListener) => {
+        listeners.set(type, listener);
+      }),
+      caches: {
+        keys: vi.fn(async () => []),
+      },
+      location: {
+        href: "https://smart-nutrition.club/meals",
+        pathname: "/meals",
+        search: "",
+        replace,
+      },
+      sessionStorage: {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+        removeItem: (key: string) => storage.delete(key),
+        key: (index: number) => {
+          let currentIndex = 0;
+
+          for (const key of storage.keys()) {
+            if (currentIndex === index) {
+              return key;
+            }
+
+            currentIndex += 1;
+          }
+
+          return null;
+        },
+        get length() {
+          return storage.size;
+        },
+      },
+    });
+    vi.stubGlobal("indexedDB", undefined);
+    vi.stubGlobal("navigator", {
+      serviceWorker: {
+        getRegistrations: vi.fn(async () => []),
+      },
+      userAgent: "test-agent",
+    });
+
+    expect(installGlobalClientErrorReporting()).toBe(true);
+
+    listeners.get("vite:preloadError")?.({
+      payload: new Error("Failed to fetch dynamically imported module"),
+      preventDefault,
+    } as unknown as Event);
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(storage.get(STALE_BUILD_RECOVERY_KEY)).toBeTruthy();
+    expect(replace).toHaveBeenCalledWith(
+      expect.stringContaining("sn_recovery=")
+    );
+
+    vi.unstubAllGlobals();
   });
 });

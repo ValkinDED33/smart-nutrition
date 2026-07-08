@@ -563,8 +563,13 @@ export const createMedicationReminderService = ({
 } = {}) => {
   const getUserReminders = (user) => normalizeMedicationReminders(user?.medicationReminders);
 
-  const persistReminders = async (user, reminders) =>
-    authRepository.updateUserMedicationReminders?.(user.id, normalizeMedicationReminders(reminders));
+  const persistReminders = async (user, reminders) => {
+    const normalizedReminders = normalizeMedicationReminders(reminders);
+    const persist =
+      authRepository.updateUserReminders ?? authRepository.updateUserMedicationReminders;
+
+    return persist?.(user.id, normalizedReminders);
+  };
 
   const createReminderFromText = async (user, text, now = new Date()) => {
     const reminder = parseMedicationReminderText(text, { now, timezone });

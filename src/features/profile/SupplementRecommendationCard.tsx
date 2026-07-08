@@ -13,6 +13,7 @@ import {
   getPrimarySupplementRecommendation,
   type SupplementRecommendation,
 } from "./supplementRecommendationModel";
+import { dispatchReminderUpserted } from "./reminderEvents";
 
 const supplementCardCopy = {
   uk: {
@@ -261,7 +262,8 @@ export const SupplementRecommendationCard = () => {
     setNotice(null);
 
     try {
-      await createRemoteReminder(item.reminder);
+      const reminder = await createRemoteReminder(item.reminder);
+      dispatchReminderUpserted(reminder);
       setNotice({ severity: "success", text: copy.created });
     } catch {
       setNotice({ severity: "error", text: copy.createError });

@@ -17,6 +17,7 @@ const SUPPORTED_REMINDER_TYPES = [
   "habit",
   "task",
 ];
+const CANONICAL_STORAGE_KEY = "reminders";
 const BACKWARD_COMPATIBLE_STORAGE_KEY = "medicationReminders";
 const REMINDER_ACTIONS = new Set(["taken", "done", "snoozed", "skipped"]);
 const SUPPORTED_REMINDER_TYPE_SET = new Set(SUPPORTED_REMINDER_TYPES);
@@ -105,8 +106,12 @@ export const createReminderService = (options = {}) => {
     snoozeReminder,
     updateReminderSchedule,
     getStatus: () => ({
-      enabled: Boolean(options.authRepository?.updateUserMedicationReminders),
-      storageKey: BACKWARD_COMPATIBLE_STORAGE_KEY,
+      enabled: Boolean(
+        options.authRepository?.updateUserReminders ??
+          options.authRepository?.updateUserMedicationReminders
+      ),
+      storageKey: CANONICAL_STORAGE_KEY,
+      legacyStorageKey: BACKWARD_COMPATIBLE_STORAGE_KEY,
       backwardCompatibleStorage: true,
       supportedTypes: SUPPORTED_REMINDER_TYPES,
     }),

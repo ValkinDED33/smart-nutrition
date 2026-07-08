@@ -1321,6 +1321,19 @@ export const createPostgresStorage = async ({
       return getResolvedUser(userId);
     },
 
+    updateUserReminders: async (userId, reminders) => {
+      await pool.query(
+        `
+          UPDATE users
+          SET medication_reminders_json = $1::jsonb
+          WHERE id = $2
+        `,
+        [toJsonParam(Array.isArray(reminders) ? reminders : []), userId]
+      );
+
+      return getResolvedUser(userId);
+    },
+
     updateUserMedicationReminders: async (userId, reminders) => {
       await pool.query(
         `

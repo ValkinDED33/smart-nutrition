@@ -442,8 +442,10 @@ export const AssistantRuntimeCard = () => {
 
     try {
       await clearAssistantRuntimeMemory(userId);
-    } finally {
       setMessages([createWelcomeMessage(context)]);
+    } catch {
+      setError(copy.error);
+    } finally {
       setLoading(false);
     }
   };

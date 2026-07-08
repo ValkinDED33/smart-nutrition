@@ -46,6 +46,22 @@ const isLoopbackDatabaseUrl = (databaseUrl) => {
   }
 };
 
+const hasPlaceholderValue = (value) => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return (
+    normalized.includes("change_me") ||
+    normalized.includes("replace-with") ||
+    normalized.includes("your-verified-domain.com") ||
+    normalized.endsWith("@example.com") ||
+    normalized === "example.com"
+  );
+};
+
 const run = () => {
   let config;
 
@@ -68,8 +84,9 @@ const run = () => {
     createCheck({
       id: "jwt-secret",
       label: "JWT secret is production-ready",
-      ok: config.jwtSecret.length >= 32,
-      detail: "SMART_NUTRITION_JWT_SECRET must be unique and at least 32 characters.",
+      ok: config.jwtSecret.length >= 32 && !hasPlaceholderValue(config.jwtSecret),
+      detail:
+        "SMART_NUTRITION_JWT_SECRET must be unique, at least 32 characters, and not a placeholder.",
     }),
     createCheck({
       id: "cors",
@@ -81,28 +98,40 @@ const run = () => {
       id: "cookies",
       label: "Auth cookies match cross-site production mode",
       ok:
-        config.authCookieSameSite !== "None" ||
+        !config.isProduction ||
+        config.serveStatic ||
         (config.authCookieSameSite === "None" && config.authCookieSecure),
-      detail: `SameSite=${config.authCookieSameSite}, Secure=${config.authCookieSecure}`,
+      detail: `SameSite=${config.authCookieSameSite}, Secure=${config.authCookieSecure}, serveStatic=${config.serveStatic}`,
     }),
     createCheck({
       id: "database",
-      label: "PostgreSQL production database is configured",
-      ok: config.databaseProvider === "postgres" && Boolean(config.postgresUrl),
+      label: "Canonical production database is configured",
+      ok:
+        (config.databaseProvider === "postgres" &&
+          Boolean(config.postgresUrl) &&
+          !hasPlaceholderValue(config.postgresUrl)) ||
+        (config.databaseProvider === "mongodb" &&
+          Boolean(config.mongoUri) &&
+          !hasPlaceholderValue(config.mongoUri)),
       detail:
         config.databaseProvider === "postgres"
           ? `PostgreSQL provider enabled, schema version ${POSTGRES_SCHEMA_VERSION}`
-          : `Current provider: ${config.databaseProvider}. Use SMART_NUTRITION_DATABASE_PROVIDER=postgres for production.`,
+          : config.databaseProvider === "mongodb"
+            ? `MongoDB provider enabled, database ${config.mongoDatabaseName}`
+            : `Current provider: ${config.databaseProvider}. Use SMART_NUTRITION_DATABASE_PROVIDER=mongodb or postgres for production.`,
     }),
     createCheck({
       id: "postgres-ssl",
-      label: "PostgreSQL SSL is enabled for remote production databases",
+      label: "PostgreSQL SSL is valid when Postgres is used",
       ok:
         config.databaseProvider !== "postgres" ||
         !config.postgresUrl ||
         isLoopbackDatabaseUrl(config.postgresUrl) ||
         config.postgresSsl,
-      detail: `SSL=${config.postgresSsl}, loopback=${isLoopbackDatabaseUrl(config.postgresUrl)}`,
+      detail:
+        config.databaseProvider === "postgres"
+          ? `SSL=${config.postgresSsl}, loopback=${isLoopbackDatabaseUrl(config.postgresUrl)}`
+          : `Not applicable for ${config.databaseProvider} provider.`,
     }),
     createCheck({
       id: "backups",
@@ -121,10 +150,13 @@ const run = () => {
     createCheck({
       id: "email",
       label: "Email delivery is configured",
-      ok: config.emailTransportConfigured,
+      ok:
+        config.emailTransportConfigured &&
+        !hasPlaceholderValue(config.resendApiKey) &&
+        !hasPlaceholderValue(config.emailFromAddress),
       detail: config.emailTransportConfigured
         ? `From: ${config.emailFromName} <${config.emailFromAddress}>`
-        : "Set SMART_NUTRITION_RESEND_API_KEY and SMART_NUTRITION_EMAIL_FROM_ADDRESS.",
+        : "Set SMART_NUTRITION_RESEND_API_KEY and SMART_NUTRITION_EMAIL_FROM_ADDRESS. Do not use placeholders.",
       required: true,
     }),
     createCheck({

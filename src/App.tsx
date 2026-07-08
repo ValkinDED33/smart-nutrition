@@ -13,9 +13,8 @@ import { useLanguage } from "./shared/language";
 import { adminRouteRoles } from "@app/navigation/appNavigation";
 import { canAccessAdminCenter } from "@domain/user/roles";
 import {
-  buildRecoveryReloadUrl,
-  clearRuntimeCaches,
   getSessionStorageItem,
+  recoverApplicationAfterStaleBuild,
   setSessionStorageItem,
   shouldAttemptStaleBuildRecovery,
   STALE_BUILD_RECOVERY_KEY,
@@ -58,12 +57,6 @@ const ResetPasswordPage = lazy(loadResetPasswordPage);
 const NotFoundPage = lazy(loadNotFoundPage);
 
 const RouteFallback = () => <Loader fullScreen={false} size={80} />;
-
-const recoverApplicationAfterStaleBuild = (currentHref: string) => {
-  void clearRuntimeCaches().finally(() => {
-    window.location.replace(buildRecoveryReloadUrl(currentHref));
-  });
-};
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();

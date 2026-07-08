@@ -11,36 +11,9 @@ type ProductSearchResponse = {
   message?: string;
 };
 
-type OpenFoodFactsProduct = {
-  product_name?: unknown;
-  brands?: unknown;
-  code?: unknown;
-  nutriments?: unknown;
-  image_front_url?: unknown;
-  categories_tags?: unknown;
-};
-
-type OpenFoodFactsSearchResponse = {
-  products?: unknown[];
-};
-
-type OpenFoodFactsBarcodeResponse = {
-  product?: unknown;
-  status?: unknown;
-};
-
 const PRODUCT_SEARCH_LIMIT = 18;
 const FEATURED_PRODUCT_LIMIT = 12;
 const PRODUCT_LOOKUP_TIMEOUT_MS = 12_000;
-const OPEN_FOOD_FACTS_BASE_URL = "https://world.openfoodfacts.org";
-const OPEN_FOOD_FACTS_SEARCH_FIELDS = [
-  "product_name",
-  "brands",
-  "nutriments",
-  "image_front_url",
-  "code",
-  "categories_tags",
-].join(",");
 
 export type ProductLookupErrorCode =
   | "PRODUCT_LOOKUP_AUTH_REQUIRED"
@@ -99,73 +72,6 @@ const toNumber = (value: unknown) =>
     : typeof value === "string"
       ? Number.parseFloat(value) || 0
       : 0;
-
-const readOpenFoodFactsNutrient = (
-  nutriments: Record<string, unknown>,
-  key: string
-) => Math.max(toNumber(nutriments[`${key}_100g`] ?? nutriments[key]), 0);
-
-const formatOpenFoodFactsCategory = (value: unknown) => {
-  const categories = Array.isArray(value) ? value : [];
-  const firstCategory = categories.find((category): category is string =>
-    typeof category === "string" && category.trim().length > 0
-  );
-
-  if (!firstCategory) {
-    return undefined;
-  }
-
-  return firstCategory
-    .replace(/^[a-z]{2}:/i, "")
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-};
-
-const readOpenFoodFactsProduct = (value: unknown): Product | null => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-
-  const record = value as OpenFoodFactsProduct;
-  const name = toString(record.product_name);
-
-  if (!name) {
-    return null;
-  }
-
-  const code = toString(record.code);
-  const nutriments =
-    record.nutriments && typeof record.nutriments === "object" && !Array.isArray(record.nutriments)
-      ? (record.nutriments as Record<string, unknown>)
-      : {};
-  const nutrients = createEmptyNutrients();
-  const category = formatOpenFoodFactsCategory(record.categories_tags);
-
-  nutrients.calories = readOpenFoodFactsNutrient(nutriments, "energy-kcal");
-  nutrients.protein = readOpenFoodFactsNutrient(nutriments, "proteins");
-  nutrients.fat = readOpenFoodFactsNutrient(nutriments, "fat");
-  nutrients.carbs = readOpenFoodFactsNutrient(nutriments, "carbohydrates");
-  nutrients.fiber = readOpenFoodFactsNutrient(nutriments, "fiber");
-  nutrients.sugars = readOpenFoodFactsNutrient(nutriments, "sugars");
-  nutrients.sodium = readOpenFoodFactsNutrient(nutriments, "sodium");
-
-  return {
-    id: code
-      ? `openfoodfacts-${code}`
-      : `openfoodfacts-${name.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}`,
-    name,
-    unit: "g",
-    source: "OpenFoodFacts",
-    nutrients,
-    brand: toString(record.brands) || undefined,
-    barcode: code || undefined,
-    category,
-    imageUrl: toString(record.image_front_url) || undefined,
-    facts: category ? { foodGroup: category } : undefined,
-  };
-};
 
 const readProduct = (value: unknown): Product | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -301,99 +207,6 @@ const fetchBackendProducts = async ({
     : [];
 };
 
-const fetchOpenFoodFactsSearch = async ({
-  query,
-  limit,
-}: {
-  query: string;
-  limit: number;
-}) => {
-  const normalizedQuery = query.trim();
-
-  if (!normalizedQuery) {
-    return [];
-  }
-
-  const timeout = createAbortSignal(PRODUCT_LOOKUP_TIMEOUT_MS);
-  const params = new URLSearchParams({
-    search_terms: normalizedQuery,
-    search_simple: "1",
-    action: "process",
-    json: "1",
-    page_size: String(Math.max(1, Math.min(limit, PRODUCT_SEARCH_LIMIT))),
-    fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
-  });
-
-  try {
-    const response = await fetch(`${OPEN_FOOD_FACTS_BASE_URL}/cgi/search.pl?${params.toString()}`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      signal: timeout.signal,
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = (await response.json()) as OpenFoodFactsSearchResponse;
-
-    return Array.isArray(payload.products)
-      ? payload.products
-          .map(readOpenFoodFactsProduct)
-          .filter((item): item is Product => item !== null)
-      : [];
-  } catch {
-    return null;
-  } finally {
-    timeout.clear();
-  }
-};
-
-const fetchOpenFoodFactsByBarcode = async (barcode: string) => {
-  const normalizedBarcode = barcode.replace(/\D/g, "");
-
-  if (!normalizedBarcode) {
-    return null;
-  }
-
-  const timeout = createAbortSignal(PRODUCT_LOOKUP_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(
-      `${OPEN_FOOD_FACTS_BASE_URL}/api/v2/product/${normalizedBarcode}.json?fields=${OPEN_FOOD_FACTS_SEARCH_FIELDS}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-        signal: timeout.signal,
-      }
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = (await response.json()) as OpenFoodFactsBarcodeResponse;
-
-    if (payload.status === 0) {
-      return null;
-    }
-
-    return readOpenFoodFactsProduct(payload.product);
-  } catch {
-    return null;
-  } finally {
-    timeout.clear();
-  }
-};
-
-const canUseDirectOnlineFallback = (error: unknown) =>
-  error instanceof ProductLookupError &&
-  error.code !== "PRODUCT_LOOKUP_AUTH_REQUIRED";
-
 export const fetchProductByBarcode = async (
   barcode: string
 ): Promise<Product | null> => {
@@ -403,20 +216,10 @@ export const fetchProductByBarcode = async (
     return null;
   }
 
-  let products: Product[];
-
-  try {
-    products = await fetchBackendProducts({
-      query: normalizedBarcode,
-      limit: PRODUCT_SEARCH_LIMIT,
-    });
-  } catch (error) {
-    if (!canUseDirectOnlineFallback(error)) {
-      throw error;
-    }
-
-    return fetchOpenFoodFactsByBarcode(normalizedBarcode);
-  }
+  const products = await fetchBackendProducts({
+    query: normalizedBarcode,
+    limit: PRODUCT_SEARCH_LIMIT,
+  });
 
   return (
     products.find(
@@ -428,29 +231,10 @@ export const fetchProductByBarcode = async (
 export const searchProducts = async (query: string): Promise<Product[]> => {
   const normalizedQuery = query.trim();
   const limit = normalizedQuery ? PRODUCT_SEARCH_LIMIT : FEATURED_PRODUCT_LIMIT;
-  let backendProducts: Product[];
-
-  try {
-    backendProducts = await fetchBackendProducts({
-      query: normalizedQuery,
-      limit,
-    });
-  } catch (error) {
-    if (!canUseDirectOnlineFallback(error) || !normalizedQuery) {
-      throw error;
-    }
-
-    const fallbackProducts = await fetchOpenFoodFactsSearch({
-      query: normalizedQuery,
-      limit,
-    });
-
-    if (fallbackProducts === null) {
-      throw error;
-    }
-
-    return mergeProductsByIdentity(fallbackProducts).slice(0, limit);
-  }
+  const backendProducts = await fetchBackendProducts({
+    query: normalizedQuery,
+    limit,
+  });
 
   return mergeProductsByIdentity(backendProducts).slice(0, limit);
 };

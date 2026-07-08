@@ -1,5 +1,15 @@
 import { sendJson } from "../lib/http.mjs";
 
+const createPublicReadinessSummary = (readiness) => ({
+  ok: Boolean(readiness?.ok),
+  ready: Boolean(readiness?.ready),
+  checks: readiness?.checks ?? {},
+});
+
+const createPublicStorageSummary = (storage) => ({
+  engine: storage?.engine ?? "unknown",
+});
+
 export const createHealthRoutes = ({ healthController } = {}) =>
   healthController
     ? [
@@ -28,17 +38,8 @@ export const createHealthRoutes = ({ healthController } = {}) =>
 export const createHealthController = ({
   authService,
   getStorageStatus,
-  getCacheStatus,
   getStaticStatus,
-  getMetrics,
-  getLimits,
-  getWarnings,
   getEmailStatus,
-  getBrevoStatus,
-  getTelegramStatus,
-  getKeepAliveStatus,
-  getProductLookupStatus,
-  getAiStatus,
   getReadiness,
   getDebugStartup,
   debugStartupEnabled = false,
@@ -46,26 +47,25 @@ export const createHealthController = ({
   debugStartupEnabled,
 
   getHealth: ({ response }) => {
+    const healthInfo = authService.getHealthInfo();
+
     sendJson(response, 200, {
-      ...authService.getHealthInfo(),
-      storage: getStorageStatus(),
-      cache: getCacheStatus(),
+      ok: Boolean(healthInfo.ok),
+      mode: healthInfo.mode,
+      auth: healthInfo.auth,
+      storage: createPublicStorageSummary(getStorageStatus()),
       static: getStaticStatus(),
-      metrics: getMetrics(),
-      limits: getLimits(),
-      warnings: getWarnings(),
       email: getEmailStatus(),
-      brevo: getBrevoStatus?.() ?? null,
-      telegram: getTelegramStatus?.() ?? null,
-      keepAlive: getKeepAliveStatus?.() ?? null,
-      products: getProductLookupStatus?.() ?? null,
-      ai: getAiStatus(),
     });
   },
 
   getReadiness: ({ response }) => {
     const readiness = getReadiness();
-    sendJson(response, readiness.ready ? 200 : 503, readiness);
+    sendJson(
+      response,
+      readiness.ready ? 200 : 503,
+      createPublicReadinessSummary(readiness)
+    );
   },
 
   getDebugStartup: ({ response }) => {

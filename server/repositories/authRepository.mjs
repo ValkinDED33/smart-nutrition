@@ -8,6 +8,10 @@ export const createAuthRepository = (storage) => ({
   updateUser: (user) => storage.updateUser(user),
   updateUserTelegramConnection: (payload) =>
     storage.updateUserTelegramConnection?.(payload) ?? null,
+  updateUserReminders: (userId, reminders) =>
+    storage.updateUserReminders?.(userId, reminders) ??
+    storage.updateUserMedicationReminders?.(userId, reminders) ??
+    null,
   updateUserMedicationReminders: (userId, reminders) =>
     storage.updateUserMedicationReminders?.(userId, reminders) ?? null,
   disconnectUserTelegram: (userId) => storage.disconnectUserTelegram?.(userId) ?? null,

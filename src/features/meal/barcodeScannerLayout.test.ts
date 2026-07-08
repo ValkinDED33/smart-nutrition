@@ -56,9 +56,13 @@ describe("BarcodeScanner mobile preview layout", () => {
     expect(source).toContain("BARCODE_SCAN_NO_RESULT_TIMEOUT_MS");
     expect(source).toContain("scanTimedOut");
     expect(source).toContain("noResultSoundPlayedRef");
+    expect(source).toContain("scheduleNoResultTimeout");
+    expect(source).toContain("handleNoResultTimeout");
     expect(source).toContain("copy.retryScanner");
     expect(source).toContain("copy.enterManually");
     expect(source).toContain("copy.addManually");
+    expect(source).toContain("copy.fullProductSearch");
+    expect(source).toContain("onOpenProductSearch");
   });
 
   it("keeps scanner sound feedback user-controlled and non-persistent", () => {

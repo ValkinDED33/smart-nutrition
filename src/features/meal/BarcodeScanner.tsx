@@ -67,6 +67,7 @@ import {
 
 interface Props {
   mealType: MealType;
+  onOpenProductSearch?: () => void;
 }
 
 type LookupState = "idle" | "success" | "not_found" | "error";
@@ -88,10 +89,6 @@ type TorchMediaTrackConstraintSet = MediaTrackConstraintSet & {
 };
 
 type TorchMediaTrackSettings = MediaTrackSettings & {
-  torch?: boolean;
-};
-
-type TorchMediaTrackConstraints = MediaTrackConstraints & {
   torch?: boolean;
 };
 
@@ -172,6 +169,7 @@ const scannerCopy = {
       "Можна спробувати ще раз із кращим світлом або перейти до ручного введення без втрати прогресу.",
     enterManually: "Ввести код вручну",
     addManually: "Додати продукт вручну",
+    fullProductSearch: "Повний пошук продукту",
     retryScanner: "Повторити сканування",
     soundOn: "Звук увімкнено",
     soundOff: "Звук вимкнено",
@@ -254,6 +252,7 @@ const scannerCopy = {
       "Możesz spróbować ponownie przy lepszym świetle albo przejść do ręcznego wpisania bez utraty postępu.",
     enterManually: "Wpisz kod ręcznie",
     addManually: "Dodaj produkt ręcznie",
+    fullProductSearch: "Pełne wyszukiwanie produktu",
     retryScanner: "Skanuj ponownie",
     soundOn: "Dźwięk włączony",
     soundOff: "Dźwięk wyciszony",
@@ -336,6 +335,7 @@ const scannerCopy = {
       "Try again with better light or switch to manual entry without losing progress.",
     enterManually: "Enter barcode manually",
     addManually: "Add product manually",
+    fullProductSearch: "Full product search",
     retryScanner: "Retry scanner",
     soundOn: "Sound on",
     soundOff: "Sound muted",
@@ -381,7 +381,7 @@ const scannerVideoStyle = {
   transform: "translateZ(0)",
 } as const;
 
-export const BarcodeScanner = ({ mealType }: Props) => {
+export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -523,6 +523,23 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     noResultSoundPlayedRef.current = false;
   }, [clearCooldown, clearNoResultTimeout]);
 
+  const handleNoResultTimeout = useCallback(() => {
+    setScanTimedOut(true);
+
+    if (!noResultSoundPlayedRef.current) {
+      noResultSoundPlayedRef.current = true;
+      playScannerFailureRef.current();
+    }
+  }, []);
+
+  const scheduleNoResultTimeout = useCallback(() => {
+    clearNoResultTimeout();
+    noResultTimeoutRef.current = setTimeout(
+      handleNoResultTimeout,
+      BARCODE_SCAN_NO_RESULT_TIMEOUT_MS
+    );
+  }, [clearNoResultTimeout, handleNoResultTimeout]);
+
   const getVideoTrack = useCallback(() => {
     const stream = videoRef.current?.srcObject;
 
@@ -540,10 +557,10 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       | undefined;
     const settings = track?.getSettings?.() as TorchMediaTrackSettings | undefined;
 
+    setTorchEnabled(settings?.torch === true);
     setTorchAvailable(
       resolveBarcodeTorchAvailable({
         capabilitiesTorch: capabilities?.torch,
-        settingsTorch: settings?.torch,
       })
     );
   }, [getVideoTrack]);
@@ -553,6 +570,18 @@ export const BarcodeScanner = ({ mealType }: Props) => {
 
     if (!track) {
       setTorchAvailable(false);
+      setTorchEnabled(false);
+      setTorchMessage(copy.torchUnavailable);
+      return;
+    }
+
+    const capabilities = track.getCapabilities?.() as
+      | TorchMediaTrackCapabilities
+      | undefined;
+
+    if (!resolveBarcodeTorchAvailable({ capabilitiesTorch: capabilities?.torch })) {
+      setTorchAvailable(false);
+      setTorchEnabled(false);
       setTorchMessage(copy.torchUnavailable);
       return;
     }
@@ -565,16 +594,6 @@ export const BarcodeScanner = ({ mealType }: Props) => {
       await track.applyConstraints({
         advanced: [{ torch: nextEnabled } as TorchMediaTrackConstraintSet],
       });
-      const settings = track.getSettings?.() as TorchMediaTrackSettings | undefined;
-
-      if (
-        typeof settings?.torch === "boolean" &&
-        settings.torch !== nextEnabled
-      ) {
-        await track.applyConstraints({
-          torch: nextEnabled,
-        } as TorchMediaTrackConstraints);
-      }
 
       const nextSettings = track.getSettings?.() as
         | TorchMediaTrackSettings
@@ -802,17 +821,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     const videoElement = videoRef.current;
     const codeReader = new BrowserMultiFormatReader();
 
-    clearNoResultTimeout();
-    noResultTimeoutRef.current = setTimeout(() => {
-      if (!disposed) {
-        setScanTimedOut(true);
-
-        if (!noResultSoundPlayedRef.current) {
-          noResultSoundPlayedRef.current = true;
-          playScannerFailureRef.current();
-        }
-      }
-    }, BARCODE_SCAN_NO_RESULT_TIMEOUT_MS);
+    scheduleNoResultTimeout();
 
     codeReader
       .decodeFromConstraints(
@@ -898,6 +907,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
     clearCooldown,
     clearNoResultTimeout,
     resetScanLock,
+    scheduleNoResultTimeout,
     scanning,
   ]);
 
@@ -1243,9 +1253,7 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                   onClick={() => {
                     resetScanLock();
                     setScanTimedOut(false);
-                    noResultTimeoutRef.current = setTimeout(() => {
-                      setScanTimedOut(true);
-                    }, BARCODE_SCAN_NO_RESULT_TIMEOUT_MS);
+                    scheduleNoResultTimeout();
                   }}
                 >
                   {copy.retryScanner}
@@ -1259,6 +1267,17 @@ export const BarcodeScanner = ({ mealType }: Props) => {
                 >
                   {copy.enterManually}
                 </Button>
+                {onOpenProductSearch ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      stopScanner();
+                      onOpenProductSearch();
+                    }}
+                  >
+                    {copy.fullProductSearch}
+                  </Button>
+                ) : null}
                 <Button
                   variant="contained"
                   onClick={() => {

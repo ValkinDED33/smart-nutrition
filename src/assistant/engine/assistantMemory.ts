@@ -52,11 +52,7 @@ export const createAssistantRuntimeMemory = ({
   clearHistory: async (userId) => {
     clearLocalHistory(userId);
 
-    try {
-      return await clearHistory(userId);
-    } catch {
-      return true;
-    }
+    return clearHistory(userId);
   },
 });
 

@@ -190,4 +190,32 @@ describe("remote API base URL guards", () => {
 
     await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
   });
+
+  it("accepts the sanitized public health payload without diagnostic provider details", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition.club",
+        origin: "https://smart-nutrition.club",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          mode: "production",
+          auth: "remote-cloud",
+          storage: { engine: "mongodb" },
+          static: { enabled: false },
+          email: { configured: true },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+    expect(JSON.stringify(fetchMock.mock.calls)).toContain(
+      "https://smart-nutrition-sk5r.onrender.com/api/health"
+    );
+  });
 });

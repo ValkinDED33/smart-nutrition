@@ -51,7 +51,7 @@ describe("http response helpers", () => {
       "Content-Security-Policy": expect.stringContaining("default-src 'self'"),
       "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
       "Cross-Origin-Resource-Policy": "same-site",
-      "Permissions-Policy": expect.stringContaining("camera=()"),
+      "Permissions-Policy": expect.stringContaining("camera=(self)"),
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin",

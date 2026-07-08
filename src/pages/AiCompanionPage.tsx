@@ -82,7 +82,7 @@ const aiCopy = {
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
     renderModeHint:
-      "3D завантажується тільки після вашого вибору. Якщо щось піде не так, залишиться 2D.",
+      "3D завантажується тільки після вашого вибору. На телефонах і в режимі економії лишається 2D.",
     renderModeLoading: "Завантажую 3D",
     renderModeError: "3D не завантажився, залишив 2D",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
@@ -157,7 +157,7 @@ const aiCopy = {
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
     renderModeHint:
-      "3D ładuje się dopiero po Twoim wyborze. Jeśli coś pójdzie nie tak, zostaje 2D.",
+      "3D ładuje się dopiero po Twoim wyborze. Na telefonach i w trybie oszczędzania zostaje 2D.",
     renderModeLoading: "Ładuję 3D",
     renderModeError: "3D się nie załadowało, zostaje 2D",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
@@ -232,7 +232,7 @@ const aiCopy = {
     renderMode2d: "Fast 2D",
     renderMode3d: "Live 3D",
     renderModeHint:
-      "3D loads only after your choice. If it fails, the companion stays in 2D.",
+      "3D loads only after your choice. Phones and data-saver mode stay in 2D.",
     renderModeLoading: "Loading 3D",
     renderModeError: "3D failed, staying in 2D",
     greeting: (name: string) => `Hi, ${name}. I am already reading your day.`,

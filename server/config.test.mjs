@@ -18,6 +18,37 @@ describe("createServerConfig", () => {
     ).toThrow(/SMART_NUTRITION_JWT_SECRET/);
   });
 
+  it("rejects placeholder JWT secrets in production", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "CHANGE_ME_LONG_RANDOM_SECRET_AT_LEAST_32_CHARS",
+      })
+    ).toThrow(/placeholder value/);
+  });
+
+  it("rejects placeholder Postgres database URLs in production", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_DATABASE_PROVIDER: "postgres",
+        SMART_NUTRITION_DATABASE_URL: "CHANGE_ME_RENDER_POSTGRES_INTERNAL_DATABASE_URL",
+      })
+    ).toThrow(/SMART_NUTRITION_DATABASE_URL/);
+  });
+
+  it("rejects placeholder production email settings", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_RESEND_API_KEY: "CHANGE_ME_RESEND_API_KEY",
+        SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreply@example.com",
+      })
+    ).toThrow(/SMART_NUTRITION_RESEND_API_KEY/);
+  });
+
   it("rejects refresh TTL values that are not greater than access TTL", () => {
     expect(() =>
       createServerConfig({
@@ -57,6 +88,35 @@ describe("createServerConfig", () => {
     });
     expect(config.allowedCorsOrigins).toEqual(["https://app.smartnutrition.test"]);
     expect(config.warnings).toHaveLength(0);
+  });
+
+  it("accepts MongoDB as the production canonical storage provider", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_DATABASE_PROVIDER: "mongodb",
+      SMART_NUTRITION_AI_DATA_PROVIDER: "mongodb",
+      SMART_NUTRITION_MONGO_URI:
+        "mongodb+srv://cluster0.example.mongodb.net/smart-nutrition?retryWrites=true&w=majority",
+      SMART_NUTRITION_SERVE_STATIC: "false",
+      SMART_NUTRITION_APP_BASE_URL: "https://smart-nutrition.club",
+      SMART_NUTRITION_CORS_ORIGINS:
+        "https://smart-nutrition.club,https://www.smart-nutrition.club",
+      SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: "None",
+      SMART_NUTRITION_AUTH_COOKIE_SECURE: "true",
+      SMART_NUTRITION_RESEND_API_KEY: "re_prod_key",
+      SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreply@smart-nutrition.club",
+    });
+
+    expect(config.isProduction).toBe(true);
+    expect(config.databaseProvider).toBe("mongodb");
+    expect(config.aiDataProvider).toBe("mongodb");
+    expect(config.mongoAiEnabled).toBe(true);
+    expect(config.mongoDatabaseName).toBe("smart-nutrition");
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://smart-nutrition.club",
+      "https://www.smart-nutrition.club",
+    ]);
   });
 
   it("allows per-route auth rate limit overrides", () => {
@@ -154,6 +214,18 @@ describe("createServerConfig", () => {
 
     expect(config.authCookieSameSite).toBe("Lax");
     expect(config.authCookieSecure).toBe(false);
+  });
+
+  it("rejects non-secure cookies for cross-site production frontend/backend deployments", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_SERVE_STATIC: "false",
+        SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: "Lax",
+        SMART_NUTRITION_AUTH_COOKIE_SECURE: "false",
+      })
+    ).toThrow(/Cross-site production/);
   });
 
   it("rejects SameSite=None cookies without Secure", () => {
@@ -272,12 +344,12 @@ describe("createServerConfig", () => {
         NODE_ENV: "production",
         SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
         SMART_NUTRITION_SECRET_FILE_DIR: secretFileDir,
-        SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreply@example.com",
+        SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreply@smart-nutrition.club",
       });
 
       expect(config.emailTransportConfigured).toBe(true);
       expect(config.resendApiKey).toBe("re_key");
-      expect(config.emailFromAddress).toBe("noreply@example.com");
+      expect(config.emailFromAddress).toBe("noreply@smart-nutrition.club");
     } finally {
       rmSync(secretFileDir, { recursive: true, force: true });
     }

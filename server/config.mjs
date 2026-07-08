@@ -251,6 +251,22 @@ const readBooleanFlag = (value, fallback = false) => {
   return fallback;
 };
 
+const hasPlaceholderValue = (value) => {
+  const normalized = toTrimmedString(value).toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return (
+    normalized.includes("change_me") ||
+    normalized.includes("replace-with") ||
+    normalized.includes("your-verified-domain.com") ||
+    normalized.endsWith("@example.com") ||
+    normalized === "example.com"
+  );
+};
+
 const normalizeStorageProvider = (value, { postgresUrl, mongoUri } = {}) => {
   const normalized = toTrimmedString(value).toLowerCase();
 
@@ -977,6 +993,10 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors.push("SMART_NUTRITION_JWT_SECRET must be at least 32 characters long in production.");
   }
 
+  if (isProduction && hasPlaceholderValue(jwtSecret)) {
+    errors.push("SMART_NUTRITION_JWT_SECRET must not use a placeholder value in production.");
+  }
+
   if (port > 65_535) {
     errors.push("SMART_NUTRITION_API_PORT must be <= 65535.");
   }
@@ -1018,10 +1038,18 @@ export const createServerConfig = (rawEnv = process.env) => {
     );
   }
 
+  if (isProduction && databaseProvider === "postgres" && hasPlaceholderValue(postgresUrl)) {
+    errors.push("SMART_NUTRITION_DATABASE_URL must not use a placeholder value in production.");
+  }
+
   if (databaseProvider === "mongodb" && !mongoUri) {
     errors.push(
       "SMART_NUTRITION_MONGO_URI, SMART_NUTRITION_MONGODB_URI, or MONGODB_URI is required when SMART_NUTRITION_DATABASE_PROVIDER=mongodb."
     );
+  }
+
+  if (isProduction && databaseProvider === "mongodb" && hasPlaceholderValue(mongoUri)) {
+    errors.push("SMART_NUTRITION_MONGO_URI must not use a placeholder value in production.");
   }
 
   const backupDir =
@@ -1113,6 +1141,16 @@ export const createServerConfig = (rawEnv = process.env) => {
     );
   }
 
+  if (
+    isProduction &&
+    !serveStatic &&
+    (authCookieSameSite !== "None" || !authCookieSecure)
+  ) {
+    errors.push(
+      "Cross-site production frontend/backend deployments require SMART_NUTRITION_AUTH_COOKIE_SAME_SITE=None and SMART_NUTRITION_AUTH_COOKIE_SECURE=true."
+    );
+  }
+
   const allowedCorsOrigins = resolveAllowedCorsOrigins(
     env.SMART_NUTRITION_CORS_ORIGINS,
     appBaseUrl,
@@ -1131,6 +1169,16 @@ export const createServerConfig = (rawEnv = process.env) => {
   if (resendApiKey && !emailFromAddress) {
     warnings.push(
       "Email delivery is configured without SMART_NUTRITION_EMAIL_FROM_ADDRESS."
+    );
+  }
+
+  if (isProduction && hasPlaceholderValue(resendApiKey)) {
+    errors.push("SMART_NUTRITION_RESEND_API_KEY must not use a placeholder value in production.");
+  }
+
+  if (isProduction && hasPlaceholderValue(emailFromAddress)) {
+    errors.push(
+      "SMART_NUTRITION_EMAIL_FROM_ADDRESS must not use a placeholder value in production."
     );
   }
 

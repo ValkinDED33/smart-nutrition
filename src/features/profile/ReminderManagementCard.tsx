@@ -43,7 +43,9 @@ import {
   reminderTypeOptions,
   sortReminders,
   toReminderType,
+  upsertReminderItem,
 } from "./reminderManagementModel";
+import { dispatchReminderUpserted, subscribeToReminderUpserts } from "./reminderEvents";
 
 const reminderCopy = {
   uk: {
@@ -361,6 +363,14 @@ export const ReminderManagementCard = () => {
     };
   }, [copy.loadError]);
 
+  useEffect(
+    () =>
+      subscribeToReminderUpserts((item) => {
+        setItems((current) => upsertReminderItem(current, item));
+      }),
+    []
+  );
+
   const handleCreate = async () => {
     if (!canCreate) {
       return;
@@ -371,7 +381,8 @@ export const ReminderManagementCard = () => {
 
     try {
       const item = await createRemoteReminder({ type, text: trimmedText });
-      setItems((current) => sortReminders([item, ...current.filter((reminder) => reminder.id !== item.id)]));
+      setItems((current) => upsertReminderItem(current, item));
+      dispatchReminderUpserted(item);
       setText("");
       setNotice({ type: "success", text: copy.created });
     } catch {
@@ -391,9 +402,8 @@ export const ReminderManagementCard = () => {
 
     try {
       const item = await updateRemoteReminderAction(reminder.id, action, options);
-      setItems((current) =>
-        sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
-      );
+      setItems((current) => upsertReminderItem(current, item));
+      dispatchReminderUpserted(item);
       setNotice({ type: "success", text: copy.updated });
     } catch {
       setNotice({ type: "error", text: copy.actionError });
@@ -427,9 +437,8 @@ export const ReminderManagementCard = () => {
 
     try {
       const item = await updateRemoteReminderSchedule(reminder.id, scheduleText);
-      setItems((current) =>
-        sortReminders(current.map((entry) => (entry.id === item.id ? item : entry)))
-      );
+      setItems((current) => upsertReminderItem(current, item));
+      dispatchReminderUpserted(item);
       cancelEditing();
       setNotice({ type: "success", text: copy.updated });
     } catch {

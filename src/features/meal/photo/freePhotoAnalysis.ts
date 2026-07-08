@@ -563,14 +563,14 @@ export const createFreePhotoAnalysis = ({
   }));
 
   return {
-    dishName: `${getMealLabel(mealType)} photo draft`,
+    dishName: `${getMealLabel(mealType)} review draft`,
     summary:
-      "This build does not use paid AI vision. The photo is kept as a visual reference, and the app prepares a low-confidence draft based on meal type and your nutrition preferences.",
+      "Review these starter suggestions against your photo, adjust the foods and portions, then save only what matches your meal.",
     confidence: 0.18,
     estimatedPortions: 1,
     cautions: [
-      "Automatic image recognition is disabled in this build.",
-      "Every suggested item is only a starter draft and must be reviewed manually.",
+      "The suggestions are a starting point, not a confirmed meal.",
+      "Check each item before saving it to your diary.",
       "Adjust quantities or replace foods before saving to the diary.",
     ],
     manualReviewRequired: true,
