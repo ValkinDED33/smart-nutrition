@@ -1,6 +1,8 @@
 import { createServerConfig } from "./config.mjs";
 import { POSTGRES_SCHEMA_VERSION } from "./storage/postgres.mjs";
 
+process.env.NODE_ENV ||= "production";
+
 const statusIcon = (check) => {
   if (check.ok) {
     return "OK ";
