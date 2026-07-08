@@ -143,12 +143,12 @@ const InlineEditPanel = ({
 
   return (
     <Paper
+      className="sn-premium-panel"
       variant="outlined"
       sx={{
         p: 2,
         borderRadius: 2,
         borderColor: "rgba(15, 118, 110, 0.28)",
-        backgroundColor: "rgba(240,253,250,0.55)",
       }}
     >
       <Stack spacing={2}>

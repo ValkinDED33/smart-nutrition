@@ -606,12 +606,12 @@ export const AccountDataCard = () => {
 
         {confirmOpen && (
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2,
               borderRadius: 2,
               borderColor: "error.light",
-              backgroundColor: "rgba(254,242,242,0.72)",
             }}
           >
             <Stack spacing={1.5}>

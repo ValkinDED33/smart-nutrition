@@ -400,12 +400,12 @@ export const LearningHubCard = () => {
                 {activeTopic.title}
               </Typography>
               <Paper
+                className="sn-premium-panel"
                 variant="outlined"
                 sx={{
                   p: 1.5,
                   borderRadius: 1,
                   borderColor: "rgba(15, 118, 110, 0.18)",
-                  backgroundColor: "rgba(240,253,250,0.7)",
                 }}
               >
                 <ReactMarkdown
@@ -441,12 +441,11 @@ export const LearningHubCard = () => {
           </Paper>
 
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2,
               borderRadius: 1,
-              background:
-                "linear-gradient(135deg, rgba(239,246,255,0.92) 0%, rgba(240,253,250,0.92) 100%)",
             }}
           >
             <Stack spacing={1.5}>

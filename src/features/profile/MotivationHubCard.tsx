@@ -513,12 +513,12 @@ export const MotivationHubCard = () => {
 
         {pendingAction !== null && (
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2,
               borderRadius: 1,
               borderColor: "rgba(234, 179, 8, 0.45)",
-              backgroundColor: "rgba(254,252,232,0.8)",
             }}
           >
             <Stack spacing={1.5}>

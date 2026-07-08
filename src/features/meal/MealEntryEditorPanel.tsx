@@ -134,13 +134,13 @@ export const MealEntryEditorPanel = ({ entry }: Props) => {
 
       {editor.open && (
         <Paper
+          className="sn-premium-panel"
           variant="outlined"
           sx={{
             mt: 1,
             p: { xs: 1.5, sm: 2 },
             borderRadius: 1,
             borderColor: "rgba(15, 118, 110, 0.28)",
-            backgroundColor: "rgba(240,253,250,0.55)",
           }}
         >
           <Stack spacing={2}>

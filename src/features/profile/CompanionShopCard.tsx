@@ -254,13 +254,12 @@ const CompanionShopCard = () => {
           }}
         >
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2,
               borderRadius: 1,
               borderColor: "rgba(15, 23, 42, 0.08)",
-              background:
-                "linear-gradient(135deg, rgba(240,253,250,0.92) 0%, rgba(239,246,255,0.9) 100%)",
             }}
           >
             <Stack spacing={1.2} alignItems="center" textAlign="center">
@@ -331,6 +330,7 @@ const CompanionShopCard = () => {
 
               return (
                 <Paper
+                  className="sn-premium-panel"
                   key={item.id}
                   variant="outlined"
                   sx={{
@@ -339,9 +339,6 @@ const CompanionShopCard = () => {
                     borderColor: isEquipped
                       ? "rgba(15, 118, 110, 0.55)"
                       : "rgba(15, 23, 42, 0.08)",
-                    backgroundColor: isEquipped
-                      ? "rgba(240,253,250,0.86)"
-                      : "rgba(248,250,252,0.72)",
                   }}
                 >
                   <Stack spacing={1}>

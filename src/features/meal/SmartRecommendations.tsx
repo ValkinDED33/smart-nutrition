@@ -676,6 +676,7 @@ export const SmartRecommendations = () => {
         ) : (
           recommendations.map((recommendation) => (
             <Paper
+              className="sn-premium-panel"
               key={`${recommendation.title}-${recommendation.detail}`}
               variant="outlined"
               sx={{
@@ -687,12 +688,6 @@ export const SmartRecommendations = () => {
                     : recommendation.tone === "success"
                       ? "rgba(34, 197, 94, 0.3)"
                       : "rgba(15, 23, 42, 0.08)",
-                backgroundColor:
-                  recommendation.tone === "warning"
-                    ? "rgba(255, 251, 235, 0.72)"
-                    : recommendation.tone === "success"
-                      ? "rgba(240, 253, 244, 0.76)"
-                      : "rgba(248,250,252,0.9)",
               }}
             >
               <Stack spacing={0.8}>

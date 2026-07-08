@@ -23,6 +23,13 @@ describe("Smart Nutrition visual system coverage", () => {
       readSource("../../features/meal/PhotoMealAssistant.tsx"),
       readSource("../../features/meal/ProductNutritionFacts.tsx"),
       readSource("../../features/profile/ProfileForm.tsx"),
+      readSource("../../features/meal/MealDayOverview.tsx"),
+      readSource("../../features/meal/MealEntryEditorPanel.tsx"),
+      readSource("../../features/meal/SmartRecommendations.tsx"),
+      readSource("../../features/profile/AccountDataCard.tsx"),
+      readSource("../../features/profile/MotivationHubCard.tsx"),
+      readSource("../../features/profile/CompanionShopCard.tsx"),
+      readSource("../../features/education/LearningHubCard.tsx"),
     ]);
 
     for (const source of sources) {
@@ -31,5 +38,7 @@ describe("Smart Nutrition visual system coverage", () => {
 
     expect(sources.join("\n")).not.toContain("rgba(248,250,252,0.86)");
     expect(sources.join("\n")).not.toContain("rgba(255,255,255,0.94)");
+    expect(sources.join("\n")).not.toContain("rgba(240,253,250,0.55)");
+    expect(sources.join("\n")).not.toContain("rgba(254,242,242,0.72)");
   });
 });

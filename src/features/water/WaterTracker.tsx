@@ -915,7 +915,7 @@ export const WaterTracker = () => {
                 minHeight: { xs: 96, sm: 112 },
                 borderRadius: 1,
                 border: "1px solid rgba(125,211,252,0.42)",
-                backgroundColor: "rgba(239,246,255,0.72)",
+                backgroundColor: "var(--sn-surface-elevated)",
                 cursor: "pointer",
                 position: "relative",
                 overflow: "hidden",
