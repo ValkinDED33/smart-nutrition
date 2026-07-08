@@ -306,13 +306,12 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
 
   return (
     <Paper
+      className="sn-premium-panel"
       elevation={0}
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
-        background:
-          "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(240,253,250,0.92) 100%)",
       }}
     >
       <Stack spacing={2}>

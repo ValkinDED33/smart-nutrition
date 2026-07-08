@@ -164,13 +164,12 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       </Stack>
 
       <Paper
+        className="sn-premium-panel"
         variant="outlined"
         sx={{
           p: 1.5,
           borderRadius: 1,
-          borderColor: "rgba(15, 23, 42, 0.08)",
-          background:
-            "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",
+          borderColor: "var(--sn-border-soft)",
         }}
       >
         <Stack spacing={1.1}>
@@ -233,8 +232,8 @@ export const ProductNutritionFacts = ({ product }: Props) => {
                   sx={{
                     p: 1.2,
                     borderRadius: 3,
-                    backgroundColor: "rgba(248,250,252,0.92)",
-                    border: "1px solid rgba(15, 23, 42, 0.06)",
+                    backgroundColor: "var(--sn-surface-elevated)",
+                    border: "1px solid var(--sn-border-soft)",
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">

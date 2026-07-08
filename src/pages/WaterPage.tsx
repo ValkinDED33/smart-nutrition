@@ -102,13 +102,15 @@ const WaterPage = () => {
   return (
     <PageShell title={copy.title} subtitle={copy.subtitle}>
       <Paper
+        className="sn-companion-panel"
         elevation={0}
         sx={{
+          position: "relative",
+          overflow: "hidden",
           p: { xs: 2.2, md: 3 },
           borderRadius: 1,
-          color: "white",
-          background:
-            "linear-gradient(135deg, rgba(14,116,144,0.98) 0%, rgba(37,99,235,0.94) 100%)",
+          color: "var(--sn-on-companion)",
+          border: "1px solid var(--sn-border-strong)",
         }}
       >
         <Stack
@@ -116,6 +118,7 @@ const WaterPage = () => {
           spacing={2}
           alignItems={{ xs: "flex-start", md: "center" }}
           justifyContent="space-between"
+          sx={{ position: "relative", zIndex: 1 }}
         >
           <Stack spacing={0.8}>
             <Stack direction="row" spacing={1.2} alignItems="center">
@@ -126,7 +129,8 @@ const WaterPage = () => {
                   borderRadius: 1,
                   display: "grid",
                   placeItems: "center",
-                  backgroundColor: "rgba(255,255,255,0.16)",
+                  backgroundColor: "var(--sn-accent-soft)",
+                  border: "1px solid var(--sn-border-strong)",
                 }}
               >
                 <Droplets size={24} aria-hidden="true" />
@@ -139,7 +143,7 @@ const WaterPage = () => {
                 {copy.title}
               </Typography>
             </Stack>
-            <Typography sx={{ maxWidth: 660, color: "rgba(255,255,255,0.82)" }}>
+            <Typography sx={{ maxWidth: 660, color: "var(--sn-on-companion-muted)" }}>
               {copy.subtitle}
             </Typography>
           </Stack>
@@ -153,9 +157,10 @@ const WaterPage = () => {
               px: 2.2,
               textTransform: "none",
               fontWeight: 900,
-              color: "#0f172a",
-              backgroundColor: "#ffffff",
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.92)" },
+              color: "var(--sn-text-primary)",
+              backgroundColor: "var(--sn-surface-elevated)",
+              border: "1px solid var(--sn-border-soft)",
+              "&:hover": { backgroundColor: "var(--sn-accent-soft)" },
             }}
           >
             +{addAmountMl} ml

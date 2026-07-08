@@ -805,11 +805,11 @@ const ProfileForm = () => {
         </Stack>
 
         <Paper
+          className="sn-premium-panel"
           variant="outlined"
           sx={{
             p: 2.25,
             borderRadius: 1,
-            backgroundColor: "rgba(248,250,252,0.86)",
           }}
         >
           <Stack spacing={2}>
@@ -910,11 +910,11 @@ const ProfileForm = () => {
 
         {shouldShowWomenHealth && (
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2.25,
               borderRadius: 1,
-              backgroundColor: "rgba(240,253,250,0.72)",
               borderColor: "rgba(20, 184, 166, 0.28)",
             }}
           >

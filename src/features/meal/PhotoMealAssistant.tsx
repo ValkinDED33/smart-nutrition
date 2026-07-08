@@ -795,13 +795,12 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
 
         {analysis && (
           <Paper
+            className="sn-premium-panel"
             variant="outlined"
             sx={{
               p: 2,
               borderRadius: 1,
-              borderColor: "rgba(15, 23, 42, 0.08)",
-              background:
-                "linear-gradient(180deg, rgba(240,249,255,0.92) 0%, rgba(255,255,255,0.94) 100%)",
+              borderColor: "var(--sn-border-soft)",
             }}
           >
             <Stack spacing={1.5}>

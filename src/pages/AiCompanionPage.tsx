@@ -453,21 +453,22 @@ const AiCompanionPage = () => {
       {activeSection === "companion" ? (
         <Stack spacing={2.5}>
       <Paper
+        className="sn-companion-panel"
         elevation={0}
         sx={{
+          position: "relative",
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-soft)",
-          color: "white",
+          border: "1px solid var(--sn-border-strong)",
+          color: "var(--sn-on-companion)",
           overflow: "hidden",
-          background:
-            "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(15,118,110,0.92) 100%)",
         }}
         >
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={{ xs: 2.5, md: 3 }}
           alignItems={{ xs: "center", sm: "flex-start" }}
+          sx={{ position: "relative", zIndex: 1 }}
         >
           <Box
             sx={{
@@ -500,7 +501,7 @@ const AiCompanionPage = () => {
             />
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
-            <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
+            <Typography variant="overline" sx={{ color: "var(--sn-on-companion-muted)" }}>
               {assistant.name}
             </Typography>
             <Typography
@@ -513,7 +514,7 @@ const AiCompanionPage = () => {
             {user && (
               <Typography
                 sx={{
-                  color: "rgba(255,255,255,0.9)",
+                  color: "var(--sn-on-companion)",
                   fontWeight: 800,
                   overflowWrap: "anywhere",
                 }}
@@ -521,7 +522,7 @@ const AiCompanionPage = () => {
                 {copy.greeting(user.name)}
               </Typography>
             )}
-            <Typography sx={{ color: "rgba(255,255,255,0.84)", overflowWrap: "anywhere" }}>
+            <Typography sx={{ color: "var(--sn-on-companion-muted)", overflowWrap: "anywhere" }}>
               {copy.subtitle}
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -535,9 +536,9 @@ const AiCompanionPage = () => {
                   label={label}
                   variant="outlined"
                   sx={{
-                    color: "white",
-                    borderColor: "rgba(255,255,255,0.26)",
-                    backgroundColor: "rgba(255,255,255,0.08)",
+                    color: "var(--sn-on-companion)",
+                    borderColor: "var(--sn-border-strong)",
+                    backgroundColor: "var(--sn-accent-soft)",
                   }}
                 />
               ))}
@@ -546,9 +547,9 @@ const AiCompanionPage = () => {
                 variant="outlined"
                 sx={{
                   display: { xs: "none", md: "inline-flex" },
-                  color: "white",
-                  borderColor: "rgba(255,255,255,0.26)",
-                  backgroundColor: "rgba(255,255,255,0.08)",
+                  color: "var(--sn-on-companion)",
+                  borderColor: "var(--sn-border-strong)",
+                  backgroundColor: "var(--sn-accent-soft)",
                 }}
               />
             </Stack>
@@ -573,12 +574,12 @@ const AiCompanionPage = () => {
 
       {actionCards.length > 0 && (
         <Paper
+          className="sn-premium-panel"
           elevation={0}
           sx={{
             p: { xs: 2, md: 3 },
             borderRadius: 1,
             border: "1px solid var(--sn-border-soft)",
-            backgroundColor: "var(--sn-surface-glass)",
           }}
         >
           <Stack spacing={2}>
@@ -594,12 +595,12 @@ const AiCompanionPage = () => {
             >
               {actionCards.map((card) => (
                 <Paper
+                  className="sn-premium-panel"
                   key={card.id}
                   variant="outlined"
                   sx={{
                     p: 2,
                     borderRadius: 1,
-                    backgroundColor: "rgba(248,250,252,0.88)",
                   }}
                 >
                   <Stack spacing={1.2} sx={{ height: "100%" }}>
@@ -637,12 +638,12 @@ const AiCompanionPage = () => {
 
       {activeSection === "memory" ? (
       <Paper
+        className="sn-premium-panel"
         elevation={0}
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
-          backgroundColor: "rgba(255,255,255,0.88)",
         }}
       >
         <Stack spacing={2}>
@@ -681,12 +682,12 @@ const AiCompanionPage = () => {
       {activeSection === "settings" ? (
         <Stack spacing={2.5}>
       <Paper
+        className="sn-premium-panel"
         elevation={0}
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
-          backgroundColor: "var(--sn-surface-glass)",
         }}
       >
         <Stack spacing={2}>
