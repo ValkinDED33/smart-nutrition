@@ -11,7 +11,8 @@ describe("AuthSurface", () => {
     );
 
     expect(html).toContain("Sign in");
-    expect(html).toContain("var(--sn-surface-elevated)");
-    expect(html).toContain("var(--sn-border-soft)");
+    expect(html).toContain("sn-premium-panel");
+    expect(html).toContain("var(--sn-companion-hero)");
+    expect(html).toContain("var(--sn-border-strong)");
   });
 });

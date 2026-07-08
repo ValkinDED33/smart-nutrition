@@ -17,7 +17,8 @@ const toneStyles: Record<
 > = {
   default: {
     border: "var(--sn-border-soft)",
-    background: "var(--sn-surface-glass)",
+    background:
+      "linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
     glow: "transparent",
   },
   success: {
@@ -57,6 +58,7 @@ export const SectionCard = ({
 
   return (
     <Paper
+      className="sn-premium-panel"
       elevation={0}
       sx={{
         position: "relative",
@@ -65,7 +67,7 @@ export const SectionCard = ({
         border: `1px solid ${styles.border}`,
         background: styles.background,
         boxShadow: "var(--sn-shadow-soft)",
-        backdropFilter: "blur(18px)",
+        backdropFilter: "blur(22px)",
         overflow: "hidden",
         "&::before": {
           content: '""',

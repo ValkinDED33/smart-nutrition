@@ -19,9 +19,11 @@ export const AuthSurface = ({
       minHeight,
       width: "100%",
       px: { xs: 0.5, sm: 1 },
+      py: { xs: 2, md: 4 },
     }}
   >
     <Paper
+      className="sn-premium-panel"
       elevation={0}
       sx={{
         position: "relative",
@@ -29,9 +31,9 @@ export const AuthSurface = ({
         maxWidth,
         p: { xs: 2.4, md: 4 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: "1px solid var(--sn-border-strong)",
         background:
-          "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          "radial-gradient(circle at 92% 0%, var(--sn-accent-soft), transparent 30%), var(--sn-companion-hero)",
         boxShadow: "var(--sn-shadow-strong)",
         backdropFilter: "blur(22px)",
         overflow: "hidden",
@@ -40,9 +42,20 @@ export const AuthSurface = ({
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background:
-            "linear-gradient(120deg, rgba(255,255,255,0.16), transparent 40%, rgba(20,184,166,0.08))",
-          opacity: 0.72,
+          background: "var(--sn-companion-overlay)",
+          opacity: 0.86,
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          width: { xs: 280, sm: 420 },
+          height: { xs: 280, sm: 420 },
+          right: { xs: -156, sm: -180 },
+          top: { xs: -164, sm: -210 },
+          borderRadius: "50%",
+          pointerEvents: "none",
+          background: "var(--sn-portal-ring)",
+          opacity: 0.62,
         },
       }}
     >

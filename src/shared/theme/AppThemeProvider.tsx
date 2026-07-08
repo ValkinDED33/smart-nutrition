@@ -31,6 +31,7 @@ const visualTokens = {
     surfaceGlass: "rgba(255,255,255,0.78)",
     surfaceElevated: "rgba(255,255,255,0.92)",
     surfaceSoft: "rgba(240,253,250,0.74)",
+    surfaceMuted: "rgba(226,232,240,0.64)",
     navSurface: "rgba(248, 250, 252, 0.78)",
     border: "rgba(15, 23, 42, 0.08)",
     borderStrong: "rgba(15,118,110,0.22)",
@@ -43,6 +44,14 @@ const visualTokens = {
     glow: "0 0 42px rgba(132,204,22,0.22)",
     heroGradient:
       "radial-gradient(circle at 70% 34%, rgba(132,204,22,0.28), transparent 24%), radial-gradient(circle at 86% 4%, rgba(45,212,191,0.22), transparent 24%), linear-gradient(135deg, #07111f 0%, #0f172a 46%, #0f766e 100%)",
+    companionHero:
+      "radial-gradient(circle at 78% 26%, rgba(255,255,255,0.86), transparent 18%), radial-gradient(circle at 84% 66%, rgba(14,165,233,0.24), transparent 34%), radial-gradient(circle at 58% 56%, rgba(187,247,208,0.5), transparent 32%), linear-gradient(135deg, #fbfffe 0%, #effdfa 40%, #e9f7ff 100%)",
+    companionOverlay:
+      "linear-gradient(90deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.66) 46%, rgba(240,249,255,0.18) 100%)",
+    portalRing:
+      "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.74) 43%, rgba(14,165,233,0.22) 50%, transparent 58%)",
+    sceneLandscape:
+      "linear-gradient(180deg, transparent 0%, rgba(224,242,254,0.44) 38%, rgba(240,253,250,0.78) 100%)",
   },
   dark: {
     pageGradient:
@@ -52,6 +61,7 @@ const visualTokens = {
     surfaceGlass: "rgba(10, 18, 35, 0.72)",
     surfaceElevated: "rgba(15, 23, 42, 0.9)",
     surfaceSoft: "rgba(20,184,166,0.1)",
+    surfaceMuted: "rgba(15,23,42,0.62)",
     navSurface: "rgba(2, 6, 23, 0.78)",
     border: "rgba(148, 163, 184, 0.18)",
     borderStrong: "rgba(94,234,212,0.28)",
@@ -64,6 +74,14 @@ const visualTokens = {
     glow: "0 0 48px rgba(132,204,22,0.18)",
     heroGradient:
       "radial-gradient(circle at 72% 32%, rgba(132,204,22,0.24), transparent 24%), radial-gradient(circle at 88% 4%, rgba(45,212,191,0.18), transparent 24%), linear-gradient(135deg, #020617 0%, #07111f 48%, #0f2f2c 100%)",
+    companionHero:
+      "radial-gradient(circle at 74% 28%, rgba(163,230,53,0.24), transparent 26%), radial-gradient(circle at 88% 68%, rgba(20,184,166,0.18), transparent 32%), radial-gradient(circle at 62% 58%, rgba(15,118,110,0.2), transparent 34%), linear-gradient(135deg, #010409 0%, #03111f 42%, #061a16 100%)",
+    companionOverlay:
+      "linear-gradient(90deg, rgba(1,4,9,0.94) 0%, rgba(3,12,24,0.78) 42%, rgba(2,6,23,0.18) 100%)",
+    portalRing:
+      "radial-gradient(circle, transparent 46%, rgba(163,230,53,0.22) 47%, rgba(94,234,212,0.1) 52%, transparent 58%)",
+    sceneLandscape:
+      "linear-gradient(180deg, transparent 0%, rgba(5,46,22,0.3) 40%, rgba(2,6,23,0.88) 100%)",
   },
 } as const;
 
@@ -225,6 +243,7 @@ const buildGlobalStyles = (mode: AppColorMode) => {
           "--sn-surface-glass": tokens.surfaceGlass,
           "--sn-surface-elevated": tokens.surfaceElevated,
           "--sn-surface-soft": tokens.surfaceSoft,
+          "--sn-surface-muted": tokens.surfaceMuted,
           "--sn-nav-surface": tokens.navSurface,
           "--sn-border-soft": tokens.border,
           "--sn-border-strong": tokens.borderStrong,
@@ -235,6 +254,13 @@ const buildGlobalStyles = (mode: AppColorMode) => {
           "--sn-accent": tokens.accent,
           "--sn-accent-soft": tokens.accentSoft,
           "--sn-glow": tokens.glow,
+          "--sn-companion-hero": tokens.companionHero,
+          "--sn-companion-overlay": tokens.companionOverlay,
+          "--sn-portal-ring": tokens.portalRing,
+          "--sn-scene-landscape": tokens.sceneLandscape,
+          "--sn-on-companion": mode === "dark" ? "#ffffff" : "#102a43",
+          "--sn-on-companion-muted":
+            mode === "dark" ? "rgba(255,255,255,0.78)" : "rgba(15,23,42,0.68)",
         },
         body: {
           background: "var(--sn-page-gradient)",
@@ -249,6 +275,44 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         ".MuiPaper-root, .MuiCard-root": {
           borderColor: "var(--sn-border-soft)",
           boxShadow: "var(--sn-shadow-soft)",
+        },
+        ".sn-premium-panel": {
+          position: "relative",
+          overflow: "hidden",
+          border: "1px solid var(--sn-border-soft)",
+          background:
+            "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          boxShadow: "var(--sn-shadow-soft)",
+          backdropFilter: "blur(22px)",
+        },
+        ".sn-companion-panel": {
+          color: "var(--sn-on-companion)",
+          background: "var(--sn-companion-hero)",
+          boxShadow: "var(--sn-shadow-strong)",
+        },
+        ".sn-companion-panel::before": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: "var(--sn-companion-overlay)",
+          opacity: 0.92,
+        },
+        ".sn-companion-panel::after": {
+          content: '""',
+          position: "absolute",
+          width: "min(46vw, 520px)",
+          aspectRatio: "1 / 1",
+          right: "-8%",
+          top: "-34%",
+          borderRadius: "50%",
+          pointerEvents: "none",
+          background: "var(--sn-portal-ring)",
+          filter:
+            mode === "dark"
+              ? "drop-shadow(0 0 42px rgba(163,230,53,0.18))"
+              : "drop-shadow(0 0 58px rgba(14,165,233,0.2))",
+          opacity: mode === "dark" ? 0.88 : 0.78,
         },
         "body[data-sn-color-mode='light'] .MuiPaper-root, body[data-sn-color-mode='light'] .MuiCard-root":
           {

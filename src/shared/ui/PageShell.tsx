@@ -31,24 +31,35 @@ export const PageShell = ({
   >
     <Stack spacing={compact ? 2 : { xs: 2, md: 2.75 }}>
       <Box
+        className="sn-premium-panel sn-page-hero"
         sx={{
           position: "relative",
           overflow: "hidden",
           p: compact ? { xs: 1.6, md: 2 } : { xs: 1.8, sm: 2.2, md: 2.6 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
-          background:
-            "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
-          boxShadow: "var(--sn-shadow-soft)",
-          backdropFilter: "blur(20px)",
           "&::after": {
             content: '""',
             position: "absolute",
-            inset: 0,
+            width: { xs: 220, md: 360 },
+            height: { xs: 220, md: 360 },
+            right: { xs: -98, md: -84 },
+            top: { xs: -126, md: -164 },
+            borderRadius: "50%",
             pointerEvents: "none",
-            background:
-              "linear-gradient(120deg, rgba(255,255,255,0.18), transparent 36%, rgba(20,184,166,0.08))",
-            opacity: 0.72,
+            background: "var(--sn-portal-ring)",
+            opacity: 0.66,
+          },
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            left: { xs: "18%", md: "48%" },
+            right: { xs: "-18%", md: "-4%" },
+            bottom: -1,
+            height: { xs: 74, md: 118 },
+            pointerEvents: "none",
+            background: "var(--sn-scene-landscape)",
+            opacity: 0.7,
           },
         }}
       >

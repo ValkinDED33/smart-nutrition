@@ -1,11 +1,11 @@
 import { lazy, Suspense } from "react";
-import { Stack, Typography } from "@mui/material";
 import { CommunityHubCard } from "../features/community/CommunityHubCard";
 import { useLanguage } from "../shared/language";
 import {
   buildLazyModuleRecoveryCopy,
   LazyModuleBoundary,
   LoadingSkeleton,
+  PageShell,
 } from "../shared/ui";
 
 const LearningHubCard = lazy(() =>
@@ -19,13 +19,10 @@ const CommunityPage = () => {
   const recoveryCopy = buildLazyModuleRecoveryCopy(appLanguage, "Learning Hub");
 
   return (
-    <Stack spacing={2.5}>
-      <Stack spacing={0.8}>
-        <Typography component="h1" variant="h4" sx={{ fontWeight: 900, fontSize: { xs: 32, md: 40 } }}>
-          {t("page.community.title")}
-        </Typography>
-        <Typography color="text.secondary">{t("page.community.subtitle")}</Typography>
-      </Stack>
+    <PageShell
+      title={t("page.community.title")}
+      subtitle={t("page.community.subtitle")}
+    >
       <CommunityHubCard />
       <LazyModuleBoundary
         errorTitle={recoveryCopy.errorTitle}
@@ -37,7 +34,7 @@ const CommunityPage = () => {
           <LearningHubCard />
         </Suspense>
       </LazyModuleBoundary>
-    </Stack>
+    </PageShell>
   );
 };
 

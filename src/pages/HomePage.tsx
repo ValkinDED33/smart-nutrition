@@ -258,16 +258,18 @@ const HomePage = () => {
       maxWidth={980}
     >
       <Paper
+        className="sn-companion-panel"
         elevation={0}
         sx={{
+          position: "relative",
+          overflow: "hidden",
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          color: "white",
-          background:
-            "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(15,118,110,0.94) 58%, rgba(37,99,235,0.88) 100%)",
+          color: "var(--sn-on-companion)",
+          border: "1px solid var(--sn-border-strong)",
         }}
       >
-        <Stack spacing={2.2}>
+        <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1 }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.6}
@@ -283,7 +285,7 @@ const HomePage = () => {
                 active
               />
               <Stack spacing={0.4} minWidth={0}>
-                <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.72)" }}>
+                <Typography variant="overline" sx={{ color: "var(--sn-on-companion-muted)" }}>
                   {copy.assistant} · {intelligence.headline}
                 </Typography>
                 <Typography
@@ -293,7 +295,7 @@ const HomePage = () => {
                 >
                   {assistant.name}
                 </Typography>
-                <Typography sx={{ color: "rgba(255,255,255,0.84)" }}>
+                <Typography sx={{ color: "var(--sn-on-companion-muted)" }}>
                   {copy.greeting.replace("{name}", firstName)}
                 </Typography>
               </Stack>
@@ -304,9 +306,10 @@ const HomePage = () => {
               sx={{
                 width: 52,
                 height: 52,
-                color: "#0f172a",
-                bgcolor: "#ffffff",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.88)" },
+                color: "var(--sn-text-primary)",
+                bgcolor: "var(--sn-surface-elevated)",
+                border: "1px solid var(--sn-border-soft)",
+                "&:hover": { bgcolor: "var(--sn-accent-soft)" },
               }}
             >
               <Plus size={24} />
@@ -314,14 +317,14 @@ const HomePage = () => {
           </Stack>
 
           <Stack spacing={0.6}>
-            <Typography sx={{ color: "rgba(255,255,255,0.86)", maxWidth: 720 }}>
+            <Typography sx={{ color: "var(--sn-on-companion-muted)", maxWidth: 720 }}>
               {copy.subtitle}
             </Typography>
-            <Typography sx={{ color: "white", fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
+            <Typography sx={{ color: "var(--sn-on-companion)", fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
               {intelligence.message}
             </Typography>
             {intelligence.personalizationLine && (
-              <Typography sx={{ color: "rgba(255,255,255,0.78)", maxWidth: 760 }}>
+              <Typography sx={{ color: "var(--sn-on-companion-muted)", maxWidth: 760 }}>
                 {intelligence.personalizationLine}
               </Typography>
             )}
@@ -332,9 +335,10 @@ const HomePage = () => {
             sx={{
               p: 1.6,
               borderRadius: 1,
-              color: "white",
-              bgcolor: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.18)",
+              color: "var(--sn-on-companion)",
+              bgcolor: "rgba(20,184,166,0.12)",
+              border: "1px solid var(--sn-border-strong)",
+              backdropFilter: "blur(16px)",
             }}
           >
             <Stack spacing={1.2}>
@@ -350,8 +354,8 @@ const HomePage = () => {
                 sx={{
                   height: 10,
                   borderRadius: 999,
-                  bgcolor: "rgba(255,255,255,0.22)",
-                  "& .MuiLinearProgress-bar": { bgcolor: "#ffffff" },
+                  bgcolor: "var(--sn-surface-muted)",
+                  "& .MuiLinearProgress-bar": { bgcolor: "var(--sn-accent)" },
                 }}
               />
               <Box
@@ -367,7 +371,7 @@ const HomePage = () => {
                   [`${copy.waterLeft}`, `${waterLeft.toFixed(0)} ml`],
                 ].map(([label, value]) => (
                   <Box key={label}>
-                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.68)" }}>
+                    <Typography variant="caption" sx={{ color: "var(--sn-on-companion-muted)" }}>
                       {label}
                     </Typography>
                     <Typography sx={{ fontWeight: 900 }}>{value}</Typography>
@@ -378,7 +382,7 @@ const HomePage = () => {
           </Paper>
 
           <Stack spacing={0.8}>
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.72)", fontWeight: 800 }}>
+            <Typography variant="caption" sx={{ color: "var(--sn-on-companion-muted)", fontWeight: 800 }}>
               {copy.assistantAction}
             </Typography>
             <Paper
@@ -391,10 +395,10 @@ const HomePage = () => {
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
-                color: "#0f172a",
-                bgcolor: "#ffffff",
-                border: "1px solid rgba(255,255,255,0.4)",
-                "&:hover": { bgcolor: "var(--sn-surface-elevated)" },
+                color: "var(--sn-text-primary)",
+                bgcolor: "var(--sn-surface-elevated)",
+                border: "1px solid var(--sn-border-soft)",
+                "&:hover": { bgcolor: "var(--sn-accent-soft)" },
               }}
             >
               <Stack spacing={0.4}>
@@ -528,10 +532,10 @@ const HomePage = () => {
                 cursor: "pointer",
                 textAlign: "left",
                 bgcolor: "var(--sn-surface-elevated)",
-                borderColor: "rgba(15,23,42,0.1)",
+                borderColor: "var(--sn-border-soft)",
                 "&:hover": {
                   borderColor: "primary.main",
-                  bgcolor: "rgba(240,253,250,0.88)",
+                  bgcolor: "var(--sn-accent-soft)",
                 },
               }}
             >

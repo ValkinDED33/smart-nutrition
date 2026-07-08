@@ -1,0 +1,39 @@
+import { readFile } from "node:fs/promises";
+import { describe, expect, it } from "vitest";
+
+const readSource = (path: string) =>
+  readFile(new URL(path, import.meta.url), "utf8");
+
+describe("Smart Nutrition visual system contract", () => {
+  it("exposes one theme-driven companion visual language", async () => {
+    const source = await readSource("../theme/AppThemeProvider.tsx");
+
+    expect(source).toContain("--sn-companion-hero");
+    expect(source).toContain("--sn-companion-overlay");
+    expect(source).toContain("--sn-portal-ring");
+    expect(source).toContain("--sn-scene-landscape");
+    expect(source).toContain(".sn-companion-panel");
+  });
+
+  it("keeps shared page, card, and auth surfaces on the premium system", async () => {
+    const [pageShell, sectionCard, authSurface] = await Promise.all([
+      readSource("./PageShell.tsx"),
+      readSource("./SectionCard.tsx"),
+      readSource("./AuthSurface.tsx"),
+    ]);
+
+    expect(pageShell).toContain('className="sn-premium-panel sn-page-hero"');
+    expect(sectionCard).toContain('className="sn-premium-panel"');
+    expect(authSurface).toContain('className="sn-premium-panel"');
+    expect(authSurface).toContain("var(--sn-companion-hero)");
+  });
+
+  it("keeps authenticated home using theme-aware companion colors", async () => {
+    const source = await readSource("../../pages/HomePage.tsx");
+
+    expect(source).toContain('className="sn-companion-panel"');
+    expect(source).toContain("var(--sn-on-companion)");
+    expect(source).toContain("var(--sn-on-companion-muted)");
+    expect(source).not.toContain('bgcolor: "#ffffff"');
+  });
+});
