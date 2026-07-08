@@ -13,6 +13,9 @@ describe("Smart Nutrition visual system contract", () => {
     expect(source).toContain("--sn-portal-ring");
     expect(source).toContain("--sn-scene-landscape");
     expect(source).toContain(".sn-companion-panel");
+    expect(source).toContain(
+      "linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+    );
   });
 
   it("keeps shared page, card, and auth surfaces on the premium system", async () => {

@@ -275,6 +275,9 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         ".MuiPaper-root, .MuiCard-root": {
           borderColor: "var(--sn-border-soft)",
           boxShadow: "var(--sn-shadow-soft)",
+          backgroundImage:
+            "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          backdropFilter: "blur(20px)",
         },
         ".sn-premium-panel": {
           position: "relative",
@@ -317,6 +320,8 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         "body[data-sn-color-mode='light'] .MuiPaper-root, body[data-sn-color-mode='light'] .MuiCard-root":
           {
             backgroundColor: "var(--sn-surface-glass)",
+            backgroundImage:
+              "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
           },
         "body[data-sn-color-mode='dark']": {
           background: "var(--sn-page-gradient)",
@@ -326,6 +331,8 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         "body[data-sn-color-mode='dark'] .MuiPaper-root, body[data-sn-color-mode='dark'] .MuiCard-root":
           {
             backgroundColor: "var(--sn-surface-glass) !important",
+            backgroundImage:
+              "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass)) !important",
             borderColor: "var(--sn-border-soft) !important",
             color: "var(--sn-text-primary)",
           },
