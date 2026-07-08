@@ -4,7 +4,14 @@ export const createPlatformRepository = (storage) => ({
   updateUserRole: (payload) => storage.updateUserRole(payload),
   updateUserBan: (payload) => storage.updateUserBan(payload),
   hasUserWithRole: (role) => storage.hasUserWithRole(role),
-  promoteUserByEmailToSuperAdmin: (email) => storage.promoteUserByEmailToSuperAdmin(email),
+  promoteUserByEmailToOwner: (email) =>
+    storage.promoteUserByEmailToOwner?.(email) ??
+    storage.promoteUserByEmailToSuperAdmin?.(email) ??
+    null,
+  promoteUserByEmailToSuperAdmin: (email) =>
+    storage.promoteUserByEmailToOwner?.(email) ??
+    storage.promoteUserByEmailToSuperAdmin?.(email) ??
+    null,
   createAuditLog: (entry) => storage.createAuditLog(entry),
   listAuditLogs: (limit) => storage.listAuditLogs(limit),
   countCatalogProductsByOwnerSince: (userId, sinceIso) =>

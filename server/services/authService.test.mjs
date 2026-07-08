@@ -10,6 +10,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
   const authRepository = {
     findUserByEmail: vi.fn(),
     findUserById: vi.fn(),
+    hasUserWithRole: vi.fn(() => false),
     insertUser: vi.fn(),
     updateUser: vi.fn(),
     updateUserPassword: vi.fn(),
@@ -36,6 +37,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
     clearLoginAttempt: vi.fn(),
     cleanupExpiredSessions: vi.fn(),
     cleanupExpiredPasswordResetTokens: vi.fn(),
+    promoteUserByEmailToOwner: vi.fn(),
   };
   const stateRepository = {
     getSnapshotByUserId: vi.fn(() => null),
@@ -97,6 +99,50 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
 };
 
 describe("authService", () => {
+  it("promotes the configured owner email through the canonical owner method on startup", () => {
+    const { authRepository } = createAuthServiceFixture({
+      configOverrides: { superAdminEmail: "owner@example.com" },
+    });
+
+    expect(authRepository.promoteUserByEmailToOwner).toHaveBeenCalledWith(
+      "owner@example.com"
+    );
+  });
+
+  it("bootstraps the first configured owner registration as OWNER", async () => {
+    const { authRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: {
+        superAdminEmail: "owner@example.com",
+        registrationVerificationTokenTtlMs: 900000,
+      },
+    });
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: true,
+      messageId: "email-owner",
+    });
+
+    await service.register({
+      name: "Owner User",
+      email: "owner@example.com",
+      password: "StrongPass123!",
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+    });
+
+    expect(authRepository.hasUserWithRole).toHaveBeenCalledWith("OWNER");
+    expect(authRepository.insertUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "owner@example.com",
+        role: "OWNER",
+        twoFactorRequired: true,
+      })
+    );
+  });
+
   it("rotates refresh sessions on refresh", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {

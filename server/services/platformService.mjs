@@ -301,7 +301,10 @@ export const createPlatformService = ({
   return {
     bootstrapAccessControl: async () => {
       if (config.superAdminEmail) {
-        await platformRepository.promoteUserByEmailToSuperAdmin(config.superAdminEmail);
+        const promoteConfiguredOwner =
+          platformRepository.promoteUserByEmailToOwner ??
+          platformRepository.promoteUserByEmailToSuperAdmin;
+        await promoteConfiguredOwner?.(config.superAdminEmail);
       }
     },
 

@@ -20,7 +20,14 @@ export const createAuthRepository = (storage) => ({
   updateUserPassword: (payload) => storage.updateUserPassword(payload),
   updateUserRole: (payload) => storage.updateUserRole(payload),
   listUsers: () => storage.listUsers(),
-  promoteUserByEmailToSuperAdmin: (email) => storage.promoteUserByEmailToSuperAdmin(email),
+  promoteUserByEmailToOwner: (email) =>
+    storage.promoteUserByEmailToOwner?.(email) ??
+    storage.promoteUserByEmailToSuperAdmin?.(email) ??
+    null,
+  promoteUserByEmailToSuperAdmin: (email) =>
+    storage.promoteUserByEmailToOwner?.(email) ??
+    storage.promoteUserByEmailToSuperAdmin?.(email) ??
+    null,
   deleteUser: (userId) => storage.deleteUser(userId),
   listUserBackups: (userId) => storage.listUserBackups(userId),
   readUserBackup: (userId, backupId) => storage.readUserBackup(userId, backupId),

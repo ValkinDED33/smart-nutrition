@@ -1429,7 +1429,7 @@ export const createPostgresStorage = async ({
       return getResolvedUser(userId);
     },
 
-    promoteUserByEmailToSuperAdmin: async (email) => {
+    promoteUserByEmailToOwner: async (email) => {
       const normalizedEmail = String(email ?? "").trim().toLowerCase();
 
       if (!normalizedEmail) {
@@ -1457,6 +1457,10 @@ export const createPostgresStorage = async ({
       return mapUserRow(
         await queryOne("SELECT * FROM users WHERE email = $1 LIMIT 1", [normalizedEmail])
       );
+    },
+
+    async promoteUserByEmailToSuperAdmin(email) {
+      return this.promoteUserByEmailToOwner(email);
     },
 
     deleteUser: async (userId) => {

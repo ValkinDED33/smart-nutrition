@@ -20,6 +20,7 @@ const createPlatformFixture = ({ productLookupService = null } = {}) => {
       bannedAt,
       bannedReason,
     })),
+    promoteUserByEmailToOwner: vi.fn(),
     countCatalogProductsByOwnerSince: vi.fn(() => 0),
     findCatalogDuplicateCandidates: vi.fn(() => []),
     insertCatalogProduct: vi.fn(),
@@ -69,6 +70,24 @@ const owner = {
 };
 
 describe("platformService", () => {
+  it("bootstraps the configured owner email through the canonical owner method", async () => {
+    const { platformRepository } = createPlatformFixture();
+    const configuredService = createPlatformService({
+      platformRepository,
+      config: {
+        productSubmissionDailyLimit: 10,
+        superAdminEmail: "owner@example.com",
+        catalogCacheTtlSeconds: 60,
+      },
+    });
+
+    await configuredService.bootstrapAccessControl();
+
+    expect(platformRepository.promoteUserByEmailToOwner).toHaveBeenCalledWith(
+      "owner@example.com"
+    );
+  });
+
   it("clamps public catalog query limits and trims search", async () => {
     const { platformRepository, service } = createPlatformFixture();
 

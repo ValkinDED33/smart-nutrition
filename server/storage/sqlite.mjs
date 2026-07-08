@@ -3053,7 +3053,7 @@ export const createSqliteStorage = async ({
       return getResolvedUser(userId);
     },
 
-    promoteUserByEmailToSuperAdmin: (email) => {
+    promoteUserByEmailToOwner: (email) => {
       const normalizedEmail = String(email ?? "").trim().toLowerCase();
 
       if (!normalizedEmail) {
@@ -3082,6 +3082,10 @@ export const createSqliteStorage = async ({
       return mapUserRow(
         database.prepare("SELECT * FROM users WHERE email = ? LIMIT 1").get(normalizedEmail)
       );
+    },
+
+    promoteUserByEmailToSuperAdmin(email) {
+      return this.promoteUserByEmailToOwner(email);
     },
 
     deleteUser: (userId) => {

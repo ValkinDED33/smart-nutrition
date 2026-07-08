@@ -1215,7 +1215,7 @@ export const createMongoStorage = async (config) => {
       return getResolvedUser(userId);
     },
 
-    promoteUserByEmailToSuperAdmin: async (email) => {
+    promoteUserByEmailToOwner: async (email) => {
       await collections.users.updateOne(
         { email },
         {
@@ -1227,6 +1227,10 @@ export const createMongoStorage = async (config) => {
         }
       );
       return mapUserDoc(await collections.users.findOne({ email }));
+    },
+
+    async promoteUserByEmailToSuperAdmin(email) {
+      return this.promoteUserByEmailToOwner(email);
     },
 
     deleteUser: async (userId) => {

@@ -474,7 +474,10 @@ export const createAuthService = ({
   };
 
   if (config.superAdminEmail) {
-    void authRepository.promoteUserByEmailToSuperAdmin?.(config.superAdminEmail);
+    const promoteConfiguredOwner =
+      authRepository.promoteUserByEmailToOwner ??
+      authRepository.promoteUserByEmailToSuperAdmin;
+    void promoteConfiguredOwner?.(config.superAdminEmail);
   }
 
   return {
