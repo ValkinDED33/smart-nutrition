@@ -28,6 +28,14 @@ class FakeStorage {
   }
 }
 
+const LANGUAGE_KEY = "smart-nutrition.language";
+const COLOR_MODE_KEY = "smart-nutrition.color-mode";
+const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
+const REMOTE_SNAPSHOT_KEY = "smart-nutrition.remote-snapshot";
+const ASSISTANT_HISTORY_KEY = "smart-nutrition-assistant-history:user-1";
+const PRIVATE_PAYLOAD = "{ private: true }";
+const SAVED_AUTH_HINT = JSON.stringify({ savedAt: 1_772_000_000_000 });
+
 const installStorage = () => {
   const localStorage = new FakeStorage();
   const sessionStorage = new FakeStorage();
@@ -60,32 +68,31 @@ describe("clientPersistence", () => {
 
   it("keeps durable preferences while purging local app data", async () => {
     const { localStorage, sessionStorage } = installStorage();
-    localStorage.setItem("smart-nutrition.language", "en");
-    localStorage.setItem("smart-nutrition.color-mode", "dark");
-    localStorage.setItem(
-      "smart-nutrition.auth-session-hint",
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
-    );
-    localStorage.setItem("smart-nutrition.remote-snapshot", "{ private: true }");
-    sessionStorage.setItem("smart-nutrition.remote-snapshot", "{ private: true }");
+    localStorage.setItem(LANGUAGE_KEY, "en");
+    localStorage.setItem(COLOR_MODE_KEY, "dark");
+    localStorage.setItem(AUTH_SESSION_HINT_KEY, SAVED_AUTH_HINT);
+    localStorage.setItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
+    localStorage.setItem(ASSISTANT_HISTORY_KEY, PRIVATE_PAYLOAD);
+    sessionStorage.setItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
+    sessionStorage.setItem(ASSISTANT_HISTORY_KEY, PRIVATE_PAYLOAD);
 
     const persistence = await import("./clientPersistence");
 
     await persistence.initializeClientPersistence();
 
-    expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("en");
-    expect(persistence.getClientStorageItem("smart-nutrition.color-mode")).toBe("dark");
-    expect(persistence.getClientStorageItem("smart-nutrition.auth-session-hint")).toBe(
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
+    expect(persistence.getClientStorageItem(LANGUAGE_KEY)).toBe("en");
+    expect(persistence.getClientStorageItem(COLOR_MODE_KEY)).toBe("dark");
+    expect(persistence.getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBe(
+      SAVED_AUTH_HINT
     );
-    expect(persistence.getClientStorageItem("smart-nutrition.remote-snapshot")).toBeNull();
-    expect(localStorage.getItem("smart-nutrition.language")).toBe("en");
-    expect(localStorage.getItem("smart-nutrition.color-mode")).toBe("dark");
-    expect(localStorage.getItem("smart-nutrition.auth-session-hint")).toBe(
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
-    );
-    expect(localStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
-    expect(sessionStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
+    expect(persistence.getClientStorageItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
+    expect(localStorage.getItem(LANGUAGE_KEY)).toBe("en");
+    expect(localStorage.getItem(COLOR_MODE_KEY)).toBe("dark");
+    expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(localStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
+    expect(localStorage.getItem(ASSISTANT_HISTORY_KEY)).toBeNull();
+    expect(sessionStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
+    expect(sessionStorage.getItem(ASSISTANT_HISTORY_KEY)).toBeNull();
   });
 
   it("persists only durable preference keys to browser storage", async () => {
@@ -93,30 +100,34 @@ describe("clientPersistence", () => {
     const persistence = await import("./clientPersistence");
 
     await persistence.initializeClientPersistence();
-    persistence.setClientStorageItem("smart-nutrition.language", "pl");
-    persistence.setClientStorageItem(
-      "smart-nutrition.auth-session-hint",
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
-    );
-    persistence.setClientStorageItem("smart-nutrition.remote-snapshot", "{ private: true }");
+    persistence.setClientStorageItem(LANGUAGE_KEY, "pl");
+    persistence.setClientStorageItem(AUTH_SESSION_HINT_KEY, SAVED_AUTH_HINT);
+    persistence.setClientStorageItem(REMOTE_SNAPSHOT_KEY, PRIVATE_PAYLOAD);
 
-    expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("pl");
-    expect(persistence.getClientStorageItem("smart-nutrition.auth-session-hint")).toBe(
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
-    );
-    expect(persistence.getClientStorageItem("smart-nutrition.remote-snapshot")).toBe(
-      "{ private: true }"
-    );
-    expect(localStorage.getItem("smart-nutrition.language")).toBe("pl");
-    expect(localStorage.getItem("smart-nutrition.auth-session-hint")).toBe(
-      JSON.stringify({ savedAt: 1_772_000_000_000 })
-    );
-    expect(localStorage.getItem("smart-nutrition.remote-snapshot")).toBeNull();
+    expect(persistence.getClientStorageItem(LANGUAGE_KEY)).toBe("pl");
+    expect(persistence.getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(persistence.getClientStorageItem(REMOTE_SNAPSHOT_KEY)).toBe(PRIVATE_PAYLOAD);
+    expect(localStorage.getItem(LANGUAGE_KEY)).toBe("pl");
+    expect(localStorage.getItem(AUTH_SESSION_HINT_KEY)).toBe(SAVED_AUTH_HINT);
+    expect(localStorage.getItem(REMOTE_SNAPSHOT_KEY)).toBeNull();
 
-    persistence.removeClientStorageItem("smart-nutrition.language");
+    persistence.removeClientStorageItem(LANGUAGE_KEY);
 
-    expect(persistence.getClientStorageItem("smart-nutrition.language")).toBeNull();
-    expect(localStorage.getItem("smart-nutrition.language")).toBeNull();
+    expect(persistence.getClientStorageItem(LANGUAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(LANGUAGE_KEY)).toBeNull();
+  });
+
+  it("does not allow legacy assistant history to become durable browser storage", async () => {
+    const { localStorage } = installStorage();
+    const persistence = await import("./clientPersistence");
+
+    await persistence.initializeClientPersistence();
+    persistence.setClientStorageItem(ASSISTANT_HISTORY_KEY, PRIVATE_PAYLOAD);
+
+    expect(persistence.getClientStorageItem(ASSISTANT_HISTORY_KEY)).toBe(
+      PRIVATE_PAYLOAD
+    );
+    expect(localStorage.getItem(ASSISTANT_HISTORY_KEY)).toBeNull();
   });
 
   it("keeps bootstrapping when browser storage access is blocked", async () => {
@@ -145,8 +156,8 @@ describe("clientPersistence", () => {
 
     await expect(persistence.initializeClientPersistence()).resolves.toBeUndefined();
 
-    persistence.setClientStorageItem("smart-nutrition.language", "uk");
+    persistence.setClientStorageItem(LANGUAGE_KEY, "uk");
 
-    expect(persistence.getClientStorageItem("smart-nutrition.language")).toBe("uk");
+    expect(persistence.getClientStorageItem(LANGUAGE_KEY)).toBe("uk");
   });
 });

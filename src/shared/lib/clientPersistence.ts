@@ -1,4 +1,7 @@
-const LEGACY_KEY_PREFIX = "smart-nutrition.";
+const LEGACY_KEY_PREFIXES = [
+  "smart-nutrition.",
+  "smart-nutrition-assistant-history:",
+];
 const LEGACY_DB_NAME = "smart-nutrition-client";
 const DURABLE_PREFERENCE_KEYS = new Set([
   "smart-nutrition.language",
@@ -45,7 +48,8 @@ const purgeLegacyBrowserStorage = (name: BrowserStorageName) => {
       const key = storage.key(index);
 
       if (
-        key?.startsWith(LEGACY_KEY_PREFIX) &&
+        key &&
+        LEGACY_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
         !DURABLE_PREFERENCE_KEYS.has(key)
       ) {
         keys.push(key);
