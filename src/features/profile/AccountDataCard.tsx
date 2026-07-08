@@ -28,197 +28,11 @@ import {
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { accountCopy } from "./AccountDataCard.copy";
 import {
   TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS,
   shouldPollTelegramConnectStatus,
 } from "./telegramConnectStatusModel";
-
-const accountCopy = {
-  uk: {
-    title: "Акаунт і дані",
-    subtitle:
-      "Експортуйте свої дані, перевіряйте, де вони зберігаються, і за потреби повністю видаляйте акаунт.",
-    provider: "Режим зберігання",
-    session: "Сесія",
-    sync: "Синхронізація",
-    security: "Безпека",
-    providerRemote: "Віддалений API-акаунт",
-    sessionRemote: "API-сесія access + refresh",
-    securityRemote: "Сесії працюють через access + refresh токени з серверною перевіркою.",
-    exportAction: "Експортувати мої дані",
-    exportBusy: "Готуємо експорт...",
-    exportSuccess: "Експорт даних готовий.",
-    exportError: "Не вдалося створити експорт.",
-    backupsTitle: "Резервні знімки",
-    backupsSubtitle:
-      "Останні хмарні точки відновлення, створені зі змін синхронізованого стану.",
-    backupsEmpty: "Резервні знімки поки недоступні.",
-    backupsLoading: "Завантажуємо резервні знімки...",
-    backupDownload: "Завантажити резервну копію",
-    backupBusy: "Завантаження...",
-    backupError: "Не вдалося завантажити резервну копію.",
-    deleteAction: "Видалити акаунт",
-    revokeAction: "Вийти з усіх сесій",
-    revokeBusy: "Скасовуємо сесії...",
-    revokeSuccess: "Усі сесії було завершено.",
-    revokeError: "Не вдалося завершити всі сесії.",
-    deleteBusy: "Видалення...",
-    deleteSuccess: "Акаунт видалено.",
-    deleteError: "Не вдалося видалити акаунт.",
-    remoteNotice:
-      "Віддалені акаунти працюють через сесії access + refresh, фонову синхронізацію, хмарний стан із врахуванням конфліктів і резервні знімки на сервері.",
-    confirmTitle: "Видалити цей акаунт?",
-    confirmBody:
-      "Це видалить акаунт, сесію, дані профілю, історію прийомів їжі, збережені продукти, шаблони й пам'ять штрихкодів для цієї інсталяції.",
-    confirmCancel: "Скасувати",
-    confirmDelete: "Так, видалити все",
-    syncRemote: "Хмарна синхронізація активна",
-    telegramTitle: "Telegram-помічник",
-    telegramSubtitle:
-      "Підключіть бота, щоб отримувати нагадування, підказки та майбутні повідомлення асистента в Telegram.",
-    telegramConnected: "Підключено",
-    telegramDisconnected: "Не підключено",
-    telegramUnavailable: "Telegram ще не налаштований на сервері.",
-    telegramLoading: "Перевіряємо Telegram...",
-    telegramConnect: "Підключити Telegram",
-    telegramConnecting: "Готуємо посилання...",
-    telegramDisconnect: "Відключити",
-    telegramDisconnecting: "Відключаємо...",
-    telegramConnectSuccess: "Відкрили Telegram для підключення.",
-    telegramConnectError: "Не вдалося створити посилання Telegram.",
-    telegramDisconnectSuccess: "Telegram відключено.",
-    telegramDisconnectError: "Не вдалося відключити Telegram.",
-    telegramBot: "Бот",
-    telegramConnectInstruction:
-      "Якщо Telegram не відкрився автоматично, натисніть персональне посилання нижче. Звичайний /start без цього посилання не підключає акаунт.",
-    telegramOpenPersonalLink: "Відкрити персональне посилання",
-    telegramCopyLink: "Скопіювати посилання",
-    telegramCopySuccess: "Посилання Telegram скопійовано.",
-  },
-  pl: {
-    title: "Konto i dane",
-    subtitle:
-      "Eksportuj swoje dane, sprawdzaj gdzie sa zapisane i w razie potrzeby usun konto calkowicie.",
-    provider: "Tryb przechowywania",
-    session: "Sesja",
-    sync: "Synchronizacja",
-    security: "Bezpieczenstwo",
-    providerRemote: "Zdalne konto API",
-    sessionRemote: "Sesja API access + refresh",
-    securityRemote: "Sesje dzialaja przez tokeny access + refresh z weryfikacja po stronie serwera.",
-    exportAction: "Eksportuj moje dane",
-    exportBusy: "Przygotowujemy eksport...",
-    exportSuccess: "Eksport danych jest gotowy.",
-    exportError: "Nie udalo sie utworzyc eksportu.",
-    backupsTitle: "Snapshoty kopii zapasowych",
-    backupsSubtitle:
-      "Ostatnie punkty przywracania z chmury utworzone ze zsynchronizowanych zmian stanu.",
-    backupsEmpty: "Kopie zapasowe nie sa jeszcze dostepne.",
-    backupsLoading: "Ladujemy kopie zapasowe...",
-    backupDownload: "Pobierz kopie zapasowa",
-    backupBusy: "Pobieranie...",
-    backupError: "Nie udalo sie pobrac kopii zapasowej.",
-    deleteAction: "Usun konto",
-    revokeAction: "Wyloguj wszystkie sesje",
-    revokeBusy: "Wycofywanie sesji...",
-    revokeSuccess: "Wszystkie sesje zostaly zakonczone.",
-    revokeError: "Nie udalo sie zakonczyc wszystkich sesji.",
-    deleteBusy: "Usuwanie...",
-    deleteSuccess: "Konto zostalo usuniete.",
-    deleteError: "Nie udalo sie usunac konta.",
-    remoteNotice:
-      "Konta zdalne korzystaja z sesji access + refresh, synchronizacji w tle, wykrywania konfliktow i snapshotow zapasowych na serwerze.",
-    confirmTitle: "Usunac to konto?",
-    confirmBody:
-      "To usunie konto, sesje, dane profilu, historie posilkow, zapisane produkty, szablony i pamiec kodow kreskowych dla tej instalacji.",
-    confirmCancel: "Anuluj",
-    confirmDelete: "Tak, usun wszystko",
-    syncRemote: "Synchronizacja z chmura aktywna",
-    telegramTitle: "Asystent Telegram",
-    telegramSubtitle:
-      "Podlacz bota, aby dostawac przypomnienia, wskazowki i przyszle wiadomosci asystenta w Telegramie.",
-    telegramConnected: "Polaczono",
-    telegramDisconnected: "Nie polaczono",
-    telegramUnavailable: "Telegram nie jest jeszcze skonfigurowany na serwerze.",
-    telegramLoading: "Sprawdzamy Telegram...",
-    telegramConnect: "Podlacz Telegram",
-    telegramConnecting: "Przygotowujemy link...",
-    telegramDisconnect: "Odlacz",
-    telegramDisconnecting: "Odlaczanie...",
-    telegramConnectSuccess: "Otworzylismy Telegram do podlaczenia.",
-    telegramConnectError: "Nie udalo sie utworzyc linku Telegram.",
-    telegramDisconnectSuccess: "Telegram odlaczony.",
-    telegramDisconnectError: "Nie udalo sie odlaczyc Telegram.",
-    telegramBot: "Bot",
-    telegramConnectInstruction:
-      "Jesli Telegram nie otworzyl sie automatycznie, nacisnij osobisty link ponizej. Zwykle /start bez tego linku nie polaczy konta.",
-    telegramOpenPersonalLink: "Otworz osobisty link",
-    telegramCopyLink: "Skopiuj link",
-    telegramCopySuccess: "Link Telegram skopiowany.",
-  },
-  en: {
-    title: "Account and data",
-    subtitle:
-      "Export your data, check where it is stored, and fully delete the account if needed.",
-    provider: "Storage mode",
-    session: "Session",
-    sync: "Sync",
-    security: "Security",
-    providerRemote: "Remote API account",
-    sessionRemote: "API session access + refresh",
-    securityRemote:
-      "Sessions use access + refresh tokens with server-side verification.",
-    exportAction: "Export my data",
-    exportBusy: "Preparing export...",
-    exportSuccess: "Data export is ready.",
-    exportError: "Could not create export.",
-    backupsTitle: "Backup snapshots",
-    backupsSubtitle:
-      "Latest cloud restore points created from synchronized state changes.",
-    backupsEmpty: "Backup snapshots are not available yet.",
-    backupsLoading: "Loading backup snapshots...",
-    backupDownload: "Download backup",
-    backupBusy: "Downloading...",
-    backupError: "Could not download backup.",
-    deleteAction: "Delete account",
-    revokeAction: "Log out all sessions",
-    revokeBusy: "Revoking sessions...",
-    revokeSuccess: "All sessions were ended.",
-    revokeError: "Could not end all sessions.",
-    deleteBusy: "Deleting...",
-    deleteSuccess: "Account deleted.",
-    deleteError: "Could not delete account.",
-    remoteNotice:
-      "Remote accounts use access + refresh sessions, background sync, conflict-aware cloud state, and server-side backup snapshots.",
-    confirmTitle: "Delete this account?",
-    confirmBody:
-      "This will delete the account, session, profile data, meal history, saved products, templates, and barcode memory for this installation.",
-    confirmCancel: "Cancel",
-    confirmDelete: "Yes, delete everything",
-    syncRemote: "Cloud sync is active",
-    telegramTitle: "Telegram assistant",
-    telegramSubtitle:
-      "Connect the bot to receive reminders, nudges, and future assistant messages in Telegram.",
-    telegramConnected: "Connected",
-    telegramDisconnected: "Not connected",
-    telegramUnavailable: "Telegram is not configured on the server yet.",
-    telegramLoading: "Checking Telegram...",
-    telegramConnect: "Connect Telegram",
-    telegramConnecting: "Preparing link...",
-    telegramDisconnect: "Disconnect",
-    telegramDisconnecting: "Disconnecting...",
-    telegramConnectSuccess: "Telegram opened for connection.",
-    telegramConnectError: "Could not create Telegram link.",
-    telegramDisconnectSuccess: "Telegram disconnected.",
-    telegramDisconnectError: "Could not disconnect Telegram.",
-    telegramBot: "Bot",
-    telegramConnectInstruction:
-      "If Telegram did not open automatically, use the personal link below. Plain /start without this link cannot connect your account.",
-    telegramOpenPersonalLink: "Open personal link",
-    telegramCopyLink: "Copy link",
-    telegramCopySuccess: "Telegram link copied.",
-  },
-} as const;
 
 type AccountCopy = (typeof accountCopy)[keyof typeof accountCopy];
 
@@ -251,9 +65,10 @@ export const AccountDataCard = () => {
   const copy = accountCopy[appLanguage];
   const runtime = getAuthRuntimeInfo();
   const runtimeLabels = getRuntimeLabels(copy);
-  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(
-    null
-  );
+  const [notice, setNotice] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [backups, setBackups] = useState<AccountBackupSummary[]>([]);
   const [backupsLoading, setBackupsLoading] = useState(true);
@@ -512,7 +327,7 @@ export const AccountDataCard = () => {
         window.location.assign(status.url);
       }
 
-      setNotice({ type: "success", message: copy.telegramConnectSuccess });
+      setNotice({ type: "info", message: copy.telegramConnectPending });
     } catch {
       pendingWindow?.close();
       setNotice({ type: "error", message: copy.telegramConnectError });
