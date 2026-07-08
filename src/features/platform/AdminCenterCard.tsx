@@ -454,11 +454,11 @@ export const AdminCenterCard = () => {
               ].map(([label, value]) => (
                 <Box
                   key={label}
+                  className="sn-premium-panel"
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    border: "1px solid rgba(15, 23, 42, 0.1)",
-                    backgroundColor: "rgba(255,255,255,0.72)",
+                    border: "1px solid var(--sn-border-soft)",
                   }}
                 >
                   <Typography color="text.secondary" variant="body2">

@@ -30,6 +30,7 @@ describe("Smart Nutrition visual system coverage", () => {
       readSource("../../features/profile/MotivationHubCard.tsx"),
       readSource("../../features/profile/CompanionShopCard.tsx"),
       readSource("../../features/education/LearningHubCard.tsx"),
+      readSource("../../features/platform/AdminCenterCard.tsx"),
     ]);
 
     for (const source of sources) {
@@ -40,5 +41,15 @@ describe("Smart Nutrition visual system coverage", () => {
     expect(sources.join("\n")).not.toContain("rgba(255,255,255,0.94)");
     expect(sources.join("\n")).not.toContain("rgba(240,253,250,0.55)");
     expect(sources.join("\n")).not.toContain("rgba(254,242,242,0.72)");
+  });
+
+  it("keeps the application shell mobile-safe and token-driven", async () => {
+    const source = await readSource("../../app/layouts/AppLayout.tsx");
+
+    expect(source).toContain('minHeight: "100dvh"');
+    expect(source).toContain("var(--sn-brand-gradient)");
+    expect(source).toContain("var(--sn-border-soft)");
+    expect(source).toContain("env(safe-area-inset-bottom");
+    expect(source).not.toContain('border: "1px solid rgba(20, 33, 61, 0.08)"');
   });
 });

@@ -59,6 +59,8 @@ const LANDING_FEATURES_HREF = "/#features";
 const LANDING_ABOUT_HREF = "/#about";
 const NAV_BACKDROP_FILTER = "blur(18px)";
 const NAV_SURFACE_BACKGROUND = "var(--sn-nav-surface)";
+const NAV_SOFT_BORDER = "1px solid var(--sn-border-soft)";
+const BRAND_GRADIENT = "var(--sn-brand-gradient)";
 
 const getLandingNavigationItems = (
   language: AppLanguage,
@@ -214,7 +216,7 @@ const Layout = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         width: "100%",
         maxWidth: "100vw",
         overflowX: "hidden",
@@ -235,7 +237,7 @@ const Layout = () => {
           borderBottom:
             isLandingRoute && !user
               ? "1px solid transparent"
-              : "1px solid var(--sn-border-soft)",
+              : NAV_SOFT_BORDER,
           boxShadow: isLandingRoute && !user ? "none" : "var(--sn-shadow-soft)",
           left: 0,
           right: 0,
@@ -275,11 +277,10 @@ const Layout = () => {
                     width: 40,
                     height: 40,
                     borderRadius: "14px",
-                    background:
-                      "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                    background: BRAND_GRADIENT,
                     display: "grid",
                     placeItems: "center",
-                    color: "white",
+                    color: "#ffffff",
                     fontWeight: 900,
                     flexShrink: 0,
                   }}
@@ -337,17 +338,15 @@ const Layout = () => {
                       sx={{
                         px: 1.6,
                         color: selected
-                          ? "#ffffff"
-                          : isDarkMode
-                            ? "#cbd5e1"
-                            : "#334155",
-                        bgcolor: selected ? "#0f766e" : "transparent",
+                          ? "var(--sn-on-primary)"
+                          : "var(--sn-text-secondary)",
+                        bgcolor: selected
+                          ? "var(--sn-primary)"
+                          : "transparent",
                         "&:hover": {
                           bgcolor: selected
-                            ? "#115e59"
-                            : isDarkMode
-                              ? "rgba(148, 163, 184, 0.12)"
-                              : "rgba(15, 118, 110, 0.08)",
+                            ? "var(--sn-primary-strong)"
+                            : "var(--sn-accent-soft)",
                         },
                       }}
                     >
@@ -373,7 +372,7 @@ const Layout = () => {
                   px: 1,
                   py: 0.6,
                   borderRadius: 999,
-                  border: "1px solid var(--sn-border-soft)",
+                  border: NAV_SOFT_BORDER,
                   backgroundColor: isDarkMode
                     ? "rgba(2, 6, 23, 0.32)"
                     : "rgba(255,255,255,0.36)",
@@ -531,8 +530,7 @@ const Layout = () => {
                       textTransform: "none",
                       fontWeight: 800,
                       borderRadius: 999,
-                      background:
-                        "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                      background: BRAND_GRADIENT,
                     }}
                   >
                     {t("nav.register")}
@@ -584,9 +582,10 @@ const Layout = () => {
             zIndex: 1200,
             borderRadius: 999,
             overflow: "hidden",
-            border: "1px solid rgba(20, 33, 61, 0.08)",
+            border: NAV_SOFT_BORDER,
             backdropFilter: NAV_BACKDROP_FILTER,
             backgroundColor: NAV_SURFACE_BACKGROUND,
+            boxShadow: "var(--sn-shadow-strong)",
             ...(isDarkMode && {
               backgroundColor: NAV_SURFACE_BACKGROUND,
               borderColor: "var(--sn-border-soft)",
@@ -612,7 +611,7 @@ const Layout = () => {
                 minWidth: 0,
               },
               "& .Mui-selected": {
-                color: "#0f766e",
+                color: "var(--sn-primary)",
               },
             }}
           >
