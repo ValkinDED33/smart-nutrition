@@ -1,6 +1,9 @@
 const OPEN_FOOD_FACTS_PROVIDER = "openfoodfacts";
 const USDA_PROVIDER = "usda";
-const OPEN_FOOD_FACTS_BASE_URL = "https://world.openfoodfacts.org";
+const OPEN_FOOD_FACTS_BASE_URLS = [
+  "https://world.openfoodfacts.org",
+  "https://world.openfoodfacts.net",
+];
 const USDA_SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 const FEATURED_QUERIES = ["oats", "chicken breast", "greek yogurt", "banana"];
 const BARCODE_PATTERN = /^\d{8,14}$/;
@@ -353,6 +356,30 @@ const fetchJson = async ({ fetchImpl, url, timeoutMs, headers = {} }) => {
   }
 };
 
+const fetchJsonFromFirstAvailableUrl = async ({
+  fetchImpl,
+  urls,
+  timeoutMs,
+  headers = {},
+}) => {
+  let lastError = null;
+
+  for (const url of urls) {
+    try {
+      return await fetchJson({
+        fetchImpl,
+        url,
+        timeoutMs,
+        headers,
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError ?? new Error("No product lookup URL configured.");
+};
+
 const mergeProductsByIdentity = (products) => {
   const merged = new Map();
 
@@ -404,9 +431,10 @@ export const createProductLookupService = ({
       fields:
         "code,product_name,product_name_en,generic_name,abbreviated_product_name,brands,categories,categories_tags,labels_tags,image_front_url,image_url,nutriments",
     });
-    const payload = await fetchJson({
+    const path = `/cgi/search.pl?${params.toString()}`;
+    const payload = await fetchJsonFromFirstAvailableUrl({
       fetchImpl,
-      url: `${OPEN_FOOD_FACTS_BASE_URL}/cgi/search.pl?${params.toString()}`,
+      urls: OPEN_FOOD_FACTS_BASE_URLS.map((baseUrl) => `${baseUrl}${path}`),
       timeoutMs,
       headers: {
         Accept: "application/json",
@@ -424,11 +452,12 @@ export const createProductLookupService = ({
       fields:
         "code,product_name,product_name_en,generic_name,abbreviated_product_name,brands,categories,categories_tags,labels_tags,image_front_url,image_url,nutriments",
     });
-    const payload = await fetchJson({
+    const path = `/api/v2/product/${encodeURIComponent(
+      barcode
+    )}.json?${params.toString()}`;
+    const payload = await fetchJsonFromFirstAvailableUrl({
       fetchImpl,
-      url: `${OPEN_FOOD_FACTS_BASE_URL}/api/v2/product/${encodeURIComponent(
-        barcode
-      )}.json?${params.toString()}`,
+      urls: OPEN_FOOD_FACTS_BASE_URLS.map((baseUrl) => `${baseUrl}${path}`),
       timeoutMs,
       headers: {
         Accept: "application/json",

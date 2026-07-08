@@ -84,6 +84,38 @@ describe("productLookupService", () => {
     expect(fetchImpl.mock.calls[0][0]).toContain("world.openfoodfacts.org/cgi/search.pl");
   });
 
+  it("falls back to the secondary OpenFoodFacts host when the primary search host fails", async () => {
+    const fetchImpl = vi.fn(async (url) => {
+      if (String(url).startsWith("https://world.openfoodfacts.org")) {
+        return createResponse({
+          ok: false,
+          status: 502,
+        });
+      }
+
+      return createResponse({
+        body: {
+          products: [openFoodFactsProduct],
+        },
+      });
+    });
+    const service = createProductLookupService({
+      config: {
+        openFoodFactsEnabled: true,
+      },
+      fetchImpl,
+    });
+
+    const results = await service.searchProducts({ search: "greek yogurt", limit: 6 });
+
+    expect(results[0]).toMatchObject({
+      name: "Greek yogurt",
+      source: "OpenFoodFacts",
+    });
+    expect(fetchImpl.mock.calls[0][0]).toContain("world.openfoodfacts.org/cgi/search.pl");
+    expect(fetchImpl.mock.calls[1][0]).toContain("world.openfoodfacts.net/cgi/search.pl");
+  });
+
   it("expands localized common food queries before calling external providers", async () => {
     const fetchImpl = vi.fn(async (url) => {
       if (String(url).includes("search_terms=chicken+breast")) {
@@ -172,6 +204,37 @@ describe("productLookupService", () => {
     expect(fetchImpl.mock.calls[0][0]).toContain(
       "world.openfoodfacts.org/api/v2/product/4820000730030.json"
     );
+  });
+
+  it("falls back to the secondary OpenFoodFacts host for barcode lookups", async () => {
+    const fetchImpl = vi.fn(async (url) => {
+      if (String(url).startsWith("https://world.openfoodfacts.org")) {
+        throw new Error("primary host unavailable");
+      }
+
+      return createResponse({
+        body: {
+          status: 1,
+          product: openFoodFactsProduct,
+        },
+      });
+    });
+    const service = createProductLookupService({
+      config: {
+        openFoodFactsEnabled: true,
+      },
+      fetchImpl,
+    });
+
+    const results = await service.searchProducts({ search: "4820000730030", limit: 1 });
+
+    expect(results).toHaveLength(1);
+    expect(fetchImpl.mock.calls[0][0]).toContain(
+      "world.openfoodfacts.org/api/v2/product/4820000730030.json"
+    );
+    expect(fetchImpl.mock.calls.some(([url]) =>
+      String(url).includes("world.openfoodfacts.net/api/v2/product/4820000730030.json")
+    )).toBe(true);
   });
 
   it("uses USDA FoodData Central when an API key is configured", async () => {
