@@ -13,6 +13,8 @@ import {
 } from "../../core/assistant";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
+const FIRST_STEP_ACHIEVEMENT_ID = "first-step";
+const STEADY_RUN_ACHIEVEMENT_ID = "steady-run";
 
 const toDateKey = (value: string | Date) => {
   const date = typeof value === "string" ? new Date(value) : value;
@@ -48,7 +50,7 @@ export const createDefaultAssistantCustomization = (): AssistantCustomization =>
 
 export const createDefaultAchievements = (): AchievementProgress[] => [
   {
-    id: "first-step",
+    id: FIRST_STEP_ACHIEVEMENT_ID,
     title: "First step",
     description: "Complete your first motivation task.",
     unlockedAt: null,
@@ -72,7 +74,7 @@ export const createDefaultAchievements = (): AchievementProgress[] => [
     target: 100,
   },
   {
-    id: "steady-run",
+    id: STEADY_RUN_ACHIEVEMENT_ID,
     title: "Steady run",
     description: "Complete 15 motivation tasks.",
     unlockedAt: null,
@@ -359,6 +361,21 @@ const goalLabelByLanguage = {
   },
 } as const;
 
+const getGoalLabel = (
+  labels: (typeof goalLabelByLanguage)[AppLanguage],
+  goal: Goal
+) => {
+  switch (goal) {
+    case "cut":
+      return labels.cut;
+    case "bulk":
+      return labels.bulk;
+    case "maintain":
+    default:
+      return labels.maintain;
+  }
+};
+
 const taskCopyByLanguage = {
   uk: {
     "check-in": {
@@ -366,7 +383,7 @@ const taskCopyByLanguage = {
       description: "Відкрийте план і визначте, що сьогодні найважливіше.",
     },
     nutrition: (goal: Goal) => ({
-      title: `Підтримайте мету: ${goalLabelByLanguage.uk[goal]}`,
+      title: `Підтримайте мету: ${getGoalLabel(goalLabelByLanguage.uk, goal)}`,
       description: "Закрийте одну харчову дію, яка прямо підтримує вашу поточну мету.",
     }),
     reflection: {
@@ -380,7 +397,7 @@ const taskCopyByLanguage = {
       description: "Otwórz plan i zdecyduj, co dziś ma największe znaczenie.",
     },
     nutrition: (goal: Goal) => ({
-      title: `Wesprzyj cel: ${goalLabelByLanguage.pl[goal]}`,
+      title: `Wesprzyj cel: ${getGoalLabel(goalLabelByLanguage.pl, goal)}`,
       description: "Domknij jedno działanie żywieniowe, które realnie wspiera obecny cel.",
     }),
     reflection: {
@@ -394,7 +411,7 @@ const taskCopyByLanguage = {
       description: "Open your plan and decide what matters most today.",
     },
     nutrition: (goal: Goal) => ({
-      title: `Support your goal: ${goalLabelByLanguage.en[goal]}`,
+      title: `Support your goal: ${getGoalLabel(goalLabelByLanguage.en, goal)}`,
       description: "Complete one nutrition action that directly supports your current goal.",
     }),
     reflection: {
@@ -406,7 +423,7 @@ const taskCopyByLanguage = {
 
 const achievementCopyByLanguage = {
   uk: {
-    "first-step": {
+    firstStep: {
       title: "Перший крок",
       description: "Закрийте своє перше мотиваційне завдання.",
     },
@@ -418,13 +435,13 @@ const achievementCopyByLanguage = {
       title: "Сотня",
       description: "Наберіть 100 балів.",
     },
-    "steady-run": {
+    steadyRun: {
       title: "Стабільний ритм",
       description: "Закрийте 15 мотиваційних завдань.",
     },
   },
   pl: {
-    "first-step": {
+    firstStep: {
       title: "Pierwszy krok",
       description: "Zamknij swoje pierwsze zadanie motywacyjne.",
     },
@@ -436,13 +453,13 @@ const achievementCopyByLanguage = {
       title: "Setka",
       description: "Zdobądź 100 punktów.",
     },
-    "steady-run": {
+    steadyRun: {
       title: "Stabilny rytm",
       description: "Zamknij 15 zadań motywacyjnych.",
     },
   },
   en: {
-    "first-step": {
+    firstStep: {
       title: "First step",
       description: "Complete your first motivation task.",
     },
@@ -454,14 +471,85 @@ const achievementCopyByLanguage = {
       title: "Century",
       description: "Earn 100 points.",
     },
-    "steady-run": {
+    steadyRun: {
       title: "Steady rhythm",
       description: "Complete 15 motivation tasks.",
     },
   },
 } as const;
 
-const resolveTaskKey = (taskId: string) => {
+type MotivationTaskCopyKey = "check-in" | "nutrition" | "reflection";
+
+const getTaskCopyForLanguage = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return taskCopyByLanguage.pl;
+    case "en":
+      return taskCopyByLanguage.en;
+    case "uk":
+    default:
+      return taskCopyByLanguage.uk;
+  }
+};
+
+const getTaskCopy = ({
+  language,
+  taskKey,
+  goal,
+}: {
+  language: AppLanguage;
+  taskKey: MotivationTaskCopyKey;
+  goal: Goal;
+}) => {
+  const copy = getTaskCopyForLanguage(language);
+
+  switch (taskKey) {
+    case "nutrition":
+      return copy.nutrition(goal);
+    case "reflection":
+      return copy.reflection;
+    case "check-in":
+    default:
+      return copy["check-in"];
+  }
+};
+
+const getAchievementCopyForLanguage = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return achievementCopyByLanguage.pl;
+    case "en":
+      return achievementCopyByLanguage.en;
+    case "uk":
+    default:
+      return achievementCopyByLanguage.uk;
+  }
+};
+
+const getAchievementCopyById = ({
+  language,
+  achievementId,
+}: {
+  language: AppLanguage;
+  achievementId: string;
+}) => {
+  const copy = getAchievementCopyForLanguage(language);
+
+  switch (achievementId) {
+    case FIRST_STEP_ACHIEVEMENT_ID:
+      return copy.firstStep;
+    case "momentum":
+      return copy.momentum;
+    case "century":
+      return copy.century;
+    case STEADY_RUN_ACHIEVEMENT_ID:
+      return copy.steadyRun;
+    default:
+      return null;
+  }
+};
+
+const resolveTaskKey = (taskId: string): MotivationTaskCopyKey | null => {
   if (taskId.endsWith("-check-in")) {
     return "check-in";
   }
@@ -499,11 +587,7 @@ export const getLocalizedMotivationTaskCopy = ({
     };
   }
 
-  if (taskKey === "nutrition") {
-    return taskCopyByLanguage[language].nutrition(goal);
-  }
-
-  return taskCopyByLanguage[language][taskKey];
+  return getTaskCopy({ language, taskKey, goal });
 };
 
 export const getLocalizedAchievementCopy = ({
@@ -517,12 +601,8 @@ export const getLocalizedAchievementCopy = ({
   fallbackTitle: string;
   fallbackDescription?: string;
 }) => {
-  return (
-    achievementCopyByLanguage[language][
-      achievementId as keyof (typeof achievementCopyByLanguage)[typeof language]
-    ] ?? {
-      title: fallbackTitle,
-      description: fallbackDescription,
-    }
-  );
+  return getAchievementCopyById({ language, achievementId }) ?? {
+    title: fallbackTitle,
+    description: fallbackDescription,
+  };
 };

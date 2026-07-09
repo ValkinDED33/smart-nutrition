@@ -41,9 +41,19 @@ import { canModerateCommunity } from "@domain/user/roles";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { SectionCard } from "@shared/ui";
 
+const COMMUNITY_HUB_TITLE = "Community Hub";
+const COMMUNITY_SURFACE_BACKGROUND = "var(--sn-surface-elevated)";
+const COMMUNITY_BORDER_SOFT = "var(--sn-border-soft)";
+const COMMUNITY_ALIGN_START = "flex-start";
+const COMMUNITY_PRIMARY_BUTTON_SX = { textTransform: "none", fontWeight: 700 } as const;
+const COMMUNITY_ALIGN_START_BUTTON_SX = {
+  alignSelf: COMMUNITY_ALIGN_START,
+  ...COMMUNITY_PRIMARY_BUTTON_SX,
+} as const;
+
 const communityCopy = {
   uk: {
-    title: "Community Hub",
+    title: COMMUNITY_HUB_TITLE,
     subtitle:
       "Друзі, приватні повідомлення, рецепт-форум і особисті бали в одному місці.",
     personalFocus: (friction: string, motivation: string) =>
@@ -121,7 +131,7 @@ const communityCopy = {
     },
   },
   pl: {
-    title: "Community Hub",
+    title: COMMUNITY_HUB_TITLE,
     subtitle:
       "Znajomi, prywatne wiadomości, forum z przepisami i osobiste punkty w jednym miejscu.",
     personalFocus: (friction: string, motivation: string) =>
@@ -199,7 +209,7 @@ const communityCopy = {
     },
   },
   en: {
-    title: "Community Hub",
+    title: COMMUNITY_HUB_TITLE,
     subtitle:
       "Friends, private messages, recipe forum, and personal points in one place.",
     personalFocus: (friction: string, motivation: string) =>
@@ -287,8 +297,64 @@ const communityLocaleByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getCommunityCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return communityCopy.pl;
+    case "en":
+      return communityCopy.en;
+    case "uk":
+    default:
+      return communityCopy.uk;
+  }
+};
+
+const getCommunityLocale = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return communityLocaleByLanguage.pl;
+    case "en":
+      return communityLocaleByLanguage.en;
+    case "uk":
+    default:
+      return communityLocaleByLanguage.uk;
+  }
+};
+
+const getCommentDraft = (drafts: Record<string, string>, postId: string) => {
+  for (const [draftPostId, draft] of Object.entries(drafts)) {
+    if (draftPostId === postId) {
+      return draft;
+    }
+  }
+
+  return "";
+};
+
+const setCommentDraft = (
+  drafts: Record<string, string>,
+  postId: string,
+  value: string
+) => {
+  let draftExists = false;
+  const nextEntries = Object.entries(drafts).map(([draftPostId, draft]) => {
+    if (draftPostId !== postId) {
+      return [draftPostId, draft] as const;
+    }
+
+    draftExists = true;
+    return [draftPostId, value] as const;
+  });
+
+  if (!draftExists) {
+    nextEntries.push([postId, value]);
+  }
+
+  return Object.fromEntries(nextEntries);
+};
+
 const formatDateTime = (value: string, language: AppLanguage) =>
-  new Date(value).toLocaleString(communityLocaleByLanguage[language], {
+  new Date(value).toLocaleString(getCommunityLocale(language), {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -307,7 +373,7 @@ export const CommunityHubCard = () => {
   const community = useSelector((state: RootState) => state.community);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
-  const copy = communityCopy[appLanguage];
+  const copy = getCommunityCopy(appLanguage);
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
     appLanguage
@@ -475,7 +541,7 @@ export const CommunityHubCard = () => {
   };
 
   const publishComment = async (postId: string) => {
-    const text = commentDrafts[postId] ?? "";
+    const text = getCommentDraft(commentDrafts, postId);
 
     const safeText = sanitizeCommunityText(text);
 
@@ -488,7 +554,7 @@ export const CommunityHubCard = () => {
         commentCommunityPost({ postId, text: safeText, authorName })
       )
     ) {
-      setCommentDrafts((drafts) => ({ ...drafts, [postId]: "" }));
+      setCommentDrafts((drafts) => setCommentDraft(drafts, postId, ""));
     }
   };
 
@@ -622,7 +688,7 @@ export const CommunityHubCard = () => {
                     }
                   );
                 }}
-                sx={{ textTransform: "none", fontWeight: 700 }}
+                sx={COMMUNITY_PRIMARY_BUTTON_SX}
               >
                 {copy.addFriend}
               </Button>
@@ -638,8 +704,8 @@ export const CommunityHubCard = () => {
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    bgcolor: "var(--sn-surface-elevated)",
-                    borderColor: "var(--sn-border-soft)",
+                    bgcolor: COMMUNITY_SURFACE_BACKGROUND,
+                    borderColor: COMMUNITY_BORDER_SOFT,
                   }}
                 >
                   <Stack
@@ -691,8 +757,8 @@ export const CommunityHubCard = () => {
                     sx={{
                       p: 1.3,
                       borderRadius: 1,
-                      bgcolor: "var(--sn-surface-elevated)",
-                      borderColor: "var(--sn-border-soft)",
+                      bgcolor: COMMUNITY_SURFACE_BACKGROUND,
+                      borderColor: COMMUNITY_BORDER_SOFT,
                     }}
                   >
                     <Stack spacing={0.4}>
@@ -716,7 +782,7 @@ export const CommunityHubCard = () => {
               <Button
                 variant="contained"
                 onClick={sendRoomMessage}
-                sx={{ textTransform: "none", fontWeight: 700 }}
+                sx={COMMUNITY_PRIMARY_BUTTON_SX}
               >
                 {copy.send}
               </Button>
@@ -739,8 +805,8 @@ export const CommunityHubCard = () => {
                         backgroundColor:
                           message.author === "self"
                             ? "var(--sn-accent-soft)"
-                            : "var(--sn-surface-elevated)",
-                        borderColor: "var(--sn-border-soft)",
+                            : COMMUNITY_SURFACE_BACKGROUND,
+                        borderColor: COMMUNITY_BORDER_SOFT,
                       }}
                     >
                       <Typography color="text.primary">{message.text}</Typography>
@@ -772,7 +838,7 @@ export const CommunityHubCard = () => {
                         }
                       });
                     }}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
+                    sx={COMMUNITY_PRIMARY_BUTTON_SX}
                   >
                     {copy.send}
                   </Button>
@@ -824,7 +890,7 @@ export const CommunityHubCard = () => {
             <Button
               variant="contained"
               onClick={publishPost}
-              sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
+              sx={COMMUNITY_ALIGN_START_BUTTON_SX}
             >
               {copy.publish}
             </Button>
@@ -1016,7 +1082,7 @@ export const CommunityHubCard = () => {
                               sx={{
                                 p: 1.2,
                                 borderRadius: 1,
-                                backgroundColor: "var(--sn-surface-elevated)",
+                                backgroundColor: COMMUNITY_SURFACE_BACKGROUND,
                               }}
                             >
                               <Stack spacing={0.3}>
@@ -1036,7 +1102,7 @@ export const CommunityHubCard = () => {
                                         })
                                       )
                                     }
-                                    sx={{ alignSelf: "flex-start" }}
+                                    sx={{ alignSelf: COMMUNITY_ALIGN_START }}
                                   >
                                     {copy.deleteComment}
                                   </Button>
@@ -1049,17 +1115,16 @@ export const CommunityHubCard = () => {
                               fullWidth
                               size="small"
                               label={copy.typeComment}
-                              value={commentDrafts[post.id] ?? ""}
+                              value={getCommentDraft(commentDrafts, post.id)}
                               onChange={(event) =>
-                                setCommentDrafts((drafts) => ({
-                                  ...drafts,
-                                  [post.id]: event.target.value,
-                                }))
+                                setCommentDrafts((drafts) =>
+                                  setCommentDraft(drafts, post.id, event.target.value)
+                                )
                               }
                             />
                             <Button
                               onClick={() => publishComment(post.id)}
-                              sx={{ textTransform: "none", fontWeight: 700 }}
+                              sx={COMMUNITY_PRIMARY_BUTTON_SX}
                             >
                               {copy.addComment}
                             </Button>
@@ -1102,7 +1167,7 @@ export const CommunityHubCard = () => {
             <Button
               variant="contained"
               onClick={shareProgressCard}
-              sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
+              sx={COMMUNITY_ALIGN_START_BUTTON_SX}
             >
               {copy.shareProgress}
             </Button>
@@ -1133,7 +1198,7 @@ export const CommunityHubCard = () => {
                       onClick={() =>
                         void commitCommunityAction(likeProgressCard(card.id))
                       }
-                      sx={{ alignSelf: "flex-start" }}
+                      sx={{ alignSelf: COMMUNITY_ALIGN_START }}
                     >
                       {copy.like}
                     </Button>

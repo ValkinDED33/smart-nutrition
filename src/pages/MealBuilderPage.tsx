@@ -24,6 +24,7 @@ import {
 import type { MealEntry, MealType } from "@domain/meal/types";
 import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
+import type { AppLanguage } from "@shared/types/i18n";
 import Loader from "../shared/components/Loader/PacmanLoader";
 import { LazyModuleBoundary, PageShell, SectionCard, SectionTabs } from "@shared/ui";
 
@@ -96,6 +97,17 @@ const SmartRecommendations = lazy(() =>
 type MealInputMode = "photo" | "search" | "barcode";
 
 const mealInputModes: MealInputMode[] = ["photo", "search", "barcode"];
+const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+const SURFACE_ELEVATED_BACKGROUND = "var(--sn-surface-elevated)";
+const BORDER_SOFT_COLOR = "var(--sn-border-soft)";
+const SECONDARY_TEXT_COLOR = "text.secondary";
+const COMMON_KCAL_KEY = "common.kcal";
+const SINGLE_COLUMN_GRID = "minmax(0, 1fr)";
+const MEAL_INPUT_GRID_COLUMNS = `repeat(3, ${SINGLE_COLUMN_GRID})`;
+const MEAL_ADD_LAYOUT_GRID = `${SINGLE_COLUMN_GRID} minmax(300px, 340px)`;
+const MEAL_ADD_LAYOUT_GRID_WIDE = `${SINGLE_COLUMN_GRID} 360px`;
+const TEMPLATE_GRID_COLUMNS = `repeat(2, ${SINGLE_COLUMN_GRID})`;
+const COMPACT_RADIUS = 1;
 
 const normalizeMealInputMode = (value: string | null): MealInputMode =>
   value === "photo" || value === "barcode" ? value : "search";
@@ -229,6 +241,78 @@ const mealInputCopy = {
   },
 } as const;
 
+const getMealInputCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return mealInputCopy.pl;
+    case "en":
+      return mealInputCopy.en;
+    case "uk":
+    default:
+      return mealInputCopy.uk;
+  }
+};
+
+const getMealInputModeCopy = (
+  copy: ReturnType<typeof getMealInputCopy>,
+  mode: MealInputMode
+) => {
+  switch (mode) {
+    case "photo":
+      return copy.modes.photo;
+    case "barcode":
+      return copy.modes.barcode;
+    case "search":
+    default:
+      return copy.modes.search;
+  }
+};
+
+const createEmptyMealGroups = (): Record<MealType, MealEntry[]> => ({
+  breakfast: [],
+  lunch: [],
+  dinner: [],
+  snack: [],
+});
+
+const addEntryToMealGroups = (
+  groups: Record<MealType, MealEntry[]>,
+  item: MealEntry
+) => {
+  switch (item.mealType) {
+    case "lunch":
+      groups.lunch.push(item);
+      return groups;
+    case "dinner":
+      groups.dinner.push(item);
+      return groups;
+    case "snack":
+      groups.snack.push(item);
+      return groups;
+    case "breakfast":
+    default:
+      groups.breakfast.push(item);
+      return groups;
+  }
+};
+
+const getMealEntriesForType = (
+  groups: Record<MealType, MealEntry[]>,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "lunch":
+      return groups.lunch;
+    case "dinner":
+      return groups.dinner;
+    case "snack":
+      return groups.snack;
+    case "breakfast":
+    default:
+      return groups.breakfast;
+  }
+};
+
 type MealSection =
   | "day"
   | "add"
@@ -248,7 +332,7 @@ const MealBuilderPage = () => {
   const totals = useSelector(selectTodayMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const { appLanguage, t } = useLanguage();
-  const copy = mealInputCopy[appLanguage];
+  const copy = getMealInputCopy(appLanguage);
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
   const [activeSection, setActiveSection] = useState<MealSection>(
     inputMode === "barcode" ? "scan" : "add"
@@ -261,6 +345,19 @@ const MealBuilderPage = () => {
     dinner: t("mealType.dinner"),
     snack: t("mealType.snack"),
   };
+  const getMealLabel = (value: MealType) => {
+    switch (value) {
+      case "lunch":
+        return mealLabels.lunch;
+      case "dinner":
+        return mealLabels.dinner;
+      case "snack":
+        return mealLabels.snack;
+      case "breakfast":
+      default:
+        return mealLabels.breakfast;
+    }
+  };
 
   const caloriePercent = dailyCalories
     ? Math.min((totals.calories / dailyCalories) * 100, 100)
@@ -268,16 +365,8 @@ const MealBuilderPage = () => {
 
   const groupedEntries = useMemo(() => {
     return items.reduce<Record<MealType, MealEntry[]>>(
-      (accumulator, item) => {
-        accumulator[item.mealType].push(item);
-        return accumulator;
-      },
-      {
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snack: [],
-      }
+      (accumulator, item) => addEntryToMealGroups(accumulator, item),
+      createEmptyMealGroups()
     );
   }, [items]);
 
@@ -386,7 +475,7 @@ const MealBuilderPage = () => {
             gap: 1,
             "& .MuiToggleButton-root": {
               flexGrow: 1,
-              borderRadius: 1,
+              borderRadius: COMPACT_RADIUS,
               minWidth: { xs: "calc(50% - 4px)", sm: 140 },
               py: { xs: 0.9, sm: 1 },
               fontSize: { xs: 14, sm: 15 },
@@ -394,9 +483,9 @@ const MealBuilderPage = () => {
             },
           }}
         >
-          {Object.entries(mealLabels).map(([value, label]) => (
+          {mealTypes.map((value) => (
             <ToggleButton key={value} value={value}>
-              {label}
+              {getMealLabel(value)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
@@ -410,20 +499,23 @@ const MealBuilderPage = () => {
         {t("mealBuilder.diary")}
       </Typography>
 
-      {(Object.keys(groupedEntries) as MealType[]).map((group) => (
+      {mealTypes.map((group) => {
+        const groupEntries = getMealEntriesForType(groupedEntries, group);
+
+        return (
         <Stack key={group} spacing={1.2}>
           <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-            <Typography sx={{ fontWeight: 800 }}>{mealLabels[group]}</Typography>
+            <Typography sx={{ fontWeight: 800 }}>{getMealLabel(group)}</Typography>
             <Chip
-              label={`${groupedEntries[group].length} ${t("mealBuilder.items")}`}
+              label={`${groupEntries.length} ${t("mealBuilder.items")}`}
               size="small"
             />
           </Stack>
 
-          {groupedEntries[group].length === 0 ? (
-            <Typography color="text.secondary">{t("mealBuilder.noEntries")}</Typography>
+          {groupEntries.length === 0 ? (
+            <Typography color={SECONDARY_TEXT_COLOR}>{t("mealBuilder.noEntries")}</Typography>
           ) : (
-            groupedEntries[group].map((item) => {
+            groupEntries.map((item) => {
               const entryCalories =
                 (item.product.nutrients.calories * item.quantity) / 100;
 
@@ -433,9 +525,9 @@ const MealBuilderPage = () => {
                   variant="outlined"
                   sx={{
                     p: 1.5,
-                    borderRadius: 1,
-                    backgroundColor: "var(--sn-surface-elevated)",
-                    borderColor: "var(--sn-border-soft)",
+                    borderRadius: COMPACT_RADIUS,
+                    backgroundColor: SURFACE_ELEVATED_BACKGROUND,
+                    borderColor: BORDER_SOFT_COLOR,
                   }}
                 >
                   <Stack
@@ -447,9 +539,9 @@ const MealBuilderPage = () => {
                       <Typography sx={{ fontWeight: 700 }}>
                         {getProductDisplayName(item.product, appLanguage)}
                       </Typography>
-                      <Typography color="text.secondary" variant="body2">
+                      <Typography color={SECONDARY_TEXT_COLOR} variant="body2">
                         {item.quantity} {item.product.unit} - {entryCalories.toFixed(0)}{" "}
-                        {t("common.kcal")}
+                        {t(COMMON_KCAL_KEY)}
                       </Typography>
                     </Box>
                     <MealEntryEditorPanel entry={item} />
@@ -461,7 +553,8 @@ const MealBuilderPage = () => {
 
           <Divider />
         </Stack>
-      ))}
+        );
+      })}
     </Stack>
   );
 
@@ -478,7 +571,7 @@ const MealBuilderPage = () => {
             width: { xs: "100%", md: "auto" },
             textTransform: "none",
             fontWeight: 900,
-            borderRadius: 1,
+            borderRadius: COMPACT_RADIUS,
           }}
         >
           {copy.scanAction}
@@ -490,7 +583,7 @@ const MealBuilderPage = () => {
         <Stack spacing={{ xs: 1, md: 1.5 }}>
           <Typography variant="body2">
             {t("mealBuilder.calories")}: {totals.calories.toFixed(0)} / {dailyCalories}{" "}
-            {t("common.kcal")}
+            {t(COMMON_KCAL_KEY)}
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -519,7 +612,7 @@ const MealBuilderPage = () => {
         description={copy.inputSubtitle}
         action={
           <Chip
-            label={`${totals.calories.toFixed(0)} / ${dailyCalories} ${t("common.kcal")}`}
+            label={`${totals.calories.toFixed(0)} / ${dailyCalories} ${t(COMMON_KCAL_KEY)}`}
             color={caloriePercent > 92 ? "warning" : "success"}
             variant="outlined"
           />
@@ -529,13 +622,13 @@ const MealBuilderPage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(3, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: SINGLE_COLUMN_GRID, md: MEAL_INPUT_GRID_COLUMNS },
               gap: 1,
               minWidth: 0,
             }}
           >
             {mealInputModes.map((mode) => {
-              const modeCopy = copy.modes[mode];
+              const modeCopy = getMealInputModeCopy(copy, mode);
               const active = inputMode === mode;
 
               return (
@@ -547,11 +640,11 @@ const MealBuilderPage = () => {
                   variant="outlined"
                   sx={{
                     p: 1.5,
-                    borderRadius: 1,
+                    borderRadius: COMPACT_RADIUS,
                     cursor: "pointer",
                     textAlign: "left",
-                    backgroundColor: active ? "var(--sn-accent-soft)" : "var(--sn-surface-elevated)",
-                    borderColor: active ? "var(--sn-border-strong)" : "var(--sn-border-soft)",
+                    backgroundColor: active ? "var(--sn-accent-soft)" : SURFACE_ELEVATED_BACKGROUND,
+                    borderColor: active ? "var(--sn-border-strong)" : BORDER_SOFT_COLOR,
                     "&:hover": {
                       borderColor: "primary.main",
                     },
@@ -559,7 +652,7 @@ const MealBuilderPage = () => {
                 >
                   <Stack spacing={0.6}>
                     <Typography sx={{ fontWeight: 900 }}>{modeCopy.title}</Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography color={SECONDARY_TEXT_COLOR} variant="body2">
                       {modeCopy.body}
                     </Typography>
                   </Stack>
@@ -576,9 +669,9 @@ const MealBuilderPage = () => {
         sx={{
           display: "grid",
           gridTemplateColumns: {
-            xs: "minmax(0, 1fr)",
-            lg: "minmax(0, 1fr) minmax(300px, 340px)",
-            xl: "minmax(0, 1fr) 360px",
+            xs: SINGLE_COLUMN_GRID,
+            lg: MEAL_ADD_LAYOUT_GRID,
+            xl: MEAL_ADD_LAYOUT_GRID_WIDE,
           },
           gap: { xs: 2, lg: 2.5 },
           alignItems: "start",
@@ -694,7 +787,7 @@ const MealBuilderPage = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(2, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: SINGLE_COLUMN_GRID, lg: TEMPLATE_GRID_COLUMNS },
                 gap: 2,
                 alignItems: "start",
                 minWidth: 0,
