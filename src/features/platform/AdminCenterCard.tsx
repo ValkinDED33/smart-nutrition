@@ -49,9 +49,20 @@ import type { AppLanguage } from "../../shared/types/i18n";
 
 type AdminTab = "reports" | "queue" | "stats" | "users" | "audit" | "system";
 
+const ADMIN_CENTER_TITLE = "Admin Center";
+const ANALYTICS_LABEL = "Analytics";
+const REPORTS_LABEL = "Reports";
+const CONTENT_LABEL = "Content";
+const AI_CONTROLS_LABEL = "AI controls";
+const SYSTEM_LOGS_LABEL = "System logs";
+const UK_USERS_LABEL = "Користувачі";
+const PL_REPORTS_LABEL = "Zgłoszenia";
+const PL_USERS_LABEL = "Użytkownicy";
+const ADMIN_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
+
 const adminCopy = {
   uk: {
-    title: "Admin Center",
+    title: ADMIN_CENTER_TITLE,
     subtitle:
       "Модерація продуктів, ролі користувачів і журнал дій для командного контролю.",
     backendUnavailable:
@@ -60,13 +71,13 @@ const adminCopy = {
       reports: "Скарги",
       queue: "Модерація",
       stats: "Статистика",
-      users: "Користувачі",
+      users: UK_USERS_LABEL,
       audit: "Аудит",
       system: "Система",
     },
     statsTitle: "Платформа",
     statsSubtitle: "Ключові показники користувачів, AI і каталогу.",
-    usersTotal: "Користувачі",
+    usersTotal: UK_USERS_LABEL,
     usersActive: "Активні",
     usersNewThisWeek: "Нові за тиждень",
     usersBanned: "Заблоковані",
@@ -83,12 +94,12 @@ const adminCopy = {
     systemTitle: "Операційний центр",
     systemSubtitle:
       "Аналітика, reports, content management, AI controls і системні логи в одному місці.",
-    analytics: "Analytics",
-    reports: "Reports",
-    content: "Content",
-    aiControls: "AI controls",
-    systemLogs: "System logs",
-    activeUsers: "Користувачі",
+    analytics: ANALYTICS_LABEL,
+    reports: REPORTS_LABEL,
+    content: CONTENT_LABEL,
+    aiControls: AI_CONTROLS_LABEL,
+    systemLogs: SYSTEM_LOGS_LABEL,
+    activeUsers: UK_USERS_LABEL,
     publicProducts: "Продукти на перевірці",
     openReports: "Скарги",
     aiPolicy: "AI відповідає як wellness companion, без медичних діагнозів і з м'якими попередженнями.",
@@ -111,22 +122,22 @@ const adminCopy = {
     noAudit: "Журнал дій порожній.",
   },
   pl: {
-    title: "Admin Center",
+    title: ADMIN_CENTER_TITLE,
     subtitle:
       "Moderacja produktów, role użytkowników i dziennik działań do kontroli zespołowej.",
     backendUnavailable:
       "Backend cloud jest niedostępny, więc admin center nie może teraz pobrać danych.",
     tabs: {
-      reports: "Zgłoszenia",
+      reports: PL_REPORTS_LABEL,
       queue: "Moderacja",
       stats: "Statystyka",
-      users: "Użytkownicy",
+      users: PL_USERS_LABEL,
       audit: "Audyt",
       system: "System",
     },
     statsTitle: "Platforma",
     statsSubtitle: "Kluczowe wskaźniki użytkowników, AI i katalogu.",
-    usersTotal: "Użytkownicy",
+    usersTotal: PL_USERS_LABEL,
     usersActive: "Aktywni",
     usersNewThisWeek: "Nowi w tygodniu",
     usersBanned: "Zablokowani",
@@ -136,21 +147,21 @@ const adminCopy = {
     photoAnalysesTotal: "Analiza zdjęć",
     suspiciousAccounts: "Podejrzane konta",
     moderationTitle: "Moderacja",
-    reportsLabel: "Zgłoszenia",
+    reportsLabel: PL_REPORTS_LABEL,
     contentLabel: "Treści",
     photoAnalytics: "Analiza zdjęć",
     suspicious: "Podejrzane konta",
     systemTitle: "Centrum operacyjne",
     systemSubtitle:
       "Analityka, reports, content management, AI controls i logi systemowe w jednym miejscu.",
-    analytics: "Analytics",
-    reports: "Reports",
-    content: "Content",
-    aiControls: "AI controls",
-    systemLogs: "System logs",
-    activeUsers: "Użytkownicy",
+    analytics: ANALYTICS_LABEL,
+    reports: REPORTS_LABEL,
+    content: CONTENT_LABEL,
+    aiControls: AI_CONTROLS_LABEL,
+    systemLogs: SYSTEM_LOGS_LABEL,
+    activeUsers: PL_USERS_LABEL,
     publicProducts: "Produkty do sprawdzenia",
-    openReports: "Zgłoszenia",
+    openReports: PL_REPORTS_LABEL,
     aiPolicy: "AI odpowiada jak wellness companion, bez diagnoz medycznych i z łagodnymi ostrzeżeniami.",
     logsReady: "Zdarzenia ról, moderacji i blokad są już zapisywane w audit logu.",
     pendingEmpty: "Kolejka moderacji jest teraz pusta.",
@@ -171,7 +182,7 @@ const adminCopy = {
     noAudit: "Dziennik działań jest pusty.",
   },
   en: {
-    title: "Admin Center",
+    title: ADMIN_CENTER_TITLE,
     subtitle:
       "Product moderation, user roles, and audit logs for team control.",
     backendUnavailable:
@@ -196,21 +207,21 @@ const adminCopy = {
     photoAnalysesTotal: "Photo analysis",
     suspiciousAccounts: "Suspicious accounts",
     moderationTitle: "Moderation",
-    reportsLabel: "Reports",
-    contentLabel: "Content",
+    reportsLabel: REPORTS_LABEL,
+    contentLabel: CONTENT_LABEL,
     photoAnalytics: "Photo analytics",
     suspicious: "Suspicious accounts",
     systemTitle: "Operations center",
     systemSubtitle:
       "Analytics, reports, content management, AI controls, and system logs in one place.",
-    analytics: "Analytics",
-    reports: "Reports",
-    content: "Content",
-    aiControls: "AI controls",
-    systemLogs: "System logs",
+    analytics: ANALYTICS_LABEL,
+    reports: REPORTS_LABEL,
+    content: CONTENT_LABEL,
+    aiControls: AI_CONTROLS_LABEL,
+    systemLogs: SYSTEM_LOGS_LABEL,
     activeUsers: "Users",
     publicProducts: "Products to review",
-    openReports: "Reports",
+    openReports: REPORTS_LABEL,
     aiPolicy:
       "AI responds as a wellness companion, without medical diagnoses and with gentle warnings.",
     logsReady: "Role, moderation, and ban events are already written to audit log.",
@@ -239,8 +250,71 @@ const adminLocaleByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getAdminCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return adminCopy.uk;
+    case "pl":
+      return adminCopy.pl;
+    case "en":
+      return adminCopy.en;
+  }
+};
+
+const getAdminLocale = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return adminLocaleByLanguage.uk;
+    case "pl":
+      return adminLocaleByLanguage.pl;
+    case "en":
+      return adminLocaleByLanguage.en;
+  }
+};
+
+const getAdminTabLabel = (
+  tabs: (typeof adminCopy)[AppLanguage]["tabs"],
+  tabId: AdminTab
+) => {
+  switch (tabId) {
+    case "reports":
+      return tabs.reports;
+    case "queue":
+      return tabs.queue;
+    case "stats":
+      return tabs.stats;
+    case "users":
+      return tabs.users;
+    case "audit":
+      return tabs.audit;
+    case "system":
+      return tabs.system;
+  }
+};
+
+const getUserRoleLabel = (role: UserRole) => {
+  switch (role) {
+    case "USER":
+      return userRoleLabels.USER;
+    case "VERIFIED_USER":
+      return userRoleLabels.VERIFIED_USER;
+    case "HELPER":
+      return userRoleLabels.HELPER;
+    case "NUTRITIONIST":
+      return userRoleLabels.NUTRITIONIST;
+    case "MODERATOR":
+      return userRoleLabels.MODERATOR;
+    case "ADMIN":
+      return userRoleLabels.ADMIN;
+    case "OWNER":
+      return userRoleLabels.OWNER;
+    case "SUPER_ADMIN":
+      return userRoleLabels.SUPER_ADMIN;
+  }
+};
+
 const formatDateTime = (value: string, language: AppLanguage) =>
-  new Date(value).toLocaleString(adminLocaleByLanguage[language], {
+  new Date(value).toLocaleString(getAdminLocale(language), {
     dateStyle: "short",
     timeStyle: "short",
   });
@@ -274,11 +348,59 @@ const getVisibleAdminTabs = (access: AccessOverview | null): AdminTab[] => {
   ].filter(Boolean) as AdminTab[];
 };
 
+const createRoleDrafts = (users: AdminUserSummary[]) =>
+  new Map(
+    users
+      .filter((item) => !isProtectedOwnerRole(item.role))
+      .map((item) => [item.id, toAssignableRole(item.role)])
+  );
+
+const getRoleDraft = (
+  roleDrafts: Map<string, AssignableUserRole>,
+  user: AdminUserSummary
+) => roleDrafts.get(user.id) ?? toAssignableRole(user.role);
+
+const getPlatformStatsCards = ({
+  copy,
+  stats,
+  users,
+  queue,
+}: {
+  copy: ReturnType<typeof getAdminCopy>;
+  stats: AdminPlatformStats | null;
+  users: AdminUserSummary[];
+  queue: CatalogProductItem[];
+}) => [
+  { label: copy.usersTotal, value: stats?.usersTotal ?? users.length },
+  { label: copy.usersActive, value: stats?.usersActive ?? 0 },
+  { label: copy.usersNewThisWeek, value: stats?.usersNewThisWeek ?? 0 },
+  { label: copy.usersBanned, value: stats?.usersBanned ?? 0 },
+  { label: copy.aiRequestsTotal, value: stats?.aiRequestsTotal ?? 0 },
+  { label: copy.productsTotal, value: stats?.productsTotal ?? 0 },
+  { label: copy.productsPending, value: stats?.productsPending ?? queue.length },
+  { label: copy.photoAnalysesTotal, value: stats?.photoAnalysesTotal ?? 0 },
+];
+
+const getModerationStatsCards = ({
+  copy,
+  stats,
+  queue,
+}: {
+  copy: ReturnType<typeof getAdminCopy>;
+  stats: AdminPlatformStats | null;
+  queue: CatalogProductItem[];
+}) => [
+  { label: copy.reportsLabel, value: stats?.reportsOpen ?? 0 },
+  { label: copy.contentLabel, value: stats?.productsPending ?? queue.length },
+  { label: copy.photoAnalytics, value: stats?.photoAnalysesTotal ?? 0 },
+  { label: copy.suspicious, value: stats?.suspiciousAccounts ?? 0 },
+];
+
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { appLanguage } = useLanguage();
-  const copy = adminCopy[appLanguage];
-  const backendUnavailableMessage = adminCopy[appLanguage].backendUnavailable;
+  const copy = getAdminCopy(appLanguage);
+  const backendUnavailableMessage = copy.backendUnavailable;
   const [tab, setTab] = useState<AdminTab>("reports");
   const [access, setAccess] = useState<AccessOverview | null>(null);
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
@@ -286,7 +408,9 @@ export const AdminCenterCard = () => {
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
   const [reports, setReports] = useState<ContentReportItem[]>([]);
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, AssignableUserRole>>({});
+  const [roleDrafts, setRoleDrafts] = useState<Map<string, AssignableUserRole>>(
+    () => new Map()
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -332,16 +456,7 @@ export const AdminCenterCard = () => {
 
           if (active) {
             setUsers(userItems);
-            setRoleDrafts(
-              Object.fromEntries(
-                userItems
-                  .filter((item) => !isProtectedOwnerRole(item.role))
-                  .map((item) => [
-                    item.id,
-                    toAssignableRole(item.role),
-                  ])
-              ) as Record<string, AssignableUserRole>
-            );
+            setRoleDrafts(createRoleDrafts(userItems));
           }
         }
 
@@ -406,7 +521,7 @@ export const AdminCenterCard = () => {
 
         {access && (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={userRoleLabels[access.role]} color="primary" />
+            <Chip label={getUserRoleLabel(access.role)} color="primary" />
             <Chip
               label={`${copy.twoFactor}: ${access.twoFactorRequired ? copy.required : copy.optional}`}
               variant="outlined"
@@ -424,7 +539,7 @@ export const AdminCenterCard = () => {
             allowScrollButtonsMobile
           >
             {visibleTabs.map((tabId) => (
-              <Tab key={tabId} value={tabId} label={copy.tabs[tabId]} />
+              <Tab key={tabId} value={tabId} label={getAdminTabLabel(copy.tabs, tabId)} />
             ))}
           </Tabs>
         )}
@@ -438,20 +553,11 @@ export const AdminCenterCard = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: ADMIN_FOUR_COLUMN_GRID },
                 gap: 1.2,
               }}
             >
-              {[
-                [copy.usersTotal, stats?.usersTotal ?? users.length],
-                [copy.usersActive, stats?.usersActive ?? 0],
-                [copy.usersNewThisWeek, stats?.usersNewThisWeek ?? 0],
-                [copy.usersBanned, stats?.usersBanned ?? 0],
-                [copy.aiRequestsTotal, stats?.aiRequestsTotal ?? 0],
-                [copy.productsTotal, stats?.productsTotal ?? 0],
-                [copy.productsPending, stats?.productsPending ?? queue.length],
-                [copy.photoAnalysesTotal, stats?.photoAnalysesTotal ?? 0],
-              ].map(([label, value]) => (
+              {getPlatformStatsCards({ copy, stats, users, queue }).map(({ label, value }) => (
                 <Box
                   key={label}
                   className="sn-premium-panel"
@@ -471,16 +577,11 @@ export const AdminCenterCard = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "1fr", md: ADMIN_FOUR_COLUMN_GRID },
                 gap: 1.2,
               }}
             >
-              {[
-                [copy.reportsLabel, stats?.reportsOpen ?? 0],
-                [copy.contentLabel, stats?.productsPending ?? queue.length],
-                [copy.photoAnalytics, stats?.photoAnalysesTotal ?? 0],
-                [copy.suspicious, stats?.suspiciousAccounts ?? 0],
-              ].map(([label, value]) => (
+              {getModerationStatsCards({ copy, stats, queue }).map(({ label, value }) => (
                 <Alert key={label} severity={Number(value) > 0 ? "warning" : "info"}>
                   <strong>{label}</strong>: {value}
                 </Alert>
@@ -603,7 +704,7 @@ export const AdminCenterCard = () => {
             {users.map((user) => (
               <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 {(() => {
-                  const roleDraft = roleDrafts[user.id] ?? toAssignableRole(user.role);
+                  const roleDraft = getRoleDraft(roleDrafts, user);
                   const roleOptions = allowedRoles.includes(roleDraft)
                     ? allowedRoles
                     : [roleDraft, ...allowedRoles];
@@ -639,16 +740,18 @@ export const AdminCenterCard = () => {
                       value={roleDraft}
                       disabled={!canChangeRole}
                       onChange={(event) =>
-                        setRoleDrafts((current) => ({
-                          ...current,
-                          [user.id]: event.target.value as AssignableUserRole,
-                        }))
+                        setRoleDrafts((current) => {
+                          const next = new Map(current);
+                          next.set(user.id, event.target.value as AssignableUserRole);
+
+                          return next;
+                        })
                       }
                       sx={{ minWidth: 180 }}
                     >
                       {roleOptions.map((role) => (
                         <MenuItem key={role} value={role}>
-                          {userRoleLabels[role]}
+                          {getUserRoleLabel(role)}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -768,7 +871,7 @@ export const AdminCenterCard = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "1fr", md: ADMIN_FOUR_COLUMN_GRID },
                 gap: 1.2,
               }}
             >
