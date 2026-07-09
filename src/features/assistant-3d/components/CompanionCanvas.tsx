@@ -104,6 +104,30 @@ const palettes: Record<AssistantCompanionKind, ModelPalette> = {
   },
 };
 
+const getPalette = (variant: AssistantCompanionKind) => {
+  switch (variant) {
+    case "cat":
+      return palettes.cat;
+    case "dog":
+      return palettes.dog;
+    case "fox":
+      return palettes.fox;
+    case "panda":
+      return palettes.panda;
+    case "owl":
+      return palettes.owl;
+    case "human":
+      return palettes.human;
+    case "capybara":
+      return palettes.capybara;
+    case "dragon":
+      return palettes.dragon;
+    case "robot":
+    default:
+      return palettes.robot;
+  }
+};
+
 const headScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   robot: [0.58, 0.5, 0.5],
   cat: [0.58, 0.52, 0.5],
@@ -114,6 +138,30 @@ const headScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   human: [0.55, 0.54, 0.48],
   capybara: [0.64, 0.5, 0.52],
   dragon: [0.58, 0.5, 0.52],
+};
+
+const getHeadScale = (variant: AssistantCompanionKind) => {
+  switch (variant) {
+    case "cat":
+      return headScaleByVariant.cat;
+    case "dog":
+      return headScaleByVariant.dog;
+    case "fox":
+      return headScaleByVariant.fox;
+    case "panda":
+      return headScaleByVariant.panda;
+    case "owl":
+      return headScaleByVariant.owl;
+    case "human":
+      return headScaleByVariant.human;
+    case "capybara":
+      return headScaleByVariant.capybara;
+    case "dragon":
+      return headScaleByVariant.dragon;
+    case "robot":
+    default:
+      return headScaleByVariant.robot;
+  }
 };
 
 const bodyScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
@@ -128,6 +176,30 @@ const bodyScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   dragon: [0.5, 0.5, 0.42],
 };
 
+const getBodyScale = (variant: AssistantCompanionKind) => {
+  switch (variant) {
+    case "cat":
+      return bodyScaleByVariant.cat;
+    case "dog":
+      return bodyScaleByVariant.dog;
+    case "fox":
+      return bodyScaleByVariant.fox;
+    case "panda":
+      return bodyScaleByVariant.panda;
+    case "owl":
+      return bodyScaleByVariant.owl;
+    case "human":
+      return bodyScaleByVariant.human;
+    case "capybara":
+      return bodyScaleByVariant.capybara;
+    case "dragon":
+      return bodyScaleByVariant.dragon;
+    case "robot":
+    default:
+      return bodyScaleByVariant.robot;
+  }
+};
+
 const moodLift: Record<AssistantAvatarMood, number> = {
   idle: 0,
   happy: 0.03,
@@ -135,6 +207,24 @@ const moodLift: Record<AssistantAvatarMood, number> = {
   concerned: -0.02,
   sleepy: -0.05,
   celebrate: 0.06,
+};
+
+const getMoodLift = (mood: AssistantAvatarMood) => {
+  switch (mood) {
+    case "happy":
+      return moodLift.happy;
+    case "coach":
+      return moodLift.coach;
+    case "concerned":
+      return moodLift.concerned;
+    case "sleepy":
+      return moodLift.sleepy;
+    case "celebrate":
+      return moodLift.celebrate;
+    case "idle":
+    default:
+      return moodLift.idle;
+  }
 };
 
 const clampLookOffset = (value: number) => Math.max(Math.min(value, 1), -1);
@@ -810,8 +900,10 @@ const CompanionModel = ({
   active,
 }: Required<Pick<AssistantAvatarProps, "variant" | "mood" | "lookOffset" | "active">>) => {
   const groupRef = useRef<Group>(null);
-  const palette = palettes[variant];
+  const palette = getPalette(variant);
   const intensity = getMotionIntensity(mood, active);
+  const [bodyScaleX, bodyScaleY, bodyScaleZ] = getBodyScale(variant);
+  const [headScaleX, headScaleY, headScaleZ] = getHeadScale(variant);
 
   useFrame(({ clock }) => {
     const group = groupRef.current;
@@ -822,7 +914,7 @@ const CompanionModel = ({
 
     const elapsed = clock.getElapsedTime();
     group.position.y =
-      moodLift[mood] + Math.sin(elapsed * (1.5 + intensity)) * 0.025 * intensity;
+      getMoodLift(mood) + Math.sin(elapsed * (1.5 + intensity)) * 0.025 * intensity;
     group.rotation.y =
       clampLookOffset(lookOffset.x) * 0.16 +
       Math.sin(elapsed * 0.7) * 0.08 * intensity;
@@ -840,22 +932,14 @@ const CompanionModel = ({
         <Sphere
           color={palette.body}
           position={[0, -0.48, 0]}
-          scale={[
-            bodyScaleByVariant[variant][0] * 1.05,
-            bodyScaleByVariant[variant][1] * 1.1,
-            bodyScaleByVariant[variant][2],
-          ]}
+          scale={[bodyScaleX * 1.05, bodyScaleY * 1.1, bodyScaleZ]}
         />
         <BellyPatch variant={variant} palette={palette} />
         <HeartCore palette={palette} mood={mood} />
         <Sphere
           color={palette.head}
           position={[0, 0.22, 0]}
-          scale={[
-            headScaleByVariant[variant][0] * 1.08,
-            headScaleByVariant[variant][1] * 1.04,
-            headScaleByVariant[variant][2],
-          ]}
+          scale={[headScaleX * 1.08, headScaleY * 1.04, headScaleZ]}
         />
         <SpeciesDetails variant={variant} palette={palette} />
         <Snout variant={variant} palette={palette} />
@@ -904,6 +988,7 @@ export const CompanionCanvas = ({
 }: AssistantAvatarProps) => {
   const initial = name.trim()[0]?.toUpperCase() ?? "A";
   const showInitial = variant === "robot" || variant === "human";
+  const palette = getPalette(variant);
 
   return (
     <Box
@@ -914,7 +999,7 @@ export const CompanionCanvas = ({
         position: "relative",
         filter: `drop-shadow(0 ${Math.round(size * 0.18)}px ${Math.round(
           size * 0.28
-        )}px ${palettes[variant].shadow})`,
+        )}px ${palette.shadow})`,
       }}
     >
       <Canvas
@@ -927,7 +1012,7 @@ export const CompanionCanvas = ({
         <directionalLight position={[2.4, 3.2, 4]} intensity={1.55} />
         <directionalLight position={[-2, 1, 2]} intensity={0.55} color="#d9f99d" />
         <pointLight position={[-2, 1.5, 3]} intensity={0.95} color="#ccfbf1" />
-        <pointLight position={[1.4, -0.6, 2.4]} intensity={0.55} color={palettes[variant].accent} />
+        <pointLight position={[1.4, -0.6, 2.4]} intensity={0.55} color={palette.accent} />
         <CompanionModel
           variant={variant}
           mood={mood}

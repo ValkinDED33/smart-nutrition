@@ -37,10 +37,13 @@ import type {
   PhotoPortionSize,
 } from "../../shared/types/photo";
 import type { Product } from "@domain/products/types";
+import type { AppLanguage } from "@shared/types/i18n";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { addMealEntriesToCloud } from "./mealCloudSync";
 import { useMealActionFeedback } from "./useMealActionFeedback";
 import { searchProducts } from "../../shared/api/products";
+
+const FLEX_START_ALIGNMENT = "flex-start";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -80,6 +83,83 @@ const readPhotoFileAsDataUrl = async (file: File) => {
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const getPhotoSuggestionAt = (
+  suggestions: PhotoMealSuggestion[],
+  targetIndex: number
+) => {
+  let currentIndex = 0;
+
+  for (const suggestion of suggestions) {
+    if (currentIndex === targetIndex) {
+      return suggestion;
+    }
+
+    currentIndex += 1;
+  }
+
+  return undefined;
+};
+
+const getMatchedPhotoProductAt = (
+  products: Array<Product | null>,
+  targetIndex: number
+) => {
+  let currentIndex = 0;
+
+  for (const product of products) {
+    if (currentIndex === targetIndex) {
+      return product;
+    }
+
+    currentIndex += 1;
+  }
+
+  return null;
+};
+
+const getPhotoInterpretationAt = (
+  interpretations: PhotoMealAnalysis["interpretations"] | undefined,
+  targetIndex: number
+) => {
+  let currentIndex = 0;
+
+  for (const interpretation of interpretations ?? []) {
+    if (currentIndex === targetIndex) {
+      return interpretation;
+    }
+
+    currentIndex += 1;
+  }
+
+  return undefined;
+};
+
+const getQuantityDraftAt = (
+  drafts: Record<number, string>,
+  targetIndex: number
+) => {
+  const targetKey = String(targetIndex);
+
+  for (const [key, value] of Object.entries(drafts)) {
+    if (key === targetKey) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const removeQuantityDraftAt = (
+  drafts: Record<number, string>,
+  targetIndex: number
+) => {
+  const targetKey = String(targetIndex);
+
+  return Object.fromEntries(
+    Object.entries(drafts).filter(([key]) => key !== targetKey)
+  ) as Record<number, string>;
+};
 
 const roundMacro = (value: number) => Math.round(value * 10) / 10;
 
@@ -137,7 +217,11 @@ const createDraftEntries = (
 
   return analysis.items.map((suggestion, index) => ({
     id: createId("photo-entry"),
-    product: createPhotoProduct(suggestion, previewUrl, matchedProducts[index] ?? null),
+    product: createPhotoProduct(
+      suggestion,
+      previewUrl,
+      getMatchedPhotoProductAt(matchedProducts, index)
+    ),
     quantity: Math.max(Math.round(suggestion.quantityGrams), 5),
     mealType,
     eatenAt,
@@ -152,8 +236,8 @@ const createConfirmedPhotoEntries = (
   matchedProducts: Array<Product | null> = []
 ): MealEntry[] =>
   createDraftEntries(analysis, mealType, previewUrl, matchedProducts).map((entry, index) => {
-    const suggestion = analysis.items[index];
-    const matchedProduct = matchedProducts[index] ?? null;
+    const suggestion = getPhotoSuggestionAt(analysis.items, index);
+    const matchedProduct = getMatchedPhotoProductAt(matchedProducts, index);
     const originalName = suggestion?.originalName?.trim();
     const correctedName = suggestion?.name?.trim();
     const correctionLabel =
@@ -347,6 +431,18 @@ const photoCopy = {
   },
 } as const;
 
+const getPhotoCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return photoCopy.pl;
+    case "en":
+      return photoCopy.en;
+    case "uk":
+    default:
+      return photoCopy.uk;
+  }
+};
+
 type Props = {
   mealType: MealType;
 };
@@ -355,7 +451,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
   const { appLanguage, t } = useLanguage();
-  const copy = photoCopy[appLanguage];
+  const copy = getPhotoCopy(appLanguage);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<PhotoMealAnalysis | null>(null);
   const [portionSize, setPortionSize] = useState<PhotoPortionSize>("regular");
@@ -518,7 +614,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   };
 
   const handleUseInterpretation = (interpretationIndex: number) => {
-    const interpretation = analysis?.interpretations?.[interpretationIndex];
+    const interpretation = getPhotoInterpretationAt(
+      analysis?.interpretations,
+      interpretationIndex
+    );
 
     if (!analysis || !interpretation) {
       return;
@@ -636,11 +735,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   };
 
   const resetSuggestionQuantityDraft = (index: number) => {
-    setQuantityDrafts((current) => {
-      const nextDrafts = { ...current };
-      delete nextDrafts[index];
-      return nextDrafts;
-    });
+    setQuantityDrafts((current) => removeQuantityDraftAt(current, index));
   };
 
   const resolveConfirmedPhotoProducts = async (items: PhotoMealSuggestion[]) => {
@@ -747,7 +842,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           </Alert>
         )}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems="flex-start">
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems={FLEX_START_ALIGNMENT}>
           <Button
             component="label"
             variant="outlined"
@@ -831,7 +926,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   </Stack>
                 </Stack>
 
-                <Stack spacing={0.8} alignItems={{ xs: "flex-start", md: "flex-end" }}>
+                <Stack spacing={0.8} alignItems={{ xs: FLEX_START_ALIGNMENT, md: "flex-end" }}>
                   <Typography variant="body2" color="text.secondary">
                     {copy.portions}:{" "}
                     {copy.portionsValue.replace(
@@ -970,7 +1065,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                           <Checkbox
                             checked={selectedItemIndexes.includes(index)}
                             onChange={() => handleToggleSuggestion(index)}
-                            sx={{ alignSelf: "flex-start", p: 0.5 }}
+                            sx={{ alignSelf: FLEX_START_ALIGNMENT, p: 0.5 }}
                           />
                           <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
                             <TextField
@@ -989,7 +1084,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                               type="text"
                               label={copy.itemGrams}
                               value={
-                                quantityDrafts[index] ??
+                                getQuantityDraftAt(quantityDrafts, index) ??
                                 String(Math.round(item.quantityGrams))
                               }
                               slotProps={{
@@ -1028,7 +1123,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                           </Typography>
                           </Stack>
                         </Stack>
-                        <Stack spacing={0.5} alignItems={{ xs: "flex-start", sm: "flex-end" }}>
+                        <Stack spacing={0.5} alignItems={{ xs: FLEX_START_ALIGNMENT, sm: "flex-end" }}>
                           <Chip
                             label={copy.itemCalories.replace(
                               "{value}",

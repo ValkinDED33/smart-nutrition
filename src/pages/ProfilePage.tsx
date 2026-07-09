@@ -26,7 +26,16 @@ import {
   selectDailyMacroProgress,
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
+import type { DietStyle } from "@domain/profile/types";
 import { communityStatusLabels, resolveCommunityStatus } from "@domain/user/roles";
+import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
+import type { AppLanguage } from "@shared/types/i18n";
+
+const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
+const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
+const USER_ROLE_LABEL = "User";
+const VERIFIED_USER_ROLE_LABEL = "Verified User";
+const OWNER_ROLE_LABEL = "Owner";
 
 const WeightTrendCard = lazy(() =>
   import("../features/profile/WeightTrendCard").then((module) => ({
@@ -225,34 +234,34 @@ const profileCopy = {
 
 const roleLabels = {
   uk: {
-    USER: "User",
-    VERIFIED_USER: "Verified User",
+    USER: USER_ROLE_LABEL,
+    VERIFIED_USER: VERIFIED_USER_ROLE_LABEL,
     HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    OWNER: "Owner",
-    SUPER_ADMIN: "Owner",
+    OWNER: OWNER_ROLE_LABEL,
+    SUPER_ADMIN: OWNER_ROLE_LABEL,
   },
   pl: {
-    USER: "User",
-    VERIFIED_USER: "Verified User",
+    USER: USER_ROLE_LABEL,
+    VERIFIED_USER: VERIFIED_USER_ROLE_LABEL,
     HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    OWNER: "Owner",
-    SUPER_ADMIN: "Owner",
+    OWNER: OWNER_ROLE_LABEL,
+    SUPER_ADMIN: OWNER_ROLE_LABEL,
   },
   en: {
-    USER: "User",
-    VERIFIED_USER: "Verified User",
+    USER: USER_ROLE_LABEL,
+    VERIFIED_USER: VERIFIED_USER_ROLE_LABEL,
     HELPER: "Helper",
     NUTRITIONIST: "Nutritionist",
     MODERATOR: "Moderator",
     ADMIN: "Admin",
-    OWNER: "Owner",
-    SUPER_ADMIN: "Owner",
+    OWNER: OWNER_ROLE_LABEL,
+    SUPER_ADMIN: OWNER_ROLE_LABEL,
   },
 } as const;
 
@@ -421,6 +430,128 @@ const personalDetailLabels = {
   },
 } as const;
 
+const getRoleLabels = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return roleLabels.pl;
+    case "en":
+      return roleLabels.en;
+    case "uk":
+    default:
+      return roleLabels.uk;
+  }
+};
+
+const getProfileCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return profileCopy.pl;
+    case "en":
+      return profileCopy.en;
+    case "uk":
+    default:
+      return profileCopy.uk;
+  }
+};
+
+const getRoleLabel = (language: AppLanguage, role: UserRole) => {
+  const labels = getRoleLabels(language);
+
+  switch (role) {
+    case "VERIFIED_USER":
+      return labels.VERIFIED_USER;
+    case "HELPER":
+      return labels.HELPER;
+    case "NUTRITIONIST":
+      return labels.NUTRITIONIST;
+    case "MODERATOR":
+      return labels.MODERATOR;
+    case "ADMIN":
+      return labels.ADMIN;
+    case "OWNER":
+      return labels.OWNER;
+    case "SUPER_ADMIN":
+      return labels.SUPER_ADMIN;
+    case "USER":
+    default:
+      return labels.USER;
+  }
+};
+
+const getDietStyleLabels = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return dietStyleLabels.pl;
+    case "en":
+      return dietStyleLabels.en;
+    case "uk":
+    default:
+      return dietStyleLabels.uk;
+  }
+};
+
+const getDietStyleLabel = (
+  labels: ReturnType<typeof getDietStyleLabels>,
+  dietStyle: DietStyle
+) => {
+  switch (dietStyle) {
+    case "vegetarian":
+      return labels.vegetarian;
+    case "vegan":
+      return labels.vegan;
+    case "pescatarian":
+      return labels.pescatarian;
+    case "low_carb":
+      return labels.low_carb;
+    case "gluten_free":
+      return labels.gluten_free;
+    case "balanced":
+    default:
+      return labels.balanced;
+  }
+};
+
+const getPersonalDetailLabels = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return personalDetailLabels.pl;
+    case "en":
+      return personalDetailLabels.en;
+    case "uk":
+    default:
+      return personalDetailLabels.uk;
+  }
+};
+
+const getCommunityStatusLabel = (status: CommunityMemberStatus) => {
+  switch (status) {
+    case "ACTIVE_MEMBER":
+      return communityStatusLabels.ACTIVE_MEMBER;
+    case "TRUSTED_MEMBER":
+      return communityStatusLabels.TRUSTED_MEMBER;
+    case "COMMUNITY_EXPERT":
+      return communityStatusLabels.COMMUNITY_EXPERT;
+    case "NEW_MEMBER":
+    default:
+      return communityStatusLabels.NEW_MEMBER;
+  }
+};
+
+const getLanguageLabel = (
+  labels: Record<AppLanguage, string>,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return labels.pl;
+    case "en":
+      return labels.en;
+    case "uk":
+    default:
+      return labels.uk;
+  }
+};
+
 const ProfilePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const {
@@ -441,7 +572,7 @@ const ProfilePage = () => {
   const macroTargets = useSelector(selectDailyMacroTargets);
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, appLanguage, languageLabels } = useLanguage();
-  const copy = profileCopy[appLanguage];
+  const copy = getProfileCopy(appLanguage);
   const renderLazySection = (
     tabKey: string,
     tabLabel: string,
@@ -461,8 +592,8 @@ const ProfilePage = () => {
       </LazyModuleBoundary>
     );
   };
-  const localizedDietLabels = dietStyleLabels[appLanguage];
-  const localizedPersonalDetails = personalDetailLabels[appLanguage];
+  const localizedDietLabels = getDietStyleLabels(appLanguage);
+  const localizedPersonalDetails = getPersonalDetailLabels(appLanguage);
 
   if (!user) {
     return (
@@ -513,7 +644,7 @@ const ProfilePage = () => {
         sx={{
           p: { xs: 3, md: 4 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-soft)",
+          border: PROFILE_CARD_BORDER,
           background:
             "linear-gradient(135deg, rgba(15,118,110,0.12) 0%, rgba(101,163,13,0.14) 100%)",
         }}
@@ -540,7 +671,7 @@ const ProfilePage = () => {
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip
-              label={`${copy.roleLabel}: ${roleLabels[appLanguage][user.role]}`}
+              label={`${copy.roleLabel}: ${getRoleLabel(appLanguage, user.role)}`}
               color={user.role === "USER" ? "default" : "primary"}
               variant={user.role === "USER" ? "outlined" : "filled"}
             />
@@ -552,7 +683,7 @@ const ProfilePage = () => {
               variant="outlined"
             />
             <Chip
-              label={`${copy.statusLabel}: ${communityStatusLabels[communityStatus]}`}
+              label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
               variant="outlined"
             />
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
@@ -620,8 +751,8 @@ const ProfilePage = () => {
                     sx={{
                       p: { xs: 2, md: 3 },
                       borderRadius: 1,
-                      border: "1px solid var(--sn-border-soft)",
-                      backgroundColor: "var(--sn-surface-glass)",
+                      border: PROFILE_CARD_BORDER,
+                      backgroundColor: PROFILE_GLASS_BACKGROUND,
                     }}
                   >
                     <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
@@ -642,8 +773,8 @@ const ProfilePage = () => {
                     sx={{
                       p: { xs: 2, md: 3 },
                       borderRadius: 1,
-                      border: "1px solid var(--sn-border-soft)",
-                      backgroundColor: "var(--sn-surface-glass)",
+                      border: PROFILE_CARD_BORDER,
+                      backgroundColor: PROFILE_GLASS_BACKGROUND,
                     }}
                   >
                     <Stack spacing={1.6}>
@@ -706,8 +837,8 @@ const ProfilePage = () => {
                   sx={{
                     p: { xs: 2, md: 3 },
                     borderRadius: 1,
-                    border: "1px solid var(--sn-border-soft)",
-                    backgroundColor: "var(--sn-surface-glass)",
+                    border: PROFILE_CARD_BORDER,
+                    backgroundColor: PROFILE_GLASS_BACKGROUND,
                   }}
                 >
                   <Stack spacing={1.4}>
@@ -773,8 +904,8 @@ const ProfilePage = () => {
                   sx={{
                     p: { xs: 2, md: 3 },
                     borderRadius: 1,
-                    border: "1px solid var(--sn-border-soft)",
-                    backgroundColor: "var(--sn-surface-glass)",
+                    border: PROFILE_CARD_BORDER,
+                    backgroundColor: PROFILE_GLASS_BACKGROUND,
                   }}
                 >
                   <Stack spacing={1.5}>
@@ -782,8 +913,8 @@ const ProfilePage = () => {
                       {copy.preferencesTitle}
                     </Typography>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Chip label={`${copy.dietLabel}: ${localizedDietLabels[dietStyle]}`} />
-                      <Chip label={`${copy.languageLabel}: ${languageLabels[languagePreference]}`} />
+                      <Chip label={`${copy.dietLabel}: ${getDietStyleLabel(localizedDietLabels, dietStyle)}`} />
+                      <Chip label={`${copy.languageLabel}: ${getLanguageLabel(languageLabels, languagePreference)}`} />
                       {allergies.map((item) => (
                         <Chip key={`allergy-${item}`} label={`${copy.allergiesLabel}: ${item}`} />
                       ))}
