@@ -63,18 +63,42 @@ const syncLocaleByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getSyncCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return syncCopy.uk;
+    case "pl":
+      return syncCopy.pl;
+    case "en":
+      return syncCopy.en;
+  }
+};
+
+const getSyncLocale = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return syncLocaleByLanguage.uk;
+    case "pl":
+      return syncLocaleByLanguage.pl;
+    case "en":
+      return syncLocaleByLanguage.en;
+  }
+};
+
 const formatAbsoluteSyncTime = (value: string | null, language: AppLanguage) => {
+  const copy = getSyncCopy(language);
+
   if (!value) {
-    return syncCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
   const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
-    return syncCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
-  return new Intl.DateTimeFormat(syncLocaleByLanguage[language], {
+  return new Intl.DateTimeFormat(getSyncLocale(language), {
     hour: "2-digit",
     minute: "2-digit",
   }).format(parsed);
@@ -85,38 +109,40 @@ const formatRelativeSyncAge = (
   language: AppLanguage,
   now: number
 ) => {
+  const copy = getSyncCopy(language);
+
   if (!value) {
-    return syncCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
   const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
-    return syncCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
   const diffMs = Math.max(now - parsed.getTime(), 0);
   const diffMinutes = Math.floor(diffMs / 60_000);
 
   if (diffMinutes <= 0) {
-    return syncCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
   if (diffMinutes === 1) {
-    return syncCopy[language].oneMinute;
+    return copy.oneMinute;
   }
 
   if (diffMinutes < 60) {
-    return syncCopy[language].minutes.replace("{count}", String(diffMinutes));
+    return copy.minutes.replace("{count}", String(diffMinutes));
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours === 1) {
-    return syncCopy[language].oneHour;
+    return copy.oneHour;
   }
 
-  return syncCopy[language].hours.replace("{count}", String(diffHours));
+  return copy.hours.replace("{count}", String(diffHours));
 };
 
 const SyncStatusChip = () => {
@@ -128,7 +154,7 @@ const SyncStatusChip = () => {
     syncOutbox,
   } = useSelector((state: RootState) => state.auth);
   const { appLanguage } = useLanguage();
-  const copy = syncCopy[appLanguage];
+  const copy = getSyncCopy(appLanguage);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -180,7 +206,7 @@ const SyncStatusChip = () => {
               ? "rgba(15, 118, 110, 0.14)"
               : syncStatus === "error"
                 ? "rgba(245, 158, 11, 0.12)"
-                : "rgba(255,255,255,0.9)",
+                : "var(--sn-surface-glass)",
           borderColor:
             syncStatus === "error"
               ? "rgba(245, 158, 11, 0.35)"
