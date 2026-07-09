@@ -11,6 +11,12 @@ import {
 import { selectMealItems } from "../meal/selectors";
 import { updateNotificationPreferences } from "./profileSlice";
 import type { MealType } from "@domain/meal/types";
+import type { AppLanguage } from "@shared/types/i18n";
+
+const HABIT_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+const ALIGN_START = "flex-start";
+const SINGLE_COLUMN_GRID = "1fr";
+const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 
 const copyByLanguage = {
   uk: {
@@ -90,12 +96,68 @@ const statusColor = {
   fragile: "warning",
 } as const;
 
+const getCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return copyByLanguage.pl;
+    case "en":
+      return copyByLanguage.en;
+    case "uk":
+    default:
+      return copyByLanguage.uk;
+  }
+};
+
+const getStatusLabel = (
+  statuses: Record<BehaviorProfileStatus, string>,
+  status: BehaviorProfileStatus
+) => {
+  switch (status) {
+    case "strong":
+      return statuses.strong;
+    case "steady":
+      return statuses.steady;
+    case "fragile":
+    default:
+      return statuses.fragile;
+  }
+};
+
+const getStatusColor = (status: BehaviorProfileStatus) => {
+  switch (status) {
+    case "strong":
+      return statusColor.strong;
+    case "steady":
+      return statusColor.steady;
+    case "fragile":
+    default:
+      return statusColor.fragile;
+  }
+};
+
+const getMealValue = <TValue,>(
+  values: Record<MealType, TValue>,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "lunch":
+      return values.lunch;
+    case "dinner":
+      return values.dinner;
+    case "snack":
+      return values.snack;
+    case "breakfast":
+    default:
+      return values.breakfast;
+  }
+};
+
 export const BehaviorPersonalizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const { reminderTimes, assistant } = useSelector((state: RootState) => state.profile);
   const { t, appLanguage } = useLanguage();
-  const copy = copyByLanguage[appLanguage];
+  const copy = getCopy(appLanguage);
 
   const analysis = generateBehaviorProfileAnalysis({
     items,
@@ -131,7 +193,7 @@ export const BehaviorPersonalizationCard = () => {
           </Stack>
           <Chip
             label={`${copy.score}: ${analysis.consistencyScore}/100`}
-            color={statusColor[analysis.status]}
+            color={getStatusColor(analysis.status)}
             sx={{ fontWeight: 800 }}
           />
         </Stack>
@@ -140,7 +202,10 @@ export const BehaviorPersonalizationCard = () => {
           <Chip label={`${copy.activeDays}: ${analysis.activeDays}/14`} />
           <Chip label={`${copy.currentStreak}: ${analysis.currentStreak}`} />
           <Chip label={`${copy.bestStreak}: ${analysis.bestStreak}`} />
-          <Chip label={copy.statuses[analysis.status]} color={statusColor[analysis.status]} />
+          <Chip
+            label={getStatusLabel(copy.statuses, analysis.status)}
+            color={getStatusColor(analysis.status)}
+          />
         </Stack>
 
         <Paper
@@ -168,15 +233,20 @@ export const BehaviorPersonalizationCard = () => {
         <Stack
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            gridTemplateColumns: { xs: SINGLE_COLUMN_GRID, md: TWO_COLUMN_GRID },
             gap: 1.5,
           }}
         >
-          {(["breakfast", "lunch", "dinner", "snack"] as MealType[]).map((mealType) => {
-            const habit = analysis.mealHabits[mealType];
+          {HABIT_MEAL_TYPES.map((mealType) => {
+            const habit = getMealValue(analysis.mealHabits, mealType);
+            const reminderTime = getMealValue(reminderTimes, mealType);
+            const suggestedReminderTime = getMealValue(
+              analysis.suggestedReminderTimes,
+              mealType
+            );
             const shift = getReminderShiftMinutes(
-              reminderTimes[mealType],
-              analysis.suggestedReminderTimes[mealType]
+              reminderTime,
+              suggestedReminderTime
             );
             const shiftPrefix = shift > 0 ? "+" : "";
 
@@ -196,10 +266,10 @@ export const BehaviorPersonalizationCard = () => {
                     {copy.averageTime}: {habit.averageLogTime ?? copy.noSuggestion}
                   </Typography>
                   <Typography color="text.secondary">
-                    {copy.reminder}: {reminderTimes[mealType]}
+                    {copy.reminder}: {reminderTime}
                   </Typography>
                   <Typography color="text.secondary">
-                    {copy.suggested}: {analysis.suggestedReminderTimes[mealType]}
+                    {copy.suggested}: {suggestedReminderTime}
                     {habit.hasSuggestion ? ` (${shiftPrefix}${shift} ${copy.minutes})` : ""}
                   </Typography>
                   <Chip
@@ -212,7 +282,7 @@ export const BehaviorPersonalizationCard = () => {
                           ? "info"
                           : "warning"
                     }
-                    sx={{ alignSelf: "flex-start" }}
+                    sx={{ alignSelf: ALIGN_START }}
                   />
                 </Stack>
               </Paper>
@@ -231,7 +301,7 @@ export const BehaviorPersonalizationCard = () => {
             )
           }
           sx={{
-            alignSelf: "flex-start",
+            alignSelf: ALIGN_START,
             textTransform: "none",
             fontWeight: 800,
             borderRadius: 999,

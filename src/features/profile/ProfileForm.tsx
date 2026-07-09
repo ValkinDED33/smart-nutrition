@@ -378,6 +378,33 @@ const petLabels: Record<AppLanguage, Record<PetCompanion, string>> = {
   },
 };
 
+const getProfileCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return profileCopy.pl;
+    case "en":
+      return profileCopy.en;
+    case "uk":
+    default:
+      return profileCopy.uk;
+  }
+};
+
+const getLocalizedProfileValue = <TValue extends string>(
+  values: Record<AppLanguage, Record<TValue, string>>,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return values.pl;
+    case "en":
+      return values.en;
+    case "uk":
+    default:
+      return values.uk;
+  }
+};
+
 const toDateInputValue = (value: string | null) =>
   value && !Number.isNaN(Date.parse(value)) ? value.slice(0, 10) : "";
 
@@ -421,13 +448,13 @@ const ProfileForm = () => {
     assistant,
   } = profile;
   const { t, appLanguage } = useLanguage();
-  const copy = profileCopy[appLanguage];
-  const dietLabels = dietStyleLabels[appLanguage];
-  const bloodLabels = bloodGroupLabels[appLanguage];
-  const eyeLabels = eyeColorLabels[appLanguage];
-  const relationshipOptions = relationshipLabels[appLanguage];
-  const supportOptions = supportLabels[appLanguage];
-  const petOptions = petLabels[appLanguage];
+  const copy = getProfileCopy(appLanguage);
+  const dietLabels = getLocalizedProfileValue(dietStyleLabels, appLanguage);
+  const bloodLabels = getLocalizedProfileValue(bloodGroupLabels, appLanguage);
+  const eyeLabels = getLocalizedProfileValue(eyeColorLabels, appLanguage);
+  const relationshipOptions = getLocalizedProfileValue(relationshipLabels, appLanguage);
+  const supportOptions = getLocalizedProfileValue(supportLabels, appLanguage);
+  const petOptions = getLocalizedProfileValue(petLabels, appLanguage);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [avatarDraft, setAvatarDraft] = useState(

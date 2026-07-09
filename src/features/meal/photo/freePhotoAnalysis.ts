@@ -24,10 +24,22 @@ type DraftItem = {
   tokens: string[];
 };
 
+const FOOD_GREEK_YOGURT = "Greek yogurt";
+const FOOD_OATS = "Oats";
+const FOOD_BANANA = "Banana";
+const FOOD_ALMONDS = "Almonds";
+const FOOD_COTTAGE_CHEESE = "Cottage cheese";
+const FOOD_CUCUMBER = "Cucumber";
+const FOOD_CHICKEN_BREAST = "Chicken breast";
+const FOOD_RICE_COOKED = "Rice cooked";
+const FOOD_TOMATO = "Tomato";
+const FOOD_TOFU = "Tofu";
+const FOOD_APPLE = "Apple";
+
 const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
   balanced: [
     {
-      name: "Greek yogurt",
+      name: FOOD_GREEK_YOGURT,
       quantityGrams: 180,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 73, protein: 10, fat: 2, carbs: 3.9 },
@@ -35,7 +47,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "yogurt"],
     },
     {
-      name: "Oats",
+      name: FOOD_OATS,
       quantityGrams: 60,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 389, protein: 17, fat: 7, carbs: 66 },
@@ -43,7 +55,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["gluten", "grain", "oats"],
     },
     {
-      name: "Banana",
+      name: FOOD_BANANA,
       quantityGrams: 100,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 89, protein: 1.1, fat: 0.3, carbs: 23 },
@@ -53,7 +65,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   vegetarian: [
     {
-      name: "Greek yogurt",
+      name: FOOD_GREEK_YOGURT,
       quantityGrams: 180,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 73, protein: 10, fat: 2, carbs: 3.9 },
@@ -61,7 +73,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "yogurt"],
     },
     {
-      name: "Oats",
+      name: FOOD_OATS,
       quantityGrams: 60,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 389, protein: 17, fat: 7, carbs: 66 },
@@ -69,7 +81,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["gluten", "grain", "oats"],
     },
     {
-      name: "Banana",
+      name: FOOD_BANANA,
       quantityGrams: 100,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 89, protein: 1.1, fat: 0.3, carbs: 23 },
@@ -79,7 +91,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   vegan: [
     {
-      name: "Oats",
+      name: FOOD_OATS,
       quantityGrams: 60,
       confidence: 0.2,
       estimatedNutritionPer100g: { calories: 389, protein: 17, fat: 7, carbs: 66 },
@@ -87,7 +99,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["gluten", "grain", "oats"],
     },
     {
-      name: "Banana",
+      name: FOOD_BANANA,
       quantityGrams: 100,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 89, protein: 1.1, fat: 0.3, carbs: 23 },
@@ -95,7 +107,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "banana"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 20,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -105,7 +117,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   pescatarian: [
     {
-      name: "Greek yogurt",
+      name: FOOD_GREEK_YOGURT,
       quantityGrams: 180,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 73, protein: 10, fat: 2, carbs: 3.9 },
@@ -113,7 +125,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "yogurt"],
     },
     {
-      name: "Oats",
+      name: FOOD_OATS,
       quantityGrams: 60,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 389, protein: 17, fat: 7, carbs: 66 },
@@ -121,7 +133,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["gluten", "grain", "oats"],
     },
     {
-      name: "Banana",
+      name: FOOD_BANANA,
       quantityGrams: 100,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 89, protein: 1.1, fat: 0.3, carbs: 23 },
@@ -139,7 +151,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["egg"],
     },
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 150,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -147,7 +159,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Cucumber",
+      name: FOOD_CUCUMBER,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 15, protein: 0.7, fat: 0.1, carbs: 3.6 },
@@ -157,7 +169,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   gluten_free: [
     {
-      name: "Greek yogurt",
+      name: FOOD_GREEK_YOGURT,
       quantityGrams: 180,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 73, protein: 10, fat: 2, carbs: 3.9 },
@@ -165,7 +177,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "yogurt"],
     },
     {
-      name: "Banana",
+      name: FOOD_BANANA,
       quantityGrams: 100,
       confidence: 0.17,
       estimatedNutritionPer100g: { calories: 89, protein: 1.1, fat: 0.3, carbs: 23 },
@@ -173,7 +185,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "banana"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 20,
       confidence: 0.15,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -186,7 +198,7 @@ const breakfastTemplates: Record<DietStyle, DraftItem[]> = {
 const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
   balanced: [
     {
-      name: "Chicken breast",
+      name: FOOD_CHICKEN_BREAST,
       quantityGrams: 160,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 165, protein: 31, fat: 3.6, carbs: 0 },
@@ -194,7 +206,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["chicken", "meat"],
     },
     {
-      name: "Rice cooked",
+      name: FOOD_RICE_COOKED,
       quantityGrams: 180,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
@@ -202,7 +214,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["grain", "rice"],
     },
     {
-      name: "Tomato",
+      name: FOOD_TOMATO,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9 },
@@ -212,7 +224,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   vegetarian: [
     {
-      name: "Tofu",
+      name: FOOD_TOFU,
       quantityGrams: 160,
       confidence: 0.21,
       estimatedNutritionPer100g: { calories: 76, protein: 8, fat: 4.8, carbs: 1.9 },
@@ -220,7 +232,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["soy", "tofu"],
     },
     {
-      name: "Rice cooked",
+      name: FOOD_RICE_COOKED,
       quantityGrams: 180,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
@@ -228,7 +240,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["grain", "rice"],
     },
     {
-      name: "Tomato",
+      name: FOOD_TOMATO,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9 },
@@ -238,7 +250,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   vegan: [
     {
-      name: "Tofu",
+      name: FOOD_TOFU,
       quantityGrams: 160,
       confidence: 0.21,
       estimatedNutritionPer100g: { calories: 76, protein: 8, fat: 4.8, carbs: 1.9 },
@@ -246,7 +258,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["soy", "tofu"],
     },
     {
-      name: "Rice cooked",
+      name: FOOD_RICE_COOKED,
       quantityGrams: 180,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
@@ -254,7 +266,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["grain", "rice"],
     },
     {
-      name: "Tomato",
+      name: FOOD_TOMATO,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9 },
@@ -272,7 +284,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fish", "salmon"],
     },
     {
-      name: "Rice cooked",
+      name: FOOD_RICE_COOKED,
       quantityGrams: 160,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
@@ -280,7 +292,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["grain", "rice"],
     },
     {
-      name: "Cucumber",
+      name: FOOD_CUCUMBER,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 15, protein: 0.7, fat: 0.1, carbs: 3.6 },
@@ -290,7 +302,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   low_carb: [
     {
-      name: "Chicken breast",
+      name: FOOD_CHICKEN_BREAST,
       quantityGrams: 160,
       confidence: 0.21,
       estimatedNutritionPer100g: { calories: 165, protein: 31, fat: 3.6, carbs: 0 },
@@ -306,7 +318,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "avocado"],
     },
     {
-      name: "Cucumber",
+      name: FOOD_CUCUMBER,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 15, protein: 0.7, fat: 0.1, carbs: 3.6 },
@@ -316,7 +328,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   gluten_free: [
     {
-      name: "Chicken breast",
+      name: FOOD_CHICKEN_BREAST,
       quantityGrams: 160,
       confidence: 0.22,
       estimatedNutritionPer100g: { calories: 165, protein: 31, fat: 3.6, carbs: 0 },
@@ -324,7 +336,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["chicken", "meat"],
     },
     {
-      name: "Rice cooked",
+      name: FOOD_RICE_COOKED,
       quantityGrams: 180,
       confidence: 0.18,
       estimatedNutritionPer100g: { calories: 130, protein: 2.7, fat: 0.3, carbs: 28 },
@@ -332,7 +344,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["grain", "rice"],
     },
     {
-      name: "Tomato",
+      name: FOOD_TOMATO,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 18, protein: 0.9, fat: 0.2, carbs: 3.9 },
@@ -345,7 +357,7 @@ const lunchDinnerTemplates: Record<DietStyle, DraftItem[]> = {
 const snackTemplates: Record<DietStyle, DraftItem[]> = {
   balanced: [
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 180,
       confidence: 0.2,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -353,7 +365,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Apple",
+      name: FOOD_APPLE,
       quantityGrams: 120,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 52, protein: 0.3, fat: 0.2, carbs: 14 },
@@ -361,7 +373,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "apple"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -371,7 +383,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   vegetarian: [
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 180,
       confidence: 0.2,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -379,7 +391,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Apple",
+      name: FOOD_APPLE,
       quantityGrams: 120,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 52, protein: 0.3, fat: 0.2, carbs: 14 },
@@ -387,7 +399,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "apple"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -405,7 +417,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["legume", "hummus"],
     },
     {
-      name: "Apple",
+      name: FOOD_APPLE,
       quantityGrams: 120,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 52, protein: 0.3, fat: 0.2, carbs: 14 },
@@ -413,7 +425,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "apple"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -423,7 +435,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   pescatarian: [
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 180,
       confidence: 0.2,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -431,7 +443,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Apple",
+      name: FOOD_APPLE,
       quantityGrams: 120,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 52, protein: 0.3, fat: 0.2, carbs: 14 },
@@ -439,7 +451,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "apple"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -449,7 +461,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   low_carb: [
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 180,
       confidence: 0.19,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -457,7 +469,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Cucumber",
+      name: FOOD_CUCUMBER,
       quantityGrams: 120,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 15, protein: 0.7, fat: 0.1, carbs: 3.6 },
@@ -465,7 +477,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["vegetable", "cucumber"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.13,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -475,7 +487,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
   ],
   gluten_free: [
     {
-      name: "Cottage cheese",
+      name: FOOD_COTTAGE_CHEESE,
       quantityGrams: 180,
       confidence: 0.2,
       estimatedNutritionPer100g: { calories: 121, protein: 17, fat: 5, carbs: 3 },
@@ -483,7 +495,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["dairy", "lactose", "cheese"],
     },
     {
-      name: "Apple",
+      name: FOOD_APPLE,
       quantityGrams: 120,
       confidence: 0.16,
       estimatedNutritionPer100g: { calories: 52, protein: 0.3, fat: 0.2, carbs: 14 },
@@ -491,7 +503,7 @@ const snackTemplates: Record<DietStyle, DraftItem[]> = {
       tokens: ["fruit", "apple"],
     },
     {
-      name: "Almonds",
+      name: FOOD_ALMONDS,
       quantityGrams: 15,
       confidence: 0.14,
       estimatedNutritionPer100g: { calories: 579, protein: 21, fat: 50, carbs: 22 },
@@ -528,16 +540,37 @@ const removeBlockedItems = (
   );
 };
 
+const getTemplateForDiet = (
+  templates: Record<DietStyle, DraftItem[]>,
+  dietStyle: DietStyle
+) => {
+  switch (dietStyle) {
+    case "vegetarian":
+      return templates.vegetarian;
+    case "vegan":
+      return templates.vegan;
+    case "pescatarian":
+      return templates.pescatarian;
+    case "low_carb":
+      return templates.low_carb;
+    case "gluten_free":
+      return templates.gluten_free;
+    case "balanced":
+    default:
+      return templates.balanced;
+  }
+};
+
 const getTemplate = (mealType: MealType, dietStyle: DietStyle) => {
   if (mealType === "breakfast") {
-    return breakfastTemplates[dietStyle];
+    return getTemplateForDiet(breakfastTemplates, dietStyle);
   }
 
   if (mealType === "snack") {
-    return snackTemplates[dietStyle];
+    return getTemplateForDiet(snackTemplates, dietStyle);
   }
 
-  return lunchDinnerTemplates[dietStyle];
+  return getTemplateForDiet(lunchDinnerTemplates, dietStyle);
 };
 
 const getMealLabel = (mealType: MealType) =>
