@@ -50,34 +50,62 @@ const normalizeSearchText = (value: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .trim();
 
-const searchPhraseExpansions: Record<string, string[]> = {
-  porridge: ["oats", "oatmeal", "овсянка", "вівсянка", "owsianka"],
-  oatmeal: ["oats", "porridge", "овсянка", "вівсянка", "owsianka"],
-  yoghurt: ["yogurt", "greek yogurt"],
-  yogurt: ["yoghurt", "greek yogurt", "skyr", "jogurt", "йогурт"],
-  "greek yoghurt": ["greek yogurt", "jogurt grecki"],
-  "protein yogurt": ["greek yogurt", "skyr", "high protein yogurt"],
-  "protein yoghurt": ["greek yogurt", "skyr", "high protein yogurt"],
-  curd: ["cottage cheese", "quark", "twarog", "творог", "кисломолочний сир"],
-  quark: ["cottage cheese", "curd", "twarog", "творог"],
-  twarog: ["cottage cheese", "quark", "curd", "творог"],
-  twarogu: ["cottage cheese", "quark", "curd", "творог"],
-};
+const OATS_TOKEN = "oats";
+const OATMEAL_TOKEN = "oatmeal";
+const PORRIDGE_TOKEN = "porridge";
+const OWSIANKA_TOKEN = "owsianka";
+const UKRAINIAN_OATMEAL_TOKEN = "вівсянка";
+const RUSSIAN_OATMEAL_TOKEN = "овсянка";
+const YOGURT_TOKEN = "yogurt";
+const YOGHURT_TOKEN = "yoghurt";
+const JOGURT_TOKEN = "jogurt";
+const GREEK_TOKEN = "greek";
+const SKYR_TOKEN = "skyr";
+const CYRILLIC_YOGURT_TOKEN = "йогурт";
+const GREEK_YOGURT_TOKEN = "greek yogurt";
+const POLISH_GREEK_YOGURT_TOKEN = "jogurt grecki";
+const HIGH_PROTEIN_YOGURT_TOKEN = "high protein yogurt";
+const CURD_TOKEN = "curd";
+const COTTAGE_TOKEN = "cottage";
+const COTTAGE_CHEESE_TOKEN = "cottage cheese";
+const QUARK_TOKEN = "quark";
+const TWAROG_TOKEN = "twarog";
+const RUSSIAN_CURD_TOKEN = "творог";
 
-const searchTokenExpansions: Record<string, string[]> = {
-  oats: ["oatmeal", "porridge", "owsianka", "овсянка", "вівсянка"],
-  oatmeal: ["oats", "porridge", "owsianka", "овсянка", "вівсянка"],
-  porridge: ["oats", "oatmeal", "owsianka", "овсянка", "вівсянка"],
-  yogurt: ["yoghurt", "jogurt", "йогурт", "greek", "skyr"],
-  yoghurt: ["yogurt", "jogurt", "greek", "skyr"],
-  jogurt: ["yogurt", "yoghurt", "greek", "skyr"],
-  greek: ["jogurt", "yogurt"],
-  protein: ["high", "skyr"],
-  curd: ["cottage", "quark", "twarog", "творог", "сир"],
-  cottage: ["curd", "quark", "twarog", "творог"],
-  quark: ["cottage", "curd", "twarog", "творог"],
-  twarog: ["cottage", "curd", "quark", "творог"],
-};
+const searchPhraseExpansions = new Map<string, string[]>([
+  [PORRIDGE_TOKEN, [OATS_TOKEN, OATMEAL_TOKEN, RUSSIAN_OATMEAL_TOKEN, UKRAINIAN_OATMEAL_TOKEN, OWSIANKA_TOKEN]],
+  [OATMEAL_TOKEN, [OATS_TOKEN, PORRIDGE_TOKEN, RUSSIAN_OATMEAL_TOKEN, UKRAINIAN_OATMEAL_TOKEN, OWSIANKA_TOKEN]],
+  [YOGHURT_TOKEN, [YOGURT_TOKEN, GREEK_YOGURT_TOKEN]],
+  [YOGURT_TOKEN, [YOGHURT_TOKEN, GREEK_YOGURT_TOKEN, SKYR_TOKEN, JOGURT_TOKEN, CYRILLIC_YOGURT_TOKEN]],
+  ["greek yoghurt", [GREEK_YOGURT_TOKEN, POLISH_GREEK_YOGURT_TOKEN]],
+  ["protein yogurt", [GREEK_YOGURT_TOKEN, SKYR_TOKEN, HIGH_PROTEIN_YOGURT_TOKEN]],
+  ["protein yoghurt", [GREEK_YOGURT_TOKEN, SKYR_TOKEN, HIGH_PROTEIN_YOGURT_TOKEN]],
+  [CURD_TOKEN, [COTTAGE_CHEESE_TOKEN, QUARK_TOKEN, TWAROG_TOKEN, RUSSIAN_CURD_TOKEN, "кисломолочний сир"]],
+  [QUARK_TOKEN, [COTTAGE_CHEESE_TOKEN, CURD_TOKEN, TWAROG_TOKEN, RUSSIAN_CURD_TOKEN]],
+  [TWAROG_TOKEN, [COTTAGE_CHEESE_TOKEN, QUARK_TOKEN, CURD_TOKEN, RUSSIAN_CURD_TOKEN]],
+  ["twarogu", [COTTAGE_CHEESE_TOKEN, QUARK_TOKEN, CURD_TOKEN, RUSSIAN_CURD_TOKEN]],
+]);
+
+const searchTokenExpansions = new Map<string, string[]>([
+  [OATS_TOKEN, [OATMEAL_TOKEN, PORRIDGE_TOKEN, OWSIANKA_TOKEN, RUSSIAN_OATMEAL_TOKEN, UKRAINIAN_OATMEAL_TOKEN]],
+  [OATMEAL_TOKEN, [OATS_TOKEN, PORRIDGE_TOKEN, OWSIANKA_TOKEN, RUSSIAN_OATMEAL_TOKEN, UKRAINIAN_OATMEAL_TOKEN]],
+  [PORRIDGE_TOKEN, [OATS_TOKEN, OATMEAL_TOKEN, OWSIANKA_TOKEN, RUSSIAN_OATMEAL_TOKEN, UKRAINIAN_OATMEAL_TOKEN]],
+  [YOGURT_TOKEN, [YOGHURT_TOKEN, JOGURT_TOKEN, CYRILLIC_YOGURT_TOKEN, GREEK_TOKEN, SKYR_TOKEN]],
+  [YOGHURT_TOKEN, [YOGURT_TOKEN, JOGURT_TOKEN, GREEK_TOKEN, SKYR_TOKEN]],
+  [JOGURT_TOKEN, [YOGURT_TOKEN, YOGHURT_TOKEN, GREEK_TOKEN, SKYR_TOKEN]],
+  [GREEK_TOKEN, [JOGURT_TOKEN, YOGURT_TOKEN]],
+  ["protein", ["high", SKYR_TOKEN]],
+  [CURD_TOKEN, [COTTAGE_TOKEN, QUARK_TOKEN, TWAROG_TOKEN, RUSSIAN_CURD_TOKEN, "сир"]],
+  [COTTAGE_TOKEN, [CURD_TOKEN, QUARK_TOKEN, TWAROG_TOKEN, RUSSIAN_CURD_TOKEN]],
+  [QUARK_TOKEN, [COTTAGE_TOKEN, CURD_TOKEN, TWAROG_TOKEN, RUSSIAN_CURD_TOKEN]],
+  [TWAROG_TOKEN, [COTTAGE_TOKEN, CURD_TOKEN, QUARK_TOKEN, RUSSIAN_CURD_TOKEN]],
+]);
+
+const getSearchPhraseExpansions = (token: string) =>
+  searchPhraseExpansions.get(token) ?? [];
+
+const getSearchTokenExpansions = (token: string) =>
+  searchTokenExpansions.get(token) ?? [];
 
 const dedupeNormalizedValues = (values: string[]) => {
   const seen = new Set<string>();
@@ -98,7 +126,7 @@ const dedupeNormalizedValues = (values: string[]) => {
 const expandSearchQueries = (normalizedQuery: string) =>
   dedupeNormalizedValues([
     normalizedQuery,
-    ...(searchPhraseExpansions[normalizedQuery] ?? []).map((value) =>
+    ...getSearchPhraseExpansions(normalizedQuery).map((value) =>
       normalizeSearchText(value)
     ),
   ]);
@@ -107,11 +135,25 @@ const expandSearchTokens = (normalizedQuery: string) => {
   const baseQueries = expandSearchQueries(normalizedQuery);
   const baseTokens = baseQueries.flatMap((value) => value.split(/\s+/).filter(Boolean));
   const expandedTokens = baseTokens.flatMap((token) => {
-    const relatedTokens = searchTokenExpansions[token] ?? [];
+    const relatedTokens = getSearchTokenExpansions(token);
     return [token, ...relatedTokens.map((value) => normalizeSearchText(value))];
   });
 
   return dedupeNormalizedValues(expandedTokens.filter(Boolean));
+};
+
+const getNumberAtPosition = (values: number[], position: number) => {
+  let currentPosition = 0;
+
+  for (const value of values) {
+    if (currentPosition === position) {
+      return value;
+    }
+
+    currentPosition += 1;
+  }
+
+  return 0;
 };
 
 const levenshteinDistance = (left: string, right: string) => {
@@ -119,26 +161,27 @@ const levenshteinDistance = (left: string, right: string) => {
   if (!left.length) return right.length;
   if (!right.length) return left.length;
 
-  const matrix: number[][] = Array.from({ length: left.length + 1 }, (_, rowIndex) =>
-    Array.from({ length: right.length + 1 }, (_, columnIndex) =>
-      rowIndex === 0 ? columnIndex : columnIndex === 0 ? rowIndex : 0
-    )
-  );
+  const rightLength = right.length;
+  let previousRow = Array.from({ length: rightLength + 1 }, (_, index) => index);
 
   for (let rowIndex = 1; rowIndex <= left.length; rowIndex += 1) {
-    for (let columnIndex = 1; columnIndex <= right.length; columnIndex += 1) {
-      const substitutionCost =
-        left[rowIndex - 1] === right[columnIndex - 1] ? 0 : 1;
+    const currentRow = [rowIndex];
 
-      matrix[rowIndex]![columnIndex] = Math.min(
-        matrix[rowIndex - 1]![columnIndex]! + 1,
-        matrix[rowIndex]![columnIndex - 1]! + 1,
-        matrix[rowIndex - 1]![columnIndex - 1]! + substitutionCost
-      );
+    for (let columnIndex = 1; columnIndex <= rightLength; columnIndex += 1) {
+      const substitutionCost =
+        left.charAt(rowIndex - 1) === right.charAt(columnIndex - 1) ? 0 : 1;
+      const deletionCost = getNumberAtPosition(previousRow, columnIndex) + 1;
+      const insertionCost = getNumberAtPosition(currentRow, columnIndex - 1) + 1;
+      const substitutionDistance =
+        getNumberAtPosition(previousRow, columnIndex - 1) + substitutionCost;
+
+      currentRow.push(Math.min(deletionCost, insertionCost, substitutionDistance));
     }
+
+    previousRow = currentRow;
   }
 
-  return matrix[left.length]![right.length]!;
+  return getNumberAtPosition(previousRow, rightLength);
 };
 
 const createProduct = ({
@@ -217,7 +260,7 @@ const catalog: CatalogProductRecord[] = [
     carbs: 3.9,
     imageUrl: images.dairy,
     barcode: "4820000730030",
-    aliases: ["greek yogurt", "йогурт", "грецький йогурт", "jogurt grecki"],
+    aliases: ["greek yogurt", "йогурт", "грецький йогурт", POLISH_GREEK_YOGURT_TOKEN],
     facts: {
       foodGroup: "dairy",
       proteinTypes: ["animal", "complete", "slow"],
@@ -961,7 +1004,7 @@ const catalog: CatalogProductRecord[] = [
 
 const localizedAliasesById: Record<string, string[]> = {
   "manual-oats": ["вівсянка", "овсянка", "płatki owsiane", "owsianka"],
-  "manual-greek-yogurt": ["грецький йогурт", "греческий йогурт", "jogurt grecki"],
+  "manual-greek-yogurt": ["грецький йогурт", "греческий йогурт", POLISH_GREEK_YOGURT_TOKEN],
   "manual-skyr": ["скир"],
   "manual-cottage-cheese": ["кисломолочний сир", "творог", "twaróg", "ser wiejski"],
   "manual-hard-cheese": ["твердий сир", "сыр", "ser twardy"],
@@ -1047,7 +1090,7 @@ const createTokenGroups = (tokens: string[]) =>
   tokens.map((token) =>
     dedupeNormalizedValues([
       token,
-      ...(searchTokenExpansions[token] ?? []).map((value) => normalizeSearchText(value)),
+      ...getSearchTokenExpansions(token).map((value) => normalizeSearchText(value)),
     ])
   );
 
