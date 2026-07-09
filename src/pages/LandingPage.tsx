@@ -35,10 +35,39 @@ import { useAppColorMode } from "../shared/theme/colorMode";
 
 type LandingLanguage = "uk" | "pl" | "en";
 
+const BRAND_NAME = "Smart Nutrition";
+const AI_WELLNESS_ECOSYSTEM = "AI wellness ecosystem";
+const AI_COMPANION_LABEL = "AI companion";
+const COMMUNITY_FOOD_HUB_TITLE = "Community food hub";
+const PROACTIVE_NUDGES_LABEL = "proactive nudges";
+const TELEGRAM_RETENTION_LABEL = "Telegram retention";
+const BREATHING_PILL = "breathing";
+const EYE_TRACKING_PILL = "eye tracking";
+const MOOD_SHIFT_PILL = "mood shift";
+const DAILY_MEMORY_PILL = "daily memory";
+const ADMIN_PANEL_LABEL = "Admin panel";
+const CALORIE_STAT_VALUE = "1 420 / 2 050";
+const WATER_STAT_VALUE = "1.5 / 2.2 l";
+const PROTEIN_STAT_VALUE = "96 / 120 г";
+const PROTEIN_STAT_VALUE_EN = "96 / 120 g";
+const CALORIE_STAT_COLOR = "#0f766e";
+const WATER_STAT_COLOR = "#0891b2";
+const PROTEIN_STAT_COLOR = "#2563eb";
+const FOOD_SCANNER_TITLE = "AI food scanner";
+const HYDRATION_TRACKER_TITLE = "Hydration tracker";
+const CALORIE_MACRO_TITLE = "Calorie & macro";
+const AI_COACHING_TITLE = "AI coaching";
+const PROGRESS_INSIGHTS_TITLE = "Progress insights";
+const SMART_REMINDERS_TITLE = "Smart reminders";
+const GLASS_WHITE_08 = "rgba(255,255,255,0.08)";
+const GLASS_WHITE_14 = "rgba(255,255,255,0.14)";
+const GLASS_WHITE_72 = "rgba(255,255,255,0.72)";
+const GLASS_BLUR_14 = "blur(14px)";
+
 const landingCopy = {
   uk: {
-    eyebrow: "AI wellness ecosystem",
-    brandTitle: "Smart Nutrition",
+    eyebrow: AI_WELLNESS_ECOSYSTEM,
+    brandTitle: BRAND_NAME,
     headline: {
       prefix: "Твій AI-компаньйон для",
       accent: "здоровішого",
@@ -57,8 +86,8 @@ const landingCopy = {
     telegramCta: "Підключити Telegram",
     navOverview: "Огляд продукту",
     socialProof: "10 000+ користувачів будують звички разом з companion",
-    proof: ["AI companion", "пам'ять", "proactive nudges", "Telegram поруч"],
-    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    proof: [AI_COMPANION_LABEL, "пам'ять", PROACTIVE_NUDGES_LABEL, "Telegram поруч"],
+    presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
     sceneCards: [
       {
         title: "Ранковий фокус",
@@ -71,7 +100,7 @@ const landingCopy = {
         tone: "coach",
       },
       {
-        title: "Telegram retention",
+        title: TELEGRAM_RETENTION_LABEL,
         body: "Швидкий лог води або ліків без відкриття застосунку.",
         tone: "warm",
       },
@@ -79,12 +108,12 @@ const landingCopy = {
     heroStats: [
       {
         label: "Калорії",
-        value: "1 420 / 2 050",
+        value: CALORIE_STAT_VALUE,
         progress: 69,
-        color: "#0f766e",
+        color: CALORIE_STAT_COLOR,
       },
-      { label: "Вода", value: "1.5 / 2.2 л", progress: 68, color: "#0891b2" },
-      { label: "Білок", value: "96 / 120 г", progress: 80, color: "#2563eb" },
+      { label: "Вода", value: WATER_STAT_VALUE, progress: 68, color: WATER_STAT_COLOR },
+      { label: "Білок", value: PROTEIN_STAT_VALUE, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
       name: "Diana",
@@ -95,12 +124,12 @@ const landingCopy = {
     },
     quickActions: ["Фото їжі", "Штрихкод", "Повторити вчора", "Ручний ввід"],
     featureRail: [
-      { title: "AI food scanner", body: "Фото їжі і швидкий аналіз" },
-      { title: "Hydration tracker", body: "Вода без ручного хаосу" },
-      { title: "Calorie & macro", body: "Калорії, білок, жири, вуглеводи" },
-      { title: "AI coaching", body: "Підказки під твій день" },
-      { title: "Progress insights", body: "Зміни без сухої статистики" },
-      { title: "Smart reminders", body: "Вода, їжа, ліки і звички" },
+      { title: FOOD_SCANNER_TITLE, body: "Фото їжі і швидкий аналіз" },
+      { title: HYDRATION_TRACKER_TITLE, body: "Вода без ручного хаосу" },
+      { title: CALORIE_MACRO_TITLE, body: "Калорії, білок, жири, вуглеводи" },
+      { title: AI_COACHING_TITLE, body: "Підказки під твій день" },
+      { title: PROGRESS_INSIGHTS_TITLE, body: "Зміни без сухої статистики" },
+      { title: SMART_REMINDERS_TITLE, body: "Вода, їжа, ліки і звички" },
     ],
     sectionEyebrow: "За 5 секунд зрозуміло, що робити",
     ecosystemTitle: "Не калькулятор, а companion-платформа",
@@ -120,7 +149,7 @@ const landingCopy = {
         body: "Серії, XP, рівні, досягнення, day-off і м'які завдання, які не ламають настрій.",
       },
       {
-        title: "Community food hub",
+        title: COMMUNITY_FOOD_HUB_TITLE,
         body: "Рецепти, коментарі, збереження, рейтинги і модерація страв перед публікацією.",
       },
     ],
@@ -148,7 +177,7 @@ const landingCopy = {
       "Рецепти",
       "Статті",
       "Модератори",
-      "Admin panel",
+      ADMIN_PANEL_LABEL,
     ],
     mobileTitle: "Працює як responsive web app і PWA",
     mobileBody:
@@ -160,8 +189,8 @@ const landingCopy = {
       "Користувач має відчувати не складну програму, а живого помічника, який допомагає ставати кращим кожного дня.",
   },
   pl: {
-    eyebrow: "AI wellness ecosystem",
-    brandTitle: "Smart Nutrition",
+    eyebrow: AI_WELLNESS_ECOSYSTEM,
+    brandTitle: BRAND_NAME,
     headline: {
       prefix: "Twój AI companion dla",
       accent: "zdrowszego",
@@ -180,8 +209,8 @@ const landingCopy = {
     telegramCta: "Połącz Telegram",
     navOverview: "Przegląd produktu",
     socialProof: "10 000+ użytkowników buduje nawyki z companion",
-    proof: ["AI companion", "pamięć", "proactive nudges", "Telegram obok"],
-    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    proof: [AI_COMPANION_LABEL, "pamięć", PROACTIVE_NUDGES_LABEL, "Telegram obok"],
+    presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
     sceneCards: [
       {
         title: "Poranny fokus",
@@ -194,7 +223,7 @@ const landingCopy = {
         tone: "coach",
       },
       {
-        title: "Telegram retention",
+        title: TELEGRAM_RETENTION_LABEL,
         body: "Szybki log wody lub leków bez otwierania aplikacji.",
         tone: "warm",
       },
@@ -202,12 +231,12 @@ const landingCopy = {
     heroStats: [
       {
         label: "Kalorie",
-        value: "1 420 / 2 050",
+        value: CALORIE_STAT_VALUE,
         progress: 69,
-        color: "#0f766e",
+        color: CALORIE_STAT_COLOR,
       },
-      { label: "Woda", value: "1.5 / 2.2 l", progress: 68, color: "#0891b2" },
-      { label: "Białko", value: "96 / 120 g", progress: 80, color: "#2563eb" },
+      { label: "Woda", value: WATER_STAT_VALUE, progress: 68, color: WATER_STAT_COLOR },
+      { label: "Białko", value: PROTEIN_STAT_VALUE_EN, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
       name: "Diana",
@@ -218,12 +247,12 @@ const landingCopy = {
     },
     quickActions: ["Zdjęcie", "Kod kreskowy", "Powtórz wczoraj", "Ręczny wpis"],
     featureRail: [
-      { title: "AI food scanner", body: "Zdjęcie posiłku i szybka analiza" },
-      { title: "Hydration tracker", body: "Woda bez ręcznego chaosu" },
-      { title: "Calorie & macro", body: "Kalorie, białko, tłuszcz, węgle" },
-      { title: "AI coaching", body: "Podpowiedzi pod Twój dzień" },
-      { title: "Progress insights", body: "Zmiany bez suchej statystyki" },
-      { title: "Smart reminders", body: "Woda, jedzenie, leki i nawyki" },
+      { title: FOOD_SCANNER_TITLE, body: "Zdjęcie posiłku i szybka analiza" },
+      { title: HYDRATION_TRACKER_TITLE, body: "Woda bez ręcznego chaosu" },
+      { title: CALORIE_MACRO_TITLE, body: "Kalorie, białko, tłuszcz, węgle" },
+      { title: AI_COACHING_TITLE, body: "Podpowiedzi pod Twój dzień" },
+      { title: PROGRESS_INSIGHTS_TITLE, body: "Zmiany bez suchej statystyki" },
+      { title: SMART_REMINDERS_TITLE, body: "Woda, jedzenie, leki i nawyki" },
     ],
     sectionEyebrow: "W 5 sekund wiadomo, co zrobić",
     ecosystemTitle: "Nie kalkulator, tylko companion-platforma",
@@ -231,7 +260,7 @@ const landingCopy = {
       "Smart Nutrition łączy dietetykę, gamification, analytics, wodę, progres i community w jeden spokojny codzienny rytm.",
     ecosystem: [
       {
-        title: "AI companion",
+        title: AI_COMPANION_LABEL,
         body: "Patrzy za kursorem, reaguje na akcje, cieszy się z osiągnięć i ostrzega bez presji.",
       },
       {
@@ -243,7 +272,7 @@ const landingCopy = {
         body: "Serie, XP, poziomy, osiągnięcia, day-off i łagodne zadania, które nie psują nastroju.",
       },
       {
-        title: "Community food hub",
+        title: COMMUNITY_FOOD_HUB_TITLE,
         body: "Przepisy, komentarze, zapisy, oceny i moderacja potraw przed publikacją.",
       },
     ],
@@ -271,7 +300,7 @@ const landingCopy = {
       "Przepisy",
       "Artykuły",
       "Moderatorzy",
-      "Admin panel",
+      ADMIN_PANEL_LABEL,
     ],
     mobileTitle: "Działa jako responsive web app i PWA",
     mobileBody:
@@ -283,8 +312,8 @@ const landingCopy = {
       "Użytkownik ma czuć nie złożoną aplikację, tylko żywego pomocnika, który pomaga stawać się lepszym każdego dnia.",
   },
   en: {
-    eyebrow: "AI wellness ecosystem",
-    brandTitle: "Smart Nutrition",
+    eyebrow: AI_WELLNESS_ECOSYSTEM,
+    brandTitle: BRAND_NAME,
     headline: {
       prefix: "Your AI companion for a",
       accent: "healthier",
@@ -303,8 +332,8 @@ const landingCopy = {
     telegramCta: "Connect Telegram",
     navOverview: "Product overview",
     socialProof: "10,000+ users building habits with their companion",
-    proof: ["AI companion", "memory", "proactive nudges", "Telegram nearby"],
-    presencePills: ["breathing", "eye tracking", "mood shift", "daily memory"],
+    proof: [AI_COMPANION_LABEL, "memory", PROACTIVE_NUDGES_LABEL, "Telegram nearby"],
+    presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
     sceneCards: [
       {
         title: "Morning focus",
@@ -317,7 +346,7 @@ const landingCopy = {
         tone: "coach",
       },
       {
-        title: "Telegram retention",
+        title: TELEGRAM_RETENTION_LABEL,
         body: "Quick water or medication logging without opening the app.",
         tone: "warm",
       },
@@ -325,12 +354,12 @@ const landingCopy = {
     heroStats: [
       {
         label: "Calories",
-        value: "1 420 / 2 050",
+        value: CALORIE_STAT_VALUE,
         progress: 69,
-        color: "#0f766e",
+        color: CALORIE_STAT_COLOR,
       },
-      { label: "Water", value: "1.5 / 2.2 l", progress: 68, color: "#0891b2" },
-      { label: "Protein", value: "96 / 120 g", progress: 80, color: "#2563eb" },
+      { label: "Water", value: WATER_STAT_VALUE, progress: 68, color: WATER_STAT_COLOR },
+      { label: "Protein", value: PROTEIN_STAT_VALUE_EN, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
       name: "Diana",
@@ -341,12 +370,12 @@ const landingCopy = {
     },
     quickActions: ["Food photo", "Barcode", "Repeat yesterday", "Manual entry"],
     featureRail: [
-      { title: "AI food scanner", body: "Food photo and quick analysis" },
-      { title: "Hydration tracker", body: "Water without manual chaos" },
-      { title: "Calorie & macro", body: "Calories, protein, fats, carbs" },
-      { title: "AI coaching", body: "Guidance for your day" },
-      { title: "Progress insights", body: "Changes without dry stats" },
-      { title: "Smart reminders", body: "Water, meals, medication, habits" },
+      { title: FOOD_SCANNER_TITLE, body: "Food photo and quick analysis" },
+      { title: HYDRATION_TRACKER_TITLE, body: "Water without manual chaos" },
+      { title: CALORIE_MACRO_TITLE, body: "Calories, protein, fats, carbs" },
+      { title: AI_COACHING_TITLE, body: "Guidance for your day" },
+      { title: PROGRESS_INSIGHTS_TITLE, body: "Changes without dry stats" },
+      { title: SMART_REMINDERS_TITLE, body: "Water, meals, medication, habits" },
     ],
     sectionEyebrow: "Clear next actions in 5 seconds",
     ecosystemTitle: "Not a calculator, a companion platform",
@@ -354,7 +383,7 @@ const landingCopy = {
       "Smart Nutrition connects nutrition, gamification, analytics, hydration, progress, and community into one calm daily flow.",
     ecosystem: [
       {
-        title: "AI companion",
+        title: AI_COMPANION_LABEL,
         body: "Follows the cursor, reacts to actions, celebrates wins, and warns about risks without pressure.",
       },
       {
@@ -366,7 +395,7 @@ const landingCopy = {
         body: "Streaks, XP, levels, achievements, day-off protection, and gentle tasks that keep momentum.",
       },
       {
-        title: "Community food hub",
+        title: COMMUNITY_FOOD_HUB_TITLE,
         body: "Recipes, comments, saves, ratings, and meal moderation before publishing.",
       },
     ],
@@ -394,7 +423,7 @@ const landingCopy = {
       "Recipes",
       "Articles",
       "Moderators",
-      "Admin panel",
+      ADMIN_PANEL_LABEL,
     ],
     mobileTitle: "Works as a responsive web app and PWA",
     mobileBody:
@@ -408,6 +437,17 @@ const landingCopy = {
 } as const;
 
 type LandingCopy = (typeof landingCopy)[LandingLanguage];
+
+const getLandingCopy = (language: LandingLanguage): LandingCopy => {
+  switch (language) {
+    case "uk":
+      return landingCopy.uk;
+    case "pl":
+      return landingCopy.pl;
+    case "en":
+      return landingCopy.en;
+  }
+};
 
 const getLandingScene = (isDarkMode: boolean) => ({
   pageBackground: isDarkMode
@@ -440,20 +480,20 @@ const getLandingScene = (isDarkMode: boolean) => ({
     : "linear-gradient(rgba(15,118,110,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.08) 1px, transparent 1px)",
   proofBorder: isDarkMode ? "rgba(255,255,255,0.24)" : "rgba(15,118,110,0.18)",
   proofColor: isDarkMode ? "rgba(255,255,255,0.88)" : "rgba(15,23,42,0.76)",
-  proofBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.56)",
-  mobilePanelBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+  proofBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.56)",
+  mobilePanelBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.7)",
   mobilePanelBorder: isDarkMode
-    ? "rgba(255,255,255,0.14)"
+    ? GLASS_WHITE_14
     : "rgba(20,184,166,0.16)",
   secondaryButtonColor: isDarkMode ? "#ffffff" : "#0f766e",
   secondaryButtonBorder: isDarkMode
     ? "rgba(255,255,255,0.32)"
     : "rgba(15,118,110,0.24)",
-  secondaryButtonBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.72)",
+  secondaryButtonBg: isDarkMode ? GLASS_WHITE_08 : GLASS_WHITE_72,
   socialColor: isDarkMode ? "rgba(255,255,255,0.76)" : "rgba(15,23,42,0.7)",
   sceneBackdrop: isDarkMode
     ? "linear-gradient(135deg, rgba(2,6,23,0.52), rgba(20,184,166,0.16) 48%, rgba(132,204,22,0.16))"
-    : "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(186,230,253,0.28) 46%, rgba(187,247,208,0.42))",
+    : `linear-gradient(135deg, ${GLASS_WHITE_72}, rgba(186,230,253,0.28) 46%, rgba(187,247,208,0.42))`,
   sceneBorder: isDarkMode ? "rgba(94,234,212,0.18)" : "rgba(20,184,166,0.18)",
   avatarStageBg: isDarkMode
     ? "radial-gradient(circle at 50% 40%, rgba(94,234,212,0.18), rgba(20,184,166,0.12) 52%, rgba(2,6,23,0.74) 100%)"
@@ -461,18 +501,18 @@ const getLandingScene = (isDarkMode: boolean) => ({
   avatarStageShadow: isDarkMode
     ? "0 34px 120px rgba(20,184,166,0.24), 0 0 80px rgba(132,204,22,0.12), inset 0 1px 0 rgba(255,255,255,0.16)"
     : "0 34px 120px rgba(14,165,233,0.22), 0 0 90px rgba(34,197,94,0.14), inset 0 1px 0 rgba(255,255,255,0.86)",
-  presenceBg: isDarkMode ? "rgba(15,23,42,0.78)" : "rgba(255,255,255,0.72)",
+  presenceBg: isDarkMode ? "rgba(15,23,42,0.78)" : GLASS_WHITE_72,
   presenceColor: isDarkMode ? "#ffffff" : "#0f766e",
   presenceBorder: isDarkMode ? "rgba(255,255,255,0.18)" : "rgba(15,118,110,0.18)",
   sceneCardBg: isDarkMode ? "rgba(15,23,42,0.76)" : "rgba(255,255,255,0.78)",
   sceneCardText: isDarkMode ? "#f8fafc" : "#102a43",
   sceneCardMuted: isDarkMode ? "rgba(226,232,240,0.74)" : "#475569",
-  sceneIconBg: isDarkMode ? "rgba(2,6,23,0.74)" : "rgba(255,255,255,0.72)",
+  sceneIconBg: isDarkMode ? "rgba(2,6,23,0.74)" : GLASS_WHITE_72,
   sceneCardShadow: isDarkMode
     ? "0 18px 56px rgba(0,0,0,0.36)"
     : "0 18px 56px rgba(15,23,42,0.18)",
   featureRailBg: isDarkMode ? "rgba(2,6,23,0.58)" : "rgba(255,255,255,0.64)",
-  featureRailBorder: isDarkMode ? "rgba(255,255,255,0.14)" : "rgba(15,118,110,0.16)",
+  featureRailBorder: isDarkMode ? GLASS_WHITE_14 : "rgba(15,118,110,0.16)",
   featureCardBg: isDarkMode ? "rgba(15,23,42,0.68)" : "rgba(255,255,255,0.58)",
   featureCardBorder: isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(15,118,110,0.12)",
   featureIconBg: isDarkMode ? "rgba(163,230,53,0.1)" : "rgba(20,184,166,0.1)",
@@ -484,7 +524,7 @@ const getLandingScene = (isDarkMode: boolean) => ({
   featureMuted: isDarkMode ? "rgba(255,255,255,0.62)" : "rgba(15,23,42,0.58)",
   portalRing: isDarkMode
     ? "radial-gradient(circle, transparent 46%, rgba(163,230,53,0.22) 47%, rgba(94,234,212,0.1) 52%, transparent 58%)"
-    : "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.72) 43%, rgba(14,165,233,0.22) 50%, transparent 58%)",
+    : `radial-gradient(circle, transparent 42%, ${GLASS_WHITE_72} 43%, rgba(14,165,233,0.22) 50%, transparent 58%)`,
   heroLandscape: isDarkMode
     ? "linear-gradient(180deg, transparent 0%, rgba(5,46,22,0.3) 40%, rgba(2,6,23,0.88) 100%)"
     : "linear-gradient(180deg, transparent 0%, rgba(224,242,254,0.44) 38%, rgba(240,253,250,0.78) 100%)",
@@ -493,8 +533,8 @@ const getLandingScene = (isDarkMode: boolean) => ({
     : "radial-gradient(circle at 88% 10%, rgba(34,197,94,0.18), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(236,254,255,0.82) 52%, rgba(220,252,231,0.9) 100%)",
   analyticsText: isDarkMode ? "#ffffff" : "#102a43",
   analyticsMuted: isDarkMode ? "rgba(255,255,255,0.66)" : "rgba(15,23,42,0.62)",
-  analyticsCardBg: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
-  analyticsCardBorder: isDarkMode ? "rgba(255,255,255,0.14)" : "rgba(15,118,110,0.14)",
+  analyticsCardBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.7)",
+  analyticsCardBorder: isDarkMode ? GLASS_WHITE_14 : "rgba(15,118,110,0.14)",
   analyticsAdviceBg: isDarkMode ? "rgba(20,184,166,0.14)" : "rgba(20,184,166,0.1)",
   analyticsAdviceBorder: isDarkMode ? "rgba(94,234,212,0.22)" : "rgba(15,118,110,0.16)",
   phoneShellBg: isDarkMode ? "#020617" : "#e2e8f0",
@@ -502,22 +542,6 @@ const getLandingScene = (isDarkMode: boolean) => ({
   phoneCardBg: isDarkMode ? "rgba(15,23,42,0.82)" : "#ffffff",
   phoneCardBorder: isDarkMode ? "rgba(148,163,184,0.22)" : "rgba(15,23,42,0.08)",
 });
-
-const quickActionIcons = [
-  Camera,
-  ScanBarcode,
-  RotateCcw,
-  MessageSquareText,
-] as const;
-
-const featureRailIcons = [
-  Camera,
-  Droplets,
-  Utensils,
-  Bot,
-  HeartPulse,
-  Bell,
-] as const;
 
 const companionKinds: AssistantCompanionKind[] = [
   "robot",
@@ -528,6 +552,36 @@ const companionKinds: AssistantCompanionKind[] = [
 ];
 
 const moodCycle: AssistantAvatarMood[] = ["happy", "coach", "celebrate"];
+
+const getMoodByIndex = (index: number): AssistantAvatarMood => {
+  switch (index % moodCycle.length) {
+    case 0:
+      return "happy";
+    case 1:
+      return "coach";
+    case 2:
+      return "celebrate";
+    default:
+      return "happy";
+  }
+};
+
+const getCompanionKindByIndex = (index: number): AssistantCompanionKind => {
+  switch (index % companionKinds.length) {
+    case 0:
+      return "robot";
+    case 1:
+      return "cat";
+    case 2:
+      return "dog";
+    case 3:
+      return "capybara";
+    case 4:
+      return "dragon";
+    default:
+      return "robot";
+  }
+};
 
 const clamp = (value: number, min = -1, max = 1) =>
   Math.max(min, Math.min(max, value));
@@ -575,8 +629,6 @@ const iconButtonSx = {
   borderColor: "rgba(15,23,42,0.12)",
 } as const;
 
-const companionSceneIcons = [HeartPulse, Bell, Droplets] as const;
-
 const sceneToneSx = {
   calm: {
     border: "rgba(132,204,22,0.34)",
@@ -594,6 +646,64 @@ const sceneToneSx = {
     icon: "#d97706",
   },
 } as const;
+
+const getCompanionSceneIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return HeartPulse;
+    case 1:
+      return Bell;
+    case 2:
+      return Droplets;
+    default:
+      return Sparkles;
+  }
+};
+
+const getFeatureRailIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return Camera;
+    case 1:
+      return Droplets;
+    case 2:
+      return Utensils;
+    case 3:
+      return Bot;
+    case 4:
+      return HeartPulse;
+    case 5:
+      return Bell;
+    default:
+      return Sparkles;
+  }
+};
+
+const getQuickActionIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return Camera;
+    case 1:
+      return ScanBarcode;
+    case 2:
+      return RotateCcw;
+    case 3:
+      return MessageSquareText;
+    default:
+      return Sparkles;
+  }
+};
+
+const getSceneToneSx = (tone: keyof typeof sceneToneSx) => {
+  switch (tone) {
+    case "calm":
+      return sceneToneSx.calm;
+    case "coach":
+      return sceneToneSx.coach;
+    case "warm":
+      return sceneToneSx.warm;
+  }
+};
 
 const landingGlassPanelSx = {
   borderRadius: 1,
@@ -620,8 +730,8 @@ const CompanionExperienceScene = ({
   const lookOffset = usePointerLook();
   const [moodIndex, setMoodIndex] = useState(0);
   const [companionIndex, setCompanionIndex] = useState(0);
-  const mood = moodCycle[moodIndex] ?? "happy";
-  const companion = companionKinds[companionIndex] ?? "robot";
+  const mood = getMoodByIndex(moodIndex);
+  const companion = getCompanionKindByIndex(companionIndex);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -766,8 +876,8 @@ const CompanionExperienceScene = ({
       </Stack>
 
       {copy.sceneCards.map((card, index) => {
-        const Icon = companionSceneIcons[index] ?? Sparkles;
-        const tone = sceneToneSx[card.tone];
+        const Icon = getCompanionSceneIcon(index);
+        const tone = getSceneToneSx(card.tone);
         const placement =
           index === 0
             ? {
@@ -809,7 +919,7 @@ const CompanionExperienceScene = ({
               borderRadius: 1,
               border: `1px solid ${tone.border}`,
               bgcolor: isDarkMode ? scene.sceneCardBg : tone.bg,
-              backdropFilter: "blur(14px)",
+              backdropFilter: GLASS_BLUR_14,
               boxShadow: scene.sceneCardShadow,
               ...placement,
             }}
@@ -919,7 +1029,7 @@ const Hero = ({
           color: scene.eyebrowColor,
           border: `1px solid ${scene.eyebrowBorder}`,
           fontWeight: 900,
-          backdropFilter: "blur(14px)",
+          backdropFilter: GLASS_BLUR_14,
         }}
       />
       <Typography
@@ -1019,7 +1129,7 @@ const Hero = ({
           borderRadius: 1,
           border: `1px solid ${scene.mobilePanelBorder}`,
           backgroundColor: scene.mobilePanelBg,
-          backdropFilter: "blur(14px)",
+          backdropFilter: GLASS_BLUR_14,
         }}
       >
         <AssistantAvatar
@@ -1097,7 +1207,7 @@ const Hero = ({
                 borderRadius: "50%",
                 display: "grid",
                 placeItems: "center",
-                border: "2px solid rgba(255,255,255,0.72)",
+                border: `2px solid ${GLASS_WHITE_72}`,
                 color: "#ffffff",
                 fontSize: 12,
                 fontWeight: 900,
@@ -1151,7 +1261,7 @@ const Hero = ({
       }}
     >
       {copy.featureRail.map((feature, index) => {
-        const Icon = featureRailIcons[index] ?? Sparkles;
+        const Icon = getFeatureRailIcon(index);
 
         return (
         <Box
@@ -1229,7 +1339,7 @@ const QuickFoodPanel = ({
       </Typography>
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
         {copy.quickActions.map((action, index) => {
-          const Icon = quickActionIcons[index] ?? Sparkles;
+          const Icon = getQuickActionIcon(index);
 
           return (
             <Button
@@ -1645,7 +1755,7 @@ const FinalCta = ({
 const LandingPage = () => {
   const { appLanguage } = useLanguage();
   const { isDarkMode } = useAppColorMode();
-  const copy = landingCopy[appLanguage];
+  const copy = getLandingCopy(appLanguage);
   const scene = getLandingScene(isDarkMode);
 
   return (
