@@ -29,6 +29,8 @@ import {
 import { useMealActionFeedback } from "./useMealActionFeedback";
 
 const mealTypeOrder: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+const COMMON_KCAL_KEY = "common.kcal";
+const ALIGN_START = "flex-start";
 
 const overviewCopy = {
   uk: {
@@ -106,6 +108,80 @@ const overviewCopy = {
 } as const;
 
 type OverviewCopy = (typeof overviewCopy)[keyof typeof overviewCopy];
+
+const getOverviewCopy = (language: AppLanguage): OverviewCopy => {
+  switch (language) {
+    case "pl":
+      return overviewCopy.pl;
+    case "en":
+      return overviewCopy.en;
+    case "uk":
+    default:
+      return overviewCopy.uk;
+  }
+};
+
+const createEmptyMealGroups = (): Record<MealType, MealEntry[]> => ({
+  breakfast: [],
+  lunch: [],
+  dinner: [],
+  snack: [],
+});
+
+const addEntryToMealGroups = (
+  groups: Record<MealType, MealEntry[]>,
+  item: MealEntry
+) => {
+  switch (item.mealType) {
+    case "breakfast":
+      groups.breakfast.push(item);
+      return groups;
+    case "dinner":
+      groups.dinner.push(item);
+      return groups;
+    case "snack":
+      groups.snack.push(item);
+      return groups;
+    case "lunch":
+    default:
+      groups.lunch.push(item);
+      return groups;
+  }
+};
+
+const getMealEntries = (
+  groups: Record<MealType, MealEntry[]>,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "breakfast":
+      return groups.breakfast;
+    case "dinner":
+      return groups.dinner;
+    case "snack":
+      return groups.snack;
+    case "lunch":
+    default:
+      return groups.lunch;
+  }
+};
+
+const getMealLabel = (
+  labels: Record<MealType, string>,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "breakfast":
+      return labels.breakfast;
+    case "dinner":
+      return labels.dinner;
+    case "snack":
+      return labels.snack;
+    case "lunch":
+    default:
+      return labels.lunch;
+  }
+};
 
 const InlineEditPanel = ({
   item,
@@ -210,7 +286,7 @@ export const MealDayOverview = () => {
   const meal = useSelector((state: RootState) => state.meal);
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, t } = useLanguage();
-  const copy = overviewCopy[appLanguage];
+  const copy = getOverviewCopy(appLanguage);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [editingItem, setEditingItem] = useState<MealEntry | null>(null);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -278,16 +354,8 @@ export const MealDayOverview = () => {
 
   const groupedEntries = useMemo(() => {
     return todayEntries.reduce<Record<MealType, MealEntry[]>>(
-      (accumulator, item) => {
-        accumulator[item.mealType].push(item);
-        return accumulator;
-      },
-      {
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snack: [],
-      }
+      (accumulator, item) => addEntryToMealGroups(accumulator, item),
+      createEmptyMealGroups()
     );
   }, [todayEntries]);
 
@@ -378,7 +446,9 @@ export const MealDayOverview = () => {
     dispatch(
       publishCommunityPost({
         type: "experience",
-        title: `${mealLabels[mealType]} · ${calories.toFixed(0)} ${t("common.kcal")}`,
+        title: `${getMealLabel(mealLabels, mealType)} · ${calories.toFixed(0)} ${t(
+          COMMON_KCAL_KEY
+        )}`,
         body: `${copy.shared}: ${ingredients.join(", ")}. Protein: ${protein.toFixed(1)} ${t(
           "common.g"
         )}.`,
@@ -396,7 +466,7 @@ export const MealDayOverview = () => {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.2}
-            alignItems={{ xs: "flex-start", sm: "center" }}
+            alignItems={{ xs: ALIGN_START, sm: "center" }}
             justifyContent="space-between"
           >
             <Stack spacing={0.6}>
@@ -445,7 +515,7 @@ export const MealDayOverview = () => {
           ) : (
             <Stack spacing={1.5}>
               {mealTypeOrder.map((mealType) => {
-                const entries = groupedEntries[mealType];
+                const entries = getMealEntries(groupedEntries, mealType);
                 const mealCalories = entries.reduce(
                   (sum, item) =>
                     sum + (item.product.nutrients.calories * item.quantity) / 100,
@@ -467,11 +537,11 @@ export const MealDayOverview = () => {
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={1}
-                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        alignItems={{ xs: ALIGN_START, sm: "center" }}
                         justifyContent="space-between"
                       >
                         <Typography sx={{ fontWeight: 800 }}>
-                          {mealLabels[mealType]}
+                          {getMealLabel(mealLabels, mealType)}
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Button
@@ -498,7 +568,7 @@ export const MealDayOverview = () => {
                           <Chip
                             size="small"
                             label={`${entries.length} ${copy.items} / ${mealCalories.toFixed(0)} ${t(
-                              "common.kcal"
+                              COMMON_KCAL_KEY
                             )}`}
                           />
                         </Stack>
@@ -514,7 +584,7 @@ export const MealDayOverview = () => {
                               direction={{ xs: "column", sm: "row" }}
                               spacing={0.6}
                               justifyContent="space-between"
-                              alignItems={{ xs: "flex-start", sm: "center" }}
+                              alignItems={{ xs: ALIGN_START, sm: "center" }}
                               sx={{
                                 p: 1,
                                 borderRadius: 1,
@@ -533,7 +603,7 @@ export const MealDayOverview = () => {
                                     (item.product.nutrients.calories * item.quantity) /
                                     100
                                   ).toFixed(0)}{" "}
-                                  {t("common.kcal")}
+                                  {t(COMMON_KCAL_KEY)}
                                 </Typography>
                                 <Button
                                   size="small"

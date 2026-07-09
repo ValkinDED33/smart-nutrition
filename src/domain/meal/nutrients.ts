@@ -246,10 +246,7 @@ export const nutrientDefinitions: Record<NutrientKey, NutrientDefinition> = {
 export const nutrientKeys = Object.keys(nutrientDefinitions) as NutrientKey[];
 
 export const createEmptyNutrients = (): Nutrients =>
-  nutrientKeys.reduce((accumulator, key) => {
-    accumulator[key] = 0;
-    return accumulator;
-  }, {} as Nutrients);
+  Object.fromEntries(nutrientKeys.map((key) => [key, 0])) as Nutrients;
 
 export const hasMeaningfulNutrientValue = (value: number) => Math.abs(value) >= 0.001;
 
@@ -309,12 +306,48 @@ const englishNutrientLabels: Record<string, string> = {
   copper: "Copper",
 };
 
-export const getNutrientLabel = (key: NutrientKey, language: AppLanguage) => {
-  if (language === "en") {
-    return englishNutrientLabels[key] ?? String(key);
+const findNutrientDefinition = (key: NutrientKey) => {
+  for (const [definitionKey, definition] of Object.entries(nutrientDefinitions)) {
+    if (definitionKey === key) {
+      return definition;
+    }
   }
 
-  return nutrientDefinitions[key]?.label[language] ?? String(key);
+  return null;
+};
+
+const findEnglishNutrientLabel = (key: NutrientKey) => {
+  for (const [labelKey, label] of Object.entries(englishNutrientLabels)) {
+    if (labelKey === key) {
+      return label;
+    }
+  }
+
+  return null;
+};
+
+const getLocalizedNutrientLabel = (
+  definition: NutrientDefinition,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return definition.label.pl;
+    case "uk":
+    case "en":
+    default:
+      return definition.label.uk;
+  }
+};
+
+export const getNutrientLabel = (key: NutrientKey, language: AppLanguage) => {
+  if (language === "en") {
+    return findEnglishNutrientLabel(key) ?? String(key);
+  }
+
+  const definition = findNutrientDefinition(key);
+
+  return definition ? getLocalizedNutrientLabel(definition, language) : String(key);
 };
 
 const nutritionSectionTitles: Record<NutritionSectionId, Record<AppLanguage, string>> = {
@@ -350,10 +383,43 @@ const nutritionSectionTitles: Record<NutritionSectionId, Record<AppLanguage, str
   },
 };
 
+const getNutritionSectionTitles = (sectionId: NutritionSectionId) => {
+  switch (sectionId) {
+    case "proteins":
+      return nutritionSectionTitles.proteins;
+    case "fats":
+      return nutritionSectionTitles.fats;
+    case "vitamins":
+      return nutritionSectionTitles.vitamins;
+    case "minerals":
+      return nutritionSectionTitles.minerals;
+    case "hydration":
+      return nutritionSectionTitles.hydration;
+    case "carbs":
+    default:
+      return nutritionSectionTitles.carbs;
+  }
+};
+
+const getNutritionTitleByLanguage = (
+  titles: Record<AppLanguage, string>,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return titles.pl;
+    case "en":
+      return titles.en;
+    case "uk":
+    default:
+      return titles.uk;
+  }
+};
+
 export const getNutritionSectionTitle = (
   sectionId: NutritionSectionId,
   language: AppLanguage
-) => nutritionSectionTitles[sectionId]?.[language] ?? String(sectionId);
+) => getNutritionTitleByLanguage(getNutritionSectionTitles(sectionId), language);
 
 export const nutritionSections: Array<{
   id: NutritionSectionId;
