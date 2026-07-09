@@ -5,6 +5,40 @@ import type { PremiumPlanId } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
+const FREE_PLAN_NAME = "Free";
+const PRO_PLAN_NAME = "Pro";
+const COACH_PLAN_NAME = "Coach";
+const FREE_PLAN_PRICE = "0";
+const PRO_PLAN_PRICE = "$7.99 / month";
+const COACH_PLAN_PRICE = "$14.99 / month";
+const FOOD_WATER_TRACKING_FEATURE = "Food + water tracking";
+const WEIGHT_BASICS_FEATURE = "Weight basics";
+const COMMUNITY_FEATURE = "Community";
+const SMART_AI_PRO_FEATURE = "Smart AI Pro";
+const PHOTO_FOOD_AI_FEATURE = "Photo Food AI";
+const WEEKLY_REPORTS_FEATURE = "Weekly reports";
+const COACH_SUMMARY_FEATURE = "Coach summary";
+const HABIT_SCORE_FEATURE = "Habit score";
+const PRIORITY_REMINDERS_FEATURE = "Priority reminders";
+
+const premiumPlanCopy = {
+  free: {
+    name: FREE_PLAN_NAME,
+    price: FREE_PLAN_PRICE,
+    features: [FOOD_WATER_TRACKING_FEATURE, WEIGHT_BASICS_FEATURE, COMMUNITY_FEATURE],
+  },
+  pro: {
+    name: PRO_PLAN_NAME,
+    price: PRO_PLAN_PRICE,
+    features: [SMART_AI_PRO_FEATURE, PHOTO_FOOD_AI_FEATURE, WEEKLY_REPORTS_FEATURE],
+  },
+  coach: {
+    name: COACH_PLAN_NAME,
+    price: COACH_PLAN_PRICE,
+    features: [COACH_SUMMARY_FEATURE, HABIT_SCORE_FEATURE, PRIORITY_REMINDERS_FEATURE],
+  },
+} as const;
+
 const premiumCopy = {
   uk: {
     title: "Premium",
@@ -15,23 +49,6 @@ const premiumCopy = {
     unavailable:
       "Доступ керується сервером. Якщо тариф зміниться, статус оновиться автоматично після синхронізації акаунта.",
     current: "Current",
-    plans: {
-      free: {
-        name: "Free",
-        price: "0",
-        features: ["Food + water tracking", "Weight basics", "Community"],
-      },
-      pro: {
-        name: "Pro",
-        price: "$7.99 / month",
-        features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
-      },
-      coach: {
-        name: "Coach",
-        price: "$14.99 / month",
-        features: ["Coach summary", "Habit score", "Priority reminders"],
-      },
-    },
   },
   pl: {
     title: "Premium",
@@ -42,23 +59,6 @@ const premiumCopy = {
     unavailable:
       "Dostęp jest zarządzany przez serwer. Po zmianie planu status odświeży się automatycznie po synchronizacji konta.",
     current: "Current",
-    plans: {
-      free: {
-        name: "Free",
-        price: "0",
-        features: ["Food + water tracking", "Weight basics", "Community"],
-      },
-      pro: {
-        name: "Pro",
-        price: "$7.99 / month",
-        features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
-      },
-      coach: {
-        name: "Coach",
-        price: "$14.99 / month",
-        features: ["Coach summary", "Habit score", "Priority reminders"],
-      },
-    },
   },
   en: {
     title: "Premium",
@@ -69,23 +69,6 @@ const premiumCopy = {
     unavailable:
       "Access is managed by the server. When the plan changes, status updates automatically after account sync.",
     current: "Current",
-    plans: {
-      free: {
-        name: "Free",
-        price: "0",
-        features: ["Food + water tracking", "Weight basics", "Community"],
-      },
-      pro: {
-        name: "Pro",
-        price: "$7.99 / month",
-        features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
-      },
-      coach: {
-        name: "Coach",
-        price: "$14.99 / month",
-        features: ["Coach summary", "Habit score", "Priority reminders"],
-      },
-    },
   },
 } as const;
 
@@ -97,9 +80,42 @@ const premiumLocaleByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getPremiumCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return premiumCopy.uk;
+    case "pl":
+      return premiumCopy.pl;
+    case "en":
+      return premiumCopy.en;
+  }
+};
+
+const getPremiumLocale = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return premiumLocaleByLanguage.uk;
+    case "pl":
+      return premiumLocaleByLanguage.pl;
+    case "en":
+      return premiumLocaleByLanguage.en;
+  }
+};
+
+const getPremiumPlanCopy = (plan: PremiumPlanId) => {
+  switch (plan) {
+    case "free":
+      return premiumPlanCopy.free;
+    case "pro":
+      return premiumPlanCopy.pro;
+    case "coach":
+      return premiumPlanCopy.coach;
+  }
+};
+
 const formatDate = (value: string | null, language: AppLanguage) =>
   value
-    ? new Date(value).toLocaleDateString(premiumLocaleByLanguage[language], {
+    ? new Date(value).toLocaleDateString(getPremiumLocale(language), {
         dateStyle: "medium",
       })
     : null;
@@ -107,7 +123,7 @@ const formatDate = (value: string | null, language: AppLanguage) =>
 export const PremiumAccessCard = () => {
   const premium = useSelector((state: RootState) => state.profile.premium);
   const { appLanguage } = useLanguage();
-  const copy = premiumCopy[appLanguage];
+  const copy = getPremiumCopy(appLanguage);
   const isPaid = premium.status === "trial" || premium.status === "active";
 
   return (
@@ -130,7 +146,7 @@ export const PremiumAccessCard = () => {
 
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Chip color={isPaid ? "success" : "default"} label={`${copy.status}: ${premium.status}`} />
-          <Chip label={`${copy.current}: ${copy.plans[premium.plan].name}`} variant="outlined" />
+          <Chip label={`${copy.current}: ${getPremiumPlanCopy(premium.plan).name}`} variant="outlined" />
           {premium.trialEndsAt ? (
             <Chip
               label={`${copy.trialEnds}: ${formatDate(premium.trialEndsAt, appLanguage)}`}
@@ -147,7 +163,7 @@ export const PremiumAccessCard = () => {
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
           {planOrder.map((plan) => {
-            const planCopy = copy.plans[plan];
+            const planCopy = getPremiumPlanCopy(plan);
             const selected = premium.plan === plan;
 
             return (
