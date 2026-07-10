@@ -9,6 +9,29 @@ import { useAssistantStore } from "../state/assistantStore";
 
 const TRANSITION_MS = 600;
 
+const getRuleForStyle = (
+  action: AssistantAction,
+  style: ReturnType<typeof getUserStyle>
+) => {
+  const actionRules =
+    Object.entries(assistantRules).find(([ruleAction]) => ruleAction === action)?.[1] ??
+    null;
+
+  if (!actionRules) {
+    return null;
+  }
+
+  switch (style) {
+    case "child":
+      return actionRules.child ?? null;
+    case "teen":
+      return actionRules.teen ?? null;
+    case "adult":
+    default:
+      return actionRules.adult ?? null;
+  }
+};
+
 export const resolveAssistantRule = (
   action: AssistantAction,
   user: Partial<UserContext> & { age?: number | null }
@@ -18,7 +41,7 @@ export const resolveAssistantRule = (
 
   return {
     style,
-    rule: assistantRules[action]?.[style] ?? null,
+    rule: getRuleForStyle(action, style),
   };
 };
 

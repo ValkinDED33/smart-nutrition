@@ -38,6 +38,48 @@ const moodGradients: Record<AssistantAvatarMood, string> = {
     "radial-gradient(circle at 35% 26%, rgba(255,255,255,0.48), transparent 25%), linear-gradient(135deg, #16a34a 0%, #f59e0b 48%, #2563eb 100%)",
 };
 
+const getCompanionVisual = (variant: AssistantAvatarProps["variant"]) => {
+  switch (variant) {
+    case "cat":
+      return companionVisuals.cat;
+    case "dog":
+      return companionVisuals.dog;
+    case "fox":
+      return companionVisuals.fox;
+    case "panda":
+      return companionVisuals.panda;
+    case "owl":
+      return companionVisuals.owl;
+    case "human":
+      return companionVisuals.human;
+    case "capybara":
+      return companionVisuals.capybara;
+    case "dragon":
+      return companionVisuals.dragon;
+    case "robot":
+    default:
+      return companionVisuals.robot;
+  }
+};
+
+const getMoodGradient = (mood: AssistantAvatarMood) => {
+  switch (mood) {
+    case "happy":
+      return moodGradients.happy;
+    case "coach":
+      return moodGradients.coach;
+    case "concerned":
+      return moodGradients.concerned;
+    case "sleepy":
+      return moodGradients.sleepy;
+    case "celebrate":
+      return moodGradients.celebrate;
+    case "idle":
+    default:
+      return moodGradients.idle;
+  }
+};
+
 const getMotionState = ({
   active,
   mood,
@@ -64,7 +106,7 @@ export const AssistantAvatar = ({
   lookOffset = { x: 0, y: 0 },
   active = false,
 }: AssistantAvatarProps) => {
-  const visual = companionVisuals[variant];
+  const visual = getCompanionVisual(variant);
   const initial = name.trim()[0]?.toUpperCase() ?? "A";
   const eyeSize = Math.max(round(size * 0.1), 4);
   const eyeMovement = Math.max(round(size * 0.035), 2);
@@ -95,7 +137,7 @@ export const AssistantAvatar = ({
         color: "white",
         fontWeight: 900,
         fontSize: Math.max(round(size * 0.22), 12),
-        background: shouldUseMoodGradient ? moodGradients[mood] : visual.face,
+        background: shouldUseMoodGradient ? getMoodGradient(mood) : visual.face,
         boxShadow:
           mood === "concerned"
             ? "0 18px 36px rgba(234, 88, 12, 0.22)"

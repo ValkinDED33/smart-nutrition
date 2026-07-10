@@ -143,14 +143,41 @@ const copyByLanguage = {
   },
 } as const;
 
+type MotivationCopy = (typeof copyByLanguage)[keyof typeof copyByLanguage];
 type PendingAction = "free" | "paid" | "reset" | null;
+const MOTIVATION_TEXT_SECONDARY = "text.secondary";
+const MOTIVATION_CARD_BORDER = "1px solid var(--sn-border-soft)";
+
+const getMotivationCopy = (language: AppLanguage): MotivationCopy => {
+  switch (language) {
+    case "uk":
+      return copyByLanguage.uk;
+    case "pl":
+      return copyByLanguage.pl;
+    case "en":
+    default:
+      return copyByLanguage.en;
+  }
+};
+
+const getMotivationLocale = (language: AppLanguage): string => {
+  switch (language) {
+    case "uk":
+      return "uk-UA";
+    case "pl":
+      return "pl-PL";
+    case "en":
+    default:
+      return "en-US";
+  }
+};
 
 export const MotivationHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile);
   const { motivation, goal } = profile;
   const { appLanguage } = useLanguage();
-  const copy = copyByLanguage[appLanguage];
+  const copy = getMotivationCopy(appLanguage);
   const profileAction = useProfileCloudAction();
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
@@ -168,12 +195,7 @@ export const MotivationHubCard = () => {
   const freeDayAvailable = canUseFreeDay(motivation.freeDayLastUsedAt);
   const paidDayAvailable = canUsePaidDay(motivation.paidDayLastUsedMonth);
   const levelProgress = ((motivation.points % 120) / 120) * 100;
-  const localeByLanguage: Record<AppLanguage, string> = {
-    uk: "uk-UA",
-    pl: "pl-PL",
-    en: "en-US",
-  };
-  const locale = localeByLanguage[appLanguage];
+  const locale = getMotivationLocale(appLanguage);
 
   const saveMotivationAction = async (
     action: ReturnType<
@@ -268,7 +290,7 @@ export const MotivationHubCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: MOTIVATION_CARD_BORDER,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
@@ -277,7 +299,7 @@ export const MotivationHubCard = () => {
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography color={MOTIVATION_TEXT_SECONDARY}>{copy.subtitle}</Typography>
         </Stack>
 
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -336,7 +358,7 @@ export const MotivationHubCard = () => {
                 sx={{
                   p: 2,
                   borderRadius: 1,
-                  border: "1px solid var(--sn-border-soft)",
+                  border: MOTIVATION_CARD_BORDER,
                   backgroundColor: "var(--sn-surface-elevated)",
                 }}
               >
@@ -347,7 +369,7 @@ export const MotivationHubCard = () => {
                 >
                   <Stack spacing={0.6}>
                     <Typography sx={{ fontWeight: 800 }}>{localizedTask.title}</Typography>
-                    <Typography color="text.secondary">
+                    <Typography color={MOTIVATION_TEXT_SECONDARY}>
                       {localizedTask.description}
                     </Typography>
                     <Chip
@@ -448,11 +470,11 @@ export const MotivationHubCard = () => {
                 <Typography sx={{ fontWeight: 700 }}>
                   {localizedAchievement.title}
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography color={MOTIVATION_TEXT_SECONDARY}>
                   {achievement.progress}/{achievement.target}
                 </Typography>
               </Stack>
-              <Typography color="text.secondary">
+              <Typography color={MOTIVATION_TEXT_SECONDARY}>
                 {localizedAchievement.description}
               </Typography>
               <LinearProgress
@@ -471,7 +493,7 @@ export const MotivationHubCard = () => {
             {copy.recentHistory}
           </Typography>
           {motivation.history.length === 0 ? (
-            <Typography color="text.secondary">{copy.emptyHistory}</Typography>
+            <Typography color={MOTIVATION_TEXT_SECONDARY}>{copy.emptyHistory}</Typography>
           ) : (
             motivation.history.slice(0, 5).map((item) => {
               const localizedTask = getLocalizedMotivationTaskCopy({
@@ -488,7 +510,7 @@ export const MotivationHubCard = () => {
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    border: "1px solid var(--sn-border-soft)",
+                    border: MOTIVATION_CARD_BORDER,
                     backgroundColor: "var(--sn-surface-elevated)",
                   }}
                 >
@@ -496,11 +518,11 @@ export const MotivationHubCard = () => {
                     <Typography sx={{ fontWeight: 700 }}>
                       {localizedTask.title}
                     </Typography>
-                    <Typography color="text.secondary">
+                    <Typography color={MOTIVATION_TEXT_SECONDARY}>
                       {item.skipped ? 0 : item.pointsEarned} {copy.pointsSuffix}
                     </Typography>
                   </Stack>
-                  <Typography color="text.secondary">
+                  <Typography color={MOTIVATION_TEXT_SECONDARY}>
                     {item.skipped
                       ? copy.skipped
                       : new Date(item.completedAt).toLocaleString(locale)}
@@ -523,7 +545,7 @@ export const MotivationHubCard = () => {
           >
             <Stack spacing={1.5}>
               <Typography sx={{ fontWeight: 900 }}>{confirmTitle}</Typography>
-              <Typography color="text.secondary">{confirmBody}</Typography>
+              <Typography color={MOTIVATION_TEXT_SECONDARY}>{confirmBody}</Typography>
               <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
                 <Button onClick={() => setPendingAction(null)}>{copy.cancel}</Button>
                 <Button

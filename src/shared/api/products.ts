@@ -1,5 +1,9 @@
 import type { NutrientKey, Product, ProductSource } from "@domain/products/types";
-import { createEmptyNutrients, type NutrientUnit } from "@domain/meal/nutrients";
+import {
+  createEmptyNutrients,
+  setNutrientValue,
+  type NutrientUnit,
+} from "@domain/meal/nutrients";
 import {
   getRemoteAuthBaseUrl,
   isCloudSyncActive,
@@ -95,7 +99,11 @@ const readProduct = (value: unknown): Product | null => {
       : {};
 
   (Object.keys(nutrients) as NutrientKey[]).forEach((key) => {
-    nutrients[key] = Math.max(toNumber(rawNutrients[key]), 0);
+    const rawValue = Object.entries(rawNutrients).find(
+      ([nutrientKey]) => nutrientKey === key
+    )?.[1];
+
+    setNutrientValue(nutrients, key, Math.max(toNumber(rawValue), 0));
   });
 
   return {

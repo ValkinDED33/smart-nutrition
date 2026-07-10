@@ -1,4 +1,6 @@
 import type {
+  AssistantDietFriction,
+  AssistantMotivationStyle,
   AssistantOnboardingProfile,
 } from "@domain/profile/types";
 import type { AppLanguage } from "@shared/types/i18n";
@@ -220,27 +222,170 @@ const personalizationCopy = {
   },
 } as const;
 
+type PersonalizationCopy = (typeof personalizationCopy)[keyof typeof personalizationCopy];
+
+const getPersonalizationCopy = (language: AppLanguage): PersonalizationCopy => {
+  switch (language) {
+    case "uk":
+      return personalizationCopy.uk;
+    case "pl":
+      return personalizationCopy.pl;
+    case "en":
+    default:
+      return personalizationCopy.en;
+  }
+};
+
+const getFrictionCopy = (
+  copy: PersonalizationCopy,
+  friction: AssistantDietFriction
+): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return copy.friction.emotional_eating;
+    case "chaotic_schedule":
+      return copy.friction.chaotic_schedule;
+    case "evening_snacking":
+      return copy.friction.evening_snacking;
+    case "low_energy":
+      return copy.friction.low_energy;
+    case "social_pressure":
+      return copy.friction.social_pressure;
+    case "unknown":
+    default:
+      return copy.friction.unknown;
+  }
+};
+
+const getMotivationCopy = (
+  copy: PersonalizationCopy,
+  style: AssistantMotivationStyle
+): string => {
+  switch (style) {
+    case "direct":
+      return copy.motivation.direct;
+    case "energetic":
+      return copy.motivation.energetic;
+    case "gentle":
+    default:
+      return copy.motivation.gentle;
+  }
+};
+
+const getHomeCopy = (
+  copy: PersonalizationCopy,
+  friction: AssistantDietFriction
+): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return copy.home.emotional_eating;
+    case "chaotic_schedule":
+      return copy.home.chaotic_schedule;
+    case "evening_snacking":
+      return copy.home.evening_snacking;
+    case "low_energy":
+      return copy.home.low_energy;
+    case "social_pressure":
+      return copy.home.social_pressure;
+    case "unknown":
+    default:
+      return copy.home.unknown;
+  }
+};
+
+const getActionCopy = (
+  copy: PersonalizationCopy,
+  style: AssistantMotivationStyle
+): string => {
+  switch (style) {
+    case "direct":
+      return copy.action.direct;
+    case "energetic":
+      return copy.action.energetic;
+    case "gentle":
+    default:
+      return copy.action.gentle;
+  }
+};
+
+const getNotificationCopy = (
+  copy: PersonalizationCopy,
+  style: AssistantMotivationStyle
+): string => {
+  switch (style) {
+    case "direct":
+      return copy.notification.direct;
+    case "energetic":
+      return copy.notification.energetic;
+    case "gentle":
+    default:
+      return copy.notification.gentle;
+  }
+};
+
+const getRecommendationCopy = (
+  copy: PersonalizationCopy,
+  friction: AssistantDietFriction
+): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return copy.recommendation.emotional_eating;
+    case "chaotic_schedule":
+      return copy.recommendation.chaotic_schedule;
+    case "evening_snacking":
+      return copy.recommendation.evening_snacking;
+    case "low_energy":
+      return copy.recommendation.low_energy;
+    case "social_pressure":
+      return copy.recommendation.social_pressure;
+    case "unknown":
+    default:
+      return copy.recommendation.unknown;
+  }
+};
+
+const getReportCopy = (
+  copy: PersonalizationCopy,
+  friction: AssistantDietFriction
+): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return copy.report.emotional_eating;
+    case "chaotic_schedule":
+      return copy.report.chaotic_schedule;
+    case "evening_snacking":
+      return copy.report.evening_snacking;
+    case "low_energy":
+      return copy.report.low_energy;
+    case "social_pressure":
+      return copy.report.social_pressure;
+    case "unknown":
+    default:
+      return copy.report.unknown;
+  }
+};
+
 export const buildAssistantPersonalizationPlan = (
   onboarding: AssistantOnboardingProfile,
   language: AppLanguage
 ): AssistantPersonalizationPlan => {
-  const copy = personalizationCopy[language];
+  const copy = getPersonalizationCopy(language);
   const frictionLabel =
     onboarding.mainFrictions.length > 0
-      ? onboarding.mainFrictions.map((friction) => copy.friction[friction]).join(", ")
-      : copy.friction[onboarding.mainFriction];
+      ? onboarding.mainFrictions.map((friction) => getFrictionCopy(copy, friction)).join(", ")
+      : getFrictionCopy(copy, onboarding.mainFriction);
   const motivationLabel =
     onboarding.motivationStyles.length > 0
-      ? onboarding.motivationStyles.map((style) => copy.motivation[style]).join(", ")
-      : copy.motivation[onboarding.motivationStyle];
+      ? onboarding.motivationStyles.map((style) => getMotivationCopy(copy, style)).join(", ")
+      : getMotivationCopy(copy, onboarding.motivationStyle);
 
   return {
     frictionLabel,
     motivationLabel,
-    homeLine: copy.home[onboarding.mainFriction],
-    actionHint: copy.action[onboarding.motivationStyle],
-    notificationBody: copy.notification[onboarding.motivationStyle],
-    recommendationHint: copy.recommendation[onboarding.mainFriction],
-    reportHint: copy.report[onboarding.mainFriction],
+    homeLine: getHomeCopy(copy, onboarding.mainFriction),
+    actionHint: getActionCopy(copy, onboarding.motivationStyle),
+    notificationBody: getNotificationCopy(copy, onboarding.motivationStyle),
+    recommendationHint: getRecommendationCopy(copy, onboarding.mainFriction),
+    reportHint: getReportCopy(copy, onboarding.mainFriction),
   };
 };

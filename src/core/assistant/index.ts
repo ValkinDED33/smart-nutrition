@@ -277,6 +277,104 @@ const motivationMemoryLabels: Record<AssistantMotivationStyle, string> = {
   energetic: "energetic momentum",
 };
 
+const getAssistantPersonalityByTone = (
+  tone: AssistantTone
+): AssistantPersonality => {
+  switch (tone) {
+    case "playful":
+      return assistantPersonalityByTone.playful;
+    case "focused":
+      return assistantPersonalityByTone.focused;
+    case "calm":
+      return assistantPersonalityByTone.calm;
+    case "scientific":
+      return assistantPersonalityByTone.scientific;
+    case "gentle":
+    default:
+      return assistantPersonalityByTone.gentle;
+  }
+};
+
+const getCommunicationStyleByTone = (
+  tone: AssistantTone
+): AssistantCommunicationStyle => {
+  switch (tone) {
+    case "playful":
+      return communicationStyleByTone.playful;
+    case "focused":
+      return communicationStyleByTone.focused;
+    case "calm":
+      return communicationStyleByTone.calm;
+    case "scientific":
+      return communicationStyleByTone.scientific;
+    case "gentle":
+    default:
+      return communicationStyleByTone.gentle;
+  }
+};
+
+const getSpeechStyleByTone = (
+  tone: AssistantTone
+): Omit<AssistantSpeechStyle, "communicationStyle"> => {
+  switch (tone) {
+    case "playful":
+      return speechStyleByTone.playful;
+    case "focused":
+      return speechStyleByTone.focused;
+    case "calm":
+      return speechStyleByTone.calm;
+    case "scientific":
+      return speechStyleByTone.scientific;
+    case "gentle":
+    default:
+      return speechStyleByTone.gentle;
+  }
+};
+
+const getGoalMemoryLabel = (goal: Goal): string => {
+  switch (goal) {
+    case "maintain":
+      return goalMemoryLabels.maintain;
+    case "bulk":
+      return goalMemoryLabels.bulk;
+    case "cut":
+    default:
+      return goalMemoryLabels.cut;
+  }
+};
+
+const getFrictionMemoryLabel = (friction: AssistantDietFriction): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return frictionMemoryLabels.emotional_eating;
+    case "chaotic_schedule":
+      return frictionMemoryLabels.chaotic_schedule;
+    case "evening_snacking":
+      return frictionMemoryLabels.evening_snacking;
+    case "low_energy":
+      return frictionMemoryLabels.low_energy;
+    case "social_pressure":
+      return frictionMemoryLabels.social_pressure;
+    case "unknown":
+    default:
+      return frictionMemoryLabels.unknown;
+  }
+};
+
+const getMotivationMemoryLabel = (
+  style: AssistantMotivationStyle
+): string => {
+  switch (style) {
+    case "direct":
+      return motivationMemoryLabels.direct;
+    case "energetic":
+      return motivationMemoryLabels.energetic;
+    case "gentle":
+    default:
+      return motivationMemoryLabels.gentle;
+  }
+};
+
 const getAssistantName = (assistant: AssistantCustomization) => {
   const trimmedName = assistant.name.trim();
   return trimmedName.length > 0 ? trimmedName : DEFAULT_ASSISTANT_NAME;
@@ -285,7 +383,7 @@ const getAssistantName = (assistant: AssistantCustomization) => {
 export const createAssistantPersonality = (
   assistant: AssistantCustomization
 ): AssistantPersonality => {
-  const base = assistantPersonalityByTone[assistant.tone];
+  const base = getAssistantPersonalityByTone(assistant.tone);
 
   return {
     ...base,
@@ -296,8 +394,8 @@ export const createAssistantPersonality = (
 export const createAssistantSpeechStyle = (
   assistant: AssistantCustomization
 ): AssistantSpeechStyle => ({
-  communicationStyle: communicationStyleByTone[assistant.tone],
-  ...speechStyleByTone[assistant.tone],
+  communicationStyle: getCommunicationStyleByTone(assistant.tone),
+  ...getSpeechStyleByTone(assistant.tone),
 });
 
 export const deriveAssistantCoreState = ({
@@ -402,7 +500,7 @@ export const createAssistantMemoryProfile = ({
 }): AssistantMemory => {
   const onboarding = assistant.onboarding;
   const goals = [
-    goalMemoryLabels[goal],
+    getGoalMemoryLabel(goal),
     onboarding.primaryGoalNote,
     ...onboarding.goalSelections,
   ].filter(
@@ -410,8 +508,8 @@ export const createAssistantMemoryProfile = ({
   );
   const struggles = [
     ...(onboarding.mainFrictions.length > 0
-      ? onboarding.mainFrictions.map((friction) => frictionMemoryLabels[friction])
-      : [frictionMemoryLabels[onboarding.mainFriction]]),
+      ? onboarding.mainFrictions.map(getFrictionMemoryLabel)
+      : [getFrictionMemoryLabel(onboarding.mainFriction)]),
     onboarding.supportNote,
   ].filter((item): item is string => item.trim().length > 0);
   const habits = [
@@ -422,8 +520,8 @@ export const createAssistantMemoryProfile = ({
   );
   const motivationTriggers =
     onboarding.motivationStyles.length > 0
-      ? onboarding.motivationStyles.map((style) => motivationMemoryLabels[style])
-      : [motivationMemoryLabels[onboarding.motivationStyle]];
+      ? onboarding.motivationStyles.map(getMotivationMemoryLabel)
+      : [getMotivationMemoryLabel(onboarding.motivationStyle)];
 
   return {
     userId,

@@ -25,6 +25,7 @@ import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import { productMatchesPreferences } from "@domain/user/preferences";
 import {
@@ -115,10 +116,28 @@ const composerStatusCopy = {
   },
 } as const;
 
+type ComposerStatusCopy = (typeof composerStatusCopy)[keyof typeof composerStatusCopy];
+
+const QUICK_MEAL_SAVE_ERROR = "Could not save meal to cloud.";
+const QUICK_MEAL_TEXT_SECONDARY = "text.secondary";
+const COMMON_KCAL_KEY = "common.kcal";
+
+const getComposerStatusCopy = (language: AppLanguage): ComposerStatusCopy => {
+  switch (language) {
+    case "uk":
+      return composerStatusCopy.uk;
+    case "pl":
+      return composerStatusCopy.pl;
+    case "en":
+    default:
+      return composerStatusCopy.en;
+  }
+};
+
 export const QuickMealComposer = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, t } = useLanguage();
-  const copy = composerStatusCopy[appLanguage];
+  const copy = getComposerStatusCopy(appLanguage);
   const favorites = useSelector(selectFavoriteProductIds);
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
@@ -224,7 +243,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         status: "failed",
         entries,
         message:
-          error instanceof Error ? error.message : "Could not save meal to cloud.",
+          error instanceof Error ? error.message : QUICK_MEAL_SAVE_ERROR,
       });
       return;
     }
@@ -292,7 +311,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("composer.title")}
         </Typography>
-        <Typography color="text.secondary">{t("composer.subtitle")}</Typography>
+        <Typography color={QUICK_MEAL_TEXT_SECONDARY}>{t("composer.subtitle")}</Typography>
 
         {lookupFailed ? (
           <Alert
@@ -372,7 +391,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
             : selectedProduct
               ? `${selectedProduct.source} • ${Math.round(
                   selectedProduct.nutrients.calories
-                )} ${t("common.kcal")} / 100 ${selectedProduct.unit}`
+                )} ${t(COMMON_KCAL_KEY)} / 100 ${selectedProduct.unit}`
               : copy.onlineHint;
 
           return (
@@ -577,7 +596,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                               <Chip
                                 size="small"
                                 label={`${Math.round(product.nutrients.calories)} ${t(
-                                  "common.kcal"
+                                  COMMON_KCAL_KEY
                                 )}`}
                               />
                               <Chip size="small" label={product.source} variant="outlined" />
@@ -643,8 +662,8 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           </Button>
         </Stack>
 
-        <Typography color="text.secondary">
-          {t("composer.summary")}: {totals.calories.toFixed(0)} {t("common.kcal")} - P{" "}
+        <Typography color={QUICK_MEAL_TEXT_SECONDARY}>
+          {t("composer.summary")}: {totals.calories.toFixed(0)} {t(COMMON_KCAL_KEY)} - P{" "}
           {totals.protein.toFixed(1)} {t("common.g")} - F {totals.fat.toFixed(1)}{" "}
           {t("common.g")} - C {totals.carbs.toFixed(1)} {t("common.g")}
         </Typography>

@@ -10,6 +10,8 @@ import {
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
 import { useLanguage } from "../../shared/language";
+import type { AssistantCompanionKind } from "@domain/profile/types";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   cardSx,
   assistantAvatarOptions,
@@ -55,10 +57,53 @@ const assistantAvatarLabels = {
   },
 } as const;
 
+type AssistantAvatarLabels = (typeof assistantAvatarLabels)[keyof typeof assistantAvatarLabels];
+
+const getAssistantAvatarLabels = (
+  language: AppLanguage
+): AssistantAvatarLabels => {
+  switch (language) {
+    case "uk":
+      return assistantAvatarLabels.uk;
+    case "pl":
+      return assistantAvatarLabels.pl;
+    case "en":
+    default:
+      return assistantAvatarLabels.en;
+  }
+};
+
+const getAssistantAvatarLabel = (
+  labels: AssistantAvatarLabels,
+  avatar: AssistantCompanionKind
+): string => {
+  switch (avatar) {
+    case "dog":
+      return labels.dog;
+    case "fox":
+      return labels.fox;
+    case "panda":
+      return labels.panda;
+    case "owl":
+      return labels.owl;
+    case "dragon":
+      return labels.dragon;
+    case "robot":
+      return labels.robot;
+    case "human":
+      return labels.human;
+    case "capybara":
+      return labels.capybara;
+    case "cat":
+    default:
+      return labels.cat;
+  }
+};
+
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
-  const avatarLabels = assistantAvatarLabels[appLanguage];
+  const avatarLabels = getAssistantAvatarLabels(appLanguage);
   const personalityOptions: PersonalityPreset[] = [
     "supportive",
     "strict",
@@ -110,7 +155,7 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
                       mood="happy"
                       size={42}
                     />
-                    <span>{avatarLabels[avatar]}</span>
+                    <span>{getAssistantAvatarLabel(avatarLabels, avatar)}</span>
                   </Stack>
                 </Button>
               ))}

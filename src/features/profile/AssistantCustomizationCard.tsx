@@ -15,6 +15,7 @@ import {
 import type { RootState } from "../../app/store";
 import { setAssistantCustomization, type ProfileState } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   Companion3DLoadingFallback,
   CompanionAvatar as AssistantAvatar,
@@ -250,10 +251,70 @@ type AssistantTextDraftFieldsProps = {
   onSave: (payload: AssistantCustomizationPayload) => Promise<ProfileState>;
 };
 
+const getAssistantCopy = (language: AppLanguage): AssistantCopy => {
+  switch (language) {
+    case "uk":
+      return assistantCopy.uk;
+    case "pl":
+      return assistantCopy.pl;
+    case "en":
+    default:
+      return assistantCopy.en;
+  }
+};
+
+const getCompanionLabel = (
+  copy: AssistantCopy,
+  kind: AssistantCompanionKind
+): string => {
+  switch (kind) {
+    case "dog":
+      return copy.companions.dog;
+    case "fox":
+      return copy.companions.fox;
+    case "panda":
+      return copy.companions.panda;
+    case "owl":
+      return copy.companions.owl;
+    case "human":
+      return copy.companions.human;
+    case "capybara":
+      return copy.companions.capybara;
+    case "dragon":
+      return copy.companions.dragon;
+    case "robot":
+      return copy.companions.robot;
+    case "cat":
+    default:
+      return copy.companions.cat;
+  }
+};
+
+const getFrictionLabel = (
+  copy: AssistantCopy,
+  friction: AssistantDietFriction
+): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return copy.frictions.emotional_eating;
+    case "chaotic_schedule":
+      return copy.frictions.chaotic_schedule;
+    case "evening_snacking":
+      return copy.frictions.evening_snacking;
+    case "low_energy":
+      return copy.frictions.low_energy;
+    case "social_pressure":
+      return copy.frictions.social_pressure;
+    case "unknown":
+    default:
+      return copy.frictions.unknown;
+  }
+};
+
 export const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
-  const copy = assistantCopy[appLanguage];
+  const copy = getAssistantCopy(appLanguage);
   const companionRenderModePreference = useCompanionRenderModePreference();
   const profileAction = useProfileCloudAction();
   const primaryGoalNoteValue =
@@ -359,7 +420,7 @@ export const AssistantCustomizationCard = () => {
           >
             {companionKinds.map((kind) => (
               <MenuItem key={kind} value={kind}>
-                {copy.companions[kind]}
+                {getCompanionLabel(copy, kind)}
               </MenuItem>
             ))}
           </TextField>
@@ -438,7 +499,7 @@ export const AssistantCustomizationCard = () => {
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0, flex: 1 }}>
             <Typography color="text.secondary">
-              {copy.companions[assistant.companionKind]} · {assistant.name}
+              {getCompanionLabel(copy, assistant.companionKind)} · {assistant.name}
             </Typography>
             <CompanionRenderModeControl
               value={companionRenderModePreference.value}
@@ -499,7 +560,7 @@ export const AssistantCustomizationCard = () => {
                     }
                     sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}
                   >
-                    {copy.frictions[friction]}
+                    {getFrictionLabel(copy, friction)}
                   </Button>
                 );
               })}

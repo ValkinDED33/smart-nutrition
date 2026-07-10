@@ -14,6 +14,7 @@ import {
   SectionCard,
   SectionTabs,
 } from "@shared/ui";
+import type { AppLanguage } from "../shared/types/i18n";
 
 const WaterTracker = lazy(() =>
   import("../features/water/WaterTracker").then((module) => ({
@@ -67,24 +68,54 @@ const waterPageCopy = {
 } as const;
 
 type WaterSection = "today" | "goal" | "history" | "reminders";
+type WaterPageCopy = (typeof waterPageCopy)[keyof typeof waterPageCopy];
+
+const getWaterPageCopy = (language: AppLanguage): WaterPageCopy => {
+  switch (language) {
+    case "uk":
+      return waterPageCopy.uk;
+    case "pl":
+      return waterPageCopy.pl;
+    case "en":
+    default:
+      return waterPageCopy.en;
+  }
+};
+
+const getWaterSectionLabel = (
+  copy: WaterPageCopy,
+  section: WaterSection
+): string => {
+  switch (section) {
+    case "goal":
+      return copy.sections.goal;
+    case "history":
+      return copy.sections.history;
+    case "reminders":
+      return copy.sections.reminders;
+    case "today":
+    default:
+      return copy.sections.today;
+  }
+};
 
 const WaterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
   const { appLanguage } = useLanguage();
   const [activeSection, setActiveSection] = useState<WaterSection>("today");
-  const copy = waterPageCopy[appLanguage];
+  const copy = getWaterPageCopy(appLanguage);
   const recoveryCopy = buildLazyModuleRecoveryCopy(
     appLanguage,
-    copy.sections[activeSection]
+    getWaterSectionLabel(copy, activeSection)
   );
   const remainingMl = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
   const addAmountMl = water.glassSizeMl || 250;
   const sections = [
-    { id: "today", label: copy.sections.today },
-    { id: "goal", label: copy.sections.goal },
-    { id: "history", label: copy.sections.history },
-    { id: "reminders", label: copy.sections.reminders },
+    { id: "today", label: getWaterSectionLabel(copy, "today") },
+    { id: "goal", label: getWaterSectionLabel(copy, "goal") },
+    { id: "history", label: getWaterSectionLabel(copy, "history") },
+    { id: "reminders", label: getWaterSectionLabel(copy, "reminders") },
   ];
   const tracker = (
     <LazyModuleBoundary

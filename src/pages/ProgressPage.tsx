@@ -10,6 +10,7 @@ import {
   PageShell,
   SectionTabs,
 } from "@shared/ui";
+import type { AppLanguage } from "../shared/types/i18n";
 
 const WaterTracker = lazy(() =>
   import("../features/water/WaterTracker").then((module) => ({
@@ -84,20 +85,50 @@ const progressPageCopy = {
 } as const;
 
 type ProgressSection = "weight" | "water" | "body" | "trends";
+type ProgressPageCopy = (typeof progressPageCopy)[keyof typeof progressPageCopy];
+
+const getProgressPageCopy = (language: AppLanguage): ProgressPageCopy => {
+  switch (language) {
+    case "uk":
+      return progressPageCopy.uk;
+    case "pl":
+      return progressPageCopy.pl;
+    case "en":
+    default:
+      return progressPageCopy.en;
+  }
+};
+
+const getProgressSectionLabel = (
+  copy: ProgressPageCopy,
+  section: ProgressSection
+): string => {
+  switch (section) {
+    case "water":
+      return copy.sections.water;
+    case "body":
+      return copy.sections.body;
+    case "trends":
+      return copy.sections.trends;
+    case "weight":
+    default:
+      return copy.sections.weight;
+  }
+};
 
 const ProgressPage = () => {
   const { appLanguage } = useLanguage();
   const [activeSection, setActiveSection] = useState<ProgressSection>("weight");
-  const copy = progressPageCopy[appLanguage];
+  const copy = getProgressPageCopy(appLanguage);
   const recoveryCopy = buildLazyModuleRecoveryCopy(
     appLanguage,
-    copy.sections[activeSection]
+    getProgressSectionLabel(copy, activeSection)
   );
   const sections = [
-    { id: "weight", label: copy.sections.weight },
-    { id: "water", label: copy.sections.water },
-    { id: "body", label: copy.sections.body },
-    { id: "trends", label: copy.sections.trends },
+    { id: "weight", label: getProgressSectionLabel(copy, "weight") },
+    { id: "water", label: getProgressSectionLabel(copy, "water") },
+    { id: "body", label: getProgressSectionLabel(copy, "body") },
+    { id: "trends", label: getProgressSectionLabel(copy, "trends") },
   ];
 
   return (

@@ -13,6 +13,7 @@ type ProteinState = "low" | "close" | "hit";
 type WaterState = "low" | "close" | "hit";
 type WeightState = "due" | "plateau" | "moving";
 type LoggingState = "empty" | "light" | "solid";
+type MealIdeaBucket = "light" | "full";
 type PrimaryFocus =
   | "log_day"
   | "recover"
@@ -206,6 +207,84 @@ const mealIdeas: Record<
       full: ["rice with chicken", "potatoes with salmon"],
     },
   },
+};
+
+type MealIdeaLanguageSet = (typeof mealIdeas)[keyof typeof mealIdeas];
+type MealIdeaDietSet = MealIdeaLanguageSet[keyof MealIdeaLanguageSet];
+type GuidedTextByIntent = Record<AssistantQuickQuestionId, string>;
+
+const getMealIdeaLanguageSet = (
+  language: AssistantRuntimeContext["language"]
+): MealIdeaLanguageSet => {
+  switch (language) {
+    case "pl":
+      return mealIdeas.pl;
+    case "en":
+      return mealIdeas.en;
+    case "uk":
+    default:
+      return mealIdeas.uk;
+  }
+};
+
+const getMealIdeaDietSet = (
+  languageSet: MealIdeaLanguageSet,
+  dietStyle: DietStyle
+): MealIdeaDietSet => {
+  switch (dietStyle) {
+    case "vegetarian":
+      return languageSet.vegetarian;
+    case "vegan":
+      return languageSet.vegan;
+    case "pescatarian":
+      return languageSet.pescatarian;
+    case "low_carb":
+      return languageSet.low_carb;
+    case "gluten_free":
+      return languageSet.gluten_free;
+    case "balanced":
+    default:
+      return languageSet.balanced;
+  }
+};
+
+const getMealIdeaItems = (
+  context: AssistantRuntimeContext,
+  bucket: MealIdeaBucket
+) => {
+  const languageSet = getMealIdeaLanguageSet(context.language);
+  const dietSet = getMealIdeaDietSet(languageSet, context.dietStyle);
+
+  switch (bucket) {
+    case "full":
+      return dietSet.full;
+    case "light":
+    default:
+      return dietSet.light;
+  }
+};
+
+const getGuidedTextByIntent = (
+  textByIntent: GuidedTextByIntent,
+  intent: AssistantQuickQuestionId
+) => {
+  switch (intent) {
+    case "protein_help":
+      return textByIntent.protein_help;
+    case "water_help":
+      return textByIntent.water_help;
+    case "weight_help":
+      return textByIntent.weight_help;
+    case "next_meal":
+      return textByIntent.next_meal;
+    case "coach_focus":
+      return textByIntent.coach_focus;
+    case "motivation_focus":
+      return textByIntent.motivation_focus;
+    case "day_status":
+    default:
+      return textByIntent.day_status;
+  }
 };
 
 const normalizeIntentText = (value: string) =>
@@ -435,7 +514,7 @@ const joinIdeas = (context: AssistantRuntimeContext, signals: AssistantSignals) 
       : context.goal === "bulk" || signals.proteinGap >= 35
         ? "full"
         : "light";
-  const items = mealIdeas[context.language][context.dietStyle][bucket];
+  const items = getMealIdeaItems(context, bucket);
 
   return items
     .slice(0, 2)
@@ -1390,7 +1469,7 @@ export const buildGuidedAssistantReply = ({
     } as const;
 
     return {
-      text: textByIntent[intent],
+      text: getGuidedTextByIntent(textByIntent, intent),
       mode: "guided",
       followUpQuestionIds: getFollowUps(intent, signals),
     };
@@ -1520,7 +1599,7 @@ export const buildGuidedAssistantReply = ({
   } as const;
 
   return {
-    text: textByIntent[intent],
+    text: getGuidedTextByIntent(textByIntent, intent),
     mode: "guided",
     followUpQuestionIds: getFollowUps(intent, signals),
   };

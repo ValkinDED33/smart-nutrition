@@ -10,6 +10,35 @@ const languageFlags: Record<AppLanguage, string> = {
   en: "🇬🇧",
 };
 
+type LanguageLabels = ReturnType<typeof useLanguage>["languageLabels"];
+
+const getLanguageFlag = (language: AppLanguage): string => {
+  switch (language) {
+    case "pl":
+      return languageFlags.pl;
+    case "en":
+      return languageFlags.en;
+    case "uk":
+    default:
+      return languageFlags.uk;
+  }
+};
+
+const getLanguageLabel = (
+  labels: LanguageLabels,
+  language: AppLanguage
+): string => {
+  switch (language) {
+    case "pl":
+      return labels.pl;
+    case "en":
+      return labels.en;
+    case "uk":
+    default:
+      return labels.uk;
+  }
+};
+
 const languageButtonSx = {
   justifyContent: "flex-start",
   py: 1.5,
@@ -81,7 +110,7 @@ const LanguageSetupPage = () => {
                 onClick={() => selectLanguage(language)}
                 sx={languageButtonSx}
               >
-                {languageFlags[language]} {languageLabels[language]}
+                {getLanguageFlag(language)} {getLanguageLabel(languageLabels, language)}
               </Button>
             ))}
           </Stack>

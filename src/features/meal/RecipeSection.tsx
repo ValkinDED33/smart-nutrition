@@ -32,6 +32,7 @@ import type {
 import type { Product } from "@domain/products/types";
 import type { AppDispatch } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
@@ -61,6 +62,7 @@ type BuilderItem = Omit<MealTemplateItem, "quantity"> & {
 };
 
 const CUSTOM_RECIPE_PREFIX = "Recipe: ";
+const COMMON_KCAL_KEY = "common.kcal";
 
 const recipeActionCopy = {
   uk: {
@@ -107,6 +109,22 @@ const recipeActionCopy = {
   },
 } as const;
 
+type RecipeActionCopy = (typeof recipeActionCopy)[keyof typeof recipeActionCopy];
+
+const RECIPE_TEXT_SECONDARY = "text.secondary";
+
+const getRecipeActionCopy = (language: AppLanguage): RecipeActionCopy => {
+  switch (language) {
+    case "uk":
+      return recipeActionCopy.uk;
+    case "pl":
+      return recipeActionCopy.pl;
+    case "en":
+    default:
+      return recipeActionCopy.en;
+  }
+};
+
 export const RecipeSection = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, t } = useLanguage();
@@ -127,7 +145,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const [builderItems, setBuilderItems] = useState<BuilderItem[]>([]);
   const recipeEntrySequenceRef = useRef(0);
   const recipeTemplateSequenceRef = useRef(0);
-  const copy = recipeActionCopy[appLanguage];
+  const copy = getRecipeActionCopy(appLanguage);
   const {
     notice: mealActionNotice,
     runMealAction,
@@ -415,7 +433,7 @@ export const RecipeSection = ({ mealType }: Props) => {
         recipe.description ||
         `Recipe with ${recipe.ingredients.length} ingredients and ${recipe.calories.toFixed(
           0
-        )} ${t("common.kcal")}.`,
+        )} ${t(COMMON_KCAL_KEY)}.`,
       authorId: user.id,
       authorName: user.name,
       ingredients: recipe.ingredients.map((ingredient) =>
@@ -463,7 +481,7 @@ export const RecipeSection = ({ mealType }: Props) => {
       >
         <Stack spacing={1.5}>
           <Typography sx={{ fontWeight: 800 }}>Custom recipe builder</Typography>
-          <Typography color="text.secondary">
+          <Typography color={RECIPE_TEXT_SECONDARY}>
             Build a reusable recipe from ingredients, check the calculated macros, add it now,
             and save it for later as your own recipe.
           </Typography>
@@ -553,7 +571,7 @@ export const RecipeSection = ({ mealType }: Props) => {
               ))}
 
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={`${builderNutrients.calories.toFixed(0)} ${t("common.kcal")}`} />
+                <Chip label={`${builderNutrients.calories.toFixed(0)} ${t(COMMON_KCAL_KEY)}`} />
                 <Chip label={`P ${builderNutrients.protein.toFixed(1)} ${t("common.g")}`} />
                 <Chip label={`F ${builderNutrients.fat.toFixed(1)} ${t("common.g")}`} />
                 <Chip label={`C ${builderNutrients.carbs.toFixed(1)} ${t("common.g")}`} />
@@ -603,7 +621,7 @@ export const RecipeSection = ({ mealType }: Props) => {
           <CardContent>
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={`${recipe.calories} ${t("common.kcal")}`} />
+                <Chip label={`${recipe.calories} ${t(COMMON_KCAL_KEY)}`} />
                 <Chip label={`P ${recipe.protein.toFixed(1)} ${t("common.g")}`} />
                 <Chip label={`F ${recipe.fat.toFixed(1)} ${t("common.g")}`} />
                 <Chip label={`C ${recipe.carbs.toFixed(1)} ${t("common.g")}`} />
@@ -611,7 +629,7 @@ export const RecipeSection = ({ mealType }: Props) => {
               <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
                 {recipe.title}
               </Typography>
-              <Typography color="text.secondary">{recipe.description}</Typography>
+              <Typography color={RECIPE_TEXT_SECONDARY}>{recipe.description}</Typography>
               <Typography variant="body2">
                 {t("recipes.ingredients")}:{" "}
                 {recipe.ingredients

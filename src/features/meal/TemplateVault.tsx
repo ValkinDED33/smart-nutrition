@@ -92,7 +92,7 @@ const TemplateCard = ({
         <CardContent>
           <Stack spacing={1.2}>
             <Typography sx={{ fontWeight: 800 }}>{template.name}</Typography>
-            <Typography color="text.secondary" variant="body2">
+            <Typography color={TEMPLATE_TEXT_SECONDARY} variant="body2">
               {template.items
                 .map(
                   (item) =>
@@ -175,13 +175,30 @@ const vaultCopy = {
   },
 } as const;
 
+type VaultCopy = (typeof vaultCopy)[keyof typeof vaultCopy];
+
+const TEMPLATE_TEXT_SECONDARY = "text.secondary";
+const SAVE_TEMPLATE_ACTION_ID = "save-template";
+
+const getVaultCopy = (language: AppLanguage): VaultCopy => {
+  switch (language) {
+    case "uk":
+      return vaultCopy.uk;
+    case "pl":
+      return vaultCopy.pl;
+    case "en":
+    default:
+      return vaultCopy.en;
+  }
+};
+
 export const TemplateVault = ({ mealType }: Props) => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectTodayMealItems);
   const meal = useSelector((state: RootState) => state.meal);
   const templates = useSelector(selectMealTemplates);
   const { appLanguage, t } = useLanguage();
-  const copy = vaultCopy[appLanguage];
+  const copy = getVaultCopy(appLanguage);
   const [templateName, setTemplateName] = useState("");
   const [orderedTemplateIds, setOrderedTemplateIds] = useState<string[]>([]);
   const {
@@ -262,7 +279,7 @@ export const TemplateVault = ({ mealType }: Props) => {
     };
 
     const saved = await runMealAction({
-      actionId: "save-template",
+      actionId: SAVE_TEMPLATE_ACTION_ID,
       kind: "saveTemplate",
       action: () => saveMealTemplateToCloud(dispatch, meal, template),
     });
@@ -324,7 +341,7 @@ export const TemplateVault = ({ mealType }: Props) => {
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("templates.title")}
         </Typography>
-        <Typography color="text.secondary">{t("templates.subtitle")}</Typography>
+        <Typography color={TEMPLATE_TEXT_SECONDARY}>{t("templates.subtitle")}</Typography>
 
         {notice ? (
           <Alert
@@ -360,10 +377,10 @@ export const TemplateVault = ({ mealType }: Props) => {
             disabled={
               !templateName.trim() ||
               currentMealEntries.length === 0 ||
-              isSavingAction("save-template")
+              isSavingAction(SAVE_TEMPLATE_ACTION_ID)
             }
           >
-            {isSavingAction("save-template") ? copy.saving : t("templates.save")}
+            {isSavingAction(SAVE_TEMPLATE_ACTION_ID) ? copy.saving : t("templates.save")}
           </Button>
         </Stack>
 
@@ -371,7 +388,7 @@ export const TemplateVault = ({ mealType }: Props) => {
           <SortableContext items={orderedCurrentMealTemplates.map((template) => template.id)}>
             <Stack spacing={1.5}>
               {currentMealTemplates.length === 0 ? (
-                <Typography color="text.secondary">{t("templates.empty")}</Typography>
+                <Typography color={TEMPLATE_TEXT_SECONDARY}>{t("templates.empty")}</Typography>
               ) : (
                 orderedCurrentMealTemplates.map((template) => (
                   <TemplateCard
