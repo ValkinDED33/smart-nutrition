@@ -502,11 +502,8 @@ describe("telegramService", () => {
           task: false,
         },
       },
-      medicationReminders: {
-        enabled: true,
-        polling: true,
-      },
     });
+    expect(service.getStatus()).not.toHaveProperty("medicationReminders");
 
     service.stop("test shutdown");
   });
@@ -1056,6 +1053,145 @@ describe("telegramService", () => {
       })
     );
     expect(reply).toHaveBeenCalledWith("Готово 💧 Додав 300 мл води.");
+
+    service.stop("test shutdown");
+  });
+
+  it("routes connected free-text conversation through the same AI assistant as the website", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: false,
+        intent: { intent: "unknown" },
+      })),
+    };
+    const aiService = {
+      askQuestion: vi.fn(async () => ({
+        text: "Я поруч. Давай спокійно розберемо твій день і харчування.",
+        mode: "remote-cloud",
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      aiService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Поговори со мной как помощник" },
+      reply,
+    });
+
+    expect(aiService.askQuestion).toHaveBeenCalledWith(connectedUser, {
+      question: "Поговори со мной как помощник",
+      context: {
+        interactionChannel: "telegram",
+        language: "uk",
+      },
+    });
+    expect(reply).toHaveBeenCalledWith(
+      "Я поруч. Давай спокійно розберемо твій день і харчування."
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("reports Telegram AI assistant failures without fake success", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const logger = { info: vi.fn(), warn: vi.fn() };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => ({
+          id: "user-1",
+          name: "Ihor",
+          role: "USER",
+          telegramChatId: "42",
+        })),
+      }),
+      assistantAgent: {
+        run: vi.fn(async () => ({ handled: false, intent: { intent: "unknown" } })),
+      },
+      aiService: {
+        askQuestion: vi.fn(async () => {
+          throw new Error("provider down");
+        }),
+      },
+      logger,
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Мне нужна поддержка" },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      "AI-помічник тимчасово недоступний. Спробуйте ще раз трохи пізніше."
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[telegram] ai assistant reply failed",
+      expect.objectContaining({ code: "Error" })
+    );
 
     service.stop("test shutdown");
   });

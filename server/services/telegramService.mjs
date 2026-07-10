@@ -568,6 +568,7 @@ export const createTelegramService = ({
   reminderService = null,
   medicationReminderService = null,
   assistantAgent = null,
+  aiService = null,
   logger = console,
   TelegrafClass = Telegraf,
 } = {}) => {
@@ -724,6 +725,39 @@ export const createTelegramService = ({
     }
 
     return agentResult;
+  };
+
+  const replyWithAiAssistant = async ({ ctx, user, message }) => {
+    if (!aiService?.askQuestion) {
+      await ctx.reply(
+        [
+          "Я на зв'язку як AI-помічник Smart Nutrition, але повний AI-режим зараз тимчасово недоступний.",
+          "Можу виконувати підтверджені дії: вода, нагадування, день, харчування.",
+        ].join("\n")
+      );
+      return null;
+    }
+
+    try {
+      const result = await aiService.askQuestion(user, {
+        question: message,
+        context: {
+          interactionChannel: "telegram",
+          language: "uk",
+        },
+      });
+
+      await ctx.reply(result.text);
+      return result;
+    } catch (error) {
+      logger.warn?.("[telegram] ai assistant reply failed", {
+        provider: "telegram",
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+      await ctx.reply("AI-помічник тимчасово недоступний. Спробуйте ще раз трохи пізніше.");
+      return null;
+    }
   };
 
   const replyWithMainMenu = async (ctx, user = null) => {
@@ -1029,18 +1063,7 @@ export const createTelegramService = ({
         return;
       }
 
-      await ctx.reply(
-        [
-          "Я на зв'язку. Можу швидко виконувати дії по Smart Nutrition.",
-          "",
-          "Приклади:",
-          "💧 Я випив 300 мл води",
-          "💊 Нагадуй пити Вітамін D щодня о 09:00",
-          "📊 Що по воді?",
-          "",
-          "Для списку команд: /help",
-        ].join("\n")
-      );
+      await replyWithAiAssistant({ ctx, user, message });
     });
 
     nextBot.catch((error) => {
@@ -1261,7 +1284,6 @@ export const createTelegramService = ({
       lastStartError,
       connectTokenTtlMs: config?.telegramConnectTokenTtlMs ?? null,
       reminders: reminderRuntimeStatus,
-      medicationReminders: reminderRuntimeStatus,
     };
   };
 

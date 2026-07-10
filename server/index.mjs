@@ -151,6 +151,7 @@ const telegramService = createTelegramService({
   stateService,
   reminderService,
   assistantAgent,
+  aiService,
 });
 const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);

@@ -46,10 +46,6 @@ export const getPublicTelegramStatus = (telegramStatus = {}) => ({
     ),
     capabilities: telegramStatus.reminders?.capabilities ?? null,
   },
-  medicationReminders: {
-    enabled: Boolean(telegramStatus.medicationReminders?.enabled),
-    polling: Boolean(telegramStatus.medicationReminders?.polling),
-  },
 });
 
 export const getPublicKeepAliveStatus = (keepAliveStatus = {}) => ({
