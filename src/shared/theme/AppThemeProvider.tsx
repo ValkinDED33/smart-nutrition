@@ -21,6 +21,10 @@ import {
 } from "./colorMode";
 
 const STORAGE_KEY = "smart-nutrition.color-mode";
+const SURFACE_BACKGROUND_IMAGE =
+  "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))";
+const BORDER_SOFT_VAR = "var(--sn-border-soft)";
+const TEXT_PRIMARY_VAR = "var(--sn-text-primary)";
 
 const visualTokens = {
   light: {
@@ -85,6 +89,18 @@ const visualTokens = {
   },
 } as const;
 
+type VisualTokens = (typeof visualTokens)[keyof typeof visualTokens];
+
+const getVisualTokens = (mode: AppColorMode): VisualTokens => {
+  switch (mode) {
+    case "dark":
+      return visualTokens.dark;
+    case "light":
+    default:
+      return visualTokens.light;
+  }
+};
+
 const getInitialMode = (): AppColorMode => {
   const storedMode = getClientStorageItem(STORAGE_KEY);
 
@@ -103,7 +119,7 @@ const getInitialMode = (): AppColorMode => {
 };
 
 const buildTheme = (mode: AppColorMode) => {
-  const tokens = visualTokens[mode];
+  const tokens = getVisualTokens(mode);
 
   return createTheme({
     palette: {
@@ -231,7 +247,7 @@ const buildTheme = (mode: AppColorMode) => {
 };
 
 const buildGlobalStyles = (mode: AppColorMode) => {
-  const tokens = visualTokens[mode];
+  const tokens = getVisualTokens(mode);
 
   return (
     <GlobalStyles
@@ -264,7 +280,7 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         },
         body: {
           background: "var(--sn-page-gradient)",
-          color: "var(--sn-text-primary)",
+          color: TEXT_PRIMARY_VAR,
         },
         "::selection": {
           backgroundColor:
@@ -273,18 +289,16 @@ const buildGlobalStyles = (mode: AppColorMode) => {
               : "rgba(20,184,166,0.24)",
         },
         ".MuiPaper-root, .MuiCard-root": {
-          borderColor: "var(--sn-border-soft)",
+          borderColor: BORDER_SOFT_VAR,
           boxShadow: "var(--sn-shadow-soft)",
-          backgroundImage:
-            "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          backgroundImage: SURFACE_BACKGROUND_IMAGE,
           backdropFilter: "blur(20px)",
         },
         ".sn-premium-panel": {
           position: "relative",
           overflow: "hidden",
-          border: "1px solid var(--sn-border-soft)",
-          background:
-            "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          border: `1px solid ${BORDER_SOFT_VAR}`,
+          background: SURFACE_BACKGROUND_IMAGE,
           boxShadow: "var(--sn-shadow-soft)",
           backdropFilter: "blur(22px)",
         },
@@ -320,21 +334,19 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         "body[data-sn-color-mode='light'] .MuiPaper-root, body[data-sn-color-mode='light'] .MuiCard-root":
           {
             backgroundColor: "var(--sn-surface-glass)",
-            backgroundImage:
-              "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+            backgroundImage: SURFACE_BACKGROUND_IMAGE,
           },
         "body[data-sn-color-mode='dark']": {
           background: "var(--sn-page-gradient)",
-          color: "var(--sn-text-primary)",
+          color: TEXT_PRIMARY_VAR,
           colorScheme: "dark",
         },
         "body[data-sn-color-mode='dark'] .MuiPaper-root, body[data-sn-color-mode='dark'] .MuiCard-root":
           {
             backgroundColor: "var(--sn-surface-glass) !important",
-            backgroundImage:
-              "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass)) !important",
-            borderColor: "var(--sn-border-soft) !important",
-            color: "var(--sn-text-primary)",
+            backgroundImage: `${SURFACE_BACKGROUND_IMAGE} !important`,
+            borderColor: `${BORDER_SOFT_VAR} !important`,
+            color: TEXT_PRIMARY_VAR,
           },
         "body[data-sn-color-mode='dark'] .MuiTypography-colorTextSecondary": {
           color: "var(--sn-text-secondary) !important",

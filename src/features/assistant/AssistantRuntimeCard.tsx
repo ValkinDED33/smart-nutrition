@@ -47,6 +47,7 @@ import {
   fadeUpVariants,
   pageSectionVariants,
 } from "@shared/ui/motion";
+import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveAssistantPromptContext } from "./assistantPromptContext";
 
@@ -199,6 +200,43 @@ const cardCopy = {
   },
 } as const;
 
+type CardCopy = (typeof cardCopy)[keyof typeof cardCopy];
+
+const getCardCopy = (language: AppLanguage): CardCopy => {
+  switch (language) {
+    case "uk":
+      return cardCopy.uk;
+    case "pl":
+      return cardCopy.pl;
+    case "en":
+    default:
+      return cardCopy.en;
+  }
+};
+
+const getQuickQuestionLabel = (
+  copy: CardCopy,
+  id: AssistantQuickQuestionId
+): string => {
+  switch (id) {
+    case "protein_help":
+      return copy.quickQuestions.protein_help;
+    case "water_help":
+      return copy.quickQuestions.water_help;
+    case "weight_help":
+      return copy.quickQuestions.weight_help;
+    case "next_meal":
+      return copy.quickQuestions.next_meal;
+    case "coach_focus":
+      return copy.quickQuestions.coach_focus;
+    case "motivation_focus":
+      return copy.quickQuestions.motivation_focus;
+    case "day_status":
+    default:
+      return copy.quickQuestions.day_status;
+  }
+};
+
 export const AssistantRuntimeCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
@@ -208,7 +246,7 @@ export const AssistantRuntimeCard = () => {
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage } = useLanguage();
-  const copy = cardCopy[appLanguage];
+  const copy = getCardCopy(appLanguage);
   const activeUserId = useAssistantChatStore((state) => state.activeUserId);
   const currentScreen = useAssistantChatStore((state) => state.currentScreen);
   const messages = useAssistantChatStore((state) => state.messages);
@@ -467,7 +505,7 @@ export const AssistantRuntimeCard = () => {
       path: context.currentPath,
       mode: latestAssistantMode,
     });
-    void handleAsk(copy.quickQuestions[id], id);
+    void handleAsk(getQuickQuestionLabel(copy, id), id);
   };
 
   return (
@@ -528,17 +566,21 @@ export const AssistantRuntimeCard = () => {
         <Stack spacing={1}>
           <Typography sx={{ fontWeight: 700 }}>{copy.quickTitle}</Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            {(Object.keys(copy.quickQuestions) as AssistantQuickQuestionId[]).map((key) => (
-              <Chip
-                key={key}
-                clickable
-                disabled={loading || !historyReady}
-                label={copy.quickQuestions[key]}
-                onClick={() => {
-                  void handleAsk(copy.quickQuestions[key], key);
-                }}
-              />
-            ))}
+            {assistantQuickQuestionIds.map((key) => {
+              const label = getQuickQuestionLabel(copy, key);
+
+              return (
+                <Chip
+                  key={key}
+                  clickable
+                  disabled={loading || !historyReady}
+                  label={label}
+                  onClick={() => {
+                    void handleAsk(label, key);
+                  }}
+                />
+              );
+            })}
           </Stack>
         </Stack>
 
@@ -631,7 +673,7 @@ export const AssistantRuntimeCard = () => {
                     clickable
                     disabled={loading || !historyReady}
                     variant="outlined"
-                    label={copy.quickQuestions[id]}
+                    label={getQuickQuestionLabel(copy, id)}
                     onClick={() => handleFollowUpClick(id)}
                   />
                 ))}

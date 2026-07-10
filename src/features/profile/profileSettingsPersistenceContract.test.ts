@@ -5,17 +5,27 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) =>
   readFile(resolve(process.cwd(), path), "utf8");
 
+const USE_PROFILE_CLOUD_ACTION = "useProfileCloudAction";
+const APPLY_PROFILE_ACTION_IN_CLOUD = "applyProfileActionInCloud";
+const RUN_PROFILE_ACTION = "profileAction.runProfileAction";
+const RUN_PROFILE_AND_USER_SAVE = "profileAction.runProfileAndUserSave";
+const PROFILE_ACTION_HAS_ERROR = "profileAction.hasError";
+const PROFILE_ACTION_SAVING = "profileAction.saving";
+const PROFILE_ACTION_ERROR = "profileAction.error";
+const SAVE_PROFILE_AND_USER_TO_CLOUD = "saveProfileAndUserToCloud";
+const REPLACE_PROFILE_STATE = "replaceProfileState";
+
 describe("profile settings persistence contract", () => {
   it("exposes one shared cloud-backed action hook for profile setting saves", async () => {
     const source = await readSource("src/features/profile/useProfileCloudAction.ts");
 
-    expect(source).toContain("applyProfileActionInCloud");
+    expect(source).toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
     expect(source).toContain("setSaving(true)");
     expect(source).toContain("runProfileStateSave");
     expect(source).toContain("runProfileAndUserSave");
     expect(source).toContain("saveProfileStateToCloud");
-    expect(source).toContain("saveProfileAndUserToCloud");
-    expect(source).toContain("replaceProfileState");
+    expect(source).toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
+    expect(source).toContain(REPLACE_PROFILE_STATE);
     expect(source).toContain("setUser");
     expect(source).toContain("setError");
     expect(source).toContain("throw caughtError");
@@ -24,12 +34,12 @@ describe("profile settings persistence contract", () => {
   it("persists authenticated language changes through the profile cloud contract", async () => {
     const source = await readSource("src/app/layouts/AppLayout.tsx");
 
-    expect(source).toContain("useProfileCloudAction");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
     expect(source).toContain("runProfileAction(setProfileLanguage(nextLanguage))");
     expect(source).toContain("setLanguage(nextProfile.languagePreference)");
     expect(source).toContain("persisted: true");
     expect(source).toContain("disabled={languageProfileAction.saving}");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
   it("keeps notification preferences cloud-confirmed with visible failure state", async () => {
@@ -37,12 +47,12 @@ describe("profile settings persistence contract", () => {
       "src/features/profile/NotificationSettingsCard.tsx"
     );
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAction");
-    expect(source).toContain("profileAction.hasError");
-    expect(source).toContain("profileAction.saving");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_ACTION);
+    expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
     expect(source).toContain("copy.saveError");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
   it("keeps assistant customization settings on the shared cloud contract", async () => {
@@ -50,36 +60,36 @@ describe("profile settings persistence contract", () => {
       "src/features/profile/AssistantCustomizationCard.tsx"
     );
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAction");
-    expect(source).toContain("profileAction.hasError");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_ACTION);
+    expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
     expect(source).toContain("disabled={profileAction.saving}");
     expect(source).toContain("catch(() => undefined)");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
   it("keeps adaptive goal changes cloud-confirmed with retry feedback", async () => {
     const source = await readSource("src/features/profile/AdaptiveGoalCard.tsx");
 
-    expect(source).toContain("useProfileCloudAction");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
     expect(source).toContain("runProfileAction");
     expect(source).toContain("setAdaptiveCalories");
-    expect(source).toContain("profileAction.hasError");
+    expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
     expect(source).toContain("disabled={profileAction.saving}");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
   it("keeps motivation actions and reset on the shared profile persistence contract", async () => {
     const source = await readSource("src/features/profile/MotivationHubCard.tsx");
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAction");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_ACTION);
     expect(source).toContain("profileAction.runProfileStateSave");
-    expect(source).toContain("profileAction.hasError");
-    expect(source).toContain("profileAction.saving");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
     expect(source).not.toContain("saveProfileStateToCloud");
-    expect(source).not.toContain("replaceProfileState");
+    expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
 
   it("keeps progress photo add and remove on the shared profile persistence contract", async () => {
@@ -87,24 +97,24 @@ describe("profile settings persistence contract", () => {
       "src/features/profile/BodyProgressPhotosCard.tsx"
     );
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAction");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_ACTION);
     expect(source).toContain("addProgressPhoto");
     expect(source).toContain("removeProgressPhoto");
-    expect(source).toContain("profileAction.hasError");
-    expect(source).toContain("profileAction.saving");
-    expect(source).not.toContain("applyProfileActionInCloud");
+    expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
+    expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
   it("keeps the full profile form on the shared user/profile cloud save contract", async () => {
     const source = await readSource("src/features/profile/ProfileForm.tsx");
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAndUserSave");
-    expect(source).toContain("profileAction.saving");
-    expect(source).toContain("profileAction.error");
-    expect(source).not.toContain("saveProfileAndUserToCloud");
-    expect(source).not.toContain("replaceProfileState");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
+    expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
+    expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
 
   it("keeps measurement check-ins on the shared user/profile cloud save contract", async () => {
@@ -112,12 +122,12 @@ describe("profile settings persistence contract", () => {
       "src/features/profile/MeasurementsCheckInCard.tsx"
     );
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAndUserSave");
-    expect(source).toContain("profileAction.saving");
-    expect(source).toContain("profileAction.error");
-    expect(source).not.toContain("saveProfileAndUserToCloud");
-    expect(source).not.toContain("replaceProfileState");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
+    expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
+    expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
 
   it("keeps quick weight check-ins on the shared user/profile cloud save contract", async () => {
@@ -125,11 +135,11 @@ describe("profile settings persistence contract", () => {
       "src/features/profile/QuickWeightCheckInCard.tsx"
     );
 
-    expect(source).toContain("useProfileCloudAction");
-    expect(source).toContain("profileAction.runProfileAndUserSave");
-    expect(source).toContain("profileAction.saving");
-    expect(source).toContain("profileAction.error");
-    expect(source).not.toContain("saveProfileAndUserToCloud");
-    expect(source).not.toContain("replaceProfileState");
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
+    expect(source).toContain(PROFILE_ACTION_SAVING);
+    expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
+    expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
 });

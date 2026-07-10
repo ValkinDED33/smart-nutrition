@@ -41,6 +41,7 @@ import {
   type AssistantRelationshipLevel,
 } from "../core/assistant";
 import { useCompanionRenderModePreference } from "../features/profile/useCompanionRenderModePreference";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const AssistantRuntimeCard = lazy(() =>
   import("../features/assistant/AssistantRuntimeCard").then((module) => ({
@@ -293,6 +294,92 @@ const aiCopy = {
 
 type AiCompanionSection = "companion" | "progress" | "memory" | "settings";
 
+type AiCopy = (typeof aiCopy)[keyof typeof aiCopy];
+
+const COMPANION_ON_COLOR = "var(--sn-on-companion)";
+const COMPANION_MUTED_COLOR = "var(--sn-on-companion-muted)";
+const COMPANION_BORDER_COLOR = "var(--sn-border-strong)";
+const COMPANION_ACCENT_SOFT = "var(--sn-accent-soft)";
+const PREMIUM_PANEL_BORDER = "1px solid var(--sn-border-soft)";
+const THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
+
+const getAiCopy = (language: AppLanguage): AiCopy => {
+  switch (language) {
+    case "uk":
+      return aiCopy.uk;
+    case "pl":
+      return aiCopy.pl;
+    case "en":
+    default:
+      return aiCopy.en;
+  }
+};
+
+const getSectionLabel = (copy: AiCopy, section: AiCompanionSection): string => {
+  switch (section) {
+    case "progress":
+      return copy.sections.progress;
+    case "memory":
+      return copy.sections.memory;
+    case "settings":
+      return copy.sections.settings;
+    case "companion":
+    default:
+      return copy.sections.companion;
+  }
+};
+
+const getRelationshipLabel = (
+  copy: AiCopy,
+  level: AssistantRelationshipLevel
+): string => {
+  switch (level) {
+    case "warming_up":
+      return copy.relationshipLabels.warming_up;
+    case "trusted_companion":
+      return copy.relationshipLabels.trusted_companion;
+    case "deep_context":
+      return copy.relationshipLabels.deep_context;
+    case "new_companion":
+    default:
+      return copy.relationshipLabels.new_companion;
+  }
+};
+
+const getStateLabel = (copy: AiCopy, state: AssistantCoreState): string => {
+  switch (state) {
+    case "hydration_attention":
+      return copy.stateLabels.hydration_attention;
+    case "protein_attention":
+      return copy.stateLabels.protein_attention;
+    case "over_target":
+      return copy.stateLabels.over_target;
+    case "weekly_check_in":
+      return copy.stateLabels.weekly_check_in;
+    case "steady_day":
+      return copy.stateLabels.steady_day;
+    case "needs_context":
+    default:
+      return copy.stateLabels.needs_context;
+  }
+};
+
+const getEmotionLabel = (copy: AiCopy, emotion: AssistantCoreEmotion): string => {
+  switch (emotion) {
+    case "encouraging":
+      return copy.emotionLabels.encouraging;
+    case "focused":
+      return copy.emotionLabels.focused;
+    case "concerned":
+      return copy.emotionLabels.concerned;
+    case "celebrating":
+      return copy.emotionLabels.celebrating;
+    case "calm":
+    default:
+      return copy.emotionLabels.calm;
+  }
+};
+
 const AiCompanionPage = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -303,12 +390,12 @@ const AiCompanionPage = () => {
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage } = useLanguage();
-  const copy = aiCopy[appLanguage];
+  const copy = getAiCopy(appLanguage);
   const [runtimeStatus, setRuntimeStatus] = useState<AssistantRuntimeStatus | null>(null);
   const [activeSection, setActiveSection] = useState<AiCompanionSection>("companion");
   const recoveryCopy = buildLazyModuleRecoveryCopy(
     appLanguage,
-    copy.sections[activeSection]
+    getSectionLabel(copy, activeSection)
   );
   const companionRenderModePreference = useCompanionRenderModePreference();
   const isCompactCompanionStage = useMediaQuery("(max-width: 599.95px)");
@@ -435,10 +522,10 @@ const AiCompanionPage = () => {
     },
   ];
   const sections = [
-    { id: "companion", label: copy.sections.companion },
-    { id: "progress", label: copy.sections.progress },
-    { id: "memory", label: copy.sections.memory },
-    { id: "settings", label: copy.sections.settings },
+    { id: "companion", label: getSectionLabel(copy, "companion") },
+    { id: "progress", label: getSectionLabel(copy, "progress") },
+    { id: "memory", label: getSectionLabel(copy, "memory") },
+    { id: "settings", label: getSectionLabel(copy, "settings") },
   ];
 
   return (
@@ -459,8 +546,8 @@ const AiCompanionPage = () => {
           position: "relative",
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-strong)",
-          color: "var(--sn-on-companion)",
+          border: `1px solid ${COMPANION_BORDER_COLOR}`,
+          color: COMPANION_ON_COLOR,
           overflow: "hidden",
         }}
         >
@@ -501,7 +588,7 @@ const AiCompanionPage = () => {
             />
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
-            <Typography variant="overline" sx={{ color: "var(--sn-on-companion-muted)" }}>
+            <Typography variant="overline" sx={{ color: COMPANION_MUTED_COLOR }}>
               {assistant.name}
             </Typography>
             <Typography
@@ -514,7 +601,7 @@ const AiCompanionPage = () => {
             {user && (
               <Typography
                 sx={{
-                  color: "var(--sn-on-companion)",
+                  color: COMPANION_ON_COLOR,
                   fontWeight: 800,
                   overflowWrap: "anywhere",
                 }}
@@ -522,23 +609,23 @@ const AiCompanionPage = () => {
                 {copy.greeting(user.name)}
               </Typography>
             )}
-            <Typography sx={{ color: "var(--sn-on-companion-muted)", overflowWrap: "anywhere" }}>
+            <Typography sx={{ color: COMPANION_MUTED_COLOR, overflowWrap: "anywhere" }}>
               {copy.subtitle}
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               {[
-                copy.relationshipLabels[assistantCore.relationshipLevel],
-                copy.stateLabels[assistantCore.state],
-                copy.emotionLabels[assistantCore.emotion],
+                getRelationshipLabel(copy, assistantCore.relationshipLevel),
+                getStateLabel(copy, assistantCore.state),
+                getEmotionLabel(copy, assistantCore.emotion),
               ].map((label) => (
                 <Chip
                   key={label}
                   label={label}
                   variant="outlined"
                   sx={{
-                    color: "var(--sn-on-companion)",
-                    borderColor: "var(--sn-border-strong)",
-                    backgroundColor: "var(--sn-accent-soft)",
+                    color: COMPANION_ON_COLOR,
+                    borderColor: COMPANION_BORDER_COLOR,
+                    backgroundColor: COMPANION_ACCENT_SOFT,
                   }}
                 />
               ))}
@@ -547,9 +634,9 @@ const AiCompanionPage = () => {
                 variant="outlined"
                 sx={{
                   display: { xs: "none", md: "inline-flex" },
-                  color: "var(--sn-on-companion)",
-                  borderColor: "var(--sn-border-strong)",
-                  backgroundColor: "var(--sn-accent-soft)",
+                  color: COMPANION_ON_COLOR,
+                  borderColor: COMPANION_BORDER_COLOR,
+                  backgroundColor: COMPANION_ACCENT_SOFT,
                 }}
               />
             </Stack>
@@ -579,7 +666,7 @@ const AiCompanionPage = () => {
           sx={{
             p: { xs: 2, md: 3 },
             borderRadius: 1,
-            border: "1px solid var(--sn-border-soft)",
+            border: PREMIUM_PANEL_BORDER,
           }}
         >
           <Stack spacing={2}>
@@ -589,7 +676,7 @@ const AiCompanionPage = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
                 gap: 1.5,
               }}
             >
@@ -643,7 +730,7 @@ const AiCompanionPage = () => {
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-soft)",
+          border: PREMIUM_PANEL_BORDER,
         }}
       >
         <Stack spacing={2}>
@@ -656,7 +743,7 @@ const AiCompanionPage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
               gap: 1.5,
             }}
           >
@@ -687,7 +774,7 @@ const AiCompanionPage = () => {
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-soft)",
+          border: PREMIUM_PANEL_BORDER,
         }}
       >
         <Stack spacing={2}>
@@ -714,7 +801,7 @@ const AiCompanionPage = () => {
                 <Box
                   sx={{
                     display: "grid",
-                    gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+                    gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
                     gap: 1.5,
                   }}
                 >

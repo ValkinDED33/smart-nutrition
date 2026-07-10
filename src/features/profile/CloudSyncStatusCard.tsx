@@ -100,24 +100,48 @@ const syncStatusCopy = {
   },
 } as const;
 
-const syncStatusLocaleByLanguage: Record<AppLanguage, string> = {
-  uk: "uk-UA",
-  pl: "pl-PL",
-  en: "en-US",
+type SyncStatusCopy = (typeof syncStatusCopy)[keyof typeof syncStatusCopy];
+
+const getSyncStatusCopy = (language: AppLanguage): SyncStatusCopy => {
+  switch (language) {
+    case "uk":
+      return syncStatusCopy.uk;
+    case "pl":
+      return syncStatusCopy.pl;
+    case "en":
+    default:
+      return syncStatusCopy.en;
+  }
 };
 
-const formatSyncTime = (value: string | null, language: AppLanguage) => {
+const getSyncStatusLocale = (language: AppLanguage): string => {
+  switch (language) {
+    case "uk":
+      return "uk-UA";
+    case "pl":
+      return "pl-PL";
+    case "en":
+    default:
+      return "en-US";
+  }
+};
+
+const formatSyncTime = (
+  value: string | null,
+  language: AppLanguage,
+  copy: SyncStatusCopy
+) => {
   if (!value) {
-    return syncStatusCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
   const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
-    return syncStatusCopy[language].unknownTime;
+    return copy.unknownTime;
   }
 
-  return new Intl.DateTimeFormat(syncStatusLocaleByLanguage[language], {
+  return new Intl.DateTimeFormat(getSyncStatusLocale(language), {
     hour: "2-digit",
     minute: "2-digit",
     day: "2-digit",
@@ -130,7 +154,7 @@ export const CloudSyncStatusCard = () => {
   const { user, syncStatus, syncError, lastSyncedAt, syncOutbox, cloudMeta } =
     useSelector((state: RootState) => state.auth);
   const { appLanguage } = useLanguage();
-  const copy = syncStatusCopy[appLanguage];
+  const copy = getSyncStatusCopy(appLanguage);
 
   if (!user) {
     return null;
@@ -199,7 +223,13 @@ export const CloudSyncStatusCard = () => {
             color={syncStatus === "error" ? "warning" : "success"}
             variant={syncStatus === "syncing" ? "filled" : "outlined"}
           />
-          <Chip label={`${copy.lastSyncLabel}: ${formatSyncTime(lastSyncedAt, appLanguage)}`} />
+          <Chip
+            label={`${copy.lastSyncLabel}: ${formatSyncTime(
+              lastSyncedAt,
+              appLanguage,
+              copy
+            )}`}
+          />
           <Chip label={`${copy.writerLabel}: ${writerText}`} variant="outlined" />
           {syncOutbox.pendingChanges > 0 && (
             <Chip
@@ -216,7 +246,8 @@ export const CloudSyncStatusCard = () => {
           {syncOutbox.pendingChanges > 0
             ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, appLanguage) ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
                 syncOutbox.firstQueuedAt,
-                appLanguage
+                appLanguage,
+                copy
               )}.`
             : translatedSyncError ?? copy.remoteInfo}
         </Alert>
