@@ -101,9 +101,23 @@ export const createStateController = ({
   getSyncContext,
   broadcastStateMeta,
 }) => {
-  const sendSavedMeta = async (response, user) => {
+  const sendSavedMeta = async (response, user, payload = {}) => {
     await broadcastStateMeta(user);
-    sendJson(response, 200, { ok: true, meta: await stateService.getSnapshotMeta(user) });
+    sendJson(response, 200, {
+      ok: true,
+      ...payload,
+      meta: await stateService.getSnapshotMeta(user),
+    });
+  };
+
+  const sendSavedMeal = async (response, user, statusCode = 200, payload = {}) => {
+    await broadcastStateMeta(user);
+    sendJson(response, statusCode, {
+      ok: true,
+      ...payload,
+      meal: await stateService.getMealState(user),
+      meta: await stateService.getSnapshotMeta(user),
+    });
   };
 
   const getStatsSummary = async (user) => {
@@ -348,8 +362,7 @@ export const createStateController = ({
     addMealEntries: async ({ request, response, auth }) => {
       const body = await readJsonBody(request, bodyLimitBytes);
       await stateService.addMealEntries(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user);
-      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
+      await sendSavedMeal(response, auth.user, 201);
     },
 
     addProductIntake: async ({ request, response, auth }) => {
@@ -398,14 +411,13 @@ export const createStateController = ({
         decodeURIComponent(params.entryId),
         getSyncContext(request)
       );
-      await sendSavedMeta(response, auth.user);
+      await sendSavedMeal(response, auth.user);
     },
 
     addMealTemplate: async ({ request, response, auth }) => {
       const body = await readJsonBody(request, bodyLimitBytes);
       await stateService.addMealTemplate(auth.user, body, getSyncContext(request));
-      await broadcastStateMeta(auth.user);
-      sendJson(response, 201, { ok: true, meta: await stateService.getSnapshotMeta(auth.user) });
+      await sendSavedMeal(response, auth.user, 201);
     },
 
     deleteMealTemplate: async ({ request, response, auth, params }) => {
@@ -414,7 +426,7 @@ export const createStateController = ({
         decodeURIComponent(params.templateId),
         getSyncContext(request)
       );
-      await sendSavedMeta(response, auth.user);
+      await sendSavedMeal(response, auth.user);
     },
 
     upsertMealProduct: async ({ request, response, auth, params }) => {
@@ -425,7 +437,7 @@ export const createStateController = ({
         body,
         getSyncContext(request)
       );
-      await sendSavedMeta(response, auth.user);
+      await sendSavedMeal(response, auth.user);
     },
 
     removeMealProduct: async ({ request, response, auth, params }) => {
@@ -435,7 +447,7 @@ export const createStateController = ({
         decodeURIComponent(params.productKey),
         getSyncContext(request)
       );
-      await sendSavedMeta(response, auth.user);
+      await sendSavedMeal(response, auth.user);
     },
 
     analyzePhoto: async ({ request, response, auth }) => {

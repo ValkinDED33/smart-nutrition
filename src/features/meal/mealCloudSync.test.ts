@@ -72,6 +72,31 @@ describe("mealCloudSync", () => {
     expect(dispatch).toHaveBeenCalledWith(replaceMealState(next));
   });
 
+  it("uses canonical backend meal state when quick add returns it", async () => {
+    const dispatch = vi.fn();
+    const entry = createEntry(ENTRY_ID_ONE);
+    const canonicalEntry = createEntry("server-normalized");
+    const canonicalMeal = {
+      ...createInitialMealState(),
+      items: [canonicalEntry],
+    };
+    authApiMock.createRemoteMealEntries.mockResolvedValueOnce({
+      ok: true,
+      meta: null,
+      meal: canonicalMeal,
+    });
+
+    const next = await addMealEntriesToCloud(
+      dispatch as never,
+      createInitialMealState(),
+      [entry]
+    );
+
+    expect(next).toBe(canonicalMeal);
+    expect(next.items).toEqual([canonicalEntry]);
+    expect(dispatch).toHaveBeenCalledWith(replaceMealState(canonicalMeal));
+  });
+
   it("does not mutate the runtime meal state when quick add save fails", async () => {
     const dispatch = vi.fn();
     authApiMock.createRemoteMealEntries.mockResolvedValueOnce({
@@ -115,6 +140,38 @@ describe("mealCloudSync", () => {
     expect(next.templates).toEqual([template]);
     expect(authApiMock.createRemoteMealTemplate).toHaveBeenCalledWith(template);
     expect(dispatch).toHaveBeenCalledWith(replaceMealState(next));
+  });
+
+  it("uses canonical backend meal state when template save returns it", async () => {
+    const dispatch = vi.fn();
+    const template = {
+      id: TEMPLATE_ID_ONE,
+      name: "Lunch",
+      mealType: "lunch" as const,
+      items: [{ product: createEntry(ENTRY_ID_ONE).product, quantity: 120 }],
+      createdAt: TEMPLATE_CREATED_AT,
+    };
+    const canonicalMeal = {
+      ...createInitialMealState(),
+      templates: [{ ...template, name: "Server Lunch" }],
+    };
+    authApiMock.createRemoteMealTemplate.mockResolvedValueOnce({
+      ok: true,
+      meta: null,
+      meal: canonicalMeal,
+    });
+
+    const next = await saveMealTemplateToCloud(
+      dispatch as never,
+      createInitialMealState(),
+      template
+    );
+
+    expect(next).toBe(canonicalMeal);
+    expect(next.templates).toEqual([
+      expect.objectContaining({ name: "Server Lunch" }),
+    ]);
+    expect(dispatch).toHaveBeenCalledWith(replaceMealState(canonicalMeal));
   });
 
   it("uses the same cloud-confirmed path when applying templates", async () => {

@@ -42,6 +42,7 @@ export interface RemoteSyncResult {
   message?: string;
   code?: string;
   meta?: AppSnapshotMeta | null;
+  meal?: unknown;
 }
 
 const REMOTE_API_UNAVAILABLE_MESSAGE = "Backend unavailable. Please reconnect.";
@@ -97,6 +98,7 @@ export interface TelegramConnectLink extends TelegramConnectionStatus {
 interface RemoteMutationResponse {
   ok: true;
   meta: AppSnapshotMeta | null;
+  meal?: unknown;
 }
 
 interface RemoteProfileAndStateResponse extends RemoteMutationResponse {
@@ -903,9 +905,23 @@ const getRemoteMutationResult = async (
       writeCachedRemoteMeta(data.meta);
     }
 
+    if (data.meal) {
+      const cachedSnapshot = readCachedRemoteSnapshot();
+
+      if (cachedSnapshot) {
+        writeCachedRemoteSnapshot({
+          ...cachedSnapshot,
+          meal: data.meal,
+          mealUpdatedAt: data.meta?.mealUpdatedAt ?? cachedSnapshot.mealUpdatedAt,
+          updatedAt: data.meta?.updatedAt ?? cachedSnapshot.updatedAt,
+        });
+      }
+    }
+
     return {
       ok: true,
       meta: data.meta,
+      meal: data.meal,
     };
   } catch (error) {
     return toRemoteSyncResult(error);
