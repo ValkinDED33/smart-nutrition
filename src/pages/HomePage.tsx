@@ -7,9 +7,11 @@ import {
   BookOpen,
   Camera,
   ChefHat,
+  Droplets,
   Plus,
   Search,
   ScanBarcode,
+  Sparkles,
   UserRound,
   UsersRound,
   Utensils,
@@ -38,17 +40,25 @@ import {
   type AssistantHomeAction,
 } from "@features/assistant/assistantHomeIntelligence";
 import { useLanguage } from "../shared/language";
+import { useAppColorMode } from "../shared/theme/colorMode";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
-import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import { SectionCard, SectionTabs } from "@shared/ui";
 import type { AppLanguage } from "@shared/types/i18n";
 
 const COMMON_KCAL_KEY = "common.kcal";
 const COMMON_GRAMS_KEY = "common.g";
-const COMPANION_MUTED_COLOR = "var(--sn-on-companion-muted)";
-const COMPANION_ON_COLOR = "var(--sn-on-companion)";
 const ELEVATED_SURFACE_COLOR = "var(--sn-surface-elevated)";
 const ACCENT_SOFT_COLOR = "var(--sn-accent-soft)";
 const ALIGN_START = "flex-start";
+const LEGACY_ASSISTANT_NAMES = new Set(["hyemye", "hye-mye", "hue-mue", "huemue"]);
+
+const getAssistantDisplayName = (name: string) => {
+  const normalized = name.trim().toLowerCase();
+
+  return normalized && !LEGACY_ASSISTANT_NAMES.has(normalized)
+    ? name.trim()
+    : "Smart Nutrition AI";
+};
 
 const homeCopy = {
   uk: {
@@ -175,6 +185,7 @@ const HomePage = () => {
   const totals = useSelector(selectTodayMealTotalNutrients);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage, t } = useLanguage();
+  const { isDarkMode } = useAppColorMode();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<HomeSection>("today");
   const copy = getHomeCopy(appLanguage);
@@ -205,6 +216,22 @@ const HomePage = () => {
   }
 
   const firstName = user.name.split(" ")[0] || user.name;
+  const assistantDisplayName = getAssistantDisplayName(assistant.name);
+  const heroTextColor = isDarkMode ? "#ffffff" : "#102a43";
+  const heroMutedColor = isDarkMode ? "rgba(226,232,240,0.74)" : "rgba(15,23,42,0.66)";
+  const heroOverlineColor = isDarkMode ? "rgba(236,253,245,0.82)" : "#0f766e";
+  const heroBorder = isDarkMode ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.74)";
+  const heroBackground = isDarkMode
+    ? "radial-gradient(circle at 76% 18%, rgba(255,255,255,0.3), transparent 15%), radial-gradient(circle at 76% 42%, rgba(163,230,53,0.32), transparent 25%), radial-gradient(circle at 88% 74%, rgba(20,184,166,0.26), transparent 30%), linear-gradient(135deg, #020617 0%, #07111f 46%, #042f2e 100%)"
+    : "radial-gradient(circle at 76% 18%, rgba(255,255,255,0.98), transparent 22%), radial-gradient(circle at 78% 42%, rgba(125,211,252,0.48), transparent 28%), radial-gradient(circle at 88% 74%, rgba(20,184,166,0.24), transparent 32%), radial-gradient(circle at 62% 76%, rgba(187,247,208,0.52), transparent 28%), linear-gradient(135deg, #fbfffe 0%, #effdfa 34%, #e6f7ff 100%)";
+  const heroOverlay = isDarkMode
+    ? "linear-gradient(90deg, rgba(2,6,23,0.94) 0%, rgba(2,6,23,0.68) 48%, rgba(2,6,23,0.1) 100%)"
+    : "linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(240,253,250,0.56) 48%, rgba(240,249,255,0.04) 100%)";
+  const heroRing = isDarkMode
+    ? "radial-gradient(circle, transparent 41%, rgba(255,255,255,0.2) 42%, rgba(163,230,53,0.34) 48%, rgba(20,184,166,0.12) 56%, transparent 64%)"
+    : "radial-gradient(circle, transparent 40%, rgba(255,255,255,0.92) 41%, rgba(14,165,233,0.34) 48%, rgba(20,184,166,0.16) 56%, transparent 64%)";
+  const glassMetricBg = isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.64)";
+  const actionCardBg = isDarkMode ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.82)";
   const caloriesLeft = Math.max(dailyCalories - totals.calories, 0);
   const proteinLeft = Math.max(macroTargets.protein - totals.protein, 0);
   const waterLeft = Math.max(water.dailyWaterGoal - water.consumedMl, 0);
@@ -285,24 +312,102 @@ const HomePage = () => {
   );
 
   return (
-    <PageShell
-      title={copy.greeting.replace("{name}", firstName)}
-      subtitle={copy.subtitle}
-      maxWidth={980}
+    <Box
+      sx={{
+        width: "100%",
+        maxWidth: 1040,
+        mx: "auto",
+        px: { xs: 0.5, sm: 1, md: 0 },
+        pb: "calc(96px + env(safe-area-inset-bottom, 0px))",
+        overflowX: "hidden",
+      }}
     >
+      <Stack spacing={{ xs: 1.6, md: 2.4 }}>
       <Paper
-        className="sn-companion-panel"
         elevation={0}
         sx={{
           position: "relative",
           overflow: "hidden",
-          p: { xs: 2, md: 3 },
+          p: { xs: 2.1, sm: 2.6, md: 3.4 },
           borderRadius: 1,
-          color: COMPANION_ON_COLOR,
-          border: "1px solid var(--sn-border-strong)",
+          color: heroTextColor,
+          minHeight: { xs: 520, sm: 560, md: 520 },
+          border: `1px solid ${heroBorder}`,
+          background: heroBackground,
+          boxShadow: isDarkMode
+            ? "0 34px 110px rgba(2,6,23,0.34)"
+            : "0 34px 100px rgba(14,165,233,0.18)",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: 0,
+            background: heroOverlay,
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            width: { xs: 380, sm: 520, md: 620 },
+            height: { xs: 380, sm: 520, md: 620 },
+            right: { xs: -172, sm: -110, md: -22 },
+            top: { xs: 42, sm: -8, md: -42 },
+            borderRadius: "50%",
+            background: heroRing,
+            filter: isDarkMode
+              ? "drop-shadow(0 0 72px rgba(163,230,53,0.24))"
+              : "drop-shadow(0 0 72px rgba(14,165,233,0.24))",
+            opacity: 0.9,
+          },
         }}
       >
-        <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1 }}>
+        <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1, maxWidth: { md: 640 } }}>
+          <Stack spacing={0.9}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  color: "#07111f",
+                  background: "linear-gradient(135deg, #a3e635, #22d3ee)",
+                  boxShadow: "0 0 34px rgba(163,230,53,0.34)",
+                }}
+              >
+                <Sparkles size={17} aria-hidden="true" />
+              </Box>
+              <Typography
+                variant="overline"
+                sx={{ color: heroOverlineColor, fontWeight: 900 }}
+              >
+                Smart Nutrition · AI Companion
+              </Typography>
+            </Stack>
+            <Typography
+              component="h1"
+              sx={{
+                fontWeight: 950,
+                fontSize: { xs: 38, sm: 52, md: 64 },
+                lineHeight: 0.96,
+                letterSpacing: 0,
+                textWrap: "balance",
+              }}
+            >
+              {copy.greeting.replace("{name}", firstName)}
+            </Typography>
+            <Typography
+              sx={{
+                maxWidth: 620,
+                color: heroMutedColor,
+                fontSize: { xs: 17, md: 19 },
+                lineHeight: 1.55,
+                fontWeight: 650,
+              }}
+            >
+              {copy.subtitle}
+            </Typography>
+          </Stack>
+
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.6}
@@ -310,15 +415,31 @@ const HomePage = () => {
             justifyContent="space-between"
           >
             <Stack direction="row" spacing={1.4} alignItems="center" minWidth={0}>
-              <AssistantAvatar
-                name={assistant.name}
-                variant={assistant.companionKind}
-                mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
-                size={72}
-                active
-              />
+              <Box
+                sx={{
+                  position: "relative",
+                  width: 82,
+                  height: 82,
+                  borderRadius: 1,
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                  background:
+                    "linear-gradient(135deg, rgba(34,211,238,0.24), rgba(163,230,53,0.18))",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  boxShadow: "0 20px 54px rgba(20,184,166,0.22)",
+                }}
+              >
+                <AssistantAvatar
+                  name={assistantDisplayName}
+                  variant="robot"
+                  mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
+                  size={62}
+                  active
+                />
+              </Box>
               <Stack spacing={0.4} minWidth={0}>
-                <Typography variant="overline" sx={{ color: COMPANION_MUTED_COLOR }}>
+                <Typography variant="overline" sx={{ color: heroMutedColor }}>
                   {copy.assistant} · {intelligence.headline}
                 </Typography>
                 <Typography
@@ -326,10 +447,10 @@ const HomePage = () => {
                   variant="h4"
                   sx={{ fontWeight: 900, overflowWrap: "anywhere" }}
                 >
-                  {assistant.name}
+                  {assistantDisplayName}
                 </Typography>
-                <Typography sx={{ color: COMPANION_MUTED_COLOR }}>
-                  {copy.greeting.replace("{name}", firstName)}
+                <Typography sx={{ color: heroMutedColor }}>
+                  {copy.assistantAction}
                 </Typography>
               </Stack>
             </Stack>
@@ -339,10 +460,10 @@ const HomePage = () => {
               sx={{
                 width: 52,
                 height: 52,
-                color: "var(--sn-text-primary)",
-                bgcolor: ELEVATED_SURFACE_COLOR,
-                border: "1px solid var(--sn-border-soft)",
-                "&:hover": { bgcolor: ACCENT_SOFT_COLOR },
+                color: "#07111f",
+                bgcolor: "rgba(255,255,255,0.92)",
+                border: "1px solid rgba(255,255,255,0.7)",
+                "&:hover": { bgcolor: "#ffffff" },
               }}
             >
               <Plus size={24} />
@@ -350,17 +471,12 @@ const HomePage = () => {
           </Stack>
 
           <Stack spacing={0.6}>
-            <Typography sx={{ color: COMPANION_MUTED_COLOR, maxWidth: 720 }}>
-              {copy.subtitle}
+            <Typography sx={{ color: heroMutedColor, maxWidth: 720 }}>
+              {intelligence.personalizationLine ?? copy.subtitle}
             </Typography>
-            <Typography sx={{ color: COMPANION_ON_COLOR, fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
+            <Typography sx={{ color: heroTextColor, fontWeight: 900, fontSize: { xs: 19, md: 22 }, lineHeight: 1.35 }}>
               {intelligence.message}
             </Typography>
-            {intelligence.personalizationLine && (
-              <Typography sx={{ color: COMPANION_MUTED_COLOR, maxWidth: 760 }}>
-                {intelligence.personalizationLine}
-              </Typography>
-            )}
           </Stack>
 
           <Paper
@@ -368,10 +484,10 @@ const HomePage = () => {
             sx={{
               p: 1.6,
               borderRadius: 1,
-              color: COMPANION_ON_COLOR,
-              bgcolor: "rgba(20,184,166,0.12)",
-              border: "1px solid var(--sn-border-strong)",
-              backdropFilter: "blur(16px)",
+              color: heroTextColor,
+              bgcolor: glassMetricBg,
+              border: `1px solid ${heroBorder}`,
+              backdropFilter: "blur(18px)",
             }}
           >
             <Stack spacing={1.2}>
@@ -387,8 +503,11 @@ const HomePage = () => {
                 sx={{
                   height: 10,
                   borderRadius: 999,
-                  bgcolor: "var(--sn-surface-muted)",
-                  "& .MuiLinearProgress-bar": { bgcolor: "var(--sn-accent)" },
+                    bgcolor: isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.08)",
+                  "& .MuiLinearProgress-bar": {
+                    bgcolor: "#a3e635",
+                    boxShadow: "0 0 24px rgba(163,230,53,0.36)",
+                  },
                 }}
               />
               <Box
@@ -404,7 +523,7 @@ const HomePage = () => {
                   [`${copy.waterLeft}`, `${waterLeft.toFixed(0)} ml`],
                 ].map(([label, value]) => (
                   <Box key={label}>
-                    <Typography variant="caption" sx={{ color: COMPANION_MUTED_COLOR }}>
+                    <Typography variant="caption" sx={{ color: heroMutedColor }}>
                       {label}
                     </Typography>
                     <Typography sx={{ fontWeight: 900 }}>{value}</Typography>
@@ -415,7 +534,7 @@ const HomePage = () => {
           </Paper>
 
           <Stack spacing={0.8}>
-            <Typography variant="caption" sx={{ color: "var(--sn-on-companion-muted)", fontWeight: 800 }}>
+            <Typography variant="caption" sx={{ color: heroMutedColor, fontWeight: 800 }}>
               {copy.assistantAction}
             </Typography>
             <Paper
@@ -428,10 +547,11 @@ const HomePage = () => {
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
-                color: "var(--sn-text-primary)",
-                bgcolor: ELEVATED_SURFACE_COLOR,
-                border: "1px solid var(--sn-border-soft)",
-                "&:hover": { bgcolor: ACCENT_SOFT_COLOR },
+                color: "#102a43",
+                bgcolor: actionCardBg,
+                border: "1px solid rgba(255,255,255,0.66)",
+                backdropFilter: "blur(16px)",
+                "&:hover": { bgcolor: "#ffffff" },
               }}
             >
               <Stack spacing={0.4}>
@@ -445,6 +565,25 @@ const HomePage = () => {
             </Paper>
           </Stack>
         </Stack>
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            right: { xs: -10, sm: 42, md: 72 },
+            bottom: { xs: 70, sm: 46, md: 36 },
+            zIndex: 1,
+            width: { xs: 118, sm: 170, md: 210 },
+            height: { xs: 118, sm: 170, md: 210 },
+            borderRadius: "50%",
+            display: { xs: "grid", sm: "grid" },
+            placeItems: "center",
+            background:
+              "radial-gradient(circle, rgba(163,230,53,0.28), rgba(20,184,166,0.08) 58%, transparent 70%)",
+            filter: "drop-shadow(0 0 44px rgba(163,230,53,0.26))",
+          }}
+        >
+          <Droplets size={42} color="#67e8f9" />
+        </Box>
       </Paper>
 
       <SectionTabs
@@ -641,7 +780,8 @@ const HomePage = () => {
           </Button>
         </Stack>
       </Drawer>
-    </PageShell>
+      </Stack>
+    </Box>
   );
 };
 
