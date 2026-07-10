@@ -9,6 +9,7 @@ import {
   type NutritionCoachStatus,
 } from "@domain/meal/nutritionCoach";
 import { selectMealItems } from "./selectors";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const coachCopy = {
   uk: {
@@ -288,6 +289,83 @@ const insightAccent = {
 
 const formatAverageMeals = (value: number) => value.toFixed(1);
 
+type CoachCopy = (typeof coachCopy)[AppLanguage];
+type CoachInsightCode = NutritionCoachInsight["code"];
+
+const getCoachCopy = (language: AppLanguage): CoachCopy => {
+  switch (language) {
+    case "pl":
+      return coachCopy.pl;
+    case "en":
+      return coachCopy.en;
+    case "uk":
+    default:
+      return coachCopy.uk;
+  }
+};
+
+const getCoachStatusColor = (status: NutritionCoachStatus) => {
+  switch (status) {
+    case "strong":
+      return statusColor.strong;
+    case "steady":
+      return statusColor.steady;
+    case "attention":
+    default:
+      return statusColor.attention;
+  }
+};
+
+const getCoachStatusLabel = (copy: CoachCopy, status: NutritionCoachStatus) => {
+  switch (status) {
+    case "strong":
+      return copy.status.strong;
+    case "steady":
+      return copy.status.steady;
+    case "attention":
+    default:
+      return copy.status.attention;
+  }
+};
+
+const getCoachInsightCopy = (copy: CoachCopy, code: CoachInsightCode) => {
+  switch (code) {
+    case "logging_low":
+      return copy.insights.logging_low;
+    case "protein_low":
+      return copy.insights.protein_low;
+    case "water_low":
+      return copy.insights.water_low;
+    case "breakfast_skipped":
+      return copy.insights.breakfast_skipped;
+    case "fiber_low":
+      return copy.insights.fiber_low;
+    case "calories_high":
+      return copy.insights.calories_high;
+    case "calories_low":
+      return copy.insights.calories_low;
+    case "meal_pattern":
+      return copy.insights.meal_pattern;
+    case "weight_trend":
+      return copy.insights.weight_trend;
+    case "on_track":
+    default:
+      return copy.insights.on_track;
+  }
+};
+
+const getInsightAccent = (severity: NutritionCoachInsight["severity"]) => {
+  switch (severity) {
+    case "success":
+      return insightAccent.success;
+    case "warning":
+      return insightAccent.warning;
+    case "info":
+    default:
+      return insightAccent.info;
+  }
+};
+
 export const NutritionCoachCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const items = useSelector(selectMealItems);
@@ -299,7 +377,7 @@ export const NutritionCoachCard = () => {
     return null;
   }
 
-  const copy = coachCopy[appLanguage];
+  const copy = getCoachCopy(appLanguage);
   const analysis = generateNutritionCoachAnalysis({
     items,
     dailyCalories: profile.dailyCalories,
@@ -343,7 +421,7 @@ export const NutritionCoachCard = () => {
           </Stack>
           <Chip
             label={`${copy.score}: ${analysis.score}/100`}
-            color={statusColor[analysis.status]}
+            color={getCoachStatusColor(analysis.status)}
             sx={{ fontWeight: 800 }}
           />
         </Stack>
@@ -373,13 +451,13 @@ export const NutritionCoachCard = () => {
         >
           <Stack spacing={0.6}>
             <Typography variant="overline" sx={{ fontWeight: 800, color: "#0f766e" }}>
-              {copy.status[analysis.status]}
+              {getCoachStatusLabel(copy, analysis.status)}
             </Typography>
             <Typography sx={{ fontWeight: 800 }}>
-              {copy.focus}: {copy.insights[primaryInsight.code].title}
+              {copy.focus}: {getCoachInsightCopy(copy, primaryInsight.code).title}
             </Typography>
             <Typography color="text.secondary">
-              {copy.insights[primaryInsight.code].detail(analysis)}
+              {getCoachInsightCopy(copy, primaryInsight.code).detail(analysis)}
             </Typography>
           </Stack>
         </Paper>
@@ -392,7 +470,7 @@ export const NutritionCoachCard = () => {
           }}
         >
           {analysis.insights.map((insight: NutritionCoachInsight) => {
-            const localizedInsight = copy.insights[insight.code];
+            const localizedInsight = getCoachInsightCopy(copy, insight.code);
 
             return (
               <Paper
@@ -401,7 +479,7 @@ export const NutritionCoachCard = () => {
                 sx={{
                   p: 2,
                   borderRadius: 1,
-                  ...insightAccent[insight.severity],
+                  ...getInsightAccent(insight.severity),
                 }}
               >
                 <Stack spacing={0.8}>

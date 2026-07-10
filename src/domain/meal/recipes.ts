@@ -9,8 +9,11 @@ const legacyProductIds: Record<string, string> = {
   "manual-nuts": "manual-almonds",
 };
 
+const getCanonicalProductId = (id: string) =>
+  Object.entries(legacyProductIds).find(([legacyId]) => legacyId === id)?.[1] ?? id;
+
 const requireProduct = (id: string): Product => {
-  const normalizedId = legacyProductIds[id] ?? id;
+  const normalizedId = getCanonicalProductId(id);
   const product = productCatalog.find((item) => item.id === normalizedId);
 
   if (!product) {

@@ -65,6 +65,20 @@ const editorCopy = {
   },
 } as const;
 
+type EditorCopy = (typeof editorCopy)[AppLanguage];
+
+const getEditorCopy = (language: AppLanguage): EditorCopy => {
+  switch (language) {
+    case "pl":
+      return editorCopy.pl;
+    case "en":
+      return editorCopy.en;
+    case "uk":
+    default:
+      return editorCopy.uk;
+  }
+};
+
 const CandidateProductCard = ({
   active,
   appLanguage,
@@ -113,7 +127,7 @@ const CandidateProductCard = ({
 
 export const MealEntryEditorPanel = ({ entry }: Props) => {
   const { appLanguage, t } = useLanguage();
-  const copy = editorCopy[appLanguage];
+  const copy = getEditorCopy(appLanguage);
   const editor = useMealEntryEditor(entry);
 
   const mealLabels: Record<MealType, string> = {

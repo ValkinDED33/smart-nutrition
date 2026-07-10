@@ -8,6 +8,14 @@ import {
   normalizeWaterState,
 } from "./waterModel";
 
+const CURRENT_WATER_DATE = "2026-05-05";
+const PREVIOUS_WATER_DATE = "2026-05-04";
+const STANDARD_WATER_TARGET_ML = 2000;
+const MORNING_REMINDER_START = "09:00";
+const EVENING_REMINDER_END = "21:00";
+const OVERNIGHT_REMINDER_START = "22:00";
+const OVERNIGHT_REMINDER_END = "06:00";
+
 describe("waterModel", () => {
   it("builds stable weekly records from history and the current day", () => {
     const records = createWeeklyWaterRecords(
@@ -16,15 +24,15 @@ describe("waterModel", () => {
         dailyWaterGoal: 2100,
         history: [
           {
-            date: "2026-05-04",
+            date: PREVIOUS_WATER_DATE,
             consumedMl: 1800,
-            targetMl: 2000,
+            targetMl: STANDARD_WATER_TARGET_ML,
             updatedAt: "2026-05-04T20:00:00.000Z",
           },
           {
             date: "2026-05-01",
             consumedMl: 2200,
-            targetMl: 2000,
+            targetMl: STANDARD_WATER_TARGET_ML,
             updatedAt: "2026-05-01T20:00:00.000Z",
           },
         ],
@@ -41,8 +49,8 @@ describe("waterModel", () => {
       "2026-05-04",
       "2026-05-05",
     ]);
-    expect(records[2]).toMatchObject({ consumedMl: 2200, targetMl: 2000 });
-    expect(records[5]).toMatchObject({ consumedMl: 1800, targetMl: 2000 });
+    expect(records[2]).toMatchObject({ consumedMl: 2200, targetMl: STANDARD_WATER_TARGET_ML });
+    expect(records[5]).toMatchObject({ consumedMl: 1800, targetMl: STANDARD_WATER_TARGET_ML });
     expect(records[6]).toMatchObject({ consumedMl: 1250, targetMl: 2100 });
   });
 
@@ -58,16 +66,16 @@ describe("waterModel", () => {
 
   it("supports normal and overnight reminder windows", () => {
     expect(
-      isWithinReminderWindow("09:00", "21:00", new Date(2026, 4, 5, 10))
+      isWithinReminderWindow(MORNING_REMINDER_START, EVENING_REMINDER_END, new Date(2026, 4, 5, 10))
     ).toBe(true);
     expect(
-      isWithinReminderWindow("09:00", "21:00", new Date(2026, 4, 5, 23))
+      isWithinReminderWindow(MORNING_REMINDER_START, EVENING_REMINDER_END, new Date(2026, 4, 5, 23))
     ).toBe(false);
     expect(
-      isWithinReminderWindow("22:00", "06:00", new Date(2026, 4, 5, 23))
+      isWithinReminderWindow(OVERNIGHT_REMINDER_START, OVERNIGHT_REMINDER_END, new Date(2026, 4, 5, 23))
     ).toBe(true);
     expect(
-      isWithinReminderWindow("22:00", "06:00", new Date(2026, 4, 5, 2))
+      isWithinReminderWindow(OVERNIGHT_REMINDER_START, OVERNIGHT_REMINDER_END, new Date(2026, 4, 5, 2))
     ).toBe(true);
   });
 
@@ -76,11 +84,11 @@ describe("waterModel", () => {
       consumedMl: "640",
       dailyWaterGoal: -1,
       glassSizeMl: 0,
-      lastLoggedOn: "2026-05-05",
+      lastLoggedOn: CURRENT_WATER_DATE,
       targetMode: "manual",
       history: [
-        { date: "bad-date", consumedMl: 1000, targetMl: 2000 },
-        { date: "2026-05-04", consumedMl: 1900, targetMl: 2000 },
+        { date: "bad-date", consumedMl: 1000, targetMl: STANDARD_WATER_TARGET_ML },
+        { date: PREVIOUS_WATER_DATE, consumedMl: 1900, targetMl: STANDARD_WATER_TARGET_ML },
       ],
       reminders: {
         enabled: true,
@@ -94,7 +102,7 @@ describe("waterModel", () => {
       consumedMl: 640,
       dailyWaterGoal: 2000,
       glassSizeMl: 250,
-      lastLoggedOn: "2026-05-05",
+      lastLoggedOn: CURRENT_WATER_DATE,
       targetMode: "manual",
       reminders: {
         enabled: true,
@@ -103,7 +111,7 @@ describe("waterModel", () => {
         endTime: "20:00",
       },
     });
-    expect(state.history.map((entry) => entry.date)).toContain("2026-05-05");
+    expect(state.history.map((entry) => entry.date)).toContain(CURRENT_WATER_DATE);
     expect(state.history.map((entry) => entry.date)).not.toContain("bad-date");
   });
 
@@ -111,11 +119,11 @@ describe("waterModel", () => {
     const state = normalizeWaterState({
       dailyTargetMl: 2400,
       consumedMl: 500,
-      lastLoggedOn: "2026-05-05",
+      lastLoggedOn: CURRENT_WATER_DATE,
     });
 
     expect(state.dailyWaterGoal).toBe(2400);
-    expect(state.history.find((entry) => entry.date === "2026-05-05")).toMatchObject({
+    expect(state.history.find((entry) => entry.date === CURRENT_WATER_DATE)).toMatchObject({
       targetMl: 2400,
     });
   });

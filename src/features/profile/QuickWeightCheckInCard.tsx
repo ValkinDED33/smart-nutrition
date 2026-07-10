@@ -21,6 +21,7 @@ import { applyCompanionRewardInCloud } from "@features/companion/companionCloudS
 import { SectionCard } from "@shared/ui";
 import { buildProfileStateAfterWeightSave } from "./profileSaveModel";
 import { useProfileCloudAction } from "./useProfileCloudAction";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const quickWeightCopy = {
   uk: {
@@ -91,6 +92,37 @@ const quickWeightCopy = {
   },
 } as const;
 
+type QuickWeightCopy = (typeof quickWeightCopy)[AppLanguage];
+
+const getQuickWeightCopy = (language: AppLanguage): QuickWeightCopy => {
+  switch (language) {
+    case "pl":
+      return quickWeightCopy.pl;
+    case "en":
+      return quickWeightCopy.en;
+    case "uk":
+    default:
+      return quickWeightCopy.uk;
+  }
+};
+
+const getQuickWeightBmiLabel = (
+  copy: QuickWeightCopy,
+  bmiStatus: ReturnType<typeof getBmiStatus>
+) => {
+  switch (bmiStatus) {
+    case "underweight":
+      return copy.underweight;
+    case "overweight":
+      return copy.overweight;
+    case "obesity":
+      return copy.obesity;
+    case "normal":
+    default:
+      return copy.normal;
+  }
+};
+
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -126,7 +158,7 @@ export const QuickWeightCheckInCard = () => {
   const profileAction = useProfileCloudAction();
   const { targetWeight, targetWeightStart, weightHistory } = profile;
   const { appLanguage } = useLanguage();
-  const copy = quickWeightCopy[appLanguage];
+  const copy = getQuickWeightCopy(appLanguage);
   const latestEntry = weightHistory.at(-1);
   const latestWeight = latestEntry?.weight ?? user?.weight ?? 0;
   const [weightDraft, setWeightDraft] = useState(
@@ -238,7 +270,7 @@ export const QuickWeightCheckInCard = () => {
           />
           <Chip
             label={`${copy.bmi}: ${bmi > 0 ? bmi.toFixed(1) : "-"} • ${
-              copy[bmiStatus]
+              getQuickWeightBmiLabel(copy, bmiStatus)
             }`}
             color={bmiStatus === "normal" ? "success" : "default"}
             variant={bmiStatus === "normal" ? "filled" : "outlined"}

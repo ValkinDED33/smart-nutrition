@@ -63,6 +63,7 @@ import {
   buildWaterStateAfterWeightTargetSync,
 } from "./waterSaveModel";
 import { useWaterCloudAction } from "./useWaterCloudAction";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const waterCopy = {
   uk: {
@@ -213,6 +214,20 @@ const waterCopy = {
   },
 } as const;
 
+type WaterCopy = (typeof waterCopy)[AppLanguage];
+
+const getWaterCopy = (language: AppLanguage): WaterCopy => {
+  switch (language) {
+    case "pl":
+      return waterCopy.pl;
+    case "en":
+      return waterCopy.en;
+    case "uk":
+    default:
+      return waterCopy.uk;
+  }
+};
+
 export const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
@@ -224,7 +239,7 @@ export const WaterTracker = () => {
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
   const latestWeight = latestWeightHistoryWeight ?? authWeight ?? 0;
   const { appLanguage } = useLanguage();
-  const copy = waterCopy[appLanguage];
+  const copy = getWaterCopy(appLanguage);
   const waterAction = useWaterCloudAction();
   const {
     clearError: clearWaterActionError,

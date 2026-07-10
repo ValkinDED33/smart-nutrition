@@ -48,8 +48,32 @@ const accountLocaleByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getAccountCopy = (language: AppLanguage): AccountCopy => {
+  switch (language) {
+    case "pl":
+      return accountCopy.pl;
+    case "en":
+      return accountCopy.en;
+    case "uk":
+    default:
+      return accountCopy.uk;
+  }
+};
+
+const getAccountLocale = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return accountLocaleByLanguage.pl;
+    case "en":
+      return accountLocaleByLanguage.en;
+    case "uk":
+    default:
+      return accountLocaleByLanguage.uk;
+  }
+};
+
 const formatBackupTimestamp = (value: string, language: AppLanguage) =>
-  new Date(value).toLocaleString(accountLocaleByLanguage[language]);
+  new Date(value).toLocaleString(getAccountLocale(language));
 
 const getRuntimeLabels = (copy: AccountCopy) => ({
   provider: copy.providerRemote,
@@ -62,7 +86,7 @@ export const AccountDataCard = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage } = useLanguage();
-  const copy = accountCopy[appLanguage];
+  const copy = getAccountCopy(appLanguage);
   const runtime = getAuthRuntimeInfo();
   const runtimeLabels = getRuntimeLabels(copy);
   const [notice, setNotice] = useState<{

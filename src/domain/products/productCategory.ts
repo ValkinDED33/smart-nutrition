@@ -17,6 +17,10 @@ const categoryLabels: Record<string, LocalizedLabel> = {
   vegetable: { uk: "Овочі", pl: "Warzywa", en: "Vegetables" },
 };
 
+const getKnownCategoryLabel = (categoryKey: string) =>
+  Object.entries(categoryLabels).find(([knownCategory]) => knownCategory === categoryKey)?.[1] ??
+  null;
+
 const normalizeCategory = (value: string) =>
   value
     .toLowerCase()
@@ -44,7 +48,23 @@ export const getProductCategoryKey = (product: Product) => {
 export const getProductCategoryLabel = (
   categoryKey: string,
   language: AppLanguage
-) => categoryLabels[categoryKey]?.[language] ?? formatFallbackLabel(categoryKey);
+) => {
+  const label = getKnownCategoryLabel(categoryKey);
+
+  if (!label) {
+    return formatFallbackLabel(categoryKey);
+  }
+
+  switch (language) {
+    case "pl":
+      return label.pl;
+    case "en":
+      return label.en;
+    case "uk":
+    default:
+      return label.uk;
+  }
+};
 
 export const getKnownProductCategoryOptions = (language: AppLanguage) =>
   Object.keys(categoryLabels)

@@ -6,9 +6,12 @@ import {
   getNextLevelProgress,
 } from "./companionProgression";
 
+const INITIAL_TIMESTAMP = "2026-06-08T10:00:00.000Z";
+const REWARD_TIMESTAMP = "2026-06-08T10:05:00.000Z";
+
 describe("companionProgression", () => {
   it("creates an initial level 1 state with zero xp", () => {
-    const state = createInitialCompanionState("2026-06-08T10:00:00.000Z");
+    const state = createInitialCompanionState(INITIAL_TIMESTAMP);
 
     expect(state).toMatchObject({
       level: 1,
@@ -18,23 +21,19 @@ describe("companionProgression", () => {
       achievements: [],
       ownedItemIds: [],
       equippedItemIds: [],
-      createdAt: "2026-06-08T10:00:00.000Z",
-      updatedAt: "2026-06-08T10:00:00.000Z",
+      createdAt: INITIAL_TIMESTAMP,
+      updatedAt: INITIAL_TIMESTAMP,
     });
   });
 
   it("increases xp when a known reward is applied", () => {
-    const state = createInitialCompanionState("2026-06-08T10:00:00.000Z");
-    const nextState = applyCompanionReward(
-      state,
-      "meal_added",
-      "2026-06-08T10:05:00.000Z"
-    );
+    const state = createInitialCompanionState(INITIAL_TIMESTAMP);
+    const nextState = applyCompanionReward(state, "meal_added", REWARD_TIMESTAMP);
 
     expect(nextState.xp).toBe(10);
     expect(nextState.coins).toBe(2);
     expect(nextState.level).toBe(1);
-    expect(nextState.updatedAt).toBe("2026-06-08T10:05:00.000Z");
+    expect(nextState.updatedAt).toBe(REWARD_TIMESTAMP);
   });
 
   it("changes level when a threshold is reached", () => {
@@ -70,12 +69,8 @@ describe("companionProgression", () => {
   });
 
   it("uses safe no-op behavior for unknown reward events", () => {
-    const state = createInitialCompanionState("2026-06-08T10:00:00.000Z");
-    const nextState = applyCompanionReward(
-      state,
-      "unknown_event",
-      "2026-06-08T10:05:00.000Z"
-    );
+    const state = createInitialCompanionState(INITIAL_TIMESTAMP);
+    const nextState = applyCompanionReward(state, "unknown_event", REWARD_TIMESTAMP);
 
     expect(nextState).toBe(state);
   });

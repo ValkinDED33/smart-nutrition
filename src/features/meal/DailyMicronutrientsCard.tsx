@@ -2,6 +2,7 @@ import { useSelector } from "react-redux";
 import { LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { selectTodayMealTotalNutrients } from "./selectors";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 type TrackedNutrientKey =
   | "fiber"
@@ -78,6 +79,79 @@ const micronutrientCopy = {
   },
 } as const;
 
+type MicronutrientCopy = (typeof micronutrientCopy)[AppLanguage];
+type TrackedUnit = "g" | "mg" | "mcg";
+
+const getMicronutrientCopy = (language: AppLanguage): MicronutrientCopy => {
+  switch (language) {
+    case "pl":
+      return micronutrientCopy.pl;
+    case "en":
+      return micronutrientCopy.en;
+    case "uk":
+    default:
+      return micronutrientCopy.uk;
+  }
+};
+
+const getTrackedNutrientTotal = (
+  totals: ReturnType<typeof selectTodayMealTotalNutrients>,
+  key: TrackedNutrientKey
+) => {
+  switch (key) {
+    case "water":
+      return totals.water;
+    case "vitaminC":
+      return totals.vitaminC;
+    case "vitaminD":
+      return totals.vitaminD;
+    case "calcium":
+      return totals.calcium;
+    case "iron":
+      return totals.iron;
+    case "potassium":
+      return totals.potassium;
+    case "fiber":
+    default:
+      return totals.fiber;
+  }
+};
+
+const getTrackedNutrientLabel = (
+  copy: MicronutrientCopy,
+  key: TrackedNutrientKey
+) => {
+  switch (key) {
+    case "water":
+      return copy.nutrients.water;
+    case "vitaminC":
+      return copy.nutrients.vitaminC;
+    case "vitaminD":
+      return copy.nutrients.vitaminD;
+    case "calcium":
+      return copy.nutrients.calcium;
+    case "iron":
+      return copy.nutrients.iron;
+    case "potassium":
+      return copy.nutrients.potassium;
+    case "fiber":
+    default:
+      return copy.nutrients.fiber;
+  }
+};
+
+const getTrackedUnitLabel = (copy: MicronutrientCopy, unit: TrackedUnit) => {
+  switch (unit) {
+    case "mg":
+      return copy.units.mg;
+    case "mcg":
+      return copy.units.mcg;
+    case "g":
+    default:
+      return copy.units.g;
+  }
+};
+
 const trackedNutrients = [
   { key: "fiber", unit: "g", target: 25, digits: 1 },
   { key: "water", unit: "g", target: 2000, digits: 0 },
@@ -88,7 +162,7 @@ const trackedNutrients = [
   { key: "potassium", unit: "mg", target: 3500, digits: 0 },
 ] as const satisfies ReadonlyArray<{
   key: TrackedNutrientKey;
-  unit: "g" | "mg" | "mcg";
+  unit: TrackedUnit;
   target: number;
   digits: number;
 }>;
@@ -96,10 +170,10 @@ const trackedNutrients = [
 export const DailyMicronutrientsCard = () => {
   const totals = useSelector(selectTodayMealTotalNutrients);
   const { appLanguage } = useLanguage();
-  const copy = micronutrientCopy[appLanguage];
+  const copy = getMicronutrientCopy(appLanguage);
 
   const hasAnyTrackedData = trackedNutrients.some(
-    (nutrient) => totals[nutrient.key] > 0.001
+    (nutrient) => getTrackedNutrientTotal(totals, nutrient.key) > 0.001
   );
 
   return (
@@ -131,8 +205,9 @@ export const DailyMicronutrientsCard = () => {
             }}
           >
             {trackedNutrients.map((nutrient) => {
-              const value = totals[nutrient.key];
+              const value = getTrackedNutrientTotal(totals, nutrient.key);
               const progress = Math.min((value / nutrient.target) * 100, 100);
+              const unitLabel = getTrackedUnitLabel(copy, nutrient.unit);
 
               return (
                 <Paper
@@ -148,11 +223,11 @@ export const DailyMicronutrientsCard = () => {
                       alignItems="center"
                     >
                       <Typography sx={{ fontWeight: 700 }}>
-                        {copy.nutrients[nutrient.key]}
+                        {getTrackedNutrientLabel(copy, nutrient.key)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {value.toFixed(nutrient.digits)} {copy.units[nutrient.unit]} /{" "}
-                        {nutrient.target} {copy.units[nutrient.unit]}
+                        {value.toFixed(nutrient.digits)} {unitLabel} /{" "}
+                        {nutrient.target} {unitLabel}
                       </Typography>
                     </Stack>
                     <LinearProgress

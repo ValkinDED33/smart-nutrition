@@ -60,6 +60,18 @@ const rewardAchievementMap: Partial<Record<CompanionRewardEvent, CompanionAchiev
   weight_updated: "first_weight_updated",
 };
 
+const getAchievementFromCatalog = (
+  achievementId: CompanionAchievementId
+): CompanionAchievement | null =>
+  Object.values(companionAchievementCatalog).find(
+    (achievement) => achievement.id === achievementId
+  ) ?? null;
+
+const getAchievementIdForReward = (
+  event: CompanionRewardEvent
+): CompanionAchievementId | undefined =>
+  Object.entries(rewardAchievementMap).find(([rewardEvent]) => rewardEvent === event)?.[1];
+
 const hasAchievement = (state: CompanionState, achievementId: string) =>
   state.achievements.some((achievement) => achievement.id === achievementId);
 
@@ -71,22 +83,21 @@ const getPendingAchievement = (
     return null;
   }
 
-  return companionAchievementCatalog[achievementId];
+  return getAchievementFromCatalog(achievementId);
 };
 
 export const getCompanionAchievementById = (
   id: string
 ): CompanionAchievement | null =>
-  Object.prototype.hasOwnProperty.call(companionAchievementCatalog, id)
-    ? companionAchievementCatalog[id as CompanionAchievementId]
-    : null;
+  Object.values(companionAchievementCatalog).find((achievement) => achievement.id === id) ??
+  null;
 
 export const evaluateAchievementsAfterReward = (
   state: CompanionState,
   event: CompanionRewardEvent
 ): CompanionAchievement[] => {
   const candidates = [
-    getPendingAchievement(state, rewardAchievementMap[event]),
+    getPendingAchievement(state, getAchievementIdForReward(event)),
     state.level >= 2 ? getPendingAchievement(state, "level_2_reached") : null,
     state.level >= 5 ? getPendingAchievement(state, "level_5_reached") : null,
   ];

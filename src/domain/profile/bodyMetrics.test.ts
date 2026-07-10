@@ -5,6 +5,9 @@ import {
   getMeasurementDelta,
 } from "./bodyMetrics";
 
+const FIRST_WEEK_TIMESTAMP = "2026-04-08T08:00:00.000Z";
+const SECOND_WEEK_TIMESTAMP = "2026-04-15T08:00:00.000Z";
+
 describe("bodyMetrics", () => {
   it("detects a stable multi-week weight plateau", () => {
     const plateau = detectWeightPlateau([
@@ -35,12 +38,12 @@ describe("bodyMetrics", () => {
     const report = createWeeklyBodyReport({
       heightCm: 180,
       weightHistory: [
-        { date: "2026-04-08T08:00:00.000Z", weight: 82 },
-        { date: "2026-04-15T08:00:00.000Z", weight: 81 },
+        { date: FIRST_WEEK_TIMESTAMP, weight: 82 },
+        { date: SECOND_WEEK_TIMESTAMP, weight: 81 },
       ],
       measurementHistory: [
-        { date: "2026-04-08T08:00:00.000Z", weight: 82, waist: 92, chest: 104 },
-        { date: "2026-04-15T08:00:00.000Z", weight: 81, waist: 91, chest: 103.5 },
+        { date: FIRST_WEEK_TIMESTAMP, weight: 82, waist: 92, chest: 104 },
+        { date: SECOND_WEEK_TIMESTAMP, weight: 81, waist: 91, chest: 103.5 },
       ],
     });
 

@@ -4,6 +4,7 @@ import { Award, Droplets, Scale, Sparkles, TrendingUp, Utensils, type LucideIcon
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { SectionCard, SectionHeader } from "@shared/ui";
 import { fadeUpVariants } from "@shared/ui/motion";
 import { buildCompanionProgressCardModel } from "./companionProgressCardModel";
@@ -56,6 +57,23 @@ const achievementIconMap: Record<string, LucideIcon> = {
   utensils: Utensils,
 };
 
+type CompanionProgressCopy = (typeof companionProgressCopy)[AppLanguage];
+
+const getCompanionProgressCopy = (language: AppLanguage): CompanionProgressCopy => {
+  switch (language) {
+    case "pl":
+      return companionProgressCopy.pl;
+    case "en":
+      return companionProgressCopy.en;
+    case "uk":
+    default:
+      return companionProgressCopy.uk;
+  }
+};
+
+const getAchievementIcon = (icon: string | undefined) =>
+  icon ? Object.entries(achievementIconMap).find(([iconName]) => iconName === icon)?.[1] : undefined;
+
 interface CompanionProgressCardProps {
   embedded?: boolean;
 }
@@ -63,7 +81,7 @@ interface CompanionProgressCardProps {
 export const CompanionProgressCard = ({ embedded = false }: CompanionProgressCardProps) => {
   const companionState = useSelector((state: RootState) => state.companion ?? null);
   const { appLanguage } = useLanguage();
-  const copy = companionProgressCopy[appLanguage];
+  const copy = getCompanionProgressCopy(appLanguage);
   const model = buildCompanionProgressCardModel(companionState);
   const stats = [
     { label: copy.level, value: model.level.toString() },
@@ -145,7 +163,7 @@ export const CompanionProgressCard = ({ embedded = false }: CompanionProgressCar
           {model.recentAchievements.length > 0 ? (
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               {model.recentAchievements.map((achievement) => {
-                const Icon = achievement.icon ? achievementIconMap[achievement.icon] : undefined;
+                const Icon = getAchievementIcon(achievement.icon);
 
                 return (
                   <Chip

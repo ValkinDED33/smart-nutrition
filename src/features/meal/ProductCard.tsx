@@ -36,6 +36,7 @@ import {
   saveMealProductToCloud,
 } from "./mealCloudSync";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 interface Props {
   product: Product;
@@ -82,6 +83,20 @@ const productCardCopy = {
   },
 } as const;
 
+type ProductCardCopy = (typeof productCardCopy)[AppLanguage];
+
+const getProductCardCopy = (language: AppLanguage): ProductCardCopy => {
+  switch (language) {
+    case "pl":
+      return productCardCopy.pl;
+    case "en":
+      return productCardCopy.en;
+    case "uk":
+    default:
+      return productCardCopy.uk;
+  }
+};
+
 export const ProductCard = ({
   product,
   mealType = "snack",
@@ -97,7 +112,7 @@ export const ProductCard = ({
   const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector((state: RootState) => selectSavedProducts(state));
   const { t, appLanguage } = useLanguage();
-  const copy = productCardCopy[appLanguage];
+  const copy = getProductCardCopy(appLanguage);
   const displayName = getProductDisplayName(product, appLanguage);
   const categoryKey = getProductCategoryKey(product);
   const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);

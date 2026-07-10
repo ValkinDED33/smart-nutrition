@@ -8,6 +8,8 @@ import {
 const loopbackHostname = ["local", "host"].join("");
 const loopbackIpv4 = ["127", "0", "0", "1"].join(".");
 const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
+const VERCEL_PREVIEW_HOSTNAME = "smart-nutrition-topaz.vercel.app";
+const VERCEL_PREVIEW_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 
 describe("remote API base URL guards", () => {
   afterEach(() => {
@@ -18,8 +20,8 @@ describe("remote API base URL guards", () => {
   it("rejects loopback API URLs from deployed browser origins", () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
 
@@ -40,8 +42,8 @@ describe("remote API base URL guards", () => {
   it("allows public HTTPS API URLs from deployed browser origins", () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
 
@@ -51,8 +53,8 @@ describe("remote API base URL guards", () => {
   it("probes the Render API for the public Vercel deployment when no build env is set", async () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn().mockResolvedValue(
@@ -77,8 +79,8 @@ describe("remote API base URL guards", () => {
     vi.useFakeTimers();
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn(
@@ -115,8 +117,8 @@ describe("remote API base URL guards", () => {
     vi.useFakeTimers();
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn(
@@ -152,8 +154,8 @@ describe("remote API base URL guards", () => {
   it("accepts a healthy Postgres-backed remote API", async () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn().mockResolvedValue(
@@ -173,8 +175,8 @@ describe("remote API base URL guards", () => {
   it("accepts a healthy MongoDB-backed remote API", async () => {
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-topaz.vercel.app",
-        origin: "https://smart-nutrition-topaz.vercel.app",
+        hostname: VERCEL_PREVIEW_HOSTNAME,
+        origin: VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn().mockResolvedValue(

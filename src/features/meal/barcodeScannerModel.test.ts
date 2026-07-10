@@ -20,6 +20,15 @@ import {
   resolveCatalogNotice,
 } from "./barcodeScannerModel";
 
+const GREEK_YOGURT_NAME = "  Greek yogurt ";
+const NORMALIZED_GREEK_YOGURT_NAME = "Greek yogurt";
+const DAIRY_CO_BRAND = "  Dairy Co ";
+const NORMALIZED_DAIRY_CO_BRAND = "Dairy Co";
+const YOGURT_CATEGORY = "yogurt";
+const YOGURT_IMAGE_URL = "https://example.com/yogurt.png";
+const NORMALIZED_MANUAL_BARCODE = "590123";
+const SPACED_MANUAL_BARCODE = "590 123";
+
 describe("barcodeScannerModel", () => {
   it("normalizes barcode identity consistently", () => {
     expect(normalizeBarcode(" 590-123 abc 456 ")).toBe("590123456");
@@ -33,12 +42,12 @@ describe("barcodeScannerModel", () => {
 
   it("builds safe fallback search urls", () => {
     const emptyUrls = createBarcodeSearchUrls("not-a-barcode");
-    const urls = createBarcodeSearchUrls("590 123");
+    const urls = createBarcodeSearchUrls(SPACED_MANUAL_BARCODE);
 
     expect(emptyUrls.google).toBe("#");
-    expect(urls.google).toContain("590123%20nutrition%20facts");
-    expect(urls.auchan).toContain("site%3Azakupy.auchan.pl%20590123");
-    expect(urls.biedronka).toContain("site%3Azakupy.biedronka.pl%20590123");
+    expect(urls.google).toContain(`${NORMALIZED_MANUAL_BARCODE}%20nutrition%20facts`);
+    expect(urls.auchan).toContain(`site%3Azakupy.auchan.pl%20${NORMALIZED_MANUAL_BARCODE}`);
+    expect(urls.biedronka).toContain(`site%3Azakupy.biedronka.pl%20${NORMALIZED_MANUAL_BARCODE}`);
   });
 
   it("starts barcode quantity empty so mobile users can type immediately", () => {
@@ -76,12 +85,12 @@ describe("barcodeScannerModel", () => {
     const { catalogImageUrl, category, normalizedBarcode, product } =
       createManualBarcodeProduct({
         id: "manual-1",
-        barcodeInput: "590 123",
+        barcodeInput: SPACED_MANUAL_BARCODE,
         draft: {
-          name: "  Greek yogurt ",
-          brand: "  Dairy Co ",
-          category: "yogurt",
-          imageUrl: "https://example.com/yogurt.png",
+          name: GREEK_YOGURT_NAME,
+          brand: DAIRY_CO_BRAND,
+          category: YOGURT_CATEGORY,
+          imageUrl: YOGURT_IMAGE_URL,
           calories: 110,
           protein: 9,
           fat: 4,
@@ -89,15 +98,15 @@ describe("barcodeScannerModel", () => {
         },
       });
 
-    expect(normalizedBarcode).toBe("590123");
-    expect(category).toBe("yogurt");
-    expect(catalogImageUrl).toBe("https://example.com/yogurt.png");
+    expect(normalizedBarcode).toBe(NORMALIZED_MANUAL_BARCODE);
+    expect(category).toBe(YOGURT_CATEGORY);
+    expect(catalogImageUrl).toBe(YOGURT_IMAGE_URL);
     expect(product).toMatchObject({
       id: "manual-1",
-      name: "Greek yogurt",
-      brand: "Dairy Co",
-      barcode: "590123",
-      category: "yogurt",
+      name: NORMALIZED_GREEK_YOGURT_NAME,
+      brand: NORMALIZED_DAIRY_CO_BRAND,
+      barcode: NORMALIZED_MANUAL_BARCODE,
+      category: YOGURT_CATEGORY,
       source: "Manual",
       unit: "g",
       nutrients: {
@@ -111,10 +120,10 @@ describe("barcodeScannerModel", () => {
 
   it("creates a shared catalog submission payload from a saved manual product", () => {
     const draft = {
-      name: "  Greek yogurt ",
-      brand: "  Dairy Co ",
-      category: "yogurt",
-      imageUrl: "https://example.com/yogurt.png",
+      name: GREEK_YOGURT_NAME,
+      brand: DAIRY_CO_BRAND,
+      category: YOGURT_CATEGORY,
+      imageUrl: YOGURT_IMAGE_URL,
       calories: 110,
       protein: 9,
       fat: 4,
@@ -132,11 +141,11 @@ describe("barcodeScannerModel", () => {
         draft,
       })
     ).toEqual({
-      name: "Greek yogurt",
-      brand: "Dairy Co",
-      barcode: "590123",
-      category: "yogurt",
-      imageUrl: "https://example.com/yogurt.png",
+      name: NORMALIZED_GREEK_YOGURT_NAME,
+      brand: NORMALIZED_DAIRY_CO_BRAND,
+      barcode: NORMALIZED_MANUAL_BARCODE,
+      category: YOGURT_CATEGORY,
+      imageUrl: YOGURT_IMAGE_URL,
       calories: 110,
       protein: 9,
       fat: 4,
@@ -153,7 +162,7 @@ describe("barcodeScannerModel", () => {
       catalogRetry: "Retry",
     };
     const payload = {
-      name: "Greek yogurt",
+      name: NORMALIZED_GREEK_YOGURT_NAME,
       calories: 110,
       protein: 9,
       fat: 4,

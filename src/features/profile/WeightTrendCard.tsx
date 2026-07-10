@@ -10,6 +10,7 @@ import {
 } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { EmptyState } from "@shared/ui";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const weightTrendCopy = {
   uk: {
@@ -65,11 +66,42 @@ const weightTrendCopy = {
   },
 } as const;
 
+type WeightTrendCopy = (typeof weightTrendCopy)[AppLanguage];
+
+const getWeightTrendCopy = (language: AppLanguage): WeightTrendCopy => {
+  switch (language) {
+    case "pl":
+      return weightTrendCopy.pl;
+    case "en":
+      return weightTrendCopy.en;
+    case "uk":
+    default:
+      return weightTrendCopy.uk;
+  }
+};
+
+const getBmiStatusLabel = (
+  copy: WeightTrendCopy,
+  bmiStatus: ReturnType<typeof getBmiStatus>
+) => {
+  switch (bmiStatus) {
+    case "underweight":
+      return copy.underweight;
+    case "overweight":
+      return copy.overweight;
+    case "obesity":
+      return copy.obesity;
+    case "normal":
+    default:
+      return copy.normal;
+  }
+};
+
 export const WeightTrendCard = () => {
   const { weightHistory } = useSelector((state: RootState) => state.profile);
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage } = useLanguage();
-  const copy = weightTrendCopy[appLanguage];
+  const copy = getWeightTrendCopy(appLanguage);
 
   const entries = useMemo(() => {
     return weightHistory.slice(-8).map((entry) => {
@@ -97,7 +129,7 @@ export const WeightTrendCard = () => {
   const bmi = calculateBmi(latestWeight || user?.weight || 0, user?.height || 0);
   const bmiStatus = getBmiStatus(bmi);
   const plateau = detectWeightPlateau(weightHistory);
-  const bmiStatusLabel = copy[bmiStatus];
+  const bmiStatusLabel = getBmiStatusLabel(copy, bmiStatus);
   const chart = useMemo(() => {
     if (entries.length < 2) {
       return null;

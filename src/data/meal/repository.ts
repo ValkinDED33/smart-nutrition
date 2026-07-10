@@ -51,16 +51,13 @@ export class LocalMealRepository implements IMealRepository {
   }
 
   async updateMeal(id: string, updates: Partial<MealEntry>): Promise<MealEntry> {
-    const index = this.meals.findIndex((m) => m.id === id);
-    if (index === -1) throw new Error(`Meal ${id} not found`);
-
-    const currentMeal = this.meals[index];
+    const currentMeal = this.meals.find((m) => m.id === id);
     if (!currentMeal) {
       throw new Error(`Meal ${id} not found`);
     }
 
     const updated: MealEntry = { ...currentMeal, ...updates };
-    this.meals[index] = updated;
+    this.meals = this.meals.map((meal) => (meal.id === id ? updated : meal));
     return updated;
   }
 

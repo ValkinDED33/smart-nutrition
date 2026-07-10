@@ -33,6 +33,26 @@ export const communityStatusLabels: Record<CommunityMemberStatus, string> = {
   COMMUNITY_EXPERT: "Community Expert",
 };
 
+const getRoleRank = (role: UserRole) => {
+  switch (role) {
+    case "HELPER":
+      return 1;
+    case "NUTRITIONIST":
+      return 2;
+    case "MODERATOR":
+      return 3;
+    case "ADMIN":
+      return 4;
+    case "OWNER":
+    case "SUPER_ADMIN":
+      return 5;
+    case "USER":
+    case "VERIFIED_USER":
+    default:
+      return 0;
+  }
+};
+
 export const isOwnerRole = (role: UserRole | null | undefined) =>
   role === "OWNER" || role === "SUPER_ADMIN";
 
@@ -44,7 +64,7 @@ export const hasUserRoleAtLeast = (
     return false;
   }
 
-  return roleRank[role] >= roleRank[minimumRole];
+  return getRoleRank(role) >= getRoleRank(minimumRole);
 };
 
 export const canAccessAdminCenter = (role: UserRole | null | undefined) =>

@@ -26,6 +26,7 @@ import {
 } from "@shared/ui/motion";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveGlobalAssistantLayerModel } from "./globalAssistantLayerModel";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const layerCopy = {
   uk: {
@@ -282,7 +283,49 @@ const layerCopy = {
 const getAreaCopy = (
   copy: (typeof layerCopy)[keyof typeof layerCopy],
   area: AssistantArea
-) => copy.areas[area] ?? copy.areas.unknown;
+) => {
+  switch (area) {
+    case "auth":
+      return copy.areas.auth;
+    case "onboarding":
+      return copy.areas.onboarding;
+    case "home":
+      return copy.areas.home;
+    case "meals":
+      return copy.areas.meals;
+    case "coach":
+      return copy.areas.coach;
+    case "progress":
+      return copy.areas.progress;
+    case "profile":
+      return copy.areas.profile;
+    case "community":
+      return copy.areas.community;
+    case "recipes":
+      return copy.areas.recipes;
+    case "water":
+      return copy.areas.water;
+    case "admin":
+      return copy.areas.admin;
+    case "unknown":
+    default:
+      return copy.areas.unknown;
+  }
+};
+
+type LayerCopy = (typeof layerCopy)[AppLanguage];
+
+const getLayerCopy = (language: AppLanguage): LayerCopy => {
+  switch (language) {
+    case "pl":
+      return layerCopy.pl;
+    case "en":
+      return layerCopy.en;
+    case "uk":
+    default:
+      return layerCopy.uk;
+  }
+};
 
 const isEditableElement = (element: Element | null) => {
   if (!(element instanceof HTMLElement)) {
@@ -328,7 +371,7 @@ export const GlobalAssistantLayer = () => {
     (state: RootState) => state.profile.weightHistory
   );
   const { appLanguage } = useLanguage();
-  const copy = layerCopy[appLanguage];
+  const copy = getLayerCopy(appLanguage);
   const inputFocused = useInputFocusState();
   const isMobile = useMediaQuery("(max-width: 599.95px)");
   const isTablet = useMediaQuery(

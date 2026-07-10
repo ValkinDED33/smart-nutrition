@@ -6,6 +6,7 @@ import { getLocalDateKey } from "../../shared/lib/date";
 import type { AppDispatch, RootState } from "../../app/store";
 import { addMealEntriesToCloud } from "./mealCloudSync";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+import type { AppLanguage } from "../../shared/types/i18n";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -32,12 +33,26 @@ const repeaterCopy = {
   },
 } as const;
 
+type RepeaterCopy = (typeof repeaterCopy)[AppLanguage];
+
+const getRepeaterCopy = (language: AppLanguage): RepeaterCopy => {
+  switch (language) {
+    case "pl":
+      return repeaterCopy.pl;
+    case "en":
+      return repeaterCopy.en;
+    case "uk":
+    default:
+      return repeaterCopy.uk;
+  }
+};
+
 export const YesterdayRepeater = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const meal = useSelector((state: RootState) => state.meal);
   const { appLanguage, t } = useLanguage();
-  const copy = repeaterCopy[appLanguage];
+  const copy = getRepeaterCopy(appLanguage);
   const {
     notice,
     runMealAction,

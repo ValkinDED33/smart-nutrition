@@ -15,12 +15,19 @@ import {
 import type { RootState } from "../../app/store";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const MAX_PHOTO_BYTES = 8_000_000;
 const MAX_COMPRESSED_PHOTO_MB = 1.2;
 const SUPPORTED_PROGRESS_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PHOTO_ACTION_ALIGN = "flex-start";
+const PHOTO_ACTION_BUTTON_SX = {
+  alignSelf: PHOTO_ACTION_ALIGN,
+  textTransform: "none",
+  fontWeight: 800,
+};
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -136,12 +143,26 @@ const progressPhotoCopy = {
   },
 } as const;
 
+type ProgressPhotoCopy = (typeof progressPhotoCopy)[AppLanguage];
+
+const getProgressPhotoCopy = (language: AppLanguage): ProgressPhotoCopy => {
+  switch (language) {
+    case "pl":
+      return progressPhotoCopy.pl;
+    case "en":
+      return progressPhotoCopy.en;
+    case "uk":
+    default:
+      return progressPhotoCopy.uk;
+  }
+};
+
 export const BodyProgressPhotosCard = () => {
   const profile = useSelector((state: RootState) => state.profile);
   const profileAction = useProfileCloudAction();
   const photos = profile.progressPhotos;
   const { appLanguage } = useLanguage();
-  const copy = progressPhotoCopy[appLanguage];
+  const copy = getProgressPhotoCopy(appLanguage);
   const [rawPreview, setRawPreview] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -299,7 +320,7 @@ export const BodyProgressPhotosCard = () => {
             <Button
               variant="outlined"
               component="label"
-              sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+              sx={PHOTO_ACTION_BUTTON_SX}
             >
               {rawPreview || preview ? copy.replace : copy.upload}
               <Box
@@ -336,7 +357,7 @@ export const BodyProgressPhotosCard = () => {
                   onClick={() => {
                     void handleApplyCrop();
                   }}
-                  sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+                  sx={PHOTO_ACTION_BUTTON_SX}
                 >
                   {copy.applyCrop}
                 </Button>
@@ -346,7 +367,7 @@ export const BodyProgressPhotosCard = () => {
               <Button
                 variant="text"
                 onClick={() => setPreview(null)}
-                sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+                sx={PHOTO_ACTION_BUTTON_SX}
               >
                 {copy.crop}
               </Button>
@@ -358,7 +379,7 @@ export const BodyProgressPhotosCard = () => {
                 void handleSave();
               }}
               sx={{
-                alignSelf: "flex-start",
+                alignSelf: PHOTO_ACTION_ALIGN,
                 textTransform: "none",
                 fontWeight: 800,
                 borderRadius: 999,
@@ -483,7 +504,7 @@ export const BodyProgressPhotosCard = () => {
                         onClick={() => {
                           void handleRemove(photo.id);
                         }}
-                        sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
+                        sx={{ alignSelf: PHOTO_ACTION_ALIGN, textTransform: "none", fontWeight: 700 }}
                       >
                         {removingPhotoId === photo.id ? copy.saving : copy.remove}
                       </Button>

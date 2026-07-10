@@ -8,6 +8,10 @@ import { toast } from "sonner";
 import type { RootState } from "../../app/store";
 import { selectTodayMealTotalNutrients } from "../meal/selectors";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
+
+const COMMON_KCAL_KEY = "common.kcal";
+const PROGRESS_REPORT_TITLE = "Smart Nutrition progress";
 
 const pulse = keyframes`
   0% { transform: scale(0.86); opacity: 0.52; }
@@ -43,7 +47,6 @@ const progressActionCopy = {
     calories: "Калорії",
     water: "Вода",
     weight: "Вага",
-    reportTitle: "Smart Nutrition progress",
   },
   pl: {
     title: "Szybkie akcje progresu",
@@ -55,7 +58,6 @@ const progressActionCopy = {
     calories: "Kalorie",
     water: "Woda",
     weight: "Waga",
-    reportTitle: "Smart Nutrition progress",
   },
   en: {
     title: "Quick progress actions",
@@ -67,9 +69,22 @@ const progressActionCopy = {
     calories: "Calories",
     water: "Water",
     weight: "Weight",
-    reportTitle: "Smart Nutrition progress",
   },
 } as const;
+
+type ProgressActionCopy = (typeof progressActionCopy)[AppLanguage];
+
+const getProgressActionCopy = (language: AppLanguage): ProgressActionCopy => {
+  switch (language) {
+    case "pl":
+      return progressActionCopy.pl;
+    case "en":
+      return progressActionCopy.en;
+    case "uk":
+    default:
+      return progressActionCopy.uk;
+  }
+};
 
 export const ProgressActionBar = () => {
   const profile = useSelector((state: RootState) => state.profile);
@@ -77,15 +92,15 @@ export const ProgressActionBar = () => {
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
   const totals = useSelector(selectTodayMealTotalNutrients);
   const { appLanguage, t } = useLanguage();
-  const copyText = progressActionCopy[appLanguage];
+  const copyText = getProgressActionCopy(appLanguage);
   const latestWeight = profile.weightHistory.at(-1)?.weight ?? authWeight ?? 0;
   const waterProgress = water.dailyWaterGoal
     ? Math.round((water.consumedMl / water.dailyWaterGoal) * 100)
     : 0;
 
   const report = [
-    copyText.reportTitle,
-    `${copyText.calories}: ${Math.round(totals.calories)} / ${profile.dailyCalories} ${t("common.kcal")}`,
+    PROGRESS_REPORT_TITLE,
+    `${copyText.calories}: ${Math.round(totals.calories)} / ${profile.dailyCalories} ${t(COMMON_KCAL_KEY)}`,
     `${copyText.water}: ${water.consumedMl} / ${water.dailyWaterGoal} ml (${waterProgress}%)`,
     `${copyText.weight}: ${latestWeight.toFixed(1)} ${t("common.kg")}`,
   ].join("\n");

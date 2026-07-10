@@ -25,6 +25,9 @@ import {
   assistantSpeechStaggerVariants,
   fadeUpVariants,
 } from "@shared/ui/motion";
+import type { AppLanguage } from "@shared/types/i18n";
+
+const COACH_MODE_LABEL = "Coach mode";
 
 const widgetCopy = {
   uk: {
@@ -37,7 +40,7 @@ const widgetCopy = {
     moods: {
       idle: "Поруч",
       happy: "Ритм є",
-      coach: "Coach mode",
+      coach: COACH_MODE_LABEL,
       concerned: "Мʼякий контроль",
       sleepy: "Чекаю поруч",
       celebrate: "Прогрес",
@@ -93,7 +96,7 @@ const widgetCopy = {
     moods: {
       idle: "Jestem obok",
       happy: "Rytm jest",
-      coach: "Coach mode",
+      coach: COACH_MODE_LABEL,
       concerned: "Łagodna kontrola",
       sleepy: "Czekam obok",
       celebrate: "Progres",
@@ -149,7 +152,7 @@ const widgetCopy = {
     moods: {
       idle: "Nearby",
       happy: "Rhythm is here",
-      coach: "Coach mode",
+      coach: COACH_MODE_LABEL,
       concerned: "Gentle control",
       sleepy: "Waiting nearby",
       celebrate: "Progress",
@@ -210,6 +213,38 @@ const avatarMoodByEmotion: Record<AssistantCoreEmotion, AssistantAvatarMood> = {
   celebrating: "celebrate",
 };
 
+type WidgetCopy = (typeof widgetCopy)[AppLanguage];
+
+const getWidgetCopy = (language: AppLanguage): WidgetCopy => {
+  switch (language) {
+    case "pl":
+      return widgetCopy.pl;
+    case "en":
+      return widgetCopy.en;
+    case "uk":
+    default:
+      return widgetCopy.uk;
+  }
+};
+
+const getMoodLabel = (copy: WidgetCopy, mood: AssistantAvatarMood) => {
+  switch (mood) {
+    case "happy":
+      return copy.moods.happy;
+    case "coach":
+      return copy.moods.coach;
+    case "concerned":
+      return copy.moods.concerned;
+    case "sleepy":
+      return copy.moods.sleepy;
+    case "celebrate":
+      return copy.moods.celebrate;
+    case "idle":
+    default:
+      return copy.moods.idle;
+  }
+};
+
 interface AssistantTip {
   id: string;
   title: string;
@@ -228,7 +263,7 @@ export const ContextAssistantWidget = () => {
   const todayTotals = useSelector(selectTodayMealTotalNutrients);
   const macroTargets = useSelector(selectDailyMacroTargets);
   const { appLanguage } = useLanguage();
-  const copy = widgetCopy[appLanguage];
+  const copy = getWidgetCopy(appLanguage);
   const [dismissedTipId, setDismissedTipId] = useState<string | null>(null);
   const [isIdle, setIsIdle] = useState(false);
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
@@ -534,7 +569,7 @@ export const ContextAssistantWidget = () => {
                 </Typography>
                 <Chip
                   size="small"
-                  label={copy.moods[currentTip.mood]}
+                  label={getMoodLabel(copy, currentTip.mood)}
                   color={currentTip.mood === "concerned" ? "warning" : "success"}
                   variant="outlined"
                 />

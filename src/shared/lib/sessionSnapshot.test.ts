@@ -9,6 +9,9 @@ const emptyOutbox: SyncOutboxMeta = {
   lastError: null,
 };
 
+const LOCAL_OUTBOX_QUEUED_AT = "2026-06-20T10:00:00.000Z";
+const NETWORK_ERROR_MESSAGE = "Network error";
+
 describe("sessionSnapshot sync recovery policy", () => {
   it("applies cloud snapshot when there are no pending local changes", () => {
     expect(
@@ -28,9 +31,9 @@ describe("sessionSnapshot sync recovery policy", () => {
         now: Date.parse("2026-06-20T10:05:00.000Z"),
         syncOutbox: {
           pendingChanges: 1,
-          firstQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastError: "Network error",
+          firstQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastError: NETWORK_ERROR_MESSAGE,
         },
       })
     ).toMatchObject({
@@ -46,9 +49,9 @@ describe("sessionSnapshot sync recovery policy", () => {
         now: Date.parse("2026-06-20T12:01:00.000Z"),
         syncOutbox: {
           pendingChanges: 1,
-          firstQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastError: "Network error",
+          firstQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastError: NETWORK_ERROR_MESSAGE,
         },
       })
     ).toMatchObject({
@@ -65,9 +68,9 @@ describe("sessionSnapshot sync recovery policy", () => {
         now: Date.parse("2026-06-20T10:15:00.000Z"),
         syncOutbox: {
           pendingChanges: 1,
-          firstQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastQueuedAt: "2026-06-20T10:00:00.000Z",
-          lastError: "Network error",
+          firstQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastQueuedAt: LOCAL_OUTBOX_QUEUED_AT,
+          lastError: NETWORK_ERROR_MESSAGE,
         },
       })
     ).toMatchObject({

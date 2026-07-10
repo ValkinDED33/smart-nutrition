@@ -16,11 +16,19 @@ const authApiMock = vi.hoisted(() => ({
 
 vi.mock("@shared/api/auth", () => authApiMock);
 
+const CLOUD_DEVICE_ID = "device-1";
+const CLOUD_CREATED_AT = "2026-07-01T08:00:00.000Z";
+const SHOP_SYNCED_AT = "2026-07-01T08:10:00.000Z";
+const REWARD_SYNCED_AT = "2026-07-01T08:12:00.000Z";
+const PREMIUM_DRAGON_ITEM_ID = "dragon-premium";
+const MEAL_ADDED_REWARD_EVENT = "meal_added";
+const MARK_SYNC_STARTED_ACTION = "auth/markSyncStarted";
+
 const createCompanionSnapshotState = () => ({
   auth: {
     cloudMeta: {
-      updatedAt: "2026-07-01T08:00:00.000Z",
-      deviceId: "device-1",
+      updatedAt: CLOUD_CREATED_AT,
+      deviceId: CLOUD_DEVICE_ID,
     },
   },
   profile: normalizeProfileState({}),
@@ -29,7 +37,7 @@ const createCompanionSnapshotState = () => ({
   fridge: { items: [] },
   community: { posts: [] },
   companion: {
-    ...createInitialCompanionState("2026-07-01T08:00:00.000Z"),
+    ...createInitialCompanionState(CLOUD_CREATED_AT),
     coins: 300,
   },
 });
@@ -40,7 +48,7 @@ describe("companionCloudSync", () => {
   });
 
   it("builds one state change for companion purchase and assistant avatar", () => {
-    const item = getCompanionCatalogItemById("dragon-premium");
+    const item = getCompanionCatalogItemById(PREMIUM_DRAGON_ITEM_ID);
 
     expect(item).not.toBeNull();
 
@@ -49,21 +57,21 @@ describe("companionCloudSync", () => {
 
     expect(result.changed).toBe(true);
     expect(result.companion.coins).toBe(40);
-    expect(result.companion.ownedItemIds).toContain("dragon-premium");
-    expect(result.companion.equippedItemIds).toContain("dragon-premium");
+    expect(result.companion.ownedItemIds).toContain(PREMIUM_DRAGON_ITEM_ID);
+    expect(result.companion.equippedItemIds).toContain(PREMIUM_DRAGON_ITEM_ID);
     expect(result.profile.assistant.companionKind).toBe("dragon");
-    expect(state.companion.ownedItemIds).not.toContain("dragon-premium");
+    expect(state.companion.ownedItemIds).not.toContain(PREMIUM_DRAGON_ITEM_ID);
   });
 
   it("updates local companion and profile only after the cloud snapshot save succeeds", async () => {
     const dispatch = vi.fn();
-    const item = getCompanionCatalogItemById("dragon-premium");
+    const item = getCompanionCatalogItemById(PREMIUM_DRAGON_ITEM_ID);
     const state = createCompanionSnapshotState();
     authApiMock.syncRemoteAppSnapshot.mockResolvedValueOnce({
       ok: true,
       meta: {
-        updatedAt: "2026-07-01T08:10:00.000Z",
-        deviceId: "device-1",
+        updatedAt: SHOP_SYNCED_AT,
+        deviceId: CLOUD_DEVICE_ID,
       },
     });
 
@@ -71,7 +79,7 @@ describe("companionCloudSync", () => {
 
     expect(authApiMock.syncRemoteAppSnapshot).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED_ACTION,
       "auth/hydrateSyncOutbox",
       "auth/setCloudMeta",
       "auth/markSyncSuccess",
@@ -82,7 +90,7 @@ describe("companionCloudSync", () => {
 
   it("builds reward state without mutating the current companion state", () => {
     const state = createCompanionSnapshotState();
-    const nextCompanion = buildCompanionRewardState(state, "meal_added");
+    const nextCompanion = buildCompanionRewardState(state, MEAL_ADDED_REWARD_EVENT);
 
     expect(nextCompanion.xp).toBeGreaterThan(state.companion.xp);
     expect(state.companion.xp).toBe(0);
@@ -94,16 +102,16 @@ describe("companionCloudSync", () => {
     authApiMock.syncRemoteCompanionState.mockResolvedValueOnce({
       ok: true,
       meta: {
-        updatedAt: "2026-07-01T08:12:00.000Z",
-        deviceId: "device-1",
+        updatedAt: REWARD_SYNCED_AT,
+        deviceId: CLOUD_DEVICE_ID,
       },
     });
 
-    await applyCompanionRewardInCloud(dispatch, state, "meal_added");
+    await applyCompanionRewardInCloud(dispatch, state, MEAL_ADDED_REWARD_EVENT);
 
     expect(authApiMock.syncRemoteCompanionState).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED_ACTION,
       "auth/hydrateSyncOutbox",
       "auth/setCloudMeta",
       "auth/markSyncSuccess",
@@ -121,18 +129,18 @@ describe("companionCloudSync", () => {
     });
 
     await expect(
-      applyCompanionRewardInCloud(dispatch, state, "meal_added")
+      applyCompanionRewardInCloud(dispatch, state, MEAL_ADDED_REWARD_EVENT)
     ).rejects.toThrow("reward failed");
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED_ACTION,
       "auth/markSyncError",
     ]);
   });
 
   it("does not update local companion or profile when the cloud save fails", async () => {
     const dispatch = vi.fn();
-    const item = getCompanionCatalogItemById("dragon-premium");
+    const item = getCompanionCatalogItemById(PREMIUM_DRAGON_ITEM_ID);
     const state = createCompanionSnapshotState();
     authApiMock.syncRemoteAppSnapshot.mockResolvedValueOnce({
       ok: false,
@@ -145,7 +153,7 @@ describe("companionCloudSync", () => {
     ).rejects.toThrow("snapshot failed");
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED_ACTION,
       "auth/markSyncError",
     ]);
   });

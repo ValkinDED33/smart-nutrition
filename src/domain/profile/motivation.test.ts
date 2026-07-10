@@ -8,18 +8,22 @@ import {
   createDefaultMotivationState,
 } from "./motivation";
 
+const FIRST_TASK_COMPLETED_AT = "2026-04-03T10:00:00.000Z";
+const PAID_DAY_USED_AT = "2026-04-20T08:00:00.000Z";
+const PAID_DAY_MONTH = "2026-04";
+
 describe("motivation", () => {
   it("awards points and unlocks the first achievement", () => {
     const state = createDefaultMotivationState("maintain");
     const firstTaskId = state.activeTasks[0]?.id;
 
     expect(firstTaskId).toBeDefined();
-    const next = completeMotivationTaskState(state, firstTaskId!, "2026-04-03T10:00:00.000Z");
+    const next = completeMotivationTaskState(state, firstTaskId!, FIRST_TASK_COMPLETED_AT);
 
     expect(next.points).toBeGreaterThan(0);
     expect(next.completedTasks).toBe(1);
     expect(next.achievements.find((item) => item.id === "first-step")?.unlockedAt).toBe(
-      "2026-04-03T10:00:00.000Z"
+      FIRST_TASK_COMPLETED_AT
     );
   });
 
@@ -28,7 +32,7 @@ describe("motivation", () => {
     expect(canUseFreeDay("2026-04-05T08:00:00.000Z", "2026-04-10T08:00:00.000Z")).toBe(
       false
     );
-    expect(canUsePaidDay("2026-04", "2026-04-20T08:00:00.000Z")).toBe(false);
+    expect(canUsePaidDay(PAID_DAY_MONTH, PAID_DAY_USED_AT)).toBe(false);
     expect(canUsePaidDay("2026-03", "2026-04-20T08:00:00.000Z")).toBe(true);
   });
 
@@ -40,7 +44,7 @@ describe("motivation", () => {
     const afterFirst = completeMotivationTaskState(
       state,
       firstTaskId!,
-      "2026-04-03T10:00:00.000Z"
+      FIRST_TASK_COMPLETED_AT
     );
     const secondTaskId = afterFirst.activeTasks[1]?.id;
 
@@ -61,14 +65,10 @@ describe("motivation", () => {
     const firstTaskId = state.activeTasks[0]?.id;
 
     expect(firstTaskId).toBeDefined();
-    const completed = completeMotivationTaskState(
-      state,
-      firstTaskId!,
-      "2026-04-03T10:00:00.000Z"
-    );
-    const next = applyPaidDayState(completed, 10, "2026-04-20T08:00:00.000Z");
+    const completed = completeMotivationTaskState(state, firstTaskId!, FIRST_TASK_COMPLETED_AT);
+    const next = applyPaidDayState(completed, 10, PAID_DAY_USED_AT);
 
     expect(next.points).toBe(completed.points - 10);
-    expect(next.paidDayLastUsedMonth).toBe("2026-04");
+    expect(next.paidDayLastUsedMonth).toBe(PAID_DAY_MONTH);
   });
 });

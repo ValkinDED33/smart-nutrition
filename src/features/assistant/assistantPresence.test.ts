@@ -5,13 +5,33 @@ import {
   resolveAssistantRouteKind,
 } from "./assistantPresence";
 
+const ROUTE_LOGIN = "/login";
+const ROUTE_REGISTER = "/register";
+const ROUTE_DASHBOARD = "/dashboard";
+const ROUTE_MEALS = "/meals";
+const ROUTE_PROFILE = "/profile";
+const ROUTE_PROGRESS = "/progress";
+const ROUTE_COMMUNITY = "/community";
+const ROUTE_ONBOARDING = "/onboarding";
+const ROUTE_ONBOARDING_PROFILE = "/onboarding/profile";
+
+const DENSE_PRODUCT_ROUTES = [
+  ROUTE_MEALS,
+  "/coach",
+  ROUTE_PROGRESS,
+  ROUTE_PROFILE,
+  ROUTE_COMMUNITY,
+  "/recipes",
+  "/water",
+] as const;
+
 describe("assistantPresence", () => {
   it("uses bubble companion mode on desktop public routes", () => {
-    const context = resolveAssistantContext("/login");
+    const context = resolveAssistantContext(ROUTE_LOGIN);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/login",
+        pathname: ROUTE_LOGIN,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -24,11 +44,11 @@ describe("assistantPresence", () => {
   });
 
   it("uses compact companion mode on mobile public routes", () => {
-    const context = resolveAssistantContext("/login");
+    const context = resolveAssistantContext(ROUTE_LOGIN);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/login",
+        pathname: ROUTE_LOGIN,
         viewport: "mobile",
       })
     ).toMatchObject({
@@ -41,11 +61,11 @@ describe("assistantPresence", () => {
   });
 
   it("hides on mobile public routes while an input is focused", () => {
-    const context = resolveAssistantContext("/register");
+    const context = resolveAssistantContext(ROUTE_REGISTER);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/register",
+        pathname: ROUTE_REGISTER,
         viewport: "mobile",
         inputFocused: true,
       })
@@ -58,11 +78,11 @@ describe("assistantPresence", () => {
   });
 
   it("uses compact mode on mobile authenticated routes", () => {
-    const context = resolveAssistantContext("/dashboard");
+    const context = resolveAssistantContext(ROUTE_DASHBOARD);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/dashboard",
+        pathname: ROUTE_DASHBOARD,
         viewport: "mobile",
       })
     ).toMatchObject({
@@ -75,49 +95,45 @@ describe("assistantPresence", () => {
   });
 
   it("hides the global companion on dense mobile product surfaces", () => {
-    ["/meals", "/coach", "/progress", "/profile", "/community", "/recipes", "/water"].forEach(
-      (pathname) => {
-        expect(
-          resolveAssistantPresence(resolveAssistantContext(pathname), {
-            pathname,
-            viewport: "mobile",
-          })
-        ).toMatchObject({
-          visible: false,
-          mode: "hidden",
-          reason: "mobile-dense-surface-hidden",
-          allowSpeechBubble: false,
-          priority: "low",
-        });
-      }
-    );
+    DENSE_PRODUCT_ROUTES.forEach((pathname) => {
+      expect(
+        resolveAssistantPresence(resolveAssistantContext(pathname), {
+          pathname,
+          viewport: "mobile",
+        })
+      ).toMatchObject({
+        visible: false,
+        mode: "hidden",
+        reason: "mobile-dense-surface-hidden",
+        allowSpeechBubble: false,
+        priority: "low",
+      });
+    });
   });
 
   it("keeps a compact low-priority companion on dense tablet product surfaces", () => {
-    ["/meals", "/coach", "/progress", "/profile", "/community", "/recipes", "/water"].forEach(
-      (pathname) => {
-        expect(
-          resolveAssistantPresence(resolveAssistantContext(pathname), {
-            pathname,
-            viewport: "tablet",
-          })
-        ).toMatchObject({
-          visible: true,
-          mode: "compact",
-          reason: "compact-dense-surface",
-          allowSpeechBubble: false,
-          priority: "low",
-        });
-      }
-    );
+    DENSE_PRODUCT_ROUTES.forEach((pathname) => {
+      expect(
+        resolveAssistantPresence(resolveAssistantContext(pathname), {
+          pathname,
+          viewport: "tablet",
+        })
+      ).toMatchObject({
+        visible: true,
+        mode: "compact",
+        reason: "compact-dense-surface",
+        allowSpeechBubble: false,
+        priority: "low",
+      });
+    });
   });
 
   it("uses bubble mode on desktop authenticated routes", () => {
-    const context = resolveAssistantContext("/dashboard");
+    const context = resolveAssistantContext(ROUTE_DASHBOARD);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/dashboard",
+        pathname: ROUTE_DASHBOARD,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -130,11 +146,11 @@ describe("assistantPresence", () => {
   });
 
   it("switches to compact mode when an input is focused", () => {
-    const context = resolveAssistantContext("/profile");
+    const context = resolveAssistantContext(ROUTE_PROFILE);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/profile",
+        pathname: ROUTE_PROFILE,
         viewport: "desktop",
         inputFocused: true,
       })
@@ -148,11 +164,11 @@ describe("assistantPresence", () => {
   });
 
   it("hides on mobile when an input is focused", () => {
-    const context = resolveAssistantContext("/dashboard");
+    const context = resolveAssistantContext(ROUTE_DASHBOARD);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/dashboard",
+        pathname: ROUTE_DASHBOARD,
         viewport: "mobile",
         inputFocused: true,
       })
@@ -166,11 +182,11 @@ describe("assistantPresence", () => {
   });
 
   it("uses compact mode on profile desktop surfaces to avoid covering forms and shop cards", () => {
-    const context = resolveAssistantContext("/profile");
+    const context = resolveAssistantContext(ROUTE_PROFILE);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/profile",
+        pathname: ROUTE_PROFILE,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -182,11 +198,11 @@ describe("assistantPresence", () => {
   });
 
   it("uses compact mode on community desktop surfaces to avoid covering content cards", () => {
-    const context = resolveAssistantContext("/community");
+    const context = resolveAssistantContext(ROUTE_COMMUNITY);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/community",
+        pathname: ROUTE_COMMUNITY,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -200,7 +216,7 @@ describe("assistantPresence", () => {
   it("uses compact mode on dense food and progress surfaces", () => {
     expect(
       resolveAssistantPresence(resolveAssistantContext("/meals"), {
-        pathname: "/meals",
+        pathname: ROUTE_MEALS,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -212,7 +228,7 @@ describe("assistantPresence", () => {
 
     expect(
       resolveAssistantPresence(resolveAssistantContext("/progress"), {
-        pathname: "/progress",
+        pathname: ROUTE_PROGRESS,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -224,11 +240,11 @@ describe("assistantPresence", () => {
   });
 
   it("excludes onboarding because the onboarding guide owns that experience", () => {
-    const context = resolveAssistantContext("/onboarding");
+    const context = resolveAssistantContext(ROUTE_ONBOARDING);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/onboarding",
+        pathname: ROUTE_ONBOARDING,
         viewport: "desktop",
       })
     ).toMatchObject({
@@ -239,11 +255,11 @@ describe("assistantPresence", () => {
   });
 
   it("disables motion when reduced motion is preferred", () => {
-    const context = resolveAssistantContext("/dashboard");
+    const context = resolveAssistantContext(ROUTE_DASHBOARD);
 
     expect(
       resolveAssistantPresence(context, {
-        pathname: "/dashboard",
+        pathname: ROUTE_DASHBOARD,
         viewport: "desktop",
         prefersReducedMotion: true,
       })
@@ -255,8 +271,8 @@ describe("assistantPresence", () => {
   });
 
   it("classifies route kinds for the presence engine", () => {
-    expect(resolveAssistantRouteKind("/register")).toBe("public");
-    expect(resolveAssistantRouteKind("/onboarding/profile")).toBe("onboarding");
-    expect(resolveAssistantRouteKind("/meals")).toBe("auth");
+    expect(resolveAssistantRouteKind(ROUTE_REGISTER)).toBe("public");
+    expect(resolveAssistantRouteKind(ROUTE_ONBOARDING_PROFILE)).toBe("onboarding");
+    expect(resolveAssistantRouteKind(ROUTE_MEALS)).toBe("auth");
   });
 });

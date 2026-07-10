@@ -112,5 +112,27 @@ const localizedNames: Record<
   },
 };
 
-export const getProductDisplayName = (product: Product, language: AppLanguage) =>
-  localizedNames[product.id]?.[language] ?? product.name;
+const getLocalizedName = (productId: string) =>
+  Object.entries(localizedNames).find(([localizedProductId]) => localizedProductId === productId)
+    ?.[1] ?? null;
+
+const getNameForLanguage = (
+  names: Record<AppLanguage, string>,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return names.pl;
+    case "en":
+      return names.en;
+    case "uk":
+    default:
+      return names.uk;
+  }
+};
+
+export const getProductDisplayName = (product: Product, language: AppLanguage) => {
+  const names = getLocalizedName(product.id);
+
+  return names ? getNameForLanguage(names, language) : product.name;
+};

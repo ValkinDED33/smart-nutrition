@@ -49,15 +49,13 @@ export const companionRewardTable: Record<KnownCompanionRewardEvent, CompanionRe
   },
 };
 
-const isKnownCompanionRewardEvent = (
-  event: CompanionRewardEvent
-): event is KnownCompanionRewardEvent =>
-  Object.prototype.hasOwnProperty.call(companionRewardTable, event);
+const findCompanionReward = (event: CompanionRewardEvent) =>
+  Object.values(companionRewardTable).find((reward) => reward.event === event) ?? null;
 
 export const getCompanionReward = (
   event: CompanionRewardEvent
 ): CompanionReward | null =>
-  isKnownCompanionRewardEvent(event) ? companionRewardTable[event] : null;
+  findCompanionReward(event);
 
 export const hasCompanionAchievement = (
   state: CompanionState,

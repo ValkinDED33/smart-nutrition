@@ -10,6 +10,9 @@ import {
   calculateAverageDailyCalories,
 } from "@domain/profile/adaptiveGoal";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
+
+const COMMON_KCAL_KEY = "common.kcal";
 
 const adaptiveGoalSaveCopy = {
   uk: {
@@ -26,9 +29,23 @@ const adaptiveGoalSaveCopy = {
   },
 } as const;
 
+type AdaptiveGoalSaveCopy = (typeof adaptiveGoalSaveCopy)[AppLanguage];
+
+const getAdaptiveGoalSaveCopy = (language: AppLanguage): AdaptiveGoalSaveCopy => {
+  switch (language) {
+    case "pl":
+      return adaptiveGoalSaveCopy.pl;
+    case "en":
+      return adaptiveGoalSaveCopy.en;
+    case "uk":
+    default:
+      return adaptiveGoalSaveCopy.uk;
+  }
+};
+
 export const AdaptiveGoalCard = () => {
   const { appLanguage, t } = useLanguage();
-  const copy = adaptiveGoalSaveCopy[appLanguage];
+  const copy = getAdaptiveGoalSaveCopy(appLanguage);
   const profileAction = useProfileCloudAction();
   const { maintenanceCalories, goal, adaptiveCalories, weightHistory, adaptiveMode } = useSelector(
     (state: RootState) => state.profile
@@ -66,13 +83,13 @@ export const AdaptiveGoalCard = () => {
         </Typography>
         <Typography color="text.secondary">{t("adaptive.subtitle")}</Typography>
         <Typography>
-          {t("adaptive.current")}: {adaptiveCalories ?? maintenanceCalories} {t("common.kcal")}
+          {t("adaptive.current")}: {adaptiveCalories ?? maintenanceCalories} {t(COMMON_KCAL_KEY)}
         </Typography>
         <Typography>
-          {t("adaptive.suggested")}: {suggestedCalories} {t("common.kcal")}
+          {t("adaptive.suggested")}: {suggestedCalories} {t(COMMON_KCAL_KEY)}
         </Typography>
         <Typography color="text.secondary">
-          {t("adaptive.average")}: {averageIntake.toFixed(0)} {t("common.kcal")}
+          {t("adaptive.average")}: {averageIntake.toFixed(0)} {t(COMMON_KCAL_KEY)}
         </Typography>
         <Typography color="text.secondary">
           {adaptiveMode === "automatic"

@@ -44,6 +44,9 @@ export interface RemoteSyncResult {
   meta?: AppSnapshotMeta | null;
 }
 
+const REMOTE_API_UNAVAILABLE_MESSAGE = "Backend unavailable. Please reconnect.";
+const CLOUD_SYNC_DISABLED_MESSAGE = "Cloud sync is not active for this account.";
+
 export interface ProductIntakePayload {
   source: "barcode" | "search" | "manual" | "recommendation" | "photo";
   product?: Product;
@@ -487,7 +490,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
     } catch {
       throw new AuthApiError(
         "REMOTE_API_UNAVAILABLE",
-        "Backend unavailable. Please reconnect."
+        REMOTE_API_UNAVAILABLE_MESSAGE
       );
     } finally {
       timeout.clear();
@@ -663,7 +666,7 @@ export const requestRemote = async <T>(
   if (!baseUrl) {
     throw new AuthApiError(
       "REMOTE_API_UNAVAILABLE",
-      "Backend unavailable. Please reconnect."
+      REMOTE_API_UNAVAILABLE_MESSAGE
     );
   }
 
@@ -711,7 +714,7 @@ export const requestRemote = async <T>(
   } catch {
     throw new AuthApiError(
       "REMOTE_API_UNAVAILABLE",
-      "Backend unavailable. Please reconnect."
+      REMOTE_API_UNAVAILABLE_MESSAGE
     );
   }
 
@@ -723,7 +726,7 @@ export const requestRemote = async <T>(
       } catch {
         throw new AuthApiError(
           "REMOTE_API_UNAVAILABLE",
-          "Backend unavailable. Please reconnect."
+          REMOTE_API_UNAVAILABLE_MESSAGE
         );
       }
     } catch (error) {
@@ -848,7 +851,7 @@ export const pushRemoteAppSnapshot = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -916,7 +919,7 @@ export const pushRemoteProfileState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -935,7 +938,7 @@ export const updateRemoteProfileWithState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -971,7 +974,7 @@ export const pushRemoteMealState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -989,7 +992,7 @@ export const pushRemoteWaterState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1007,7 +1010,7 @@ export const pushRemoteFridgeState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1025,7 +1028,7 @@ export const pushRemoteCommunityState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1043,7 +1046,7 @@ export const pushRemoteCompanionState = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1079,7 +1082,7 @@ export const addRemoteProductIntake = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1147,7 +1150,7 @@ export const addRemoteMealTemplate = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1186,7 +1189,7 @@ export const upsertRemoteMealProduct = async (
     return {
       ok: false,
       code: "SYNC_DISABLED",
-      message: "Cloud sync is not active for this account.",
+      message: CLOUD_SYNC_DISABLED_MESSAGE,
       meta: null,
     };
   }
@@ -1341,7 +1344,7 @@ export const remoteAuthProvider: AuthProvider = {
     if (signal?.aborted) {
       throw new AuthApiError(
         "REMOTE_API_UNAVAILABLE",
-        "Backend unavailable. Please reconnect."
+        REMOTE_API_UNAVAILABLE_MESSAGE
       );
     }
 
