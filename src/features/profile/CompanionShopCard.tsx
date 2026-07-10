@@ -123,6 +123,56 @@ const shopCopy = {
   },
 } as const;
 
+type ShopCopy = (typeof shopCopy)[keyof typeof shopCopy];
+
+const getShopCopy = (locale: CompanionCatalogLocale): ShopCopy => {
+  switch (locale) {
+    case "pl":
+      return shopCopy.pl;
+    case "en":
+      return shopCopy.en;
+    case "uk":
+    default:
+      return shopCopy.uk;
+  }
+};
+
+const getCatalogText = (
+  values: Record<CompanionCatalogLocale, string>,
+  locale: CompanionCatalogLocale
+) => {
+  switch (locale) {
+    case "pl":
+      return values.pl;
+    case "en":
+      return values.en;
+    case "uk":
+    default:
+      return values.uk;
+  }
+};
+
+const getCategoryLabel = (
+  categories: Record<CompanionCatalogCategory, string>,
+  category: CompanionCatalogCategory
+) => {
+  switch (category) {
+    case "emotion":
+      return categories.emotion;
+    case "accessory":
+      return categories.accessory;
+    case "animation":
+      return categories.animation;
+    case "premium":
+      return categories.premium;
+    case "seasonal":
+      return categories.seasonal;
+    case "outfit":
+    default:
+      return categories.outfit;
+  }
+};
+
 const getStatusTone = ({
   isEquipped,
   isLocked,
@@ -156,7 +206,7 @@ const CompanionShopCard = () => {
   const companionRenderModePreference = useCompanionRenderModePreference();
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
-  const copy = shopCopy[locale];
+  const copy = getShopCopy(locale);
   const equippedItems = useMemo(
     () => getEquippedCompanionItems(companion),
     [companion]
@@ -281,10 +331,14 @@ const CompanionShopCard = () => {
               />
               <Stack spacing={0.6}>
                 <Typography sx={{ fontWeight: 900 }}>
-                  {activePreview?.title[locale] ?? copy.profileLook}
+                  {activePreview
+                    ? getCatalogText(activePreview.title, locale)
+                    : copy.profileLook}
                 </Typography>
                 <Typography color="text.secondary">
-                  {activePreview?.description[locale] ?? assistant.name}
+                  {activePreview
+                    ? getCatalogText(activePreview.description, locale)
+                    : assistant.name}
                 </Typography>
               </Stack>
               <CompanionRenderModeControl
@@ -344,11 +398,15 @@ const CompanionShopCard = () => {
                   <Stack spacing={1}>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Chip
-                        label={copy.categories[item.category]}
+                        label={getCategoryLabel(copy.categories, item.category)}
                         size="small"
                         color={item.category === "premium" ? "secondary" : "default"}
                       />
-                      <Chip label={item.tagLabel[locale]} size="small" variant="outlined" />
+                      <Chip
+                        label={getCatalogText(item.tagLabel, locale)}
+                        size="small"
+                        variant="outlined"
+                      />
                       <Chip
                         label={statusLabel}
                         size="small"
@@ -356,9 +414,11 @@ const CompanionShopCard = () => {
                         variant={isEquipped ? "filled" : "outlined"}
                       />
                     </Stack>
-                    <Typography sx={{ fontWeight: 900 }}>{item.title[locale]}</Typography>
+                    <Typography sx={{ fontWeight: 900 }}>
+                      {getCatalogText(item.title, locale)}
+                    </Typography>
                     <Typography color="text.secondary" variant="body2">
-                      {item.description[locale]}
+                      {getCatalogText(item.description, locale)}
                     </Typography>
                     <Stack
                       direction="row"

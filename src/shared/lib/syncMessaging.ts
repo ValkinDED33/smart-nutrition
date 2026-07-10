@@ -32,10 +32,24 @@ const syncMessageCopy = {
   },
 } as const;
 
+type SyncMessageCopy = (typeof syncMessageCopy)[keyof typeof syncMessageCopy];
+
+const getSyncMessageCopy = (language: AppLanguage): SyncMessageCopy => {
+  switch (language) {
+    case "pl":
+      return syncMessageCopy.pl;
+    case "en":
+      return syncMessageCopy.en;
+    case "uk":
+    default:
+      return syncMessageCopy.uk;
+  }
+};
+
 export const formatQueuedSyncMessage = (pendingChanges: number, language: AppLanguage) =>
   pendingChanges <= 1
-    ? syncMessageCopy[language].queuedOne
-    : syncMessageCopy[language].queuedMany(pendingChanges);
+    ? getSyncMessageCopy(language).queuedOne
+    : getSyncMessageCopy(language).queuedMany(pendingChanges);
 
 export const translateSyncErrorMessage = (
   message: string | null | undefined,
@@ -51,20 +65,22 @@ export const translateSyncErrorMessage = (
     return formatQueuedSyncMessage(Number(queuedMatch[1]), language);
   }
 
+  const copy = getSyncMessageCopy(language);
+
   if (/another device/i.test(message)) {
-    return syncMessageCopy[language].conflict;
+    return copy.conflict;
   }
 
   if (/latest cloud snapshot/i.test(message)) {
-    return syncMessageCopy[language].pullFailed;
+    return copy.pullFailed;
   }
 
   if (/not enabled|not active/i.test(message)) {
-    return syncMessageCopy[language].inactive;
+    return copy.inactive;
   }
 
   if (/cloud sync could not save|latest profile and meal data|latest change/i.test(message)) {
-    return syncMessageCopy[language].saveFailed;
+    return copy.saveFailed;
   }
 
   return message;

@@ -40,6 +40,15 @@ import {
 import { useLanguage } from "../shared/language";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
 import { PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import type { AppLanguage } from "@shared/types/i18n";
+
+const COMMON_KCAL_KEY = "common.kcal";
+const COMMON_GRAMS_KEY = "common.g";
+const COMPANION_MUTED_COLOR = "var(--sn-on-companion-muted)";
+const COMPANION_ON_COLOR = "var(--sn-on-companion)";
+const ELEVATED_SURFACE_COLOR = "var(--sn-surface-elevated)";
+const ACCENT_SOFT_COLOR = "var(--sn-accent-soft)";
+const ALIGN_START = "flex-start";
 
 const homeCopy = {
   uk: {
@@ -141,6 +150,19 @@ const homeCopy = {
 } as const;
 
 type HomeSection = "today" | "meals" | "water" | "progress" | "assistant";
+type HomeCopy = (typeof homeCopy)[keyof typeof homeCopy];
+
+const getHomeCopy = (language: AppLanguage): HomeCopy => {
+  switch (language) {
+    case "pl":
+      return homeCopy.pl;
+    case "en":
+      return homeCopy.en;
+    case "uk":
+    default:
+      return homeCopy.uk;
+  }
+};
 
 const HomePage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -155,7 +177,7 @@ const HomePage = () => {
   const { appLanguage, t } = useLanguage();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<HomeSection>("today");
-  const copy = homeCopy[appLanguage];
+  const copy = getHomeCopy(appLanguage);
 
   const dailyContext = useMemo(
     () =>
@@ -247,6 +269,17 @@ const HomePage = () => {
     { label: copy.searchFood, icon: Search, onClick: () => openMealMode("search") },
     { label: copy.mealPlan, icon: ChefHat, onClick: () => navigate("/recipes") },
   ];
+  const drawerQuickActions = [
+    ...mealQuickActions,
+    {
+      label: copy.water,
+      icon: Plus,
+      onClick: () => {
+        dispatch(incrementWater(water.glassSizeMl));
+        setQuickAddOpen(false);
+      },
+    },
+  ];
   const progressCards = routeCards.filter((card) =>
     ["/progress", "/profile", "/community"].includes(card.path)
   );
@@ -265,7 +298,7 @@ const HomePage = () => {
           overflow: "hidden",
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          color: "var(--sn-on-companion)",
+          color: COMPANION_ON_COLOR,
           border: "1px solid var(--sn-border-strong)",
         }}
       >
@@ -273,7 +306,7 @@ const HomePage = () => {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.6}
-            alignItems={{ xs: "flex-start", sm: "center" }}
+            alignItems={{ xs: ALIGN_START, sm: "center" }}
             justifyContent="space-between"
           >
             <Stack direction="row" spacing={1.4} alignItems="center" minWidth={0}>
@@ -285,7 +318,7 @@ const HomePage = () => {
                 active
               />
               <Stack spacing={0.4} minWidth={0}>
-                <Typography variant="overline" sx={{ color: "var(--sn-on-companion-muted)" }}>
+                <Typography variant="overline" sx={{ color: COMPANION_MUTED_COLOR }}>
                   {copy.assistant} · {intelligence.headline}
                 </Typography>
                 <Typography
@@ -295,7 +328,7 @@ const HomePage = () => {
                 >
                   {assistant.name}
                 </Typography>
-                <Typography sx={{ color: "var(--sn-on-companion-muted)" }}>
+                <Typography sx={{ color: COMPANION_MUTED_COLOR }}>
                   {copy.greeting.replace("{name}", firstName)}
                 </Typography>
               </Stack>
@@ -307,9 +340,9 @@ const HomePage = () => {
                 width: 52,
                 height: 52,
                 color: "var(--sn-text-primary)",
-                bgcolor: "var(--sn-surface-elevated)",
+                bgcolor: ELEVATED_SURFACE_COLOR,
                 border: "1px solid var(--sn-border-soft)",
-                "&:hover": { bgcolor: "var(--sn-accent-soft)" },
+                "&:hover": { bgcolor: ACCENT_SOFT_COLOR },
               }}
             >
               <Plus size={24} />
@@ -317,14 +350,14 @@ const HomePage = () => {
           </Stack>
 
           <Stack spacing={0.6}>
-            <Typography sx={{ color: "var(--sn-on-companion-muted)", maxWidth: 720 }}>
+            <Typography sx={{ color: COMPANION_MUTED_COLOR, maxWidth: 720 }}>
               {copy.subtitle}
             </Typography>
-            <Typography sx={{ color: "var(--sn-on-companion)", fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
+            <Typography sx={{ color: COMPANION_ON_COLOR, fontWeight: 900, fontSize: { xs: 18, md: 20 } }}>
               {intelligence.message}
             </Typography>
             {intelligence.personalizationLine && (
-              <Typography sx={{ color: "var(--sn-on-companion-muted)", maxWidth: 760 }}>
+              <Typography sx={{ color: COMPANION_MUTED_COLOR, maxWidth: 760 }}>
                 {intelligence.personalizationLine}
               </Typography>
             )}
@@ -335,7 +368,7 @@ const HomePage = () => {
             sx={{
               p: 1.6,
               borderRadius: 1,
-              color: "var(--sn-on-companion)",
+              color: COMPANION_ON_COLOR,
               bgcolor: "rgba(20,184,166,0.12)",
               border: "1px solid var(--sn-border-strong)",
               backdropFilter: "blur(16px)",
@@ -345,7 +378,7 @@ const HomePage = () => {
               <Stack direction="row" justifyContent="space-between" spacing={1}>
                 <Typography sx={{ fontWeight: 900 }}>{copy.caloriesLeft}</Typography>
                 <Typography sx={{ fontWeight: 900 }}>
-                  {caloriesLeft.toFixed(0)} {t("common.kcal")}
+                  {caloriesLeft.toFixed(0)} {t(COMMON_KCAL_KEY)}
                 </Typography>
               </Stack>
               <LinearProgress
@@ -366,12 +399,12 @@ const HomePage = () => {
                 }}
               >
                 {[
-                  [`${copy.eaten}`, `${totals.calories.toFixed(0)} ${t("common.kcal")}`],
-                  [`${copy.proteinLeft}`, `${proteinLeft.toFixed(0)} ${t("common.g")}`],
+                  [`${copy.eaten}`, `${totals.calories.toFixed(0)} ${t(COMMON_KCAL_KEY)}`],
+                  [`${copy.proteinLeft}`, `${proteinLeft.toFixed(0)} ${t(COMMON_GRAMS_KEY)}`],
                   [`${copy.waterLeft}`, `${waterLeft.toFixed(0)} ml`],
                 ].map(([label, value]) => (
                   <Box key={label}>
-                    <Typography variant="caption" sx={{ color: "var(--sn-on-companion-muted)" }}>
+                    <Typography variant="caption" sx={{ color: COMPANION_MUTED_COLOR }}>
                       {label}
                     </Typography>
                     <Typography sx={{ fontWeight: 900 }}>{value}</Typography>
@@ -396,9 +429,9 @@ const HomePage = () => {
                 cursor: "pointer",
                 textAlign: "left",
                 color: "var(--sn-text-primary)",
-                bgcolor: "var(--sn-surface-elevated)",
+                bgcolor: ELEVATED_SURFACE_COLOR,
                 border: "1px solid var(--sn-border-soft)",
-                "&:hover": { bgcolor: "var(--sn-accent-soft)" },
+                "&:hover": { bgcolor: ACCENT_SOFT_COLOR },
               }}
             >
               <Stack spacing={0.4}>
@@ -477,7 +510,7 @@ const HomePage = () => {
                   variant="outlined"
                   sx={{
                     minHeight: 54,
-                    justifyContent: "flex-start",
+                    justifyContent: ALIGN_START,
                     borderRadius: 1,
                     textTransform: "none",
                     fontWeight: 900,
@@ -531,11 +564,11 @@ const HomePage = () => {
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
-                bgcolor: "var(--sn-surface-elevated)",
+                bgcolor: ELEVATED_SURFACE_COLOR,
                 borderColor: "var(--sn-border-soft)",
                 "&:hover": {
                   borderColor: "primary.main",
-                  bgcolor: "var(--sn-accent-soft)",
+                  bgcolor: ACCENT_SOFT_COLOR,
                 },
               }}
             >
@@ -586,20 +619,7 @@ const HomePage = () => {
             </Typography>
             <Typography color="text.secondary">{copy.quickAddSubtitle}</Typography>
           </Stack>
-          {[
-            { label: copy.scan, icon: ScanBarcode, onClick: () => openMealMode("barcode") },
-            { label: copy.photo, icon: Camera, onClick: () => openMealMode("photo") },
-            { label: copy.searchFood, icon: Search, onClick: () => openMealMode("search") },
-            { label: copy.mealPlan, icon: ChefHat, onClick: () => navigate("/recipes") },
-            {
-              label: copy.water,
-              icon: Plus,
-              onClick: () => {
-                dispatch(incrementWater(water.glassSizeMl));
-                setQuickAddOpen(false);
-              },
-            },
-          ].map((action) => {
+          {drawerQuickActions.map((action) => {
             const Icon = action.icon;
 
             return (
@@ -610,7 +630,7 @@ const HomePage = () => {
                 onClick={action.onClick}
                 startIcon={<Icon size={19} />}
                 variant="outlined"
-                sx={{ justifyContent: "flex-start", borderRadius: 1, textTransform: "none", fontWeight: 900 }}
+                sx={{ justifyContent: ALIGN_START, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
               >
                 {action.label}
               </Button>
