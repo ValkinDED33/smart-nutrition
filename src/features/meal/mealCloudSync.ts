@@ -19,7 +19,6 @@ import type { Product } from "@domain/products/types";
 import type { MealState } from "./mealSlice";
 import { replaceMealState } from "./mealSlice";
 import {
-  buildMealStateAfterAddEntries,
   buildMealStateAfterApplyTemplate,
   buildMealStateAfterDeleteTemplate,
   buildMealStateAfterRememberRecentProduct,
@@ -31,6 +30,7 @@ import {
 } from "./mealSaveModel";
 
 type RemoteResult = Awaited<ReturnType<typeof syncRemoteMealState>>;
+const MISSING_CANONICAL_MEAL_ERROR = "Backend did not return canonical meal state.";
 
 const recoverIfCloudConflict = async (
   dispatch: AppDispatch,
@@ -59,6 +59,14 @@ const getConfirmedMealState = (
   fallbackMeal: MealState
 ): MealState => (result.meal ? (result.meal as MealState) : fallbackMeal);
 
+const requireConfirmedMealState = (result: RemoteResult): MealState => {
+  if (!result.meal) {
+    throw new Error(MISSING_CANONICAL_MEAL_ERROR);
+  }
+
+  return result.meal as MealState;
+};
+
 export const saveMealStateToCloud = async (
   dispatch: AppDispatch,
   nextMeal: MealState
@@ -72,15 +80,14 @@ export const saveMealStateToCloud = async (
 
 export const addMealEntriesToCloud = async (
   dispatch: AppDispatch,
-  meal: MealState,
+  _meal: MealState,
   entries: MealEntry[]
 ) => {
-  const nextMeal = buildMealStateAfterAddEntries(meal, entries);
   const result = await createRemoteMealEntries(entries);
 
   await assertCloudSaved(dispatch, result);
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -94,7 +101,7 @@ export const addProductIntakeToCloud = async (
   await assertCloudSaved(dispatch, result);
 
   if (!result.meal) {
-    throw new Error("Product intake did not return canonical meal state.");
+    throw new Error(MISSING_CANONICAL_MEAL_ERROR);
   }
 
   dispatch(replaceMealState(result.meal));
@@ -115,7 +122,7 @@ export const removeMealEntryFromCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -144,7 +151,7 @@ export const saveMealTemplateToCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -162,7 +169,7 @@ export const deleteMealTemplateFromCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -191,7 +198,7 @@ export const saveMealProductToCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -209,7 +216,7 @@ export const removeSavedMealProductFromCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };
@@ -227,7 +234,7 @@ export const rememberRecentMealProductInCloud = async (
     return saveMealStateToCloud(dispatch, nextMeal);
   }
 
-  const confirmedMeal = getConfirmedMealState(result, nextMeal);
+  const confirmedMeal = requireConfirmedMealState(result);
   dispatch(replaceMealState(confirmedMeal));
   return confirmedMeal;
 };

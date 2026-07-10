@@ -5,6 +5,7 @@ import { createInitialMealState } from "./mealSlice";
 import {
   addMealEntriesToCloud,
   applyMealTemplateInCloud,
+  saveMealProductToCloud,
   saveMealTemplateToCloud,
 } from "./mealCloudSync";
 import { replaceMealState } from "./mealSlice";
@@ -25,6 +26,7 @@ vi.mock("@shared/api/auth", () => authApiMock);
 const ENTRY_ID_ONE = "one";
 const TEMPLATE_ID_ONE = "template-one";
 const TEMPLATE_CREATED_AT = "2026-07-03T08:00:00.000Z";
+const MISSING_CANONICAL_MEAL_ERROR = "Backend did not return canonical meal state.";
 
 const createEntry = (id: string): MealEntry => ({
   id,
@@ -52,24 +54,25 @@ describe("mealCloudSync", () => {
     vi.clearAllMocks();
   });
 
-  it("applies quick meal entries only after the backend confirms them", async () => {
+  it("rejects quick meal entry success without canonical backend meal state", async () => {
     const dispatch = vi.fn();
     authApiMock.createRemoteMealEntries.mockResolvedValueOnce({
       ok: true,
       meta: null,
     });
 
-    const next = await addMealEntriesToCloud(
-      dispatch as never,
-      createInitialMealState(),
-      [createEntry(ENTRY_ID_ONE)]
-    );
+    await expect(
+      addMealEntriesToCloud(
+        dispatch as never,
+        createInitialMealState(),
+        [createEntry(ENTRY_ID_ONE)]
+      )
+    ).rejects.toThrow(MISSING_CANONICAL_MEAL_ERROR);
 
-    expect(next.items).toHaveLength(1);
     expect(authApiMock.createRemoteMealEntries).toHaveBeenCalledWith([
       createEntry(ENTRY_ID_ONE),
     ]);
-    expect(dispatch).toHaveBeenCalledWith(replaceMealState(next));
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("uses canonical backend meal state when quick add returns it", async () => {
@@ -117,7 +120,7 @@ describe("mealCloudSync", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("persists meal templates through the backend before exposing them locally", async () => {
+  it("rejects meal template success without canonical backend meal state", async () => {
     const dispatch = vi.fn();
     const template = {
       id: TEMPLATE_ID_ONE,
@@ -131,15 +134,16 @@ describe("mealCloudSync", () => {
       meta: null,
     });
 
-    const next = await saveMealTemplateToCloud(
-      dispatch as never,
-      createInitialMealState(),
-      template
-    );
+    await expect(
+      saveMealTemplateToCloud(
+        dispatch as never,
+        createInitialMealState(),
+        template
+      )
+    ).rejects.toThrow(MISSING_CANONICAL_MEAL_ERROR);
 
-    expect(next.templates).toEqual([template]);
     expect(authApiMock.createRemoteMealTemplate).toHaveBeenCalledWith(template);
-    expect(dispatch).toHaveBeenCalledWith(replaceMealState(next));
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("uses canonical backend meal state when template save returns it", async () => {
@@ -172,6 +176,22 @@ describe("mealCloudSync", () => {
       expect.objectContaining({ name: "Server Lunch" }),
     ]);
     expect(dispatch).toHaveBeenCalledWith(replaceMealState(canonicalMeal));
+  });
+
+  it("rejects saved product success without canonical backend meal state", async () => {
+    const dispatch = vi.fn();
+    const product = createEntry(ENTRY_ID_ONE).product;
+    authApiMock.saveRemoteMealProduct.mockResolvedValueOnce({
+      ok: true,
+      meta: null,
+    });
+
+    await expect(
+      saveMealProductToCloud(dispatch as never, createInitialMealState(), product)
+    ).rejects.toThrow(MISSING_CANONICAL_MEAL_ERROR);
+
+    expect(authApiMock.saveRemoteMealProduct).toHaveBeenCalledWith("saved", product);
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("uses the same cloud-confirmed path when applying templates", async () => {
