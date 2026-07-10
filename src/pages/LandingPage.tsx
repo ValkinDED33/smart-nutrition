@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { TypeAnimation } from "react-type-animation";
 import { motion } from "framer-motion";
 import {
@@ -27,9 +26,7 @@ import {
 import { Link } from "react-router-dom";
 import {
   AssistantAvatar,
-  type AssistantAvatarMood,
 } from "../shared/components/AssistantAvatar";
-import type { AssistantCompanionKind } from "@domain/profile/types";
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 
@@ -454,11 +451,11 @@ const getLandingScene = (isDarkMode: boolean) => ({
     ? "radial-gradient(circle at 10% 0%, rgba(20,184,166,0.16), transparent 28%), radial-gradient(circle at 90% 8%, rgba(163,230,53,0.1), transparent 32%), linear-gradient(180deg, #020617 0%, #050b18 48%, #07110f 100%)"
     : "radial-gradient(circle at 12% 0%, rgba(34,197,94,0.16), transparent 28%), radial-gradient(circle at 88% 12%, rgba(14,165,233,0.16), transparent 30%), linear-gradient(180deg, #f8fffb 0%, #effdfa 44%, #f8fbff 100%)",
   heroBackground: isDarkMode
-    ? "radial-gradient(circle at 74% 28%, rgba(163,230,53,0.24), transparent 26%), radial-gradient(circle at 88% 68%, rgba(20,184,166,0.18), transparent 32%), radial-gradient(circle at 62% 58%, rgba(15,118,110,0.2), transparent 34%), linear-gradient(135deg, #010409 0%, #03111f 42%, #061a16 100%)"
-    : "radial-gradient(circle at 78% 24%, rgba(255,255,255,0.96), transparent 22%), radial-gradient(circle at 82% 70%, rgba(14,165,233,0.24), transparent 34%), radial-gradient(circle at 60% 52%, rgba(187,247,208,0.46), transparent 34%), linear-gradient(135deg, #fbfffe 0%, #effdfa 38%, #e9f7ff 100%)",
+    ? "radial-gradient(circle at 78% 20%, rgba(226,232,240,0.18), transparent 16%), radial-gradient(circle at 78% 44%, rgba(163,230,53,0.34), transparent 25%), radial-gradient(circle at 90% 70%, rgba(20,184,166,0.22), transparent 30%), radial-gradient(circle at 62% 74%, rgba(34,197,94,0.22), transparent 28%), linear-gradient(135deg, #010409 0%, #03101b 42%, #061712 100%)"
+    : "radial-gradient(circle at 76% 18%, rgba(255,255,255,0.98), transparent 20%), radial-gradient(circle at 78% 42%, rgba(125,211,252,0.48), transparent 28%), radial-gradient(circle at 88% 74%, rgba(20,184,166,0.26), transparent 32%), radial-gradient(circle at 62% 76%, rgba(187,247,208,0.52), transparent 28%), linear-gradient(135deg, #fbfffe 0%, #effdfa 34%, #e6f7ff 100%)",
   heroOverlay: isDarkMode
-    ? "linear-gradient(90deg, rgba(1,4,9,0.94) 0%, rgba(3,12,24,0.78) 42%, rgba(2,6,23,0.18) 100%), linear-gradient(180deg, rgba(2,6,23,0.68) 0%, rgba(3,14,23,0.32) 56%, rgba(20,184,166,0.12) 100%)"
-    : "linear-gradient(90deg, rgba(255,255,255,0.86) 0%, rgba(240,253,250,0.64) 42%, rgba(240,249,255,0.12) 100%), linear-gradient(180deg, rgba(255,255,255,0.36) 0%, rgba(236,254,255,0.1) 54%, rgba(20,184,166,0.08) 100%)",
+    ? "linear-gradient(90deg, rgba(1,4,9,0.98) 0%, rgba(3,12,24,0.82) 39%, rgba(2,6,23,0.12) 100%), linear-gradient(180deg, rgba(2,6,23,0.72) 0%, rgba(3,14,23,0.24) 52%, rgba(20,184,166,0.16) 100%)"
+    : "linear-gradient(90deg, rgba(255,255,255,0.88) 0%, rgba(240,253,250,0.58) 38%, rgba(240,249,255,0.04) 100%), linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(236,254,255,0.04) 52%, rgba(20,184,166,0.1) 100%)",
   heroText: isDarkMode ? "#ffffff" : "#102a43",
   mutedText: isDarkMode ? "rgba(255,255,255,0.82)" : "rgba(15,23,42,0.68)",
   titleShadow: isDarkMode
@@ -476,8 +473,8 @@ const getLandingScene = (isDarkMode: boolean) => ({
     : "rgba(20,184,166,0.22)",
   gridOpacity: isDarkMode ? 0.24 : 0.18,
   gridLines: isDarkMode
-    ? "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)"
-    : "linear-gradient(rgba(15,118,110,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.08) 1px, transparent 1px)",
+    ? "radial-gradient(circle at center, rgba(255,255,255,0.26) 0 1px, transparent 1.8px)"
+    : "radial-gradient(circle at center, rgba(14,165,233,0.18) 0 1px, transparent 1.8px)",
   proofBorder: isDarkMode ? "rgba(255,255,255,0.24)" : "rgba(15,118,110,0.18)",
   proofColor: isDarkMode ? "rgba(255,255,255,0.88)" : "rgba(15,23,42,0.76)",
   proofBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.56)",
@@ -543,83 +540,6 @@ const getLandingScene = (isDarkMode: boolean) => ({
   phoneCardBorder: isDarkMode ? "rgba(148,163,184,0.22)" : "rgba(15,23,42,0.08)",
 });
 
-const companionKinds: AssistantCompanionKind[] = [
-  "robot",
-  "cat",
-  "dog",
-  "capybara",
-  "dragon",
-];
-
-const moodCycle: AssistantAvatarMood[] = ["happy", "coach", "celebrate"];
-
-const getMoodByIndex = (index: number): AssistantAvatarMood => {
-  switch (index % moodCycle.length) {
-    case 0:
-      return "happy";
-    case 1:
-      return "coach";
-    case 2:
-      return "celebrate";
-    default:
-      return "happy";
-  }
-};
-
-const getCompanionKindByIndex = (index: number): AssistantCompanionKind => {
-  switch (index % companionKinds.length) {
-    case 0:
-      return "robot";
-    case 1:
-      return "cat";
-    case 2:
-      return "dog";
-    case 3:
-      return "capybara";
-    case 4:
-      return "dragon";
-    default:
-      return "robot";
-  }
-};
-
-const clamp = (value: number, min = -1, max = 1) =>
-  Math.max(min, Math.min(max, value));
-
-const usePointerLook = () => {
-  const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    let animationFrame: number | undefined;
-
-    const handlePointerMove = (event: PointerEvent) => {
-      if (animationFrame !== undefined) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-
-      animationFrame = window.requestAnimationFrame(() => {
-        setLookOffset({
-          x: clamp((event.clientX / Math.max(window.innerWidth, 1) - 0.5) * 2),
-          y: clamp((event.clientY / Math.max(window.innerHeight, 1) - 0.5) * 2),
-        });
-      });
-    };
-
-    window.addEventListener("pointermove", handlePointerMove, {
-      passive: true,
-    });
-
-    return () => {
-      if (animationFrame !== undefined) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-      window.removeEventListener("pointermove", handlePointerMove);
-    };
-  }, []);
-
-  return lookOffset;
-};
-
 const iconButtonSx = {
   minWidth: 44,
   width: 44,
@@ -628,37 +548,6 @@ const iconButtonSx = {
   borderRadius: "50%",
   borderColor: "rgba(15,23,42,0.12)",
 } as const;
-
-const sceneToneSx = {
-  calm: {
-    border: "rgba(132,204,22,0.34)",
-    bg: "rgba(240,253,244,0.78)",
-    icon: "#65a30d",
-  },
-  coach: {
-    border: "rgba(45,212,191,0.34)",
-    bg: "rgba(236,254,255,0.76)",
-    icon: "#14b8a6",
-  },
-  warm: {
-    border: "rgba(245,158,11,0.32)",
-    bg: "rgba(255,251,235,0.76)",
-    icon: "#d97706",
-  },
-} as const;
-
-const getCompanionSceneIcon = (index: number) => {
-  switch (index) {
-    case 0:
-      return HeartPulse;
-    case 1:
-      return Bell;
-    case 2:
-      return Droplets;
-    default:
-      return Sparkles;
-  }
-};
 
 const getFeatureRailIcon = (index: number) => {
   switch (index) {
@@ -694,17 +583,6 @@ const getQuickActionIcon = (index: number) => {
   }
 };
 
-const getSceneToneSx = (tone: keyof typeof sceneToneSx) => {
-  switch (tone) {
-    case "calm":
-      return sceneToneSx.calm;
-    case "coach":
-      return sceneToneSx.coach;
-    case "warm":
-      return sceneToneSx.warm;
-  }
-};
-
 const landingGlassPanelSx = {
   borderRadius: 1,
   border: "1px solid var(--sn-border-soft)",
@@ -720,27 +598,48 @@ const landingSectionTitleSx = {
 } as const;
 
 const CompanionExperienceScene = ({
-  copy,
   isDarkMode,
 }: {
-  copy: LandingCopy;
   isDarkMode: boolean;
 }) => {
   const scene = getLandingScene(isDarkMode);
-  const lookOffset = usePointerLook();
-  const [moodIndex, setMoodIndex] = useState(0);
-  const [companionIndex, setCompanionIndex] = useState(0);
-  const mood = getMoodByIndex(moodIndex);
-  const companion = getCompanionKindByIndex(companionIndex);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setMoodIndex((current) => (current + 1) % moodCycle.length);
-      setCompanionIndex((current) => (current + 1) % companionKinds.length);
-    }, 2600);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
+  const referenceCards = [
+    {
+      id: "hydration",
+      label: "Hydration",
+      value: "6 / 8 glasses",
+      badge: "62%",
+      sx: { left: { sm: 10, md: 72 }, top: { sm: 24, md: 58 } },
+    },
+    {
+      id: "calories",
+      label: "Today",
+      value: "1,450 kcal",
+      badge: "72%",
+      sx: { right: { sm: 4, md: 42 }, top: { sm: 90, md: 130 } },
+    },
+    {
+      id: "protein",
+      label: "Protein",
+      value: "108 / 150g",
+      badge: null,
+      sx: { left: { sm: 18, md: 22 }, top: { sm: 214, md: 258 } },
+    },
+    {
+      id: "coach",
+      label: "AI Coach",
+      value: "Great job hitting your protein goal.",
+      badge: null,
+      sx: { left: { sm: 94, md: 128 }, bottom: { sm: 68, md: 92 } },
+    },
+    {
+      id: "streak",
+      label: "Streak",
+      value: "12 days",
+      badge: null,
+      sx: { right: { sm: 32, md: 70 }, bottom: { sm: 46, md: 74 } },
+    },
+  ];
 
   return (
     <Box
@@ -750,7 +649,7 @@ const CompanionExperienceScene = ({
         zIndex: 2,
         right: { md: 0 },
         bottom: { md: 0 },
-        minHeight: { xs: 320, sm: 430, md: 548 },
+        minHeight: { xs: 320, sm: 500, md: 600 },
         width: { xs: "100%", md: "64%" },
         mt: { xs: 1, md: 0 },
         display: { xs: "none", sm: "grid" },
@@ -762,12 +661,15 @@ const CompanionExperienceScene = ({
         aria-hidden
         sx={{
           position: "absolute",
-          inset: { xs: "10% 0 4%", md: "4% 6% 2%" },
+          inset: { xs: "10% 0 4%", md: "2% 2% 0%" },
           borderRadius: 1,
-          background: scene.sceneBackdrop,
+          background: isDarkMode
+            ? "radial-gradient(circle at 58% 46%, rgba(163,230,53,0.22), transparent 18%), radial-gradient(circle at 76% 28%, rgba(148,163,184,0.36), transparent 14%), radial-gradient(circle at 50% 82%, rgba(20,184,166,0.2), transparent 28%), linear-gradient(145deg, rgba(2,6,23,0.1), rgba(5,46,22,0.22))"
+            : "radial-gradient(circle at 58% 42%, rgba(255,255,255,0.94), transparent 18%), radial-gradient(circle at 76% 28%, rgba(186,230,253,0.56), transparent 16%), radial-gradient(circle at 54% 82%, rgba(20,184,166,0.26), transparent 28%), linear-gradient(145deg, rgba(224,242,254,0.24), rgba(220,252,231,0.34))",
           border: `1px solid ${scene.sceneBorder}`,
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.38)",
-          transform: "skewY(-1.2deg)",
+          boxShadow: isDarkMode
+            ? "inset 0 1px 0 rgba(255,255,255,0.18), 0 60px 160px rgba(0,0,0,0.28)"
+            : "inset 0 1px 0 rgba(255,255,255,0.82), 0 60px 150px rgba(14,165,233,0.16)",
         }}
       />
       <Box
@@ -775,14 +677,18 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 1,
-          width: { sm: 420, md: 620 },
-          height: { sm: 420, md: 620 },
+          width: { sm: 460, md: 690 },
+          height: { sm: 460, md: 690 },
           borderRadius: "50%",
-          right: { sm: 42, md: 72 },
-          top: { sm: 8, md: 10 },
-          background: scene.portalRing,
-          filter: isDarkMode ? "drop-shadow(0 0 42px rgba(163,230,53,0.18))" : "drop-shadow(0 0 58px rgba(14,165,233,0.2))",
-          opacity: isDarkMode ? 0.9 : 0.82,
+          right: { sm: 8, md: 44 },
+          top: { sm: -16, md: -18 },
+          background: isDarkMode
+            ? "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.2) 43%, rgba(163,230,53,0.26) 47%, rgba(20,184,166,0.12) 54%, transparent 61%)"
+            : "radial-gradient(circle, transparent 40%, rgba(255,255,255,0.92) 41%, rgba(14,165,233,0.32) 47%, rgba(20,184,166,0.2) 55%, transparent 63%)",
+          filter: isDarkMode
+            ? "drop-shadow(0 0 58px rgba(163,230,53,0.22))"
+            : "drop-shadow(0 0 72px rgba(14,165,233,0.26))",
+          opacity: isDarkMode ? 0.96 : 0.88,
         }}
       />
       <Box
@@ -790,13 +696,15 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 1,
-          left: { sm: "8%", md: "14%" },
-          right: { sm: "2%", md: "8%" },
-          bottom: { sm: 24, md: 34 },
-          height: { sm: 140, md: 190 },
+          left: { sm: "2%", md: "8%" },
+          right: { sm: "0%", md: "2%" },
+          bottom: { sm: 0, md: 0 },
+          height: { sm: 210, md: 265 },
           borderRadius: "50% 50% 0 0",
-          background: scene.heroLandscape,
-          filter: "blur(1px)",
+          background: isDarkMode
+            ? "linear-gradient(180deg, transparent 0%, rgba(22,101,52,0.28) 26%, rgba(2,6,23,0.9) 100%)"
+            : "linear-gradient(180deg, transparent 0%, rgba(186,230,253,0.46) 26%, rgba(236,253,245,0.92) 100%)",
+          filter: "blur(0.5px)",
         }}
       />
 
@@ -810,154 +718,204 @@ const CompanionExperienceScene = ({
           zIndex: 2,
           display: "grid",
           placeItems: "center",
-          width: { xs: 190, sm: 280, md: 360 },
-          height: { xs: 190, sm: 280, md: 360 },
-          borderRadius: "50%",
-          background: scene.avatarStageBg,
-          border: "1px solid rgba(94,234,212,0.26)",
-          boxShadow: scene.avatarStageShadow,
-          backdropFilter: "blur(18px)",
+          width: { sm: 300, md: 390 },
+          height: { sm: 390, md: 500 },
+          mt: { sm: 1, md: 2 },
         }}
       >
         <Box
           aria-hidden
-          component={motion.div}
-          animate={{ scale: [0.98, 1.06, 0.98], opacity: [0.42, 0.2, 0.42] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
           sx={{
             position: "absolute",
-            inset: { xs: 20, sm: 30 },
+            width: { sm: 250, md: 330 },
+            height: { sm: 250, md: 330 },
+            top: { sm: 30, md: 50 },
             borderRadius: "50%",
-            border: "1px solid rgba(20,184,166,0.46)",
+            background: isDarkMode
+              ? "radial-gradient(circle, rgba(163,230,53,0.24), rgba(20,184,166,0.08) 52%, rgba(2,6,23,0.08) 70%)"
+              : "radial-gradient(circle, rgba(255,255,255,0.9), rgba(34,211,238,0.22) 50%, rgba(187,247,208,0.14) 70%)",
+            filter: "blur(2px)",
+            boxShadow: isDarkMode
+              ? "0 0 110px rgba(163,230,53,0.22)"
+              : "0 0 120px rgba(14,165,233,0.22)",
           }}
         />
-        <AssistantAvatar
-          name={copy.mascot.name}
-          variant={companion}
-          mood={mood}
-          lookOffset={lookOffset}
-          active
-          size={136}
-        />
-        <Chip
-          label={copy.mascot.mood}
+        <Box
+          aria-hidden
           sx={{
             position: "absolute",
-            bottom: { xs: 24, sm: 36 },
-            background: "linear-gradient(135deg, #0f766e, #65a30d)",
-            color: "white",
-            fontWeight: 900,
-            boxShadow: "var(--sn-glow)",
+            top: { sm: 80, md: 108 },
+            width: { sm: 168, md: 214 },
+            height: { sm: 132, md: 168 },
+            borderRadius: "46% 46% 34% 34%",
+            background: isDarkMode
+              ? "linear-gradient(145deg, #f8fafc 0%, #dbeafe 48%, #94a3b8 100%)"
+              : "linear-gradient(145deg, #ffffff 0%, #ecfeff 48%, #cbd5e1 100%)",
+            boxShadow: isDarkMode
+              ? "0 34px 90px rgba(0,0,0,0.42), inset -18px -20px 38px rgba(15,23,42,0.18), inset 16px 18px 36px rgba(255,255,255,0.68)"
+              : "0 34px 90px rgba(14,165,233,0.2), inset -18px -20px 38px rgba(15,23,42,0.1), inset 16px 18px 36px rgba(255,255,255,0.92)",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: { sm: 26, md: 34 },
+              borderRadius: 999,
+              background: "#07111f",
+              boxShadow: "inset 0 0 28px rgba(20,184,166,0.46)",
+            },
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              left: "50%",
+              top: "52%",
+              width: { sm: 90, md: 116 },
+              height: { sm: 36, md: 46 },
+              transform: "translate(-50%, -50%)",
+              background:
+                "radial-gradient(circle at 28% 44%, #86efac 0 14%, transparent 15%), radial-gradient(circle at 72% 44%, #86efac 0 14%, transparent 15%), radial-gradient(ellipse at 50% 78%, transparent 0 56%, #86efac 57% 61%, transparent 62%)",
+              filter: "drop-shadow(0 0 12px rgba(134,239,172,0.9))",
+            },
+          }}
+        />
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: { sm: 226, md: 292 },
+            width: { sm: 138, md: 178 },
+            height: { sm: 148, md: 190 },
+            borderRadius: "44% 44% 36% 36%",
+            background: isDarkMode
+              ? "linear-gradient(145deg, #e2e8f0, #94a3b8)"
+              : "linear-gradient(145deg, #ffffff, #cbd5e1)",
+            boxShadow: isDarkMode
+              ? "0 28px 80px rgba(0,0,0,0.38), inset -16px -20px 34px rgba(15,23,42,0.16)"
+              : "0 28px 80px rgba(14,165,233,0.16), inset -14px -18px 32px rgba(15,23,42,0.08)",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: "50%",
+              top: "48%",
+              width: { sm: 58, md: 76 },
+              height: { sm: 58, md: 76 },
+              transform: "translate(-50%, -50%)",
+              borderRadius: "36% 64% 34% 66%",
+              background: "linear-gradient(135deg, #22c55e, #bef264)",
+              boxShadow: "0 0 32px rgba(134,239,172,0.74)",
+            },
+          }}
+        />
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: { sm: 252, md: 320 },
+            left: { sm: 48, md: 62 },
+            width: { sm: 54, md: 70 },
+            height: { sm: 16, md: 20 },
+            borderRadius: 999,
+            transform: "rotate(32deg)",
+            background: "linear-gradient(90deg, #e2e8f0, #94a3b8)",
+          }}
+        />
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: { sm: 252, md: 320 },
+            right: { sm: 48, md: 62 },
+            width: { sm: 54, md: 70 },
+            height: { sm: 16, md: 20 },
+            borderRadius: 999,
+            transform: "rotate(-32deg)",
+            background: "linear-gradient(90deg, #94a3b8, #e2e8f0)",
           }}
         />
       </Box>
 
-      <Stack
-        direction="row"
-        spacing={1}
-        useFlexGap
-        flexWrap="wrap"
-        justifyContent="center"
-        sx={{ position: "absolute", zIndex: 3, bottom: { xs: 8, md: 22 } }}
-      >
-        {copy.presencePills.map((pill) => (
-          <Chip
-            key={pill}
-            label={pill}
-            size="small"
-            sx={{
-              bgcolor: scene.presenceBg,
-              color: scene.presenceColor,
-              border: `1px solid ${scene.presenceBorder}`,
-              backdropFilter: "blur(10px)",
-            }}
-          />
-        ))}
-      </Stack>
-
-      {copy.sceneCards.map((card, index) => {
-        const Icon = getCompanionSceneIcon(index);
-        const tone = getSceneToneSx(card.tone);
-        const placement =
-          index === 0
-            ? {
-              left: { xs: 0, md: 56 },
-                top: { xs: 0, md: 46 },
-              }
-            : index === 1
-              ? {
-                  right: { xs: 0, md: 36 },
-                  top: { xs: 128, sm: 78, md: 78 },
-                }
-              : {
-                  left: { xs: 0, sm: 30, md: 120 },
-                  bottom: { xs: 70, sm: 86, md: 74 },
-                };
-
-        return (
-          <Paper
-            key={card.title}
-            component={motion.div}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: [0, -7, 0] }}
-            transition={{
-              opacity: { delay: 0.24 + index * 0.1, duration: 0.36 },
-              y: {
-                delay: index * 0.2,
-                duration: 4 + index * 0.35,
-                repeat: Infinity,
-                ease: "easeInOut",
-              },
-            }}
-            elevation={0}
-            sx={{
-              position: "absolute",
-              display: { xs: "none", sm: "block" },
-              zIndex: 4,
-              width: { xs: 210, sm: 250, md: 282 },
-              p: { xs: 1.3, sm: 1.6 },
-              borderRadius: 1,
-              border: `1px solid ${tone.border}`,
-              bgcolor: isDarkMode ? scene.sceneCardBg : tone.bg,
-              backdropFilter: GLASS_BLUR_14,
-              boxShadow: scene.sceneCardShadow,
-              ...placement,
-            }}
-          >
-            <Stack direction="row" spacing={1.1} alignItems="flex-start">
+      {referenceCards.map((card, index) => (
+        <Paper
+          key={card.id}
+          component={motion.div}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: [0, -6, 0] }}
+          transition={{
+            opacity: { delay: 0.12 + index * 0.08, duration: 0.3 },
+            y: {
+              delay: index * 0.16,
+              duration: 4 + index * 0.28,
+              repeat: Infinity,
+              ease: "easeInOut",
+            },
+          }}
+          elevation={0}
+          sx={{
+            position: "absolute",
+            zIndex: 4,
+            width: card.id === "coach" ? { sm: 220, md: 250 } : { sm: 180, md: 210 },
+            p: { sm: 1.25, md: 1.45 },
+            borderRadius: 1,
+            border: isDarkMode
+              ? "1px solid rgba(255,255,255,0.16)"
+              : "1px solid rgba(255,255,255,0.72)",
+            bgcolor: isDarkMode ? "rgba(2,6,23,0.58)" : "rgba(255,255,255,0.42)",
+            color: isDarkMode ? "#ffffff" : "#102a43",
+            backdropFilter: "blur(18px)",
+            boxShadow: isDarkMode
+              ? "0 20px 60px rgba(0,0,0,0.34)"
+              : "0 20px 54px rgba(14,165,233,0.18)",
+            ...card.sx,
+          }}
+        >
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: 12, color: scene.sceneCardMuted, fontWeight: 800 }}>
+                {card.label}
+              </Typography>
+              <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                {card.value}
+              </Typography>
+              {card.id === "protein" ? (
+                <LinearProgress
+                  variant="determinate"
+                  value={72}
+                  sx={{
+                    mt: 0.9,
+                    height: 5,
+                    borderRadius: 999,
+                    bgcolor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(15,23,42,0.1)",
+                    "& .MuiLinearProgress-bar": { bgcolor: "#22d3ee" },
+                  }}
+                />
+              ) : null}
+            </Box>
+            {card.badge ? (
               <Box
                 sx={{
-                  width: 34,
-                  height: 34,
+                  width: 48,
+                  height: 48,
                   borderRadius: "50%",
                   display: "grid",
                   placeItems: "center",
-                  color: tone.icon,
-                  bgcolor: scene.sceneIconBg,
-                  flexShrink: 0,
+                  fontWeight: 900,
+                  background:
+                    "conic-gradient(from 0deg, #22d3ee 0 38%, #84cc16 38% 72%, rgba(255,255,255,0.16) 72% 100%)",
+                  boxShadow: "0 0 24px rgba(34,211,238,0.28)",
+                  "&::before": {
+                    content: `"${card.badge}"`,
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    bgcolor: isDarkMode ? "#07111f" : "#ffffff",
+                    fontSize: 12,
+                  },
                 }}
-              >
-                <Icon size={18} aria-hidden="true" />
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 900, color: scene.sceneCardText }}>
-                  {card.title}
-                </Typography>
-                <Typography
-                  sx={{
-                    mt: 0.4,
-                    color: scene.sceneCardMuted,
-                    lineHeight: 1.45,
-                    fontSize: { xs: 13, sm: 14 },
-                  }}
-                >
-                  {card.body}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-        );
-      })}
+              />
+            ) : null}
+          </Stack>
+        </Paper>
+      ))}
     </Box>
   );
 };
@@ -1238,7 +1196,7 @@ const Hero = ({
       </Stack>
     </Stack>
 
-    <CompanionExperienceScene copy={copy} isDarkMode={isDarkMode} />
+    <CompanionExperienceScene isDarkMode={isDarkMode} />
 
     <Stack
       direction={{ xs: "column", md: "row" }}
