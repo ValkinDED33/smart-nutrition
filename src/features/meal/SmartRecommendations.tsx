@@ -5,6 +5,7 @@ import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { addDays, getLocalDateKey } from "../../shared/lib/date";
 import { recipes } from "@domain/meal/recipes";
 import {
@@ -20,6 +21,10 @@ import { buildDailyContext } from "@domain/meal/dailyContext";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import { searchProducts } from "../../shared/api/products";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+
+const EGGS_QUERY = "eggs";
+const GREEK_YOGURT_QUERY = "greek yogurt";
+const createRecommendationTimestamp = () => new Date().toISOString();
 
 const recommendationCopy = {
   uk: {
@@ -182,11 +187,24 @@ const recommendationCopy = {
 
 type RecommendationTone = "success" | "warning" | "info";
 type RecommendationProductKind = "protein" | "fiber" | "dense";
+type RecommendationCopy = (typeof recommendationCopy)[keyof typeof recommendationCopy];
 
 interface RecommendationProductRequest {
   kind: RecommendationProductKind;
   query: string;
 }
+
+const getRecommendationCopy = (language: AppLanguage): RecommendationCopy => {
+  switch (language) {
+    case "uk":
+      return recommendationCopy.uk;
+    case "pl":
+      return recommendationCopy.pl;
+    case "en":
+    default:
+      return recommendationCopy.en;
+  }
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -217,12 +235,12 @@ const getRecommendationProductRequests = (
     preferences.dietStyle === "vegan"
       ? ["tofu", "lentils", "chickpeas", "soy yogurt"]
       : preferences.dietStyle === "vegetarian"
-        ? ["greek yogurt", "cottage cheese", "tofu", "eggs"]
+        ? [GREEK_YOGURT_QUERY, "cottage cheese", "tofu", EGGS_QUERY]
         : preferences.dietStyle === "pescatarian"
-          ? ["tuna", "salmon", "greek yogurt", "eggs"]
-          : preferences.dietStyle === "low_carb"
-            ? ["chicken breast", "eggs", "tuna", "cottage cheese"]
-            : ["chicken breast", "greek yogurt", "eggs", "tuna"];
+          ? ["tuna", "salmon", GREEK_YOGURT_QUERY, EGGS_QUERY]
+        : preferences.dietStyle === "low_carb"
+            ? ["chicken breast", EGGS_QUERY, "tuna", "cottage cheese"]
+            : ["chicken breast", GREEK_YOGURT_QUERY, EGGS_QUERY, "tuna"];
   const fiberTerms =
     preferences.dietStyle === "low_carb"
       ? ["broccoli", "avocado", "chia seeds", "berries"]
@@ -255,7 +273,10 @@ const groupRecommendationProducts = (
   const seen = new Set<string>();
 
   requests.forEach((request, index) => {
-    results[index]?.forEach((product) => {
+    const requestProducts =
+      results.find((_, resultIndex) => resultIndex === index) ?? [];
+
+    requestProducts.forEach((product) => {
       const identity = `${request.kind}-${getProductIdentity(product)}`;
 
       if (seen.has(identity) || !productMatchesPreferences(product, preferences)) {
@@ -294,7 +315,7 @@ export const SmartRecommendations = () => {
   const water = useSelector((state: RootState) => state.water);
   const items = useSelector(selectMealItems);
   const { appLanguage, t } = useLanguage();
-  const copy = recommendationCopy[appLanguage];
+  const copy = getRecommendationCopy(appLanguage);
   const {
     notice: mealActionNotice,
     runMealAction,
@@ -725,7 +746,7 @@ export const SmartRecommendations = () => {
                       )}
                       onClick={() => {
                         if (recommendation.actionRecipe) {
-                          const eatenAt = new Date().toISOString();
+                          const eatenAt = createRecommendationTimestamp();
                           const entries: MealEntry[] =
                             recommendation.actionRecipe.ingredients.map((ingredient) => ({
                               id: createEntryId(),
@@ -749,7 +770,7 @@ export const SmartRecommendations = () => {
                           product: recommendation.actionProduct!,
                           quantity: recommendation.actionQuantity!,
                           mealType: dailyContext.suggestedMealType,
-                          eatenAt: new Date().toISOString(),
+                          eatenAt: createRecommendationTimestamp(),
                           origin: "manual",
                         };
 

@@ -23,6 +23,7 @@ import {
 import { fetchProductByBarcode } from "../../shared/api/products";
 import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { ProductCard } from "./ProductCard";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { getProductDisplayName } from "@domain/products/productDisplay";
@@ -344,6 +345,30 @@ const scannerCopy = {
   },
 } as const;
 
+type ScannerCopy = (typeof scannerCopy)[keyof typeof scannerCopy];
+
+const CLOUD_SAVE_ERROR_MESSAGE = "Could not save meal to cloud.";
+const SCANNER_FLEX_START = "flex-start";
+const SCANNER_TEXT_TRANSFORM_NONE = "none";
+const SCANNER_STRONG_FONT_WEIGHT = 800;
+const SCANNER_INLINE_BUTTON_SX = {
+  alignSelf: SCANNER_FLEX_START,
+  textTransform: SCANNER_TEXT_TRANSFORM_NONE,
+  fontWeight: SCANNER_STRONG_FONT_WEIGHT,
+} as const;
+
+const getScannerCopy = (language: AppLanguage): ScannerCopy => {
+  switch (language) {
+    case "uk":
+      return scannerCopy.uk;
+    case "pl":
+      return scannerCopy.pl;
+    case "en":
+    default:
+      return scannerCopy.en;
+  }
+};
+
 const scannerPreviewSx = {
   position: "relative",
   overflow: "hidden",
@@ -426,7 +451,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
   const [scannerRuntimeState, setScannerRuntimeState] =
     useState<ScannerRuntimeState>("idle");
   const { appLanguage } = useLanguage();
-  const copy = scannerCopy[appLanguage];
+  const copy = getScannerCopy(appLanguage);
   const categoryOptions = useMemo(
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
@@ -758,7 +783,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
         } else {
           void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
             setSaveError(
-              error instanceof Error ? error.message : "Could not save meal to cloud."
+              error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
             );
           });
           playScannerSuccess();
@@ -769,7 +794,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       } catch (error) {
         console.error(error);
         setSaveError(
-          error instanceof Error ? error.message : "Could not save meal to cloud."
+          error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
         );
         setLookupState("error");
         setScannerRuntimeState("saveFailed");
@@ -1057,7 +1082,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       pendingManualIntakeKeyRef.current = null;
     } catch (error) {
       setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
+        error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
       );
       setScannerRuntimeState("saveFailed");
       playScannerFailure();
@@ -1099,7 +1124,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       }}
     >
       <Stack spacing={2}>
-        <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
           {copy.title}
         </Typography>
 
@@ -1122,7 +1147,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
               <Button
                 variant="outlined"
                 onClick={() => setShowManualForm(true)}
-                sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 800 }}
+                sx={SCANNER_INLINE_BUTTON_SX}
               >
                 {copy.manualOpen}
               </Button>
@@ -1218,7 +1243,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                   borderRadius: 999,
                   color: "#ffffff",
                   textAlign: "center",
-                  fontWeight: 800,
+                  fontWeight: SCANNER_STRONG_FONT_WEIGHT,
                   bgcolor: "rgba(2, 6, 23, 0.68)",
                   backdropFilter: "blur(10px)",
                 }}
@@ -1232,7 +1257,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
               alignItems="center"
               sx={{ px: 2, textAlign: "center" }}
             >
-              <Typography sx={{ fontWeight: 800 }}>
+              <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
                 {copy.cameraIdle}
               </Typography>
               <Typography color="text.secondary" variant="body2">
@@ -1298,7 +1323,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             <Stack spacing={1}>
               <Typography variant="body2">{copy.lowLightBody}</Typography>
               {torchAvailable ? (
-                <Stack spacing={0.75} alignItems="flex-start">
+                <Stack spacing={0.75} alignItems={SCANNER_FLEX_START}>
                   <Button
                     variant="outlined"
                     onClick={() => {
@@ -1306,7 +1331,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                     }}
                     disabled={torchToggling}
                     aria-pressed={torchEnabled}
-                    sx={{ alignSelf: "flex-start" }}
+                    sx={{ alignSelf: SCANNER_FLEX_START }}
                   >
                     {torchToggling
                       ? torchEnabled
@@ -1331,9 +1356,9 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                     variant="text"
                     onClick={refreshTorchAvailability}
                     sx={{
-                      alignSelf: "flex-start",
-                      textTransform: "none",
-                      fontWeight: 800,
+                      alignSelf: SCANNER_FLEX_START,
+                      textTransform: SCANNER_TEXT_TRANSFORM_NONE,
+                      fontWeight: SCANNER_STRONG_FONT_WEIGHT,
                     }}
                   >
                     {copy.retryScanner}
@@ -1369,8 +1394,8 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             aria-pressed={scannerSoundEnabled}
             sx={{
               width: { xs: "100%", sm: "auto" },
-              textTransform: "none",
-              fontWeight: 800,
+              textTransform: SCANNER_TEXT_TRANSFORM_NONE,
+              fontWeight: SCANNER_STRONG_FONT_WEIGHT,
             }}
           >
             {scannerSoundEnabled ? copy.muteSound : copy.unmuteSound}
@@ -1385,7 +1410,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
         </Box>
 
         <Stack spacing={1}>
-          <Typography sx={{ fontWeight: 800 }}>{copy.scanHistory}</Typography>
+          <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.scanHistory}</Typography>
           {scanHistory.length === 0 ? (
             <Typography color="text.secondary" variant="body2">
               {copy.scanHistoryEmpty}
@@ -1406,7 +1431,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                       direction={{ xs: "column", sm: "row" }}
                       spacing={1}
                       justifyContent="space-between"
-                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      alignItems={{ xs: SCANNER_FLEX_START, sm: "center" }}
                     >
                       <Stack spacing={0.4}>
                         <Typography sx={{ fontWeight: 700 }}>
@@ -1437,7 +1462,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                             setSaveError(
                               error instanceof Error
                                 ? error.message
-                                : "Could not save meal to cloud."
+                                : CLOUD_SAVE_ERROR_MESSAGE
                             );
                           });
                         }}
@@ -1533,7 +1558,10 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                   onClick={() =>
                     void submitManualProductToCatalog(catalogSubmissionState.payload)
                   }
-                  sx={{ fontWeight: 800, textTransform: "none" }}
+                  sx={{
+                    fontWeight: SCANNER_STRONG_FONT_WEIGHT,
+                    textTransform: SCANNER_TEXT_TRANSFORM_NONE,
+                  }}
                 >
                   {copy.catalogRetry}
                 </Button>
@@ -1554,7 +1582,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             }}
           >
             <Stack spacing={1.5}>
-              <Typography sx={{ fontWeight: 800 }}>{copy.manualTitle}</Typography>
+              <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.manualTitle}</Typography>
 
               <TextField
                 fullWidth
@@ -1593,7 +1621,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                 <Button
                   component="label"
                   variant="outlined"
-                  sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+                  sx={{ alignSelf: { xs: "stretch", sm: SCANNER_FLEX_START } }}
                 >
                   {copy.manualPhoto}
                   <input
@@ -1687,7 +1715,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
 
         {foundProduct ? (
           <Stack spacing={1.2}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.preview}</Typography>
+            <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
             <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
           </Stack>
         ) : null}

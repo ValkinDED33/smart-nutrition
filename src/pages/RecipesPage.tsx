@@ -9,6 +9,7 @@ import {
 } from "../shared/ui";
 import { useLanguage } from "../shared/language";
 import type { MealType } from "@domain/meal/types";
+import type { AppLanguage } from "../shared/types/i18n";
 
 const FridgeRecipePlanner = lazy(() =>
   import("../features/fridge/FridgeRecipePlanner").then((module) => ({
@@ -58,18 +59,63 @@ const sectionCopy = {
   },
 } as const;
 
+type RecipesSectionCopy = (typeof sectionCopy)[keyof typeof sectionCopy];
+type Translate = ReturnType<typeof useLanguage>["t"];
+
+const getRecipesSectionCopy = (language: AppLanguage): RecipesSectionCopy => {
+  switch (language) {
+    case "uk":
+      return sectionCopy.uk;
+    case "pl":
+      return sectionCopy.pl;
+    case "en":
+    default:
+      return sectionCopy.en;
+  }
+};
+
+const getRecipesSectionLabel = (
+  copy: RecipesSectionCopy,
+  section: RecipesSection
+): string => {
+  switch (section) {
+    case "saved":
+      return copy.saved;
+    case "recipes":
+      return copy.recipes;
+    case "fridge":
+      return copy.fridge;
+    case "recommendations":
+      return copy.recommendations;
+    case "library":
+    default:
+      return copy.library;
+  }
+};
+
+const getMealTypeLabel = (t: Translate, type: MealType): string => {
+  switch (type) {
+    case "breakfast":
+      return t("mealType.breakfast");
+    case "dinner":
+      return t("mealType.dinner");
+    case "snack":
+      return t("mealType.snack");
+    case "lunch":
+    default:
+      return t("mealType.lunch");
+  }
+};
+
 const RecipesPage = () => {
   const [mealType, setMealType] = useState<MealType>("lunch");
   const [activeSection, setActiveSection] = useState<RecipesSection>("library");
   const { appLanguage, t } = useLanguage();
-  const sections = sectionCopy[appLanguage];
-  const recoveryCopy = buildLazyModuleRecoveryCopy(appLanguage, sections[activeSection]);
-  const mealLabels: Record<MealType, string> = {
-    breakfast: t("mealType.breakfast"),
-    lunch: t("mealType.lunch"),
-    dinner: t("mealType.dinner"),
-    snack: t("mealType.snack"),
-  };
+  const sections = getRecipesSectionCopy(appLanguage);
+  const recoveryCopy = buildLazyModuleRecoveryCopy(
+    appLanguage,
+    getRecipesSectionLabel(sections, activeSection)
+  );
 
   return (
     <PageShell title={t("page.recipes.title")} subtitle={t("page.recipes.subtitle")}>
@@ -105,7 +151,7 @@ const RecipesPage = () => {
         >
           {mealTypes.map((type) => (
             <ToggleButton key={type} value={type}>
-              {mealLabels[type]}
+              {getMealTypeLabel(t, type)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
@@ -113,11 +159,14 @@ const RecipesPage = () => {
 
       <SectionTabs
         sections={[
-          { id: "library", label: sections.library },
-          { id: "saved", label: sections.saved },
-          { id: "recipes", label: sections.recipes },
-          { id: "fridge", label: sections.fridge },
-          { id: "recommendations", label: sections.recommendations },
+          { id: "library", label: getRecipesSectionLabel(sections, "library") },
+          { id: "saved", label: getRecipesSectionLabel(sections, "saved") },
+          { id: "recipes", label: getRecipesSectionLabel(sections, "recipes") },
+          { id: "fridge", label: getRecipesSectionLabel(sections, "fridge") },
+          {
+            id: "recommendations",
+            label: getRecipesSectionLabel(sections, "recommendations"),
+          },
         ]}
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as RecipesSection)}

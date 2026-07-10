@@ -13,6 +13,19 @@ import {
   shouldRecoverOnManualRetry,
 } from "./errorRecovery";
 
+const SMART_NUTRITION_HOME_URL = "https://smart-nutrition.club/home";
+const SMART_NUTRITION_VERIFY_EMAIL_TOKEN_ROUTE =
+  "/verify-email?token=super-secret-token";
+const SMART_NUTRITION_LANGUAGE_KEY = "smart-nutrition.language";
+const SMART_NUTRITION_COLOR_MODE_KEY = "smart-nutrition.color-mode";
+const SMART_NUTRITION_AUTH_HINT_KEY = "smart-nutrition.auth-session-hint";
+const SMART_NUTRITION_ERROR_DIAGNOSTIC_KEY =
+  "smart-nutrition.error-boundary-diagnostic";
+const SMART_NUTRITION_REMOTE_SNAPSHOT_KEY =
+  "smart-nutrition.remote-snapshot-cache";
+const REDACTED_TOKEN_TEXT = "token=[redacted]";
+const REDACTED_VERIFY_EMAIL_ROUTE = `/verify-email?${REDACTED_TOKEN_TEXT}`;
+
 class FakeStorage {
   private readonly values = new Map<string, string>();
 
@@ -25,7 +38,7 @@ class FakeStorage {
   }
 
   key(index: number) {
-    return [...this.values.keys()][index] ?? null;
+    return [...this.values.keys()].find((_, position) => position === index) ?? null;
   }
 
   removeItem(key: string) {
@@ -84,9 +97,9 @@ describe("errorRecovery", () => {
 
   it("detects cache-busted recovery URLs", () => {
     expect(
-      hasRecoveryReloadMarker("https://smart-nutrition.club/home?sn_recovery=123")
+      hasRecoveryReloadMarker(`${SMART_NUTRITION_HOME_URL}?sn_recovery=123`)
     ).toBe(true);
-    expect(hasRecoveryReloadMarker("https://smart-nutrition.club/home")).toBe(false);
+    expect(hasRecoveryReloadMarker(SMART_NUTRITION_HOME_URL)).toBe(false);
     expect(hasRecoveryReloadMarker("not a url")).toBe(false);
   });
 
@@ -98,29 +111,29 @@ describe("errorRecovery", () => {
 
   it("preserves durable app keys and removes volatile smart-nutrition storage", () => {
     const storage = new FakeStorage();
-    storage.setItem("smart-nutrition.language", "uk");
-    storage.setItem("smart-nutrition.color-mode", "dark");
-    storage.setItem("smart-nutrition.auth-session-hint", "{}");
-    storage.setItem("smart-nutrition.error-boundary-diagnostic", "{}");
-    storage.setItem("smart-nutrition.remote-snapshot-cache", "{}");
+    storage.setItem(SMART_NUTRITION_LANGUAGE_KEY, "uk");
+    storage.setItem(SMART_NUTRITION_COLOR_MODE_KEY, "dark");
+    storage.setItem(SMART_NUTRITION_AUTH_HINT_KEY, "{}");
+    storage.setItem(SMART_NUTRITION_ERROR_DIAGNOSTIC_KEY, "{}");
+    storage.setItem(SMART_NUTRITION_REMOTE_SNAPSHOT_KEY, "{}");
     storage.setItem("other-app-key", "safe");
 
-    expect(shouldPreserveSmartNutritionStorageKey("smart-nutrition.language")).toBe(
+    expect(shouldPreserveSmartNutritionStorageKey(SMART_NUTRITION_LANGUAGE_KEY)).toBe(
       true
     );
     expect(
-      shouldPreserveSmartNutritionStorageKey("smart-nutrition.remote-snapshot-cache")
+      shouldPreserveSmartNutritionStorageKey(SMART_NUTRITION_REMOTE_SNAPSHOT_KEY)
     ).toBe(false);
 
     expect(clearVolatileSmartNutritionStorage(storage)).toEqual([
-      "smart-nutrition.remote-snapshot-cache",
+      SMART_NUTRITION_REMOTE_SNAPSHOT_KEY,
     ]);
-    expect(storage.getItem("smart-nutrition.language")).toBe("uk");
-    expect(storage.getItem("smart-nutrition.color-mode")).toBe("dark");
-    expect(storage.getItem("smart-nutrition.auth-session-hint")).toBe("{}");
-    expect(storage.getItem("smart-nutrition.error-boundary-diagnostic")).toBe("{}");
+    expect(storage.getItem(SMART_NUTRITION_LANGUAGE_KEY)).toBe("uk");
+    expect(storage.getItem(SMART_NUTRITION_COLOR_MODE_KEY)).toBe("dark");
+    expect(storage.getItem(SMART_NUTRITION_AUTH_HINT_KEY)).toBe("{}");
+    expect(storage.getItem(SMART_NUTRITION_ERROR_DIAGNOSTIC_KEY)).toBe("{}");
     expect(storage.getItem("other-app-key")).toBe("safe");
-    expect(storage.getItem("smart-nutrition.remote-snapshot-cache")).toBeNull();
+    expect(storage.getItem(SMART_NUTRITION_REMOTE_SNAPSHOT_KEY)).toBeNull();
   });
 
   it("redacts sensitive diagnostic text and keeps diagnostic output compact", () => {
@@ -129,7 +142,7 @@ describe("errorRecovery", () => {
     );
     const diagnostic = buildErrorRecoveryDiagnostic(
       error,
-      "/verify-email?token=super-secret-token",
+      SMART_NUTRITION_VERIFY_EMAIL_TOKEN_ROUTE,
       new Date("2026-06-18T10:00:00.000Z"),
       "Mozilla/5.0 ".repeat(20)
     );
@@ -137,9 +150,9 @@ describe("errorRecovery", () => {
     expect(sanitizeDiagnosticText("x?token=abc&key=def")).toBe(
       "x?token=[redacted]&key=[redacted]"
     );
-    expect(diagnostic.message).toContain("token=[redacted]");
+    expect(diagnostic.message).toContain(REDACTED_TOKEN_TEXT);
     expect(diagnostic.message).toContain("email=[redacted]");
-    expect(diagnostic.route).toBe("/verify-email?token=[redacted]");
+    expect(diagnostic.route).toBe(REDACTED_VERIFY_EMAIL_ROUTE);
     expect(diagnostic.userAgent?.length).toBeLessThanOrEqual(120);
     expect(diagnostic.id).toMatch(/^sn-/);
   });

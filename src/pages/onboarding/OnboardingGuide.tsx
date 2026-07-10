@@ -7,6 +7,7 @@ import {
   type AssistantAvatarMood,
 } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   onboardingGuideAvatarVariants,
   onboardingGuideBubbleVariants,
@@ -60,6 +61,8 @@ const guideCopy = {
     finish: "Done. I will assemble your route and open the main screen.",
   },
 } as const;
+
+type GuideCopy = (typeof guideCopy)[keyof typeof guideCopy];
 
 type StepMeta = {
   key: keyof typeof guideCopy.en;
@@ -157,10 +160,63 @@ const fallbackStepMeta: StepMeta = {
   mood: "celebrate",
 };
 
+const getGuideCopy = (language: AppLanguage): GuideCopy => {
+  switch (language) {
+    case "uk":
+      return guideCopy.uk;
+    case "pl":
+      return guideCopy.pl;
+    case "en":
+    default:
+      return guideCopy.en;
+  }
+};
+
 const resolveStepMeta = (pathname: string): StepMeta =>
-  Object.prototype.hasOwnProperty.call(stepMeta, pathname)
-    ? stepMeta[pathname]!
-    : fallbackStepMeta;
+  Object.entries(stepMeta).find(([stepPath]) => stepPath === pathname)?.[1] ??
+  fallbackStepMeta;
+
+const resolvePlacementSx = (placement: GuidePlacement): object => {
+  switch (placement) {
+    case "peekLeft":
+      return placementSx.peekLeft;
+    case "floatTop":
+      return placementSx.floatTop;
+    case "floatBottom":
+      return placementSx.floatBottom;
+    case "peekRight":
+    default:
+      return placementSx.peekRight;
+  }
+};
+
+const getGuideMessage = (copy: GuideCopy, key: StepMeta["key"]): string => {
+  switch (key) {
+    case "welcome":
+      return copy.welcome;
+    case "name":
+      return copy.name;
+    case "age":
+      return copy.age;
+    case "gender":
+      return copy.gender;
+    case "height":
+      return copy.height;
+    case "goal":
+      return copy.goal;
+    case "friction":
+      return copy.friction;
+    case "motivation":
+      return copy.motivation;
+    case "weight":
+      return copy.weight;
+    case "finish":
+      return copy.finish;
+    case "assistant":
+    default:
+      return copy.assistant;
+  }
+};
 
 const usePointerLook = () => {
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
@@ -205,7 +261,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const meta = resolveStepMeta(pathname);
   const { key, placement, mood } = meta;
 
-  const copy = guideCopy[appLanguage][key];
+  const copy = getGuideMessage(getGuideCopy(appLanguage), key);
 
   const transform = useMemo(() => {
     if (placement === "peekLeft") {
@@ -234,7 +290,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
           zIndex: 1250,
           pointerEvents: "none",
           display: { xs: "none", sm: "block" },
-          ...placementSx[placement],
+          ...resolvePlacementSx(placement),
           transform,
           transformOrigin: placement === "peekLeft" ? "left center" : "right center",
         }}

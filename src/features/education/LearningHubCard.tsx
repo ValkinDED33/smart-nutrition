@@ -18,6 +18,11 @@ import { useLanguage } from "../../shared/language";
 import type { RootState } from "../../app/store";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AssistantDietFriction } from "@domain/profile/types";
+import type { AppLanguage } from "../../shared/types/i18n";
+
+const WATER_TOPIC_KEY = "water";
+const STRESS_TOPIC_KEY = "stress";
+const WEIGHT_LOSS_TOPIC_KEY = "weight-loss";
 
 const learningCopy = {
   uk: {
@@ -102,7 +107,7 @@ const learningCopy = {
         score: 88,
       },
       {
-        key: "weight-loss",
+        key: WEIGHT_LOSS_TOPIC_KEY,
         title: "Похудення",
         insight: "Стійкий дефіцит краще працює, коли білок, сон і вода не провалюються.",
         ai: "Якщо стало важко, не зменшуйте план одразу. Перевірте ситість і темп.",
@@ -193,7 +198,7 @@ const learningCopy = {
         score: 88,
       },
       {
-        key: "weight-loss",
+        key: WEIGHT_LOSS_TOPIC_KEY,
         title: "Odchudzanie",
         insight: "Stały deficyt działa lepiej, gdy białko, sen i woda nie spadają.",
         ai: "Gdy robi się trudno, nie tnij planu od razu. Sprawdź sytość i tempo.",
@@ -284,7 +289,7 @@ const learningCopy = {
         score: 88,
       },
       {
-        key: "weight-loss",
+        key: WEIGHT_LOSS_TOPIC_KEY,
         title: "Weight loss",
         insight: "A steady deficit works better when protein, sleep, and water do not collapse.",
         ai: "If it gets hard, do not shrink the plan immediately. Check satiety and pace first.",
@@ -295,20 +300,60 @@ const learningCopy = {
   },
 } as const;
 
-const topicByFriction: Record<AssistantDietFriction, string> = {
-  unknown: "weight-loss",
-  emotional_eating: "stress",
-  chaotic_schedule: "water",
-  evening_snacking: "sleep",
-  low_energy: "water",
-  social_pressure: "stress",
+type LearningCopy = (typeof learningCopy)[keyof typeof learningCopy];
+type LearningTopic = LearningCopy["topics"][number];
+
+const getLearningCopy = (language: AppLanguage): LearningCopy => {
+  switch (language) {
+    case "uk":
+      return learningCopy.uk;
+    case "pl":
+      return learningCopy.pl;
+    case "en":
+    default:
+      return learningCopy.en;
+  }
 };
+
+const topicByFriction: Record<AssistantDietFriction, string> = {
+  unknown: WEIGHT_LOSS_TOPIC_KEY,
+  emotional_eating: STRESS_TOPIC_KEY,
+  chaotic_schedule: WATER_TOPIC_KEY,
+  evening_snacking: "sleep",
+  low_energy: WATER_TOPIC_KEY,
+  social_pressure: STRESS_TOPIC_KEY,
+};
+
+const getTopicKeyByFriction = (friction: AssistantDietFriction): string => {
+  switch (friction) {
+    case "emotional_eating":
+      return topicByFriction.emotional_eating;
+    case "chaotic_schedule":
+      return topicByFriction.chaotic_schedule;
+    case "evening_snacking":
+      return topicByFriction.evening_snacking;
+    case "low_energy":
+      return topicByFriction.low_energy;
+    case "social_pressure":
+      return topicByFriction.social_pressure;
+    case "unknown":
+    default:
+      return topicByFriction.unknown;
+  }
+};
+
+const getTopicByIndex = (
+  topics: readonly LearningTopic[],
+  index: number
+): LearningTopic =>
+  topics.find((_, topicPosition) => topicPosition === index) ??
+  topics.find((_, topicPosition) => topicPosition === 0)!;
 
 export const LearningHubCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
-  const copy = learningCopy[appLanguage];
-  const recommendedTopicKey = topicByFriction[assistant.onboarding.mainFriction];
+  const copy = getLearningCopy(appLanguage);
+  const recommendedTopicKey = getTopicKeyByFriction(assistant.onboarding.mainFriction);
   const recommendedTopicIndex = Math.max(
     copy.topics.findIndex((topic) => topic.key === recommendedTopicKey),
     0
@@ -318,7 +363,7 @@ export const LearningHubCard = () => {
     appLanguage
   );
   const [topicIndex, setTopicIndex] = useState(recommendedTopicIndex);
-  const activeTopic = copy.topics[topicIndex] ?? copy.topics[0];
+  const activeTopic = getTopicByIndex(copy.topics, topicIndex);
   const articleMarkdown = useMemo(
     () =>
       [

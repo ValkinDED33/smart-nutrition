@@ -27,6 +27,11 @@ const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+const DEFAULT_COMMUNITY_AUTHOR_NAME = "Smart User";
+const DEFAULT_COMMUNITY_COACH_NAME = "Coach Denis";
+const ANNA_FRIEND_ID = "friend-anna";
+const createCommunityTimestamp = () => new Date().toISOString();
+
 const normalizeText = (value: unknown, fallback = "", maxLength = 280) =>
   String(value ?? fallback)
     .trim()
@@ -87,7 +92,7 @@ const normalizePost = (value: unknown): CommunityPost | null => {
     reviewedAt: normalizeText(item.reviewedAt, "", 40) || null,
     reviewedBy: normalizeText(item.reviewedBy, "", 80) || null,
     publishedAt: normalizeText(item.publishedAt, "", 40) || null,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
     likes: Number.isFinite(Number(item.likes)) ? Math.max(Number(item.likes), 0) : 0,
   };
 };
@@ -109,7 +114,7 @@ const normalizeFriend = (value: unknown): CommunityFriend | null => {
     name,
     handle: normalizeText(item.handle, `@${name.toLowerCase().replace(/\s+/g, "")}`, 80),
     status: item.status === "online" ? "online" : "offline",
-    lastActiveAt: normalizeText(item.lastActiveAt, new Date().toISOString(), 40),
+    lastActiveAt: normalizeText(item.lastActiveAt, createCommunityTimestamp(), 40),
   };
 };
 
@@ -131,7 +136,7 @@ const normalizeMessage = (value: unknown): CommunityMessage | null => {
     friendId,
     author: item.author === "friend" ? "friend" : "self",
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
   };
 };
 
@@ -149,9 +154,9 @@ const normalizeRoomMessage = (value: unknown): CommunityRoomMessage | null => {
 
   return {
     id: normalizeText(item.id, createId("community-room-message"), 96),
-    authorName: normalizeText(item.authorName, "Smart User", 80),
+    authorName: normalizeText(item.authorName, DEFAULT_COMMUNITY_AUTHOR_NAME, 80),
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
   };
 };
 
@@ -171,9 +176,9 @@ const normalizeComment = (value: unknown): CommunityPostComment | null => {
   return {
     id: normalizeText(item.id, createId("community-comment"), 96),
     postId,
-    authorName: normalizeText(item.authorName, "Smart User", 80),
+    authorName: normalizeText(item.authorName, DEFAULT_COMMUNITY_AUTHOR_NAME, 80),
     text,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
   };
 };
 
@@ -198,10 +203,10 @@ const normalizeReport = (value: unknown): CommunityContentReport | null => {
     targetId,
     reason,
     reporterId: normalizeText(item.reporterId, "", 96) || undefined,
-    reporterName: normalizeText(item.reporterName, "Smart User", 80),
+    reporterName: normalizeText(item.reporterName, DEFAULT_COMMUNITY_AUTHOR_NAME, 80),
     status:
       item.status === "reviewed" || item.status === "dismissed" ? item.status : "open",
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
     reviewedAt: normalizeText(item.reviewedAt, "", 40) || null,
     reviewedBy: normalizeText(item.reviewedBy, "", 80) || null,
   };
@@ -223,11 +228,11 @@ const normalizeProgressCard = (value: unknown): CommunityProgressCard | null => 
 
   return {
     id: normalizeText(item.id, createId("community-progress"), 96),
-    authorName: normalizeText(item.authorName, "Smart User", 80),
+    authorName: normalizeText(item.authorName, DEFAULT_COMMUNITY_AUTHOR_NAME, 80),
     metricLabel,
     metricValue,
     caption,
-    createdAt: normalizeText(item.createdAt, new Date().toISOString(), 40),
+    createdAt: normalizeText(item.createdAt, createCommunityTimestamp(), 40),
     likes: Number.isFinite(Number(item.likes)) ? Math.max(Number(item.likes), 0) : 0,
   };
 };
@@ -235,7 +240,7 @@ const normalizeProgressCard = (value: unknown): CommunityProgressCard | null => 
 const initialState: CommunityState = {
   friends: [
     {
-      id: "friend-anna",
+      id: ANNA_FRIEND_ID,
       name: "Anna",
       handle: "@anna.fit",
       status: "online",
@@ -252,14 +257,14 @@ const initialState: CommunityState = {
   messages: [
     {
       id: "message-1",
-      friendId: "friend-anna",
+      friendId: ANNA_FRIEND_ID,
       author: "friend",
       text: "Собрала белковый завтрак на завтра. Хочешь рецепт?",
       createdAt: "2026-04-25T18:31:00.000Z",
     },
     {
       id: "message-2",
-      friendId: "friend-anna",
+      friendId: ANNA_FRIEND_ID,
       author: "self",
       text: "Да, пришли, пожалуйста.",
       createdAt: "2026-04-25T18:34:00.000Z",
@@ -274,7 +279,7 @@ const initialState: CommunityState = {
     },
     {
       id: "room-message-2",
-      authorName: "Coach Denis",
+      authorName: DEFAULT_COMMUNITY_COACH_NAME,
       text: "Если вес стоит, сначала смотрим среднюю неделю, воду и точность логирования.",
       createdAt: "2026-04-25T17:28:00.000Z",
     },
@@ -290,7 +295,7 @@ const initialState: CommunityState = {
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-25T08:12:00.000Z",
-      reviewedBy: "Coach Denis",
+      reviewedBy: DEFAULT_COMMUNITY_COACH_NAME,
       publishedAt: "2026-04-25T08:12:00.000Z",
       createdAt: "2026-04-25T08:10:00.000Z",
       likes: 14,
@@ -305,7 +310,7 @@ const initialState: CommunityState = {
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-24T11:48:00.000Z",
-      reviewedBy: "Coach Denis",
+      reviewedBy: DEFAULT_COMMUNITY_COACH_NAME,
       publishedAt: "2026-04-24T11:48:00.000Z",
       createdAt: "2026-04-24T11:45:00.000Z",
       likes: 9,
@@ -316,7 +321,7 @@ const initialState: CommunityState = {
       title: "Plateau week checklist",
       body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
       ingredients: [],
-      authorName: "Coach Denis",
+      authorName: DEFAULT_COMMUNITY_COACH_NAME,
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-23T09:03:00.000Z",
@@ -507,7 +512,7 @@ const communitySlice = createSlice({
         name,
         handle: `@${name.toLowerCase().replace(/\s+/g, "")}`,
         status: "offline",
-        lastActiveAt: new Date().toISOString(),
+        lastActiveAt: createCommunityTimestamp(),
       });
       state.score += 10;
     },
@@ -527,7 +532,7 @@ const communitySlice = createSlice({
         friendId,
         author: "self",
         text,
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
       });
       state.score += 2;
     },
@@ -545,7 +550,7 @@ const communitySlice = createSlice({
         id: createId("community-room-message"),
         authorName: normalizeText(action.payload.authorName, "You", 80),
         text,
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
       });
       state.score += 2;
     },
@@ -584,10 +589,10 @@ const communitySlice = createSlice({
         authorName: normalizeText(action.payload.authorName, "You", 80),
         status: moderation.status,
         moderationReason: moderation.reason,
-        reviewedAt: moderation.status === "rejected" ? new Date().toISOString() : null,
+        reviewedAt: moderation.status === "rejected" ? createCommunityTimestamp() : null,
         reviewedBy: moderation.status === "rejected" ? "Auto moderation" : null,
         publishedAt: null,
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
         likes: 0,
       });
       state.score += moderation.status === "rejected" ? 2 : 15;
@@ -612,7 +617,7 @@ const communitySlice = createSlice({
         postId,
         authorName: normalizeText(action.payload.authorName, "You", 80),
         text,
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
       });
       state.score += 3;
     },
@@ -651,9 +656,13 @@ const communitySlice = createSlice({
         targetId,
         reason,
         reporterId: normalizeText(action.payload.reporterId, "", 96) || undefined,
-        reporterName: normalizeText(action.payload.reporterName, "Smart User", 80),
+        reporterName: normalizeText(
+          action.payload.reporterName,
+          DEFAULT_COMMUNITY_AUTHOR_NAME,
+          80
+        ),
         status: "open",
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
         reviewedAt: null,
         reviewedBy: null,
       });
@@ -681,7 +690,7 @@ const communitySlice = createSlice({
         metricLabel,
         metricValue,
         caption,
-        createdAt: new Date().toISOString(),
+        createdAt: createCommunityTimestamp(),
         likes: 0,
       });
       state.score += 20;
@@ -701,7 +710,7 @@ const communitySlice = createSlice({
         return;
       }
 
-      const now = new Date().toISOString();
+      const now = createCommunityTimestamp();
       post.status = action.payload.decision === "approve" ? "approved" : "rejected";
       post.reviewedAt = now;
       post.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
@@ -722,7 +731,7 @@ const communitySlice = createSlice({
       }
 
       post.status = "rejected";
-      post.reviewedAt = new Date().toISOString();
+      post.reviewedAt = createCommunityTimestamp();
       post.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
       post.moderationReason = "Deleted as spam.";
       post.publishedAt = null;
@@ -743,7 +752,7 @@ const communitySlice = createSlice({
       state.reports.forEach((report) => {
         if (report.targetType === "comment" && report.targetId === commentId) {
           report.status = "reviewed";
-          report.reviewedAt = new Date().toISOString();
+          report.reviewedAt = createCommunityTimestamp();
           report.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
         }
       });
@@ -773,7 +782,7 @@ const communitySlice = createSlice({
         }
       });
       source.status = "rejected";
-      source.reviewedAt = new Date().toISOString();
+      source.reviewedAt = createCommunityTimestamp();
       source.reviewedBy = normalizeText(action.payload.moderatorName, "Moderator", 80);
       source.moderationReason = `Merged into "${target.title}".`;
       source.publishedAt = null;

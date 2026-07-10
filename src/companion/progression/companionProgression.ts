@@ -20,6 +20,32 @@ export const companionLevelThresholds: Record<CompanionLevel, number> = {
   10: 4800,
 };
 
+const getCompanionLevelThreshold = (level: CompanionLevel): number => {
+  switch (level) {
+    case 1:
+      return companionLevelThresholds[1];
+    case 2:
+      return companionLevelThresholds[2];
+    case 3:
+      return companionLevelThresholds[3];
+    case 4:
+      return companionLevelThresholds[4];
+    case 5:
+      return companionLevelThresholds[5];
+    case 6:
+      return companionLevelThresholds[6];
+    case 7:
+      return companionLevelThresholds[7];
+    case 8:
+      return companionLevelThresholds[8];
+    case 9:
+      return companionLevelThresholds[9];
+    case 10:
+    default:
+      return companionLevelThresholds[10];
+  }
+};
+
 const companionLevels = Object.keys(companionLevelThresholds)
   .map(Number)
   .sort((left, right) => left - right) as CompanionLevel[];
@@ -45,14 +71,14 @@ export const getCompanionLevelForXp = (xp: number): CompanionLevel => {
   const safeXp = normalizeXp(xp);
 
   return companionLevels.reduce<CompanionLevel>((currentLevel, level) => {
-    return safeXp >= companionLevelThresholds[level] ? level : currentLevel;
+    return safeXp >= getCompanionLevelThreshold(level) ? level : currentLevel;
   }, 1);
 };
 
 export const getNextLevelProgress = (xp: number): CompanionLevelProgress => {
   const safeXp = normalizeXp(xp);
   const level = getCompanionLevelForXp(safeXp);
-  const currentLevelXp = companionLevelThresholds[level];
+  const currentLevelXp = getCompanionLevelThreshold(level);
   const nextLevel = companionLevels.find((candidate) => candidate > level) ?? null;
 
   if (nextLevel === null) {
@@ -64,7 +90,7 @@ export const getNextLevelProgress = (xp: number): CompanionLevelProgress => {
     };
   }
 
-  const nextLevelXp = companionLevelThresholds[nextLevel];
+  const nextLevelXp = getCompanionLevelThreshold(nextLevel);
   const xpInLevel = safeXp - currentLevelXp;
   const xpForLevel = nextLevelXp - currentLevelXp;
 

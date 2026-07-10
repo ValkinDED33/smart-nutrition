@@ -40,6 +40,36 @@ const createCopy = (): MealActionFeedbackCopy => ({
   retry: "Retry",
 });
 
+const getMealActionFeedbackText = (
+  copy: MealActionFeedbackCopy,
+  phase: "saving" | "confirmed" | "failed",
+  kind: MealActionKind
+) => {
+  const source = phase === "saving"
+    ? copy.saving
+    : phase === "confirmed"
+      ? copy.confirmed
+      : copy.failed;
+
+  switch (kind) {
+    case "edit":
+      return source.edit;
+    case "delete":
+      return source.delete;
+    case "repeat":
+      return source.repeat;
+    case "saveTemplate":
+      return source.saveTemplate;
+    case "applyTemplate":
+      return source.applyTemplate;
+    case "saveProduct":
+      return source.saveProduct;
+    case "add":
+    default:
+      return source.add;
+  }
+};
+
 describe("mealActionFeedbackModel", () => {
   it("does not show a notice while idle", () => {
     expect(
@@ -84,7 +114,7 @@ describe("mealActionFeedbackModel", () => {
         resolveMealActionNotice(createMealActionSavingState(kind, `saving-${kind}`), copy)
       ).toMatchObject({
         severity: "info",
-        text: copy.saving[kind],
+        text: getMealActionFeedbackText(copy, "saving", kind),
       });
       expect(
         resolveMealActionNotice(
@@ -93,7 +123,7 @@ describe("mealActionFeedbackModel", () => {
         )
       ).toMatchObject({
         severity: "success",
-        text: copy.confirmed[kind],
+        text: getMealActionFeedbackText(copy, "confirmed", kind),
       });
       expect(
         resolveMealActionNotice(
@@ -106,7 +136,7 @@ describe("mealActionFeedbackModel", () => {
         )
       ).toMatchObject({
         severity: "warning",
-        text: `${copy.failed[kind]} backend sleeping`,
+        text: `${getMealActionFeedbackText(copy, "failed", kind)} backend sleeping`,
         retryable: true,
       });
     });

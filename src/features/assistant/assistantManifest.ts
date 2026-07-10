@@ -26,6 +26,10 @@ export type AssistantTone = "supportive" | "focused" | "urgent" | "celebratory";
 
 export type AssistantVisibility = "global" | "onboarding" | "hidden";
 
+const ONBOARDING_ROUTE = "/onboarding";
+const DASHBOARD_ROUTE = "/dashboard";
+const COMMUNITY_ROUTE = "/community";
+
 export type AssistantDefaultAction = {
   label: string;
   route: string;
@@ -70,16 +74,16 @@ export const assistantAreas: AssistantAreaManifest[] = [
   {
     area: "onboarding",
     label: "Onboarding",
-    routePrefixes: ["/onboarding"],
-    defaultRoute: "/onboarding",
+    routePrefixes: [ONBOARDING_ROUTE],
+    defaultRoute: ONBOARDING_ROUTE,
     tone: "supportive",
     visibility: "onboarding",
   },
   {
     area: "home",
     label: "Home",
-    routePrefixes: ["/", "/home", "/dashboard"],
-    defaultRoute: "/dashboard",
+    routePrefixes: ["/", "/home", DASHBOARD_ROUTE],
+    defaultRoute: DASHBOARD_ROUTE,
     tone: "supportive",
     visibility: "global",
   },
@@ -118,8 +122,8 @@ export const assistantAreas: AssistantAreaManifest[] = [
   {
     area: "community",
     label: "Community",
-    routePrefixes: ["/community"],
-    defaultRoute: "/community",
+    routePrefixes: [COMMUNITY_ROUTE],
+    defaultRoute: COMMUNITY_ROUTE,
     tone: "supportive",
     visibility: "global",
   },
@@ -170,10 +174,10 @@ export const assistantCapabilities: AssistantCapability[] = [
     duties: ["guide", "explain", "motivate"],
     description:
       "Guides the user through profile setup and captures goals, friction, and support style.",
-    entryRoute: "/onboarding",
+    entryRoute: ONBOARDING_ROUTE,
     defaultAction: {
       label: "Continue setup",
-      route: "/onboarding",
+      route: ONBOARDING_ROUTE,
     },
     tone: "supportive",
     visibility: "onboarding",
@@ -184,7 +188,7 @@ export const assistantCapabilities: AssistantCapability[] = [
     duties: ["suggest", "motivate", "navigate"],
     description:
       "Turns the user's current nutrition, motivation, and onboarding context into a visible daily focus.",
-    entryRoute: "/dashboard",
+    entryRoute: DASHBOARD_ROUTE,
     defaultAction: {
       label: "Open daily coach",
       route: "/coach",
@@ -254,10 +258,10 @@ export const assistantCapabilities: AssistantCapability[] = [
     duties: ["motivate", "navigate", "suggest"],
     description:
       "Surfaces community support when the user's friction or motivation state benefits from social context.",
-    entryRoute: "/community",
+    entryRoute: COMMUNITY_ROUTE,
     defaultAction: {
       label: "Open community",
-      route: "/community",
+      route: COMMUNITY_ROUTE,
     },
     tone: "supportive",
     visibility: "global",

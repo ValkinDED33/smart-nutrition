@@ -6,6 +6,7 @@ import type { RootState } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
 
 const monthlyCopy = {
@@ -95,6 +96,25 @@ const monthlyCopy = {
   },
 } as const;
 
+type MonthlyCopy = (typeof monthlyCopy)[keyof typeof monthlyCopy];
+
+const MONTHLY_CARD_BORDER = "1px solid var(--sn-border-soft)";
+const MONTHLY_TEXT_SECONDARY = "text.secondary";
+const MONTHLY_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
+const COMMON_KCAL_KEY = "common.kcal";
+
+const getMonthlyCopy = (language: AppLanguage): MonthlyCopy => {
+  switch (language) {
+    case "uk":
+      return monthlyCopy.uk;
+    case "pl":
+      return monthlyCopy.pl;
+    case "en":
+    default:
+      return monthlyCopy.en;
+  }
+};
+
 const getCalorieColor = (ratio: number) => {
   if (ratio === 0) return "rgba(148, 163, 184, 0.12)";
   if (ratio < 0.9) return "rgba(14, 165, 233, 0.2)";
@@ -118,7 +138,7 @@ export const MonthlyAnalyticsCard = () => {
   const profile = useSelector((state: RootState) => state.profile);
   const user = useSelector((state: RootState) => state.auth.user);
   const { appLanguage, t } = useLanguage();
-  const copy = monthlyCopy[appLanguage];
+  const copy = getMonthlyCopy(appLanguage);
 
   const currentWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const macroTargets = useMemo(() => {
@@ -189,14 +209,14 @@ export const MonthlyAnalyticsCard = () => {
         sx={{
           p: { xs: 2, md: 3 },
           borderRadius: 1,
-          border: "1px solid var(--sn-border-soft)",
+          border: MONTHLY_CARD_BORDER,
           backgroundColor: "var(--sn-surface-glass)",
         }}
       >
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
           {copy.title}
         </Typography>
-        <Typography color="text.secondary">{copy.noData}</Typography>
+        <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.noData}</Typography>
       </Paper>
     );
   }
@@ -234,7 +254,7 @@ export const MonthlyAnalyticsCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: MONTHLY_CARD_BORDER,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
@@ -243,7 +263,7 @@ export const MonthlyAnalyticsCard = () => {
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.subtitle}</Typography>
         </Stack>
 
         <Box
@@ -251,33 +271,33 @@ export const MonthlyAnalyticsCard = () => {
             display: "grid",
             gridTemplateColumns: {
               xs: "repeat(2, minmax(0, 1fr))",
-              md: "repeat(4, minmax(0, 1fr))",
+              md: MONTHLY_FOUR_COLUMN_GRID,
             },
             gap: 1.5,
           }}
         >
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.averageCalories}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.averageCalories}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={averageCalories} duration={0.7} decimals={0} />{" "}
-              {t("common.kcal")}
+              {t(COMMON_KCAL_KEY)}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.averageProtein}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.averageProtein}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={averageProtein} duration={0.7} decimals={1} />{" "}
               {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.adherence}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.adherence}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={adherenceRate} duration={0.7} decimals={0} />%
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.streak}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.streak}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={loggingStreak} duration={0.7} /> {copy.days}
             </Typography>
@@ -306,7 +326,7 @@ export const MonthlyAnalyticsCard = () => {
                 sx={{
                   minHeight: 46,
                   borderRadius: 1,
-                  border: "1px solid var(--sn-border-soft)",
+                  border: MONTHLY_CARD_BORDER,
                   backgroundColor: getCalorieColor(day.calorieRatio),
                   p: 0.75,
                   display: "flex",
@@ -317,7 +337,7 @@ export const MonthlyAnalyticsCard = () => {
                 <Typography variant="caption" sx={{ fontWeight: 700 }}>
                   {day.key.slice(-2)}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY}>
                   {day.calories > 0 ? day.calories.toFixed(0) : "-"}
                 </Typography>
               </Box>
@@ -329,7 +349,7 @@ export const MonthlyAnalyticsCard = () => {
 
         <Stack spacing={0.6}>
           <Typography sx={{ fontWeight: 800 }}>{copy.deviationTitle}</Typography>
-          <Typography color="text.secondary">{copy.deviationSubtitle}</Typography>
+          <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.deviationSubtitle}</Typography>
         </Stack>
 
         <Box
@@ -340,35 +360,35 @@ export const MonthlyAnalyticsCard = () => {
           }}
         >
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.surplus}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.surplus}</Typography>
             {strongestSurplus ? (
               <>
                 <Typography sx={{ fontWeight: 800 }}>{strongestSurplus.label}</Typography>
-                <Typography color="text.secondary">
+                <Typography color={MONTHLY_TEXT_SECONDARY}>
                   {formatDeviation(
                     strongestSurplus.calories - profile.dailyCalories,
-                    t("common.kcal")
+                    t(COMMON_KCAL_KEY)
                   )}
                 </Typography>
               </>
             ) : (
-              <Typography color="text.secondary">{copy.noSurplus}</Typography>
+              <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.noSurplus}</Typography>
             )}
           </Paper>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color="text.secondary">{copy.deficit}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.deficit}</Typography>
             {deepestDeficit ? (
               <>
                 <Typography sx={{ fontWeight: 800 }}>{deepestDeficit.label}</Typography>
-                <Typography color="text.secondary">
+                <Typography color={MONTHLY_TEXT_SECONDARY}>
                   {formatDeviation(
                     deepestDeficit.calories - profile.dailyCalories,
-                    t("common.kcal")
+                    t(COMMON_KCAL_KEY)
                   )}
                 </Typography>
               </>
             ) : (
-              <Typography color="text.secondary">{copy.noDeficit}</Typography>
+              <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.noDeficit}</Typography>
             )}
           </Paper>
         </Box>
@@ -378,7 +398,7 @@ export const MonthlyAnalyticsCard = () => {
         <Stack spacing={1.2}>
           <Stack spacing={0.6}>
             <Typography sx={{ fontWeight: 800 }}>{copy.macroHeatmapTitle}</Typography>
-            <Typography color="text.secondary">{copy.macroHeatmapSubtitle}</Typography>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.macroHeatmapSubtitle}</Typography>
           </Stack>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={copy.legendLow} size="small" />
@@ -400,16 +420,16 @@ export const MonthlyAnalyticsCard = () => {
                 minWidth: { xs: 420, sm: "auto" },
               }}
             >
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
                 {copy.dayLabel}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
                 {copy.protein}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
                 {copy.fat}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
                 {copy.carbs}
               </Typography>
 

@@ -24,6 +24,7 @@ import { useLanguage } from "../../shared/language";
 import { SectionCard } from "../../shared/ui/SectionCard";
 import { SectionHeader } from "../../shared/ui/SectionHeader";
 import { SectionTabs } from "../../shared/ui/SectionTabs";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   selectMealTemplates,
   selectSavedProducts,
@@ -48,6 +49,11 @@ interface NutritionLibraryPanelProps {
   mealType: MealType;
   mode?: LibraryMode;
 }
+
+const PRODUCT_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 220px), 1fr))";
+const DISH_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 260px), 1fr))";
+const LIBRARY_CARD_BORDER = "1px solid var(--sn-border-soft)";
+const LIBRARY_CARD_BACKGROUND = "var(--sn-surface-elevated)";
 
 const copy = {
   uk: {
@@ -181,6 +187,20 @@ const copy = {
   },
 } as const;
 
+type NutritionLibraryCopy = (typeof copy)[keyof typeof copy];
+
+const getNutritionLibraryCopy = (language: AppLanguage): NutritionLibraryCopy => {
+  switch (language) {
+    case "uk":
+      return copy.uk;
+    case "pl":
+      return copy.pl;
+    case "en":
+    default:
+      return copy.en;
+  }
+};
+
 const normalizeSearchText = (value: string) =>
   value
     .toLowerCase()
@@ -210,7 +230,7 @@ export const NutritionLibraryPanel = ({
 }: NutritionLibraryPanelProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { appLanguage, t } = useLanguage();
-  const labels = copy[appLanguage];
+  const labels = getNutritionLibraryCopy(appLanguage);
   const [activeTab, setActiveTab] = useState<InnerTab>("products");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -503,8 +523,7 @@ export const NutritionLibraryPanel = ({
                     <Box
                       sx={{
                         display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
+                        gridTemplateColumns: PRODUCT_CARD_GRID,
                         gap: 1,
                       }}
                     >
@@ -518,8 +537,8 @@ export const NutritionLibraryPanel = ({
                             sx={{
                               p: 1.25,
                               borderRadius: 1,
-                              border: "1px solid var(--sn-border-soft)",
-                              bgcolor: "var(--sn-surface-elevated)",
+                              border: LIBRARY_CARD_BORDER,
+                              bgcolor: LIBRARY_CARD_BACKGROUND,
                               minWidth: 0,
                             }}
                           >
@@ -615,7 +634,7 @@ export const NutritionLibraryPanel = ({
                 <Box
                   sx={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+                    gridTemplateColumns: DISH_CARD_GRID,
                     gap: 1,
                   }}
                 >
@@ -625,8 +644,8 @@ export const NutritionLibraryPanel = ({
                       sx={{
                         p: 1.35,
                         borderRadius: 1,
-                        border: "1px solid var(--sn-border-soft)",
-                        bgcolor: "var(--sn-surface-elevated)",
+                        border: LIBRARY_CARD_BORDER,
+                        bgcolor: LIBRARY_CARD_BACKGROUND,
                       }}
                     >
                       <Stack spacing={1}>
@@ -690,7 +709,7 @@ export const NutritionLibraryPanel = ({
                     <Box
                       sx={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+                        gridTemplateColumns: DISH_CARD_GRID,
                         gap: 1,
                       }}
                     >
@@ -700,8 +719,8 @@ export const NutritionLibraryPanel = ({
                           sx={{
                             p: 1.35,
                             borderRadius: 1,
-                            border: "1px solid var(--sn-border-soft)",
-                            bgcolor: "var(--sn-surface-elevated)",
+                            border: LIBRARY_CARD_BORDER,
+                            bgcolor: LIBRARY_CARD_BACKGROUND,
                           }}
                         >
                           <Stack spacing={1}>
@@ -736,7 +755,7 @@ export const NutritionLibraryPanel = ({
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+                  gridTemplateColumns: DISH_CARD_GRID,
                   gap: 1,
                 }}
               >
@@ -746,8 +765,8 @@ export const NutritionLibraryPanel = ({
                     sx={{
                       p: 1.35,
                       borderRadius: 1,
-                      border: "1px solid var(--sn-border-soft)",
-                      bgcolor: "var(--sn-surface-elevated)",
+                      border: LIBRARY_CARD_BORDER,
+                      bgcolor: LIBRARY_CARD_BACKGROUND,
                     }}
                   >
                     <Stack spacing={1}>
