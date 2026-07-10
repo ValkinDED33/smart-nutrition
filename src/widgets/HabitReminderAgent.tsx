@@ -5,9 +5,11 @@ import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "@shared/language";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
+import type { NutritionCoachInsightCode } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AppLanguage } from "@shared/types/i18n";
+import type { Goal } from "@domain/user/types";
 import {
   getSafeNotificationPermission,
   showSafeNotification,
@@ -111,6 +113,54 @@ const mealNotificationCopy = {
   Record<MealType, { title: string; body: string }>
 >;
 
+type MealNotificationCopy = (typeof mealNotificationCopy)[keyof typeof mealNotificationCopy];
+
+const getMealNotificationCopy = (language: AppLanguage): MealNotificationCopy => {
+  switch (language) {
+    case "pl":
+      return mealNotificationCopy.pl;
+    case "en":
+      return mealNotificationCopy.en;
+    case "uk":
+    default:
+      return mealNotificationCopy.uk;
+  }
+};
+
+const getMealReminderCopy = (
+  copy: MealNotificationCopy,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "breakfast":
+      return copy.breakfast;
+    case "dinner":
+      return copy.dinner;
+    case "snack":
+      return copy.snack;
+    case "lunch":
+    default:
+      return copy.lunch;
+  }
+};
+
+const getMealReminderTime = (
+  reminderTimes: Record<MealType, string>,
+  mealType: MealType
+) => {
+  switch (mealType) {
+    case "breakfast":
+      return reminderTimes.breakfast;
+    case "dinner":
+      return reminderTimes.dinner;
+    case "snack":
+      return reminderTimes.snack;
+    case "lunch":
+    default:
+      return reminderTimes.lunch;
+  }
+};
+
 const coachNotificationCopy = {
   uk: {
     title: (name: string) => `${name}: вечірній розбір`,
@@ -195,6 +245,20 @@ const coachNotificationCopy = {
   },
 } as const;
 
+type CoachNotificationCopy = (typeof coachNotificationCopy)[keyof typeof coachNotificationCopy];
+
+const getCoachNotificationCopy = (language: AppLanguage): CoachNotificationCopy => {
+  switch (language) {
+    case "pl":
+      return coachNotificationCopy.pl;
+    case "en":
+      return coachNotificationCopy.en;
+    case "uk":
+    default:
+      return coachNotificationCopy.uk;
+  }
+};
+
 const wellbeingNotificationCopy = {
   uk: {
     dailyTitle: (name: string) => `${name}: план на день`,
@@ -242,6 +306,72 @@ const wellbeingNotificationCopy = {
       `The day is now about ${Math.round(ratio * 100)}% of the calorie target.`,
   },
 } as const;
+
+type WellbeingNotificationCopy =
+  (typeof wellbeingNotificationCopy)[keyof typeof wellbeingNotificationCopy];
+
+const getWellbeingNotificationCopy = (
+  language: AppLanguage
+): WellbeingNotificationCopy => {
+  switch (language) {
+    case "pl":
+      return wellbeingNotificationCopy.pl;
+    case "en":
+      return wellbeingNotificationCopy.en;
+    case "uk":
+    default:
+      return wellbeingNotificationCopy.uk;
+  }
+};
+
+const getGoalNotificationLine = (
+  copy: WellbeingNotificationCopy,
+  goal: Goal
+) => {
+  switch (goal) {
+    case "cut":
+      return copy.goal.cut;
+    case "bulk":
+      return copy.goal.bulk;
+    case "maintain":
+    default:
+      return copy.goal.maintain;
+  }
+};
+
+const getCoachInsightBody = ({
+  code,
+  analysis,
+  copy,
+}: {
+  code: NutritionCoachInsightCode;
+  analysis: ReturnType<typeof generateNutritionCoachAnalysis>;
+  copy: CoachNotificationCopy;
+}) => {
+  switch (code) {
+    case "logging_low":
+      return copy.logging_low(analysis.daysLogged);
+    case "protein_low":
+      return copy.protein_low(analysis.averageProtein, analysis.proteinTarget);
+    case "water_low":
+      return copy.water_low(analysis.averageWater, analysis.waterTarget);
+    case "breakfast_skipped":
+      return copy.breakfast_skipped(analysis.breakfastSkippedDays);
+    case "fiber_low":
+      return copy.fiber_low(analysis.averageFiber);
+    case "calories_high":
+      return copy.calories_high(analysis.averageCalories, analysis.calorieTarget);
+    case "calories_low":
+      return copy.calories_low(analysis.averageCalories, analysis.calorieTarget);
+    case "meal_pattern":
+      return copy.meal_pattern(analysis.averageMeals);
+    case "weight_trend":
+      return copy.weight_trend(analysis.weightChange);
+    case "on_track":
+    default:
+      return null;
+  }
+};
 
 const withPersonalNotificationContext = (
   body: string,
@@ -300,9 +430,9 @@ const HabitReminderAgent = () => {
       const now = new Date();
       const todayKey = formatLocalDayKey(now);
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const localizedMealCopy = mealNotificationCopy[appLanguage];
-      const coachCopy = coachNotificationCopy[appLanguage];
-      const wellbeingCopy = wellbeingNotificationCopy[appLanguage];
+      const localizedMealCopy = getMealNotificationCopy(appLanguage);
+      const coachCopy = getCoachNotificationCopy(appLanguage);
+      const wellbeingCopy = getWellbeingNotificationCopy(appLanguage);
       const personalization = buildAssistantPersonalizationPlan(
         assistant.onboarding,
         appLanguage
@@ -312,7 +442,7 @@ const HabitReminderAgent = () => {
       const personalContext = {
         actionHint: personalization.actionHint,
         recommendationHint: personalization.recommendationHint,
-        goalLine: wellbeingCopy.goal[goal],
+        goalLine: getGoalNotificationLine(wellbeingCopy, goal),
         progressLine: wellbeingCopy.progress(calorieRatio),
       };
       const waterConsumedToday =
@@ -331,14 +461,14 @@ const HabitReminderAgent = () => {
 
       if (mealRemindersEnabled) {
         (Object.keys(localizedMealCopy) as MealType[]).forEach((mealType) => {
-          const reminderAt = reminderTimes[mealType];
+          const reminderAt = getMealReminderTime(reminderTimes, mealType);
           const reminderMinutes = parseTimeToMinutes(reminderAt);
           const hasLoggedMeal = items.some(
             (item) => item.mealType === mealType && isSameLocalDay(item.eatenAt, now)
           );
 
           if (!hasLoggedMeal && nowMinutes >= reminderMinutes) {
-            const reminder = localizedMealCopy[mealType];
+            const reminder = getMealReminderCopy(localizedMealCopy, mealType);
             maybeSendNotification(
               `${todayKey}-${mealType}`,
               reminder.title,
@@ -404,19 +534,11 @@ const HabitReminderAgent = () => {
         const focus = analysis.insights.find((insight) => insight.code !== "on_track");
 
         if (focus) {
-          const messageByInsight = {
-            logging_low: coachCopy.logging_low(analysis.daysLogged),
-            protein_low: coachCopy.protein_low(analysis.averageProtein, analysis.proteinTarget),
-            water_low: coachCopy.water_low(analysis.averageWater, analysis.waterTarget),
-            breakfast_skipped: coachCopy.breakfast_skipped(analysis.breakfastSkippedDays),
-            fiber_low: coachCopy.fiber_low(analysis.averageFiber),
-            calories_high: coachCopy.calories_high(analysis.averageCalories, analysis.calorieTarget),
-            calories_low: coachCopy.calories_low(analysis.averageCalories, analysis.calorieTarget),
-            meal_pattern: coachCopy.meal_pattern(analysis.averageMeals),
-            weight_trend: coachCopy.weight_trend(analysis.weightChange),
-            on_track: null,
-          } as const;
-          const body = messageByInsight[focus.code];
+          const body = getCoachInsightBody({
+            code: focus.code,
+            analysis,
+            copy: coachCopy,
+          });
 
           if (body) {
             maybeSendNotification(

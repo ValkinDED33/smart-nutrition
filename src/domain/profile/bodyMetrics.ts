@@ -10,6 +10,29 @@ export interface MeasurementPoint extends WeightPoint {
   chest?: number;
 }
 
+type MeasurementKey = "waist" | "abdomen" | "hip" | "chest";
+
+const getMeasurementValue = (
+  measurement: MeasurementPoint | undefined,
+  key: MeasurementKey
+) => {
+  if (!measurement) {
+    return undefined;
+  }
+
+  switch (key) {
+    case "abdomen":
+      return measurement.abdomen;
+    case "hip":
+      return measurement.hip;
+    case "chest":
+      return measurement.chest;
+    case "waist":
+    default:
+      return measurement.waist;
+  }
+};
+
 export type BmiStatus = "underweight" | "normal" | "overweight" | "obesity";
 
 export const calculateBmi = (weightKg: number, heightCm: number) => {
@@ -112,10 +135,10 @@ export const detectWeightPlateau = (
 
 export const getMeasurementDelta = (
   measurementHistory: MeasurementPoint[],
-  key: "waist" | "abdomen" | "hip" | "chest"
+  key: MeasurementKey
 ) => {
   const entries = [...measurementHistory]
-    .filter((entry) => Number.isFinite(entry[key] ?? Number.NaN))
+    .filter((entry) => Number.isFinite(getMeasurementValue(entry, key) ?? Number.NaN))
     .sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime());
 
   const latest = entries.at(-1);
@@ -123,14 +146,17 @@ export const getMeasurementDelta = (
 
   if (!latest || !previous) {
     return {
-      current: latest?.[key] ?? null,
+      current: getMeasurementValue(latest, key) ?? null,
       delta: null,
     };
   }
 
+  const latestValue = getMeasurementValue(latest, key) ?? 0;
+  const previousValue = getMeasurementValue(previous, key) ?? 0;
+
   return {
-    current: latest[key] ?? null,
-    delta: (latest[key] ?? 0) - (previous[key] ?? 0),
+    current: getMeasurementValue(latest, key) ?? null,
+    delta: latestValue - previousValue,
   };
 };
 
