@@ -248,6 +248,242 @@ export const nutrientKeys = Object.keys(nutrientDefinitions) as NutrientKey[];
 export const createEmptyNutrients = (): Nutrients =>
   Object.fromEntries(nutrientKeys.map((key) => [key, 0])) as Nutrients;
 
+export const getNutrientValue = (nutrients: Nutrients, key: NutrientKey) => {
+  switch (key) {
+    case "protein":
+      return nutrients.protein;
+    case "fat":
+      return nutrients.fat;
+    case "saturatedFat":
+      return nutrients.saturatedFat;
+    case "monounsaturatedFat":
+      return nutrients.monounsaturatedFat;
+    case "polyunsaturatedFat":
+      return nutrients.polyunsaturatedFat;
+    case "transFat":
+      return nutrients.transFat;
+    case "omega3":
+      return nutrients.omega3;
+    case "omega6":
+      return nutrients.omega6;
+    case "omega9":
+      return nutrients.omega9;
+    case "cholesterol":
+      return nutrients.cholesterol;
+    case "carbs":
+      return nutrients.carbs;
+    case "sugars":
+      return nutrients.sugars;
+    case "fiber":
+      return nutrients.fiber;
+    case "starch":
+      return nutrients.starch;
+    case "glucose":
+      return nutrients.glucose;
+    case "fructose":
+      return nutrients.fructose;
+    case "sucrose":
+      return nutrients.sucrose;
+    case "lactose":
+      return nutrients.lactose;
+    case "water":
+      return nutrients.water;
+    case "sodium":
+      return nutrients.sodium;
+    case "potassium":
+      return nutrients.potassium;
+    case "vitaminA":
+      return nutrients.vitaminA;
+    case "vitaminB":
+      return nutrients.vitaminB;
+    case "vitaminB1":
+      return nutrients.vitaminB1;
+    case "vitaminB2":
+      return nutrients.vitaminB2;
+    case "vitaminB3":
+      return nutrients.vitaminB3;
+    case "vitaminB5":
+      return nutrients.vitaminB5;
+    case "vitaminB6":
+      return nutrients.vitaminB6;
+    case "vitaminB7":
+      return nutrients.vitaminB7;
+    case "vitaminB9":
+      return nutrients.vitaminB9;
+    case "vitaminB12":
+      return nutrients.vitaminB12;
+    case "vitaminC":
+      return nutrients.vitaminC;
+    case "vitaminD":
+      return nutrients.vitaminD;
+    case "vitaminE":
+      return nutrients.vitaminE;
+    case "vitaminK":
+      return nutrients.vitaminK;
+    case "calcium":
+      return nutrients.calcium;
+    case "iron":
+      return nutrients.iron;
+    case "magnesium":
+      return nutrients.magnesium;
+    case "zinc":
+      return nutrients.zinc;
+    case "phosphorus":
+      return nutrients.phosphorus;
+    case "iodine":
+      return nutrients.iodine;
+    case "selenium":
+      return nutrients.selenium;
+    case "copper":
+      return nutrients.copper;
+    case "calories":
+    default:
+      return nutrients.calories;
+  }
+};
+
+export const setNutrientValue = (
+  nutrients: Nutrients,
+  key: NutrientKey,
+  value: number
+) => {
+  switch (key) {
+    case "protein":
+      nutrients.protein = value;
+      break;
+    case "fat":
+      nutrients.fat = value;
+      break;
+    case "saturatedFat":
+      nutrients.saturatedFat = value;
+      break;
+    case "monounsaturatedFat":
+      nutrients.monounsaturatedFat = value;
+      break;
+    case "polyunsaturatedFat":
+      nutrients.polyunsaturatedFat = value;
+      break;
+    case "transFat":
+      nutrients.transFat = value;
+      break;
+    case "omega3":
+      nutrients.omega3 = value;
+      break;
+    case "omega6":
+      nutrients.omega6 = value;
+      break;
+    case "omega9":
+      nutrients.omega9 = value;
+      break;
+    case "cholesterol":
+      nutrients.cholesterol = value;
+      break;
+    case "carbs":
+      nutrients.carbs = value;
+      break;
+    case "sugars":
+      nutrients.sugars = value;
+      break;
+    case "fiber":
+      nutrients.fiber = value;
+      break;
+    case "starch":
+      nutrients.starch = value;
+      break;
+    case "glucose":
+      nutrients.glucose = value;
+      break;
+    case "fructose":
+      nutrients.fructose = value;
+      break;
+    case "sucrose":
+      nutrients.sucrose = value;
+      break;
+    case "lactose":
+      nutrients.lactose = value;
+      break;
+    case "water":
+      nutrients.water = value;
+      break;
+    case "sodium":
+      nutrients.sodium = value;
+      break;
+    case "potassium":
+      nutrients.potassium = value;
+      break;
+    case "vitaminA":
+      nutrients.vitaminA = value;
+      break;
+    case "vitaminB":
+      nutrients.vitaminB = value;
+      break;
+    case "vitaminB1":
+      nutrients.vitaminB1 = value;
+      break;
+    case "vitaminB2":
+      nutrients.vitaminB2 = value;
+      break;
+    case "vitaminB3":
+      nutrients.vitaminB3 = value;
+      break;
+    case "vitaminB5":
+      nutrients.vitaminB5 = value;
+      break;
+    case "vitaminB6":
+      nutrients.vitaminB6 = value;
+      break;
+    case "vitaminB7":
+      nutrients.vitaminB7 = value;
+      break;
+    case "vitaminB9":
+      nutrients.vitaminB9 = value;
+      break;
+    case "vitaminB12":
+      nutrients.vitaminB12 = value;
+      break;
+    case "vitaminC":
+      nutrients.vitaminC = value;
+      break;
+    case "vitaminD":
+      nutrients.vitaminD = value;
+      break;
+    case "vitaminE":
+      nutrients.vitaminE = value;
+      break;
+    case "vitaminK":
+      nutrients.vitaminK = value;
+      break;
+    case "calcium":
+      nutrients.calcium = value;
+      break;
+    case "iron":
+      nutrients.iron = value;
+      break;
+    case "magnesium":
+      nutrients.magnesium = value;
+      break;
+    case "zinc":
+      nutrients.zinc = value;
+      break;
+    case "phosphorus":
+      nutrients.phosphorus = value;
+      break;
+    case "iodine":
+      nutrients.iodine = value;
+      break;
+    case "selenium":
+      nutrients.selenium = value;
+      break;
+    case "copper":
+      nutrients.copper = value;
+      break;
+    case "calories":
+    default:
+      nutrients.calories = value;
+      break;
+  }
+};
+
 export const hasMeaningfulNutrientValue = (value: number) => Math.abs(value) >= 0.001;
 
 export const formatNutrientValue = (value: number, unit: NutrientUnit) => {

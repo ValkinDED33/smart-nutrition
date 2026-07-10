@@ -6,7 +6,12 @@
  */
 
 import type { MealEntry, Nutrients, MacroProgress, MealTypeValue } from "./types";
-import { createEmptyNutrients, nutrientKeys } from "./nutrients";
+import {
+  createEmptyNutrients,
+  getNutrientValue,
+  nutrientKeys,
+  setNutrientValue,
+} from "./nutrients";
 
 const toDateKey = (value: Date) => value.toISOString().slice(0, 10);
 
@@ -21,7 +26,11 @@ export function calculateMealTotalNutrients(items: MealEntry[]): Nutrients {
     const n = item.product.nutrients;
 
     nutrientKeys.forEach((key) => {
-      totals[key] = (totals[key] ?? 0) + (n[key] ?? 0) * factor;
+      setNutrientValue(
+        totals,
+        key,
+        getNutrientValue(totals, key) + getNutrientValue(n, key) * factor
+      );
     });
   });
 
@@ -42,7 +51,21 @@ export function groupEntriesByMealType(
   };
 
   items.forEach((item) => {
-    grouped[item.mealType].push(item);
+    switch (item.mealType) {
+      case "breakfast":
+        grouped.breakfast.push(item);
+        break;
+      case "lunch":
+        grouped.lunch.push(item);
+        break;
+      case "dinner":
+        grouped.dinner.push(item);
+        break;
+      case "snack":
+      default:
+        grouped.snack.push(item);
+        break;
+    }
   });
 
   return grouped;
@@ -112,7 +135,7 @@ export function calculateDailySummaries(
   startDate: Date,
   endDate: Date
 ): Record<string, Nutrients> {
-  const summaries: Record<string, Nutrients> = {};
+  const summaries: Array<[string, Nutrients]> = [];
 
   const current = new Date(startDate);
   current.setHours(0, 0, 0, 0);
@@ -120,9 +143,9 @@ export function calculateDailySummaries(
   while (current <= endDate) {
     const dateKey = toDateKey(current);
     const dayEntries = filterEntriesByDate(items, dateKey);
-    summaries[dateKey] = calculateMealTotalNutrients(dayEntries);
+    summaries.push([dateKey, calculateMealTotalNutrients(dayEntries)]);
     current.setDate(current.getDate() + 1);
   }
 
-  return summaries;
+  return Object.fromEntries(summaries);
 }

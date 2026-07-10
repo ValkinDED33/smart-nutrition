@@ -38,6 +38,7 @@ import {
   normalizeProductLookupQuery,
   shouldRunOnlineProductLookup,
 } from "./productLookupUiModel";
+import type { AppLanguage } from "@shared/types/i18n";
 
 const CatalogContributionCard = lazy(() =>
   import("@features/platform/CatalogContributionCard").then((module) => ({
@@ -48,6 +49,15 @@ const CatalogContributionCard = lazy(() =>
 interface Props {
   mealType: MealType;
 }
+
+const QUICK_PRESETS = [
+  "Oats",
+  "Greek yogurt",
+  "Boiled egg",
+  "Chicken breast",
+  "Rice cooked",
+  "Banana",
+];
 
 const suggestionCopy = {
   uk: {
@@ -70,7 +80,7 @@ const suggestionCopy = {
     retry: "Спробувати ще раз",
     googleSearch: "Шукати в Google",
     addToCatalog: "Додати в базу",
-    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
+    presets: QUICK_PRESETS,
   },
   pl: {
     title: "Szybkie podpowiedzi",
@@ -92,7 +102,7 @@ const suggestionCopy = {
     retry: "Spróbuj ponownie",
     googleSearch: "Szukaj w Google",
     addToCatalog: "Dodaj do bazy",
-    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
+    presets: QUICK_PRESETS,
   },
   en: {
     title: "Quick suggestions",
@@ -114,9 +124,23 @@ const suggestionCopy = {
     retry: "Try again",
     googleSearch: "Search Google",
     addToCatalog: "Add to database",
-    presets: ["Oats", "Greek yogurt", "Boiled egg", "Chicken breast", "Rice cooked", "Banana"],
+    presets: QUICK_PRESETS,
   },
 } as const;
+
+type SuggestionCopy = (typeof suggestionCopy)[keyof typeof suggestionCopy];
+
+const getSuggestionCopy = (language: AppLanguage): SuggestionCopy => {
+  switch (language) {
+    case "pl":
+      return suggestionCopy.pl;
+    case "en":
+      return suggestionCopy.en;
+    case "uk":
+    default:
+      return suggestionCopy.uk;
+  }
+};
 
 const genericBrands = new Set(["Manual", "Homemade", "Restaurant", "Fast food"]);
 
@@ -156,7 +180,7 @@ export const ProductSearch = ({ mealType }: Props) => {
   const { appLanguage, t } = useLanguage();
   const [showContributionForm, setShowContributionForm] = useState(false);
   const normalizedQuery = normalizeProductLookupQuery(query);
-  const copy = suggestionCopy[appLanguage];
+  const copy = getSuggestionCopy(appLanguage);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

@@ -8,7 +8,9 @@ import type {
 } from "@domain/meal/types";
 import {
   createEmptyNutrients,
+  getNutrientValue,
   nutrientKeys,
+  setNutrientValue,
 } from "@domain/meal/nutrients";
 import { createProductKey, normalizeBarcode } from "./productIdentity";
 
@@ -102,11 +104,17 @@ const normalizeImageUrl = (value: unknown) => {
 
 const normalizeNutrients = (value: unknown): Nutrients => {
   const record = isRecord(value) ? value : {};
+  const nutrients = createEmptyNutrients();
 
-  return nutrientKeys.reduce((accumulator, key) => {
-    accumulator[key] = clampNumber(toNumber(record[key]));
-    return accumulator;
-  }, createEmptyNutrients());
+  nutrientKeys.forEach((key) => {
+    setNutrientValue(
+      nutrients,
+      key,
+      clampNumber(toNumber(getNutrientValue(record as Nutrients, key)))
+    );
+  });
+
+  return nutrients;
 };
 
 const normalizeStringArray = (value: unknown) =>
@@ -212,7 +220,11 @@ export const calculateMealTotalNutrients = (items: MealEntry[]): Nutrients => {
     const n = item.product.nutrients;
 
     nutrientKeys.forEach((key) => {
-      totals[key] = (totals[key] ?? 0) + (n[key] ?? 0) * factor;
+      setNutrientValue(
+        totals,
+        key,
+        getNutrientValue(totals, key) + getNutrientValue(n, key) * factor
+      );
     });
   });
 

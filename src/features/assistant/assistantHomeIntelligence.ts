@@ -5,6 +5,9 @@ import type { AssistantOnboardingProfile } from "@domain/profile/types";
 
 export type AssistantHomePhase = "morning" | "day" | "evening";
 export type AssistantHomeActionKind = "meal_search" | "meal_photo" | "meal_scan" | "water" | "recipes" | "progress";
+type AssistantHomeCopy = (typeof copy)[keyof typeof copy];
+type AssistantHomeActionKey = keyof (typeof copy)["en"]["actions"];
+type MealActionKey = "breakfast" | "lunch" | "dinner";
 
 export interface AssistantHomeAction {
   kind: AssistantHomeActionKind;
@@ -120,12 +123,80 @@ const copy = {
   },
 } as const;
 
+const getCopy = (language: AppLanguage): AssistantHomeCopy => {
+  switch (language) {
+    case "pl":
+      return copy.pl;
+    case "en":
+      return copy.en;
+    case "uk":
+    default:
+      return copy.uk;
+  }
+};
+
+const getPhaseLabel = (text: AssistantHomeCopy, phase: AssistantHomePhase) => {
+  switch (phase) {
+    case "morning":
+      return text.phase.morning;
+    case "evening":
+      return text.phase.evening;
+    case "day":
+    default:
+      return text.phase.day;
+  }
+};
+
+const getFocusMessage = (text: AssistantHomeCopy, focus: DailyContextFocus) => {
+  switch (focus) {
+    case "log_first_meal":
+      return text.focus.log_first_meal;
+    case "complete_day":
+      return text.focus.complete_day;
+    case "protein":
+      return text.focus.protein;
+    case "water":
+      return text.focus.water;
+    case "fiber":
+      return text.focus.fiber;
+    case "calories_high":
+      return text.focus.calories_high;
+    case "calories_low":
+      return text.focus.calories_low;
+    case "steady":
+    default:
+      return text.focus.steady;
+  }
+};
+
+const getActionTuple = (text: AssistantHomeCopy, key: AssistantHomeActionKey) => {
+  switch (key) {
+    case "breakfast":
+      return text.actions.breakfast;
+    case "lunch":
+      return text.actions.lunch;
+    case "dinner":
+      return text.actions.dinner;
+    case "protein":
+      return text.actions.protein;
+    case "water":
+      return text.actions.water;
+    case "photo":
+      return text.actions.photo;
+    case "recipes":
+      return text.actions.recipes;
+    case "progress":
+    default:
+      return text.actions.progress;
+  }
+};
+
 const action = (
   language: AppLanguage,
   kind: AssistantHomeActionKind,
-  key: keyof (typeof copy)["en"]["actions"]
+  key: AssistantHomeActionKey
 ): AssistantHomeAction => {
-  const [label, helper, searchQuery] = copy[language].actions[key];
+  const [label, helper, searchQuery] = getActionTuple(getCopy(language), key);
 
   return {
     kind,
@@ -135,10 +206,16 @@ const action = (
   };
 };
 
-const mealActionKeyByPhase: Record<AssistantHomePhase, "breakfast" | "lunch" | "dinner"> = {
-  morning: "breakfast",
-  day: "lunch",
-  evening: "dinner",
+const getMealActionKeyByPhase = (phase: AssistantHomePhase): MealActionKey => {
+  switch (phase) {
+    case "morning":
+      return "breakfast";
+    case "evening":
+      return "dinner";
+    case "day":
+    default:
+      return "lunch";
+  }
 };
 
 export const buildAssistantHomeIntelligence = ({
@@ -153,8 +230,9 @@ export const buildAssistantHomeIntelligence = ({
   now?: Date;
 }): AssistantHomeIntelligence => {
   const phase = getPhase(now);
-  const text = copy[language];
+  const text = getCopy(language);
   const focus = context.primaryFocus;
+  const focusMessage = getFocusMessage(text, focus);
   const personalization = onboarding
     ? buildAssistantPersonalizationPlan(onboarding, language)
     : null;
@@ -169,7 +247,7 @@ export const buildAssistantHomeIntelligence = ({
   } else if (focus === "steady" && phase === "evening") {
     primaryAction = action(language, "progress", "progress");
   } else {
-    primaryAction = action(language, "meal_search", mealActionKeyByPhase[phase]);
+    primaryAction = action(language, "meal_search", getMealActionKeyByPhase(phase));
   }
 
   const secondaryActions = [
@@ -180,10 +258,10 @@ export const buildAssistantHomeIntelligence = ({
 
   return {
     phase,
-    headline: text.phase[phase],
+    headline: getPhaseLabel(text, phase),
     message: personalization
-      ? `${text.focus[focus as DailyContextFocus]} ${personalization.actionHint}`
-      : text.focus[focus as DailyContextFocus],
+      ? `${focusMessage} ${personalization.actionHint}`
+      : focusMessage,
     personalizationLine: personalization?.homeLine ?? "",
     primaryAction: personalization
       ? {
