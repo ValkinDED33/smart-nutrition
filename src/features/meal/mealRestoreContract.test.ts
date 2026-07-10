@@ -21,6 +21,12 @@ import {
   createTemplateEntries,
 } from "./mealSaveModel";
 
+const MEAL_TEST_DAY = "2026-07-03";
+const BREAKFAST_AT = `${MEAL_TEST_DAY}T08:00:00.000Z`;
+const LUNCH_AT = `${MEAL_TEST_DAY}T12:00:00.000Z`;
+const TEMPLATE_CREATED_AT = `${MEAL_TEST_DAY}T09:00:00.000Z`;
+const SNAPSHOT_UPDATED_AT = `${MEAL_TEST_DAY}T10:00:00.000Z`;
+
 const createTestStore = () =>
   configureStore({
     reducer: {
@@ -56,7 +62,7 @@ const createEntry = (
   product: createProduct(id),
   quantity: 100,
   mealType: "breakfast",
-  eatenAt: "2026-07-03T08:00:00.000Z",
+  eatenAt: BREAKFAST_AT,
   origin: "manual",
   ...overrides,
 });
@@ -70,7 +76,7 @@ const createTemplate = (
   id,
   name: `Template ${id}`,
   mealType: "lunch",
-  createdAt: "2026-07-03T09:00:00.000Z",
+  createdAt: TEMPLATE_CREATED_AT,
   items,
 });
 
@@ -81,9 +87,9 @@ const createSnapshot = (meal: MealState): AppSnapshot => ({
   fridge: null,
   community: null,
   companion: null,
-  updatedAt: "2026-07-03T10:00:00.000Z",
+  updatedAt: SNAPSHOT_UPDATED_AT,
   profileUpdatedAt: null,
-  mealUpdatedAt: "2026-07-03T10:00:00.000Z",
+  mealUpdatedAt: SNAPSHOT_UPDATED_AT,
   waterUpdatedAt: null,
 });
 
@@ -168,7 +174,7 @@ describe("meal restore contract", () => {
     );
     const entries = createTemplateEntries(
       template,
-      "2026-07-03T12:00:00.000Z"
+      LUNCH_AT
     );
     const confirmedMeal = buildMealStateAfterApplyTemplate(
       mealWithTemplate,
@@ -183,18 +189,18 @@ describe("meal restore contract", () => {
     expect(restored.items[0]).toMatchObject({
       mealType: template.mealType,
       origin: "recipe",
-      eatenAt: "2026-07-03T12:00:00.000Z",
+      eatenAt: LUNCH_AT,
     });
   });
 
   it("restores a confirmed repeat-yesterday action after refresh or relogin", () => {
     const repeatedEntries = [
       createEntry("repeat-breakfast", {
-        eatenAt: "2026-07-03T08:00:00.000Z",
+        eatenAt: BREAKFAST_AT,
         mealType: "breakfast",
       }),
       createEntry("repeat-lunch", {
-        eatenAt: "2026-07-03T12:00:00.000Z",
+        eatenAt: LUNCH_AT,
         mealType: "lunch",
       }),
     ];

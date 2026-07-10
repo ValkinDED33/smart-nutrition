@@ -16,6 +16,8 @@ import {
 
 const AI_PATH = "/ai";
 const AI_STATUS_PATH = "/ai/status";
+const AGENT_ACTION_MODE = "agent-action";
+const REMOTE_CLOUD_MODE = "remote-cloud";
 
 const getRequiredAssistantBaseUrl = () => {
   if (!isCloudSyncActive()) {
@@ -42,7 +44,7 @@ const parseAiResponse = async (
 
   return {
     text: payload.text.trim(),
-    mode: payload.mode === "agent-action" ? "agent-action" : "remote-cloud",
+    mode: payload.mode === AGENT_ACTION_MODE ? AGENT_ACTION_MODE : REMOTE_CLOUD_MODE,
     followUpQuestionIds: Array.isArray(payload.followUpQuestionIds)
       ? payload.followUpQuestionIds.filter(isAssistantQuickQuestionId)
       : [],
@@ -86,7 +88,7 @@ const parseAiHistory = async (
         id: item.id,
         role: item.role,
         text,
-        mode: item.mode === "agent-action" ? "agent-action" : "remote-cloud",
+        mode: item.mode === AGENT_ACTION_MODE ? AGENT_ACTION_MODE : REMOTE_CLOUD_MODE,
         followUpQuestionIds: Array.isArray(item.followUpQuestionIds)
           ? item.followUpQuestionIds.filter((value): value is (typeof assistantQuickQuestionIds)[number] =>
               isAssistantQuickQuestionId(value)

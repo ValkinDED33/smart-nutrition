@@ -10,6 +10,9 @@ const authRemoteMock = vi.hoisted(() => ({
 
 vi.mock("./authRemote", () => authRemoteMock);
 
+const REMINDER_NEXT_RUN_AT = "2026-06-22T08:00:00.000Z";
+const REMINDER_CREATED_AT = "2026-06-22T07:00:00.000Z";
+
 const createReminderItem = (overrides = {}) => ({
   id: "task-1",
   type: "task",
@@ -20,10 +23,10 @@ const createReminderItem = (overrides = {}) => ({
   durationDays: 1,
   repeat: "once",
   active: true,
-  nextRunAt: "2026-06-22T08:00:00.000Z",
+  nextRunAt: REMINDER_NEXT_RUN_AT,
   lastSentAt: null,
-  createdAt: "2026-06-22T07:00:00.000Z",
-  updatedAt: "2026-06-22T07:00:00.000Z",
+  createdAt: REMINDER_CREATED_AT,
+  updatedAt: REMINDER_CREATED_AT,
   events: [],
   ...overrides,
 });
@@ -63,8 +66,8 @@ describe("reminders api", () => {
             {
               id: "event-1",
               action: "snoozed",
-              scheduledFor: "2026-06-22T08:00:00.000Z",
-              createdAt: "2026-06-22T08:00:00.000Z",
+              scheduledFor: REMINDER_NEXT_RUN_AT,
+              createdAt: REMINDER_NEXT_RUN_AT,
             },
           ],
         }),

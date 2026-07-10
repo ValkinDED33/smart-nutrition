@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createInitialCompanionState } from "../../companion";
 import { buildCompanionProgressCardModel } from "./companionProgressCardModel";
 
+const COMPANION_CREATED_AT = "2026-06-08T00:00:00.000Z";
+
 describe("buildCompanionProgressCardModel", () => {
   it("uses an initial state fallback when companion state is missing", () => {
     const model = buildCompanionProgressCardModel(null);
@@ -15,7 +17,7 @@ describe("buildCompanionProgressCardModel", () => {
 
   it("calculates progress to the next level", () => {
     const state = {
-      ...createInitialCompanionState("2026-06-08T00:00:00.000Z"),
+      ...createInitialCompanionState(COMPANION_CREATED_AT),
       xp: 120,
       coins: 7,
       relationshipLevel: 3,
@@ -32,7 +34,7 @@ describe("buildCompanionProgressCardModel", () => {
 
   it("returns the latest achievements first", () => {
     const state = {
-      ...createInitialCompanionState("2026-06-08T00:00:00.000Z"),
+      ...createInitialCompanionState(COMPANION_CREATED_AT),
       achievements: [
         {
           id: "first",
@@ -42,7 +44,7 @@ describe("buildCompanionProgressCardModel", () => {
         {
           id: "latest",
           title: "Latest",
-          unlockedAt: "2026-06-08T00:00:00.000Z",
+          unlockedAt: COMPANION_CREATED_AT,
         },
       ],
     };

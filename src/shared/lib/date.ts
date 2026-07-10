@@ -6,6 +6,19 @@ const localeByLanguage: Record<AppLanguage, string> = {
   en: "en-US",
 };
 
+const getLocaleByLanguage = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return localeByLanguage.uk;
+    case "pl":
+      return localeByLanguage.pl;
+    case "en":
+      return localeByLanguage.en;
+    default:
+      return localeByLanguage.en;
+  }
+};
+
 const pad = (value: number) => String(value).padStart(2, "0");
 
 export const getLocalDateKey = (value: Date | string | number) => {
@@ -27,7 +40,7 @@ export const formatLocalDateKey = (
   dateKey: string,
   language: AppLanguage,
   options: Intl.DateTimeFormatOptions
-) => parseLocalDateKey(dateKey).toLocaleDateString(localeByLanguage[language], options);
+) => parseLocalDateKey(dateKey).toLocaleDateString(getLocaleByLanguage(language), options);
 
 export const addDays = (date: Date, days: number) => {
   const copy = new Date(date);

@@ -110,7 +110,7 @@ export const getDefaultAvatar = (seed: string) => {
   }
 
   const index = Math.abs(hashSeed(seed)) % avatarPresets.length;
-  return avatarPresets[index]?.url ?? fallback;
+  return avatarPresets.find((_, presetIndex) => presetIndex === index)?.url ?? fallback;
 };
 
 const loadImageFile = (file: File) =>

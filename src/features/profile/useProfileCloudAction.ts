@@ -12,6 +12,8 @@ import { setUser } from "../auth/authSlice";
 
 type AuthUser = NonNullable<RootState["auth"]["user"]>;
 
+const CLOUD_PROFILE_SAVE_FAILED = "Cloud profile save failed.";
+
 export const useProfileCloudAction = () => {
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile);
@@ -33,7 +35,7 @@ export const useProfileCloudAction = () => {
         const message =
           caughtError instanceof Error
             ? caughtError.message
-            : "Cloud profile save failed.";
+            : CLOUD_PROFILE_SAVE_FAILED;
         setError(message);
         throw caughtError;
       } finally {
@@ -60,7 +62,7 @@ export const useProfileCloudAction = () => {
         const message =
           caughtError instanceof Error
             ? caughtError.message
-            : "Cloud profile save failed.";
+            : CLOUD_PROFILE_SAVE_FAILED;
         setError(message);
         throw caughtError;
       } finally {

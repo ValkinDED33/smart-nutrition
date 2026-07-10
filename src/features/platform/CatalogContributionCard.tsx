@@ -19,6 +19,7 @@ import {
 } from "../../shared/api/platform";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { getKnownProductCategoryOptions } from "@domain/products/productCategory";
 import {
   buildCatalogContributionPayload,
@@ -134,6 +135,35 @@ const catalogCopy = {
   },
 } as const;
 
+type CatalogCopy = (typeof catalogCopy)[AppLanguage];
+
+const getCatalogCopy = (language: AppLanguage): CatalogCopy => {
+  switch (language) {
+    case "pl":
+      return catalogCopy.pl;
+    case "en":
+      return catalogCopy.en;
+    case "uk":
+    default:
+      return catalogCopy.uk;
+  }
+};
+
+const getSubmissionStatusLabel = (
+  copy: CatalogCopy,
+  status: CatalogProductItem["status"]
+) => {
+  switch (status) {
+    case "approved":
+      return copy.status.approved;
+    case "rejected":
+      return copy.status.rejected;
+    case "pending":
+    default:
+      return copy.status.pending;
+  }
+};
+
 interface CatalogContributionCardProps {
   initialName?: string;
   compact?: boolean;
@@ -144,7 +174,7 @@ export const CatalogContributionCard = ({
   compact = false,
 }: CatalogContributionCardProps) => {
   const { appLanguage } = useLanguage();
-  const copy = catalogCopy[appLanguage];
+  const copy = getCatalogCopy(appLanguage);
   const categoryOptions = useMemo(
     () => getKnownProductCategoryOptions(appLanguage),
     [appLanguage]
@@ -489,7 +519,7 @@ export const CatalogContributionCard = ({
                       </Typography>
                     </Stack>
                     <Chip
-                      label={copy.status[item.status]}
+                      label={getSubmissionStatusLabel(copy, item.status)}
                       color={
                         item.status === "approved"
                           ? "success"

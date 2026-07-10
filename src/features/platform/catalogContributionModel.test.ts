@@ -6,6 +6,8 @@ import {
   resolveCatalogContributionNotice,
 } from "./catalogContributionModel";
 
+const CATALOG_PRODUCT_NAME = "Quinoa bowl";
+
 describe("catalogContributionModel", () => {
   it("creates an initial form with an optional trimmed product name", () => {
     expect(createInitialCatalogContributionForm("  quinoa bowl  ")).toMatchObject({
@@ -18,7 +20,7 @@ describe("catalogContributionModel", () => {
   });
 
   it("validates required nutrition fields before allowing submission", () => {
-    const invalidForm = createInitialCatalogContributionForm("Quinoa bowl");
+    const invalidForm = createInitialCatalogContributionForm(CATALOG_PRODUCT_NAME);
     const validForm = {
       ...invalidForm,
       calories: "120",
@@ -34,7 +36,7 @@ describe("catalogContributionModel", () => {
   it("builds a normalized backend catalog payload", () => {
     expect(
       buildCatalogContributionPayload({
-        name: "  Quinoa bowl ",
+        name: `  ${CATALOG_PRODUCT_NAME} `,
         category: " grains ",
         brand: " Kitchen ",
         barcode: " 590-123 abc ",
@@ -45,7 +47,7 @@ describe("catalogContributionModel", () => {
         carbs: "20",
       })
     ).toEqual({
-      name: "Quinoa bowl",
+      name: CATALOG_PRODUCT_NAME,
       category: "grains",
       brand: "Kitchen",
       barcode: "590123",
@@ -60,7 +62,7 @@ describe("catalogContributionModel", () => {
   it("rejects invalid numeric payloads instead of sending fake catalog data", () => {
     expect(
       buildCatalogContributionPayload({
-        ...createInitialCatalogContributionForm("Quinoa bowl"),
+        ...createInitialCatalogContributionForm(CATALOG_PRODUCT_NAME),
         calories: "abc",
         protein: "4",
         fat: "2",

@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import {
   canUseWebNotifications,
   getSafeNotificationPermission,
@@ -101,6 +102,37 @@ const notificationCopy = {
 } as const;
 
 type PermissionState = NotificationPermission | "unsupported";
+type NotificationCopy = (typeof notificationCopy)[AppLanguage];
+type ReminderTimeKey = keyof RootState["profile"]["reminderTimes"];
+
+const getNotificationCopy = (language: AppLanguage): NotificationCopy => {
+  switch (language) {
+    case "pl":
+      return notificationCopy.pl;
+    case "en":
+      return notificationCopy.en;
+    case "uk":
+    default:
+      return notificationCopy.uk;
+  }
+};
+
+const getReminderTimeValue = (
+  reminderTimes: RootState["profile"]["reminderTimes"],
+  key: ReminderTimeKey
+) => {
+  switch (key) {
+    case "lunch":
+      return reminderTimes.lunch;
+    case "dinner":
+      return reminderTimes.dinner;
+    case "snack":
+      return reminderTimes.snack;
+    case "breakfast":
+    default:
+      return reminderTimes.breakfast;
+  }
+};
 
 export const NotificationSettingsCard = () => {
   const {
@@ -114,7 +146,7 @@ export const NotificationSettingsCard = () => {
   const [permission, setPermission] = useState<PermissionState>(() =>
     getSafeNotificationPermission()
   );
-  const copy = notificationCopy[appLanguage];
+  const copy = getNotificationCopy(appLanguage);
 
   useEffect(() => {
     if (typeof window === "undefined" || !canUseWebNotifications()) {
@@ -313,7 +345,7 @@ export const NotificationSettingsCard = () => {
               fullWidth
               type="time"
               label={item.label}
-              value={reminderTimes[item.key]}
+              value={getReminderTimeValue(reminderTimes, item.key)}
               disabled={!notificationsEnabled || !mealRemindersEnabled || profileAction.saving}
               onChange={(event) => {
                 void profileAction.runProfileAction(

@@ -6,6 +6,7 @@ const readSource = (path: string) =>
   readFile(resolve(process.cwd(), path), "utf8");
 
 const normalizeNewlines = (source: string) => source.replace(/\r\n/g, "\n");
+const WATER_TRACKER_SOURCE_PATH = "src/features/water/WaterTracker.tsx";
 
 describe("water persistence contract", () => {
   it("exposes one cloud-confirmed water action hook with retry support", async () => {
@@ -22,7 +23,7 @@ describe("water persistence contract", () => {
 
   it("keeps WaterTracker on the shared cloud action contract", async () => {
     const source = normalizeNewlines(
-      await readSource("src/features/water/WaterTracker.tsx")
+      await readSource(WATER_TRACKER_SOURCE_PATH)
     );
 
     expect(source).toContain("useWaterCloudAction");
@@ -35,7 +36,7 @@ describe("water persistence contract", () => {
 
   it("does not clear target or glass drafts after a failed cloud save", async () => {
     const source = normalizeNewlines(
-      await readSource("src/features/water/WaterTracker.tsx")
+      await readSource(WATER_TRACKER_SOURCE_PATH)
     );
 
     expect(source).toContain("if (!saved) {\n          return;\n        }\n\n        setTargetDraft(null);");
@@ -43,7 +44,7 @@ describe("water persistence contract", () => {
   });
 
   it("keeps partial-glass editor open until save is confirmed", async () => {
-    const source = await readSource("src/features/water/WaterTracker.tsx");
+    const source = await readSource(WATER_TRACKER_SOURCE_PATH);
 
     expect(source).toContain("const saved = await saveWaterState(nextWater)");
     expect(source).toContain("if (!saved) {\n      return;\n    }\n\n    setEditingSlot(null);");

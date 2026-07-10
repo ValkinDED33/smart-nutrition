@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Button, Collapse } from "@mui/material";
 import { useLanguage } from "@shared/language";
+import type { AppLanguage } from "@shared/types/i18n";
 import {
   PWA_UPDATE_READY_EVENT,
   type PwaUpdateReadyEventDetail,
@@ -27,9 +28,23 @@ const updateCopy = {
   },
 } as const;
 
+type UpdateCopy = (typeof updateCopy)[AppLanguage];
+
+const getUpdateCopy = (language: AppLanguage): UpdateCopy => {
+  switch (language) {
+    case "pl":
+      return updateCopy.pl;
+    case "en":
+      return updateCopy.en;
+    case "uk":
+    default:
+      return updateCopy.uk;
+  }
+};
+
 const PwaUpdateBanner = () => {
   const { appLanguage } = useLanguage();
-  const copy = updateCopy[appLanguage];
+  const copy = getUpdateCopy(appLanguage);
   const [applyUpdate, setApplyUpdate] = useState<(() => void) | null>(null);
   const [applying, setApplying] = useState(false);
 

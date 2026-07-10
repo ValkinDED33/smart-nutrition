@@ -16,19 +16,23 @@ const authApiMock = vi.hoisted(() => ({
 
 vi.mock("@shared/api/auth", () => authApiMock);
 
+const COMMUNITY_MESSAGE_TEXT = "Cloud-first hello";
+const COMMUNITY_AUTHOR_NAME = "Ihor";
+const FRIEND_NAME = "Maks";
+
 describe("communityCloudSync", () => {
   it("reuses the community reducer to build the next cloud state", () => {
     const current = normalizeCommunityState({});
     const next = buildCommunityStateAfterAction(
       current,
-      sendCommunityMessage({ text: "Cloud-first hello", authorName: "Ihor" })
+      sendCommunityMessage({ text: COMMUNITY_MESSAGE_TEXT, authorName: COMMUNITY_AUTHOR_NAME })
     );
 
     expect(next.roomMessages.at(-1)).toMatchObject({
-      authorName: "Ihor",
-      text: "Cloud-first hello",
+      authorName: COMMUNITY_AUTHOR_NAME,
+      text: COMMUNITY_MESSAGE_TEXT,
     });
-    expect(current.roomMessages[0]?.text).not.toBe("Cloud-first hello");
+    expect(current.roomMessages[0]?.text).not.toBe(COMMUNITY_MESSAGE_TEXT);
   });
 
   it("updates local community only after the cloud save succeeds", async () => {
@@ -41,7 +45,7 @@ describe("communityCloudSync", () => {
     await applyCommunityActionInCloud(
       dispatch as never,
       normalizeCommunityState({}),
-      addFriend({ name: "Maks" })
+      addFriend({ name: FRIEND_NAME })
     );
 
     expect(authApiMock.syncRemoteCommunityState).toHaveBeenCalledTimes(1);
@@ -75,7 +79,7 @@ describe("communityCloudSync", () => {
       applyCommunityActionInCloud(
         dispatch as never,
         normalizeCommunityState({}),
-        addFriend({ name: "Maks" })
+        addFriend({ name: FRIEND_NAME })
       )
     ).rejects.toThrow("latest cloud version has been loaded");
 

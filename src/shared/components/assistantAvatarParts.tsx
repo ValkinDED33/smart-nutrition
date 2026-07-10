@@ -11,6 +11,7 @@ interface CompanionPartsProps {
 
 const SHINE_BORDER = "1px solid rgba(255,255,255,0.34)";
 const SOFT_DARK = "rgba(15,23,42,0.48)";
+const CENTER_X_TRANSFORM = "translateX(-50%)";
 
 const round = (value: number) => Math.round(value);
 
@@ -166,7 +167,7 @@ const DragonHead = ({ size, visual }: Pick<CompanionPartsProps, "size" | "visual
             height: scaled(size, 0.12),
             backgroundColor: visual.detail,
             clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
-            transform: "translateX(-50%)",
+            transform: CENTER_X_TRANSFORM,
             opacity: 0.92 - index * 0.12,
             zIndex: 3,
           }}
@@ -186,7 +187,7 @@ const RobotAntenna = ({ size, visual }: Pick<CompanionPartsProps, "size" | "visu
       height: scaled(size, 0.18, 9),
       borderRadius: 999,
       backgroundColor: "rgba(255,255,255,0.72)",
-      transform: "translateX(-50%)",
+      transform: CENTER_X_TRANSFORM,
       "&::after": {
         content: '""',
         position: "absolute",
@@ -196,7 +197,7 @@ const RobotAntenna = ({ size, visual }: Pick<CompanionPartsProps, "size" | "visu
         height: scaled(size, 0.09, 5),
         borderRadius: "50%",
         backgroundColor: visual.detail,
-        transform: "translateX(-50%)",
+        transform: CENTER_X_TRANSFORM,
         boxShadow: "0 0 12px rgba(219,234,254,0.72)",
       },
     }}
@@ -213,7 +214,7 @@ const HumanHair = ({ size }: Pick<CompanionPartsProps, "size">) => (
       height: scaled(size, 0.2),
       borderRadius: "999px 999px 55% 55%",
       backgroundColor: "rgba(15,23,42,0.34)",
-      transform: "translateX(-50%)",
+      transform: CENTER_X_TRANSFORM,
     }}
   />
 );
@@ -375,7 +376,7 @@ const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
             bottom: scaled(size, 0.2),
             width: scaled(size, 0.28),
             height: scaled(size, 0.22),
-            transform: "translateX(-50%)",
+            transform: CENTER_X_TRANSFORM,
             backgroundColor: visual.muzzle,
             clipPath: "polygon(50% 100%, 0 0, 100% 0)",
             zIndex: 2,
@@ -408,7 +409,7 @@ const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
           top: scaled(size, 0.5),
           width: scaled(size, 0.26),
           height: scaled(size, 0.17),
-          transform: "translateX(-50%)",
+          transform: CENTER_X_TRANSFORM,
           borderRadius: "50%",
           backgroundColor: visual.muzzle,
           zIndex: 2,
@@ -472,7 +473,7 @@ const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
           left: "50%",
           width: scaled(size, 0.15),
           height: scaled(size, 0.13),
-          transform: "translateX(-50%)",
+          transform: CENTER_X_TRANSFORM,
           clipPath: "polygon(50% 100%, 0 0, 100% 0)",
           backgroundColor: "#f97316",
           filter: "drop-shadow(0 2px 2px rgba(15,23,42,0.18))",
@@ -522,7 +523,7 @@ const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
             bottom: scaled(size, 0.15),
             width: scaled(size, 0.42),
             height: scaled(size, 0.22),
-            transform: "translateX(-50%)",
+            transform: CENTER_X_TRANSFORM,
             borderRadius: "55% 55% 70% 70%",
             backgroundColor: visual.muzzle,
             border: "1px solid rgba(255,255,255,0.26)",
@@ -565,7 +566,7 @@ const AnimalNose = ({ variant, size }: Pick<CompanionPartsProps, "variant" | "si
           left: "50%",
           width: scaled(size, 0.1),
           height: scaled(size, 0.075),
-          transform: "translateX(-50%)",
+          transform: CENTER_X_TRANSFORM,
           borderRadius:
             variant === "dog" || variant === "panda" ? "50%" : "55% 55% 70% 70%",
           backgroundColor:

@@ -5,20 +5,23 @@ import {
   getCompanionAchievementById,
 } from "./companionAchievements";
 
+const INITIAL_COMPANION_TIMESTAMP = "2026-06-08T10:00:00.000Z";
+const FIRST_MEAL_ACHIEVEMENT_ID = "first_meal_logged";
+
 describe("companionAchievements", () => {
   it("returns achievement definitions by id", () => {
-    expect(getCompanionAchievementById("first_meal_logged")).toMatchObject({
-      id: "first_meal_logged",
+    expect(getCompanionAchievementById(FIRST_MEAL_ACHIEVEMENT_ID)).toMatchObject({
+      id: FIRST_MEAL_ACHIEVEMENT_ID,
       category: "nutrition",
     });
     expect(getCompanionAchievementById("unknown")).toBeNull();
   });
 
   it("evaluates first action achievements", () => {
-    const state = createInitialCompanionState("2026-06-08T10:00:00.000Z");
+    const state = createInitialCompanionState(INITIAL_COMPANION_TIMESTAMP);
 
     expect(evaluateAchievementsAfterReward(state, "meal_added")).toContainEqual(
-      expect.objectContaining({ id: "first_meal_logged" })
+      expect.objectContaining({ id: FIRST_MEAL_ACHIEVEMENT_ID })
     );
     expect(evaluateAchievementsAfterReward(state, "water_logged")).toContainEqual(
       expect.objectContaining({ id: "first_water_logged" })
@@ -33,7 +36,7 @@ describe("companionAchievements", () => {
 
   it("evaluates level achievements from the rewarded state", () => {
     const levelTwoState = {
-      ...createInitialCompanionState("2026-06-08T10:00:00.000Z"),
+      ...createInitialCompanionState(INITIAL_COMPANION_TIMESTAMP),
       level: 2 as const,
       xp: 100,
     };
@@ -53,17 +56,17 @@ describe("companionAchievements", () => {
 
   it("does not return already unlocked achievements", () => {
     const state = {
-      ...createInitialCompanionState("2026-06-08T10:00:00.000Z"),
+      ...createInitialCompanionState(INITIAL_COMPANION_TIMESTAMP),
       achievements: [
         {
-          id: "first_meal_logged",
+          id: FIRST_MEAL_ACHIEVEMENT_ID,
           title: "First meal",
         },
       ],
     };
 
     expect(evaluateAchievementsAfterReward(state, "meal_added")).not.toContainEqual(
-      expect.objectContaining({ id: "first_meal_logged" })
+      expect.objectContaining({ id: FIRST_MEAL_ACHIEVEMENT_ID })
     );
   });
 });

@@ -7,6 +7,11 @@ import {
   shouldHideAssistantLayer,
 } from "./globalAssistantLayerModel";
 
+const COMMUNITY_ROUTE = "/community";
+const PROFILE_ROUTE = "/profile";
+const COACH_ROUTE = "/coach";
+const MEALS_ROUTE = "/meals";
+
 const resolveModel = (pathname: string) =>
   resolveGlobalAssistantLayerModel(pathname, {
     viewport: "desktop",
@@ -68,7 +73,7 @@ describe("GlobalAssistantLayer", () => {
   });
 
   it("resolves meals area and action from the assistant manifest", () => {
-    const model = resolveModel("/meals");
+    const model = resolveModel(MEALS_ROUTE);
 
     expect(model.area).toBe("meals");
     expect(model.primaryCapability?.id).toBe("meal-helper");
@@ -77,35 +82,35 @@ describe("GlobalAssistantLayer", () => {
     );
     expect(model.defaultAction).toEqual({
       label: "Add or review food",
-      route: "/meals",
+      route: MEALS_ROUTE,
     });
   });
 
   it("uses area-specific action routes instead of always routing to coach", () => {
-    expect(resolveModel("/community").defaultAction?.route).toBe("/community");
-    expect(resolveModel("/profile").defaultAction?.route).toBe("/profile");
-    expect(resolveModel("/coach").defaultAction?.route).toBe("/coach");
+    expect(resolveModel(COMMUNITY_ROUTE).defaultAction?.route).toBe(COMMUNITY_ROUTE);
+    expect(resolveModel(PROFILE_ROUTE).defaultAction?.route).toBe(PROFILE_ROUTE);
+    expect(resolveModel(COACH_ROUTE).defaultAction?.route).toBe(COACH_ROUTE);
   });
 
   it("uses coach fallback when the manifest action points to the current page", () => {
-    const action = resolveGlobalAssistantDisplayAction("/community", {
+    const action = resolveGlobalAssistantDisplayAction(COMMUNITY_ROUTE, {
       label: "Open community",
-      route: "/community",
+      route: COMMUNITY_ROUTE,
     });
 
     expect(action).toEqual({
       label: "Open community",
-      route: "/coach",
+      route: COACH_ROUTE,
       usesCoachFallback: true,
     });
   });
 
   it("keeps community compact so it does not cover content cards", () => {
-    const model = resolveModel("/community");
+    const model = resolveModel(COMMUNITY_ROUTE);
 
     expect(model.presence.mode).toBe("compact");
     expect(model.presence.allowSpeechBubble).toBe(false);
-    expect(model.displayAction?.route).toBe("/coach");
+    expect(model.displayAction?.route).toBe(COACH_ROUTE);
     expect(model.avatarRenderMode).toBe("2d");
   });
 

@@ -6,6 +6,11 @@ import {
   unlockCompanionAchievement,
 } from "./companionRewards";
 
+const INITIAL_COMPANION_TIMESTAMP = "2026-06-08T10:00:00.000Z";
+const FIRST_MEAL_ACHIEVEMENT_ID = "first-meal";
+const FIRST_MEAL_TITLE = "First meal";
+const FIRST_MEAL_UNLOCKED_AT = "2026-06-08T10:10:00.000Z";
+
 describe("companionRewards", () => {
   it("returns configured reward values for known events", () => {
     expect(getCompanionReward("registration_completed")).toMatchObject({
@@ -30,16 +35,16 @@ describe("companionRewards", () => {
   });
 
   it("unlocks achievements idempotently", () => {
-    const state = createInitialCompanionState("2026-06-08T10:00:00.000Z");
+    const state = createInitialCompanionState(INITIAL_COMPANION_TIMESTAMP);
     const achievement = {
-      id: "first-meal",
-      title: "First meal",
+      id: FIRST_MEAL_ACHIEVEMENT_ID,
+      title: FIRST_MEAL_TITLE,
       description: "Logged the first meal.",
     };
     const unlocked = unlockCompanionAchievement(
       state,
       achievement,
-      "2026-06-08T10:10:00.000Z"
+      FIRST_MEAL_UNLOCKED_AT
     );
     const unlockedAgain = unlockCompanionAchievement(
       unlocked,
@@ -47,11 +52,11 @@ describe("companionRewards", () => {
       "2026-06-08T10:20:00.000Z"
     );
 
-    expect(hasCompanionAchievement(unlocked, "first-meal")).toBe(true);
+    expect(hasCompanionAchievement(unlocked, FIRST_MEAL_ACHIEVEMENT_ID)).toBe(true);
     expect(unlocked.achievements).toHaveLength(1);
     expect(unlocked.achievements[0]).toMatchObject({
-      id: "first-meal",
-      unlockedAt: "2026-06-08T10:10:00.000Z",
+      id: FIRST_MEAL_ACHIEVEMENT_ID,
+      unlockedAt: FIRST_MEAL_UNLOCKED_AT,
     });
     expect(unlockedAgain).toBe(unlocked);
   });

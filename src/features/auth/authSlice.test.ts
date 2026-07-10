@@ -48,6 +48,10 @@ const sessionHintMock = vi.hoisted(() => ({
 vi.mock("../../shared/api/auth", () => authApiMock);
 vi.mock("../../shared/lib/authSessionHint", () => sessionHintMock);
 
+const ONBOARDING_COMPLETED_AT = "2026-06-20T10:00:00.000Z";
+const CHAOTIC_SCHEDULE_FRICTION = "chaotic_schedule";
+const GENTLE_MOTIVATION_STYLE = "gentle";
+
 const createTestStore = () =>
   configureStore({
     reducer: {
@@ -216,7 +220,7 @@ describe("authSlice", () => {
 
   it("does not overwrite completed onboarding with an empty remote profile slice", async () => {
     const store = createTestStore();
-    const completedAt = "2026-06-20T10:00:00.000Z";
+    const completedAt = ONBOARDING_COMPLETED_AT;
     const user = createUser("completed-user");
 
     store.dispatch(
@@ -225,10 +229,10 @@ describe("authSlice", () => {
           preferredName: "Igor",
           primaryGoalNote: "steady",
           goalSelections: ["maintain"],
-          mainFriction: "chaotic_schedule",
-          mainFrictions: ["chaotic_schedule"],
-          motivationStyle: "gentle",
-          motivationStyles: ["gentle"],
+          mainFriction: CHAOTIC_SCHEDULE_FRICTION,
+          mainFrictions: [CHAOTIC_SCHEDULE_FRICTION],
+          motivationStyle: GENTLE_MOTIVATION_STYLE,
+          motivationStyles: [GENTLE_MOTIVATION_STYLE],
           supportNote: "",
           completedAt,
         },
@@ -261,7 +265,7 @@ describe("authSlice", () => {
 
   it("applies cloud snapshot and clears stale pending outbox during restore", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-20T10:00:00.000Z"));
+    vi.setSystemTime(new Date(ONBOARDING_COMPLETED_AT));
     enqueueSyncOutbox("Old unsynced change");
     vi.setSystemTime(new Date("2026-06-20T11:05:00.000Z"));
 
@@ -277,8 +281,8 @@ describe("authSlice", () => {
             onboarding: {
               preferredName: "Igor",
               goalSelections: ["maintain"],
-              mainFrictions: ["chaotic_schedule"],
-              motivationStyles: ["gentle"],
+              mainFrictions: [CHAOTIC_SCHEDULE_FRICTION],
+              motivationStyles: [GENTLE_MOTIVATION_STYLE],
               completedAt,
             },
           },
@@ -352,7 +356,7 @@ describe("authSlice", () => {
 
   it("keeps a fresh local outbox for retry instead of silently discarding it", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-20T10:00:00.000Z"));
+    vi.setSystemTime(new Date(ONBOARDING_COMPLETED_AT));
     enqueueSyncOutbox("Recent unsynced change");
     vi.setSystemTime(new Date("2026-06-20T10:05:00.000Z"));
 
@@ -368,8 +372,8 @@ describe("authSlice", () => {
             onboarding: {
               preferredName: "Cloud Igor",
               goalSelections: ["maintain"],
-              mainFrictions: ["chaotic_schedule"],
-              motivationStyles: ["gentle"],
+              mainFrictions: [CHAOTIC_SCHEDULE_FRICTION],
+              motivationStyles: [GENTLE_MOTIVATION_STYLE],
               completedAt,
             },
           },

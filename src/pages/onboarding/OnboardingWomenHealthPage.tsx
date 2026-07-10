@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import type { WomenHealthMode } from "@domain/profile/types";
 import {
   cardSx,
@@ -77,6 +78,37 @@ const copy = {
   },
 } as const;
 
+type WomenHealthCopy = (typeof copy)[AppLanguage];
+
+const getWomenHealthCopy = (language: AppLanguage): WomenHealthCopy => {
+  switch (language) {
+    case "pl":
+      return copy.pl;
+    case "en":
+      return copy.en;
+    case "uk":
+    default:
+      return copy.uk;
+  }
+};
+
+const getModeOptionLabel = (
+  text: WomenHealthCopy,
+  labelKey: (typeof modeOptions)[number]["labelKey"]
+) => {
+  switch (labelKey) {
+    case "trying":
+      return text.trying;
+    case "pregnant":
+      return text.pregnant;
+    case "postpartum":
+      return text.postpartum;
+    case "none":
+    default:
+      return text.none;
+  }
+};
+
 const modeOptions: Array<{ id: WomenHealthMode; labelKey: keyof typeof copy.uk }> = [
   { id: "none", labelKey: "none" },
   { id: "trying_to_conceive", labelKey: "trying" },
@@ -90,7 +122,7 @@ export const OnboardingWomenHealthPage = ({
 }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { appLanguage, t } = useLanguage();
-  const text = copy[appLanguage];
+  const text = getWomenHealthCopy(appLanguage);
   const isPregnant = state.womenHealthMode === "pregnant";
   const usesCycleContext =
     state.womenHealthMode === "pregnant" ||
@@ -142,7 +174,7 @@ export const OnboardingWomenHealthPage = ({
                   fontWeight: 900,
                 }}
               >
-                {text[option.labelKey]}
+                {getModeOptionLabel(text, option.labelKey)}
               </Button>
             ))}
           </Stack>

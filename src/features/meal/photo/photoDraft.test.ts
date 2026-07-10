@@ -12,6 +12,8 @@ import type { PhotoMealAnalysis } from "../types/photo";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { Product } from "@domain/products/types";
 
+const CHICKEN_BREAST_NAME = "Chicken breast";
+
 const baseAnalysis: PhotoMealAnalysis = {
   dishName: "Lunch photo draft",
   summary: "Draft summary",
@@ -21,7 +23,7 @@ const baseAnalysis: PhotoMealAnalysis = {
   manualReviewRequired: true,
   items: [
     {
-      name: "Chicken breast",
+      name: CHICKEN_BREAST_NAME,
       quantityGrams: 160,
       portionRangeGrams: { min: 120, max: 200 },
       confidence: 0.2,
@@ -87,20 +89,20 @@ describe("photoDraft helpers", () => {
       },
       {
         id: "chicken",
-        name: "Chicken breast",
+        name: CHICKEN_BREAST_NAME,
         unit: "g",
         source: "OpenFoodFacts",
         nutrients,
       },
     ];
 
-    expect(chooseBestPhotoProductMatch(products, { name: "Chicken breast" })?.id).toBe(
+    expect(chooseBestPhotoProductMatch(products, { name: CHICKEN_BREAST_NAME })?.id).toBe(
       "chicken"
     );
     expect(chooseBestPhotoProductMatch(products, { name: "Chocolate cake" })).toBeNull();
     expect(
       chooseBestPhotoProductMatch([{ ...products[1]!, nutrients: createEmptyNutrients() }], {
-        name: "Chicken breast",
+        name: CHICKEN_BREAST_NAME,
       })
     ).toBeNull();
   });

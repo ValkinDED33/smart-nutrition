@@ -7,6 +7,7 @@ import { selectTodayMealItems } from "@features/meal/selectors";
 import { createRemoteReminder } from "@shared/api/reminders";
 import { getLocalDateKey } from "@shared/lib/date";
 import { useLanguage } from "@shared/language";
+import type { AppLanguage } from "@shared/types/i18n";
 import { SectionCard } from "@shared/ui";
 import {
   buildSupplementRecommendations,
@@ -87,6 +88,47 @@ const supplementCardCopy = {
   },
 } as const;
 
+type SupplementCardCopy = (typeof supplementCardCopy)[AppLanguage];
+
+const getSupplementCardCopy = (language: AppLanguage): SupplementCardCopy => {
+  switch (language) {
+    case "pl":
+      return supplementCardCopy.pl;
+    case "en":
+      return supplementCardCopy.en;
+    case "uk":
+    default:
+      return supplementCardCopy.uk;
+  }
+};
+
+const getConfidenceLabel = (
+  copy: SupplementCardCopy,
+  confidence: SupplementRecommendation["confidence"]
+) => {
+  switch (confidence) {
+    case "high":
+      return copy.confidence.high;
+    case "medium":
+      return copy.confidence.medium;
+    case "low":
+    default:
+      return copy.confidence.low;
+  }
+};
+
+const getConfidenceColor = (confidence: SupplementRecommendation["confidence"]) => {
+  switch (confidence) {
+    case "high":
+      return confidenceColor.high;
+    case "medium":
+      return confidenceColor.medium;
+    case "low":
+    default:
+      return confidenceColor.low;
+  }
+};
+
 const confidenceColor = {
   high: "success",
   medium: "warning",
@@ -105,7 +147,7 @@ const RecommendationPanel = ({
   creatingId,
 }: {
   item: SupplementRecommendation;
-  copy: (typeof supplementCardCopy)[keyof typeof supplementCardCopy];
+  copy: SupplementCardCopy;
   onCreateReminder: (item: SupplementRecommendation) => void;
   creatingId: string | null;
 }) => (
@@ -122,8 +164,8 @@ const RecommendationPanel = ({
         <Chip label={item.title} color="primary" />
         <Chip label={item.timing} variant="outlined" />
         <Chip
-          label={copy.confidence[item.confidence]}
-          color={confidenceColor[item.confidence]}
+          label={getConfidenceLabel(copy, item.confidence)}
+          color={getConfidenceColor(item.confidence)}
           variant="outlined"
         />
       </Stack>
@@ -219,7 +261,7 @@ const RecommendationPanel = ({
 
 export const SupplementRecommendationCard = () => {
   const { appLanguage } = useLanguage();
-  const copy = supplementCardCopy[appLanguage];
+  const copy = getSupplementCardCopy(appLanguage);
   const meals = useSelector(selectTodayMealItems);
   const { dietStyle, allergies, excludedIngredients, womenHealth } = useSelector(
     (state: RootState) => state.profile

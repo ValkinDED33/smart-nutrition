@@ -15,7 +15,17 @@ const roundToNearestFive = (value: number) => {
 const roundPortions = (value: number) => Math.max(Math.round(value * 10) / 10, 0.5);
 
 export const getPhotoPortionMultiplier = (size: PhotoPortionSize) =>
-  portionMultipliers[size];
+  {
+    switch (size) {
+      case "light":
+        return portionMultipliers.light;
+      case "large":
+        return portionMultipliers.large;
+      case "regular":
+      default:
+        return portionMultipliers.regular;
+    }
+  };
 
 export const scalePhotoSuggestion = (
   suggestion: PhotoMealSuggestion,

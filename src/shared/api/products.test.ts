@@ -12,6 +12,13 @@ const authMock = vi.hoisted(() => ({
 
 vi.mock("./auth", () => authMock);
 
+const PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE =
+  "External product lookup is unavailable.";
+const PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE_CODE =
+  "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE";
+const PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS = 502;
+const PROVIDER_UNAVAILABLE_MESSAGE = "Provider unavailable.";
+
 const createProductPayload = (overrides: Record<string, unknown> = {}) => ({
   id: "catalog-oats",
   name: "Oats",
@@ -98,18 +105,18 @@ describe("products api", () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          code: "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE",
-          message: "External product lookup is unavailable.",
+          code: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE_CODE,
+          message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
         }),
-        { status: 502 }
+        { status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS }
       )
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(searchProducts("oats")).rejects.toMatchObject({
       code: "PRODUCT_LOOKUP_FAILED",
-      status: 502,
-      message: "External product lookup is unavailable.",
+      status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
+      message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("world.openfoodfacts.org");
@@ -117,16 +124,16 @@ describe("products api", () => {
 
   it("does not bypass backend when backend product lookup fails for barcode", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
-      new Response(JSON.stringify({ message: "Provider unavailable." }), {
-        status: 502,
+      new Response(JSON.stringify({ message: PROVIDER_UNAVAILABLE_MESSAGE }), {
+        status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
       })
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchProductByBarcode("1234567890123")).rejects.toMatchObject({
       code: "PRODUCT_LOOKUP_FAILED",
-      status: 502,
-      message: "Provider unavailable.",
+      status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
+      message: PROVIDER_UNAVAILABLE_MESSAGE,
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("world.openfoodfacts.org");
@@ -138,18 +145,18 @@ describe("products api", () => {
       vi.fn().mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            code: "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE",
-            message: "External product lookup is unavailable.",
+            code: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE_CODE,
+            message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
           }),
-          { status: 502 }
+          { status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS }
         )
       )
     );
 
     await expect(searchProducts("oats")).rejects.toMatchObject({
       code: "PRODUCT_LOOKUP_FAILED",
-      status: 502,
-      message: "External product lookup is unavailable.",
+      status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
+      message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
     });
   });
 });

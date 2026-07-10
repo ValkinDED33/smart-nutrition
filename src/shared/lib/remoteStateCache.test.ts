@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { StorageLike } from "./remoteStateCache";
 import { createRemoteStateCache } from "./remoteStateCache";
 
+const SNAPSHOT_UPDATED_AT = "2026-04-03T10:00:00.000Z";
+const PROFILE_UPDATED_AT = "2026-04-03T09:58:00.000Z";
+const DEVICE_A_ID = "device-a";
+const SAMPLE_PROFILE_CALORIES = 2200;
+
+const createEmptyItemsState = () => ({ items: [] });
+
 const createMemoryStorage = (): StorageLike => {
   const state = new Map<string, string>();
 
@@ -21,25 +28,25 @@ describe("remoteStateCache", () => {
     const cache = createRemoteStateCache(createMemoryStorage());
 
     cache.writeSnapshot({
-      profile: { calories: 2200 },
-      meal: { items: [] },
+      profile: { calories: SAMPLE_PROFILE_CALORIES },
+      meal: createEmptyItemsState(),
       water: { consumedMl: 1200 },
-      fridge: { items: [] },
+      fridge: createEmptyItemsState(),
       community: { posts: [] },
-      updatedAt: "2026-04-03T10:00:00.000Z",
-      profileUpdatedAt: "2026-04-03T09:58:00.000Z",
-      mealUpdatedAt: "2026-04-03T10:00:00.000Z",
-      lastWriterDeviceId: "device-a",
+      updatedAt: SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: PROFILE_UPDATED_AT,
+      mealUpdatedAt: SNAPSHOT_UPDATED_AT,
+      lastWriterDeviceId: DEVICE_A_ID,
       backupEnabled: true,
     });
 
-    expect(cache.readSnapshot()?.updatedAt).toBe("2026-04-03T10:00:00.000Z");
+    expect(cache.readSnapshot()?.updatedAt).toBe(SNAPSHOT_UPDATED_AT);
     expect(cache.readMeta()).toEqual({
-      updatedAt: "2026-04-03T10:00:00.000Z",
-      profileUpdatedAt: "2026-04-03T09:58:00.000Z",
-      mealUpdatedAt: "2026-04-03T10:00:00.000Z",
+      updatedAt: SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: PROFILE_UPDATED_AT,
+      mealUpdatedAt: SNAPSHOT_UPDATED_AT,
       waterUpdatedAt: null,
-      lastWriterDeviceId: "device-a",
+      lastWriterDeviceId: DEVICE_A_ID,
       backupEnabled: true,
     });
   });
@@ -49,7 +56,7 @@ describe("remoteStateCache", () => {
     const cache = createRemoteStateCache(createMemoryStorage());
 
     cache.writeMeta({
-      updatedAt: "2026-04-03T10:00:00.000Z",
+      updatedAt: SNAPSHOT_UPDATED_AT,
       lastWriterDeviceId: "device-b",
     });
 
@@ -57,7 +64,7 @@ describe("remoteStateCache", () => {
 
     expect(cache.readMeta()).toBeNull();
     expect(cache.readMeta({ allowStale: true })).toEqual({
-      updatedAt: "2026-04-03T10:00:00.000Z",
+      updatedAt: SNAPSHOT_UPDATED_AT,
       lastWriterDeviceId: "device-b",
     });
 
@@ -68,12 +75,12 @@ describe("remoteStateCache", () => {
     const cache = createRemoteStateCache(createMemoryStorage());
 
     cache.writeSnapshot({
-      profile: { calories: 2200 },
-      meal: { items: [] },
+      profile: { calories: SAMPLE_PROFILE_CALORIES },
+      meal: createEmptyItemsState(),
       water: { consumedMl: 0 },
-      fridge: { items: [] },
+      fridge: createEmptyItemsState(),
       community: { posts: [] },
-      updatedAt: "2026-04-03T10:00:00.000Z",
+      updatedAt: SNAPSHOT_UPDATED_AT,
     });
 
     cache.clear();
@@ -86,20 +93,20 @@ describe("remoteStateCache", () => {
     const cache = createRemoteStateCache(createMemoryStorage());
 
     cache.writeSnapshot({
-      profile: { calories: 2200 },
-      meal: { items: [] },
+      profile: { calories: SAMPLE_PROFILE_CALORIES },
+      meal: createEmptyItemsState(),
       water: { consumedMl: 1200 },
-      fridge: { items: [] },
+      fridge: createEmptyItemsState(),
       community: { posts: [] },
       companion: { xp: 150, level: 2 },
-      updatedAt: "2026-04-03T10:00:00.000Z",
+      updatedAt: SNAPSHOT_UPDATED_AT,
     });
 
     cache.writeSnapshot({
       profile: { calories: 2300 },
-      meal: { items: [] },
+      meal: createEmptyItemsState(),
       water: { consumedMl: 1400 },
-      fridge: { items: [] },
+      fridge: createEmptyItemsState(),
       community: { posts: [] },
       updatedAt: "2026-04-03T11:00:00.000Z",
     });

@@ -18,6 +18,7 @@ import { getDaysSince } from "@domain/profile/bodyMetrics";
 import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { buildProfileStateAfterMeasurementSave } from "./profileSaveModel";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
@@ -86,6 +87,20 @@ const checkInCopy = {
   },
 } as const;
 
+type CheckInCopy = (typeof checkInCopy)[AppLanguage];
+
+const getCheckInCopy = (language: AppLanguage): CheckInCopy => {
+  switch (language) {
+    case "pl":
+      return checkInCopy.pl;
+    case "en":
+      return checkInCopy.en;
+    case "uk":
+    default:
+      return checkInCopy.uk;
+  }
+};
+
 const createMeasurementFormValues = (
   user: RootState["auth"]["user"]
 ): FormData => ({
@@ -102,7 +117,7 @@ export const MeasurementsCheckInCard = () => {
   const profileAction = useProfileCloudAction();
   const { measurementHistory, weeklyCheckIn } = profile;
   const { t, appLanguage } = useLanguage();
-  const copy = checkInCopy[appLanguage];
+  const copy = getCheckInCopy(appLanguage);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 

@@ -39,7 +39,8 @@ import {
   applyRemoteSnapshotWithSyncPolicy,
 } from "./sessionSnapshot";
 
-export type SyncMode = "remote-cloud";
+export const REMOTE_CLOUD_SYNC_MODE = "remote-cloud";
+export type SyncMode = typeof REMOTE_CLOUD_SYNC_MODE;
 export type SyncStatus = "syncing" | "synced" | "error";
 export type SessionRestoreStatus = "idle" | "checking" | "unavailable";
 type RestoreRaceResult =
@@ -121,7 +122,7 @@ const initialState: AuthState = {
   isLoading: false,
   isInitialized: false,
   error: null,
-  syncMode: "remote-cloud",
+  syncMode: REMOTE_CLOUD_SYNC_MODE,
   syncStatus: "synced",
   lastSyncedAt: null,
   syncError: null,
@@ -338,7 +339,7 @@ export const flushSyncOutbox = createAsyncThunk<
 
       return (
         state.auth.isAuthenticated &&
-        state.auth.syncMode === "remote-cloud" &&
+        state.auth.syncMode === REMOTE_CLOUD_SYNC_MODE &&
         state.auth.syncStatus !== "syncing" &&
         state.auth.syncOutbox.pendingChanges > 0
       );
@@ -378,7 +379,7 @@ export const pullLatestCloudSnapshot = createAsyncThunk<
 
       return (
         state.auth.isAuthenticated &&
-        state.auth.syncMode === "remote-cloud" &&
+        state.auth.syncMode === REMOTE_CLOUD_SYNC_MODE &&
         state.auth.syncStatus !== "syncing"
       );
     },
@@ -393,7 +394,7 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
-      state.syncMode = "remote-cloud";
+      state.syncMode = REMOTE_CLOUD_SYNC_MODE;
       state.syncStatus = "synced";
       state.lastSyncedAt = null;
       state.syncError = null;
@@ -446,7 +447,7 @@ const authSlice = createSlice({
       state.sessionRestoreStatus = "idle";
     },
     markSyncStarted(state) {
-      if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+      if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
         return;
       }
 
@@ -454,7 +455,7 @@ const authSlice = createSlice({
       state.syncError = null;
     },
     markSyncSuccess(state, action: PayloadAction<string | undefined>) {
-      if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+      if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
         return;
       }
 
@@ -464,7 +465,7 @@ const authSlice = createSlice({
       state.syncOutbox = createEmptySyncOutboxMeta();
     },
     markSyncError(state, action: PayloadAction<string | undefined>) {
-      if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+      if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
         return;
       }
 
@@ -474,7 +475,7 @@ const authSlice = createSlice({
     hydrateSyncOutbox(state, action: PayloadAction<SyncOutboxMeta>) {
       state.syncOutbox = action.payload;
 
-      if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+      if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
         return;
       }
 
@@ -549,7 +550,7 @@ const authSlice = createSlice({
             : "idle";
       })
       .addCase(retryCloudSync.pending, (state) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -557,7 +558,7 @@ const authSlice = createSlice({
         state.syncError = null;
       })
       .addCase(retryCloudSync.fulfilled, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -569,7 +570,7 @@ const authSlice = createSlice({
         state.syncToast = { id: Date.now(), kind: "retry-success" };
       })
       .addCase(retryCloudSync.rejected, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -578,7 +579,7 @@ const authSlice = createSlice({
           action.payload ?? "Cloud sync could not save the latest app data.";
       })
       .addCase(flushSyncOutbox.pending, (state) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -586,7 +587,7 @@ const authSlice = createSlice({
         state.syncError = null;
       })
       .addCase(flushSyncOutbox.fulfilled, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -598,7 +599,7 @@ const authSlice = createSlice({
         state.syncToast = { id: Date.now(), kind: "outbox-flushed" };
       })
       .addCase(pullLatestCloudSnapshot.pending, (state) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -606,7 +607,7 @@ const authSlice = createSlice({
         state.syncError = null;
       })
       .addCase(pullLatestCloudSnapshot.fulfilled, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -617,7 +618,7 @@ const authSlice = createSlice({
         state.cloudMeta = action.payload.cloudMeta;
       })
       .addCase(pullLatestCloudSnapshot.rejected, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 
@@ -625,7 +626,7 @@ const authSlice = createSlice({
         state.syncError = action.payload ?? "Could not pull the latest cloud snapshot.";
       })
       .addCase(flushSyncOutbox.rejected, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== "remote-cloud") {
+        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
         }
 

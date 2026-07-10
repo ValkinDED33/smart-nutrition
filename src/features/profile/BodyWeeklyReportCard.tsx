@@ -4,6 +4,7 @@ import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
+import type { AppLanguage } from "../../shared/types/i18n";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 
 const bodyReportCopy = {
@@ -78,6 +79,37 @@ const bodyReportCopy = {
   },
 } as const;
 
+type BodyReportCopy = (typeof bodyReportCopy)[AppLanguage];
+
+const getBodyReportCopy = (language: AppLanguage): BodyReportCopy => {
+  switch (language) {
+    case "pl":
+      return bodyReportCopy.pl;
+    case "en":
+      return bodyReportCopy.en;
+    case "uk":
+    default:
+      return bodyReportCopy.uk;
+  }
+};
+
+const getBmiStatusCopy = (
+  copy: BodyReportCopy,
+  status: ReturnType<typeof createWeeklyBodyReport>["bmiStatus"]
+) => {
+  switch (status) {
+    case "underweight":
+      return copy.underweight;
+    case "overweight":
+      return copy.overweight;
+    case "obesity":
+      return copy.obesity;
+    case "normal":
+    default:
+      return copy.normal;
+  }
+};
+
 const formatSigned = (value: number | null) => {
   if (value === null || !Number.isFinite(value)) {
     return "-";
@@ -92,7 +124,7 @@ export const BodyWeeklyReportCard = () => {
     (state: RootState) => state.profile
   );
   const { appLanguage } = useLanguage();
-  const copy = bodyReportCopy[appLanguage];
+  const copy = getBodyReportCopy(appLanguage);
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
     appLanguage
@@ -166,7 +198,7 @@ export const BodyWeeklyReportCard = () => {
               />
               <Chip
                 label={`${copy.bmi}: ${report.bmi.toFixed(1)} ${
-                  copy[report.bmiStatus]
+                  getBmiStatusCopy(copy, report.bmiStatus)
                 }`}
                 variant="outlined"
               />

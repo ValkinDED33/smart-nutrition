@@ -47,6 +47,23 @@ const toneStyles: Record<
   },
 };
 
+const getToneStyles = (tone: SectionCardTone) => {
+  switch (tone) {
+    case "default":
+      return toneStyles.default;
+    case "success":
+      return toneStyles.success;
+    case "warning":
+      return toneStyles.warning;
+    case "info":
+      return toneStyles.info;
+    case "premium":
+      return toneStyles.premium;
+    default:
+      return toneStyles.default;
+  }
+};
+
 export const SectionCard = ({
   title,
   description,
@@ -54,7 +71,7 @@ export const SectionCard = ({
   children,
   tone = "default",
 }: SectionCardProps) => {
-  const styles = toneStyles[tone];
+  const styles = getToneStyles(tone);
 
   return (
     <Paper

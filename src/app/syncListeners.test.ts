@@ -18,6 +18,10 @@ const { syncRemoteCompanionStateMock, syncRemoteWaterStateMock } = vi.hoisted(()
   syncRemoteWaterStateMock: vi.fn(),
 }));
 
+const TEST_USER_ID = "user-1";
+const TEST_USER_EMAIL = "test@example.com";
+const TEST_SYNC_MODE = "remote-cloud";
+
 vi.mock("../shared/api/auth", () => {
   const okResult = { ok: true, meta: { updatedAt: "sync-ok" } };
   class MockAuthApiError extends Error {
@@ -97,9 +101,9 @@ describe("remote sync listeners", () => {
     store.dispatch(
       setCredentials({
         user: {
-          id: "user-1",
+          id: TEST_USER_ID,
           name: "Test User",
-          email: "test@example.com",
+          email: TEST_USER_EMAIL,
           age: 30,
           weight: 80,
           height: 180,
@@ -108,7 +112,7 @@ describe("remote sync listeners", () => {
           goal: "maintain",
           role: "VERIFIED_USER",
         },
-        syncMode: "remote-cloud",
+        syncMode: TEST_SYNC_MODE,
         syncOutbox: {
           pendingChanges: 0,
           firstQueuedAt: null,
@@ -147,9 +151,9 @@ describe("remote sync listeners", () => {
     store.dispatch(
       setCredentials({
         user: {
-          id: "user-1",
+          id: TEST_USER_ID,
           name: "Test User",
-          email: "test@example.com",
+          email: TEST_USER_EMAIL,
           age: 30,
           weight: 80,
           height: 180,
@@ -158,7 +162,7 @@ describe("remote sync listeners", () => {
           goal: "maintain",
           role: "VERIFIED_USER",
         },
-        syncMode: "remote-cloud",
+        syncMode: TEST_SYNC_MODE,
         syncOutbox: {
           pendingChanges: 0,
           firstQueuedAt: null,

@@ -22,6 +22,10 @@ const authApiMock = vi.hoisted(() => ({
 
 vi.mock("@shared/api/auth", () => authApiMock);
 
+const ENTRY_ID_ONE = "one";
+const TEMPLATE_ID_ONE = "template-one";
+const TEMPLATE_CREATED_AT = "2026-07-03T08:00:00.000Z";
+
 const createEntry = (id: string): MealEntry => ({
   id,
   product: {
@@ -58,12 +62,12 @@ describe("mealCloudSync", () => {
     const next = await addMealEntriesToCloud(
       dispatch as never,
       createInitialMealState(),
-      [createEntry("one")]
+      [createEntry(ENTRY_ID_ONE)]
     );
 
     expect(next.items).toHaveLength(1);
     expect(authApiMock.createRemoteMealEntries).toHaveBeenCalledWith([
-      createEntry("one"),
+      createEntry(ENTRY_ID_ONE),
     ]);
     expect(dispatch).toHaveBeenCalledWith(replaceMealState(next));
   });
@@ -81,7 +85,7 @@ describe("mealCloudSync", () => {
       addMealEntriesToCloud(
         dispatch as never,
         createInitialMealState(),
-        [createEntry("one")]
+        [createEntry(ENTRY_ID_ONE)]
       )
     ).rejects.toThrow("backend sleeping");
 
@@ -91,11 +95,11 @@ describe("mealCloudSync", () => {
   it("persists meal templates through the backend before exposing them locally", async () => {
     const dispatch = vi.fn();
     const template = {
-      id: "template-one",
+      id: TEMPLATE_ID_ONE,
       name: "Lunch",
       mealType: "lunch" as const,
-      items: [{ product: createEntry("one").product, quantity: 120 }],
-      createdAt: "2026-07-03T08:00:00.000Z",
+      items: [{ product: createEntry(ENTRY_ID_ONE).product, quantity: 120 }],
+      createdAt: TEMPLATE_CREATED_AT,
     };
     authApiMock.createRemoteMealTemplate.mockResolvedValueOnce({
       ok: true,
@@ -120,11 +124,11 @@ describe("mealCloudSync", () => {
       ...createInitialMealState(),
       templates: [
         {
-          id: "template-one",
+          id: TEMPLATE_ID_ONE,
           name: "Breakfast",
           mealType: "breakfast" as const,
           items: [{ product: entry.product, quantity: entry.quantity }],
-          createdAt: "2026-07-03T08:00:00.000Z",
+          createdAt: TEMPLATE_CREATED_AT,
         },
       ],
     };
@@ -136,7 +140,7 @@ describe("mealCloudSync", () => {
     const next = await applyMealTemplateInCloud(
       dispatch as never,
       meal,
-      "template-one",
+      TEMPLATE_ID_ONE,
       [entry]
     );
 
@@ -171,7 +175,7 @@ describe("mealCloudSync", () => {
       addMealEntriesToCloud(
         dispatch as never,
         createInitialMealState(),
-        [createEntry("one")]
+        [createEntry(ENTRY_ID_ONE)]
       )
     ).rejects.toThrow("latest cloud version has been loaded");
 

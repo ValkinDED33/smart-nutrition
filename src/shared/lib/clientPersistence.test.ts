@@ -16,7 +16,7 @@ class FakeStorage {
   }
 
   key(index: number) {
-    return [...this.values.keys()][index] ?? null;
+    return [...this.values.keys()].at(index) ?? null;
   }
 
   removeItem(key: string) {

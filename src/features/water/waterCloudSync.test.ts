@@ -9,6 +9,9 @@ const authApiMock = vi.hoisted(() => ({
 
 vi.mock("@shared/api/auth", () => authApiMock);
 
+const MARK_SYNC_STARTED = "auth/markSyncStarted";
+const MARK_SYNC_ERROR = "auth/markSyncError";
+
 describe("waterCloudSync", () => {
   it("marks water sync success only after remote save", async () => {
     const dispatch = vi.fn();
@@ -22,7 +25,7 @@ describe("waterCloudSync", () => {
 
     expect(authApiMock.syncRemoteWaterState).toHaveBeenCalledWith(water);
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED,
       "auth/hydrateSyncOutbox",
       "auth/setCloudMeta",
       "auth/markSyncSuccess",
@@ -42,8 +45,8 @@ describe("waterCloudSync", () => {
     ).rejects.toThrow("water failed");
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
-      "auth/markSyncError",
+      MARK_SYNC_STARTED,
+      MARK_SYNC_ERROR,
     ]);
   });
 
@@ -78,8 +81,8 @@ describe("waterCloudSync", () => {
 
     expect(authApiMock.pullRemoteAppSnapshot).toHaveBeenCalledWith({ force: true });
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "auth/markSyncStarted",
-      "auth/markSyncStarted",
+      MARK_SYNC_STARTED,
+      MARK_SYNC_STARTED,
       "water/replaceWaterState",
       "companion/hydrateCompanionState",
       "auth/hydrateSyncOutbox",

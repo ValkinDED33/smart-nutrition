@@ -84,19 +84,28 @@ export const companionVisuals: Record<AssistantCompanionKind, CompanionVisual> =
 };
 
 export const getCompanionFaceRadius = (variant: AssistantCompanionKind) => {
-  const radii: Record<AssistantCompanionKind, string> = {
-    robot: "28%",
-    cat: "50%",
-    dog: "48% 48% 55% 55%",
-    fox: "44% 44% 58% 58%",
-    panda: "50%",
-    owl: "50% 50% 42% 42%",
-    human: "48% 48% 54% 54%",
-    capybara: "52% 52% 48% 48%",
-    dragon: "46% 54% 56% 44% / 38% 42% 62% 58%",
-  };
-
-  return radii[variant];
+  switch (variant) {
+    case "robot":
+      return "28%";
+    case "cat":
+      return "50%";
+    case "dog":
+      return "48% 48% 55% 55%";
+    case "fox":
+      return "44% 44% 58% 58%";
+    case "panda":
+      return "50%";
+    case "owl":
+      return "50% 50% 42% 42%";
+    case "human":
+      return "48% 48% 54% 54%";
+    case "capybara":
+      return "52% 52% 48% 48%";
+    case "dragon":
+      return "46% 54% 56% 44% / 38% 42% 62% 58%";
+    default:
+      return "28%";
+  }
 };
 
 export const isLetterCompanion = (variant: AssistantCompanionKind) =>

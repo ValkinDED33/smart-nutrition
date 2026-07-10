@@ -17,6 +17,14 @@ import reducer, {
   updateWomenHealth,
 } from "./store";
 
+const TEST_USER_ID = "test-user";
+const TEST_USER_EMAIL = "test@example.com";
+const PREGNANCY_MODE = "pregnant";
+const THREE_D_RENDER_MODE = "3d";
+const TRIAL_STARTED_AT = "2026-05-02T10:00:00.000Z";
+const TRIAL_ENDS_AT = "2026-05-09T10:00:00.000Z";
+const LATEST_WEIGHT_CHECK_IN_AT = TRIAL_STARTED_AT;
+
 const createSelectorState = ({
   weightHistory = [],
   userWeight = 80,
@@ -27,9 +35,9 @@ const createSelectorState = ({
   ({
     auth: {
       user: {
-        id: "test-user",
+        id: TEST_USER_ID,
         name: "Test User",
-        email: "test@example.com",
+        email: TEST_USER_EMAIL,
         age: 30,
         weight: userWeight,
         height: 175,
@@ -65,20 +73,20 @@ describe("profileSlice premium", () => {
   it("starts trial, activates paid plan, and cancels subscription", () => {
     let state = reducer(
       undefined,
-      startPremiumTrial({ startedAt: "2026-05-02T10:00:00.000Z" })
+      startPremiumTrial({ startedAt: TRIAL_STARTED_AT })
     );
 
     expect(state.premium).toMatchObject({
       plan: "pro",
       status: "trial",
-      trialEndsAt: "2026-05-09T10:00:00.000Z",
+      trialEndsAt: TRIAL_ENDS_AT,
     });
 
     state = reducer(
       state,
       activatePremiumPlan({
         plan: "coach",
-        activatedAt: "2026-05-02T10:00:00.000Z",
+        activatedAt: TRIAL_STARTED_AT,
       })
     );
 
@@ -189,7 +197,7 @@ describe("profileSlice women health", () => {
     });
 
     expect(invalidState.womenHealth).toMatchObject({
-      mode: "pregnant",
+      mode: PREGNANCY_MODE,
       pregnancyWeek: null,
       dueDate: null,
       doctorConfirmed: true,
@@ -226,11 +234,11 @@ describe("profileSlice assistant onboarding", () => {
 
     const restoredState = normalizeProfileState({
       assistant: {
-        preferredCompanionRenderMode: "3d",
+        preferredCompanionRenderMode: THREE_D_RENDER_MODE,
       },
     });
 
-    expect(restoredState.assistant.preferredCompanionRenderMode).toBe("3d");
+    expect(restoredState.assistant.preferredCompanionRenderMode).toBe(THREE_D_RENDER_MODE);
 
     const invalidState = normalizeProfileState({
       assistant: {
@@ -244,10 +252,10 @@ describe("profileSlice assistant onboarding", () => {
   it("persists companion render mode through assistant customization", () => {
     const state = reducer(
       undefined,
-      setAssistantCustomization({ preferredCompanionRenderMode: "3d" })
+      setAssistantCustomization({ preferredCompanionRenderMode: THREE_D_RENDER_MODE })
     );
 
-    expect(state.assistant.preferredCompanionRenderMode).toBe("3d");
+    expect(state.assistant.preferredCompanionRenderMode).toBe(THREE_D_RENDER_MODE);
   });
 
   it("persists and normalizes companion memory inputs", () => {
@@ -303,7 +311,7 @@ describe("profile selectors", () => {
       userWeight: 80,
       weightHistory: [
         { date: "2026-05-01T10:00:00.000Z", weight: 77.8 },
-        { date: "2026-05-02T10:00:00.000Z", weight: 75.4 },
+        { date: LATEST_WEIGHT_CHECK_IN_AT, weight: 75.4 },
       ],
     });
 
@@ -313,7 +321,7 @@ describe("profile selectors", () => {
   it("calculates macro targets from the latest check-in weight", () => {
     const state = createSelectorState({
       userWeight: 80,
-      weightHistory: [{ date: "2026-05-02T10:00:00.000Z", weight: 75 }],
+      weightHistory: [{ date: LATEST_WEIGHT_CHECK_IN_AT, weight: 75 }],
     });
 
     expect(selectDailyMacroTargets(state)).toEqual(

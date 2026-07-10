@@ -4,6 +4,7 @@ import { Alert, Button, Collapse } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { getRemoteBackendAvailability } from "../api/auth";
 import { useLanguage } from "../language";
+import type { AppLanguage } from "../types/i18n";
 
 const bannerCopy = {
   uk: {
@@ -30,10 +31,24 @@ const bannerCopy = {
   },
 } as const;
 
+type BannerCopy = (typeof bannerCopy)[AppLanguage];
+
+const getBannerCopy = (language: AppLanguage): BannerCopy => {
+  switch (language) {
+    case "pl":
+      return bannerCopy.pl;
+    case "en":
+      return bannerCopy.en;
+    case "uk":
+    default:
+      return bannerCopy.uk;
+  }
+};
+
 const BackendOfflineBanner = () => {
   const { user, error } = useSelector((state: RootState) => state.auth);
   const { appLanguage } = useLanguage();
-  const copy = bannerCopy[appLanguage];
+  const copy = getBannerCopy(appLanguage);
   const [browserOnline, setBrowserOnline] = useState(
     typeof navigator === "undefined" ? true : navigator.onLine
   );

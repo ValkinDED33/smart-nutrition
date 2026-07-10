@@ -1,6 +1,7 @@
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { Cloud, RefreshCw, ShieldCheck } from "lucide-react";
 import { useLanguage } from "../language";
+import type { AppLanguage } from "../types/i18n";
 
 const restoreCopy = {
   uk: {
@@ -38,6 +39,20 @@ const restoreCopy = {
   },
 } as const;
 
+type RestoreCopy = (typeof restoreCopy)[AppLanguage];
+
+const getRestoreCopy = (language: AppLanguage): RestoreCopy => {
+  switch (language) {
+    case "pl":
+      return restoreCopy.pl;
+    case "en":
+      return restoreCopy.en;
+    case "uk":
+    default:
+      return restoreCopy.uk;
+  }
+};
+
 interface SessionRestoreFallbackProps {
   onForgetSession: () => void;
   onRetry: () => void;
@@ -50,7 +65,7 @@ export const SessionRestoreFallback = ({
   status = "unavailable",
 }: SessionRestoreFallbackProps) => {
   const { appLanguage } = useLanguage();
-  const copy = restoreCopy[appLanguage];
+  const copy = getRestoreCopy(appLanguage);
   const isChecking = status === "checking";
 
   return (

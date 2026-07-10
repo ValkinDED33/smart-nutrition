@@ -216,8 +216,7 @@ const getBrowserStorage = (name: BrowserStorageName): StorageLike | null => {
   }
 
   try {
-    const propertyName = `${name}Storage` as const;
-    const storage = window[propertyName];
+    const storage = name === "local" ? window.localStorage : window.sessionStorage;
 
     return storage ?? null;
   } catch {

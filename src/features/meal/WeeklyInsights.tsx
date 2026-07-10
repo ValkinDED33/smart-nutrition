@@ -9,14 +9,17 @@ import {
   getLocalDateKey,
 } from "../../shared/lib/date";
 
+const WEEK_DAY_COUNT = 7;
+
 export const WeeklyInsights = () => {
   const items = useSelector(selectMealItems);
   const { appLanguage, t } = useLanguage();
+  const kcalLabel = t("common.kcal");
 
   const days = useMemo(() => {
     const today = new Date();
 
-    return Array.from({ length: 7 }, (_, index) => {
+    return Array.from({ length: WEEK_DAY_COUNT }, (_, index) => {
       const date = addDays(today, -(6 - index));
       const key = getLocalDateKey(date);
       const entries = items.filter((item) => getLocalDateKey(item.eatenAt) === key);
@@ -90,19 +93,19 @@ export const WeeklyInsights = () => {
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.average")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {(totalWeekCalories / 7).toFixed(0)} {t("common.kcal")}
+              {(totalWeekCalories / WEEK_DAY_COUNT).toFixed(0)} {kcalLabel}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.protein")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {(totalWeekProtein / 7).toFixed(1)} {t("common.g")}
+              {(totalWeekProtein / WEEK_DAY_COUNT).toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
             <Typography color="text.secondary">{t("weekly.bestDay")}</Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
-              {bestDay?.label} - {bestDay?.calories.toFixed(0)} {t("common.kcal")}
+              {bestDay?.label} - {bestDay?.calories.toFixed(0)} {kcalLabel}
             </Typography>
           </Paper>
         </Box>
