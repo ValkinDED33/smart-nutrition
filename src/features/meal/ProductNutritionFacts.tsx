@@ -301,6 +301,18 @@ const getStandardNutritionRows = (product: Product, language: AppLanguage) => {
   return [...baseRows, ...micronutrientRows];
 };
 
+const getIngredientsTextForLanguage = (product: Product, language: AppLanguage) => {
+  const byLanguage = product.facts?.ingredientsTextByLanguage;
+  const localizedText =
+    language === "uk"
+      ? byLanguage?.uk
+      : language === "pl"
+        ? byLanguage?.pl
+        : byLanguage?.en;
+
+  return localizedText?.trim() || product.facts?.ingredientsText?.trim() || "";
+};
+
 const getRiskStyles = (riskLevel: AdditiveRiskLevel) => {
   switch (riskLevel) {
     case "low":
@@ -381,7 +393,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       ? baseAmountLabel
       : t("productFacts.perBase", { unit: product.unit });
   const servingSize = product.facts?.servingSize?.trim();
-  const ingredientsText = product.facts?.ingredientsText?.trim();
+  const ingredientsText = getIngredientsTextForLanguage(product, appLanguage);
   const servingQuantity =
     product.facts?.servingUnit === product.unit &&
     Number.isFinite(product.facts?.servingQuantity)

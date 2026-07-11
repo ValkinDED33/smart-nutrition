@@ -38,6 +38,8 @@ const openFoodFactsBeverageProduct = {
   serving_size: "330 ml",
   ingredients_text_en:
     "Carbonated water, sugar, colour E150d, phosphoric acid, natural flavourings, caffeine.",
+  ingredients_text_pl:
+    "Woda gazowana, cukier, barwnik E150d, kwas fosforowy, naturalne aromaty, kofeina.",
   nutriments: {
     "energy-kcal_100ml": 42,
     proteins_100ml: 0,
@@ -156,6 +158,10 @@ describe("productLookupService", () => {
         servingQuantity: 330,
         servingUnit: "ml",
         ingredientsText: expect.stringContaining("Carbonated water"),
+        ingredientsTextByLanguage: expect.objectContaining({
+          en: expect.stringContaining("Carbonated water"),
+          pl: expect.stringContaining("Woda gazowana"),
+        }),
       }),
     });
     expect(fetchImpl.mock.calls[0][0]).toContain("quantity%2Cserving_size");

@@ -26,6 +26,12 @@ describe("analyzeProductAdditives", () => {
     expect(getAdditiveRiskLabel(findings[0]!.riskLevel, "uk")).toBe("Краще обмежити");
   });
 
+  it("localizes risk labels for every product language", () => {
+    expect(getAdditiveRiskLabel("low", "uk")).toBe("Зазвичай безпечно");
+    expect(getAdditiveRiskLabel("low", "pl")).toBe("Zwykle bezpieczne");
+    expect(getAdditiveRiskLabel("low", "en")).toBe("Usually safe");
+  });
+
   it("returns no findings when composition has no known additives", () => {
     expect(analyzeProductAdditives("water, oats, banana, chia seeds")).toEqual([]);
   });

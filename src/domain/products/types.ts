@@ -60,6 +60,7 @@ export interface ProductFacts {
   fatTypes?: string[];
   extraCompounds?: string[];
   ingredientsText?: string;
+  ingredientsTextByLanguage?: Partial<Record<"uk" | "pl" | "en", string>>;
   servingSize?: string;
   servingQuantity?: number;
   servingUnit?: ProductUnit;

@@ -407,6 +407,17 @@ const readOpenFoodFactsIngredients = (rawProduct) =>
     900
   );
 
+const readOpenFoodFactsIngredientsByLanguage = (rawProduct) => {
+  const byLanguage = {
+    uk: normalizeOptionalText(rawProduct.ingredients_text_uk, 900),
+    pl: normalizeOptionalText(rawProduct.ingredients_text_pl, 900),
+    en: normalizeOptionalText(rawProduct.ingredients_text_en, 900),
+  };
+  const entries = Object.entries(byLanguage).filter(([, value]) => Boolean(value));
+
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+};
+
 const parseOpenFoodFactsProduct = (rawProduct) => {
   if (!rawProduct || typeof rawProduct !== "object" || Array.isArray(rawProduct)) {
     return null;
@@ -436,6 +447,7 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
   const serving = readOpenFoodFactsServing(rawProduct);
   const servingMatchesUnit = serving?.unit === unit;
   const ingredientsText = readOpenFoodFactsIngredients(rawProduct);
+  const ingredientsTextByLanguage = readOpenFoodFactsIngredientsByLanguage(rawProduct);
   const energyKcal = readOpenFoodFactsEnergyKcal(nutriments, unit);
   const nutrients = createNutrients({
     calories: energyKcal,
@@ -493,6 +505,7 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     facts: {
       foodGroup: category ?? undefined,
       ingredientsText: ingredientsText ?? undefined,
+      ingredientsTextByLanguage,
       servingSize: normalizeOptionalText(rawProduct.serving_size ?? rawProduct.quantity, 80) ?? undefined,
       servingQuantity: servingMatchesUnit ? serving.quantity : undefined,
       servingUnit: servingMatchesUnit ? serving.unit : undefined,
