@@ -25,7 +25,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
     );
   };
   const handleNext = () => {
-    navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.height);
+    navigate(stepPaths.name);
   };
 
   return (
@@ -51,7 +51,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
-              onClick={() => navigate(stepPaths.age)}
+              onClick={() => navigate(stepPaths.choice)}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               {t("onboarding.back")}

@@ -39,6 +39,8 @@ import {
 } from "../shared/api/auth";
 import type { AuthResponse } from "@domain/user/types";
 import { useLanguage } from "../shared/language";
+import { useAppColorMode } from "../shared/theme/colorMode";
+import type { AppLanguage } from "../shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
@@ -50,6 +52,14 @@ type FormData = {
   password: string;
   confirmPassword: string;
 };
+
+type RegistrationStep =
+  | "language"
+  | "theme"
+  | "name"
+  | "email"
+  | "password"
+  | "confirm";
 
 type AvailabilityFieldState = "idle" | "checking" | "available" | "taken" | "invalid" | "unavailable";
 
@@ -139,6 +149,23 @@ const AvailabilityAdornment = ({ state }: { state: AvailabilityFieldState }) => 
   return null;
 };
 
+const getAvailabilityBlockMessageKey = (
+  field: "name" | "email",
+  state: AvailabilityFieldState
+) => {
+  if (state === "taken") {
+    return field === "name"
+      ? availabilityTranslationKeys.nameInUse
+      : availabilityTranslationKeys.emailInUse;
+  }
+
+  if (state === "checking" || state === "idle") {
+    return availabilityTranslationKeys.checking;
+  }
+
+  return availabilityTranslationKeys.unavailable;
+};
+
 const defaultProfileBootstrap = {
   age: 25,
   weight: 70,
@@ -146,6 +173,98 @@ const defaultProfileBootstrap = {
   gender: "male" as const,
   activity: "moderate" as const,
   goal: "maintain" as const,
+};
+
+const registrationStepOrder: RegistrationStep[] = [
+  "language",
+  "theme",
+  "name",
+  "email",
+  "password",
+  "confirm",
+];
+
+const registrationCopy = {
+  uk: {
+    languageTitle: "Оберіть мову",
+    themeTitle: "Оберіть тему",
+    nameTitle: "Ваш нікнейм",
+    emailTitle: "Ваш email",
+    passwordTitle: "Створіть пароль",
+    confirmTitle: "Підтвердіть пароль",
+    next: "Далі",
+    back: "Назад",
+    light: "Світла",
+    dark: "Темна",
+  },
+  pl: {
+    languageTitle: "Wybierz język",
+    themeTitle: "Wybierz motyw",
+    nameTitle: "Twój nick",
+    emailTitle: "Twój email",
+    passwordTitle: "Utwórz hasło",
+    confirmTitle: "Potwierdź hasło",
+    next: "Dalej",
+    back: "Wstecz",
+    light: "Jasny",
+    dark: "Ciemny",
+  },
+  en: {
+    languageTitle: "Choose language",
+    themeTitle: "Choose theme",
+    nameTitle: "Your nickname",
+    emailTitle: "Your email",
+    passwordTitle: "Create password",
+    confirmTitle: "Confirm password",
+    next: "Next",
+    back: "Back",
+    light: "Light",
+    dark: "Dark",
+  },
+} as const;
+
+const getStepField = (step: RegistrationStep): keyof FormData | null => {
+  switch (step) {
+    case "name":
+      return "name";
+    case "email":
+      return "email";
+    case "password":
+      return "password";
+    case "confirm":
+      return "confirmPassword";
+    case "language":
+    case "theme":
+    default:
+      return null;
+  }
+};
+
+const getRegistrationCopy = (language: AppLanguage) => {
+  switch (language) {
+    case "pl":
+      return registrationCopy.pl;
+    case "en":
+      return registrationCopy.en;
+    case "uk":
+    default:
+      return registrationCopy.uk;
+  }
+};
+
+const getRegistrationLanguageLabel = (
+  labels: Record<AppLanguage, string>,
+  language: AppLanguage
+) => {
+  switch (language) {
+    case "pl":
+      return labels.pl;
+    case "en":
+      return labels.en;
+    case "uk":
+    default:
+      return labels.uk;
+  }
 };
 
 const isVerificationPending = (
@@ -159,7 +278,11 @@ const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const companion = useSelector((state: RootState) => state.companion);
   const navigate = useNavigate();
-  const { t, appLanguage, resetOnboarding } = useLanguage();
+  const { t, appLanguage, languageLabels, setLanguage, resetOnboarding } = useLanguage();
+  const { mode: colorMode, setMode: setColorMode } = useAppColorMode();
+  const stepCopy = getRegistrationCopy(appLanguage);
+  const [registrationStep, setRegistrationStep] =
+    useState<RegistrationStep>("language");
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<RegistrationVerificationPending | null>(null);
@@ -200,6 +323,7 @@ const RegisterPage = () => {
     register,
     handleSubmit,
     control,
+    trigger,
     setError,
     clearErrors,
     formState: { errors },
@@ -413,6 +537,63 @@ const RegisterPage = () => {
     displayedEmailAvailability === "checking" ||
     displayedNameAvailability === "taken" ||
     displayedEmailAvailability === "taken";
+  const currentStepIndex = registrationStepOrder.indexOf(registrationStep);
+  const currentStepField = getStepField(registrationStep);
+  const canGoBack = currentStepIndex > 0;
+
+  const goBack = () => {
+    if (!canGoBack) {
+      return;
+    }
+
+    setServerError(null);
+    const previousStep = registrationStepOrder[currentStepIndex - 1];
+
+    if (previousStep) {
+      setRegistrationStep(previousStep);
+    }
+  };
+
+  const goNext = async () => {
+    setServerError(null);
+
+    if (currentStepField) {
+      const valid = await trigger(currentStepField);
+
+      if (!valid) {
+        return;
+      }
+    }
+
+    if (registrationStep === "name" && displayedNameAvailability !== "available") {
+      setError("name", {
+        type: "manual",
+        message: t(getAvailabilityBlockMessageKey("name", displayedNameAvailability)),
+      });
+      return;
+    }
+
+    if (registrationStep === "email" && displayedEmailAvailability !== "available") {
+      setError("email", {
+        type: "manual",
+        message: t(getAvailabilityBlockMessageKey("email", displayedEmailAvailability)),
+      });
+      return;
+    }
+
+    if (currentStepIndex < registrationStepOrder.length - 1) {
+      const nextStep = registrationStepOrder[currentStepIndex + 1];
+
+      if (nextStep) {
+        setRegistrationStep(nextStep);
+      }
+    }
+  };
+
+  const handleLanguageSelect = (language: AppLanguage) => {
+    setLanguage(language);
+    setRegistrationStep("theme");
+  };
 
   const onSubmit = async (data: FormData) => {
     if (displayedNameAvailability === "taken") {
@@ -606,115 +787,225 @@ const RegisterPage = () => {
             onSubmit={handleSubmit(onSubmit)}
             autoComplete="on"
           >
-            <TextField
-              fullWidth
-              label={t("form.name")}
-              {...nameField}
-              onChange={(event) => {
-                setServerError(null);
-                void nameField.onChange(event);
-              }}
-              autoComplete="name"
-              error={Boolean(errors.name) || displayedNameAvailability === "taken"}
-              helperText={getNameHelperText()}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AvailabilityAdornment state={displayedNameAvailability} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {registrationStep === "language" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.languageTitle}
+                </Typography>
+                {(["uk", "pl", "en"] as const).map((language) => (
+                  <Button
+                    key={language}
+                    type="button"
+                    variant={appLanguage === language ? "contained" : "outlined"}
+                    size="large"
+                    onClick={() => handleLanguageSelect(language)}
+                    sx={{ justifyContent: "flex-start", borderRadius: 1, textTransform: "none", fontWeight: 900 }}
+                  >
+                    {language === "uk" ? "🇺🇦" : language === "pl" ? "🇵🇱" : "🇬🇧"}{" "}
+                    {getRegistrationLanguageLabel(languageLabels, language)}
+                  </Button>
+                ))}
+              </Stack>
+            )}
 
-            <TextField
-              fullWidth
-              label={t("form.email")}
-              type="email"
-              {...emailField}
-              onChange={(event) => {
-                setServerError(null);
-                void emailField.onChange(event);
-              }}
-              autoComplete="email"
-              error={Boolean(errors.email) || displayedEmailAvailability === "taken"}
-              helperText={getEmailHelperText()}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <AvailabilityAdornment state={displayedEmailAvailability} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {registrationStep === "theme" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.themeTitle}
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                  {(["light", "dark"] as const).map((mode) => (
+                    <Button
+                      key={mode}
+                      type="button"
+                      variant={colorMode === mode ? "contained" : "outlined"}
+                      size="large"
+                      onClick={() => {
+                        setColorMode(mode);
+                        setRegistrationStep("name");
+                      }}
+                      sx={{ flex: 1, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
+                    >
+                      {mode === "light" ? stepCopy.light : stepCopy.dark}
+                    </Button>
+                  ))}
+                </Stack>
+              </Stack>
+            )}
 
-            <TextField
-              fullWidth
-              label={t("form.password")}
-              type={passwordVisible ? "text" : "password"}
-              {...passwordField}
-              autoComplete="new-password"
-              error={Boolean(errors.password)}
-              helperText={errors.password?.message}
-              inputProps={{
-                autoComplete: "new-password",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <PasswordVisibilityButton
-                      visible={passwordVisible}
-                      onToggle={() => setPasswordVisible((current) => !current)}
-                      showLabel={t("auth.showPassword")}
-                      hideLabel={t("auth.hidePassword")}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {registrationStep === "name" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.nameTitle}
+                </Typography>
+                <TextField
+                  fullWidth
+                  autoFocus
+                  label={t("form.name")}
+                  {...nameField}
+                  onChange={(event) => {
+                    setServerError(null);
+                    void nameField.onChange(event);
+                  }}
+                  autoComplete="nickname"
+                  error={Boolean(errors.name) || displayedNameAvailability === "taken"}
+                  helperText={getNameHelperText()}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <AvailabilityAdornment state={displayedNameAvailability} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+            )}
 
-            <TextField
-              fullWidth
-              label={t("form.confirmPassword")}
-              type={confirmPasswordVisible ? "text" : "password"}
-              {...confirmPasswordField}
-              autoComplete="new-password"
-              error={Boolean(errors.confirmPassword)}
-              helperText={errors.confirmPassword?.message}
-              inputProps={{
-                autoComplete: "new-password",
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <PasswordVisibilityButton
-                      visible={confirmPasswordVisible}
-                      onToggle={() => setConfirmPasswordVisible((current) => !current)}
-                      showLabel={t("auth.showPassword")}
-                      hideLabel={t("auth.hidePassword")}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {registrationStep === "email" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.emailTitle}
+                </Typography>
+                <TextField
+                  fullWidth
+                  autoFocus
+                  label={t("form.email")}
+                  type="email"
+                  {...emailField}
+                  onChange={(event) => {
+                    setServerError(null);
+                    void emailField.onChange(event);
+                  }}
+                  autoComplete="email"
+                  error={Boolean(errors.email) || displayedEmailAvailability === "taken"}
+                  helperText={getEmailHelperText()}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <AvailabilityAdornment state={displayedEmailAvailability} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+            )}
 
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={submitting || availabilityBlocksSubmit}
-              startIcon={
-                submitting ? <CircularProgress size={18} color="inherit" /> : undefined
-              }
-              sx={{
-                py: 1.5,
-                borderRadius: 999,
-                textTransform: "none",
-                fontWeight: 800,
-                background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-              }}
-            >
-              {submitting ? t("auth.creatingAccount") : t("auth.submitRegister")}
-            </Button>
+            {registrationStep === "password" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.passwordTitle}
+                </Typography>
+                <TextField
+                  fullWidth
+                  autoFocus
+                  label={t("form.password")}
+                  type={passwordVisible ? "text" : "password"}
+                  {...passwordField}
+                  autoComplete="new-password"
+                  error={Boolean(errors.password)}
+                  helperText={errors.password?.message}
+                  inputProps={{
+                    autoComplete: "new-password",
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <PasswordVisibilityButton
+                          visible={passwordVisible}
+                          onToggle={() => setPasswordVisible((current) => !current)}
+                          showLabel={t("auth.showPassword")}
+                          hideLabel={t("auth.hidePassword")}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+            )}
+
+            {registrationStep === "confirm" && (
+              <Stack spacing={1.2}>
+                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                  {stepCopy.confirmTitle}
+                </Typography>
+                <TextField
+                  fullWidth
+                  autoFocus
+                  label={t("form.confirmPassword")}
+                  type={confirmPasswordVisible ? "text" : "password"}
+                  {...confirmPasswordField}
+                  autoComplete="new-password"
+                  error={Boolean(errors.confirmPassword)}
+                  helperText={errors.confirmPassword?.message}
+                  inputProps={{
+                    autoComplete: "new-password",
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <PasswordVisibilityButton
+                          visible={confirmPasswordVisible}
+                          onToggle={() => setConfirmPasswordVisible((current) => !current)}
+                          showLabel={t("auth.showPassword")}
+                          hideLabel={t("auth.hidePassword")}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+            )}
+
+            <Stack direction="row" spacing={1.2}>
+              {canGoBack && (
+                <Button
+                  type="button"
+                  variant="outlined"
+                  size="large"
+                  onClick={goBack}
+                  sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                >
+                  {stepCopy.back}
+                </Button>
+              )}
+              {registrationStep === "confirm" ? (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={submitting || availabilityBlocksSubmit}
+                  startIcon={
+                    submitting ? <CircularProgress size={18} color="inherit" /> : undefined
+                  }
+                  sx={{
+                    flex: 1,
+                    py: 1.5,
+                    borderRadius: 999,
+                    textTransform: "none",
+                    fontWeight: 800,
+                    background: "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
+                  }}
+                >
+                  {submitting ? t("auth.creatingAccount") : t("auth.submitRegister")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="contained"
+                  size="large"
+                  disabled={
+                    (registrationStep === "name" && displayedNameAvailability === "checking") ||
+                    (registrationStep === "email" && displayedEmailAvailability === "checking")
+                  }
+                  onClick={() => {
+                    void goNext();
+                  }}
+                  sx={{ flex: 1, py: 1.5, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+                >
+                  {stepCopy.next}
+                </Button>
+              )}
+            </Stack>
           </Stack>
 
           <Typography color="text.secondary" sx={{ textAlign: "center" }}>

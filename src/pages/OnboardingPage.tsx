@@ -22,6 +22,7 @@ import { OnboardingNamePage } from "./onboarding/OnboardingNamePage";
 import { OnboardingWeightPage } from "./onboarding/OnboardingWeightPage";
 import { OnboardingWelcomePage } from "./onboarding/OnboardingWelcomePage";
 import { OnboardingWomenHealthPage } from "./onboarding/OnboardingWomenHealthPage";
+import { OnboardingChoicePage } from "./onboarding/OnboardingChoicePage";
 import {
   normalizeSelectedGoals,
   stepPaths,
@@ -211,6 +212,7 @@ const OnboardingPage = () => {
       <Routes>
         <Route index element={<OnboardingWelcomePage />} />
         <Route path="welcome" element={<OnboardingWelcomePage />} />
+        <Route path="choice" element={<OnboardingChoicePage />} />
         <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
         <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
         <Route path="age" element={<OnboardingAgePage {...stepProps} />} />

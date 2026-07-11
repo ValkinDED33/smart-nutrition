@@ -1,9 +1,10 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
 import {
   Avatar,
   Box,
+  Button,
   Chip,
   LinearProgress,
   Paper,
@@ -27,7 +28,11 @@ import {
   selectDailyMacroTargets,
 } from "../features/profile/selectors";
 import type { DietStyle } from "@domain/profile/types";
-import { communityStatusLabels, resolveCommunityStatus } from "@domain/user/roles";
+import {
+  canAccessAdminCenter,
+  communityStatusLabels,
+  resolveCommunityStatus,
+} from "@domain/user/roles";
 import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
 
@@ -125,6 +130,10 @@ const profileCopy = {
     targetSame: "Поточна вага вже збігається з ціллю.",
     targetAway: (value: string) => `До цілі залишилось ${value} кг.`,
     preferencesTitle: "Налаштування",
+    profileInfoTitle: "Інформація профілю",
+    profileInfoSubtitle: "Спочатку показуємо спокійний підсумок. Поля редагування відкриваються тільки за потреби.",
+    editProfile: "Редагувати",
+    hideEditor: "Сховати редагування",
     noRestrictions: "Алергії або виключення ще не додані.",
     dietLabel: "Харчування",
     allergiesLabel: "Алергії",
@@ -164,6 +173,10 @@ const profileCopy = {
     targetSame: "Aktualna waga już odpowiada celowi.",
     targetAway: (value: string) => `Do celu pozostało ${value} kg.`,
     preferencesTitle: "Preferencje",
+    profileInfoTitle: "Informacje profilu",
+    profileInfoSubtitle: "Najpierw pokazujemy spokojne podsumowanie. Pola edycji otwierają się tylko wtedy, gdy są potrzebne.",
+    editProfile: "Edytuj",
+    hideEditor: "Ukryj edycję",
     noRestrictions: "Nie dodano jeszcze alergii ani wykluczeń.",
     dietLabel: "Styl żywienia",
     allergiesLabel: "Alergie",
@@ -203,6 +216,10 @@ const profileCopy = {
     targetSame: "Your current weight already matches the goal.",
     targetAway: (value: string) => `${value} kg left to the goal.`,
     preferencesTitle: "Preferences",
+    profileInfoTitle: "Profile information",
+    profileInfoSubtitle: "We show a calm summary first. Editing fields open only when you need them.",
+    editProfile: "Edit",
+    hideEditor: "Hide editor",
     noRestrictions: "No allergies or exclusions added yet.",
     dietLabel: "Diet",
     allergiesLabel: "Allergies",
@@ -553,6 +570,7 @@ const getLanguageLabel = (
 };
 
 const ProfilePage = () => {
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
   const {
     dailyCalories,
@@ -606,6 +624,7 @@ const ProfilePage = () => {
 
   const communityStatus =
     user.communityStatus ?? resolveCommunityStatus(user.reputationScore);
+  const canSeeOperationalDetails = canAccessAdminCenter(user.role);
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
@@ -682,28 +701,32 @@ const ProfilePage = () => {
               color={user.emailVerified ? "success" : "warning"}
               variant="outlined"
             />
-            <Chip
-              label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
-              variant="outlined"
-            />
             <Chip label={`${t("dashboard.age")}: ${user.age}`} />
             <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
             <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
-            <Chip
-              label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
-            />
-            <Chip
-              label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
-            />
-            <Chip
-              label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
-            />
-            <Chip
-              label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
-            />
-            <Chip
-              label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
-            />
+            {canSeeOperationalDetails && (
+              <>
+                <Chip
+                  label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
+                  variant="outlined"
+                />
+                <Chip
+                  label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
+                />
+                <Chip
+                  label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
+                />
+                <Chip
+                  label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
+                />
+                <Chip
+                  label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
+                />
+                <Chip
+                  label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
+                />
+              </>
+            )}
             {hasTargetWeight && (
               <Chip
                 label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
@@ -720,7 +743,65 @@ const ProfilePage = () => {
             label: copy.tabs.data,
             content: (
               <Stack spacing={3}>
-                <ProfileForm />
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, md: 3 },
+                    borderRadius: 1,
+                    border: PROFILE_CARD_BORDER,
+                    backgroundColor: PROFILE_GLASS_BACKGROUND,
+                  }}
+                >
+                  <Stack spacing={2}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={2}
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      justifyContent="space-between"
+                    >
+                      <Box>
+                        <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+                          {copy.profileInfoTitle}
+                        </Typography>
+                        <Typography color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.6 }}>
+                          {copy.profileInfoSubtitle}
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant={profileEditorOpen ? "outlined" : "contained"}
+                        onClick={() => setProfileEditorOpen((current) => !current)}
+                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+                      >
+                        {profileEditorOpen ? copy.hideEditor : copy.editProfile}
+                      </Button>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Chip label={`${copy.emailLabel}: ${user.email}`} variant="outlined" />
+                      <Chip
+                        label={`${copy.emailLabel}: ${
+                          user.emailVerified ? copy.emailVerified : copy.emailUnverified
+                        }`}
+                        color={user.emailVerified ? "success" : "warning"}
+                        variant="outlined"
+                      />
+                      <Chip label={`${t("dashboard.age")}: ${user.age}`} />
+                      <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
+                      <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
+                      <Chip label={`${copy.dietLabel}: ${getDietStyleLabel(localizedDietLabels, dietStyle)}`} />
+                      <Chip label={`${copy.languageLabel}: ${getLanguageLabel(languageLabels, languagePreference)}`} />
+                      {hasTargetWeight && (
+                        <Chip
+                          label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
+                          color="primary"
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                  </Stack>
+                </Paper>
+
+                {profileEditorOpen && <ProfileForm />}
                 {renderLazySection(
                   "data",
                   copy.tabs.data,
@@ -988,9 +1069,9 @@ const ProfilePage = () => {
                   <NotificationSettingsCard />
                   <SupplementRecommendationCard />
                   <ReminderManagementCard />
-                  <CloudSyncStatusCard />
+                  {canSeeOperationalDetails && <CloudSyncStatusCard />}
                   <AccountDataCard />
-                  <AdminCenterCard />
+                  {canSeeOperationalDetails && <AdminCenterCard />}
                 </Stack>
               )
             ),

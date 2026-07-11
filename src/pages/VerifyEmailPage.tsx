@@ -115,7 +115,7 @@ const VerifyEmailPage = () => {
         setStatus("success");
         const nextPath = hasCompletedOnboardingSnapshot(snapshot)
           ? "/dashboard"
-          : "/onboarding";
+          : "/onboarding/choice";
         trackRuntimeEvent("signup_completed", {
           authMode: getAuthRuntimeInfo().mode,
           requiresVerification: true,

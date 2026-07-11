@@ -50,6 +50,7 @@ export interface OnboardingStepProps {
 
 export const stepPaths = {
   welcome: "/onboarding",
+  choice: "/onboarding/choice",
   assistant: "/onboarding/assistant",
   name: "/onboarding/name",
   age: "/onboarding/age",

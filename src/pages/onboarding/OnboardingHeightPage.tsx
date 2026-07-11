@@ -71,7 +71,7 @@ export const OnboardingHeightPage = ({ state, updateState }: OnboardingStepProps
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="outlined"
-              onClick={() => navigate(stepPaths.gender)}
+              onClick={() => navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.age)}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
               {t("onboarding.back")}

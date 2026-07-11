@@ -30,13 +30,13 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
     }
   };
 
-  const continueToGender = () => {
+  const continueToHeight = () => {
     if (parsedAge === null) {
       return;
     }
 
     updateState({ age: clampNumber(parsedAge, 10, 120) });
-    navigate(stepPaths.gender);
+    navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.height);
   };
 
   return (
@@ -56,7 +56,7 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
             onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && ageValid) {
-                continueToGender();
+                continueToHeight();
               }
             }}
             slotProps={{
@@ -77,7 +77,7 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
             </Button>
             <Button
               variant="contained"
-              onClick={continueToGender}
+              onClick={continueToHeight}
               disabled={!ageValid}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
