@@ -161,6 +161,11 @@ const productFactCopy = {
     pl: "Nie znaleziono znanych dodatków ryzyka w tym składzie.",
     en: "No known risk additives were found in this ingredient text.",
   },
+  additiveCompositionMissing: {
+    uk: "Склад не отримано з бази продуктів, тому добавки та консерванти неможливо перевірити автоматично.",
+    pl: "Skład nie został pobrany z bazy produktów, więc dodatków i konserwantów nie da się sprawdzić automatycznie.",
+    en: "Ingredients were not received from the product database, so additives and preservatives cannot be checked automatically.",
+  },
   additiveSafetyNote: {
     uk: "Це харчова довідка, не діагноз: реакції залежать від здоров'я, віку, ваги та чутливості.",
     pl: "To informacja żywieniowa, nie diagnoza: reakcje zależą od zdrowia, wieku, masy i wrażliwości.",
@@ -559,88 +564,90 @@ export const ProductNutritionFacts = ({ product }: Props) => {
         </Paper>
       ) : null}
 
-      {ingredientsText ? (
-        <Paper
-          variant="outlined"
-          sx={{
-            p: 1.4,
-            borderRadius: 1,
-            borderColor: BORDER_SOFT,
-            backgroundColor: SURFACE_ELEVATED,
-          }}
-        >
-          <Stack spacing={1.1}>
-            <Stack spacing={0.4}>
-              <Typography sx={{ fontWeight: 800 }}>
-                {getLocalizedText(productFactCopy.additives, appLanguage)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {getLocalizedText(productFactCopy.additiveSafetyNote, appLanguage)}
-              </Typography>
-            </Stack>
-            {additiveFindings.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                {getLocalizedText(productFactCopy.additiveNone, appLanguage)}
-              </Typography>
-            ) : (
-              <Stack spacing={1}>
-                {additiveFindings.map((finding) => (
-                  <Box
-                    key={finding.code}
-                    sx={{
-                      p: 1.1,
-                      borderRadius: 1,
-                      border: "1px solid",
-                      ...getRiskStyles(finding.riskLevel),
-                    }}
-                  >
-                    <Stack spacing={0.8}>
-                      <Stack
-                        direction="row"
-                        spacing={0.75}
-                        useFlexGap
-                        flexWrap="wrap"
-                        alignItems="center"
-                      >
-                        <Chip
-                          label={finding.code}
-                          size="small"
-                          color={getAdditiveRiskColor(finding.riskLevel)}
-                        />
-                        <Chip
-                          label={getAdditiveRiskLabel(finding.riskLevel, appLanguage)}
-                          size="small"
-                          variant="outlined"
-                          color={getAdditiveRiskColor(finding.riskLevel)}
-                        />
-                        <Typography sx={{ fontWeight: 800 }}>
-                          {getLocalizedText(finding.name, appLanguage)}
-                        </Typography>
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {getLocalizedText(finding.group, appLanguage)} ·{" "}
-                        {getLocalizedText(finding.purpose, appLanguage)}
-                      </Typography>
-                      <Typography variant="body2">
-                        {getLocalizedText(finding.riskSummary, appLanguage)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {finding.dailyExample70Kg
-                          ? `${getLocalizedText(productFactCopy.additiveDose, appLanguage)}: ${finding.dailyExample70Kg} ${getLocalizedText(productFactCopy.milligramsPerDay, appLanguage)}. `
-                          : ""}
-                        {getLocalizedText(finding.guidance, appLanguage)}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.4,
+          borderRadius: 1,
+          borderColor: BORDER_SOFT,
+          backgroundColor: SURFACE_ELEVATED,
+        }}
+      >
+        <Stack spacing={1.1}>
+          <Stack spacing={0.4}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {getLocalizedText(productFactCopy.additives, appLanguage)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {getLocalizedText(productFactCopy.additiveSafetyNote, appLanguage)}
+            </Typography>
+          </Stack>
+          {!ingredientsText ? (
+            <Typography variant="body2" color="text.secondary">
+              {getLocalizedText(productFactCopy.additiveCompositionMissing, appLanguage)}
+            </Typography>
+          ) : additiveFindings.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              {getLocalizedText(productFactCopy.additiveNone, appLanguage)}
+            </Typography>
+          ) : (
+            <Stack spacing={1}>
+              {additiveFindings.map((finding) => (
+                <Box
+                  key={finding.code}
+                  sx={{
+                    p: 1.1,
+                    borderRadius: 1,
+                    border: "1px solid",
+                    ...getRiskStyles(finding.riskLevel),
+                  }}
+                >
+                  <Stack spacing={0.8}>
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      useFlexGap
+                      flexWrap="wrap"
+                      alignItems="center"
+                    >
+                      <Chip
+                        label={finding.code}
+                        size="small"
+                        color={getAdditiveRiskColor(finding.riskLevel)}
+                      />
+                      <Chip
+                        label={getAdditiveRiskLabel(finding.riskLevel, appLanguage)}
+                        size="small"
+                        variant="outlined"
+                        color={getAdditiveRiskColor(finding.riskLevel)}
+                      />
+                      <Typography sx={{ fontWeight: 800 }}>
+                        {getLocalizedText(finding.name, appLanguage)}
                       </Typography>
                     </Stack>
-                  </Box>
-                ))}
-                <Typography variant="caption" color="text.secondary">
-                  {getLocalizedText(productFactCopy.additiveDoseUnknown, appLanguage)}
-                </Typography>
-              </Stack>
-            )}
-          </Stack>
-        </Paper>
-      ) : null}
+                    <Typography variant="body2" color="text.secondary">
+                      {getLocalizedText(finding.group, appLanguage)} ·{" "}
+                      {getLocalizedText(finding.purpose, appLanguage)}
+                    </Typography>
+                    <Typography variant="body2">
+                      {getLocalizedText(finding.riskSummary, appLanguage)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {finding.dailyExample70Kg
+                        ? `${getLocalizedText(productFactCopy.additiveDose, appLanguage)}: ${finding.dailyExample70Kg} ${getLocalizedText(productFactCopy.milligramsPerDay, appLanguage)}. `
+                        : ""}
+                      {getLocalizedText(finding.guidance, appLanguage)}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))}
+              <Typography variant="caption" color="text.secondary">
+                {getLocalizedText(productFactCopy.additiveDoseUnknown, appLanguage)}
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+      </Paper>
 
       <Stack spacing={2}>
         {detailSections.map((section) => (
