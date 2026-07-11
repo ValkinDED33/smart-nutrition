@@ -6,13 +6,13 @@ import type { RootState } from "@app/store";
 import { selectTodayMealItems } from "@features/meal/selectors";
 import { createRemoteReminder } from "@shared/api/reminders";
 import { getLocalDateKey } from "@shared/lib/date";
-import { useLanguage } from "@shared/language";
 import type { AppLanguage } from "@shared/types/i18n";
 import { SectionCard } from "@shared/ui";
 import {
   buildSupplementRecommendations,
   getPrimarySupplementRecommendation,
   type SupplementRecommendation,
+  type SupplementRecommendationSurface,
 } from "./supplementRecommendationModel";
 import { dispatchReminderUpserted } from "./reminderEvents";
 
@@ -25,7 +25,7 @@ const supplementCardCopy = {
     why: "Чому",
     context: "Що я врахував",
     blockers: "Взаємодії",
-    examples: "UX-приклади",
+    examples: "Де це з'явиться",
     deeper: "Глибше",
     createReminder: "Створити нагадування",
     creating: "Створюю...",
@@ -36,6 +36,13 @@ const supplementCardCopy = {
       high: "висока впевненість",
       medium: "потрібно перевірити",
       low: "бракує даних",
+    },
+    surfaces: {
+      dashboard_card: "На головному екрані",
+      assistant_chat: "У чаті з помічником",
+      notification: "У нагадуванні",
+      bedtime_reminder: "У вечірній рутині",
+      meal_interaction_warning: "Біля їжі або добавки",
     },
     safeNote:
       "Дози, ліки, вагітність і симптоми завжди перевіряються з лікарем. Я допомагаю з контекстом і рутиною.",
@@ -48,7 +55,7 @@ const supplementCardCopy = {
     why: "Dlaczego",
     context: "Co uwzględniam",
     blockers: "Interakcje",
-    examples: "Przykłady UX",
+    examples: "Gdzie to zobaczysz",
     deeper: "Głębiej",
     createReminder: "Utwórz przypomnienie",
     creating: "Tworzę...",
@@ -59,6 +66,13 @@ const supplementCardCopy = {
       high: "wysoka pewność",
       medium: "warto sprawdzić",
       low: "brakuje danych",
+    },
+    surfaces: {
+      dashboard_card: "Na ekranie głównym",
+      assistant_chat: "W rozmowie z asystentem",
+      notification: "W przypomnieniu",
+      bedtime_reminder: "W wieczornej rutynie",
+      meal_interaction_warning: "Przy posiłku lub suplemencie",
     },
     safeNote:
       "Dawki, leki, ciąża i objawy zawsze wymagają konsultacji z lekarzem. Pomagam z kontekstem i rutyną.",
@@ -71,7 +85,7 @@ const supplementCardCopy = {
     why: "Why",
     context: "Context used",
     blockers: "Interactions",
-    examples: "UX examples",
+    examples: "Where this appears",
     deeper: "Deeper",
     createReminder: "Create reminder",
     creating: "Creating...",
@@ -82,6 +96,13 @@ const supplementCardCopy = {
       high: "high confidence",
       medium: "check first",
       low: "missing data",
+    },
+    surfaces: {
+      dashboard_card: "Home screen",
+      assistant_chat: "Assistant chat",
+      notification: "Reminder",
+      bedtime_reminder: "Evening routine",
+      meal_interaction_warning: "Meal or supplement context",
     },
     safeNote:
       "Doses, medication, pregnancy, and symptoms must be checked with a clinician. I help with context and routine.",
@@ -135,10 +156,24 @@ const confidenceColor = {
   low: "info",
 } as const;
 
-const formatSurfaceLabel = (key: string) =>
-  key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+const getSurfaceLabel = (
+  copy: SupplementCardCopy,
+  surface: SupplementRecommendationSurface
+) => {
+  switch (surface) {
+    case "assistant_chat":
+      return copy.surfaces.assistant_chat;
+    case "notification":
+      return copy.surfaces.notification;
+    case "bedtime_reminder":
+      return copy.surfaces.bedtime_reminder;
+    case "meal_interaction_warning":
+      return copy.surfaces.meal_interaction_warning;
+    case "dashboard_card":
+    default:
+      return copy.surfaces.dashboard_card;
+  }
+};
 
 const RecommendationPanel = ({
   item,
@@ -234,7 +269,7 @@ const RecommendationPanel = ({
         <Stack spacing={0.8} sx={{ mt: 1 }}>
           {Object.entries(item.surfaces).map(([surface, text]) => (
             <Typography key={surface} variant="body2" color="text.secondary">
-              <strong>{formatSurfaceLabel(surface)}:</strong> {text}
+              <strong>{getSurfaceLabel(copy, surface as SupplementRecommendationSurface)}:</strong> {text}
             </Typography>
           ))}
         </Stack>
@@ -260,8 +295,8 @@ const RecommendationPanel = ({
 );
 
 export const SupplementRecommendationCard = () => {
-  const { appLanguage } = useLanguage();
-  const copy = getSupplementCardCopy(appLanguage);
+  const recommendationLanguage: AppLanguage = "uk";
+  const copy = getSupplementCardCopy(recommendationLanguage);
   const meals = useSelector(selectTodayMealItems);
   const { dietStyle, allergies, excludedIngredients, womenHealth } = useSelector(
     (state: RootState) => state.profile
