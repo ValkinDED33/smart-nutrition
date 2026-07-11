@@ -21,6 +21,7 @@ const categoryLabels: Record<string, LocalizedLabel> = {
 const categoryAliases = new Map<string, string>([
   ["beverages", "beverage"],
   ["beverage", "beverage"],
+  ["beverages-and-beverages-preparations", "beverage"],
   ["drinks", "beverage"],
   ["drink", "beverage"],
   ["soft-drinks", "beverage"],

@@ -46,6 +46,16 @@ const openFoodFactsBeverageProduct = {
     carbohydrates_100ml: 10.6,
     sugars_100ml: 10.6,
     sodium_100ml: 0,
+    "vitamin-a_100ml": 232,
+    "vitamin-a_unit": "ug",
+    "vitamin-c_100ml": 6,
+    "vitamin-c_unit": "mg",
+    "vitamin-b1_100ml": 0.0825,
+    "vitamin-b1_unit": "mg",
+    biotin_100ml: 3.75,
+    biotin_unit: "ug",
+    "pantothenic-acid_100ml": 0.45,
+    "pantothenic-acid_unit": "mg",
   },
 };
 
@@ -134,6 +144,11 @@ describe("productLookupService", () => {
         carbs: 10.6,
         saturatedFat: 0,
         sugars: 10.6,
+        vitaminA: 232,
+        vitaminB1: 0.0825,
+        vitaminB5: 0.45,
+        vitaminB7: 3.75,
+        vitaminC: 6,
       }),
       facts: expect.objectContaining({
         foodGroup: "beverages",

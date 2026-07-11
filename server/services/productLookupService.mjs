@@ -162,6 +162,25 @@ const createNutrients = ({
   fiber = 0,
   sugars = 0,
   sodium = 0,
+  potassium = 0,
+  vitaminA = 0,
+  vitaminB1 = 0,
+  vitaminB2 = 0,
+  vitaminB3 = 0,
+  vitaminB5 = 0,
+  vitaminB6 = 0,
+  vitaminB7 = 0,
+  vitaminB9 = 0,
+  vitaminB12 = 0,
+  vitaminC = 0,
+  vitaminD = 0,
+  vitaminE = 0,
+  vitaminK = 0,
+  calcium = 0,
+  iron = 0,
+  magnesium = 0,
+  zinc = 0,
+  phosphorus = 0,
 } = {}) => ({
   calories: clampNumber(calories),
   protein: clampNumber(protein),
@@ -172,6 +191,25 @@ const createNutrients = ({
   fiber: clampNumber(fiber),
   sugars: clampNumber(sugars),
   sodium: clampNumber(sodium),
+  potassium: clampNumber(potassium),
+  vitaminA: clampNumber(vitaminA),
+  vitaminB1: clampNumber(vitaminB1),
+  vitaminB2: clampNumber(vitaminB2),
+  vitaminB3: clampNumber(vitaminB3),
+  vitaminB5: clampNumber(vitaminB5),
+  vitaminB6: clampNumber(vitaminB6),
+  vitaminB7: clampNumber(vitaminB7),
+  vitaminB9: clampNumber(vitaminB9),
+  vitaminB12: clampNumber(vitaminB12),
+  vitaminC: clampNumber(vitaminC),
+  vitaminD: clampNumber(vitaminD),
+  vitaminE: clampNumber(vitaminE),
+  vitaminK: clampNumber(vitaminK),
+  calcium: clampNumber(calcium),
+  iron: clampNumber(iron),
+  magnesium: clampNumber(magnesium),
+  zinc: clampNumber(zinc),
+  phosphorus: clampNumber(phosphorus),
 });
 
 const hasUsefulNutrition = (nutrients) =>
@@ -288,6 +326,50 @@ const readNutrimentPerBase = (nutriments, key, unit, fallback = 0) => {
   return toNumber(nutriments[key], fallback);
 };
 
+const normalizeNutrimentUnit = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace("µ", "u")
+    .replace("μ", "u");
+
+const convertMicronutrientValue = (value, sourceUnit, targetUnit) => {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+
+  const normalizedSourceUnit = normalizeNutrimentUnit(sourceUnit);
+
+  if (targetUnit === "mg") {
+    if (normalizedSourceUnit === "g") {
+      return value * 1000;
+    }
+
+    if (normalizedSourceUnit === "ug" || normalizedSourceUnit === "mcg") {
+      return value / 1000;
+    }
+
+    return normalizedSourceUnit === "" && value < 0.01 ? value * 1000 : value;
+  }
+
+  if (normalizedSourceUnit === "g") {
+    return value * 1000000;
+  }
+
+  if (normalizedSourceUnit === "mg") {
+    return value * 1000;
+  }
+
+  return normalizedSourceUnit === "" && value < 1 ? value * 1000000 : value;
+};
+
+const readMicronutrientPerBase = (nutriments, key, unit, targetUnit) =>
+  convertMicronutrientValue(
+    readNutrimentPerBase(nutriments, key, unit, NaN),
+    nutriments[`${key}_unit`],
+    targetUnit
+  );
+
 const readOpenFoodFactsEnergyKcal = (nutriments, unit) => {
   const unitEnergyKcal = toNumber(nutriments[`energy-kcal_100${unit}`], NaN);
 
@@ -367,6 +449,25 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     sodium:
       readNutrimentPerBase(nutriments, "sodium", unit, NaN) * 1000 ||
       readNutrimentPerBase(nutriments, "salt", unit, 0) * 393.4,
+    potassium: readMicronutrientPerBase(nutriments, "potassium", unit, "mg"),
+    vitaminA: readMicronutrientPerBase(nutriments, "vitamin-a", unit, "ug"),
+    vitaminB1: readMicronutrientPerBase(nutriments, "vitamin-b1", unit, "mg"),
+    vitaminB2: readMicronutrientPerBase(nutriments, "vitamin-b2", unit, "mg"),
+    vitaminB3: readMicronutrientPerBase(nutriments, "vitamin-pp", unit, "mg"),
+    vitaminB5: readMicronutrientPerBase(nutriments, "pantothenic-acid", unit, "mg"),
+    vitaminB6: readMicronutrientPerBase(nutriments, "vitamin-b6", unit, "mg"),
+    vitaminB7: readMicronutrientPerBase(nutriments, "biotin", unit, "ug"),
+    vitaminB9: readMicronutrientPerBase(nutriments, "folates", unit, "ug"),
+    vitaminB12: readMicronutrientPerBase(nutriments, "vitamin-b12", unit, "ug"),
+    vitaminC: readMicronutrientPerBase(nutriments, "vitamin-c", unit, "mg"),
+    vitaminD: readMicronutrientPerBase(nutriments, "vitamin-d", unit, "ug"),
+    vitaminE: readMicronutrientPerBase(nutriments, "vitamin-e", unit, "mg"),
+    vitaminK: readMicronutrientPerBase(nutriments, "vitamin-k", unit, "ug"),
+    calcium: readMicronutrientPerBase(nutriments, "calcium", unit, "mg"),
+    iron: readMicronutrientPerBase(nutriments, "iron", unit, "mg"),
+    magnesium: readMicronutrientPerBase(nutriments, "magnesium", unit, "mg"),
+    zinc: readMicronutrientPerBase(nutriments, "zinc", unit, "mg"),
+    phosphorus: readMicronutrientPerBase(nutriments, "phosphorus", unit, "mg"),
   });
 
   if (!hasUsefulNutrition(nutrients)) {

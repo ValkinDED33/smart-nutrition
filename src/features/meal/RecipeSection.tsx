@@ -52,6 +52,7 @@ import { selectMealTemplates } from "./selectors";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { createTemplateEntries } from "./mealSaveModel";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+import { getNutrientLabel } from "@domain/meal/nutrients";
 
 interface Props {
   mealType: MealType;
@@ -63,6 +64,13 @@ type BuilderItem = Omit<MealTemplateItem, "quantity"> & {
 
 const CUSTOM_RECIPE_PREFIX = "Recipe: ";
 const COMMON_KCAL_KEY = "common.kcal";
+
+const formatMacroLabel = (
+  key: "protein" | "fat" | "carbs",
+  value: number,
+  language: AppLanguage,
+  gramLabel: string
+) => `${getNutrientLabel(key, language)} ${value.toFixed(1)} ${gramLabel}`;
 
 const recipeActionCopy = {
   uk: {
@@ -572,9 +580,20 @@ export const RecipeSection = ({ mealType }: Props) => {
 
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <Chip label={`${builderNutrients.calories.toFixed(0)} ${t(COMMON_KCAL_KEY)}`} />
-                <Chip label={`P ${builderNutrients.protein.toFixed(1)} ${t("common.g")}`} />
-                <Chip label={`F ${builderNutrients.fat.toFixed(1)} ${t("common.g")}`} />
-                <Chip label={`C ${builderNutrients.carbs.toFixed(1)} ${t("common.g")}`} />
+                <Chip
+                  label={formatMacroLabel(
+                    "protein",
+                    builderNutrients.protein,
+                    appLanguage,
+                    t("common.g")
+                  )}
+                />
+                <Chip
+                  label={formatMacroLabel("fat", builderNutrients.fat, appLanguage, t("common.g"))}
+                />
+                <Chip
+                  label={formatMacroLabel("carbs", builderNutrients.carbs, appLanguage, t("common.g"))}
+                />
               </Stack>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
@@ -622,9 +641,11 @@ export const RecipeSection = ({ mealType }: Props) => {
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <Chip label={`${recipe.calories} ${t(COMMON_KCAL_KEY)}`} />
-                <Chip label={`P ${recipe.protein.toFixed(1)} ${t("common.g")}`} />
-                <Chip label={`F ${recipe.fat.toFixed(1)} ${t("common.g")}`} />
-                <Chip label={`C ${recipe.carbs.toFixed(1)} ${t("common.g")}`} />
+                <Chip
+                  label={formatMacroLabel("protein", recipe.protein, appLanguage, t("common.g"))}
+                />
+                <Chip label={formatMacroLabel("fat", recipe.fat, appLanguage, t("common.g"))} />
+                <Chip label={formatMacroLabel("carbs", recipe.carbs, appLanguage, t("common.g"))} />
               </Stack>
               <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
                 {recipe.title}

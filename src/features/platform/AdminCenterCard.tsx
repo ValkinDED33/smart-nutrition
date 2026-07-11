@@ -46,6 +46,7 @@ import {
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { getNutrientLabel } from "@domain/meal/nutrients";
 
 type AdminTab = "reports" | "queue" | "stats" | "users" | "audit" | "system";
 
@@ -59,6 +60,12 @@ const UK_USERS_LABEL = "Користувачі";
 const PL_REPORTS_LABEL = "Zgłoszenia";
 const PL_USERS_LABEL = "Użytkownicy";
 const ADMIN_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
+
+const formatAdminMacro = (
+  key: "protein" | "fat" | "carbs",
+  value: number,
+  language: AppLanguage
+) => `${getNutrientLabel(key, language)} ${value}`;
 
 const adminCopy = {
   uk: {
@@ -653,9 +660,18 @@ export const AdminCenterCard = () => {
                     </Stack>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Chip label={`${item.nutrients.calories} kcal`} size="small" />
-                      <Chip label={`P ${item.nutrients.protein}`} size="small" />
-                      <Chip label={`F ${item.nutrients.fat}`} size="small" />
-                      <Chip label={`C ${item.nutrients.carbs}`} size="small" />
+                      <Chip
+                        label={formatAdminMacro("protein", item.nutrients.protein, appLanguage)}
+                        size="small"
+                      />
+                      <Chip
+                        label={formatAdminMacro("fat", item.nutrients.fat, appLanguage)}
+                        size="small"
+                      />
+                      <Chip
+                        label={formatAdminMacro("carbs", item.nutrients.carbs, appLanguage)}
+                        size="small"
+                      />
                     </Stack>
                     <Stack direction="row" spacing={1}>
                       <Button

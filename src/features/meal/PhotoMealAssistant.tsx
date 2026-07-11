@@ -316,7 +316,7 @@ const photoCopy = {
     addDraft: "Підтвердити і додати",
     added: "Чернетку додано до щоденника.",
     itemCalories: "{value} ккал",
-    itemMacros: "Б {protein} г • Ж {fat} г • В {carbs} г",
+    itemMacros: "Білки {protein} г • Жири {fat} г • Вуглеводи {carbs} г",
     grams: "{value} г",
   },
   pl: {
@@ -371,7 +371,7 @@ const photoCopy = {
     addDraft: "Potwierdź i dodaj",
     added: "Szkic został dodany do dziennika.",
     itemCalories: "{value} kcal",
-    itemMacros: "B {protein} g • T {fat} g • W {carbs} g",
+    itemMacros: "Białko {protein} g • Tłuszcz {fat} g • Węglowodany {carbs} g",
     grams: "{value} g",
   },
   en: {
@@ -426,7 +426,7 @@ const photoCopy = {
     addDraft: "Confirm and add",
     added: "Draft was added to the diary.",
     itemCalories: "{value} kcal",
-    itemMacros: "P {protein} g • F {fat} g • C {carbs} g",
+    itemMacros: "Proteins {protein} g • Fats {fat} g • Carbohydrates {carbs} g",
     grams: "{value} g",
   },
 } as const;

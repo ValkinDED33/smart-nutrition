@@ -12,15 +12,20 @@ import {
   Typography,
 } from "@mui/material";
 import type { Product } from "@domain/products/types";
+import type { NutrientKey } from "@domain/products/types";
 import {
   formatNutrientValue,
   getNutrientLabel,
+  getNutrientValue,
   getNutritionSectionTitle,
   hasMeaningfulNutrientValue,
   nutrientDefinitions,
   nutritionSections,
 } from "@domain/meal/nutrients";
-import { getProductCategoryLabel } from "@domain/products/productCategory";
+import {
+  getProductCategoryKey,
+  getProductCategoryLabel,
+} from "@domain/products/productCategory";
 import { formatProductBaseAmount } from "@domain/products/productPortions";
 import type { AppLanguage } from "@shared/types/i18n";
 import { useLanguage } from "../../shared/language";
@@ -140,12 +145,14 @@ const productFactCopy = {
   salt: { uk: "Сіль", pl: "Sól", en: "Salt" },
 } satisfies Record<string, LocalizedText>;
 
-type NutritionTableUnit = "g" | "kcal";
+type NutritionTableUnit = "g" | "kcal" | "mg" | "ug";
 
 const fallbackUnitCopy: LocalizedText = { uk: "г", pl: "g", en: "g" };
 const unitCopy = new Map<NutritionTableUnit, LocalizedText>([
   ["g", fallbackUnitCopy],
   ["kcal", { uk: "ккал", pl: "kcal", en: "kcal" }],
+  ["mg", { uk: "мг", pl: "mg", en: "mg" }],
+  ["ug", { uk: "мкг", pl: "ug", en: "ug" }],
 ]);
 
 const getFactLabel = (key: string, language: AppLanguage) => {
@@ -181,50 +188,94 @@ const formatTableValue = (
 const saltFromSodiumMg = (sodiumMg: number) =>
   Number.isFinite(sodiumMg) && sodiumMg > 0 ? (sodiumMg * 2.5) / 1000 : 0;
 
-const getStandardNutritionRows = (product: Product, language: AppLanguage) => [
-  {
-    id: "calories",
-    label: getLocalizedText(productFactCopy.energy, language),
-    value: product.nutrients.calories,
-    unit: "kcal" as const,
-  },
-  {
-    id: "fat",
-    label: getNutrientLabel("fat", language),
-    value: product.nutrients.fat,
-    unit: "g" as const,
-  },
-  {
-    id: "saturatedFat",
-    label: getNutrientLabel("saturatedFat", language),
-    value: product.nutrients.saturatedFat,
-    unit: "g" as const,
-  },
-  {
-    id: "carbs",
-    label: getNutrientLabel("carbs", language),
-    value: product.nutrients.carbs,
-    unit: "g" as const,
-  },
-  {
-    id: "sugars",
-    label: getNutrientLabel("sugars", language),
-    value: product.nutrients.sugars,
-    unit: "g" as const,
-  },
-  {
-    id: "protein",
-    label: getNutrientLabel("protein", language),
-    value: product.nutrients.protein,
-    unit: "g" as const,
-  },
-  {
-    id: "salt",
-    label: getLocalizedText(productFactCopy.salt, language),
-    value: saltFromSodiumMg(product.nutrients.sodium),
-    unit: "g" as const,
-  },
+const micronutrientTableKeys: NutrientKey[] = [
+  "vitaminA",
+  "vitaminE",
+  "vitaminC",
+  "vitaminB1",
+  "vitaminB2",
+  "vitaminB3",
+  "vitaminB5",
+  "vitaminB6",
+  "vitaminB7",
+  "vitaminB9",
+  "vitaminB12",
+  "vitaminD",
+  "vitaminK",
+  "calcium",
+  "iron",
+  "magnesium",
+  "potassium",
+  "zinc",
+  "phosphorus",
 ];
+
+const getStandardNutritionRows = (product: Product, language: AppLanguage) => {
+  const nutrientDefinitionByKey = new Map(Object.entries(nutrientDefinitions));
+  const baseRows = [
+    {
+      id: "calories",
+      label: getLocalizedText(productFactCopy.energy, language),
+      value: product.nutrients.calories,
+      unit: "kcal" as const,
+    },
+    {
+      id: "fat",
+      label: getNutrientLabel("fat", language),
+      value: product.nutrients.fat,
+      unit: "g" as const,
+    },
+    {
+      id: "saturatedFat",
+      label: getNutrientLabel("saturatedFat", language),
+      value: product.nutrients.saturatedFat,
+      unit: "g" as const,
+    },
+    {
+      id: "carbs",
+      label: getNutrientLabel("carbs", language),
+      value: product.nutrients.carbs,
+      unit: "g" as const,
+    },
+    {
+      id: "sugars",
+      label: getNutrientLabel("sugars", language),
+      value: product.nutrients.sugars,
+      unit: "g" as const,
+    },
+    {
+      id: "protein",
+      label: getNutrientLabel("protein", language),
+      value: product.nutrients.protein,
+      unit: "g" as const,
+    },
+    {
+      id: "salt",
+      label: getLocalizedText(productFactCopy.salt, language),
+      value: saltFromSodiumMg(product.nutrients.sodium),
+      unit: "g" as const,
+    },
+  ];
+  const micronutrientRows = micronutrientTableKeys
+    .map((key) => {
+      const definition = nutrientDefinitionByKey.get(String(key));
+      const value = getNutrientValue(product.nutrients, key);
+
+      if (!definition || !hasMeaningfulNutrientValue(value)) {
+        return null;
+      }
+
+      return {
+        id: key,
+        label: getNutrientLabel(key, language),
+        value,
+        unit: definition.unit as NutritionTableUnit,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
+
+  return [...baseRows, ...micronutrientRows];
+};
 
 interface Props {
   product: Product;
@@ -274,7 +325,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       (item) => getFactLabel(item, appLanguage)
     ),
   ].filter((item): item is string => Boolean(item));
-  const categoryKey = product.category ?? product.facts?.foodGroup ?? null;
+  const categoryKey = getProductCategoryKey(product);
   const highlightedMicros = detailSections
     .filter((section) => section.id === "vitamins" || section.id === "minerals")
     .flatMap((section) => section.items)

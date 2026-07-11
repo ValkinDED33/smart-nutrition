@@ -41,6 +41,7 @@ import {
 } from "./mealCloudSync";
 import { createMealEntryDraft, createTemplateEntries } from "./mealSaveModel";
 import { useMealActionFeedback } from "./useMealActionFeedback";
+import { getNutrientLabel } from "@domain/meal/nutrients";
 
 type LibraryMode = "library" | "saved";
 type InnerTab = "products" | "dishes" | "articles";
@@ -54,6 +55,13 @@ const PRODUCT_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 220px), 1fr))";
 const DISH_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 260px), 1fr))";
 const LIBRARY_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const LIBRARY_CARD_BACKGROUND = "var(--sn-surface-elevated)";
+
+const formatLibraryMacro = (
+  key: "protein" | "fat" | "carbs",
+  value: number,
+  language: AppLanguage,
+  gramLabel: string
+) => `${getNutrientLabel(key, language)} ${value.toFixed(1)} ${gramLabel}`;
 
 const copy = {
   uk: {
@@ -562,9 +570,12 @@ export const NutritionLibraryPanel = ({
                                   size="small"
                                 />
                                 <Chip
-                                  label={`P ${product.nutrients.protein.toFixed(1)} ${t(
-                                    "common.g"
-                                  )}`}
+                                  label={formatLibraryMacro(
+                                    "protein",
+                                    product.nutrients.protein,
+                                    appLanguage,
+                                    t("common.g")
+                                  )}
                                   size="small"
                                 />
                                 <Chip label={product.source ?? labels.online} size="small" />

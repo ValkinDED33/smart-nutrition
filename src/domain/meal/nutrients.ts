@@ -29,7 +29,7 @@ export const nutrientDefinitions: Record<NutrientKey, NutrientDefinition> = {
   protein: {
     unit: "g",
     section: "proteins",
-    label: { uk: "Білок", pl: "Białko" },
+    label: { uk: "Білки", pl: "Białko" },
   },
   fat: {
     unit: "g",
@@ -84,7 +84,7 @@ export const nutrientDefinitions: Record<NutrientKey, NutrientDefinition> = {
   sugars: {
     unit: "g",
     section: "carbs",
-    label: { uk: "Цукри", pl: "Cukry" },
+    label: { uk: "Цукор", pl: "Cukier" },
   },
   fiber: {
     unit: "g",
@@ -497,8 +497,8 @@ export const formatNutrientValue = (value: number, unit: NutrientUnit) => {
 
 const englishNutrientLabels: Record<string, string> = {
   calories: "Calories",
-  protein: "Protein",
-  fat: "Fat",
+  protein: "Proteins",
+  fat: "Fats",
   saturatedFat: "Saturated fat",
   monounsaturatedFat: "Monounsaturated fat",
   polyunsaturatedFat: "Polyunsaturated fat",
@@ -508,7 +508,7 @@ const englishNutrientLabels: Record<string, string> = {
   omega9: "Omega-9",
   cholesterol: "Cholesterol",
   carbs: "Carbohydrates",
-  sugars: "Sugars",
+  sugars: "Sugar",
   fiber: "Fiber",
   starch: "Starch",
   glucose: "Glucose",

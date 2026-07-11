@@ -32,6 +32,7 @@ import {
   formatProductPortion,
   getProductPortionPresets,
 } from "@domain/products/productPortions";
+import { getNutrientLabel } from "@domain/meal/nutrients";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import { getProductSuggestions } from "./productSuggestionModel";
 import { addMealEntriesToCloud } from "./mealCloudSync";
@@ -51,6 +52,12 @@ const CatalogContributionCard = lazy(() =>
     default: module.CatalogContributionCard,
   }))
 );
+
+const formatSummaryMacro = (
+  label: string,
+  value: number,
+  gramLabel: string
+) => `${label} ${value.toFixed(1)} ${gramLabel}`;
 
 interface Props {
   mealType: MealType;
@@ -663,9 +670,14 @@ export const QuickMealComposer = ({ mealType }: Props) => {
         </Stack>
 
         <Typography color={QUICK_MEAL_TEXT_SECONDARY}>
-          {t("composer.summary")}: {totals.calories.toFixed(0)} {t(COMMON_KCAL_KEY)} - P{" "}
-          {totals.protein.toFixed(1)} {t("common.g")} - F {totals.fat.toFixed(1)}{" "}
-          {t("common.g")} - C {totals.carbs.toFixed(1)} {t("common.g")}
+          {t("composer.summary")}: {totals.calories.toFixed(0)} {t(COMMON_KCAL_KEY)} -{" "}
+          {formatSummaryMacro(
+            getNutrientLabel("protein", appLanguage),
+            totals.protein,
+            t("common.g")
+          )}{" "}
+          - {formatSummaryMacro(getNutrientLabel("fat", appLanguage), totals.fat, t("common.g"))} -{" "}
+          {formatSummaryMacro(getNutrientLabel("carbs", appLanguage), totals.carbs, t("common.g"))}
         </Typography>
       </Stack>
     </Paper>

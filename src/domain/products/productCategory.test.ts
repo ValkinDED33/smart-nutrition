@@ -65,4 +65,13 @@ describe("productCategory", () => {
     expect(getProductCategoryLabel(categoryKey, "pl")).toBe("Napoje");
     expect(getProductCategoryLabel(categoryKey, "en")).toBe("Beverages");
   });
+
+  it("normalizes broad OpenFoodFacts beverage preparation categories", () => {
+    const categoryKey = getProductCategoryKey(
+      createProduct("en:beverages-and-beverages-preparations")
+    );
+
+    expect(categoryKey).toBe("beverage");
+    expect(getProductCategoryLabel(categoryKey, "uk")).toBe("Напої");
+  });
 });
