@@ -297,6 +297,9 @@ const getStoredRemoteBaseUrl = () => {
   return storedBaseUrl;
 };
 
+const getPreferredRemoteBaseUrl = () =>
+  getConfiguredRemoteBaseUrl() ?? getStoredRemoteBaseUrl();
+
 export const purgeLegacyBrowserAuthStorage = () => {
   LEGACY_BROWSER_AUTH_KEYS.forEach((key) => {
     removeClientStorageItem(key);
@@ -529,7 +532,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
 
 export const refreshRemoteSession = async () => {
   const baseUrl =
-    getStoredRemoteBaseUrl() ??
+    getPreferredRemoteBaseUrl() ??
     (await probeRemoteBaseUrl()) ??
     (await probeRemoteBaseUrl({ force: true }));
 
@@ -546,7 +549,7 @@ export const refreshRemoteSession = async () => {
 };
 
 const getCandidateBaseUrls = () => {
-  const candidates = [getStoredRemoteBaseUrl(), getConfiguredRemoteBaseUrl()];
+  const candidates = [getConfiguredRemoteBaseUrl(), getStoredRemoteBaseUrl()];
 
   return dedupe(candidates.filter((value): value is string => Boolean(value)));
 };
@@ -666,7 +669,7 @@ export const requestRemote = async <T>(
 ): Promise<{ data: T; baseUrl: string }> => {
   const upstreamSignal = init.signal ?? null;
   const baseUrl =
-    getStoredRemoteBaseUrl() ??
+    getPreferredRemoteBaseUrl() ??
     (await probeRemoteBaseUrl({ signal: upstreamSignal, timeoutMs })) ??
     (await probeRemoteBaseUrl({ force: true, signal: upstreamSignal, timeoutMs }));
 
@@ -1410,7 +1413,7 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   logout: async () => {
-    if (getStoredRemoteBaseUrl()) {
+    if (getPreferredRemoteBaseUrl()) {
       try {
         await requestRemote(
           "/auth/logout",
@@ -1428,7 +1431,7 @@ export const remoteAuthProvider: AuthProvider = {
   },
 
   logoutEverywhere: async () => {
-    if (getStoredRemoteBaseUrl()) {
+    if (getPreferredRemoteBaseUrl()) {
       await requestRemote(
         "/auth/logout-all",
         { method: "POST" },
