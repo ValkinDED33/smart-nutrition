@@ -19,7 +19,7 @@ export const pl = {
   "auth.notVerified": "Potwierdź email przyciskiem w wiadomości przed logowaniem.",
   "auth.accountBanned": "Konto zostało zablokowane przez administratora.",
   "auth.registrationNote":
-    "Utwórz konto i potwierdź email przyciskiem w wiadomości. Potem Alex przeprowadzi krótką konfigurację profilu.",
+    "Utwórz konto i potwierdź email przyciskiem w wiadomości. Potem asystent spokojnie przeprowadzi krótką konfigurację profilu.",
   "auth.registrationAssistantIntro":
     "Po potwierdzeniu zapytam o 7 rzeczy: imię, wiek, płeć, wzrost, wagę i główny cel.",
   "auth.checkingAvailability": "Sprawdzamy dostępność...",

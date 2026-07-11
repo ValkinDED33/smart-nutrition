@@ -37,10 +37,15 @@ describe("onboarding and profile flow contract", () => {
   });
 
   it("keeps the post-confirmation questionnaire order user-friendly", async () => {
+    const onboardingSource = await readSource("src/pages/OnboardingPage.tsx");
+    const assistantSource = await readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
     const genderSource = await readSource("src/pages/onboarding/OnboardingGenderPage.tsx");
     const nameSource = await readSource("src/pages/onboarding/OnboardingNamePage.tsx");
     const ageSource = await readSource("src/pages/onboarding/OnboardingAgePage.tsx");
 
+    expect(onboardingSource).not.toContain("DEFAULT_ASSISTANT_NAME");
+    expect(assistantSource).toContain("getAssistantPreviewName");
+    expect(assistantSource).not.toContain('placeholder={"Alex"');
     expect(genderSource).toContain("navigate(stepPaths.name)");
     expect(nameSource).toContain("navigate(stepPaths.age)");
     expect(ageSource).toContain("stepPaths.womenHealth");

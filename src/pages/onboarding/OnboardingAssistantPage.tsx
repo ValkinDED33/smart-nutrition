@@ -100,10 +100,35 @@ const getAssistantAvatarLabel = (
   }
 };
 
+const assistantPreviewName = {
+  uk: "Помічник",
+  pl: "Asystent",
+  en: "Assistant",
+} as const;
+
+const getAssistantPreviewName = (language: AppLanguage, selectedName: string) => {
+  const trimmedName = selectedName.trim();
+
+  if (trimmedName.length > 0) {
+    return trimmedName;
+  }
+
+  switch (language) {
+    case "uk":
+      return assistantPreviewName.uk;
+    case "pl":
+      return assistantPreviewName.pl;
+    case "en":
+    default:
+      return assistantPreviewName.en;
+  }
+};
+
 export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepProps) => {
   const navigate = useNavigate();
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const avatarLabels = getAssistantAvatarLabels(appLanguage);
+  const previewName = getAssistantPreviewName(appLanguage, state.assistantName);
   const personalityOptions: PersonalityPreset[] = [
     "supportive",
     "strict",
@@ -116,7 +141,7 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
       <Paper elevation={0} sx={cardSx}>
         <Stack spacing={3}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
-            <AssistantAvatar name={state.assistantName} variant={state.assistantAvatar} mood="happy" size={96} />
+            <AssistantAvatar name={previewName} variant={state.assistantAvatar} mood="happy" size={96} />
             <Stack spacing={0.8}>
               <Typography component="h1" variant="h4" sx={{ fontWeight: 900 }}>
                 {t("onboarding.assistantTitle")}
@@ -150,7 +175,7 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
                 >
                   <Stack spacing={0.7} alignItems="center">
                     <AssistantAvatar
-                      name={state.assistantName}
+                      name={previewName}
                       variant={avatar}
                       mood="happy"
                       size={42}

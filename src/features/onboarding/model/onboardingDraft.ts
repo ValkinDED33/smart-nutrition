@@ -45,7 +45,7 @@ export const defaultPreAuthOnboardingDraft = (
   language: AppLanguage
 ): PreAuthOnboardingDraft => ({
   language,
-  assistantName: language === "pl" || language === "en" ? "Alex" : "Алекс",
+  assistantName: "",
   assistantAvatar: "robot",
   assistantPersonality: "gentle",
   userName: "",

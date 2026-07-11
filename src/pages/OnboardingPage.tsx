@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { DEFAULT_ASSISTANT_NAME } from "../core/assistant";
 import type { RootState } from "../app/store";
 import {
   hasPreAuthOnboardingDraft,
@@ -47,7 +46,7 @@ const OnboardingPage = () => {
         assistantName:
           !onboardingCompleted && hasDraft && draftAssistantName
             ? draftAssistantName
-            : profileAssistantName || DEFAULT_ASSISTANT_NAME,
+            : profileAssistantName,
         assistantAvatar:
           !onboardingCompleted && hasDraft
             ? draft.assistantAvatar

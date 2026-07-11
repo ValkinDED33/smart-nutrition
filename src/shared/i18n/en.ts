@@ -44,7 +44,7 @@ export const en = {
   "auth.notVerified": "Confirm your email with the button in the message before logging in.",
   "auth.accountBanned": "This account has been blocked by an administrator.",
   "auth.registrationNote":
-    "Create an account and confirm your email with the button in the message. Then Alex will guide a short profile setup.",
+    "Create an account and confirm your email with the button in the message. Then the assistant will gently guide a short profile setup.",
   "auth.registrationAssistantIntro":
     "After confirmation I will ask 7 things: name, age, sex, height, weight, and main goal.",
   "auth.checkingAvailability": "Checking availability...",

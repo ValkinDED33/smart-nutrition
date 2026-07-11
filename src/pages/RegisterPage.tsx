@@ -198,12 +198,12 @@ const registrationCopy = {
     back: "Назад",
     light: "Світла",
     dark: "Темна",
-    portalTitle: "Alex налаштовує ваш простір",
+    portalTitle: "Ваш AI-помічник готує простір",
     portalSubtitle:
       "Це не калькулятор калорій. Ми збираємо живий wellness-профіль: харчування, воду, нагадування і AI-підказки в одному місці.",
     progressLabel: "Крок",
     capabilities: ["AI-помічник", "Сканер їжі", "Розумні нагадування"],
-    stepHint: "Один маленький крок, і Alex підлаштується під вас.",
+    stepHint: "Один маленький крок, і помічник підлаштується під вас.",
   },
   pl: {
     languageTitle: "Wybierz język",
@@ -216,12 +216,12 @@ const registrationCopy = {
     back: "Wstecz",
     light: "Jasny",
     dark: "Ciemny",
-    portalTitle: "Alex stroi Twoją przestrzeń",
+    portalTitle: "Twój asystent AI przygotowuje przestrzeń",
     portalSubtitle:
       "To nie jest kalkulator kalorii. Budujemy żywy profil wellness: jedzenie, wodę, przypomnienia i wskazówki AI w jednym miejscu.",
     progressLabel: "Krok",
     capabilities: ["Asystent AI", "Skaner jedzenia", "Mądre przypomnienia"],
-    stepHint: "Jeden mały krok i Alex dopasuje się do Ciebie.",
+    stepHint: "Jeden mały krok i asystent dopasuje się do Ciebie.",
   },
   en: {
     languageTitle: "Choose language",
@@ -234,12 +234,12 @@ const registrationCopy = {
     back: "Back",
     light: "Light",
     dark: "Dark",
-    portalTitle: "Alex is tuning your space",
+    portalTitle: "Your AI assistant is preparing your space",
     portalSubtitle:
       "This is not a calorie calculator. We build a living wellness profile: food, water, reminders, and AI guidance in one place.",
     progressLabel: "Step",
     capabilities: ["AI companion", "Food scanner", "Smart reminders"],
-    stepHint: "One small step and Alex adapts to you.",
+    stepHint: "One small step and the assistant adapts to you.",
   },
 } as const;
 
@@ -806,7 +806,7 @@ const RegisterPage = () => {
                   },
                 }}
               >
-                <AssistantAvatar name="Alex" variant="dragon" mood="celebrate" size={76} active />
+                <AssistantAvatar name="Assistant" variant="dragon" mood="celebrate" size={76} active />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>

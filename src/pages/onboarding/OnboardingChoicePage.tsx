@@ -9,7 +9,7 @@ const choiceCopy = {
     title: "Заповнити анкету зараз?",
     body:
       "Це займе кілька хвилин і допоможе одразу налаштувати калорії, цілі та підказки помічника.",
-    companion: "Alex вже готовий підлаштувати план під ваш ритм.",
+    companion: "Ваш AI-помічник вже готовий підлаштувати план під ваш ритм.",
     chips: ["Калорії без ручної математики", "Вода і нагадування", "Підказки AI"],
     start: "Так, заповнити зараз",
     later: "Пізніше",
@@ -18,7 +18,7 @@ const choiceCopy = {
     title: "Uzupełnić ankietę teraz?",
     body:
       "To zajmie kilka minut i od razu pomoże ustawić kalorie, cele oraz podpowiedzi asystenta.",
-    companion: "Alex jest gotowy dopasować plan do Twojego rytmu.",
+    companion: "Twój asystent AI jest gotowy dopasować plan do Twojego rytmu.",
     chips: ["Kalorie bez ręcznej matematyki", "Woda i przypomnienia", "Wskazówki AI"],
     start: "Tak, wypełnij teraz",
     later: "Później",
@@ -27,7 +27,7 @@ const choiceCopy = {
     title: "Complete your profile now?",
     body:
       "It takes a few minutes and helps set calories, goals, and assistant guidance right away.",
-    companion: "Alex is ready to tune the plan around your rhythm.",
+    companion: "Your AI assistant is ready to tune the plan around your rhythm.",
     chips: ["Calories without manual math", "Water and reminders", "AI guidance"],
     start: "Yes, do it now",
     later: "Later",
@@ -87,7 +87,7 @@ export const OnboardingChoicePage = () => {
                 },
               }}
             >
-              <AssistantAvatar name="Alex" variant="dragon" mood="coach" size={92} active />
+              <AssistantAvatar name="Assistant" variant="dragon" mood="coach" size={92} active />
             </Box>
             <Stack spacing={1}>
               <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>

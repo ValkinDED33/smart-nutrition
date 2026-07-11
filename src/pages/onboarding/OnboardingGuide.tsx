@@ -218,6 +218,30 @@ const getGuideMessage = (copy: GuideCopy, key: StepMeta["key"]): string => {
   }
 };
 
+const guideFallbackNames = {
+  uk: "Помічник",
+  pl: "Asystent",
+  en: "Assistant",
+} as const;
+
+const getGuideAssistantName = (language: AppLanguage, assistantName: string) => {
+  const trimmedName = assistantName.trim();
+
+  if (trimmedName.length > 0) {
+    return trimmedName;
+  }
+
+  switch (language) {
+    case "uk":
+      return guideFallbackNames.uk;
+    case "pl":
+      return guideFallbackNames.pl;
+    case "en":
+    default:
+      return guideFallbackNames.en;
+  }
+};
+
 const usePointerLook = () => {
   const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
 
@@ -262,6 +286,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const { key, placement, mood } = meta;
 
   const copy = getGuideMessage(getGuideCopy(appLanguage), key);
+  const displayName = getGuideAssistantName(appLanguage, state.assistantName);
 
   const transform = useMemo(() => {
     if (placement === "peekLeft") {
@@ -329,7 +354,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
               />
 
               <AssistantAvatar
-                name={state.assistantName}
+                name={displayName}
                 variant={state.assistantAvatar}
                 mood={mood}
                 lookOffset={lookOffset}
@@ -360,7 +385,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
                   fontSize: 14,
                 }}
               >
-                {state.assistantName}
+                {displayName}
               </Typography>
 
               <Typography

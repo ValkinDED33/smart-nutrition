@@ -80,7 +80,7 @@ const ForgotPasswordPage = () => {
     <AuthSurface>
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name="Alex" variant="dragon" mood="coach" size={72} />
+            <AssistantAvatar name="Assistant" variant="dragon" mood="coach" size={72} />
             <Box>
               <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
                 {t("brand.name")}

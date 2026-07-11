@@ -7,6 +7,14 @@ import {
 } from "./onboardingDraft";
 
 describe("onboardingDraft", () => {
+  it("does not assign a default assistant name before the user chooses one", () => {
+    clearPreAuthOnboardingDraft();
+
+    expect(readPreAuthOnboardingDraft("uk").assistantName).toBe("");
+    expect(readPreAuthOnboardingDraft("pl").assistantName).toBe("");
+    expect(readPreAuthOnboardingDraft("en").assistantName).toBe("");
+  });
+
   it("persists the selected assistant identity without falling back to defaults", () => {
     clearPreAuthOnboardingDraft();
 
