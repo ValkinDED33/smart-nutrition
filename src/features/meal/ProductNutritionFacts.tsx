@@ -23,6 +23,12 @@ import {
   nutritionSections,
 } from "@domain/meal/nutrients";
 import {
+  analyzeProductAdditives,
+  getAdditiveRiskColor,
+  getAdditiveRiskLabel,
+  type AdditiveRiskLevel,
+} from "@domain/products/additiveAnalysis";
+import {
   getProductCategoryKey,
   getProductCategoryLabel,
 } from "@domain/products/productCategory";
@@ -143,6 +149,24 @@ const productFactCopy = {
   perServing: { uk: "На порцію", pl: "Na porcję", en: "Per serving" },
   energy: { uk: "Енергетична цінність", pl: "Wartość energetyczna", en: "Energy" },
   salt: { uk: "Сіль", pl: "Sól", en: "Salt" },
+  additives: { uk: "Добавки та консерванти", pl: "Dodatki i konserwanty", en: "Additives and preservatives" },
+  additiveDose: { uk: "Орієнтир ADI для 70 кг", pl: "Orientacyjny ADI dla 70 kg", en: "ADI guide for 70 kg" },
+  additiveDoseUnknown: {
+    uk: "Точну дозу не визначити без кількості добавки на етикетці.",
+    pl: "Dokładnej dawki nie da się określić bez ilości dodatku na etykiecie.",
+    en: "Exact dose cannot be calculated without the additive amount on the label.",
+  },
+  additiveNone: {
+    uk: "Відомих ризикових добавок у цьому складі не знайдено.",
+    pl: "Nie znaleziono znanych dodatków ryzyka w tym składzie.",
+    en: "No known risk additives were found in this ingredient text.",
+  },
+  additiveSafetyNote: {
+    uk: "Це харчова довідка, не діагноз: реакції залежать від здоров'я, віку, ваги та чутливості.",
+    pl: "To informacja żywieniowa, nie diagnoza: reakcje zależą od zdrowia, wieku, masy i wrażliwości.",
+    en: "Nutrition guidance, not a diagnosis: reactions depend on health, age, weight, and sensitivity.",
+  },
+  milligramsPerDay: { uk: "мг/день", pl: "mg/dzień", en: "mg/day" },
 } satisfies Record<string, LocalizedText>;
 
 type NutritionTableUnit = "g" | "kcal" | "mg" | "ug";
@@ -277,6 +301,26 @@ const getStandardNutritionRows = (product: Product, language: AppLanguage) => {
   return [...baseRows, ...micronutrientRows];
 };
 
+const getRiskStyles = (riskLevel: AdditiveRiskLevel) => {
+  switch (riskLevel) {
+    case "low":
+      return {
+        borderColor: "rgba(34, 197, 94, 0.45)",
+        backgroundColor: "rgba(34, 197, 94, 0.08)",
+      };
+    case "watch":
+      return {
+        borderColor: "rgba(245, 158, 11, 0.48)",
+        backgroundColor: "rgba(245, 158, 11, 0.1)",
+      };
+    case "limit":
+      return {
+        borderColor: "rgba(239, 68, 68, 0.5)",
+        backgroundColor: "rgba(239, 68, 68, 0.09)",
+      };
+  }
+};
+
 interface Props {
   product: Product;
 }
@@ -346,6 +390,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const baseQuantity = product.unit === "piece" ? 1 : 100;
   const servingFactor = servingQuantity > 0 ? servingQuantity / baseQuantity : null;
   const standardNutritionRows = getStandardNutritionRows(product, appLanguage);
+  const additiveFindings = ingredientsText ? analyzeProductAdditives(ingredientsText) : [];
 
   return (
     <Stack spacing={2}>
@@ -498,6 +543,89 @@ export const ProductNutritionFacts = ({ product }: Props) => {
             <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
               {ingredientsText}
             </Typography>
+          </Stack>
+        </Paper>
+      ) : null}
+
+      {ingredientsText ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1.4,
+            borderRadius: 1,
+            borderColor: BORDER_SOFT,
+            backgroundColor: SURFACE_ELEVATED,
+          }}
+        >
+          <Stack spacing={1.1}>
+            <Stack spacing={0.4}>
+              <Typography sx={{ fontWeight: 800 }}>
+                {getLocalizedText(productFactCopy.additives, appLanguage)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {getLocalizedText(productFactCopy.additiveSafetyNote, appLanguage)}
+              </Typography>
+            </Stack>
+            {additiveFindings.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                {getLocalizedText(productFactCopy.additiveNone, appLanguage)}
+              </Typography>
+            ) : (
+              <Stack spacing={1}>
+                {additiveFindings.map((finding) => (
+                  <Box
+                    key={finding.code}
+                    sx={{
+                      p: 1.1,
+                      borderRadius: 1,
+                      border: "1px solid",
+                      ...getRiskStyles(finding.riskLevel),
+                    }}
+                  >
+                    <Stack spacing={0.8}>
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        useFlexGap
+                        flexWrap="wrap"
+                        alignItems="center"
+                      >
+                        <Chip
+                          label={finding.code}
+                          size="small"
+                          color={getAdditiveRiskColor(finding.riskLevel)}
+                        />
+                        <Chip
+                          label={getAdditiveRiskLabel(finding.riskLevel, appLanguage)}
+                          size="small"
+                          variant="outlined"
+                          color={getAdditiveRiskColor(finding.riskLevel)}
+                        />
+                        <Typography sx={{ fontWeight: 800 }}>
+                          {getLocalizedText(finding.name, appLanguage)}
+                        </Typography>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        {getLocalizedText(finding.group, appLanguage)} ·{" "}
+                        {getLocalizedText(finding.purpose, appLanguage)}
+                      </Typography>
+                      <Typography variant="body2">
+                        {getLocalizedText(finding.riskSummary, appLanguage)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {finding.dailyExample70Kg
+                          ? `${getLocalizedText(productFactCopy.additiveDose, appLanguage)}: ${finding.dailyExample70Kg} ${getLocalizedText(productFactCopy.milligramsPerDay, appLanguage)}. `
+                          : ""}
+                        {getLocalizedText(finding.guidance, appLanguage)}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                ))}
+                <Typography variant="caption" color="text.secondary">
+                  {getLocalizedText(productFactCopy.additiveDoseUnknown, appLanguage)}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         </Paper>
       ) : null}
