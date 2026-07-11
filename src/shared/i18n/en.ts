@@ -57,7 +57,7 @@ export const en = {
   "auth.openConfirmationEmail": "Open the email and click the confirmation button.",
   "auth.invalidConfirmationLink": "Invalid or expired confirmation link.",
   "auth.deliveryUnavailable":
-    "Confirmation email delivery is temporarily unavailable on the backend.",
+    "The confirmation email could not be sent. Check Resend/API key, sender domain, and try again.",
   "auth.verifyTitle": "Confirming email",
   "auth.verifyBody":
     "Wait a few seconds. After confirmation we will open the assistant onboarding right away.",

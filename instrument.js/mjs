@@ -1,9 +1,0 @@
-// Import with `import * as Sentry from "@sentry/node"` if you are using ESM
-const Sentry = require("@sentry/node");
-
-Sentry.init({
-  dsn: "https://5ad73aa25695db309d204d3ef58fe16c@o4511547790131200.ingest.de.sentry.io/4511547801731152",
-  // To disable sending user data, uncomment the line below. For more info visit:
-  // https://docs.sentry.io/platforms/javascript/guides/node/configuration/options/#dataCollection
-  // dataCollection: { userInfo: false },
-});

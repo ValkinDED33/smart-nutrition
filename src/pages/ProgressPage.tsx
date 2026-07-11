@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { Box, Stack } from "@mui/material";
 import { ProgressActionBar } from "../features/profile/ProgressActionBar";
+import { ProgressOverviewCard } from "../features/profile/ProgressOverviewCard";
 import { QuickWeightCheckInCard } from "../features/profile/QuickWeightCheckInCard";
 import { useLanguage } from "../shared/language";
 import {
@@ -139,6 +140,7 @@ const ProgressPage = () => {
       assistantHint={<EcosystemPulse focus="progress" />}
     >
       <ProgressActionBar />
+      <ProgressOverviewCard />
 
       <SectionTabs
         sections={sections}

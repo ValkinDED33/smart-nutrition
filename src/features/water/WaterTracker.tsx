@@ -891,6 +891,98 @@ export const WaterTracker = () => {
           />
         </Box>
 
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(4, minmax(0, 1fr))",
+              sm: "repeat(auto-fit, minmax(72px, 1fr))",
+            },
+            gap: 1.2,
+          }}
+        >
+          {glasses.map((glass) => (
+            <Box
+              key={`glass-${glass.index}`}
+              component="button"
+              type="button"
+              onClick={() => handleGlassClick(glass.index, glass.fill)}
+              disabled={savingWater}
+              sx={{
+                p: 0,
+                minHeight: { xs: 104, sm: 118 },
+                border: "0",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                position: "relative",
+                "&:disabled": {
+                  cursor: "wait",
+                  opacity: 0.64,
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  position: "absolute",
+                  insetInline: { xs: 10, sm: 14 },
+                  top: 8,
+                  bottom: 8,
+                  borderRadius: "10px 10px 18px 18px",
+                  border: "2px solid rgba(125, 211, 252, 0.72)",
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.2), rgba(14,165,233,0.06))",
+                  boxShadow: "inset 0 0 18px rgba(125,211,252,0.18)",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    insetInline: 0,
+                    bottom: 0,
+                    height: `${glass.fill * 100}%`,
+                    background:
+                      "linear-gradient(180deg, rgba(56,189,248,0.86), rgba(37,99,235,0.92))",
+                    transition: "height 180ms ease",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      insetInline: 0,
+                      top: -5,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "rgba(224,242,254,0.85)",
+                    },
+                  }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "grid",
+                  placeItems: "center",
+                  pt: 1,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    px: 0.8,
+                    py: 0.25,
+                    borderRadius: 999,
+                    bgcolor: "rgba(15, 23, 42, 0.72)",
+                    color: "#e0f2fe",
+                    fontWeight: 850,
+                  }}
+                >
+                  {Math.round(glass.fill * water.glassSizeMl)} ml
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
         <Stack spacing={1}>
           <Typography sx={{ fontWeight: 700 }}>{copy.quickAmounts}</Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
@@ -907,62 +999,6 @@ export const WaterTracker = () => {
             ))}
           </Stack>
         </Stack>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "repeat(4, minmax(0, 1fr))",
-              sm: "repeat(auto-fit, minmax(76px, 1fr))",
-            },
-            gap: 1.2,
-          }}
-        >
-          {glasses.map((glass) => (
-            <Box
-              key={`glass-${glass.index}`}
-              component="button"
-              type="button"
-                onClick={() => handleGlassClick(glass.index, glass.fill)}
-              disabled={savingWater}
-              sx={{
-                p: 0,
-                minHeight: { xs: 96, sm: 112 },
-                borderRadius: 1,
-                border: "1px solid rgba(125,211,252,0.42)",
-                backgroundColor: "var(--sn-surface-elevated)",
-                cursor: "pointer",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  insetInline: 8,
-                  bottom: 8,
-                  height: `${glass.fill * 100}%`,
-                  borderRadius: 2,
-                  background: "linear-gradient(180deg, #38bdf8 0%, #2563eb 100%)",
-                  transition: "height 180ms ease",
-                }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "grid",
-                  placeItems: "end center",
-                  pb: 1,
-                }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                  {Math.round(glass.fill * water.glassSizeMl)} ml
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-        </Box>
 
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button
