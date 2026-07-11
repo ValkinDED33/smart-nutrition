@@ -4,6 +4,7 @@ const PUBLIC_AUTH_ROUTES = [
   ["POST", "/api/auth/register", "register"],
   ["POST", "/api/auth/verify-registration", "verifyRegistration"],
   ["POST", "/api/auth/resend-verification", "resendVerification"],
+  ["POST", "/api/auth/availability", "checkRegistrationAvailability"],
   ["POST", "/api/auth/login", "login"],
   ["POST", "/api/auth/forgot-password", "forgotPassword"],
   ["POST", "/api/auth/reset-password", "resetPassword"],
@@ -64,6 +65,11 @@ export const createAuthController = ({
   resendVerification: async ({ request, response }) => {
     const body = await readJsonBody(request, bodyLimitBytes);
     sendJson(response, 200, await authService.resendRegistrationVerification(body));
+  },
+
+  checkRegistrationAvailability: async ({ request, response }) => {
+    const body = await readJsonBody(request, bodyLimitBytes);
+    sendJson(response, 200, await authService.checkRegistrationAvailability(body));
   },
 
   login: async ({ request, response }) => {

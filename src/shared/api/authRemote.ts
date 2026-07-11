@@ -34,6 +34,7 @@ import type {
   PasswordResetRequestResult,
   PasswordResetResult,
   RegisterPayload,
+  RegistrationAvailabilityResult,
   RegistrationResult,
 } from "./authProvider";
 
@@ -381,6 +382,10 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
   if (error instanceof RemoteRequestError) {
     if (error.code === "EMAIL_IN_USE") {
       return new AuthApiError("EMAIL_IN_USE", error.message);
+    }
+
+    if (error.code === "NAME_IN_USE") {
+      return new AuthApiError("NAME_IN_USE", error.message);
     }
 
     if (error.code === "TOO_MANY_ATTEMPTS") {
@@ -1473,6 +1478,24 @@ export const remoteAuthProvider: AuthProvider = {
     }
 
     return mapAuthResponse(data, baseUrl);
+  },
+
+  checkRegistrationAvailability: async (payload: {
+    name?: string;
+    email?: string;
+  }) => {
+    const { data } = await requestRemote<RegistrationAvailabilityResult>(
+      "/auth/availability",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    ).catch((error) => {
+      const authError = toAuthApiError(error);
+      throw authError ?? error;
+    });
+
+    return data;
   },
 
   verifyRegistration: async (payload) => {

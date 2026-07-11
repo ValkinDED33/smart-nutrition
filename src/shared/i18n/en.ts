@@ -47,6 +47,11 @@ export const en = {
     "Create an account and confirm your email with the button in the message. Then Alex will guide a short profile setup.",
   "auth.registrationAssistantIntro":
     "After confirmation I will ask 7 things: name, age, sex, height, weight, and main goal.",
+  "auth.checkingAvailability": "Checking availability...",
+  "auth.nameAvailable": "Name is available.",
+  "auth.emailAvailable": "Email is available.",
+  "auth.nameInUse": "This name is already used.",
+  "auth.availabilityUnavailable": "Could not check availability. Try again.",
   "auth.resend": "Send again",
   "auth.confirmationSent": "We sent a confirmation link to {target}.",
   "auth.openConfirmationEmail": "Open the email and click the confirmation button.",

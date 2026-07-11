@@ -72,9 +72,23 @@ export interface RegistrationVerificationResendPayload {
 
 export type RegistrationResult = AuthResponse | RegistrationVerificationPending;
 
+export interface RegistrationAvailabilityResult {
+  email: {
+    checked: boolean;
+    valid: boolean;
+    available: boolean;
+  };
+  name: {
+    checked: boolean;
+    valid: boolean;
+    available: boolean;
+  };
+}
+
 export class AuthApiError extends Error {
   code:
     | "EMAIL_IN_USE"
+    | "NAME_IN_USE"
     | "INVALID_CREDENTIALS"
     | "INVALID_REFRESH_TOKEN"
     | "TOO_MANY_ATTEMPTS"
@@ -103,6 +117,10 @@ export interface AuthProvider {
   logoutEverywhere: () => Promise<void>;
   updateStoredProfile: (user: User) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<RegistrationResult>;
+  checkRegistrationAvailability: (payload: {
+    name?: string;
+    email?: string;
+  }) => Promise<RegistrationAvailabilityResult>;
   verifyRegistration: (payload: RegistrationVerificationPayload) => Promise<AuthResponse>;
   resendRegistrationVerification: (
     payload: RegistrationVerificationResendPayload

@@ -50,6 +50,7 @@ export type {
   AccountExportPayload,
   PasswordResetRequestResult,
   PasswordResetResult,
+  RegistrationAvailabilityResult,
   RegistrationResult,
   RegistrationVerificationPayload,
   RegistrationVerificationPending,
@@ -88,6 +89,10 @@ export const register = async (
   purgeLegacyBrowserAuthStorage();
   return remoteAuthProvider.register(payload);
 };
+
+export const checkRegistrationAvailability = (
+  payload: Parameters<typeof remoteAuthProvider.checkRegistrationAvailability>[0]
+) => remoteAuthProvider.checkRegistrationAvailability(payload);
 
 export const verifyRegistration = async (
   payload: RegistrationVerificationPayload

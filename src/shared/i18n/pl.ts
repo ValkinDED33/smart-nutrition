@@ -22,6 +22,11 @@ export const pl = {
     "Utwórz konto i potwierdź email przyciskiem w wiadomości. Potem Alex przeprowadzi krótką konfigurację profilu.",
   "auth.registrationAssistantIntro":
     "Po potwierdzeniu zapytam o 7 rzeczy: imię, wiek, płeć, wzrost, wagę i główny cel.",
+  "auth.checkingAvailability": "Sprawdzamy dostępność...",
+  "auth.nameAvailable": "Imię jest dostępne.",
+  "auth.emailAvailable": "Email jest dostępny.",
+  "auth.nameInUse": "To imię jest już używane.",
+  "auth.availabilityUnavailable": "Nie udało się sprawdzić dostępności. Spróbuj ponownie.",
   "auth.resend": "Wyślij ponownie",
   "auth.confirmationSent": "Wysłaliśmy link potwierdzający na {target}.",
   "auth.openConfirmationEmail": "Otwórz wiadomość i kliknij przycisk potwierdzenia emaila.",

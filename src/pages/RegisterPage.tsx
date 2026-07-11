@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,6 +11,7 @@ import {
   CircularProgress,
   InputAdornment,
   Stack,
+  SvgIcon,
   TextField,
   Typography,
 } from "@mui/material";
@@ -29,9 +30,11 @@ import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
 import { normalizeCompanionState } from "../features/companion/model/store";
 import {
   AuthApiError,
+  checkRegistrationAvailability,
   getAuthRuntimeInfo,
   register as registerApi,
   resendRegistrationVerification,
+  type RegistrationAvailabilityResult,
   type RegistrationVerificationPending,
 } from "../shared/api/auth";
 import type { AuthResponse } from "@domain/user/types";
@@ -46,6 +49,94 @@ type FormData = {
   email: string;
   password: string;
   confirmPassword: string;
+};
+
+type AvailabilityFieldState = "idle" | "checking" | "available" | "taken" | "invalid" | "unavailable";
+
+type AvailabilitySnapshot = {
+  value: string;
+  state: AvailabilityFieldState;
+};
+
+const availabilityIconSx = {
+  width: 22,
+  height: 22,
+};
+
+const CheckCircleIcon = () => (
+  <SvgIcon viewBox="0 0 24 24" sx={{ ...availabilityIconSx, color: "#22c55e" }}>
+    <path
+      fill="currentColor"
+      d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 13.6-3.7-3.7 1.4-1.4 2.3 2.3 4.8-4.8 1.4 1.4-6.2 6.2Z"
+    />
+  </SvgIcon>
+);
+
+const XCircleIcon = () => (
+  <SvgIcon viewBox="0 0 24 24" sx={{ ...availabilityIconSx, color: "#ef4444" }}>
+    <path
+      fill="currentColor"
+      d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm3.5 12.1-1.4 1.4-2.1-2.1-2.1 2.1-1.4-1.4 2.1-2.1-2.1-2.1 1.4-1.4 2.1 2.1 2.1-2.1 1.4 1.4-2.1 2.1 2.1 2.1Z"
+    />
+  </SvgIcon>
+);
+
+const normalizeAvailabilityInput = (value: string) => value.trim();
+
+const isEmailInputValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const availabilityTranslationKeys = {
+  checking: "auth.checkingAvailability",
+  unavailable: "auth.availabilityUnavailable",
+  nameInUse: "auth.nameInUse",
+  emailInUse: "error.emailInUse",
+} as const;
+
+const resolveAvailabilityState = (
+  field: RegistrationAvailabilityResult["email"] | RegistrationAvailabilityResult["name"],
+  fallbackInvalid: boolean
+): AvailabilityFieldState => {
+  if (!field.checked) {
+    return fallbackInvalid ? "invalid" : "idle";
+  }
+
+  if (!field.valid) {
+    return "invalid";
+  }
+
+  return field.available ? "available" : "taken";
+};
+
+const getCurrentAvailabilityState = (
+  snapshot: AvailabilitySnapshot,
+  value: string,
+  canCheck: boolean
+): AvailabilityFieldState => {
+  if (!value) {
+    return "idle";
+  }
+
+  if (!canCheck) {
+    return "invalid";
+  }
+
+  return snapshot.value === value ? snapshot.state : "idle";
+};
+
+const AvailabilityAdornment = ({ state }: { state: AvailabilityFieldState }) => {
+  if (state === "checking") {
+    return <CircularProgress size={18} />;
+  }
+
+  if (state === "available") {
+    return <CheckCircleIcon />;
+  }
+
+  if (state === "taken" || state === "invalid") {
+    return <XCircleIcon />;
+  }
+
+  return null;
 };
 
 const defaultProfileBootstrap = {
@@ -75,6 +166,10 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [nameAvailability, setNameAvailability] =
+    useState<AvailabilitySnapshot>({ value: "", state: "idle" });
+  const [emailAvailability, setEmailAvailability] =
+    useState<AvailabilitySnapshot>({ value: "", state: "idle" });
 
   const schema = useMemo(
     () =>
@@ -104,6 +199,9 @@ const RegisterPage = () => {
   const {
     register,
     handleSubmit,
+    control,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -118,6 +216,103 @@ const RegisterPage = () => {
   const emailField = register("email");
   const passwordField = register("password");
   const confirmPasswordField = register("confirmPassword");
+  const watchedName = useWatch({ control, name: "name" });
+  const watchedEmail = useWatch({ control, name: "email" });
+  const availabilityName = normalizeAvailabilityInput(watchedName ?? "");
+  const availabilityEmail = normalizeAvailabilityInput(watchedEmail ?? "").toLowerCase();
+  const nameCanCheck = availabilityName.length >= 2;
+  const emailCanCheck = isEmailInputValid(availabilityEmail);
+  const displayedNameAvailability = getCurrentAvailabilityState(
+    nameAvailability,
+    availabilityName,
+    nameCanCheck
+  );
+  const displayedEmailAvailability = getCurrentAvailabilityState(
+    emailAvailability,
+    availabilityEmail,
+    emailCanCheck
+  );
+
+  useEffect(() => {
+    if (!nameCanCheck && !emailCanCheck) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      if (nameCanCheck) {
+        setNameAvailability({ value: availabilityName, state: "checking" });
+      }
+
+      if (emailCanCheck) {
+        setEmailAvailability({ value: availabilityEmail, state: "checking" });
+      }
+
+      checkRegistrationAvailability({
+        name: nameCanCheck ? availabilityName : undefined,
+        email: emailCanCheck ? availabilityEmail : undefined,
+      })
+        .then((result) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          if (nameCanCheck) {
+            setNameAvailability({
+              value: availabilityName,
+              state: resolveAvailabilityState(result.name, false),
+            });
+          }
+
+          if (emailCanCheck) {
+            setEmailAvailability({
+              value: availabilityEmail,
+              state: resolveAvailabilityState(result.email, false),
+            });
+          }
+
+          if (result.name.checked && result.name.available) {
+            clearErrors("name");
+          }
+
+          if (result.email.checked && result.email.available) {
+            clearErrors("email");
+          }
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+
+          setNameAvailability((current) =>
+            nameCanCheck &&
+            current.value === availabilityName &&
+            current.state === "checking"
+              ? { value: availabilityName, state: "unavailable" }
+              : current
+          );
+          setEmailAvailability((current) =>
+            emailCanCheck &&
+            current.value === availabilityEmail &&
+            current.state === "checking"
+              ? { value: availabilityEmail, state: "unavailable" }
+              : current
+          );
+
+          if (
+            error instanceof AuthApiError &&
+            error.code === "REMOTE_API_UNAVAILABLE"
+          ) {
+            return;
+          }
+        });
+    }, 450);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [availabilityEmail, availabilityName, clearErrors, emailCanCheck, nameCanCheck]);
 
   const applyAuthenticatedSession = async ({ user, snapshot }: AuthResponse) => {
     const hydrationResult = applyRemoteSnapshotWithSyncPolicy(dispatch, snapshot);
@@ -165,7 +360,77 @@ const RegisterPage = () => {
     }
   };
 
+  const getNameHelperText = () => {
+    if (errors.name?.message) {
+      return errors.name.message;
+    }
+
+    if (displayedNameAvailability === "available") {
+      return t("auth.nameAvailable");
+    }
+
+    if (displayedNameAvailability === "taken") {
+      return t(availabilityTranslationKeys.nameInUse);
+    }
+
+    if (displayedNameAvailability === "checking") {
+      return t(availabilityTranslationKeys.checking);
+    }
+
+    if (displayedNameAvailability === "unavailable") {
+      return t(availabilityTranslationKeys.unavailable);
+    }
+
+    return undefined;
+  };
+
+  const getEmailHelperText = () => {
+    if (errors.email?.message) {
+      return errors.email.message;
+    }
+
+    if (displayedEmailAvailability === "available") {
+      return t("auth.emailAvailable");
+    }
+
+    if (displayedEmailAvailability === "taken") {
+      return t(availabilityTranslationKeys.emailInUse);
+    }
+
+    if (displayedEmailAvailability === "checking") {
+      return t(availabilityTranslationKeys.checking);
+    }
+
+    if (displayedEmailAvailability === "unavailable") {
+      return t(availabilityTranslationKeys.unavailable);
+    }
+
+    return undefined;
+  };
+
+  const availabilityBlocksSubmit =
+    displayedNameAvailability === "checking" ||
+    displayedEmailAvailability === "checking" ||
+    displayedNameAvailability === "taken" ||
+    displayedEmailAvailability === "taken";
+
   const onSubmit = async (data: FormData) => {
+    if (displayedNameAvailability === "taken") {
+      setError("name", {
+        type: "manual",
+        message: t(availabilityTranslationKeys.nameInUse),
+      });
+      return;
+    }
+
+    if (displayedEmailAvailability === "taken") {
+      setError("email", {
+        type: "manual",
+        message: t(availabilityTranslationKeys.emailInUse),
+      });
+      return;
+    }
+
     setSubmitting(true);
     setServerError(null);
     setPendingVerification(null);
@@ -203,7 +468,23 @@ const RegisterPage = () => {
       navigate("/onboarding");
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
-        setServerError(t("error.emailInUse"));
+        setError("email", {
+          type: "manual",
+          message: t(availabilityTranslationKeys.emailInUse),
+        });
+        setEmailAvailability({
+          value: normalizeAvailabilityInput(data.email).toLowerCase(),
+          state: "taken",
+        });
+      } else if (error instanceof AuthApiError && error.code === "NAME_IN_USE") {
+        setError("name", {
+          type: "manual",
+          message: t(availabilityTranslationKeys.nameInUse),
+        });
+        setNameAvailability({
+          value: normalizeAvailabilityInput(data.name),
+          state: "taken",
+        });
       } else if (
         error instanceof AuthApiError &&
         error.code === "REMOTE_API_UNAVAILABLE"
@@ -329,9 +610,20 @@ const RegisterPage = () => {
               fullWidth
               label={t("form.name")}
               {...nameField}
+              onChange={(event) => {
+                setServerError(null);
+                void nameField.onChange(event);
+              }}
               autoComplete="name"
-              error={Boolean(errors.name)}
-              helperText={errors.name?.message}
+              error={Boolean(errors.name) || displayedNameAvailability === "taken"}
+              helperText={getNameHelperText()}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <AvailabilityAdornment state={displayedNameAvailability} />
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
@@ -339,9 +631,20 @@ const RegisterPage = () => {
               label={t("form.email")}
               type="email"
               {...emailField}
+              onChange={(event) => {
+                setServerError(null);
+                void emailField.onChange(event);
+              }}
               autoComplete="email"
-              error={Boolean(errors.email)}
-              helperText={errors.email?.message}
+              error={Boolean(errors.email) || displayedEmailAvailability === "taken"}
+              helperText={getEmailHelperText()}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <AvailabilityAdornment state={displayedEmailAvailability} />
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
@@ -398,7 +701,7 @@ const RegisterPage = () => {
               type="submit"
               variant="contained"
               size="large"
-              disabled={submitting}
+              disabled={submitting || availabilityBlocksSubmit}
               startIcon={
                 submitting ? <CircularProgress size={18} color="inherit" /> : undefined
               }

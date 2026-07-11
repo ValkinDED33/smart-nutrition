@@ -76,6 +76,21 @@ export const createAuthService = ({
     return name;
   };
 
+  const normalizeNameForAvailability = (value) =>
+    sanitizeName(value).toLowerCase();
+
+  const findUserByName = async (name) => {
+    const normalizedName = normalizeNameForAvailability(name);
+
+    if (!normalizedName) {
+      return null;
+    }
+
+    const users = (await authRepository.listUsers?.()) ?? [];
+
+    return users.find((user) => normalizeNameForAvailability(user?.name) === normalizedName) ?? null;
+  };
+
   const readBoundedNumber = (value, fieldName, { min, max }) => {
     const numberValue = Number(value);
 
@@ -516,6 +531,12 @@ export const createAuthService = ({
         return createRegistrationVerification(existingUser);
       }
 
+      const existingNameUser = await findUserByName(profileInput.name);
+
+      if (existingNameUser) {
+        throw new AuthApiError("NAME_IN_USE", "A user with this name already exists.");
+      }
+
       const hasExistingOwner =
         (await authRepository.hasUserWithRole?.("OWNER")) ||
         (await authRepository.hasUserWithRole?.("SUPER_ADMIN"));
@@ -573,6 +594,39 @@ export const createAuthService = ({
         await authRepository.deleteUser?.(user.id);
         throw error;
       }
+    },
+
+    checkRegistrationAvailability: async (body = {}) => {
+      const rawEmail = normalizeEmail(body.email);
+      const rawName = sanitizeName(body.name);
+      const response = {
+        email: {
+          checked: false,
+          valid: false,
+          available: false,
+        },
+        name: {
+          checked: false,
+          valid: false,
+          available: false,
+        },
+      };
+
+      if (rawEmail) {
+        response.email.checked = true;
+        response.email.valid = validEmailPattern.test(rawEmail);
+        response.email.available =
+          response.email.valid && !(await authRepository.findUserByEmail(rawEmail));
+      }
+
+      if (rawName) {
+        response.name.checked = true;
+        response.name.valid = rawName.length >= 2 && rawName.length <= 80;
+        response.name.available =
+          response.name.valid && !(await findUserByName(rawName));
+      }
+
+      return response;
     },
 
     verifyRegistration: async (body) => {

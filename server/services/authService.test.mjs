@@ -15,6 +15,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
     updateUser: vi.fn(),
     updateUserPassword: vi.fn(),
     deleteUser: vi.fn(),
+    listUsers: vi.fn(() => []),
     listUserBackups: vi.fn(() => []),
     readUserBackup: vi.fn(() => null),
     createSession: vi.fn(),
@@ -481,6 +482,92 @@ describe("authService", () => {
 
     expect(authRepository.insertUser).not.toHaveBeenCalled();
     expect(emailService.sendRegistrationVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it("reports backend-confirmed registration field availability", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const existingUser = {
+      id: "user-availability",
+      email: "used@example.com",
+      name: "Taken Name",
+      role: "USER",
+    };
+
+    authRepository.findUserByEmail.mockImplementation((email) =>
+      email === existingUser.email ? existingUser : null
+    );
+    authRepository.listUsers.mockReturnValue([existingUser]);
+
+    await expect(
+      service.checkRegistrationAvailability({
+        email: "used@example.com",
+        name: "taken name",
+      })
+    ).resolves.toEqual({
+      email: {
+        checked: true,
+        valid: true,
+        available: false,
+      },
+      name: {
+        checked: true,
+        valid: true,
+        available: false,
+      },
+    });
+
+    await expect(
+      service.checkRegistrationAvailability({
+        email: "free@example.com",
+        name: "Free Name",
+      })
+    ).resolves.toEqual({
+      email: {
+        checked: true,
+        valid: true,
+        available: true,
+      },
+      name: {
+        checked: true,
+        valid: true,
+        available: true,
+      },
+    });
+  });
+
+  it("rejects registration when the profile name is already used", async () => {
+    const { authRepository, service } = createAuthServiceFixture({
+      configOverrides: {
+        registrationVerificationTokenTtlMs: 900000,
+      },
+    });
+    authRepository.listUsers.mockReturnValue([
+      {
+        id: "existing-name",
+        email: "existing-name@example.com",
+        name: "Existing Name",
+        role: "USER",
+      },
+    ]);
+
+    await expect(
+      service.register({
+        name: "existing name",
+        email: "new-name-owner@example.com",
+        password: "StrongPass123!",
+        age: 31,
+        weight: 72,
+        height: 178,
+        gender: "male",
+        activity: "moderate",
+        goal: "maintain",
+      })
+    ).rejects.toMatchObject({
+      code: "NAME_IN_USE",
+    });
+
+    expect(authRepository.insertUser).not.toHaveBeenCalled();
+    expect(authRepository.createRegistrationVerificationToken).not.toHaveBeenCalled();
   });
 
   it("resends verification when registering an unverified email again", async () => {

@@ -22,6 +22,11 @@ export const uk = {
     "Створіть акаунт і підтвердіть email кнопкою в листі. Далі Алекс проведе коротке налаштування профілю.",
   "auth.registrationAssistantIntro":
     "Після підтвердження я запитаю 7 речей: ім'я, вік, стать, зріст, вагу і головну ціль.",
+  "auth.checkingAvailability": "Перевіряємо доступність...",
+  "auth.nameAvailable": "Ім'я вільне.",
+  "auth.emailAvailable": "Email вільний.",
+  "auth.nameInUse": "Це ім'я вже використовується.",
+  "auth.availabilityUnavailable": "Не вдалося перевірити доступність. Спробуйте ще раз.",
   "auth.resend": "Надіслати ще раз",
   "auth.confirmationSent": "Ми надіслали посилання для підтвердження на {target}.",
   "auth.openConfirmationEmail": "Відкрийте лист і натисніть кнопку підтвердження email.",
