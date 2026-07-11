@@ -1124,14 +1124,11 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       }}
     >
       <Stack spacing={2}>
-              <Typography component="h2" variant="h6" sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
           {copy.title}
         </Typography>
 
         <Typography color="text.secondary">{copy.subtitle}</Typography>
-        <Typography color="text.secondary" variant="body2">
-          {copy.cameraHint}
-        </Typography>
 
         {saveError ? (
           <Alert severity="error" onClose={() => setSaveError(null)}>
@@ -1154,50 +1151,6 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             </Stack>
           </Alert>
         ) : null}
-
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-          <TextField
-            fullWidth
-            label={copy.barcode}
-            value={barcodeInput}
-            onChange={(event) => handleBarcodeChange(event.target.value)}
-            slotProps={{
-              htmlInput: {
-                enterKeyHint: "search",
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-              },
-            }}
-            onFocus={(event) => selectInputValue(event.target)}
-            onClick={(event) => selectInputValue(event.currentTarget)}
-          />
-          <TextField
-            type="text"
-            label={copy.grams}
-            value={quantity}
-            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
-            onFocus={(event) => selectInputValue(event.target)}
-            onClick={(event) => selectInputValue(event.currentTarget)}
-            onChange={(event) => {
-              const value = event.target.value;
-              const nextQuantity = Number(value);
-              setQuantity(
-                value === "" || !Number.isFinite(nextQuantity)
-                  ? ""
-                  : Math.max(0, nextQuantity)
-              );
-            }}
-            sx={{ width: { xs: "100%", md: 180 } }}
-          />
-          <Button
-            variant="outlined"
-            onClick={() => void handleLookup(barcodeInput, true)}
-            disabled={isSearching || selectedQuantity === null}
-            sx={{ width: { xs: "100%", md: 220 } }}
-          >
-            {copy.search}
-          </Button>
-        </Stack>
 
         <Box
           sx={scannerPreviewSx}
@@ -1266,6 +1219,90 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             </Stack>
           )}
         </Box>
+
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          {!scanning ? (
+            <Button
+              variant="contained"
+              onClick={handleStartScanner}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              {copy.start}
+            </Button>
+          ) : (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={stopScanner}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              {copy.stop}
+            </Button>
+          )}
+          <Button
+            variant="text"
+            onClick={() => setScannerSoundEnabled((current) => !current)}
+            aria-pressed={scannerSoundEnabled}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              textTransform: SCANNER_TEXT_TRANSFORM_NONE,
+              fontWeight: SCANNER_STRONG_FONT_WEIGHT,
+            }}
+          >
+            {scannerSoundEnabled ? copy.muteSound : copy.unmuteSound}
+          </Button>
+          <Chip
+            size="small"
+            label={scannerSoundEnabled ? copy.soundOn : copy.soundOff}
+            color={scannerSoundEnabled ? "success" : "default"}
+            variant={scannerSoundEnabled ? "filled" : "outlined"}
+            sx={{ alignSelf: "center" }}
+          />
+        </Box>
+
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+          <TextField
+            fullWidth
+            label={copy.barcode}
+            value={barcodeInput}
+            onChange={(event) => handleBarcodeChange(event.target.value)}
+            slotProps={{
+              htmlInput: {
+                enterKeyHint: "search",
+                inputMode: "numeric",
+                pattern: "[0-9]*",
+              },
+            }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+          />
+          <TextField
+            type="text"
+            label={copy.grams}
+            value={quantity}
+            slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+            onFocus={(event) => selectInputValue(event.target)}
+            onClick={(event) => selectInputValue(event.currentTarget)}
+            onChange={(event) => {
+              const value = event.target.value;
+              const nextQuantity = Number(value);
+              setQuantity(
+                value === "" || !Number.isFinite(nextQuantity)
+                  ? ""
+                  : Math.max(0, nextQuantity)
+              );
+            }}
+            sx={{ width: { xs: "100%", md: 180 } }}
+          />
+          <Button
+            variant="outlined"
+            onClick={() => void handleLookup(barcodeInput, true)}
+            disabled={isSearching || selectedQuantity === null}
+            sx={{ width: { xs: "100%", md: 220 } }}
+          >
+            {copy.search}
+          </Button>
+        </Stack>
 
         {scanTimedOut ? (
           <Alert severity="warning">
@@ -1368,46 +1405,6 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             </Stack>
           </Alert>
         ) : null}
-
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          {!scanning ? (
-            <Button
-              variant="contained"
-              onClick={handleStartScanner}
-              sx={{ width: { xs: "100%", sm: "auto" } }}
-            >
-              {copy.start}
-            </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={stopScanner}
-              sx={{ width: { xs: "100%", sm: "auto" } }}
-            >
-              {copy.stop}
-            </Button>
-          )}
-          <Button
-            variant="text"
-            onClick={() => setScannerSoundEnabled((current) => !current)}
-            aria-pressed={scannerSoundEnabled}
-            sx={{
-              width: { xs: "100%", sm: "auto" },
-              textTransform: SCANNER_TEXT_TRANSFORM_NONE,
-              fontWeight: SCANNER_STRONG_FONT_WEIGHT,
-            }}
-          >
-            {scannerSoundEnabled ? copy.muteSound : copy.unmuteSound}
-          </Button>
-          <Chip
-            size="small"
-            label={scannerSoundEnabled ? copy.soundOn : copy.soundOff}
-            color={scannerSoundEnabled ? "success" : "default"}
-            variant={scannerSoundEnabled ? "filled" : "outlined"}
-            sx={{ alignSelf: "center" }}
-          />
-        </Box>
 
         <Stack spacing={1}>
           <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.scanHistory}</Typography>

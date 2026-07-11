@@ -26,6 +26,19 @@ describe("BarcodeScanner mobile preview layout", () => {
     expect(source).not.toContain("minHeight: 240");
   });
 
+  it("keeps the camera preview above manual barcode controls in the scanner tab", () => {
+    const source = scannerSource();
+    const previewIndex = source.indexOf('data-scanner-preview-shell="stable"');
+    const manualInputIndex = source.indexOf("label={copy.barcode}");
+    const historyIndex = source.indexOf("{copy.scanHistory}");
+
+    expect(previewIndex).toBeGreaterThan(-1);
+    expect(manualInputIndex).toBeGreaterThan(-1);
+    expect(historyIndex).toBeGreaterThan(-1);
+    expect(previewIndex).toBeLessThan(manualInputIndex);
+    expect(previewIndex).toBeLessThan(historyIndex);
+  });
+
   it("keeps the video node mounted and decouples camera lifecycle from meal state changes", () => {
     const source = scannerSource();
 
