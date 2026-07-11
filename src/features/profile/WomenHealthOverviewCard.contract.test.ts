@@ -2,10 +2,11 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 const readSource = (path: string) => readFile(path, "utf8");
+const womenHealthCardPath = "src/features/profile/WomenHealthOverviewCard.tsx";
 
 describe("WomenHealthOverviewCard contract", () => {
   it("uses the canonical profile women-health state without local persistence", async () => {
-    const source = await readSource("src/features/profile/WomenHealthOverviewCard.tsx");
+    const source = await readSource(womenHealthCardPath);
 
     expect(source).toContain("state.profile.womenHealth");
     expect(source).toContain("isWomenHealthVisibleForGender");
@@ -14,7 +15,7 @@ describe("WomenHealthOverviewCard contract", () => {
   });
 
   it("keeps women-health guidance safety-bound instead of medical certainty", async () => {
-    const source = await readSource("src/features/profile/WomenHealthOverviewCard.tsx");
+    const source = await readSource(womenHealthCardPath);
 
     expect(source).toContain("No medical prescriptions");
     expect(source).toContain("лікарем");
@@ -27,5 +28,15 @@ describe("WomenHealthOverviewCard contract", () => {
 
     expect(source).toContain("WomenHealthOverviewCard");
     expect(source).toContain("../features/profile/WomenHealthOverviewCard");
+  });
+
+  it("uses backend-confirmed partner sharing instead of a local family mock", async () => {
+    const source = await readSource(womenHealthCardPath);
+
+    expect(source).toContain("createRemotePartnerInvite");
+    expect(source).toContain("acceptRemotePartnerInvite");
+    expect(source).toContain("fetchRemotePartnerPregnancyShares");
+    expect(source).toContain("QRCode.toDataURL");
+    expect(source).not.toContain("localStorage");
   });
 });

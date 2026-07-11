@@ -29,6 +29,7 @@ import {
   createClientErrorMemoryStore,
 } from "./routes/clientError.routes.mjs";
 import { createHealthController } from "./routes/health.routes.mjs";
+import { createPartnerController } from "./routes/partner.routes.mjs";
 import { createReminderController } from "./routes/reminder.routes.mjs";
 import { createTelegramController } from "./routes/telegram.routes.mjs";
 import { createAiService } from "./services/ai/ai.service.mjs";
@@ -37,6 +38,7 @@ import { createBrevoService } from "./services/brevoService.mjs";
 import { createEmailService } from "./services/emailService.mjs";
 import { createPhotoAnalysisService } from "./services/photoAnalysisService.mjs";
 import { createPlatformService } from "./services/platformService.mjs";
+import { createPartnerService } from "./services/partnerService.mjs";
 import { createProductLookupService } from "./services/productLookupService.mjs";
 import { createReminderService } from "./services/reminderService.mjs";
 import { createStateService } from "./services/stateService.mjs";
@@ -260,6 +262,15 @@ const accountController = createAccountController({
 const telegramController = createTelegramController({
   telegramService,
 });
+const partnerService = createPartnerService({
+  authRepository,
+  stateRepository,
+  config: serverConfig,
+});
+const partnerController = createPartnerController({
+  partnerService,
+  bodyLimitBytes: serverConfig.bodyLimitBytes,
+});
 const reminderController = createReminderController({
   reminderService,
   bodyLimitBytes: serverConfig.bodyLimitBytes,
@@ -275,6 +286,7 @@ const apiRouter = createApiRouter({
   authRouteScope: "protected",
   accountController,
   telegramController,
+  partnerController,
   reminderController,
   stateController,
   aiController,

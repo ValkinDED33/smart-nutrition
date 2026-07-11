@@ -4,6 +4,7 @@ import {
   analyzeRemoteMealPhoto,
   addRemoteMealTemplate,
   checkRemoteBackendAvailability,
+  acceptRemotePartnerInvite,
   createRemoteTelegramConnectLink,
   disconnectRemoteTelegram,
   fetchRemoteAccountBackup,
@@ -60,6 +61,7 @@ export type { RemoteSyncResult };
 export type { ProductIntakePayload, ProductIntakeResult };
 export type { TelegramConnectionStatus, TelegramConnectLink };
 export { AuthApiError };
+export { acceptRemotePartnerInvite };
 
 export const restoreSession = async (options?: {
   signal?: AbortSignal;

@@ -35,6 +35,10 @@ import type {
   MotivationState,
   MotivationTask,
   MotivationTaskCategory,
+  PartnerShareInvite,
+  PartnerShareLink,
+  PartnerSharePermission,
+  PartnerSharingState,
   PersonalProfileDetails,
   PetCompanion,
   PremiumPlanId,
@@ -83,6 +87,7 @@ export interface ProfileState {
   premium: PremiumSubscriptionState;
   personalDetails: PersonalProfileDetails;
   womenHealth: WomenHealthState;
+  partnerSharing: PartnerSharingState;
 }
 
 interface ProfileTargetsPayload {
@@ -198,6 +203,8 @@ const isPetCompanion = (value: unknown): value is PetCompanion =>
   value === "dog" ||
   value === "cat_and_dog" ||
   value === "other";
+const isPartnerSharePermission = (value: unknown): value is PartnerSharePermission =>
+  value === "pregnancy_timeline";
 
 const isReminderTime = (value: unknown): value is string =>
   typeof value === "string" && /^([01]\d|2[0-3]):([0-5]\d)$/.test(value.trim());
@@ -281,6 +288,11 @@ const createDefaultPersonalDetails = (): PersonalProfileDetails => ({
   relationshipStatus: "prefer_not",
   supportSystem: "self",
   petCompanion: "none",
+});
+
+const createDefaultPartnerSharingState = (): PartnerSharingState => ({
+  invites: [],
+  links: [],
 });
 
 const normalizeMeasurementHistory = (value: unknown): MeasurementHistoryItem[] => {
@@ -566,6 +578,86 @@ const normalizePersonalDetails = (value: unknown): PersonalProfileDetails => {
   };
 };
 
+const normalizePartnerPermissions = (value: unknown): PartnerSharePermission[] => {
+  const permissions = Array.isArray(value)
+    ? value.filter(isPartnerSharePermission)
+    : ["pregnancy_timeline"];
+
+  return permissions.includes("pregnancy_timeline") ? ["pregnancy_timeline"] : [];
+};
+
+const normalizePartnerSharingState = (value: unknown): PartnerSharingState => {
+  const record = isRecord(value) ? value : {};
+
+  const invites: PartnerShareInvite[] = Array.isArray(record.invites)
+    ? record.invites
+        .map((item) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const id = typeof item.id === "string" ? item.id.trim().slice(0, 96) : "";
+          const codeHash =
+            typeof item.codeHash === "string" ? item.codeHash.trim().slice(0, 160) : "";
+          const expiresAt = toNullableIsoDate(item.expiresAt);
+          const createdAt = toNullableIsoDate(item.createdAt);
+
+          if (!id || !codeHash || !expiresAt || !createdAt) {
+            return null;
+          }
+
+          return {
+            id,
+            codeHash,
+            codePreview:
+              typeof item.codePreview === "string"
+                ? item.codePreview.trim().replace(/\s+/g, "").slice(-6)
+                : "",
+            permissions: normalizePartnerPermissions(item.permissions),
+            expiresAt,
+            createdAt,
+            acceptedAt: toNullableIsoDate(item.acceptedAt),
+          };
+        })
+        .filter((item): item is PartnerShareInvite => item !== null)
+        .slice(-10)
+    : [];
+
+  const links: PartnerShareLink[] = Array.isArray(record.links)
+    ? record.links
+        .map((item) => {
+          if (!isRecord(item)) {
+            return null;
+          }
+
+          const id = typeof item.id === "string" ? item.id.trim().slice(0, 96) : "";
+          const partnerUserId =
+            typeof item.partnerUserId === "string"
+              ? item.partnerUserId.trim().slice(0, 96)
+              : "";
+          const connectedAt = toNullableIsoDate(item.connectedAt);
+
+          if (!id || !partnerUserId || !connectedAt) {
+            return null;
+          }
+
+          return {
+            id,
+            partnerUserId,
+            role: item.role === "owner" ? "owner" : "partner",
+            permissions: normalizePartnerPermissions(item.permissions),
+            status: item.status === "revoked" ? "revoked" : "active",
+            connectedAt,
+            revokedAt: toNullableIsoDate(item.revokedAt),
+          };
+        })
+        .filter((item): item is PartnerShareLink => item !== null)
+        .slice(-10)
+    : [];
+
+  return { invites, links };
+};
+
 export const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
@@ -585,6 +677,7 @@ export const createInitialProfileState = (): ProfileState => ({
   premium: createDefaultPremiumSubscription(),
   personalDetails: createDefaultPersonalDetails(),
   womenHealth: createDefaultWomenHealthState(),
+  partnerSharing: createDefaultPartnerSharingState(),
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -633,6 +726,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     premium: normalizePremiumSubscription(value.premium),
     personalDetails: normalizePersonalDetails(value.personalDetails),
     womenHealth: normalizeWomenHealthState(value.womenHealth),
+    partnerSharing: normalizePartnerSharingState(value.partnerSharing),
   };
 };
 

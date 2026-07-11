@@ -3,7 +3,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -47,6 +47,10 @@ import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { AuthSurface } from "@shared/ui";
+import {
+  PENDING_PARTNER_INVITE_KEY,
+  setClientStorageItem,
+} from "@shared/lib/clientPersistence";
 
 type FormData = {
   name: string;
@@ -319,6 +323,7 @@ const RegisterPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const companion = useSelector((state: RootState) => state.companion);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t, appLanguage, languageLabels, setLanguage, resetOnboarding } = useLanguage();
   const { mode: colorMode, setMode: setColorMode } = useAppColorMode();
   const stepCopy = getRegistrationCopy(appLanguage);
@@ -397,6 +402,14 @@ const RegisterPage = () => {
     availabilityEmail,
     emailCanCheck
   );
+
+  useEffect(() => {
+    const partnerInvite = searchParams.get("partnerInvite")?.trim().toUpperCase();
+
+    if (/^SN-[A-Z0-9]{6,12}$/.test(partnerInvite ?? "")) {
+      setClientStorageItem(PENDING_PARTNER_INVITE_KEY, partnerInvite ?? "");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!nameCanCheck && !emailCanCheck) {

@@ -152,6 +152,35 @@ export interface WomenHealthState {
   updatedAt: string | null;
 }
 
+export type PartnerSharePermission = "pregnancy_timeline";
+export type PartnerShareRole = "owner" | "partner";
+export type PartnerShareStatus = "active" | "revoked";
+
+export interface PartnerShareInvite {
+  id: string;
+  codeHash: string;
+  codePreview: string;
+  permissions: PartnerSharePermission[];
+  expiresAt: string;
+  createdAt: string;
+  acceptedAt: string | null;
+}
+
+export interface PartnerShareLink {
+  id: string;
+  partnerUserId: string;
+  role: PartnerShareRole;
+  permissions: PartnerSharePermission[];
+  status: PartnerShareStatus;
+  connectedAt: string;
+  revokedAt: string | null;
+}
+
+export interface PartnerSharingState {
+  invites: PartnerShareInvite[];
+  links: PartnerShareLink[];
+}
+
 export interface MeasurementHistoryItem {
   date: string;
   weight: number;

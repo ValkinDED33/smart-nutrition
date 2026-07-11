@@ -506,6 +506,15 @@ const normalizeProfileState = (value, user) => {
     motivation: normalizeMotivationState(record.motivation, fallback.motivation),
     premium: normalizePremiumSubscription(record.premium, fallback.premium),
     assistant: normalizeAssistantCustomization(record.assistant, fallback.assistant),
+    personalDetails: isRecord(record.personalDetails)
+      ? { ...fallback.personalDetails, ...record.personalDetails }
+      : fallback.personalDetails,
+    womenHealth: isRecord(record.womenHealth)
+      ? { ...fallback.womenHealth, ...record.womenHealth }
+      : fallback.womenHealth,
+    partnerSharing: isRecord(record.partnerSharing)
+      ? { ...fallback.partnerSharing, ...record.partnerSharing }
+      : fallback.partnerSharing,
   };
 };
 

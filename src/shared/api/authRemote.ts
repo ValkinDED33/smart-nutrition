@@ -96,6 +96,42 @@ export interface TelegramConnectLink extends TelegramConnectionStatus {
   expiresAt: string;
 }
 
+export interface PartnerInviteResult {
+  code: string;
+  inviteUrl: string;
+  expiresAt: string;
+  permissions: ["pregnancy_timeline"];
+}
+
+export interface PartnerPregnancyShare {
+  owner: {
+    id: string;
+    name: string;
+  };
+  pregnancy: {
+    mode: "none" | "trying_to_conceive" | "pregnant" | "postpartum";
+    pregnancyWeek: number | null;
+    dueDate: string | null;
+    lastPeriodStartDate: string | null;
+    updatedAt: string | null;
+  };
+  baby: {
+    milestoneWeek: number;
+    sizeKey: string;
+    note: string;
+    disclaimer: string;
+  } | null;
+}
+
+export interface PartnerAcceptResult {
+  ok: boolean;
+  share: PartnerPregnancyShare;
+}
+
+export interface PartnerPregnancySharesResult {
+  items: PartnerPregnancyShare[];
+}
+
 interface RemoteMutationResponse {
   ok: true;
   meta: AppSnapshotMeta | null;
@@ -1340,6 +1376,45 @@ export const disconnectRemoteTelegram =
     );
 
     return data;
+  };
+
+export const createRemotePartnerInvite =
+  async (): Promise<PartnerInviteResult> => {
+    const { data } = await requestRemote<PartnerInviteResult>(
+      "/partner/invites",
+      { method: "POST" },
+      { requireAuth: true }
+    );
+
+    return data;
+  };
+
+export const acceptRemotePartnerInvite = async (
+  code: string
+): Promise<PartnerAcceptResult> => {
+  const { data } = await requestRemote<PartnerAcceptResult>(
+    "/partner/invites/accept",
+    {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    },
+    { requireAuth: true }
+  );
+
+  return data;
+};
+
+export const fetchRemotePartnerPregnancyShares =
+  async (): Promise<PartnerPregnancySharesResult> => {
+    const { data } = await requestRemote<PartnerPregnancySharesResult>(
+      "/partner/pregnancy",
+      { method: "GET" },
+      { requireAuth: true }
+    );
+
+    return {
+      items: Array.isArray(data.items) ? data.items : [],
+    };
   };
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {

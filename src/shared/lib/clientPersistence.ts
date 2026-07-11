@@ -3,11 +3,13 @@ const LEGACY_KEY_PREFIXES = [
   "smart-nutrition-assistant-history:",
 ];
 const LEGACY_DB_NAME = "smart-nutrition-client";
+export const PENDING_PARTNER_INVITE_KEY = "smart-nutrition.pending-partner-invite";
 const DURABLE_PREFERENCE_KEYS = new Set([
   "smart-nutrition.language",
   "smart-nutrition.color-mode",
   "smart-nutrition.auth-session-hint",
   "smart-nutrition.remote-device-id",
+  PENDING_PARTNER_INVITE_KEY,
 ]);
 
 const memoryStore = new Map<string, string>();

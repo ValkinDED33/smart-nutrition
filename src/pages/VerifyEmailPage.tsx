@@ -14,10 +14,20 @@ import { applyCompanionRewardInCloud } from "../features/companion/companionClou
 import { normalizeCompanionState } from "../features/companion/model/store";
 import { replaceProfileState } from "../features/profile/profileSlice";
 import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
-import { AuthApiError, getAuthRuntimeInfo, verifyRegistration } from "../shared/api/auth";
+import {
+  AuthApiError,
+  acceptRemotePartnerInvite,
+  getAuthRuntimeInfo,
+  verifyRegistration,
+} from "../shared/api/auth";
 import { writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { useLanguage } from "../shared/language";
 import { clearSensitiveSearchParamsFromCurrentUrl } from "../shared/lib/sensitiveUrl";
+import {
+  PENDING_PARTNER_INVITE_KEY,
+  getClientStorageItem,
+  removeClientStorageItem,
+} from "@shared/lib/clientPersistence";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { AuthSurface } from "@shared/ui";
 
@@ -91,6 +101,18 @@ const VerifyEmailPage = () => {
         } catch {
           // Email verification/session succeeded. The sync slice records the
           // profile language failure without showing unsaved profile data.
+        }
+
+        const pendingPartnerInvite = getClientStorageItem(PENDING_PARTNER_INVITE_KEY);
+
+        if (pendingPartnerInvite) {
+          try {
+            await acceptRemotePartnerInvite(pendingPartnerInvite);
+            removeClientStorageItem(PENDING_PARTNER_INVITE_KEY);
+          } catch {
+            // The account remains valid. The user can paste the invite code
+            // again from the family access block if the invite expired.
+          }
         }
 
         let companionRewardPayload = {};

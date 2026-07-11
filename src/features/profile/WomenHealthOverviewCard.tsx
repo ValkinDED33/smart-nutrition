@@ -1,8 +1,27 @@
-import { Alert, Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  LinearProgress,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import QRCode from "qrcode";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import type { WomenHealthMode, WomenHealthState } from "@domain/profile/types";
 import { isWomenHealthVisibleForGender } from "@domain/profile/womenHealth";
+import {
+  acceptRemotePartnerInvite,
+  createRemotePartnerInvite,
+  fetchRemotePartnerPregnancyShares,
+  type PartnerInviteResult,
+  type PartnerPregnancyShare,
+} from "@shared/api/authRemote";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
@@ -46,6 +65,22 @@ const womenHealthCopy = {
     cycleFocus:
       "Цикл може впливати на апетит, воду, вагу і енергію. Тренд важливіший за один день.",
     addContext: "Додайте дату останньої менструації або режим у профілі, щоб відкрити персональні підказки.",
+    partnerTitle: "Сімейний доступ",
+    partnerHelp:
+      "Партнер бачить тільки термін вагітності, розвиток малюка і орієнтовну дату. Харчування, вага, нотатки і приватний профіль не передаються.",
+    createPartnerInvite: "Підключити партнера",
+    acceptPartnerInvite: "Прийняти код партнера",
+    partnerCode: "Код",
+    partnerLink: "Посилання",
+    partnerInviteReady: "Запрошення створено. Код діє 7 днів.",
+    partnerCodeLabel: "Код SN-...",
+    partnerConnected: "Профілі підключені",
+    partnerEmpty: "Партнерських даних поки немає.",
+    babySize: "Орієнтовний розмір",
+    copy: "Копіювати",
+    copied: "Скопійовано",
+    loading: "Зачекайте...",
+    shareLoadError: "Не вдалося отримати партнерські дані.",
     days: (value: number) => `${value} дн.`,
     dayRange: (from: number, to: number) => `${from}-${to} день`,
   },
@@ -84,6 +119,22 @@ const womenHealthCopy = {
     cycleFocus:
       "Cykl może wpływać na apetyt, wodę, wagę i energię. Trend jest ważniejszy niż jeden dzień.",
     addContext: "Dodaj datę ostatniej miesiączki albo tryb w profilu, aby odblokować osobiste wskazówki.",
+    partnerTitle: "Dostęp rodzinny",
+    partnerHelp:
+      "Partner widzi tylko tydzień ciąży, rozwój dziecka i orientacyjną datę. Jedzenie, waga, notatki i prywatny profil nie są udostępniane.",
+    createPartnerInvite: "Dołącz partnera",
+    acceptPartnerInvite: "Przyjmij kod partnera",
+    partnerCode: "Kod",
+    partnerLink: "Link",
+    partnerInviteReady: "Zaproszenie utworzone. Kod działa 7 dni.",
+    partnerCodeLabel: "Kod SN-...",
+    partnerConnected: "Profile połączone",
+    partnerEmpty: "Nie ma jeszcze danych partnera.",
+    babySize: "Orientacyjny rozmiar",
+    copy: "Kopiuj",
+    copied: "Skopiowano",
+    loading: "Chwila...",
+    shareLoadError: "Nie udało się pobrać danych partnera.",
     days: (value: number) => `${value} dni`,
     dayRange: (from: number, to: number) => `${from}-${to} dzień`,
   },
@@ -122,6 +173,22 @@ const womenHealthCopy = {
     cycleFocus:
       "Cycle can affect appetite, water, weight, and energy. The trend matters more than one day.",
     addContext: "Add last period date or mode in profile to unlock personal guidance.",
+    partnerTitle: "Family access",
+    partnerHelp:
+      "A partner sees only pregnancy week, baby development, and estimated date. Food, weight, notes, and private profile data are not shared.",
+    createPartnerInvite: "Connect partner",
+    acceptPartnerInvite: "Accept partner code",
+    partnerCode: "Code",
+    partnerLink: "Link",
+    partnerInviteReady: "Invite created. The code works for 7 days.",
+    partnerCodeLabel: "SN-... code",
+    partnerConnected: "Profiles connected",
+    partnerEmpty: "No partner data yet.",
+    babySize: "Estimated size",
+    copy: "Copy",
+    copied: "Copied",
+    loading: "Please wait...",
+    shareLoadError: "Partner data could not be loaded.",
     days: (value: number) => `${value} days`,
     dayRange: (from: number, to: number) => `day ${from}-${to}`,
   },
@@ -225,15 +292,167 @@ const getFocusText = (copy: WomenHealthCopy, state: WomenHealthState) => {
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
+const babySizeLabels = {
+  uk: new Map([
+    ["poppy_seed", "макове зернятко"],
+    ["raspberry", "малина"],
+    ["lime", "лайм"],
+    ["avocado", "авокадо"],
+    ["banana", "банан"],
+    ["corn", "кукурудза"],
+    ["eggplant", "баклажан"],
+    ["squash", "гарбуз"],
+    ["romaine", "лист салату"],
+    ["watermelon", "кавун"],
+  ]),
+  pl: new Map([
+    ["poppy_seed", "ziarenko maku"],
+    ["raspberry", "malina"],
+    ["lime", "limonka"],
+    ["avocado", "awokado"],
+    ["banana", "banan"],
+    ["corn", "kukurydza"],
+    ["eggplant", "bakłażan"],
+    ["squash", "dynia"],
+    ["romaine", "liść sałaty"],
+    ["watermelon", "arbuz"],
+  ]),
+  en: new Map([
+    ["poppy_seed", "poppy seed"],
+    ["raspberry", "raspberry"],
+    ["lime", "lime"],
+    ["avocado", "avocado"],
+    ["banana", "banana"],
+    ["corn", "corn"],
+    ["eggplant", "eggplant"],
+    ["squash", "squash"],
+    ["romaine", "romaine leaf"],
+    ["watermelon", "watermelon"],
+  ]),
+} as const;
+
+const getBabySizeLabel = (language: AppLanguage, sizeKey: string) => {
+  const labels =
+    language === "pl"
+      ? babySizeLabels.pl
+      : language === "en"
+        ? babySizeLabels.en
+        : babySizeLabels.uk;
+
+  return labels.get(sizeKey) ?? sizeKey;
+};
+
 export const WomenHealthOverviewCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
+  const partnerSharing = useSelector((state: RootState) => state.profile.partnerSharing);
   const { appLanguage } = useLanguage();
   const copy = getWomenHealthCopy(appLanguage);
+  const [invite, setInvite] = useState<PartnerInviteResult | null>(null);
+  const [inviteQrDataUrl, setInviteQrDataUrl] = useState<string | null>(null);
+  const [partnerCode, setPartnerCode] = useState("");
+  const [partnerShares, setPartnerShares] = useState<PartnerPregnancyShare[]>([]);
+  const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
+  const [partnerError, setPartnerError] = useState<string | null>(null);
+  const [partnerLoading, setPartnerLoading] = useState(false);
+  const isWomenHealthOwner = isWomenHealthVisibleForGender(user?.gender);
+  const hasPartnerLink = partnerSharing.links.some(
+    (link) => link.role === "partner" && link.status === "active"
+  );
+  const pageTitle = isWomenHealthOwner ? copy.title : copy.partnerTitle;
+  const pageSubtitle = isWomenHealthOwner ? copy.subtitle : copy.partnerHelp;
 
-  if (!isWomenHealthVisibleForGender(user?.gender)) {
-    return null;
-  }
+  useEffect(() => {
+    if (!hasPartnerLink) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadShares = async () => {
+      try {
+        const result = await fetchRemotePartnerPregnancyShares();
+
+        if (!cancelled) {
+          setPartnerShares(result.items);
+        }
+      } catch {
+        if (!cancelled) {
+          setPartnerError(copy.shareLoadError);
+        }
+      }
+    };
+
+    void loadShares();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.shareLoadError, hasPartnerLink]);
+
+  useEffect(() => {
+    if (!invite?.inviteUrl) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const renderQr = async () => {
+      const dataUrl = await QRCode.toDataURL(invite.inviteUrl, {
+        errorCorrectionLevel: "M",
+        margin: 1,
+        width: 192,
+      });
+
+      if (!cancelled) {
+        setInviteQrDataUrl(dataUrl);
+      }
+    };
+
+    void renderQr();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [invite]);
+
+  const createPartnerInvite = async () => {
+    setPartnerLoading(true);
+    setPartnerError(null);
+    setPartnerStatus(null);
+
+    try {
+      const result = await createRemotePartnerInvite();
+      setInvite(result);
+      setPartnerStatus(copy.partnerInviteReady);
+    } catch (error) {
+      setPartnerError(error instanceof Error ? error.message : copy.shareLoadError);
+    } finally {
+      setPartnerLoading(false);
+    }
+  };
+
+  const acceptPartnerInvite = async () => {
+    setPartnerLoading(true);
+    setPartnerError(null);
+    setPartnerStatus(null);
+
+    try {
+      const result = await acceptRemotePartnerInvite(partnerCode);
+      setPartnerShares([result.share]);
+      setPartnerStatus(copy.partnerConnected);
+      setPartnerCode("");
+    } catch (error) {
+      setPartnerError(error instanceof Error ? error.message : copy.shareLoadError);
+    } finally {
+      setPartnerLoading(false);
+    }
+  };
+
+  const copyText = async (value: string) => {
+    await navigator.clipboard?.writeText(value);
+    setPartnerStatus(copy.copied);
+  };
 
   const cycleDay = getCycleDay(womenHealth.lastPeriodStartDate);
   const trimester = getTrimester(womenHealth.pregnancyWeek);
@@ -265,37 +484,39 @@ export const WomenHealthOverviewCard = () => {
       <Stack spacing={2}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
-            {copy.title}
+            {pageTitle}
           </Typography>
           <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-            {copy.subtitle}
+            {pageSubtitle}
           </Typography>
         </Stack>
 
-        {!hasPersonalContext && <Alert severity="info">{copy.addContext}</Alert>}
+        {isWomenHealthOwner && !hasPersonalContext && <Alert severity="info">{copy.addContext}</Alert>}
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip color="secondary" label={getModeLabel(copy, womenHealth.mode)} />
-          <Chip
-            label={`${copy.doctorPlan}: ${
-              womenHealth.doctorConfirmed ? copy.doctorYes : copy.doctorNo
-            }`}
-            color={womenHealth.doctorConfirmed ? "success" : "default"}
-            variant="outlined"
-          />
-          {cycleDay && <Chip label={`${copy.cycleDay}: ${cycleDay}`} variant="outlined" />}
-          {womenHealth.pregnancyWeek && (
+        {isWomenHealthOwner && (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip color="secondary" label={getModeLabel(copy, womenHealth.mode)} />
             <Chip
-              label={`${copy.pregnancyWeek}: ${womenHealth.pregnancyWeek}`}
-              color="primary"
+              label={`${copy.doctorPlan}: ${
+                womenHealth.doctorConfirmed ? copy.doctorYes : copy.doctorNo
+              }`}
+              color={womenHealth.doctorConfirmed ? "success" : "default"}
               variant="outlined"
             />
-          )}
-          {trimester && <Chip label={`${copy.trimester}: ${trimester}`} variant="outlined" />}
-          {dueInDays !== null && <Chip label={`${copy.dueIn}: ${copy.days(dueInDays)}`} />}
-        </Stack>
+            {cycleDay && <Chip label={`${copy.cycleDay}: ${cycleDay}`} variant="outlined" />}
+            {womenHealth.pregnancyWeek && (
+              <Chip
+                label={`${copy.pregnancyWeek}: ${womenHealth.pregnancyWeek}`}
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {trimester && <Chip label={`${copy.trimester}: ${trimester}`} variant="outlined" />}
+            {dueInDays !== null && <Chip label={`${copy.dueIn}: ${copy.days(dueInDays)}`} />}
+          </Stack>
+        )}
 
-        <Box
+        {isWomenHealthOwner && <Box
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
@@ -347,9 +568,9 @@ export const WomenHealthOverviewCard = () => {
               />
             </Stack>
           </Paper>
-        </Box>
+        </Box>}
 
-        <Box
+        {isWomenHealthOwner && <Box
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
@@ -366,14 +587,155 @@ export const WomenHealthOverviewCard = () => {
               </Stack>
             </Paper>
           ))}
-        </Box>
+        </Box>}
 
-        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+        {isWomenHealthOwner && <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
           <Stack spacing={0.8}>
             <Typography sx={{ fontWeight: 850 }}>{copy.notes}</Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
               {womenHealth.notes || copy.noNotes}
             </Typography>
+          </Stack>
+        </Paper>}
+
+        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+          <Stack spacing={1.4}>
+            <Stack spacing={0.5}>
+              <Typography sx={{ fontWeight: 900 }}>{copy.partnerTitle}</Typography>
+              <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                {copy.partnerHelp}
+              </Typography>
+            </Stack>
+
+            {partnerStatus && <Alert severity="success">{partnerStatus}</Alert>}
+            {partnerError && <Alert severity="error">{partnerError}</Alert>}
+
+            {isWomenHealthOwner && (
+              <Stack spacing={1.2}>
+                <Button
+                  variant="contained"
+                  onClick={createPartnerInvite}
+                  disabled={partnerLoading}
+                  sx={{ alignSelf: "flex-start" }}
+                >
+                  {partnerLoading ? copy.loading : copy.createPartnerInvite}
+                </Button>
+                {invite && (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", sm: "auto 1fr" },
+                      gap: 1.2,
+                      alignItems: "center",
+                    }}
+                  >
+                    {inviteQrDataUrl && (
+                      <Box
+                        component="img"
+                        src={inviteQrDataUrl}
+                        alt={copy.partnerTitle}
+                        sx={{
+                          width: 160,
+                          height: 160,
+                          borderRadius: 1,
+                          border: "1px solid var(--sn-border-soft)",
+                        }}
+                      />
+                    )}
+                    <Stack spacing={0.8}>
+                      <Typography sx={{ fontWeight: 850 }}>
+                        {copy.partnerCode}: {invite.code}
+                      </Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {copy.partnerLink}: {invite.inviteUrl}
+                      </Typography>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Button variant="outlined" onClick={() => void copyText(invite.code)}>
+                          {copy.copy} {copy.partnerCode}
+                        </Button>
+                        <Button variant="outlined" onClick={() => void copyText(invite.inviteUrl)}>
+                          {copy.copy} {copy.partnerLink}
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Box>
+                )}
+              </Stack>
+            )}
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <TextField
+                label={copy.partnerCodeLabel}
+                value={partnerCode}
+                onChange={(event) => setPartnerCode(event.target.value)}
+                size="small"
+                fullWidth
+              />
+              <Button
+                variant="outlined"
+                onClick={acceptPartnerInvite}
+                disabled={partnerLoading || partnerCode.trim().length < 6}
+              >
+                {copy.acceptPartnerInvite}
+              </Button>
+            </Stack>
+
+            <Stack spacing={1}>
+              {partnerShares.length === 0 && hasPartnerLink && (
+                <Typography color="text.secondary">{copy.partnerEmpty}</Typography>
+              )}
+              {partnerShares.map((share) => {
+                const progress = share.pregnancy.pregnancyWeek
+                  ? clampPercent((share.pregnancy.pregnancyWeek / 40) * 100)
+                  : 0;
+                const sizeLabel = share.baby
+                  ? getBabySizeLabel(appLanguage, share.baby.sizeKey)
+                  : null;
+
+                return (
+                  <Paper key={share.owner.id} variant="outlined" sx={{ p: 1.4, borderRadius: 1 }}>
+                    <Stack spacing={1}>
+                      <Typography sx={{ fontWeight: 850 }}>
+                        {share.owner.name}: {getModeLabel(copy, share.pregnancy.mode)}
+                      </Typography>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        {share.pregnancy.pregnancyWeek && (
+                          <Chip
+                            color="primary"
+                            label={`${copy.pregnancyWeek}: ${share.pregnancy.pregnancyWeek}`}
+                          />
+                        )}
+                        {share.pregnancy.dueDate && (
+                          <Chip
+                            variant="outlined"
+                            label={`${copy.dueIn}: ${copy.days(
+                              getDaysUntilIso(share.pregnancy.dueDate) ?? 0
+                            )}`}
+                          />
+                        )}
+                        {sizeLabel && (
+                          <Chip variant="outlined" label={`${copy.babySize}: ${sizeLabel}`} />
+                        )}
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                          height: 8,
+                          borderRadius: 999,
+                          "& .MuiLinearProgress-bar": { backgroundColor: "#14b8a6" },
+                        }}
+                      />
+                      {share.baby && (
+                        <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                          {share.baby.note} {share.baby.disclaimer}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Stack>
           </Stack>
         </Paper>
 

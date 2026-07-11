@@ -482,6 +482,19 @@ export const createInitialProfileState = (userInput) => {
       supportSystem: "self",
       petCompanion: "none",
     },
+    womenHealth: {
+      mode: "none",
+      pregnancyWeek: null,
+      dueDate: null,
+      lastPeriodStartDate: null,
+      doctorConfirmed: false,
+      notes: "",
+      updatedAt: null,
+    },
+    partnerSharing: {
+      invites: [],
+      links: [],
+    },
   };
 };
 
