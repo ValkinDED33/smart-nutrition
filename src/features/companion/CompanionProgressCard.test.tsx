@@ -13,6 +13,9 @@ describe("buildCompanionProgressCardModel", () => {
     expect(model.coins).toBe(0);
     expect(model.relationshipLevel).toBe(1);
     expect(model.progressPercent).toBe(0);
+    expect(model.evolutionStage).toBe("spark");
+    expect(model.bondPercent).toBe(10);
+    expect(model.nextRitual).toBe("complete_onboarding");
   });
 
   it("calculates progress to the next level", () => {
@@ -30,6 +33,38 @@ describe("buildCompanionProgressCardModel", () => {
     expect(model.progressPercent).toBe(13);
     expect(model.coins).toBe(7);
     expect(model.relationshipLevel).toBe(3);
+    expect(model.evolutionStage).toBe("aware");
+    expect(model.bondPercent).toBe(30);
+    expect(model.nextRitual).toBe("complete_onboarding");
+  });
+
+  it("derives trusted and deep evolution stages from real companion progress", () => {
+    const trustedState = {
+      ...createInitialCompanionState(COMPANION_CREATED_AT),
+      xp: 900,
+      relationshipLevel: 5,
+      achievements: [
+        {
+          id: "first-meal",
+          title: "First meal",
+          unlockedAt: COMPANION_CREATED_AT,
+        },
+      ],
+    };
+    const deepState = {
+      ...trustedState,
+      xp: 2800,
+      relationshipLevel: 8,
+    };
+
+    expect(buildCompanionProgressCardModel(trustedState)).toMatchObject({
+      evolutionStage: "trusted",
+      nextRitual: "keep_rhythm",
+    });
+    expect(buildCompanionProgressCardModel(deepState)).toMatchObject({
+      evolutionStage: "deep",
+      bondPercent: 80,
+    });
   });
 
   it("returns the latest achievements first", () => {
