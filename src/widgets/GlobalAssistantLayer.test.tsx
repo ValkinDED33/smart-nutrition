@@ -37,26 +37,26 @@ describe("GlobalAssistantLayer", () => {
     expect(source).not.toContain("renderMode=");
   });
 
-  it("uses guided public companion mode on auth routes and hides on onboarding", () => {
+  it("lets public auth surfaces guide themselves and hides on onboarding", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {
         expect(shouldHideAssistantLayer(pathname)).toBe(false);
         expect(resolveModel(pathname)).toMatchObject({
           area: "auth",
           presence: expect.objectContaining({
-            visible: true,
-            mode: "bubble",
-            reason: "desktop-public-route",
-            allowSpeechBubble: true,
+            visible: false,
+            mode: "hidden",
+            reason: "public-auth-surface-guides-itself",
+            allowSpeechBubble: false,
           }),
-          isVisibleOnAuthenticatedRoute: true,
+          isVisibleOnAuthenticatedRoute: false,
         });
         expect(resolveMobileModel(pathname)).toMatchObject({
           area: "auth",
           presence: expect.objectContaining({
-            visible: true,
-            mode: "compact",
-            reason: "public-route",
+            visible: false,
+            mode: "hidden",
+            reason: "public-auth-surface-guides-itself",
             allowSpeechBubble: false,
           }),
         });

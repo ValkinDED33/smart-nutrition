@@ -14,6 +14,7 @@ const ROUTE_PROGRESS = "/progress";
 const ROUTE_COMMUNITY = "/community";
 const ROUTE_ONBOARDING = "/onboarding";
 const ROUTE_ONBOARDING_PROFILE = "/onboarding/profile";
+const PUBLIC_AUTH_HIDDEN_REASON = "public-auth-surface-guides-itself";
 
 const DENSE_PRODUCT_ROUTES = [
   ROUTE_MEALS,
@@ -26,7 +27,7 @@ const DENSE_PRODUCT_ROUTES = [
 ] as const;
 
 describe("assistantPresence", () => {
-  it("uses bubble companion mode on desktop public routes", () => {
+  it("hides on desktop public auth routes because auth surfaces guide themselves", () => {
     const context = resolveAssistantContext(ROUTE_LOGIN);
 
     expect(
@@ -35,15 +36,15 @@ describe("assistantPresence", () => {
         viewport: "desktop",
       })
     ).toMatchObject({
-      visible: true,
-      mode: "bubble",
-      reason: "desktop-public-route",
-      allowSpeechBubble: true,
-      priority: "normal",
+      visible: false,
+      mode: "hidden",
+      reason: PUBLIC_AUTH_HIDDEN_REASON,
+      allowSpeechBubble: false,
+      priority: "low",
     });
   });
 
-  it("uses compact companion mode on mobile public routes", () => {
+  it("hides on mobile public auth routes because auth surfaces guide themselves", () => {
     const context = resolveAssistantContext(ROUTE_LOGIN);
 
     expect(
@@ -52,15 +53,15 @@ describe("assistantPresence", () => {
         viewport: "mobile",
       })
     ).toMatchObject({
-      visible: true,
-      mode: "compact",
-      reason: "public-route",
+      visible: false,
+      mode: "hidden",
+      reason: PUBLIC_AUTH_HIDDEN_REASON,
       allowSpeechBubble: false,
       priority: "low",
     });
   });
 
-  it("hides on mobile public routes while an input is focused", () => {
+  it("keeps public auth routes hidden while an input is focused", () => {
     const context = resolveAssistantContext(ROUTE_REGISTER);
 
     expect(
@@ -72,7 +73,7 @@ describe("assistantPresence", () => {
     ).toMatchObject({
       visible: false,
       mode: "hidden",
-      reason: "mobile-public-input-focused",
+      reason: PUBLIC_AUTH_HIDDEN_REASON,
       allowSpeechBubble: false,
     });
   });

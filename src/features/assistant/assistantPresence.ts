@@ -112,26 +112,7 @@ export const resolveAssistantPresence = (
   const prefersReducedMotion = Boolean(options.prefersReducedMotion);
 
   if (routeKind === "public") {
-    if (inputFocused && options.viewport === "mobile") {
-      return hiddenPresence("mobile-public-input-focused", prefersReducedMotion);
-    }
-
-    if (inputFocused || options.viewport !== "desktop") {
-      return compactPresence({
-        reason: "public-route",
-        prefersReducedMotion,
-        priority: "low",
-      });
-    }
-
-    return {
-      visible: true,
-      mode: "bubble",
-      reason: "desktop-public-route",
-      allowSpeechBubble: true,
-      allowMotion: !prefersReducedMotion,
-      priority: "normal",
-    };
+    return hiddenPresence("public-auth-surface-guides-itself", prefersReducedMotion);
   }
 
   if (routeKind === "onboarding" || context.visibility === "onboarding") {

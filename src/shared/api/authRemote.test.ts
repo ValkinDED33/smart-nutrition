@@ -15,6 +15,8 @@ const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
 const VERCEL_PREVIEW_HOSTNAME = "smart-nutrition-topaz.vercel.app";
 const VERCEL_PREVIEW_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
+const REMOTE_CLOUD_MODE = "remote-cloud";
+const HTTP_ONLY_COOKIE_SESSION_AUTH = "httpOnly-cookie-session";
 
 describe("remote API base URL guards", () => {
   afterEach(() => {
@@ -39,10 +41,94 @@ describe("remote API base URL guards", () => {
     vi.stubGlobal("window", {
       location: {
         hostname: loopbackHostname,
+        origin: "http://localhost:5173",
       },
     });
 
     expect(canUseRemoteBaseUrlInCurrentBrowser(loopbackApiUrl(loopbackHostname))).toBe(false);
+  });
+
+  it("uses the same-origin API proxy during local development", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: loopbackHostname,
+        origin: "http://localhost:5173",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          mode: REMOTE_CLOUD_MODE,
+          auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
+          storage: { engine: "mongodb" },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:5173/api/health",
+      expect.any(Object)
+    );
+  });
+
+  it("routes local registration availability through the same-origin API proxy", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: loopbackIpv4,
+        origin: "http://127.0.0.1:5173",
+      },
+    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            ok: true,
+            mode: REMOTE_CLOUD_MODE,
+            auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
+            storage: { engine: "mongodb" },
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            email: {
+              checked: false,
+              valid: false,
+              available: false,
+            },
+            name: {
+              checked: true,
+              valid: true,
+              available: true,
+            },
+          }),
+          { status: 200 }
+        )
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      remoteAuthProvider.checkRegistrationAvailability({
+        name: "CodexLocal",
+      })
+    ).resolves.toMatchObject({
+      name: { available: true },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:5173/api/health",
+      expect.any(Object)
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:5173/api/auth/availability",
+      expect.any(Object)
+    );
   });
 
   it("allows public HTTPS API URLs from deployed browser origins", () => {
@@ -210,8 +296,8 @@ describe("remote API base URL guards", () => {
       new Response(
         JSON.stringify({
           ok: true,
-          mode: "remote-cloud",
-          auth: "httpOnly-cookie-session",
+          mode: REMOTE_CLOUD_MODE,
+          auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
           storage: { engine: "mongodb" },
           static: { enabled: false },
           email: { configured: true },

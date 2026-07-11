@@ -591,6 +591,13 @@ const RegisterPage = () => {
     displayedEmailAvailability === "checking" ||
     displayedNameAvailability === "taken" ||
     displayedEmailAvailability === "taken";
+  const availabilityBlocksNext =
+    (registrationStep === "name" &&
+      nameCanCheck &&
+      displayedNameAvailability !== "available") ||
+    (registrationStep === "email" &&
+      emailCanCheck &&
+      displayedEmailAvailability !== "available");
   const currentStepIndex = registrationStepOrder.indexOf(registrationStep);
   const currentStepField = getStepField(registrationStep);
   const canGoBack = currentStepIndex > 0;
@@ -1126,10 +1133,7 @@ const RegisterPage = () => {
                   type="button"
                   variant="contained"
                   size="large"
-                  disabled={
-                    (registrationStep === "name" && displayedNameAvailability === "checking") ||
-                    (registrationStep === "email" && displayedEmailAvailability === "checking")
-                  }
+                  disabled={availabilityBlocksNext}
                   onClick={() => {
                     void goNext();
                   }}

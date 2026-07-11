@@ -302,6 +302,16 @@ const getPublicDeploymentRemoteBaseUrl = () => {
     : null;
 };
 
+const getSameOriginDevProxyBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const { hostname, origin } = window.location;
+
+  return loopbackHostnames.has(hostname) ? `${origin}/api` : null;
+};
+
 const getConfiguredRemoteBaseUrl = () => {
   const configuredBaseUrl =
     normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL) ??
@@ -585,7 +595,11 @@ export const refreshRemoteSession = async () => {
 };
 
 const getCandidateBaseUrls = () => {
-  const candidates = [getConfiguredRemoteBaseUrl(), getStoredRemoteBaseUrl()];
+  const candidates = [
+    getConfiguredRemoteBaseUrl(),
+    normalizeRemoteBaseUrl(getSameOriginDevProxyBaseUrl()),
+    getStoredRemoteBaseUrl(),
+  ];
 
   return dedupe(candidates.filter((value): value is string => Boolean(value)));
 };

@@ -17,6 +17,8 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("checkRegistrationAvailability");
     expect(registerSource).toContain('displayedNameAvailability !== "available"');
     expect(registerSource).toContain('displayedEmailAvailability !== "available"');
+    expect(registerSource).toContain("availabilityBlocksNext");
+    expect(registerSource).toContain("disabled={availabilityBlocksNext}");
     expect(registerSource).toContain("portalTitle");
     expect(registerSource).toContain("registrationProgress");
     expect(registerSource).toContain("This is not a calorie calculator");
