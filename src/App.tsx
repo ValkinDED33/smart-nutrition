@@ -33,6 +33,7 @@ const loadAdminPage = () => import("./pages/AdminPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
 const loadLoginPage = () => import("./pages/LoginPage");
 const loadRegisterPage = () => import("./pages/RegisterPage");
+const loadPartnerInvitePage = () => import("./pages/PartnerInvitePage");
 const loadVerifyEmailPage = () => import("./pages/VerifyEmailPage");
 const loadForgotPasswordPage = () => import("./pages/ForgotPasswordPage");
 const loadResetPasswordPage = () => import("./pages/ResetPasswordPage");
@@ -51,6 +52,7 @@ const AdminPage = lazy(loadAdminPage);
 const ProgressPage = lazy(loadProgressPage);
 const LoginPage = lazy(loadLoginPage);
 const RegisterPage = lazy(loadRegisterPage);
+const PartnerInvitePage = lazy(loadPartnerInvitePage);
 const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
@@ -223,6 +225,10 @@ function App() {
                     <RegisterPage />
                   </PublicRoute>
                 }
+              />
+              <Route
+                path="/partner-invite"
+                element={<PartnerInvitePage />}
               />
               <Route
                 path="/verify-email"

@@ -20,6 +20,7 @@ import {
   applyRemoteSnapshotWithSyncPolicy,
 } from "@features/auth/sessionSnapshot";
 import {
+  acceptRemotePartnerInvite,
   AuthApiError,
   getAuthRuntimeInfo,
   login as loginApi,
@@ -29,6 +30,11 @@ import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/auth
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { useLanguage } from "../shared/language";
 import { AuthSurface } from "@shared/ui";
+import {
+  PENDING_PARTNER_INVITE_KEY,
+  getClientStorageItem,
+  removeClientStorageItem,
+} from "@shared/lib/clientPersistence";
 
 type FormData = {
   email: string;
@@ -90,6 +96,18 @@ const LoginPage = () => {
           cloudMeta: hydrationResult.cloudMeta,
         })
       );
+
+      const pendingPartnerInvite = getClientStorageItem(PENDING_PARTNER_INVITE_KEY);
+
+      if (pendingPartnerInvite) {
+        try {
+          await acceptRemotePartnerInvite(pendingPartnerInvite);
+          removeClientStorageItem(PENDING_PARTNER_INVITE_KEY);
+        } catch {
+          // Login remains valid. The invite can still be pasted manually from
+          // the family access card if it expired or was already consumed.
+        }
+      }
 
       trackRuntimeEvent("login_completed", {
         authMode: getAuthRuntimeInfo().mode,

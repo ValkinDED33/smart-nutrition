@@ -159,7 +159,7 @@ export const createPartnerService = ({ authRepository, stateRepository, config }
 
     return {
       code,
-      inviteUrl: `${config.appBaseUrl}/register?partnerInvite=${encodeURIComponent(code)}`,
+      inviteUrl: `${config.appBaseUrl}/partner-invite?code=${encodeURIComponent(code)}`,
       expiresAt: invite.expiresAt,
       permissions: invite.permissions,
     };
