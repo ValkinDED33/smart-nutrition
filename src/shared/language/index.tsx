@@ -202,9 +202,9 @@ const uk = {
   "productCard.remove": "Прибрати зі збережених",
   "productCard.details": "Показати склад",
   "productCard.hide": "Сховати склад",
-  "productFacts.title": "Точний склад продукту",
+  "productFacts.title": "Харчова цінність продукту",
   "productFacts.subtitle":
-    "Показуємо лише значення, які реально є в джерелі даних. Приховані поля означають, що точної інформації немає.",
+    "Показники наведені за даними каталогу продукту. Назва може лишатися мовою виробника, а поживна інформація нормалізована для щоденника.",
   "productFacts.perBase": "На 100 {unit}",
   "productFacts.noData":
     "Для цього продукту немає додаткових якісних позначок.",
@@ -453,9 +453,9 @@ const pl: Record<keyof typeof uk, string> = {
   "productCard.remove": "Usuń z zapisanych",
   "productCard.details": "Pokaż skład",
   "productCard.hide": "Ukryj skład",
-  "productFacts.title": "Dokładny skład produktu",
+  "productFacts.title": "Wartość odżywcza produktu",
   "productFacts.subtitle":
-    "Wartości są pokazywane tylko dla danych dostępnych w źródle. Ukryte pola oznaczają brak dokładnej informacji.",
+    "Wartości pochodzą z katalogu produktu. Nazwa może pozostać w języku producenta, a dane odżywcze są ujednolicone dla dziennika.",
   "productFacts.perBase": "Na 100 {unit}",
   "productFacts.noData":
     "Brak dodatkowych danych jakościowych dla tego produktu.",

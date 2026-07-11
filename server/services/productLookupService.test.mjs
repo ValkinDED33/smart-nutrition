@@ -42,6 +42,7 @@ const openFoodFactsBeverageProduct = {
     "energy-kcal_100ml": 42,
     proteins_100ml: 0,
     fat_100ml: 0,
+    "saturated-fat_100ml": 0,
     carbohydrates_100ml: 10.6,
     sugars_100ml: 10.6,
     sodium_100ml: 0,
@@ -131,6 +132,7 @@ describe("productLookupService", () => {
       nutrients: expect.objectContaining({
         calories: 42,
         carbs: 10.6,
+        saturatedFat: 0,
         sugars: 10.6,
       }),
       facts: expect.objectContaining({

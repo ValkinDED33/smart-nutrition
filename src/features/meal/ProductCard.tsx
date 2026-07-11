@@ -319,11 +319,23 @@ export const ProductCard = ({
 
           <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap">
             <Chip
-              label={`P ${nutrients.protein.toFixed(1)} ${t("common.g")}`}
+              label={`${getNutrientLabel("protein", appLanguage)} ${nutrients.protein.toFixed(
+                1
+              )} ${t("common.g")}`}
               size="small"
             />
-            <Chip label={`F ${nutrients.fat.toFixed(1)} ${t("common.g")}`} size="small" />
-            <Chip label={`C ${nutrients.carbs.toFixed(1)} ${t("common.g")}`} size="small" />
+            <Chip
+              label={`${getNutrientLabel("fat", appLanguage)} ${nutrients.fat.toFixed(1)} ${t(
+                "common.g"
+              )}`}
+              size="small"
+            />
+            <Chip
+              label={`${getNutrientLabel("carbs", appLanguage)} ${nutrients.carbs.toFixed(
+                1
+              )} ${t("common.g")}`}
+              size="small"
+            />
             {nutrients.sugars > 0 ? (
               <Chip
                 label={`${getNutrientLabel("sugars", appLanguage)} ${nutrients.sugars.toFixed(

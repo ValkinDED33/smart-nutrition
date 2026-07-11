@@ -1,4 +1,16 @@
-import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Chip,
+  Divider,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import type { Product } from "@domain/products/types";
 import {
   formatNutrientValue,
@@ -14,6 +26,9 @@ import type { AppLanguage } from "@shared/types/i18n";
 import { useLanguage } from "../../shared/language";
 
 type LocalizedText = Record<AppLanguage, string>;
+
+const BORDER_SOFT = "var(--sn-border-soft)";
+const SURFACE_ELEVATED = "var(--sn-surface-elevated)";
 
 const getLocalizedText = (copy: LocalizedText, language: AppLanguage) => {
   switch (language) {
@@ -113,7 +128,25 @@ const fallbackBenefitCopy: LocalizedText = {
 const productFactCopy = {
   serving: { uk: "Порція", pl: "Porcja", en: "Serving" },
   ingredients: { uk: "Склад", pl: "Skład", en: "Ingredients" },
+  nutritionTable: {
+    uk: "Поживна цінність",
+    pl: "Wartość odżywcza",
+    en: "Nutrition facts",
+  },
+  indicator: { uk: "Показник", pl: "Składnik", en: "Nutrient" },
+  perBase: { uk: "На", pl: "Na", en: "Per" },
+  perServing: { uk: "На порцію", pl: "Na porcję", en: "Per serving" },
+  energy: { uk: "Енергетична цінність", pl: "Wartość energetyczna", en: "Energy" },
+  salt: { uk: "Сіль", pl: "Sól", en: "Salt" },
 } satisfies Record<string, LocalizedText>;
+
+type NutritionTableUnit = "g" | "kcal";
+
+const fallbackUnitCopy: LocalizedText = { uk: "г", pl: "g", en: "g" };
+const unitCopy = new Map<NutritionTableUnit, LocalizedText>([
+  ["g", fallbackUnitCopy],
+  ["kcal", { uk: "ккал", pl: "kcal", en: "kcal" }],
+]);
 
 const getFactLabel = (key: string, language: AppLanguage) => {
   const label = factLabels.get(key);
@@ -132,6 +165,66 @@ const getBenefitSummary = (key: string | null, language: AppLanguage) => {
 
   return getLocalizedText(benefit ?? fallbackBenefitCopy, language);
 };
+
+const formatTableValue = (
+  value: number,
+  unit: NutritionTableUnit,
+  language: AppLanguage
+) => {
+  const normalizedValue = Number.isFinite(value) ? Math.max(value, 0) : 0;
+  const digits = unit === "kcal" ? 0 : normalizedValue >= 10 ? 1 : 2;
+  const unitLabel = unitCopy.get(unit) ?? fallbackUnitCopy;
+
+  return `${normalizedValue.toFixed(digits)} ${getLocalizedText(unitLabel, language)}`;
+};
+
+const saltFromSodiumMg = (sodiumMg: number) =>
+  Number.isFinite(sodiumMg) && sodiumMg > 0 ? (sodiumMg * 2.5) / 1000 : 0;
+
+const getStandardNutritionRows = (product: Product, language: AppLanguage) => [
+  {
+    id: "calories",
+    label: getLocalizedText(productFactCopy.energy, language),
+    value: product.nutrients.calories,
+    unit: "kcal" as const,
+  },
+  {
+    id: "fat",
+    label: getNutrientLabel("fat", language),
+    value: product.nutrients.fat,
+    unit: "g" as const,
+  },
+  {
+    id: "saturatedFat",
+    label: getNutrientLabel("saturatedFat", language),
+    value: product.nutrients.saturatedFat,
+    unit: "g" as const,
+  },
+  {
+    id: "carbs",
+    label: getNutrientLabel("carbs", language),
+    value: product.nutrients.carbs,
+    unit: "g" as const,
+  },
+  {
+    id: "sugars",
+    label: getNutrientLabel("sugars", language),
+    value: product.nutrients.sugars,
+    unit: "g" as const,
+  },
+  {
+    id: "protein",
+    label: getNutrientLabel("protein", language),
+    value: product.nutrients.protein,
+    unit: "g" as const,
+  },
+  {
+    id: "salt",
+    label: getLocalizedText(productFactCopy.salt, language),
+    value: saltFromSodiumMg(product.nutrients.sodium),
+    unit: "g" as const,
+  },
+];
 
 interface Props {
   product: Product;
@@ -194,6 +287,14 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       : t("productFacts.perBase", { unit: product.unit });
   const servingSize = product.facts?.servingSize?.trim();
   const ingredientsText = product.facts?.ingredientsText?.trim();
+  const servingQuantity =
+    product.facts?.servingUnit === product.unit &&
+    Number.isFinite(product.facts?.servingQuantity)
+      ? Math.max(Number(product.facts?.servingQuantity), 0)
+      : 0;
+  const baseQuantity = product.unit === "piece" ? 1 : 100;
+  const servingFactor = servingQuantity > 0 ? servingQuantity / baseQuantity : null;
+  const standardNutritionRows = getStandardNutritionRows(product, appLanguage);
 
   return (
     <Stack spacing={2}>
@@ -213,7 +314,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
         sx={{
           p: 1.5,
           borderRadius: 1,
-          borderColor: "var(--sn-border-soft)",
+          borderColor: BORDER_SOFT,
         }}
       >
         <Stack spacing={1.1}>
@@ -264,14 +365,79 @@ export const ProductNutritionFacts = ({ product }: Props) => {
 
       <Divider />
 
+      <Paper
+        variant="outlined"
+        sx={{
+          overflow: "hidden",
+          borderRadius: 1,
+          borderColor: BORDER_SOFT,
+        }}
+      >
+        <Box sx={{ px: 1.5, py: 1.2, backgroundColor: SURFACE_ELEVATED }}>
+          <Typography sx={{ fontWeight: 800 }}>
+            {getLocalizedText(productFactCopy.nutritionTable, appLanguage)}
+          </Typography>
+        </Box>
+        <Table
+          size="small"
+          aria-label={getLocalizedText(productFactCopy.nutritionTable, appLanguage)}
+          sx={{
+            "& th, & td": {
+              borderColor: BORDER_SOFT,
+              fontSize: { xs: 12.5, sm: 13.5 },
+              px: { xs: 1, sm: 1.5 },
+              py: 1,
+            },
+            "& th": {
+              fontWeight: 800,
+              backgroundColor: SURFACE_ELEVATED,
+            },
+            "& td:not(:first-of-type), & th:not(:first-of-type)": {
+              textAlign: "right",
+              whiteSpace: "nowrap",
+            },
+          }}
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell>{getLocalizedText(productFactCopy.indicator, appLanguage)}</TableCell>
+              <TableCell>
+                {getLocalizedText(productFactCopy.perBase, appLanguage)} {baseAmountLabel}
+              </TableCell>
+              {servingFactor ? (
+                <TableCell>
+                  {getLocalizedText(productFactCopy.perServing, appLanguage)}
+                  {servingSize ? ` (${servingSize})` : ""}
+                </TableCell>
+              ) : null}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {standardNutritionRows.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell component="th" scope="row">
+                  {row.label}
+                </TableCell>
+                <TableCell>{formatTableValue(row.value, row.unit, appLanguage)}</TableCell>
+                {servingFactor ? (
+                  <TableCell>
+                    {formatTableValue(row.value * servingFactor, row.unit, appLanguage)}
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
+
       {ingredientsText ? (
         <Paper
           variant="outlined"
           sx={{
             p: 1.4,
             borderRadius: 1,
-            borderColor: "var(--sn-border-soft)",
-            backgroundColor: "var(--sn-surface-elevated)",
+            borderColor: BORDER_SOFT,
+            backgroundColor: SURFACE_ELEVATED,
           }}
         >
           <Stack spacing={0.75}>
