@@ -7,6 +7,7 @@ import {
   LoadingSkeleton,
   PageShell,
 } from "../shared/ui";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 const LearningHubCard = lazy(() =>
   import("../features/education/LearningHubCard").then((module) => ({
@@ -22,6 +23,7 @@ const CommunityPage = () => {
     <PageShell
       title={t("page.community.title")}
       subtitle={t("page.community.subtitle")}
+      assistantHint={<EcosystemPulse focus="community" />}
     >
       <CommunityHubCard />
       <LazyModuleBoundary

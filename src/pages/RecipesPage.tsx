@@ -10,6 +10,7 @@ import {
 import { useLanguage } from "../shared/language";
 import type { MealType } from "@domain/meal/types";
 import type { AppLanguage } from "../shared/types/i18n";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 const FridgeRecipePlanner = lazy(() =>
   import("../features/fridge/FridgeRecipePlanner").then((module) => ({
@@ -118,7 +119,11 @@ const RecipesPage = () => {
   );
 
   return (
-    <PageShell title={t("page.recipes.title")} subtitle={t("page.recipes.subtitle")}>
+    <PageShell
+      title={t("page.recipes.title")}
+      subtitle={t("page.recipes.subtitle")}
+      assistantHint={<EcosystemPulse focus="recipes" />}
+    >
       <Paper
         elevation={0}
         sx={{

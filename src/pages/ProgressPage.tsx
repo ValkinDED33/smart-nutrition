@@ -10,6 +10,7 @@ import {
   PageShell,
   SectionTabs,
 } from "@shared/ui";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 import type { AppLanguage } from "../shared/types/i18n";
 
 const WaterTracker = lazy(() =>
@@ -132,7 +133,11 @@ const ProgressPage = () => {
   ];
 
   return (
-    <PageShell title={copy.title} subtitle={copy.subtitle}>
+    <PageShell
+      title={copy.title}
+      subtitle={copy.subtitle}
+      assistantHint={<EcosystemPulse focus="progress" />}
+    >
       <ProgressActionBar />
 
       <SectionTabs

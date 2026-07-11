@@ -27,6 +27,7 @@ import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { AppLanguage } from "@shared/types/i18n";
 import Loader from "../shared/components/Loader/PacmanLoader";
 import { LazyModuleBoundary, PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 const BarcodeScanner = lazy(() =>
   import("../features/meal/BarcodeScanner").then((module) => ({
@@ -562,6 +563,7 @@ const MealBuilderPage = () => {
     <PageShell
       title={t("mealBuilder.title")}
       subtitle={t("mealBuilder.subtitle")}
+      assistantHint={<EcosystemPulse focus="food" />}
       action={
         <Button
           variant="contained"

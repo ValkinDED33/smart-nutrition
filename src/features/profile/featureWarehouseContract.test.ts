@@ -1,9 +1,37 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
+
+const collectSourceFiles = (roots: string[]) => {
+  const pending = roots.map((root) => resolve(process.cwd(), root));
+  const sourceFiles: string[] = [];
+
+  while (pending.length > 0) {
+    const currentPath = pending.pop();
+
+    if (!currentPath) {
+      continue;
+    }
+
+    const currentStats = statSync(currentPath);
+
+    if (currentStats.isDirectory()) {
+      for (const entry of readdirSync(currentPath)) {
+        pending.push(resolve(currentPath, entry));
+      }
+      continue;
+    }
+
+    if (/\.(mjs|ts|tsx)$/.test(currentPath) && !/\.test\.(mjs|ts|tsx)$/.test(currentPath)) {
+      sourceFiles.push(currentPath);
+    }
+  }
+
+  return sourceFiles;
+};
 
 describe("profile feature warehouse contract", () => {
   it("does not expose disconnected premium purchase buttons", () => {
@@ -22,5 +50,13 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain("comingSoon");
     expect(source).not.toContain("futureItem");
     expect(source).not.toContain("Available later");
+  });
+
+  it("does not let women-health competitor branding become product direction", () => {
+    const source = collectSourceFiles(["src", "server"])
+      .map((filePath) => readFileSync(filePath, "utf8"))
+      .join("\n");
+
+    expect(source).not.toMatch(/Flo-level|flo app/i);
   });
 });

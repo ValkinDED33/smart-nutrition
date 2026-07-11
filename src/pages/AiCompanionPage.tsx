@@ -42,6 +42,7 @@ import {
 } from "../core/assistant";
 import { useCompanionRenderModePreference } from "../features/profile/useCompanionRenderModePreference";
 import type { AppLanguage } from "@shared/types/i18n";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 const AssistantRuntimeCard = lazy(() =>
   import("../features/assistant/AssistantRuntimeCard").then((module) => ({
@@ -529,7 +530,11 @@ const AiCompanionPage = () => {
   ];
 
   return (
-    <PageShell title={copy.title} subtitle={copy.subtitle}>
+    <PageShell
+      title={copy.title}
+      subtitle={copy.subtitle}
+      assistantHint={<EcosystemPulse focus="assistant" />}
+    >
       <SectionTabs
         sections={sections}
         activeSection={activeSection}

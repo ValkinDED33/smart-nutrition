@@ -38,8 +38,8 @@ work must compress them into one fast daily flow controlled by the assistant.
 
 Public product references used for this audit:
 
-- Flo positions around cycle, ovulation, pregnancy, symptoms, fertility, and
-  personalized insights.
+- Women-health competitors position around cycle, ovulation, pregnancy,
+  symptoms, fertility, and personalized insights.
 - MyFitnessPal emphasizes barcode scan, meal scan, voice logging, custom goals,
   weight, water, workouts, and fasting.
 - FatSecret emphasizes a large food database, barcode scanner, photo/image food
@@ -347,8 +347,8 @@ FILE:
 `src/pages/onboarding/OnboardingWomenHealthPage.tsx`
 
 PROBLEM:
-Female-only modes exist, but the app does not yet provide Flo-level daily
-workflows.
+Female-only modes exist, but the app does not yet provide dedicated
+women-health daily workflows.
 
 WHY IT IS A PROBLEM:
 Pregnancy, conception, postpartum, and cycle support are high-trust contexts.
@@ -716,4 +716,3 @@ Resolved:
 - Telegram chat id is persisted to the Smart Nutrition account.
 - Tests cover compact payload limits, generated start URL, persistence, logs,
   and success reply.
-

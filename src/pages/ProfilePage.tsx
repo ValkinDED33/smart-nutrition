@@ -35,6 +35,7 @@ import {
 } from "@domain/user/roles";
 import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
@@ -60,6 +61,11 @@ const BodyProgressPhotosCard = lazy(() =>
 const BodyWeeklyReportCard = lazy(() =>
   import("../features/profile/BodyWeeklyReportCard").then((module) => ({
     default: module.BodyWeeklyReportCard,
+  }))
+);
+const WomenHealthOverviewCard = lazy(() =>
+  import("../features/profile/WomenHealthOverviewCard").then((module) => ({
+    default: module.WomenHealthOverviewCard,
   }))
 );
 const MealDayOverview = lazy(() =>
@@ -657,7 +663,11 @@ const ProfilePage = () => {
       : copy.targetAway(remainingWeight.toFixed(1));
 
   return (
-    <PageShell title={t("profile.title")} subtitle={t("profile.subtitle")}>
+    <PageShell
+      title={t("profile.title")}
+      subtitle={t("profile.subtitle")}
+      assistantHint={<EcosystemPulse focus="profile" />}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -807,6 +817,7 @@ const ProfilePage = () => {
                   copy.tabs.data,
                   <LoadingSkeleton cards={3} chart bodyRows={3} />,
                   <Stack spacing={3}>
+                    <WomenHealthOverviewCard />
                     <WeightTrendCard />
                     <MeasurementsCheckInCard />
                     <BodyProgressPhotosCard />

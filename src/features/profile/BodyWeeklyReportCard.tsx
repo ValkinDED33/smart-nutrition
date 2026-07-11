@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Alert, Box, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
@@ -20,6 +20,9 @@ const bodyReportCopy = {
     checkIns: "Check-in",
     plateauTitle: "AI визначення plateau",
     personalTitle: "Персональний фокус асистента",
+    bodyMapTitle: "Карта прогресу тіла",
+    bodyMapSubtitle:
+      "Кожна шкала показує окремий параметр: вага, BMI, заміри і регулярність записів.",
     plateauBody: (weeks: number, delta: string) =>
       `Вага тримається в межах ${delta} кг приблизно ${weeks} тиж. Спершу перевірте калорії, білок, воду і регулярність записів перед зміною цілі.`,
     progressBody: (delta: string) =>
@@ -30,6 +33,13 @@ const bodyReportCopy = {
     underweight: "Нижче норми",
     overweight: "Вище норми",
     obesity: "Ожиріння",
+    targetMissing: "Ціль ваги ще не задана",
+    enoughDataMissing: "Потрібно ще 2 записи для чесного тренду",
+    onTrack: "в нормі / рух правильний",
+    watch: "увага / перевірити ритм",
+    missing: "даних поки мало",
+    targetWeight: "Вага до цілі",
+    consistency: "Регулярність",
   },
   pl: {
     title: "Weekly body report",
@@ -43,6 +53,9 @@ const bodyReportCopy = {
     checkIns: "Check-ins",
     plateauTitle: "AI plateau detection",
     personalTitle: "Osobisty fokus asystenta",
+    bodyMapTitle: "Mapa postępu ciała",
+    bodyMapSubtitle:
+      "Każda skala pokazuje osobny parametr: wagę, BMI, pomiary i regularność zapisów.",
     plateauBody: (weeks: number, delta: string) =>
       `Waga utrzymuje się w zakresie ${delta} kg przez około ${weeks} tyg. Sprawdź kalorie, białko, wodę i regularność zapisów przed zmianą celu.`,
     progressBody: (delta: string) =>
@@ -53,6 +66,13 @@ const bodyReportCopy = {
     underweight: "Underweight",
     overweight: "Overweight",
     obesity: "Obesity",
+    targetMissing: "Cel wagi nie jest jeszcze ustawiony",
+    enoughDataMissing: "Potrzeba jeszcze 2 zapisów dla uczciwego trendu",
+    onTrack: "w normie / dobry kierunek",
+    watch: "uwaga / sprawdź rytm",
+    missing: "za mało danych",
+    targetWeight: "Waga do celu",
+    consistency: "Regularność",
   },
   en: {
     title: "Weekly body report",
@@ -66,6 +86,9 @@ const bodyReportCopy = {
     checkIns: "Check-ins",
     plateauTitle: "AI plateau detection",
     personalTitle: "Personal assistant focus",
+    bodyMapTitle: "Body progress map",
+    bodyMapSubtitle:
+      "Each scale shows a separate parameter: weight, BMI, measurements, and check-in rhythm.",
     plateauBody: (weeks: number, delta: string) =>
       `Weight has stayed within ${delta} kg for about ${weeks} weeks. Keep calories, protein, water, and check-in consistency visible before changing the goal.`,
     progressBody: (delta: string) =>
@@ -76,10 +99,25 @@ const bodyReportCopy = {
     underweight: "Underweight",
     overweight: "Overweight",
     obesity: "Obesity",
+    targetMissing: "Target weight is not set yet",
+    enoughDataMissing: "Need 2 more entries for an honest trend",
+    onTrack: "healthy / moving well",
+    watch: "watch / review rhythm",
+    missing: "not enough data",
+    targetWeight: "Weight to target",
+    consistency: "Consistency",
   },
 } as const;
 
 type BodyReportCopy = (typeof bodyReportCopy)[AppLanguage];
+type BodyProgressTone = "good" | "watch" | "missing";
+type BodyProgressMapItem = {
+  label: string;
+  value: number | null;
+  detail: string;
+  color: string;
+  tone: BodyProgressTone;
+};
 
 const getBodyReportCopy = (language: AppLanguage): BodyReportCopy => {
   switch (language) {
@@ -118,9 +156,112 @@ const formatSigned = (value: number | null) => {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
 };
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+
+const buildGoalProgress = ({
+  latestWeight,
+  targetWeight,
+  targetWeightStart,
+}: {
+  latestWeight: number;
+  targetWeight: number | null;
+  targetWeightStart: number | null;
+}) => {
+  if (!latestWeight || !targetWeight) {
+    return null;
+  }
+
+  const startWeight = targetWeightStart ?? latestWeight;
+  const totalDistance = Math.abs(startWeight - targetWeight);
+
+  if (totalDistance === 0) {
+    return 100;
+  }
+
+  return clamp(
+    (Math.abs(startWeight - latestWeight) / totalDistance) * 100,
+    0,
+    100
+  );
+};
+
+const getBmiProgressValue = (bmi: number) => {
+  if (!bmi) {
+    return null;
+  }
+
+  return clamp(((bmi - 16) / 19) * 100, 0, 100);
+};
+
+const getMeasurementTrendValue = (delta: number | null) => {
+  if (delta === null || !Number.isFinite(delta)) {
+    return null;
+  }
+
+  return clamp(50 - delta * 8, 5, 100);
+};
+
+const getMeasurementTone = (delta: number | null): BodyProgressTone => {
+  if (delta === null || !Number.isFinite(delta)) {
+    return "missing";
+  }
+
+  return Math.abs(delta) <= 1.5 || delta < 0 ? "good" : "watch";
+};
+
+const getBarColor = (tone: BodyProgressTone, color: string) => {
+  switch (tone) {
+    case "watch":
+      return "#f59e0b";
+    case "missing":
+      return "rgba(148, 163, 184, 0.65)";
+    case "good":
+    default:
+      return color;
+  }
+};
+
+const getToneLabel = (
+  copy: BodyReportCopy,
+  tone: BodyProgressTone
+) => {
+  switch (tone) {
+    case "watch":
+      return copy.watch;
+    case "missing":
+      return copy.missing;
+    case "good":
+    default:
+      return copy.onTrack;
+  }
+};
+
+const getMeasurementColor = (index: number) => {
+  switch (index) {
+    case 0:
+      return "#06b6d4";
+    case 1:
+      return "#22c55e";
+    case 2:
+      return "#f97316";
+    case 3:
+      return "#ec4899";
+    default:
+      return "#0ea5e9";
+  }
+};
+
 export const BodyWeeklyReportCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const { assistant, measurementHistory, weightHistory } = useSelector(
+  const {
+    assistant,
+    measurementHistory,
+    targetWeight,
+    targetWeightStart,
+    weeklyCheckIn,
+    weightHistory,
+  } = useSelector(
     (state: RootState) => state.profile
   );
   const { appLanguage } = useLanguage();
@@ -168,6 +309,56 @@ export const BodyWeeklyReportCard = () => {
   ];
   const weeklyDelta = formatSigned(report.weeklyWeightDelta);
   const plateauDelta = Math.abs(report.plateau.deltaKg).toFixed(1);
+  const goalProgress = buildGoalProgress({
+    latestWeight: report.latestWeight,
+    targetWeight,
+    targetWeightStart,
+  });
+  const bmiProgress = getBmiProgressValue(report.bmi);
+  const checkInProgress = clamp(
+    (Math.min(report.checkIns, weeklyCheckIn.remindIntervalDays) /
+      weeklyCheckIn.remindIntervalDays) *
+      100,
+    0,
+    100
+  );
+  const progressMapItems: BodyProgressMapItem[] = [
+    {
+      label: copy.targetWeight,
+      value: goalProgress,
+      detail: targetWeight
+        ? `${report.latestWeight.toFixed(1)} / ${targetWeight.toFixed(1)} kg`
+        : copy.targetMissing,
+      color: "#14b8a6",
+      tone: goalProgress === null ? "missing" : "good",
+    },
+    {
+      label: copy.bmi,
+      value: bmiProgress,
+      detail: `${report.bmi.toFixed(1)} ${getBmiStatusCopy(copy, report.bmiStatus)}`,
+      color: "#8b5cf6",
+      tone: report.bmiStatus === "normal" ? "good" : "watch",
+    },
+    ...measurementCards.map((item, index) => {
+      const tone = getMeasurementTone(item.delta);
+      return {
+        label: item.label,
+        value: getMeasurementTrendValue(item.delta),
+        detail: item.current
+          ? `${item.current.toFixed(1)} cm / ${formatSigned(item.delta)} ${copy.previousDelta}`
+          : copy.enoughDataMissing,
+        color: getMeasurementColor(index),
+        tone,
+      };
+    }),
+    {
+      label: copy.consistency,
+      value: checkInProgress,
+      detail: `${report.checkIns} ${copy.checkIns.toLowerCase()}`,
+      color: "#84cc16",
+      tone: report.checkIns >= 2 ? "good" : "missing",
+    },
+  ];
 
   return (
     <Paper
@@ -218,6 +409,97 @@ export const BodyWeeklyReportCard = () => {
               <Typography sx={{ fontWeight: 800 }}>{copy.personalTitle}</Typography>
               <Typography variant="body2">{personalization.reportHint}</Typography>
             </Alert>
+
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.8,
+                borderRadius: 1,
+                background:
+                  "linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(139, 92, 246, 0.08))",
+              }}
+            >
+              <Stack spacing={1.6}>
+                <Stack spacing={0.4}>
+                  <Typography sx={{ fontWeight: 900 }}>{copy.bodyMapTitle}</Typography>
+                  <Typography color="text.secondary" variant="body2">
+                    {copy.bodyMapSubtitle}
+                  </Typography>
+                </Stack>
+
+                <Stack spacing={1.25}>
+                  {progressMapItems.map((item) => {
+                    const barColor = getBarColor(item.tone, item.color);
+                    return (
+                      <Stack key={item.label} spacing={0.55}>
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          spacing={1}
+                          useFlexGap
+                          flexWrap="wrap"
+                        >
+                          <Stack direction="row" spacing={0.8} alignItems="center">
+                            <Box
+                              aria-hidden
+                              sx={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: 999,
+                                backgroundColor: barColor,
+                                boxShadow: `0 0 0 4px ${barColor}22`,
+                              }}
+                            />
+                            <Typography sx={{ fontWeight: 800 }}>{item.label}</Typography>
+                          </Stack>
+                          <Typography color="text.secondary" variant="body2">
+                            {item.detail}
+                          </Typography>
+                        </Stack>
+                        <LinearProgress
+                          variant="determinate"
+                          value={item.value ?? 100}
+                          sx={{
+                            height: 9,
+                            borderRadius: 999,
+                            backgroundColor: "rgba(148, 163, 184, 0.18)",
+                            "& .MuiLinearProgress-bar": {
+                              borderRadius: 999,
+                              background: `linear-gradient(90deg, ${barColor}, ${barColor}cc)`,
+                            },
+                          }}
+                        />
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  {(["good", "watch", "missing"] as const).map((tone) => (
+                    <Chip
+                      key={tone}
+                      size="small"
+                      label={getToneLabel(copy, tone)}
+                      sx={{
+                        fontWeight: 800,
+                        backgroundColor:
+                          tone === "good"
+                            ? "rgba(20, 184, 166, 0.14)"
+                            : tone === "watch"
+                              ? "rgba(245, 158, 11, 0.16)"
+                              : "rgba(148, 163, 184, 0.18)",
+                        color:
+                          tone === "good"
+                            ? "#0f766e"
+                            : tone === "watch"
+                              ? "#92400e"
+                              : "text.secondary",
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            </Paper>
 
             <Box
               sx={{
