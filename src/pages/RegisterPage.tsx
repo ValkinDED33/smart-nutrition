@@ -8,8 +8,10 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   InputAdornment,
+  LinearProgress,
   Stack,
   SvgIcon,
   TextField,
@@ -196,6 +198,12 @@ const registrationCopy = {
     back: "Назад",
     light: "Світла",
     dark: "Темна",
+    portalTitle: "Alex налаштовує ваш простір",
+    portalSubtitle:
+      "Це не калькулятор калорій. Ми збираємо живий wellness-профіль: харчування, воду, нагадування і AI-підказки в одному місці.",
+    progressLabel: "Крок",
+    capabilities: ["AI-помічник", "Сканер їжі", "Розумні нагадування"],
+    stepHint: "Один маленький крок, і Alex підлаштується під вас.",
   },
   pl: {
     languageTitle: "Wybierz język",
@@ -208,6 +216,12 @@ const registrationCopy = {
     back: "Wstecz",
     light: "Jasny",
     dark: "Ciemny",
+    portalTitle: "Alex stroi Twoją przestrzeń",
+    portalSubtitle:
+      "To nie jest kalkulator kalorii. Budujemy żywy profil wellness: jedzenie, wodę, przypomnienia i wskazówki AI w jednym miejscu.",
+    progressLabel: "Krok",
+    capabilities: ["Asystent AI", "Skaner jedzenia", "Mądre przypomnienia"],
+    stepHint: "Jeden mały krok i Alex dopasuje się do Ciebie.",
   },
   en: {
     languageTitle: "Choose language",
@@ -220,6 +234,12 @@ const registrationCopy = {
     back: "Back",
     light: "Light",
     dark: "Dark",
+    portalTitle: "Alex is tuning your space",
+    portalSubtitle:
+      "This is not a calorie calculator. We build a living wellness profile: food, water, reminders, and AI guidance in one place.",
+    progressLabel: "Step",
+    capabilities: ["AI companion", "Food scanner", "Smart reminders"],
+    stepHint: "One small step and Alex adapts to you.",
   },
 } as const;
 
@@ -264,6 +284,27 @@ const getRegistrationLanguageLabel = (
     case "uk":
     default:
       return labels.uk;
+  }
+};
+
+const getRegistrationStepTitle = (
+  copy: (typeof registrationCopy)[keyof typeof registrationCopy],
+  step: RegistrationStep
+) => {
+  switch (step) {
+    case "language":
+      return copy.languageTitle;
+    case "theme":
+      return copy.themeTitle;
+    case "name":
+      return copy.nameTitle;
+    case "email":
+      return copy.emailTitle;
+    case "password":
+      return copy.passwordTitle;
+    case "confirm":
+    default:
+      return copy.confirmTitle;
   }
 };
 
@@ -540,6 +581,9 @@ const RegisterPage = () => {
   const currentStepIndex = registrationStepOrder.indexOf(registrationStep);
   const currentStepField = getStepField(registrationStep);
   const canGoBack = currentStepIndex > 0;
+  const registrationProgress =
+    ((currentStepIndex + 1) / registrationStepOrder.length) * 100;
+  const activeStepTitle = getRegistrationStepTitle(stepCopy, registrationStep);
 
   const goBack = () => {
     if (!canGoBack) {
@@ -733,24 +777,100 @@ const RegisterPage = () => {
   return (
     <AuthSurface maxWidth={520} minHeight="70vh">
         <Stack spacing={2.5}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name="Alex" variant="dragon" mood="happy" size={72} />
-            <Box>
-              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                {t("brand.name")}
-              </Typography>
-              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-                {t("auth.registerTitle")}
-              </Typography>
-              <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                {t("auth.registrationNote")}
-              </Typography>
-            </Box>
-          </Stack>
+          <Box
+            sx={{
+              position: "relative",
+              p: { xs: 2, sm: 2.5 },
+              borderRadius: 1,
+              border: "1px solid var(--sn-border-strong)",
+              background:
+                "radial-gradient(circle at 82% 18%, rgba(132,204,22,0.22), transparent 30%), radial-gradient(circle at 8% 0%, rgba(20,184,166,0.18), transparent 34%), rgba(255,255,255,0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "grid",
+                  placeItems: "center",
+                  flex: "0 0 auto",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    width: 104,
+                    height: 104,
+                    borderRadius: "50%",
+                    background: "var(--sn-portal-ring)",
+                    opacity: 0.72,
+                  },
+                }}
+              >
+                <AssistantAvatar name="Alex" variant="dragon" mood="celebrate" size={76} active />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>
+                  {t("brand.name")}
+                </Typography>
+                <Typography component="h1" variant="h4" sx={{ fontWeight: 950, mb: 0.8 }}>
+                  {stepCopy.portalTitle}
+                </Typography>
+                <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  {stepCopy.portalSubtitle}
+                </Typography>
+              </Box>
+            </Stack>
 
-          <Alert severity="success" icon={false} sx={{ borderRadius: 3 }}>
-            <Typography sx={{ fontWeight: 800 }}>{t("auth.registrationAssistantIntro")}</Typography>
-          </Alert>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2 }}>
+              {stepCopy.capabilities.map((capability) => (
+                <Chip
+                  key={capability}
+                  label={capability}
+                  size="small"
+                  sx={{
+                    border: "1px solid var(--sn-border-soft)",
+                    backgroundColor: "var(--sn-surface-glass)",
+                    color: "var(--sn-text-primary)",
+                    fontWeight: 850,
+                  }}
+                />
+              ))}
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1,
+              border: "1px solid var(--sn-border-soft)",
+              backgroundColor: "var(--sn-surface-glass)",
+            }}
+          >
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" spacing={1}>
+                <Typography sx={{ fontWeight: 900 }}>{activeStepTitle}</Typography>
+                <Typography color="text.secondary" sx={{ fontWeight: 800 }}>
+                  {stepCopy.progressLabel} {currentStepIndex + 1}/{registrationStepOrder.length}
+                </Typography>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={registrationProgress}
+                sx={{
+                  height: 8,
+                  borderRadius: 999,
+                  backgroundColor: "var(--sn-surface-muted)",
+                  "& .MuiLinearProgress-bar": {
+                    borderRadius: 999,
+                    background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #84cc16 100%)",
+                  },
+                }}
+              />
+              <Typography color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                {stepCopy.stepHint}
+              </Typography>
+            </Stack>
+          </Box>
 
           {serverError && (
             <Alert severity="error" sx={{ borderRadius: 3 }}>

@@ -17,6 +17,9 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("checkRegistrationAvailability");
     expect(registerSource).toContain('displayedNameAvailability !== "available"');
     expect(registerSource).toContain('displayedEmailAvailability !== "available"');
+    expect(registerSource).toContain("portalTitle");
+    expect(registerSource).toContain("registrationProgress");
+    expect(registerSource).toContain("This is not a calorie calculator");
   });
 
   it("routes confirmed users to an explicit onboarding choice before the questionnaire", async () => {
@@ -29,6 +32,8 @@ describe("onboarding and profile flow contract", () => {
     expect(onboardingSource).toContain("OnboardingChoicePage");
     expect(choiceSource).toContain("navigate(stepPaths.gender)");
     expect(choiceSource).toContain('navigate("/dashboard", { replace: true })');
+    expect(choiceSource).toContain("AssistantAvatar");
+    expect(choiceSource).toContain("Calories without manual math");
   });
 
   it("keeps the post-confirmation questionnaire order user-friendly", async () => {
