@@ -118,7 +118,7 @@ const PartnerInvitePage = () => {
               <Button component={Link} to="/login" variant="contained">
                 Log in
               </Button>
-              <Button component={Link} to={`/register?partnerInvite=${encodeURIComponent(code)}`} variant="outlined">
+              <Button component={Link} to="/register" variant="outlined">
                 Create account
               </Button>
             </Box>

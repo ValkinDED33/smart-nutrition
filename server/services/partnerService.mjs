@@ -18,11 +18,7 @@ const getInviteHash = (code, secret) =>
   hashOneTimeToken(`partner:${String(code ?? "").trim().toUpperCase()}`, secret);
 
 const createInviteCode = () =>
-  `SN-${randomBytes(5)
-    .toString("base64url")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 8)}`;
+  `SN-${randomBytes(4).toString("hex").toUpperCase()}`;
 
 const createShareId = (prefix) => `${prefix}_${createOpaqueToken(12)}`;
 

@@ -22,6 +22,7 @@ describe("PartnerInvitePage contract", () => {
     expect(inviteSource).toContain("acceptRemotePartnerInvite");
     expect(loginSource).toContain("acceptRemotePartnerInvite(pendingPartnerInvite)");
     expect(verifySource).toContain("acceptRemotePartnerInvite(pendingPartnerInvite)");
+    expect(inviteSource).not.toContain("partnerInvite=");
     expect(inviteSource).not.toContain("localStorage");
   });
 });
