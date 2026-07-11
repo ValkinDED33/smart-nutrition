@@ -15,6 +15,9 @@ describe("ProgressOverviewCard contract", () => {
     expect(source).toContain("caloriesProgress");
     expect(source).toContain("proteinProgress");
     expect(source).toContain("waterProgress");
+    expect(source).toContain("createWaterGlassSlots");
+    expect(source).toContain("overviewWaterGlasses");
+    expect(source).toContain('data-testid="overview-water-glass"');
     expect(source).toContain("mealsProgress");
     expect(source).toContain("weightProgress");
     expect(source).toContain("checkInProgress");

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { createWaterGlassSlots } from "../water/waterModel";
 
 const progressOverviewCopy = {
   uk: {
@@ -59,6 +60,7 @@ const progressOverviewCopy = {
 } as const;
 
 type ProgressTone = "good" | "watch" | "missing";
+type ProgressDomain = "calories" | "protein" | "water" | "meals" | "weight" | "checkIn";
 type ProgressOverviewCopy = (typeof progressOverviewCopy)[AppLanguage];
 
 const getProgressOverviewCopy = (language: AppLanguage): ProgressOverviewCopy => {
@@ -124,6 +126,12 @@ export const ProgressOverviewCard = () => {
   const waterProgress = water.dailyWaterGoal
     ? clampPercent((water.consumedMl / water.dailyWaterGoal) * 100)
     : null;
+  const overviewWaterGlasses = createWaterGlassSlots(
+    water.consumedMl,
+    water.dailyWaterGoal,
+    water.glassSizeMl,
+    6
+  ).slice(0, 8);
   const mealsProgress = clampPercent((todayMealCount / 4) * 100);
   const weightProgress =
     latestWeight && profile.targetWeight
@@ -137,6 +145,7 @@ export const ProgressOverviewCard = () => {
   const checkInProgress = clampPercent(Math.min(profile.measurementHistory.length, 4) * 25);
   const items = [
     {
+      domain: "calories" as ProgressDomain,
       label: copy.calories,
       value: caloriesProgress,
       detail: `${Math.round(meal.totalNutrients.calories)} / ${profile.dailyCalories || 0} kcal`,
@@ -144,6 +153,7 @@ export const ProgressOverviewCard = () => {
       tone: getTone(caloriesProgress),
     },
     {
+      domain: "protein" as ProgressDomain,
       label: copy.protein,
       value: proteinProgress,
       detail: `${Math.round(meal.totalNutrients.protein)} / ${proteinTarget || 0} g`,
@@ -151,6 +161,7 @@ export const ProgressOverviewCard = () => {
       tone: getTone(proteinProgress),
     },
     {
+      domain: "water" as ProgressDomain,
       label: copy.water,
       value: waterProgress,
       detail: `${water.consumedMl} / ${water.dailyWaterGoal} ml`,
@@ -158,6 +169,7 @@ export const ProgressOverviewCard = () => {
       tone: getTone(waterProgress),
     },
     {
+      domain: "meals" as ProgressDomain,
       label: copy.meals,
       value: mealsProgress,
       detail: copy.mealsDetail(todayMealCount),
@@ -165,6 +177,7 @@ export const ProgressOverviewCard = () => {
       tone: getTone(mealsProgress, 50),
     },
     {
+      domain: "weight" as ProgressDomain,
       label: copy.weightGoal,
       value: weightProgress,
       detail: profile.targetWeight ? `${latestWeight.toFixed(1)} / ${profile.targetWeight.toFixed(1)} kg` : copy.noTarget,
@@ -172,6 +185,7 @@ export const ProgressOverviewCard = () => {
       tone: getTone(weightProgress),
     },
     {
+      domain: "checkIn" as ProgressDomain,
       label: copy.checkIn,
       value: checkInProgress,
       detail: copy.checkInDetail(profile.measurementHistory.length),
@@ -234,6 +248,44 @@ export const ProgressOverviewCard = () => {
                   <Typography color="text.secondary" variant="body2">
                     {item.detail}
                   </Typography>
+                  {item.domain === "water" ? (
+                    <Box
+                      aria-label={copy.water}
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${overviewWaterGlasses.length}, minmax(12px, 1fr))`,
+                        gap: 0.55,
+                        minHeight: 32,
+                      }}
+                    >
+                      {overviewWaterGlasses.map((glass) => (
+                        <Box
+                          key={`overview-water-glass-${glass.index}`}
+                          data-testid="overview-water-glass"
+                          sx={{
+                            position: "relative",
+                            height: 32,
+                            borderRadius: "0 0 8px 8px",
+                            border: "1px solid rgba(14, 165, 233, 0.32)",
+                            backgroundColor: "rgba(14, 165, 233, 0.08)",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              insetInline: 0,
+                              bottom: 0,
+                              height: `${glass.fill * 100}%`,
+                              minHeight: glass.fill > 0 ? 4 : 0,
+                              background:
+                                "linear-gradient(180deg, rgba(56, 189, 248, 0.75), rgba(14, 165, 233, 0.95))",
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : null}
                 </Stack>
               </Paper>
             );
