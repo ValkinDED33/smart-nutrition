@@ -9,6 +9,7 @@ import {
   nutritionSections,
 } from "@domain/meal/nutrients";
 import { getProductCategoryLabel } from "@domain/products/productCategory";
+import { formatProductBaseAmount } from "@domain/products/productPortions";
 import type { AppLanguage } from "@shared/types/i18n";
 import { useLanguage } from "../../shared/language";
 
@@ -109,6 +110,11 @@ const fallbackBenefitCopy: LocalizedText = {
   en: "Use macros, micronutrients, and portion size to fit this product into your day.",
 };
 
+const productFactCopy = {
+  serving: { uk: "Порція", pl: "Porcja", en: "Serving" },
+  ingredients: { uk: "Склад", pl: "Skład", en: "Ingredients" },
+} satisfies Record<string, LocalizedText>;
+
 const getFactLabel = (key: string, language: AppLanguage) => {
   const label = factLabels.get(key);
 
@@ -181,6 +187,13 @@ export const ProductNutritionFacts = ({ product }: Props) => {
     .flatMap((section) => section.items)
     .slice(0, 6);
   const benefitSummary = getBenefitSummary(categoryKey, appLanguage);
+  const baseAmountLabel = formatProductBaseAmount(product.unit);
+  const perBaseLabel =
+    product.unit === "piece"
+      ? baseAmountLabel
+      : t("productFacts.perBase", { unit: product.unit });
+  const servingSize = product.facts?.servingSize?.trim();
+  const ingredientsText = product.facts?.ingredientsText?.trim();
 
   return (
     <Stack spacing={2}>
@@ -190,7 +203,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
           {t("productFacts.subtitle")}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {t("productFacts.perBase", { unit: product.unit })}
+          {perBaseLabel}
         </Typography>
       </Stack>
 
@@ -223,6 +236,13 @@ export const ProductNutritionFacts = ({ product }: Props) => {
                 variant="outlined"
               />
             ))}
+            {servingSize ? (
+              <Chip
+                label={`${getLocalizedText(productFactCopy.serving, appLanguage)}: ${servingSize}`}
+                size="small"
+                variant="outlined"
+              />
+            ) : null}
           </Stack>
           <Typography variant="body2" color="text.secondary">
             {benefitSummary}
@@ -243,6 +263,27 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       </Stack>
 
       <Divider />
+
+      {ingredientsText ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1.4,
+            borderRadius: 1,
+            borderColor: "var(--sn-border-soft)",
+            backgroundColor: "var(--sn-surface-elevated)",
+          }}
+        >
+          <Stack spacing={0.75}>
+            <Typography sx={{ fontWeight: 700 }}>
+              {getLocalizedText(productFactCopy.ingredients, appLanguage)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+              {ingredientsText}
+            </Typography>
+          </Stack>
+        </Paper>
+      ) : null}
 
       <Stack spacing={2}>
         {detailSections.map((section) => (

@@ -185,6 +185,142 @@ const firstCsvValue = (value) =>
 const cleanCategory = (value) =>
   normalizeOptionalText(String(value ?? "").replace(/^[a-z]{2}:/i, "").replace(/-/g, " "), 120);
 
+const OPEN_FOOD_FACTS_FIELDS = [
+  "code",
+  "product_name",
+  "product_name_en",
+  "generic_name",
+  "abbreviated_product_name",
+  "brands",
+  "categories",
+  "categories_tags",
+  "labels_tags",
+  "quantity",
+  "serving_size",
+  "serving_quantity",
+  "ingredients_text",
+  "ingredients_text_en",
+  "ingredients_text_pl",
+  "ingredients_text_uk",
+  "image_front_url",
+  "image_url",
+  "nutriments",
+].join(",");
+
+const LIQUID_CATEGORY_PATTERN =
+  /\b(beverage|beverages|drink|drinks|soft drinks?|soda|cola|water|juice|nectar|energy drink|iced tea|tea-based beverage|coffee drinks?)\b/i;
+const LIQUID_SIZE_PATTERN = /\b\d+(?:[.,]\d+)?\s*(?:ml|milliliters?|millilitres?|l|liters?|litres?)\b/i;
+
+const parseOpenFoodFactsQuantity = (value) => {
+  const text = normalizeText(value, { maxLength: 80 });
+  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(ml|milliliters?|millilitres?|l|liters?|litres?|g|grams?|kg|kilograms?)\b/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1].replace(",", "."));
+  const unit = match[2].toLowerCase();
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  if (unit === "l" || unit.startsWith("liter") || unit.startsWith("litre")) {
+    return { quantity: Math.round(amount * 1000), unit: "ml" };
+  }
+
+  if (unit === "kg" || unit.startsWith("kilogram")) {
+    return { quantity: Math.round(amount * 1000), unit: "g" };
+  }
+
+  return {
+    quantity: Math.round(amount),
+    unit: unit.startsWith("ml") || unit.startsWith("milli") ? "ml" : "g",
+  };
+};
+
+const readOpenFoodFactsServing = (rawProduct) =>
+  parseOpenFoodFactsQuantity(rawProduct.serving_size) ??
+  parseOpenFoodFactsQuantity(rawProduct.quantity) ??
+  null;
+
+const hasNutrimentForBaseUnit = (nutriments, unit) =>
+  Object.keys(nutriments).some((key) => key.endsWith(`_100${unit}`));
+
+const resolveOpenFoodFactsUnit = ({ rawProduct, category, nutriments }) => {
+  const serving = readOpenFoodFactsServing(rawProduct);
+  const categories = [
+    category,
+    rawProduct.categories,
+    ...(Array.isArray(rawProduct.categories_tags) ? rawProduct.categories_tags : []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const hasLiquidNutrients = hasNutrimentForBaseUnit(nutriments, "ml");
+  const hasLiquidSize =
+    serving?.unit === "ml" ||
+    LIQUID_SIZE_PATTERN.test(String(rawProduct.quantity ?? "")) ||
+    LIQUID_SIZE_PATTERN.test(String(rawProduct.serving_size ?? ""));
+
+  return hasLiquidNutrients || hasLiquidSize || LIQUID_CATEGORY_PATTERN.test(categories)
+    ? "ml"
+    : "g";
+};
+
+const readNutrimentPerBase = (nutriments, key, unit, fallback = 0) => {
+  const unitValue = toNumber(nutriments[`${key}_100${unit}`], NaN);
+
+  if (Number.isFinite(unitValue)) {
+    return unitValue;
+  }
+
+  const gramValue = toNumber(nutriments[`${key}_100g`], NaN);
+
+  if (Number.isFinite(gramValue)) {
+    return gramValue;
+  }
+
+  return toNumber(nutriments[key], fallback);
+};
+
+const readOpenFoodFactsEnergyKcal = (nutriments, unit) => {
+  const unitEnergyKcal = toNumber(nutriments[`energy-kcal_100${unit}`], NaN);
+
+  if (Number.isFinite(unitEnergyKcal)) {
+    return unitEnergyKcal;
+  }
+
+  const gramEnergyKcal = toNumber(nutriments["energy-kcal_100g"], NaN);
+
+  if (Number.isFinite(gramEnergyKcal)) {
+    return gramEnergyKcal;
+  }
+
+  const directEnergyKcal = toNumber(nutriments["energy-kcal"], NaN);
+
+  if (Number.isFinite(directEnergyKcal)) {
+    return directEnergyKcal;
+  }
+
+  const unitEnergyKj = toNumber(nutriments[`energy_100${unit}`], NaN);
+
+  if (Number.isFinite(unitEnergyKj)) {
+    return unitEnergyKj / 4.184;
+  }
+
+  return toNumber(nutriments.energy_100g, 0) / 4.184;
+};
+
+const readOpenFoodFactsIngredients = (rawProduct) =>
+  normalizeOptionalText(
+    rawProduct.ingredients_text_uk ||
+      rawProduct.ingredients_text_en ||
+      rawProduct.ingredients_text_pl ||
+      rawProduct.ingredients_text,
+    900
+  );
+
 const parseOpenFoodFactsProduct = (rawProduct) => {
   if (!rawProduct || typeof rawProduct !== "object" || Array.isArray(rawProduct)) {
     return null;
@@ -207,20 +343,24 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     !Array.isArray(rawProduct.nutriments)
       ? rawProduct.nutriments
       : {};
-  const energyKcal =
-    toNumber(nutriments["energy-kcal_100g"], NaN) ||
-    toNumber(nutriments["energy-kcal"], NaN) ||
-    toNumber(nutriments["energy_100g"], 0) / 4.184;
+  const category =
+    cleanCategory(Array.isArray(rawProduct.categories_tags) ? rawProduct.categories_tags[0] : null) ||
+    cleanCategory(firstCsvValue(rawProduct.categories));
+  const unit = resolveOpenFoodFactsUnit({ rawProduct, category, nutriments });
+  const serving = readOpenFoodFactsServing(rawProduct);
+  const servingMatchesUnit = serving?.unit === unit;
+  const ingredientsText = readOpenFoodFactsIngredients(rawProduct);
+  const energyKcal = readOpenFoodFactsEnergyKcal(nutriments, unit);
   const nutrients = createNutrients({
     calories: energyKcal,
-    protein: toNumber(nutriments.proteins_100g),
-    fat: toNumber(nutriments.fat_100g),
-    carbs: toNumber(nutriments.carbohydrates_100g),
-    fiber: toNumber(nutriments.fiber_100g),
-    sugars: toNumber(nutriments.sugars_100g),
+    protein: readNutrimentPerBase(nutriments, "proteins", unit),
+    fat: readNutrimentPerBase(nutriments, "fat", unit),
+    carbs: readNutrimentPerBase(nutriments, "carbohydrates", unit),
+    fiber: readNutrimentPerBase(nutriments, "fiber", unit),
+    sugars: readNutrimentPerBase(nutriments, "sugars", unit),
     sodium:
-      toNumber(nutriments.sodium_100g, NaN) * 1000 ||
-      toNumber(nutriments.salt_100g, 0) * 393.4,
+      readNutrimentPerBase(nutriments, "sodium", unit, NaN) * 1000 ||
+      readNutrimentPerBase(nutriments, "salt", unit, 0) * 393.4,
   });
 
   if (!hasUsefulNutrition(nutrients)) {
@@ -228,9 +368,6 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
   }
 
   const barcode = normalizeOptionalText(rawProduct.code, 64);
-  const category =
-    cleanCategory(Array.isArray(rawProduct.categories_tags) ? rawProduct.categories_tags[0] : null) ||
-    cleanCategory(firstCsvValue(rawProduct.categories));
   const id = barcode
     ? `openfoodfacts-${barcode}`
     : `openfoodfacts-${productName.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}`;
@@ -243,11 +380,15 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     barcode,
     category,
     imageUrl: normalizeImageUrl(rawProduct.image_front_url ?? rawProduct.image_url),
-    unit: "g",
+    unit,
     source: "OpenFoodFacts",
     nutrients,
     facts: {
       foodGroup: category ?? undefined,
+      ingredientsText: ingredientsText ?? undefined,
+      servingSize: normalizeOptionalText(rawProduct.serving_size ?? rawProduct.quantity, 80) ?? undefined,
+      servingQuantity: servingMatchesUnit ? serving.quantity : undefined,
+      servingUnit: servingMatchesUnit ? serving.unit : undefined,
       extraCompounds: Array.isArray(rawProduct.labels_tags)
         ? rawProduct.labels_tags.slice(0, 8).map((item) => String(item))
         : undefined,
@@ -428,8 +569,7 @@ export const createProductLookupService = ({
       action: "process",
       json: "1",
       page_size: String(limit),
-      fields:
-        "code,product_name,product_name_en,generic_name,abbreviated_product_name,brands,categories,categories_tags,labels_tags,image_front_url,image_url,nutriments",
+      fields: OPEN_FOOD_FACTS_FIELDS,
     });
     const path = `/cgi/search.pl?${params.toString()}`;
     const payload = await fetchJsonFromFirstAvailableUrl({
@@ -449,8 +589,7 @@ export const createProductLookupService = ({
 
   const fetchOpenFoodFactsBarcode = async ({ barcode }) => {
     const params = new URLSearchParams({
-      fields:
-        "code,product_name,product_name_en,generic_name,abbreviated_product_name,brands,categories,categories_tags,labels_tags,image_front_url,image_url,nutriments",
+      fields: OPEN_FOOD_FACTS_FIELDS,
     });
     const path = `/api/v2/product/${encodeURIComponent(
       barcode

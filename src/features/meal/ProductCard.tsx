@@ -26,9 +26,12 @@ import {
   getProductCategoryLabel,
 } from "@domain/products/productCategory";
 import {
+  formatProductBaseAmount,
   formatProductPortion,
+  getDefaultProductQuantity,
   getProductPortionPresets,
 } from "@domain/products/productPortions";
+import { getNutrientLabel } from "@domain/meal/nutrients";
 import { selectInputValue } from "../../shared/lib/inputSelection";
 import {
   addProductIntakeToCloud,
@@ -116,7 +119,9 @@ export const ProductCard = ({
   const displayName = getProductDisplayName(product, appLanguage);
   const categoryKey = getProductCategoryKey(product);
   const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);
-  const portionPresets = getProductPortionPresets(product.unit);
+  const portionPresets = getProductPortionPresets(product);
+  const defaultQuantity = getDefaultProductQuantity(product);
+  const baseAmountLabel = formatProductBaseAmount(product.unit);
   const savedKey = getProductKey(product);
   const isSaved = savedProducts.some((item) => getProductKey(item) === savedKey);
   const {
@@ -208,12 +213,9 @@ export const ProductCard = ({
   };
 
   const handleAdd = () => {
-    if (!qty.trim()) {
-      setQuantityError(t("meal.invalidQuantity"));
-      return;
-    }
+    const quantity = qty.trim() ? Number(qty) : defaultQuantity;
 
-    void handleAddQuantity(Number(qty));
+    void handleAddQuantity(quantity, Boolean(qty.trim()));
   };
 
   const handleToggleSave = async () => {
@@ -230,8 +232,9 @@ export const ProductCard = ({
   const nutrients = product.nutrients;
   const parsedQuantity = Number(qty);
   const trackedQuantity =
-    !Number.isNaN(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 100;
-  const quantityFactor = trackedQuantity / 100;
+    !Number.isNaN(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : defaultQuantity;
+  const baseQuantity = product.unit === "piece" ? 1 : 100;
+  const quantityFactor = trackedQuantity / baseQuantity;
   const estimatedCalories = nutrients.calories * quantityFactor;
   const estimatedProtein = nutrients.protein * quantityFactor;
   const estimatedFat = nutrients.fat * quantityFactor;
@@ -311,7 +314,7 @@ export const ProductCard = ({
           )}
 
           <Typography variant={compact ? "body2" : "body1"}>
-            {nutrients.calories.toFixed(0)} {t("common.kcal")} / {product.unit}
+            {nutrients.calories.toFixed(0)} {t("common.kcal")} / {baseAmountLabel}
           </Typography>
 
           <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap">
@@ -321,6 +324,15 @@ export const ProductCard = ({
             />
             <Chip label={`F ${nutrients.fat.toFixed(1)} ${t("common.g")}`} size="small" />
             <Chip label={`C ${nutrients.carbs.toFixed(1)} ${t("common.g")}`} size="small" />
+            {nutrients.sugars > 0 ? (
+              <Chip
+                label={`${getNutrientLabel("sugars", appLanguage)} ${nutrients.sugars.toFixed(
+                  1
+                )} ${t("common.g")}`}
+                size="small"
+                variant="outlined"
+              />
+            ) : null}
           </Stack>
 
           <TextField
@@ -328,7 +340,7 @@ export const ProductCard = ({
             size="small"
             type="text"
             label={`${t("meal.quantity")} (${product.unit})`}
-            placeholder="100"
+            placeholder={String(defaultQuantity)}
             value={qty}
             error={Boolean(quantityError)}
             helperText={quantityError}

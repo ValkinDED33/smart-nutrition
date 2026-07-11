@@ -51,6 +51,7 @@ export interface Nutrients {
 export type NutrientKey = keyof Nutrients;
 
 export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
+export type ProductUnit = "g" | "ml" | "piece";
 
 export interface ProductFacts {
   foodGroup?: string;
@@ -58,12 +59,16 @@ export interface ProductFacts {
   proteinTypes?: string[];
   fatTypes?: string[];
   extraCompounds?: string[];
+  ingredientsText?: string;
+  servingSize?: string;
+  servingQuantity?: number;
+  servingUnit?: ProductUnit;
 }
 
 export interface Product {
   id: string;
   name: string;
-  unit: "g" | "ml" | "piece";
+  unit: ProductUnit;
   source: ProductSource;
   nutrients: Nutrients;
   brand?: string;

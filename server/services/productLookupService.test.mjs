@@ -28,6 +28,26 @@ const openFoodFactsProduct = {
   },
 };
 
+const openFoodFactsBeverageProduct = {
+  code: "5449000000996",
+  product_name: "Coca-Cola",
+  brands: "Coca Cola",
+  categories: "Beverages, Carbonated drinks, Colas",
+  categories_tags: ["en:beverages", "en:carbonated-drinks", "en:colas"],
+  quantity: "330 ml",
+  serving_size: "330 ml",
+  ingredients_text_en:
+    "Carbonated water, sugar, colour E150d, phosphoric acid, natural flavourings, caffeine.",
+  nutriments: {
+    "energy-kcal_100ml": 42,
+    proteins_100ml: 0,
+    fat_100ml: 0,
+    carbohydrates_100ml: 10.6,
+    sugars_100ml: 10.6,
+    sodium_100ml: 0,
+  },
+};
+
 describe("productLookupService", () => {
   it("returns no results when every external provider is disabled", async () => {
     const fetchImpl = vi.fn();
@@ -82,6 +102,46 @@ describe("productLookupService", () => {
       }),
     });
     expect(fetchImpl.mock.calls[0][0]).toContain("world.openfoodfacts.org/cgi/search.pl");
+  });
+
+  it("maps OpenFoodFacts beverages as milliliters with serving and ingredient facts", async () => {
+    const fetchImpl = vi.fn(async () =>
+      createResponse({
+        body: {
+          status: 1,
+          product: openFoodFactsBeverageProduct,
+        },
+      })
+    );
+    const service = createProductLookupService({
+      config: {
+        openFoodFactsEnabled: true,
+      },
+      fetchImpl,
+    });
+
+    const results = await service.searchProducts({ search: "5449000000996", limit: 1 });
+
+    expect(results[0]).toMatchObject({
+      id: "openfoodfacts-5449000000996",
+      name: "Coca-Cola",
+      brand: "Coca Cola",
+      unit: "ml",
+      source: "OpenFoodFacts",
+      nutrients: expect.objectContaining({
+        calories: 42,
+        carbs: 10.6,
+        sugars: 10.6,
+      }),
+      facts: expect.objectContaining({
+        foodGroup: "beverages",
+        servingSize: "330 ml",
+        servingQuantity: 330,
+        servingUnit: "ml",
+        ingredientsText: expect.stringContaining("Carbonated water"),
+      }),
+    });
+    expect(fetchImpl.mock.calls[0][0]).toContain("quantity%2Cserving_size");
   });
 
   it("falls back to the secondary OpenFoodFacts host when the primary search host fails", async () => {
