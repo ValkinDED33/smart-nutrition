@@ -14,22 +14,23 @@ Smart Nutrition should:
 
 ## Current baseline
 
-The current project already has a strong MVP foundation:
+The current project already has a strong production-oriented foundation:
 
-- local profile with adaptive calorie targets
-- meal logging, templates, recipes, barcode scanning, saved products
-- calorie and macro tracking
+- backend-first auth, session restore, cloud profile/meal state, and environment-gated storage providers
+- adaptive calorie targets, target-weight progress, and body progress tracking
+- meal logging, templates, recipes, barcode scanning, saved/recent products, and backend catalog lookup
+- calorie, macro, micronutrient, additive, allergen, vitamin, and mineral display
 - weekly insights, meal history, and recommendation cards
-- target weight, weight progress scale, and weight trend chart
-- custom avatar upload with automatic resizing/compression
-- micronutrient summary and grouped daily meal overview
+- photo meal analysis as a review-first flow rather than an auto-save guess
+- assistant runtime with backend provider fallback, cloud memory, Telegram integration, and local degradation
+- custom companion/avatar surfaces with lazy 3D loading
 
 Main blockers that still prevent a "best possible" product:
 
-- remote auth and cloud sync exist, but still need production hardening and observability
+- cloud mode still needs more observability, smoke automation, and release hardening
 - fuzzy search exists, but product intelligence still needs broader restaurant/home-dish knowledge
-- photo logging is still a draft/manual-review flow, not production recognition
-- reminders and habit nudges exist, but orchestration is still lightweight
+- photo logging still needs stronger vision accuracy, confidence handling, and bad-photo recovery
+- reminders and habit nudges exist, but orchestration can become more contextual around real user events
 - assistant runtime now supports remote AI and memory, but proactive coaching and cloud hardening are still missing
 - external integrations such as Google Fit / Apple Health are still missing
 
@@ -37,17 +38,17 @@ Main blockers that still prevent a "best possible" product:
 
 | Area | Current state | Gap to target | Priority |
 | --- | --- | --- | --- |
-| User profile | Basic profile, target weight, adaptive calories | Add allergies, diet style, exclusions, dynamic preference engine | P1 |
-| Adaptive planning | Partial | Needs automatic recalculation from actual trend without manual check-ins only | P1 |
-| Core food logging | Good MVP | Inline edit-anything flow, fewer taps, restaurant and homemade dish shortcuts | P1 |
+| User profile | Profile, target weight, adaptive calories, preferences, women-health context | Simplify the user-facing edit/read mode and deepen dynamic preference logic | P1 |
+| Adaptive planning | Cloud-confirmed adaptive goal card and target-weight tracking | Needs more automatic trend explanation and coaching | P1 |
+| Core food logging | Unified meal builder, command center, scanner, photo, search, saved/recent foods | Fewer taps, restaurant and homemade dish shortcuts, stronger photo confidence | P1 |
 | Calories and macros | Good | Needs stronger validation and easier correction UX | P1 |
-| Micronutrients | Partial | Needs richer daily/weekly micronutrient reporting and deficiency flags | P1 |
+| Micronutrients | Daily micronutrient summary and nutrition facts details | Needs richer weekly reporting and deficiency flags | P1 |
 | Product search | Good MVP | Expand restaurant coverage, home dish taxonomy, and richer ranking logic | P1 |
 | Barcode scanning | Good MVP | Offline cache, better EU coverage, source confidence, faster retry UX | P1 |
 | Recipes and meal plans | Partial | Real goal-based plans, recipe import, plan recommendations | P2 |
 | Analytics | Partial | Month view, deviation analysis, cleaner charts, progress dashboards | P1 |
 | Recommendations | Basic rules-based | Goal-aware scoring engine with specific corrective suggestions | P1 |
-| Photo logging | Draft/manual-review flow | Production-grade recognition, confidence score, editable estimate, portion correction | P2 |
+| Photo logging | Review-first backend photo analysis flow | Production-grade recognition, confidence score, editable estimate, portion correction | P2 |
 | Notifications | Basic reminders and nudges | Rich orchestration, better preference logic, and smarter timing | P2 |
 | Security and account data | Production baseline | Hardening, stronger auth paths, audit-safe storage, observability | P0 |
 | Sync | Cloud sync MVP | Real-time consistency hardening, better conflict handling, stronger resilience | P0 |

@@ -60,7 +60,7 @@ position is:
 
 Relevant areas:
 
-- `src/pages/FoodPage.tsx`
+- `src/pages/MealBuilderPage.tsx`
 - `src/features/meal/ProductSearch.tsx`
 - `src/features/meal/QuickMealComposer.tsx`
 - `src/features/meal/BarcodeScanner.tsx`
@@ -194,7 +194,7 @@ Gap:
 Severity: Critical
 
 FILE:
-`src/pages/FoodPage.tsx`, `src/features/meal/ProductSearch.tsx`,
+`src/pages/MealBuilderPage.tsx`, `src/features/meal/ProductSearch.tsx`,
 `src/features/meal/QuickMealComposer.tsx`, `src/features/meal/BarcodeScanner.tsx`,
 `src/features/meal/PhotoMealAssistant.tsx`
 

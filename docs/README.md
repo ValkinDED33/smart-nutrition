@@ -2,24 +2,20 @@
 
 Smart Nutrition is a nutrition-tracking app focused on fast food logging, adaptive calorie planning, clear analytics, and practical guidance instead of generic dashboard noise.
 
-## Current product level
+## Current Product Level
 
-The current codebase is a strong frontend MVP with:
+The current codebase is a production-oriented Smart Nutrition system with:
 
-- local registration/login with persisted profile data
-- adaptive calorie targets and target-weight progress
-- calorie, macro, and basic micronutrient tracking
-- meal logging, recipes, templates, saved foods, and grouped meal history
-- barcode scanning with Open Food Facts and local fallback data
-- free photo meal draft mode with mandatory manual review
-- dashboard assistant runtime with quick questions, follow-up chips, remote AI fallback, and persistent cloud conversation memory
-- weight trend view, daily overviews, and recommendation cards
-- avatar presets plus custom avatar upload with automatic resize/compression
-- account export and delete-account controls
-- optional backend auth and cloud snapshot sync when the local API is running
-- device-aware cloud sync with conflict detection for stale multi-device writes
-- SQLite-backed local API storage with legacy JSON migration support
-- repository/service server structure with normalized profile and meal-state endpoints
+- backend-first registration, login, email verification, password reset, account export, and account deletion
+- warm session restore with profile and meal state recovered through the backend/cloud contract
+- adaptive calorie targets, target-weight progress, macro targets, and body progress tracking
+- meal logging, recipes, templates, saved foods, recent foods, grouped meal history, and micronutrient summaries
+- barcode scanning through the backend product lookup contract with Open Food Facts and optional USDA/provider fallback
+- product nutrition facts with localized labels, additives, allergens, vitamins, minerals, and explicit catalog status
+- photo meal analysis as a review-first flow that must never save unconfirmed AI guesses
+- assistant runtime with backend provider fallback, persistent cloud conversation memory, Telegram assistant integration, and local degradation when the cloud is unavailable
+- water tracking, reminders, medication/task flows, Telegram retention, community, analytics, admin/moderation surfaces, and 3D companion progression
+- Mongo/Postgres/SQLite-capable backend storage selected by environment, with backend/cloud treated as the source of truth in production
 
 ## Product direction
 
@@ -45,7 +41,7 @@ npm install
 npm run dev
 ```
 
-To run the local API-first auth/data layer as well:
+Run the backend as well for any realistic auth, sync, assistant, product lookup, scanner, Telegram, or reminder work:
 
 ```bash
 npm run server:dev
@@ -68,14 +64,15 @@ copy .env.example .env
 Set at least:
 
 - `SMART_NUTRITION_JWT_SECRET`
-- `SMART_NUTRITION_DB_PATH` if you do not want the default SQLite location
+- `SMART_NUTRITION_DATABASE_PROVIDER`
+- the matching database URL/URI for the selected provider
 
 Keep local `.env` frontend-safe. `npm run server:check` selects production
 readiness mode internally, so local builds do not need `NODE_ENV=production` in
 `.env`. Deployment hosts such as Render or Docker should still set
 `NODE_ENV=production` in their service environment.
 
-Optional assistant runtime upgrade:
+Assistant runtime configuration:
 
 - `SMART_NUTRITION_ASSISTANT_API_KEY`
 - `SMART_NUTRITION_ASSISTANT_MODEL`
@@ -138,7 +135,7 @@ npm run test
 - The current build does not require any paid API keys for the default local-preview flow.
 - Product lookup goes through the backend product contract; browser code must not call external food catalogs directly.
 - Product lookup is resilient through backend-owned catalog/provider fallback.
-- Photo logging is now a free draft/review flow rather than paid AI vision recognition.
+- Photo logging is a review-first flow: uncertain AI output must be corrected or confirmed before saving.
 - Assistant Runtime now uses a provider layer with honest fallback: local contextual answers stay available, and a remote AI runtime can be enabled through the backend without rewriting the UI.
 - When `SMART_NUTRITION_ASSISTANT_API_KEY` and `SMART_NUTRITION_ASSISTANT_MODEL` are configured, the backend exposes `/api/ai`, stores short multi-turn conversation memory in SQLite, and lets the dashboard resume or reset the cloud conversation safely.
 - The assistant backend now supports a provider chain with automatic fallback between Groq, Google AI Studio, OpenRouter, and other OpenAI-compatible runtimes when multiple credentials are configured.
@@ -148,9 +145,9 @@ npm run test
 - The server now validates environment configuration on startup and refuses weak default JWT secrets in `production`.
 - Remote accounts now support `log out all sessions` in addition to current-session logout.
 - The Node backend can serve the built frontend directly when `SMART_NUTRITION_SERVE_STATIC=true`.
-- Without the backend, the app falls back to browser-only auth/storage so the MVP still works offline.
-- The backend now uses SQLite at `server/data/smart-nutrition.sqlite` and can migrate data from the old `server/data/db.json` format if that file exists locally.
-- Server state is no longer stored only as one snapshot blob: profile and meal data are also persisted in normalized SQLite tables and exposed through `/api/profile-state` and `/api/meal-state`.
+- Frontend-only storage is not production truth. It is only a local cache/degradation path until backend-confirmed sync is available.
+- The backend can use SQLite for local development and MongoDB/Postgres for hosted production, depending on `SMART_NUTRITION_DATABASE_PROVIDER`.
+- Server state is not stored only as one snapshot blob: profile and meal data are persisted through normalized backend state contracts and exposed through `/api/profile-state` and `/api/meal-state`.
 - Auth now sits behind a provider layer, so backend/cloud auth can replace the local provider without rewriting the pages.
 - Assistant runtime now also sits behind a provider layer: local contextual answers stay available, while remote AI can be enabled with persisted cloud memory when configured.
 - The roadmap priority is now to move next toward proactive coaching, production-grade photo recognition, and cloud hardening.

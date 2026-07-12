@@ -45,12 +45,11 @@ No broad dead-code or architecture baseline should be added silently. If Knip or
 Current baseline:
 
 - ESLint has warning-level security/sonar findings enabled. The first run reported object-indexing and duplicate-string warnings across existing code. They are intentionally warnings so the gate can land without a broad refactor.
-- Knip ignores the legacy unused-file list in `knip.json`. These files include old barrel modules, legacy assistant/data layers, and inactive pages that need product/architecture decisions before deletion.
+- Knip no longer carries a legacy unused-file list. `knip.json` keeps only `vite-env.d.ts` in `ignoreFiles` because Vite ambient declarations are not imported directly.
 - Knip ignores unused export/type/duplicate-export reports for `src/**/*.ts`, `src/**/*.tsx`, and `server/**/*.mjs`. Existing public API barrels and shared domain exports need a separate cleanup pass before this can become an error-level dead-export gate.
 - Knip ignores `@types/react-redux` and `prettier` as dev dependency baseline items. Remove these ignores once the dependency list is cleaned or formatter scripts are added.
 
 Next cleanup targets:
 
 - Reduce ESLint warning count by validating real `security/detect-object-injection` risks and suppressing safe indexed lookups locally.
-- Delete or rewire legacy unused files reported in the first Knip run.
 - Narrow Knip `ignoreIssues` from broad layer globs to exact files, then eventually remove it.
