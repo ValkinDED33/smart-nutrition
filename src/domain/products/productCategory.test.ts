@@ -87,4 +87,31 @@ describe("productCategory", () => {
       getProductCategoryLabel("Beverages And Beverages Preparations", "uk")
     ).toBe("Напої");
   });
+
+  it.each([
+    ["en:dairy-products", "dairy", "Молочні"],
+    ["Cheeses", "dairy", "Молочні"],
+    ["en:breakfast-cereals", "grain", "Крупи та хліб"],
+    ["Breads And Bakery Products", "grain", "Крупи та хліб"],
+    ["en:meats", "meat", "М'ясо та птиця"],
+    ["Poultry", "meat", "М'ясо та птиця"],
+    ["en:fishes", "fish", "Риба та морепродукти"],
+    ["Seafood", "fish", "Риба та морепродукти"],
+    ["en:eggs", "egg", "Яйця"],
+    ["en:confectioneries", "sweets", "Солодощі"],
+    ["Biscuits And Cakes", "sweets", "Солодощі"],
+    ["en:salty-snacks", "snack", "Снеки"],
+    ["en:sauces", "sauce", "Соуси"],
+    ["Prepared Meals", "readyMeal", "Готові страви"],
+    ["Pizzas Pies And Quiches", "readyMeal", "Готові страви"],
+    ["Nuts & Seeds", "nuts", "Горіхи"],
+    ["Fats And Oils", "oil", "Олії"],
+    ["Vegetables Based Foods", "vegetable", "Овочі"],
+    ["Fruit And Vegetables Based Foods", "fruit", "Фрукти"],
+  ])("normalizes broad product category %s", (rawCategory, expectedKey, expectedUkLabel) => {
+    const categoryKey = getProductCategoryKey(createProduct(rawCategory));
+
+    expect(categoryKey).toBe(expectedKey);
+    expect(getProductCategoryLabel(rawCategory, "uk")).toBe(expectedUkLabel);
+  });
 });
