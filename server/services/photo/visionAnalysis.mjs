@@ -19,6 +19,19 @@ const normalizeNutritionPer100g = (value) => ({
   carbs: clamp(value?.carbs, 0, 100),
 });
 
+const normalizeImageQuality = (value) =>
+  ["clear", "unclear"].includes(value) ? value : "clear";
+
+const getRecognitionStatus = ({ confidence, imageQuality }) => {
+  if (confidence >= 0.7 && imageQuality === "clear") {
+    return "recognized";
+  }
+
+  return imageQuality === "unclear" || confidence < 0.35
+    ? "needs_better_photo"
+    : "needs_review";
+};
+
 const toPortionRangeGrams = (quantityGrams) => {
   const quantity = Math.max(Math.round(Number(quantityGrams) || 100), 5);
   const min = Math.max(Math.round((quantity * 0.75) / 5) * 5, 5);
@@ -165,6 +178,8 @@ Safety and honesty rules:
 - Confidence is honest from 0 to 1. Never use 0.99/99.9 style certainty.
 - If confidence is below 0.70, user confirmation is required.
 - If confidence is below 0.35, output suggestions only, not finalized products.
+- If the photo is blurry, too dark, strongly shadowed, too close, cropped, or the food is not clearly visible, set imageQuality to "unclear".
+- If imageQuality is "unclear", keep confidence below 0.35 unless a package label or food is still clearly identifiable.
 - Mention sauces, oils, fillings, toppings, drinks, and sides as questions if not visible.
 - Avoid blocked ingredients if visible alternatives exist: ${blockedTokens.join(", ") || "none"}.
 
@@ -176,6 +191,7 @@ JSON schema:
 {
   "dishName": "short visible dish name or photo meal",
   "summary": "I prepared a food draft from the photo. Please check ingredients and portions before saving.",
+  "imageQuality": "clear",
   "confidence": 0.42,
   "uncertainIngredients": ["possible sauce"],
   "hiddenIngredientQuestions": ["Is there oil or sauce not visible?"],
@@ -311,6 +327,7 @@ export const normalizeVisionAnalysis = (payload) => {
     0.05,
     0.86
   );
+  const imageQuality = normalizeImageQuality(payload?.imageQuality);
   const items = interpretations[0].items;
   const summary = normalizeVisionText(payload?.summary, {
     fallback: "Visible food items were detected from the photo.",
@@ -325,7 +342,7 @@ export const normalizeVisionAnalysis = (payload) => {
       fallback: interpretations[0].title || "Photo meal estimate",
     }),
     summary: hasReviewPrefix ? summary : `${photoDraftSummaryPrefix} ${summary}`,
-    recognitionStatus: confidence >= 0.7 ? "recognized" : "needs_review",
+    recognitionStatus: getRecognitionStatus({ confidence, imageQuality }),
     confidence,
     estimatedPortions: 1,
     cautions: [

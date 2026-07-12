@@ -203,6 +203,7 @@ describe("photoAnalysisService", () => {
                     text: JSON.stringify({
                       dishName: "Cinnamon roll",
                       summary: "A spiral pastry is visible on the plate.",
+                      imageQuality: "unclear",
                       confidence: 0.68,
                       uncertainIngredients: ["filling"],
                       hiddenIngredientQuestions: ["Is there glaze or extra butter?"],
@@ -280,7 +281,7 @@ describe("photoAnalysisService", () => {
       expect(calls[1]).toContain("generativelanguage.googleapis.com");
       expect(calls.join(" ")).not.toContain("groq.com");
       expect(result.items).toHaveLength(1);
-      expect(result.recognitionStatus).toBe("needs_review");
+      expect(result.recognitionStatus).toBe("needs_better_photo");
       expect(result.items[0]).toMatchObject({
         name: "Cinnamon roll",
         portionRangeGrams: { min: 80, max: 140 },
