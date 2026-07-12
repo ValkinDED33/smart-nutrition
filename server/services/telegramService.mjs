@@ -1210,6 +1210,38 @@ export const createTelegramService = ({
     return false;
   };
 
+  const sendAssistantReactionToChat = async (chatId, mood) => {
+    const media = getAssistantReactionMedia(mood);
+
+    if (!media || !configured) {
+      return false;
+    }
+
+    try {
+      const telegram = getBot()?.telegram;
+
+      if (media.type === "animation" && typeof telegram?.sendAnimation === "function") {
+        await telegram.sendAnimation(String(chatId), media.value);
+        return true;
+      }
+
+      if (media.type === "sticker" && typeof telegram?.sendSticker === "function") {
+        await telegram.sendSticker(String(chatId), media.value);
+        return true;
+      }
+    } catch (error) {
+      logger.warn?.("[telegram] assistant chat reaction failed", {
+        provider: "telegram",
+        mood,
+        type: media.type,
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+    }
+
+    return false;
+  };
+
   const replyWithSnapshot = async (ctx, buildMessage) => {
     const user = await getConnectedUser(ctx);
 
@@ -1764,7 +1796,7 @@ export const createTelegramService = ({
     return getConnectionStatus(updatedUser);
   };
 
-  const sendTelegramMessage = async (chatId, text, extra = undefined) => {
+  const sendTelegramMessage = async (chatId, text, extra = undefined, options = {}) => {
     if (!configured) {
       return {
         ok: false,
@@ -1773,6 +1805,10 @@ export const createTelegramService = ({
     }
 
     try {
+      if (options.assistantReactionMood) {
+        await sendAssistantReactionToChat(chatId, options.assistantReactionMood);
+      }
+
       await getBot().telegram.sendMessage(String(chatId), String(text), extra);
       return { ok: true };
     } catch (error) {

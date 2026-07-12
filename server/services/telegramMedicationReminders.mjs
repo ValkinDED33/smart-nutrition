@@ -1427,7 +1427,8 @@ export const createTelegramMedicationReminderRuntime = ({
               : buildTaskReminderNotificationMessage(reminder, language),
             isMedicationReminder(reminder)
               ? buildMedicationReminderKeyboard(reminder, language)
-              : buildTaskReminderKeyboard(reminder, language)
+              : buildTaskReminderKeyboard(reminder, language),
+            { assistantReactionMood: "reminder" }
           );
 
           if (!result.ok) {

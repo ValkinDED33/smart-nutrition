@@ -223,6 +223,104 @@ describe("telegramService", () => {
     });
   });
 
+  it("sends configured assistant reminder media before outbound Telegram messages", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = {
+          sendAnimation: vi.fn(async () => {}),
+          sendMessage: vi.fn(async () => {}),
+        };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+    }
+
+    const service = createTelegramService({
+      config: createConfig({
+        telegramAssistantMedia: {
+          reminder: { type: "animation", value: "assistant-reminder-animation-id" },
+        },
+      }),
+      authRepository: createAuthRepository(),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await expect(
+      service.sendTelegramMessage("42", "Пора прийняти магній.", undefined, {
+        assistantReactionMood: "reminder",
+      })
+    ).resolves.toEqual({ ok: true });
+
+    expect(instances[0].telegram.sendAnimation).toHaveBeenCalledWith(
+      "42",
+      "assistant-reminder-animation-id"
+    );
+    expect(instances[0].telegram.sendMessage).toHaveBeenCalledWith(
+      "42",
+      "Пора прийняти магній.",
+      undefined
+    );
+  });
+
+  it("still sends outbound Telegram text when assistant reminder media fails", async () => {
+    const logger = { info: vi.fn(), warn: vi.fn() };
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = {
+          sendAnimation: vi.fn(async () => {
+            throw new Error("telegram media rejected");
+          }),
+          sendMessage: vi.fn(async () => {}),
+        };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+    }
+
+    const service = createTelegramService({
+      config: createConfig({
+        telegramAssistantMedia: {
+          reminder: { type: "animation", value: "assistant-reminder-animation-id" },
+        },
+      }),
+      authRepository: createAuthRepository(),
+      logger,
+      TelegrafClass: TestBot,
+    });
+
+    await expect(
+      service.sendTelegramMessage("42", "Пора прийняти магній.", undefined, {
+        assistantReactionMood: "reminder",
+      })
+    ).resolves.toEqual({ ok: true });
+
+    expect(instances[0].telegram.sendMessage).toHaveBeenCalledWith(
+      "42",
+      "Пора прийняти магній.",
+      undefined
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[telegram] assistant chat reaction failed",
+      expect.objectContaining({
+        mood: "reminder",
+        type: "animation",
+      })
+    );
+  });
+
   it("creates a Telegram start link for the configured bot", async () => {
     const repository = createAuthRepository({
       findUserById: vi.fn(async () => ({
