@@ -13,5 +13,26 @@ describe("domain profile defaults", () => {
     });
 
     expect(profile.assistant.name).toBe("");
+    expect(profile.assistant).toMatchObject({
+      assistantName: "",
+      companionKind: "robot",
+      assistantAvatar: "robot",
+      preferredCompanionRenderMode: "2d",
+      role: "assistant",
+      tone: "gentle",
+      assistantPersonality: "gentle",
+      assistantMood: "idle",
+      assistantMemory: {
+        goals: [],
+        preferences: [],
+        conversationHighlights: [],
+        lastSyncedAt: null,
+      },
+      onboarding: {
+        goalSelections: [],
+        mainFrictions: [],
+        motivationStyles: ["gentle"],
+      },
+    });
   });
 });

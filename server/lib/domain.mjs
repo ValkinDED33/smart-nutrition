@@ -335,6 +335,38 @@ export const calculateMealTotalNutrients = (items = []) => {
   return totals;
 };
 
+export const createInitialAssistantCustomization = () => ({
+  name: "",
+  assistantName: "",
+  companionKind: "robot",
+  assistantAvatar: "robot",
+  preferredCompanionRenderMode: "2d",
+  role: "assistant",
+  tone: "gentle",
+  assistantPersonality: "gentle",
+  assistantMood: "idle",
+  assistantMemory: {
+    goals: [],
+    preferences: [],
+    conversationHighlights: [],
+    lastSyncedAt: null,
+  },
+  humorEnabled: true,
+  widgetEnabled: true,
+  proactiveHintsEnabled: true,
+  onboarding: {
+    preferredName: "",
+    primaryGoalNote: "",
+    goalSelections: [],
+    mainFriction: "unknown",
+    mainFrictions: [],
+    motivationStyle: "gentle",
+    motivationStyles: ["gentle"],
+    supportNote: "",
+    completedAt: null,
+  },
+});
+
 export const createInitialProfileState = (userInput) => {
   const maintenanceCalories = calculateMaintenanceCalories(userInput);
   const targetCalories = applyGoalDelta(maintenanceCalories, userInput.goal);
@@ -458,23 +490,7 @@ export const createInitialProfileState = (userInput) => {
       renewsAt: null,
       cancelledAt: null,
     },
-    assistant: {
-      name: "",
-      companionKind: "robot",
-      role: "assistant",
-      tone: "gentle",
-      humorEnabled: true,
-      widgetEnabled: true,
-      proactiveHintsEnabled: true,
-      onboarding: {
-        preferredName: "",
-        primaryGoalNote: "",
-        mainFriction: "unknown",
-        motivationStyle: "gentle",
-        supportNote: "",
-        completedAt: null,
-      },
-    },
+    assistant: createInitialAssistantCustomization(),
     personalDetails: {
       bloodGroup: "unknown",
       eyeColor: "unknown",

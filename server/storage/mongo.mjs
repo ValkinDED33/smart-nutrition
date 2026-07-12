@@ -433,10 +433,32 @@ const normalizeMealState = (value) => {
   };
 };
 
-const normalizeProfileState = (value, user) => ({
-  ...createInitialProfileState(user),
-  ...(isRecord(value) ? value : {}),
-});
+const normalizeProfileState = (value, user) => {
+  const fallback = createInitialProfileState(user);
+  const record = isRecord(value) ? value : {};
+  const assistant = isRecord(record.assistant) ? record.assistant : {};
+  const onboarding = isRecord(assistant.onboarding) ? assistant.onboarding : {};
+  const assistantMemory = isRecord(assistant.assistantMemory)
+    ? assistant.assistantMemory
+    : {};
+
+  return {
+    ...fallback,
+    ...record,
+    assistant: {
+      ...fallback.assistant,
+      ...assistant,
+      onboarding: {
+        ...fallback.assistant.onboarding,
+        ...onboarding,
+      },
+      assistantMemory: {
+        ...fallback.assistant.assistantMemory,
+        ...assistantMemory,
+      },
+    },
+  };
+};
 
 const normalizeWaterState = (value) => ({
   ...createInitialWaterState(),

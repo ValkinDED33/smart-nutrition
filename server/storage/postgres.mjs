@@ -45,6 +45,8 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(next) ? next : fallback;
 };
 
+const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
 const toBoolean = (value, fallback = false) =>
   typeof value === "boolean" ? value : value === 1 || value === "1" ? true : fallback;
 
@@ -202,10 +204,32 @@ const normalizeMealState = (value) => {
   };
 };
 
-const normalizeProfileState = (value, user) => ({
-  ...createInitialProfileState(user),
-  ...(value && typeof value === "object" && !Array.isArray(value) ? value : {}),
-});
+const normalizeProfileState = (value, user) => {
+  const fallback = createInitialProfileState(user);
+  const record = isRecord(value) ? value : {};
+  const assistant = isRecord(record.assistant) ? record.assistant : {};
+  const onboarding = isRecord(assistant.onboarding) ? assistant.onboarding : {};
+  const assistantMemory = isRecord(assistant.assistantMemory)
+    ? assistant.assistantMemory
+    : {};
+
+  return {
+    ...fallback,
+    ...record,
+    assistant: {
+      ...fallback.assistant,
+      ...assistant,
+      onboarding: {
+        ...fallback.assistant.onboarding,
+        ...onboarding,
+      },
+      assistantMemory: {
+        ...fallback.assistant.assistantMemory,
+        ...assistantMemory,
+      },
+    },
+  };
+};
 
 const normalizeWaterState = (value) => ({
   ...createInitialWaterState(),
