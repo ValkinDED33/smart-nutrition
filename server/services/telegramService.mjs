@@ -1303,6 +1303,7 @@ export const createTelegramService = ({
         reminderService: reminders,
         getConnectedUser,
         getUserLanguage: getTelegramUserLanguage,
+        getMealState: (user) => stateService?.getMealState?.(user),
         writeAuditLog,
         sendTelegramMessage,
         logger,

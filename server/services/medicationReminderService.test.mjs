@@ -79,6 +79,27 @@ describe("medicationReminderService", () => {
     expect(parseMedicationReminderText("Магний")).toBeNull();
   });
 
+  it("parses medication reminders that should fire after a real lunch", () => {
+    const reminder = parseMedicationReminderText("Магний 1 капсула после обеда", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+
+    expect(reminder).toMatchObject({
+      title: "Магний",
+      dose: "1 капсула",
+      times: [],
+      trigger: {
+        kind: "after_meal",
+        mealType: "lunch",
+        offsetMinutes: 0,
+        windowStart: "12:00",
+        windowEnd: "16:30",
+      },
+      nextRunAt: null,
+      active: true,
+    });
+  });
+
   it("parses ordinary task reminders without treating them as medication", () => {
     const reminder = parseTaskReminderText("Напомни позвонить врачу о 10:00", {
       now: new Date("2026-06-20T05:00:00.000Z"),
@@ -212,6 +233,69 @@ describe("medicationReminderService", () => {
     const persistedReminder = repository.updateUserMedicationReminders.mock.calls[0][1][0];
     expect(persistedReminder.active).toBe(false);
     expect(persistedReminder.nextRunAt).toBeNull();
+  });
+
+  it("sends after-lunch medication reminders only after a real lunch entry", async () => {
+    const initialReminder = parseMedicationReminderText("Магний 1 капсула после обеда", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+    const user = createUser({ medicationReminders: [initialReminder] });
+    let persistedReminders = [initialReminder];
+    const repository = {
+      updateUserMedicationReminders: vi.fn(async (userId, reminders) => {
+        persistedReminders = reminders;
+        return {
+          ...user,
+          id: userId,
+          medicationReminders: reminders,
+        };
+      }),
+    };
+    const service = createMedicationReminderService({ authRepository: repository });
+    const sendReminder = vi.fn(async () => {});
+    const getMealState = vi.fn(async () => ({
+      items: [
+        {
+          id: "meal-lunch-1",
+          mealType: "lunch",
+          eatenAt: "2026-06-20T12:30:00.000Z",
+        },
+      ],
+    }));
+
+    await service.sendDueReminders({
+      users: [user],
+      sendReminder,
+      getMealState,
+      now: new Date("2026-06-20T10:00:00.000Z"),
+    });
+    expect(sendReminder).not.toHaveBeenCalled();
+
+    await service.sendDueReminders({
+      users: [user],
+      sendReminder,
+      getMealState,
+      now: new Date("2026-06-20T12:31:00.000Z"),
+    });
+    expect(sendReminder).toHaveBeenCalledTimes(1);
+    expect(repository.updateUserMedicationReminders.mock.calls[0][1][0]).toMatchObject({
+      active: true,
+      nextRunAt: null,
+      events: expect.arrayContaining([
+        expect.objectContaining({
+          action: "sent",
+          scheduledFor: "after_meal:lunch:2026-06-20",
+        }),
+      ]),
+    });
+
+    await service.sendDueReminders({
+      users: [{ ...user, medicationReminders: persistedReminders }],
+      sendReminder,
+      getMealState,
+      now: new Date("2026-06-20T15:00:00.000Z"),
+    });
+    expect(sendReminder).toHaveBeenCalledTimes(1);
   });
 
   it("reactivates a sent one-time task reminder when it is snoozed", async () => {

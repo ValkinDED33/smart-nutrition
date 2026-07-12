@@ -27,12 +27,19 @@ const REMINDER_COPY = {
       "Медична безпека: я тільки нагадую і веду журнал. Дозування, призначення або зміну лікування погоджуйте з лікарем.",
     details: {
       time: "Час",
+      trigger: "Умова",
       timezone: "Часовий пояс",
       status: "Статус",
       next: "Найближче",
       repeatOnce: "Повтор: один раз",
       repeatDaily: "Повтор: щодня",
       duration: (days) => `Тривалість: ${days} дн.`,
+    },
+    afterMeal: {
+      breakfast: "після сніданку",
+      lunch: "після обіду",
+      dinner: "після вечері",
+      snack: "після перекусу",
     },
     usage: [
       "Напишіть нагадування про ліки простими словами.",
@@ -168,12 +175,19 @@ const REMINDER_COPY = {
       "Bezpieczeństwo medyczne: tylko przypominam i prowadzę dziennik. Dawkowanie, zalecenia lub zmianę leczenia uzgadniaj z lekarzem.",
     details: {
       time: "Czas",
+      trigger: "Warunek",
       timezone: "Strefa czasowa",
       status: "Status",
       next: "Najbliższe",
       repeatOnce: "Powtórka: jeden raz",
       repeatDaily: "Powtórka: codziennie",
       duration: (days) => `Czas trwania: ${days} dni`,
+    },
+    afterMeal: {
+      breakfast: "po śniadaniu",
+      lunch: "po obiedzie",
+      dinner: "po kolacji",
+      snack: "po przekąsce",
     },
     usage: [
       "Napisz przypomnienie o lekach prostymi słowami.",
@@ -309,12 +323,19 @@ const REMINDER_COPY = {
       "Medical safety: I only remind you and keep a log. Dosage, prescriptions, or treatment changes should be agreed with your clinician.",
     details: {
       time: "Time",
+      trigger: "Trigger",
       timezone: "Time zone",
       status: "Status",
       next: "Next",
       repeatOnce: "Repeat: once",
       repeatDaily: "Repeat: daily",
       duration: (days) => `Duration: ${days} day(s)`,
+    },
+    afterMeal: {
+      breakfast: "after breakfast",
+      lunch: "after lunch",
+      dinner: "after dinner",
+      snack: "after snack",
     },
     usage: [
       "Write a medication reminder in plain language.",
@@ -548,6 +569,31 @@ const formatReminderNextRun = (reminder, language = REMINDER_LANGUAGE_FALLBACK) 
     ? formatReminderDateTime(reminder, reminder.nextRunAt, language)
     : getReminderCopy(language).notScheduled;
 
+const formatReminderTrigger = (reminder, language = REMINDER_LANGUAGE_FALLBACK) => {
+  const copy = getReminderCopy(language);
+  const mealType = reminder?.trigger?.mealType;
+
+  if (reminder?.trigger?.kind !== "after_meal" || !mealType) {
+    return null;
+  }
+
+  const label = copy.afterMeal[mealType] ?? copy.afterMeal.lunch;
+  const offsetMinutes = Number(reminder.trigger.offsetMinutes) || 0;
+  return offsetMinutes > 0 ? `${label} +${offsetMinutes} min` : label;
+};
+
+const formatReminderScheduleLine = (
+  reminder,
+  language = REMINDER_LANGUAGE_FALLBACK
+) => {
+  const copy = getReminderCopy(language);
+  const trigger = formatReminderTrigger(reminder, language);
+
+  return trigger
+    ? `${copy.details.trigger}: ${trigger}`
+    : `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`;
+};
+
 const buildReminderDetailsMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
@@ -556,7 +602,7 @@ const buildReminderDetailsMessage = (
 
   return [
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-    `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+    formatReminderScheduleLine(reminder, language),
     `${copy.details.timezone}: ${getReminderTimeZone(reminder)}`,
     `${copy.details.status}: ${getReminderStatusLabel(reminder, language)}`,
     `${copy.details.next}: ${formatReminderNextRun(reminder, language)}`,
@@ -639,7 +685,7 @@ export const buildMedicationReminderCreatedMessage = (
     copy.created,
     "",
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-    `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+    formatReminderScheduleLine(reminder, language),
     reminder.dose ? copy.dose(reminder.dose).trim() : null,
     reminder.durationDays ? copy.details.duration(reminder.durationDays) : null,
     reminder.nextRunAt
@@ -664,7 +710,7 @@ export const buildMedicationReminderNotificationMessage = (
     copy.notificationStart[reminder?.type] ?? copy.notificationStart.medication,
     "",
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-    `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+    formatReminderScheduleLine(reminder, language),
     formatMedicationReminderDose(reminder, language).trim() || null,
     "",
     copy.notificationHint,
@@ -690,7 +736,7 @@ export const buildMedicationReminderListMessage = (
     ...activeReminders.map((reminder, index) =>
       [
         `${index + 1}. ${reminder.title}`,
-        `   ${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+        `   ${formatReminderScheduleLine(reminder, language)}`,
         `   ${copy.details.timezone}: ${getReminderTimeZone(reminder)}`,
         `   ${copy.details.status}: ${getReminderStatusLabel(reminder, language)}`,
         `   ${copy.details.next}: ${formatReminderNextRun(reminder, language)}`,
@@ -722,7 +768,7 @@ export const buildReminderListMessage = (
     ...activeReminders.map((reminder, index) =>
       [
         `${index + 1}. ${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-        `   ${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+        `   ${formatReminderScheduleLine(reminder, language)}`,
         `   ${copy.details.timezone}: ${getReminderTimeZone(reminder)}`,
         `   ${copy.details.status}: ${getReminderStatusLabel(reminder, language)}`,
         `   ${copy.details.next}: ${formatReminderNextRun(reminder, language)}`,
@@ -767,7 +813,6 @@ const buildReminderManagementKeyboard = (
     },
   };
 };
-
 const buildDeleteConfirmationKeyboard = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
@@ -799,7 +844,7 @@ export const buildTaskReminderCreatedMessage = (
     copy.created,
     "",
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-    `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+    formatReminderScheduleLine(reminder, language),
     reminder.repeat === "once" ? copy.details.repeatOnce : copy.details.repeatDaily,
     reminder.durationDays ? copy.details.duration(reminder.durationDays) : null,
     reminder.nextRunAt
@@ -822,7 +867,7 @@ export const buildTaskReminderNotificationMessage = (
     copy.notificationStart.task,
     "",
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
-    `${copy.details.time}: ${formatMedicationReminderTimes(reminder, language)}`,
+    formatReminderScheduleLine(reminder, language),
     "",
     copy.taskNotificationHint,
   ].join("\n");
@@ -992,6 +1037,7 @@ export const createTelegramMedicationReminderRuntime = ({
   medicationReminderService,
   getConnectedUser,
   getUserLanguage,
+  getMealState,
   writeAuditLog,
   sendTelegramMessage,
   logger = console,
@@ -1371,6 +1417,7 @@ export const createTelegramMedicationReminderRuntime = ({
 
       await reminders.sendDueReminders({
         users: connectedUsers,
+        getMealState,
         sendReminder: async (user, reminder) => {
           const language = await resolveUserLanguage(user);
           const result = await sendTelegramMessage(

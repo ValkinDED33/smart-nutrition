@@ -10,6 +10,8 @@ const REMINDER_TYPE_PREGNANCY_SUPPLEMENT = "pregnancy_supplement";
 const REMINDER_TYPE_TASK = "task";
 const REMINDER_TYPE_WATER = "water";
 const REMINDER_TYPE_HABIT = "habit";
+const REMINDER_TRIGGER_AFTER_MEAL = "after_meal";
+const MEAL_TRIGGER_TYPES = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const REMINDER_TYPES = new Set([
   REMINDER_TYPE_MEDICATION,
   REMINDER_TYPE_MEDICATION_COURSE,
@@ -46,6 +48,11 @@ const normalizeTime = (hour, minute = "00") => {
 };
 
 const dedupe = (values) => [...new Set(values.filter(Boolean))];
+
+const normalizeMealType = (value) => {
+  const mealType = String(value ?? "").trim().toLowerCase();
+  return MEAL_TRIGGER_TYPES.has(mealType) ? mealType : null;
+};
 
 const getDatePartsInTimeZone = (date, timeZone = DEFAULT_TIMEZONE) => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -168,6 +175,46 @@ const hasDailyRepeatIntent = (text) =>
     String(text ?? "")
   );
 
+const extractAfterMealTrigger = (text) => {
+  const normalized = String(text ?? "").toLowerCase();
+  const afterMealPattern =
+    /(?:после|після|after|po)\s+(?:(?:того\s+)?(?:как|як)\s+)?(?:по)?(?:завтрака|сніданку|śniadaniu|breakfast|обеда|обіду|lunch|lunchu|ужина|вечері|dinner|kolacji|перекуса|перекусу|snack)/iu;
+
+  if (!afterMealPattern.test(normalized)) {
+    return null;
+  }
+
+  const mealType =
+    /завтрак|снідан|breakfast|śniadan/iu.test(normalized)
+      ? "breakfast"
+      : /ужин|вечер|вечір|dinner|kolac/iu.test(normalized)
+        ? "dinner"
+        : /перекус|snack/iu.test(normalized)
+          ? "snack"
+          : "lunch";
+  const offsetMatch = normalized.match(
+    /(?:через|за|after|po)\s+(\d{1,3})\s*(?:мин|хв|min|minutes?|minut)/iu
+  );
+  const offsetMinutes = offsetMatch
+    ? Math.min(Math.max(Number(offsetMatch[1]), 0), 180)
+    : 0;
+  const windows = {
+    breakfast: ["06:00", "11:30"],
+    lunch: ["12:00", "16:30"],
+    dinner: ["17:00", "22:30"],
+    snack: ["10:00", "22:00"],
+  };
+  const [windowStart, windowEnd] = windows[mealType];
+
+  return {
+    kind: REMINDER_TRIGGER_AFTER_MEAL,
+    mealType,
+    offsetMinutes,
+    windowStart,
+    windowEnd,
+  };
+};
+
 const extractDose = (text) => {
   const match = text.match(
     /(?:^|\s)(\d+(?:[,.]\d+)?)\s*(мг|mg|мл|ml|таблет(?:ка|ки|ок|ку|ке)?|табл\.?|капсул(?:а|ы|у|е|ок)?|капс\.?)(?:\s|$|,|\.)/iu
@@ -204,6 +251,7 @@ const cleanTitle = (text) => {
     .replace(/(?:^|\s)\d{1,2}\s*(?:раз(?:а)?|разів|times?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)\d+(?:[,.]\d+)?\s*(?:мг|mg|мл|ml|таблет(?:ка|ки|ок|ку|ке)?|табл\.?|капсул(?:а|ы|у|е|ок)?|капс\.?)(?:\s|$|,|\.)/giu, " ")
+    .replace(/(?:^|\s)(?:после|після|after|po)\s+(?:(?:того\s+)?(?:как|як)\s+)?(?:по)?(?:завтрака|сніданку|śniadaniu|breakfast|обеда|обіду|lunch|lunchu|ужина|вечері|dinner|kolacji|перекуса|перекусу|snack)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|вечером|вечір|вечора|вечера|morning|evening|night)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:пить|пити|принимать|приймати|выпить|випити)(?:\s|$)/giu, " ")
@@ -294,6 +342,7 @@ export const parseMedicationReminderText = (
   { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
 ) => {
   const rawText = normalizeText(text, 500);
+  const trigger = extractAfterMealTrigger(rawText);
   const explicitTimes = extractTimes(rawText);
   const countPerDay = extractCountPerDay(rawText);
   const times = explicitTimes.length > 0
@@ -302,7 +351,7 @@ export const parseMedicationReminderText = (
       ? defaultTimesForCount(countPerDay)
       : [];
 
-  if (!rawText || times.length === 0) {
+  if (!rawText || (times.length === 0 && !trigger)) {
     return null;
   }
 
@@ -313,6 +362,7 @@ export const parseMedicationReminderText = (
     dose: extractDose(rawText),
     sourceText: rawText,
     times,
+    trigger,
     timezone,
     durationDays: extractDurationDays(rawText),
     active: true,
@@ -325,9 +375,9 @@ export const parseMedicationReminderText = (
   reminder.endsAt = reminder.durationDays
     ? new Date(now.getTime() + reminder.durationDays * 24 * 60 * 60 * 1000).toISOString()
     : null;
-  reminder.nextRunAt = calculateNextMedicationRunAt(reminder, { from: now });
+  reminder.nextRunAt = trigger ? null : calculateNextMedicationRunAt(reminder, { from: now });
 
-  return reminder.nextRunAt ? reminder : null;
+  return reminder.nextRunAt || reminder.trigger ? reminder : null;
 };
 
 export const parseMedicationCourseReminderText = (
@@ -486,7 +536,37 @@ export const normalizeMedicationReminder = (value) => {
       : []
   ).sort();
 
-  if (!value.id || !value.title || times.length === 0) {
+  const trigger = isRecord(value.trigger)
+    ? {
+        kind:
+          value.trigger.kind === REMINDER_TRIGGER_AFTER_MEAL
+            ? REMINDER_TRIGGER_AFTER_MEAL
+            : "",
+        mealType: normalizeMealType(value.trigger.mealType),
+        offsetMinutes: Math.min(
+          Math.max(Math.round(Number(value.trigger.offsetMinutes) || 0), 0),
+          180
+        ),
+        windowStart: normalizeText(value.trigger.windowStart, 5),
+        windowEnd: normalizeText(value.trigger.windowEnd, 5),
+      }
+    : null;
+  const normalizedTrigger =
+    trigger?.kind === REMINDER_TRIGGER_AFTER_MEAL && trigger.mealType
+      ? {
+          kind: trigger.kind,
+          mealType: trigger.mealType,
+          offsetMinutes: trigger.offsetMinutes,
+          windowStart: /^([01]\d|2[0-3]):([0-5]\d)$/.test(trigger.windowStart)
+            ? trigger.windowStart
+            : null,
+          windowEnd: /^([01]\d|2[0-3]):([0-5]\d)$/.test(trigger.windowEnd)
+            ? trigger.windowEnd
+            : null,
+        }
+      : null;
+
+  if (!value.id || !value.title || (times.length === 0 && !normalizedTrigger)) {
     return null;
   }
 
@@ -497,6 +577,7 @@ export const normalizeMedicationReminder = (value) => {
     dose: normalizeText(value.dose, 80),
     sourceText: normalizeText(value.sourceText, 500),
     times,
+    trigger: normalizedTrigger,
     timezone: normalizeText(value.timezone, 64) || DEFAULT_TIMEZONE,
     durationDays:
       Number.isInteger(Number(value.durationDays)) && Number(value.durationDays) > 0
@@ -554,6 +635,75 @@ const findLatestEditableReminder = (reminders) =>
 
       return bTime - aTime;
     })[0] ?? null;
+
+const getLocalDateKey = (date, timeZone = DEFAULT_TIMEZONE) => {
+  const parts = getDatePartsInTimeZone(date, timeZone);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+};
+
+const getLocalMinuteOfDay = (date, timeZone = DEFAULT_TIMEZONE) => {
+  const parts = getDatePartsInTimeZone(date, timeZone);
+  return parts.hour * 60 + parts.minute;
+};
+
+const timeToMinuteOfDay = (value) => {
+  const match = String(value ?? "").match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+};
+
+const getReminderEventToken = ({ trigger, dayKey }) => `${trigger.kind}:${trigger.mealType}:${dayKey}`;
+
+const hasReminderEvent = (reminder, action, scheduledFor) =>
+  Array.isArray(reminder?.events) &&
+  reminder.events.some(
+    (event) => event?.action === action && event?.scheduledFor === scheduledFor
+  );
+
+const getAfterMealDueToken = (reminder, mealState, now = new Date()) => {
+  const trigger = reminder?.trigger;
+
+  if (trigger?.kind !== REMINDER_TRIGGER_AFTER_MEAL || !trigger.mealType) {
+    return null;
+  }
+
+  const timeZone = reminder?.timezone || DEFAULT_TIMEZONE;
+  const dayKey = getLocalDateKey(now, timeZone);
+  const scheduledFor = getReminderEventToken({ trigger, dayKey });
+
+  if (hasReminderEvent(reminder, "sent", scheduledFor)) {
+    return null;
+  }
+
+  const windowStart = timeToMinuteOfDay(trigger.windowStart) ?? 0;
+  const windowEnd = timeToMinuteOfDay(trigger.windowEnd) ?? 24 * 60 - 1;
+  const nowMinute = getLocalMinuteOfDay(now, timeZone);
+  const items = Array.isArray(mealState?.items) ? mealState.items : [];
+  const matchingMeal = items
+    .filter((item) => {
+      if (item?.mealType !== trigger.mealType || !item?.eatenAt) {
+        return false;
+      }
+
+      const eatenAt = new Date(item.eatenAt);
+
+      if (Number.isNaN(eatenAt.getTime()) || getLocalDateKey(eatenAt, timeZone) !== dayKey) {
+        return false;
+      }
+
+      const eatenMinute = getLocalMinuteOfDay(eatenAt, timeZone);
+      return eatenMinute >= windowStart && eatenMinute <= windowEnd;
+    })
+    .sort((left, right) => new Date(left.eatenAt).getTime() - new Date(right.eatenAt).getTime())[0];
+
+  if (!matchingMeal) {
+    return null;
+  }
+
+  const eatenMinute = getLocalMinuteOfDay(new Date(matchingMeal.eatenAt), timeZone);
+  const dueMinute = eatenMinute + (Number(trigger.offsetMinutes) || 0);
+
+  return nowMinute >= dueMinute ? scheduledFor : null;
+};
 
 export const createMedicationReminderService = ({
   authRepository,
@@ -705,13 +855,15 @@ export const createMedicationReminderService = ({
     );
     const updatedReminder = {
       ...resumedReminder,
-      nextRunAt: calculateNextMedicationRunAt(resumedReminder, {
-        from: now,
-        includeNow: true,
-      }),
+      nextRunAt: resumedReminder.trigger
+        ? null
+        : calculateNextMedicationRunAt(resumedReminder, {
+            from: now,
+            includeNow: true,
+          }),
     };
 
-    if (!updatedReminder.nextRunAt) {
+    if (!updatedReminder.nextRunAt && !updatedReminder.trigger) {
       return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
     }
 
@@ -781,6 +933,9 @@ export const createMedicationReminderService = ({
       return { ok: false, code: "MEDICATION_REMINDER_NOT_FOUND" };
     }
 
+    const trigger = Array.isArray(textOrTimes)
+      ? null
+      : extractAfterMealTrigger(String(textOrTimes ?? ""));
     const times = Array.isArray(textOrTimes)
       ? dedupe(textOrTimes.map((time) => {
           const match = String(time).match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
@@ -788,7 +943,7 @@ export const createMedicationReminderService = ({
         })).sort()
       : extractTimes(String(textOrTimes ?? ""));
 
-    if (times.length === 0) {
+    if (times.length === 0 && !trigger) {
       return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
     }
 
@@ -796,6 +951,7 @@ export const createMedicationReminderService = ({
       {
         ...reminder,
         times,
+        trigger,
         updatedAt: now.toISOString(),
         nextRunAt: null,
       },
@@ -803,9 +959,11 @@ export const createMedicationReminderService = ({
       now,
       reminder.nextRunAt
     );
-    updatedReminder.nextRunAt = calculateNextMedicationRunAt(updatedReminder, { from: now });
+    updatedReminder.nextRunAt = trigger
+      ? null
+      : calculateNextMedicationRunAt(updatedReminder, { from: now });
 
-    if (!updatedReminder.nextRunAt) {
+    if (!updatedReminder.nextRunAt && !updatedReminder.trigger) {
       return { ok: false, code: "REMINDER_SCHEDULE_PARSE_FAILED" };
     }
 
@@ -829,6 +987,13 @@ export const createMedicationReminderService = ({
     if (reminder.repeat === "once") {
       return {
         active: false,
+        nextRunAt: null,
+      };
+    }
+
+    if (reminder.trigger?.kind === REMINDER_TRIGGER_AFTER_MEAL) {
+      return {
+        active: true,
         nextRunAt: null,
       };
     }
@@ -894,14 +1059,16 @@ export const createMedicationReminderService = ({
     return { ok: true, reminder: updatedReminder, user: updatedUser };
   };
 
-  const markReminderSent = async (user, reminder, now = new Date()) => {
+  const markReminderSent = async (user, reminder, now = new Date(), scheduledFor = null) => {
     const reminders = getUserReminders(user);
     const sentReminder = addReminderEvent(
       {
         ...reminder,
         lastSentAt: now.toISOString(),
         nextRunAt:
-          reminder.repeat === "once"
+          reminder.trigger?.kind === REMINDER_TRIGGER_AFTER_MEAL
+            ? null
+            : reminder.repeat === "once"
             ? null
             : calculateNextMedicationRunAt(reminder, {
                 from: new Date(now.getTime() + 60_000),
@@ -909,31 +1076,42 @@ export const createMedicationReminderService = ({
       },
       "sent",
       now,
-      reminder.nextRunAt
+      scheduledFor ?? reminder.nextRunAt
     );
     const updatedReminder = sentReminder.nextRunAt
       ? sentReminder
+      : reminder.trigger?.kind === REMINDER_TRIGGER_AFTER_MEAL
+        ? { ...sentReminder, active: true }
       : { ...sentReminder, active: false };
     const updatedReminders = upsertReminder(reminders, updatedReminder);
 
     return persistReminders(user, updatedReminders);
   };
 
-  const sendDueReminders = async ({ users, sendReminder, now = new Date() }) => {
+  const sendDueReminders = async ({ users, sendReminder, getMealState, now = new Date() }) => {
     const currentTime = now.getTime();
 
     for (const user of users) {
-      const reminders = getUserReminders(user).filter(
-        (reminder) =>
-          reminder.active &&
-          reminder.nextRunAt &&
-          new Date(reminder.nextRunAt).getTime() <= currentTime
-      );
+      const userReminders = getUserReminders(user).filter((reminder) => reminder.active);
+      const mealState = userReminders.some(
+        (reminder) => reminder.trigger?.kind === REMINDER_TRIGGER_AFTER_MEAL
+      )
+        ? await getMealState?.(user)
+        : null;
+      const reminders = userReminders
+        .map((reminder) => ({
+          reminder,
+          scheduledFor:
+            reminder.nextRunAt && new Date(reminder.nextRunAt).getTime() <= currentTime
+              ? reminder.nextRunAt
+              : getAfterMealDueToken(reminder, mealState, now),
+        }))
+        .filter((item) => item.scheduledFor);
 
-      for (const reminder of reminders) {
+      for (const { reminder, scheduledFor } of reminders) {
         try {
           await sendReminder(user, reminder);
-          await markReminderSent(user, reminder, now);
+          await markReminderSent(user, reminder, now, scheduledFor);
         } catch (error) {
           logger.warn?.("[medication-reminders] send failed", {
             userId: user.id,

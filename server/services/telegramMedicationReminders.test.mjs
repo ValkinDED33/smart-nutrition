@@ -67,6 +67,24 @@ describe("telegramMedicationReminders", () => {
     expect(message).not.toContain("Активні нагадування");
   });
 
+  it("renders after-meal reminders as a trigger instead of a missing time", () => {
+    const reminder = createReminder({
+      times: [],
+      nextRunAt: null,
+      trigger: {
+        kind: "after_meal",
+        mealType: "lunch",
+        offsetMinutes: 0,
+        windowStart: "12:00",
+        windowEnd: "16:30",
+      },
+    });
+    const message = buildMedicationReminderCreatedMessage(reminder);
+
+    expect(message).toContain("Умова: після обіду");
+    expect(message).not.toContain("Час: час не задан");
+  });
+
   it("formats next reminder time in the reminder timezone instead of server UTC", () => {
     const reminder = createReminder({
       times: ["10:00"],
