@@ -92,6 +92,16 @@ describe("telegramService", () => {
     expect(message).toContain("/today");
   });
 
+  it("localizes assistant capabilities for Telegram", () => {
+    const message = buildTelegramAssistantCapabilitiesMessage("en");
+
+    expect(message).toContain("Food");
+    expect(message).toContain("Water");
+    expect(message).toContain("Nutrients");
+    expect(message).toContain("/today");
+    expect(message).not.toContain("Харчування");
+  });
+
   it("builds a Telegram workspace menu around real commands", () => {
     const message = buildTelegramMainMenuMessage({ name: "Ihor" });
 
@@ -318,7 +328,7 @@ describe("telegramService", () => {
         targetId: "user-6d8c5a68-16ec-45a1-81ca-cc69c1f89f9c",
       })
     );
-    expect(reply).toHaveBeenCalledWith("Telegram connected ✅");
+    expect(reply).toHaveBeenCalledWith("Telegram підключено ✅");
     expect(logger.info).toHaveBeenCalledWith(
       "[telegram] connect payload verification result",
       expect.objectContaining({
@@ -398,9 +408,9 @@ describe("telegramService", () => {
       reply,
     });
 
-    expect(reply).not.toHaveBeenCalledWith("Telegram connected ✅");
+    expect(reply).not.toHaveBeenCalledWith("Telegram підключено ✅");
     expect(reply).toHaveBeenCalledWith(
-      "Не удалось сохранить подключение Telegram. Попробуйте создать новую ссылку в профиле."
+      "Не вдалося зберегти підключення Telegram. Спробуйте створити нове посилання в профілі."
     );
     expect(repository.createAuditLog).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
@@ -595,11 +605,12 @@ describe("telegramService", () => {
     await instances[0].startHandler({
       startPayload: "",
       chat: { id: 42 },
+      from: { language_code: "en" },
       reply,
     });
 
-    expect(reply).toHaveBeenCalledWith(expect.stringContaining("персональный линк"));
-    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Обычный /start"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("personal link"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("plain /start"));
 
     service.stop("test shutdown");
   });
@@ -633,6 +644,7 @@ describe("telegramService", () => {
           name: "Ihor",
           role: "USER",
           telegramChatId: "42",
+          languagePreference: "en",
         })),
       }),
       logger: { info: vi.fn(), warn: vi.fn() },
@@ -644,10 +656,11 @@ describe("telegramService", () => {
     await instances[0].startHandler({
       startPayload: "",
       chat: { id: 42 },
+      from: { language_code: "en" },
       reply,
     });
 
-    expect(reply).toHaveBeenCalledWith(expect.stringContaining("уже подключён"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("already connected"));
     expect(reply).toHaveBeenCalledWith(expect.stringContaining("/meds"));
 
     service.stop("test shutdown");
@@ -1542,14 +1555,15 @@ describe("telegramService", () => {
     const reply = vi.fn();
     await instances[0].textHandler({
       chat: { id: 42 },
+      from: { language_code: "en" },
       message: { text: "привет" },
       reply,
     });
 
     expect(assistantAgent.run).not.toHaveBeenCalled();
     expect(reply).toHaveBeenCalledTimes(1);
-    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Telegram ещё не подключён"));
-    expect(reply).toHaveBeenCalledWith(expect.stringContaining("персональной ссылке"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Telegram is not connected yet"));
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("personal link"));
 
     service.stop("test shutdown");
   });

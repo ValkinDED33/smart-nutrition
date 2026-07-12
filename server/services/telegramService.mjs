@@ -10,8 +10,6 @@ const TELEGRAM_CONNECT_GENERIC_PREFIX = "g1";
 const TELEGRAM_CONNECT_SIGNATURE_LENGTH = 16;
 const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
 const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
-const TELEGRAM_NOT_CONNECTED_MESSAGE =
-  "Telegram ещё не подключён. Откройте профиль Smart Nutrition и нажмите Start по персональной ссылке.";
 const TELEGRAM_BOT_COMMANDS_BY_LANGUAGE = {
   uk: [
     { command: "menu", description: "Головне меню Smart Nutrition" },
@@ -73,6 +71,63 @@ const TELEGRAM_LANGUAGE_FALLBACK = "uk";
 const TELEGRAM_SUPPORTED_LANGUAGES = new Set(["uk", "pl", "en"]);
 const TELEGRAM_COPY = {
   uk: {
+    notConnected:
+      "Telegram ще не підключено. Відкрийте профіль Smart Nutrition і натисніть Start за персональним посиланням.",
+    alreadyConnected: (name) => `Telegram вже підключено до Smart Nutrition: ${name}.`,
+    connectLinkRequired:
+      "Щоб підключити Telegram, потрібне персональне посилання з профілю Smart Nutrition.",
+    connectLinkPath:
+      "Відкрийте Smart Nutrition → Профіль → Безпека / Акаунт і дані → Підключити Telegram.",
+    plainStartDoesNotConnect:
+      "Звичайний /start без персонального посилання не підключає акаунт.",
+    expiredConnectLink:
+      "Посилання підключення застаріло або недійсне. Створіть нове в профілі.",
+    connectAccountNotFound: "Не вдалося знайти акаунт Smart Nutrition для цього посилання.",
+    connectSaveFailed:
+      "Не вдалося зберегти підключення Telegram. Спробуйте створити нове посилання в профілі.",
+    connectedSuccess: "Telegram підключено ✅",
+    profileConnected: (name) => `Підключений акаунт Smart Nutrition: ${name}`,
+    chatUnknown: "Не вдалося визначити Telegram чат.",
+    disconnected: "Telegram відключено від Smart Nutrition.",
+    profileDataUnavailable:
+      "Дані профілю тимчасово недоступні. Спробуйте трохи пізніше.",
+    waterDataUnavailable: "Дані води тимчасово недоступні. Спробуйте трохи пізніше.",
+    assistantUnavailable:
+      "Асистент тимчасово недоступний. Спробуйте трохи пізніше.",
+    assistantSafeFailure:
+      "Я не зміг безпечно виконати цю дію. Спробуйте написати конкретніше.",
+    aiUnavailableLines: [
+      "Я на зв'язку як AI-помічник Smart Nutrition, але повний AI-режим зараз тимчасово недоступний.",
+      "Можу виконувати підтверджені дії: вода, нагадування, день, харчування.",
+    ],
+    aiTemporaryUnavailable:
+      "AI-помічник тимчасово недоступний. Спробуйте ще раз трохи пізніше.",
+    connectTelegramInProfile: "Підключіть Telegram у профілі.",
+    invalidWaterAmount: "Некоректна кількість води.",
+    waterAmountClarification:
+      "Не зміг визначити кількість води. Напишіть, наприклад: я випив 300 мл.",
+    capabilitiesTitle: "Я можу допомагати зі Smart Nutrition:",
+    capabilities: [
+      "🥗 Харчування — денник їжі, продукти, рецепти, фото/штрихкод.",
+      "💧 Вода — ціль, прогрес і нагадування.",
+      "🧬 Нутрієнти — калорії, білки, жири, вуглеводи, клітковина та мікроелементи.",
+      "📈 Прогрес — вага, тренди, звіти й пояснення змін.",
+      "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
+      "🎮 Companion — рівень, XP, досягнення.",
+      "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
+    ],
+    commandsTitle: "Команди:",
+    commandLines: [
+      "/today — короткий статус дня",
+      "/water — вода",
+      "/nutrition — калорії та нутрієнти",
+      "/meds — активні нагадування про ліки",
+      "/reminders — усі активні нагадування",
+      "/addmed <текст> — створити нагадування про ліки",
+      "/addtask <текст> — створити звичайне нагадування",
+      "/profile — статус підключення",
+      "/disconnect — відключити Telegram",
+    ],
     mainMenuPlaceholder: "Напишіть дію або оберіть кнопку",
     mainMenuGreeting: "Smart Nutrition поруч",
     mainMenuTitle: "Що можна зробити зараз:",
@@ -112,6 +167,63 @@ const TELEGRAM_COPY = {
     nutritionTitle: "Нутрієнти сьогодні:",
   },
   pl: {
+    notConnected:
+      "Telegram nie jest jeszcze połączony. Otwórz profil Smart Nutrition i naciśnij Start w osobistym linku.",
+    alreadyConnected: (name) => `Telegram jest już połączony ze Smart Nutrition: ${name}.`,
+    connectLinkRequired:
+      "Aby połączyć Telegram, potrzebny jest osobisty link z profilu Smart Nutrition.",
+    connectLinkPath:
+      "Otwórz Smart Nutrition → Profil → Bezpieczeństwo / Konto i dane → Połącz Telegram.",
+    plainStartDoesNotConnect:
+      "Zwykły /start bez osobistego linku nie połącza konta.",
+    expiredConnectLink:
+      "Link połączenia wygasł albo jest nieprawidłowy. Utwórz nowy w profilu.",
+    connectAccountNotFound: "Nie udało się znaleźć konta Smart Nutrition dla tego linku.",
+    connectSaveFailed:
+      "Nie udało się zapisać połączenia Telegram. Spróbuj utworzyć nowy link w profilu.",
+    connectedSuccess: "Telegram połączony ✅",
+    profileConnected: (name) => `Połączone konto Smart Nutrition: ${name}`,
+    chatUnknown: "Nie udało się rozpoznać czatu Telegram.",
+    disconnected: "Telegram odłączony od Smart Nutrition.",
+    profileDataUnavailable:
+      "Dane profilu są chwilowo niedostępne. Spróbuj trochę później.",
+    waterDataUnavailable: "Dane wody są chwilowo niedostępne. Spróbuj trochę później.",
+    assistantUnavailable:
+      "Asystent jest chwilowo niedostępny. Spróbuj trochę później.",
+    assistantSafeFailure:
+      "Nie mogłem bezpiecznie wykonać tej akcji. Spróbuj napisać konkretniej.",
+    aiUnavailableLines: [
+      "Jestem dostępny jako AI-asystent Smart Nutrition, ale pełny tryb AI jest teraz chwilowo niedostępny.",
+      "Mogę wykonywać potwierdzone działania: woda, przypomnienia, dzień, jedzenie.",
+    ],
+    aiTemporaryUnavailable:
+      "AI-asystent jest chwilowo niedostępny. Spróbuj ponownie trochę później.",
+    connectTelegramInProfile: "Połącz Telegram w profilu.",
+    invalidWaterAmount: "Nieprawidłowa ilość wody.",
+    waterAmountClarification:
+      "Nie mogłem określić ilości wody. Napisz na przykład: wypiłem 300 ml.",
+    capabilitiesTitle: "Mogę pomagać w Smart Nutrition:",
+    capabilities: [
+      "🥗 Jedzenie — dziennik posiłków, produkty, przepisy, zdjęcie/kod kreskowy.",
+      "💧 Woda — cel, postęp i przypomnienia.",
+      "🧬 Składniki — kalorie, białko, tłuszcze, węglowodany, błonnik i mikroelementy.",
+      "📈 Postęp — waga, trendy, raporty i wyjaśnienie zmian.",
+      "🤖 Asystent — personalne podpowiedzi z uwzględnieniem onboardingu.",
+      "🎮 Companion — poziom, XP i osiągnięcia.",
+      "💊 Leki — przypomnienia, przyciski „przyjęte/później/pomiń” i historia.",
+    ],
+    commandsTitle: "Komendy:",
+    commandLines: [
+      "/today — krótki status dnia",
+      "/water — woda",
+      "/nutrition — kalorie i składniki",
+      "/meds — aktywne przypomnienia o lekach",
+      "/reminders — wszystkie aktywne przypomnienia",
+      "/addmed <tekst> — utwórz przypomnienie o lekach",
+      "/addtask <tekst> — utwórz zwykłe przypomnienie",
+      "/profile — status połączenia",
+      "/disconnect — odłącz Telegram",
+    ],
     mainMenuPlaceholder: "Napisz działanie albo wybierz przycisk",
     mainMenuGreeting: "Smart Nutrition jest obok",
     mainMenuTitle: "Co możesz zrobić teraz:",
@@ -150,6 +262,61 @@ const TELEGRAM_COPY = {
     nutritionTitle: "Składniki dzisiaj:",
   },
   en: {
+    notConnected:
+      "Telegram is not connected yet. Open your Smart Nutrition profile and press Start from the personal link.",
+    alreadyConnected: (name) => `Telegram is already connected to Smart Nutrition: ${name}.`,
+    connectLinkRequired:
+      "To connect Telegram, use the personal link from your Smart Nutrition profile.",
+    connectLinkPath:
+      "Open Smart Nutrition → Profile → Security / Account and data → Connect Telegram.",
+    plainStartDoesNotConnect:
+      "A plain /start without a personal link does not connect the account.",
+    expiredConnectLink:
+      "The connection link expired or is invalid. Create a new one in your profile.",
+    connectAccountNotFound: "Could not find a Smart Nutrition account for this link.",
+    connectSaveFailed:
+      "Could not save the Telegram connection. Try creating a new link in your profile.",
+    connectedSuccess: "Telegram connected ✅",
+    profileConnected: (name) => `Connected Smart Nutrition account: ${name}`,
+    chatUnknown: "Could not detect the Telegram chat.",
+    disconnected: "Telegram disconnected from Smart Nutrition.",
+    profileDataUnavailable: "Profile data is temporarily unavailable. Try again soon.",
+    waterDataUnavailable: "Water data is temporarily unavailable. Try again soon.",
+    assistantUnavailable: "Assistant is temporarily unavailable. Try again soon.",
+    assistantSafeFailure:
+      "I could not safely perform this action. Try writing it more specifically.",
+    aiUnavailableLines: [
+      "I am online as the Smart Nutrition AI assistant, but full AI mode is temporarily unavailable.",
+      "I can still perform confirmed actions: water, reminders, day summary, and food.",
+    ],
+    aiTemporaryUnavailable:
+      "The AI assistant is temporarily unavailable. Try again a little later.",
+    connectTelegramInProfile: "Connect Telegram in your profile.",
+    invalidWaterAmount: "Invalid water amount.",
+    waterAmountClarification:
+      "I could not detect the water amount. Write, for example: I drank 300 ml.",
+    capabilitiesTitle: "I can help with Smart Nutrition:",
+    capabilities: [
+      "🥗 Food — meal diary, products, recipes, photo/barcode.",
+      "💧 Water — goal, progress, and reminders.",
+      "🧬 Nutrients — calories, protein, fat, carbs, fiber, and micronutrients.",
+      "📈 Progress — weight, trends, reports, and change explanations.",
+      "🤖 Assistant — personal hints using onboarding context.",
+      "🎮 Companion — level, XP, and achievements.",
+      "💊 Medication — reminders, taken/later/skip buttons, and history.",
+    ],
+    commandsTitle: "Commands:",
+    commandLines: [
+      "/today — quick day status",
+      "/water — water",
+      "/nutrition — calories and nutrients",
+      "/meds — active medication reminders",
+      "/reminders — all active reminders",
+      "/addmed <text> — create a medication reminder",
+      "/addtask <text> — create a normal reminder",
+      "/profile — connection status",
+      "/disconnect — disconnect Telegram",
+    ],
     mainMenuPlaceholder: "Type an action or choose a button",
     mainMenuGreeting: "Smart Nutrition is nearby",
     mainMenuTitle: "What you can do now:",
@@ -189,14 +356,34 @@ const TELEGRAM_COPY = {
   },
 };
 
-const normalizeTelegramLanguage = (value) =>
-  TELEGRAM_SUPPORTED_LANGUAGES.has(value) ? value : TELEGRAM_LANGUAGE_FALLBACK;
+const normalizeTelegramLanguage = (value) => {
+  const language = String(value ?? "").trim().toLowerCase();
+  return TELEGRAM_SUPPORTED_LANGUAGES.has(language) ? language : TELEGRAM_LANGUAGE_FALLBACK;
+};
 
 const getTelegramCopy = (language) =>
   TELEGRAM_COPY[normalizeTelegramLanguage(language)] ?? TELEGRAM_COPY[TELEGRAM_LANGUAGE_FALLBACK];
 
 const getTelegramLanguageFromSnapshot = (snapshot = {}) =>
   normalizeTelegramLanguage(snapshot?.profile?.languagePreference);
+
+const getTelegramLanguageFromCode = (value) => {
+  const code = String(value ?? "").trim().toLowerCase();
+
+  if (code.startsWith("pl")) {
+    return "pl";
+  }
+
+  if (code.startsWith("en")) {
+    return "en";
+  }
+
+  if (code.startsWith("uk") || code.startsWith("ua")) {
+    return "uk";
+  }
+
+  return TELEGRAM_LANGUAGE_FALLBACK;
+};
 
 const buildTelegramMainMenuKeyboard = (language = TELEGRAM_LANGUAGE_FALLBACK) => {
   const copy = getTelegramCopy(language);
@@ -337,6 +524,15 @@ const getTelegramChatIdFromContext = (ctx) => {
 
   return chatId === null || chatId === undefined ? null : String(chatId);
 };
+
+const getTelegramLanguageFromContext = (ctx) =>
+  getTelegramLanguageFromCode(
+    ctx?.from?.language_code ??
+      ctx?.message?.from?.language_code ??
+      ctx?.callbackQuery?.from?.language_code ??
+      ctx?.update?.callback_query?.from?.language_code ??
+      ctx?.update?.message?.from?.language_code
+  );
 
 const toCompactUserId = (userId) => {
   const match = /^user-([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/i.exec(
@@ -590,29 +786,20 @@ const buildTelegramAssistantContextFromSnapshot = ({ user, snapshot }) => {
   };
 };
 
-export const buildTelegramAssistantCapabilitiesMessage = () =>
-  [
-    "Я можу допомагати зі Smart Nutrition:",
+export const buildTelegramAssistantCapabilitiesMessage = (
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
+
+  return [
+    copy.capabilitiesTitle,
     "",
-    "🥗 Харчування — денник їжі, продукти, рецепти, фото/штрихкод.",
-    "💧 Вода — ціль, прогрес і нагадування.",
-    "🧬 Нутрієнти — калорії, білки, жири, вуглеводи, клітковина та мікроелементи.",
-    "📈 Прогрес — вага, тренди, звіти й пояснення змін.",
-    "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
-    "🎮 Companion — рівень, XP, досягнення.",
-    "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
+    ...copy.capabilities,
     "",
-    "Команди:",
-    "/today — короткий статус дня",
-    "/water — вода",
-    "/nutrition — калорії та нутрієнти",
-    "/meds — активні нагадування про ліки",
-    "/reminders — усі активні нагадування",
-    "/addmed <текст> — створити нагадування про ліки",
-    "/addtask <текст> — створити звичайне нагадування",
-    "/profile — статус підключення",
-    "/disconnect — відключити Telegram",
+    copy.commandsTitle,
+    ...copy.commandLines,
   ].join("\n");
+};
 
 export const buildTelegramMainMenuMessage = (
   user = null,
@@ -919,7 +1106,7 @@ export const createTelegramService = ({
     const user = chatId ? await getUserByTelegramChatId(chatId) : null;
 
     if (!user) {
-      await ctx.reply(TELEGRAM_NOT_CONNECTED_MESSAGE);
+      await ctx.reply(getTelegramCopy(getTelegramLanguageFromContext(ctx)).notConnected);
       return null;
     }
 
@@ -983,7 +1170,7 @@ export const createTelegramService = ({
     }
 
     if (!stateService?.getSnapshot) {
-      await ctx.reply("Дані профілю тимчасово недоступні. Спробуйте трохи пізніше.");
+      await ctx.reply(getTelegramCopy(await getTelegramUserLanguage(user)).profileDataUnavailable);
       return;
     }
 
@@ -1000,7 +1187,7 @@ export const createTelegramService = ({
     }
 
     if (!stateService?.getSnapshot) {
-      await ctx.reply("Дані води тимчасово недоступні. Спробуйте трохи пізніше.");
+      await ctx.reply(getTelegramCopy(await getTelegramUserLanguage(user)).waterDataUnavailable);
       return;
     }
 
@@ -1042,8 +1229,11 @@ export const createTelegramService = ({
   };
 
   const runTelegramAgentAction = async ({ ctx, user, message }) => {
+    const language = await getTelegramUserLanguage(user);
+    const copy = getTelegramCopy(language);
+
     if (!assistantAgent?.run) {
-      await ctx.reply("Асистент тимчасово недоступний. Спробуйте трохи пізніше.");
+      await ctx.reply(copy.assistantUnavailable);
       return null;
     }
 
@@ -1054,11 +1244,10 @@ export const createTelegramService = ({
     });
 
     if (!agentResult?.handled) {
-      await ctx.reply("Я не зміг безпечно виконати цю дію. Спробуйте написати конкретніше.");
+      await ctx.reply(copy.assistantSafeFailure);
       return agentResult ?? null;
     }
 
-    const language = await getTelegramUserLanguage(user);
     const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
     if (replyOptions) {
@@ -1071,13 +1260,11 @@ export const createTelegramService = ({
   };
 
   const replyWithAiAssistant = async ({ ctx, user, message }) => {
+    const language = await getTelegramUserLanguage(user);
+    const copy = getTelegramCopy(language);
+
     if (!aiService?.askQuestion) {
-      await ctx.reply(
-        [
-          "Я на зв'язку як AI-помічник Smart Nutrition, але повний AI-режим зараз тимчасово недоступний.",
-          "Можу виконувати підтверджені дії: вода, нагадування, день, харчування.",
-        ].join("\n")
-      );
+      await ctx.reply(copy.aiUnavailableLines.join("\n"));
       return null;
     }
 
@@ -1095,7 +1282,7 @@ export const createTelegramService = ({
         code: toSafeErrorCode(error),
         message: toSafeErrorMessage(error),
       });
-      await ctx.reply("AI-помічник тимчасово недоступний. Спробуйте ще раз трохи пізніше.");
+      await ctx.reply(copy.aiTemporaryUnavailable);
       return null;
     }
   };
@@ -1129,6 +1316,8 @@ export const createTelegramService = ({
       const { payload: payloadToken, source: payloadSource } =
         extractTelegramStartPayload(ctx);
       const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
+      const telegramLanguage = getTelegramLanguageFromContext(ctx);
+      const telegramCopy = getTelegramCopy(telegramLanguage);
 
       logger.info?.("[telegram] connect payload received", {
         provider: "telegram",
@@ -1142,11 +1331,14 @@ export const createTelegramService = ({
         const connectedUser = chatId ? await getUserByTelegramChatId(chatId) : null;
 
         if (connectedUser) {
+          const language = await getTelegramUserLanguage(connectedUser);
+          const copy = getTelegramCopy(language);
+
           await ctx.reply(
             [
-              `Telegram уже подключён к Smart Nutrition: ${connectedUser.name}.`,
+              copy.alreadyConnected(connectedUser.name),
               "",
-              buildTelegramAssistantCapabilitiesMessage(),
+              buildTelegramAssistantCapabilitiesMessage(language),
             ].join("\n")
           );
           await replyWithMainMenu(ctx, connectedUser);
@@ -1155,10 +1347,10 @@ export const createTelegramService = ({
 
         await ctx.reply(
           [
-            "Чтобы подключить Telegram, нужен персональный линк из профиля Smart Nutrition.",
+            telegramCopy.connectLinkRequired,
             "",
-            "Откройте Smart Nutrition → Профиль → Безопасность / Акаунт і дані → Підключити Telegram.",
-            "Обычный /start без персональной ссылки не подключает аккаунт.",
+            telegramCopy.connectLinkPath,
+            telegramCopy.plainStartDoesNotConnect,
           ].join("\n")
         );
         return;
@@ -1186,7 +1378,7 @@ export const createTelegramService = ({
       });
 
       if (!verifiedToken.ok) {
-        await ctx.reply("Ссылка подключения истекла или недействительна. Создайте новую в профиле.");
+        await ctx.reply(telegramCopy.expiredConnectLink);
         return;
       }
 
@@ -1200,7 +1392,7 @@ export const createTelegramService = ({
       });
 
       if (!user || !chatId) {
-        await ctx.reply("Не удалось найти аккаунт Smart Nutrition для этой ссылки.");
+        await ctx.reply(telegramCopy.connectAccountNotFound);
         return;
       }
 
@@ -1231,9 +1423,8 @@ export const createTelegramService = ({
           updated: Boolean(updatedUser),
           persisted: telegramPersisted,
         });
-        await ctx.reply(
-          "Не удалось сохранить подключение Telegram. Попробуйте создать новую ссылку в профиле."
-        );
+        const language = await getTelegramUserLanguage(user);
+        await ctx.reply(getTelegramCopy(language).connectSaveFailed);
         return;
       }
 
@@ -1243,7 +1434,8 @@ export const createTelegramService = ({
         details: { provider: "telegram" },
       });
 
-      await ctx.reply("Telegram connected ✅");
+      const language = await getTelegramUserLanguage(updatedUser);
+      await ctx.reply(getTelegramCopy(language).connectedSuccess);
       await replyWithMainMenu(ctx, updatedUser);
     });
 
@@ -1260,9 +1452,11 @@ export const createTelegramService = ({
     nextBot.command("help", async (ctx) => {
       const chatId = getTelegramChatIdFromContext(ctx);
       const user = chatId ? await getUserByTelegramChatId(chatId) : null;
-      const language = await getTelegramUserLanguage(user);
+      const language = user
+        ? await getTelegramUserLanguage(user)
+        : getTelegramLanguageFromContext(ctx);
       await ctx.reply(
-        buildTelegramAssistantCapabilitiesMessage(),
+        buildTelegramAssistantCapabilitiesMessage(language),
         buildTelegramMainMenuKeyboard(language)
       );
     });
@@ -1286,20 +1480,26 @@ export const createTelegramService = ({
     nextBot.command("profile", async (ctx) => {
       const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
       const user = chatId ? await getUserByTelegramChatId(chatId) : null;
+      const language = user
+        ? await getTelegramUserLanguage(user)
+        : getTelegramLanguageFromContext(ctx);
+      const copy = getTelegramCopy(language);
 
       if (!user) {
-        await ctx.reply(TELEGRAM_NOT_CONNECTED_MESSAGE);
+        await ctx.reply(copy.notConnected);
         return;
       }
 
-      await ctx.reply(`Подключён аккаунт Smart Nutrition: ${user.name}`);
+      await ctx.reply(copy.profileConnected(user.name));
     });
 
     nextBot.command("disconnect", async (ctx) => {
       const chatId = ctx.chat?.id === undefined ? null : String(ctx.chat.id);
+      const language = getTelegramLanguageFromContext(ctx);
+      const copy = getTelegramCopy(language);
 
       if (!chatId) {
-        await ctx.reply("Не удалось определить Telegram чат.");
+        await ctx.reply(copy.chatUnknown);
         return;
       }
 
@@ -1313,7 +1513,7 @@ export const createTelegramService = ({
         });
       }
 
-      await ctx.reply("Telegram отключён от Smart Nutrition.");
+      await ctx.reply(copy.disconnected);
     });
 
     getMedicationReminderRuntime().registerHandlers(nextBot);
@@ -1324,13 +1524,17 @@ export const createTelegramService = ({
       const user = await getConnectedUser(ctx);
 
       if (!user) {
-        await ctx.answerCbQuery?.("Підключіть Telegram у профілі.");
+        await ctx.answerCbQuery?.(
+          getTelegramCopy(getTelegramLanguageFromContext(ctx)).connectTelegramInProfile
+        );
         return;
       }
+      const language = await getTelegramUserLanguage(user);
+      const copy = getTelegramCopy(language);
 
       if (!amountMl) {
-        await ctx.answerCbQuery?.("Некоректна кількість води.");
-        await ctx.reply("Не зміг визначити кількість води. Напишіть, наприклад: я випив 300 мл.");
+        await ctx.answerCbQuery?.(copy.invalidWaterAmount);
+        await ctx.reply(copy.waterAmountClarification);
         return;
       }
 
@@ -1356,7 +1560,9 @@ export const createTelegramService = ({
       const user = await getConnectedUser(ctx);
 
       if (!user) {
-        await ctx.answerCbQuery?.("Підключіть Telegram у профілі.");
+        await ctx.answerCbQuery?.(
+          getTelegramCopy(getTelegramLanguageFromContext(ctx)).connectTelegramInProfile
+        );
         return;
       }
 
