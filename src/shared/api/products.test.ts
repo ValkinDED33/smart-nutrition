@@ -63,6 +63,91 @@ describe("products api", () => {
     );
   });
 
+  it("normalizes backend product facts before they reach product cards", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            items: [
+              createProductPayload({
+                unit: "ml",
+                facts: {
+                  foodGroup: "en:beverages",
+                  carbohydrateTypes: [" simple-carbs ", "", "en:sugars"],
+                  proteinTypes: "broken",
+                  ingredientsText: "  Woda gazowana,\n cukier, barwnik E150d.  ",
+                  ingredientsTextByLanguage: {
+                    pl: "  Woda gazowana, cukier. ",
+                    en: "Carbonated water, sugar.",
+                    ru: "must not leak",
+                  },
+                  additivesText: " en:e150d-sulphite-ammonia-caramel ",
+                  servingSize: "330 ml",
+                  servingQuantity: 330,
+                  servingUnit: "ml",
+                },
+              }),
+            ],
+          }),
+          { status: 200 }
+        )
+      )
+    );
+
+    const [product] = await searchProducts("cola");
+
+    expect(product?.facts).toMatchObject({
+      foodGroup: "beverages",
+      carbohydrateTypes: ["simple carbs", "sugars"],
+      ingredientsText: "Woda gazowana, cukier, barwnik E150d.",
+      ingredientsTextByLanguage: {
+        pl: "Woda gazowana, cukier.",
+        en: "Carbonated water, sugar.",
+      },
+      additivesText: "en:e150d-sulphite-ammonia-caramel",
+      servingSize: "330 ml",
+      servingQuantity: 330,
+      servingUnit: "ml",
+    });
+    expect(product?.facts?.proteinTypes).toBeUndefined();
+    expect(product?.facts?.ingredientsTextByLanguage).not.toHaveProperty("ru");
+  });
+
+  it("drops mismatched serving quantities instead of showing false portions", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            items: [
+              createProductPayload({
+                unit: "g",
+                facts: {
+                  servingSize: "330 ml",
+                  servingQuantity: 330,
+                  servingUnit: "ml",
+                  ingredientsTextByLanguage: {
+                    uk: "",
+                    pl: "",
+                    en: "",
+                  },
+                },
+              }),
+            ],
+          }),
+          { status: 200 }
+        )
+      )
+    );
+
+    const [product] = await searchProducts("sauce");
+
+    expect(product?.facts).toEqual({
+      servingSize: "330 ml",
+    });
+  });
+
   it("does not fall back to a local product catalog when backend is unavailable", async () => {
     authMock.isCloudSyncActive.mockReturnValue(false);
 

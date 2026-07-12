@@ -83,6 +83,94 @@ const toNumber = (value: unknown) =>
       ? Number.parseFloat(value) || 0
       : 0;
 
+const normalizeOptionalText = (value: unknown, maxLength = 180) => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.replace(/\s+/g, " ").trim().slice(0, maxLength);
+
+  return normalized || undefined;
+};
+
+const normalizeFactToken = (value: unknown, maxLength = 80) => {
+  const text = normalizeOptionalText(value, maxLength);
+
+  if (!text) {
+    return undefined;
+  }
+
+  return text
+    .replace(/^[a-z]{2}:/i, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || undefined;
+};
+
+const normalizeStringArray = (value: unknown, maxLength = 80) =>
+  Array.isArray(value)
+    ? [
+        ...new Set(
+          value
+            .map((item) => normalizeFactToken(item, maxLength))
+            .filter((item): item is string => Boolean(item))
+        ),
+      ].slice(0, 16)
+    : undefined;
+
+const normalizeIngredientsTextByLanguage = (value: unknown) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const byLanguage = {
+    uk: normalizeOptionalText(record.uk, 1200),
+    pl: normalizeOptionalText(record.pl, 1200),
+    en: normalizeOptionalText(record.en, 1200),
+  };
+  const entries = Object.entries(byLanguage).filter(([, text]) => Boolean(text));
+
+  return entries.length > 0
+    ? (Object.fromEntries(entries) as NonNullable<Product["facts"]>["ingredientsTextByLanguage"])
+    : undefined;
+};
+
+const normalizeProductFacts = (value: unknown, productUnit: Product["unit"]) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const servingQuantity = toNumber(record.servingQuantity);
+  const servingUnit = productUnits.has(record.servingUnit as Product["unit"])
+    ? (record.servingUnit as Product["unit"])
+    : undefined;
+  const facts: Product["facts"] = {
+    foodGroup: normalizeFactToken(record.foodGroup, 120),
+    carbohydrateTypes: normalizeStringArray(record.carbohydrateTypes),
+    proteinTypes: normalizeStringArray(record.proteinTypes),
+    fatTypes: normalizeStringArray(record.fatTypes),
+    extraCompounds: normalizeStringArray(record.extraCompounds),
+    ingredientsText: normalizeOptionalText(record.ingredientsText, 1200),
+    ingredientsTextByLanguage: normalizeIngredientsTextByLanguage(
+      record.ingredientsTextByLanguage
+    ),
+    additivesText: normalizeOptionalText(record.additivesText, 900),
+    servingSize: normalizeOptionalText(record.servingSize, 120),
+    servingQuantity:
+      servingQuantity > 0 && servingUnit === productUnit
+        ? Math.min(servingQuantity, 100000)
+        : undefined,
+    servingUnit: servingUnit === productUnit ? servingUnit : undefined,
+  };
+  const hasFacts = Object.values(facts).some((fact) =>
+    Array.isArray(fact) ? fact.length > 0 : Boolean(fact)
+  );
+
+  return hasFacts ? facts : undefined;
+};
+
 const readProduct = (value: unknown): Product | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -98,7 +186,10 @@ const readProduct = (value: unknown): Product | null => {
 
   const nutrients = createEmptyNutrients();
   const source = toString(record.source);
-  const unit = toString(record.unit);
+  const rawUnit = toString(record.unit);
+  const unit = productUnits.has(rawUnit as Product["unit"])
+    ? (rawUnit as Product["unit"])
+    : "g";
   const rawNutrients =
     record.nutrients && typeof record.nutrients === "object" && !Array.isArray(record.nutrients)
       ? (record.nutrients as Record<string, unknown>)
@@ -115,7 +206,7 @@ const readProduct = (value: unknown): Product | null => {
   return {
     id,
     name,
-    unit: productUnits.has(unit as Product["unit"]) ? (unit as Product["unit"]) : "g",
+    unit,
     source: productSources.has(source as ProductSource)
       ? (source as ProductSource)
       : "Manual",
@@ -127,10 +218,7 @@ const readProduct = (value: unknown): Product | null => {
     status: productStatuses.has(record.status as Product["status"])
       ? (record.status as Product["status"])
       : undefined,
-    facts:
-      record.facts && typeof record.facts === "object" && !Array.isArray(record.facts)
-        ? (record.facts as Product["facts"])
-        : undefined,
+    facts: normalizeProductFacts(record.facts, unit),
   };
 };
 
