@@ -1304,6 +1304,13 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
           </Button>
         </Stack>
 
+        {foundProduct ? (
+          <Stack spacing={1.2} data-scanner-found-product="primary-result">
+            <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
+            <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
+          </Stack>
+        ) : null}
+
         {scanTimedOut ? (
           <Alert severity="warning">
             <AlertTitle>{copy.noResultTitle}</AlertTitle>
@@ -1708,13 +1715,6 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
               </Button>
             </Stack>
           </Paper>
-        ) : null}
-
-        {foundProduct ? (
-          <Stack spacing={1.2}>
-            <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
-            <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
-          </Stack>
         ) : null}
 
         {message ? (

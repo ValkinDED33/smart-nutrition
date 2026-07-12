@@ -39,6 +39,22 @@ describe("BarcodeScanner mobile preview layout", () => {
     expect(previewIndex).toBeLessThan(historyIndex);
   });
 
+  it("shows the found product result before scan history, fallback, and manual catalog form", () => {
+    const source = scannerSource();
+    const foundProductIndex = source.indexOf('data-scanner-found-product="primary-result"');
+    const historyIndex = source.indexOf("{copy.scanHistory}");
+    const fallbackIndex = source.indexOf("copy.fallbackTitle");
+    const manualFormIndex = source.indexOf("copy.manualTitle");
+
+    expect(foundProductIndex).toBeGreaterThan(-1);
+    expect(historyIndex).toBeGreaterThan(-1);
+    expect(fallbackIndex).toBeGreaterThan(-1);
+    expect(manualFormIndex).toBeGreaterThan(-1);
+    expect(foundProductIndex).toBeLessThan(historyIndex);
+    expect(foundProductIndex).toBeLessThan(fallbackIndex);
+    expect(foundProductIndex).toBeLessThan(manualFormIndex);
+  });
+
   it("keeps the video node mounted and decouples camera lifecycle from meal state changes", () => {
     const source = scannerSource();
 
