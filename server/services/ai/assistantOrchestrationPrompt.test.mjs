@@ -24,7 +24,22 @@ describe("assistantOrchestrationPrompt", () => {
     expect(prompt).toContain("channel: Telegram");
     expect(prompt).toContain("CORE_SYSTEM_PROMPT");
     expect(prompt).toContain("nutrition companion");
+    expect(prompt).toContain("project worker inside Smart Nutrition");
     expect(prompt).toContain("Primary mission");
+  });
+
+  it("frames the assistant as a project worker instead of an article generator", () => {
+    const prompt = buildAssistantSystemPrompt({
+      interactionChannel: "telegram",
+      language: "en",
+    });
+
+    expect(prompt).toContain("PROJECT_WORKER_PROMPT");
+    expect(prompt).toContain("reliable Smart Nutrition staff member");
+    expect(prompt).toContain("not a generic chatbot");
+    expect(prompt).toContain("current status, what I can do now, confirmed result");
+    expect(prompt).toContain("Never say it is done unless a tool/runtime result confirms it");
+    expect(prompt).toContain("meals, products, scanner, photo meals, water, reminders, Telegram");
   });
 
   it("uses a neutral runtime label when the user has not named the companion", () => {
@@ -90,6 +105,7 @@ describe("assistantOrchestrationPrompt", () => {
 
     [
       "CORE_SYSTEM_PROMPT",
+      "PROJECT_WORKER_PROMPT",
       "SAFETY_AND_MEDICAL_PROMPT",
       "AGENT_TOOL_PROMPT",
       "MEMORY_PROMPT",
