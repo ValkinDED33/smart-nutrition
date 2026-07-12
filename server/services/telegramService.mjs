@@ -12,24 +12,62 @@ const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
 const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
 const TELEGRAM_NOT_CONNECTED_MESSAGE =
   "Telegram ещё не подключён. Откройте профиль Smart Nutrition и нажмите Start по персональной ссылке.";
-const TELEGRAM_BOT_COMMANDS = [
-  { command: "menu", description: "Головне меню Smart Nutrition" },
-  { command: "help", description: "Що вміє Smart Nutrition AI" },
-  { command: "today", description: "Підсумок дня" },
-  { command: "nutrition", description: "Харчування і нутрієнти" },
-  { command: "water", description: "Вода сьогодні" },
-  { command: "reminders", description: "Reminders / Tasks" },
-  { command: "meds", description: "Активні нагадування про ліки" },
-  { command: "add", description: "Додати нагадування автоматично" },
-  { command: "addtask", description: "Додати задачу" },
-  { command: "addmed", description: "Додати нагадування про ліки" },
-  { command: "addwater", description: "Додати нагадування про воду" },
-  { command: "addhabit", description: "Додати нагадування про звичку" },
-  { command: "addsupplement", description: "Додати нагадування про добавку" },
-  { command: "settime", description: "Змінити час нагадування" },
-  { command: "profile", description: "Підключений акаунт" },
-  { command: "disconnect", description: "Відключити Telegram" },
-];
+const TELEGRAM_BOT_COMMANDS_BY_LANGUAGE = {
+  uk: [
+    { command: "menu", description: "Головне меню Smart Nutrition" },
+    { command: "help", description: "Що вміє Smart Nutrition AI" },
+    { command: "today", description: "Підсумок дня" },
+    { command: "nutrition", description: "Харчування і нутрієнти" },
+    { command: "water", description: "Вода сьогодні" },
+    { command: "reminders", description: "Нагадування / задачі" },
+    { command: "meds", description: "Активні нагадування про ліки" },
+    { command: "add", description: "Додати нагадування автоматично" },
+    { command: "addtask", description: "Додати задачу" },
+    { command: "addmed", description: "Додати нагадування про ліки" },
+    { command: "addwater", description: "Додати нагадування про воду" },
+    { command: "addhabit", description: "Додати нагадування про звичку" },
+    { command: "addsupplement", description: "Додати нагадування про добавку" },
+    { command: "settime", description: "Змінити час нагадування" },
+    { command: "profile", description: "Підключений акаунт" },
+    { command: "disconnect", description: "Відключити Telegram" },
+  ],
+  pl: [
+    { command: "menu", description: "Menu główne Smart Nutrition" },
+    { command: "help", description: "Co potrafi Smart Nutrition AI" },
+    { command: "today", description: "Podsumowanie dnia" },
+    { command: "nutrition", description: "Jedzenie i składniki" },
+    { command: "water", description: "Woda dzisiaj" },
+    { command: "reminders", description: "Przypomnienia / zadania" },
+    { command: "meds", description: "Aktywne przypomnienia o lekach" },
+    { command: "add", description: "Dodaj przypomnienie automatycznie" },
+    { command: "addtask", description: "Dodaj zadanie" },
+    { command: "addmed", description: "Dodaj przypomnienie o lekach" },
+    { command: "addwater", description: "Dodaj przypomnienie o wodzie" },
+    { command: "addhabit", description: "Dodaj przypomnienie o nawyku" },
+    { command: "addsupplement", description: "Dodaj przypomnienie o suplemencie" },
+    { command: "settime", description: "Zmień czas przypomnienia" },
+    { command: "profile", description: "Połączone konto" },
+    { command: "disconnect", description: "Odłącz Telegram" },
+  ],
+  en: [
+    { command: "menu", description: "Smart Nutrition main menu" },
+    { command: "help", description: "What Smart Nutrition AI can do" },
+    { command: "today", description: "Day summary" },
+    { command: "nutrition", description: "Food and nutrients" },
+    { command: "water", description: "Water today" },
+    { command: "reminders", description: "Reminders / tasks" },
+    { command: "meds", description: "Active medication reminders" },
+    { command: "add", description: "Add reminder automatically" },
+    { command: "addtask", description: "Add task" },
+    { command: "addmed", description: "Add medication reminder" },
+    { command: "addwater", description: "Add water reminder" },
+    { command: "addhabit", description: "Add habit reminder" },
+    { command: "addsupplement", description: "Add supplement reminder" },
+    { command: "settime", description: "Change reminder time" },
+    { command: "profile", description: "Connected account" },
+    { command: "disconnect", description: "Disconnect Telegram" },
+  ],
+};
 
 const TELEGRAM_LANGUAGE_FALLBACK = "uk";
 const TELEGRAM_SUPPORTED_LANGUAGES = new Set(["uk", "pl", "en"]);
@@ -1501,7 +1539,16 @@ export const createTelegramService = ({
 
   const configureBotCommands = async (currentBot) => {
     try {
-      await currentBot.telegram?.setMyCommands?.(TELEGRAM_BOT_COMMANDS);
+      await currentBot.telegram?.setMyCommands?.(
+        TELEGRAM_BOT_COMMANDS_BY_LANGUAGE[TELEGRAM_LANGUAGE_FALLBACK]
+      );
+      await Promise.all(
+        Object.entries(TELEGRAM_BOT_COMMANDS_BY_LANGUAGE).map(([language, commands]) =>
+          currentBot.telegram?.setMyCommands?.(commands, {
+            language_code: language,
+          })
+        )
+      );
     } catch (error) {
       logger.warn?.("[telegram] set commands failed", {
         provider: "telegram",

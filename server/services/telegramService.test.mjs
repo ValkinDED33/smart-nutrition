@@ -489,7 +489,7 @@ describe("telegramService", () => {
       expect.arrayContaining([
         expect.objectContaining({
           command: "reminders",
-          description: "Reminders / Tasks",
+          description: "Нагадування / задачі",
         }),
         expect.objectContaining({
           command: "meds",
@@ -512,6 +512,32 @@ describe("telegramService", () => {
           description: "Додати нагадування про добавку",
         }),
       ])
+    );
+    expect(instances[0].telegram.setMyCommands).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: "water",
+          description: "Woda dzisiaj",
+        }),
+        expect.objectContaining({
+          command: "addmed",
+          description: "Dodaj przypomnienie o lekach",
+        }),
+      ]),
+      { language_code: "pl" }
+    );
+    expect(instances[0].telegram.setMyCommands).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: "water",
+          description: "Water today",
+        }),
+        expect.objectContaining({
+          command: "addmed",
+          description: "Add medication reminder",
+        }),
+      ]),
+      { language_code: "en" }
     );
     expect(instances[0].launchOptions).toEqual({ dropPendingUpdates: false });
     expect(service.getStatus()).toMatchObject({
