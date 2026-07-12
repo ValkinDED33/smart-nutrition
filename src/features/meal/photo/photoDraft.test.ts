@@ -65,6 +65,16 @@ describe("photoDraft helpers", () => {
     expect(shouldStartWithSuggestionsOnly(baseAnalysis)).toBe(true);
   });
 
+  it("starts unclear-photo recognition with nothing selected even if a provider guessed food", () => {
+    expect(
+      shouldStartWithSuggestionsOnly({
+        ...baseAnalysis,
+        recognitionStatus: "needs_better_photo",
+        confidence: 0.68,
+      })
+    ).toBe(true);
+  });
+
   it("creates a blank user correction suggestion", () => {
     expect(createBlankPhotoSuggestion()).toMatchObject({
       name: "",

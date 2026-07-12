@@ -58,7 +58,7 @@ export const requiresPhotoMealConfirmation = (analysis: PhotoMealAnalysis) =>
   analysis.confidence < 0.7 || analysis.manualReviewRequired;
 
 export const shouldStartWithSuggestionsOnly = (analysis: PhotoMealAnalysis) =>
-  analysis.confidence < 0.35;
+  analysis.recognitionStatus === "needs_better_photo" || analysis.confidence < 0.35;
 
 export const createBlankPhotoSuggestion = (): PhotoMealSuggestion => ({
   name: "",
