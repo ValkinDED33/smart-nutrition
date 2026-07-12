@@ -1234,7 +1234,7 @@ const createSchema = (database) => {
       progress_photos_json TEXT NOT NULL DEFAULT '[]',
       weekly_check_in_json TEXT NOT NULL DEFAULT '{"enabled":true,"remindIntervalDays":7,"lastRecordedAt":null}',
       motivation_json TEXT NOT NULL DEFAULT '{"points":0,"level":1,"completedTasks":0,"activeTasks":[],"history":[],"achievements":[],"lastTaskRefreshDate":null,"freeDayLastUsedAt":null,"paidDayLastUsedAt":null,"paidDayLastUsedMonth":null}',
-      assistant_json TEXT NOT NULL DEFAULT '{"name":"Diana","companionKind":"robot","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true,"onboarding":{"preferredName":"","primaryGoalNote":"","mainFriction":"unknown","motivationStyle":"gentle","supportNote":"","completedAt":null}}',
+      assistant_json TEXT NOT NULL DEFAULT '{"name":"","companionKind":"robot","role":"assistant","tone":"gentle","humorEnabled":true,"widgetEnabled":true,"proactiveHintsEnabled":true,"onboarding":{"preferredName":"","primaryGoalNote":"","mainFriction":"unknown","motivationStyle":"gentle","supportNote":"","completedAt":null}}',
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -2204,7 +2204,7 @@ export const createSqliteStorage = async ({
     database,
     "profile_states",
     "assistant_json",
-      "TEXT NOT NULL DEFAULT '{\"name\":\"Diana\",\"companionKind\":\"robot\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true,\"widgetEnabled\":true,\"proactiveHintsEnabled\":true,\"onboarding\":{\"preferredName\":\"\",\"primaryGoalNote\":\"\",\"mainFriction\":\"unknown\",\"motivationStyle\":\"gentle\",\"supportNote\":\"\",\"completedAt\":null}}'"
+      "TEXT NOT NULL DEFAULT '{\"name\":\"\",\"companionKind\":\"robot\",\"role\":\"assistant\",\"tone\":\"gentle\",\"humorEnabled\":true,\"widgetEnabled\":true,\"proactiveHintsEnabled\":true,\"onboarding\":{\"preferredName\":\"\",\"primaryGoalNote\":\"\",\"mainFriction\":\"unknown\",\"motivationStyle\":\"gentle\",\"supportNote\":\"\",\"completedAt\":null}}'"
   );
   createIndexes(database);
   setMeta(database, "storage_engine", "sqlite");

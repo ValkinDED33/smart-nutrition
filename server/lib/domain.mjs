@@ -459,7 +459,7 @@ export const createInitialProfileState = (userInput) => {
       cancelledAt: null,
     },
     assistant: {
-      name: "Алекс",
+      name: "",
       companionKind: "robot",
       role: "assistant",
       tone: "gentle",

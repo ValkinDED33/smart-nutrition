@@ -113,8 +113,8 @@ const landingCopy = {
       { label: "Білок", value: PROTEIN_STAT_VALUE, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
-      name: "Diana",
-      title: "Diana поруч",
+      name: AI_COMPANION_LABEL,
+      title: "AI-помічник поруч",
       body: "Сьогодні залишилось 600 ккал. Я б додала воду і легку вечерю з білком.",
       mood: "жива реакція",
       xps: "+25 XP за серію",
@@ -189,7 +189,7 @@ const landingCopy = {
     eyebrow: AI_WELLNESS_ECOSYSTEM,
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: "Twój AI companion dla",
+      prefix: `Twój ${AI_COMPANION_LABEL} dla`,
       accent: "zdrowszego",
       suffix: "dnia.",
     },
@@ -200,7 +200,7 @@ const landingCopy = {
       "Reaguje na dzień, a nie tylko liczy liczby.",
     ],
     subtitle:
-      "Żywy AI companion do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.",
+      `Żywy ${AI_COMPANION_LABEL} do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.`,
     primary: "Zacznij za darmo",
     secondary: "Zobacz companion",
     telegramCta: "Połącz Telegram",
@@ -236,8 +236,8 @@ const landingCopy = {
       { label: "Białko", value: PROTEIN_STAT_VALUE_EN, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
-      name: "Diana",
-      title: "Diana jest obok",
+      name: AI_COMPANION_LABEL,
+      title: "AI asystent jest obok",
       body: "Zostało dziś 600 kcal. Dodałabym wodę i lekką kolację z białkiem.",
       mood: "żywa reakcja",
       xps: "+25 XP za serię",
@@ -312,7 +312,7 @@ const landingCopy = {
     eyebrow: AI_WELLNESS_ECOSYSTEM,
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: "Your AI companion for a",
+      prefix: `Your ${AI_COMPANION_LABEL} for a`,
       accent: "healthier",
       suffix: "you.",
     },
@@ -323,7 +323,7 @@ const landingCopy = {
       "Reacts to the day, not just the numbers.",
     ],
     subtitle:
-      "A living AI companion for food, water, medication, progress, and gentle motivation. It does not just track data; it moves through the day with you.",
+      `A living ${AI_COMPANION_LABEL} for food, water, medication, progress, and gentle motivation. It does not just track data; it moves through the day with you.`,
     primary: "Start free",
     secondary: "See companion",
     telegramCta: "Connect Telegram",
@@ -359,8 +359,8 @@ const landingCopy = {
       { label: "Protein", value: PROTEIN_STAT_VALUE_EN, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
-      name: "Diana",
-      title: "Diana is here",
+      name: AI_COMPANION_LABEL,
+      title: `${AI_COMPANION_LABEL} is here`,
       body: "You have 600 kcal left today. I would add water and a light protein dinner.",
       mood: "live reaction",
       xps: "+25 XP streak",

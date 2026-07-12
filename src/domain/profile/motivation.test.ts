@@ -5,6 +5,7 @@ import {
   canUseFreeDay,
   canUsePaidDay,
   completeMotivationTaskState,
+  createDefaultAssistantCustomization,
   createDefaultMotivationState,
 } from "./motivation";
 
@@ -13,6 +14,13 @@ const PAID_DAY_USED_AT = "2026-04-20T08:00:00.000Z";
 const PAID_DAY_MONTH = "2026-04";
 
 describe("motivation", () => {
+  it("does not assign a default assistant name before the user chooses one", () => {
+    const assistant = createDefaultAssistantCustomization();
+
+    expect(assistant.name).toBe("");
+    expect(assistant.assistantName).toBe("");
+  });
+
   it("awards points and unlocks the first achievement", () => {
     const state = createDefaultMotivationState("maintain");
     const firstTaskId = state.activeTasks[0]?.id;

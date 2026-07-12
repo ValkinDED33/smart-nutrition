@@ -27,6 +27,18 @@ describe("assistantOrchestrationPrompt", () => {
     expect(prompt).toContain("Primary mission");
   });
 
+  it("uses a neutral runtime label when the user has not named the companion", () => {
+    const prompt = buildAssistantSystemPrompt({
+      assistantName: "",
+      assistantRole: "assistant",
+      language: "en",
+    });
+
+    expect(prompt).toContain("You are Smart Nutrition companion");
+    expect(prompt).not.toContain("You are Diana");
+    expect(prompt).not.toContain("You are Алекс");
+  });
+
   it("contains safety rules for medication, pregnancy and prompt secrecy", () => {
     const prompt = buildAssistantSystemPrompt({
       interactionChannel: "mobile",

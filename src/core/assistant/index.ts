@@ -15,7 +15,8 @@ import type { Goal } from "@domain/user/types";
 export { buildAssistantPersonalizationPlan } from "./personalizationPlan";
 export type { AssistantPersonalizationPlan } from "./personalizationPlan";
 
-export const DEFAULT_ASSISTANT_NAME = "Алекс";
+export const DEFAULT_ASSISTANT_NAME = "";
+export const DEFAULT_ASSISTANT_RUNTIME_LABEL = "Smart Nutrition companion";
 
 export type AssistantCoreEmotion =
   | "calm"
@@ -377,7 +378,7 @@ const getMotivationMemoryLabel = (
 
 const getAssistantName = (assistant: AssistantCustomization) => {
   const trimmedName = assistant.name.trim();
-  return trimmedName.length > 0 ? trimmedName : DEFAULT_ASSISTANT_NAME;
+  return trimmedName.length > 0 ? trimmedName : DEFAULT_ASSISTANT_RUNTIME_LABEL;
 };
 
 export const createAssistantPersonality = (

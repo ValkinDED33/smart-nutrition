@@ -9,7 +9,7 @@ const DEFAULT_PERSONALITY = {
 };
 
 const DEFAULT_MEMORY = {
-  assistantName: "Diana",
+  assistantName: "Smart Nutrition companion",
   personality: DEFAULT_PERSONALITY,
   communicationStyle: "supportive",
   goals: [],

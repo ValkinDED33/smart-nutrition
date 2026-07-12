@@ -180,7 +180,10 @@ const buildAutonomousPrompt = () =>
 
 export const buildAssistantPromptStack = (context = {}) => {
   const channel = getInteractionChannel(context);
-  const assistantName = normalizeText(context.assistantName, "Diana");
+  const assistantName = normalizeText(
+    context.assistantName,
+    "Smart Nutrition companion"
+  );
   const assistantRole = normalizeText(context.assistantRole, "companion");
   const assistantTone = normalizeText(context.assistantTone, "gentle");
   const communicationStyle = normalizeText(context.communicationStyle, "supportive");
