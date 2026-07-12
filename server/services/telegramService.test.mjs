@@ -122,6 +122,23 @@ describe("telegramService", () => {
     expect(buildTelegramNutritionSummary(snapshot, now)).not.toContain("999");
   });
 
+  it("localizes Telegram daily, water and nutrition summaries", () => {
+    const now = new Date("2026-06-20T12:00:00.000Z");
+
+    expect(buildTelegramDailySummary(snapshot, now, "en")).toContain(
+      "Calories: 200 / 2200 kcal"
+    );
+    expect(buildTelegramDailySummary(snapshot, now, "en")).toContain(
+      "I can see the day"
+    );
+    expect(buildTelegramWaterSummary(snapshot, "pl")).toContain("Woda dzisiaj");
+    expect(buildTelegramWaterSummary(snapshot, "pl")).toContain("Jeszcze około 1500 ml");
+    expect(buildTelegramNutritionSummary(snapshot, now, "en")).toContain(
+      "Protein: 20.0 g"
+    );
+    expect(buildTelegramNutritionSummary(snapshot, now, "en")).not.toContain("Білок");
+  });
+
   it("creates signed connect tokens and rejects expired tokens", () => {
     const now = Date.UTC(2026, 5, 20, 10, 0, 0);
     const { token, expiresAt } = createTelegramConnectToken({
@@ -858,7 +875,7 @@ describe("telegramService", () => {
     });
 
     expect(reply).toHaveBeenCalledWith(
-      expect.stringContaining("Вода сьогодні"),
+      expect.stringContaining("Water today"),
       expect.objectContaining({
         reply_markup: expect.objectContaining({
           inline_keyboard: expect.arrayContaining([

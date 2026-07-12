@@ -48,6 +48,30 @@ const TELEGRAM_COPY = {
       "Можна писати людською мовою: “нагадуй пити магній о 22:00” або “що у мене по нагадуванням”.",
     waterStatusButton: "💧 Статус води",
     retryWaterButton: "↻ Спробувати +{amount} мл ще раз",
+    dailyTitle: "Стан на сьогодні:",
+    foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
+    calories: (current, target, percent = null) =>
+      `🔥 Калорії: ${current} / ${target} ккал${percent ? ` (${percent})` : ""}`,
+    protein: (value) => `🥩 Білок: ${value} г`,
+    fat: (value) => `🥑 Жири: ${value} г`,
+    carbs: (value) => `🍚 Вуглеводи: ${value} г`,
+    sugars: (value) => `🍬 Цукри: ${value} г`,
+    fiber: (value) => `🌾 Клітковина: ${value} г`,
+    sodium: (value) => `🧂 Натрій: ${value} мг`,
+    calcium: (value) => `🦴 Кальцій: ${value} мг`,
+    iron: (value) => `🩸 Залізо: ${value} мг`,
+    waterLine: (current, target, percent) => `💧 Вода: ${current} / ${target} мл (${percent})`,
+    firstDailyStep:
+      "Перший корисний крок — додати перший прийом їжі або випити склянку води.",
+    nextDailyStep: "Я бачу день і можу підказати наступний крок по воді, білку або калоріях.",
+    waterTodayTitle: "Вода сьогодні:",
+    waterConsumed: (value) => `💧 Випито: ${value} мл`,
+    waterTarget: (value) => `🎯 Ціль: ${value} мл`,
+    progress: (percent) => `📊 Прогрес: ${percent}`,
+    waterRemaining: (remaining, glasses) =>
+      `Ще приблизно ${remaining} мл, це близько ${glasses} склян(ок).`,
+    waterClosed: "Ціль по воді вже закрита. Красиво тримаєш ритм.",
+    nutritionTitle: "Нутрієнти сьогодні:",
   },
   pl: {
     mainMenuPlaceholder: "Napisz działanie albo wybierz przycisk",
@@ -63,6 +87,29 @@ const TELEGRAM_COPY = {
       "Możesz pisać normalnym językiem: „przypomnij mi o magnezie o 22:00” albo „co z moimi przypomnieniami”.",
     waterStatusButton: "💧 Status wody",
     retryWaterButton: "↻ Spróbuj ponownie +{amount} ml",
+    dailyTitle: "Status na dziś:",
+    foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
+    calories: (current, target, percent = null) =>
+      `🔥 Kalorie: ${current} / ${target} kcal${percent ? ` (${percent})` : ""}`,
+    protein: (value) => `🥩 Białko: ${value} g`,
+    fat: (value) => `🥑 Tłuszcz: ${value} g`,
+    carbs: (value) => `🍚 Węglowodany: ${value} g`,
+    sugars: (value) => `🍬 Cukry: ${value} g`,
+    fiber: (value) => `🌾 Błonnik: ${value} g`,
+    sodium: (value) => `🧂 Sód: ${value} mg`,
+    calcium: (value) => `🦴 Wapń: ${value} mg`,
+    iron: (value) => `🩸 Żelazo: ${value} mg`,
+    waterLine: (current, target, percent) => `💧 Woda: ${current} / ${target} ml (${percent})`,
+    firstDailyStep: "Pierwszy dobry krok — dodaj pierwszy posiłek albo wypij szklankę wody.",
+    nextDailyStep: "Widzę dzień i mogę podpowiedzieć następny krok dla wody, białka albo kalorii.",
+    waterTodayTitle: "Woda dzisiaj:",
+    waterConsumed: (value) => `💧 Wypite: ${value} ml`,
+    waterTarget: (value) => `🎯 Cel: ${value} ml`,
+    progress: (percent) => `📊 Postęp: ${percent}`,
+    waterRemaining: (remaining, glasses) =>
+      `Jeszcze około ${remaining} ml, czyli mniej więcej ${glasses} szklank(i).`,
+    waterClosed: "Cel wody jest już zamknięty. Ładnie trzymasz rytm.",
+    nutritionTitle: "Składniki dzisiaj:",
   },
   en: {
     mainMenuPlaceholder: "Type an action or choose a button",
@@ -78,6 +125,29 @@ const TELEGRAM_COPY = {
       "You can write naturally: “remind me to take magnesium at 22:00” or “what reminders do I have”.",
     waterStatusButton: "💧 Water status",
     retryWaterButton: "↻ Try +{amount} ml again",
+    dailyTitle: "Today status:",
+    foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
+    calories: (current, target, percent = null) =>
+      `🔥 Calories: ${current} / ${target} kcal${percent ? ` (${percent})` : ""}`,
+    protein: (value) => `🥩 Protein: ${value} g`,
+    fat: (value) => `🥑 Fat: ${value} g`,
+    carbs: (value) => `🍚 Carbs: ${value} g`,
+    sugars: (value) => `🍬 Sugars: ${value} g`,
+    fiber: (value) => `🌾 Fiber: ${value} g`,
+    sodium: (value) => `🧂 Sodium: ${value} mg`,
+    calcium: (value) => `🦴 Calcium: ${value} mg`,
+    iron: (value) => `🩸 Iron: ${value} mg`,
+    waterLine: (current, target, percent) => `💧 Water: ${current} / ${target} ml (${percent})`,
+    firstDailyStep: "First useful step: add your first meal or drink a glass of water.",
+    nextDailyStep: "I can see the day and suggest the next step for water, protein, or calories.",
+    waterTodayTitle: "Water today:",
+    waterConsumed: (value) => `💧 Drank: ${value} ml`,
+    waterTarget: (value) => `🎯 Goal: ${value} ml`,
+    progress: (percent) => `📊 Progress: ${percent}`,
+    waterRemaining: (remaining, glasses) =>
+      `About ${remaining} ml left, roughly ${glasses} glass(es).`,
+    waterClosed: "Water goal is already closed. Nice rhythm.",
+    nutritionTitle: "Nutrition today:",
   },
 };
 
@@ -527,7 +597,12 @@ export const buildTelegramMainMenuMessage = (
   ].join("\n");
 };
 
-export const buildTelegramDailySummary = (snapshot = {}, now = new Date()) => {
+export const buildTelegramDailySummary = (
+  snapshot = {},
+  now = new Date(),
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
   const profile = snapshot?.profile ?? {};
   const meal = snapshot?.meal ?? {};
   const water = snapshot?.water ?? {};
@@ -539,23 +614,33 @@ export const buildTelegramDailySummary = (snapshot = {}, now = new Date()) => {
   const fiber = Number(nutrients.fiber) || 0;
 
   return [
-    "Стан на сьогодні:",
+    copy.dailyTitle,
     "",
-    `🥗 Їжа: ${entries.length} запис(ів)`,
-    `🔥 Калорії: ${formatNumber(nutrients.calories)} / ${formatNumber(calorieTarget)} ккал (${formatPercent(nutrients.calories, calorieTarget)})`,
-    `🥩 Білок: ${formatNumber(nutrients.protein, 1)} г`,
-    `🥑 Жири: ${formatNumber(nutrients.fat, 1)} г`,
-    `🍚 Вуглеводи: ${formatNumber(nutrients.carbs, 1)} г`,
-    `🌾 Клітковина: ${formatNumber(fiber, 1)} г`,
-    `💧 Вода: ${formatNumber(waterConsumed)} / ${formatNumber(waterTarget)} мл (${formatPercent(waterConsumed, waterTarget)})`,
+    copy.foodEntries(entries.length),
+    copy.calories(
+      formatNumber(nutrients.calories),
+      formatNumber(calorieTarget),
+      formatPercent(nutrients.calories, calorieTarget)
+    ),
+    copy.protein(formatNumber(nutrients.protein, 1)),
+    copy.fat(formatNumber(nutrients.fat, 1)),
+    copy.carbs(formatNumber(nutrients.carbs, 1)),
+    copy.fiber(formatNumber(fiber, 1)),
+    copy.waterLine(
+      formatNumber(waterConsumed),
+      formatNumber(waterTarget),
+      formatPercent(waterConsumed, waterTarget)
+    ),
     "",
-    entries.length === 0
-      ? "Перший корисний крок — додати перший прийом їжі або випити склянку води."
-      : "Я бачу день і можу підказати наступний крок по воді, білку або калоріях.",
+    entries.length === 0 ? copy.firstDailyStep : copy.nextDailyStep,
   ].join("\n");
 };
 
-export const buildTelegramWaterSummary = (snapshot = {}) => {
+export const buildTelegramWaterSummary = (
+  snapshot = {},
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
   const water = snapshot?.water ?? {};
   const consumed = Number(water.consumedMl) || 0;
   const target = Number(water.dailyWaterGoal) || 0;
@@ -563,35 +648,40 @@ export const buildTelegramWaterSummary = (snapshot = {}) => {
   const remaining = Math.max(target - consumed, 0);
 
   return [
-    "Вода сьогодні:",
+    copy.waterTodayTitle,
     "",
-    `💧 Випито: ${formatNumber(consumed)} мл`,
-    `🎯 Ціль: ${formatNumber(target)} мл`,
-    `📊 Прогрес: ${formatPercent(consumed, target)}`,
+    copy.waterConsumed(formatNumber(consumed)),
+    copy.waterTarget(formatNumber(target)),
+    copy.progress(formatPercent(consumed, target)),
     remaining > 0
-      ? `Ще приблизно ${formatNumber(remaining)} мл, це близько ${Math.ceil(remaining / glassSize)} склян(ок).`
-      : "Ціль по воді вже закрита. Красиво тримаєш ритм.",
+      ? copy.waterRemaining(formatNumber(remaining), Math.ceil(remaining / glassSize))
+      : copy.waterClosed,
   ].join("\n");
 };
 
-export const buildTelegramNutritionSummary = (snapshot = {}, now = new Date()) => {
+export const buildTelegramNutritionSummary = (
+  snapshot = {},
+  now = new Date(),
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
   const profile = snapshot?.profile ?? {};
   const entries = getTodayMealEntries(snapshot?.meal ?? {}, now);
   const nutrients = calculateMealTotalNutrients(entries);
   const calorieTarget = Number(profile.dailyCalories) || 0;
 
   return [
-    "Нутрієнти сьогодні:",
+    copy.nutritionTitle,
     "",
-    `🔥 Калорії: ${formatNumber(nutrients.calories)} / ${formatNumber(calorieTarget)} ккал`,
-    `🥩 Білок: ${formatNumber(nutrients.protein, 1)} г`,
-    `🥑 Жири: ${formatNumber(nutrients.fat, 1)} г`,
-    `🍚 Вуглеводи: ${formatNumber(nutrients.carbs, 1)} г`,
-    `🍬 Цукри: ${formatNumber(nutrients.sugars, 1)} г`,
-    `🌾 Клітковина: ${formatNumber(nutrients.fiber, 1)} г`,
-    `🧂 Натрій: ${formatNumber(nutrients.sodium, 0)} мг`,
-    `🦴 Кальцій: ${formatNumber(nutrients.calcium, 0)} мг`,
-    `🩸 Залізо: ${formatNumber(nutrients.iron, 1)} мг`,
+    copy.calories(formatNumber(nutrients.calories), formatNumber(calorieTarget)),
+    copy.protein(formatNumber(nutrients.protein, 1)),
+    copy.fat(formatNumber(nutrients.fat, 1)),
+    copy.carbs(formatNumber(nutrients.carbs, 1)),
+    copy.sugars(formatNumber(nutrients.sugars, 1)),
+    copy.fiber(formatNumber(nutrients.fiber, 1)),
+    copy.sodium(formatNumber(nutrients.sodium, 0)),
+    copy.calcium(formatNumber(nutrients.calcium, 0)),
+    copy.iron(formatNumber(nutrients.iron, 1)),
   ].join("\n");
 };
 
@@ -860,7 +950,8 @@ export const createTelegramService = ({
     }
 
     const snapshot = await stateService.getSnapshot(user);
-    await ctx.reply(buildMessage(snapshot));
+    const language = getTelegramLanguageFromSnapshot(snapshot);
+    await ctx.reply(buildMessage(snapshot, language));
   };
 
   const replyWithWaterSnapshot = async (ctx) => {
@@ -878,7 +969,7 @@ export const createTelegramService = ({
     const snapshot = await stateService.getSnapshot(user);
     const language = getTelegramLanguageFromSnapshot(snapshot);
     await ctx.reply(
-      buildTelegramWaterSummary(snapshot),
+      buildTelegramWaterSummary(snapshot, language),
       buildTelegramWaterActionKeyboard({ language })
     );
   };
@@ -1139,7 +1230,9 @@ export const createTelegramService = ({
     });
 
     nextBot.command("today", async (ctx) => {
-      await replyWithSnapshot(ctx, (snapshot) => buildTelegramDailySummary(snapshot));
+      await replyWithSnapshot(ctx, (snapshot, language) =>
+        buildTelegramDailySummary(snapshot, new Date(), language)
+      );
     });
 
     nextBot.command("water", async (ctx) => {
@@ -1147,7 +1240,9 @@ export const createTelegramService = ({
     });
 
     nextBot.command("nutrition", async (ctx) => {
-      await replyWithSnapshot(ctx, (snapshot) => buildTelegramNutritionSummary(snapshot));
+      await replyWithSnapshot(ctx, (snapshot, language) =>
+        buildTelegramNutritionSummary(snapshot, new Date(), language)
+      );
     });
 
     nextBot.command("profile", async (ctx) => {
