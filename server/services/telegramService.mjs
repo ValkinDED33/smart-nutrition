@@ -31,45 +31,116 @@ const TELEGRAM_BOT_COMMANDS = [
   { command: "disconnect", description: "Відключити Telegram" },
 ];
 
-const TELEGRAM_MAIN_MENU_KEYBOARD = {
-  reply_markup: {
-    keyboard: [
-      [{ text: "/today" }, { text: "/reminders" }],
-      [{ text: "/water" }, { text: "/nutrition" }],
-      [{ text: "/addtask" }, { text: "/addmed" }],
-      [{ text: "/profile" }, { text: "/help" }],
-    ],
-    resize_keyboard: true,
-    one_time_keyboard: false,
-    input_field_placeholder: "Напишіть дію або оберіть кнопку",
+const TELEGRAM_LANGUAGE_FALLBACK = "uk";
+const TELEGRAM_SUPPORTED_LANGUAGES = new Set(["uk", "pl", "en"]);
+const TELEGRAM_COPY = {
+  uk: {
+    mainMenuPlaceholder: "Напишіть дію або оберіть кнопку",
+    mainMenuGreeting: "Smart Nutrition поруч",
+    mainMenuTitle: "Що можна зробити зараз:",
+    todayAction: "📊 /today — швидкий підсумок дня",
+    remindersAction: "⏰ /reminders — нагадування і задачі з кнопками керування",
+    waterAction: "💧 /water — вода сьогодні",
+    nutritionAction: "🧬 /nutrition — калорії, БЖВ і нутрієнти",
+    addTaskAction: "➕ /addtask — додати задачу за часом",
+    addMedicationAction: "💊 /addmed — додати нагадування про ліки",
+    naturalLanguageHint:
+      "Можна писати людською мовою: “нагадуй пити магній о 22:00” або “що у мене по нагадуванням”.",
+    waterStatusButton: "💧 Статус води",
+    retryWaterButton: "↻ Спробувати +{amount} мл ще раз",
   },
+  pl: {
+    mainMenuPlaceholder: "Napisz działanie albo wybierz przycisk",
+    mainMenuGreeting: "Smart Nutrition jest obok",
+    mainMenuTitle: "Co możesz zrobić teraz:",
+    todayAction: "📊 /today — szybkie podsumowanie dnia",
+    remindersAction: "⏰ /reminders — przypomnienia i zadania z przyciskami",
+    waterAction: "💧 /water — woda dzisiaj",
+    nutritionAction: "🧬 /nutrition — kalorie, makro i składniki",
+    addTaskAction: "➕ /addtask — dodaj zadanie z godziną",
+    addMedicationAction: "💊 /addmed — dodaj przypomnienie o lekach",
+    naturalLanguageHint:
+      "Możesz pisać normalnym językiem: „przypomnij mi o magnezie o 22:00” albo „co z moimi przypomnieniami”.",
+    waterStatusButton: "💧 Status wody",
+    retryWaterButton: "↻ Spróbuj ponownie +{amount} ml",
+  },
+  en: {
+    mainMenuPlaceholder: "Type an action or choose a button",
+    mainMenuGreeting: "Smart Nutrition is nearby",
+    mainMenuTitle: "What you can do now:",
+    todayAction: "📊 /today — quick day summary",
+    remindersAction: "⏰ /reminders — reminders and tasks with action buttons",
+    waterAction: "💧 /water — water today",
+    nutritionAction: "🧬 /nutrition — calories, macros, and nutrients",
+    addTaskAction: "➕ /addtask — add a timed task",
+    addMedicationAction: "💊 /addmed — add a medication reminder",
+    naturalLanguageHint:
+      "You can write naturally: “remind me to take magnesium at 22:00” or “what reminders do I have”.",
+    waterStatusButton: "💧 Water status",
+    retryWaterButton: "↻ Try +{amount} ml again",
+  },
+};
+
+const normalizeTelegramLanguage = (value) =>
+  TELEGRAM_SUPPORTED_LANGUAGES.has(value) ? value : TELEGRAM_LANGUAGE_FALLBACK;
+
+const getTelegramCopy = (language) =>
+  TELEGRAM_COPY[normalizeTelegramLanguage(language)] ?? TELEGRAM_COPY[TELEGRAM_LANGUAGE_FALLBACK];
+
+const getTelegramLanguageFromSnapshot = (snapshot = {}) =>
+  normalizeTelegramLanguage(snapshot?.profile?.languagePreference);
+
+const buildTelegramMainMenuKeyboard = (language = TELEGRAM_LANGUAGE_FALLBACK) => {
+  const copy = getTelegramCopy(language);
+
+  return {
+    reply_markup: {
+      keyboard: [
+        [{ text: "/today" }, { text: "/reminders" }],
+        [{ text: "/water" }, { text: "/nutrition" }],
+        [{ text: "/addtask" }, { text: "/addmed" }],
+        [{ text: "/profile" }, { text: "/help" }],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false,
+      input_field_placeholder: copy.mainMenuPlaceholder,
+    },
+  };
 };
 
 const TELEGRAM_WATER_QUICK_AMOUNTS_ML = [250, 500];
 
-const buildTelegramWaterActionKeyboard = ({ retryAmountMl = null } = {}) => ({
-  reply_markup: {
-    inline_keyboard: [
-      [
-        ...TELEGRAM_WATER_QUICK_AMOUNTS_ML.map((amountMl) => ({
-          text: `+${amountMl} мл`,
-          callback_data: `water:add:${amountMl}`,
-        })),
+const buildTelegramWaterActionKeyboard = ({
+  retryAmountMl = null,
+  language = TELEGRAM_LANGUAGE_FALLBACK,
+} = {}) => {
+  const copy = getTelegramCopy(language);
+  const volumeUnit = normalizeTelegramLanguage(language) === "uk" ? "мл" : "ml";
+
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          ...TELEGRAM_WATER_QUICK_AMOUNTS_ML.map((amountMl) => ({
+            text: `+${amountMl} ${volumeUnit}`,
+            callback_data: `water:add:${amountMl}`,
+          })),
+        ],
+        [{ text: copy.waterStatusButton, callback_data: "water:status" }],
+        ...(retryAmountMl
+          ? [
+              [
+                {
+                  text: copy.retryWaterButton.replace("{amount}", String(retryAmountMl)),
+                  callback_data: `water:retry:${retryAmountMl}`,
+                },
+              ],
+            ]
+          : []),
       ],
-      [{ text: "💧 Статус води", callback_data: "water:status" }],
-      ...(retryAmountMl
-        ? [
-            [
-              {
-                text: `↻ Спробувати +${retryAmountMl} мл ще раз`,
-                callback_data: `water:retry:${retryAmountMl}`,
-              },
-            ],
-          ]
-        : []),
-    ],
-  },
-});
+    },
+  };
+};
 
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
@@ -435,20 +506,26 @@ export const buildTelegramAssistantCapabilitiesMessage = () =>
     "/disconnect — відключити Telegram",
   ].join("\n");
 
-export const buildTelegramMainMenuMessage = (user = null) =>
-  [
-    `Smart Nutrition поруч${user?.name ? `, ${user.name}` : ""}.`,
+export const buildTelegramMainMenuMessage = (
+  user = null,
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
+
+  return [
+    `${copy.mainMenuGreeting}${user?.name ? `, ${user.name}` : ""}.`,
     "",
-    "Що можна зробити зараз:",
-    "📊 /today — швидкий підсумок дня",
-    "⏰ /reminders — нагадування і задачі з кнопками керування",
-    "💧 /water — вода сьогодні",
-    "🧬 /nutrition — калорії, БЖВ і нутрієнти",
-    "➕ /addtask — додати задачу за часом",
-    "💊 /addmed — додати нагадування про ліки",
+    copy.mainMenuTitle,
+    copy.todayAction,
+    copy.remindersAction,
+    copy.waterAction,
+    copy.nutritionAction,
+    copy.addTaskAction,
+    copy.addMedicationAction,
     "",
-    "Можна писати людською мовою: “нагадуй пити магній о 22:00” або “що у мене по напоминаниям”.",
+    copy.naturalLanguageHint,
   ].join("\n");
+};
 
 export const buildTelegramDailySummary = (snapshot = {}, now = new Date()) => {
   const profile = snapshot?.profile ?? {};
@@ -750,6 +827,26 @@ export const createTelegramService = ({
     }
   };
 
+  const getTelegramUserLanguage = async (user) => {
+    const fallbackLanguage = normalizeTelegramLanguage(user?.languagePreference);
+
+    if (!stateService?.getSnapshot || !user) {
+      return fallbackLanguage;
+    }
+
+    try {
+      const snapshot = await stateService.getSnapshot(user);
+      return getTelegramLanguageFromSnapshot(snapshot);
+    } catch (error) {
+      logger.warn?.("[telegram] profile language snapshot unavailable", {
+        provider: "telegram",
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+      return fallbackLanguage;
+    }
+  };
+
   const replyWithSnapshot = async (ctx, buildMessage) => {
     const user = await getConnectedUser(ctx);
 
@@ -779,7 +876,11 @@ export const createTelegramService = ({
     }
 
     const snapshot = await stateService.getSnapshot(user);
-    await ctx.reply(buildTelegramWaterSummary(snapshot), buildTelegramWaterActionKeyboard());
+    const language = getTelegramLanguageFromSnapshot(snapshot);
+    await ctx.reply(
+      buildTelegramWaterSummary(snapshot),
+      buildTelegramWaterActionKeyboard({ language })
+    );
   };
 
   const getWaterRetryAmountFromAgentResult = (agentResult) => {
@@ -788,11 +889,11 @@ export const createTelegramService = ({
     return Number.isFinite(amountMl) && amountMl > 0 ? Math.round(amountMl) : null;
   };
 
-  const getTelegramAgentReplyOptions = (agentResult) => {
+  const getTelegramAgentReplyOptions = (agentResult, language = TELEGRAM_LANGUAGE_FALLBACK) => {
     const intent = agentResult?.intent?.intent;
 
     if (intent === "show_water_status") {
-      return buildTelegramWaterActionKeyboard();
+      return buildTelegramWaterActionKeyboard({ language });
     }
 
     if (intent !== "add_water") {
@@ -804,8 +905,9 @@ export const createTelegramService = ({
       : null;
 
     return waterAction?.ok
-      ? buildTelegramWaterActionKeyboard()
+      ? buildTelegramWaterActionKeyboard({ language })
       : buildTelegramWaterActionKeyboard({
+          language,
           retryAmountMl: getWaterRetryAmountFromAgentResult(agentResult),
         });
   };
@@ -827,7 +929,8 @@ export const createTelegramService = ({
       return agentResult ?? null;
     }
 
-    const replyOptions = getTelegramAgentReplyOptions(agentResult);
+    const language = await getTelegramUserLanguage(user);
+    const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
     if (replyOptions) {
       await ctx.reply(agentResult.text, replyOptions);
@@ -869,7 +972,11 @@ export const createTelegramService = ({
   };
 
   const replyWithMainMenu = async (ctx, user = null) => {
-    await ctx.reply(buildTelegramMainMenuMessage(user), TELEGRAM_MAIN_MENU_KEYBOARD);
+    const language = await getTelegramUserLanguage(user);
+    await ctx.reply(
+      buildTelegramMainMenuMessage(user, language),
+      buildTelegramMainMenuKeyboard(language)
+    );
   };
 
   const getMedicationReminderRuntime = () => {
@@ -1022,7 +1129,13 @@ export const createTelegramService = ({
     });
 
     nextBot.command("help", async (ctx) => {
-      await ctx.reply(buildTelegramAssistantCapabilitiesMessage(), TELEGRAM_MAIN_MENU_KEYBOARD);
+      const chatId = getTelegramChatIdFromContext(ctx);
+      const user = chatId ? await getUserByTelegramChatId(chatId) : null;
+      const language = await getTelegramUserLanguage(user);
+      await ctx.reply(
+        buildTelegramAssistantCapabilitiesMessage(),
+        buildTelegramMainMenuKeyboard(language)
+      );
     });
 
     nextBot.command("today", async (ctx) => {
@@ -1157,7 +1270,8 @@ export const createTelegramService = ({
       });
 
       if (agentResult?.handled) {
-        const replyOptions = getTelegramAgentReplyOptions(agentResult);
+        const language = await getTelegramUserLanguage(user);
+        const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
         if (replyOptions) {
           await ctx.reply(agentResult.text, replyOptions);

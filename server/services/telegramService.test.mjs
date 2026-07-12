@@ -102,6 +102,15 @@ describe("telegramService", () => {
     expect(message).toContain("/addmed");
   });
 
+  it("localizes the exported Telegram workspace menu text", () => {
+    const message = buildTelegramMainMenuMessage({ name: "Ihor" }, "en");
+
+    expect(message).toContain("Smart Nutrition is nearby, Ihor");
+    expect(message).toContain("/today — quick day summary");
+    expect(message).toContain("/water — water today");
+    expect(message).not.toContain("поруч");
+  });
+
   it("builds daily, water and nutrition summaries from the app snapshot", () => {
     const now = new Date("2026-06-20T12:00:00.000Z");
 
@@ -661,6 +670,71 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("uses the profile language for Telegram reply keyboard labels", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.commands = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn((name, handler) => {
+        this.commands[name] = handler;
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => ({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            languagePreference: "pl",
+          },
+        })),
+      },
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].commands.menu({
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Smart Nutrition jest obok, Ihor"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          input_field_placeholder: "Napisz działanie albo wybierz przycisk",
+        }),
+      })
+    );
+
+    service.stop("test shutdown");
+  });
+
   it("shows water status with storage-backed Telegram quick actions", async () => {
     const instances = [];
     class TestBot {
@@ -721,6 +795,78 @@ describe("telegramService", () => {
             expect.arrayContaining([
               expect.objectContaining({ callback_data: "water:status" }),
             ]),
+          ]),
+        }),
+      })
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("uses the profile language for Telegram water quick actions", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.commands = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn((name, handler) => {
+        this.commands[name] = handler;
+      });
+      action = vi.fn();
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => ({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            languagePreference: "en",
+          },
+        })),
+      },
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].commands.water({
+      chat: { id: 42 },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Вода сьогодні"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({ text: "+250 ml" }),
+              expect.objectContaining({ text: "+500 ml" }),
+            ]),
+            expect.arrayContaining([expect.objectContaining({ text: "💧 Water status" })]),
           ]),
         }),
       })
