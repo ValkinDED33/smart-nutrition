@@ -53,6 +53,23 @@ describe("analyzeProductAdditives", () => {
     expect(insights.find((insight) => insight.id === "caffeine")?.tone).toBe("watch");
   });
 
+  it("extracts user-friendly ingredient insights from Polish composition text", () => {
+    const insights = analyzeProductIngredientInsights(
+      "Woda gazowana, cukier, barwnik E150d, kwas fosforowy, naturalne aromaty, kofeina."
+    );
+
+    expect(insights.map((insight) => insight.id)).toEqual([
+      "water",
+      "sugar",
+      "acid",
+      "colour",
+      "caffeine",
+    ]);
+    expect(
+      analyzeProductAdditives("barwnik E150d, kwas fosforowy").map((item) => item.code)
+    ).toEqual(["E150D", "E338"]);
+  });
+
   it("extracts allergens and preservation signals without exposing raw language noise", () => {
     const insights = analyzeProductIngredientInsights(
       "Wheat flour, milk powder, salt, preservative sodium benzoate, sunflower oil."

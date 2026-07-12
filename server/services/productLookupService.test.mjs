@@ -40,6 +40,7 @@ const openFoodFactsBeverageProduct = {
     "Carbonated water, sugar, colour E150d, phosphoric acid, natural flavourings, caffeine.",
   ingredients_text_pl:
     "Woda gazowana, cukier, barwnik E150d, kwas fosforowy, naturalne aromaty, kofeina.",
+  additives_tags: ["en:e150d-sulphite-ammonia-caramel", "en:e338-phosphoric-acid"],
   nutriments: {
     "energy-kcal_100ml": 42,
     proteins_100ml: 0,
@@ -157,14 +158,16 @@ describe("productLookupService", () => {
         servingSize: "330 ml",
         servingQuantity: 330,
         servingUnit: "ml",
-        ingredientsText: expect.stringContaining("Carbonated water"),
+        ingredientsText: expect.stringContaining("Woda gazowana"),
         ingredientsTextByLanguage: expect.objectContaining({
           en: expect.stringContaining("Carbonated water"),
           pl: expect.stringContaining("Woda gazowana"),
         }),
+        additivesText: expect.stringContaining("E150D"),
       }),
     });
     expect(fetchImpl.mock.calls[0][0]).toContain("quantity%2Cserving_size");
+    expect(fetchImpl.mock.calls[0][0]).toContain("additives_tags");
   });
 
   it("falls back to the secondary OpenFoodFacts host when the primary search host fails", async () => {

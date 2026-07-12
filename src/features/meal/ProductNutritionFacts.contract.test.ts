@@ -8,6 +8,8 @@ describe("ProductNutritionFacts contract", () => {
     expect(source).toContain("analyzeProductIngredientInsights");
     expect(source).toContain("ingredientsSummary");
     expect(source).toContain("ingredientsRaw");
+    expect(source).toContain("product.facts?.additivesText");
+    expect(source).toContain("additiveAnalysisText");
     expect(source).toContain("getProductCategoryLabel(key, language)");
     expect(source).toContain("getProductCategoryKey(product)");
     expect(source).toContain('["beverage"');

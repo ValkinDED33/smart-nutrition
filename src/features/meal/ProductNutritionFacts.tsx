@@ -464,6 +464,9 @@ export const ProductNutritionFacts = ({ product }: Props) => {
       : t("productFacts.perBase", { unit: product.unit });
   const servingSize = product.facts?.servingSize?.trim();
   const ingredientsText = getIngredientsTextForLanguage(product, appLanguage);
+  const additiveAnalysisText = [ingredientsText, product.facts?.additivesText]
+    .filter(Boolean)
+    .join(", ");
   const servingQuantity =
     product.facts?.servingUnit === product.unit &&
     Number.isFinite(product.facts?.servingQuantity)
@@ -475,7 +478,9 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const ingredientInsights = ingredientsText
     ? analyzeProductIngredientInsights(ingredientsText)
     : [];
-  const additiveFindings = ingredientsText ? analyzeProductAdditives(ingredientsText) : [];
+  const additiveFindings = additiveAnalysisText
+    ? analyzeProductAdditives(additiveAnalysisText)
+    : [];
 
   return (
     <Stack spacing={2}>
@@ -677,7 +682,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
               {getLocalizedText(productFactCopy.additiveSafetyNote, appLanguage)}
             </Typography>
           </Stack>
-          {!ingredientsText ? (
+          {!additiveAnalysisText ? (
             <Typography variant="body2" color="text.secondary">
               {getLocalizedText(productFactCopy.additiveCompositionMissing, appLanguage)}
             </Typography>

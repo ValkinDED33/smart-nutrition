@@ -244,6 +244,8 @@ const OPEN_FOOD_FACTS_FIELDS = [
   "ingredients_text_en",
   "ingredients_text_pl",
   "ingredients_text_uk",
+  "additives_tags",
+  "additives_original_tags",
   "image_front_url",
   "image_url",
   "nutriments",
@@ -401,8 +403,8 @@ const readOpenFoodFactsEnergyKcal = (nutriments, unit) => {
 const readOpenFoodFactsIngredients = (rawProduct) =>
   normalizeOptionalText(
     rawProduct.ingredients_text_uk ||
-      rawProduct.ingredients_text_en ||
       rawProduct.ingredients_text_pl ||
+      rawProduct.ingredients_text_en ||
       rawProduct.ingredients_text,
     900
   );
@@ -416,6 +418,31 @@ const readOpenFoodFactsIngredientsByLanguage = (rawProduct) => {
   const entries = Object.entries(byLanguage).filter(([, value]) => Boolean(value));
 
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+};
+
+const normalizeOpenFoodFactsAdditiveTag = (value) => {
+  const text = normalizeText(value, { maxLength: 80 })
+    .replace(/^[a-z]{2}:/i, "")
+    .replace(/-/g, " ");
+  const code = text.match(/\be\s?\d{3}[a-z]?\b/i)?.[0]?.replace(/\s+/g, "").toUpperCase();
+
+  return code ? `${code} ${text}` : text;
+};
+
+const readOpenFoodFactsAdditivesText = (rawProduct) => {
+  const tags = [
+    ...(Array.isArray(rawProduct.additives_tags) ? rawProduct.additives_tags : []),
+    ...(Array.isArray(rawProduct.additives_original_tags)
+      ? rawProduct.additives_original_tags
+      : []),
+  ];
+  const normalizedTags = tags
+    .map(normalizeOpenFoodFactsAdditiveTag)
+    .filter(Boolean);
+
+  return normalizedTags.length > 0
+    ? [...new Set(normalizedTags)].slice(0, 16).join(", ")
+    : null;
 };
 
 const parseOpenFoodFactsProduct = (rawProduct) => {
@@ -448,6 +475,7 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
   const servingMatchesUnit = serving?.unit === unit;
   const ingredientsText = readOpenFoodFactsIngredients(rawProduct);
   const ingredientsTextByLanguage = readOpenFoodFactsIngredientsByLanguage(rawProduct);
+  const additivesText = readOpenFoodFactsAdditivesText(rawProduct);
   const energyKcal = readOpenFoodFactsEnergyKcal(nutriments, unit);
   const nutrients = createNutrients({
     calories: energyKcal,
@@ -506,6 +534,7 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
       foodGroup: category ?? undefined,
       ingredientsText: ingredientsText ?? undefined,
       ingredientsTextByLanguage,
+      additivesText: additivesText ?? undefined,
       servingSize: normalizeOptionalText(rawProduct.serving_size ?? rawProduct.quantity, 80) ?? undefined,
       servingQuantity: servingMatchesUnit ? serving.quantity : undefined,
       servingUnit: servingMatchesUnit ? serving.unit : undefined,
