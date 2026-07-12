@@ -156,6 +156,7 @@ describe("ai.service", () => {
       context: {
         language: "pl",
         userName: "Ira",
+        gender: "female",
         goal: "cut",
         dailyCalories: 2000,
         caloriesConsumed: 1600,
@@ -170,6 +171,13 @@ describe("ai.service", () => {
         latestWeight: 78,
         weightChangeKg: -0.4,
         weeklyCheckInDue: false,
+        womenHealth: {
+          mode: "pregnant",
+          pregnancyWeek: 18,
+          dueDate: "2026-11-20",
+          doctorConfirmed: true,
+          notes: "doctor advised steady hydration",
+        },
         assistantName: "Diana",
         assistantRole: "assistant",
         assistantTone: "gentle",
@@ -222,6 +230,14 @@ describe("ai.service", () => {
     expect(providerBody.messages[1].content).toContain("currentCalories: 1600");
     expect(providerBody.messages[1].content).toContain("waterToday: 1000 / 2200 ml");
     expect(providerBody.messages[1].content).toContain("Interaction channel: web");
+    expect(providerBody.messages[1].content).toContain("womenHealthMode: pregnant");
+    expect(providerBody.messages[1].content).toContain("Pregnancy week: 18");
+    expect(providerBody.messages[1].content).toContain(
+      "Pregnancy doctor confirmed: yes"
+    );
+    expect(providerBody.messages[1].content).toContain(
+      "do not prescribe medication, supplements, dosages"
+    );
     expect(aiRepository.insertConversationMessage).toHaveBeenCalledTimes(2);
     expect(aiRepository.pruneConversationMessages).toHaveBeenCalledWith(currentUser.id, 16);
     expect(aiRepository.insertUsageEvent).toHaveBeenCalledWith(

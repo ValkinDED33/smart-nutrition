@@ -189,6 +189,58 @@ const normalizePersonalDetails = (value) => {
   };
 };
 
+const normalizeGender = (value, fallback = null) => {
+  if (value === "male" || value === "female") {
+    return value;
+  }
+
+  return fallback === "male" || fallback === "female" ? fallback : null;
+};
+
+const normalizeIsoDateOrNull = (value) => {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+
+  return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
+};
+
+const normalizePregnancyWeek = (value) => {
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(numberValue);
+
+  return rounded >= 1 && rounded <= 42 ? rounded : null;
+};
+
+const normalizeWomenHealth = (value, gender) => {
+  const record = isRecord(value) ? value : {};
+  const allowedModes = ["none", "trying_to_conceive", "pregnant", "postpartum"];
+  const mode =
+    gender === "female" && allowedModes.includes(record.mode) ? record.mode : "none";
+
+  return {
+    mode,
+    pregnancyWeek: mode === "pregnant" ? normalizePregnancyWeek(record.pregnancyWeek) : null,
+    dueDate: mode === "pregnant" ? normalizeIsoDateOrNull(record.dueDate) : null,
+    lastPeriodStartDate:
+      mode === "pregnant" || mode === "trying_to_conceive"
+        ? normalizeIsoDateOrNull(record.lastPeriodStartDate)
+        : null,
+    doctorConfirmed:
+      mode === "pregnant" || mode === "trying_to_conceive"
+        ? Boolean(record.doctorConfirmed)
+        : false,
+    notes: normalizeText(record.notes, { maxLength: 220, fallback: "" }),
+  };
+};
+
 const normalizeDailyContextDay = (value) => {
   const record = isRecord(value) ? value : {};
 
@@ -505,6 +557,7 @@ const normalizeContext = (payload, currentUser) => {
   const record = isRecord(payload) ? payload : {};
   const coach = isRecord(record.coach) ? record.coach : {};
   const motivation = isRecord(record.motivation) ? record.motivation : {};
+  const gender = normalizeGender(record.gender, currentUser.gender);
   const assistantTone = normalizeText(record.assistantTone, {
     maxLength: 24,
     fallback: "gentle",
@@ -529,6 +582,7 @@ const normalizeContext = (payload, currentUser) => {
     interactionChannel: normalizeInteractionChannel(
       record.interactionChannel ?? record.channel ?? record.uiMode
     ),
+    gender,
     userName: normalizeText(record.userName, {
       maxLength: 60,
       fallback: currentUser.name ?? "User",
@@ -563,6 +617,7 @@ const normalizeContext = (payload, currentUser) => {
     assistantPersonality,
     communicationStyle,
     personalDetails: normalizePersonalDetails(record.personalDetails),
+    womenHealth: normalizeWomenHealth(record.womenHealth, gender),
     dailyContext: normalizeDailyContext(record.dailyContext),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
@@ -595,6 +650,7 @@ const normalizeContext = (payload, currentUser) => {
         maxLength: 24,
         fallback: currentUser.goal ?? "maintain",
       }),
+      gender,
       dietStyle: normalizeText(record.dietStyle, { maxLength: 24, fallback: "balanced" }),
       latestWeight: toFiniteNumber(record.latestWeight, currentUser.weight ?? 0),
       weeklyCheckInDue: Boolean(record.weeklyCheckInDue),

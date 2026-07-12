@@ -326,6 +326,91 @@ const getTodayMealEntries = (mealState = {}, now = new Date()) => {
   return items.filter((item) => getDateKey(item?.eatenAt ?? 0) === todayKey);
 };
 
+const getLatestWeight = (profile = {}, user = {}) => {
+  const history = Array.isArray(profile.weightHistory) ? profile.weightHistory : [];
+  const latest = Number(history.at(-1)?.weight ?? user.weight ?? 0);
+
+  return Number.isFinite(latest) ? latest : 0;
+};
+
+const getFirstWeight = (profile = {}, latestWeight = 0) => {
+  const history = Array.isArray(profile.weightHistory) ? profile.weightHistory : [];
+  const first = Number(history[0]?.weight ?? latestWeight);
+
+  return Number.isFinite(first) ? first : latestWeight;
+};
+
+const buildTelegramAssistantContextFromSnapshot = ({ user, snapshot }) => {
+  const profile = snapshot?.profile ?? {};
+  const water = snapshot?.water ?? {};
+  const todayEntries = getTodayMealEntries(snapshot?.meal ?? {});
+  const nutrients = calculateMealTotalNutrients(todayEntries);
+  const latestWeight = getLatestWeight(profile, user);
+  const firstWeight = getFirstWeight(profile, latestWeight);
+  const dailyCalories = Number(profile.dailyCalories) || 0;
+  const waterConsumedMl = Number(water.consumedMl) || 0;
+  const waterTargetMl = Number(water.dailyWaterGoal) || 0;
+  const motivation = profile.motivation ?? {};
+
+  return {
+    interactionChannel: "telegram",
+    language: profile.languagePreference ?? "uk",
+    userName: user?.name ?? "",
+    gender: user?.gender ?? null,
+    goal: profile.goal ?? user?.goal ?? "maintain",
+    dietStyle: profile.dietStyle ?? "balanced",
+    dailyCalories,
+    caloriesConsumed: nutrients.calories,
+    caloriesRemaining: dailyCalories - nutrients.calories,
+    proteinConsumed: nutrients.protein,
+    proteinTarget: Math.round(Number(profile.macroTargets?.protein ?? 0) || 0),
+    fatConsumed: nutrients.fat,
+    carbsConsumed: nutrients.carbs,
+    mealEntriesToday: todayEntries.length,
+    waterConsumedMl,
+    waterTargetMl,
+    latestWeight,
+    weightChangeKg: latestWeight - firstWeight,
+    weeklyCheckInDue: false,
+    personalDetails: profile.personalDetails,
+    womenHealth: user?.gender === "female" ? profile.womenHealth : undefined,
+    motivation: {
+      points: Number(motivation.points) || 0,
+      level: Number(motivation.level) || 1,
+      completedTasks: Number(motivation.completedTasks) || 0,
+      activeTasks: Array.isArray(motivation.activeTasks) ? motivation.activeTasks : [],
+    },
+    profile: {
+      goal: profile.goal ?? user?.goal ?? "maintain",
+      gender: user?.gender ?? null,
+      dietStyle: profile.dietStyle ?? "balanced",
+      latestWeight,
+      weeklyCheckInDue: false,
+    },
+    nutritionState: {
+      dailyCalories,
+      caloriesConsumed: nutrients.calories,
+      caloriesRemaining: dailyCalories - nutrients.calories,
+      proteinConsumed: nutrients.protein,
+      proteinTarget: Math.round(Number(profile.macroTargets?.protein ?? 0) || 0),
+      fatConsumed: nutrients.fat,
+      carbsConsumed: nutrients.carbs,
+      waterConsumedMl,
+      waterTargetMl,
+    },
+    behavior: {
+      mealEntriesToday: todayEntries.length,
+      waterLoggedToday: waterConsumedMl > 0,
+      openMotivationTasks: Array.isArray(motivation.activeTasks)
+        ? motivation.activeTasks.filter(
+            (task) => !task?.completedAt && !task?.skippedWithDayOffAt
+          ).length
+        : 0,
+      completedMotivationTasks: Number(motivation.completedTasks) || 0,
+    },
+  };
+};
+
 export const buildTelegramAssistantCapabilitiesMessage = () =>
   [
     "Я можу допомагати зі Smart Nutrition:",
@@ -636,6 +721,35 @@ export const createTelegramService = ({
     return user;
   };
 
+  const buildTelegramAssistantContext = async (user) => {
+    const fallbackContext = {
+      interactionChannel: "telegram",
+      language: "uk",
+      userName: user?.name ?? "",
+      gender: user?.gender ?? null,
+      goal: user?.goal ?? "maintain",
+    };
+
+    if (!stateService?.getSnapshot) {
+      return fallbackContext;
+    }
+
+    try {
+      const snapshot = await stateService.getSnapshot(user);
+      return {
+        ...fallbackContext,
+        ...buildTelegramAssistantContextFromSnapshot({ user, snapshot }),
+      };
+    } catch (error) {
+      logger.warn?.("[telegram] assistant context snapshot unavailable", {
+        provider: "telegram",
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+      return fallbackContext;
+    }
+  };
+
   const replyWithSnapshot = async (ctx, buildMessage) => {
     const user = await getConnectedUser(ctx);
 
@@ -705,10 +819,7 @@ export const createTelegramService = ({
     const agentResult = await assistantAgent.run({
       user,
       message,
-      context: {
-        interactionChannel: "telegram",
-        language: "uk",
-      },
+      context: await buildTelegramAssistantContext(user),
     });
 
     if (!agentResult?.handled) {
@@ -741,10 +852,7 @@ export const createTelegramService = ({
     try {
       const result = await aiService.askQuestion(user, {
         question: message,
-        context: {
-          interactionChannel: "telegram",
-          language: "uk",
-        },
+        context: await buildTelegramAssistantContext(user),
       });
 
       await ctx.reply(result.text);
@@ -1045,10 +1153,7 @@ export const createTelegramService = ({
       const agentResult = await assistantAgent?.run?.({
         user,
         message,
-        context: {
-          interactionChannel: "telegram",
-          language: "uk",
-        },
+        context: await buildTelegramAssistantContext(user),
       });
 
       if (agentResult?.handled) {

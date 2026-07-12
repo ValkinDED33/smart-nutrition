@@ -795,10 +795,10 @@ describe("telegramService", () => {
       expect.objectContaining({
         user: connectedUser,
         message: "додай 250 мл води",
-        context: {
+        context: expect.objectContaining({
           interactionChannel: "telegram",
           language: "uk",
-        },
+        }),
       })
     );
     expect(reply).toHaveBeenCalledWith(
@@ -1046,10 +1046,10 @@ describe("telegramService", () => {
       expect.objectContaining({
         user: connectedUser,
         message: "Я випив 300 мл води",
-        context: {
+        context: expect.objectContaining({
           interactionChannel: "telegram",
           language: "uk",
-        },
+        }),
       })
     );
     expect(reply).toHaveBeenCalledWith("Готово 💧 Додав 300 мл води.");
@@ -1119,13 +1119,130 @@ describe("telegramService", () => {
 
     expect(aiService.askQuestion).toHaveBeenCalledWith(connectedUser, {
       question: "Поговори со мной как помощник",
-      context: {
+      context: expect.objectContaining({
         interactionChannel: "telegram",
         language: "uk",
-      },
+      }),
     });
     expect(reply).toHaveBeenCalledWith(
       "Я поруч. Давай спокійно розберемо твій день і харчування."
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("passes women-health profile context into Telegram AI conversation", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ira",
+      role: "USER",
+      gender: "female",
+      goal: "maintain",
+      weight: 72,
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: false,
+        intent: { intent: "unknown" },
+      })),
+    };
+    const aiService = {
+      askQuestion: vi.fn(async () => ({
+        text: "Тримаю контекст вагітності обережно і без медичних призначень.",
+        mode: "remote-cloud",
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => ({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            goal: "maintain",
+            dietStyle: "balanced",
+            languagePreference: "uk",
+            weightHistory: [
+              { date: "2026-06-01T08:00:00.000Z", weight: 73 },
+              { date: "2026-06-20T08:00:00.000Z", weight: 72 },
+            ],
+            personalDetails: {
+              bloodGroup: "unknown",
+              eyeColor: "green",
+              relationshipStatus: "married",
+              supportSystem: "partner_supports",
+              petCompanion: "none",
+            },
+            womenHealth: {
+              mode: "pregnant",
+              pregnancyWeek: 19,
+              dueDate: "2026-11-15T00:00:00.000Z",
+              lastPeriodStartDate: null,
+              doctorConfirmed: true,
+              notes: "clinician confirmed prenatal plan",
+            },
+          },
+        })),
+      },
+      assistantAgent,
+      aiService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Що мені краще сьогодні по харчуванню?" },
+      reply,
+    });
+
+    expect(aiService.askQuestion).toHaveBeenCalledWith(connectedUser, {
+      question: "Що мені краще сьогодні по харчуванню?",
+      context: expect.objectContaining({
+        interactionChannel: "telegram",
+        language: "uk",
+        userName: "Ira",
+        gender: "female",
+        womenHealth: expect.objectContaining({
+          mode: "pregnant",
+          pregnancyWeek: 19,
+          doctorConfirmed: true,
+        }),
+        personalDetails: expect.objectContaining({
+          eyeColor: "green",
+        }),
+      }),
+    });
+    expect(reply).toHaveBeenCalledWith(
+      "Тримаю контекст вагітності обережно і без медичних призначень."
     );
 
     service.stop("test shutdown");
