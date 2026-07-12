@@ -1053,6 +1053,7 @@ export const createTelegramService = ({
   const botUsername = normalizeBotUsername(config?.telegramBotUsername);
   const botToken = toTrimmedString(config?.telegramBotToken) || null;
   const configured = Boolean(botToken && botUsername);
+  const telegramAssistantMedia = config?.telegramAssistantMedia ?? {};
   let bot = null;
   let launchPromise = null;
   let launched = false;
@@ -1162,6 +1163,53 @@ export const createTelegramService = ({
     }
   };
 
+  const getAssistantReactionMedia = (mood) => {
+    const media = telegramAssistantMedia?.[mood];
+
+    if (
+      !media ||
+      !toTrimmedString(media.value) ||
+      (media.type !== "animation" && media.type !== "sticker")
+    ) {
+      return null;
+    }
+
+    return {
+      type: media.type,
+      value: toTrimmedString(media.value),
+    };
+  };
+
+  const sendAssistantReaction = async (ctx, mood) => {
+    const media = getAssistantReactionMedia(mood);
+
+    if (!media) {
+      return false;
+    }
+
+    try {
+      if (media.type === "animation" && typeof ctx.replyWithAnimation === "function") {
+        await ctx.replyWithAnimation(media.value);
+        return true;
+      }
+
+      if (media.type === "sticker" && typeof ctx.replyWithSticker === "function") {
+        await ctx.replyWithSticker(media.value);
+        return true;
+      }
+    } catch (error) {
+      logger.warn?.("[telegram] assistant reaction failed", {
+        provider: "telegram",
+        mood,
+        type: media.type,
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+    }
+
+    return false;
+  };
+
   const replyWithSnapshot = async (ctx, buildMessage) => {
     const user = await getConnectedUser(ctx);
 
@@ -1233,9 +1281,12 @@ export const createTelegramService = ({
     const copy = getTelegramCopy(language);
 
     if (!assistantAgent?.run) {
+      await sendAssistantReaction(ctx, "error");
       await ctx.reply(copy.assistantUnavailable);
       return null;
     }
+
+    await sendAssistantReaction(ctx, "thinking");
 
     const agentResult = await assistantAgent.run({
       user,
@@ -1244,9 +1295,12 @@ export const createTelegramService = ({
     });
 
     if (!agentResult?.handled) {
+      await sendAssistantReaction(ctx, "error");
       await ctx.reply(copy.assistantSafeFailure);
       return agentResult ?? null;
     }
+
+    await sendAssistantReaction(ctx, "success");
 
     const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
@@ -1259,16 +1313,21 @@ export const createTelegramService = ({
     return agentResult;
   };
 
-  const replyWithAiAssistant = async ({ ctx, user, message }) => {
+  const replyWithAiAssistant = async ({ ctx, user, message, skipThinkingReaction = false }) => {
     const language = await getTelegramUserLanguage(user);
     const copy = getTelegramCopy(language);
 
     if (!aiService?.askQuestion) {
+      await sendAssistantReaction(ctx, "error");
       await ctx.reply(copy.aiUnavailableLines.join("\n"));
       return null;
     }
 
     try {
+      if (!skipThinkingReaction) {
+        await sendAssistantReaction(ctx, "thinking");
+      }
+
       const result = await aiService.askQuestion(user, {
         question: message,
         context: await buildTelegramAssistantContext(user),
@@ -1282,6 +1341,7 @@ export const createTelegramService = ({
         code: toSafeErrorCode(error),
         message: toSafeErrorMessage(error),
       });
+      await sendAssistantReaction(ctx, "error");
       await ctx.reply(copy.aiTemporaryUnavailable);
       return null;
     }
@@ -1289,6 +1349,7 @@ export const createTelegramService = ({
 
   const replyWithMainMenu = async (ctx, user = null) => {
     const language = await getTelegramUserLanguage(user);
+    await sendAssistantReaction(ctx, "greeting");
     await ctx.reply(
       buildTelegramMainMenuMessage(user, language),
       buildTelegramMainMenuKeyboard(language)
@@ -1380,6 +1441,7 @@ export const createTelegramService = ({
       });
 
       if (!verifiedToken.ok) {
+        await sendAssistantReaction(ctx, "error");
         await ctx.reply(telegramCopy.expiredConnectLink);
         return;
       }
@@ -1394,6 +1456,7 @@ export const createTelegramService = ({
       });
 
       if (!user || !chatId) {
+        await sendAssistantReaction(ctx, "error");
         await ctx.reply(telegramCopy.connectAccountNotFound);
         return;
       }
@@ -1426,6 +1489,7 @@ export const createTelegramService = ({
           persisted: telegramPersisted,
         });
         const language = await getTelegramUserLanguage(user);
+        await sendAssistantReaction(ctx, "error");
         await ctx.reply(getTelegramCopy(language).connectSaveFailed);
         return;
       }
@@ -1437,6 +1501,7 @@ export const createTelegramService = ({
       });
 
       const language = await getTelegramUserLanguage(updatedUser);
+      await sendAssistantReaction(ctx, "success");
       await ctx.reply(getTelegramCopy(language).connectedSuccess);
       await replyWithMainMenu(ctx, updatedUser);
     });
@@ -1457,6 +1522,7 @@ export const createTelegramService = ({
       const language = user
         ? await getTelegramUserLanguage(user)
         : getTelegramLanguageFromContext(ctx);
+      await sendAssistantReaction(ctx, "greeting");
       await ctx.reply(
         buildTelegramAssistantCapabilitiesMessage(language),
         buildTelegramMainMenuKeyboard(language)
@@ -1604,6 +1670,8 @@ export const createTelegramService = ({
         return;
       }
 
+      await sendAssistantReaction(ctx, "thinking");
+
       const agentResult = await assistantAgent?.run?.({
         user,
         message,
@@ -1611,6 +1679,7 @@ export const createTelegramService = ({
       });
 
       if (agentResult?.handled) {
+        await sendAssistantReaction(ctx, "success");
         const language = await getTelegramUserLanguage(user);
         const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
@@ -1623,7 +1692,7 @@ export const createTelegramService = ({
         return;
       }
 
-      await replyWithAiAssistant({ ctx, user, message });
+      await replyWithAiAssistant({ ctx, user, message, skipThinkingReaction: true });
     });
 
     nextBot.catch((error) => {

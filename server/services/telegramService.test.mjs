@@ -726,6 +726,65 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("sends configured assistant greeting media before the Telegram menu", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.commands = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn((name, handler) => {
+        this.commands[name] = handler;
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig({
+        telegramAssistantMedia: {
+          greeting: { type: "sticker", value: "assistant-greeting-sticker-id" },
+        },
+      }),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    const replyWithSticker = vi.fn();
+    await instances[0].commands.menu({
+      chat: { id: 42 },
+      reply,
+      replyWithSticker,
+    });
+
+    expect(replyWithSticker).toHaveBeenCalledWith("assistant-greeting-sticker-id");
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Smart Nutrition поруч, Ihor"),
+      expect.any(Object)
+    );
+
+    service.stop("test shutdown");
+  });
+
   it("uses the profile language for Telegram reply keyboard labels", async () => {
     const instances = [];
     class TestBot {
@@ -1259,6 +1318,81 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("uses assistant reaction media around confirmed Telegram agent actions", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Готово. Я зберіг дію після підтвердження backend.",
+      })),
+    };
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const service = createTelegramService({
+      config: createConfig({
+        telegramAssistantMedia: {
+          thinking: { type: "animation", value: "assistant-thinking-animation-id" },
+          success: { type: "animation", value: "assistant-success-animation-id" },
+        },
+      }),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    const replyWithAnimation = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Додай 250 мл води" },
+      reply,
+      replyWithAnimation,
+    });
+
+    expect(replyWithAnimation).toHaveBeenNthCalledWith(
+      1,
+      "assistant-thinking-animation-id"
+    );
+    expect(replyWithAnimation).toHaveBeenNthCalledWith(
+      2,
+      "assistant-success-animation-id"
+    );
+    expect(reply).toHaveBeenCalledWith(
+      "Готово. Я зберіг дію після підтвердження backend."
+    );
+
+    service.stop("test shutdown");
+  });
+
   it("routes connected free-text conversation through the same AI assistant as the website", async () => {
     const instances = [];
     class TestBot {
@@ -1329,6 +1463,78 @@ describe("telegramService", () => {
     expect(reply).toHaveBeenCalledWith(
       "Я поруч. Давай спокійно розберемо твій день і харчування."
     );
+
+    service.stop("test shutdown");
+  });
+
+  it("sends configured thinking media before Telegram AI conversation fallback", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: false,
+        intent: { intent: "unknown" },
+      })),
+    };
+    const aiService = {
+      askQuestion: vi.fn(async () => ({
+        text: "Я поруч як AI-помічник Smart Nutrition.",
+        mode: "remote-cloud",
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig({
+        telegramAssistantMedia: {
+          thinking: { type: "animation", value: "assistant-thinking-animation-id" },
+        },
+      }),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      aiService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    const replyWithAnimation = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Поговори со мной" },
+      reply,
+      replyWithAnimation,
+    });
+
+    expect(replyWithAnimation).toHaveBeenCalledWith("assistant-thinking-animation-id");
+    expect(reply).toHaveBeenCalledWith("Я поруч як AI-помічник Smart Nutrition.");
 
     service.stop("test shutdown");
   });

@@ -30,6 +30,14 @@ const SECRET_FILE_ENV_NAMES = [
   "SMART_NUTRITION_BREVO_LIST_ID",
   "SMART_NUTRITION_TELEGRAM_BOT_TOKEN",
   "SMART_NUTRITION_TELEGRAM_BOT_USERNAME",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_STICKER_GREETING",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_STICKER_THINKING",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_STICKER_SUCCESS",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_STICKER_ERROR",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_ANIMATION_GREETING",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_ANIMATION_THINKING",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_ANIMATION_SUCCESS",
+  "SMART_NUTRITION_TELEGRAM_ASSISTANT_ANIMATION_ERROR",
   "SMART_NUTRITION_SENTRY_DSN",
   "SMART_NUTRITION_DATABASE_URL",
   "SMART_NUTRITION_MONGO_URI",
@@ -52,6 +60,28 @@ const readSecretFileValue = (secretFileDir, name) => {
   } catch {
     return null;
   }
+};
+
+const readTelegramAssistantMedia = (env) => {
+  const moods = ["GREETING", "THINKING", "SUCCESS", "ERROR"];
+
+  return moods.reduce((acc, mood) => {
+    const key = mood.toLowerCase();
+    const animation = toTrimmedString(
+      env[`SMART_NUTRITION_TELEGRAM_ASSISTANT_ANIMATION_${mood}`]
+    );
+    const sticker = toTrimmedString(
+      env[`SMART_NUTRITION_TELEGRAM_ASSISTANT_STICKER_${mood}`]
+    );
+
+    acc[key] = animation
+      ? { type: "animation", value: animation }
+      : sticker
+        ? { type: "sticker", value: sticker }
+        : null;
+
+    return acc;
+  }, {});
 };
 
 const hydrateSecretFileEnv = (env) => {
@@ -1234,6 +1264,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 60_000 }
   );
+  const telegramAssistantMedia = readTelegramAssistantMedia(env);
   const telegramConfigured = Boolean(telegramBotToken && telegramBotUsername);
 
   if (telegramBotToken && !toTrimmedString(env.SMART_NUTRITION_TELEGRAM_BOT_USERNAME)) {
@@ -1480,6 +1511,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     telegramBotToken,
     telegramBotUsername,
     telegramConnectTokenTtlMs,
+    telegramAssistantMedia,
     telegramConfigured,
     assistantApiKey,
     assistantModel,
