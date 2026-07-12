@@ -24,9 +24,11 @@ import {
 } from "@domain/meal/nutrients";
 import {
   analyzeProductAdditives,
+  analyzeProductIngredientInsights,
   getAdditiveRiskColor,
   getAdditiveRiskLabel,
   type AdditiveRiskLevel,
+  type IngredientInsightTone,
 } from "@domain/products/additiveAnalysis";
 import {
   getProductCategoryKey,
@@ -179,6 +181,8 @@ const fallbackBenefitCopy: LocalizedText = {
 const productFactCopy = {
   serving: { uk: "Порція", pl: "Porcja", en: "Serving" },
   ingredients: { uk: "Склад", pl: "Skład", en: "Ingredients" },
+  ingredientsSummary: { uk: "Склад простими словами", pl: "Skład prostym językiem", en: "Ingredients in plain language" },
+  ingredientsRaw: { uk: "Текст з етикетки", pl: "Tekst z etykiety", en: "Label text" },
   nutritionTable: {
     uk: "Поживна цінність",
     pl: "Wartość odżywcza",
@@ -378,6 +382,27 @@ const getRiskStyles = (riskLevel: AdditiveRiskLevel) => {
   }
 };
 
+const getIngredientInsightStyles = (tone: IngredientInsightTone) => {
+  switch (tone) {
+    case "good":
+      return {
+        borderColor: "rgba(34, 197, 94, 0.36)",
+        backgroundColor: "rgba(34, 197, 94, 0.08)",
+      };
+    case "watch":
+      return {
+        borderColor: "rgba(245, 158, 11, 0.42)",
+        backgroundColor: "rgba(245, 158, 11, 0.1)",
+      };
+    case "neutral":
+    default:
+      return {
+        borderColor: BORDER_SOFT,
+        backgroundColor: "rgba(148, 163, 184, 0.08)",
+      };
+  }
+};
+
 interface Props {
   product: Product;
 }
@@ -447,6 +472,9 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const baseQuantity = product.unit === "piece" ? 1 : 100;
   const servingFactor = servingQuantity > 0 ? servingQuantity / baseQuantity : null;
   const standardNutritionRows = getStandardNutritionRows(product, appLanguage);
+  const ingredientInsights = ingredientsText
+    ? analyzeProductIngredientInsights(ingredientsText)
+    : [];
   const additiveFindings = ingredientsText ? analyzeProductAdditives(ingredientsText) : [];
 
   return (
@@ -596,6 +624,33 @@ export const ProductNutritionFacts = ({ product }: Props) => {
           <Stack spacing={0.75}>
             <Typography sx={{ fontWeight: 700 }}>
               {getLocalizedText(productFactCopy.ingredients, appLanguage)}
+            </Typography>
+            {ingredientInsights.length > 0 ? (
+              <Stack spacing={0.8}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  {getLocalizedText(productFactCopy.ingredientsSummary, appLanguage)}
+                </Typography>
+                <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                  {ingredientInsights.map((insight) => (
+                    <Chip
+                      key={insight.id}
+                      label={`${getLocalizedText(insight.label, appLanguage)} · ${getLocalizedText(
+                        insight.group,
+                        appLanguage
+                      )}`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontWeight: 750,
+                        ...getIngredientInsightStyles(insight.tone),
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {getLocalizedText(productFactCopy.ingredientsRaw, appLanguage)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
               {ingredientsText}

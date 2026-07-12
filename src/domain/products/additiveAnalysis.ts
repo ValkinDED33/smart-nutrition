@@ -21,6 +21,16 @@ export interface AdditiveFinding extends AdditiveDefinition {
   dailyExample70Kg?: number;
 }
 
+export type IngredientInsightTone = "neutral" | "good" | "watch";
+
+export interface IngredientInsight {
+  id: string;
+  label: LocalizedText;
+  group: LocalizedText;
+  tone: IngredientInsightTone;
+  matchedText: string;
+}
+
 const preservativeGroup: LocalizedText = {
   uk: "Консервант",
   pl: "Konserwant",
@@ -236,6 +246,114 @@ const matchesAlias = (normalizedIngredients: string, alias: string) => {
   }
 
   return normalizedIngredients.includes(normalizedAlias);
+};
+
+const ingredientInsights: Array<Omit<IngredientInsight, "matchedText"> & { aliases: string[] }> = [
+  {
+    id: "water",
+    aliases: ["water", "woda", "вода", "вуглекисла вода", "carbonated water"],
+    label: { uk: "Вода", pl: "Woda", en: "Water" },
+    group: { uk: "Основа продукту", pl: "Baza produktu", en: "Product base" },
+    tone: "good",
+  },
+  {
+    id: "sugar",
+    aliases: ["sugar", "cukier", "цукор", "сахар", "glucose-fructose syrup", "syrop glukozowo-fruktozowy"],
+    label: { uk: "Цукор", pl: "Cukier", en: "Sugar" },
+    group: { uk: "Швидкі вуглеводи", pl: "Szybkie węglowodany", en: "Fast carbs" },
+    tone: "watch",
+  },
+  {
+    id: "sweetener",
+    aliases: ["sweetener", "sweeteners", "słodzik", "substancja słodząca", "підсолоджувач", "подсластитель", "aspartame", "sucralose", "acesulfame"],
+    label: { uk: "Підсолоджувач", pl: "Słodzik", en: "Sweetener" },
+    group: { uk: "Солодкий смак без цукру", pl: "Słodki smak bez cukru", en: "Sweet taste without sugar" },
+    tone: "watch",
+  },
+  {
+    id: "acid",
+    aliases: ["acid", "acidity regulator", "kwas", "regulator kwasowości", "кислота", "регулятор кислотності", "citric acid", "phosphoric acid"],
+    label: { uk: "Кислоти / регулятор кислотності", pl: "Kwasy / regulator kwasowości", en: "Acids / acidity regulator" },
+    group: { uk: "Смак і кислотність", pl: "Smak i kwasowość", en: "Taste and acidity" },
+    tone: "neutral",
+  },
+  {
+    id: "preservative",
+    aliases: ["preservative", "konserwant", "консервант", "sorbate", "benzoate", "nitrite", "sorbinian", "benzoesan", "azotyn"],
+    label: { uk: "Консервант", pl: "Konserwant", en: "Preservative" },
+    group: { uk: "Захист від псування", pl: "Ochrona przed psuciem", en: "Spoilage protection" },
+    tone: "watch",
+  },
+  {
+    id: "colour",
+    aliases: ["colour", "color", "barwnik", "барвник", "краситель", "caramel", "tartrazine"],
+    label: { uk: "Барвник", pl: "Barwnik", en: "Colour" },
+    group: { uk: "Колір продукту", pl: "Kolor produktu", en: "Product colour" },
+    tone: "watch",
+  },
+  {
+    id: "caffeine",
+    aliases: ["caffeine", "kofeina", "кофеїн", "кофеин"],
+    label: { uk: "Кофеїн", pl: "Kofeina", en: "Caffeine" },
+    group: { uk: "Стимулюючий компонент", pl: "Składnik pobudzający", en: "Stimulant" },
+    tone: "watch",
+  },
+  {
+    id: "salt",
+    aliases: ["salt", "sól", "сіль", "соль", "sodium chloride"],
+    label: { uk: "Сіль", pl: "Sól", en: "Salt" },
+    group: { uk: "Натрій / смак", pl: "Sód / smak", en: "Sodium / taste" },
+    tone: "watch",
+  },
+  {
+    id: "oil",
+    aliases: ["oil", "olej", "олія", "масло", "vegetable oil", "palm oil", "sunflower oil"],
+    label: { uk: "Олії / жири", pl: "Oleje / tłuszcze", en: "Oils / fats" },
+    group: { uk: "Жирова частина", pl: "Część tłuszczowa", en: "Fat component" },
+    tone: "neutral",
+  },
+  {
+    id: "milk",
+    aliases: ["milk", "mleko", "молоко", "lactose", "laktoza", "лактоза", "whey", "serwatka"],
+    label: { uk: "Молоко / лактоза", pl: "Mleko / laktoza", en: "Milk / lactose" },
+    group: { uk: "Алергенний компонент", pl: "Składnik alergenny", en: "Allergen component" },
+    tone: "watch",
+  },
+  {
+    id: "gluten",
+    aliases: ["gluten", "wheat", "pszenica", "глютен", "пшениця", "пшеница"],
+    label: { uk: "Глютен / пшениця", pl: "Gluten / pszenica", en: "Gluten / wheat" },
+    group: { uk: "Алергенний компонент", pl: "Składnik alergenny", en: "Allergen component" },
+    tone: "watch",
+  },
+];
+
+export const analyzeProductIngredientInsights = (
+  ingredientsText: string
+): IngredientInsight[] => {
+  const normalizedIngredients = normalize(ingredientsText);
+
+  if (!normalizedIngredients) {
+    return [];
+  }
+
+  return ingredientInsights.reduce<IngredientInsight[]>((insights, insight) => {
+    const matchedAlias = insight.aliases.find((alias) =>
+      matchesAlias(normalizedIngredients, alias)
+    );
+
+    if (matchedAlias) {
+      insights.push({
+        id: insight.id,
+        label: insight.label,
+        group: insight.group,
+        tone: insight.tone,
+        matchedText: matchedAlias,
+      });
+    }
+
+    return insights;
+  }, []);
 };
 
 export const analyzeProductAdditives = (ingredientsText: string): AdditiveFinding[] => {

@@ -5,6 +5,9 @@ describe("ProductNutritionFacts contract", () => {
   it("keeps product detail food groups aligned with canonical product categories", async () => {
     const source = await readFile("src/features/meal/ProductNutritionFacts.tsx", "utf8");
 
+    expect(source).toContain("analyzeProductIngredientInsights");
+    expect(source).toContain("ingredientsSummary");
+    expect(source).toContain("ingredientsRaw");
     expect(source).toContain("getProductCategoryLabel(key, language)");
     expect(source).toContain("getProductCategoryKey(product)");
     expect(source).toContain('["beverage"');

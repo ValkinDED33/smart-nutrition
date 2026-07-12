@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   analyzeProductAdditives,
+  analyzeProductIngredientInsights,
   getAdditiveRiskLabel,
 } from "./additiveAnalysis";
 
@@ -34,5 +35,39 @@ describe("analyzeProductAdditives", () => {
 
   it("returns no findings when composition has no known additives", () => {
     expect(analyzeProductAdditives("water, oats, banana, chia seeds")).toEqual([]);
+  });
+
+  it("extracts user-friendly ingredient insights from raw composition text", () => {
+    const insights = analyzeProductIngredientInsights(
+      "Carbonated water, sugar, phosphoric acid, colour E150d, caffeine."
+    );
+
+    expect(insights.map((insight) => insight.id)).toEqual([
+      "water",
+      "sugar",
+      "acid",
+      "colour",
+      "caffeine",
+    ]);
+    expect(insights.find((insight) => insight.id === "sugar")?.label.uk).toBe("Цукор");
+    expect(insights.find((insight) => insight.id === "caffeine")?.tone).toBe("watch");
+  });
+
+  it("extracts allergens and preservation signals without exposing raw language noise", () => {
+    const insights = analyzeProductIngredientInsights(
+      "Wheat flour, milk powder, salt, preservative sodium benzoate, sunflower oil."
+    );
+
+    expect(insights.map((insight) => insight.id)).toEqual([
+      "preservative",
+      "salt",
+      "oil",
+      "milk",
+      "gluten",
+    ]);
+    expect(insights.find((insight) => insight.id === "milk")?.label.uk).toBe("Молоко / лактоза");
+    expect(insights.find((insight) => insight.id === "gluten")?.group.uk).toBe(
+      "Алергенний компонент"
+    );
   });
 });
