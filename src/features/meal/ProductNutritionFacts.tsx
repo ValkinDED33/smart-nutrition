@@ -88,6 +88,21 @@ const factLabels = new Map<string, LocalizedText>([
 ]);
 
 const benefitCopy = new Map<string, LocalizedText>([
+  ["beverage", {
+    uk: "Оцініть цукор, калорії та об'єм порції: напої легко непомітно додають енергію за день.",
+    pl: "Sprawdź cukier, kalorie i objętość porcji: napoje łatwo dodają energię niezauważenie.",
+    en: "Check sugar, calories, and serving volume: drinks can quietly add energy during the day.",
+  }],
+  ["egg", {
+    uk: "Дає зручний білок і жири; порцію легко вписати в сніданок або перекус.",
+    pl: "Daje wygodne białko i tłuszcz; porcję łatwo wpasować w śniadanie albo przekąskę.",
+    en: "Provides convenient protein and fat; easy to fit into breakfast or a snack.",
+  }],
+  ["fish", {
+    uk: "Корисний білковий продукт; зверніть увагу на жири, сіль і спосіб приготування.",
+    pl: "Wartościowe źródło białka; zwróć uwagę na tłuszcz, sól i sposób przygotowania.",
+    en: "A useful protein food; check fat, salt, and preparation method.",
+  }],
   ["fruit", {
     uk: "Дає легкий об'єм раціону, клітковину та мікронутрієнти.",
     pl: "Daje lekki wolumen dnia, błonnik i mikroskładniki.",
@@ -118,6 +133,11 @@ const benefitCopy = new Map<string, LocalizedText>([
     pl: "Dostarcza błonnika i białka roślinnego dla sytości.",
     en: "Adds fiber and plant protein for fullness.",
   }],
+  ["meat", {
+    uk: "Добре працює як білкова основа; перевірте жири, сіль і розмір порції.",
+    pl: "Dobrze działa jako baza białkowa; sprawdź tłuszcz, sól i wielkość porcji.",
+    en: "Works well as a protein base; check fat, salt, and portion size.",
+  }],
   ["nuts", {
     uk: "Дає концентровані жири та мікроелементи, тому порцію краще контролювати.",
     pl: "Daje skoncentrowane tłuszcze i mikroelementy, więc warto pilnować porcji.",
@@ -127,6 +147,26 @@ const benefitCopy = new Map<string, LocalizedText>([
     uk: "Підсилює смак і додає жири, але калорії зростають швидко.",
     pl: "Wspiera smak i dostarcza tłuszczu, ale kalorie rosną szybko.",
     en: "Boosts flavor and adds fat, but calories rise quickly.",
+  }],
+  ["readyMeal", {
+    uk: "Зручно, але варто перевірити сіль, жири, цукор і реальний розмір порції.",
+    pl: "Wygodne, ale warto sprawdzić sól, tłuszcz, cukier i realną wielkość porcji.",
+    en: "Convenient, but check salt, fat, sugar, and the real serving size.",
+  }],
+  ["sauce", {
+    uk: "Маленька порція може сильно змінити калорії, цукор або сіль у страві.",
+    pl: "Mała porcja może mocno zmienić kalorie, cukier albo sól w posiłku.",
+    en: "A small serving can noticeably change calories, sugar, or salt in a meal.",
+  }],
+  ["snack", {
+    uk: "Перевірте калорії, сіль і жири: снеки легко з'їсти більше запланованого.",
+    pl: "Sprawdź kalorie, sól i tłuszcze: przekąski łatwo zjeść ponad plan.",
+    en: "Check calories, salt, and fat: snacks are easy to overeat.",
+  }],
+  ["sweets", {
+    uk: "Зверніть увагу на цукор, жири та порцію, щоб не зламати денний баланс.",
+    pl: "Zwróć uwagę na cukier, tłuszcz i porcję, aby nie rozbić bilansu dnia.",
+    en: "Watch sugar, fat, and portion size so the daily balance stays clear.",
   }],
 ]);
 
@@ -193,7 +233,7 @@ const getFactLabel = (key: string, language: AppLanguage) => {
 const getFoodGroupLabel = (key: string, language: AppLanguage) => {
   const label = foodGroupLabels.get(key);
 
-  return label ? getLocalizedText(label, language) : null;
+  return label ? getLocalizedText(label, language) : getProductCategoryLabel(key, language);
 };
 
 const getBenefitSummary = (key: string | null, language: AppLanguage) => {
