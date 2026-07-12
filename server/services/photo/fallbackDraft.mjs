@@ -1,30 +1,3 @@
-import { breakfastTemplates, lunchDinnerTemplates, snackTemplates } from "./fallbackTemplates.mjs";
-
-const getTemplate = (mealType, dietStyle) => {
-  if (mealType === "breakfast") {
-    return breakfastTemplates[dietStyle];
-  }
-
-  if (mealType === "snack") {
-    return snackTemplates[dietStyle];
-  }
-
-  return lunchDinnerTemplates[dietStyle];
-};
-
-const removeBlockedItems = (items, blockedTokens) => {
-  if (blockedTokens.length === 0) {
-    return items;
-  }
-
-  return items.filter(
-    (item) =>
-      !blockedTokens.some((blockedToken) =>
-        item.tokens.some((token) => token.includes(blockedToken))
-      )
-  );
-};
-
 const toPortionRangeGrams = (quantityGrams) => {
   const quantity = Math.max(Math.round(Number(quantityGrams) || 100), 5);
   const min = Math.max(Math.round((quantity * 0.75) / 5) * 5, 5);
@@ -43,26 +16,6 @@ const toPhotoSuggestion = (item, { uncertain = true } = {}) => ({
   uncertain,
   estimatedNutritionPer100g: item.estimatedNutritionPer100g,
 });
-
-const createInterpretation = ({ id, title, reason, items, confidence }) => ({
-  id,
-  title,
-  confidence: Math.min(Number(confidence) || 0.12, 0.69),
-  reason,
-  items: items.slice(0, 4).map((item) => toPhotoSuggestion(item)),
-});
-
-const getAlternativeMealTypes = (mealType) => {
-  if (mealType === "breakfast") {
-    return ["snack", "lunch"];
-  }
-
-  if (mealType === "snack") {
-    return ["breakfast", "lunch"];
-  }
-
-  return ["snack", "breakfast"];
-};
 
 const getFeedbackItemsFromMealState = (mealState) => {
   const entries = Array.isArray(mealState?.items) ? mealState.items : [];
@@ -118,65 +71,39 @@ const getFeedbackItemsFromMealState = (mealState) => {
     }));
 };
 
-const getMealLabel = (mealType) =>
-  mealType.charAt(0).toUpperCase() + mealType.slice(1);
 const photoDraftSummary =
-  "I prepared a food draft from the photo. Please check ingredients and portions before saving. This draft uses meal context, profile preferences, and your previous confirmed corrections without inventing hidden ingredients or exact grams.";
+  "I could not confidently identify visible foods from this photo. Please add the visible ingredients manually before saving.";
 const photoDraftReviewCaution =
-  "Photo draft only. Please check ingredients and portions before saving.";
+  "No food was automatically identified. The diary will not be changed until you confirm ingredients.";
 
 export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens, mealState, image }) => {
-  const template = getTemplate(mealType, dietStyle);
-  const filteredTemplate = removeBlockedItems(template, blockedTokens);
-  const baseItems = filteredTemplate.length > 0 ? filteredTemplate : template;
+  void mealType;
+  void dietStyle;
+  void blockedTokens;
   const feedbackItems = getFeedbackItemsFromMealState(mealState);
-  const items = (feedbackItems.length > 0 ? feedbackItems : baseItems).map((item) =>
-    toPhotoSuggestion(item)
-  );
-  const interpretationSources = [
-    {
-      id: "current-meal-pattern",
-      title: `${getMealLabel(mealType)} option`,
-      reason:
-        "Built from meal type, profile preferences, allergies/exclusions, and safe starter ingredients.",
-      items: baseItems,
-      confidence: 0.28,
-    },
-    ...getAlternativeMealTypes(mealType).map((alternativeMealType, index) => ({
-      id: `alternative-${alternativeMealType}`,
-      title: `${getMealLabel(alternativeMealType)} option`,
-      reason:
-        "Another possible match because a single photo may hide ingredients, sauces, or portion boundaries.",
-      items: removeBlockedItems(getTemplate(alternativeMealType, dietStyle), blockedTokens),
-      confidence: index === 0 ? 0.22 : 0.18,
-    })),
-  ];
-  const feedbackInterpretation =
-    feedbackItems.length > 0
-      ? [
-          {
-            id: "user-confirmed-history",
-            title: "Previously confirmed by you",
-            reason:
-              "Uses ingredients you previously corrected and confirmed from photo drafts. Confirm again before saving.",
-            items: feedbackItems,
-            confidence: 0.34,
-          },
-        ]
-      : [];
-  const interpretations = [...feedbackInterpretation, ...interpretationSources]
-    .slice(0, 3)
-    .map(createInterpretation);
+  const items = feedbackItems.map((item) => toPhotoSuggestion(item));
+  const interpretations = feedbackItems.length > 0
+    ? [
+        {
+          id: "user-confirmed-history",
+          title: "Previously confirmed by you",
+          reason:
+            "Uses ingredients you previously corrected and confirmed from photo drafts. Confirm again before saving.",
+          items,
+          confidence: 0.34,
+        },
+      ]
+    : [];
 
   return {
-    dishName: `${getMealLabel(mealType)} photo draft`,
+    dishName: "Photo needs checking",
     summary: photoDraftSummary,
-    confidence: Math.max(...interpretations.map((item) => item.confidence), 0.18),
+    confidence: feedbackItems.length > 0 ? 0.34 : 0,
     estimatedPortions: 1,
     cautions: [
       photoDraftReviewCaution,
       "Portions are ranges; exact grams are not visible from the photo alone.",
-      "Hidden sauces, oils, fillings, and drinks must be added manually.",
+      "Add sauces, oils, fillings, drinks, and visible foods manually.",
     ],
     uncertainIngredients: items.map((item) => item.name),
     hiddenIngredientQuestions: [

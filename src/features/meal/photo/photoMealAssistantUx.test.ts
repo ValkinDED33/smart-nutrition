@@ -96,6 +96,7 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).toContain("Чернетка сніданку з фото");
     expect(componentSource).toContain("Грецький йогурт");
     expect(componentSource).toContain("Jogurt grecki");
+    expect(componentSource).toContain("needsManualPhotoTitle");
     expect(componentSource).toContain("item.originalName?.trim() || item.name");
   });
 

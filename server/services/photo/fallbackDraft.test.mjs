@@ -10,7 +10,7 @@ const image = {
 };
 
 describe("fallbackDraft", () => {
-  it("builds an honest low-confidence review draft with portion ranges", () => {
+  it("builds an honest empty review draft instead of fake template foods", () => {
     const result = createFallbackPhotoAnalysis({
       mealType: "breakfast",
       dietStyle: "balanced",
@@ -20,10 +20,10 @@ describe("fallbackDraft", () => {
     });
 
     expect(result).toMatchObject({
-      dishName: "Breakfast photo draft",
+      dishName: "Photo needs checking",
       image,
       manualReviewRequired: true,
-      summary: expect.stringContaining("Please check ingredients and portions before saving"),
+      summary: expect.stringContaining("could not confidently identify"),
       hiddenIngredientQuestions: expect.arrayContaining([expect.stringContaining("sauces")]),
     });
     expect(result.summary).not.toContain("AI estimate");
@@ -35,20 +35,11 @@ describe("fallbackDraft", () => {
       /candidate|alternative/i
     );
     expect(result.confidence).toBeLessThan(0.7);
-    expect(result.items.length).toBeGreaterThan(0);
-    expect(result.items[0]).toMatchObject({
-      uncertain: true,
-      portionRangeGrams: {
-        min: expect.any(Number),
-        max: expect.any(Number),
-      },
-    });
-    expect(result.items[0].portionRangeGrams.max).toBeGreaterThan(
-      result.items[0].portionRangeGrams.min
-    );
+    expect(result.items).toEqual([]);
+    expect(result.interpretations).toEqual([]);
   });
 
-  it("filters blocked ingredients from the primary fallback candidates", () => {
+  it("does not use meal type templates as fake photo recognition results", () => {
     const result = createFallbackPhotoAnalysis({
       mealType: "breakfast",
       dietStyle: "balanced",
@@ -57,11 +48,10 @@ describe("fallbackDraft", () => {
       image,
     });
 
-    const primaryNames = result.interpretations[0].items.map((item) => item.name);
-
-    expect(primaryNames).not.toContain("Greek yogurt");
-    expect(primaryNames).not.toContain("Oats");
-    expect(primaryNames).toContain("Banana");
+    expect(result.items.map((item) => item.name)).not.toEqual(
+      expect.arrayContaining(["Greek yogurt", "Oats", "Banana"])
+    );
+    expect(result.uncertainIngredients).toEqual([]);
   });
 
   it("prioritizes previously confirmed photo corrections without making them certain", () => {

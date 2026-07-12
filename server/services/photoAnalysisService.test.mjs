@@ -42,22 +42,9 @@ describe("photoAnalysisService", () => {
         normalizedFormat: "jpeg",
       },
       manualReviewRequired: true,
-      summary: expect.stringContaining("Please check ingredients and portions before saving"),
-      interpretations: expect.arrayContaining([
-        expect.objectContaining({
-          confidence: expect.any(Number),
-          reason: expect.any(String),
-          items: expect.arrayContaining([
-            expect.objectContaining({
-              portionRangeGrams: expect.objectContaining({
-                min: expect.any(Number),
-                max: expect.any(Number),
-              }),
-              uncertain: true,
-            }),
-          ]),
-        }),
-      ]),
+      summary: expect.stringContaining("could not confidently identify"),
+      items: [],
+      interpretations: [],
       hiddenIngredientQuestions: expect.arrayContaining([
         expect.stringContaining("sauces"),
       ]),

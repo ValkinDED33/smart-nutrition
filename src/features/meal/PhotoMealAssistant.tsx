@@ -305,6 +305,7 @@ const photoCopy = {
     reviewStepSave: "Збереження",
     reviewStepSaveBody: "запис створиться тільки після вашого підтвердження",
     selectedHint: "Поки нічого не вибрано. Позначте інгредієнти, які треба додати.",
+    needsManualPhotoTitle: "Фото потребує ручної перевірки",
     portions: "Порція",
     portionLight: "Легка",
     portionRegular: "Стандарт",
@@ -374,6 +375,7 @@ const photoCopy = {
     reviewStepSave: "Zapis",
     reviewStepSaveBody: "wpis powstanie dopiero po Twoim potwierdzeniu",
     selectedHint: "Na razie nic nie wybrano. Zaznacz składniki, które chcesz dodać.",
+    needsManualPhotoTitle: "Zdjęcie wymaga ręcznego sprawdzenia",
     portions: "Porcja",
     portionLight: "Lekka",
     portionRegular: "Standard",
@@ -444,6 +446,7 @@ const photoCopy = {
     reviewStepSave: "Save",
     reviewStepSaveBody: "the diary entry is created only after confirmation",
     selectedHint: "Nothing is selected yet. Tick the ingredients you want to add.",
+    needsManualPhotoTitle: "Photo needs checking",
     portions: "Portion",
     portionLight: "Light",
     portionRegular: "Regular",
@@ -603,13 +606,18 @@ const localizeFallbackPhotoAnalysis = (
           originalName: item.originalName || item.name,
         };
   };
-  const localizeDraftTitle = (title: string) =>
-    /^(Breakfast|Lunch|Dinner|Snack) photo draft$/i.test(title)
+  const localizeDraftTitle = (title: string) => {
+    if (/^Photo needs checking$/i.test(title)) {
+      return getPhotoCopy(language).needsManualPhotoTitle;
+    }
+
+    return /^(Breakfast|Lunch|Dinner|Snack) photo draft$/i.test(title)
       ? getLocalizedMealDraftName(language, mealType)
       : title.replace(/\b(Breakfast|Lunch|Dinner|Snack) option\b/gi, (value) => {
           const normalizedMealType = value.toLowerCase().split(" ")[0] as MealType;
           return getLocalizedMealOptionName(language, normalizedMealType) || value;
         });
+  };
 
   return {
     ...analysis,
