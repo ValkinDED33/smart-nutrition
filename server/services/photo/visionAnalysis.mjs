@@ -325,6 +325,7 @@ export const normalizeVisionAnalysis = (payload) => {
       fallback: interpretations[0].title || "Photo meal estimate",
     }),
     summary: hasReviewPrefix ? summary : `${photoDraftSummaryPrefix} ${summary}`,
+    recognitionStatus: confidence >= 0.7 ? "recognized" : "needs_review",
     confidence,
     estimatedPortions: 1,
     cautions: [

@@ -110,9 +110,10 @@ describe("photo meal assistant UX contract", () => {
   });
 
   it("guides the user to retake unclear food photos instead of inventing ingredients", () => {
+    expect(componentSource).toContain("shouldShowBetterPhotoGuidance");
+    expect(componentSource).toContain('recognitionStatus === "needs_better_photo"');
     expect(componentSource).toContain("copy.poorPhotoTitle");
     expect(componentSource).toContain("copy.poorPhotoTips");
-    expect(componentSource).toContain("analysis.items.length === 0");
     expect(componentSource).toContain("щоб фото не було розмитим");
     expect(componentSource).toContain("image is not blurry");
   });

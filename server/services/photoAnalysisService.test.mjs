@@ -168,6 +168,7 @@ describe("photoAnalysisService", () => {
       expect(result.summary).toContain("Please check ingredients and portions before saving");
       expect(result.summary).not.toContain("AI estimate");
       expect(result.manualReviewRequired).toBe(true);
+      expect(result.recognitionStatus).toBe("recognized");
       expect(result.confidence).toBeLessThan(0.9);
       expect(result.items[0]).toMatchObject({
         name: "Tortilla wrap",
@@ -279,6 +280,7 @@ describe("photoAnalysisService", () => {
       expect(calls[1]).toContain("generativelanguage.googleapis.com");
       expect(calls.join(" ")).not.toContain("groq.com");
       expect(result.items).toHaveLength(1);
+      expect(result.recognitionStatus).toBe("needs_review");
       expect(result.items[0]).toMatchObject({
         name: "Cinnamon roll",
         portionRangeGrams: { min: 80, max: 140 },

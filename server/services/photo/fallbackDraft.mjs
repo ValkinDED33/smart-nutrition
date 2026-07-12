@@ -98,6 +98,7 @@ export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens
   return {
     dishName: "Photo needs checking",
     summary: photoDraftSummary,
+    recognitionStatus: feedbackItems.length > 0 ? "needs_review" : "needs_better_photo",
     confidence: feedbackItems.length > 0 ? 0.34 : 0,
     estimatedPortions: 1,
     cautions: [

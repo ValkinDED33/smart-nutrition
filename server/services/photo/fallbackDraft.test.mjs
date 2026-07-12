@@ -23,6 +23,7 @@ describe("fallbackDraft", () => {
       dishName: "Photo needs checking",
       image,
       manualReviewRequired: true,
+      recognitionStatus: "needs_better_photo",
       summary: expect.stringContaining("could not confidently identify"),
       hiddenIngredientQuestions: expect.arrayContaining([
         expect.stringContaining("brighter light"),
@@ -89,6 +90,7 @@ describe("fallbackDraft", () => {
       id: "user-confirmed-history",
       title: "Previously confirmed by you",
     });
+    expect(result.recognitionStatus).toBe("needs_review");
     expect(result.items[0]).toMatchObject({
       name: "Turkey wrap",
       reason: expect.stringContaining("Previously confirmed"),

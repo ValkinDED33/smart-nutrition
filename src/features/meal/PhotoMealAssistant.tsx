@@ -673,6 +673,10 @@ const getLocalizedHiddenIngredientQuestions = (
     : copy.hiddenQuestionList;
 };
 
+const shouldShowBetterPhotoGuidance = (analysis: PhotoMealAnalysis) =>
+  analysis.recognitionStatus === "needs_better_photo" ||
+  (analysis.items.length === 0 && analysis.confidence === 0);
+
 type Props = {
   mealType: MealType;
 };
@@ -1339,7 +1343,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   </Alert>
                 )}
 
-              {analysis.items.length === 0 && (
+              {shouldShowBetterPhotoGuidance(analysis) && (
                 <Alert severity="info">
                   <Stack spacing={0.5}>
                     <Typography sx={{ fontWeight: 800 }}>{copy.poorPhotoTitle}</Typography>
