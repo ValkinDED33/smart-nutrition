@@ -125,13 +125,39 @@ const normalizeStringArray = (value: unknown) =>
         .slice(0, 16)
     : [];
 
+const normalizeIngredientsTextByLanguage = (value: unknown) => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const byLanguage = {
+    uk: toString(value.uk, "", 1200) || undefined,
+    pl: toString(value.pl, "", 1200) || undefined,
+    en: toString(value.en, "", 1200) || undefined,
+  };
+  const entries = Object.entries(byLanguage).filter(([, text]) => Boolean(text));
+
+  return entries.length > 0
+    ? (Object.fromEntries(entries) as NonNullable<Product["facts"]>["ingredientsTextByLanguage"])
+    : undefined;
+};
+
 const normalizeProduct = (value: unknown): Product => {
   const record = isRecord(value) ? value : {};
+  const unit = isUnit(record.unit) ? record.unit : "g";
+  const servingUnit =
+    isRecord(record.facts) && isUnit(record.facts.servingUnit)
+      ? record.facts.servingUnit
+      : undefined;
+  const servingQuantity =
+    isRecord(record.facts) && servingUnit === unit
+      ? toPositiveNumber(record.facts.servingQuantity, 0)
+      : 0;
 
   return {
     id: toString(record.id, createId("product"), 96),
     name: toString(record.name, "Unknown product", 160),
-    unit: isUnit(record.unit) ? record.unit : "g",
+    unit,
     source: isSource(record.source) ? record.source : "Manual",
     brand: toString(record.brand, "", 120) || undefined,
     barcode: toString(record.barcode, "", 64) || undefined,
@@ -144,6 +170,16 @@ const normalizeProduct = (value: unknown): Product => {
           proteinTypes: normalizeStringArray(record.facts.proteinTypes),
           fatTypes: normalizeStringArray(record.facts.fatTypes),
           extraCompounds: normalizeStringArray(record.facts.extraCompounds),
+          ingredientsText: toString(record.facts.ingredientsText, "", 1200) || undefined,
+          ingredientsTextByLanguage: normalizeIngredientsTextByLanguage(
+            record.facts.ingredientsTextByLanguage
+          ),
+          additivesText: toString(record.facts.additivesText, "", 900) || undefined,
+          allergens: normalizeStringArray(record.facts.allergens),
+          traces: normalizeStringArray(record.facts.traces),
+          servingSize: toString(record.facts.servingSize, "", 120) || undefined,
+          servingQuantity: servingQuantity > 0 ? servingQuantity : undefined,
+          servingUnit: servingUnit === unit ? servingUnit : undefined,
         }
       : undefined,
     nutrients: normalizeNutrients(record.nutrients),
