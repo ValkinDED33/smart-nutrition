@@ -49,6 +49,54 @@ const normalizePregnancyWeek = (value: unknown) => {
   return rounded >= 1 && rounded <= 42 ? rounded : null;
 };
 
+const PREGNANCY_DAYS = 280;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+
+const readDateTime = (value: string | null | undefined) => {
+  if (!value) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const clampPregnancyWeek = (week: number) =>
+  Math.max(1, Math.min(42, Math.round(week)));
+
+export const getEffectivePregnancyWeek = (
+  state: Pick<WomenHealthState, "pregnancyWeek" | "dueDate" | "lastPeriodStartDate">,
+  now: Date = new Date()
+) => {
+  if (state.pregnancyWeek) {
+    return clampPregnancyWeek(state.pregnancyWeek);
+  }
+
+  const nowTime = now.getTime();
+  const dueTime = readDateTime(state.dueDate);
+
+  if (dueTime !== null) {
+    const elapsedWeeks = (PREGNANCY_DAYS - (dueTime - nowTime) / DAY_MS) / 7;
+
+    if (Number.isFinite(elapsedWeeks) && elapsedWeeks >= 1 && elapsedWeeks <= 42) {
+      return clampPregnancyWeek(elapsedWeeks);
+    }
+  }
+
+  const lastPeriodTime = readDateTime(state.lastPeriodStartDate);
+
+  if (lastPeriodTime !== null) {
+    const elapsedWeeks = (nowTime - lastPeriodTime) / WEEK_MS;
+
+    if (Number.isFinite(elapsedWeeks) && elapsedWeeks >= 1 && elapsedWeeks <= 42) {
+      return clampPregnancyWeek(elapsedWeeks);
+    }
+  }
+
+  return null;
+};
+
 export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
   const fallback = createDefaultWomenHealthState();
   const record = isRecord(value) ? value : {};

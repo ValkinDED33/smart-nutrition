@@ -14,7 +14,10 @@ import QRCode from "qrcode";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import type { WomenHealthMode, WomenHealthState } from "@domain/profile/types";
-import { isWomenHealthVisibleForGender } from "@domain/profile/womenHealth";
+import {
+  getEffectivePregnancyWeek,
+  isWomenHealthVisibleForGender,
+} from "@domain/profile/womenHealth";
 import {
   acceptRemotePartnerInvite,
   createRemotePartnerInvite,
@@ -479,10 +482,11 @@ export const WomenHealthOverviewCard = () => {
   };
 
   const cycleDay = getCycleDay(womenHealth.lastPeriodStartDate);
-  const trimester = getTrimester(womenHealth.pregnancyWeek);
+  const effectivePregnancyWeek = getEffectivePregnancyWeek(womenHealth);
+  const trimester = getTrimester(effectivePregnancyWeek);
   const dueInDays = getDaysUntilIso(womenHealth.dueDate);
-  const pregnancyProgress = womenHealth.pregnancyWeek
-    ? clampPercent((womenHealth.pregnancyWeek / 40) * 100)
+  const pregnancyProgress = effectivePregnancyWeek
+    ? clampPercent((effectivePregnancyWeek / 40) * 100)
     : 0;
   const cycleProgress = cycleDay ? clampPercent((cycleDay / DEFAULT_CYCLE_DAYS) * 100) : 0;
   const ovulationDay = DEFAULT_CYCLE_DAYS - DEFAULT_LUTEAL_DAYS;
@@ -559,7 +563,7 @@ export const WomenHealthOverviewCard = () => {
                       {copy.pregnancyWeek}
                     </Typography>
                     <Typography color="text.secondary">
-                      {womenHealth.pregnancyWeek ? `${womenHealth.pregnancyWeek} / 40` : copy.none}
+                      {effectivePregnancyWeek ? `${effectivePregnancyWeek} / 40` : copy.none}
                     </Typography>
                   </Stack>
                 </Box>
@@ -627,9 +631,9 @@ export const WomenHealthOverviewCard = () => {
               variant="outlined"
             />
             {cycleDay && <Chip label={`${copy.cycleDay}: ${cycleDay}`} variant="outlined" />}
-            {womenHealth.pregnancyWeek && (
+            {effectivePregnancyWeek && (
               <Chip
-                label={`${copy.pregnancyWeek}: ${womenHealth.pregnancyWeek}`}
+                label={`${copy.pregnancyWeek}: ${effectivePregnancyWeek}`}
                 color="primary"
                 variant="outlined"
               />
@@ -676,8 +680,8 @@ export const WomenHealthOverviewCard = () => {
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 850 }}>{copy.pregnancyWeek}</Typography>
               <Typography color="text.secondary">
-                {womenHealth.pregnancyWeek
-                  ? `${womenHealth.pregnancyWeek} / 40`
+                {effectivePregnancyWeek
+                  ? `${effectivePregnancyWeek} / 40`
                   : getModeLabel(copy, womenHealth.mode)}
               </Typography>
               <LinearProgress

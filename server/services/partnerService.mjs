@@ -3,6 +3,9 @@ import { StateApiError, createOpaqueToken, hashOneTimeToken } from "../lib/domai
 
 const PARTNER_INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PARTNER_PERMISSION = "pregnancy_timeline";
+const PREGNANCY_DAYS = 280;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
 
 const isRecord = (value) => value && typeof value === "object" && !Array.isArray(value);
 
@@ -71,12 +74,49 @@ const getPregnancyMilestone = (week) => {
   };
 };
 
+const readDateTime = (value) => {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const clampPregnancyWeek = (week) => Math.max(1, Math.min(42, Math.round(week)));
+
+const getEffectivePregnancyWeek = (womenHealth, now = new Date()) => {
+  if (typeof womenHealth.pregnancyWeek === "number" && Number.isFinite(womenHealth.pregnancyWeek)) {
+    return clampPregnancyWeek(womenHealth.pregnancyWeek);
+  }
+
+  const nowTime = now.getTime();
+  const dueTime = readDateTime(womenHealth.dueDate);
+
+  if (dueTime !== null) {
+    const elapsedWeeks = (PREGNANCY_DAYS - (dueTime - nowTime) / DAY_MS) / 7;
+
+    if (Number.isFinite(elapsedWeeks) && elapsedWeeks >= 1 && elapsedWeeks <= 42) {
+      return clampPregnancyWeek(elapsedWeeks);
+    }
+  }
+
+  const lastPeriodTime = readDateTime(womenHealth.lastPeriodStartDate);
+
+  if (lastPeriodTime !== null) {
+    const elapsedWeeks = (nowTime - lastPeriodTime) / WEEK_MS;
+
+    if (Number.isFinite(elapsedWeeks) && elapsedWeeks >= 1 && elapsedWeeks <= 42) {
+      return clampPregnancyWeek(elapsedWeeks);
+    }
+  }
+
+  return null;
+};
+
 const sanitizePregnancyShare = ({ ownerUser, ownerProfile }) => {
   const womenHealth = isRecord(ownerProfile?.womenHealth) ? ownerProfile.womenHealth : {};
-  const week =
-    typeof womenHealth.pregnancyWeek === "number" && Number.isFinite(womenHealth.pregnancyWeek)
-      ? Math.max(1, Math.min(42, Math.round(womenHealth.pregnancyWeek)))
-      : null;
+  const week = getEffectivePregnancyWeek(womenHealth);
 
   return {
     owner: {

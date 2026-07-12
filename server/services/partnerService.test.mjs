@@ -129,4 +129,36 @@ describe("partnerService", () => {
     expect(result.items[0].owner.name).toBe("Anna");
     expect(result.items[0].pregnancy.pregnancyWeek).toBe(20);
   });
+
+  it("derives partner pregnancy timeline from due date when week is missing", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-12T12:00:00.000Z"));
+
+    try {
+      const { owner, partner, profiles, service } = createFixture();
+      profiles.set(
+        owner.id,
+        createProfile({
+          womenHealth: {
+            mode: "pregnant",
+            pregnancyWeek: null,
+            dueDate: "2026-11-20T00:00:00.000Z",
+            lastPeriodStartDate: null,
+            doctorConfirmed: true,
+            notes: "Private clinician note",
+            updatedAt: "2026-07-10T12:00:00.000Z",
+          },
+        })
+      );
+      const invite = await service.createInvite(owner);
+
+      const result = await service.acceptInvite(partner, invite.code);
+
+      expect(result.share.pregnancy.pregnancyWeek).toBe(21);
+      expect(result.share.baby.sizeKey).toBe("banana");
+      expect(JSON.stringify(result.share)).not.toContain("Private clinician note");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -31,6 +31,8 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("copy.pregnancyTimeline");
     expect(source).toContain("copy.pregnancySafety");
     expect(source).toContain("hasPregnancyContext");
+    expect(source).toContain("getEffectivePregnancyWeek");
+    expect(source).toContain("effectivePregnancyWeek");
     expect(source).toContain("womenHealth.pregnancyWeek");
     expect(source).toContain("womenHealth.dueDate");
   });
