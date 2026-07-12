@@ -72,7 +72,7 @@ const getFeedbackItemsFromMealState = (mealState) => {
 };
 
 const photoDraftSummary =
-  "I could not confidently identify visible foods from this photo. Please add the visible ingredients manually before saving.";
+  "I could not confidently identify visible foods from this photo. Try another photo with better light, sharper focus, and the whole meal clearly visible, or add the visible ingredients manually before saving.";
 const photoDraftReviewCaution =
   "No food was automatically identified. The diary will not be changed until you confirm ingredients.";
 
@@ -107,6 +107,8 @@ export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens
     ],
     uncertainIngredients: items.map((item) => item.name),
     hiddenIngredientQuestions: [
+      "Can you retake the photo in brighter light with the food in focus?",
+      "Is the whole meal visible in the frame without blur or strong shadows?",
       "Are there sauces, oil, butter, cheese, or dressing not clearly visible?",
       "Is anything inside a wrap, sandwich, bowl, or covered part of the meal?",
       "Was any drink, side, or dessert eaten with this photo?",

@@ -24,7 +24,11 @@ describe("fallbackDraft", () => {
       image,
       manualReviewRequired: true,
       summary: expect.stringContaining("could not confidently identify"),
-      hiddenIngredientQuestions: expect.arrayContaining([expect.stringContaining("sauces")]),
+      hiddenIngredientQuestions: expect.arrayContaining([
+        expect.stringContaining("brighter light"),
+        expect.stringContaining("without blur"),
+        expect.stringContaining("sauces"),
+      ]),
     });
     expect(result.summary).not.toContain("AI estimate");
     expect(result.cautions.join(" ")).not.toContain("AI estimate");

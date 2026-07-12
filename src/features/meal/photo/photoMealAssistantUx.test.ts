@@ -109,6 +109,14 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).toContain("copy.selectedHint");
   });
 
+  it("guides the user to retake unclear food photos instead of inventing ingredients", () => {
+    expect(componentSource).toContain("copy.poorPhotoTitle");
+    expect(componentSource).toContain("copy.poorPhotoTips");
+    expect(componentSource).toContain("analysis.items.length === 0");
+    expect(componentSource).toContain("щоб фото не було розмитим");
+    expect(componentSource).toContain("image is not blurry");
+  });
+
   it("keeps the save action reachable on narrow mobile screens", () => {
     expect(photoMealSaveButtonSx.alignSelf.xs).toBe("stretch");
     expect(photoMealSaveButtonSx.position.xs).toBe("sticky");

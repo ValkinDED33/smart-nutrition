@@ -281,6 +281,12 @@ const photoCopy = {
     analyzed: "Склад підготовлено. Перевірте деталі перед збереженням.",
     needsDetails:
       "Потрібно перевірити склад. Я підготував основу, ви можете швидко змінити назви та грами.",
+    poorPhotoTitle: "Фото не розпізналося достатньо добре",
+    poorPhotoTips: [
+      "Спробуйте сфотографувати при яскравішому світлі.",
+      "Тримайте камеру рівно, щоб фото не було розмитим.",
+      "Покажіть усю страву в кадрі без сильних тіней і закритих частин.",
+    ],
     savingDraft: "Зберігаємо обрані підказки в щоденник...",
     saveFailed: "Не вдалося додати чернетку до щоденника.",
     retry: "Спробувати ще раз",
@@ -351,6 +357,12 @@ const photoCopy = {
     analyzed: "Skład jest przygotowany. Sprawdź szczegóły przed zapisem.",
     needsDetails:
       "Trzeba sprawdzić skład. Przygotowałem podstawę, możesz szybko zmienić nazwy i gramy.",
+    poorPhotoTitle: "Zdjęcie nie zostało rozpoznane wystarczająco dobrze",
+    poorPhotoTips: [
+      "Spróbuj zrobić zdjęcie w jaśniejszym świetle.",
+      "Trzymaj aparat stabilnie, żeby zdjęcie nie było rozmazane.",
+      "Pokaż cały posiłek w kadrze, bez mocnych cieni i zakrytych części.",
+    ],
     savingDraft: "Zapisujemy wybrane podpowiedzi w dzienniku...",
     saveFailed: "Nie udało się dodać szkicu do dziennika.",
     retry: "Spróbuj ponownie",
@@ -422,6 +434,12 @@ const photoCopy = {
     analyzed: "The meal is prepared. Check the details before saving.",
     needsDetails:
       "Please check the ingredients. I prepared a starting point, and you can quickly edit names and grams.",
+    poorPhotoTitle: "The photo was not clear enough to recognize",
+    poorPhotoTips: [
+      "Try taking the photo in brighter light.",
+      "Hold the camera steady so the image is not blurry.",
+      "Keep the whole meal in frame without strong shadows or covered parts.",
+    ],
     savingDraft: "Saving selected draft items to your diary...",
     saveFailed: "Could not add this draft to your diary.",
     retry: "Try again",
@@ -635,7 +653,7 @@ const localizeFallbackPhotoAnalysis = (
 };
 
 const rawBackendPhotoQuestionPattern =
-  /(sauces?|oil|butter|cheese|dressing|wrap|sandwich|bowl|covered|drink|side|dessert|exact grams|photo alone)/i;
+  /(sauces?|oil|butter|cheese|dressing|wrap|sandwich|bowl|covered|drink|side|dessert|exact grams|photo alone|retake|brighter|light|focus|blur|shadow|frame)/i;
 
 const getLocalizedHiddenIngredientQuestions = (
   questions: string[] | undefined,
@@ -1320,6 +1338,19 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                     </Stack>
                   </Alert>
                 )}
+
+              {analysis.items.length === 0 && (
+                <Alert severity="info">
+                  <Stack spacing={0.5}>
+                    <Typography sx={{ fontWeight: 800 }}>{copy.poorPhotoTitle}</Typography>
+                    {copy.poorPhotoTips.map((tip) => (
+                      <Typography key={tip} variant="body2">
+                        • {tip}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Alert>
+              )}
 
               <Stack spacing={1.2}>
                 <Typography sx={{ fontWeight: 700 }}>{copy.suggestions}</Typography>
