@@ -177,4 +177,119 @@ describe("photoAnalysisService", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it("tries the next real vision provider instead of returning a template when the first one fails", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+
+      if (calls.length === 1) {
+        return new Response(JSON.stringify({ error: "model does not support images" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      dishName: "Cinnamon roll",
+                      summary: "A spiral pastry is visible on the plate.",
+                      confidence: 0.68,
+                      uncertainIngredients: ["filling"],
+                      hiddenIngredientQuestions: ["Is there glaze or extra butter?"],
+                      interpretations: [
+                        {
+                          id: "cinnamon-roll",
+                          title: "Cinnamon roll",
+                          confidence: 0.68,
+                          reason: "Visible spiral pastry shape.",
+                          items: [
+                            {
+                              name: "Cinnamon roll",
+                              portionRangeGrams: { min: 80, max: 140 },
+                              confidence: 0.68,
+                              reason: "Visible baked spiral pastry.",
+                              uncertain: true,
+                              estimatedNutritionPer100g: {
+                                calories: 380,
+                                protein: 6,
+                                fat: 14,
+                                carbs: 58,
+                              },
+                            },
+                          ],
+                        },
+                      ],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    try {
+      const service = createPhotoAnalysisService({
+        config: {
+          assistantProviders: [
+            {
+              id: "openrouter",
+              apiKey: "openrouter-key",
+              model: "text-only-test",
+              baseUrl: "https://openrouter.ai/api/v1",
+              apiPath: "/chat/completions",
+              timeoutMs: 1_000,
+            },
+            {
+              id: "groq",
+              apiKey: "groq-key",
+              model: "llama-text-test",
+              baseUrl: "https://api.groq.com/openai/v1",
+              apiPath: "/chat/completions",
+              timeoutMs: 1_000,
+            },
+            {
+              id: "google",
+              apiKey: "google-key",
+              model: "gemini-test",
+              baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+              timeoutMs: 1_000,
+            },
+          ],
+        },
+      });
+      const result = await service.analyzePhoto(
+        { dietStyle: "balanced" },
+        { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "breakfast" }
+      );
+
+      expect(calls).toHaveLength(2);
+      expect(calls[0]).toContain("openrouter.ai");
+      expect(calls[1]).toContain("generativelanguage.googleapis.com");
+      expect(calls.join(" ")).not.toContain("groq.com");
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        name: "Cinnamon roll",
+        portionRangeGrams: { min: 80, max: 140 },
+      });
+      expect(result.items.map((item) => item.name)).not.toEqual([
+        "Greek yogurt",
+        "Oats",
+        "Banana",
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

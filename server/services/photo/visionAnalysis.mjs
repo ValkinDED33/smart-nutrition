@@ -145,15 +145,13 @@ const getGoogleNativeGenerateContentUrl = (provider) => {
   )}:generateContent`;
 };
 
-const selectVisionProvider = (config) => {
+const isVisionCapableProvider = (provider) =>
+  ["google", "openrouter", "openai", "custom"].includes(provider?.id);
+
+const selectVisionProviders = (config) => {
   const providers = Array.isArray(config?.assistantProviders) ? config.assistantProviders : [];
-  return (
-    providers.find((provider) => provider.id === "google") ??
-    providers.find((provider) => provider.id === "openrouter") ??
-    providers.find((provider) => provider.id === "openai") ??
-    providers.find((provider) => provider.id === "custom") ??
-    null
-  );
+
+  return providers.filter(isVisionCapableProvider);
 };
 
 const buildVisionPrompt = ({ mealType, dietStyle, blockedTokens }) => `
@@ -356,39 +354,48 @@ export const tryAnalyzeWithVisionProvider = async ({
   dietStyle,
   blockedTokens,
 }) => {
-  const provider = selectVisionProvider(config);
+  const providers = selectVisionProviders(config);
 
-  if (!provider) {
+  if (providers.length === 0) {
     return null;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    Math.min(Number(provider.timeoutMs) || maxVisionTimeoutMs, maxVisionTimeoutMs)
-  );
+  const prompt = buildVisionPrompt({ mealType, dietStyle, blockedTokens });
 
-  try {
-    const prompt = buildVisionPrompt({ mealType, dietStyle, blockedTokens });
-    const text =
-      provider.id === "google"
-        ? await callGoogleVisionProvider({
-            provider,
-            prompt,
-            normalizedPhoto,
-            signal: controller.signal,
-          })
-        : await callOpenAiCompatibleVisionProvider({
-            provider,
-            prompt,
-            normalizedPhoto,
-            signal: controller.signal,
-          });
-    const payload = extractJsonObject(text.slice(0, maxVisionResponseLength));
-    return normalizeVisionAnalysis(payload);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
+  for (const provider of providers) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      Math.min(Number(provider.timeoutMs) || maxVisionTimeoutMs, maxVisionTimeoutMs)
+    );
+
+    try {
+      const text =
+        provider.id === "google"
+          ? await callGoogleVisionProvider({
+              provider,
+              prompt,
+              normalizedPhoto,
+              signal: controller.signal,
+            })
+          : await callOpenAiCompatibleVisionProvider({
+              provider,
+              prompt,
+              normalizedPhoto,
+              signal: controller.signal,
+            });
+      const payload = extractJsonObject(text.slice(0, maxVisionResponseLength));
+      const analysis = normalizeVisionAnalysis(payload);
+
+      if (analysis) {
+        return analysis;
+      }
+    } catch {
+      // Try the next configured vision provider before giving the user an honest manual review state.
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
+
+  return null;
 };
