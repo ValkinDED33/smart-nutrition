@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MealEntry } from "@domain/meal/types";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import type { DietStyle, WomenHealthState } from "@domain/profile/types";
+import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 import {
   buildSupplementRecommendations,
   createSupplementRecommendationContextSummary,
@@ -10,15 +11,7 @@ import {
   type SupplementRecommendationType,
 } from "./supplementRecommendationModel";
 
-const womenHealth: WomenHealthState = {
-  mode: "none",
-  pregnancyWeek: null,
-  dueDate: null,
-  lastPeriodStartDate: null,
-  doctorConfirmed: false,
-  notes: "",
-  updatedAt: null,
-};
+const womenHealth: WomenHealthState = createDefaultWomenHealthState();
 
 const createMeal = (
   name: string,

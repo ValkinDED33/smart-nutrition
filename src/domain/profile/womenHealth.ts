@@ -1,5 +1,11 @@
 import type { Gender } from "@domain/user/types";
-import type { WomenHealthMode, WomenHealthState } from "./types";
+import type {
+  ChineseZodiacSign,
+  EyeColor,
+  WomenHealthMode,
+  WomenHealthState,
+  ZodiacSign,
+} from "./types";
 
 const MAX_NOTE_LENGTH = 220;
 
@@ -16,6 +22,56 @@ export const womenHealthModes: WomenHealthMode[] = [
 export const isWomenHealthMode = (value: unknown): value is WomenHealthMode =>
   womenHealthModes.includes(value as WomenHealthMode);
 
+export const zodiacSigns: ZodiacSign[] = [
+  "unknown",
+  "aries",
+  "taurus",
+  "gemini",
+  "cancer",
+  "leo",
+  "virgo",
+  "libra",
+  "scorpio",
+  "sagittarius",
+  "capricorn",
+  "aquarius",
+  "pisces",
+];
+
+export const chineseZodiacSigns: ChineseZodiacSign[] = [
+  "unknown",
+  "rat",
+  "ox",
+  "tiger",
+  "rabbit",
+  "dragon",
+  "snake",
+  "horse",
+  "goat",
+  "monkey",
+  "rooster",
+  "dog",
+  "pig",
+];
+
+const eyeColors: EyeColor[] = [
+  "unknown",
+  "brown",
+  "blue",
+  "green",
+  "gray",
+  "hazel",
+  "amber",
+  "other",
+];
+
+const isEyeColor = (value: unknown): value is EyeColor =>
+  eyeColors.includes(value as EyeColor);
+export const isZodiacSign = (value: unknown): value is ZodiacSign =>
+  zodiacSigns.includes(value as ZodiacSign);
+export const isChineseZodiacSign = (value: unknown): value is ChineseZodiacSign =>
+  chineseZodiacSigns.includes(value as ChineseZodiacSign);
+
 export const createDefaultWomenHealthState = (): WomenHealthState => ({
   mode: "none",
   pregnancyWeek: null,
@@ -23,6 +79,11 @@ export const createDefaultWomenHealthState = (): WomenHealthState => ({
   lastPeriodStartDate: null,
   doctorConfirmed: false,
   notes: "",
+  partnerEyeColor: "unknown",
+  motherZodiac: "unknown",
+  fatherZodiac: "unknown",
+  motherChineseZodiac: "unknown",
+  fatherChineseZodiac: "unknown",
   updatedAt: null,
 });
 
@@ -121,6 +182,21 @@ export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
         ? Boolean(record.doctorConfirmed)
         : false,
     notes,
+    partnerEyeColor: isEyeColor(record.partnerEyeColor)
+      ? record.partnerEyeColor
+      : fallback.partnerEyeColor,
+    motherZodiac: isZodiacSign(record.motherZodiac)
+      ? record.motherZodiac
+      : fallback.motherZodiac,
+    fatherZodiac: isZodiacSign(record.fatherZodiac)
+      ? record.fatherZodiac
+      : fallback.fatherZodiac,
+    motherChineseZodiac: isChineseZodiacSign(record.motherChineseZodiac)
+      ? record.motherChineseZodiac
+      : fallback.motherChineseZodiac,
+    fatherChineseZodiac: isChineseZodiacSign(record.fatherChineseZodiac)
+      ? record.fatherChineseZodiac
+      : fallback.fatherChineseZodiac,
     updatedAt: toIsoDateOrNull(record.updatedAt),
   };
 };

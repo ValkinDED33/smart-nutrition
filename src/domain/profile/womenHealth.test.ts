@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getEffectivePregnancyWeek } from "./womenHealth";
+import { getEffectivePregnancyWeek, normalizeWomenHealthState } from "./womenHealth";
 
 const NOW = new Date("2026-07-12T12:00:00.000Z");
 
@@ -41,5 +41,24 @@ describe("women health domain", () => {
     );
 
     expect(week).toBe(21);
+  });
+
+  it("keeps baby preview partner context in canonical women health state", () => {
+    const state = normalizeWomenHealthState({
+      mode: "pregnant",
+      partnerEyeColor: "blue",
+      motherZodiac: "cancer",
+      fatherZodiac: "capricorn",
+      motherChineseZodiac: "tiger",
+      fatherChineseZodiac: "goat",
+    });
+
+    expect(state).toMatchObject({
+      partnerEyeColor: "blue",
+      motherZodiac: "cancer",
+      fatherZodiac: "capricorn",
+      motherChineseZodiac: "tiger",
+      fatherChineseZodiac: "goat",
+    });
   });
 });

@@ -11,7 +11,8 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("state.profile.womenHealth");
     expect(source).toContain("isWomenHealthVisibleForGender");
     expect(source).not.toContain("localStorage");
-    expect(source).not.toContain("dispatch(");
+    expect(source).toContain("saveProfileStateToCloud");
+    expect(source).toContain("dispatch(replaceProfileState(nextProfile))");
   });
 
   it("keeps women-health guidance safety-bound instead of medical certainty", async () => {
@@ -35,6 +36,21 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("effectivePregnancyWeek");
     expect(source).toContain("womenHealth.pregnancyWeek");
     expect(source).toContain("womenHealth.dueDate");
+  });
+
+  it("surfaces baby preview as probability context, not a medical verdict", async () => {
+    const source = await readSource(womenHealthCardPath);
+
+    expect(source).toContain('data-baby-preview-block="true"');
+    expect(source).toContain("buildBabyPreview");
+    expect(source).toContain("copy.eyeChanceTitle");
+    expect(source).toContain("copy.sexChanceBody");
+    expect(source).toContain("copy.babyPreviewDisclaimer");
+    expect(source).toContain("buildProfileStateAfterAction");
+    expect(source).toContain("updatePersonalDetails");
+    expect(source).toContain("updateWomenHealth(womenHealthPatch)");
+    expect(source).toContain("saveProfileStateToCloud");
+    expect(source).toContain("replaceProfileState(nextProfile)");
   });
 
   it("surfaces the women-health center through the existing profile shell", async () => {

@@ -1,6 +1,7 @@
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
 import type { AssistantContextSource } from "./assistantRuntimeTypes";
 import { buildAssistantCoreSnapshot } from "@core/assistant";
+import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 import { resolveAssistantPromptContext } from "@features/assistant/assistantPromptContext";
 
 const getTodayKey = () => {
@@ -103,15 +104,7 @@ export const createAssistantRuntimeContext = ({
     womenHealth:
       user?.gender === "female"
         ? profile.womenHealth
-        : {
-            mode: "none",
-            pregnancyWeek: null,
-            dueDate: null,
-            lastPeriodStartDate: null,
-            doctorConfirmed: false,
-            notes: "",
-            updatedAt: null,
-          },
+        : createDefaultWomenHealthState(),
     motivation: profile.motivation,
     coach,
     coachPrimaryInsight: coachPrimaryInsight ?? coach.insights[0]?.code ?? "on_track",

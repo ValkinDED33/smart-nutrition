@@ -5,19 +5,36 @@ import {
   Button,
   Chip,
   LinearProgress,
+  MenuItem,
   Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import QRCode from "qrcode";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../app/store";
-import type { WomenHealthMode, WomenHealthState } from "@domain/profile/types";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../../app/store";
+import type {
+  ChineseZodiacSign,
+  EyeColor,
+  WomenHealthMode,
+  WomenHealthState,
+  ZodiacSign,
+} from "@domain/profile/types";
+import { buildBabyPreview } from "@domain/profile/babyPreview";
 import {
   getEffectivePregnancyWeek,
   isWomenHealthVisibleForGender,
 } from "@domain/profile/womenHealth";
+import {
+  buildProfileStateAfterAction,
+  saveProfileStateToCloud,
+} from "./profileCloudSync";
+import {
+  replaceProfileState,
+  updatePersonalDetails,
+  updateWomenHealth,
+} from "./profileSlice";
 import {
   acceptRemotePartnerInvite,
   createRemotePartnerInvite,
@@ -49,6 +66,27 @@ const womenHealthCopy = {
     pregnancyTimeline: "Прогрес вагітності",
     pregnancySafety:
       "Підказки тут не замінюють лікаря: добавки, дозування, біль, кровотеча або тривожні симптоми тільки через медичного спеціаліста.",
+    babyPreviewTitle: "Майбутній малюк",
+    babyPreviewSubtitle:
+      "М'який сімейний прогноз за даними пари: колір очей як спрощена генетична оцінка, характер як ігровий шар.",
+    motherEyeColor: "Очі мами",
+    fatherEyeColor: "Очі тата",
+    motherZodiac: "Знак мами",
+    fatherZodiac: "Знак тата",
+    motherChineseZodiac: "Рік мами",
+    fatherChineseZodiac: "Рік тата",
+    saveBabyPreview: "Зберегти прогноз",
+    babyPreviewSaved: "Дані прогнозу збережено.",
+    babyPreviewError: "Не вдалося зберегти прогноз у хмарі.",
+    eyeChanceTitle: "Ймовірність кольору очей",
+    eyeChanceMissing: "Укажіть колір очей обох партнерів, щоб побачити оцінку.",
+    sexChanceTitle: "Дівчинка / хлопчик",
+    sexChanceBody:
+      "За профілем батьків це не прогнозується чесно, тому показуємо базово 50% / 50%. Це не УЗД і не висновок лікаря.",
+    playfulTraitsTitle: "Можливі риси",
+    playfulTraitsMissing: "Додайте знаки або роки народження, щоб побачити ігровий опис.",
+    babyPreviewDisclaimer:
+      "Це не медичний і не генетичний висновок. Колір очей є спрощеною оцінкою, стать не прогнозується за профілем, знаки — лише розважальний шар.",
     postpartum: "Після пологів",
     cycleDay: "День циклу",
     fertileWindow: "Орієнтовне фертильне вікно",
@@ -111,6 +149,27 @@ const womenHealthCopy = {
     pregnancyTimeline: "Postęp ciąży",
     pregnancySafety:
       "Wskazówki tutaj nie zastępują lekarza: suplementy, dawki, ból, krwawienie lub niepokojące objawy zawsze konsultuj ze specjalistą.",
+    babyPreviewTitle: "Przyszłe dziecko",
+    babyPreviewSubtitle:
+      "Łagodny rodzinny podgląd na podstawie danych pary: kolor oczu jako uproszczona ocena genetyczna, charakter jako warstwa zabawowa.",
+    motherEyeColor: "Oczy mamy",
+    fatherEyeColor: "Oczy taty",
+    motherZodiac: "Znak mamy",
+    fatherZodiac: "Znak taty",
+    motherChineseZodiac: "Rok mamy",
+    fatherChineseZodiac: "Rok taty",
+    saveBabyPreview: "Zapisz podgląd",
+    babyPreviewSaved: "Dane podglądu zapisane.",
+    babyPreviewError: "Nie udało się zapisać podglądu w chmurze.",
+    eyeChanceTitle: "Szansa koloru oczu",
+    eyeChanceMissing: "Podaj kolor oczu obojga partnerów, aby zobaczyć ocenę.",
+    sexChanceTitle: "Dziewczynka / chłopiec",
+    sexChanceBody:
+      "Nie da się tego uczciwie przewidzieć z profilu rodziców, więc pokazujemy bazowe 50% / 50%. To nie jest USG ani wniosek lekarza.",
+    playfulTraitsTitle: "Możliwe cechy",
+    playfulTraitsMissing: "Dodaj znaki albo lata urodzenia, aby zobaczyć opis zabawowy.",
+    babyPreviewDisclaimer:
+      "To nie jest wniosek medyczny ani genetyczny. Kolor oczu jest uproszczoną oceną, płeć nie jest przewidywana z profilu, a znaki są tylko warstwą rozrywkową.",
     postpartum: "Po porodzie",
     cycleDay: "Dzień cyklu",
     fertileWindow: "Orientacyjne okno płodne",
@@ -173,6 +232,27 @@ const womenHealthCopy = {
     pregnancyTimeline: "Pregnancy progress",
     pregnancySafety:
       "Guidance here does not replace a clinician: supplements, dosages, pain, bleeding, or worrying symptoms must be checked with a qualified specialist.",
+    babyPreviewTitle: "Future baby",
+    babyPreviewSubtitle:
+      "A gentle family preview from partner data: eye color as a simplified genetics estimate, personality as a playful layer.",
+    motherEyeColor: "Mother eyes",
+    fatherEyeColor: "Father eyes",
+    motherZodiac: "Mother zodiac",
+    fatherZodiac: "Father zodiac",
+    motherChineseZodiac: "Mother birth year",
+    fatherChineseZodiac: "Father birth year",
+    saveBabyPreview: "Save preview",
+    babyPreviewSaved: "Preview data saved.",
+    babyPreviewError: "Could not save preview to cloud.",
+    eyeChanceTitle: "Eye color chance",
+    eyeChanceMissing: "Set both partners' eye colors to see an estimate.",
+    sexChanceTitle: "Girl / boy",
+    sexChanceBody:
+      "This cannot be honestly predicted from parent profile data, so we show the base 50% / 50%. This is not ultrasound or a clinician result.",
+    playfulTraitsTitle: "Possible traits",
+    playfulTraitsMissing: "Add zodiac or birth-year signs to see a playful description.",
+    babyPreviewDisclaimer:
+      "This is not a medical or genetic conclusion. Eye color is a simplified estimate, sex is not predicted from profile data, and zodiac signs are only a playful layer.",
     postpartum: "Postpartum",
     cycleDay: "Cycle day",
     fertileWindow: "Estimated fertile window",
@@ -369,8 +449,367 @@ const getBabySizeLabel = (language: AppLanguage, sizeKey: string) => {
   return labels.get(sizeKey) ?? sizeKey;
 };
 
+const eyeColorOptions: EyeColor[] = [
+  "unknown",
+  "brown",
+  "blue",
+  "green",
+  "gray",
+  "hazel",
+  "amber",
+  "other",
+];
+
+const zodiacOptions: ZodiacSign[] = [
+  "unknown",
+  "aries",
+  "taurus",
+  "gemini",
+  "cancer",
+  "leo",
+  "virgo",
+  "libra",
+  "scorpio",
+  "sagittarius",
+  "capricorn",
+  "aquarius",
+  "pisces",
+];
+
+const chineseZodiacOptions: ChineseZodiacSign[] = [
+  "unknown",
+  "rat",
+  "ox",
+  "tiger",
+  "rabbit",
+  "dragon",
+  "snake",
+  "horse",
+  "goat",
+  "monkey",
+  "rooster",
+  "dog",
+  "pig",
+];
+
+const UK_NOT_SET = "Не вказано";
+const PL_NOT_SET = "Nie podano";
+const THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
+
+const valueLabels = {
+  uk: {
+    eyeColor: {
+      unknown: UK_NOT_SET,
+      brown: "Карі",
+      blue: "Блакитні",
+      green: "Зелені",
+      gray: "Сірі",
+      hazel: "Горіхові",
+      amber: "Бурштинові",
+      other: "Інші",
+    },
+    zodiac: {
+      unknown: UK_NOT_SET,
+      aries: "Овен",
+      taurus: "Телець",
+      gemini: "Близнюки",
+      cancer: "Рак",
+      leo: "Лев",
+      virgo: "Діва",
+      libra: "Терези",
+      scorpio: "Скорпіон",
+      sagittarius: "Стрілець",
+      capricorn: "Козеріг",
+      aquarius: "Водолій",
+      pisces: "Риби",
+    },
+    chineseZodiac: {
+      unknown: UK_NOT_SET,
+      rat: "Щур",
+      ox: "Бик",
+      tiger: "Тигр",
+      rabbit: "Кролик",
+      dragon: "Дракон",
+      snake: "Змія",
+      horse: "Кінь",
+      goat: "Коза",
+      monkey: "Мавпа",
+      rooster: "Півень",
+      dog: "Собака",
+      pig: "Свиня",
+    },
+  },
+  pl: {
+    eyeColor: {
+      unknown: PL_NOT_SET,
+      brown: "Brązowe",
+      blue: "Niebieskie",
+      green: "Zielone",
+      gray: "Szare",
+      hazel: "Piwne",
+      amber: "Bursztynowe",
+      other: "Inne",
+    },
+    zodiac: {
+      unknown: PL_NOT_SET,
+      aries: "Baran",
+      taurus: "Byk",
+      gemini: "Bliźnięta",
+      cancer: "Rak",
+      leo: "Lew",
+      virgo: "Panna",
+      libra: "Waga",
+      scorpio: "Skorpion",
+      sagittarius: "Strzelec",
+      capricorn: "Koziorożec",
+      aquarius: "Wodnik",
+      pisces: "Ryby",
+    },
+    chineseZodiac: {
+      unknown: PL_NOT_SET,
+      rat: "Szczur",
+      ox: "Wół",
+      tiger: "Tygrys",
+      rabbit: "Królik",
+      dragon: "Smok",
+      snake: "Wąż",
+      horse: "Koń",
+      goat: "Koza",
+      monkey: "Małpa",
+      rooster: "Kogut",
+      dog: "Pies",
+      pig: "Świnia",
+    },
+  },
+  en: {
+    eyeColor: {
+      unknown: "Not set",
+      brown: "Brown",
+      blue: "Blue",
+      green: "Green",
+      gray: "Gray",
+      hazel: "Hazel",
+      amber: "Amber",
+      other: "Other",
+    },
+    zodiac: {
+      unknown: "Not set",
+      aries: "Aries",
+      taurus: "Taurus",
+      gemini: "Gemini",
+      cancer: "Cancer",
+      leo: "Leo",
+      virgo: "Virgo",
+      libra: "Libra",
+      scorpio: "Scorpio",
+      sagittarius: "Sagittarius",
+      capricorn: "Capricorn",
+      aquarius: "Aquarius",
+      pisces: "Pisces",
+    },
+    chineseZodiac: {
+      unknown: "Not set",
+      rat: "Rat",
+      ox: "Ox",
+      tiger: "Tiger",
+      rabbit: "Rabbit",
+      dragon: "Dragon",
+      snake: "Snake",
+      horse: "Horse",
+      goat: "Goat",
+      monkey: "Monkey",
+      rooster: "Rooster",
+      dog: "Dog",
+      pig: "Pig",
+    },
+  },
+} as const;
+
+const getValueLabels = (language: AppLanguage) =>
+  language === "pl" ? valueLabels.pl : language === "en" ? valueLabels.en : valueLabels.uk;
+
+const getEyeColorLabel = (language: AppLanguage, value: EyeColor) => {
+  const labels = getValueLabels(language).eyeColor;
+
+  switch (value) {
+    case "brown":
+      return labels.brown;
+    case "blue":
+      return labels.blue;
+    case "green":
+      return labels.green;
+    case "gray":
+      return labels.gray;
+    case "hazel":
+      return labels.hazel;
+    case "amber":
+      return labels.amber;
+    case "other":
+      return labels.other;
+    case "unknown":
+    default:
+      return labels.unknown;
+  }
+};
+
+const getZodiacLabel = (language: AppLanguage, value: ZodiacSign) => {
+  const labels = getValueLabels(language).zodiac;
+
+  switch (value) {
+    case "aries":
+      return labels.aries;
+    case "taurus":
+      return labels.taurus;
+    case "gemini":
+      return labels.gemini;
+    case "cancer":
+      return labels.cancer;
+    case "leo":
+      return labels.leo;
+    case "virgo":
+      return labels.virgo;
+    case "libra":
+      return labels.libra;
+    case "scorpio":
+      return labels.scorpio;
+    case "sagittarius":
+      return labels.sagittarius;
+    case "capricorn":
+      return labels.capricorn;
+    case "aquarius":
+      return labels.aquarius;
+    case "pisces":
+      return labels.pisces;
+    case "unknown":
+    default:
+      return labels.unknown;
+  }
+};
+
+const getChineseZodiacLabel = (language: AppLanguage, value: ChineseZodiacSign) => {
+  const labels = getValueLabels(language).chineseZodiac;
+
+  switch (value) {
+    case "rat":
+      return labels.rat;
+    case "ox":
+      return labels.ox;
+    case "tiger":
+      return labels.tiger;
+    case "rabbit":
+      return labels.rabbit;
+    case "dragon":
+      return labels.dragon;
+    case "snake":
+      return labels.snake;
+    case "horse":
+      return labels.horse;
+    case "goat":
+      return labels.goat;
+    case "monkey":
+      return labels.monkey;
+    case "rooster":
+      return labels.rooster;
+    case "dog":
+      return labels.dog;
+    case "pig":
+      return labels.pig;
+    case "unknown":
+    default:
+      return labels.unknown;
+  }
+};
+
+const traitLabels = {
+  uk: {
+    initiative: "ініціативність",
+    steadiness: "стійкість",
+    curiosity: "допитливість",
+    sensitivity: "чутливість",
+    "warm confidence": "тепла впевненість",
+    "attention to detail": "увага до деталей",
+    "social balance": "соціальна рівновага",
+    "emotional depth": "емоційна глибина",
+    independence: "самостійність",
+    persistence: "наполегливість",
+    "original thinking": "оригінальне мислення",
+    imagination: "уяву",
+    "quick adaptation": "швидка адаптація",
+    patience: "терпіння",
+    boldness: "сміливість",
+    gentleness: "м'якість",
+    "expressive energy": "виразна енергія",
+    "observant calm": "спостережливий спокій",
+    "movement and drive": "рух і драйв",
+    "soft creativity": "м'яка творчість",
+    "playful problem-solving": "грайливе мислення",
+    precision: "точність",
+    loyalty: "вірність",
+    "kind openness": "добра відкритість",
+  },
+  pl: {
+    initiative: "inicjatywa",
+    steadiness: "stabilność",
+    curiosity: "ciekawość",
+    sensitivity: "wrażliwość",
+    "warm confidence": "ciepła pewność siebie",
+    "attention to detail": "uważność na detale",
+    "social balance": "równowaga społeczna",
+    "emotional depth": "głębia emocjonalna",
+    independence: "samodzielność",
+    persistence: "wytrwałość",
+    "original thinking": "oryginalne myślenie",
+    imagination: "wyobraźnia",
+    "quick adaptation": "szybka adaptacja",
+    patience: "cierpliwość",
+    boldness: "odwaga",
+    gentleness: "łagodność",
+    "expressive energy": "wyrazista energia",
+    "observant calm": "spokojna spostrzegawczość",
+    "movement and drive": "ruch i napęd",
+    "soft creativity": "miękka kreatywność",
+    "playful problem-solving": "zabawowe rozwiązywanie problemów",
+    precision: "precyzja",
+    loyalty: "lojalność",
+    "kind openness": "życzliwa otwartość",
+  },
+  en: {
+    initiative: "initiative",
+    steadiness: "steadiness",
+    curiosity: "curiosity",
+    sensitivity: "sensitivity",
+    "warm confidence": "warm confidence",
+    "attention to detail": "attention to detail",
+    "social balance": "social balance",
+    "emotional depth": "emotional depth",
+    independence: "independence",
+    persistence: "persistence",
+    "original thinking": "original thinking",
+    imagination: "imagination",
+    "quick adaptation": "quick adaptation",
+    patience: "patience",
+    boldness: "boldness",
+    gentleness: "gentleness",
+    "expressive energy": "expressive energy",
+    "observant calm": "observant calm",
+    "movement and drive": "movement and drive",
+    "soft creativity": "soft creativity",
+    "playful problem-solving": "playful problem-solving",
+    precision: "precision",
+    loyalty: "loyalty",
+    "kind openness": "kind openness",
+  },
+} as const;
+
+const getTraitLabel = (language: AppLanguage, value: string) => {
+  const labels = language === "pl" ? traitLabels.pl : language === "en" ? traitLabels.en : traitLabels.uk;
+  return labels[value as keyof typeof labels] ?? value;
+};
+
 export const WomenHealthOverviewCard = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
+  const profile = useSelector((state: RootState) => state.profile);
   const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
   const partnerSharing = useSelector((state: RootState) => state.profile.partnerSharing);
   const { appLanguage } = useLanguage();
@@ -382,6 +821,17 @@ export const WomenHealthOverviewCard = () => {
   const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
   const [partnerError, setPartnerError] = useState<string | null>(null);
   const [partnerLoading, setPartnerLoading] = useState(false);
+  const [babyPreviewDraft, setBabyPreviewDraft] = useState({
+    motherEyeColor: profile.personalDetails.eyeColor,
+    partnerEyeColor: womenHealth.partnerEyeColor,
+    motherZodiac: womenHealth.motherZodiac,
+    fatherZodiac: womenHealth.fatherZodiac,
+    motherChineseZodiac: womenHealth.motherChineseZodiac,
+    fatherChineseZodiac: womenHealth.fatherChineseZodiac,
+  });
+  const [babyPreviewSaving, setBabyPreviewSaving] = useState(false);
+  const [babyPreviewStatus, setBabyPreviewStatus] = useState<string | null>(null);
+  const [babyPreviewError, setBabyPreviewError] = useState<string | null>(null);
   const isWomenHealthOwner = isWomenHealthVisibleForGender(user?.gender);
   const hasPartnerLink = partnerSharing.links.some(
     (link) => link.role === "partner" && link.status === "active"
@@ -481,6 +931,40 @@ export const WomenHealthOverviewCard = () => {
     setPartnerStatus(copy.copied);
   };
 
+  const saveBabyPreview = async () => {
+    setBabyPreviewSaving(true);
+    setBabyPreviewStatus(null);
+    setBabyPreviewError(null);
+
+    try {
+      const womenHealthPatch = {
+        partnerEyeColor: babyPreviewDraft.partnerEyeColor,
+        motherZodiac: babyPreviewDraft.motherZodiac,
+        fatherZodiac: babyPreviewDraft.fatherZodiac,
+        motherChineseZodiac: babyPreviewDraft.motherChineseZodiac,
+        fatherChineseZodiac: babyPreviewDraft.fatherChineseZodiac,
+      };
+      const profileWithMotherEyes = buildProfileStateAfterAction(
+        profile,
+        updatePersonalDetails({ eyeColor: babyPreviewDraft.motherEyeColor })
+      );
+      const nextProfile = buildProfileStateAfterAction(
+        profileWithMotherEyes,
+        updateWomenHealth(womenHealthPatch)
+      );
+
+      await saveProfileStateToCloud(dispatch, nextProfile);
+      dispatch(replaceProfileState(nextProfile));
+      setBabyPreviewStatus(copy.babyPreviewSaved);
+    } catch (error) {
+      setBabyPreviewError(
+        error instanceof Error ? error.message : copy.babyPreviewError
+      );
+    } finally {
+      setBabyPreviewSaving(false);
+    }
+  };
+
   const cycleDay = getCycleDay(womenHealth.lastPeriodStartDate);
   const effectivePregnancyWeek = getEffectivePregnancyWeek(womenHealth);
   const trimester = getTrimester(effectivePregnancyWeek);
@@ -502,6 +986,14 @@ export const WomenHealthOverviewCard = () => {
     womenHealth.mode === "trying_to_conceive" ||
     Boolean(womenHealth.pregnancyWeek) ||
     Boolean(womenHealth.dueDate);
+  const babyPreview = buildBabyPreview({
+    motherEyeColor: babyPreviewDraft.motherEyeColor,
+    fatherEyeColor: babyPreviewDraft.partnerEyeColor,
+    motherZodiac: babyPreviewDraft.motherZodiac,
+    fatherZodiac: babyPreviewDraft.fatherZodiac,
+    motherChineseZodiac: babyPreviewDraft.motherChineseZodiac,
+    fatherChineseZodiac: babyPreviewDraft.fatherChineseZodiac,
+  });
 
   return (
     <Paper
@@ -621,6 +1113,232 @@ export const WomenHealthOverviewCard = () => {
         )}
 
         {isWomenHealthOwner && (
+          <Box
+            data-baby-preview-block="true"
+            sx={{
+              p: { xs: 1.6, md: 2 },
+              borderRadius: 1,
+              border: 1,
+              borderColor: "rgba(168, 85, 247, 0.28)",
+              background:
+                "linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(20, 184, 166, 0.08))",
+            }}
+          >
+            <Stack spacing={1.5}>
+              <Stack spacing={0.4}>
+                <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
+                  {copy.babyPreviewTitle}
+                </Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                  {copy.babyPreviewSubtitle}
+                </Typography>
+              </Stack>
+
+              {babyPreviewStatus && <Alert severity="success">{babyPreviewStatus}</Alert>}
+              {babyPreviewError && <Alert severity="error">{babyPreviewError}</Alert>}
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
+                  gap: 1,
+                }}
+              >
+                <TextField
+                  select
+                  label={copy.motherEyeColor}
+                  value={babyPreviewDraft.motherEyeColor}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      motherEyeColor: event.target.value as EyeColor,
+                    }))
+                  }
+                >
+                  {eyeColorOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getEyeColorLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label={copy.fatherEyeColor}
+                  value={babyPreviewDraft.partnerEyeColor}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      partnerEyeColor: event.target.value as EyeColor,
+                    }))
+                  }
+                >
+                  {eyeColorOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getEyeColorLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label={copy.motherZodiac}
+                  value={babyPreviewDraft.motherZodiac}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      motherZodiac: event.target.value as ZodiacSign,
+                    }))
+                  }
+                >
+                  {zodiacOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getZodiacLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label={copy.fatherZodiac}
+                  value={babyPreviewDraft.fatherZodiac}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      fatherZodiac: event.target.value as ZodiacSign,
+                    }))
+                  }
+                >
+                  {zodiacOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getZodiacLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label={copy.motherChineseZodiac}
+                  value={babyPreviewDraft.motherChineseZodiac}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      motherChineseZodiac: event.target.value as ChineseZodiacSign,
+                    }))
+                  }
+                >
+                  {chineseZodiacOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getChineseZodiacLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label={copy.fatherChineseZodiac}
+                  value={babyPreviewDraft.fatherChineseZodiac}
+                  size="small"
+                  onChange={(event) =>
+                    setBabyPreviewDraft((current) => ({
+                      ...current,
+                      fatherChineseZodiac: event.target.value as ChineseZodiacSign,
+                    }))
+                  }
+                >
+                  {chineseZodiacOptions.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {getChineseZodiacLabel(appLanguage, item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+
+              <Button
+                variant="contained"
+                onClick={() => void saveBabyPreview()}
+                disabled={babyPreviewSaving}
+                sx={{ alignSelf: "flex-start" }}
+              >
+                {babyPreviewSaving ? copy.loading : copy.saveBabyPreview}
+              </Button>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.8}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.eyeChanceTitle}
+                    </Typography>
+                    {babyPreview.eyeColorChances.length > 0 ? (
+                      <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                        {babyPreview.eyeColorChances.map((item) => (
+                          <Chip
+                            key={item.color}
+                            label={`${getEyeColorLabel(appLanguage, item.color)} ${item.probability}%`}
+                            color="primary"
+                            variant="outlined"
+                          />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Typography color="text.secondary" variant="body2">
+                        {copy.eyeChanceMissing}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.8}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.sexChanceTitle}
+                    </Typography>
+                    <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                      <Chip label={`♀ ${babyPreview.sexChances.girl}%`} color="secondary" />
+                      <Chip label={`♂ ${babyPreview.sexChances.boy}%`} color="info" />
+                    </Stack>
+                    <Typography color="text.secondary" variant="body2">
+                      {copy.sexChanceBody}
+                    </Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.8}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.playfulTraitsTitle}
+                    </Typography>
+                    {babyPreview.playfulTraits.length > 0 ? (
+                      <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                        {babyPreview.playfulTraits.map((item) => (
+                          <Chip
+                            key={item}
+                            label={getTraitLabel(appLanguage, item)}
+                            variant="outlined"
+                          />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Typography color="text.secondary" variant="body2">
+                        {copy.playfulTraitsMissing}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Box>
+              </Box>
+
+              <Alert severity="info">
+                <Typography variant="body2">{copy.babyPreviewDisclaimer}</Typography>
+              </Alert>
+            </Stack>
+          </Box>
+        )}
+
+        {isWomenHealthOwner && (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip color="secondary" label={getModeLabel(copy, womenHealth.mode)} />
             <Chip
@@ -646,7 +1364,7 @@ export const WomenHealthOverviewCard = () => {
         {isWomenHealthOwner && <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+            gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
             gap: 1.4,
           }}
         >
@@ -700,7 +1418,7 @@ export const WomenHealthOverviewCard = () => {
         {isWomenHealthOwner && <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+            gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
             gap: 1.4,
           }}
         >

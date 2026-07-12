@@ -4,6 +4,7 @@ import {
   buildGuidedAssistantReply,
 } from "./assistantRuntime";
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
+import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 
 const createContext = (): AssistantRuntimeContext => ({
   language: "pl",
@@ -44,15 +45,7 @@ const createContext = (): AssistantRuntimeContext => ({
     supportSystem: "self",
     petCompanion: "dog",
   },
-  womenHealth: {
-    mode: "none",
-    pregnancyWeek: null,
-    dueDate: null,
-    lastPeriodStartDate: null,
-    doctorConfirmed: false,
-    notes: "",
-    updatedAt: null,
-  },
+  womenHealth: createDefaultWomenHealthState(),
   motivation: {
     points: 65,
     level: 1,

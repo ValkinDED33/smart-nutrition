@@ -77,6 +77,34 @@ export type WomenHealthMode =
   | "trying_to_conceive"
   | "pregnant"
   | "postpartum";
+export type ZodiacSign =
+  | "unknown"
+  | "aries"
+  | "taurus"
+  | "gemini"
+  | "cancer"
+  | "leo"
+  | "virgo"
+  | "libra"
+  | "scorpio"
+  | "sagittarius"
+  | "capricorn"
+  | "aquarius"
+  | "pisces";
+export type ChineseZodiacSign =
+  | "unknown"
+  | "rat"
+  | "ox"
+  | "tiger"
+  | "rabbit"
+  | "dragon"
+  | "snake"
+  | "horse"
+  | "goat"
+  | "monkey"
+  | "rooster"
+  | "dog"
+  | "pig";
 
 export interface MacroTargets {
   protein: number;
@@ -149,6 +177,11 @@ export interface WomenHealthState {
   lastPeriodStartDate: string | null;
   doctorConfirmed: boolean;
   notes: string;
+  partnerEyeColor: EyeColor;
+  motherZodiac: ZodiacSign;
+  fatherZodiac: ZodiacSign;
+  motherChineseZodiac: ChineseZodiacSign;
+  fatherChineseZodiac: ChineseZodiacSign;
   updatedAt: string | null;
 }
 
