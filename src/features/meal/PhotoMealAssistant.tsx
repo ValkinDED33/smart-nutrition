@@ -271,6 +271,7 @@ const photoCopy = {
     subtitle:
       "Завантажте фото, швидко перевірте склад і збережіть прийом їжі.",
     upload: "Завантажити фото страви",
+    retakeClearPhoto: "Перезняти чіткіше фото",
     uploaded: "Фото завантажено",
     recognizing: "Аналізуємо фото...",
     readError: "Не вдалося прочитати фото. Спробуйте інший файл.",
@@ -347,6 +348,7 @@ const photoCopy = {
     subtitle:
       "Wgraj zdjęcie, szybko sprawdź skład i zapisz posiłek.",
     upload: "Wgraj zdjęcie posiłku",
+    retakeClearPhoto: "Zrób wyraźniejsze zdjęcie",
     uploaded: "Zdjęcie wgrane",
     recognizing: "Analizujemy zdjęcie...",
     readError: "Nie udało się odczytać zdjęcia. Spróbuj innego pliku.",
@@ -424,6 +426,7 @@ const photoCopy = {
     subtitle:
       "Upload a photo, quickly check the ingredients, and save the meal.",
     upload: "Upload meal photo",
+    retakeClearPhoto: "Retake a clearer photo",
     uploaded: "Photo uploaded",
     recognizing: "Analyzing photo...",
     readError: "Could not read the photo. Try another file.",
@@ -772,6 +775,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       ),
     [analysis?.hiddenIngredientQuestions, copy]
   );
+  const betterPhotoGuidanceVisible = analysis ? shouldShowBetterPhotoGuidance(analysis) : false;
 
   const handleFileChange = async (file: File | null) => {
     if (!file) {
@@ -1092,10 +1096,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} alignItems={FLEX_START_ALIGNMENT}>
           <Button
             component="label"
-            variant="outlined"
+            variant={betterPhotoGuidanceVisible ? "contained" : "outlined"}
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
           >
-            {copy.upload}
+            {betterPhotoGuidanceVisible ? copy.retakeClearPhoto : copy.upload}
             <input
               hidden
               accept="image/jpeg,image/png,image/webp"
