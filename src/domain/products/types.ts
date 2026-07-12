@@ -63,6 +63,8 @@ export interface ProductFacts {
   ingredientsText?: string;
   ingredientsTextByLanguage?: Partial<Record<"uk" | "pl" | "en", string>>;
   additivesText?: string;
+  allergens?: string[];
+  traces?: string[];
   servingSize?: string;
   servingQuantity?: number;
   servingUnit?: ProductUnit;

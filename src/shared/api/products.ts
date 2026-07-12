@@ -157,6 +157,8 @@ const normalizeProductFacts = (value: unknown, productUnit: Product["unit"]) => 
       record.ingredientsTextByLanguage
     ),
     additivesText: normalizeOptionalText(record.additivesText, 900),
+    allergens: normalizeStringArray(record.allergens),
+    traces: normalizeStringArray(record.traces),
     servingSize: normalizeOptionalText(record.servingSize, 120),
     servingQuantity:
       servingQuantity > 0 && servingUnit === productUnit

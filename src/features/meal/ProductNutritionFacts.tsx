@@ -194,6 +194,13 @@ const productFactCopy = {
   energy: { uk: "Енергетична цінність", pl: "Wartość energetyczna", en: "Energy" },
   salt: { uk: "Сіль", pl: "Sól", en: "Salt" },
   additives: { uk: "Добавки та консерванти", pl: "Dodatki i konserwanty", en: "Additives and preservatives" },
+  allergens: { uk: "Алергени", pl: "Alergeny", en: "Allergens" },
+  traces: { uk: "Може містити сліди", pl: "Może zawierać śladowe ilości", en: "May contain traces" },
+  allergenSafetyNote: {
+    uk: "Якщо маєте алергію або сильну непереносимість, перевірте етикетку перед вживанням.",
+    pl: "Jeśli masz alergię lub silną nietolerancję, sprawdź etykietę przed spożyciem.",
+    en: "If you have an allergy or strong intolerance, check the label before eating.",
+  },
   additiveDose: { uk: "Орієнтир ADI для 70 кг", pl: "Orientacyjny ADI dla 70 kg", en: "ADI guide for 70 kg" },
   additiveDoseUnknown: {
     uk: "Точну дозу не визначити без кількості добавки на етикетці.",
@@ -403,6 +410,14 @@ const getIngredientInsightStyles = (tone: IngredientInsightTone) => {
   }
 };
 
+const formatFactTokenLabel = (value: string) =>
+  value
+    .replace(/^[a-z]{2}:/i, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
 interface Props {
   product: Product;
 }
@@ -481,6 +496,9 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const additiveFindings = additiveAnalysisText
     ? analyzeProductAdditives(additiveAnalysisText)
     : [];
+  const allergens = product.facts?.allergens ?? [];
+  const traces = product.facts?.traces ?? [];
+  const hasAllergenInfo = allergens.length > 0 || traces.length > 0;
 
   return (
     <Stack spacing={2}>
@@ -748,6 +766,60 @@ export const ProductNutritionFacts = ({ product }: Props) => {
           )}
         </Stack>
       </Paper>
+
+      {hasAllergenInfo ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1.4,
+            borderRadius: 1,
+            borderColor: "rgba(245, 158, 11, 0.42)",
+            backgroundColor: "rgba(245, 158, 11, 0.08)",
+          }}
+        >
+          <Stack spacing={1}>
+            <Stack spacing={0.3}>
+              <Typography sx={{ fontWeight: 800 }}>
+                {getLocalizedText(productFactCopy.allergens, appLanguage)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {getLocalizedText(productFactCopy.allergenSafetyNote, appLanguage)}
+              </Typography>
+            </Stack>
+            {allergens.length > 0 ? (
+              <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                {allergens.map((item) => (
+                  <Chip
+                    key={`allergen-${item}`}
+                    label={formatFactTokenLabel(item)}
+                    size="small"
+                    color="warning"
+                    variant="filled"
+                  />
+                ))}
+              </Stack>
+            ) : null}
+            {traces.length > 0 ? (
+              <Stack spacing={0.6}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  {getLocalizedText(productFactCopy.traces, appLanguage)}
+                </Typography>
+                <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                  {traces.map((item) => (
+                    <Chip
+                      key={`trace-${item}`}
+                      label={formatFactTokenLabel(item)}
+                      size="small"
+                      color="warning"
+                      variant="outlined"
+                    />
+                  ))}
+                </Stack>
+              </Stack>
+            ) : null}
+          </Stack>
+        </Paper>
+      ) : null}
 
       <Stack spacing={2}>
         {detailSections.map((section) => (

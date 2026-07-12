@@ -41,6 +41,8 @@ const openFoodFactsBeverageProduct = {
   ingredients_text_pl:
     "Woda gazowana, cukier, barwnik E150d, kwas fosforowy, naturalne aromaty, kofeina.",
   additives_tags: ["en:e150d-sulphite-ammonia-caramel", "en:e338-phosphoric-acid"],
+  allergens_tags: ["en:milk", "en:gluten"],
+  traces_tags: ["en:nuts"],
   nutriments: {
     "energy-kcal_100ml": 42,
     proteins_100ml: 0,
@@ -173,10 +175,14 @@ describe("productLookupService", () => {
           pl: expect.stringContaining("Woda gazowana"),
         }),
         additivesText: expect.stringContaining("E150D"),
+        allergens: ["milk", "gluten"],
+        traces: ["nuts"],
       }),
     });
     expect(fetchImpl.mock.calls[0][0]).toContain("quantity%2Cserving_size");
     expect(fetchImpl.mock.calls[0][0]).toContain("additives_tags");
+    expect(fetchImpl.mock.calls[0][0]).toContain("allergens_tags");
+    expect(fetchImpl.mock.calls[0][0]).toContain("traces_tags");
   });
 
   it("falls back to the secondary OpenFoodFacts host when the primary search host fails", async () => {

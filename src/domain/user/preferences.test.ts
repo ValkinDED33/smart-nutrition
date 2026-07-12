@@ -31,6 +31,24 @@ describe("preferences filters", () => {
     expect(productMatchesPreferences(banana!, preferences)).toBe(false);
   });
 
+  it("blocks products matching backend allergen and trace facts", () => {
+    const preferences = {
+      ...createDefaultNutritionPreferences(),
+      allergies: ["gluten"],
+      excludedIngredients: ["nuts"],
+    };
+    const product = {
+      ...productCatalog.find((item) => item.id === "manual-banana")!,
+      name: "Neutral snack",
+      facts: {
+        allergens: ["gluten"],
+        traces: ["nuts"],
+      },
+    };
+
+    expect(productMatchesPreferences(product, preferences)).toBe(false);
+  });
+
   it("filters recipes through ingredient preferences", () => {
     const preferences = {
       ...createDefaultNutritionPreferences(),

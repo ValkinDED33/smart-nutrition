@@ -31,7 +31,13 @@ const normalizeToken = (value: string) =>
 
 const getProductSearchText = (product: Product) =>
   normalizeToken(
-    [product.name, product.brand, ...(product.facts?.extraCompounds ?? [])]
+    [
+      product.name,
+      product.brand,
+      ...(product.facts?.extraCompounds ?? []),
+      ...(product.facts?.allergens ?? []),
+      ...(product.facts?.traces ?? []),
+    ]
       .filter(Boolean)
       .join(" ")
   );

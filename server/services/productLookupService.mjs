@@ -246,6 +246,8 @@ const OPEN_FOOD_FACTS_FIELDS = [
   "ingredients_text_uk",
   "additives_tags",
   "additives_original_tags",
+  "allergens_tags",
+  "traces_tags",
   "image_front_url",
   "image_url",
   "nutriments",
@@ -457,6 +459,21 @@ const readOpenFoodFactsAdditivesText = (rawProduct) => {
     : null;
 };
 
+const readOpenFoodFactsTags = (value) =>
+  Array.isArray(value)
+    ? [
+        ...new Set(
+          value
+            .map((item) =>
+              normalizeText(item, { maxLength: 80 })
+                .replace(/^[a-z]{2}:/i, "")
+                .replace(/-/g, " ")
+            )
+            .filter(Boolean)
+        ),
+      ].slice(0, 12)
+    : undefined;
+
 const parseOpenFoodFactsProduct = (rawProduct) => {
   if (!rawProduct || typeof rawProduct !== "object" || Array.isArray(rawProduct)) {
     return null;
@@ -547,6 +564,8 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
       ingredientsText: ingredientsText ?? undefined,
       ingredientsTextByLanguage,
       additivesText: additivesText ?? undefined,
+      allergens: readOpenFoodFactsTags(rawProduct.allergens_tags),
+      traces: readOpenFoodFactsTags(rawProduct.traces_tags),
       servingSize: normalizeOptionalText(rawProduct.serving_size ?? rawProduct.quantity, 80) ?? undefined,
       servingQuantity: servingMatchesUnit ? serving.quantity : undefined,
       servingUnit: servingMatchesUnit ? serving.unit : undefined,
