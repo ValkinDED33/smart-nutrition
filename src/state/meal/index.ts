@@ -1,2 +1,0 @@
-// Meal state
-export { };

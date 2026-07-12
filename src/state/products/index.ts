@@ -1,2 +1,0 @@
-// Products state
-export { };

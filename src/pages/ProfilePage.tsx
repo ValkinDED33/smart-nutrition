@@ -63,6 +63,11 @@ const BodyWeeklyReportCard = lazy(() =>
     default: module.BodyWeeklyReportCard,
   }))
 );
+const AdaptiveGoalCard = lazy(() =>
+  import("../features/profile/AdaptiveGoalCard").then((module) => ({
+    default: module.AdaptiveGoalCard,
+  }))
+);
 const WomenHealthOverviewCard = lazy(() =>
   import("../features/profile/WomenHealthOverviewCard").then((module) => ({
     default: module.WomenHealthOverviewCard,
@@ -1028,6 +1033,7 @@ const ProfilePage = () => {
                   copy.tabs.goal,
                   <LoadingSkeleton cards={3} chart bodyRows={3} />,
                   <Stack spacing={3}>
+                    <AdaptiveGoalCard />
                     <BodyWeeklyReportCard />
                     <MealDayOverview />
                     <DailyHistoryExplorer />
