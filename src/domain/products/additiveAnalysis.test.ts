@@ -87,4 +87,45 @@ describe("analyzeProductAdditives", () => {
       "Алергенний компонент"
     );
   });
+
+  it("normalizes OpenFoodFacts additive tags into user-safe additive cards", () => {
+    const findings = analyzeProductAdditives(
+      "en:e150d,en:e338,en:e950,en:e955,en:e407,en:e471"
+    );
+
+    expect(findings.map((finding) => finding.code)).toEqual([
+      "E150D",
+      "E338",
+      "E950",
+      "E955",
+      "E407",
+      "E471",
+    ]);
+    expect(findings.find((finding) => finding.code === "E407")?.riskLevel).toBe("watch");
+    expect(findings.find((finding) => finding.code === "E471")?.name.uk).toBe(
+      "Моно- та дигліцериди жирних кислот"
+    );
+    expect(findings.find((finding) => finding.code === "E955")?.group.uk).toBe(
+      "Підсолоджувач"
+    );
+  });
+
+  it("explains vitamins, thickeners, and sweeteners from consumer label language", () => {
+    const insights = analyzeProductIngredientInsights(
+      "Woda, witamina C, guma ksantanowa, substancje słodzące: sukraloza i acesulfam K."
+    );
+
+    expect(insights.map((insight) => insight.id)).toEqual([
+      "water",
+      "sweetener",
+      "vitamins",
+      "thickener",
+    ]);
+    expect(insights.find((insight) => insight.id === "vitamins")?.label.uk).toBe(
+      "Вітаміни"
+    );
+    expect(insights.find((insight) => insight.id === "thickener")?.group.uk).toBe(
+      "Текстура продукту"
+    );
+  });
 });
