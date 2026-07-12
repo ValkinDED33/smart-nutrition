@@ -5,14 +5,17 @@ const readSource = (path: string) =>
   readFile(new URL(path, import.meta.url), "utf8");
 
 describe("Smart Nutrition visual system coverage", () => {
-  it("keeps water and AI companion hero surfaces on the shared companion scene", async () => {
-    const [waterPage, companionPage] = await Promise.all([
-      readSource("../../pages/WaterPage.tsx"),
+  it("keeps progress and AI companion hero surfaces on the shared ecosystem pulse", async () => {
+    const [progressPage, ecosystemPulse, companionPage] = await Promise.all([
+      readSource("../../pages/ProgressPage.tsx"),
+      readSource("../../features/assistant/EcosystemPulse.tsx"),
       readSource("../../pages/AiCompanionPage.tsx"),
     ]);
 
-    expect(waterPage).toContain('className="sn-companion-panel"');
-    expect(waterPage).toContain("var(--sn-on-companion)");
+    expect(progressPage).toContain('assistantHint={<EcosystemPulse focus="progress" />}');
+    expect(ecosystemPulse).toContain("AssistantAvatar");
+    expect(ecosystemPulse).toContain("selectTodayMealItems");
+    expect(ecosystemPulse).toContain("state.water");
     expect(companionPage).toContain('className="sn-companion-panel"');
     expect(companionPage).toContain("var(--sn-on-companion-muted)");
   });

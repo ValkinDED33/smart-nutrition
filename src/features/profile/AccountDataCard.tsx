@@ -28,7 +28,7 @@ import {
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
-import { accountCopy } from "./AccountDataCard.copy";
+import { accountCopy } from "./accountDataCardCopy";
 import {
   TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS,
   shouldPollTelegramConnectStatus,

@@ -64,6 +64,11 @@ const DailyHistoryExplorer = lazy(() =>
     default: module.DailyHistoryExplorer,
   }))
 );
+const DailyMicronutrientsCard = lazy(() =>
+  import("../features/meal/DailyMicronutrientsCard").then((module) => ({
+    default: module.DailyMicronutrientsCard,
+  }))
+);
 const FridgeRecipePlanner = lazy(() =>
   import("../features/fridge/FridgeRecipePlanner").then((module) => ({
     default: module.FridgeRecipePlanner,
@@ -776,7 +781,10 @@ const MealBuilderPage = () => {
       ) : null}
 
       {activeSection === "day" ? (
-        <SectionCard>{diaryContent}</SectionCard>
+        <Stack spacing={3}>
+          <SectionCard>{diaryContent}</SectionCard>
+          {renderLazyModule(copy.sections.day, <DailyMicronutrientsCard />)}
+        </Stack>
       ) : null}
 
       {activeSection === "history" ? (

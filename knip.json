@@ -10,12 +10,6 @@
     "vite-env.d.ts"
   ],
   "ignoreFiles": [
-    "server/services/aiProvider.mjs",
-    "src/assistant/engine/assistantEngine.ts",
-    "src/assistant/engine/assistantRules.ts",
-    "src/assistant/engine/assistantRuntimeFacade.ts",
-    "src/assistant/engine/assistantTypes.ts",
-    "src/assistant/state/assistantStore.ts",
     "src/data/index.ts",
     "src/data/products/index.ts",
     "src/data/profile/index.ts",
@@ -29,7 +23,6 @@
     "src/features/assistant/model/assistantStore.ts",
     "src/features/auth/index.ts",
     "src/features/index.ts",
-    "src/features/meal/DailyMicronutrientsCard.tsx",
     "src/features/meal/hooks/index.ts",
     "src/features/meal/hooks/useMealOperations.ts",
     "src/features/meal/index.ts",
@@ -41,7 +34,6 @@
     "src/integration/runtime/index.ts",
     "src/integration/shared/errors.ts",
     "src/integration/shared/index.ts",
-    "src/pages/WaterPage.tsx",
     "src/shared/types/rawProduct.ts",
     "src/state/companion/index.ts",
     "src/state/index.ts",
@@ -49,7 +41,6 @@
     "src/state/products/index.ts",
     "src/state/profile/index.ts",
     "src/state/sync/index.ts",
-    "src/widgets/ContextAssistantWidget.tsx",
     "vite-env.d.ts"
   ],
   "ignoreDependencies": [

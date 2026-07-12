@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { accountCopy } from "./AccountDataCard.copy";
+import { accountCopy } from "./accountDataCardCopy";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(path.join(__dirname, "AccountDataCard.tsx"), "utf8");

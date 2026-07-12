@@ -19,7 +19,6 @@ describe("EcosystemPulse contract", () => {
   it("surfaces the ecosystem pulse on key product areas", async () => {
     const pages = [
       "src/pages/MealBuilderPage.tsx",
-      "src/pages/WaterPage.tsx",
       "src/pages/ProgressPage.tsx",
       "src/pages/ProfilePage.tsx",
       "src/pages/AiCompanionPage.tsx",
@@ -35,5 +34,12 @@ describe("EcosystemPulse contract", () => {
         expect(source).toContain("assistantHint=");
       })
     );
+  });
+
+  it("keeps the retired water route redirected to the canonical progress surface", async () => {
+    const source = await readSource("src/App.tsx");
+
+    expect(source).toContain('path="/water"');
+    expect(source).toContain('to="/progress"');
   });
 });

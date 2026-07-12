@@ -47,7 +47,6 @@ describe("page lazy-loading boundaries", () => {
         "MealsPage.tsx",
         "ProfilePage.tsx",
         "ProgressPage.tsx",
-        "WaterPage.tsx",
       ].map(readPageSource)
     );
 
