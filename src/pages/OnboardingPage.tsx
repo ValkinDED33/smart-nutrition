@@ -82,6 +82,30 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft && draft.gender === "female"
             ? draft.womenHealthNotes
             : "",
+        motherEyeColor:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.motherEyeColor
+            : profile.personalDetails.eyeColor,
+        partnerEyeColor:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.partnerEyeColor
+            : profile.womenHealth.partnerEyeColor,
+        motherZodiac:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.motherZodiac
+            : profile.womenHealth.motherZodiac,
+        fatherZodiac:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.fatherZodiac
+            : profile.womenHealth.fatherZodiac,
+        motherChineseZodiac:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.motherChineseZodiac
+            : profile.womenHealth.motherChineseZodiac,
+        fatherChineseZodiac:
+          !onboardingCompleted && hasDraft && draft.gender === "female"
+            ? draft.fatherChineseZodiac
+            : profile.womenHealth.fatherChineseZodiac,
         height: user?.height ?? (!onboardingCompleted && hasDraft ? draft.height : 175),
         goal:
           user?.goal ??
@@ -137,6 +161,12 @@ const OnboardingPage = () => {
       profile.assistant.companionKind,
       profile.assistant.onboarding,
       profile.goal,
+      profile.personalDetails.eyeColor,
+      profile.womenHealth.fatherChineseZodiac,
+      profile.womenHealth.fatherZodiac,
+      profile.womenHealth.motherChineseZodiac,
+      profile.womenHealth.motherZodiac,
+      profile.womenHealth.partnerEyeColor,
       profile.weightHistory,
       user,
     ]
@@ -188,6 +218,14 @@ const OnboardingPage = () => {
           ? state.doctorConfirmed
           : false,
       womenHealthNotes: state.gender === "female" ? state.womenHealthNotes : "",
+      motherEyeColor: state.gender === "female" ? state.motherEyeColor : "unknown",
+      partnerEyeColor: state.gender === "female" ? state.partnerEyeColor : "unknown",
+      motherZodiac: state.gender === "female" ? state.motherZodiac : "unknown",
+      fatherZodiac: state.gender === "female" ? state.fatherZodiac : "unknown",
+      motherChineseZodiac:
+        state.gender === "female" ? state.motherChineseZodiac : "unknown",
+      fatherChineseZodiac:
+        state.gender === "female" ? state.fatherChineseZodiac : "unknown",
       height: state.height,
       weight: state.weight,
       goal: state.goal,

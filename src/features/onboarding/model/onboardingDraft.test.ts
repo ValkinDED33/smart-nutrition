@@ -32,6 +32,12 @@ describe("onboardingDraft", () => {
       lastPeriodStartDate: "2026-03-20",
       doctorConfirmed: true,
       womenHealthNotes: "Нагадувати тільки за планом лікаря",
+      motherEyeColor: "green",
+      partnerEyeColor: "blue",
+      motherZodiac: "cancer",
+      fatherZodiac: "capricorn",
+      motherChineseZodiac: "tiger",
+      fatherChineseZodiac: "goat",
       height: 168,
       weight: 64,
       goal: "cut",
@@ -53,6 +59,12 @@ describe("onboardingDraft", () => {
     expect(draft.womenHealthMode).toBe("pregnant");
     expect(draft.pregnancyWeek).toBe(12);
     expect(draft.doctorConfirmed).toBe(true);
+    expect(draft.motherEyeColor).toBe("green");
+    expect(draft.partnerEyeColor).toBe("blue");
+    expect(draft.motherZodiac).toBe("cancer");
+    expect(draft.fatherZodiac).toBe("capricorn");
+    expect(draft.motherChineseZodiac).toBe("tiger");
+    expect(draft.fatherChineseZodiac).toBe("goat");
     expect(draft.selectedGoals).toEqual(["cut", "healthy"]);
     expect(draft.mainFriction).toBe("evening_snacking");
     expect(draft.mainFrictions).toEqual(["evening_snacking", "low_energy"]);

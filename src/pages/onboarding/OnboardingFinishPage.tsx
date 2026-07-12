@@ -14,6 +14,7 @@ import {
   replaceProfileState,
   setAssistantCustomization,
   setProfileLanguage,
+  updatePersonalDetails,
   updateWomenHealth,
 } from "../../features/profile/profileSlice";
 import { saveProfileAndUserToCloud } from "../../features/profile/profileCloudSync";
@@ -161,6 +162,11 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
                 ? state.doctorConfirmed
                 : false,
             notes: state.womenHealthNotes,
+            partnerEyeColor: state.partnerEyeColor,
+            motherZodiac: state.motherZodiac,
+            fatherZodiac: state.fatherZodiac,
+            motherChineseZodiac: state.motherChineseZodiac,
+            fatherChineseZodiac: state.fatherChineseZodiac,
           }
         : {
             mode: "none" as const,
@@ -169,12 +175,25 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
             lastPeriodStartDate: null,
             doctorConfirmed: false,
             notes: "",
+            partnerEyeColor: "unknown" as const,
+            motherZodiac: "unknown" as const,
+            fatherZodiac: "unknown" as const,
+            motherChineseZodiac: "unknown" as const,
+            fatherChineseZodiac: "unknown" as const,
           };
     const nextProfile = profileReducer(
       profileReducer(
         profileReducer(
-          profileReducer(profile, setProfileLanguage(appLanguage)),
-          setAssistantCustomization(assistantCustomization)
+          profileReducer(
+            profileReducer(profile, setProfileLanguage(appLanguage)),
+            setAssistantCustomization(assistantCustomization)
+          ),
+          updatePersonalDetails({
+            eyeColor:
+              state.gender === "female"
+                ? state.motherEyeColor
+                : profile.personalDetails.eyeColor,
+          })
         ),
         applyProfileTargets(profileTargets)
       ),

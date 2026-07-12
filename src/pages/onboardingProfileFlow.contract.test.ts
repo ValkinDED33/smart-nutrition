@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 
 const readSource = (path: string) => readFile(path, "utf8");
+const ONBOARDING_PAGE_PATH = "src/pages/OnboardingPage.tsx";
 
 describe("onboarding and profile flow contract", () => {
   it("keeps registration as a guided language-theme-account sequence with backend availability checks", async () => {
@@ -26,7 +27,7 @@ describe("onboarding and profile flow contract", () => {
 
   it("routes confirmed users to an explicit onboarding choice before the questionnaire", async () => {
     const verifyEmailSource = await readSource("src/pages/VerifyEmailPage.tsx");
-    const onboardingSource = await readSource("src/pages/OnboardingPage.tsx");
+    const onboardingSource = await readSource(ONBOARDING_PAGE_PATH);
     const choiceSource = await readSource("src/pages/onboarding/OnboardingChoicePage.tsx");
 
     expect(verifyEmailSource).toContain('"/onboarding/choice"');
@@ -39,7 +40,7 @@ describe("onboarding and profile flow contract", () => {
   });
 
   it("keeps the post-confirmation questionnaire order user-friendly", async () => {
-    const onboardingSource = await readSource("src/pages/OnboardingPage.tsx");
+    const onboardingSource = await readSource(ONBOARDING_PAGE_PATH);
     const assistantSource = await readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
     const genderSource = await readSource("src/pages/onboarding/OnboardingGenderPage.tsx");
     const nameSource = await readSource("src/pages/onboarding/OnboardingNamePage.tsx");
@@ -54,9 +55,27 @@ describe("onboarding and profile flow contract", () => {
     expect(ageSource).toContain("stepPaths.womenHealth");
     expect(ageSource).toContain("stepPaths.height");
     expect(womenHealthSource).toContain('data-onboarding-pregnancy-block="true"');
+    expect(womenHealthSource).toContain('data-onboarding-family-preview-block="true"');
     expect(womenHealthSource).toContain("pregnancyBlockTitle");
     expect(womenHealthSource).toContain("pregnancyPrivate");
+    expect(womenHealthSource).toContain("familyPreviewSafety");
+    expect(womenHealthSource).toContain("motherEyeColor");
+    expect(womenHealthSource).toContain("fatherChineseZodiac");
     expect(womenHealthSource).toContain("state.womenHealthMode === \"pregnant\"");
+  });
+
+  it("saves family preview onboarding data into the canonical profile contract", async () => {
+    const onboardingSource = await readSource("src/pages/OnboardingPage.tsx");
+    const finishSource = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+
+    expect(onboardingSource).toContain("motherEyeColor");
+    expect(onboardingSource).toContain("partnerEyeColor");
+    expect(onboardingSource).toContain("motherChineseZodiac");
+    expect(finishSource).toContain("updatePersonalDetails");
+    expect(finishSource).toContain("eyeColor:");
+    expect(finishSource).toContain("partnerEyeColor: state.partnerEyeColor");
+    expect(finishSource).toContain("motherZodiac: state.motherZodiac");
+    expect(finishSource).toContain("fatherChineseZodiac: state.fatherChineseZodiac");
   });
 
   it("keeps profile editing behind an explicit edit action and gates admin details", async () => {

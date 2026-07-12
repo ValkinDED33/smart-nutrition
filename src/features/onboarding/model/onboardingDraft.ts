@@ -4,7 +4,10 @@ import type {
   AssistantDietFriction,
   AssistantMotivationStyle,
   AssistantTone,
+  ChineseZodiacSign,
+  EyeColor,
   WomenHealthMode,
+  ZodiacSign,
 } from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
 import {
@@ -29,6 +32,12 @@ export interface PreAuthOnboardingDraft {
   lastPeriodStartDate: string;
   doctorConfirmed: boolean;
   womenHealthNotes: string;
+  motherEyeColor: EyeColor;
+  partnerEyeColor: EyeColor;
+  motherZodiac: ZodiacSign;
+  fatherZodiac: ZodiacSign;
+  motherChineseZodiac: ChineseZodiacSign;
+  fatherChineseZodiac: ChineseZodiacSign;
   height: number;
   weight: number;
   goal: Goal;
@@ -57,6 +66,12 @@ export const defaultPreAuthOnboardingDraft = (
   lastPeriodStartDate: "",
   doctorConfirmed: false,
   womenHealthNotes: "",
+  motherEyeColor: "unknown",
+  partnerEyeColor: "unknown",
+  motherZodiac: "unknown",
+  fatherZodiac: "unknown",
+  motherChineseZodiac: "unknown",
+  fatherChineseZodiac: "unknown",
   height: 175,
   weight: 70,
   goal: "maintain",
@@ -110,6 +125,43 @@ const isWomenHealthMode = (value: unknown): value is WomenHealthMode =>
   value === "trying_to_conceive" ||
   value === "pregnant" ||
   value === "postpartum";
+const isEyeColor = (value: unknown): value is EyeColor =>
+  value === "unknown" ||
+  value === "brown" ||
+  value === "blue" ||
+  value === "green" ||
+  value === "gray" ||
+  value === "hazel" ||
+  value === "amber" ||
+  value === "other";
+const isZodiacSign = (value: unknown): value is ZodiacSign =>
+  value === "unknown" ||
+  value === "aries" ||
+  value === "taurus" ||
+  value === "gemini" ||
+  value === "cancer" ||
+  value === "leo" ||
+  value === "virgo" ||
+  value === "libra" ||
+  value === "scorpio" ||
+  value === "sagittarius" ||
+  value === "capricorn" ||
+  value === "aquarius" ||
+  value === "pisces";
+const isChineseZodiacSign = (value: unknown): value is ChineseZodiacSign =>
+  value === "unknown" ||
+  value === "rat" ||
+  value === "ox" ||
+  value === "tiger" ||
+  value === "rabbit" ||
+  value === "dragon" ||
+  value === "snake" ||
+  value === "horse" ||
+  value === "goat" ||
+  value === "monkey" ||
+  value === "rooster" ||
+  value === "dog" ||
+  value === "pig";
 const isGoal = (value: unknown): value is Goal =>
   value === "cut" || value === "maintain" || value === "bulk";
 const isGoalChoice = (value: unknown): value is Goal | "healthy" =>
@@ -237,6 +289,34 @@ export const normalizePreAuthOnboardingDraft = (
       isGender(record.gender) && record.gender === "female" && typeof record.womenHealthNotes === "string"
         ? record.womenHealthNotes.trim().replace(/\s+/g, " ").slice(0, 220)
         : "",
+    motherEyeColor:
+      isGender(record.gender) && record.gender === "female" && isEyeColor(record.motherEyeColor)
+        ? record.motherEyeColor
+        : fallback.motherEyeColor,
+    partnerEyeColor:
+      isGender(record.gender) && record.gender === "female" && isEyeColor(record.partnerEyeColor)
+        ? record.partnerEyeColor
+        : fallback.partnerEyeColor,
+    motherZodiac:
+      isGender(record.gender) && record.gender === "female" && isZodiacSign(record.motherZodiac)
+        ? record.motherZodiac
+        : fallback.motherZodiac,
+    fatherZodiac:
+      isGender(record.gender) && record.gender === "female" && isZodiacSign(record.fatherZodiac)
+        ? record.fatherZodiac
+        : fallback.fatherZodiac,
+    motherChineseZodiac:
+      isGender(record.gender) &&
+      record.gender === "female" &&
+      isChineseZodiacSign(record.motherChineseZodiac)
+        ? record.motherChineseZodiac
+        : fallback.motherChineseZodiac,
+    fatherChineseZodiac:
+      isGender(record.gender) &&
+      record.gender === "female" &&
+      isChineseZodiacSign(record.fatherChineseZodiac)
+        ? record.fatherChineseZodiac
+        : fallback.fatherChineseZodiac,
     height: toNumber(record.height, fallback.height, 120, 250),
     weight: toNumber(record.weight, fallback.weight, 30, 300),
     goal,

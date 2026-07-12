@@ -3,7 +3,10 @@ import type {
   AssistantCompanionKind,
   AssistantDietFriction,
   AssistantMotivationStyle,
+  ChineseZodiacSign,
+  EyeColor,
   WomenHealthMode,
+  ZodiacSign,
 } from "@domain/profile/types";
 import type { Gender, Goal } from "@domain/user/types";
 import { selectInputValue } from "@shared/lib/inputSelection";
@@ -31,6 +34,12 @@ export interface OnboardingState {
   lastPeriodStartDate: string;
   doctorConfirmed: boolean;
   womenHealthNotes: string;
+  motherEyeColor: EyeColor;
+  partnerEyeColor: EyeColor;
+  motherZodiac: ZodiacSign;
+  fatherZodiac: ZodiacSign;
+  motherChineseZodiac: ChineseZodiacSign;
+  fatherChineseZodiac: ChineseZodiacSign;
   height: number;
   goal: Goal;
   selectedGoals: OnboardingGoalChoice[];
