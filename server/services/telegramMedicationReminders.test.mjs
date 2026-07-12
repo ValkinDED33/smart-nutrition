@@ -58,6 +58,15 @@ describe("telegramMedicationReminders", () => {
     );
   });
 
+  it("localizes medication reminder lists", () => {
+    const message = buildMedicationReminderListMessage([createReminder()], "en");
+
+    expect(message).toContain("Active reminders");
+    expect(message).toContain("Dose: 1 капсула");
+    expect(message).toContain("Medical safety");
+    expect(message).not.toContain("Активні нагадування");
+  });
+
   it("formats next reminder time in the reminder timezone instead of server UTC", () => {
     const reminder = createReminder({
       times: ["10:00"],
@@ -442,6 +451,56 @@ describe("telegramMedicationReminders", () => {
       })
     );
     expect(ctx.answerCbQuery).toHaveBeenCalledWith("Записано: зроблено.");
+  });
+
+  it("uses the profile language for reminder management buttons and callbacks", async () => {
+    const { bot, events } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123", languagePreference: "en" };
+    const reminder = createReminder({
+      id: "task-call",
+      type: "task",
+      title: "Call doctor",
+      dose: "",
+      repeat: "once",
+      timezone: "Europe/Warsaw",
+    });
+    const reminderService = {
+      getUserReminders: vi.fn(() => [reminder]),
+      recordReminderAction: vi.fn(async () => ({ ok: true, user, reminder })),
+    };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      reminderService,
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(async () => {}),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const listCtx = {
+      message: { text: "show reminders" },
+      reply: vi.fn(async () => {}),
+    };
+    const callbackCtx = {
+      callbackQuery: { data: "rem:done:task-call" },
+      answerCbQuery: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await events.text(listCtx, vi.fn(async () => {}));
+    await events.callback_query(callbackCtx);
+
+    expect(listCtx.reply.mock.calls[0][0]).toContain("Active reminders");
+    expect(listCtx.reply.mock.calls[1][1].reply_markup.inline_keyboard.flat()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: "✅ Done" }),
+        expect.objectContaining({ text: "⏰ In 15 min" }),
+        expect.objectContaining({ text: "✏️ Edit" }),
+        expect.objectContaining({ text: "⏸ Pause" }),
+        expect.objectContaining({ text: "🗑 Delete" }),
+      ])
+    );
+    expect(callbackCtx.answerCbQuery).toHaveBeenCalledWith("Saved: done.");
   });
 
   it("shows reminder list with management buttons from natural text", async () => {

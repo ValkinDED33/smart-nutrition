@@ -1302,6 +1302,7 @@ export const createTelegramService = ({
         authRepository,
         reminderService: reminders,
         getConnectedUser,
+        getUserLanguage: getTelegramUserLanguage,
         writeAuditLog,
         sendTelegramMessage,
         logger,
