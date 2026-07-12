@@ -72,6 +72,41 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("answers deterministic tool actions in the runtime context language", async () => {
+    const stateService = {
+      getWaterState: vi.fn(async () => ({
+        dailyWaterGoal: 2000,
+        consumedMl: 500,
+        glassSizeMl: 250,
+        lastLoggedOn: "2026-06-21",
+        history: [],
+      })),
+      saveWaterState: vi.fn(async () => undefined),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "I drank 300 ml water",
+      context: {
+        language: "en",
+        interactionChannel: "telegram",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "add_water" },
+      actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+    });
+    expect(result.text).toContain("Done");
+    expect(result.text).toContain("Added 300 ml of water");
+    expect(result.text).not.toContain("Додав");
+  });
+
   it("returns visible failure when backend water save is unavailable", async () => {
     const stateService = {
       getWaterState: vi.fn(async () => ({

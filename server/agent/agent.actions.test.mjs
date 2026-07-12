@@ -53,4 +53,43 @@ describe("agent.actions", () => {
     expect(reply).toContain("курс ліків");
     expect(reply).toContain("прийнято");
   });
+
+  it("localizes confirmed water actions for the runtime context language", () => {
+    const reply = buildAgentReply({
+      intent: createIntent("add_water"),
+      language: "en",
+      toolResult: {
+        ok: true,
+        type: "water_added",
+        amountMl: 250,
+        water: {
+          consumedMl: 750,
+          targetMl: 2000,
+        },
+      },
+    });
+
+    expect(reply).toContain("Done");
+    expect(reply).toContain("Added 250 ml of water");
+    expect(reply).toContain("Now: 750 / 2000 ml");
+    expect(reply).not.toContain("Додав");
+  });
+
+  it("localizes reminder worker confirmations without changing the backend action", () => {
+    const reply = buildAgentReply({
+      intent: createIntent("create_water_reminder"),
+      language: "pl",
+      toolResult: {
+        ok: true,
+        type: "reminder_created",
+        reminderKind: "water",
+        reminder: createReminder(),
+      },
+    });
+
+    expect(reply).toContain("Utworzono przypomnienie o wodzie");
+    expect(reply).toContain("Przypomnę w Telegramie");
+    expect(reply).toContain("wypite");
+    expect(reply).not.toContain("випито");
+  });
 });

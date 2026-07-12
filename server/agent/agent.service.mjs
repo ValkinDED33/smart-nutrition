@@ -138,7 +138,7 @@ export const createAssistantAgentService = ({
     }
   };
 
-  const run = async ({ user, message, quickQuestionId = null } = {}) => {
+  const run = async ({ user, message, quickQuestionId = null, context = null } = {}) => {
     const intent = detectAgentIntent(message, { quickQuestionId });
 
     if (intent.confidence < MIN_EXECUTION_CONFIDENCE || intent.intent === "unknown") {
@@ -166,7 +166,7 @@ export const createAssistantAgentService = ({
     }
 
     const memory = await updateMemory({ user, intent, toolResult });
-    const reply = buildAgentReply({ intent, toolResult });
+    const reply = buildAgentReply({ intent, toolResult, language: context?.language });
 
     return {
       handled: true,
