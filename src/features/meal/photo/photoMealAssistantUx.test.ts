@@ -99,6 +99,15 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).toContain("item.originalName?.trim() || item.name");
   });
 
+  it("shows a clear photo draft status before allowing save", () => {
+    expect(componentSource).toContain('data-photo-review-status="draft-not-saved"');
+    expect(componentSource).toContain("copy.reviewStatusTitle");
+    expect(componentSource).toContain("copy.reviewStepIngredients");
+    expect(componentSource).toContain("copy.reviewStepPortion");
+    expect(componentSource).toContain("copy.reviewStepSave");
+    expect(componentSource).toContain("copy.selectedHint");
+  });
+
   it("keeps the save action reachable on narrow mobile screens", () => {
     expect(photoMealSaveButtonSx.alignSelf.xs).toBe("stretch");
     expect(photoMealSaveButtonSx.position.xs).toBe("sticky");

@@ -44,6 +44,7 @@ import { useMealActionFeedback } from "./useMealActionFeedback";
 import { searchProducts } from "../../shared/api/products";
 
 const FLEX_START_ALIGNMENT = "flex-start";
+const PHOTO_BORDER_SOFT_COLOR = "var(--sn-border-soft)";
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -294,6 +295,16 @@ const photoCopy = {
       "Чи є всередині страви начинка або інгредієнти, закриті тістом чи хлібом?",
       "Чи були разом із цією стравою напій, десерт або додаткова порція?",
     ],
+    reviewStatusTitle: "Фото розібрано",
+    reviewStatusBody:
+      "Це чернетка прийому їжі. Виберіть правильні інгредієнти, поправте грами і тільки потім збережіть у щоденник.",
+    reviewStepIngredients: "Склад",
+    reviewStepIngredientsBody: "залиште тільки те, що справді було на тарілці",
+    reviewStepPortion: "Порція",
+    reviewStepPortionBody: "виберіть легку, стандартну або велику порцію",
+    reviewStepSave: "Збереження",
+    reviewStepSaveBody: "запис створиться тільки після вашого підтвердження",
+    selectedHint: "Поки нічого не вибрано. Позначте інгредієнти, які треба додати.",
     portions: "Порція",
     portionLight: "Легка",
     portionRegular: "Стандарт",
@@ -353,6 +364,16 @@ const photoCopy = {
       "Czy w środku potrawy jest farsz albo składniki przykryte ciastem lub pieczywem?",
       "Czy razem z tym posiłkiem był napój, deser albo dodatkowa porcja?",
     ],
+    reviewStatusTitle: "Zdjęcie rozpisane",
+    reviewStatusBody:
+      "To szkic posiłku. Zostaw właściwe składniki, popraw gramy i dopiero wtedy zapisz w dzienniku.",
+    reviewStepIngredients: "Skład",
+    reviewStepIngredientsBody: "zostaw tylko to, co naprawdę było na talerzu",
+    reviewStepPortion: "Porcja",
+    reviewStepPortionBody: "wybierz lekką, standardową albo dużą porcję",
+    reviewStepSave: "Zapis",
+    reviewStepSaveBody: "wpis powstanie dopiero po Twoim potwierdzeniu",
+    selectedHint: "Na razie nic nie wybrano. Zaznacz składniki, które chcesz dodać.",
     portions: "Porcja",
     portionLight: "Lekka",
     portionRegular: "Standard",
@@ -413,6 +434,16 @@ const photoCopy = {
       "Is anything hidden inside a wrap, sandwich, pastry, or covered part of the meal?",
       "Was any drink, side, dessert, or extra portion eaten with this meal?",
     ],
+    reviewStatusTitle: "Photo parsed",
+    reviewStatusBody:
+      "This is a meal draft. Keep the correct ingredients, adjust grams, and save only after your confirmation.",
+    reviewStepIngredients: "Ingredients",
+    reviewStepIngredientsBody: "keep only what was actually on the plate",
+    reviewStepPortion: "Portion",
+    reviewStepPortionBody: "choose light, regular, or large",
+    reviewStepSave: "Save",
+    reviewStepSaveBody: "the diary entry is created only after confirmation",
+    selectedHint: "Nothing is selected yet. Tick the ingredients you want to add.",
     portions: "Portion",
     portionLight: "Light",
     portionRegular: "Regular",
@@ -988,7 +1019,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: `1px solid ${PHOTO_BORDER_SOFT_COLOR}`,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
@@ -1081,7 +1112,7 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
             sx={{
               p: 2,
               borderRadius: 1,
-              borderColor: "var(--sn-border-soft)",
+              borderColor: PHOTO_BORDER_SOFT_COLOR,
             }}
           >
             <Stack spacing={1.5}>
@@ -1134,13 +1165,90 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                 </Stack>
               </Stack>
 
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1,
+                  borderColor: PHOTO_BORDER_SOFT_COLOR,
+                  backgroundColor: "var(--sn-surface-elevated)",
+                }}
+                data-photo-review-status="draft-not-saved"
+              >
+                <Stack spacing={1.2}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    justifyContent="space-between"
+                    alignItems={{ xs: FLEX_START_ALIGNMENT, sm: "center" }}
+                  >
+                    <Stack spacing={0.4}>
+                      <Typography sx={{ fontWeight: 800 }}>
+                        {copy.reviewStatusTitle}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {copy.reviewStatusBody}
+                      </Typography>
+                    </Stack>
+                    <Chip
+                      label={`${copy.selected}: ${selectedItemIndexes.length}/${analysis.items.length}`}
+                      color={selectedItemIndexes.length > 0 ? "success" : "warning"}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Stack>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "minmax(0, 1fr)",
+                        md: "repeat(3, minmax(0, 1fr))",
+                      },
+                      gap: 1,
+                    }}
+                  >
+                    {[
+                      {
+                        title: copy.reviewStepIngredients,
+                        body: copy.reviewStepIngredientsBody,
+                      },
+                      {
+                        title: copy.reviewStepPortion,
+                        body: copy.reviewStepPortionBody,
+                      },
+                      {
+                        title: copy.reviewStepSave,
+                        body: copy.reviewStepSaveBody,
+                      },
+                    ].map((step) => (
+                      <Box
+                        key={step.title}
+                        sx={{
+                          p: 1,
+                          borderRadius: 1,
+                          border: `1px solid ${PHOTO_BORDER_SOFT_COLOR}`,
+                          minWidth: 0,
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                          {step.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {step.body}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Stack>
+              </Paper>
+
               {totals && (
                 <Paper
                   variant="outlined"
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    borderColor: "var(--sn-border-soft)",
+                    borderColor: PHOTO_BORDER_SOFT_COLOR,
                     backgroundColor: "var(--sn-surface-elevated)",
                   }}
                 >
@@ -1232,6 +1340,9 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                     {copy.addMissing}
                   </Button>
                 </Stack>
+                {selectedItemIndexes.length === 0 ? (
+                  <Alert severity="warning">{copy.selectedHint}</Alert>
+                ) : null}
                 {analysis.items.length === 0 ? (
                   <Alert severity="warning">{copy.empty}</Alert>
                 ) : (
