@@ -38,6 +38,14 @@ const womenHealthCopy = {
     none: "Режим не ввімкнено",
     trying: "Підготовка до вагітності",
     pregnant: "Вагітність",
+    pregnancyTitle: "Вагітність",
+    pregnancySubtitle:
+      "Окремий простір для терміну, триместру, дати пологів, м'яких підказок і сімейного доступу.",
+    pregnancyNotEnabled:
+      "Увімкніть режим вагітності або підготовки в редагуванні профілю, щоб відкрити цей блок.",
+    pregnancyTimeline: "Прогрес вагітності",
+    pregnancySafety:
+      "Підказки тут не замінюють лікаря: добавки, дозування, біль, кровотеча або тривожні симптоми тільки через медичного спеціаліста.",
     postpartum: "Після пологів",
     cycleDay: "День циклу",
     fertileWindow: "Орієнтовне фертильне вікно",
@@ -92,6 +100,14 @@ const womenHealthCopy = {
     none: "Tryb nie jest włączony",
     trying: "Przygotowanie do ciąży",
     pregnant: "Ciąża",
+    pregnancyTitle: "Ciąża",
+    pregnancySubtitle:
+      "Osobna przestrzeń na tydzień, trymestr, termin, łagodne wskazówki i dostęp rodzinny.",
+    pregnancyNotEnabled:
+      "Włącz tryb ciąży albo przygotowania w edycji profilu, aby odblokować ten blok.",
+    pregnancyTimeline: "Postęp ciąży",
+    pregnancySafety:
+      "Wskazówki tutaj nie zastępują lekarza: suplementy, dawki, ból, krwawienie lub niepokojące objawy zawsze konsultuj ze specjalistą.",
     postpartum: "Po porodzie",
     cycleDay: "Dzień cyklu",
     fertileWindow: "Orientacyjne okno płodne",
@@ -146,6 +162,14 @@ const womenHealthCopy = {
     none: "Mode is not enabled",
     trying: "Preparing for pregnancy",
     pregnant: "Pregnancy",
+    pregnancyTitle: "Pregnancy",
+    pregnancySubtitle:
+      "A dedicated space for week, trimester, due date, gentle guidance, and family access.",
+    pregnancyNotEnabled:
+      "Enable pregnancy or preparing mode in profile editing to unlock this block.",
+    pregnancyTimeline: "Pregnancy progress",
+    pregnancySafety:
+      "Guidance here does not replace a clinician: supplements, dosages, pain, bleeding, or worrying symptoms must be checked with a qualified specialist.",
     postpartum: "Postpartum",
     cycleDay: "Cycle day",
     fertileWindow: "Estimated fertile window",
@@ -469,6 +493,11 @@ export const WomenHealthOverviewCard = () => {
     Boolean(womenHealth.lastPeriodStartDate) ||
     Boolean(womenHealth.pregnancyWeek) ||
     Boolean(womenHealth.notes);
+  const hasPregnancyContext =
+    womenHealth.mode === "pregnant" ||
+    womenHealth.mode === "trying_to_conceive" ||
+    Boolean(womenHealth.pregnancyWeek) ||
+    Boolean(womenHealth.dueDate);
 
   return (
     <Paper
@@ -492,6 +521,100 @@ export const WomenHealthOverviewCard = () => {
         </Stack>
 
         {isWomenHealthOwner && !hasPersonalContext && <Alert severity="info">{copy.addContext}</Alert>}
+
+        {isWomenHealthOwner && (
+          <Box
+            sx={{
+              p: { xs: 1.6, md: 2 },
+              borderRadius: 1,
+              border: 1,
+              borderColor: "rgba(20, 184, 166, 0.32)",
+              background:
+                "linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(236, 72, 153, 0.08))",
+            }}
+            data-women-health-pregnancy-block="true"
+          >
+            <Stack spacing={1.4}>
+              <Stack spacing={0.4}>
+                <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
+                  {copy.pregnancyTitle}
+                </Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                  {copy.pregnancySubtitle}
+                </Typography>
+              </Stack>
+
+              {!hasPregnancyContext && <Alert severity="info">{copy.pregnancyNotEnabled}</Alert>}
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.pregnancyWeek}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {womenHealth.pregnancyWeek ? `${womenHealth.pregnancyWeek} / 40` : copy.none}
+                    </Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.trimester}
+                    </Typography>
+                    <Typography color="text.secondary">{trimester ?? copy.none}</Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.dueIn}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {dueInDays !== null ? copy.days(dueInDays) : copy.none}
+                    </Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                      {copy.doctorPlan}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {womenHealth.doctorConfirmed ? copy.doctorYes : copy.doctorNo}
+                    </Typography>
+                  </Stack>
+                </Box>
+              </Box>
+
+              <Stack spacing={0.8}>
+                <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                  {copy.pregnancyTimeline}
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={pregnancyProgress}
+                  sx={{
+                    height: 10,
+                    borderRadius: 999,
+                    "& .MuiLinearProgress-bar": { backgroundColor: "#14b8a6" },
+                  }}
+                />
+              </Stack>
+
+              <Alert severity="warning">
+                <Typography sx={{ fontWeight: 850 }}>{copy.safetyTitle}</Typography>
+                <Typography variant="body2">{copy.pregnancySafety}</Typography>
+              </Alert>
+            </Stack>
+          </Box>
+        )}
 
         {isWomenHealthOwner && (
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">

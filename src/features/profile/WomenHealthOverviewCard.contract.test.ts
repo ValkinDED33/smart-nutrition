@@ -23,6 +23,18 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).not.toMatch(/diagnosis|guarantee/i);
   });
 
+  it("surfaces pregnancy as a dedicated women-health block", async () => {
+    const source = await readSource(womenHealthCardPath);
+
+    expect(source).toContain('data-women-health-pregnancy-block="true"');
+    expect(source).toContain("copy.pregnancyTitle");
+    expect(source).toContain("copy.pregnancyTimeline");
+    expect(source).toContain("copy.pregnancySafety");
+    expect(source).toContain("hasPregnancyContext");
+    expect(source).toContain("womenHealth.pregnancyWeek");
+    expect(source).toContain("womenHealth.dueDate");
+  });
+
   it("surfaces the women-health center through the existing profile shell", async () => {
     const source = await readSource("src/pages/ProfilePage.tsx");
 
