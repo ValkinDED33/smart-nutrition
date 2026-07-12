@@ -66,7 +66,7 @@ export const createBlankPhotoSuggestion = (): PhotoMealSuggestion => ({
   quantityGrams: 100,
   portionRangeGrams: { min: 75, max: 125 },
   confidence: 0,
-  reason: "Added manually by the user as a correction to the AI photo estimate.",
+  reason: "Added manually by the user as a correction to the photo draft.",
   uncertain: false,
   estimatedNutritionPer100g: {
     calories: 0,

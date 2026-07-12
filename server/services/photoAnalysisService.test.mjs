@@ -42,7 +42,7 @@ describe("photoAnalysisService", () => {
         normalizedFormat: "jpeg",
       },
       manualReviewRequired: true,
-      summary: expect.stringContaining("AI estimate, please confirm"),
+      summary: expect.stringContaining("Please check ingredients and portions before saving"),
       interpretations: expect.arrayContaining([
         expect.objectContaining({
           confidence: expect.any(Number),
@@ -62,6 +62,12 @@ describe("photoAnalysisService", () => {
         expect.stringContaining("sauces"),
       ]),
     });
+    const result = await service.analyzePhoto(
+      { dietStyle: "balanced" },
+      { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "breakfast" }
+    );
+    expect(result.summary).not.toContain("AI estimate");
+    expect(result.cautions.join(" ")).not.toContain("AI estimate");
   });
 
   it("uses previous confirmed photo corrections as future low-confidence candidates", async () => {
@@ -172,7 +178,8 @@ describe("photoAnalysisService", () => {
         { imageDataUrl: `data:image/png;base64,${tinyPng}`, mealType: "lunch" }
       );
 
-      expect(result.summary).toContain("AI estimate, please confirm");
+      expect(result.summary).toContain("Please check ingredients and portions before saving");
+      expect(result.summary).not.toContain("AI estimate");
       expect(result.manualReviewRequired).toBe(true);
       expect(result.confidence).toBeLessThan(0.9);
       expect(result.items[0]).toMatchObject({

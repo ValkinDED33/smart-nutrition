@@ -23,9 +23,17 @@ describe("fallbackDraft", () => {
       dishName: "Breakfast photo draft",
       image,
       manualReviewRequired: true,
-      summary: expect.stringContaining("AI estimate, please confirm"),
+      summary: expect.stringContaining("Please check ingredients and portions before saving"),
       hiddenIngredientQuestions: expect.arrayContaining([expect.stringContaining("sauces")]),
     });
+    expect(result.summary).not.toContain("AI estimate");
+    expect(result.cautions.join(" ")).not.toContain("AI estimate");
+    expect(result.interpretations.map((item) => item.title).join(" ")).not.toMatch(
+      /candidate|alternative/i
+    );
+    expect(result.interpretations.map((item) => item.reason).join(" ")).not.toMatch(
+      /candidate|alternative/i
+    );
     expect(result.confidence).toBeLessThan(0.7);
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.items[0]).toMatchObject({

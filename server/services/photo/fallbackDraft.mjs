@@ -120,6 +120,10 @@ const getFeedbackItemsFromMealState = (mealState) => {
 
 const getMealLabel = (mealType) =>
   mealType.charAt(0).toUpperCase() + mealType.slice(1);
+const photoDraftSummary =
+  "I prepared a food draft from the photo. Please check ingredients and portions before saving. This draft uses meal context, profile preferences, and your previous confirmed corrections without inventing hidden ingredients or exact grams.";
+const photoDraftReviewCaution =
+  "Photo draft only. Please check ingredients and portions before saving.";
 
 export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens, mealState, image }) => {
   const template = getTemplate(mealType, dietStyle);
@@ -132,17 +136,17 @@ export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens
   const interpretationSources = [
     {
       id: "current-meal-pattern",
-      title: `${getMealLabel(mealType)} candidate`,
+      title: `${getMealLabel(mealType)} option`,
       reason:
-        "Meal type, profile preferences, allergies/exclusions, and safe starter ingredients.",
+        "Built from meal type, profile preferences, allergies/exclusions, and safe starter ingredients.",
       items: baseItems,
       confidence: 0.28,
     },
     ...getAlternativeMealTypes(mealType).map((alternativeMealType, index) => ({
       id: `alternative-${alternativeMealType}`,
-      title: `${getMealLabel(alternativeMealType)} alternative`,
+      title: `${getMealLabel(alternativeMealType)} option`,
       reason:
-        "Alternative interpretation because a single photo may hide ingredients, sauces, or portion boundaries.",
+        "Another possible match because a single photo may hide ingredients, sauces, or portion boundaries.",
       items: removeBlockedItems(getTemplate(alternativeMealType, dietStyle), blockedTokens),
       confidence: index === 0 ? 0.22 : 0.18,
     })),
@@ -166,12 +170,11 @@ export const createFallbackPhotoAnalysis = ({ mealType, dietStyle, blockedTokens
 
   return {
     dishName: `${getMealLabel(mealType)} photo draft`,
-    summary:
-      "AI estimate, please confirm. This build prepares honest low-confidence candidates from meal context, profile preferences, and previous confirmed corrections; it does not invent hidden ingredients or exact grams.",
+    summary: photoDraftSummary,
     confidence: Math.max(...interpretations.map((item) => item.confidence), 0.18),
     estimatedPortions: 1,
     cautions: [
-      "AI estimate, please confirm before saving.",
+      photoDraftReviewCaution,
       "Portions are ranges; exact grams are not visible from the photo alone.",
       "Hidden sauces, oils, fillings, and drinks must be added manually.",
     ],

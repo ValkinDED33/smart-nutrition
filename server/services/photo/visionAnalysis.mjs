@@ -1,5 +1,9 @@
 const maxVisionResponseLength = 16_000;
 const maxVisionTimeoutMs = 18_000;
+const photoDraftSummaryPrefix =
+  "I prepared a food draft from the photo. Please check ingredients and portions before saving.";
+const photoDraftReviewCaution =
+  "Photo draft only. Please check ingredients and portions before saving.";
 
 const clamp = (value, min, max) => Math.min(Math.max(Number(value) || 0, min), max);
 
@@ -47,7 +51,7 @@ const normalizeVisionSuggestion = (item, index = 0) => {
     portionRangeGrams: { min, max },
     confidence: clamp(item?.confidence, 0.05, 0.86),
     reason: normalizeVisionText(item?.reason, {
-      fallback: "Visible candidate from AI photo analysis; user confirmation required.",
+      fallback: "Visible food item from the photo; please check before saving.",
     }),
     uncertain: Boolean(item?.uncertain ?? Number(item?.confidence) < 0.7),
     estimatedNutritionPer100g: normalizeNutritionPer100g(item?.estimatedNutritionPer100g),
@@ -65,11 +69,11 @@ const createVisionInterpretation = (interpretation, index = 0) => {
         .replace(/^-+|-+$/g, "")
         .slice(0, 64) || `vision-${index + 1}`,
     title: normalizeVisionText(interpretation?.title, {
-      fallback: `Photo interpretation ${index + 1}`,
+      fallback: `Possible meal ${index + 1}`,
     }),
     confidence: clamp(interpretation?.confidence, 0.05, 0.86),
     reason: normalizeVisionText(interpretation?.reason, {
-      fallback: "AI vision candidate; user confirmation required.",
+      fallback: "Possible match from the visible food; please check before saving.",
     }),
     items: items.slice(0, 5).map((item, itemIndex) => normalizeVisionSuggestion(item, itemIndex)),
   };
@@ -173,7 +177,7 @@ Context:
 JSON schema:
 {
   "dishName": "short visible dish name or photo meal",
-  "summary": "AI estimate, please confirm...",
+  "summary": "I prepared a food draft from the photo. Please check ingredients and portions before saving.",
   "confidence": 0.42,
   "uncertainIngredients": ["possible sauce"],
   "hiddenIngredientQuestions": ["Is there oil or sauce not visible?"],
@@ -311,20 +315,22 @@ export const normalizeVisionAnalysis = (payload) => {
   );
   const items = interpretations[0].items;
   const summary = normalizeVisionText(payload?.summary, {
-    fallback: "Visible food candidates were detected from the photo.",
+    fallback: "Visible food items were detected from the photo.",
   });
+  const hasReviewPrefix =
+    summary.toLowerCase().startsWith(photoDraftSummaryPrefix.toLowerCase()) ||
+    summary.toLowerCase().startsWith("please check") ||
+    summary.toLowerCase().startsWith("check ingredients");
 
   return {
     dishName: normalizeVisionText(payload?.dishName, {
       fallback: interpretations[0].title || "Photo meal estimate",
     }),
-    summary: /^AI estimate, please confirm/i.test(summary)
-      ? summary
-      : `AI estimate, please confirm. ${summary}`,
+    summary: hasReviewPrefix ? summary : `${photoDraftSummaryPrefix} ${summary}`,
     confidence,
     estimatedPortions: 1,
     cautions: [
-      "AI estimate, please confirm before saving.",
+      photoDraftReviewCaution,
       "Portions are ranges; exact grams are not visible from the photo alone.",
       "Hidden sauces, oils, fillings, and drinks must be added manually.",
     ],
