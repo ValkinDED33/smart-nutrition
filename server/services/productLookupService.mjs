@@ -372,6 +372,18 @@ const readMicronutrientPerBase = (nutriments, key, unit, targetUnit) =>
     targetUnit
   );
 
+const readFirstMicronutrientPerBase = (nutriments, keys, unit, targetUnit) => {
+  for (const key of keys) {
+    const value = readMicronutrientPerBase(nutriments, key, unit, targetUnit);
+
+    if (value > 0) {
+      return value;
+    }
+  }
+
+  return 0;
+};
+
 const readOpenFoodFactsEnergyKcal = (nutriments, unit) => {
   const unitEnergyKcal = toNumber(nutriments[`energy-kcal_100${unit}`], NaN);
 
@@ -491,13 +503,13 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
       readNutrimentPerBase(nutriments, "salt", unit, 0) * 393.4,
     potassium: readMicronutrientPerBase(nutriments, "potassium", unit, "mg"),
     vitaminA: readMicronutrientPerBase(nutriments, "vitamin-a", unit, "ug"),
-    vitaminB1: readMicronutrientPerBase(nutriments, "vitamin-b1", unit, "mg"),
-    vitaminB2: readMicronutrientPerBase(nutriments, "vitamin-b2", unit, "mg"),
-    vitaminB3: readMicronutrientPerBase(nutriments, "vitamin-pp", unit, "mg"),
-    vitaminB5: readMicronutrientPerBase(nutriments, "pantothenic-acid", unit, "mg"),
-    vitaminB6: readMicronutrientPerBase(nutriments, "vitamin-b6", unit, "mg"),
-    vitaminB7: readMicronutrientPerBase(nutriments, "biotin", unit, "ug"),
-    vitaminB9: readMicronutrientPerBase(nutriments, "folates", unit, "ug"),
+    vitaminB1: readFirstMicronutrientPerBase(nutriments, ["vitamin-b1", "thiamin"], unit, "mg"),
+    vitaminB2: readFirstMicronutrientPerBase(nutriments, ["vitamin-b2", "riboflavin"], unit, "mg"),
+    vitaminB3: readFirstMicronutrientPerBase(nutriments, ["vitamin-b3", "vitamin-pp", "niacin"], unit, "mg"),
+    vitaminB5: readFirstMicronutrientPerBase(nutriments, ["vitamin-b5", "pantothenic-acid"], unit, "mg"),
+    vitaminB6: readFirstMicronutrientPerBase(nutriments, ["vitamin-b6", "pyridoxine"], unit, "mg"),
+    vitaminB7: readFirstMicronutrientPerBase(nutriments, ["vitamin-b7", "biotin"], unit, "ug"),
+    vitaminB9: readFirstMicronutrientPerBase(nutriments, ["vitamin-b9", "folates", "folic-acid"], unit, "ug"),
     vitaminB12: readMicronutrientPerBase(nutriments, "vitamin-b12", unit, "ug"),
     vitaminC: readMicronutrientPerBase(nutriments, "vitamin-c", unit, "mg"),
     vitaminD: readMicronutrientPerBase(nutriments, "vitamin-d", unit, "ug"),
