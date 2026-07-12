@@ -67,6 +67,8 @@ const openFoodFactsBeverageProduct = {
     "folic-acid_unit": "ug",
     "pantothenic-acid_100ml": 0.45,
     "pantothenic-acid_unit": "mg",
+    iodine_100ml: 22,
+    iodine_unit: "ug",
   },
 };
 
@@ -163,6 +165,7 @@ describe("productLookupService", () => {
         vitaminB7: 3.75,
         vitaminB9: 15,
         vitaminC: 6,
+        iodine: 22,
       }),
       facts: expect.objectContaining({
         foodGroup: "beverages",

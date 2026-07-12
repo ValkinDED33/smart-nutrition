@@ -288,6 +288,7 @@ const micronutrientTableKeys: NutrientKey[] = [
   "potassium",
   "zinc",
   "phosphorus",
+  "iodine",
 ];
 
 const getStandardNutritionRows = (product: Product, language: AppLanguage) => {

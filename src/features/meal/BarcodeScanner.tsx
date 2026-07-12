@@ -109,6 +109,8 @@ const scannerCopy = {
     notFound: "Продукт за цим кодом не знайдено",
     failed: "Не вдалося перевірити штрихкод",
     preview: "Останній знайдений продукт",
+    scannedProduct: "Відскановано",
+    scannedCodeReady: "Код зчитано. Перевірте продукт нижче.",
     cameraIdle: "Після запуску сканера тут з'явиться камера.",
     cameraFailed:
       "Не вдалося запустити камеру. Перевірте доступ до камери або скористайтеся ручним пошуком.",
@@ -192,6 +194,8 @@ const scannerCopy = {
     notFound: "Nie znaleziono produktu po tym kodzie",
     failed: "Nie udało się sprawdzić kodu kreskowego",
     preview: "Ostatnio znaleziony produkt",
+    scannedProduct: "Zeskanowano",
+    scannedCodeReady: "Kod odczytany. Sprawdź produkt poniżej.",
     cameraIdle: "Po uruchomieniu skanera pojawi się tutaj podgląd kamery.",
     cameraFailed:
       "Nie udało się uruchomić kamery. Sprawdź dostęp do kamery albo skorzystaj z wyszukiwania ręcznego.",
@@ -275,6 +279,8 @@ const scannerCopy = {
     notFound: "No product found for this code",
     failed: "Could not check barcode",
     preview: "Last found product",
+    scannedProduct: "Scanned",
+    scannedCodeReady: "Code captured. Check the product below.",
     cameraIdle: "Camera preview will appear here after starting the scanner.",
     cameraFailed:
       "Could not start the camera. Check camera access or use manual search.",
@@ -751,6 +757,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
         setLookupState("success");
         setShowManualForm(false);
         setFoundProduct(product);
+        stopScanner();
 
         if (autoAdd) {
           if (selectedQuantity === null) {
@@ -778,7 +785,6 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
           }
 
           playScannerSuccess();
-          stopScanner();
           setScannerRuntimeState("addConfirmed");
         } else {
           void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
@@ -1211,10 +1217,12 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
               sx={{ px: 2, textAlign: "center" }}
             >
               <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
-                {copy.cameraIdle}
+                {foundProduct ? copy.scannedCodeReady : copy.cameraIdle}
               </Typography>
               <Typography color="text.secondary" variant="body2">
-                {copy.cameraHint}
+                {foundProduct
+                  ? `${copy.detectedCode}: ${normalizeBarcode(foundProduct.barcode ?? barcodeInput)}`
+                  : copy.cameraHint}
               </Typography>
             </Stack>
           )}
@@ -1306,6 +1314,13 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
 
         {foundProduct ? (
           <Stack spacing={1.2} data-scanner-found-product="primary-result">
+            <Alert severity="success" data-scanner-result-alert="confirmed">
+              <AlertTitle>{copy.scannedProduct}</AlertTitle>
+              {getProductDisplayName(foundProduct, appLanguage)}
+              {normalizeBarcode(foundProduct.barcode ?? barcodeInput)
+                ? ` · ${copy.detectedCode}: ${normalizeBarcode(foundProduct.barcode ?? barcodeInput)}`
+                : ""}
+            </Alert>
             <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
             <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
           </Stack>

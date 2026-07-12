@@ -339,6 +339,7 @@ const MealBuilderPage = () => {
     inputMode === "barcode" ? "scan" : "add"
   );
   const [activeAddTool, setActiveAddTool] = useState<AddTool>("search");
+  const isDirectCaptureMode = inputMode === "barcode" || inputMode === "photo";
 
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),
@@ -493,6 +494,28 @@ const MealBuilderPage = () => {
       </Stack>
     </SectionCard>
   );
+  const directCaptureModule = inputMode === "barcode"
+    ? (
+        <Stack spacing={3} data-meal-builder-direct-capture="barcode">
+          {mealTypeSelector}
+          {renderLazyModule(copy.modes.barcode.title, (
+            <BarcodeScanner
+              mealType={mealType}
+              onOpenProductSearch={openProductSearchFromScanner}
+            />
+          ))}
+        </Stack>
+      )
+    : inputMode === "photo"
+      ? (
+          <Stack spacing={3} data-meal-builder-direct-capture="photo">
+            {mealTypeSelector}
+            {renderLazyModule(copy.modes.photo.title, (
+              <PhotoMealAssistant mealType={mealType} />
+            ))}
+          </Stack>
+        )
+      : null;
 
   const diaryContent = (
     <Stack spacing={2}>
@@ -595,19 +618,25 @@ const MealBuilderPage = () => {
         </Stack>
       </SectionCard>
 
-      <FoodCommandCenter
-        mealType={mealType}
-        onOpenTarget={openFoodCommandTarget}
-      />
+      {directCaptureModule}
 
-      <SectionTabs
-        sections={sections}
-        activeSection={activeSection}
-        onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
-        ariaLabel="Meal sections"
-      />
+      {!isDirectCaptureMode ? (
+        <>
+          <FoodCommandCenter
+            mealType={mealType}
+            onOpenTarget={openFoodCommandTarget}
+          />
 
-      {activeSection === "add" ? (
+          <SectionTabs
+            sections={sections}
+            activeSection={activeSection}
+            onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
+            ariaLabel="Meal sections"
+          />
+        </>
+      ) : null}
+
+      {activeSection === "add" && !isDirectCaptureMode ? (
         <Stack spacing={3} sx={{ minWidth: 0 }}>
       <SectionCard
         title={copy.inputTitle}
@@ -683,54 +712,37 @@ const MealBuilderPage = () => {
         }}
       >
         <Stack spacing={3} sx={{ minWidth: 0 }}>
-          {inputMode === "photo" ? (
-            renderLazyModule(copy.modes.photo.title, (
-              <PhotoMealAssistant mealType={mealType} />
-            ))
-          ) : null}
-
-          {inputMode === "search" ? (
-            <Stack spacing={2} sx={{ minWidth: 0 }}>
-              <SectionTabs
-                sections={addToolSections}
-                activeSection={activeAddTool}
-                onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
-                ariaLabel="Meal add tools"
-              />
-              {activeAddTool === "search"
-                ? renderLazyModule(copy.addTools.search, (
-                    <ProductSearch mealType={mealType} />
-                  ))
-                : null}
-              {activeAddTool === "favorites" ? (
-                renderLazyModule(copy.addTools.favorites, (
-                  <QuickProductShelf mealType={mealType} />
+          <Stack spacing={2} sx={{ minWidth: 0 }}>
+            <SectionTabs
+              sections={addToolSections}
+              activeSection={activeAddTool}
+              onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
+              ariaLabel="Meal add tools"
+            />
+            {activeAddTool === "search"
+              ? renderLazyModule(copy.addTools.search, (
+                  <ProductSearch mealType={mealType} />
                 ))
-              ) : null}
-              {activeAddTool === "composer" ? (
-                renderLazyModule(copy.addTools.composer, (
-                  <QuickMealComposer mealType={mealType} />
-                ))
-              ) : null}
-              {activeAddTool === "scanner" ? (
-                renderLazyModule(copy.addTools.scanner, (
-                  <BarcodeScanner
-                    mealType={mealType}
-                    onOpenProductSearch={openProductSearchFromScanner}
-                  />
-                ))
-              ) : null}
-            </Stack>
-          ) : null}
-
-          {inputMode === "barcode" ? (
-            renderLazyModule(copy.modes.barcode.title, (
-              <BarcodeScanner
-                mealType={mealType}
-                onOpenProductSearch={openProductSearchFromScanner}
-              />
-            ))
-          ) : null}
+              : null}
+            {activeAddTool === "favorites" ? (
+              renderLazyModule(copy.addTools.favorites, (
+                <QuickProductShelf mealType={mealType} />
+              ))
+            ) : null}
+            {activeAddTool === "composer" ? (
+              renderLazyModule(copy.addTools.composer, (
+                <QuickMealComposer mealType={mealType} />
+              ))
+            ) : null}
+            {activeAddTool === "scanner" ? (
+              renderLazyModule(copy.addTools.scanner, (
+                <BarcodeScanner
+                  mealType={mealType}
+                  onOpenProductSearch={openProductSearchFromScanner}
+                />
+              ))
+            ) : null}
+          </Stack>
         </Stack>
 
         <Stack spacing={3} sx={{ display: { xs: "none", lg: "block" }, minWidth: 0 }}>
@@ -751,7 +763,7 @@ const MealBuilderPage = () => {
         </Stack>
       ) : null}
 
-      {activeSection === "scan" ? (
+      {activeSection === "scan" && !isDirectCaptureMode ? (
         <Stack spacing={3}>
           {mealTypeSelector}
           {renderLazyModule(copy.sections.scan, (

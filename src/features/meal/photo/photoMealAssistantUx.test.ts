@@ -84,6 +84,13 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).not.toMatch(/alternative/i);
   });
 
+  it("localizes backend default photo review questions before rendering", () => {
+    expect(componentSource).toContain("getLocalizedHiddenIngredientQuestions");
+    expect(componentSource).toContain("hiddenQuestionList");
+    expect(componentSource).toContain("rawBackendPhotoQuestionPattern");
+    expect(componentSource).not.toContain("analysis.hiddenIngredientQuestions.slice(0, 3).map");
+  });
+
   it("keeps the save action reachable on narrow mobile screens", () => {
     expect(photoMealSaveButtonSx.alignSelf.xs).toBe("stretch");
     expect(photoMealSaveButtonSx.position.xs).toBe("sticky");

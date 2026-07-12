@@ -181,6 +181,7 @@ const createNutrients = ({
   magnesium = 0,
   zinc = 0,
   phosphorus = 0,
+  iodine = 0,
 } = {}) => ({
   calories: clampNumber(calories),
   protein: clampNumber(protein),
@@ -210,6 +211,7 @@ const createNutrients = ({
   magnesium: clampNumber(magnesium),
   zinc: clampNumber(zinc),
   phosphorus: clampNumber(phosphorus),
+  iodine: clampNumber(iodine),
 });
 
 const hasUsefulNutrition = (nutrients) =>
@@ -537,6 +539,7 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     magnesium: readMicronutrientPerBase(nutriments, "magnesium", unit, "mg"),
     zinc: readMicronutrientPerBase(nutriments, "zinc", unit, "mg"),
     phosphorus: readMicronutrientPerBase(nutriments, "phosphorus", unit, "mg"),
+    iodine: readFirstMicronutrientPerBase(nutriments, ["iodine", "iodide", "iodides"], unit, "ug"),
   });
 
   if (!hasUsefulNutrition(nutrients)) {

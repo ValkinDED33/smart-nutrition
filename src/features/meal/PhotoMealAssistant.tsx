@@ -289,6 +289,11 @@ const photoCopy = {
     matchOptions: "Можна уточнити",
     uncertain: "Перевір склад",
     hiddenQuestions: "Перед збереженням",
+    hiddenQuestionList: [
+      "Чи є на фото соус, масло, сир або заправка, які погано видно?",
+      "Чи є всередині страви начинка або інгредієнти, закриті тістом чи хлібом?",
+      "Чи були разом із цією стравою напій, десерт або додаткова порція?",
+    ],
     portions: "Порція",
     portionLight: "Легка",
     portionRegular: "Стандарт",
@@ -343,6 +348,11 @@ const photoCopy = {
     matchOptions: "Możesz doprecyzować",
     uncertain: "Sprawdź skład",
     hiddenQuestions: "Przed zapisem",
+    hiddenQuestionList: [
+      "Czy na zdjęciu jest sos, masło, ser albo dressing, których nie widać dokładnie?",
+      "Czy w środku potrawy jest farsz albo składniki przykryte ciastem lub pieczywem?",
+      "Czy razem z tym posiłkiem był napój, deser albo dodatkowa porcja?",
+    ],
     portions: "Porcja",
     portionLight: "Lekka",
     portionRegular: "Standard",
@@ -398,6 +408,11 @@ const photoCopy = {
     matchOptions: "Adjust if needed",
     uncertain: "Check ingredients",
     hiddenQuestions: "Before saving",
+    hiddenQuestionList: [
+      "Is there sauce, oil, cheese, or dressing that is not clearly visible?",
+      "Is anything hidden inside a wrap, sandwich, pastry, or covered part of the meal?",
+      "Was any drink, side, dessert, or extra portion eaten with this meal?",
+    ],
     portions: "Portion",
     portionLight: "Light",
     portionRegular: "Regular",
@@ -441,6 +456,27 @@ const getPhotoCopy = (language: AppLanguage) => {
     default:
       return photoCopy.uk;
   }
+};
+
+const rawBackendPhotoQuestionPattern =
+  /(sauces?|oil|butter|cheese|dressing|wrap|sandwich|bowl|covered|drink|side|dessert|exact grams|photo alone)/i;
+
+const getLocalizedHiddenIngredientQuestions = (
+  questions: string[] | undefined,
+  copy: ReturnType<typeof getPhotoCopy>
+) => {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return [];
+  }
+
+  const meaningfulCustomQuestions = questions
+    .map((question) => question.trim())
+    .filter(Boolean)
+    .filter((question) => !rawBackendPhotoQuestionPattern.test(question));
+
+  return meaningfulCustomQuestions.length > 0
+    ? meaningfulCustomQuestions.slice(0, 3)
+    : copy.hiddenQuestionList;
 };
 
 type Props = {
@@ -530,6 +566,14 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         : copy.needsDetailsChip;
   const reviewColor =
     reviewState === "ready" ? "success" : reviewState === "review" ? "warning" : "info";
+  const hiddenIngredientQuestions = useMemo(
+    () =>
+      getLocalizedHiddenIngredientQuestions(
+        analysis?.hiddenIngredientQuestions,
+        copy
+      ),
+    [analysis?.hiddenIngredientQuestions, copy]
+  );
 
   const handleFileChange = async (file: File | null) => {
     if (!file) {
@@ -1006,12 +1050,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
                   </Stack>
                 )}
 
-              {Array.isArray(analysis.hiddenIngredientQuestions) &&
-                analysis.hiddenIngredientQuestions.length > 0 && (
+              {hiddenIngredientQuestions.length > 0 && (
                   <Alert severity="warning">
                     <Stack spacing={0.5}>
                       <Typography sx={{ fontWeight: 800 }}>{copy.hiddenQuestions}</Typography>
-                      {analysis.hiddenIngredientQuestions.slice(0, 3).map((question) => (
+                      {hiddenIngredientQuestions.map((question) => (
                         <Typography key={question} variant="body2">
                           • {question}
                         </Typography>
