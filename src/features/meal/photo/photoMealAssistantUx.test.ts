@@ -91,6 +91,14 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).not.toContain("analysis.hiddenIngredientQuestions.slice(0, 3).map");
   });
 
+  it("localizes fallback photo draft names while preserving lookup source names", () => {
+    expect(componentSource).toContain("localizeFallbackPhotoAnalysis");
+    expect(componentSource).toContain("Чернетка сніданку з фото");
+    expect(componentSource).toContain("Грецький йогурт");
+    expect(componentSource).toContain("Jogurt grecki");
+    expect(componentSource).toContain("item.originalName?.trim() || item.name");
+  });
+
   it("keeps the save action reachable on narrow mobile screens", () => {
     expect(photoMealSaveButtonSx.alignSelf.xs).toBe("stretch");
     expect(photoMealSaveButtonSx.position.xs).toBe("sticky");

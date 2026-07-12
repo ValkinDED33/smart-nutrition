@@ -458,6 +458,143 @@ const getPhotoCopy = (language: AppLanguage) => {
   }
 };
 
+const ukPhotoFallbackNameLabels = new Map([
+  ["Greek yogurt", "Грецький йогурт"],
+  ["Oats", "Вівсянка"],
+  ["Banana", "Банан"],
+  ["Almonds", "Мигдаль"],
+  ["Boiled egg", "Варене яйце"],
+  ["Cottage cheese", "Творог"],
+  ["Cucumber", "Огірок"],
+  ["Chicken breast", "Куряча грудка"],
+  ["Rice cooked", "Відварений рис"],
+  ["Tomato", "Помідор"],
+  ["Tofu", "Тофу"],
+  ["Salmon", "Лосось"],
+  ["Avocado", "Авокадо"],
+  ["Apple", "Яблуко"],
+  ["Hummus", "Хумус"],
+  ["Turkey wrap", "Рол із індичкою"],
+]);
+
+const plPhotoFallbackNameLabels = new Map([
+  ["Greek yogurt", "Jogurt grecki"],
+  ["Oats", "Płatki owsiane"],
+  ["Banana", "Banan"],
+  ["Almonds", "Migdały"],
+  ["Boiled egg", "Jajko gotowane"],
+  ["Cottage cheese", "Twaróg"],
+  ["Cucumber", "Ogórek"],
+  ["Chicken breast", "Pierś z kurczaka"],
+  ["Rice cooked", "Ryż gotowany"],
+  ["Tomato", "Pomidor"],
+  ["Tofu", "Tofu"],
+  ["Salmon", "Łosoś"],
+  ["Avocado", "Awokado"],
+  ["Apple", "Jabłko"],
+  ["Hummus", "Hummus"],
+  ["Turkey wrap", "Wrap z indykiem"],
+]);
+
+const getLocalizedPhotoFallbackNameLabels = (language: AppLanguage) => {
+  switch (language) {
+    case "uk":
+      return ukPhotoFallbackNameLabels;
+    case "pl":
+      return plPhotoFallbackNameLabels;
+    case "en":
+    default:
+      return null;
+  }
+};
+
+const getLocalizedMealDraftName = (language: AppLanguage, mealType: MealType) => {
+  switch (language) {
+    case "pl":
+      switch (mealType) {
+        case "breakfast":
+          return "Szkic śniadania ze zdjęcia";
+        case "lunch":
+          return "Szkic obiadu ze zdjęcia";
+        case "dinner":
+          return "Szkic kolacji ze zdjęcia";
+        case "snack":
+        default:
+          return "Szkic przekąski ze zdjęcia";
+      }
+    case "en":
+      switch (mealType) {
+        case "breakfast":
+          return "Breakfast photo draft";
+        case "lunch":
+          return "Lunch photo draft";
+        case "dinner":
+          return "Dinner photo draft";
+        case "snack":
+        default:
+          return "Snack photo draft";
+      }
+    case "uk":
+    default:
+      switch (mealType) {
+        case "breakfast":
+          return "Чернетка сніданку з фото";
+        case "lunch":
+          return "Чернетка обіду з фото";
+        case "dinner":
+          return "Чернетка вечері з фото";
+        case "snack":
+        default:
+          return "Чернетка перекусу з фото";
+      }
+  }
+};
+
+const getLocalizedMealOptionName = (language: AppLanguage, mealType: MealType) =>
+  getLocalizedMealDraftName(language, mealType).replace(/ з фото$| ze zdjęcia$/i, "");
+
+const localizePhotoFallbackName = (name: string, language: AppLanguage) =>
+  getLocalizedPhotoFallbackNameLabels(language)?.get(name) ?? name;
+
+const localizeFallbackPhotoAnalysis = (
+  analysis: PhotoMealAnalysis,
+  language: AppLanguage,
+  mealType: MealType
+): PhotoMealAnalysis => {
+  const localizeSuggestion = (item: PhotoMealSuggestion): PhotoMealSuggestion => {
+    const localizedName = localizePhotoFallbackName(item.name, language);
+
+    return localizedName === item.name
+      ? item
+      : {
+          ...item,
+          name: localizedName,
+          originalName: item.originalName || item.name,
+        };
+  };
+  const localizeDraftTitle = (title: string) =>
+    /^(Breakfast|Lunch|Dinner|Snack) photo draft$/i.test(title)
+      ? getLocalizedMealDraftName(language, mealType)
+      : title.replace(/\b(Breakfast|Lunch|Dinner|Snack) option\b/gi, (value) => {
+          const normalizedMealType = value.toLowerCase().split(" ")[0] as MealType;
+          return getLocalizedMealOptionName(language, normalizedMealType) || value;
+        });
+
+  return {
+    ...analysis,
+    dishName: localizeDraftTitle(analysis.dishName),
+    uncertainIngredients: analysis.uncertainIngredients?.map((item) =>
+      localizePhotoFallbackName(item, language)
+    ),
+    items: analysis.items.map(localizeSuggestion),
+    interpretations: analysis.interpretations?.map((interpretation) => ({
+      ...interpretation,
+      title: localizeDraftTitle(interpretation.title),
+      items: interpretation.items.map(localizeSuggestion),
+    })),
+  };
+};
+
 const rawBackendPhotoQuestionPattern =
   /(sauces?|oil|butter|cheese|dressing|wrap|sandwich|bowl|covered|drink|side|dessert|exact grams|photo alone)/i;
 
@@ -600,7 +737,11 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
           throw new Error("PHOTO_ANALYSIS_UNAVAILABLE");
         }
 
-        const nextAnalysis = scalePhotoMealAnalysis(remoteAnalysis, "regular");
+        const nextAnalysis = localizeFallbackPhotoAnalysis(
+          scalePhotoMealAnalysis(remoteAnalysis, "regular"),
+          appLanguage,
+          mealType
+        );
 
         setPortionSize("regular");
         setAnalysis(nextAnalysis);
@@ -785,8 +926,9 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
   const resolveConfirmedPhotoProducts = async (items: PhotoMealSuggestion[]) => {
     const results = await Promise.allSettled(
       items.map(async (item) => {
-        const products = await searchProducts(item.name);
-        return chooseBestPhotoProductMatch(products, item);
+        const lookupName = item.originalName?.trim() || item.name;
+        const products = await searchProducts(lookupName);
+        return chooseBestPhotoProductMatch(products, { ...item, name: lookupName });
       })
     );
 
