@@ -44,6 +44,7 @@ describe("onboarding and profile flow contract", () => {
     const genderSource = await readSource("src/pages/onboarding/OnboardingGenderPage.tsx");
     const nameSource = await readSource("src/pages/onboarding/OnboardingNamePage.tsx");
     const ageSource = await readSource("src/pages/onboarding/OnboardingAgePage.tsx");
+    const womenHealthSource = await readSource("src/pages/onboarding/OnboardingWomenHealthPage.tsx");
 
     expect(onboardingSource).not.toContain("DEFAULT_ASSISTANT_NAME");
     expect(assistantSource).toContain("getAssistantPreviewName");
@@ -52,6 +53,10 @@ describe("onboarding and profile flow contract", () => {
     expect(nameSource).toContain("navigate(stepPaths.age)");
     expect(ageSource).toContain("stepPaths.womenHealth");
     expect(ageSource).toContain("stepPaths.height");
+    expect(womenHealthSource).toContain('data-onboarding-pregnancy-block="true"');
+    expect(womenHealthSource).toContain("pregnancyBlockTitle");
+    expect(womenHealthSource).toContain("pregnancyPrivate");
+    expect(womenHealthSource).toContain("state.womenHealthMode === \"pregnant\"");
   });
 
   it("keeps profile editing behind an explicit edit action and gates admin details", async () => {

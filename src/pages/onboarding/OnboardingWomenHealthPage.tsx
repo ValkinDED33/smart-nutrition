@@ -29,6 +29,11 @@ const copy = {
     title: "Чи потрібен режим жіночого здоров'я?",
     body:
       "Якщо ви готуєтесь до вагітності або вже вагітні, помічник буде обережніше працювати з харчуванням, ліками, водою і нагадуваннями.",
+    pregnancyBlockTitle: "Блок вагітності",
+    pregnancyBlockBody:
+      "Якщо це актуально, я збережу термін, орієнтовну дату пологів і план лікаря. Партнерський доступ показує тільки розвиток вагітності, без ваги, харчування чи приватних нотаток.",
+    pregnancyData: "Термін, дата пологів, цикл і медичний план",
+    pregnancyPrivate: "Приватні дані не відкриваються партнеру",
     none: "Не потрібно",
     trying: "Готуюся до вагітності",
     pregnant: "Вагітна",
@@ -46,6 +51,11 @@ const copy = {
     title: "Czy potrzebujesz trybu zdrowia kobiet?",
     body:
       "Jeśli przygotowujesz się do ciąży albo jesteś w ciąży, asystent będzie ostrożniej prowadził żywienie, leki, wodę i przypomnienia.",
+    pregnancyBlockTitle: "Blok ciąży",
+    pregnancyBlockBody:
+      "Jeśli to aktualne, zapiszę tydzień, przewidywany termin porodu i plan lekarza. Dostęp partnera pokazuje tylko rozwój ciąży, bez wagi, jedzenia i prywatnych notatek.",
+    pregnancyData: "Tydzień, termin porodu, cykl i plan medyczny",
+    pregnancyPrivate: "Dane prywatne nie są udostępniane partnerowi",
     none: "Nie dotyczy",
     trying: "Przygotowuję się do ciąży",
     pregnant: "Jestem w ciąży",
@@ -63,6 +73,11 @@ const copy = {
     title: "Do you need women health mode?",
     body:
       "If you are preparing for pregnancy or already pregnant, the assistant will handle nutrition, medication, water, and reminders more carefully.",
+    pregnancyBlockTitle: "Pregnancy block",
+    pregnancyBlockBody:
+      "If this is relevant, I will save week, estimated due date, and clinician plan. Partner access shows only pregnancy development, not weight, food, or private notes.",
+    pregnancyData: "Week, due date, cycle, and clinician plan",
+    pregnancyPrivate: "Private data is not shared with a partner",
     none: "Not needed",
     trying: "Preparing for pregnancy",
     pregnant: "Pregnant",
@@ -159,6 +174,59 @@ export const OnboardingWomenHealthPage = ({
             </Typography>
             <Typography color="text.secondary">{text.body}</Typography>
           </Stack>
+
+          <Box
+            data-onboarding-pregnancy-block="true"
+            sx={{
+              p: { xs: 1.6, sm: 2 },
+              border: 1,
+              borderColor: "rgba(20, 184, 166, 0.32)",
+              borderRadius: 1,
+              background:
+                "linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(236, 72, 153, 0.08))",
+            }}
+          >
+            <Stack spacing={1.2}>
+              <Stack spacing={0.35}>
+                <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 950 }}>
+                  {text.pregnancyBlockTitle}
+                </Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                  {text.pregnancyBlockBody}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                <Box
+                  sx={{
+                    px: 1.2,
+                    py: 0.7,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 999,
+                    color: "text.secondary",
+                    fontSize: 13,
+                    fontWeight: 850,
+                  }}
+                >
+                  {text.pregnancyData}
+                </Box>
+                <Box
+                  sx={{
+                    px: 1.2,
+                    py: 0.7,
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 999,
+                    color: "text.secondary",
+                    fontSize: 13,
+                    fontWeight: 850,
+                  }}
+                >
+                  {text.pregnancyPrivate}
+                </Box>
+              </Stack>
+            </Stack>
+          </Box>
 
           <Stack spacing={1.2}>
             {modeOptions.map((option) => (
