@@ -55,7 +55,9 @@ const normalizeCategoryValue = (value: string) =>
   value
     .toLowerCase()
     .replace(/^en:/, "")
-    .replace(/[_/]+/g, "-")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .trim();
 
 const normalizeCategory = (value: string) => {
@@ -85,10 +87,11 @@ export const getProductCategoryLabel = (
   categoryKey: string,
   language: AppLanguage
 ) => {
-  const label = getKnownCategoryLabel(categoryKey);
+  const normalizedCategoryKey = normalizeCategory(categoryKey);
+  const label = getKnownCategoryLabel(normalizedCategoryKey);
 
   if (!label) {
-    return formatFallbackLabel(categoryKey);
+    return formatFallbackLabel(normalizedCategoryKey);
   }
 
   switch (language) {

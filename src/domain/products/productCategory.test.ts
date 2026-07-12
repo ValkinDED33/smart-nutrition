@@ -74,4 +74,17 @@ describe("productCategory", () => {
     expect(categoryKey).toBe("beverage");
     expect(getProductCategoryLabel(categoryKey, "uk")).toBe("Напої");
   });
+
+  it("normalizes human-spaced OpenFoodFacts category labels from product cards", () => {
+    const categoryKey = getProductCategoryKey(
+      createProduct("Beverages And Beverages Preparations")
+    );
+
+    expect(categoryKey).toBe("beverage");
+    expect(getProductCategoryLabel(categoryKey, "uk")).toBe("Напої");
+    expect(getProductCategoryLabel(categoryKey, "pl")).toBe("Napoje");
+    expect(
+      getProductCategoryLabel("Beverages And Beverages Preparations", "uk")
+    ).toBe("Напої");
+  });
 });
