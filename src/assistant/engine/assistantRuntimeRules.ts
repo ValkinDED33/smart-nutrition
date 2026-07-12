@@ -691,6 +691,72 @@ const getPersonalContactLine = (context: AssistantRuntimeContext) => {
   return [supportLine, relationshipLine, petLine].filter(Boolean).join(" ");
 };
 
+const getWomenHealthLine = (context: AssistantRuntimeContext) => {
+  const womenHealth = context.womenHealth;
+
+  if (context.gender !== "female" || womenHealth.mode === "none") {
+    return "";
+  }
+
+  const hasClinicianPlan = womenHealth.doctorConfirmed;
+  const weekText = womenHealth.pregnancyWeek
+    ? context.language === "en"
+      ? `around week ${womenHealth.pregnancyWeek}`
+      : context.language === "pl"
+        ? `około ${womenHealth.pregnancyWeek}. tygodnia`
+        : `приблизно ${womenHealth.pregnancyWeek} тиждень`
+    : "";
+
+  if (context.language === "en") {
+    if (womenHealth.mode === "pregnant") {
+      return [
+        `Pregnancy context is active${weekText ? ` (${weekText})` : ""}.`,
+        hasClinicianPlan
+          ? "I will keep food, water, and reminder suggestions aligned with the clinician plan."
+          : "I will stay conservative: no supplement doses, medication changes, diagnosis, or medical certainty.",
+      ].join(" ");
+    }
+
+    if (womenHealth.mode === "trying_to_conceive") {
+      return "Preparing-for-pregnancy context is active, so I will keep guidance gentle and avoid supplement or medication certainty without a clinician plan.";
+    }
+
+    return "Postpartum context is active, so I will keep the pace recovery-first and avoid pressure around weight.";
+  }
+
+  if (context.language === "pl") {
+    if (womenHealth.mode === "pregnant") {
+      return [
+        `Kontekst ciąży jest aktywny${weekText ? ` (${weekText})` : ""}.`,
+        hasClinicianPlan
+          ? "Będę trzymać jedzenie, wodę i przypomnienia zgodnie z planem lekarza."
+          : "Zostaję ostrożny: bez dawek suplementów, zmian leków, diagnozy i medycznej pewności.",
+      ].join(" ");
+    }
+
+    if (womenHealth.mode === "trying_to_conceive") {
+      return "Kontekst przygotowania do ciąży jest aktywny, więc prowadzę łagodnie i bez pewności co do suplementów lub leków bez planu lekarza.";
+    }
+
+    return "Kontekst po porodzie jest aktywny, więc priorytetem jest regeneracja bez presji na wagę.";
+  }
+
+  if (womenHealth.mode === "pregnant") {
+    return [
+      `Контекст вагітності активний${weekText ? ` (${weekText})` : ""}.`,
+      hasClinicianPlan
+        ? "Я триматиму їжу, воду й нагадування в межах плану лікаря."
+        : "Я буду обережним: без доз добавок, змін ліків, діагнозів і медичної впевненості.",
+    ].join(" ");
+  }
+
+  if (womenHealth.mode === "trying_to_conceive") {
+    return "Контекст підготовки до вагітності активний, тож я даватиму м'які поради без впевненості щодо добавок або ліків без плану лікаря.";
+  }
+
+  return "Післяпологовий контекст активний, тому пріоритет — відновлення без тиску на вагу.";
+};
+
 const getDailyContextLine = (context: AssistantRuntimeContext) => {
   const { dailyContext } = context;
 
@@ -1331,21 +1397,22 @@ export const buildAssistantWelcomeMessage = (
 ): AssistantRuntimeResponse => {
   const signals = deriveSignals(context);
   const contactLine = getPersonalContactLine(context);
+  const womenHealthLine = getWomenHealthLine(context);
   const personalityLine = getPersonalityLine(context);
   const onboardingLine = getOnboardingPersonalizationLine(context);
   const promptContextLine = getPromptContextLine(context);
   const text =
     context.language === "en"
-      ? `${context.assistantName} is ready. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      ? `${context.assistantName} is ready. ${personalityLine} ${onboardingLine} ${contactLine} ${womenHealthLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} ${promptContextLine} I can quickly break down your day, protein, weekly focus, and motivation from current data.`
       : context.language === "pl"
-      ? `${context.assistantName} jest gotowy. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      ? `${context.assistantName} jest gotowy. ${personalityLine} ${onboardingLine} ${contactLine} ${womenHealthLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} ${promptContextLine} Mogę szybko rozłożyć dzień, białko, fokus tygodnia i motywację na podstawie bieżących danych.`
-      : `${context.assistantName} вже на місці. ${personalityLine} ${onboardingLine} ${contactLine} ${getSnapshotLine(context)} ${getPriorityLine(
+      : `${context.assistantName} вже на місці. ${personalityLine} ${onboardingLine} ${contactLine} ${womenHealthLine} ${getSnapshotLine(context)} ${getPriorityLine(
           context,
           signals
         )} ${promptContextLine} Можу швидко розкласти день, білок, тижневий фокус і мотивацію по ваших поточних даних.`;
@@ -1385,6 +1452,7 @@ export const buildGuidedAssistantReply = ({
     const textByIntent = {
       day_status: [
         getPersonalContactLine(context),
+        getWomenHealthLine(context),
         getPersonalityLine(context),
         getPromptContextLine(context),
         getOnboardingPersonalizationLine(context),
@@ -1407,13 +1475,15 @@ export const buildGuidedAssistantReply = ({
               signals.calorieState === "tight"
                 ? "The main thing now is protecting the small calorie budget from random snacks."
                 : "The main thing now is keeping the day quality steady without adding empty calories.",
+              getWomenHealthLine(context),
             ]
               .filter(Boolean)
               .join(" ")
           : [
               `You still need about ${formatRounded(
-                signals.proteinGap
+              signals.proteinGap
               )} g protein to reach a comfortable zone.`,
+              getWomenHealthLine(context),
               `${getActionLead(
                 context
               )} the easiest way is one concrete meal, for example ${joinIdeas(
@@ -1428,18 +1498,21 @@ export const buildGuidedAssistantReply = ({
               .filter(Boolean)
               .join(" "),
       water_help: [
+        getWomenHealthLine(context),
         getWaterLine(context, signals),
         "Water does not replace food, but it often stabilizes appetite and evening decisions.",
       ]
         .filter(Boolean)
         .join(" "),
       weight_help: [
+        getWomenHealthLine(context),
         getWeightLine(context, signals),
         "If the trend is flat, do not cut calories immediately: first check logging accuracy, protein, water, and the weekly check-in.",
       ]
         .filter(Boolean)
         .join(" "),
       next_meal: [
+        getWomenHealthLine(context),
         getNextMealLine(context, signals),
         `Right now you have about ${formatRounded(
           context.caloriesRemaining
@@ -1448,6 +1521,7 @@ export const buildGuidedAssistantReply = ({
         .filter(Boolean)
         .join(" "),
       coach_focus: [
+        getWomenHealthLine(context),
         `Weekly status: ${context.coach.score}/100.`,
         getCoachSnapshot(context),
         getCoachLever(context),
@@ -1459,6 +1533,7 @@ export const buildGuidedAssistantReply = ({
         .join(" "),
       motivation_focus: [
         getPersonalContactLine(context),
+        getWomenHealthLine(context),
         getOnboardingPersonalizationLine(context),
         `Motivation now: ${context.motivation.points} points, level ${context.motivation.level}, ${signals.openTasks} open tasks.`,
         getMotivationLine(context, signals),
@@ -1478,6 +1553,7 @@ export const buildGuidedAssistantReply = ({
   const textByIntent = {
     day_status: [
       getPersonalContactLine(context),
+      getWomenHealthLine(context),
       getPersonalityLine(context),
       getPromptContextLine(context),
       getOnboardingPersonalizationLine(context),
@@ -1510,6 +1586,7 @@ export const buildGuidedAssistantReply = ({
               : signals.calorieState === "tight"
                 ? "Тепер головне не розкидати невеликий бюджет калорій випадковими перекусами."
                 : "Тепер головне втримати якість дня і не добивати його пустими калоріями.",
+            getWomenHealthLine(context),
           ]
             .filter(Boolean)
             .join(" ")
@@ -1521,6 +1598,7 @@ export const buildGuidedAssistantReply = ({
               : `До комфортної білкової зони бракує ще близько ${formatRounded(
                   signals.proteinGap
                 )} г.`,
+            getWomenHealthLine(context),
             `${getActionLead(context)} ${
               context.language === "pl"
                 ? `najłatwiej domknąć to jednym konkretnym posiłkiem, na przykład ${joinIdeas(
@@ -1544,6 +1622,7 @@ export const buildGuidedAssistantReply = ({
               .filter(Boolean)
               .join(" "),
     water_help: [
+      getWomenHealthLine(context),
       getWaterLine(context, signals),
       context.language === "pl"
         ? "Woda nie zastępuje posiłku, ale często stabilizuje apetyt i jakość decyzji wieczorem."
@@ -1552,6 +1631,7 @@ export const buildGuidedAssistantReply = ({
       .filter(Boolean)
       .join(" "),
     weight_help: [
+      getWomenHealthLine(context),
       getWeightLine(context, signals),
       context.language === "pl"
         ? "Jeśli trend stoi, nie tnij od razu kalorii: najpierw sprawdź dokładność wpisów, białko, wodę i weekly check-in."
@@ -1560,6 +1640,7 @@ export const buildGuidedAssistantReply = ({
       .filter(Boolean)
       .join(" "),
     next_meal: [
+      getWomenHealthLine(context),
       getNextMealLine(context, signals),
       context.language === "pl"
         ? `Aktualnie zostało około ${formatRounded(
@@ -1572,6 +1653,7 @@ export const buildGuidedAssistantReply = ({
       .filter(Boolean)
       .join(" "),
     coach_focus: [
+      getWomenHealthLine(context),
       context.language === "pl"
         ? `Status tygodnia: ${context.coach.score}/100.`
         : `Тижневий статус: ${context.coach.score}/100.`,
@@ -1587,6 +1669,7 @@ export const buildGuidedAssistantReply = ({
       .join(" "),
     motivation_focus: [
       getPersonalContactLine(context),
+      getWomenHealthLine(context),
       getOnboardingPersonalizationLine(context),
       context.language === "pl"
         ? `Po stronie motywacji masz teraz ${context.motivation.points} punktów, poziom ${context.motivation.level} i ${signals.openTasks} otwartych zadań.`

@@ -6,7 +6,9 @@ import {
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
 import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 
-const createContext = (): AssistantRuntimeContext => ({
+const createContext = (
+  overrides: Partial<AssistantRuntimeContext> = {}
+): AssistantRuntimeContext => ({
   language: "pl",
   screen: "food",
   currentPath: "/meals",
@@ -227,6 +229,7 @@ const createContext = (): AssistantRuntimeContext => ({
     summary:
       "Meals: area=meals; duties=suggest, analyze, warn; tone=focused; capabilities=meal-helper.",
   },
+  ...overrides,
 });
 
 describe("assistantRuntime", () => {
@@ -276,5 +279,29 @@ describe("assistantRuntime", () => {
     expect(water.followUpQuestionIds).toContain("weight_help");
     expect(nextMeal.text).toContain("białka");
     expect(nextMeal.followUpQuestionIds).toContain("protein_help");
+  });
+
+  it("keeps pregnancy-aware guidance safe and clinician-bound", () => {
+    const context = createContext({
+      language: "en",
+      womenHealth: {
+        ...createDefaultWomenHealthState(),
+        mode: "pregnant",
+        pregnancyWeek: 18,
+        doctorConfirmed: false,
+      },
+    });
+    const welcome = buildAssistantWelcomeMessage(context);
+    const protein = buildGuidedAssistantReply({
+      question: "What should I eat for protein?",
+      context,
+      quickQuestionId: "protein_help",
+    });
+
+    expect(welcome.text).toContain("Pregnancy context is active");
+    expect(welcome.text).toContain("no supplement doses");
+    expect(protein.text).toContain("no supplement doses");
+    expect(protein.text).toContain("no supplement doses, medication changes, diagnosis");
+    expect(protein.text).not.toMatch(/I prescribe|guaranteed|medical certainty that/i);
   });
 });
