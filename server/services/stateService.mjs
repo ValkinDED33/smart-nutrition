@@ -34,6 +34,7 @@ const requireEntries = (value) => {
 
 const mealTypes = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const intakeSources = new Set(["barcode", "search", "manual", "recommendation", "photo"]);
+const productCatalogStatuses = new Set(["pending", "approved", "rejected", "personal"]);
 
 const toSafeIdPart = (value) =>
   String(value ?? "")
@@ -103,6 +104,7 @@ const requireProductPayload = (value) => {
     barcode: String(product.barcode ?? "").trim().slice(0, 64) || undefined,
     category: String(product.category ?? "").trim().slice(0, 120) || undefined,
     imageUrl: String(product.imageUrl ?? "").trim().slice(0, 1700000) || undefined,
+    status: productCatalogStatuses.has(product.status) ? product.status : undefined,
     facts: isRecord(product.facts) ? product.facts : undefined,
   };
 };

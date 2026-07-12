@@ -52,6 +52,7 @@ export type NutrientKey = keyof Nutrients;
 
 export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
 export type ProductUnit = "g" | "ml" | "piece";
+export type ProductCatalogStatus = "pending" | "approved" | "rejected" | "personal";
 
 export interface ProductFacts {
   foodGroup?: string;
@@ -77,5 +78,6 @@ export interface Product {
   barcode?: string;
   category?: string;
   imageUrl?: string;
+  status?: ProductCatalogStatus;
   facts?: ProductFacts;
 }

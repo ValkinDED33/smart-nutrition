@@ -107,6 +107,7 @@ describe("barcodeScannerModel", () => {
       brand: NORMALIZED_DAIRY_CO_BRAND,
       barcode: NORMALIZED_MANUAL_BARCODE,
       category: YOGURT_CATEGORY,
+      status: "personal",
       source: "Manual",
       unit: "g",
       nutrients: {

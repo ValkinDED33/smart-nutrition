@@ -30,6 +30,7 @@ const createProduct = (overrides = {}) => ({
   name: "Greek yogurt",
   unit: "g",
   source: "Manual",
+  status: "personal",
   barcode: "590123",
   nutrients: {
     calories: 92,
@@ -145,6 +146,9 @@ describe("stateService", () => {
       quantity: 150,
       mealType: "lunch",
       product: expect.objectContaining({ id: product.id }),
+    });
+    expect(result.entry.product).toMatchObject({
+      status: "personal",
     });
     expect(result.meal.items).toHaveLength(1);
     expect(result.outcomes).toMatchObject({

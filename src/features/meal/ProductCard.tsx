@@ -63,6 +63,10 @@ const productCardCopy = {
     failedAdd: "Не вдалося додати продукт до щоденника.",
     failedLibrary: "Не вдалося оновити вашу бібліотеку.",
     retry: "Спробувати ще раз",
+    statusApproved: "Перевірено базою",
+    statusPending: "На модерації",
+    statusRejected: "Потрібна перевірка",
+    statusPersonal: "Ваш продукт",
   },
   pl: {
     addedToMeal: "Dodano do bieżącego posiłku",
@@ -73,6 +77,10 @@ const productCardCopy = {
     failedAdd: "Nie udało się dodać produktu do dziennika.",
     failedLibrary: "Nie udało się zaktualizować biblioteki.",
     retry: "Spróbuj ponownie",
+    statusApproved: "Zweryfikowane w bazie",
+    statusPending: "W moderacji",
+    statusRejected: "Wymaga sprawdzenia",
+    statusPersonal: "Twój produkt",
   },
   en: {
     addedToMeal: "Added to the current meal",
@@ -83,6 +91,10 @@ const productCardCopy = {
     failedAdd: "Could not add product to your diary.",
     failedLibrary: "Could not update your library.",
     retry: "Try again",
+    statusApproved: "Database verified",
+    statusPending: "In moderation",
+    statusRejected: "Needs review",
+    statusPersonal: "Your product",
   },
 } as const;
 
@@ -97,6 +109,23 @@ const getProductCardCopy = (language: AppLanguage): ProductCardCopy => {
     case "uk":
     default:
       return productCardCopy.uk;
+  }
+};
+
+const getProductStatusChip = (product: Product, copy: ProductCardCopy) => {
+  const status = product.status ?? (product.source === "Manual" ? "personal" : undefined);
+
+  switch (status) {
+    case "approved":
+      return { label: copy.statusApproved, color: "success" as const };
+    case "pending":
+      return { label: copy.statusPending, color: "warning" as const };
+    case "rejected":
+      return { label: copy.statusRejected, color: "error" as const };
+    case "personal":
+      return { label: copy.statusPersonal, color: "info" as const };
+    default:
+      return null;
   }
 };
 
@@ -119,6 +148,7 @@ export const ProductCard = ({
   const displayName = getProductDisplayName(product, appLanguage);
   const categoryKey = getProductCategoryKey(product);
   const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);
+  const statusChip = getProductStatusChip(product, copy);
   const portionPresets = getProductPortionPresets(product);
   const defaultQuantity = getDefaultProductQuantity(product);
   const baseAmountLabel = formatProductBaseAmount(product.unit);
@@ -301,11 +331,22 @@ export const ProductCard = ({
             {isSaved && <Typography sx={{ fontSize: "1.2rem" }}>⭐</Typography>}
           </Stack>
 
-          <Chip
-            label={categoryLabel}
-            size="small"
-            sx={{ alignSelf: "flex-start", fontWeight: 700 }}
-          />
+          <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap">
+            <Chip
+              label={categoryLabel}
+              size="small"
+              sx={{ fontWeight: 700 }}
+            />
+            {statusChip ? (
+              <Chip
+                label={statusChip.label}
+                size="small"
+                color={statusChip.color}
+                variant="outlined"
+                sx={{ fontWeight: 700 }}
+              />
+            ) : null}
+          </Stack>
 
           {(product.brand || product.source) && (
             <Typography variant="body2" color="text.secondary">

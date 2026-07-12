@@ -216,6 +216,7 @@ export const createManualBarcodeProduct = ({
     barcode: normalizedBarcode || undefined,
     category: category || undefined,
     imageUrl: imageUrl || undefined,
+    status: "personal",
     facts: category ? { foodGroup: category } : undefined,
     unit: "g",
     source: "Manual",

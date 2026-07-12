@@ -48,6 +48,12 @@ const productSources = new Set<ProductSource>([
 ]);
 
 const productUnits = new Set<Product["unit"]>(["g", "ml", "piece"]);
+const productStatuses = new Set<Product["status"]>([
+  "pending",
+  "approved",
+  "rejected",
+  "personal",
+]);
 
 const createProductIdentity = (product: Product) =>
   product.barcode?.replace(/\D/g, "") ||
@@ -118,6 +124,9 @@ const readProduct = (value: unknown): Product | null => {
     barcode: toString(record.barcode) || undefined,
     category: toString(record.category) || undefined,
     imageUrl: toString(record.imageUrl) || undefined,
+    status: productStatuses.has(record.status as Product["status"])
+      ? (record.status as Product["status"])
+      : undefined,
     facts:
       record.facts && typeof record.facts === "object" && !Array.isArray(record.facts)
         ? (record.facts as Product["facts"])

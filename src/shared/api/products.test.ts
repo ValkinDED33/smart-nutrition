@@ -24,6 +24,7 @@ const createProductPayload = (overrides: Record<string, unknown> = {}) => ({
   name: "Oats",
   unit: "g",
   source: "OpenFoodFacts",
+  status: "approved",
   nutrients: {
     calories: 389,
     protein: 16.9,
@@ -55,6 +56,7 @@ describe("products api", () => {
     const results = await searchProducts("oats");
 
     expect(results[0]?.id).toBe("catalog-oats");
+    expect(results[0]?.status).toBe("approved");
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.example.com/api/products/search?q=oats&limit=18",
       expect.any(Object)
