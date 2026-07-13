@@ -55,7 +55,7 @@ export type AssistantAreaManifest = {
   visibility: AssistantVisibility;
 };
 
-export const assistantAreas: AssistantAreaManifest[] = [
+const assistantAreas: AssistantAreaManifest[] = [
   {
     area: "auth",
     label: "Start",
