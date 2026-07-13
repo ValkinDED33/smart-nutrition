@@ -2,19 +2,6 @@ import type { CommunityMemberStatus, UserRole } from "./types";
 
 export type AssignableUserRole = "USER" | "HELPER" | "MODERATOR" | "ADMIN";
 
-export const ownerRoles: UserRole[] = ["OWNER", "SUPER_ADMIN"];
-
-export const roleRank: Record<UserRole, number> = {
-  USER: 0,
-  VERIFIED_USER: 0,
-  HELPER: 1,
-  NUTRITIONIST: 2,
-  MODERATOR: 3,
-  ADMIN: 4,
-  OWNER: 5,
-  SUPER_ADMIN: 5,
-};
-
 export const roleLabels: Record<UserRole, string> = {
   USER: "User",
   VERIFIED_USER: "Email verified legacy",
@@ -53,10 +40,10 @@ const getRoleRank = (role: UserRole) => {
   }
 };
 
-export const isOwnerRole = (role: UserRole | null | undefined) =>
+const isOwnerRole = (role: UserRole | null | undefined) =>
   role === "OWNER" || role === "SUPER_ADMIN";
 
-export const hasUserRoleAtLeast = (
+const hasUserRoleAtLeast = (
   role: UserRole | null | undefined,
   minimumRole: UserRole
 ) => {
