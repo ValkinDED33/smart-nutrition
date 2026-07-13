@@ -513,56 +513,6 @@ const getPhotoCopy = (language: AppLanguage) => {
   }
 };
 
-const ukPhotoFallbackNameLabels = new Map([
-  ["Greek yogurt", "Грецький йогурт"],
-  ["Oats", "Вівсянка"],
-  ["Banana", "Банан"],
-  ["Almonds", "Мигдаль"],
-  ["Boiled egg", "Варене яйце"],
-  ["Cottage cheese", "Творог"],
-  ["Cucumber", "Огірок"],
-  ["Chicken breast", "Куряча грудка"],
-  ["Rice cooked", "Відварений рис"],
-  ["Tomato", "Помідор"],
-  ["Tofu", "Тофу"],
-  ["Salmon", "Лосось"],
-  ["Avocado", "Авокадо"],
-  ["Apple", "Яблуко"],
-  ["Hummus", "Хумус"],
-  ["Turkey wrap", "Рол із індичкою"],
-]);
-
-const plPhotoFallbackNameLabels = new Map([
-  ["Greek yogurt", "Jogurt grecki"],
-  ["Oats", "Płatki owsiane"],
-  ["Banana", "Banan"],
-  ["Almonds", "Migdały"],
-  ["Boiled egg", "Jajko gotowane"],
-  ["Cottage cheese", "Twaróg"],
-  ["Cucumber", "Ogórek"],
-  ["Chicken breast", "Pierś z kurczaka"],
-  ["Rice cooked", "Ryż gotowany"],
-  ["Tomato", "Pomidor"],
-  ["Tofu", "Tofu"],
-  ["Salmon", "Łosoś"],
-  ["Avocado", "Awokado"],
-  ["Apple", "Jabłko"],
-  ["Hummus", "Hummus"],
-  ["Turkey wrap", "Wrap z indykiem"],
-]);
-
-const getLocalizedPhotoFallbackNameLabels = (language: AppLanguage) => {
-  switch (language) {
-    case "uk":
-      return ukPhotoFallbackNameLabels;
-    case "pl":
-      return plPhotoFallbackNameLabels;
-    case "en":
-    default:
-      return null;
-  }
-};
-
 const getLocalizedMealDraftName = (language: AppLanguage, mealType: MealType) => {
   switch (language) {
     case "pl":
@@ -578,17 +528,7 @@ const getLocalizedMealDraftName = (language: AppLanguage, mealType: MealType) =>
           return "Szkic przekąski ze zdjęcia";
       }
     case "en":
-      switch (mealType) {
-        case "breakfast":
-          return "Breakfast photo draft";
-        case "lunch":
-          return "Lunch photo draft";
-        case "dinner":
-          return "Dinner photo draft";
-        case "snack":
-        default:
-          return "Snack photo draft";
-      }
+      return "Photo meal draft";
     case "uk":
     default:
       switch (mealType) {
@@ -608,49 +548,32 @@ const getLocalizedMealDraftName = (language: AppLanguage, mealType: MealType) =>
 const getLocalizedMealOptionName = (language: AppLanguage, mealType: MealType) =>
   getLocalizedMealDraftName(language, mealType).replace(/ з фото$| ze zdjęcia$/i, "");
 
-const localizePhotoFallbackName = (name: string, language: AppLanguage) =>
-  getLocalizedPhotoFallbackNameLabels(language)?.get(name) ?? name;
-
-const localizeFallbackPhotoAnalysis = (
+const localizePhotoAnalysisReviewCopy = (
   analysis: PhotoMealAnalysis,
-  language: AppLanguage,
-  mealType: MealType
+  language: AppLanguage
 ): PhotoMealAnalysis => {
-  const localizeSuggestion = (item: PhotoMealSuggestion): PhotoMealSuggestion => {
-    const localizedName = localizePhotoFallbackName(item.name, language);
-
-    return localizedName === item.name
-      ? item
-      : {
-          ...item,
-          name: localizedName,
-          originalName: item.originalName || item.name,
-        };
-  };
   const localizeDraftTitle = (title: string) => {
-    if (/^Photo needs checking$/i.test(title)) {
+    if (
+      /^Photo needs checking$/i.test(title) ||
+      /^(Breakfast|Lunch|Dinner|Snack) photo draft$/i.test(title)
+    ) {
       return getPhotoCopy(language).needsManualPhotoTitle;
     }
 
-    return /^(Breakfast|Lunch|Dinner|Snack) photo draft$/i.test(title)
-      ? getLocalizedMealDraftName(language, mealType)
-      : title.replace(/\b(Breakfast|Lunch|Dinner|Snack) option\b/gi, (value) => {
-          const normalizedMealType = value.toLowerCase().split(" ")[0] as MealType;
-          return getLocalizedMealOptionName(language, normalizedMealType) || value;
-        });
+    return title.replace(/\b(Breakfast|Lunch|Dinner|Snack) option\b/gi, (value) => {
+      const normalizedMealType = value.toLowerCase().split(" ")[0] as MealType;
+      return getLocalizedMealOptionName(language, normalizedMealType) || value;
+    });
   };
 
   return {
     ...analysis,
     dishName: localizeDraftTitle(analysis.dishName),
-    uncertainIngredients: analysis.uncertainIngredients?.map((item) =>
-      localizePhotoFallbackName(item, language)
-    ),
-    items: analysis.items.map(localizeSuggestion),
+    items: analysis.items,
     interpretations: analysis.interpretations?.map((interpretation) => ({
       ...interpretation,
       title: localizeDraftTitle(interpretation.title),
-      items: interpretation.items.map(localizeSuggestion),
+      items: interpretation.items,
     })),
   };
 };
@@ -796,16 +719,15 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
       setIsRecognizing(true);
 
       try {
-        const remoteAnalysis = await analyzeMealPhoto(dataUrl, mealType);
+        const remoteAnalysis = await analyzeMealPhoto(dataUrl, mealType, appLanguage);
 
         if (!remoteAnalysis) {
           throw new Error("PHOTO_ANALYSIS_UNAVAILABLE");
         }
 
-        const nextAnalysis = localizeFallbackPhotoAnalysis(
+        const nextAnalysis = localizePhotoAnalysisReviewCopy(
           scalePhotoMealAnalysis(remoteAnalysis, "regular"),
-          appLanguage,
-          mealType
+          appLanguage
         );
 
         setPortionSize("regular");

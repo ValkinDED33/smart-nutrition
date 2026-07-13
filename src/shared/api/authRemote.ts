@@ -1240,7 +1240,8 @@ export const removeRemoteMealProduct = async (
 
 export const analyzeRemoteMealPhoto = async (
   imageDataUrl: string,
-  mealType: string
+  mealType: string,
+  language?: string
 ): Promise<PhotoMealAnalysis | null> => {
   if (!isRemoteAuthMode()) {
     return null;
@@ -1254,6 +1255,7 @@ export const analyzeRemoteMealPhoto = async (
         body: JSON.stringify({
           imageDataUrl,
           mealType,
+          language,
         }),
       },
       { requireAuth: true, timeoutMs: REMOTE_LONG_REQUEST_TIMEOUT_MS }

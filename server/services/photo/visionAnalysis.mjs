@@ -32,6 +32,49 @@ const getRecognitionStatus = ({ confidence, imageQuality }) => {
     : "needs_review";
 };
 
+const normalizeFoodName = (value) =>
+  normalizeVisionText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const genericDraftTitlePattern =
+  /^(breakfast|lunch|dinner|snack)?\s*(photo\s*)?(meal\s*)?(draft|option|estimate|possible meal)$/i;
+const genericTemplateFoods = new Set([
+  "greek yogurt",
+  "oats",
+  "banana",
+  "chia",
+  "chia seeds",
+]);
+
+const hasGenericDraftTitle = (value) => {
+  const text = normalizeVisionText(value);
+
+  return !text || genericDraftTitlePattern.test(text);
+};
+
+const looksLikeTemplateBreakfastDraft = ({ payload, interpretations, confidence }) => {
+  if (confidence >= 0.7) {
+    return false;
+  }
+
+  const firstInterpretation = interpretations[0];
+  const itemNames = (firstInterpretation?.items ?? [])
+    .map((item) => normalizeFoodName(item.name))
+    .filter(Boolean);
+
+  if (itemNames.length < 2 || itemNames.some((name) => !genericTemplateFoods.has(name))) {
+    return false;
+  }
+
+  return (
+    hasGenericDraftTitle(payload?.dishName) ||
+    hasGenericDraftTitle(firstInterpretation?.title)
+  );
+};
+
 const toPortionRangeGrams = (quantityGrams) => {
   const quantity = Math.max(Math.round(Number(quantityGrams) || 100), 5);
   const min = Math.max(Math.round((quantity * 0.75) / 5) * 5, 5);
@@ -167,14 +210,17 @@ const selectVisionProviders = (config) => {
   return providers.filter(isVisionCapableProvider);
 };
 
-const buildVisionPrompt = ({ mealType, dietStyle, blockedTokens }) => `
+export const buildVisionPrompt = ({ mealType, dietStyle, blockedTokens, language = "en" }) => `
 You are Smart Nutrition photo meal analyzer. Return ONLY valid JSON.
 
 Safety and honesty rules:
-- Identify only visible food. Do not invent hidden ingredients.
+- Identify visible food as specifically as possible from the photo. Do not invent hidden ingredients.
+- Your main job is recognition first: return an editable draft with the visible ingredients, not an empty manual form, when food is reasonably visible.
+- Use ${language} for user-facing dishName, interpretation titles, item names, reasons, cautions, and questions.
+- Never return a generic template breakfast such as Greek yogurt, oats, banana, or chia unless those foods are clearly visible in this exact photo.
 - Put uncertain or hidden ingredients in uncertainIngredients and hiddenIngredientQuestions.
 - Portion estimates must be ranges in grams, never exact grams unless a package label is visible.
-- Give top 3 possible meal interpretations.
+- Give up to 3 possible meal interpretations. Each interpretation must contain 1 to 5 visible ingredients.
 - Confidence is honest from 0 to 1. Never use 0.99/99.9 style certainty.
 - If confidence is below 0.70, user confirmation is required.
 - If confidence is below 0.35, output suggestions only, not finalized products.
@@ -186,6 +232,7 @@ Safety and honesty rules:
 Context:
 - mealType: ${mealType}
 - dietStyle: ${dietStyle}
+- language: ${language}
 
 JSON schema:
 {
@@ -312,7 +359,7 @@ const callOpenAiCompatibleVisionProvider = async ({ provider, prompt, normalized
   return extractProviderText(payload);
 };
 
-const normalizeVisionAnalysis = (payload) => {
+export const normalizeVisionAnalysis = (payload) => {
   const interpretations = (Array.isArray(payload?.interpretations) ? payload.interpretations : [])
     .map(createVisionInterpretation)
     .filter((interpretation) => interpretation.items.length > 0)
@@ -336,6 +383,10 @@ const normalizeVisionAnalysis = (payload) => {
     summary.toLowerCase().startsWith(photoDraftSummaryPrefix.toLowerCase()) ||
     summary.toLowerCase().startsWith("please check") ||
     summary.toLowerCase().startsWith("check ingredients");
+
+  if (looksLikeTemplateBreakfastDraft({ payload, interpretations, confidence })) {
+    return null;
+  }
 
   return {
     dishName: normalizeVisionText(payload?.dishName, {
@@ -371,6 +422,7 @@ export const tryAnalyzeWithVisionProvider = async ({
   mealType,
   dietStyle,
   blockedTokens,
+  language,
 }) => {
   const providers = selectVisionProviders(config);
 
@@ -378,7 +430,7 @@ export const tryAnalyzeWithVisionProvider = async ({
     return null;
   }
 
-  const prompt = buildVisionPrompt({ mealType, dietStyle, blockedTokens });
+  const prompt = buildVisionPrompt({ mealType, dietStyle, blockedTokens, language });
 
   for (const provider of providers) {
     const controller = new AbortController();

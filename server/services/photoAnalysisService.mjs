@@ -123,6 +123,9 @@ const toPublicPhotoMeta = (photoMeta) => ({
   normalizedBytes: photoMeta.normalizedBytes,
 });
 
+const normalizeLanguage = (value) =>
+  ["uk", "pl", "en"].includes(value) ? value : "en";
+
 export const createPhotoAnalysisService = ({ config = {} } = {}) => ({
   analyzePhoto: async (profileState, requestBody, context = {}) => {
     const imageDataUrl =
@@ -142,6 +145,7 @@ export const createPhotoAnalysisService = ({ config = {} } = {}) => ({
     const photoMeta = await normalizePhotoPayload(imageDataUrl);
 
     const dietStyle = normalizeDietStyle(profileState?.dietStyle);
+    const language = normalizeLanguage(requestBody?.language);
     const blockedTokens = buildBlockedTokens(profileState);
     const visionAnalysis = await tryAnalyzeWithVisionProvider({
       config,
@@ -149,6 +153,7 @@ export const createPhotoAnalysisService = ({ config = {} } = {}) => ({
       mealType,
       dietStyle,
       blockedTokens,
+      language,
     });
 
     if (visionAnalysis) {

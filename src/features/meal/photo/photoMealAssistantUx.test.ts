@@ -91,11 +91,12 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).not.toContain("analysis.hiddenIngredientQuestions.slice(0, 3).map");
   });
 
-  it("localizes fallback photo draft names while preserving lookup source names", () => {
-    expect(componentSource).toContain("localizeFallbackPhotoAnalysis");
-    expect(componentSource).toContain("Чернетка сніданку з фото");
-    expect(componentSource).toContain("Грецький йогурт");
-    expect(componentSource).toContain("Jogurt grecki");
+  it("does not hard-code template foods into photo recognition review", () => {
+    expect(componentSource).toContain("localizePhotoAnalysisReviewCopy");
+    expect(componentSource).not.toContain("Greek yogurt");
+    expect(componentSource).not.toContain("Oats");
+    expect(componentSource).not.toContain("Banana");
+    expect(componentSource).not.toContain("Breakfast photo draft");
     expect(componentSource).toContain("needsManualPhotoTitle");
     expect(componentSource).toContain("item.originalName?.trim() || item.name");
   });
