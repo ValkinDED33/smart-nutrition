@@ -37,7 +37,7 @@ const assertCloudSaved = async (
   );
 };
 
-export const saveCommunityStateToCloud = async (
+const saveCommunityStateToCloud = async (
   dispatch: AppDispatch,
   nextCommunity: CommunityState
 ) => {
