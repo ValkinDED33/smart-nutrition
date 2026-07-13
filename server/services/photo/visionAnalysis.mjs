@@ -312,7 +312,7 @@ const callOpenAiCompatibleVisionProvider = async ({ provider, prompt, normalized
   return extractProviderText(payload);
 };
 
-export const normalizeVisionAnalysis = (payload) => {
+const normalizeVisionAnalysis = (payload) => {
   const interpretations = (Array.isArray(payload?.interpretations) ? payload.interpretations : [])
     .map(createVisionInterpretation)
     .filter((interpretation) => interpretation.items.length > 0)
