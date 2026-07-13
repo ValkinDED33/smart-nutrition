@@ -12,11 +12,8 @@ import type {
   AssistantTone,
 } from "@domain/profile/types";
 import type { Goal } from "@domain/user/types";
-export { buildAssistantPersonalizationPlan } from "./personalizationPlan";
-export type { AssistantPersonalizationPlan } from "./personalizationPlan";
-
 export const DEFAULT_ASSISTANT_NAME = "";
-export const DEFAULT_ASSISTANT_RUNTIME_LABEL = "Smart Nutrition companion";
+const DEFAULT_ASSISTANT_RUNTIME_LABEL = "Smart Nutrition companion";
 
 export type AssistantCoreEmotion =
   | "calm"
@@ -92,12 +89,12 @@ export const assistantMotivationStyles = [
   "energetic",
 ] as const satisfies readonly AssistantMotivationStyle[];
 
-export const isAssistantDietFriction = (
+const isAssistantDietFriction = (
   value: unknown
 ): value is AssistantDietFriction =>
   assistantDietFrictions.includes(value as AssistantDietFriction);
 
-export const isAssistantMotivationStyle = (
+const isAssistantMotivationStyle = (
   value: unknown
 ): value is AssistantMotivationStyle =>
   assistantMotivationStyles.includes(value as AssistantMotivationStyle);
@@ -185,7 +182,7 @@ export const normalizeAssistantOnboardingProfile = (
   };
 };
 
-export const assistantPersonalityByTone: Record<AssistantTone, AssistantPersonality> = {
+const assistantPersonalityByTone: Record<AssistantTone, AssistantPersonality> = {
   gentle: {
     warmth: 0.9,
     humor: 0.36,
@@ -218,7 +215,7 @@ export const assistantPersonalityByTone: Record<AssistantTone, AssistantPersonal
   },
 };
 
-export const communicationStyleByTone: Record<
+const communicationStyleByTone: Record<
   AssistantTone,
   AssistantCommunicationStyle
 > = {
@@ -381,7 +378,7 @@ const getAssistantName = (assistant: AssistantCustomization) => {
   return trimmedName.length > 0 ? trimmedName : DEFAULT_ASSISTANT_RUNTIME_LABEL;
 };
 
-export const createAssistantPersonality = (
+const createAssistantPersonality = (
   assistant: AssistantCustomization
 ): AssistantPersonality => {
   const base = getAssistantPersonalityByTone(assistant.tone);
@@ -392,14 +389,14 @@ export const createAssistantPersonality = (
   };
 };
 
-export const createAssistantSpeechStyle = (
+const createAssistantSpeechStyle = (
   assistant: AssistantCustomization
 ): AssistantSpeechStyle => ({
   communicationStyle: getCommunicationStyleByTone(assistant.tone),
   ...getSpeechStyleByTone(assistant.tone),
 });
 
-export const deriveAssistantCoreState = ({
+const deriveAssistantCoreState = ({
   mealEntriesToday,
   caloriesConsumed,
   dailyCalories,
@@ -432,7 +429,7 @@ export const deriveAssistantCoreState = ({
   return "steady_day";
 };
 
-export const deriveAssistantEmotion = (
+const deriveAssistantEmotion = (
   state: AssistantCoreState,
   { caloriesConsumed, dailyCalories, openMotivationTasks }: AssistantCoreSignals
 ): AssistantCoreEmotion => {
@@ -455,7 +452,7 @@ export const deriveAssistantEmotion = (
   return "calm";
 };
 
-export const deriveAssistantRelationshipLevel = ({
+const deriveAssistantRelationshipLevel = ({
   onboardingCompleted,
   completedMotivationTasks,
   mealEntriesToday,
@@ -482,7 +479,7 @@ export const deriveAssistantRelationshipLevel = ({
   return "new_companion";
 };
 
-export const createAssistantMemoryProfile = ({
+const createAssistantMemoryProfile = ({
   userId,
   userName,
   goal,
