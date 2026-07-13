@@ -232,7 +232,7 @@ const isReadyMeal = (product: Product) => {
   return foodGroup === "homemade" || foodGroup === "restaurant";
 };
 
-export const NutritionLibraryPanel = ({
+const NutritionLibraryPanel = ({
   mealType,
   mode = "library",
 }: NutritionLibraryPanelProps) => {

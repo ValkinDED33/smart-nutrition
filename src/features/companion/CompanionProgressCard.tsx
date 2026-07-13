@@ -154,7 +154,7 @@ interface CompanionProgressCardProps {
   embedded?: boolean;
 }
 
-export const CompanionProgressCard = ({ embedded = false }: CompanionProgressCardProps) => {
+const CompanionProgressCard = ({ embedded = false }: CompanionProgressCardProps) => {
   const companionState = useSelector((state: RootState) => state.companion ?? null);
   const { appLanguage } = useLanguage();
   const copy = getCompanionProgressCopy(appLanguage);

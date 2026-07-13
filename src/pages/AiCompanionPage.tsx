@@ -49,21 +49,13 @@ const AssistantRuntimeCard = lazy(() =>
     default: module.AssistantRuntimeCard,
   }))
 );
-const NutritionCoachCard = lazy(() =>
-  import("../features/meal/NutritionCoachCard").then((module) => ({
-    default: module.NutritionCoachCard,
-  }))
-);
+const NutritionCoachCard = lazy(() => import("../features/meal/NutritionCoachCard"));
 const SmartRecommendations = lazy(() =>
   import("../features/meal/SmartRecommendations").then((module) => ({
     default: module.SmartRecommendations,
   }))
 );
-const CompanionProgressCard = lazy(() =>
-  import("../features/companion").then((module) => ({
-    default: module.CompanionProgressCard,
-  }))
-);
+const CompanionProgressCard = lazy(() => import("../features/companion/CompanionProgressCard"));
 
 const aiCopy = {
   uk: {

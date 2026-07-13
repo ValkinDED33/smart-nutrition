@@ -17,11 +17,7 @@ const FridgeRecipePlanner = lazy(() =>
     default: module.FridgeRecipePlanner,
   }))
 );
-const NutritionLibraryPanel = lazy(() =>
-  import("../features/meal/NutritionLibraryPanel").then((module) => ({
-    default: module.NutritionLibraryPanel,
-  }))
-);
+const NutritionLibraryPanel = lazy(() => import("../features/meal/NutritionLibraryPanel"));
 const RecipeSection = lazy(() =>
   import("../features/meal/RecipeSection").then((module) => ({
     default: module.RecipeSection,

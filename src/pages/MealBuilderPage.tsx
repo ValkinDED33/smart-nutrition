@@ -54,11 +54,7 @@ const QuickProductShelf = lazy(() =>
     default: module.QuickProductShelf,
   }))
 );
-const NutritionLibraryPanel = lazy(() =>
-  import("../features/meal/NutritionLibraryPanel").then((module) => ({
-    default: module.NutritionLibraryPanel,
-  }))
-);
+const NutritionLibraryPanel = lazy(() => import("../features/meal/NutritionLibraryPanel"));
 const DailyHistoryExplorer = lazy(() =>
   import("../features/meal/DailyHistoryExplorer").then((module) => ({
     default: module.DailyHistoryExplorer,

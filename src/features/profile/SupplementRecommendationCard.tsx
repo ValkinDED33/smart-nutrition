@@ -294,7 +294,7 @@ const RecommendationPanel = ({
   </Box>
 );
 
-export const SupplementRecommendationCard = () => {
+const SupplementRecommendationCard = () => {
   const recommendationLanguage: AppLanguage = "uk";
   const copy = getSupplementCardCopy(recommendationLanguage);
   const meals = useSelector(selectTodayMealItems);

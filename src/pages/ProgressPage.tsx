@@ -14,11 +14,7 @@ import {
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 import type { AppLanguage } from "../shared/types/i18n";
 
-const WaterTracker = lazy(() =>
-  import("../features/water/WaterTracker").then((module) => ({
-    default: module.WaterTracker,
-  }))
-);
+const WaterTracker = lazy(() => import("../features/water/WaterTracker"));
 const WeightTrendCard = lazy(() =>
   import("../features/profile/WeightTrendCard").then((module) => ({
     default: module.WeightTrendCard,

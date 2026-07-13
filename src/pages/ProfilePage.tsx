@@ -69,9 +69,7 @@ const AdaptiveGoalCard = lazy(() =>
   }))
 );
 const WomenHealthOverviewCard = lazy(() =>
-  import("../features/profile/WomenHealthOverviewCard").then((module) => ({
-    default: module.WomenHealthOverviewCard,
-  }))
+  import("../features/profile/WomenHealthOverviewCard")
 );
 const MealDayOverview = lazy(() =>
   import("../features/meal/MealDayOverview").then((module) => ({

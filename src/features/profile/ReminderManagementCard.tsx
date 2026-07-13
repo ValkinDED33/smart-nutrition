@@ -304,7 +304,7 @@ const getReminderPrimaryActionLabel = (
   return copy.done;
 };
 
-export const ReminderManagementCard = () => {
+const ReminderManagementCard = () => {
   const { appLanguage } = useLanguage();
   const copy = getReminderCopy(appLanguage);
   const locale = getReminderLocale(appLanguage);

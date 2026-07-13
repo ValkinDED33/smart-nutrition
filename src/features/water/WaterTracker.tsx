@@ -228,7 +228,7 @@ const getWaterCopy = (language: AppLanguage): WaterCopy => {
   }
 };
 
-export const WaterTracker = () => {
+const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
   const companion = useSelector((state: RootState) => state.companion);

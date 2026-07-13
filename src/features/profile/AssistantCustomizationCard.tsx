@@ -21,7 +21,7 @@ import {
   CompanionAvatar as AssistantAvatar,
   CompanionRenderModeControl,
 } from "@features/assistant-3d";
-import { CompanionProgressCard } from "../companion";
+import CompanionProgressCard from "../companion/CompanionProgressCard";
 import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
@@ -311,7 +311,7 @@ const getFrictionLabel = (
   }
 };
 
-export const AssistantCustomizationCard = () => {
+const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = getAssistantCopy(appLanguage);

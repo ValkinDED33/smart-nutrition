@@ -152,7 +152,7 @@ const getMealValue = <TValue,>(
   }
 };
 
-export const BehaviorPersonalizationCard = () => {
+const BehaviorPersonalizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
   const { reminderTimes, assistant } = useSelector((state: RootState) => state.profile);

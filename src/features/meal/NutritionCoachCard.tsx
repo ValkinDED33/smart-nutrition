@@ -366,7 +366,7 @@ const getInsightAccent = (severity: NutritionCoachInsight["severity"]) => {
   }
 };
 
-export const NutritionCoachCard = () => {
+const NutritionCoachCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const items = useSelector(selectMealItems);
   const profile = useSelector((state: RootState) => state.profile);

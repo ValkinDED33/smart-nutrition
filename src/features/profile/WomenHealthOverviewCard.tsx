@@ -806,7 +806,7 @@ const getTraitLabel = (language: AppLanguage, value: string) => {
   return labels[value as keyof typeof labels] ?? value;
 };
 
-export const WomenHealthOverviewCard = () => {
+const WomenHealthOverviewCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);

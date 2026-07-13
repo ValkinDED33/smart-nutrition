@@ -172,7 +172,7 @@ const getMotivationLocale = (language: AppLanguage): string => {
   }
 };
 
-export const MotivationHubCard = () => {
+const MotivationHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile);
   const { motivation, goal } = profile;
