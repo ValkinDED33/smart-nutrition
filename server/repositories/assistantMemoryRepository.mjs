@@ -58,7 +58,7 @@ const toScore = (value, fallback) => {
   return Math.min(Math.max(Number(nextValue.toFixed(2)), 0), 1);
 };
 
-export const normalizeAssistantPersonality = (value = {}) => {
+const normalizeAssistantPersonality = (value = {}) => {
   const record = isRecord(value) ? value : {};
 
   return {
@@ -69,7 +69,7 @@ export const normalizeAssistantPersonality = (value = {}) => {
   };
 };
 
-export const normalizeAssistantMemory = (value = {}, fallback = DEFAULT_MEMORY) => {
+const normalizeAssistantMemory = (value = {}, fallback = DEFAULT_MEMORY) => {
   const record = isRecord(value) ? value : {};
 
   return {
