@@ -12,14 +12,14 @@ const MAX_NOTE_LENGTH = 220;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-export const womenHealthModes: WomenHealthMode[] = [
+const womenHealthModes: WomenHealthMode[] = [
   "none",
   "trying_to_conceive",
   "pregnant",
   "postpartum",
 ];
 
-export const isWomenHealthMode = (value: unknown): value is WomenHealthMode =>
+const isWomenHealthMode = (value: unknown): value is WomenHealthMode =>
   womenHealthModes.includes(value as WomenHealthMode);
 
 export const zodiacSigns: ZodiacSign[] = [
@@ -67,9 +67,9 @@ export const eyeColors: EyeColor[] = [
 
 const isEyeColor = (value: unknown): value is EyeColor =>
   eyeColors.includes(value as EyeColor);
-export const isZodiacSign = (value: unknown): value is ZodiacSign =>
+const isZodiacSign = (value: unknown): value is ZodiacSign =>
   zodiacSigns.includes(value as ZodiacSign);
-export const isChineseZodiacSign = (value: unknown): value is ChineseZodiacSign =>
+const isChineseZodiacSign = (value: unknown): value is ChineseZodiacSign =>
   chineseZodiacSigns.includes(value as ChineseZodiacSign);
 
 export const createDefaultWomenHealthState = (): WomenHealthState => ({
@@ -199,23 +199,4 @@ export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
       : fallback.fatherChineseZodiac,
     updatedAt: toIsoDateOrNull(record.updatedAt),
   };
-};
-
-export const getWomenHealthForGender = (
-  gender: Gender | null | undefined,
-  value: unknown
-): WomenHealthState =>
-  isWomenHealthVisibleForGender(gender)
-    ? normalizeWomenHealthState(value)
-    : createDefaultWomenHealthState();
-
-export const getWomenHealthAssistantMode = (
-  gender: Gender | null | undefined,
-  state: WomenHealthState
-) => {
-  if (!isWomenHealthVisibleForGender(gender) || state.mode === "none") {
-    return "not_applicable";
-  }
-
-  return state.mode;
 };
