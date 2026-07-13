@@ -521,7 +521,7 @@ const normalizeReminderType = (value) => {
   return REMINDER_TYPES.has(type) ? type : REMINDER_TYPE_MEDICATION;
 };
 
-export const normalizeMedicationReminder = (value) => {
+const normalizeMedicationReminder = (value) => {
   if (!isRecord(value)) {
     return null;
   }
@@ -604,7 +604,7 @@ export const normalizeMedicationReminder = (value) => {
   };
 };
 
-export const normalizeMedicationReminders = (value) =>
+const normalizeMedicationReminders = (value) =>
   Array.isArray(value)
     ? value.map(normalizeMedicationReminder).filter(Boolean).slice(0, MAX_REMINDERS_PER_USER)
     : [];

@@ -671,7 +671,7 @@ const formatReminderKindTitle = (reminder, language = REMINDER_LANGUAGE_FALLBACK
   return copy.kinds[reminder?.type] ?? copy.kinds.medication;
 };
 
-export const buildMedicationReminderUsageMessage = (
+const buildMedicationReminderUsageMessage = (
   language = REMINDER_LANGUAGE_FALLBACK
 ) => getReminderCopy(language).usage.join("\n");
 
@@ -700,7 +700,7 @@ export const buildMedicationReminderCreatedMessage = (
     .join("\n");
 };
 
-export const buildMedicationReminderNotificationMessage = (
+const buildMedicationReminderNotificationMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
 ) => {
@@ -857,7 +857,7 @@ export const buildTaskReminderCreatedMessage = (
     .join("\n");
 };
 
-export const buildTaskReminderNotificationMessage = (
+const buildTaskReminderNotificationMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
 ) => {
@@ -873,7 +873,7 @@ export const buildTaskReminderNotificationMessage = (
   ].join("\n");
 };
 
-export const buildReminderScheduleUpdatedMessage = (
+const buildReminderScheduleUpdatedMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
 ) => {
