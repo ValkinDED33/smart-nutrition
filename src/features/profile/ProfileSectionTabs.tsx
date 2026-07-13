@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Stack } from "@mui/material";
 import { SectionTabs } from "@shared/ui";
 
-export interface ProfileSectionTab {
+interface ProfileSectionTab {
   id: string;
   label: string;
   content: ReactNode;

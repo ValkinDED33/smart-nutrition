@@ -27,9 +27,8 @@ import {
   updateRemoteProfileWithState,
   remoteAuthProvider,
   purgeLegacyBrowserAuthStorage,
-  type RemoteSyncResult,
   type ProductIntakePayload,
-  type ProductIntakeResult,
+  type RemoteSyncResult,
   type TelegramConnectLink,
   type TelegramConnectionStatus,
   upsertRemoteMealProduct,
@@ -41,21 +40,15 @@ import type {
 } from "./authProvider";
 
 export type {
-  RegisterPayload,
-  AuthRuntimeInfo,
-  AccountBackupPayload,
   AccountBackupSummary,
-  AccountExportPayload,
   PasswordResetRequestResult,
-  PasswordResetResult,
   RegistrationAvailabilityResult,
-  RegistrationResult,
   RegistrationVerificationPayload,
   RegistrationVerificationPending,
   RegistrationVerificationResendPayload,
 } from "./authProvider";
 export type { RemoteSyncResult };
-export type { ProductIntakePayload, ProductIntakeResult };
+export type { ProductIntakePayload };
 export type { TelegramConnectionStatus, TelegramConnectLink };
 export { AuthApiError };
 export { acceptRemotePartnerInvite };

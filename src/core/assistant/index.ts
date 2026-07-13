@@ -36,7 +36,7 @@ export type AssistantRelationshipLevel =
   | "trusted_companion"
   | "deep_context";
 
-export interface AssistantSpeechStyle {
+interface AssistantSpeechStyle {
   communicationStyle: AssistantCommunicationStyle;
   pace: "soft" | "balanced" | "direct";
   nudgeStyle: "gentle" | "practical" | "firm";

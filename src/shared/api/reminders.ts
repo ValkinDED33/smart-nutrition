@@ -7,7 +7,7 @@ export type ReminderType =
   | "water"
   | "habit"
   | "task";
-export type ReminderRepeat = "daily" | "once";
+type ReminderRepeat = "daily" | "once";
 export type ReminderAction =
   | "taken"
   | "done"
@@ -16,7 +16,7 @@ export type ReminderAction =
   | "pause"
   | "resume";
 
-export type ReminderEvent = {
+type ReminderEvent = {
   id: string;
   action: string;
   scheduledFor: string | null;

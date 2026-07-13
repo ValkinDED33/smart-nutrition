@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Box, ButtonBase, Chip, Stack, Typography } from "@mui/material";
 
-export interface SectionTabItem {
+interface SectionTabItem {
   id: string;
   label: ReactNode;
   icon?: ReactNode;

@@ -4,7 +4,7 @@ import type {
   AssistantRuntimeResponse,
 } from "@domain/assistant/types";
 
-export interface AssistantRuntimeGateway {
+interface AssistantRuntimeGateway {
   askQuestion: (
     input: AssistantQuestionInput
   ) => Promise<AssistantRuntimeResponse>;

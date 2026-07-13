@@ -12,8 +12,6 @@ import {
 import type { WaterReminderSettings } from "./waterModel";
 
 export type {
-  WaterHistoryEntry,
-  WaterReminderSettings,
   WaterState,
 } from "./waterModel";
 export { createInitialWaterState } from "./waterModel";

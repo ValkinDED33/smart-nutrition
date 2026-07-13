@@ -1,5 +1,5 @@
 export type PhotoPortionSize = "light" | "regular" | "large";
-export type PhotoRecognitionStatus = "recognized" | "needs_review" | "needs_better_photo";
+type PhotoRecognitionStatus = "recognized" | "needs_review" | "needs_better_photo";
 
 export interface PhotoMealSuggestion {
   name: string;
@@ -20,7 +20,7 @@ export interface PhotoMealSuggestion {
   };
 }
 
-export interface PhotoMealInterpretation {
+interface PhotoMealInterpretation {
   id: string;
   title: string;
   confidence: number;

@@ -1,4 +1,4 @@
-export type CommunityFriendStatus = "online" | "offline";
+type CommunityFriendStatus = "online" | "offline";
 export type CommunityPostType = "recipe" | "advice" | "experience" | "discussion";
 export type CommunityContentStatus = "pending" | "approved" | "rejected";
 

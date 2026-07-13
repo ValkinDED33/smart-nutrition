@@ -3,8 +3,8 @@ import type { AppLanguage } from "../types/i18n";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
 import type { AssistantOnboardingProfile } from "@domain/profile/types";
 
-export type AssistantHomePhase = "morning" | "day" | "evening";
-export type AssistantHomeActionKind = "meal_search" | "meal_photo" | "meal_scan" | "water" | "recipes" | "progress";
+type AssistantHomePhase = "morning" | "day" | "evening";
+type AssistantHomeActionKind = "meal_search" | "meal_photo" | "meal_scan" | "water" | "recipes" | "progress";
 type AssistantHomeCopy = (typeof copy)[keyof typeof copy];
 type AssistantHomeActionKey = keyof (typeof copy)["en"]["actions"];
 type MealActionKey = "breakfast" | "lunch" | "dinner";

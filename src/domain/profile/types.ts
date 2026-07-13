@@ -38,7 +38,7 @@ export type AssistantDietFriction =
 export type AssistantMotivationStyle = "gentle" | "direct" | "energetic";
 export type MotivationTaskCategory = "nutrition" | "consistency" | "reflection";
 export type PremiumPlanId = "free" | "pro" | "coach";
-export type PremiumStatus = "inactive" | "trial" | "active" | "cancelled";
+type PremiumStatus = "inactive" | "trial" | "active" | "cancelled";
 export type BloodGroup =
   | "unknown"
   | "o_positive"
@@ -186,8 +186,8 @@ export interface WomenHealthState {
 }
 
 export type PartnerSharePermission = "pregnancy_timeline";
-export type PartnerShareRole = "owner" | "partner";
-export type PartnerShareStatus = "active" | "revoked";
+type PartnerShareRole = "owner" | "partner";
+type PartnerShareStatus = "active" | "revoked";
 
 export interface PartnerShareInvite {
   id: string;

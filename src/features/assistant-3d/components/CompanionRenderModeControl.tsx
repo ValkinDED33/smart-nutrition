@@ -1,7 +1,7 @@
 import { Box, Button, Chip, CircularProgress, Stack, Typography } from "@mui/material";
 import type { CompanionAvatarRenderMode } from "./companionAvatarModel";
 
-export type CompanionRenderModeValue = Extract<
+type CompanionRenderModeValue = Extract<
   CompanionAvatarRenderMode,
   "2d" | "3d"
 >;

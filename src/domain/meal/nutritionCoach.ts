@@ -7,7 +7,7 @@ import type { Goal } from "@domain/user/types";
 const COACH_WINDOW_DAYS = 7;
 const FIBER_TARGET = 25;
 
-export type NutritionCoachSeverity = "success" | "warning" | "info";
+type NutritionCoachSeverity = "success" | "warning" | "info";
 export type NutritionCoachStatus = "strong" | "steady" | "attention";
 export type NutritionCoachInsightCode =
   | "logging_low"

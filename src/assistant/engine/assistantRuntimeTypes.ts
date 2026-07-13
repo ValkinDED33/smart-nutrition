@@ -1,7 +1,6 @@
 import type { ProfileState } from "@features/profile/profileSlice";
 import type { WaterState } from "@features/water/waterSlice";
 import type {
-  AssistantConversationMessage,
   AssistantPromptContext,
   AssistantRuntimeContext,
 } from "@domain/assistant/types";
@@ -12,27 +11,6 @@ import type {
   NutritionCoachInsightCode,
 } from "@domain/meal/nutritionCoach";
 import type { DailyContext } from "@domain/meal/dailyContext";
-
-export type AssistantChatMessage = AssistantConversationMessage;
-export type AssistantScene = "home" | "meals" | "progress" | "profile" | "celebration";
-export type AssistantStatus = "idle" | "transition" | "reacting";
-export type AssistantAnimation = "none" | "smoke_in" | "bounce" | "nod" | "celebrate";
-export type AssistantProp = "none" | "plate" | "water" | "scale" | "sparkles";
-export type AssistantMood = "neutral" | "happy" | "focused" | "concerned";
-export type AssistantUserStyle = "child" | "teen" | "adult";
-export type AssistantAction = string;
-
-export interface UserContext {
-  age?: number | null;
-}
-
-export interface AssistantRule {
-  scene: AssistantScene;
-  prop: AssistantProp;
-  mood: AssistantMood;
-  animation: AssistantAnimation;
-  reaction?: AssistantAnimation;
-}
 
 export interface AssistantContextSource {
   language: AssistantRuntimeContext["language"];

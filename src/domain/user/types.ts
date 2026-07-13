@@ -25,7 +25,7 @@ export type CommunityMemberStatus =
   | "ACTIVE_MEMBER"
   | "TRUSTED_MEMBER"
   | "COMMUNITY_EXPERT";
-export type VerificationChannel = "email";
+type VerificationChannel = "email";
 
 export interface User {
   id: string;
@@ -56,17 +56,6 @@ export interface User {
   };
 }
 
-export interface RegisterPayload {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
 export interface AuthResponse {
   user: User;
   token?: string;
@@ -84,5 +73,3 @@ export interface RegistrationVerificationPending {
   message: string;
   expiresAt?: string;
 }
-
-export type UpdateUserPayload = Partial<Omit<User, "id" | "email">>;

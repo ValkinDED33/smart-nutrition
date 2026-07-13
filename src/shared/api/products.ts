@@ -1,8 +1,7 @@
-import type { NutrientKey, Product, ProductSource } from "@domain/products/types";
+import type { NutrientKey, Product } from "@domain/products/types";
 import {
   createEmptyNutrients,
   setNutrientValue,
-  type NutrientUnit,
 } from "@domain/meal/nutrients";
 import {
   getRemoteAuthBaseUrl,
@@ -40,7 +39,7 @@ export class ProductLookupError extends Error {
   }
 }
 
-const productSources = new Set<ProductSource>([
+const productSources = new Set<Product["source"]>([
   "USDA",
   "OpenFoodFacts",
   "Manual",
@@ -209,8 +208,8 @@ const readProduct = (value: unknown): Product | null => {
     id,
     name,
     unit,
-    source: productSources.has(source as ProductSource)
-      ? (source as ProductSource)
+    source: productSources.has(source as Product["source"])
+      ? (source as Product["source"])
       : "Manual",
     nutrients,
     brand: toString(record.brand) || undefined,
@@ -345,5 +344,3 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
 
   return mergeProductsByIdentity(backendProducts).slice(0, limit);
 };
-
-export type { NutrientUnit };

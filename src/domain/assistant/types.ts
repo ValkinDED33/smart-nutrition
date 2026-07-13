@@ -15,9 +15,9 @@ import type {
 import type { DailyContext } from "@domain/meal/dailyContext";
 import type { Gender, Goal } from "./user";
 
-export type AssistantRuntimeMode = "guided" | "remote-cloud" | "agent-action";
+type AssistantRuntimeMode = "guided" | "remote-cloud" | "agent-action";
 
-export type AssistantScreenId =
+type AssistantScreenId =
   | "dashboard"
   | "food"
   | "recipes"
@@ -61,7 +61,7 @@ export interface AssistantMemory {
   recentProblems: string[];
 }
 
-export interface AssistantPromptCapabilityContext {
+interface AssistantPromptCapabilityContext {
   id: string;
   area: string;
   duties: string[];
@@ -69,7 +69,7 @@ export interface AssistantPromptCapabilityContext {
   entryRoute: string | null;
 }
 
-export interface AssistantPromptActionContext {
+interface AssistantPromptActionContext {
   label: string;
   route: string;
 }

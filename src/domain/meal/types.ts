@@ -1,20 +1,7 @@
-import type { Product, Nutrients } from "../products/types";
+import type { Product } from "../products/types";
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-export type MealTypeValue = MealType;
-export type ProductUnit = "g" | "ml" | "piece";
-export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
-export type MealOrigin = "manual" | "barcode" | "recipe";
-
-export type { Nutrients, Product };
-
-export interface UserProfile {
-  dailyCalories: number;
-  macroGoals?: MacroGoals;
-  allergies: string[];
-  excludedIngredients: string[];
-  dietStyle?: "balanced" | "low_carb" | "high_protein";
-}
+type MealOrigin = "manual" | "barcode" | "recipe";
 
 export interface MealEntry {
   id: string;
@@ -38,7 +25,7 @@ export interface MealTemplate {
   createdAt: string;
 }
 
-export interface RecipeIngredient {
+interface RecipeIngredient {
   product: Product;
   quantity: number;
 }
@@ -54,29 +41,4 @@ export interface Recipe {
   protein: number;
   fat: number;
   carbs: number;
-}
-
-export interface MacroGoals {
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-}
-
-export interface MacroProgress {
-  current: number;
-  target: number;
-  progress: number;
-}
-
-export interface DailyNutrition {
-  date: string;
-  nutrients: Nutrients;
-  mealCount: number;
-  calorieProgress: MacroProgress;
-  macroProgress: {
-    protein: MacroProgress;
-    fat: MacroProgress;
-    carbs: MacroProgress;
-  };
 }

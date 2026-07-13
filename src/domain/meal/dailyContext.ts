@@ -22,7 +22,7 @@ export type DailyContextFocus =
   | "calories_low"
   | "steady";
 
-export type DailyContextPatternCode =
+type DailyContextPatternCode =
   | "light_logging"
   | "breakfast_gap"
   | "late_snacking"
@@ -31,9 +31,9 @@ export type DailyContextPatternCode =
   | "calorie_overshoot"
   | "steady_streak";
 
-export type DailyContextNudgeTone = "gentle" | "direct" | "celebratory";
+type DailyContextNudgeTone = "gentle" | "direct" | "celebratory";
 
-export interface DailyContextDay {
+interface DailyContextDay {
   dateKey: string;
   entries: number;
   mealTypes: MealType[];

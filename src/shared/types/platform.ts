@@ -1,7 +1,7 @@
 import type { Product } from "./product";
 import type { User, UserRole } from "./user";
 
-export type ProductModerationStatus = "pending" | "approved" | "rejected";
+type ProductModerationStatus = "pending" | "approved" | "rejected";
 
 export interface AccessOverview {
   role: UserRole;

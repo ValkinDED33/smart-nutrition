@@ -5,7 +5,7 @@ type LocalizedText = Record<AppLanguage, string>;
 
 export type AdditiveRiskLevel = "low" | "watch" | "limit";
 
-export interface AdditiveDefinition {
+interface AdditiveDefinition {
   code: string;
   aliases: string[];
   name: LocalizedText;

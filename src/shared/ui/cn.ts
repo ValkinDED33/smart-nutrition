@@ -1,4 +1,4 @@
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -25,5 +25,3 @@ export const buttonSurface = cva(
     },
   }
 );
-
-export type ButtonSurfaceVariants = VariantProps<typeof buttonSurface>;

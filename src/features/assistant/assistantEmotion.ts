@@ -5,7 +5,7 @@ import type {
   AssistantPresencePriority,
 } from "./assistantPresence";
 
-export type AssistantEmotion =
+type AssistantEmotion =
   | "calm"
   | "happy"
   | "coach"
@@ -13,7 +13,7 @@ export type AssistantEmotion =
   | "celebrate"
   | "focused";
 
-export type AssistantMessageIntent =
+type AssistantMessageIntent =
   | "guide"
   | "encourage"
   | "warn"

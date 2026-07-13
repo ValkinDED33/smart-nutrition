@@ -50,11 +50,11 @@ export interface Nutrients {
 
 export type NutrientKey = keyof Nutrients;
 
-export type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
-export type ProductUnit = "g" | "ml" | "piece";
-export type ProductCatalogStatus = "pending" | "approved" | "rejected" | "personal";
+type ProductSource = "USDA" | "OpenFoodFacts" | "Manual" | "Recipe";
+type ProductUnit = "g" | "ml" | "piece";
+type ProductCatalogStatus = "pending" | "approved" | "rejected" | "personal";
 
-export interface ProductFacts {
+interface ProductFacts {
   foodGroup?: string;
   carbohydrateTypes?: string[];
   proteinTypes?: string[];

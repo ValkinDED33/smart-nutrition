@@ -4,7 +4,7 @@ export type AssistantViewport = "mobile" | "tablet" | "desktop";
 
 export type AssistantRouteKind = "public" | "auth" | "onboarding" | "unknown";
 
-export type AssistantPresenceMode = "hidden" | "compact" | "bubble" | "coach";
+type AssistantPresenceMode = "hidden" | "compact" | "bubble" | "coach";
 
 export type AssistantPresencePriority = "low" | "normal" | "high";
 

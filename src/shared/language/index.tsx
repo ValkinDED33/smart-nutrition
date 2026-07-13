@@ -22,7 +22,7 @@ import {
   setClientStorageItem,
 } from "../lib/clientPersistence";
 
-export type Language = "uk" | "pl";
+type Language = "uk" | "pl";
 
 const STORAGE_KEY = "smart-nutrition.language";
 const ONBOARDING_STORAGE_KEY = "smart-nutrition.onboarding-complete";

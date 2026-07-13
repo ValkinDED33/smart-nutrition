@@ -38,11 +38,6 @@ export interface CompanionAchievement {
   unlockedAt?: string;
 }
 
-export interface CompanionRelationship {
-  level: number;
-  label?: string;
-}
-
 export interface CompanionState {
   level: CompanionLevel;
   xp: number;
@@ -78,7 +73,7 @@ export type CompanionCatalogCategory =
 
 export type CompanionCatalogLocale = "uk" | "pl" | "en";
 
-export type CompanionCatalogCompanionKind =
+type CompanionCatalogCompanionKind =
   | "cat"
   | "dog"
   | "fox"
@@ -89,7 +84,7 @@ export type CompanionCatalogCompanionKind =
   | "robot"
   | "human";
 
-export type CompanionItemSlot =
+type CompanionItemSlot =
   | "companion"
   | "outfit"
   | "reaction"
