@@ -1,6 +1,6 @@
 export const STALE_BUILD_RECOVERY_KEY = "smart-nutrition.stale-build-recovery";
 export const STALE_BUILD_RECOVERY_TTL_MS = 15_000;
-export const ERROR_RECOVERY_DIAGNOSTIC_KEY =
+const ERROR_RECOVERY_DIAGNOSTIC_KEY =
   "smart-nutrition.error-boundary-diagnostic";
 
 const SMART_NUTRITION_KEY_PREFIX = "smart-nutrition.";

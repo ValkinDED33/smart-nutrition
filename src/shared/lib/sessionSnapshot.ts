@@ -1,6 +1,6 @@
 import type { SyncOutboxMeta } from "./syncOutbox";
 
-export const STALE_SYNC_OUTBOX_MS = 1000 * 60 * 60;
+const STALE_SYNC_OUTBOX_MS = 1000 * 60 * 60;
 
 export type CloudSnapshotHydrationDecision =
   | { shouldApplyCloudSnapshot: true; shouldDiscardOutbox: false; reason: "no-pending-local-changes" }
@@ -17,7 +17,7 @@ const parseTime = (value: string | null | undefined) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-export const getSyncOutboxAgeMs = (
+const getSyncOutboxAgeMs = (
   syncOutbox: Pick<SyncOutboxMeta, "firstQueuedAt" | "lastQueuedAt">,
   now = Date.now()
 ) => {

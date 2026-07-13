@@ -4,7 +4,7 @@ import {
   setClientStorageItem,
 } from "./clientPersistence";
 
-export const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
+const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
 const AUTH_SESSION_HINT_TTL_MS = 1000 * 60 * 60 * 24 * 8;
 
 type AuthSessionHint = {
@@ -54,7 +54,7 @@ const parseAuthSessionHint = (rawValue: string | null): AuthSessionHint | null =
   }
 };
 
-export const readAuthSessionHint = () =>
+const readAuthSessionHint = () =>
   parseAuthSessionHint(
     getClientStorageItem(AUTH_SESSION_HINT_KEY) ??
       readBrowserStorageItem(AUTH_SESSION_HINT_KEY)

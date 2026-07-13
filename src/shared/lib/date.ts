@@ -27,7 +27,7 @@ export const getLocalDateKey = (value: Date | string | number) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
-export const parseLocalDateKey = (dateKey: string) => {
+const parseLocalDateKey = (dateKey: string) => {
   const [yearPart, monthPart, dayPart] = dateKey.split("-");
   const year = Number(yearPart ?? 1970);
   const month = Number(monthPart ?? 1);
