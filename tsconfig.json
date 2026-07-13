@@ -16,7 +16,6 @@
     "baseUrl": ".",
     "paths": {
       "@domain/*": ["src/domain/*"],
-      "@data/*": ["src/data/*"],
       "@integration/*": ["src/integration/*"],
       "@state/*": ["src/state/*"],
       "@features/*": ["src/features/*"],

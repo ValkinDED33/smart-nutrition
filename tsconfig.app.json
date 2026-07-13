@@ -15,7 +15,6 @@
     "baseUrl": "./src",
     "paths": {
       "@domain/*": ["domain/*"],
-      "@data/*": ["data/*"],
       "@integration/*": ["integration/*"],
       "@state/meal/*": ["features/meal/model/*"],
       "@state/*": ["state/*"],

@@ -38,7 +38,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@domain": fromRoot("src/domain"),
-      "@data": fromRoot("src/data"),
       "@integration": fromRoot("src/integration"),
       "@state": fromRoot("src/state"),
       "@features": fromRoot("src/features"),
