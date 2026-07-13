@@ -524,7 +524,7 @@ const getMongoHostLabel = (mongoUri) => {
   }
 };
 
-export async function connectMongo(config = {}) {
+async function connectMongo(config = {}) {
   const mongoUri = toTrimmedString(config.mongoUri) || getMongoUriFromEnv();
 
   if (!mongoUri) {
