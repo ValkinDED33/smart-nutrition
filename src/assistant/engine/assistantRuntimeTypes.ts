@@ -34,17 +34,6 @@ export interface AssistantRule {
   reaction?: AssistantAnimation;
 }
 
-export const normalizeUserContext = (user: Partial<UserContext>): UserContext => ({
-  age: typeof user.age === "number" ? user.age : null,
-});
-
-export const getUserStyle = (age?: number | null): AssistantUserStyle => {
-  if (typeof age !== "number") return "adult";
-  if (age < 13) return "child";
-  if (age < 18) return "teen";
-  return "adult";
-};
-
 export interface AssistantContextSource {
   language: AssistantRuntimeContext["language"];
   screen?: AssistantRuntimeContext["screen"];
