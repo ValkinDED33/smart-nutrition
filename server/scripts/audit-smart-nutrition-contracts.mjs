@@ -26,6 +26,9 @@ const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
+const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
+const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
+const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 
 addCheck(
   "photo assistant does not hard-code template recognition foods",
@@ -149,6 +152,55 @@ addCheck(
     profileCloudActionSource.includes("setUser") &&
     profileCloudActionSource.includes("throw caughtError"),
   "Profile settings must use the shared cloud action path and throw on failed persistence instead of fake success."
+);
+
+addCheck(
+  "barcode scanner shows the confirmed product result before secondary panels",
+  barcodeScannerSource.includes('data-scanner-found-product="primary-result"') &&
+    barcodeScannerSource.includes('data-scanner-result-alert="confirmed"') &&
+    barcodeScannerSource.indexOf('data-scanner-found-product="primary-result"') <
+      barcodeScannerSource.indexOf("{copy.scanHistory}") &&
+    barcodeScannerSource.indexOf('data-scanner-found-product="primary-result"') <
+      barcodeScannerSource.indexOf("copy.manualTitle"),
+  "After scan, the product result must be visible above history/fallback/manual panels so users know what was scanned."
+);
+
+addCheck(
+  "barcode scanner stops camera after a product is resolved",
+  /setFoundProduct\(product\);[\s\S]*?stopScanner\(\);/.test(barcodeScannerSource) &&
+    barcodeScannerSource.includes("scannedCodeReady") &&
+    barcodeScannerSource.includes("scannerRuntimeState"),
+  "Scanner camera must stop and show a stable result state after product resolution instead of leaving users in an endless camera state."
+);
+
+addCheck(
+  "barcode scanner adds food only through canonical backend intake",
+  barcodeScannerSource.includes("addProductIntakeToCloud(dispatch") &&
+    barcodeScannerSource.includes('source: "barcode"') &&
+    barcodeScannerSource.includes("intakeResult.outcomes?.mealAdded") &&
+    barcodeScannerSource.includes("Backend did not confirm the meal entry."),
+  "Barcode scan add must be backend-confirmed through canonical product intake before showing success."
+);
+
+addCheck(
+  "product facts table includes vitamins minerals iodine and additive safety",
+  productNutritionFactsSource.includes("micronutrientTableKeys") &&
+    productNutritionFactsSource.includes('"iodine"') &&
+    productNutritionFactsSource.includes("analyzeProductAdditives") &&
+    productNutritionFactsSource.includes("getAdditiveRiskColor") &&
+    productNutritionFactsSource.includes("additiveDose") &&
+    productNutritionFactsSource.includes("additiveCompositionMissing"),
+  "Product details must expose micronutrients, iodine, additive risk, dose guidance, and a clear missing-composition state."
+);
+
+addCheck(
+  "backend product lookup imports label micronutrients and additive text",
+  productLookupServiceSource.includes("additives_tags") &&
+    productLookupServiceSource.includes("additives_original_tags") &&
+    productLookupServiceSource.includes("readOpenFoodFactsAdditivesText") &&
+    productLookupServiceSource.includes("readFirstMicronutrientPerBase(nutriments, [\"iodine\", \"iodide\", \"iodides\"]") &&
+    productLookupServiceSource.includes("vitamin-b12"),
+  "Backend product lookup must preserve additive and micronutrient facts from provider data before the frontend renders product facts."
 );
 
 const failed = checks.filter((check) => !check.pass);
