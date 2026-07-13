@@ -9,15 +9,12 @@ import type { AppLanguage } from "@shared/types/i18n";
 const syncFeedbackCopy = {
   uk: {
     retrySuccess: "Хмарна синхронізація завершилася успішно.",
-    outboxFlushed: "Очікувані зміни підтверджено хмарою.",
   },
   pl: {
     retrySuccess: "Synchronizacja z chmura zakonczona pomyslnie.",
-    outboxFlushed: "Oczekujace zmiany zostaly potwierdzone przez chmure.",
   },
   en: {
     retrySuccess: "Cloud sync completed successfully.",
-    outboxFlushed: "Pending changes were confirmed by the cloud.",
   },
 } as const;
 
@@ -54,7 +51,7 @@ const SyncFeedbackAlert = () => {
       variant="filled"
       sx={{ mb: 2 }}
     >
-      {syncToast.kind === "outbox-flushed" ? copy.outboxFlushed : copy.retrySuccess}
+      {copy.retrySuccess}
     </Alert>
   );
 };

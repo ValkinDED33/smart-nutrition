@@ -5,7 +5,6 @@ import type { User } from "@domain/user/types";
 import {
   AuthApiError,
   getAuthRuntimeInfo,
-  getRemoteBackendAvailability,
   pullRemoteAppSnapshot,
   restoreSession,
   syncRemoteCommunityState,
@@ -39,10 +38,10 @@ import {
   applyRemoteSnapshotWithSyncPolicy,
 } from "./sessionSnapshot";
 
-export const REMOTE_CLOUD_SYNC_MODE = "remote-cloud";
-export type SyncMode = typeof REMOTE_CLOUD_SYNC_MODE;
-export type SyncStatus = "syncing" | "synced" | "error";
-export type SessionRestoreStatus = "idle" | "checking" | "unavailable";
+const REMOTE_CLOUD_SYNC_MODE = "remote-cloud";
+type SyncMode = typeof REMOTE_CLOUD_SYNC_MODE;
+type SyncStatus = "syncing" | "synced" | "error";
+type SessionRestoreStatus = "idle" | "checking" | "unavailable";
 type RestoreRaceResult =
   | { kind: "remote"; data: Awaited<ReturnType<typeof restoreSession>> }
   | { kind: "timeout" };
@@ -62,7 +61,7 @@ interface AuthState {
   syncError: string | null;
   cloudMeta: AppSnapshotMeta | null;
   syncOutbox: SyncOutboxMeta;
-  syncToast: { id: number; kind: "retry-success" | "outbox-flushed" } | null;
+  syncToast: { id: number; kind: "retry-success" } | null;
   hasSessionHint: boolean;
   sessionRestoreStatus: SessionRestoreStatus;
 }
@@ -304,49 +303,6 @@ export const retryCloudSync = createAsyncThunk<
   };
 });
 
-export const flushSyncOutbox = createAsyncThunk<
-  { syncedAt: string; syncOutbox: SyncOutboxMeta; cloudMeta: AppSnapshotMeta | null },
-  void,
-  { state: AuthRootState; rejectValue: string }
->(
-  "auth/flushSyncOutbox",
-  async (_, { dispatch, getState, rejectWithValue }) => {
-    const available = await getRemoteBackendAvailability(true);
-
-    if (!available) {
-      return rejectWithValue("Cloud API is still unavailable.");
-    }
-
-    const state = getState();
-    const syncResult = await pushCurrentStateToCloud(state);
-
-    if (!syncResult.ok) {
-      dispatch(setCloudMeta(syncResult.meta ?? readCachedRemoteMeta({ allowStale: true })));
-      return rejectWithValue(getSyncErrorMessage(syncResult));
-    }
-
-    cacheCurrentRemoteSnapshot(state, syncResult.meta);
-
-    return {
-      syncedAt: syncResult.meta?.updatedAt ?? new Date().toISOString(),
-      syncOutbox: clearSyncOutbox(),
-      cloudMeta: syncResult.meta ?? null,
-    };
-  },
-  {
-    condition: (_, { getState }) => {
-      const state = getState() as AuthRootState;
-
-      return (
-        state.auth.isAuthenticated &&
-        state.auth.syncMode === REMOTE_CLOUD_SYNC_MODE &&
-        state.auth.syncStatus !== "syncing" &&
-        state.auth.syncOutbox.pendingChanges > 0
-      );
-    },
-  }
-);
-
 export const pullLatestCloudSnapshot = createAsyncThunk<
   { syncedAt: string; syncOutbox: SyncOutboxMeta; cloudMeta: AppSnapshotMeta | null },
   { discardQueuedChanges?: boolean } | void,
@@ -390,20 +346,6 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout(state) {
-      state.user = null;
-      state.isAuthenticated = false;
-      state.error = null;
-      state.syncMode = REMOTE_CLOUD_SYNC_MODE;
-      state.syncStatus = "synced";
-      state.lastSyncedAt = null;
-      state.syncError = null;
-      state.cloudMeta = null;
-      state.syncOutbox = createEmptySyncOutboxMeta();
-      state.syncToast = null;
-      state.hasSessionHint = false;
-      state.sessionRestoreStatus = "idle";
-    },
     clearSavedSessionHint(state) {
       state.user = null;
       state.isAuthenticated = false;
@@ -578,26 +520,6 @@ const authSlice = createSlice({
         state.syncError =
           action.payload ?? "Cloud sync could not save the latest app data.";
       })
-      .addCase(flushSyncOutbox.pending, (state) => {
-        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
-          return;
-        }
-
-        state.syncStatus = "syncing";
-        state.syncError = null;
-      })
-      .addCase(flushSyncOutbox.fulfilled, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
-          return;
-        }
-
-        state.syncStatus = "synced";
-        state.lastSyncedAt = action.payload.syncedAt;
-        state.syncError = null;
-        state.syncOutbox = action.payload.syncOutbox;
-        state.cloudMeta = action.payload.cloudMeta;
-        state.syncToast = { id: Date.now(), kind: "outbox-flushed" };
-      })
       .addCase(pullLatestCloudSnapshot.pending, (state) => {
         if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
           return;
@@ -624,22 +546,12 @@ const authSlice = createSlice({
 
         state.syncStatus = "error";
         state.syncError = action.payload ?? "Could not pull the latest cloud snapshot.";
-      })
-      .addCase(flushSyncOutbox.rejected, (state, action) => {
-        if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
-          return;
-        }
-
-        state.syncStatus = "error";
-        state.syncError =
-          action.payload ?? getSyncError(state.syncOutbox);
       });
   },
 });
 
 export const {
   clearSavedSessionHint,
-  logout,
   setUser,
   setCredentials,
   markSyncStarted,
