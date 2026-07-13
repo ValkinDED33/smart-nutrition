@@ -195,7 +195,6 @@ const createProduct = ({
   aliases,
   featured = true,
   brand,
-  barcode,
   unit = "g",
   facts,
 }: {
@@ -209,7 +208,6 @@ const createProduct = ({
   aliases: string[];
   featured?: boolean;
   brand?: string;
-  barcode?: string;
   unit?: Product["unit"];
   facts?: Product["facts"];
 }): CatalogProductRecord => ({
@@ -220,7 +218,6 @@ const createProduct = ({
     name,
     unit,
     brand,
-    barcode,
     imageUrl,
     facts,
     source: "Manual",
@@ -259,7 +256,6 @@ const catalog: CatalogProductRecord[] = [
     fat: 2,
     carbs: 3.9,
     imageUrl: images.dairy,
-    barcode: "4820000730030",
     aliases: ["greek yogurt", "йогурт", "грецький йогурт", POLISH_GREEK_YOGURT_TOKEN],
     facts: {
       foodGroup: "dairy",
@@ -302,7 +298,6 @@ const catalog: CatalogProductRecord[] = [
     fat: 27,
     carbs: 2,
     imageUrl: images.dairy,
-    barcode: "4820000730016",
     aliases: ["cheese", "сыр", "сир", "ser", "ser twardy"],
     facts: {
       foodGroup: "dairy",
@@ -352,7 +347,6 @@ const catalog: CatalogProductRecord[] = [
     fat: 11,
     carbs: 1.1,
     imageUrl: images.eggs,
-    barcode: "4820000730047",
     aliases: ["egg", "eggs", "яйцо", "яйце", "jajko", "boiled egg"],
     facts: {
       foodGroup: "protein",
@@ -397,7 +391,6 @@ const catalog: CatalogProductRecord[] = [
     fat: 1.5,
     carbs: 0,
     imageUrl: images.chicken,
-    barcode: "4820000730023",
     aliases: ["turkey", "индейка", "індичка", "indyk"],
     facts: {
       foodGroup: "protein",
@@ -1132,14 +1125,11 @@ const recordMatchesIntentToken = (
 
 export const productCatalog: Product[] = catalog.map((record) => record.product);
 
-export const getFeaturedProducts = (limit = 12): Product[] =>
+const getFeaturedProducts = (limit = 12): Product[] =>
   catalog
     .filter((record) => record.featured)
     .slice(0, limit)
     .map((record) => record.product);
-
-export const findCatalogProductByBarcode = (barcode: string): Product | null =>
-  catalog.find((record) => record.product.barcode === barcode)?.product ?? null;
 
 export const searchCatalogProducts = (query: string, limit = 18): Product[] => {
   const normalizedQuery = normalizeSearchText(query);

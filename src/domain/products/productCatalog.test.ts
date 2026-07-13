@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchCatalogProducts } from "./productCatalog";
+import { productCatalog, searchCatalogProducts } from "./productCatalog";
 
 describe("searchCatalogProducts", () => {
   it("maps porridge-style queries to oats", () => {
@@ -47,5 +47,9 @@ describe("searchCatalogProducts", () => {
 
     expect(topResults).toContain("manual-greek-yogurt");
     expect(topResults[0]).not.toBe("manual-protein-bar");
+  });
+
+  it("does not pretend the manual starter catalog is a barcode source of truth", () => {
+    expect(productCatalog.every((product) => !product.barcode)).toBe(true);
   });
 });
