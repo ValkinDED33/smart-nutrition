@@ -10,7 +10,7 @@ export interface AssistantRuntimeGateway {
   ) => Promise<AssistantRuntimeResponse>;
 }
 
-export const createAssistantRuntimeGateway = (
+const createAssistantRuntimeGateway = (
   askQuestion: AssistantRuntimeGateway["askQuestion"] = askAssistantQuestion
 ): AssistantRuntimeGateway => ({
   askQuestion,

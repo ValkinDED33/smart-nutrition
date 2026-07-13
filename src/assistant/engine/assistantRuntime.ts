@@ -4,68 +4,21 @@ import {
   serializeAssistantPromptContext,
 } from "@features/assistant/assistantPromptContext";
 import {
-  assistantRuntimeMemory,
   clearAssistantRuntimeMemory,
   loadAssistantConversationHistory,
   saveAssistantConversationHistory,
 } from "./assistantMemory";
-import {
-  askAssistantRuntimeQuestion,
-  assistantRuntimeGateway,
-} from "./assistantGateway";
+import { askAssistantRuntimeQuestion } from "./assistantGateway";
 import {
   buildAssistantWelcomeMessage,
   buildGuidedAssistantReply,
   getAssistantHonestyNote,
   getAssistantModeLabel,
 } from "./assistantRuntimeRules";
-import type { AssistantQuestionInput, AssistantRuntimeContext } from "@domain/assistant/types";
-import type { AssistantRuntimeMemoryStore } from "./assistantMemory";
-import type { AssistantRuntimeGateway } from "./assistantGateway";
-import type { AssistantChatMessage, AssistantContextSource } from "./assistantRuntimeTypes";
+import type { AssistantRuntimeContext } from "@domain/assistant/types";
 
-export type { AssistantChatMessage, AssistantContextSource } from "./assistantRuntimeTypes";
-
-export interface AssistantRuntimeDependencies {
-  provider?: AssistantRuntimeGateway;
-  memory?: AssistantRuntimeMemoryStore;
-}
-
-export interface AssistantRuntime {
-  createContext: (source: AssistantContextSource) => AssistantRuntimeContext;
-  askQuestion: typeof askAssistantRuntimeQuestion;
-  loadHistory: () => Promise<AssistantChatMessage[]>;
-  clearHistory: () => Promise<boolean>;
-  getPersonality: typeof getAssistantRuntimePersonality;
-  buildWelcomeMessage: typeof buildAssistantWelcomeMessage;
-  buildGuidedReply: (input: AssistantQuestionInput) => ReturnType<typeof buildGuidedAssistantReply>;
-  getModeLabel: typeof getAssistantModeLabel;
-  getHonestyNote: typeof getAssistantHonestyNote;
-  resolvePromptContext: typeof resolveAssistantPromptContext;
-  serializePromptContext: typeof serializeAssistantPromptContext;
-}
-
-export const getAssistantRuntimePersonality = (context: AssistantRuntimeContext) =>
+const getAssistantRuntimePersonality = (context: AssistantRuntimeContext) =>
   context.memory?.personality ?? context.assistantPersonality;
-
-export const createAssistantRuntime = ({
-  provider = assistantRuntimeGateway,
-  memory = assistantRuntimeMemory,
-}: AssistantRuntimeDependencies = {}): AssistantRuntime => ({
-  createContext: createAssistantRuntimeContext,
-  askQuestion: (input) => provider.askQuestion(input),
-  loadHistory: () => memory.loadHistory(),
-  clearHistory: () => memory.clearHistory(),
-  getPersonality: getAssistantRuntimePersonality,
-  buildWelcomeMessage: buildAssistantWelcomeMessage,
-  buildGuidedReply: buildGuidedAssistantReply,
-  getModeLabel: getAssistantModeLabel,
-  getHonestyNote: getAssistantHonestyNote,
-  resolvePromptContext: resolveAssistantPromptContext,
-  serializePromptContext: serializeAssistantPromptContext,
-});
-
-export const assistantRuntime = createAssistantRuntime();
 
 export {
   askAssistantRuntimeQuestion,
@@ -75,6 +28,7 @@ export {
   createAssistantRuntimeContext,
   getAssistantHonestyNote,
   getAssistantModeLabel,
+  getAssistantRuntimePersonality,
   loadAssistantConversationHistory,
   resolveAssistantPromptContext,
   saveAssistantConversationHistory,

@@ -14,7 +14,7 @@ const normalizeCapability = (
   entryRoute: capability.entryRoute ?? null,
 });
 
-export const buildAssistantPromptContextFromContext = (
+const buildAssistantPromptContextFromContext = (
   context: AssistantContext
 ): AssistantPromptContext => {
   const capabilities = context.capabilities.map(normalizeCapability);
@@ -68,4 +68,3 @@ export const serializeAssistantPromptContext = (
         : "none"
     }`,
   ].join("\n");
-
