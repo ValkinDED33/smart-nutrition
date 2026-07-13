@@ -16,7 +16,7 @@ export type {
   WaterReminderSettings,
   WaterState,
 } from "./waterModel";
-export { createInitialWaterState, normalizeWaterState } from "./waterModel";
+export { createInitialWaterState } from "./waterModel";
 
 const initialState = createInitialWaterState();
 

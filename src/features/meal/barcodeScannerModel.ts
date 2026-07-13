@@ -58,7 +58,7 @@ export const resolveBarcodeTorchAvailable = ({
 }) => capabilitiesTorch === true;
 
 export const MAX_MANUAL_PHOTO_BYTES = 1_200_000;
-export const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
+const MAX_MANUAL_IMAGE_DATA_URL_LENGTH = 1_700_000;
 export const BARCODE_SCAN_NO_RESULT_TIMEOUT_MS = 12_000;
 export const BARCODE_SCANNER_PREVIEW_ASPECT_RATIO = "4 / 3";
 export const BARCODE_SCANNER_PREVIEW_MIN_HEIGHT_PX = 220;
@@ -119,7 +119,7 @@ export const resolveBarcodeScannerAvailability = ({
   };
 };
 
-export const normalizeManualNumericValue = (
+const normalizeManualNumericValue = (
   value: ManualNumericDraftValue
 ) => (typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : 0);
 
@@ -135,7 +135,7 @@ export const isSafeManualImageDataUrl = (value: string) =>
   value.length <= MAX_MANUAL_IMAGE_DATA_URL_LENGTH &&
   SAFE_IMAGE_DATA_URL_PATTERN.test(value);
 
-export const normalizeCatalogImageUrl = (value: string) => {
+const normalizeCatalogImageUrl = (value: string) => {
   const nextValue = value.trim();
 
   if (!nextValue || nextValue.length > 500) {

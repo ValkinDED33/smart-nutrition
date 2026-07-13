@@ -1,4 +1,4 @@
-export const MIN_PRODUCT_LOOKUP_QUERY_LENGTH = 2;
+const MIN_PRODUCT_LOOKUP_QUERY_LENGTH = 2;
 
 export const normalizeProductLookupQuery = (query: string) =>
   query.trim().replace(/\s+/g, " ");

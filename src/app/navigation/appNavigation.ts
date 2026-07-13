@@ -85,7 +85,7 @@ export const adminRouteRoles: UserRole[] = [
   "SUPER_ADMIN",
 ];
 
-export const canAccessNavigationItem = (
+const canAccessNavigationItem = (
   item: AppNavigationItem,
   role: UserRole | null | undefined
 ) => item.access === "authenticated" || canAccessAdminCenter(role);

@@ -27,7 +27,7 @@ export const getPhotoPortionMultiplier = (size: PhotoPortionSize) =>
     }
   };
 
-export const scalePhotoSuggestion = (
+const scalePhotoSuggestion = (
   suggestion: PhotoMealSuggestion,
   ratio: number
 ): PhotoMealSuggestion => ({

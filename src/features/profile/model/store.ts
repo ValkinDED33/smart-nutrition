@@ -658,7 +658,7 @@ const normalizePartnerSharingState = (value: unknown): PartnerSharingState => {
   return { invites, links };
 };
 
-export const createInitialProfileState = (): ProfileState => ({
+const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
   weightHistory: [],
@@ -1019,32 +1019,6 @@ const profileSlice = createSlice({
       state.motivation = resetMotivationState(state.goal);
     },
 
-    resetProfile(state) {
-      state.dailyCalories = 0;
-      state.goal = "maintain";
-      state.weightHistory = [];
-      state.measurementHistory = [];
-      state.progressPhotos = [];
-      state.weeklyCheckIn = createDefaultWeeklyCheckInState();
-      state.maintenanceCalories = 0;
-      state.adaptiveCalories = null;
-      state.targetWeight = null;
-      state.targetWeightStart = null;
-      state.dietStyle = "balanced";
-      state.allergies = [];
-      state.excludedIngredients = [];
-      state.adaptiveMode = "automatic";
-      state.notificationsEnabled = false;
-      state.mealRemindersEnabled = true;
-      state.calorieAlertsEnabled = true;
-      state.reminderTimes = createDefaultNotificationPreferences().reminderTimes;
-      state.languagePreference = "uk";
-      state.motivation = createDefaultMotivationState();
-      state.assistant = createDefaultAssistantCustomization();
-      state.premium = createDefaultPremiumSubscription();
-      state.personalDetails = createDefaultPersonalDetails();
-      state.womenHealth = createDefaultWomenHealthState();
-    },
   },
 });
 
@@ -1072,7 +1046,6 @@ export const {
   activatePremiumPlan,
   cancelPremiumSubscription,
   resetMotivationProgress,
-  resetProfile,
 } = profileSlice.actions;
 
 export default profileSlice.reducer;

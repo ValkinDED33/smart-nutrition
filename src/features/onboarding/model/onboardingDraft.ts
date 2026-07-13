@@ -50,7 +50,7 @@ export interface PreAuthOnboardingDraft {
   supportNote: string;
 }
 
-export const defaultPreAuthOnboardingDraft = (
+const defaultPreAuthOnboardingDraft = (
   language: AppLanguage
 ): PreAuthOnboardingDraft => ({
   language,
@@ -225,7 +225,7 @@ const normalizeMotivationStyles = (
   return selected.length > 0 ? selected : [fallback];
 };
 
-export const normalizePreAuthOnboardingDraft = (
+const normalizePreAuthOnboardingDraft = (
   value: unknown,
   language: AppLanguage
 ): PreAuthOnboardingDraft => {

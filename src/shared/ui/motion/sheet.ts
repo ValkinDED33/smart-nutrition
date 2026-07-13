@@ -23,26 +23,3 @@ export const bottomSheetVariants: Variants = {
     },
   },
 };
-
-export const sideSheetVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    x: 28,
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.28,
-      ease: EASE_EMPHASIZED,
-    },
-  },
-  exit: {
-    opacity: 0,
-    x: 24,
-    transition: {
-      duration: 0.16,
-      ease: "easeOut",
-    },
-  },
-};

@@ -16,9 +16,6 @@ export const selectMealItems = (state: RootState) =>
 export const selectMealTemplates = (state: RootState) =>
   state.meal?.templates ?? EMPTY_TEMPLATES;
 
-export const selectMealTotalNutrients = (state: RootState) =>
-  state.meal?.totalNutrients ?? calculateMealTotalNutrients(selectMealItems(state));
-
 export const selectTodayMealItems = createSelector([selectMealItems], (items) => {
   const todayKey = getLocalDateKey(new Date());
   return items.filter((item) => getLocalDateKey(item.eatenAt) === todayKey);
@@ -46,13 +43,3 @@ export const selectPersonalBarcodeProducts = (state: RootState) =>
 export const selectFavoriteProductIds = createSelector([selectSavedProducts], (products) => {
   return new Set(products.map(createProductKey));
 });
-
-export const selectIsProductFavorited = (product: { name: string; brand?: string; barcode?: string }) =>
-  createSelector([selectFavoriteProductIds], (favorites) => {
-    return favorites.has(createProductKey(product));
-  });
-
-export const selectMealsByDate = (dateKey: string) =>
-  createSelector([selectMealItems], (items) => {
-    return items.filter((item) => getLocalDateKey(item.eatenAt) === dateKey);
-  });

@@ -10,7 +10,7 @@ import {
 } from "@features/assistant/assistantPresence";
 import type { AssistantDefaultAction } from "@features/assistant/assistantManifest";
 
-export const hiddenGlobalAssistantRoutePrefixes = [
+const hiddenGlobalAssistantRoutePrefixes = [
   "/onboarding",
 ];
 
