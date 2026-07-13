@@ -7,7 +7,7 @@ import type {
   CompanionState,
 } from "../types";
 
-export const companionLevelThresholds: Record<CompanionLevel, number> = {
+const companionLevelThresholds: Record<CompanionLevel, number> = {
   1: 0,
   2: 100,
   3: 250,

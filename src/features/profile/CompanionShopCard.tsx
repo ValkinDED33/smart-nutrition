@@ -6,6 +6,7 @@ import {
   canPurchaseCompanionItem,
   companionShopCatalog,
   getEquippedCompanionItems,
+  getOwnedCompanionItems,
   hasCompanionItem,
   isCompanionItemEquipped,
   type CompanionCatalogCategory,
@@ -28,6 +29,7 @@ const shopCopy = {
       "Образи, реакції та аксесуари для ігрового компаньйона. Монети заробляються реальними звичками.",
     balance: "Монети",
     equippedCount: "Вибрано",
+    ownedCount: "Куплено",
     choose: "Вибрати",
     buyAndChoose: "Купити",
     equipped: "Активний",
@@ -61,6 +63,7 @@ const shopCopy = {
       "Wyglądy, reakcje i akcesoria dla grywalnego kompana. Monety zdobywasz przez realne nawyki.",
     balance: "Monety",
     equippedCount: "Wybrane",
+    ownedCount: "Kupione",
     choose: "Wybierz",
     buyAndChoose: "Kup",
     equipped: "Aktywny",
@@ -94,6 +97,7 @@ const shopCopy = {
       "Looks, reactions, and accessories for the game companion. Coins come from real habits.",
     balance: "Coins",
     equippedCount: "Equipped",
+    ownedCount: "Owned",
     choose: "Equip",
     buyAndChoose: "Buy",
     equipped: "Active",
@@ -211,6 +215,10 @@ const CompanionShopCard = () => {
     () => getEquippedCompanionItems(companion),
     [companion]
   );
+  const ownedItems = useMemo(
+    () => getOwnedCompanionItems(companion),
+    [companion]
+  );
   const activePreview =
     equippedItems.find((item) => item.slot === "companion") ??
     companionShopCatalog.find((item) => item.companionKind === assistant.companionKind) ??
@@ -286,6 +294,10 @@ const CompanionShopCard = () => {
             <Chip label={`${copy.balance}: ${companion.coins}`} color="primary" />
             <Chip
               label={`${copy.equippedCount}: ${companion.equippedItemIds.length}`}
+              variant="outlined"
+            />
+            <Chip
+              label={`${copy.ownedCount}: ${ownedItems.length}`}
               variant="outlined"
             />
           </Stack>

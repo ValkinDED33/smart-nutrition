@@ -6,7 +6,7 @@ import type {
   KnownCompanionRewardEvent,
 } from "../types";
 
-export const companionRewardTable: Record<KnownCompanionRewardEvent, CompanionReward> = {
+const companionRewardTable: Record<KnownCompanionRewardEvent, CompanionReward> = {
   registration_completed: {
     event: "registration_completed",
     xp: 100,

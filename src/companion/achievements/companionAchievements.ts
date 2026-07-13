@@ -5,7 +5,7 @@ import type {
   CompanionState,
 } from "../types";
 
-export const companionAchievementCatalog: Record<
+const companionAchievementCatalog: Record<
   CompanionAchievementId,
   CompanionAchievement
 > = {
