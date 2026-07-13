@@ -125,7 +125,7 @@ export const buildCompanionRewardState = (
   event: CompanionRewardEvent
 ) => buildCompanionStateAfterAction(state.companion, awardCompanionReward(event));
 
-export const saveCompanionSnapshotToCloud = async (
+const saveCompanionSnapshotToCloud = async (
   dispatch: CompanionCloudDispatch,
   state: CompanionSnapshotState,
   confirmedAt = new Date().toISOString()
@@ -163,7 +163,7 @@ export const saveCompanionSnapshotToCloud = async (
   return result;
 };
 
-export const saveCompanionStateToCloud = async (
+const saveCompanionStateToCloud = async (
   dispatch: CompanionCloudDispatch,
   companion: CompanionState,
   confirmedAt = new Date().toISOString()
