@@ -10,10 +10,8 @@ import {
   fetchRemoteAccountBackup,
   fetchRemoteAccountExport,
   fetchRemoteAppState,
-  fetchRemoteStateMeta,
   fetchRemoteTelegramStatus,
   getRemoteBaseUrl,
-  getRemoteSessionToken,
   isRemoteAuthMode,
   pushRemoteCommunityState,
   pushRemoteAppSnapshot,
@@ -27,7 +25,6 @@ import {
   pushRemoteMealState,
   pushRemoteProfileState,
   updateRemoteProfileWithState,
-  refreshRemoteSession,
   remoteAuthProvider,
   purgeLegacyBrowserAuthStorage,
   type RemoteSyncResult,
@@ -80,10 +77,6 @@ export const logoutEverywhere = async () => {
   await remoteAuthProvider.logoutEverywhere();
   purgeLegacyBrowserAuthStorage();
 };
-
-export const updateStoredProfile = (
-  user: Parameters<typeof remoteAuthProvider.updateStoredProfile>[0]
-) => remoteAuthProvider.updateStoredProfile(user);
 
 export const register = async (
   payload: Parameters<typeof remoteAuthProvider.register>[0]
@@ -144,11 +137,8 @@ export const saveRemoteMealProduct = upsertRemoteMealProduct;
 export const deleteRemoteMealProduct = removeRemoteMealProduct;
 export const getRemoteBackendAvailability = checkRemoteBackendAvailability;
 export const pullRemoteAppSnapshot = fetchRemoteAppState;
-export const getRemoteSnapshotMeta = fetchRemoteStateMeta;
 export const analyzeMealPhoto = analyzeRemoteMealPhoto;
 export const getRemoteAuthBaseUrl = getRemoteBaseUrl;
-export const getRemoteAuthToken = getRemoteSessionToken;
-export const refreshRemoteAccessSession = refreshRemoteSession;
 export const exportRemoteAccountData = fetchRemoteAccountExport;
 export const getRemoteAccountBackups = listRemoteAccountBackups;
 export const getRemoteAccountBackup = fetchRemoteAccountBackup;

@@ -576,24 +576,6 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
   return remoteRefreshPromise;
 };
 
-export const refreshRemoteSession = async () => {
-  const baseUrl =
-    getPreferredRemoteBaseUrl() ??
-    (await probeRemoteBaseUrl()) ??
-    (await probeRemoteBaseUrl({ force: true }));
-
-  if (!baseUrl) {
-    return false;
-  }
-
-  try {
-    await refreshRemoteAccessToken(baseUrl);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 const getCandidateBaseUrls = () => {
   const candidates = [
     getConfiguredRemoteBaseUrl(),
@@ -812,46 +794,9 @@ export const requestRemote = async <T>(
 export const checkRemoteBackendAvailability = async (force = false) =>
   Boolean(await probeRemoteBaseUrl({ force }));
 
-export const isRemoteAuthAvailable = async () =>
-  checkRemoteBackendAvailability();
-
 export const isRemoteAuthMode = () => remoteSessionActive;
 
-export const getRemoteAuthRuntimeInfo = () => remoteRuntimeInfo;
-
-export const getRemoteSessionToken = () => null;
-
 export const getRemoteBaseUrl = () => getStoredRemoteBaseUrl();
-
-export const fetchRemoteStateMeta = async ({
-  force = false,
-}: { force?: boolean } = {}): Promise<AppSnapshotMeta | null> => {
-  if (!isRemoteAuthMode()) {
-    return null;
-  }
-
-  if (!force) {
-    const cachedMeta = readCachedRemoteMeta();
-
-    if (cachedMeta) {
-      return cachedMeta;
-    }
-  }
-
-  try {
-    const { data } = await requestRemote<AppSnapshotMeta>(
-      "/state/meta",
-      { method: "GET" },
-      { requireAuth: true }
-    );
-
-    writeCachedRemoteMeta(data);
-
-    return data;
-  } catch {
-    return readCachedRemoteMeta({ allowStale: true });
-  }
-};
 
 export const fetchRemoteAppState = async ({
   preferCache = false,
