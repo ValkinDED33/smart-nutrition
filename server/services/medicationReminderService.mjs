@@ -380,7 +380,7 @@ export const parseMedicationReminderText = (
   return reminder.nextRunAt || reminder.trigger ? reminder : null;
 };
 
-export const parseMedicationCourseReminderText = (
+const parseMedicationCourseReminderText = (
   text,
   options = {}
 ) => {
@@ -395,7 +395,7 @@ export const parseMedicationCourseReminderText = (
     : null;
 };
 
-export const parsePregnancySupplementReminderText = (
+const parsePregnancySupplementReminderText = (
   text,
   options = {}
 ) => {
@@ -448,7 +448,7 @@ export const parseTaskReminderText = (
   return reminder.nextRunAt && reminder.title ? reminder : null;
 };
 
-export const parseWaterReminderText = (
+const parseWaterReminderText = (
   text,
   { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
 ) => {
@@ -488,7 +488,7 @@ export const parseWaterReminderText = (
   return reminder.nextRunAt ? reminder : null;
 };
 
-export const parseHabitReminderText = (
+const parseHabitReminderText = (
   text,
   { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
 ) => {
