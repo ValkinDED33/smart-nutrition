@@ -29,6 +29,9 @@ const profileCloudActionSource = readSource("src/features/profile/useProfileClou
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
+const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
+const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
+const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
 
 addCheck(
   "photo assistant does not hard-code template recognition foods",
@@ -201,6 +204,56 @@ addCheck(
     productLookupServiceSource.includes("readFirstMicronutrientPerBase(nutriments, [\"iodine\", \"iodide\", \"iodides\"]") &&
     productLookupServiceSource.includes("vitamin-b12"),
   "Backend product lookup must preserve additive and micronutrient facts from provider data before the frontend renders product facts."
+);
+
+addCheck(
+  "photo meal save requires reviewed selected ingredients and backend confirmation",
+  photoAssistantSource.includes("selectedItemIndexes.includes(index)") &&
+    photoAssistantSource.includes("copy.nothingSelected") &&
+    photoAssistantSource.includes("copy.incompleteCorrection") &&
+    photoAssistantSource.includes("createConfirmedPhotoEntries") &&
+    photoAssistantSource.includes("addMealEntriesToCloud(dispatch, meal, resolvedEntries)") &&
+    photoAssistantSource.includes("runMealAction"),
+  "Photo meal analysis must remain an editable draft and save only selected reviewed items through backend-confirmed meal sync."
+);
+
+addCheck(
+  "photo meal unclear images start unselected and show better-photo recovery",
+  photoAssistantSource.includes("shouldShowBetterPhotoGuidance") &&
+    photoAssistantSource.includes("betterPhotoGuidanceVisible") &&
+    photoAssistantSource.includes("copy.poorPhotoTips") &&
+    photoAssistantSource.includes("copy.retakeClearPhoto") &&
+    photoDraftSource.includes('analysis.recognitionStatus === "needs_better_photo"') &&
+    photoDraftSource.includes("analysis.confidence < 0.35"),
+  "Unclear or very low-confidence photo results must not auto-select foods and must guide users to retake a clearer photo."
+);
+
+addCheck(
+  "photo assistant hides raw AI confidence and research wording from users",
+  !/copy\.confidence|confidence \* 100[^`]*%|low confidence|manual verification|manual review|candidate/i.test(
+    photoAssistantSource
+  ) &&
+    photoAssistantSource.includes("reviewStatusTitle") &&
+    photoAssistantSource.includes('data-photo-review-status="draft-not-saved"'),
+  "Photo UX must present consumer-friendly review states rather than raw model confidence or research terminology."
+);
+
+addCheck(
+  "photo fallback never invents generic foods without user history",
+  fallbackPhotoDraftSource.includes("getFeedbackItemsFromMealState") &&
+    fallbackPhotoDraftSource.includes("photo-feedback:user-confirmed") &&
+    fallbackPhotoDraftSource.includes('recognitionStatus: feedbackItems.length > 0 ? "needs_review" : "needs_better_photo"') &&
+    !/\b(Greek yogurt|Oats|Banana|Breakfast photo draft)\b/.test(fallbackPhotoDraftSource),
+  "Fallback photo analysis must use only user-confirmed history or request a better/manual photo, never a generic food template."
+);
+
+addCheck(
+  "photo review state always requires confirmation for uncertain analysis",
+  photoUxSource.includes("requiresPhotoMealConfirmation") &&
+    photoUxSource.includes("shouldStartWithSuggestionsOnly") &&
+    photoUxSource.includes("needsDetails") &&
+    photoDraftSource.includes("analysis.confidence < 0.7 || analysis.manualReviewRequired"),
+  "Photo recognition must distinguish ready/review/needs-details and require user confirmation for uncertain drafts."
 );
 
 const failed = checks.filter((check) => !check.pass);
