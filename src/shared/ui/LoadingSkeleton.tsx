@@ -75,5 +75,3 @@ export const LoadingSkeleton = ({
     </Stack>
   </Paper>
 );
-
-export default LoadingSkeleton;

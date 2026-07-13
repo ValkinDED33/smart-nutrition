@@ -71,5 +71,3 @@ export const EmptyState = ({
     </Stack>
   </Paper>
 );
-
-export default EmptyState;

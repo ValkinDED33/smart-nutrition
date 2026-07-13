@@ -63,5 +63,3 @@ export const AuthSurface = ({
     </Paper>
   </Box>
 );
-
-export default AuthSurface;

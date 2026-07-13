@@ -158,5 +158,3 @@ export const SessionRestoreFallback = ({
     </Stack>
   );
 };
-
-export default SessionRestoreFallback;

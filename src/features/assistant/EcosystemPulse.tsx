@@ -188,5 +188,3 @@ export const EcosystemPulse = ({ focus }: EcosystemPulseProps) => {
     </Box>
   );
 };
-
-export default EcosystemPulse;

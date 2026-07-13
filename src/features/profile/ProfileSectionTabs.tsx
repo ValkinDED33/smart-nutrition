@@ -63,5 +63,3 @@ export const ProfileSectionTabs = ({ sections }: ProfileSectionTabsProps) => {
     </Stack>
   );
 };
-
-export default ProfileSectionTabs;

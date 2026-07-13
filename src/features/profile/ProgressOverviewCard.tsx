@@ -304,5 +304,3 @@ export const ProgressOverviewCard = () => {
     </Paper>
   );
 };
-
-export default ProgressOverviewCard;

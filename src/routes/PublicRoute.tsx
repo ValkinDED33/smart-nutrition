@@ -6,7 +6,7 @@ import {
   clearSavedSessionHint,
   initializeAuth,
 } from "../features/auth/authSlice";
-import SessionRestoreFallback from "../shared/components/SessionRestoreFallback";
+import { SessionRestoreFallback } from "../shared/components/SessionRestoreFallback";
 import { clearAuthSessionHint } from "../shared/lib/authSessionHint";
 
 interface PublicRouteProps {

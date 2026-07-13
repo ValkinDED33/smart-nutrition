@@ -124,5 +124,3 @@ export const SectionCard = ({
     </Paper>
   );
 };
-
-export default SectionCard;

@@ -30,5 +30,3 @@ export const SectionHeader = ({ title, description, action }: SectionHeaderProps
     {action ? <Stack sx={{ flexShrink: 0 }}>{action}</Stack> : null}
   </Stack>
 );
-
-export default SectionHeader;

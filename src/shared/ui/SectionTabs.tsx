@@ -104,5 +104,3 @@ export const SectionTabs = ({
     </Stack>
   </Box>
 );
-
-export default SectionTabs;

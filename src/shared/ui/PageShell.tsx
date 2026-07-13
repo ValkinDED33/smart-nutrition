@@ -109,5 +109,3 @@ export const PageShell = ({
     </Stack>
   </Box>
 );
-
-export default PageShell;

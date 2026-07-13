@@ -7,7 +7,7 @@ import {
   initializeAuth,
 } from "../features/auth/authSlice";
 import PacmanLoader from "../shared/components/Loader/PacmanLoader";
-import SessionRestoreFallback from "../shared/components/SessionRestoreFallback";
+import { SessionRestoreFallback } from "../shared/components/SessionRestoreFallback";
 import { clearAuthSessionHint } from "../shared/lib/authSessionHint";
 import type { UserRole } from "@domain/user/types";
 

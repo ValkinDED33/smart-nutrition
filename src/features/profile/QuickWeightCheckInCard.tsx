@@ -368,5 +368,3 @@ export const QuickWeightCheckInCard = () => {
     </SectionCard>
   );
 };
-
-export default QuickWeightCheckInCard;

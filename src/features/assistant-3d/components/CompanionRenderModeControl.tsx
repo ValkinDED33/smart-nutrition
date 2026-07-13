@@ -106,5 +106,3 @@ export const Companion3DLoadingFallback = ({
     </Stack>
   </Box>
 );
-
-export default CompanionRenderModeControl;
