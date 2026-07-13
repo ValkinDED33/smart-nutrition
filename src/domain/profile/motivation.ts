@@ -48,7 +48,7 @@ export const createDefaultAssistantCustomization = (): AssistantCustomization =>
   onboarding: createDefaultAssistantOnboardingProfile(),
 });
 
-export const createDefaultAchievements = (): AchievementProgress[] => [
+const createDefaultAchievements = (): AchievementProgress[] => [
   {
     id: FIRST_STEP_ACHIEVEMENT_ID,
     title: "First step",
@@ -85,7 +85,7 @@ export const createDefaultAchievements = (): AchievementProgress[] => [
 
 const buildTaskId = (dateKey: string, suffix: string) => `${dateKey}-${suffix}`;
 
-export const createMotivationTasks = ({
+const createMotivationTasks = ({
   date = new Date(),
   goal,
 }: {
