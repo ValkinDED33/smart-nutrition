@@ -9,7 +9,7 @@ const activityMultiplier = {
   very_active: 1.9,
 };
 
-export const nutrientKeys = [
+const nutrientKeys = [
   "calories",
   "protein",
   "fat",
@@ -87,7 +87,7 @@ export class StateApiError extends Error {
   }
 }
 
-export const userRoles = [
+const userRoles = [
   "USER",
   "VERIFIED_USER",
   "HELPER",
@@ -133,7 +133,7 @@ export const hashOneTimeToken = (token, secret) =>
 const strongPasswordPattern =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
 
-export const isStrongPassword = (password) =>
+const isStrongPassword = (password) =>
   strongPasswordPattern.test(String(password ?? ""));
 
 export const assertPasswordPolicy = (password) => {
@@ -274,7 +274,7 @@ export const readCookieValue = (request, name) => {
   }
 };
 
-export const derivePasswordHash = (password, salt, iterations) =>
+const derivePasswordHash = (password, salt, iterations) =>
   crypto.pbkdf2Sync(password, salt, iterations, 32, "sha256").toString("base64");
 
 export const createPasswordRecord = (password, iterations) => {
@@ -299,7 +299,7 @@ export const verifyPassword = (user, password, iterations) => {
   );
 };
 
-export const calculateMaintenanceCalories = ({ gender, weight, height, age, activity }) => {
+const calculateMaintenanceCalories = ({ gender, weight, height, age, activity }) => {
   const bmr =
     gender === "male"
       ? 88.36 + 13.4 * weight + 4.8 * height - 5.7 * age
@@ -308,7 +308,7 @@ export const calculateMaintenanceCalories = ({ gender, weight, height, age, acti
   return Math.round(bmr * activityMultiplier[activity]);
 };
 
-export const applyGoalDelta = (maintenanceCalories, goal) => {
+const applyGoalDelta = (maintenanceCalories, goal) => {
   if (goal === "cut") return Math.max(maintenanceCalories - 300, 1200);
   if (goal === "bulk") return maintenanceCalories + 250;
   return maintenanceCalories;
@@ -335,7 +335,7 @@ export const calculateMealTotalNutrients = (items = []) => {
   return totals;
 };
 
-export const createInitialAssistantCustomization = () => ({
+const createInitialAssistantCustomization = () => ({
   name: "",
   assistantName: "",
   companionKind: "robot",
@@ -677,7 +677,7 @@ export const createInitialCommunityState = () => ({
   score: 180,
 });
 
-export const createInitialCompanionState = () => {
+const createInitialCompanionState = () => {
   const now = new Date().toISOString();
 
   return {
