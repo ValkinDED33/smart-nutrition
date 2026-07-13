@@ -47,7 +47,7 @@ Current baseline:
 - ESLint has warning-level security/sonar findings enabled. The first run reported object-indexing and duplicate-string warnings across existing code. They are intentionally warnings so the gate can land without a broad refactor.
 - Knip no longer carries a legacy unused-file list. `knip.json` keeps only `vite-env.d.ts` in `ignoreFiles` because Vite ambient declarations are not imported directly.
 - Knip ignores unused export/type/duplicate-export reports for `src/**/*.ts`, `src/**/*.tsx`, and `server/**/*.mjs`. Existing public API barrels and shared domain exports need a separate cleanup pass before this can become an error-level dead-export gate.
-- Knip ignores `@types/react-redux` and `prettier` as dev dependency baseline items. Remove these ignores once the dependency list is cleaned or formatter scripts are added.
+- Knip has no dependency ignore baseline. Unused dependencies should be removed instead of hidden.
 
 Next cleanup targets:
 

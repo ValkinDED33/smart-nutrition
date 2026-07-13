@@ -12,10 +12,6 @@
   "ignoreFiles": [
     "vite-env.d.ts"
   ],
-  "ignoreDependencies": [
-    "@types/react-redux",
-    "prettier"
-  ],
   "ignoreIssues": {
     "server/**/*.mjs": ["exports", "types"],
     "src/**/*.ts": ["exports", "types", "duplicates"],
