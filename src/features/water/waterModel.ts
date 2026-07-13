@@ -67,7 +67,7 @@ const minutesFromTime = (value: string) => {
 
 export const createWaterDayKey = (date = new Date()) => getLocalDateKey(date);
 
-export const getWaterDayKeyOffset = (daysAgo: number, baseDate = new Date()) =>
+const getWaterDayKeyOffset = (daysAgo: number, baseDate = new Date()) =>
   createWaterDayKey(addDays(baseDate, -daysAgo));
 
 export const formatWaterLiters = (valueMl: number) => (valueMl / 1000).toFixed(1);
@@ -81,7 +81,7 @@ export const normalizeDailyWaterGoal = (value: unknown) =>
 export const calculateRecommendedWaterTarget = (weightKg: number) =>
   normalizeDailyWaterGoal(Math.round(weightKg * 33));
 
-export const createWaterHistoryEntry = (
+const createWaterHistoryEntry = (
   date: string,
   consumedMl: number,
   targetMl: number,
@@ -93,7 +93,7 @@ export const createWaterHistoryEntry = (
   updatedAt,
 });
 
-export const createDefaultWaterReminders = (): WaterReminderSettings => ({
+const createDefaultWaterReminders = (): WaterReminderSettings => ({
   enabled: false,
   intervalMinutes: 120,
   startTime: "09:00",
@@ -101,7 +101,7 @@ export const createDefaultWaterReminders = (): WaterReminderSettings => ({
   lastReminderAt: null,
 });
 
-export const normalizeWaterHistoryEntry = (
+const normalizeWaterHistoryEntry = (
   value: unknown
 ): WaterHistoryEntry | null => {
   const record =
