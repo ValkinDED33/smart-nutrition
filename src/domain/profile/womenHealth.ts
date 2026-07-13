@@ -54,7 +54,7 @@ export const chineseZodiacSigns: ChineseZodiacSign[] = [
   "pig",
 ];
 
-const eyeColors: EyeColor[] = [
+export const eyeColors: EyeColor[] = [
   "unknown",
   "brown",
   "blue",

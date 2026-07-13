@@ -91,7 +91,7 @@ const chineseTraits = new Map<ChineseZodiacSign, string>([
   ["pig", "kind openness"],
 ]);
 
-export const buildPlayfulBabyTraits = ({
+const buildPlayfulBabyTraits = ({
   motherZodiac,
   fatherZodiac,
   motherChineseZodiac,

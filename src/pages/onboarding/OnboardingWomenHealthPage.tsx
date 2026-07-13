@@ -21,6 +21,11 @@ import type {
   ZodiacSign,
 } from "@domain/profile/types";
 import {
+  chineseZodiacSigns,
+  eyeColors,
+  zodiacSigns,
+} from "@domain/profile/womenHealth";
+import {
   cardSx,
   parseOnboardingNumber,
   sanitizeOnboardingIntegerInput,
@@ -170,48 +175,9 @@ const modeOptions: Array<{ id: WomenHealthMode; labelKey: keyof typeof copy.uk }
   { id: "postpartum", labelKey: "postpartum" },
 ];
 
-const eyeColorOptions: EyeColor[] = [
-  "unknown",
-  "brown",
-  "blue",
-  "green",
-  "gray",
-  "hazel",
-  "amber",
-  "other",
-];
-
-const zodiacOptions: ZodiacSign[] = [
-  "unknown",
-  "aries",
-  "taurus",
-  "gemini",
-  "cancer",
-  "leo",
-  "virgo",
-  "libra",
-  "scorpio",
-  "sagittarius",
-  "capricorn",
-  "aquarius",
-  "pisces",
-];
-
-const chineseZodiacOptions: ChineseZodiacSign[] = [
-  "unknown",
-  "rat",
-  "ox",
-  "tiger",
-  "rabbit",
-  "dragon",
-  "snake",
-  "horse",
-  "goat",
-  "monkey",
-  "rooster",
-  "dog",
-  "pig",
-];
+const eyeColorOptions: EyeColor[] = eyeColors;
+const zodiacOptions: ZodiacSign[] = zodiacSigns;
+const chineseZodiacOptions: ChineseZodiacSign[] = chineseZodiacSigns;
 
 const UK_NOT_SET = "Не вказано";
 const PL_NOT_SET = "Nie podano";
