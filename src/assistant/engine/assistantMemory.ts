@@ -56,7 +56,7 @@ export const createAssistantRuntimeMemory = ({
   },
 });
 
-export const assistantRuntimeMemory = createAssistantRuntimeMemory();
+const assistantRuntimeMemory = createAssistantRuntimeMemory();
 
 export const loadAssistantConversationHistory = (userId?: string | null) =>
   assistantRuntimeMemory.loadHistory(userId);

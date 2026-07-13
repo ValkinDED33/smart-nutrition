@@ -16,7 +16,7 @@ const createAssistantRuntimeGateway = (
   askQuestion,
 });
 
-export const assistantRuntimeGateway = createAssistantRuntimeGateway();
+const assistantRuntimeGateway = createAssistantRuntimeGateway();
 
 export const askAssistantRuntimeQuestion = (
   input: AssistantQuestionInput

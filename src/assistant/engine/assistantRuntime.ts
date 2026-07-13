@@ -1,9 +1,5 @@
 import { createAssistantRuntimeContext } from "./assistantContext";
 import {
-  resolveAssistantPromptContext,
-  serializeAssistantPromptContext,
-} from "@features/assistant/assistantPromptContext";
-import {
   clearAssistantRuntimeMemory,
   loadAssistantConversationHistory,
   saveAssistantConversationHistory,
@@ -15,10 +11,6 @@ import {
   getAssistantHonestyNote,
   getAssistantModeLabel,
 } from "./assistantRuntimeRules";
-import type { AssistantRuntimeContext } from "@domain/assistant/types";
-
-const getAssistantRuntimePersonality = (context: AssistantRuntimeContext) =>
-  context.memory?.personality ?? context.assistantPersonality;
 
 export {
   askAssistantRuntimeQuestion,
@@ -28,9 +20,6 @@ export {
   createAssistantRuntimeContext,
   getAssistantHonestyNote,
   getAssistantModeLabel,
-  getAssistantRuntimePersonality,
   loadAssistantConversationHistory,
-  resolveAssistantPromptContext,
   saveAssistantConversationHistory,
-  serializeAssistantPromptContext,
 };
