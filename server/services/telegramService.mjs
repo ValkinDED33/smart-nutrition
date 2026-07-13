@@ -941,7 +941,7 @@ export const createTelegramConnectToken = ({
   };
 };
 
-export const verifyTelegramConnectTokenDetailed = ({
+const verifyTelegramConnectTokenDetailed = ({
   token,
   secret,
   now = Date.now(),
