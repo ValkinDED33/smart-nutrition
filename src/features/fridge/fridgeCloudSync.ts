@@ -32,7 +32,7 @@ const assertCloudSaved = async (dispatch: AppDispatch, result: RemoteResult) => 
   );
 };
 
-export const saveFridgeStateToCloud = async (
+const saveFridgeStateToCloud = async (
   dispatch: AppDispatch,
   nextFridge: FridgeState
 ) => {
