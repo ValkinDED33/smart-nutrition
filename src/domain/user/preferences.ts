@@ -55,7 +55,7 @@ export const parsePreferenceList = (value: string) =>
 
 export const formatPreferenceList = (values: string[]) => values.join(", ");
 
-export const createDefaultReminderTimes = (): ReminderTimes => ({
+const createDefaultReminderTimes = (): ReminderTimes => ({
   breakfast: "08:30",
   lunch: "13:00",
   dinner: "19:00",
@@ -114,14 +114,3 @@ export const recipeMatchesPreferences = (
   recipe: Recipe,
   preferences: NutritionPreferences
 ) => recipe.ingredients.every((ingredient) => productMatchesPreferences(ingredient.product, preferences));
-
-export const pickPreferredProteinProducts = (
-  products: Product[],
-  preferences: NutritionPreferences,
-  limit = 3
-) =>
-  products
-    .filter((product) => productMatchesPreferences(product, preferences))
-    .filter((product) => product.nutrients.protein >= 8)
-    .sort((left, right) => right.nutrients.protein - left.nutrients.protein)
-    .slice(0, limit);
