@@ -67,7 +67,7 @@ const requireConfirmedMealState = (result: RemoteResult): MealState => {
   return result.meal as MealState;
 };
 
-export const saveMealStateToCloud = async (
+const saveMealStateToCloud = async (
   dispatch: AppDispatch,
   nextMeal: MealState
 ) => {
