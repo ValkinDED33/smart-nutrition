@@ -222,6 +222,20 @@ addCheck(
 );
 
 addCheck(
+  "premium access copy does not leak English constants into localized profile UI",
+  premiumAccessCardSource.includes("Поточний") &&
+    premiumAccessCardSource.includes("Aktualny") &&
+    premiumAccessCardSource.includes("Їжа і вода") &&
+    premiumAccessCardSource.includes("Jedzenie i woda") &&
+    premiumAccessCardSource.includes("Без активної підписки") &&
+    premiumAccessCardSource.includes("Brak aktywnej subskrypcji") &&
+    premiumAccessCardSource.includes("getPremiumStatusLabel(copy, premium.status)") &&
+    !premiumAccessCardSource.includes("FOOD_WATER_TRACKING_FEATURE") &&
+    !premiumAccessCardSource.includes("label={`${copy.status}: ${premium.status}`"),
+  "Premium profile UI must localize plan names, feature labels, current-state labels, and subscription status instead of rendering English constants or raw enum values."
+);
+
+addCheck(
   "scanner manual catalog fallback avoids local-only save language",
   barcodeScannerSource.includes("хмарному профілі") &&
     barcodeScannerSource.includes("profilu w chmurze") &&

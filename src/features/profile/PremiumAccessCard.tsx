@@ -1,43 +1,13 @@
 import { useSelector } from "react-redux";
 import { Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import type { PremiumPlanId } from "@domain/profile/types";
+import type { PremiumPlanId, PremiumSubscriptionState } from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
-const FREE_PLAN_NAME = "Free";
-const PRO_PLAN_NAME = "Pro";
-const COACH_PLAN_NAME = "Coach";
 const FREE_PLAN_PRICE = "0";
 const PRO_PLAN_PRICE = "$7.99 / month";
 const COACH_PLAN_PRICE = "$14.99 / month";
-const FOOD_WATER_TRACKING_FEATURE = "Food + water tracking";
-const WEIGHT_BASICS_FEATURE = "Weight basics";
-const COMMUNITY_FEATURE = "Community";
-const SMART_AI_PRO_FEATURE = "Smart AI Pro";
-const PHOTO_FOOD_AI_FEATURE = "Photo Food AI";
-const WEEKLY_REPORTS_FEATURE = "Weekly reports";
-const COACH_SUMMARY_FEATURE = "Coach summary";
-const HABIT_SCORE_FEATURE = "Habit score";
-const PRIORITY_REMINDERS_FEATURE = "Priority reminders";
-
-const premiumPlanCopy = {
-  free: {
-    name: FREE_PLAN_NAME,
-    price: FREE_PLAN_PRICE,
-    features: [FOOD_WATER_TRACKING_FEATURE, WEIGHT_BASICS_FEATURE, COMMUNITY_FEATURE],
-  },
-  pro: {
-    name: PRO_PLAN_NAME,
-    price: PRO_PLAN_PRICE,
-    features: [SMART_AI_PRO_FEATURE, PHOTO_FOOD_AI_FEATURE, WEEKLY_REPORTS_FEATURE],
-  },
-  coach: {
-    name: COACH_PLAN_NAME,
-    price: COACH_PLAN_PRICE,
-    features: [COACH_SUMMARY_FEATURE, HABIT_SCORE_FEATURE, PRIORITY_REMINDERS_FEATURE],
-  },
-} as const;
 
 const premiumCopy = {
   uk: {
@@ -48,7 +18,30 @@ const premiumCopy = {
     trialEnds: "Trial до",
     unavailable:
       "Доступ оновлюється через захищену синхронізацію. Якщо тариф зміниться, статус підтягнеться автоматично після синхронізації акаунта.",
-    current: "Current",
+    current: "Поточний",
+    plans: {
+      free: {
+        name: "Базовий",
+        price: FREE_PLAN_PRICE,
+        features: ["Їжа і вода", "Базова вага", "Спільнота"],
+      },
+      pro: {
+        name: "Pro",
+        price: PRO_PLAN_PRICE,
+        features: ["Розумний AI Pro", "Фото їжі з AI", "Тижневі звіти"],
+      },
+      coach: {
+        name: "Coach",
+        price: COACH_PLAN_PRICE,
+        features: ["Підсумок coach", "Оцінка звичок", "Пріоритетні нагадування"],
+      },
+    },
+    statuses: {
+      inactive: "Без активної підписки",
+      trial: "Пробний період",
+      active: "Активна",
+      cancelled: "Скасована",
+    },
   },
   pl: {
     title: "Premium",
@@ -58,7 +51,30 @@ const premiumCopy = {
     trialEnds: "Trial do",
     unavailable:
       "Dostęp odświeża się przez chronioną synchronizację. Po zmianie planu status zaktualizuje się automatycznie po synchronizacji konta.",
-    current: "Current",
+    current: "Aktualny",
+    plans: {
+      free: {
+        name: "Podstawowy",
+        price: FREE_PLAN_PRICE,
+        features: ["Jedzenie i woda", "Podstawy wagi", "Społeczność"],
+      },
+      pro: {
+        name: "Pro",
+        price: PRO_PLAN_PRICE,
+        features: ["Smart AI Pro", "Zdjęcia jedzenia AI", "Raporty tygodniowe"],
+      },
+      coach: {
+        name: "Coach",
+        price: COACH_PLAN_PRICE,
+        features: ["Podsumowanie coach", "Ocena nawyków", "Priorytetowe przypomnienia"],
+      },
+    },
+    statuses: {
+      inactive: "Brak aktywnej subskrypcji",
+      trial: "Okres próbny",
+      active: "Aktywna",
+      cancelled: "Anulowana",
+    },
   },
   en: {
     title: "Premium",
@@ -69,6 +85,29 @@ const premiumCopy = {
     unavailable:
       "Access updates through protected sync. When the plan changes, status updates automatically after account sync.",
     current: "Current",
+    plans: {
+      free: {
+        name: "Free",
+        price: FREE_PLAN_PRICE,
+        features: ["Food and water", "Weight basics", "Community"],
+      },
+      pro: {
+        name: "Pro",
+        price: PRO_PLAN_PRICE,
+        features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
+      },
+      coach: {
+        name: "Coach",
+        price: COACH_PLAN_PRICE,
+        features: ["Coach summary", "Habit score", "Priority reminders"],
+      },
+    },
+    statuses: {
+      inactive: "No active subscription",
+      trial: "Trial",
+      active: "Active",
+      cancelled: "Cancelled",
+    },
   },
 } as const;
 
@@ -102,14 +141,34 @@ const getPremiumLocale = (language: AppLanguage) => {
   }
 };
 
-const getPremiumPlanCopy = (plan: PremiumPlanId) => {
+const getPremiumPlanCopy = (
+  copy: ReturnType<typeof getPremiumCopy>,
+  plan: PremiumPlanId
+) => {
   switch (plan) {
     case "free":
-      return premiumPlanCopy.free;
+      return copy.plans.free;
     case "pro":
-      return premiumPlanCopy.pro;
+      return copy.plans.pro;
     case "coach":
-      return premiumPlanCopy.coach;
+      return copy.plans.coach;
+  }
+};
+
+const getPremiumStatusLabel = (
+  copy: ReturnType<typeof getPremiumCopy>,
+  status: PremiumSubscriptionState["status"]
+) => {
+  switch (status) {
+    case "trial":
+      return copy.statuses.trial;
+    case "active":
+      return copy.statuses.active;
+    case "cancelled":
+      return copy.statuses.cancelled;
+    case "inactive":
+    default:
+      return copy.statuses.inactive;
   }
 };
 
@@ -145,8 +204,14 @@ export const PremiumAccessCard = () => {
         </Stack>
 
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip color={isPaid ? "success" : "default"} label={`${copy.status}: ${premium.status}`} />
-          <Chip label={`${copy.current}: ${getPremiumPlanCopy(premium.plan).name}`} variant="outlined" />
+          <Chip
+            color={isPaid ? "success" : "default"}
+            label={`${copy.status}: ${getPremiumStatusLabel(copy, premium.status)}`}
+          />
+          <Chip
+            label={`${copy.current}: ${getPremiumPlanCopy(copy, premium.plan).name}`}
+            variant="outlined"
+          />
           {premium.trialEndsAt ? (
             <Chip
               label={`${copy.trialEnds}: ${formatDate(premium.trialEndsAt, appLanguage)}`}
@@ -163,7 +228,7 @@ export const PremiumAccessCard = () => {
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
           {planOrder.map((plan) => {
-            const planCopy = getPremiumPlanCopy(plan);
+            const planCopy = getPremiumPlanCopy(copy, plan);
             const selected = premium.plan === plan;
 
             return (

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
+const PREMIUM_ACCESS_CARD_SOURCE_PATH = "src/features/profile/PremiumAccessCard.tsx";
 
 const collectSourceFiles = (roots: string[]) => {
   const pending = roots.map((root) => resolve(process.cwd(), root));
@@ -35,12 +36,26 @@ const collectSourceFiles = (roots: string[]) => {
 
 describe("profile feature warehouse contract", () => {
   it("does not expose disconnected premium purchase buttons", () => {
-    const source = readSource("src/features/profile/PremiumAccessCard.tsx");
+    const source = readSource(PREMIUM_ACCESS_CARD_SOURCE_PATH);
 
     expect(source).not.toContain("comingSoon");
     expect(source).not.toContain("Start 7-day trial");
     expect(source).not.toContain("Activate Pro");
     expect(source).not.toContain("disabled\n");
+  });
+
+  it("keeps premium plan labels and subscription statuses localized", () => {
+    const source = readSource(PREMIUM_ACCESS_CARD_SOURCE_PATH);
+
+    expect(source).toContain("Поточний");
+    expect(source).toContain("Aktualny");
+    expect(source).toContain("Їжа і вода");
+    expect(source).toContain("Jedzenie i woda");
+    expect(source).toContain("Без активної підписки");
+    expect(source).toContain("Brak aktywnej subskrypcji");
+    expect(source).toContain("getPremiumStatusLabel(copy, premium.status)");
+    expect(source).not.toContain("FOOD_WATER_TRACKING_FEATURE");
+    expect(source).not.toContain("label={`${copy.status}: ${premium.status}`");
   });
 
   it("does not show unavailable companion shop items as coming soon inventory", () => {
@@ -64,7 +79,7 @@ describe("profile feature warehouse contract", () => {
     const userFacingSources = [
       "src/shared/components/BackendOfflineBanner.tsx",
       "src/shared/components/SessionRestoreFallback.tsx",
-      "src/features/profile/PremiumAccessCard.tsx",
+      PREMIUM_ACCESS_CARD_SOURCE_PATH,
       "src/features/profile/accountDataCardCopy.ts",
     ]
       .map(readSource)

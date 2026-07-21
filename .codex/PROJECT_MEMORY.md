@@ -119,6 +119,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened barcode/manual product fallback copy so catalog moderation failure is presented separately from backend-confirmed meal/profile save, with contract coverage preventing local-only save language from returning to the scanner flow.
 - Localized water and quick-weight companion reward sync warnings so backend-confirmed hydration/weight saves remain honest while secondary companion-progress failures are shown in the user's selected language.
 - Reworked regular cloud recovery/account/premium status copy so ordinary users see product-language cloud service, protected sync, and protected verification wording instead of API/server/backend infrastructure jargon.
+- Localized premium plan labels, plan features, current-state labels, and subscription statuses in the profile card so Ukrainian/Polish interfaces no longer show English plan-feature constants or raw subscription enums.
 
 ## Current Architecture
 
@@ -149,6 +150,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
+- Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - Regular account/profile settings must show calm user-owned actions first; operational runtime, backup, and diagnostic details belong behind owner/admin/moderator/helper access gates.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
