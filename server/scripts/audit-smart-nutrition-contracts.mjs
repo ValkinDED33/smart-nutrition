@@ -32,6 +32,14 @@ const productLookupServiceSource = readSource("server/services/productLookupServ
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
+const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
+const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
+const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
+const errorRecoverySource = readSource("src/shared/lib/errorRecovery.ts");
+const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReporting.ts");
+const serviceWorkerSource = readSource("public/sw.js");
+const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
+const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
 
 addCheck(
   "photo assistant does not hard-code template recognition foods",
@@ -254,6 +262,94 @@ addCheck(
     photoUxSource.includes("needsDetails") &&
     photoDraftSource.includes("analysis.confidence < 0.7 || analysis.manualReviewRequired"),
   "Photo recognition must distinguish ready/review/needs-details and require user confirmation for uncertain drafts."
+);
+
+addCheck(
+  "mobile shell reserves safe area for bottom navigation and content",
+  appLayoutSource.includes('minHeight: "100dvh"') &&
+    appLayoutSource.includes('bottom: "max(12px, env(safe-area-inset-bottom, 0px))"') &&
+    appLayoutSource.includes("visibleMobileTabs.map") &&
+    appLayoutSource.includes("BottomNavigation") &&
+    mealBuilderPageSource.includes('height: "calc(88px + env(safe-area-inset-bottom))"') &&
+    /pb:\s*user[\s\S]*?\?\s*\{\s*xs:\s*16,\s*md:\s*5\s*\}/.test(appLayoutSource),
+  "Mobile pages must reserve bottom safe-area space so fixed navigation does not cover scanner, photo, meal, or profile actions."
+);
+
+addCheck(
+  "meal capture actions open scanner and photo directly",
+  mealBuilderPageSource.includes("const directCaptureModule = inputMode === \"barcode\"") &&
+    mealBuilderPageSource.includes('data-meal-builder-direct-capture="barcode"') &&
+    mealBuilderPageSource.includes('data-meal-builder-direct-capture="photo"') &&
+    /const openScanner = \(\) => \{[\s\S]*?nextParams\.set\("mode", "barcode"\);[\s\S]*?setActiveSection\("scan"\);[\s\S]*?\};/.test(
+      mealBuilderPageSource
+    ) &&
+    /if \(target === "photo"\) \{[\s\S]*?handleInputModeChange\("photo"\);[\s\S]*?return;[\s\S]*?\}/.test(
+      mealBuilderPageSource
+    ),
+  "Food scanner and photo meal entry must open as first-class capture surfaces, not buried behind secondary tabs or scroll-only panels."
+);
+
+addCheck(
+  "mobile scanner preview and resolution state are stable",
+  barcodeScannerSource.includes("scannerPreviewSx") &&
+    barcodeScannerSource.includes('data-scanner-preview-shell="stable"') &&
+    barcodeScannerSource.includes("BARCODE_SCANNER_PREVIEW_MOBILE_HEIGHT_CSS") &&
+    barcodeScannerSource.includes("BARCODE_SCAN_NO_RESULT_TIMEOUT_MS") &&
+    barcodeScannerSource.includes("scanTimedOut") &&
+    /setFoundProduct\(product\);[\s\S]*?stopScanner\(\);/.test(barcodeScannerSource),
+  "Mobile barcode scanning must use a stable preview shell, show recovery after no result, and stop the camera after a confirmed product."
+);
+
+addCheck(
+  "pwa update flow has user controlled activation and reload fallback",
+  registerServiceWorkerSource.includes("PWA_UPDATE_READY_EVENT") &&
+    registerServiceWorkerSource.includes("PWA_UPDATE_RELOAD_FALLBACK_MS") &&
+    registerServiceWorkerSource.includes("workbox.addEventListener(\"waiting\"") &&
+    registerServiceWorkerSource.includes("workbox.messageSkipWaiting()") &&
+    registerServiceWorkerSource.includes("workbox.addEventListener(\"controlling\"") &&
+    registerServiceWorkerSource.includes("reloadAfterUpdate()") &&
+    registerServiceWorkerSource.includes("window.setTimeout"),
+  "PWA updates must show an explicit update path and still reload if controlling does not arrive quickly."
+);
+
+addCheck(
+  "stale chunk failures recover by clearing runtime caches",
+  clientErrorReportingSource.includes('window.addEventListener("vite:preloadError"') &&
+    clientErrorReportingSource.includes("preloadEvent.preventDefault()") &&
+    clientErrorReportingSource.includes("shouldAttemptStaleBuildRecovery") &&
+    clientErrorReportingSource.includes("recoverApplicationAfterStaleBuild(window.location.href)") &&
+    errorRecoverySource.includes("ChunkLoadError") &&
+    errorRecoverySource.includes("clearRuntimeCaches") &&
+    errorRecoverySource.includes("navigator.serviceWorker.getRegistrations") &&
+    errorRecoverySource.includes("window.caches.delete") &&
+    errorRecoverySource.includes("sn_recovery"),
+  "Vite stale chunk crashes must be reported and recovered through service worker, cache, and volatile state cleanup."
+);
+
+addCheck(
+  "service worker avoids stale app chunks",
+  serviceWorkerSource.includes('fetch(request, { cache: "reload" })') &&
+    serviceWorkerSource.includes('fetch(request, { cache: "no-store" })') &&
+    serviceWorkerSource.includes('url.pathname.startsWith("/assets/")') &&
+    serviceWorkerSource.includes('event.data?.type === "SKIP_WAITING"') &&
+    !/self\.skipWaiting\(\)[\s\S]*self\.addEventListener\("install"/.test(serviceWorkerSource),
+  "Service worker must not serve stale hashed assets after deploy and must wait for explicit activation."
+);
+
+addCheck(
+  "3d companion stays lazy and disabled on constrained mobile devices",
+  companionAvatarSource.includes("const CompanionCanvas = lazy(") &&
+    companionAvatarSource.includes("defer3dUntilVisible = true") &&
+    companionAvatarSource.includes("IntersectionObserver") &&
+    companionAvatarSource.includes("prefersReducedMotion") &&
+    companionAvatarSource.includes("saveData") &&
+    companionAvatarSource.includes("lowPowerDevice") &&
+    companionAvatarModelSource.includes("isMobileViewport") &&
+    companionAvatarModelSource.includes("prefersReducedMotion") &&
+    companionAvatarModelSource.includes("saveData") &&
+    companionAvatarModelSource.includes("lowPowerDevice") &&
+    companionAvatarModelSource.includes("return false"),
+  "3D companion must not load heavy WebGL on mobile, reduced-motion, save-data, low-power, or unsupported devices."
 );
 
 const failed = checks.filter((check) => !check.pass);
