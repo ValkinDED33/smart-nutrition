@@ -15,19 +15,19 @@ const createId = (prefix: string) =>
 const repeaterCopy = {
   uk: {
     saving: "Повторюю вчорашній день і зберігаю в хмару...",
-    confirmed: "Вчорашні записи додано до поточного дня і підтверджено backend.",
+    confirmed: "Вчорашні записи додано до поточного дня і підтверджено хмарою.",
     failed: "Не вдалося повторити вчорашній день.",
     retry: "Спробувати ще раз",
   },
   pl: {
     saving: "Powtarzam wczorajszy dzień i zapisuję w chmurze...",
-    confirmed: "Wczorajsze wpisy dodano do dzisiejszego dnia i potwierdzono przez backend.",
+    confirmed: "Wczorajsze wpisy dodano do dzisiejszego dnia i potwierdzono w chmurze.",
     failed: "Nie udało się powtórzyć wczorajszego dnia.",
     retry: "Spróbuj ponownie",
   },
   en: {
     saving: "Repeating yesterday and saving to cloud...",
-    confirmed: "Yesterday's entries were added to today and confirmed by the backend.",
+    confirmed: "Yesterday's entries were added to today and confirmed in the cloud.",
     failed: "Could not repeat yesterday.",
     retry: "Try again",
   },

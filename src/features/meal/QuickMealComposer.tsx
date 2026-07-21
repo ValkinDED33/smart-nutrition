@@ -66,11 +66,11 @@ interface Props {
 const composerStatusCopy = {
   uk: {
     unavailable:
-      "Онлайн-підбір інгредієнтів тимчасово недоступний. Це не порожня база — backend або зовнішній каталог не відповів.",
+      "Онлайн-підбір інгредієнтів тимчасово недоступний. Це не порожня база — каталог тимчасово не відповів.",
     retry: "Спробувати ще раз",
     noOptions: "Почніть писати назву продукту",
     searching: "Шукаю в онлайн-каталозі...",
-    onlineHint: "Пишіть назву — варіанти підтягнуться з backend-каталогу та зовнішніх баз.",
+    onlineHint: "Пишіть назву — варіанти підтягнуться з онлайн-каталогу та зовнішніх баз.",
     noMatch: "Не знайшли. Спробуйте іншу назву або додайте продукт у спільну базу нижче.",
     googleSearch: "Шукати в Google",
     addMissing: "Додати продукт в онлайн-базу",
@@ -79,17 +79,17 @@ const composerStatusCopy = {
     choose: "Обрати",
     savingMeal: "Зберігаю прийом їжі в хмару...",
     mealSaved:
-      "Додано до поточного прийому їжі та підтверджено backend. Позицій: {count}.",
+      "Додано до поточного прийому їжі та підтверджено хмарою. Позицій: {count}.",
     mealSaveFailed: "Не вдалося зберегти прийом їжі в хмару.",
     retryMealSave: "Повторити збереження",
   },
   pl: {
     unavailable:
-      "Dobór składników online jest chwilowo niedostępny. To nie pusta baza — backend albo zewnętrzny katalog nie odpowiedział.",
+      "Dobór składników online jest chwilowo niedostępny. To nie pusta baza — katalog chwilowo nie odpowiedział.",
     retry: "Spróbuj ponownie",
     noOptions: "Zacznij wpisywać nazwę produktu",
     searching: "Szukam w katalogu online...",
-    onlineHint: "Wpisuj nazwę — propozycje przyjdą z katalogu backendu i baz zewnętrznych.",
+    onlineHint: "Wpisuj nazwę — propozycje przyjdą z katalogu online i baz zewnętrznych.",
     noMatch: "Nie znaleziono. Spróbuj innej nazwy albo dodaj produkt do wspólnej bazy niżej.",
     googleSearch: "Szukaj w Google",
     addMissing: "Dodaj produkt do bazy online",
@@ -98,17 +98,17 @@ const composerStatusCopy = {
     choose: "Wybierz",
     savingMeal: "Zapisuję posiłek w chmurze...",
     mealSaved:
-      "Dodano do bieżącego posiłku i potwierdzono przez backend. Pozycji: {count}.",
+      "Dodano do bieżącego posiłku i potwierdzono w chmurze. Pozycji: {count}.",
     mealSaveFailed: "Nie udało się zapisać posiłku w chmurze.",
     retryMealSave: "Ponów zapis",
   },
   en: {
     unavailable:
-      "Online ingredient lookup is temporarily unavailable. This is not an empty database — the backend or external catalog did not respond.",
+      "Online ingredient lookup is temporarily unavailable. This is not an empty database — the catalog did not respond.",
     retry: "Try again",
     noOptions: "Start typing a product name",
     searching: "Searching the online catalog...",
-    onlineHint: "Type a name — suggestions come from the backend catalog and external databases.",
+    onlineHint: "Type a name — suggestions come from the online catalog and external databases.",
     noMatch: "No match yet. Try another name or add the product to the shared database below.",
     googleSearch: "Search Google",
     addMissing: "Add product to online database",
@@ -117,7 +117,7 @@ const composerStatusCopy = {
     choose: "Choose",
     savingMeal: "Saving meal to cloud...",
     mealSaved:
-      "Added to the current meal and confirmed by the backend. Items: {count}.",
+      "Added to the current meal and confirmed in the cloud. Items: {count}.",
     mealSaveFailed: "Could not save the meal to cloud.",
     retryMealSave: "Retry save",
   },

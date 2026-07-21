@@ -145,9 +145,9 @@ const normalizeOrderIds = (ids: string[], templates: MealTemplate[]) => [
 const vaultCopy = {
   uk: {
     saving: "Зберігаю зміни шаблону в хмару...",
-    savedTemplate: "Шаблон збережено і підтверджено backend.",
-    appliedTemplate: "Шаблон застосовано до поточного дня і підтверджено backend.",
-    deletedTemplate: "Шаблон видалено і підтверджено backend.",
+    savedTemplate: "Шаблон збережено і підтверджено хмарою.",
+    appliedTemplate: "Шаблон застосовано до поточного дня і підтверджено хмарою.",
+    deletedTemplate: "Шаблон видалено і підтверджено хмарою.",
     failedSaveTemplate: "Не вдалося зберегти шаблон.",
     failedApplyTemplate: "Не вдалося застосувати шаблон.",
     failedDeleteTemplate: "Не вдалося видалити шаблон.",
@@ -155,9 +155,9 @@ const vaultCopy = {
   },
   pl: {
     saving: "Zapisuję zmiany szablonu w chmurze...",
-    savedTemplate: "Szablon zapisany i potwierdzony przez backend.",
-    appliedTemplate: "Szablon użyty w dzisiejszym dniu i potwierdzony przez backend.",
-    deletedTemplate: "Szablon usunięty i potwierdzony przez backend.",
+    savedTemplate: "Szablon zapisany i potwierdzony w chmurze.",
+    appliedTemplate: "Szablon użyty w dzisiejszym dniu i potwierdzony w chmurze.",
+    deletedTemplate: "Szablon usunięty i potwierdzony w chmurze.",
     failedSaveTemplate: "Nie udało się zapisać szablonu.",
     failedApplyTemplate: "Nie udało się użyć szablonu.",
     failedDeleteTemplate: "Nie udało się usunąć szablonu.",
@@ -165,9 +165,9 @@ const vaultCopy = {
   },
   en: {
     saving: "Saving template changes to cloud...",
-    savedTemplate: "Template saved and confirmed by the backend.",
-    appliedTemplate: "Template applied to today and confirmed by the backend.",
-    deletedTemplate: "Template deleted and confirmed by the backend.",
+    savedTemplate: "Template saved and confirmed in the cloud.",
+    appliedTemplate: "Template applied to today and confirmed in the cloud.",
+    deletedTemplate: "Template deleted and confirmed in the cloud.",
     failedSaveTemplate: "Could not save the template.",
     failedApplyTemplate: "Could not apply the template.",
     failedDeleteTemplate: "Could not delete the template.",

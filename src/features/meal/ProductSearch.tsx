@@ -73,10 +73,10 @@ const suggestionCopy = {
       "Ця страва вже є. Якщо створити нову, з'явиться дублікат; краще використати готовий запис.",
     missingTitle: "Не знайшли в онлайн-базі?",
     missingBody:
-      "Перевірте через Google або додайте продукт у спільний каталог на backend.",
+      "Перевірте через Google або додайте продукт у спільний каталог.",
     unavailableTitle: "Онлайн-пошук тимчасово недоступний",
     unavailableBody:
-      "Це не порожня база: backend або зовнішній каталог не відповів. Спробуйте ще раз або додайте продукт у спільну базу.",
+      "Це не порожня база: онлайн-каталог тимчасово не відповів. Спробуйте ще раз або додайте продукт у спільну базу.",
     retry: "Спробувати ще раз",
     googleSearch: "Шукати в Google",
     addToCatalog: "Додати в базу",
@@ -95,10 +95,10 @@ const suggestionCopy = {
       "Ten wpis już istnieje. Jeśli utworzysz nowy, dodasz duplikat; lepiej użyć gotowego wpisu.",
     missingTitle: "Nie ma w bazie online?",
     missingBody:
-      "Sprawdź w Google albo dodaj produkt do wspólnego katalogu na backendzie.",
+      "Sprawdź w Google albo dodaj produkt do wspólnego katalogu.",
     unavailableTitle: "Wyszukiwanie online jest chwilowo niedostępne",
     unavailableBody:
-      "To nie jest pusta baza: backend albo zewnętrzny katalog nie odpowiedział. Spróbuj ponownie albo dodaj produkt do wspólnej bazy.",
+      "To nie jest pusta baza: katalog online chwilowo nie odpowiedział. Spróbuj ponownie albo dodaj produkt do wspólnej bazy.",
     retry: "Spróbuj ponownie",
     googleSearch: "Szukaj w Google",
     addToCatalog: "Dodaj do bazy",
@@ -117,10 +117,10 @@ const suggestionCopy = {
       "This item already exists. Creating a new one will add a duplicate; it is better to use the existing entry.",
     missingTitle: "Not found in the online database?",
     missingBody:
-      "Check Google or add the product to the shared backend catalog.",
+      "Check Google or add the product to the shared catalog.",
     unavailableTitle: "Online search is temporarily unavailable",
     unavailableBody:
-      "This is not an empty database: the backend or external catalog did not respond. Try again or add the product to the shared database.",
+      "This is not an empty database: the online catalog did not respond. Try again or add the product to the shared database.",
     retry: "Try again",
     googleSearch: "Search Google",
     addToCatalog: "Add to database",

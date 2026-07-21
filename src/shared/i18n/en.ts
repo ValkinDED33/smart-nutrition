@@ -27,7 +27,7 @@ export const en = {
     "Log in to your profile to see your nutrition plan and progress.",
   "auth.registerTitle": "Create profile",
   "auth.registerSubtitle":
-    "Registration creates a secure backend session and a personal user profile.",
+    "Registration creates a secure cloud session and a personal user profile.",
   "auth.haveAccount": "Already have an account?",
   "auth.noAccount": "Do not have an account yet?",
   "auth.loginLink": "Log in",
@@ -57,7 +57,7 @@ export const en = {
   "auth.openConfirmationEmail": "Open the email and click the confirmation button.",
   "auth.invalidConfirmationLink": "Invalid or expired confirmation link.",
   "auth.deliveryUnavailable":
-    "The confirmation email could not be sent. Check Resend/API key, sender domain, and try again.",
+    "The confirmation email could not be sent. Try again shortly or contact support.",
   "auth.verifyTitle": "Confirming email",
   "auth.verifyBody":
     "Wait a few seconds. After confirmation we will open the assistant onboarding right away.",
@@ -126,7 +126,7 @@ export const en = {
   "error.tooManyAttempts": "Too many failed attempts. Try again later.",
   "error.sessionExpired": "Session expired. Log in again.",
   "error.backendUnavailable":
-    "Cloud backend is unavailable. Check the API address or try again later.",
+    "The cloud service is temporarily unavailable. Try again later.",
   "error.genericLogin": "Could not log in.",
   "error.genericRegister": "Could not complete registration.",
   "error.genericProfile": "Could not save profile.",

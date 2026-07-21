@@ -61,7 +61,7 @@ const uk = {
     "Увійдіть у свій профіль, щоб переглянути план харчування та прогрес.",
   "auth.registerTitle": "Створення профілю",
   "auth.registerSubtitle":
-    "Реєстрація створює захищену backend-сесію та персональний профіль користувача.",
+    "Реєстрація створює захищену хмарну сесію та персональний профіль користувача.",
   "auth.haveAccount": "Вже маєте акаунт?",
   "auth.noAccount": "Ще не маєте акаунта?",
   "auth.loginLink": "Увійти",
@@ -114,7 +114,7 @@ const uk = {
     "Забагато невдалих спроб. Спробуйте пізніше.",
   "error.sessionExpired": "Сесія завершилась. Увійдіть повторно.",
   "error.backendUnavailable":
-    "Cloud backend недоступний. Перевірте адресу API або спробуйте ще раз пізніше.",
+    "Хмарний сервіс тимчасово недоступний. Спробуйте ще раз пізніше.",
   "error.genericLogin": "Не вдалося виконати вхід.",
   "error.genericRegister": "Не вдалося завершити реєстрацію.",
   "error.genericProfile": "Не вдалося зберегти профіль.",
@@ -313,7 +313,7 @@ const pl: Record<keyof typeof uk, string> = {
     "Zaloguj się do swojego profilu, aby zobaczyć plan żywienia i postępy.",
   "auth.registerTitle": "Tworzenie profilu",
   "auth.registerSubtitle":
-    "Rejestracja tworzy bezpieczną sesję backendową i osobisty profil użytkownika.",
+    "Rejestracja tworzy bezpieczną sesję w chmurze i osobisty profil użytkownika.",
   "auth.haveAccount": "Masz już konto?",
   "auth.noAccount": "Nie masz jeszcze konta?",
   "auth.loginLink": "Zaloguj się",
@@ -366,7 +366,7 @@ const pl: Record<keyof typeof uk, string> = {
     "Za dużo nieudanych prób. Spróbuj ponownie później.",
   "error.sessionExpired": "Sesja wygasła. Zaloguj się ponownie.",
   "error.backendUnavailable":
-    "Backend cloud jest niedostępny. Sprawdź adres API albo spróbuj ponownie później.",
+    "Usługa w chmurze jest chwilowo niedostępna. Spróbuj ponownie później.",
   "error.genericLogin": "Nie udało się zalogować.",
   "error.genericRegister": "Nie udało się zakończyć rejestracji.",
   "error.genericProfile": "Nie udało się zapisać profilu.",

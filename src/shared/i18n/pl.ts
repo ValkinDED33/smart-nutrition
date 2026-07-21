@@ -32,7 +32,7 @@ export const pl = {
   "auth.openConfirmationEmail": "Otwórz wiadomość i kliknij przycisk potwierdzenia emaila.",
   "auth.invalidConfirmationLink": "Nieprawidłowy albo wygasły link potwierdzający.",
   "auth.deliveryUnavailable":
-    "Nie udało się wysłać emaila potwierdzającego. Sprawdź Resend/API key, domenę nadawcy i spróbuj ponownie.",
+    "Nie udało się wysłać emaila potwierdzającego. Spróbuj ponownie za chwilę albo skontaktuj się ze wsparciem.",
   "auth.verifyTitle": "Potwierdzamy email",
   "auth.verifyBody":
     "Poczekaj kilka sekund. Po potwierdzeniu od razu otworzymy onboarding asystenta.",

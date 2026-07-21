@@ -333,10 +333,10 @@ const photoCopy = {
     empty: "Підказки не сформувалися. Скористайтеся ручним додаванням нижче.",
     nothingSelected: "Оберіть хоча б один пункт із чернетки.",
     incompleteCorrection: "Заповніть назву для кожного обраного інгредієнта перед збереженням.",
-    resolvingProducts: "Підтягуємо нутрієнти з online/backend бази...",
+    resolvingProducts: "Підтягуємо нутрієнти з онлайн-каталогу...",
     productLookupPartial:
-      "Частину інгредієнтів не знайдено в online/backend базі, тому збережено перевірені вами значення.",
-    productLookupMatched: "Нутрієнти підтягнуті з online/backend бази для обраних інгредієнтів.",
+      "Частину інгредієнтів не знайдено в онлайн-каталозі, тому збережено перевірені вами значення.",
+    productLookupMatched: "Нутрієнти підтягнуті з онлайн-каталогу для обраних інгредієнтів.",
     addDraft: "Підтвердити і додати",
     added: "Чернетку додано до щоденника.",
     itemCalories: "{value} ккал",
@@ -410,11 +410,11 @@ const photoCopy = {
     empty: "Nie udało się zbudować podpowiedzi. Skorzystaj z ręcznego dodawania poniżej.",
     nothingSelected: "Wybierz przynajmniej jedną pozycję ze szkicu.",
     incompleteCorrection: "Uzupełnij nazwę każdego wybranego składnika przed zapisem.",
-    resolvingProducts: "Pobieramy wartości odżywcze z bazy online/backend...",
+    resolvingProducts: "Pobieramy wartości odżywcze z katalogu online...",
     productLookupPartial:
-      "Części składników nie znaleziono w bazie online/backend, więc zapisano sprawdzone przez Ciebie wartości.",
+      "Części składników nie znaleziono w katalogu online, więc zapisano sprawdzone przez Ciebie wartości.",
     productLookupMatched:
-      "Wartości odżywcze zostały pobrane z bazy online/backend dla wybranych składników.",
+      "Wartości odżywcze zostały pobrane z katalogu online dla wybranych składników.",
     addDraft: "Potwierdź i dodaj",
     added: "Szkic został dodany do dziennika.",
     itemCalories: "{value} kcal",
@@ -488,11 +488,11 @@ const photoCopy = {
     empty: "No suggestions were created. Use manual adding below.",
     nothingSelected: "Select at least one item from the draft.",
     incompleteCorrection: "Fill in the name for every selected ingredient before saving.",
-    resolvingProducts: "Matching nutrients from the online/backend database...",
+    resolvingProducts: "Matching nutrients from the online catalog...",
     productLookupPartial:
-      "Some ingredients were not found in the online/backend database, so your reviewed values were saved.",
+      "Some ingredients were not found in the online catalog, so your reviewed values were saved.",
     productLookupMatched:
-      "Nutrients were matched from the online/backend database for the selected ingredients.",
+      "Nutrients were matched from the online catalog for the selected ingredients.",
     addDraft: "Confirm and add",
     added: "Draft was added to the diary.",
     itemCalories: "{value} kcal",

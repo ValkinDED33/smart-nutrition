@@ -73,7 +73,7 @@ const adminCopy = {
     subtitle:
       "Модерація продуктів, ролі користувачів і журнал дій для командного контролю.",
     backendUnavailable:
-      "Cloud backend недоступний, тому admin center зараз не може підвантажити дані.",
+      "Хмарні дані тимчасово недоступні, тому адмін-центр зараз не може підвантажити інформацію.",
     tabs: {
       reports: "Скарги",
       queue: "Модерація",
@@ -133,7 +133,7 @@ const adminCopy = {
     subtitle:
       "Moderacja produktów, role użytkowników i dziennik działań do kontroli zespołowej.",
     backendUnavailable:
-      "Backend cloud jest niedostępny, więc admin center nie może teraz pobrać danych.",
+      "Dane w chmurze są chwilowo niedostępne, więc centrum administracyjne nie może teraz pobrać informacji.",
     tabs: {
       reports: PL_REPORTS_LABEL,
       queue: "Moderacja",
@@ -193,7 +193,7 @@ const adminCopy = {
     subtitle:
       "Product moderation, user roles, and audit logs for team control.",
     backendUnavailable:
-      "Cloud backend is unavailable, so Admin Center cannot load data right now.",
+      "Cloud data is temporarily unavailable, so Admin Center cannot load information right now.",
     tabs: {
       reports: "Reports",
       queue: "Moderation",

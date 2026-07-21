@@ -58,7 +58,7 @@ const catalogCopy = {
     failed: "Спільна база зараз не прийняла зміни.",
     retry: "Спробувати ще раз",
     backendUnavailable:
-      "Cloud backend недоступний, тому каталог і модерація зараз працювати не зможуть.",
+      "Хмарний каталог тимчасово недоступний, тому модерація зараз не зможе прийняти зміни.",
     status: {
       pending: "Очікує",
       approved: "Підтверджено",
@@ -92,7 +92,7 @@ const catalogCopy = {
     failed: "Wspólna baza nie przyjęła teraz zmian.",
     retry: "Spróbuj ponownie",
     backendUnavailable:
-      "Backend cloud jest niedostępny, więc katalog i moderacja nie będą teraz działać.",
+      "Katalog w chmurze jest chwilowo niedostępny, więc moderacja nie może teraz przyjąć zmian.",
     status: {
       pending: "Oczekuje",
       approved: "Zatwierdzono",
@@ -126,7 +126,7 @@ const catalogCopy = {
     failed: "Shared catalog did not accept the changes right now.",
     retry: "Try again",
     backendUnavailable:
-      "Cloud backend is unavailable, so catalog and moderation will not work right now.",
+      "The cloud catalog is temporarily unavailable, so moderation cannot accept changes right now.",
     status: {
       pending: "Pending",
       approved: "Approved",

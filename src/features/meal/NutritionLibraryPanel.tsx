@@ -67,7 +67,7 @@ const copy = {
   uk: {
     libraryTitle: "Онлайн-каталог",
     libraryDescription:
-      "Продукти беруться з backend-каталогу. Якщо позиції немає, додайте її в спільну базу.",
+      "Продукти беруться з онлайн-каталогу. Якщо позиції немає, додайте її в спільну базу.",
     savedTitle: "Збережене",
     savedDescription:
       "Ваші обрані продукти, власні страви, рецепти й збережені матеріали в одному місці.",
@@ -89,7 +89,7 @@ const copy = {
     loading: "Шукаю в онлайн-каталозі...",
     unavailableTitle: "Онлайн-каталог тимчасово недоступний",
     unavailableBody:
-      "Це не порожня база: backend або зовнішній каталог не відповів. Спробуйте ще раз.",
+      "Це не порожня база: онлайн-каталог тимчасово не відповів. Спробуйте ще раз.",
     retry: "Спробувати ще раз",
     add100: "Додати 100",
     save: "Зберегти",
@@ -100,9 +100,9 @@ const copy = {
     online: "Онлайн",
     scanner: "Сканер",
     saving: "Зберігаю в хмару...",
-    confirmedAdd: "Додано до поточного прийому їжі та підтверджено backend.",
-    confirmedSave: "Збережено у вашій бібліотеці та підтверджено backend.",
-    confirmedApply: "Шаблон застосовано і підтверджено backend.",
+    confirmedAdd: "Додано до поточного прийому їжі та підтверджено хмарою.",
+    confirmedSave: "Збережено у вашій бібліотеці та підтверджено хмарою.",
+    confirmedApply: "Шаблон застосовано і підтверджено хмарою.",
     failedAdd: "Не вдалося додати продукт.",
     failedSave: "Не вдалося зберегти продукт.",
     failedApply: "Не вдалося застосувати шаблон.",
@@ -110,7 +110,7 @@ const copy = {
   pl: {
     libraryTitle: "Katalog online",
     libraryDescription:
-      "Produkty pochodzą z katalogu backendu. Jeśli czegoś brakuje, dodaj wpis do wspólnej bazy.",
+      "Produkty pochodzą z katalogu online. Jeśli czegoś brakuje, dodaj wpis do wspólnej bazy.",
     savedTitle: "Zapisane",
     savedDescription:
       "Ulubione produkty, własne dania, przepisy i zapisane materiały w jednym miejscu.",
@@ -132,7 +132,7 @@ const copy = {
     loading: "Szukam w katalogu online...",
     unavailableTitle: "Katalog online jest chwilowo niedostępny",
     unavailableBody:
-      "To nie jest pusta baza: backend albo zewnętrzny katalog nie odpowiedział. Spróbuj ponownie.",
+      "To nie jest pusta baza: katalog online chwilowo nie odpowiedział. Spróbuj ponownie.",
     retry: "Spróbuj ponownie",
     add100: "Dodaj 100",
     save: "Zapisz",
@@ -143,9 +143,9 @@ const copy = {
     online: "Online",
     scanner: "Skaner",
     saving: "Zapisuję w chmurze...",
-    confirmedAdd: "Dodano do bieżącego posiłku i potwierdzono przez backend.",
-    confirmedSave: "Zapisano w Twojej bibliotece i potwierdzono przez backend.",
-    confirmedApply: "Szablon użyty i potwierdzony przez backend.",
+    confirmedAdd: "Dodano do bieżącego posiłku i potwierdzono w chmurze.",
+    confirmedSave: "Zapisano w Twojej bibliotece i potwierdzono w chmurze.",
+    confirmedApply: "Szablon użyty i potwierdzono w chmurze.",
     failedAdd: "Nie udało się dodać produktu.",
     failedSave: "Nie udało się zapisać produktu.",
     failedApply: "Nie udało się użyć szablonu.",
@@ -153,7 +153,7 @@ const copy = {
   en: {
     libraryTitle: "Online catalog",
     libraryDescription:
-      "Products come from the backend catalog. If something is missing, add it to the shared database.",
+      "Products come from the online catalog. If something is missing, add it to the shared database.",
     savedTitle: "Saved",
     savedDescription:
       "Favorite products, your reusable dishes, recipes, and saved materials in one place.",
@@ -175,7 +175,7 @@ const copy = {
     loading: "Searching the online catalog...",
     unavailableTitle: "Online catalog is temporarily unavailable",
     unavailableBody:
-      "This is not an empty database: the backend or external catalog did not respond. Try again.",
+      "This is not an empty database: the online catalog did not respond. Try again.",
     retry: "Try again",
     add100: "Add 100",
     save: "Save",
@@ -186,9 +186,9 @@ const copy = {
     online: "Online",
     scanner: "Scanner",
     saving: "Saving to cloud...",
-    confirmedAdd: "Added to the current meal and confirmed by the backend.",
-    confirmedSave: "Saved to your library and confirmed by the backend.",
-    confirmedApply: "Template applied and confirmed by the backend.",
+    confirmedAdd: "Added to the current meal and confirmed in the cloud.",
+    confirmedSave: "Saved to your library and confirmed in the cloud.",
+    confirmedApply: "Template applied and confirmed in the cloud.",
     failedAdd: "Could not add the product.",
     failedSave: "Could not save the product.",
     failedApply: "Could not apply the template.",

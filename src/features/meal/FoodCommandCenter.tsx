@@ -60,9 +60,9 @@ const commandCopy = {
     searching: "Шукаю в онлайн-базі...",
     empty: "Почніть вводити назву — я підтягну варіанти з онлайн-каталогу.",
     unavailable:
-      "Онлайн-пошук зараз недоступний: backend або зовнішній каталог не відповів. Можна повторити в повному пошуку або додати продукт у спільну базу.",
+      "Онлайн-пошук зараз недоступний: каталог тимчасово не відповів. Можна повторити в повному пошуку або додати продукт у спільну базу.",
     noMatch:
-      "Не знайшов у backend/online результатах. Відкрийте повний пошук, перевірте Google або додайте продукт у спільну базу.",
+      "Не знайшов у результатах каталогу. Відкрийте повний пошук, перевірте Google або додайте продукт у спільну базу.",
     added: "Додано до поточного прийому їжі",
     grams: "г",
     openSearch: "Повний пошук",
@@ -86,9 +86,9 @@ const commandCopy = {
     searching: "Szukam w bazie online...",
     empty: "Zacznij wpisywać nazwę — pobiorę propozycje z katalogu online.",
     unavailable:
-      "Wyszukiwanie online jest teraz niedostępne: backend albo zewnętrzny katalog nie odpowiedział. Możesz spróbować w pełnym wyszukiwaniu albo dodać produkt do wspólnej bazy.",
+      "Wyszukiwanie online jest teraz niedostępne: katalog chwilowo nie odpowiedział. Możesz spróbować w pełnym wyszukiwaniu albo dodać produkt do wspólnej bazy.",
     noMatch:
-      "Nie znalazłem tego w wynikach backend/online. Otwórz pełne wyszukiwanie, sprawdź Google albo dodaj produkt do wspólnej bazy.",
+      "Nie znalazłem tego w wynikach katalogu. Otwórz pełne wyszukiwanie, sprawdź Google albo dodaj produkt do wspólnej bazy.",
     added: "Dodano do bieżącego posiłku",
     grams: "g",
     openSearch: "Pełne wyszukiwanie",
@@ -112,9 +112,9 @@ const commandCopy = {
     searching: "Searching the online database...",
     empty: "Start typing a name — I will pull options from the online catalog.",
     unavailable:
-      "Online search is unavailable right now: the backend or external catalog did not respond. You can retry in full search or add the product to the shared database.",
+      "Online search is unavailable right now: the catalog did not respond. You can retry in full search or add the product to the shared database.",
     noMatch:
-      "I did not find this in backend/online results. Open full search, check Google, or add it to the shared database.",
+      "I did not find this in the catalog results. Open full search, check Google, or add it to the shared database.",
     added: "Added to the current meal",
     grams: "g",
     openSearch: "Full search",

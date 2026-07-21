@@ -44,6 +44,13 @@ const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
+const foodCommandCenterSource = readSource("src/features/meal/FoodCommandCenter.tsx");
+const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
+const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
+const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
+const mealDayOverviewSource = readSource("src/features/meal/MealDayOverview.tsx");
+const yesterdayRepeaterSource = readSource("src/features/meal/YesterdayRepeater.tsx");
+const templateVaultSource = readSource("src/features/meal/TemplateVault.tsx");
 const productMicronutrientInsightsSource = readSource(
   "src/domain/products/productMicronutrientInsights.ts"
 );
@@ -59,6 +66,14 @@ const cloudSyncStatusCardSource = readSource(
 );
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
 const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePlanner.tsx");
+const catalogContributionCardSource = readSource(
+  "src/features/platform/CatalogContributionCard.tsx"
+);
+const adminCenterCardSource = readSource("src/features/platform/AdminCenterCard.tsx");
+const sharedLanguageSource = readSource("src/shared/language/index.tsx");
+const sharedI18nUkSource = readSource("src/shared/i18n/uk.ts");
+const sharedI18nPlSource = readSource("src/shared/i18n/pl.ts");
+const sharedI18nEnSource = readSource("src/shared/i18n/en.ts");
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
@@ -475,6 +490,60 @@ addCheck(
     accountDataCardCopySource.includes('telegramBot: "Assistant"') &&
     !/Connect the bot|Підключіть бота|w bocie|telegramBot: "Bot"/.test(accountDataCardCopySource),
   "Telegram profile settings must describe the same Smart Nutrition AI assistant surface, not a standalone bot product or second AI brain."
+);
+
+const humanNutritionCopySources = [
+  foodCommandCenterSource,
+  productSearchSource,
+  quickMealComposerSource,
+  nutritionLibraryPanelSource,
+  photoAssistantSource,
+  mealDayOverviewSource,
+  yesterdayRepeaterSource,
+  templateVaultSource,
+].join("\n");
+
+addCheck(
+  "nutrition flows hide backend jargon from regular user copy",
+  humanNutritionCopySources.includes("онлайн-каталогу") &&
+    humanNutritionCopySources.includes("підтверджено хмарою") &&
+    humanNutritionCopySources.includes("katalogu online") &&
+    humanNutritionCopySources.includes("potwierdzono w chmurze") &&
+    humanNutritionCopySources.includes("online catalog") &&
+    humanNutritionCopySources.includes("confirmed in the cloud") &&
+    !/backend\/online|backend catalog|backend-каталог|каталог backendu|confirmed by the backend|підтверджено backend|potwierdzon[yo] przez backend|на backend|backendzie/.test(
+      humanNutritionCopySources
+    ),
+  "Food search, photo meal, library, composer, and diary success states must keep backend-confirmed behavior while presenting human product language to regular users."
+);
+
+const humanAuthPlatformCopySources = [
+  catalogContributionCardSource,
+  adminCenterCardSource,
+  sharedLanguageSource,
+  sharedI18nUkSource,
+  sharedI18nPlSource,
+  sharedI18nEnSource,
+].join("\n");
+
+addCheck(
+  "auth and platform errors use product language instead of infrastructure instructions",
+  humanAuthPlatformCopySources.includes("захищену хмарну сесію") &&
+    humanAuthPlatformCopySources.includes("bezpieczną sesję w chmurze") &&
+    humanAuthPlatformCopySources.includes("secure cloud session") &&
+    humanAuthPlatformCopySources.includes("Хмарний сервіс тимчасово недоступний") &&
+    humanAuthPlatformCopySources.includes("Usługa w chmurze jest chwilowo niedostępna") &&
+    humanAuthPlatformCopySources.includes("cloud service is temporarily unavailable") &&
+    humanAuthPlatformCopySources.includes("Лист підтвердження не вдалося відправити. Спробуйте ще раз") &&
+    humanAuthPlatformCopySources.includes("Nie udało się wysłać emaila potwierdzającego. Spróbuj ponownie") &&
+    humanAuthPlatformCopySources.includes("confirmation email could not be sent. Try again shortly") &&
+    humanAuthPlatformCopySources.includes("Хмарний каталог тимчасово недоступний") &&
+    humanAuthPlatformCopySources.includes("Katalog w chmurze jest chwilowo niedostępny") &&
+    humanAuthPlatformCopySources.includes("cloud catalog is temporarily unavailable") &&
+    !/Cloud backend|Backend cloud|backend-сесію|backendową|backend session|API key|адресу API|address or try/.test(
+      humanAuthPlatformCopySources
+    ),
+  "Registration, email delivery, catalog, and admin unavailable states must not expose API/backend setup instructions to regular users."
 );
 
 addCheck(
