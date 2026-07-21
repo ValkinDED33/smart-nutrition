@@ -6,6 +6,8 @@ Smart Nutrition is an AI wellness ecosystem that helps users log meals, understa
 
 The product must feel trustworthy, fast, recoverable, and coherent. Every user action that claims success must map to backend-confirmed state or an explicit queued/offline state. The ecosystem must remain one product, not a collection of parallel experiments.
 
+The signature product direction is a Living AI Interface: Smart Nutrition should feel less like opening a calorie calculator and more like entering a calm AI wellness space where the assistant notices, explains, remembers, and accompanies the user. The interface may breathe, morph, surface discoveries, and react emotionally, but every magical moment must be grounded in canonical context, backend-confirmed actions, safe memory, and honest recovery.
+
 ## Current Production Status
 
 Status: stabilizing with live smoke checks passing; not yet fully certified for production.
@@ -134,6 +136,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 - Hardened fridge planner recipe and fridge-save feedback so meal/fridge failures stay product-language and do not leak backend/provider exception details.
 - Removed the obsolete Depcheck config and locked dead-code auditing to the canonical Knip setup so the root stays clean without duplicate quality tools.
+- Introduced the branded AI Discovery Cards home pattern: living story cards generated from canonical day context and existing assistant actions, with tests and contract audit guarding against mock/random/local-only AI cards.
+- Accepted Living AI Interface as the product-level UX philosophy: AI Discovery, ambient intelligence, predictive surfaces, emotional companion behavior, AI memory moments, and morphing UI are allowed only when they reuse canonical data/actions and preserve honest backend-confirmed state.
 
 ## Current Architecture
 
@@ -225,6 +229,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI daily plan drafts must read canonical snapshot/reminder state, remain localized, and clearly state that no meal diary entry or reminder was saved.
 - AI daily-plan item application must not save meals/templates directly from a draft; food and protein items open the canonical food flow, and water/review items use canonical typed reminders with backend-confirmed success.
 - AI food-plan handoffs must preserve user intent in the route and UI focus; a protein plan item should land in a focused food search, not a blank generic meal screen or a fake saved meal.
+- AI Discovery Cards are the signature living-card pattern for the home screen; they must read canonical `DailyContext`, reuse existing assistant actions, and must not introduce a second AI brain, random mock feed, localStorage state, fake findings, or unconfirmed saved actions.
+- Living AI Interface is the long-term product pattern: ambient motion, aura, emotional companion reactions, predictive UI, AI memory moments, living notifications, and morphing surfaces must be subtle, useful, accessible, and backed by canonical state. They must not become decorative noise, fake personalization, diagnosis, guilt copy, or duplicated persistence.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.

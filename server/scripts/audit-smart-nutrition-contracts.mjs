@@ -47,6 +47,7 @@ const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
+const homePageSource = readSource("src/pages/HomePage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
@@ -142,6 +143,10 @@ const assistantApiSource = readSource("src/shared/api/assistant.ts");
 const aiCompanionPageSource = readSource("src/pages/AiCompanionPage.tsx");
 const assistantRuntimeCardSource = readSource(
   "src/features/assistant/AssistantRuntimeCard.tsx"
+);
+const aiDiscoveryCardsSource = readSource("src/features/assistant/AIDiscoveryCards.tsx");
+const aiDiscoveryCardsModelSource = readSource(
+  "src/features/assistant/aiDiscoveryCardsModel.ts"
 );
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
@@ -304,6 +309,32 @@ addCheck(
     !fileExists(".depcheckrc") &&
     !packageJsonSource.includes('"depcheck"'),
   "Dead-code detection must use the canonical Knip setup only; old Depcheck config must not remain as a parallel unused-audit system."
+);
+
+addCheck(
+  "AI Discovery Cards are a canonical read-only home pattern",
+  homePageSource.includes("<AIDiscoveryCards") &&
+    homePageSource.includes("context={dailyContext}") &&
+    homePageSource.includes("intelligence={intelligence}") &&
+    homePageSource.includes("onRunAction={runAssistantAction}") &&
+    aiDiscoveryCardsSource.includes("buildAIDiscoveryCards") &&
+    aiDiscoveryCardsModelSource.includes("DailyContext") &&
+    aiDiscoveryCardsModelSource.includes("AssistantHomeAction") &&
+    !/localStorage|Math\.random|setTimeout|fetch\(|axios|mock|placeholder/i.test(
+      `${aiDiscoveryCardsSource}\n${aiDiscoveryCardsModelSource}`
+    ),
+  "AI Discovery Cards must be a branded living-card layer over canonical day context and existing assistant actions, not a second AI brain, random mock feed, or local-only state."
+);
+
+addCheck(
+  "Living AI Interface philosophy is captured as a product contract",
+  projectMemorySource.includes("Living AI Interface") &&
+    projectMemorySource.includes("entering a calm AI wellness space") &&
+    projectMemorySource.includes("AI Discovery Cards") &&
+    projectMemorySource.includes("canonical state") &&
+    projectMemorySource.includes("must not become decorative noise") &&
+    projectMemorySource.includes("duplicated persistence"),
+  "Smart Nutrition's signature interface direction must stay documented as a canonical, state-backed product philosophy rather than drifting into decorative effects or fake personalization."
 );
 
 addCheck(

@@ -39,6 +39,7 @@ import {
   buildAssistantHomeIntelligence,
   type AssistantHomeAction,
 } from "@features/assistant/assistantHomeIntelligence";
+import { AIDiscoveryCards } from "@features/assistant/AIDiscoveryCards";
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
@@ -585,6 +586,12 @@ const HomePage = () => {
           <Droplets size={42} color="#67e8f9" />
         </Box>
       </Paper>
+
+      <AIDiscoveryCards
+        context={dailyContext}
+        intelligence={intelligence}
+        onRunAction={runAssistantAction}
+      />
 
       <SectionTabs
         sections={sections}
