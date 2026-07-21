@@ -87,6 +87,13 @@ export type ReminderAdherenceSummary = {
   lastEvent: ReminderEvent | null;
 };
 
+export type ReminderAdherenceRangeSummary = ReminderAdherenceSummary & {
+  reminderCount: number;
+  activeReminderCount: number;
+  since: string;
+  riskLevel: "good" | "watch" | "missing";
+};
+
 const getEventTime = (event: ReminderEvent) => {
   const time = Date.parse(event.createdAt);
 
@@ -113,6 +120,47 @@ export const getReminderAdherenceSummary = (
     snoozed,
     completionRate: decisiveTotal > 0 ? Math.round((completed / decisiveTotal) * 100) : null,
     lastEvent: events[0] ?? null,
+  };
+};
+
+export const getReminderAdherenceRangeSummary = (
+  reminders: Array<Pick<ReminderItem, "active" | "events">>,
+  days: number,
+  now = new Date()
+): ReminderAdherenceRangeSummary => {
+  const safeDays = Math.max(1, Math.round(days));
+  const sinceTime = now.getTime() - safeDays * 24 * 60 * 60 * 1000;
+  const events = reminders
+    .flatMap((reminder) => (Array.isArray(reminder.events) ? reminder.events : []))
+    .filter((event) => {
+      if (!trackedAdherenceActions.has(event.action)) {
+        return false;
+      }
+
+      const time = getEventTime(event);
+      return time >= sinceTime && time <= now.getTime();
+    })
+    .sort((first, second) => getEventTime(second) - getEventTime(first));
+  const completed = events.filter((event) => positiveAdherenceActions.has(event.action)).length;
+  const skipped = events.filter((event) => event.action === "skipped").length;
+  const snoozed = events.filter((event) => event.action === "snoozed").length;
+  const decisiveTotal = completed + skipped;
+  const completionRate =
+    decisiveTotal > 0 ? Math.round((completed / decisiveTotal) * 100) : null;
+  const riskLevel =
+    completionRate === null ? "missing" : completionRate >= 80 ? "good" : "watch";
+
+  return {
+    total: events.length,
+    completed,
+    skipped,
+    snoozed,
+    completionRate,
+    lastEvent: events[0] ?? null,
+    reminderCount: reminders.length,
+    activeReminderCount: reminders.filter((reminder) => reminder.active).length,
+    since: new Date(sinceTime).toISOString(),
+    riskLevel,
   };
 };
 

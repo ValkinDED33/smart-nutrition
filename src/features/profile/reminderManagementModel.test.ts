@@ -3,6 +3,7 @@ import type { ReminderItem } from "@shared/api/reminders";
 import {
   formatReminderDateTime,
   formatReminderScheduleLabel,
+  getReminderAdherenceRangeSummary,
   getReminderAdherenceSummary,
   getReminderPrimaryAction,
   getReminderPrimaryActionLabelKey,
@@ -177,6 +178,88 @@ describe("reminderManagementModel", () => {
         id: "event-2",
         action: "skipped",
       },
+    });
+  });
+
+  it("builds a period adherence report from backend-confirmed reminder events", () => {
+    const report = getReminderAdherenceRangeSummary(
+      [
+        createReminder({
+          id: "medication",
+          active: true,
+          events: [
+            {
+              id: "event-1",
+              action: "taken",
+              scheduledFor: "2026-07-19T08:00:00.000Z",
+              createdAt: "2026-07-19T08:01:00.000Z",
+            },
+            {
+              id: "event-2",
+              action: "skipped",
+              scheduledFor: "2026-07-20T08:00:00.000Z",
+              createdAt: "2026-07-20T08:01:00.000Z",
+            },
+            {
+              id: "event-3",
+              action: "schedule_updated",
+              scheduledFor: null,
+              createdAt: "2026-07-20T09:00:00.000Z",
+            },
+            {
+              id: "event-4",
+              action: "taken",
+              scheduledFor: "2026-07-01T08:00:00.000Z",
+              createdAt: "2026-07-01T08:01:00.000Z",
+            },
+          ],
+        }),
+        createReminder({
+          id: "paused",
+          active: false,
+          events: [
+            {
+              id: "event-5",
+              action: "snoozed",
+              scheduledFor: "2026-07-20T12:00:00.000Z",
+              createdAt: "2026-07-20T12:05:00.000Z",
+            },
+          ],
+        }),
+      ],
+      7,
+      new Date("2026-07-21T12:00:00.000Z")
+    );
+
+    expect(report).toMatchObject({
+      total: 3,
+      completed: 1,
+      skipped: 1,
+      snoozed: 1,
+      completionRate: 50,
+      reminderCount: 2,
+      activeReminderCount: 1,
+      riskLevel: "watch",
+      lastEvent: {
+        id: "event-5",
+        action: "snoozed",
+      },
+    });
+  });
+
+  it("marks empty period adherence reports as missing instead of successful", () => {
+    const report = getReminderAdherenceRangeSummary(
+      [createReminder({ events: [] })],
+      30,
+      new Date("2026-07-21T12:00:00.000Z")
+    );
+
+    expect(report).toMatchObject({
+      total: 0,
+      completionRate: null,
+      reminderCount: 1,
+      activeReminderCount: 1,
+      riskLevel: "missing",
     });
   });
 

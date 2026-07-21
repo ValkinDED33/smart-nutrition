@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  LinearProgress,
   MenuItem,
   Stack,
   TextField,
@@ -39,6 +40,7 @@ import {
 import {
   formatReminderDateTime,
   formatReminderScheduleLabel,
+  getReminderAdherenceRangeSummary,
   getReminderAdherenceSummary,
   getReminderPrimaryAction,
   isMedicationLikeReminderType,
@@ -120,6 +122,14 @@ const reminderCopy = {
     dose: "Доза",
     portion: "Порція",
     adherence: "Історія",
+    adherenceReport: "Звіт за період",
+    adherence7d: "7 днів",
+    adherence30d: "30 днів",
+    activeReminders: (active: number, total: number) => `Активних: ${active}/${total}`,
+    adherenceReportEmpty: "Ще немає підтверджених дій за цей період.",
+    adherenceRiskGood: "ритм стабільний",
+    adherenceRiskWatch: "є пропуски",
+    adherenceRiskMissing: "потрібні дані",
     completionRate: (rate: number) => `${rate}% виконано`,
     eventCounts: (completed: number, skipped: number, snoozed: number) =>
       `Прийнято/зроблено: ${completed} · пропущено: ${skipped} · перенесено: ${snoozed}`,
@@ -202,6 +212,14 @@ const reminderCopy = {
     dose: "Dawka",
     portion: "Porcja",
     adherence: "Historia",
+    adherenceReport: "Raport okresu",
+    adherence7d: "7 dni",
+    adherence30d: "30 dni",
+    activeReminders: (active: number, total: number) => `Aktywne: ${active}/${total}`,
+    adherenceReportEmpty: "Nie ma jeszcze potwierdzonych działań w tym okresie.",
+    adherenceRiskGood: "rytm stabilny",
+    adherenceRiskWatch: "są pominięcia",
+    adherenceRiskMissing: "potrzeba danych",
     completionRate: (rate: number) => `${rate}% wykonane`,
     eventCounts: (completed: number, skipped: number, snoozed: number) =>
       `Przyjęte/zrobione: ${completed} · pominięte: ${skipped} · przesunięte: ${snoozed}`,
@@ -284,6 +302,14 @@ const reminderCopy = {
     dose: "Dose",
     portion: "Serving",
     adherence: "History",
+    adherenceReport: "Period report",
+    adherence7d: "7 days",
+    adherence30d: "30 days",
+    activeReminders: (active: number, total: number) => `Active: ${active}/${total}`,
+    adherenceReportEmpty: "No confirmed actions in this period yet.",
+    adherenceRiskGood: "steady rhythm",
+    adherenceRiskWatch: "misses found",
+    adherenceRiskMissing: "needs data",
     completionRate: (rate: number) => `${rate}% completed`,
     eventCounts: (completed: number, skipped: number, snoozed: number) =>
       `Taken/done: ${completed} · skipped: ${skipped} · snoozed: ${snoozed}`,
@@ -402,6 +428,23 @@ const getReminderActionLabel = (
   return action;
 };
 
+const getAdherenceRiskCopy = (
+  copy: (typeof reminderCopy)[keyof typeof reminderCopy],
+  riskLevel: "good" | "watch" | "missing"
+) => {
+  if (riskLevel === "good") return copy.adherenceRiskGood;
+  if (riskLevel === "watch") return copy.adherenceRiskWatch;
+
+  return copy.adherenceRiskMissing;
+};
+
+const getAdherenceRiskColor = (riskLevel: "good" | "watch" | "missing") => {
+  if (riskLevel === "good") return "#0f766e";
+  if (riskLevel === "watch") return "#b45309";
+
+  return "#64748b";
+};
+
 const ReminderManagementCard = () => {
   const { appLanguage } = useLanguage();
   const copy = getReminderCopy(appLanguage);
@@ -420,6 +463,19 @@ const ReminderManagementCard = () => {
   );
 
   const sortedItems = useMemo(() => sortReminders(items), [items]);
+  const adherenceReports = useMemo(
+    () => [
+      {
+        label: copy.adherence7d,
+        summary: getReminderAdherenceRangeSummary(sortedItems, 7),
+      },
+      {
+        label: copy.adherence30d,
+        summary: getReminderAdherenceRangeSummary(sortedItems, 30),
+      },
+    ],
+    [copy.adherence7d, copy.adherence30d, sortedItems]
+  );
   const trimmedText = text.trim();
   const canCreate = trimmedText.length >= 6 && !creating;
 
@@ -650,6 +706,102 @@ const ReminderManagementCard = () => {
           </Alert>
         ) : (
           <Stack spacing={1.2}>
+            <Box
+              data-reminder-adherence-report="true"
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                gap: 1,
+              }}
+            >
+              {adherenceReports.map(({ label, summary }) => {
+                const color = getAdherenceRiskColor(summary.riskLevel);
+                const lastActionLabel = summary.lastEvent
+                  ? getReminderActionLabel(copy, summary.lastEvent.action)
+                  : null;
+
+                return (
+                  <Box
+                    key={label}
+                    sx={{
+                      p: 1.35,
+                      border: "1px solid var(--sn-border-soft)",
+                      borderRadius: 1,
+                      bgcolor: "var(--sn-surface-elevated)",
+                    }}
+                  >
+                    <Stack spacing={0.8}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Typography sx={{ fontWeight: 900 }}>
+                          {copy.adherenceReport} · {label}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={getAdherenceRiskCopy(copy, summary.riskLevel)}
+                          sx={{
+                            color,
+                            bgcolor:
+                              summary.riskLevel === "good"
+                                ? "rgba(20,184,166,0.14)"
+                                : summary.riskLevel === "watch"
+                                  ? "rgba(245,158,11,0.16)"
+                                  : "rgba(148,163,184,0.18)",
+                            fontWeight: 800,
+                          }}
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                        <Chip
+                          size="small"
+                          label={copy.activeReminders(
+                            summary.activeReminderCount,
+                            summary.reminderCount
+                          )}
+                          variant="outlined"
+                        />
+                        <Chip
+                          size="small"
+                          label={
+                            summary.completionRate === null
+                              ? copy.adherenceReportEmpty
+                              : copy.completionRate(summary.completionRate)
+                          }
+                          variant={summary.completionRate === null ? "outlined" : "filled"}
+                        />
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={summary.completionRate ?? 0}
+                        sx={{
+                          height: 8,
+                          borderRadius: 999,
+                          backgroundColor: "rgba(148, 163, 184, 0.18)",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 999,
+                            backgroundColor: color,
+                          },
+                        }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {summary.total > 0
+                          ? copy.eventCounts(
+                              summary.completed,
+                              summary.skipped,
+                              summary.snoozed
+                            )
+                          : copy.adherenceReportEmpty}
+                        {lastActionLabel ? ` · ${copy.lastAction(lastActionLabel)}` : ""}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Box>
             {sortedItems.map((reminder) => {
               const isBusy = busyReminderId === reminder.id;
               const isEditing = editingReminderId === reminder.id;

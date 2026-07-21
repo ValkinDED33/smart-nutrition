@@ -610,12 +610,18 @@ addCheck(
 addCheck(
   "reminder manager surfaces backend-confirmed adherence history",
   reminderManagementCardSource.includes("getReminderAdherenceSummary(reminder)") &&
+    reminderManagementCardSource.includes("getReminderAdherenceRangeSummary(sortedItems, 7)") &&
+    reminderManagementCardSource.includes("getReminderAdherenceRangeSummary(sortedItems, 30)") &&
+    reminderManagementCardSource.includes('data-reminder-adherence-report="true"') &&
     reminderManagementCardSource.includes("adherence.completionRate") &&
     reminderManagementCardSource.includes("adherence.lastEvent") &&
+    reminderManagementModelSource.includes("ReminderAdherenceRangeSummary") &&
+    reminderManagementModelSource.includes("activeReminderCount") &&
+    reminderManagementModelSource.includes("riskLevel") &&
     reminderManagementCardSource.includes("copy.eventCounts") &&
     reminderManagementCardSource.includes("copy.lastAction") &&
     reminderManagementCardSource.includes("copy.noEvents"),
-  "The web reminder manager must show confirmed reminder event history from canonical backend state instead of hiding taken/skipped/snoozed actions in Telegram only."
+  "The web reminder manager must show confirmed reminder event history and 7/30-day adherence reports from canonical backend state instead of hiding taken/skipped/snoozed actions in Telegram only."
 );
 
 addCheck(

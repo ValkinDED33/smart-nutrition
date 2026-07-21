@@ -114,6 +114,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added product correction as a backend-confirmed catalog moderation path: product cards open a prefilled shared-catalog contribution from the scanned/searched product facts instead of locally editing or inventing corrected product state.
 - Added typed/browser-voice meal commands inside the existing `FoodCommandCenter`: explicit commands such as "add lunch 200 g rice" are parsed deterministically, matched against the canonical product catalog, checked for compatible product units, and saved only through backend-confirmed product intake.
 - Hardened the progress overview into a tested counted-domain model: calories, protein, water, meals, weight goal, and body check-ins are calculated together, water glasses stay visible on the first progress screen, and each domain routes to its detailed section.
+- Added web reminder adherence period reports inside the existing reminder manager: 7-day and 30-day summaries read canonical backend reminder events, show completed/skipped/snoozed counts, active reminder coverage, last action, and honest missing-data state without a second reminder/report store.
 
 ## Current Architecture
 
@@ -163,6 +164,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Email verification and reset password tokens may be consumed from URL links only long enough to capture them into runtime state; the browser address bar/history entry must be cleaned before user interaction continues.
 - Vercel-served frontend routes must keep `Referrer-Policy: strict-origin-when-cross-origin` so auth link query data is not sent cross-origin.
 - Reminders: Canonical service/repository/storage language is `reminders`; legacy medication-reminder naming is compatibility only until a planned migration retires it.
+- Reminder adherence reporting must use canonical reminder `events` from the existing reminder manager; period reports may summarize 7/30-day rhythm, but they must not create a second reminder analytics store or infer unconfirmed actions.
 - Mobile/PWA: Android, small screens, Telegram WebView, service worker recovery, safe areas, camera runtime, and keyboard behavior are first-class architecture concerns.
 - Companion: 3D companion must load lazily/on demand and must not damage core performance.
 
