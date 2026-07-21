@@ -44,6 +44,12 @@ const FAVORITE_SAVE_PATTERN =
   /(^|\s)(сохрани|сохранить|збережи|зберегти|додай в обране|добавь в избранное|save|favorite|favourite|bookmark)(\s|$)/i;
 const FAVORITE_TARGET_PATTERN =
   /(избран[а-яё]*|обран[а-яіїєґ]*|улюблен[а-яіїєґ]*|favorite|favourite|saved|збережен[а-яіїєґ]*|сохранен[а-яё]*)/i;
+const RECIPE_WORD_PATTERN =
+  /(рецепт|recipe|meal idea|иде[яю]|іде[яю]|пригот|приготов|cook|готовить|готувати)/i;
+const RECIPE_CREATE_PATTERN =
+  /(^|\s)(создай|сделай|придумай|составь|зроби|створи|придумай|склади|create|make|build|suggest)(\s|$)/i;
+const FRIDGE_WORD_PATTERN =
+  /(холодильник|холодильника|fridge|pantry|що є|что есть|залишків|остатков)/i;
 
 const normalizeMessage = (value) =>
   String(value ?? "")
@@ -163,6 +169,21 @@ const cleanFavoriteProductQuery = (message) => {
     .trim();
 
   return cleaned.length >= 2 ? cleaned.slice(0, 120) : "";
+};
+
+const cleanRecipeIngredientText = (message) => {
+  const cleaned = normalizeMessage(message)
+    .replace(/^\/?(?:recipe|createrecipe|create-recipe)\b/i, " ")
+    .replace(RECIPE_CREATE_PATTERN, " ")
+    .replace(RECIPE_WORD_PATTERN, " ")
+    .replace(MEAL_TYPE_PATTERN, " ")
+    .replace(/(^|\s)(?:из|із|з|с|со|with|from|на|for|please|пожалуйста|будь ласка|мені|мне|my|мо[єїй]|моего|моїх|моих)(?=\s|$)/giu, " ")
+    .replace(FRIDGE_WORD_PATTERN, " ")
+    .replace(/[;:!?]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned.length >= 2 ? cleaned.slice(0, 180) : "";
 };
 
 const hasMedicationCourseIntent = (message) =>
@@ -355,6 +376,24 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         reason: "favorite_product_save_request",
       };
     }
+  }
+
+  if (
+    /^\/?(?:recipe|createrecipe|create-recipe)\b/i.test(normalized) ||
+    (RECIPE_WORD_PATTERN.test(normalized) && (RECIPE_CREATE_PATTERN.test(normalized) || FRIDGE_WORD_PATTERN.test(normalized)))
+  ) {
+    return {
+      intent: "create_recipe",
+      confidence: FRIDGE_WORD_PATTERN.test(normalized) ? 0.84 : 0.78,
+      entities: {
+        text: cleanRecipeIngredientText(normalized),
+        mealType: readMealType(normalized),
+        fromFridge: FRIDGE_WORD_PATTERN.test(normalized),
+      },
+      reason: FRIDGE_WORD_PATTERN.test(normalized)
+        ? "fridge_recipe_request"
+        : "recipe_create_request",
+    };
   }
 
   if (/^\/?(?:addmeal|food|meal)\b/i.test(normalized) || MEAL_ACTION_PATTERN.test(normalized)) {

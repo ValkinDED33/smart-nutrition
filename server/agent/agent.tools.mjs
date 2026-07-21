@@ -23,6 +23,8 @@ const toMealType = (value) =>
     : "snack";
 
 const createAssistantMealIntakeKey = () => `assistant-meal-${crypto.randomUUID()}`;
+const createAssistantRecipeTemplateId = () => `assistant-recipe-${crypto.randomUUID()}`;
+const CUSTOM_RECIPE_PREFIX = "Recipe: ";
 
 const toWeightKg = (value) => {
   const weight = Number(value);
@@ -296,6 +298,106 @@ const buildReportFocus = ({ mealCount, water, weight, symptoms }) => {
   return focus.slice(0, 3);
 };
 
+const splitRecipeIngredientQueries = (text) =>
+  normalizeSearchQuery(text)
+    .replace(/\s+(?:и|та|і|and|plus|with|з|с)\s+/giu, ",")
+    .split(/[,/]+/u)
+    .map((item) => normalizeSearchQuery(item))
+    .filter((item) => item.length >= 2)
+    .slice(0, 5);
+
+const getProductName = (product) =>
+  [product?.brand, product?.name]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .trim() || "Product";
+
+const inferRecipeQuantity = (product) => {
+  const unit = product?.unit === "ml" ? "ml" : product?.unit === "piece" ? "piece" : "g";
+  const text = `${product?.name ?? ""} ${product?.category ?? ""}`.toLowerCase();
+
+  if (unit === "piece") return 1;
+  if (unit === "ml") return 250;
+  if (/rice|pasta|греч|buckwheat|oats|овсян|рис|макарон|картоф|potato/u.test(text)) return 120;
+  if (/yogurt|йогурт|twar|сир|cheese|curd/u.test(text)) return 150;
+  if (/banana|apple|яблок|банан|fruit|фрукт/u.test(text)) return 100;
+  if (/tomato|cucumber|salad|lettuce|овощ|овоч|vegetable|капуст/u.test(text)) return 120;
+  if (/oil|масл|олія|butter/u.test(text)) return 10;
+  if (/nuts|almond|орех|горіх/u.test(text)) return 20;
+
+  return 150;
+};
+
+const normalizeRecipeProduct = (product) => ({
+  id: String(product?.id ?? `recipe-product-${crypto.randomUUID()}`),
+  name: String(product?.name ?? "Product").trim().slice(0, 160) || "Product",
+  unit: product?.unit === "ml" || product?.unit === "piece" ? product.unit : "g",
+  source: ["USDA", "OpenFoodFacts", "Manual", "Recipe"].includes(product?.source)
+    ? product.source
+    : "Manual",
+  nutrients: product?.nutrients ?? {},
+  brand: product?.brand,
+  barcode: product?.barcode,
+  category: product?.category,
+  imageUrl: product?.imageUrl,
+  status: product?.status,
+  facts: product?.facts,
+});
+
+const createRecipeTemplate = ({ title, mealType, items, now }) => ({
+  id: createAssistantRecipeTemplateId(),
+  name: `${CUSTOM_RECIPE_PREFIX}${title}`,
+  mealType: toMealType(mealType),
+  items: items.map((item) => ({
+    product: normalizeRecipeProduct(item.product),
+    quantity: Math.max(Number(item.quantity) || inferRecipeQuantity(item.product), 1),
+  })),
+  createdAt: now.toISOString(),
+});
+
+const getSnapshotRecipeItems = (snapshot, { fromFridge }) => {
+  const fridgeItems = Array.isArray(snapshot?.fridge?.items) ? snapshot.fridge.items : [];
+  const savedProducts = Array.isArray(snapshot?.meal?.savedProducts)
+    ? snapshot.meal.savedProducts
+    : [];
+  const recentProducts = Array.isArray(snapshot?.meal?.recentProducts)
+    ? snapshot.meal.recentProducts
+    : [];
+
+  if (fridgeItems.length > 0 || fromFridge) {
+    return fridgeItems
+      .filter((item) => item?.product)
+      .map((item) => ({
+        product: item.product,
+        quantity: Math.max(Number(item.quantity) || inferRecipeQuantity(item.product), 1),
+      }))
+      .slice(0, 5);
+  }
+
+  return [...savedProducts, ...recentProducts]
+    .filter(Boolean)
+    .slice(0, 5)
+    .map((product) => ({
+      product,
+      quantity: inferRecipeQuantity(product),
+    }));
+};
+
+const buildRecipeTitle = (items, mealType) => {
+  const names = items
+    .slice(0, 3)
+    .map((item) => getProductName(item.product).replace(/\s+/g, " "))
+    .filter(Boolean);
+
+  return `${mealType === "breakfast" ? "Breakfast" : mealType === "dinner" ? "Dinner" : mealType === "lunch" ? "Lunch" : "Smart"} recipe: ${names.join(" + ") || "daily ingredients"}`.slice(0, 120);
+};
+
+const findConfirmedTemplate = (mealState, templateId) =>
+  Array.isArray(mealState?.templates)
+    ? mealState.templates.find((template) => template?.id === templateId)
+    : null;
+
 const getLatestWeightEntry = (profile = {}) =>
   Array.isArray(profile.weightHistory) && profile.weightHistory.length > 0
     ? sortByIsoDateDesc(profile.weightHistory, "date")[0]
@@ -545,6 +647,90 @@ export const createAgentTools = ({
       ok: true,
       type: "favorite_saved",
       product: confirmedProduct,
+    };
+  };
+
+  const createRecipe = async (user, { text = "", mealType = "snack", fromFridge = false } = {}) => {
+    if (!stateService?.addMealTemplate || !stateService?.getMealState) {
+      return { ok: false, code: "RECIPE_TOOL_UNAVAILABLE" };
+    }
+
+    const ingredientQueries = splitRecipeIngredientQueries(text);
+    let items = [];
+    let source = "snapshot";
+
+    if (ingredientQueries.length > 0) {
+      if (!platformService?.listVisibleCatalogProducts) {
+        return { ok: false, code: "PRODUCT_SEARCH_TOOL_UNAVAILABLE" };
+      }
+
+      const results = [];
+
+      for (const query of ingredientQueries) {
+        const products = await platformService.listVisibleCatalogProducts(user, {
+          search: query,
+          limit: 3,
+        });
+        const product = Array.isArray(products) ? products[0] : null;
+
+        if (product) {
+          results.push({
+            product,
+            quantity: inferRecipeQuantity(product),
+          });
+        }
+      }
+
+      items = results;
+      source = "catalog";
+    }
+
+    if (items.length === 0) {
+      if (!stateService?.getSnapshot) {
+        return { ok: false, code: "RECIPE_CONTEXT_UNAVAILABLE" };
+      }
+
+      const snapshot = await stateService.getSnapshot(user);
+      items = getSnapshotRecipeItems(snapshot, { fromFridge });
+    }
+
+    if (items.length === 0) {
+      return { ok: false, code: "RECIPE_INGREDIENTS_NOT_FOUND" };
+    }
+
+    const normalizedMealType = toMealType(mealType);
+    const template = createRecipeTemplate({
+      title: buildRecipeTitle(items, normalizedMealType),
+      mealType: normalizedMealType,
+      items: items.slice(0, 5),
+      now: now(),
+    });
+    const nutrients = calculateMealTotalNutrients(
+      template.items.map((item, index) => ({
+        id: `${template.id}-${index}`,
+        product: item.product,
+        quantity: item.quantity,
+        mealType: template.mealType,
+        eatenAt: template.createdAt,
+        origin: "recipe",
+      }))
+    );
+
+    await stateService.addMealTemplate(user, template, { source: "assistant-agent" });
+
+    const confirmedMealState = await stateService.getMealState(user);
+    const confirmedTemplate = findConfirmedTemplate(confirmedMealState, template.id);
+
+    if (!confirmedTemplate) {
+      return { ok: false, code: "RECIPE_NOT_CONFIRMED" };
+    }
+
+    return {
+      ok: true,
+      type: "recipe_created",
+      template: confirmedTemplate,
+      source,
+      nutrients,
     };
   };
 
@@ -904,6 +1090,7 @@ export const createAgentTools = ({
     addWater,
     addMeal,
     saveFavorite,
+    createRecipe,
     logWeight,
     logSymptom,
     searchProducts,

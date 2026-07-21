@@ -89,6 +89,15 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "recipe_created") {
+    return {
+      userId: user?.id,
+      habits: ["creates reusable recipes through assistant"],
+      motivationTriggers: ["fast repeat meal planning"],
+      lastMood: "organized",
+    };
+  }
+
   if (toolResult.type === "weight_logged") {
     return {
       userId: user?.id,

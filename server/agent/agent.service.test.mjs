@@ -19,6 +19,18 @@ const chickenProduct = {
     carbs: 0,
   },
 };
+const riceProduct = {
+  id: "product-rice",
+  name: "Rice",
+  unit: "g",
+  source: "OpenFoodFacts",
+  nutrients: {
+    calories: 130,
+    protein: 2.7,
+    fat: 0.3,
+    carbs: 28,
+  },
+};
 
 describe("createAssistantAgentService", () => {
   it("adds water through the state tool and updates memory", async () => {
@@ -584,6 +596,132 @@ describe("createAssistantAgentService", () => {
         habits: expect.arrayContaining(["asks assistant for progress reports"]),
       })
     );
+  });
+
+  it("creates reusable recipes through confirmed meal templates", async () => {
+    let savedTemplate = null;
+    const stateService = {
+      addMealTemplate: vi.fn(async (_user, template) => {
+        savedTemplate = template;
+        return {
+          items: [],
+          templates: [template],
+          savedProducts: [],
+          recentProducts: [],
+        };
+      }),
+      getMealState: vi.fn(async () => ({
+        items: [],
+        templates: savedTemplate ? [savedTemplate] : [],
+        savedProducts: [],
+        recentProducts: [],
+      })),
+    };
+    const platformService = {
+      listVisibleCatalogProducts: vi
+        .fn()
+        .mockResolvedValueOnce([chickenProduct])
+        .mockResolvedValueOnce([riceProduct]),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      platformService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "создай рецепт с chicken breast и rice на обед",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_recipe", entities: { mealType: "lunch" } },
+      actions: [{ id: "create_recipe", ok: true, resultType: "recipe_created" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["day_status", "search_product", "coach_focus"],
+    });
+    expect(result.text).toContain("збережено у ваших рецептах");
+    expect(result.text).toContain("Chicken breast");
+    expect(result.text).toContain("Rice");
+    expect(result.text).toContain("окремим підтвердженням");
+    expect(platformService.listVisibleCatalogProducts).toHaveBeenCalledWith(user, {
+      search: "chicken breast",
+      limit: 3,
+    });
+    expect(platformService.listVisibleCatalogProducts).toHaveBeenCalledWith(user, {
+      search: "rice",
+      limit: 3,
+    });
+    expect(stateService.addMealTemplate).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({
+        id: expect.stringMatching(/^assistant-recipe-/),
+        name: expect.stringMatching(/^Recipe: Lunch recipe:/),
+        mealType: "lunch",
+        items: [
+          expect.objectContaining({
+            product: expect.objectContaining({ id: chickenProduct.id }),
+          }),
+          expect.objectContaining({
+            product: expect.objectContaining({ id: riceProduct.id }),
+          }),
+        ],
+      }),
+      { source: "assistant-agent" }
+    );
+    expect(stateService.getMealState).toHaveBeenCalledWith(user);
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["creates reusable recipes through assistant"]),
+      })
+    );
+  });
+
+  it("does not claim recipe success without backend template restore confirmation", async () => {
+    const stateService = {
+      addMealTemplate: vi.fn(async () => ({
+        items: [],
+        templates: [],
+        savedProducts: [],
+        recentProducts: [],
+      })),
+      getMealState: vi.fn(async () => ({
+        items: [],
+        templates: [],
+        savedProducts: [],
+        recentProducts: [],
+      })),
+    };
+    const platformService = {
+      listVisibleCatalogProducts: vi
+        .fn()
+        .mockResolvedValueOnce([chickenProduct])
+        .mockResolvedValueOnce([riceProduct]),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      platformService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "создай рецепт с chicken breast и rice",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_recipe" },
+      actions: [{ id: "create_recipe", ok: false, code: "RECIPE_NOT_CONFIRMED" }],
+    });
+    expect(result.text).toContain("не зміг підтвердити");
+    expect(result.text).not.toContain("збережено у ваших рецептах");
   });
 
   it("creates medication reminders through the medication tool", async () => {

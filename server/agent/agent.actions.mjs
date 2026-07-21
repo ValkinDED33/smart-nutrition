@@ -92,6 +92,15 @@ const copy = {
       "Я зрозумів продукт, але зараз не зміг підтвердити збереження в хмарі Smart Nutrition.",
     favoriteSaved: (name) => `Готово. ${name} збережено у ваших швидких продуктах.`,
     favoriteHint: "Ви знайдете його у збережених продуктах для швидкого додавання.",
+    recipeFailed: [
+      "Я зрозумів рецепт, але зараз не зміг підтвердити збереження в Smart Nutrition.",
+      "Додайте продукти через пошук або холодильник і спробуйте ще раз — я не покажу рецепт як збережений без підтвердження хмари.",
+    ],
+    recipeCreated: (name) => `Готово. ${name} збережено у ваших рецептах.`,
+    recipeIngredients: (items) => `Склад: ${items}.`,
+    recipeNutrients: (calories, protein, fat, carbs) =>
+      `Орієнтовно на рецепт: ${calories} ккал, білок ${protein} г, жири ${fat} г, вуглеводи ${carbs} г.`,
+    recipeHint: "Коли захочете, застосуйте рецепт у щоденник — тоді їжа буде додана окремим підтвердженням.",
     mealAdded: (title, quantity, unit) => `Готово 🥗 Додав ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Прийом: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -244,6 +253,15 @@ const copy = {
       "Rozumiem produkt, ale teraz nie mogę potwierdzić zapisu w chmurze Smart Nutrition.",
     favoriteSaved: (name) => `Gotowe. ${name} zapisano w szybkich produktach.`,
     favoriteHint: "Znajdziesz go w zapisanych produktach do szybkiego dodania.",
+    recipeFailed: [
+      "Rozumiem przepis, ale nie mogę teraz potwierdzić zapisu w Smart Nutrition.",
+      "Dodaj produkty przez wyszukiwanie albo lodówkę i spróbuj ponownie — nie pokażę przepisu jako zapisanego bez potwierdzenia w chmurze.",
+    ],
+    recipeCreated: (name) => `Gotowe. ${name} zapisano w Twoich przepisach.`,
+    recipeIngredients: (items) => `Skład: ${items}.`,
+    recipeNutrients: (calories, protein, fat, carbs) =>
+      `Szacunkowo na przepis: ${calories} kcal, białko ${protein} g, tłuszcz ${fat} g, węglowodany ${carbs} g.`,
+    recipeHint: "Gdy chcesz, zastosuj przepis w dzienniku — jedzenie zostanie dodane osobnym potwierdzeniem.",
     mealAdded: (title, quantity, unit) => `Gotowe 🥗 Dodałem ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Posiłek: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -396,6 +414,15 @@ const copy = {
       "I understood the product, but I could not confirm saving it in Smart Nutrition cloud right now.",
     favoriteSaved: (name) => `Done. ${name} is saved to your quick products.`,
     favoriteHint: "You will find it in saved products for fast meal logging.",
+    recipeFailed: [
+      "I understood the recipe, but I could not confirm saving it in Smart Nutrition right now.",
+      "Add products through search or the fridge and try again — I will not show the recipe as saved without cloud confirmation.",
+    ],
+    recipeCreated: (name) => `Done. ${name} is saved to your recipes.`,
+    recipeIngredients: (items) => `Ingredients: ${items}.`,
+    recipeNutrients: (calories, protein, fat, carbs) =>
+      `Estimated for the recipe: ${calories} kcal, protein ${protein} g, fat ${fat} g, carbs ${carbs} g.`,
+    recipeHint: "When you want, apply the recipe to the diary — food logging will be a separate confirmed action.",
     mealAdded: (title, quantity, unit) => `Done 🥗 Added ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Meal: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -567,6 +594,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.foodFailed;
     }
 
+    if (intent.intent === "create_recipe") {
+      return text.recipeFailed.join("\n");
+    }
+
     if (intent.intent === "log_weight") {
       return text.weightFailed.join("\n");
     }
@@ -662,6 +693,38 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       text.favoriteSaved(getProductTitle(product, language)),
       text.favoriteHint,
     ].join("\n");
+  }
+
+  if (toolResult.type === "recipe_created") {
+    const template = toolResult.template ?? {};
+    const nutrients = toolResult.nutrients ?? {};
+    const recipeName = String(template.name ?? "")
+      .replace(/^Recipe:\s*/i, "")
+      .trim() || text.productFallback;
+    const ingredients = Array.isArray(template.items)
+      ? template.items
+          .slice(0, 5)
+          .map((item) =>
+            `${getProductTitle(item.product, language)} ${formatNumber(item.quantity)} ${
+              item.product?.unit ?? "g"
+            }`
+          )
+          .join(", ")
+      : "";
+
+    return [
+      text.recipeCreated(recipeName),
+      ingredients ? text.recipeIngredients(ingredients) : null,
+      text.recipeNutrients(
+        formatNumber(nutrients.calories),
+        formatNumber(nutrients.protein, 1),
+        formatNumber(nutrients.fat, 1),
+        formatNumber(nutrients.carbs, 1)
+      ),
+      text.recipeHint,
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   if (toolResult.type === "weight_logged") {

@@ -41,6 +41,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["search_product", "coach_focus"];
   }
 
+  if (intent === "create_recipe") {
+    return ["day_status", "search_product", "coach_focus"];
+  }
+
   if (intent === "log_weight") {
     return ["day_status", "coach_focus"];
   }
@@ -135,6 +139,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "save_favorite") {
       return tools.saveFavorite(user, intent.entities);
+    }
+
+    if (intent.intent === "create_recipe") {
+      return tools.createRecipe(user, intent.entities);
     }
 
     if (intent.intent === "log_weight") {

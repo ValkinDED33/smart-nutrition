@@ -84,6 +84,24 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects recipe creation requests before generic meal actions", () => {
+    expect(detectAgentIntent("создай рецепт с chicken breast и rice на обед")).toMatchObject({
+      intent: "create_recipe",
+      entities: {
+        text: "chicken breast и rice",
+        mealType: "lunch",
+        fromFridge: false,
+      },
+    });
+    expect(detectAgentIntent("придумай рецепт из холодильника")).toMatchObject({
+      intent: "create_recipe",
+      entities: {
+        text: "",
+        fromFridge: true,
+      },
+    });
+  });
+
   it("detects water reminder requests before treating the text as water logging", () => {
     expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
       intent: "create_water_reminder",

@@ -346,6 +346,26 @@ addCheck(
 );
 
 addCheck(
+  "assistant recipe creation uses canonical meal templates",
+  assistantAgentIntentsSource.includes('intent: "create_recipe"') &&
+    assistantAgentIntentsSource.includes("RECIPE_WORD_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "create_recipe"') &&
+    assistantAgentServiceSource.includes("tools.createRecipe(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const createRecipe = async") &&
+    assistantAgentToolsSource.includes("stateService.addMealTemplate(user, template") &&
+    assistantAgentToolsSource.includes("const confirmedMealState = await stateService.getMealState(user)") &&
+    assistantAgentToolsSource.includes("findConfirmedTemplate(confirmedMealState, template.id)") &&
+    assistantAgentToolsSource.includes('return { ok: false, code: "RECIPE_NOT_CONFIRMED" }') &&
+    assistantAgentActionsSource.includes("recipeCreated") &&
+    assistantAgentActionsSource.includes("recipeFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "recipe_created"') &&
+    assistantAgentMemorySource.includes("creates reusable recipes through assistant") &&
+    assistantPromptStackSource.includes("createRecipe") &&
+    !assistantPromptStackSource.includes("Future tools may include createRecipe"),
+  "AI recipe creation must save canonical meal templates, verify backend restore, and avoid prompt-only recipe success or a second recipe system."
+);
+
+addCheck(
   "assistant weight tool uses backend-confirmed profile state",
   assistantAgentIntentsSource.includes('intent: "log_weight"') &&
     assistantAgentServiceSource.includes('intent.intent === "log_weight"') &&
