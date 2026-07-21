@@ -133,6 +133,7 @@ const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
 const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
+const pwaUpdateBannerSource = readSource("src/shared/components/PwaUpdateBanner.tsx");
 const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
 const errorRecoverySource = readSource("src/shared/lib/errorRecovery.ts");
 const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReporting.ts");
@@ -1213,6 +1214,15 @@ addCheck(
     registerServiceWorkerSource.includes("reloadAfterUpdate()") &&
     registerServiceWorkerSource.includes("window.setTimeout"),
   "PWA updates must show an explicit update path and still reload if controlling does not arrive quickly."
+);
+
+addCheck(
+  "pwa update banner explains user benefit without deployment jargon",
+  pwaUpdateBannerSource.includes("останні виправлення") &&
+    pwaUpdateBannerSource.includes("najnowszych poprawek") &&
+    pwaUpdateBannerSource.includes("latest fixes") &&
+    !/stale cache|deployment|деплою|wdrożeniu/i.test(pwaUpdateBannerSource),
+  "PWA update prompts must explain fixes and stability to regular users, not cache/deployment internals."
 );
 
 addCheck(

@@ -96,4 +96,13 @@ describe("profile feature warehouse contract", () => {
     expect(userFacingSources).not.toContain("zarządzany przez serwer");
     expect(userFacingSources).not.toContain("verified by the server");
   });
+
+  it("keeps PWA update recovery copy user-facing", () => {
+    const source = readSource("src/shared/components/PwaUpdateBanner.tsx");
+
+    expect(source).toContain("останні виправлення");
+    expect(source).toContain("najnowszych poprawek");
+    expect(source).toContain("latest fixes");
+    expect(source).not.toMatch(/stale cache|deployment|деплою|wdrożeniu/i);
+  });
 });

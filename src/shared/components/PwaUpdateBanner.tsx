@@ -10,19 +10,19 @@ import {
 const updateCopy = {
   uk: {
     message:
-      "Доступна нова версія Smart Nutrition. Оновіть застосунок, щоб уникнути старого кешу після деплою.",
+      "Доступна нова версія Smart Nutrition. Оновіть застосунок, щоб отримати останні виправлення та стабільну роботу.",
     action: "Оновити",
     applying: "Оновлюємо...",
   },
   pl: {
     message:
-      "Dostępna jest nowa wersja Smart Nutrition. Zaktualizuj aplikację, aby uniknąć starego cache po wdrożeniu.",
+      "Dostępna jest nowa wersja Smart Nutrition. Zaktualizuj aplikację, aby korzystać z najnowszych poprawek i stabilnego działania.",
     action: "Zaktualizuj",
     applying: "Aktualizuję...",
   },
   en: {
     message:
-      "A new Smart Nutrition version is available. Update the app to avoid stale cache after deployment.",
+      "A new Smart Nutrition version is available. Update the app for the latest fixes and a stable experience.",
     action: "Update",
     applying: "Updating...",
   },
