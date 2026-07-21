@@ -10,7 +10,7 @@ const bannerCopy = {
   uk: {
     offline: "Немає з'єднання з інтернетом. Підключіться знову, щоб продовжити.",
     backendDown:
-      "Хмарний API прокидається або тимчасово недоступний. Ми перевіримо ще раз автоматично.",
+      "Хмарний сервіс прокидається або тимчасово недоступний. Ми перевіримо ще раз автоматично.",
     retry: "Перевірити ще раз",
     checking: "Перевіряємо...",
   },
@@ -18,14 +18,14 @@ const bannerCopy = {
     offline:
       "Brak połączenia z internetem. Połącz się ponownie, aby kontynuować.",
     backendDown:
-      "Cloud API wybudza się albo jest chwilowo niedostępne. Sprawdzimy ponownie automatycznie.",
+      "Usługa w chmurze wybudza się albo jest chwilowo niedostępna. Sprawdzimy ponownie automatycznie.",
     retry: "Sprawdź ponownie",
     checking: "Sprawdzam...",
   },
   en: {
     offline: "No internet connection. Reconnect to continue.",
     backendDown:
-      "Cloud API is waking up or temporarily unavailable. We will retry automatically.",
+      "The cloud service is waking up or temporarily unavailable. We will retry automatically.",
     retry: "Check again",
     checking: "Checking...",
   },

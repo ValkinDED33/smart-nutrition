@@ -59,4 +59,26 @@ describe("profile feature warehouse contract", () => {
 
     expect(source).not.toMatch(/Flo-level|flo app/i);
   });
+
+  it("keeps regular cloud recovery and account copy free from infrastructure jargon", () => {
+    const userFacingSources = [
+      "src/shared/components/BackendOfflineBanner.tsx",
+      "src/shared/components/SessionRestoreFallback.tsx",
+      "src/features/profile/PremiumAccessCard.tsx",
+      "src/features/profile/accountDataCardCopy.ts",
+    ]
+      .map(readSource)
+      .join("\n");
+
+    expect(userFacingSources).toContain("Хмарний сервіс");
+    expect(userFacingSources).toContain("Usługa w chmurze");
+    expect(userFacingSources).toContain("cloud service");
+    expect(userFacingSources).toContain("protected sync");
+    expect(userFacingSources).not.toContain("Cloud API");
+    expect(userFacingSources).not.toContain("cloud server");
+    expect(userFacingSources).not.toContain("Backend прокидається");
+    expect(userFacingSources).not.toContain("Доступ керується сервером");
+    expect(userFacingSources).not.toContain("zarządzany przez serwer");
+    expect(userFacingSources).not.toContain("verified by the server");
+  });
 });

@@ -8,10 +8,10 @@ const restoreCopy = {
     title: "Відновлюю вхід",
     checkingTitle: "Повертаю вашу сесію",
     body:
-      "Схоже, хмарний сервер прокидається. Я пробую повернути вашу сесію без повторної реєстрації.",
+      "Схоже, хмарний сервіс прокидається. Я пробую повернути вашу сесію без повторної реєстрації.",
     checkingBody:
       "Безпечно перевіряю cookie-сесію та хмарні дані. Приватні дії відкриються одразу після підтвердження входу.",
-    status: "Backend прокидається · сесія перевіряється",
+    status: "Хмарний сервіс прокидається · сесія перевіряється",
     retry: "Спробувати ще раз",
     forget: "Увійти вручну",
   },
@@ -19,10 +19,10 @@ const restoreCopy = {
     title: "Przywracam logowanie",
     checkingTitle: "Przywracam Twoją sesję",
     body:
-      "Wygląda na to, że serwer w chmurze się budzi. Próbuję przywrócić sesję bez ponownej rejestracji.",
+      "Wygląda na to, że usługa w chmurze się budzi. Próbuję przywrócić sesję bez ponownej rejestracji.",
     checkingBody:
       "Bezpiecznie sprawdzam sesję cookie i dane w chmurze. Prywatne akcje odblokują się po potwierdzeniu logowania.",
-    status: "Backend się budzi · sesja jest sprawdzana",
+    status: "Usługa w chmurze się budzi · sesja jest sprawdzana",
     retry: "Spróbuj ponownie",
     forget: "Zaloguj ręcznie",
   },
@@ -30,10 +30,10 @@ const restoreCopy = {
     title: "Restoring your session",
     checkingTitle: "Bringing your session back",
     body:
-      "The cloud server looks like it is waking up. I am trying to bring your session back without registration.",
+      "The cloud service looks like it is waking up. I am trying to bring your session back without registration.",
     checkingBody:
       "Safely checking your cookie session and cloud data. Private actions unlock as soon as sign-in is confirmed.",
-    status: "Backend waking up · session check in progress",
+    status: "Cloud service waking up · session check in progress",
     retry: "Try again",
     forget: "Log in manually",
   },

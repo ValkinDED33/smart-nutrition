@@ -47,7 +47,7 @@ const premiumCopy = {
     renews: "Наступне оновлення",
     trialEnds: "Trial до",
     unavailable:
-      "Доступ керується сервером. Якщо тариф зміниться, статус оновиться автоматично після синхронізації акаунта.",
+      "Доступ оновлюється через захищену синхронізацію. Якщо тариф зміниться, статус підтягнеться автоматично після синхронізації акаунта.",
     current: "Current",
   },
   pl: {
@@ -57,7 +57,7 @@ const premiumCopy = {
     renews: "Odnowienie",
     trialEnds: "Trial do",
     unavailable:
-      "Dostęp jest zarządzany przez serwer. Po zmianie planu status odświeży się automatycznie po synchronizacji konta.",
+      "Dostęp odświeża się przez chronioną synchronizację. Po zmianie planu status zaktualizuje się automatycznie po synchronizacji konta.",
     current: "Current",
   },
   en: {
@@ -67,7 +67,7 @@ const premiumCopy = {
     renews: "Next renewal",
     trialEnds: "Trial until",
     unavailable:
-      "Access is managed by the server. When the plan changes, status updates automatically after account sync.",
+      "Access updates through protected sync. When the plan changes, status updates automatically after account sync.",
     current: "Current",
   },
 } as const;

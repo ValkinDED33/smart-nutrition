@@ -80,11 +80,16 @@ const womenHealthOverviewCardSource = readSource(
 const syncFeedbackAlertSource = readSource("src/widgets/SyncFeedbackAlert.tsx");
 const syncStatusChipSource = readSource("src/widgets/SyncStatusChip.tsx");
 const syncMessagingSource = readSource("src/shared/lib/syncMessaging.ts");
+const backendOfflineBannerSource = readSource("src/shared/components/BackendOfflineBanner.tsx");
+const sessionRestoreFallbackSource = readSource(
+  "src/shared/components/SessionRestoreFallback.tsx"
+);
 const cloudSyncStatusCardSource = readSource(
   "src/features/profile/CloudSyncStatusCard.tsx"
 );
 const accountDataCardSource = readSource("src/features/profile/AccountDataCard.tsx");
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
+const premiumAccessCardSource = readSource("src/features/profile/PremiumAccessCard.tsx");
 const reminderManagementCardSource = readSource(
   "src/features/profile/ReminderManagementCard.tsx"
 );
@@ -186,6 +191,34 @@ addCheck(
     !/Water saved, but companion progress could not sync/.test(waterTrackerSource) &&
     !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource),
   "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English copy."
+);
+
+addCheck(
+  "regular cloud recovery copy hides infrastructure jargon",
+  [
+    backendOfflineBannerSource,
+    sessionRestoreFallbackSource,
+    premiumAccessCardSource,
+    accountDataCardCopySource,
+  ].every(
+    (source) =>
+      source.includes("Хмарний сервіс") ||
+      source.includes("хмарною перевіркою") ||
+      source.includes("захищену синхронізацію")
+  ) &&
+    backendOfflineBannerSource.includes("Usługa w chmurze") &&
+    sessionRestoreFallbackSource.includes("Cloud service waking up") &&
+    premiumAccessCardSource.includes("protected sync") &&
+    accountDataCardCopySource.includes("cloud verification") &&
+    !/Cloud API|cloud server|Backend прокидається|Доступ керується сервером|zarządzany przez serwer|verified by the server/.test(
+      [
+        backendOfflineBannerSource,
+        sessionRestoreFallbackSource,
+        premiumAccessCardSource,
+        accountDataCardCopySource,
+      ].join("\n")
+    ),
+  "Regular users may see cloud recovery and account status, but the visible copy must stay product-language and must not expose API/server/backend jargon."
 );
 
 addCheck(
