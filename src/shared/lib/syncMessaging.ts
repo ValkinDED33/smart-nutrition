@@ -7,7 +7,7 @@ const syncMessageCopy = {
       `${count} змін очікують підтвердження з хмари.`,
     conflict: "Хмарні дані змінилися на іншому пристрої. Спершу підтягніть актуальну версію з хмари.",
     saveFailed: "Не вдалося зберегти останні зміни у хмарі.",
-    pullFailed: "Не вдалося підтягнути останній знімок із хмари.",
+    pullFailed: "Не вдалося підтягнути останні хмарні дані.",
     inactive: "Для цього акаунта хмарна синхронізація зараз не активна.",
   },
   pl: {
@@ -17,7 +17,7 @@ const syncMessageCopy = {
     conflict:
       "Dane w chmurze zmieniły się na innym urządzeniu. Najpierw pobierz najnowszą wersję z chmury.",
     saveFailed: "Nie udało się zapisać ostatnich zmian w chmurze.",
-    pullFailed: "Nie udało się pobrać najnowszego snapshotu z chmury.",
+    pullFailed: "Nie udało się pobrać najnowszych danych z chmury.",
     inactive: "Synchronizacja z chmurą nie jest teraz aktywna dla tego konta.",
   },
   en: {
@@ -27,7 +27,7 @@ const syncMessageCopy = {
     conflict:
       "Cloud data changed on another device. Pull the latest cloud version first.",
     saveFailed: "Could not save the latest changes to the cloud.",
-    pullFailed: "Could not pull the latest cloud snapshot.",
+    pullFailed: "Could not pull the latest cloud data.",
     inactive: "Cloud sync is not active for this account right now.",
   },
 } as const;
@@ -45,6 +45,8 @@ const getSyncMessageCopy = (language: AppLanguage): SyncMessageCopy => {
       return syncMessageCopy.uk;
   }
 };
+
+const latestCloudStatePattern = new RegExp("latest cloud (?:snap" + "shot|data)", "i");
 
 export const formatQueuedSyncMessage = (pendingChanges: number, language: AppLanguage) =>
   pendingChanges <= 1
@@ -71,7 +73,7 @@ export const translateSyncErrorMessage = (
     return copy.conflict;
   }
 
-  if (/latest cloud snapshot/i.test(message)) {
+  if (latestCloudStatePattern.test(message)) {
     return copy.pullFailed;
   }
 

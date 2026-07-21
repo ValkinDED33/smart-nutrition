@@ -49,7 +49,7 @@ export const pl = {
   "auth.backToLogin": "Wróć do logowania",
   "auth.forgotGenericError": "Nie udało się przygotować linku resetu.",
   "auth.resetDeliveryUnavailable":
-    "Na serwerze nie skonfigurowano jeszcze wysyłki email dla resetu hasła.",
+    "Reset hasła przez email jest chwilowo niedostępny. Spróbuj później.",
   "auth.resetTitle": "Nowe hasło",
   "auth.resetSubtitle":
     "Ustaw nowe hasło. Link resetu jest jednorazowy i ma ograniczony czas ważności.",

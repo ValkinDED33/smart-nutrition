@@ -26,10 +26,10 @@ const syncStatusCopy = {
   uk: {
     title: "Статус хмарної синхронізації",
     subtitle:
-      "Перевіряйте, де зберігаються дані про харчування, і одразу повторюйте синхронізацію, якщо сервер не підтвердив останню зміну.",
-    remoteMode: "Хмарний API",
+      "Перевіряйте, чи останні зміни вже збережені в хмарі, і повторюйте синхронізацію одним натисканням.",
+    remoteMode: "Хмарний профіль",
     remoteInfo:
-      "Цей акаунт підключений до бекенда. Зміни профілю та прийомів їжі синхронізуються у фоні, а новіші хмарні знімки підтягуються автоматично.",
+      "Зміни профілю та прийомів їжі синхронізуються у фоні, а новіші хмарні дані підтягуються автоматично.",
     statusLabel: "Статус",
     lastSyncLabel: "Остання підтверджена синхронізація",
     syncingStatus: "Синхронізація триває",
@@ -51,10 +51,10 @@ const syncStatusCopy = {
   pl: {
     title: "Status synchronizacji",
     subtitle:
-      "Sprawdź, gdzie są zapisane dane o jedzeniu i od razu ponów synchronizację, jeśli serwer nie potwierdził ostatniej zmiany.",
-    remoteMode: "Chmura API",
+      "Sprawdź, czy ostatnie zmiany są już zapisane w chmurze, i ponów synchronizację jednym kliknięciem.",
+    remoteMode: "Profil w chmurze",
     remoteInfo:
-      "To konto jest połączone z backendem. Zmiany profilu i posiłków synchronizują się w tle, a nowsze snapshoty z chmury są pobierane automatycznie.",
+      "Zmiany profilu i posiłków synchronizują się w tle, a nowsze dane z chmury są pobierane automatycznie.",
     statusLabel: "Status",
     lastSyncLabel: "Ostatnia potwierdzona synchronizacja",
     syncingStatus: "Trwa synchronizacja",
@@ -76,10 +76,10 @@ const syncStatusCopy = {
   en: {
     title: "Cloud sync status",
     subtitle:
-      "Check where your nutrition data is saved and retry sync right away if the server has not confirmed the latest change.",
-    remoteMode: "Cloud API",
+      "Check whether the latest changes are already saved in the cloud and retry sync with one tap.",
+    remoteMode: "Cloud profile",
     remoteInfo:
-      "This account is connected to the backend. Profile and meal changes sync in the background, and newer cloud snapshots are pulled automatically.",
+      "Profile and meal changes sync in the background, and newer cloud data is pulled automatically.",
     statusLabel: "Status",
     lastSyncLabel: "Last confirmed sync",
     syncingStatus: "Syncing",

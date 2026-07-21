@@ -470,7 +470,8 @@ addCheck(
   polishedPolishSyncSources.includes("Synchronizacja z chmurą zakończona pomyślnie.") &&
     polishedPolishSyncSources.includes("Błąd synchronizacji") &&
     polishedPolishSyncSources.includes("Dane w chmurze zmieniły się na innym urządzeniu.") &&
-    polishedPolishSyncSources.includes("To konto jest połączone z backendem.") &&
+    polishedPolishSyncSources.includes("Profil w chmurze") &&
+    polishedPolishSyncSources.includes("Chroniona sesja") &&
     polishedPolishSyncSources.includes("Telegram odłączony.") &&
     polishedPolishSyncSources.includes("Nie udało się zapisać lodówki w chmurze.") &&
     !/\b(chmura zakonczona pomyslnie|Blad synchronizacji|czekaja na udana synchronizacje|zmienily sie|urzadzeniu|Nie udalo sie|Nie polaczono|Polaczono|Odlacz|Otworzylismy|lodowki)\b/.test(
@@ -544,6 +545,33 @@ addCheck(
       humanAuthPlatformCopySources
     ),
   "Registration, email delivery, catalog, and admin unavailable states must not expose API/backend setup instructions to regular users."
+);
+
+const humanProfileSyncCopySources = [
+  accountDataCardCopySource,
+  cloudSyncStatusCardSource,
+  syncMessagingSource,
+  sharedI18nUkSource,
+  sharedI18nPlSource,
+  sharedI18nEnSource,
+].join("\n");
+
+addCheck(
+  "profile account and sync UI hides infrastructure jargon from regular users",
+  humanProfileSyncCopySources.includes("Хмарний профіль") &&
+    humanProfileSyncCopySources.includes("Захищена сесія") &&
+    humanProfileSyncCopySources.includes("Дані профілю, харчування, води й налаштувань зберігаються в хмарі") &&
+    humanProfileSyncCopySources.includes("Profil w chmurze") &&
+    humanProfileSyncCopySources.includes("Chroniona sesja") &&
+    humanProfileSyncCopySources.includes("Dane profilu, jedzenia, wody i ustawień są przechowywane w chmurze") &&
+    humanProfileSyncCopySources.includes("Cloud profile") &&
+    humanProfileSyncCopySources.includes("Protected session") &&
+    humanProfileSyncCopySources.includes("profile, meals, water, and settings are stored in the cloud") &&
+    humanProfileSyncCopySources.includes("Password reset by email is temporarily unavailable") &&
+    !/Remote API account|Zdalne konto API|Віддалений API-акаунт|API-сесія|API session|access \+ refresh|snapshot|snapshots|connected to the backend|підключений до бекенда|połączone z backendem|serwerze nie skonfigurowano|server yet/.test(
+      humanProfileSyncCopySources
+    ),
+  "Regular profile/account/sync surfaces must present cloud profile and protected-session language, while infrastructure terms stay inside code and admin diagnostics."
 );
 
 addCheck(

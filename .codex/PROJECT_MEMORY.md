@@ -83,6 +83,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
 - Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
+- Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 
 ## Current Architecture
 
@@ -95,6 +96,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; do not imply full account synchronization.
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
+- Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
 - Product facts may explain obvious product micronutrient signals, such as iodine in seaweed/algae, only as guidance when the provider has no numeric value; do not calculate or persist fake micronutrient amounts.

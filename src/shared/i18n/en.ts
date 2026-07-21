@@ -74,7 +74,7 @@ export const en = {
   "auth.backToLogin": "Back to login",
   "auth.forgotGenericError": "Could not prepare the reset link.",
   "auth.resetDeliveryUnavailable":
-    "Email delivery for password reset is not configured on the server yet.",
+    "Password reset by email is temporarily unavailable. Try again later.",
   "auth.resetTitle": "New password",
   "auth.resetSubtitle":
     "Set a new password. The reset link is single-use and valid for a limited time.",
