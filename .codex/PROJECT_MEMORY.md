@@ -127,6 +127,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked food/scanner lazy-tool recovery copy so meal tools explain interrupted loading instead of exposing old chunk/cache internals.
 - Reworked the crash screen diagnostics so ordinary users see a short recovery code and saved-details message instead of raw stale-build/error-name/error-message internals.
 - Reworked assistant settings so ordinary users see assistant readiness/product-language status while provider, model, priority, and fallback-route diagnostics stay behind admin-center role access.
+- Hardened `/api/ai/status` so ordinary authenticated users receive assistant readiness only while provider models, base URLs, raw provider errors, and provider lists stay role-gated for helper/moderator/admin operations.
 - Reworked assistant unavailable/fallback copy so regular users see limited-helper/live-dialog recovery language instead of Cloud AI, production AI, or local-context internals.
 - Hardened shared sync error messaging so unknown backend/provider exceptions fall back to localized retry guidance instead of leaking raw technical text into regular sync chips or profile sync panels.
 - Hardened shared meal action feedback so food add/edit/delete/repeat/template/product failures remain retryable without leaking raw backend/provider exception text to regular users.
@@ -156,6 +157,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
 - Regular assistant settings must present assistant readiness and useful product behavior; provider names, model ids, priority order, and fallback-route diagnostics belong behind owner/admin/moderator/helper access gates.
+- Assistant runtime status APIs must enforce the same role boundary as the UI: ordinary users may receive readiness, provider count, memory limit, and cooldown timing, but never provider base URLs, model identifiers, provider error text, or provider lists.
 - Regular assistant unavailable/fallback states must describe what the helper can still do and how recovery happens; Cloud AI, production AI, provider, and local-context terminology belongs in diagnostics, not everyday assistant copy.
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
 - AI-created favorite product saves must use canonical meal `savedProducts`, verify the saved product after backend restore, and must not create a separate favorite/product library.
@@ -255,6 +257,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.
 - Profile mutations must use unified cloud actions, not isolated local state.
 - Regular account settings must not fetch or display backup restore points, runtime provider/session chips, or diagnostic details unless the profile role can access the admin center.
+- Regular assistant status consumers must not depend on provider diagnostics from `/api/ai/status`; the backend returns a sanitized readiness shape unless the authenticated role can access assistant operations diagnostics.
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.

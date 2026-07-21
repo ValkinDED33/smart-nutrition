@@ -142,6 +142,7 @@ const serverConfigSource = readSource("server/config.mjs");
 const serverConfigTestSource = readSource("server/config.test.mjs");
 const serverIndexSource = readSource("server/index.mjs");
 const serverErrorHandlerSource = readSource("server/runtime/errorHandler.mjs");
+const aiControllerSource = readSource("server/controllers/ai.controller.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
@@ -1505,6 +1506,13 @@ addCheck(
 addCheck(
   "regular assistant settings hide AI provider diagnostics",
   aiCompanionPageSource.includes("canAccessAdminCenter(user?.role)") &&
+    aiControllerSource.includes("canSeeAssistantDiagnostics") &&
+    aiControllerSource.includes("toPublicRuntimeStatus") &&
+    aiControllerSource.includes("providers: []") &&
+    aiControllerSource.includes("model: null") &&
+    aiControllerSource.includes("baseUrl: null") &&
+    aiControllerSource.includes("canSeeAssistantDiagnostics(auth?.user)") &&
+    !aiControllerSource.includes("sendJson(response, 200, aiService.getRuntimeStatus())") &&
     aiCompanionPageSource.includes("const canSeeAssistantOperations") &&
     aiCompanionPageSource.includes(
       "canSeeAssistantOperations ? copy.operationsTitle : copy.readinessTitle"
@@ -1516,7 +1524,7 @@ addCheck(
     !/Below you can see active providers|Niżej widać aktywnych providerów|Нижче видно активних провайдерів/.test(
       aiCompanionPageSource
     ),
-  "Regular assistant settings must show product readiness language; provider/model/fallback diagnostics belong behind admin-center role access."
+  "Regular assistant settings and /api/ai/status must show product readiness language for regular users; provider/model/fallback diagnostics belong behind admin-center role access."
 );
 
 const regularAssistantCopySources = [
