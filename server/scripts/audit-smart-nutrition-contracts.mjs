@@ -42,11 +42,48 @@ const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReport
 const serviceWorkerSource = readSource("public/sw.js");
 const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
+const gitignoreSource = readSource(".gitignore");
+const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
+const projectDecisionsSource = readSource(".codex/DECISIONS.md");
+const projectRulesSource = readSource(".codex/PROJECT_RULES.md");
+const chiefSkillSource = readSource(".codex/skills/smart-nutrition-chief/SKILL.md");
+const specialistSkillPaths = [
+  ".codex/skills/ai-architect/SKILL.md",
+  ".codex/skills/knowledge-curator/SKILL.md",
+  ".codex/skills/mobile-guardian/SKILL.md",
+  ".codex/skills/nutrition-engineer/SKILL.md",
+  ".codex/skills/production-auditor/SKILL.md",
+  ".codex/skills/production-fixer/SKILL.md",
+  ".codex/skills/release-guardian/SKILL.md",
+  ".codex/skills/smart-nutrition-brain/SKILL.md",
+  ".codex/skills/smart-nutrition-chief/SKILL.md",
+];
+const specialistSkillSources = specialistSkillPaths.map((skillPath) => ({
+  path: skillPath,
+  source: readSource(skillPath),
+}));
 
 addCheck(
   "photo assistant does not hard-code template recognition foods",
   !/\b(Greek yogurt|Oats|Banana|Breakfast photo draft)\b/.test(photoAssistantSource),
   "PhotoMealAssistant must render provider/user-reviewed results, not a fixed breakfast template."
+);
+
+addCheck(
+  "project knowledge layer is committed while codex runtime artifacts stay ignored",
+  gitignoreSource.includes(".codex/") &&
+    gitignoreSource.includes("!.codex/PROJECT_MEMORY.md") &&
+    gitignoreSource.includes("!.codex/DECISIONS.md") &&
+    gitignoreSource.includes("!.codex/PROJECT_RULES.md") &&
+    gitignoreSource.includes("!.codex/skills/*/SKILL.md") &&
+    gitignoreSource.includes(".codex/skills/*/*") &&
+    projectMemorySource.includes("## Project Vision") &&
+    projectMemorySource.includes("## Active Contracts") &&
+    projectDecisionsSource.includes("Backend/Cloud Is Source Of Truth") &&
+    projectRulesSource.includes("No duplicate systems") &&
+    chiefSkillSource.includes("Project Knowledge Layer") &&
+    specialistSkillSources.every(({ source }) => source.includes("---") && source.includes("##")),
+  "Project memory, ADRs, rules, and specialist SKILL.md files must be allowed into git, while Codex browser profiles, agents, caches, screenshots, and logs stay ignored."
 );
 
 addCheck(

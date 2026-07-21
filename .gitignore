@@ -9,6 +9,20 @@ lerna-debug.log*
 
 # Codex local/runtime artifacts
 .codex/
+!.codex/
+!.codex/PROJECT_MEMORY.md
+!.codex/DECISIONS.md
+!.codex/PROJECT_RULES.md
+!.codex/skills/
+!.codex/skills/*/
+!.codex/skills/*/SKILL.md
+.codex/*
+!.codex/PROJECT_MEMORY.md
+!.codex/DECISIONS.md
+!.codex/PROJECT_RULES.md
+!.codex/skills/
+.codex/skills/*/*
+!.codex/skills/*/SKILL.md
 .codex-remote-attachments/
 .codex-*.log
 tmp-vite-*.log
