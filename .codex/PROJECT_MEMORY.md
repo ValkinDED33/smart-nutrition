@@ -66,6 +66,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened bundle audit so it counts `modulepreload` assets as initial payload, caps total startup JavaScript, and blocks scanner, photo compression, markdown, analytics, native bridge, and 3D vendors from being preloaded by `index.html`.
 - Added `npm run audit:live` as a safe public live production smoke command for Vercel app HTML/assets, SEO discovery, PWA manifest, Render health/readiness, sanitized diagnostics, and credentialed CORS origin behavior.
 - Added `npm run audit:live:auth` as the authenticated production smoke contract for dedicated verified smoke accounts: login cookies, session restore, `/api/state`, water mutation/restore, product intake/delete, reminder create/list/delete, and Telegram status without token exposure.
+- Removed direct MongoDB success `console.log` output from storage adapters and protected the behavior with contract audit so database/host startup details stay behind controlled sanitized logging.
 
 ## Current Architecture
 
@@ -109,6 +110,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Production readiness checks must reject cross-site cookie settings that break auth restore.
 - Auth cookie helpers must keep `SameSite=None`, `Secure`, `HttpOnly`, `Path=/`, and explicit `Max-Age` behavior covered by tests for split frontend/backend deployments.
 - Public health/readiness endpoints must not expose operational diagnostics such as provider internals, limits, warnings, request metrics, Telegram polling state, or database names.
+- Storage adapters must not print infrastructure success details such as MongoDB database/host directly to stdout; production diagnostics must stay controlled, sanitized, and intentional.
 - Frontend health probes must validate public liveness shape (`ok`, `mode=remote-cloud`, `auth=httpOnly-cookie-session`, `storage.engine`) instead of depending on removed diagnostic provider fields.
 - Product lookup provider resilience belongs in `productLookupService`; do not reintroduce frontend OpenFoodFacts calls to paper over backend provider failures.
 - Environment example files must never contain real-looking provider secrets or duplicate sensitive backend assignments.

@@ -35,6 +35,8 @@ const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.t
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
+const mongoStorageSource = readSource("server/storage/mongo.mjs");
+const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
 const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
 const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
@@ -479,6 +481,18 @@ addCheck(
     envExampleSource.includes("Use a dedicated verified smoke account") &&
     !/@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(authenticatedLiveAuditSource),
   "Authenticated production smoke must require a dedicated verified account, use cookie sessions, verify backend-confirmed user flows, clean up smoke mutations, and avoid committed secrets."
+);
+
+addCheck(
+  "mongodb adapters do not print infrastructure success details directly",
+  !/console\.log/.test(mongoStorageSource) &&
+    !/console\.log/.test(mongoAiRepositorySource) &&
+    mongoStorageSource.includes('logger?.info?.("[mongodb] storage connected"') &&
+    mongoAiRepositorySource.includes('logger?.info?.("[mongodb-ai] repository connected"') &&
+    !/MongoDB database:|MongoDB host:|Connected to MongoDB Atlas database/.test(
+      `${mongoStorageSource}\n${mongoAiRepositorySource}`
+    ),
+  "MongoDB storage and AI adapters must not print database/host success details directly to stdout; startup diagnostics must stay controlled and sanitized."
 );
 
 const failed = checks.filter((check) => !check.pass);

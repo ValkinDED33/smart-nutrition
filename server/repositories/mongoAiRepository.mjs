@@ -47,7 +47,7 @@ const mapUsageEvent = (doc) =>
       }
     : null;
 
-const connectMongoClient = async ({ client, config }) => {
+const connectMongoClient = async ({ client, config, logger = null }) => {
   let lastError = null;
   const maxAttempts = Math.max(Number(config.mongoConnectRetries) || 1, 1);
   const retryDelayMs = Math.max(Number(config.mongoConnectRetryDelayMs) || 0, 0);
@@ -56,7 +56,9 @@ const connectMongoClient = async ({ client, config }) => {
     try {
       await client.connect();
       await client.db(config.mongoDatabaseName).command({ ping: 1 });
-      console.log(`Connected to MongoDB Atlas database "${config.mongoDatabaseName}"`);
+      logger?.info?.("[mongodb-ai] repository connected", {
+        database: config.mongoDatabaseName,
+      });
       return;
     } catch (error) {
       lastError = error;
@@ -78,7 +80,7 @@ const connectMongoClient = async ({ client, config }) => {
   throw new Error(`MongoDB connection failed: ${getErrorMessage(lastError)}`);
 };
 
-export const createMongoAiRepository = async ({ config, auditRepository }) => {
+export const createMongoAiRepository = async ({ config, auditRepository, logger = null }) => {
   const client = new MongoClient(config.mongoUri, {
     appName: "smart-nutrition-ai",
     serverSelectionTimeoutMS: config.mongoServerSelectionTimeoutMs,
@@ -90,7 +92,7 @@ export const createMongoAiRepository = async ({ config, auditRepository }) => {
     retryWrites: true,
   });
 
-  await connectMongoClient({ client, config });
+  await connectMongoClient({ client, config, logger });
 
   const database = client.db(config.mongoDatabaseName);
   const messages = database.collection("assistant_messages");

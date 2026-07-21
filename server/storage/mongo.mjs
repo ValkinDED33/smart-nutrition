@@ -550,9 +550,10 @@ async function connectMongo(config = {}) {
       await client.connect();
       const database = client.db(config.mongoDatabaseName ?? "smart-nutrition");
       await database.command({ ping: 1 });
-      console.log("✅ MongoDB Atlas connected");
-      console.log("MongoDB database:", database.databaseName);
-      console.log("MongoDB host:", getMongoHostLabel(mongoUri));
+      config.logger?.info?.("[mongodb] storage connected", {
+        database: database.databaseName,
+        host: getMongoHostLabel(mongoUri),
+      });
       return { client, database };
     } catch (error) {
       lastError = error;

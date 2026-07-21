@@ -62,8 +62,6 @@ describe("createMongoAiRepository", () => {
   });
 
   it("connects with production-safe MongoDB options and creates indexes", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
     const repository = await createMongoAiRepository({
       config: createConfig(),
       auditRepository: {
@@ -100,11 +98,9 @@ describe("createMongoAiRepository", () => {
       },
     });
 
-    logSpy.mockRestore();
   });
 
   it("retries transient MongoDB connection failures", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     mongoMocks.connect
       .mockRejectedValueOnce(new Error("temporary network error"))
@@ -126,6 +122,5 @@ describe("createMongoAiRepository", () => {
     );
 
     warnSpy.mockRestore();
-    logSpy.mockRestore();
   });
 });
