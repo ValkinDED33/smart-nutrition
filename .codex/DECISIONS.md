@@ -139,3 +139,10 @@
 - Context: Local release checks are deterministic and must not depend on live network state, but deploy-sensitive fixes still need evidence that Vercel, Render, public SEO files, CORS, frontend assets, and sanitized health endpoints work together after deployment.
 - Decision: `npm run audit:live` is the canonical public live smoke command. It checks the deployed app and backend through public unauthenticated endpoints only, uses no secrets, performs no protected user actions, and is intentionally kept outside `npm run quality` and `npm run release:gate`.
 - Consequences: Run `npm run audit:live` after deployment, after domain/CORS/SEO/backend URL changes, and before claiming live production readiness. Protected flows such as registration, login, admin, scanner camera, and meal writes still need separate authenticated smoke checks.
+
+## ADR-021: Authenticated Production Smoke Uses A Dedicated Verified Account
+
+- Status: Accepted.
+- Context: Public health checks cannot prove that real users can log in, restore sessions, mutate water/meal/reminder state, or access Telegram connection status. At the same time, personal/admin credentials must never be committed or echoed by tooling.
+- Decision: `npm run audit:live:auth` is the canonical authenticated production smoke command. It requires `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`, uses the live httpOnly cookie session flow, verifies backend-confirmed state actions, and cleans up smoke mutations where the API supports cleanup.
+- Consequences: Use a dedicated verified smoke account, not owner/admin/personal credentials. The command intentionally fails when credentials are missing, and it stays outside local `quality`/`release:gate` because it mutates production smoke-account state and depends on external auth availability.

@@ -21,6 +21,7 @@ const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
 const registerPageSource = readSource("src/pages/RegisterPage.tsx");
+const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
@@ -44,6 +45,7 @@ const companionAvatarSource = readSource("src/features/assistant-3d/components/C
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
+const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
 const packageJsonSource = readSource("package.json");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
@@ -453,6 +455,30 @@ addCheck(
     liveAuditSource.includes("access-control-allow-credentials") &&
     !/\/api\/auth\/login|@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(liveAuditSource),
   "Deploy verification must have a safe public live smoke command that checks Vercel, Render, SEO, CORS, assets, and sanitized health without protected auth flows or secrets."
+);
+
+addCheck(
+  "authenticated live smoke requires dedicated credentials and cleans mutations",
+  packageJsonSource.includes('"audit:live:auth": "node server/scripts/audit-live-authenticated.mjs"') &&
+    authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_EMAIL") &&
+    authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_PASSWORD") &&
+    authenticatedLiveAuditSource.includes("/api/auth/login") &&
+    authenticatedLiveAuditSource.includes("smart-nutrition-access") &&
+    authenticatedLiveAuditSource.includes("smart-nutrition-refresh") &&
+    authenticatedLiveAuditSource.includes("/api/auth/session") &&
+    authenticatedLiveAuditSource.includes("/api/state") &&
+    authenticatedLiveAuditSource.includes("/api/water-state") &&
+    authenticatedLiveAuditSource.includes("/api/water") &&
+    authenticatedLiveAuditSource.includes("/api/meal/product-intake") &&
+    authenticatedLiveAuditSource.includes("/api/reminders") &&
+    authenticatedLiveAuditSource.includes("/api/telegram/status") &&
+    authenticatedLiveAuditSource.includes("cleanup.push") &&
+    authenticatedLiveAuditSource.includes("Smoke account mutations were cleaned up.") &&
+    envExampleSource.includes("SMART_NUTRITION_LIVE_SMOKE_EMAIL=") &&
+    envExampleSource.includes("SMART_NUTRITION_LIVE_SMOKE_PASSWORD=") &&
+    envExampleSource.includes("Use a dedicated verified smoke account") &&
+    !/@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(authenticatedLiveAuditSource),
+  "Authenticated production smoke must require a dedicated verified account, use cookie sessions, verify backend-confirmed user flows, clean up smoke mutations, and avoid committed secrets."
 );
 
 const failed = checks.filter((check) => !check.pass);
