@@ -342,6 +342,23 @@ addCheck(
 );
 
 addCheck(
+  "assistant day summary uses backend snapshot and canonical reminders",
+  assistantAgentIntentsSource.includes('intent: "generate_day_summary"') &&
+    assistantAgentServiceSource.includes('intent.intent === "generate_day_summary"') &&
+    assistantAgentServiceSource.includes("tools.generateDaySummary(user)") &&
+    assistantAgentToolsSource.includes("const generateDaySummary = async") &&
+    assistantAgentToolsSource.includes("createSnapshotSummary({ user, stateService") &&
+    assistantAgentToolsSource.includes("getActiveReminders(reminders, user)") &&
+    assistantAgentToolsSource.includes("latestWeight") &&
+    assistantAgentToolsSource.includes("recentSymptoms") &&
+    assistantAgentActionsSource.includes("toolResult.type === \"day_summary\"") &&
+    assistantAgentActionsSource.includes("daySummaryTitle") &&
+    assistantAgentMemorySource.includes('toolResult.type === "day_summary"') &&
+    assistantAgentMemorySource.includes("asks assistant for daily summaries"),
+  "AI-generated day summaries must read canonical backend snapshot/profile/reminder state and respond as an action receipt, not a generic model guess or a second report system."
+);
+
+addCheck(
   "women health UI surfaces symptom history as non-diagnostic care context",
   womenHealthOverviewCardSource.includes('data-women-health-symptom-history="true"') &&
     womenHealthOverviewCardSource.includes("womenHealth.symptomHistory") &&

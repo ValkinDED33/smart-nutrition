@@ -96,10 +96,17 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
-  if (toolResult.type === "day_status" || toolResult.type === "nutrition_status") {
+  if (
+    toolResult.type === "day_status" ||
+    toolResult.type === "nutrition_status" ||
+    toolResult.type === "day_summary"
+  ) {
     return {
       userId: user?.id,
-      habits: ["asks assistant for nutrition status"],
+      habits:
+        toolResult.type === "day_summary"
+          ? ["asks assistant for daily summaries"]
+          : ["asks assistant for nutrition status"],
       lastMood: "curious",
     };
   }

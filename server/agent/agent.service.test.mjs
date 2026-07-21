@@ -357,6 +357,103 @@ describe("createAssistantAgentService", () => {
     expect(result.text).not.toContain("Записав симптом");
   });
 
+  it("generates a day summary from backend snapshot and canonical reminders", async () => {
+    const stateService = {
+      getSnapshot: vi.fn(async () => ({
+        meal: {
+          items: [
+            {
+              id: "meal-1",
+              quantity: 200,
+              mealType: "lunch",
+              eatenAt: "2026-06-21T12:30:00.000Z",
+              product: {
+                name: "Greek yogurt",
+                unit: "g",
+                nutrients: {
+                  calories: 59,
+                  protein: 10,
+                  fat: 0.4,
+                  carbs: 3.6,
+                  fiber: 0,
+                },
+              },
+            },
+          ],
+        },
+        water: {
+          dailyWaterGoal: 2000,
+          consumedMl: 900,
+          glassSizeMl: 250,
+          lastLoggedOn: "2026-06-21",
+          history: [],
+        },
+        profile: {
+          dailyCalories: 2100,
+          weightHistory: [
+            { date: "2026-06-20T09:00:00.000Z", weight: 97.2 },
+            { date: "2026-06-21T08:00:00.000Z", weight: 96.9 },
+          ],
+          womenHealth: {
+            mode: "pregnant",
+            symptomHistory: [
+              {
+                id: "symptom-1",
+                recordedAt: "2026-06-21T07:00:00.000Z",
+                label: "нудота",
+                severity: 4,
+                source: "assistant",
+              },
+            ],
+          },
+        },
+      })),
+    };
+    const reminderService = {
+      getUserReminders: vi.fn(() => [
+        { id: "reminder-1", active: true, title: "Вода", type: "water" },
+        { id: "reminder-2", active: false, title: "Old", type: "task" },
+      ]),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "сделай итог дня сегодня",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "generate_day_summary" },
+      actions: [{ id: "generate_day_summary", ok: true, resultType: "day_summary" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["protein_help", "water_help", "coach_focus"],
+    });
+    expect(result.text).toContain("Підсумок дня Smart Nutrition");
+    expect(result.text).toContain("Їжа: 1");
+    expect(result.text).toContain("118 / 2100");
+    expect(result.text).toContain("900 / 2000");
+    expect(result.text).toContain("Активні нагадування: 1");
+    expect(result.text).toContain("Остання вага: 96.9 кг");
+    expect(result.text).toContain("нудота 4/10");
+    expect(stateService.getSnapshot).toHaveBeenCalledWith(user);
+    expect(reminderService.getUserReminders).toHaveBeenCalledWith(user);
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["asks assistant for daily summaries"]),
+      })
+    );
+  });
+
   it("creates medication reminders through the medication tool", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({

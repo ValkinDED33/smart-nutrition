@@ -96,6 +96,51 @@ const toWaterStatus = (waterState) => ({
   glassSizeMl: Math.max(Math.round(Number(waterState?.glassSizeMl ?? 250) || 250), 100),
 });
 
+const calculatePercent = (current, target) => {
+  const currentNumber = Number(current) || 0;
+  const targetNumber = Number(target) || 0;
+
+  if (targetNumber <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(Math.round((currentNumber / targetNumber) * 100), 999));
+};
+
+const sortByIsoDateDesc = (items, dateKey) =>
+  [...items].sort((first, second) => {
+    const firstTime = Date.parse(first?.[dateKey] ?? "");
+    const secondTime = Date.parse(second?.[dateKey] ?? "");
+
+    return (Number.isFinite(secondTime) ? secondTime : 0) -
+      (Number.isFinite(firstTime) ? firstTime : 0);
+  });
+
+const getLatestWeightEntry = (profile = {}) =>
+  Array.isArray(profile.weightHistory) && profile.weightHistory.length > 0
+    ? sortByIsoDateDesc(profile.weightHistory, "date")[0]
+    : null;
+
+const getRecentSymptoms = (profile = {}, limit = 3) => {
+  const symptomHistory = Array.isArray(profile?.womenHealth?.symptomHistory)
+    ? profile.womenHealth.symptomHistory
+    : [];
+
+  return sortByIsoDateDesc(symptomHistory, "recordedAt").slice(0, limit);
+};
+
+const getActiveReminders = (reminders, user, limit = 5) => {
+  if (!reminders?.getUserReminders) {
+    return [];
+  }
+
+  const items = reminders.getUserReminders(user);
+
+  return Array.isArray(items)
+    ? items.filter((reminder) => reminder?.active !== false).slice(0, limit)
+    : [];
+};
+
 const createSnapshotSummary = async ({ user, stateService, now }) => {
   if (!stateService?.getSnapshot) {
     return null;
@@ -519,6 +564,37 @@ export const createAgentTools = ({
     };
   };
 
+  const generateDaySummary = async (user) => {
+    const summary = await createSnapshotSummary({ user, stateService, now: now() });
+
+    if (!summary) {
+      return { ok: false, code: "STATE_TOOL_UNAVAILABLE" };
+    }
+
+    const dailyCalories = Number(summary.profile?.dailyCalories ?? 0) || 0;
+    const activeReminders = getActiveReminders(reminders, user);
+    const latestWeight = getLatestWeightEntry(summary.profile);
+    const recentSymptoms = getRecentSymptoms(summary.profile);
+
+    return {
+      ok: true,
+      type: "day_summary",
+      date: createDateKey(now()),
+      mealCount: summary.mealEntries.length,
+      nutrients: summary.nutrients,
+      dailyCalories,
+      caloriePercent: calculatePercent(summary.nutrients.calories, dailyCalories),
+      water: {
+        ...summary.water,
+        percent: calculatePercent(summary.water.consumedMl, summary.water.targetMl),
+      },
+      activeReminders,
+      latestWeight,
+      recentSymptoms,
+      womenHealthMode: summary.profile?.womenHealth?.mode ?? "none",
+    };
+  };
+
   return {
     addWater,
     addMeal,
@@ -529,6 +605,7 @@ export const createAgentTools = ({
     createTaskReminder,
     createTypedReminder,
     getDayStatus,
+    generateDaySummary,
     getWaterStatus,
     getNutritionStatus,
   };

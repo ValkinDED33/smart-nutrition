@@ -98,4 +98,14 @@ describe("detectAgentIntent", () => {
       intent: "show_water_status",
     });
   });
+
+  it("detects day summary requests separately from quick day status", () => {
+    expect(detectAgentIntent("сделай итог дня сегодня")).toMatchObject({
+      intent: "generate_day_summary",
+      confidence: 0.84,
+    });
+    expect(detectAgentIntent("daily report today")).toMatchObject({
+      intent: "generate_day_summary",
+    });
+  });
 });

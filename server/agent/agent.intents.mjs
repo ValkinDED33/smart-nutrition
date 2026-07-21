@@ -16,6 +16,8 @@ const REMINDER_SCHEDULE_PATTERN =
   /(\d{1,2}[:.]\d{2}|(?:^|\s)(?:в|о|at)\s*\d{1,2}(?:\s|$)|утром|ранку|вечером|вечір|morning|evening|night)/i;
 const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
+const DAY_SUMMARY_PATTERN =
+  /(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд).*(?:дня|день|сегодня|сьогодні|today)|(?:дня|день|сегодня|сьогодні|today).*(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд)/i;
 const NUTRITION_WORD_PATTERN =
   /(калор|ккал|белк|білк|protein|нутри|нутрі|жир|carb|углев|вуглев|клетчат|клітков)/i;
 const WEIGHT_WORD_PATTERN =
@@ -323,6 +325,15 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
       confidence: 0.78,
       entities: {},
       reason: "water_status_request",
+    };
+  }
+
+  if (DAY_SUMMARY_PATTERN.test(normalized)) {
+    return {
+      intent: "generate_day_summary",
+      confidence: 0.84,
+      entities: {},
+      reason: "day_summary_request",
     };
   }
 

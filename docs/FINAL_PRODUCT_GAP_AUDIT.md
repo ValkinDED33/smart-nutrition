@@ -116,8 +116,8 @@ Current state:
 Gap:
 
 - Agent now completes safe catalog-backed food search and meal logging, plus
-  backend-confirmed weight and symptom check-ins, but it still needs more
-  practical tools around planning and reporting.
+  backend-confirmed weight, symptom check-ins, and daily summaries, but it still
+  needs more practical tools around planning and reporting.
 - Missing practical tools: `create_recipe`, `save_favorite`, `generate_report`,
   `open_scanner`, `request_photo_meal_analysis`, and `create_follow_up`.
 
@@ -254,8 +254,8 @@ Users will try natural commands like "сделай отчёт за неделю"
 the product.
 
 RECOMMENDED FIX:
-Add safe tools for `create_recipe`, `save_favorite`, `generate_daily_report`,
-and follow-up actions.
+Add safe tools for `create_recipe`, `save_favorite`, weekly/monthly
+`generate_report`, and follow-up actions.
 
 EXAMPLE CODE:
 
@@ -553,10 +553,9 @@ The assistant acts as a worker.
 Includes:
 
 - Done: `search_product`, `add_meal`, `add_water`,
-  `create_medication_reminder`, `create_task_reminder`, typed reminders, and
-  `log_weight`, and `log_symptom`.
+  `create_medication_reminder`, `create_task_reminder`, typed reminders,
+  `log_weight`, `log_symptom`, and `generate_day_summary`.
 - Remaining:
-- `generate_day_summary`
 - `create_follow_up`
 
 Done means:

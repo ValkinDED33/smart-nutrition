@@ -119,6 +119,21 @@ const copy = {
     carbs: (value) => `🍚 Вуглеводи: ${value} г`,
     fiber: (value) => `🌾 Клітковина: ${value} г`,
     dayStatus: "Короткий статус дня:",
+    daySummaryTitle: "Підсумок дня Smart Nutrition:",
+    daySummaryCalories: (current, target, percent) =>
+      `🔥 Калорії: ${current} / ${target} ккал (${percent})`,
+    daySummaryWater: (consumed, target, percent) =>
+      `💧 Вода: ${consumed} / ${target} мл (${percent})`,
+    daySummaryMacros: (protein, fat, carbs, fiber) =>
+      `🥗 Макро: білок ${protein} г, жири ${fat} г, вуглеводи ${carbs} г, клітковина ${fiber} г.`,
+    daySummaryReminders: (count) => `⏰ Активні нагадування: ${count}`,
+    daySummaryNoReminders: "⏰ Активних нагадувань немає.",
+    daySummaryWeight: (weight) => `⚖️ Остання вага: ${weight} кг.`,
+    daySummarySymptoms: (items) => `🩺 Самопочуття: ${items}.`,
+    daySummaryNoSymptoms: "🩺 Нових симптомів у журналі немає.",
+    daySummaryNextLowFood: "Наступний крок: додати прийом їжі, щоб я бачив реальний день.",
+    daySummaryNextLowWater: "Наступний крок: випити воду і закрити гідратацію м'яко.",
+    daySummaryNextSteady: "Наступний крок: тримати темп без тиску і не добивати день силою.",
     foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
     waterLine: (consumed, target) => `💧 Вода: ${consumed} / ${target} мл`,
     nextFirstStep: "Найпростіший наступний крок — додати перший прийом їжі або воду.",
@@ -226,6 +241,21 @@ const copy = {
     carbs: (value) => `🍚 Węglowodany: ${value} g`,
     fiber: (value) => `🌾 Błonnik: ${value} g`,
     dayStatus: "Krótki status dnia:",
+    daySummaryTitle: "Podsumowanie dnia Smart Nutrition:",
+    daySummaryCalories: (current, target, percent) =>
+      `🔥 Kalorie: ${current} / ${target} kcal (${percent})`,
+    daySummaryWater: (consumed, target, percent) =>
+      `💧 Woda: ${consumed} / ${target} ml (${percent})`,
+    daySummaryMacros: (protein, fat, carbs, fiber) =>
+      `🥗 Makro: białko ${protein} g, tłuszcz ${fat} g, węglowodany ${carbs} g, błonnik ${fiber} g.`,
+    daySummaryReminders: (count) => `⏰ Aktywne przypomnienia: ${count}`,
+    daySummaryNoReminders: "⏰ Brak aktywnych przypomnień.",
+    daySummaryWeight: (weight) => `⚖️ Ostatnia waga: ${weight} kg.`,
+    daySummarySymptoms: (items) => `🩺 Samopoczucie: ${items}.`,
+    daySummaryNoSymptoms: "🩺 Brak nowych objawów w dzienniku.",
+    daySummaryNextLowFood: "Następny krok: dodaj posiłek, żebym widział realny dzień.",
+    daySummaryNextLowWater: "Następny krok: wypij wodę i domknij nawodnienie spokojnie.",
+    daySummaryNextSteady: "Następny krok: trzymaj rytm bez presji i bez nadrabiania na siłę.",
     foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
     waterLine: (consumed, target) => `💧 Woda: ${consumed} / ${target} ml`,
     nextFirstStep: "Najprostszy następny krok — dodaj pierwszy posiłek albo wodę.",
@@ -333,6 +363,21 @@ const copy = {
     carbs: (value) => `🍚 Carbs: ${value} g`,
     fiber: (value) => `🌾 Fiber: ${value} g`,
     dayStatus: "Quick day status:",
+    daySummaryTitle: "Smart Nutrition day summary:",
+    daySummaryCalories: (current, target, percent) =>
+      `🔥 Calories: ${current} / ${target} kcal (${percent})`,
+    daySummaryWater: (consumed, target, percent) =>
+      `💧 Water: ${consumed} / ${target} ml (${percent})`,
+    daySummaryMacros: (protein, fat, carbs, fiber) =>
+      `🥗 Macros: protein ${protein} g, fat ${fat} g, carbs ${carbs} g, fiber ${fiber} g.`,
+    daySummaryReminders: (count) => `⏰ Active reminders: ${count}`,
+    daySummaryNoReminders: "⏰ No active reminders.",
+    daySummaryWeight: (weight) => `⚖️ Latest weight: ${weight} kg.`,
+    daySummarySymptoms: (items) => `🩺 Wellbeing: ${items}.`,
+    daySummaryNoSymptoms: "🩺 No new symptoms in the log.",
+    daySummaryNextLowFood: "Next step: add a meal so I can see the real day.",
+    daySummaryNextLowWater: "Next step: drink water and close hydration gently.",
+    daySummaryNextSteady: "Next step: keep the rhythm without pressure or forced catch-up.",
     foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
     waterLine: (consumed, target) => `💧 Water: ${consumed} / ${target} ml`,
     nextFirstStep: "The simplest next step is to add the first meal or water.",
@@ -381,6 +426,30 @@ const getProductTitle = (product, language = "uk") =>
 
 const formatMealType = (mealType, language = "uk") =>
   getCopy(language).mealTypes[mealType] ?? getCopy(language).mealTypes.snack;
+
+const getDaySummaryNextStep = (text, toolResult) => {
+  if (Number(toolResult.mealCount ?? 0) === 0) {
+    return text.daySummaryNextLowFood;
+  }
+
+  if (Number(toolResult.water?.percent ?? 0) < 60) {
+    return text.daySummaryNextLowWater;
+  }
+
+  return text.daySummaryNextSteady;
+};
+
+const formatSymptomSummary = (symptoms = []) =>
+  symptoms
+    .slice(0, 3)
+    .map((symptom) => {
+      const label = String(symptom?.label ?? "").trim();
+      const severity = formatNumber(symptom?.severity);
+
+      return label ? `${label} ${severity}/10` : null;
+    })
+    .filter(Boolean)
+    .join(", ");
 
 export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
   const text = getCopy(language);
@@ -597,6 +666,47 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       text.waterLine(formatNumber(water.consumedMl), formatNumber(water.targetMl)),
       toolResult.mealCount === 0 ? text.nextFirstStep : text.nextCoachingStep,
     ].join("\n");
+  }
+
+  if (toolResult.type === "day_summary") {
+    const nutrients = toolResult.nutrients ?? {};
+    const water = toolResult.water ?? {};
+    const reminders = Array.isArray(toolResult.activeReminders)
+      ? toolResult.activeReminders
+      : [];
+    const symptoms = formatSymptomSummary(toolResult.recentSymptoms);
+    const latestWeight = Number(toolResult.latestWeight?.weight);
+
+    return [
+      text.daySummaryTitle,
+      text.foodEntries(toolResult.mealCount),
+      text.daySummaryCalories(
+        formatNumber(nutrients.calories),
+        formatNumber(toolResult.dailyCalories),
+        formatPercent(nutrients.calories, toolResult.dailyCalories)
+      ),
+      text.daySummaryMacros(
+        formatNumber(nutrients.protein, 1),
+        formatNumber(nutrients.fat, 1),
+        formatNumber(nutrients.carbs, 1),
+        formatNumber(nutrients.fiber, 1)
+      ),
+      text.daySummaryWater(
+        formatNumber(water.consumedMl),
+        formatNumber(water.targetMl),
+        `${formatNumber(water.percent)}%`
+      ),
+      reminders.length > 0
+        ? text.daySummaryReminders(reminders.length)
+        : text.daySummaryNoReminders,
+      Number.isFinite(latestWeight) && latestWeight > 0
+        ? text.daySummaryWeight(formatNumber(latestWeight, 1))
+        : null,
+      symptoms ? text.daySummarySymptoms(symptoms) : text.daySummaryNoSymptoms,
+      getDaySummaryNextStep(text, toolResult),
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   return text.done;
