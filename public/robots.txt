@@ -1,4 +1,20 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /coach
+Disallow: /community
+Disallow: /dashboard
+Disallow: /food
+Disallow: /meal-builder
+Disallow: /meals
+Disallow: /onboarding
+Disallow: /partner-invite
+Disallow: /profile
+Disallow: /progress
+Disallow: /recipes
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /water
 
+Host: https://smart-nutrition.club
 Sitemap: https://smart-nutrition.club/sitemap.xml

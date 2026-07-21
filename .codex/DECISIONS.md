@@ -118,3 +118,10 @@
 - Context: Quick add, scanner, product cards, templates, saved/recent products, photo meal, recipes, and AI actions can all mutate meal state through granular backend endpoints. Returning only `{ ok, meta }` lets the frontend apply locally computed meal state and can hide backend normalization, persistence differences, or contract drift.
 - Decision: Granular meal/product mutation endpoints must return canonical backend `meal` state with mutation metadata. The frontend must treat `ok` without canonical `meal` as a broken contract for granular mutation success.
 - Consequences: UI success for granular meal/product actions is based on backend-confirmed meal state only. Full-state `PUT /meal-state` may still apply the submitted state after backend confirmation because that endpoint saves the exact state payload. Tests must cover missing canonical meal responses so fake local success cannot return.
+
+## ADR-018: SEO Discovery Is A Release Contract
+
+- Status: Accepted.
+- Context: Smart Nutrition needs to be discoverable by search engines without exposing authenticated app surfaces, token routes, or user data pages as public SEO content.
+- Decision: Release quality must verify `index.html`, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` as one SEO discovery contract. The sitemap may list only canonical public entry routes, while protected SPA screens and token routes must be blocked from crawler discovery.
+- Consequences: Search discoverability cannot rely on one-off manual edits. Any route, domain, manifest, canonical URL, or crawler policy change must keep `npm run audit:seo` passing before release.

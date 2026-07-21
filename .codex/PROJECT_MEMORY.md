@@ -62,6 +62,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reconnected Telegram free-text conversation to the same backend AI assistant runtime as the website: deterministic agent actions still execute backend-confirmed tools first, and unhandled conversational text falls back to `aiService.askQuestion` with `interactionChannel=telegram`.
 - Verified latest stabilization with build, tests, lint, dependency audit, cycle audit, and architecture audit.
 - Hardened frontend remote API routing so public deployments prefer the canonical configured Render backend over stale browser-stored API base URLs; added regression coverage for registration availability when old localStorage state exists.
+- Added SEO discovery as a release-gated contract: `robots.txt` now exposes the canonical sitemap while blocking protected/token SPA surfaces, `sitemap.xml` uses current canonical public URLs, and `npm run audit:seo` verifies index metadata, crawler policy, sitemap scope, lastmod freshness, and manifest identity.
 
 ## Current Architecture
 
@@ -97,6 +98,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - External product catalog lookup and provider fallback must run behind backend contracts.
 - Backend product lookup may use multiple backend-owned provider hosts for resilience, but the frontend must still call only the Smart Nutrition backend contract.
 - Frontend CSP must not reopen direct browser access to external food catalog providers.
+- SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.
 - Profile mutations must use unified cloud actions, not isolated local state.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.
@@ -161,7 +163,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 6. Trace canonical product/meal intake end-to-end across manual add, photo add, AI actions, scanner UI camera scan, and refresh/relogin restore.
 7. Check email deliverability DNS/reputation so verification messages stop landing in spam.
 8. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
-9. Complete SEO/indexing discoverability: verify live `robots.txt`, `sitemap.xml`, canonical URL, Open Graph/Twitter previews, JSON-LD schema, production 200 responses, Search Console/Bing Webmaster/Yandex submission, and indexed-result appearance for Smart Nutrition brand queries.
+9. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
 
 ## Release Checklist
 
@@ -171,6 +173,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - `npm run audit:deps`
 - `npm run audit:cycles`
 - `npm run audit:architecture`
+- `npm run audit:seo`
 - Mobile smoke checklist completed.
 - Scanner smoke checklist completed.
 - Auth restore verified after refresh and relogin.
@@ -181,5 +184,5 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - `npm run server:check` passes against production-like environment variables.
 - Env examples verified to contain placeholders only, with no real-looking provider secrets or duplicate sensitive assignments.
 - Reset-password and verify-email links verified to remove sensitive token query params from the browser URL after token capture.
-- SEO/indexing verified: `robots.txt` allows crawlers, `sitemap.xml` points to canonical public URLs, landing metadata is indexable, Search Console/Bing/Yandex submissions are complete, and protected app/user data routes are not exposed as public SEO pages.
+- SEO/indexing verified: `npm run audit:seo` passes, live `robots.txt` and `sitemap.xml` return 200, landing metadata is indexable, Search Console/Bing/Yandex submissions are complete, and protected app/user data routes are not exposed as public SEO pages.
 - `PROJECT_MEMORY.md`, `DECISIONS.md`, and `PROJECT_RULES.md` updated if architecture changed.
