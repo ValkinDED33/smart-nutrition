@@ -26,6 +26,7 @@ const addCheck = (label, pass, detail) => {
 
 const photoAssistantSource = readSource("src/features/meal/PhotoMealAssistant.tsx");
 const authRemoteSource = readSource("src/shared/api/authRemote.ts");
+const platformApiSource = readSource("src/shared/api/platform.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
 const frontendProductApiSource = readSource("src/shared/api/products.ts");
@@ -491,10 +492,14 @@ addCheck(
     partnerInvitePageSource.includes("getPartnerInviteCopy(appLanguage)") &&
     partnerInvitePageSource.includes("PENDING_PARTNER_INVITE_KEY") &&
     partnerInvitePageSource.includes("acceptRemotePartnerInvite") &&
+    partnerInvitePageSource.includes("захищену хмарну синхронізацію") &&
+    partnerInvitePageSource.includes("bezpieczną synchronizację w chmurze") &&
+    partnerInvitePageSource.includes("secure cloud sync") &&
     partnerInvitePageSource.includes("без повної синхронізації акаунтів") &&
     partnerInvitePageSource.includes("bez pełnej synchronizacji kont") &&
-    partnerInvitePageSource.includes("without full account synchronization"),
-  "QR partner access must feel native to the app language, route through backend invite acceptance, and communicate limited pregnancy sharing instead of full account synchronization."
+    partnerInvitePageSource.includes("without full account synchronization") &&
+    !/cloud backend/i.test(partnerInvitePageSource),
+  "QR partner access must feel native to the app language, route through backend invite acceptance, and communicate limited pregnancy sharing without exposing backend jargon."
 );
 
 const polishedPolishSyncSources = [
@@ -577,6 +582,7 @@ addCheck(
 );
 
 const humanAuthPlatformCopySources = [
+  platformApiSource,
   catalogContributionCardSource,
   adminCenterCardSource,
   sharedLanguageSource,

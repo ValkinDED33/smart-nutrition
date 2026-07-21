@@ -31,7 +31,7 @@ const requestPlatform = async <T>(
   if (!baseUrl) {
     throw new PlatformApiError(
       "REMOTE_API_UNAVAILABLE",
-      "Cloud backend is unavailable for platform tools."
+      "The cloud service is temporarily unavailable. Try again later."
     );
   }
 

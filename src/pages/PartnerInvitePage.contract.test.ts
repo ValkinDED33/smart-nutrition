@@ -33,8 +33,12 @@ describe("PartnerInvitePage contract", () => {
     expect(inviteSource).toContain("getPartnerInviteCopy(appLanguage)");
     expect(inviteSource).toContain("Сімейний доступ");
     expect(inviteSource).toContain("Dostęp rodzinny");
+    expect(inviteSource).toContain("захищену хмарну синхронізацію");
+    expect(inviteSource).toContain("bezpieczną synchronizację w chmurze");
+    expect(inviteSource).toContain("secure cloud sync");
     expect(inviteSource).toContain("without full account synchronization");
     expect(inviteSource).toContain("без повної синхронізації акаунтів");
+    expect(inviteSource).not.toMatch(/cloud backend/i);
     expect(inviteSource).not.toContain("<Typography component=\"h1\" variant=\"h4\" sx={{ fontWeight: 900 }}>\n          Family access");
     expect(inviteSource).not.toContain("<Alert severity=\"info\" sx={{ width: \"100%\", borderRadius: 3 }}>\n            Connecting partner profiles...");
     expect(inviteSource).not.toContain("<Alert severity=\"success\" sx={{ width: \"100%\", borderRadius: 3 }}>\n            Partner profiles connected.");

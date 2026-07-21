@@ -79,7 +79,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
 - Hardened Telegram reminder command hints so empty `/addmed`, `/addtask`, `/addwater`, `/addhabit`, `/addsupplement`, `/add`, and `/settime` prompts use the connected Smart Nutrition profile language instead of drifting to the Telegram client language.
 - Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
-- Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through the backend invite contract, not full account synchronization.
+- Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through secure cloud sync, not full account synchronization or visible backend jargon.
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
 - Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
 - Replaced raw Telegram main-menu command buttons with profile-language labels and routed label taps back into canonical snapshot/profile/help handlers, keeping Telegram as the same assistant worker surface instead of a command-list bolt-on.
@@ -101,7 +101,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
-- Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; do not imply full account synchronization.
+- Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.

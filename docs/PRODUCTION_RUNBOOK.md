@@ -178,7 +178,7 @@ Run this when auth, onboarding, email, sessions, or profile sync changes:
 - `401 /api/auth/refresh` before login is normal.
 - `503` during registration usually means Resend sender/domain/env delivery issue.
 - CORS error means the frontend domain is missing in `SMART_NUTRITION_CORS_ORIGINS`.
-- "Cloud backend unavailable" usually means `VITE_SMART_NUTRITION_API_BASE_URL` is wrong or missing `/api`.
+- "Cloud service is temporarily unavailable" usually means `VITE_SMART_NUTRITION_API_BASE_URL` is wrong or missing `/api`.
 - Empty product search usually means external lookup is disabled, OpenFoodFacts is unreachable, or USDA key/timeout needs checking.
 - Resend delivery unavailable means sender domain, API key, or `SMART_NUTRITION_EMAIL_FROM_ADDRESS` needs checking.
 - Telegram disabled in profile means `SMART_NUTRITION_TELEGRAM_BOT_TOKEN` or `SMART_NUTRITION_TELEGRAM_BOT_USERNAME` is missing on Render.

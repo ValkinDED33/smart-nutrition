@@ -23,7 +23,7 @@ const partnerInviteCopy = {
   uk: {
     title: "Сімейний доступ",
     body:
-      "Це посилання підключає профілі через cloud backend і відкриває тільки контекст вагітності: термін, розвиток дитини та спільні підказки без повної синхронізації акаунтів.",
+      "Це посилання підключає профілі через захищену хмарну синхронізацію і відкриває тільки контекст вагітності: термін, розвиток дитини та спільні підказки без повної синхронізації акаунтів.",
     connecting: "Підключаю профілі партнерів...",
     connected: "Профілі партнерів підключено.",
     invalid: "Код запрошення партнера недійсний.",
@@ -36,7 +36,7 @@ const partnerInviteCopy = {
   pl: {
     title: "Dostęp rodzinny",
     body:
-      "Ten link łączy profile przez cloud backend i udostępnia tylko kontekst ciąży: tydzień, rozwój dziecka i wspólne wskazówki bez pełnej synchronizacji kont.",
+      "Ten link łączy profile przez bezpieczną synchronizację w chmurze i udostępnia tylko kontekst ciąży: tydzień, rozwój dziecka i wspólne wskazówki bez pełnej synchronizacji kont.",
     connecting: "Łączę profile partnerów...",
     connected: "Profile partnerów połączone.",
     invalid: "Kod zaproszenia partnera jest nieprawidłowy.",
@@ -49,7 +49,7 @@ const partnerInviteCopy = {
   en: {
     title: "Family access",
     body:
-      "This link connects profiles through the cloud backend and shares only pregnancy context: week, baby development, and shared guidance without full account synchronization.",
+      "This link connects profiles through secure cloud sync and shares only pregnancy context: week, baby development, and shared guidance without full account synchronization.",
     connecting: "Connecting partner profiles...",
     connected: "Partner profiles connected.",
     invalid: "Partner invite code is invalid.",
