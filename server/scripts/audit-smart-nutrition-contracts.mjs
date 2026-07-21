@@ -32,6 +32,8 @@ const productLookupServiceSource = readSource("server/services/productLookupServ
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
+const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
+const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
 const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
 const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
@@ -104,6 +106,34 @@ addCheck(
   telegramServiceSource.includes("aiService.askQuestion(user") &&
     telegramServiceSource.includes("interactionChannel: \"telegram\""),
   "Telegram conversational text must use the same backend AI assistant runtime as the website."
+);
+
+addCheck(
+  "telegram assistant worker executes only canonical backend actions before success",
+  assistantAgentServiceSource.includes("const MIN_EXECUTION_CONFIDENCE = 0.7") &&
+    assistantAgentServiceSource.includes("executeIntent(user, intent)") &&
+    assistantAgentServiceSource.includes("buildAgentReply({ intent, toolResult") &&
+    assistantAgentServiceSource.includes("actions: [") &&
+    assistantAgentServiceSource.includes("ok: Boolean(toolResult?.ok)") &&
+    assistantAgentActionsSource.includes("if (!toolResult?.ok)") &&
+    assistantAgentActionsSource.includes("I will not show it as saved until the backend confirms it.") &&
+    assistantAgentActionsSource.includes("не буду показувати це як збережене, поки бекенд не підтвердить"),
+  "Telegram assistant worker must not claim saved actions unless the canonical backend tool result is ok."
+);
+
+addCheck(
+  "telegram assistant uses profile language for menus callbacks and agent context",
+  telegramServiceSource.includes("getTelegramLanguageFromSnapshot(snapshot)") &&
+    telegramServiceSource.includes("normalizeTelegramLanguage(user?.languagePreference)") &&
+    telegramServiceSource.includes("buildTelegramMainMenuKeyboard(language)") &&
+    telegramServiceSource.includes("buildTelegramWaterActionKeyboard({ language") &&
+    telegramServiceSource.includes("copy.waterSaved") &&
+    telegramServiceSource.includes("copy.waterSaveFailed") &&
+    telegramServiceSource.includes("copy.waterStatusUpdated") &&
+    telegramServiceSource.includes("context: await buildTelegramAssistantContext(user)") &&
+    assistantAgentActionsSource.includes("waterUnit") &&
+    assistantAgentActionsSource.includes("${text.waterUnit}"),
+  "Telegram quick buttons, callback feedback, assistant context, and water units must follow the user's profile language."
 );
 
 addCheck(

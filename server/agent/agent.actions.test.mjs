@@ -75,6 +75,25 @@ describe("agent.actions", () => {
     expect(reply).not.toContain("Додав");
   });
 
+  it("localizes water status units for non-Ukrainian replies", () => {
+    const reply = buildAgentReply({
+      intent: createIntent("show_water_status"),
+      language: "en",
+      toolResult: {
+        ok: true,
+        type: "water_status",
+        water: {
+          consumedMl: 750,
+          targetMl: 2000,
+        },
+      },
+    });
+
+    expect(reply).toContain("Water today");
+    expect(reply).toContain("750 / 2000 ml");
+    expect(reply).not.toContain("мл");
+  });
+
   it("localizes reminder worker confirmations without changing the backend action", () => {
     const reply = buildAgentReply({
       intent: createIntent("create_water_reminder"),

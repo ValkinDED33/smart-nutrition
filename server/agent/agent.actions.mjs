@@ -19,6 +19,7 @@ const normalizeLanguage = (value) =>
 
 const copy = {
   uk: {
+    waterUnit: "мл",
     scheduleFallback: "за розкладом",
     reminderFallback: "нагадування",
     productFallback: "продукт",
@@ -111,6 +112,7 @@ const copy = {
     done: "Готово. Я оновив дані Smart Nutrition.",
   },
   pl: {
+    waterUnit: "ml",
     scheduleFallback: "według harmonogramu",
     reminderFallback: "przypomnienie",
     productFallback: "produkt",
@@ -203,6 +205,7 @@ const copy = {
     done: "Gotowe. Zaktualizowałem dane Smart Nutrition.",
   },
   en: {
+    waterUnit: "ml",
     scheduleFallback: "on schedule",
     reminderFallback: "reminder",
     productFallback: "product",
@@ -483,7 +486,7 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
 
     return [
       text.waterToday,
-      `💧 ${formatNumber(consumed)} / ${formatNumber(target)} мл (${formatPercent(consumed, target)})`,
+      `💧 ${formatNumber(consumed)} / ${formatNumber(target)} ${text.waterUnit} (${formatPercent(consumed, target)})`,
       remaining > 0
         ? text.waterLeft(formatNumber(remaining))
         : text.waterGoalClosed,

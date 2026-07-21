@@ -1177,6 +1177,93 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("uses the profile language for Telegram water callback replies", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.actions = [];
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn((matcher, handler) => {
+        this.actions.push({ matcher, handler });
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+      languagePreference: "en",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Done. Added 250 ml of water.",
+        intent: { intent: "add_water", entities: { amountMl: 250 } },
+        actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const addAction = instances[0].actions.find((item) => String(item.matcher).includes("water"));
+    const reply = vi.fn();
+    const answerCbQuery = vi.fn();
+
+    await addAction.handler({
+      match: ["water:add:250", "add", "250"],
+      callbackQuery: {
+        data: "water:add:250",
+        message: { chat: { id: 42 } },
+      },
+      reply,
+      answerCbQuery,
+    });
+
+    expect(assistantAgent.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        context: expect.objectContaining({
+          interactionChannel: "telegram",
+          language: "en",
+        }),
+      })
+    );
+    expect(reply).toHaveBeenCalledWith(
+      "Done. Added 250 ml of water.",
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([expect.objectContaining({ text: "+250 ml" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "💧 Water status" })]),
+          ]),
+        }),
+      })
+    );
+    expect(answerCbQuery).toHaveBeenCalledWith("Water saved.");
+
+    service.stop("test shutdown");
+  });
+
   it("returns retry feedback when Telegram water save fails", async () => {
     const instances = [];
     class TestBot {

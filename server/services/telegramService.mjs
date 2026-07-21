@@ -141,6 +141,11 @@ const TELEGRAM_COPY = {
       "Можна писати людською мовою: “нагадуй пити магній о 22:00” або “що у мене по нагадуванням”.",
     waterStatusButton: "💧 Статус води",
     retryWaterButton: "↻ Спробувати +{amount} мл ще раз",
+    waterSavedAfterRetry: "Воду збережено після повтору.",
+    waterSaved: "Воду збережено.",
+    waterSaveFailed: "Не збереглося. Спробуйте ще раз.",
+    waterStatusUpdated: "Статус оновлено.",
+    waterStatusUnavailable: "Статус води тимчасово недоступний.",
     dailyTitle: "Стан на сьогодні:",
     foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
     calories: (current, target, percent = null) =>
@@ -237,6 +242,11 @@ const TELEGRAM_COPY = {
       "Możesz pisać normalnym językiem: „przypomnij mi o magnezie o 22:00” albo „co z moimi przypomnieniami”.",
     waterStatusButton: "💧 Status wody",
     retryWaterButton: "↻ Spróbuj ponownie +{amount} ml",
+    waterSavedAfterRetry: "Woda zapisana po ponownej próbie.",
+    waterSaved: "Woda zapisana.",
+    waterSaveFailed: "Nie zapisano. Spróbuj ponownie.",
+    waterStatusUpdated: "Status zaktualizowany.",
+    waterStatusUnavailable: "Status wody jest chwilowo niedostępny.",
     dailyTitle: "Status na dziś:",
     foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
     calories: (current, target, percent = null) =>
@@ -330,6 +340,11 @@ const TELEGRAM_COPY = {
       "You can write naturally: “remind me to take magnesium at 22:00” or “what reminders do I have”.",
     waterStatusButton: "💧 Water status",
     retryWaterButton: "↻ Try +{amount} ml again",
+    waterSavedAfterRetry: "Water saved after retry.",
+    waterSaved: "Water saved.",
+    waterSaveFailed: "Could not save. Try again.",
+    waterStatusUpdated: "Status updated.",
+    waterStatusUnavailable: "Water status is temporarily unavailable.",
     dailyTitle: "Today status:",
     foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
     calories: (current, target, percent = null) =>
@@ -1117,7 +1132,7 @@ export const createTelegramService = ({
   const buildTelegramAssistantContext = async (user) => {
     const fallbackContext = {
       interactionChannel: "telegram",
-      language: "uk",
+      language: normalizeTelegramLanguage(user?.languagePreference),
       userName: user?.name ?? "",
       gender: user?.gender ?? null,
       goal: user?.goal ?? "maintain",
@@ -1650,9 +1665,9 @@ export const createTelegramService = ({
       await ctx.answerCbQuery?.(
         saved
           ? action === "retry"
-            ? "Воду збережено після повтору."
-            : "Воду збережено."
-          : "Не збереглося. Спробуйте ще раз."
+            ? copy.waterSavedAfterRetry
+            : copy.waterSaved
+          : copy.waterSaveFailed
       );
     });
 
@@ -1665,6 +1680,8 @@ export const createTelegramService = ({
         );
         return;
       }
+      const language = await getTelegramUserLanguage(user);
+      const copy = getTelegramCopy(language);
 
       const agentResult = await runTelegramAgentAction({
         ctx,
@@ -1674,8 +1691,8 @@ export const createTelegramService = ({
 
       await ctx.answerCbQuery?.(
         agentResult?.actions?.some((item) => item?.id === "show_water_status" && item?.ok)
-          ? "Статус оновлено."
-          : "Статус води тимчасово недоступний."
+          ? copy.waterStatusUpdated
+          : copy.waterStatusUnavailable
       );
     });
 
