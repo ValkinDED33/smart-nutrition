@@ -81,6 +81,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
 - Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through the backend invite contract, not full account synchronization.
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
+- Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
 
 ## Current Architecture
 

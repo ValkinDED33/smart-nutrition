@@ -465,6 +465,19 @@ addCheck(
 );
 
 addCheck(
+  "telegram account UI presents an assistant surface, not a separate bot product",
+  accountDataCardCopySource.includes("Підключіть помічника") &&
+    accountDataCardCopySource.includes("Завершіть підключення в помічнику.") &&
+    accountDataCardCopySource.includes('telegramBot: "Помічник"') &&
+    accountDataCardCopySource.includes('telegramBot: "Asystent"') &&
+    accountDataCardCopySource.includes("Connect the assistant") &&
+    accountDataCardCopySource.includes("Finish connecting with the assistant.") &&
+    accountDataCardCopySource.includes('telegramBot: "Assistant"') &&
+    !/Connect the bot|Підключіть бота|w bocie|telegramBot: "Bot"/.test(accountDataCardCopySource),
+  "Telegram profile settings must describe the same Smart Nutrition AI assistant surface, not a standalone bot product or second AI brain."
+);
+
+addCheck(
   "photo meal unclear images start unselected and show better-photo recovery",
   photoAssistantSource.includes("shouldShowBetterPhotoGuidance") &&
     photoAssistantSource.includes("betterPhotoGuidanceVisible") &&
