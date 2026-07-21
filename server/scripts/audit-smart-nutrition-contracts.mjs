@@ -712,8 +712,12 @@ addCheck(
   ) &&
     registerPageSource.includes("checkRegistrationAvailability") &&
     registerPageSource.includes("availabilityBlocksNext") &&
-    registerPageSource.includes("disabled={availabilityBlocksNext}"),
-  "Registration must stay a guided language/theme/account flow and block taken/unchecked name or email values."
+    registerPageSource.includes("availabilityBlocksSubmit") &&
+    registerPageSource.includes("disabled={availabilityBlocksNext}") &&
+    registerPageSource.includes("disabled={submitting || availabilityBlocksSubmit}") &&
+    registerPageSource.includes('setRegistrationStep("name")') &&
+    registerPageSource.includes('setRegistrationStep("email")'),
+  "Registration must stay a guided language/theme/account flow and block taken, unchecked, stale, or unavailable name/email values before account creation."
 );
 
 addCheck(

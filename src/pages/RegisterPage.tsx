@@ -587,10 +587,8 @@ const RegisterPage = () => {
   };
 
   const availabilityBlocksSubmit =
-    displayedNameAvailability === "checking" ||
-    displayedEmailAvailability === "checking" ||
-    displayedNameAvailability === "taken" ||
-    displayedEmailAvailability === "taken";
+    displayedNameAvailability !== "available" ||
+    displayedEmailAvailability !== "available";
   const availabilityBlocksNext =
     (registrationStep === "name" &&
       nameCanCheck &&
@@ -660,19 +658,21 @@ const RegisterPage = () => {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (displayedNameAvailability === "taken") {
+    if (displayedNameAvailability !== "available") {
       setError("name", {
         type: "manual",
-        message: t(availabilityTranslationKeys.nameInUse),
+        message: t(getAvailabilityBlockMessageKey("name", displayedNameAvailability)),
       });
+      setRegistrationStep("name");
       return;
     }
 
-    if (displayedEmailAvailability === "taken") {
+    if (displayedEmailAvailability !== "available") {
       setError("email", {
         type: "manual",
-        message: t(availabilityTranslationKeys.emailInUse),
+        message: t(getAvailabilityBlockMessageKey("email", displayedEmailAvailability)),
       });
+      setRegistrationStep("email");
       return;
     }
 

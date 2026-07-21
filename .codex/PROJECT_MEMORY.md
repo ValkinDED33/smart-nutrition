@@ -115,6 +115,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added typed/browser-voice meal commands inside the existing `FoodCommandCenter`: explicit commands such as "add lunch 200 g rice" are parsed deterministically, matched against the canonical product catalog, checked for compatible product units, and saved only through backend-confirmed product intake.
 - Hardened the progress overview into a tested counted-domain model: calories, protein, water, meals, weight goal, and body check-ins are calculated together, water glasses stay visible on the first progress screen, and each domain routes to its detailed section.
 - Added web reminder adherence period reports inside the existing reminder manager: 7-day and 30-day summaries read canonical backend reminder events, show completed/skipped/snoozed counts, active reminder coverage, last action, and honest missing-data state without a second reminder/report store.
+- Hardened guided registration so final account creation requires backend-confirmed available nickname and email; stale, unchecked, unavailable, or taken availability states route back to the exact field instead of relying on a late register failure.
 
 ## Current Architecture
 
@@ -160,6 +161,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Public frontend deployments must prefer the canonical configured backend URL over stale stored browser API base URLs. LocalStorage may remember a remote base URL as cache/hint only; it must not override the accepted production backend contract.
 - Auth cookies: production frontend/backend split deployments must use `SameSite=None; Secure=true` for restore and authenticated API calls.
 - Auth session responses must place access/refresh tokens only into HTTP-only cookies and return user/snapshot data in the JSON body without raw tokens.
+- Guided registration must show inline backend-confirmed availability for nickname and email and must not submit account creation unless both fields are confirmed available.
 - Configured owner promotion belongs to the explicit awaited access-control bootstrap path, not to fire-and-forget service construction side effects.
 - Email verification and reset password tokens may be consumed from URL links only long enough to capture them into runtime state; the browser address bar/history entry must be cleaned before user interaction continues.
 - Vercel-served frontend routes must keep `Referrer-Policy: strict-origin-when-cross-origin` so auth link query data is not sent cross-origin.
