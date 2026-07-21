@@ -9,6 +9,8 @@ const syncMessageCopy = {
     saveFailed: "Не вдалося зберегти останні зміни у хмарі.",
     pullFailed: "Не вдалося підтягнути останні хмарні дані.",
     inactive: "Для цього акаунта хмарна синхронізація зараз не активна.",
+    unknownIssue:
+      "Останні зміни поки не підтвердилися. Спробуйте повторити дію за кілька секунд.",
   },
   pl: {
     queuedOne: "1 zmiana czeka na potwierdzenie z chmury.",
@@ -19,6 +21,8 @@ const syncMessageCopy = {
     saveFailed: "Nie udało się zapisać ostatnich zmian w chmurze.",
     pullFailed: "Nie udało się pobrać najnowszych danych z chmury.",
     inactive: "Synchronizacja z chmurą nie jest teraz aktywna dla tego konta.",
+    unknownIssue:
+      "Ostatnie zmiany nie zostały jeszcze potwierdzone. Spróbuj powtórzyć akcję za kilka sekund.",
   },
   en: {
     queuedOne: "1 change is waiting for cloud confirmation.",
@@ -29,6 +33,8 @@ const syncMessageCopy = {
     saveFailed: "Could not save the latest changes to the cloud.",
     pullFailed: "Could not pull the latest cloud data.",
     inactive: "Cloud sync is not active for this account right now.",
+    unknownIssue:
+      "The latest changes are not confirmed yet. Try the action again in a few seconds.",
   },
 } as const;
 
@@ -85,5 +91,5 @@ export const translateSyncErrorMessage = (
     return copy.saveFailed;
   }
 
-  return message;
+  return copy.unknownIssue;
 };

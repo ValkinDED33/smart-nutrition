@@ -126,6 +126,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked the crash screen diagnostics so ordinary users see a short recovery code and saved-details message instead of raw stale-build/error-name/error-message internals.
 - Reworked assistant settings so ordinary users see assistant readiness/product-language status while provider, model, priority, and fallback-route diagnostics stay behind admin-center role access.
 - Reworked assistant unavailable/fallback copy so regular users see limited-helper/live-dialog recovery language instead of Cloud AI, production AI, or local-context internals.
+- Hardened shared sync error messaging so unknown backend/provider exceptions fall back to localized retry guidance instead of leaking raw technical text into regular sync chips or profile sync panels.
 
 ## Current Architecture
 
@@ -158,6 +159,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
+- Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.

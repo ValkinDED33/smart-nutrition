@@ -1105,6 +1105,16 @@ addCheck(
 );
 
 addCheck(
+  "regular sync errors never render raw backend/provider messages",
+  syncMessagingSource.includes("unknownIssue") &&
+    syncMessagingSource.includes("Останні зміни поки не підтвердилися") &&
+    syncMessagingSource.includes("Ostatnie zmiany nie zostały jeszcze potwierdzone") &&
+    syncMessagingSource.includes("The latest changes are not confirmed yet") &&
+    !syncMessagingSource.includes("return message;"),
+  "Unknown sync errors must fall back to localized product-language retry copy instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
   "regular account settings hide operational backup and runtime details",
   accountDataCardSource.includes("canAccessAdminCenter(user?.role)") &&
     accountDataCardSource.includes("if (!canSeeOperationalDetails)") &&
