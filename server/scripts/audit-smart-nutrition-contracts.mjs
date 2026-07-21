@@ -57,6 +57,9 @@ const foodCommandCenterSource = readSource("src/features/meal/FoodCommandCenter.
 const foodCommandCenterModelSource = readSource(
   "src/features/meal/foodCommandCenterModel.ts"
 );
+const mealActionFeedbackModelSource = readSource(
+  "src/features/meal/mealActionFeedbackModel.ts"
+);
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
@@ -1112,6 +1115,14 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "meal action feedback hides raw backend/provider failure details",
+  mealActionFeedbackModelSource.includes("text: `${copy.failed[state.kind]} ${copy.retry}`") &&
+    !mealActionFeedbackModelSource.includes("${state.message") &&
+    !mealActionFeedbackModelSource.includes("state.message || copy.retry"),
+  "Food add/edit/delete/repeat/template/product failure notices must stay retryable without rendering raw backend/provider exception text."
 );
 
 addCheck(

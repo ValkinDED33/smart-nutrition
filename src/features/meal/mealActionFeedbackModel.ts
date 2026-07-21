@@ -92,7 +92,7 @@ export const resolveMealActionNotice = (
 
   return {
     severity: "warning",
-    text: `${copy.failed[state.kind]} ${state.message || copy.retry}`,
+    text: `${copy.failed[state.kind]} ${copy.retry}`,
     retryable: true,
   };
 };

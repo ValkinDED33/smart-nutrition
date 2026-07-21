@@ -136,13 +136,13 @@ describe("mealActionFeedbackModel", () => {
         )
       ).toMatchObject({
         severity: "warning",
-        text: `${getMealActionFeedbackText(copy, "failed", kind)} backend sleeping`,
+        text: `${getMealActionFeedbackText(copy, "failed", kind)} Retry`,
         retryable: true,
       });
     });
   });
 
-  it("keeps failed actions retryable with backend error details", () => {
+  it("keeps failed actions retryable without leaking backend/provider details", () => {
     expect(
       resolveMealActionNotice(
         createMealActionFailedState({
@@ -154,8 +154,18 @@ describe("mealActionFeedbackModel", () => {
       )
     ).toEqual({
       severity: "warning",
-      text: "Failed delete backend sleeping",
+      text: "Failed delete Retry",
       retryable: true,
     });
+    expect(
+      resolveMealActionNotice(
+        createMealActionFailedState({
+          kind: "saveProduct",
+          actionId: "save-product",
+          message: "Provider unavailable.",
+        }),
+        createCopy()
+      )?.text
+    ).not.toMatch(/backend|provider|unavailable|REMOTE_API/i);
   });
 });
