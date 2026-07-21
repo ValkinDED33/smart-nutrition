@@ -71,6 +71,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Blocked `SMART_NUTRITION_DEBUG_STARTUP_ENABLED=true` in production and gated full startup diagnostics logging behind the debug flag so `/api/debug/startup` and broad config dumps stay development-only.
 - Removed stale AI setup documentation that described photo uploads as manual-draft-only, and added a contract audit guard so docs stay aligned with backend vision recognition, honest fallback, profile language, and user-confirmed saving.
 - Made Redis readiness instance-aware: single-instance production may use in-memory cache/rate limiting, while `SMART_NUTRITION_RUNTIME_INSTANCE_COUNT>1` requires `SMART_NUTRITION_REDIS_URL` and is protected by tests plus contract audit.
+- Made live smoke scripts load ignored local `.env` files so deploy URLs and dedicated smoke-account credentials can be provided locally without committing secrets.
 
 ## Current Architecture
 
@@ -128,7 +129,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - 3D companion runtime must stay 2D on mobile, low-power, data-saver, reduced-motion, and unsupported WebGL contexts even if 3D is selected in profile preferences.
 - Route-heavy vendors for scanner, photo compression, markdown, analytics, native bridges, and 3D companion must stay behind route-local lazy boundaries and must not appear in initial `index.html` scripts or modulepreload assets.
 - Deploy-sensitive readiness must include `npm run audit:live` after deployment or domain/backend/CORS/SEO changes. The live audit may use only public unauthenticated endpoints and must not include secrets, login, protected user data, or fake success.
-- Authenticated deploy smoke must use a dedicated verified smoke account via `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`; personal/admin credentials must not be committed, echoed, or required for routine verification.
+- Authenticated deploy smoke must use a dedicated verified smoke account via `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`; the npm script loads ignored `.env` for these values, and personal/admin credentials must not be committed, echoed, or required for routine verification.
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.

@@ -468,7 +468,9 @@ addCheck(
 
 addCheck(
   "live production audit verifies public deployed chain without secrets",
-  packageJsonSource.includes('"audit:live": "node server/scripts/audit-live-production.mjs"') &&
+  packageJsonSource.includes(
+    '"audit:live": "node --env-file-if-exists=.env server/scripts/audit-live-production.mjs"'
+  ) &&
     liveAuditSource.includes("https://smart-nutrition.club") &&
     liveAuditSource.includes("https://smart-nutrition-sk5r.onrender.com") &&
     liveAuditSource.includes("/api/health") &&
@@ -485,7 +487,9 @@ addCheck(
 
 addCheck(
   "authenticated live smoke requires dedicated credentials and cleans mutations",
-  packageJsonSource.includes('"audit:live:auth": "node server/scripts/audit-live-authenticated.mjs"') &&
+  packageJsonSource.includes(
+    '"audit:live:auth": "node --env-file-if-exists=.env server/scripts/audit-live-authenticated.mjs"'
+  ) &&
     authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_EMAIL") &&
     authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_PASSWORD") &&
     authenticatedLiveAuditSource.includes("/api/auth/login") &&
