@@ -12,6 +12,12 @@ import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { createWaterGlassSlots } from "../water/waterModel";
+import {
+  createProgressOverviewItems,
+  formatProgressPercent,
+  getProgressToneColor,
+  type ProgressDomain,
+} from "./progressOverviewModel";
 
 const progressOverviewCopy = {
   uk: {
@@ -67,14 +73,7 @@ const progressOverviewCopy = {
   },
 } as const;
 
-type ProgressTone = "good" | "watch" | "missing";
-export type ProgressDomain =
-  | "calories"
-  | "protein"
-  | "water"
-  | "meals"
-  | "weight"
-  | "checkIn";
+export type { ProgressDomain } from "./progressOverviewModel";
 type ProgressOverviewCopy = (typeof progressOverviewCopy)[AppLanguage];
 
 interface ProgressOverviewCardProps {
@@ -93,124 +92,19 @@ const getProgressOverviewCopy = (language: AppLanguage): ProgressOverviewCopy =>
   }
 };
 
-const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
-
-const getTone = (value: number | null, target = 80): ProgressTone => {
-  if (value === null) {
-    return "missing";
-  }
-
-  return value >= target ? "good" : "watch";
-};
-
-const getToneColor = (tone: ProgressTone, color: string) => {
-  if (tone === "missing") {
-    return "rgba(148, 163, 184, 0.72)";
-  }
-
-  if (tone === "watch") {
-    return "#f59e0b";
-  }
-
-  return color;
-};
-
-const formatPercent = (value: number | null) => (value === null ? "-" : `${value}%`);
-
 export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardProps) => {
   const { appLanguage } = useLanguage();
   const copy = getProgressOverviewCopy(appLanguage);
   const profile = useSelector((state: RootState) => state.profile);
   const meal = useSelector((state: RootState) => state.meal);
   const water = useSelector((state: RootState) => state.water);
-  const latestWeight = profile.weightHistory.at(-1)?.weight ?? 0;
-  const todayMealCount = meal.items.filter((item) => {
-    const date = new Date(item.eatenAt);
-    const today = new Date();
-
-    return (
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    );
-  }).length;
-  const caloriesProgress = profile.dailyCalories
-    ? clampPercent((meal.totalNutrients.calories / profile.dailyCalories) * 100)
-    : null;
-  const proteinTarget = profile.dailyCalories ? Math.max(60, Math.round(profile.dailyCalories * 0.075)) : 0;
-  const proteinProgress = proteinTarget
-    ? clampPercent((meal.totalNutrients.protein / proteinTarget) * 100)
-    : null;
-  const waterProgress = water.dailyWaterGoal
-    ? clampPercent((water.consumedMl / water.dailyWaterGoal) * 100)
-    : null;
   const overviewWaterGlasses = createWaterGlassSlots(
     water.consumedMl,
     water.dailyWaterGoal,
     water.glassSizeMl,
     6
   ).slice(0, 8);
-  const mealsProgress = clampPercent((todayMealCount / 4) * 100);
-  const weightProgress =
-    latestWeight && profile.targetWeight
-      ? clampPercent(
-          (1 -
-            Math.abs(latestWeight - profile.targetWeight) /
-              Math.max(Math.abs((profile.targetWeightStart ?? latestWeight) - profile.targetWeight), 1)) *
-            100
-        )
-      : null;
-  const checkInProgress = clampPercent(Math.min(profile.measurementHistory.length, 4) * 25);
-  const items = [
-    {
-      domain: "calories" as ProgressDomain,
-      label: copy.calories,
-      value: caloriesProgress,
-      detail: `${Math.round(meal.totalNutrients.calories)} / ${profile.dailyCalories || 0} kcal`,
-      color: "#14b8a6",
-      tone: getTone(caloriesProgress),
-    },
-    {
-      domain: "protein" as ProgressDomain,
-      label: copy.protein,
-      value: proteinProgress,
-      detail: `${Math.round(meal.totalNutrients.protein)} / ${proteinTarget || 0} g`,
-      color: "#8b5cf6",
-      tone: getTone(proteinProgress),
-    },
-    {
-      domain: "water" as ProgressDomain,
-      label: copy.water,
-      value: waterProgress,
-      detail: `${water.consumedMl} / ${water.dailyWaterGoal} ml`,
-      color: "#0ea5e9",
-      tone: getTone(waterProgress),
-    },
-    {
-      domain: "meals" as ProgressDomain,
-      label: copy.meals,
-      value: mealsProgress,
-      detail: copy.mealsDetail(todayMealCount),
-      color: "#22c55e",
-      tone: getTone(mealsProgress, 50),
-    },
-    {
-      domain: "weight" as ProgressDomain,
-      label: copy.weightGoal,
-      value: weightProgress,
-      detail: profile.targetWeight ? `${latestWeight.toFixed(1)} / ${profile.targetWeight.toFixed(1)} kg` : copy.noTarget,
-      color: "#f97316",
-      tone: getTone(weightProgress),
-    },
-    {
-      domain: "checkIn" as ProgressDomain,
-      label: copy.checkIn,
-      value: checkInProgress,
-      detail: copy.checkInDetail(profile.measurementHistory.length),
-      color: "#ec4899",
-      tone: getTone(checkInProgress, 50),
-    },
-  ];
+  const items = createProgressOverviewItems({ profile, meal, water, labels: copy });
 
   return (
     <Paper
@@ -239,7 +133,7 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
           }}
         >
           {items.map((item) => {
-            const barColor = getToneColor(item.tone, item.color);
+            const barColor = getProgressToneColor(item.tone, item.color);
 
             return (
               <Paper
@@ -267,7 +161,7 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
                   <Stack direction="row" justifyContent="space-between" spacing={1}>
                     <Typography sx={{ fontWeight: 850 }}>{item.label}</Typography>
                     <Typography sx={{ fontWeight: 900, color: barColor }}>
-                      {formatPercent(item.value)}
+                      {formatProgressPercent(item.value)}
                     </Typography>
                   </Stack>
                   <LinearProgress

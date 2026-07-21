@@ -6,15 +6,20 @@ const readSource = (path: string) => readFile(path, "utf8");
 describe("ProgressOverviewCard contract", () => {
   it("keeps the progress overview connected to every counted domain", async () => {
     const source = await readSource("src/features/profile/ProgressOverviewCard.tsx");
+    const modelSource = await readSource("src/features/profile/progressOverviewModel.ts");
     const pageSource = await readSource("src/pages/ProgressPage.tsx");
 
     expect(pageSource).toContain("ProgressOverviewCard");
+    expect(source).toContain("createProgressOverviewItems");
+    expect(source).toContain("formatProgressPercent");
+    expect(source).toContain("getProgressToneColor");
+    expect(modelSource).toContain("createProgressOverviewItems");
     expect(source).toContain("state.profile");
     expect(source).toContain("state.meal");
     expect(source).toContain("state.water");
-    expect(source).toContain("caloriesProgress");
-    expect(source).toContain("proteinProgress");
-    expect(source).toContain("waterProgress");
+    expect(modelSource).toContain("caloriesProgress");
+    expect(modelSource).toContain("proteinProgress");
+    expect(modelSource).toContain("waterProgress");
     expect(source).toContain("createWaterGlassSlots");
     expect(source).toContain("overviewWaterGlasses");
     expect(source).toContain('data-testid="overview-water-glass"');
@@ -23,8 +28,9 @@ describe("ProgressOverviewCard contract", () => {
     expect(pageSource).toContain("getSectionForProgressDomain");
     expect(pageSource).toContain('case "water":');
     expect(pageSource).toContain('return "water";');
-    expect(source).toContain("mealsProgress");
-    expect(source).toContain("weightProgress");
-    expect(source).toContain("checkInProgress");
+    expect(modelSource).toContain("mealsProgress");
+    expect(modelSource).toContain("weightProgress");
+    expect(modelSource).toContain("checkInProgress");
+    expect(source).not.toContain("const caloriesProgress");
   });
 });

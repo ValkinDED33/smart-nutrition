@@ -113,6 +113,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Simplified the food logging entry path around the existing `FoodCommandCenter`: barcode, photo, search, saved products, builder, and catalog contribution now route from one primary command surface, while the duplicate mode-selection card was removed.
 - Added product correction as a backend-confirmed catalog moderation path: product cards open a prefilled shared-catalog contribution from the scanned/searched product facts instead of locally editing or inventing corrected product state.
 - Added typed/browser-voice meal commands inside the existing `FoodCommandCenter`: explicit commands such as "add lunch 200 g rice" are parsed deterministically, matched against the canonical product catalog, checked for compatible product units, and saved only through backend-confirmed product intake.
+- Hardened the progress overview into a tested counted-domain model: calories, protein, water, meals, weight goal, and body check-ins are calculated together, water glasses stay visible on the first progress screen, and each domain routes to its detailed section.
 
 ## Current Architecture
 
@@ -149,6 +150,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Photo meal UX must show a clear review/retry state for unavailable analysis; it must not imply a saved or recognized result, and it must not leave users guessing after upload.
 - Barcode scanner UX must make the resolved product immediately visible after scan; manual barcode controls, history, and fallback panels are secondary after a confirmed product result.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
+- Progress overview calculations must live in the tested progress overview model; the UI may render the cards, but it must not quietly collapse the product back into a weight-only chart.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.
 - Security/CSP: Frontend `connect-src` must not allow direct external food catalog providers for product lookup.
 - Scanner security headers: backend-served app responses must allow `camera=(self)` so barcode scanning is not blocked by Permissions Policy.

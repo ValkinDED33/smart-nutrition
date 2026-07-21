@@ -69,6 +69,9 @@ const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
 );
+const progressOverviewModelSource = readSource(
+  "src/features/profile/progressOverviewModel.ts"
+);
 const womenHealthOverviewCardSource = readSource(
   "src/features/profile/WomenHealthOverviewCard.tsx"
 );
@@ -797,12 +800,22 @@ addCheck(
     progressPageSource.includes('case "water":') &&
     progressPageSource.includes('return "water";') &&
     progressPageSource.includes("onSelectDomain") &&
+    progressOverviewCardSource.includes("createProgressOverviewItems") &&
+    progressOverviewCardSource.includes("formatProgressPercent") &&
+    progressOverviewCardSource.includes("getProgressToneColor") &&
+    progressOverviewModelSource.includes("caloriesProgress") &&
+    progressOverviewModelSource.includes("proteinProgress") &&
+    progressOverviewModelSource.includes("waterProgress") &&
+    progressOverviewModelSource.includes("mealsProgress") &&
+    progressOverviewModelSource.includes("weightProgress") &&
+    progressOverviewModelSource.includes("checkInProgress") &&
     progressOverviewCardSource.includes("createWaterGlassSlots") &&
     progressOverviewCardSource.includes("overviewWaterGlasses") &&
     progressOverviewCardSource.includes('data-testid="overview-water-glass"') &&
     progressOverviewCardSource.includes("data-progress-domain={item.domain}") &&
-    progressOverviewCardSource.includes("onSelectDomain?.(item.domain)"),
-  "Progress must show water glass slots in the first overview and let users open the water tab directly from the counted-domain card."
+    progressOverviewCardSource.includes("onSelectDomain?.(item.domain)") &&
+    !progressOverviewCardSource.includes("const caloriesProgress"),
+  "Progress must show all counted domains through a tested model, keep water glass slots in the first overview, and let users open detail tabs from each counted-domain card."
 );
 
 addCheck(
