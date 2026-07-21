@@ -98,6 +98,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added backend-confirmed AI symptom logging: assistant symptom text now appends to canonical `womenHealth.symptomHistory`, verifies the saved symptom after persistence, updates assistant memory, and replies with safety language instead of diagnosis.
 - Surfaced backend-confirmed symptom history in the existing women-health profile card as a care-context journal with localized copy, severity color, source labels, and a non-diagnostic safety note.
 - Added backend-backed AI daily summary generation: assistant day-summary requests now read canonical snapshot, meal, water, profile, symptom, weight, and reminder state and reply as an action receipt instead of a generic model guess.
+- Added backend-confirmed AI follow-up creation: assistant follow-up requests now become canonical task reminders with explicit local reminder time, confirmed reply copy, scoped memory, and no second reminder system.
 
 ## Current Architecture
 
@@ -107,6 +108,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
+- AI-created follow-ups must use the canonical typed task reminder contract with explicit local reminder time; they are proactive assistant work, not a separate reminder engine.
 - AI-created weight check-ins must use canonical profile state and verify the saved `weightHistory` entry before reporting success.
 - AI-created symptom check-ins must use canonical women-health profile state and verify the saved `symptomHistory` entry before reporting success; symptom replies must be care-context logs, not diagnosis or treatment advice.
 - Women-health UI must surface canonical `symptomHistory` from profile state as an observation journal; it must not use local-only symptom persistence or present symptom logs as diagnosis.
@@ -194,6 +196,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI saved actions must call backend tools/contracts and report only confirmed, pending, or failed states.
 - AI visible replies must not say an action is saved until the canonical backend tool succeeds, and failure copy should say Smart Nutrition cloud could not confirm the save rather than exposing backend jargon.
 - AI-created reminders must prefer the canonical typed reminder contract (`createReminderFromUserText`) and may use legacy medication/task-specific methods only as compatibility fallback.
+- AI follow-up reminders must route through the canonical task reminder contract, use explicit local reminder time, and must not become a second reminder system.
 - AI conversation history reset must be backend-confirmed; local cleanup is hygiene only and cannot report success by itself.
 - Legacy browser-stored assistant history is privacy-sensitive migration debt and must be purged on startup, not treated as canonical memory.
 - UI success must be backend-confirmed unless clearly marked as queued/offline.

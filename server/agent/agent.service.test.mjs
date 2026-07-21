@@ -634,6 +634,59 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("creates follow-ups through the canonical task reminder contract", async () => {
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async (_user, payload) => ({
+        ok: true,
+        reminder: {
+          id: "follow-up-1",
+          type: payload.type,
+          title: "проверить воду",
+          times: ["11:30"],
+          repeat: "once",
+        },
+      })),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "напомни проверить воду через 30 минут",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_follow_up" },
+      actions: [{ id: "create_follow_up", ok: true, resultType: "follow_up_created" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["day_status", "coach_focus"],
+    });
+    expect(result.text).toContain("Follow-up створено");
+    expect(result.text).toContain("проверить воду");
+    expect(result.text).toContain("11:30");
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(
+      user,
+      {
+        type: "task",
+        text: "напомни проверить воду о 11:30",
+      },
+      fixedNow
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["uses assistant follow-ups"]),
+      })
+    );
+  });
+
   it("prefers the canonical typed reminder contract for ordinary task reminders", async () => {
     const reminderService = {
       createReminderFromUserText: vi.fn(async () => ({

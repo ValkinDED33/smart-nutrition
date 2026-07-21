@@ -14,6 +14,10 @@ const REMINDER_WORD_PATTERN =
   /(напомни|напоминай|нагадай|нагадуй|remind me|remind|reminder|нагадування|напоминание)/i;
 const REMINDER_SCHEDULE_PATTERN =
   /(\d{1,2}[:.]\d{2}|(?:^|\s)(?:в|о|at)\s*\d{1,2}(?:\s|$)|утром|ранку|вечером|вечір|morning|evening|night)/i;
+const FOLLOW_UP_WORD_PATTERN =
+  /(follow[-\s]?up|фоллоу|фолоу|вернись|вернуться|повернись|повернутись|провер|перевір|check back|check in|later|позже|пізніше)/i;
+const RELATIVE_SCHEDULE_PATTERN =
+  /(?:через|за|in)\s+\d{1,3}\s*(?:мин(?:ут[уы]?)?|хв(?:илин[уы]?)?|minutes?|min|час(?:а|ов)?|год(?:ини|ин)?|hours?|h)(?=\s|$|[,.!?])/i;
 const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
 const DAY_SUMMARY_PATTERN =
@@ -189,6 +193,21 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         text: normalized,
       },
       reason: "habit_reminder_request",
+    };
+  }
+
+  if (
+    /^\/?(?:followup|follow-up)\b/i.test(normalized) ||
+    (FOLLOW_UP_WORD_PATTERN.test(normalized) &&
+      (REMINDER_SCHEDULE_PATTERN.test(normalized) || RELATIVE_SCHEDULE_PATTERN.test(normalized)))
+  ) {
+    return {
+      intent: "create_follow_up",
+      confidence: 0.86,
+      entities: {
+        text: normalized.replace(/^\/?(?:followup|follow-up)\b/i, "").trim() || normalized,
+      },
+      reason: "follow_up_request",
     };
   }
 

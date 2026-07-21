@@ -25,6 +25,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["protein_help", "water_help", "coach_focus"];
   }
 
+  if (intent === "create_follow_up") {
+    return ["day_status", "coach_focus"];
+  }
+
   if (intent === "add_meal" || intent === "search_product") {
     return ["day_status", "protein_help", "water_help"];
   }
@@ -79,6 +83,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "create_task_reminder") {
       return tools.createTaskReminder(user, intent.entities);
+    }
+
+    if (intent.intent === "create_follow_up") {
+      return tools.createFollowUp(user, intent.entities);
     }
 
     if (intent.intent === "create_medication_course_reminder") {

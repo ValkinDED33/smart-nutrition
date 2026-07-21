@@ -43,6 +43,15 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "follow_up_created") {
+    return {
+      userId: user?.id,
+      habits: ["uses assistant follow-ups"],
+      motivationTriggers: ["proactive follow-up reminders"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "reminder_created") {
     const reminderKind = toolResult.reminderKind ?? toolResult.reminder?.type ?? "task";
     const habitByKind = {

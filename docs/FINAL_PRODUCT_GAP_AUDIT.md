@@ -554,9 +554,11 @@ Includes:
 
 - Done: `search_product`, `add_meal`, `add_water`,
   `create_medication_reminder`, `create_task_reminder`, typed reminders,
-  `log_weight`, `log_symptom`, and `generate_day_summary`.
-- Remaining:
-- `create_follow_up`
+  `log_weight`, `log_symptom`, `generate_day_summary`, and
+  `create_follow_up`.
+- Remaining: continue expanding higher-value worker tools only through
+  backend-confirmed contracts, without adding a second reminder, product, meal,
+  or AI system.
 
 Done means:
 Telegram and web assistant can update real product, reminder, progress, symptom,

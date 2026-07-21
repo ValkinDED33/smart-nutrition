@@ -67,6 +67,10 @@ const copy = {
       "Я не зміг безпечно розібрати час нагадування.",
       "Напишіть так: /addtask Подзвонити лікарю о 10:00",
     ],
+    followUpFailed: [
+      "Я зрозумів follow-up, але не зміг безпечно створити нагадування в Smart Nutrition.",
+      "Напишіть з часом: повернись до цього о 18:00 або через 30 хв.",
+    ],
     typedReminderFailed: [
       "Я зрозумів тип нагадування, але не зміг безпечно розібрати розклад.",
       "Напишіть з конкретним часом: щодня о 09:00, 13:00 або 21:00.",
@@ -100,6 +104,8 @@ const copy = {
       "Оскільки увімкнений режим вагітності / підготовки, я триматимуся тільки плану лікаря і не змінюватиму дозування.",
     clinicianSafety: "Важливо: я не замінюю лікаря і не змінюю дозування самостійно.",
     taskCreated: "Готово. Нагадування створено.",
+    followUpCreated: "Готово. Follow-up створено.",
+    followUpButtons: "Я нагадаю і дам кнопки: зроблено, пізніше або пропустити.",
     repeatOnce: "Повтор: один раз.",
     repeatDaily: "Повтор: щодня.",
     taskButtons: "Я нагадаю в Telegram і дам кнопки: зроблено, пізніше або пропустити.",
@@ -189,6 +195,10 @@ const copy = {
       "Nie udało mi się bezpiecznie odczytać czasu przypomnienia.",
       "Napisz tak: /addtask Zadzwonić do lekarza o 10:00",
     ],
+    followUpFailed: [
+      "Rozumiem follow-up, ale nie mogę bezpiecznie utworzyć przypomnienia w Smart Nutrition.",
+      "Napisz z godziną: wróć do tego o 18:00 albo za 30 min.",
+    ],
     typedReminderFailed: [
       "Rozumiem typ przypomnienia, ale nie mogę bezpiecznie odczytać harmonogramu.",
       "Napisz z konkretną godziną: codziennie o 09:00, 13:00 albo 21:00.",
@@ -222,6 +232,8 @@ const copy = {
       "Ponieważ włączony jest tryb ciąży / przygotowania, trzymam się tylko planu lekarza i nie zmieniam dawkowania.",
     clinicianSafety: "Ważne: nie zastępuję lekarza i samodzielnie nie zmieniam dawkowania.",
     taskCreated: "Gotowe. Przypomnienie utworzone.",
+    followUpCreated: "Gotowe. Follow-up utworzony.",
+    followUpButtons: "Przypomnę i dam przyciski: zrobione, później albo pomiń.",
     repeatOnce: "Powtórka: jeden raz.",
     repeatDaily: "Powtórka: codziennie.",
     taskButtons: "Przypomnę w Telegramie i dam przyciski: zrobione, później albo pomiń.",
@@ -311,6 +323,10 @@ const copy = {
       "I could not safely parse the reminder time.",
       "Write it like this: /addtask Call the doctor at 10:00",
     ],
+    followUpFailed: [
+      "I understood the follow-up, but could not safely create the reminder in Smart Nutrition.",
+      "Write it with time: check back at 18:00 or in 30 min.",
+    ],
     typedReminderFailed: [
       "I understood the reminder type, but could not safely parse the schedule.",
       "Write a specific time: daily at 09:00, 13:00, or 21:00.",
@@ -344,6 +360,8 @@ const copy = {
       "Because pregnancy / trying-to-conceive mode is enabled, I will stay within your clinician plan and will not change dosage.",
     clinicianSafety: "Important: I do not replace a clinician and do not change dosage on my own.",
     taskCreated: "Done. Reminder created.",
+    followUpCreated: "Done. Follow-up created.",
+    followUpButtons: "I will remind you and show buttons: done, later, or skip.",
     repeatOnce: "Repeat: once.",
     repeatDaily: "Repeat: daily.",
     taskButtons: "I will remind you in Telegram and show buttons: done, later, or skip.",
@@ -485,6 +503,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.taskScheduleFailed.join("\n");
     }
 
+    if (intent.intent === "create_follow_up") {
+      return text.followUpFailed.join("\n");
+    }
+
     if (
       intent.intent === "create_water_reminder" ||
       intent.intent === "create_habit_reminder" ||
@@ -602,6 +624,17 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       `${getMedicationReminderTitle(reminder, language)} — ${formatReminderTimes(reminder, language)}`,
       reminder.repeat === "once" ? text.repeatOnce : text.repeatDaily,
       text.taskButtons,
+    ].join("\n");
+  }
+
+  if (toolResult.type === "follow_up_created") {
+    const reminder = toolResult.reminder;
+
+    return [
+      text.followUpCreated,
+      `${getMedicationReminderTitle(reminder, language)} — ${formatReminderTimes(reminder, language)}`,
+      reminder?.repeat === "once" ? text.repeatOnce : text.repeatDaily,
+      text.followUpButtons,
     ].join("\n");
   }
 

@@ -32,6 +32,7 @@ const toWeightKg = (value) => {
 };
 
 const createAssistantSymptomId = () => `assistant-symptom-${crypto.randomUUID()}`;
+const DEFAULT_REMINDER_TIMEZONE = "Europe/Warsaw";
 
 const normalizeSymptomLabel = (value) =>
   String(value ?? "")
@@ -42,6 +43,65 @@ const normalizeSymptomLabel = (value) =>
 const toSymptomSeverity = (value) => {
   const severity = Number(value);
   return Number.isFinite(severity) ? Math.max(1, Math.min(Math.round(severity), 10)) : 5;
+};
+
+const normalizeClockTime = (date, timeZone = DEFAULT_REMINDER_TIMEZONE) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const hours = String(byType.hour ?? "00").padStart(2, "0");
+  const minutes = String(byType.minute ?? "00").padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+};
+
+const readRelativeFollowUpMinutes = (text) => {
+  const normalized = String(text ?? "").toLowerCase();
+  const match = normalized.match(
+    /(?:через|за|in)\s+(\d{1,3})\s*(мин(?:ут[уы]?)?|хв(?:илин[уы]?)?|minutes?|min|час(?:а|ов)?|год(?:ини|ин)?|hours?|h)(?=\s|$|[,.!?])/iu
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1]);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  const unit = String(match[2] ?? "").toLowerCase();
+  const minutes = /час|год|hour|^h$/iu.test(unit) ? amount * 60 : amount;
+
+  return Math.min(Math.max(Math.round(minutes), 1), 24 * 60);
+};
+
+const removeRelativeFollowUpPhrase = (text) =>
+  String(text ?? "")
+    .replace(
+      /(?:через|за|in)\s+\d{1,3}\s*(?:мин(?:ут[уы]?)?|хв(?:илин[уы]?)?|minutes?|min|час(?:а|ов)?|год(?:ини|ин)?|hours?|h)(?=\s|$|[,.!?])/giu,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildFollowUpReminderText = (text, currentNow) => {
+  const normalized = normalizeSearchQuery(text);
+  const relativeMinutes = readRelativeFollowUpMinutes(normalized);
+
+  if (!relativeMinutes) {
+    return normalized;
+  }
+
+  const followUpAt = new Date(currentNow.getTime() + relativeMinutes * 60 * 1000);
+  const cleaned = removeRelativeFollowUpPhrase(normalized);
+
+  return `${cleaned || "follow up"} о ${normalizeClockTime(followUpAt)}`;
 };
 
 const calculateEntryNutrients = (entry) =>
@@ -492,6 +552,32 @@ export const createAgentTools = ({
     };
   };
 
+  const createFollowUp = async (user, { text }) => {
+    const createTaskReminderFromText = getTypedReminderCreator(reminders, "task");
+
+    if (!createTaskReminderFromText) {
+      return { ok: false, code: "FOLLOW_UP_TOOL_UNAVAILABLE" };
+    }
+
+    const currentNow = now();
+    const reminderText = buildFollowUpReminderText(text, currentNow);
+    const result = await createTaskReminderFromText(user, reminderText, currentNow);
+
+    if (!result?.ok) {
+      return {
+        ok: false,
+        code: result?.code ?? "FOLLOW_UP_PARSE_FAILED",
+      };
+    }
+
+    return {
+      ok: true,
+      type: "follow_up_created",
+      reminder: result.reminder,
+      reminderText,
+    };
+  };
+
   const createTypedReminder = async (user, { type, text }) => {
     const createReminder = getTypedReminderCreator(reminders, type);
 
@@ -603,6 +689,7 @@ export const createAgentTools = ({
     searchProducts,
     createMedicationReminder,
     createTaskReminder,
+    createFollowUp,
     createTypedReminder,
     getDayStatus,
     generateDaySummary,

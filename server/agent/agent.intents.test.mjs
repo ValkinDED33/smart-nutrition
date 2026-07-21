@@ -57,6 +57,18 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects follow-up requests before generic task reminders", () => {
+    expect(detectAgentIntent("напомни проверить воду через 30 минут")).toMatchObject({
+      intent: "create_follow_up",
+      entities: {
+        text: "напомни проверить воду через 30 минут",
+      },
+    });
+    expect(detectAgentIntent("check back with me at 18:00")).toMatchObject({
+      intent: "create_follow_up",
+    });
+  });
+
   it("detects water reminder requests before treating the text as water logging", () => {
     expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
       intent: "create_water_reminder",

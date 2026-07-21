@@ -297,6 +297,25 @@ addCheck(
 );
 
 addCheck(
+  "assistant follow-ups use canonical task reminders",
+  assistantAgentIntentsSource.includes('intent: "create_follow_up"') &&
+    assistantAgentIntentsSource.includes("FOLLOW_UP_WORD_PATTERN") &&
+    assistantAgentIntentsSource.includes("RELATIVE_SCHEDULE_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "create_follow_up"') &&
+    assistantAgentServiceSource.includes("tools.createFollowUp(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const createFollowUp = async") &&
+    assistantAgentToolsSource.includes('getTypedReminderCreator(reminders, "task")') &&
+    assistantAgentToolsSource.includes("buildFollowUpReminderText") &&
+    assistantAgentToolsSource.includes("DEFAULT_REMINDER_TIMEZONE") &&
+    assistantAgentToolsSource.includes("Intl.DateTimeFormat") &&
+    assistantAgentActionsSource.includes("followUpCreated") &&
+    assistantAgentActionsSource.includes("followUpFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "follow_up_created"') &&
+    assistantAgentMemorySource.includes("uses assistant follow-ups"),
+  "AI follow-up requests must route through the canonical task reminder contract with explicit local reminder time, confirmed reply copy, and scoped assistant memory."
+);
+
+addCheck(
   "assistant meal tool uses canonical product intake",
   assistantAgentToolsSource.includes("stateService.addProductIntake(") &&
     assistantAgentToolsSource.includes('source: "recommendation"') &&
