@@ -102,14 +102,12 @@ const SmartRecommendations = lazy(() =>
 
 type MealInputMode = "photo" | "search" | "barcode";
 
-const mealInputModes: MealInputMode[] = ["photo", "search", "barcode"];
 const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 const SURFACE_ELEVATED_BACKGROUND = "var(--sn-surface-elevated)";
 const BORDER_SOFT_COLOR = "var(--sn-border-soft)";
 const SECONDARY_TEXT_COLOR = "text.secondary";
 const COMMON_KCAL_KEY = "common.kcal";
 const SINGLE_COLUMN_GRID = "minmax(0, 1fr)";
-const MEAL_INPUT_GRID_COLUMNS = `repeat(3, ${SINGLE_COLUMN_GRID})`;
 const MEAL_ADD_LAYOUT_GRID = `${SINGLE_COLUMN_GRID} minmax(300px, 340px)`;
 const MEAL_ADD_LAYOUT_GRID_WIDE = `${SINGLE_COLUMN_GRID} 360px`;
 const TEMPLATE_GRID_COLUMNS = `repeat(2, ${SINGLE_COLUMN_GRID})`;
@@ -120,8 +118,6 @@ const normalizeMealInputMode = (value: string | null): MealInputMode =>
 
 const mealInputCopy = {
   uk: {
-    inputTitle: "Додати їжу",
-    inputSubtitle: "Три прості входи. Оберіть той, який зараз найшвидший.",
     advancedTitle: "Додаткові інструменти",
     advancedSubtitle:
       "Шаблони, повтори, холодильник і рецепти залишаються нижче, коли потрібна точніша збірка.",
@@ -162,8 +158,6 @@ const mealInputCopy = {
     } satisfies Record<MealInputMode, { title: string; body: string }>,
   },
   pl: {
-    inputTitle: "Dodaj jedzenie",
-    inputSubtitle: "Trzy proste wejścia. Wybierz to, które teraz jest najszybsze.",
     advancedTitle: "Dodatkowe narzędzia",
     advancedSubtitle:
       "Szablony, powtórki, lodówka i przepisy zostają niżej, gdy potrzeba dokładniejszego składania.",
@@ -204,8 +198,6 @@ const mealInputCopy = {
     } satisfies Record<MealInputMode, { title: string; body: string }>,
   },
   en: {
-    inputTitle: "Add food",
-    inputSubtitle: "Three simple entry points. Choose the fastest one right now.",
     advancedTitle: "Additional tools",
     advancedSubtitle:
       "Templates, repeats, fridge planning, and recipes stay below when you need a more precise setup.",
@@ -256,21 +248,6 @@ const getMealInputCopy = (language: AppLanguage) => {
     case "uk":
     default:
       return mealInputCopy.uk;
-  }
-};
-
-const getMealInputModeCopy = (
-  copy: ReturnType<typeof getMealInputCopy>,
-  mode: MealInputMode
-) => {
-  switch (mode) {
-    case "photo":
-      return copy.modes.photo;
-    case "barcode":
-      return copy.modes.barcode;
-    case "search":
-    default:
-      return copy.modes.search;
   }
 };
 
@@ -402,10 +379,16 @@ const MealBuilderPage = () => {
   };
 
   const openFoodCommandTarget = (
-    target: "search" | "photo" | "barcode" | "composer" | "favorites"
+    target: "search" | "photo" | "barcode" | "composer" | "favorites" | "catalog"
   ) => {
     if (target === "barcode") {
       openScanner();
+      return;
+    }
+
+    if (target === "catalog") {
+      handleInputModeChange("search");
+      setActiveSection("templates");
       return;
     }
 
@@ -651,62 +634,6 @@ const MealBuilderPage = () => {
 
       {displayedActiveSection === "add" && !isDirectCaptureMode ? (
         <Stack spacing={3} sx={{ minWidth: 0 }}>
-      <SectionCard
-        title={copy.inputTitle}
-        description={copy.inputSubtitle}
-        action={
-          <Chip
-            label={`${totals.calories.toFixed(0)} / ${dailyCalories} ${t(COMMON_KCAL_KEY)}`}
-            color={caloriePercent > 92 ? "warning" : "success"}
-            variant="outlined"
-          />
-        }
-      >
-        <Stack spacing={1.5}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: SINGLE_COLUMN_GRID, md: MEAL_INPUT_GRID_COLUMNS },
-              gap: 1,
-              minWidth: 0,
-            }}
-          >
-            {mealInputModes.map((mode) => {
-              const modeCopy = getMealInputModeCopy(copy, mode);
-              const active = inputMode === mode;
-
-              return (
-                <Paper
-                  key={mode}
-                  component="button"
-                  type="button"
-                  onClick={() => handleInputModeChange(mode)}
-                  variant="outlined"
-                  sx={{
-                    p: 1.5,
-                    borderRadius: COMPACT_RADIUS,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    backgroundColor: active ? "var(--sn-accent-soft)" : SURFACE_ELEVATED_BACKGROUND,
-                    borderColor: active ? "var(--sn-border-strong)" : BORDER_SOFT_COLOR,
-                    "&:hover": {
-                      borderColor: "primary.main",
-                    },
-                  }}
-                >
-                  <Stack spacing={0.6}>
-                    <Typography sx={{ fontWeight: 900 }}>{modeCopy.title}</Typography>
-                    <Typography color={SECONDARY_TEXT_COLOR} variant="body2">
-                      {modeCopy.body}
-                    </Typography>
-                  </Stack>
-                </Paper>
-              );
-            })}
-          </Box>
-        </Stack>
-      </SectionCard>
-
       {mealTypeSelector}
 
       <Box

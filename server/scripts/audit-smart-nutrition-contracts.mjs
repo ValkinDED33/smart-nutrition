@@ -547,6 +547,24 @@ addCheck(
 );
 
 addCheck(
+  "food logging uses one command center over canonical entry flows",
+  mealBuilderPageSource.includes("<FoodCommandCenter") &&
+    mealBuilderPageSource.includes("onOpenTarget={openFoodCommandTarget}") &&
+    mealBuilderPageSource.includes('target === "catalog"') &&
+    mealBuilderPageSource.includes('setActiveSection("templates")') &&
+    foodCommandCenterSource.includes('data-food-command-target="photo"') &&
+    foodCommandCenterSource.includes('data-food-command-target="barcode"') &&
+    foodCommandCenterSource.includes('data-food-command-target="composer"') &&
+    foodCommandCenterSource.includes('data-food-command-target="favorites"') &&
+    foodCommandCenterSource.includes('data-food-command-target="search"') &&
+    foodCommandCenterSource.includes('onClick={() => onOpenTarget("catalog")}') &&
+    !mealBuilderPageSource.includes("const mealInputModes") &&
+    !mealBuilderPageSource.includes("getMealInputModeCopy") &&
+    !mealBuilderPageSource.includes("MEAL_INPUT_GRID_COLUMNS"),
+  "Food logging must feel like one command surface. Barcode, photo, search, saved products, builder, and catalog contribution must route into existing canonical flows instead of duplicating mode-picking UI or looping catalog fallback back to search."
+);
+
+addCheck(
   "reminder manager surfaces backend-confirmed adherence history",
   reminderManagementCardSource.includes("getReminderAdherenceSummary(reminder)") &&
     reminderManagementCardSource.includes("adherence.completionRate") &&

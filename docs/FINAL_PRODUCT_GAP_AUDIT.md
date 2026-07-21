@@ -83,11 +83,14 @@ Current state:
 - Photo meal assistant exists.
 - Quick composer exists.
 - Saved/recent products exist.
+- Food now has a primary `FoodCommandCenter` that routes text/search,
+  barcode, photo, saved products, builder, and catalog contribution into
+  existing canonical surfaces.
 
 Gap:
 
-- The UX is still a set of tools, not a single "food command center".
-- Voice/text/photo/barcode/manual are not unified into one entry surface.
+- Food is no longer only a loose set of tools, but voice logging and deeper
+  product correction still need to fold into the same command surface.
 - User-added products go to the shared backend catalog, but the lifecycle is not
   visible enough in the daily path.
 
@@ -215,8 +218,9 @@ FILE:
 `src/features/meal/PhotoMealAssistant.tsx`
 
 PROBLEM:
-Food logging is split across multiple visible tools instead of one command
-surface.
+Food logging now has a primary command center, but remaining advanced flows must
+continue folding into that same surface instead of recreating separate entry
+warehouses.
 
 WHY IT IS A PROBLEM:
 Top calorie apps reduce the first action to one obvious entry point. Users do
@@ -224,13 +228,14 @@ not care whether the app uses text, barcode, photo, saved products, or external
 catalog internally.
 
 RISK:
-Mobile users perceive the app as complicated, and powerful tools feel hidden or
-like separate "warehouses".
+Mobile users can still perceive advanced food actions as complicated if future
+features add new cards beside the command center instead of routing through it.
 
 RECOMMENDED FIX:
-Create `FoodCommandCenter` as the primary mobile-first entry point. It should
-route text, barcode, photo, saved products, recent products, and manual fallback
-through one flow.
+Keep `FoodCommandCenter` as the primary mobile-first entry point. It already
+routes text/search, barcode, photo, saved products, recent products, builder,
+and catalog contribution into existing surfaces; next, add voice and product
+correction through the same contract.
 
 EXAMPLE CODE:
 
@@ -529,7 +534,8 @@ provider with guardrails.
 
 ## Top 20 Useful Improvements
 
-1. Build `FoodCommandCenter` as the first screen inside Food.
+1. Extend `FoodCommandCenter` with voice logging and product correction without
+   creating another food entry surface.
 2. Add agent tools for meal add/search/product lookup.
 3. Add web UI for medication reminders and adherence history.
 4. Extend the existing My Library overview with own catalog submissions and

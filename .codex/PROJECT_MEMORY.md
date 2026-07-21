@@ -110,6 +110,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Surfaced backend-confirmed reminder adherence history in the web reminder manager: each reminder now shows taken/done, skipped, snoozed counts, completion rate, and latest action from canonical reminder events.
 - Surfaced canonical after-meal medication reminders end to end: text such as "take a pill after lunch" creates a meal-state-backed `after_meal` trigger, `/api/reminders` returns it, and the web reminder manager shows the meal window instead of a blank fixed-time schedule.
 - Added a visible My Library overview over existing canonical saved nutrition state: saved products, reusable meal templates, and saved community materials now appear as one hub with counts and quick tab navigation, without a separate local library store.
+- Simplified the food logging entry path around the existing `FoodCommandCenter`: barcode, photo, search, saved products, builder, and catalog contribution now route from one primary command surface, while the duplicate mode-selection card was removed.
 
 ## Current Architecture
 
@@ -166,6 +167,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Backend/cloud is the source of truth for canonical user data.
 - Production canonical storage may be MongoDB Atlas or Postgres, but it must be backend-owned, configured explicitly, and non-placeholder.
 - Product and meal intake must use a canonical backend-confirmed flow.
+- Food logging must keep `FoodCommandCenter` as the primary entry surface for search, barcode, photo, saved products, builder, and catalog contribution; new food inputs such as voice or correction must extend that command surface instead of adding another warehouse.
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.
 - AI weight logging must append to backend profile `weightHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved entry.
 - AI symptom logging must append to backend profile `womenHealth.symptomHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved symptom.

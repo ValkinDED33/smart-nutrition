@@ -41,7 +41,13 @@ import {
   rememberRecentMealProductInCloud,
 } from "./mealCloudSync";
 
-type FoodCommandTarget = "search" | "photo" | "barcode" | "composer" | "favorites";
+type FoodCommandTarget =
+  | "search"
+  | "photo"
+  | "barcode"
+  | "composer"
+  | "favorites"
+  | "catalog";
 
 interface FoodCommandCenterProps {
   mealType: MealType;
@@ -525,7 +531,7 @@ export const FoodCommandCenter = ({
                 <Button
                   color="inherit"
                   size="small"
-                  onClick={() => onOpenTarget("search")}
+                  onClick={() => onOpenTarget("catalog")}
                   sx={{ fontWeight: 800, textTransform: "none" }}
                 >
                   {copy.addToCatalog}
@@ -561,6 +567,7 @@ export const FoodCommandCenter = ({
               variant="outlined"
               startIcon={<Camera size={18} />}
               onClick={() => onOpenTarget("photo")}
+              data-food-command-target="photo"
             >
               {copy.photo}
             </Button>
@@ -568,20 +575,30 @@ export const FoodCommandCenter = ({
               variant="outlined"
               startIcon={<ScanBarcode size={18} />}
               onClick={() => onOpenTarget("barcode")}
+              data-food-command-target="barcode"
             >
               {copy.barcode}
             </Button>
-            <Button variant="outlined" onClick={() => onOpenTarget("composer")}>
+            <Button
+              variant="outlined"
+              onClick={() => onOpenTarget("composer")}
+              data-food-command-target="composer"
+            >
               {copy.composer}
             </Button>
             <Button
               variant="outlined"
               startIcon={<Star size={18} />}
               onClick={() => onOpenTarget("favorites")}
+              data-food-command-target="favorites"
             >
               {copy.favorites}
             </Button>
-            <Button variant="text" onClick={() => onOpenTarget("search")}>
+            <Button
+              variant="text"
+              onClick={() => onOpenTarget("search")}
+              data-food-command-target="search"
+            >
               {copy.openSearch}
             </Button>
           </Stack>
