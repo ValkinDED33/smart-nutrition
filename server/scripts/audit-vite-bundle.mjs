@@ -8,6 +8,17 @@ const indexPath = path.join(distDir, "index.html");
 
 const defaultChunkLimitBytes = 500 * 1024;
 const acceptedLazyThreeLimitBytes = 760 * 1024;
+const acceptedInitialPayloadLimitBytes = 1_180 * 1024;
+const routeHeavyVendorPrefixes = [
+  "analytics-vendor-",
+  "browser-image-compression-",
+  "capacitor-vendor-",
+  "firebase-vendor-",
+  "markdown-vendor-",
+  "react-three-vendor-",
+  "scanner-vendor-",
+  "three-core-vendor-",
+];
 
 const formatKiB = (bytes) => `${(bytes / 1024).toFixed(2)} KiB`;
 
@@ -20,35 +31,56 @@ const listJavaScriptAssets = async () => {
     .sort((left, right) => left.localeCompare(right));
 };
 
-const getInitialScripts = async () => {
+const getInitialAssets = async () => {
   const html = await readFile(indexPath, "utf8");
-  const scripts = new Set();
+  const assets = new Set();
   const scriptPattern = /<script[^>]+src="\/assets\/([^"]+\.js)"/g;
+  const modulePreloadPattern =
+    /<link[^>]+rel="modulepreload"[^>]+href="\/assets\/([^"]+\.js)"/g;
 
   for (const match of html.matchAll(scriptPattern)) {
-    scripts.add(match[1]);
+    assets.add(match[1]);
   }
 
-  return scripts;
+  for (const match of html.matchAll(modulePreloadPattern)) {
+    assets.add(match[1]);
+  }
+
+  return assets;
 };
 
 const main = async () => {
-  const [assets, initialScripts] = await Promise.all([
+  const [assets, initialAssets] = await Promise.all([
     listJavaScriptAssets(),
-    getInitialScripts(),
+    getInitialAssets(),
   ]);
   const violations = [];
   const reviewedLargeChunks = [];
+  let initialPayloadBytes = 0;
 
   for (const asset of assets) {
     const assetPath = path.join(assetsDir, asset);
     const { size } = await stat(assetPath);
-    const isInitialScript = initialScripts.has(asset);
+    const isInitialAsset = initialAssets.has(asset);
     const isAcceptedLazyThreeChunk = asset.startsWith("three-core-vendor-");
+    const isRouteHeavyVendor = routeHeavyVendorPrefixes.some((prefix) =>
+      asset.startsWith(prefix)
+    );
 
-    if (isInitialScript && size > defaultChunkLimitBytes) {
+    if (isInitialAsset) {
+      initialPayloadBytes += size;
+    }
+
+    if (isInitialAsset && isRouteHeavyVendor) {
       violations.push(
-        `${asset} is an initial script at ${formatKiB(size)}; initial scripts must stay under ${formatKiB(defaultChunkLimitBytes)}.`
+        `${asset} is preloaded by index.html; scanner, photo, markdown, analytics, native, and 3D vendors must stay route-lazy.`
+      );
+      continue;
+    }
+
+    if (isInitialAsset && size > defaultChunkLimitBytes) {
+      violations.push(
+        `${asset} is an initial asset at ${formatKiB(size)}; initial assets must stay under ${formatKiB(defaultChunkLimitBytes)}.`
       );
       continue;
     }
@@ -81,6 +113,12 @@ const main = async () => {
     }
   }
 
+  if (initialPayloadBytes > acceptedInitialPayloadLimitBytes) {
+    violations.push(
+      `initial JavaScript payload is ${formatKiB(initialPayloadBytes)}; accepted initial payload limit is ${formatKiB(acceptedInitialPayloadLimitBytes)}.`
+    );
+  }
+
   if (violations.length > 0) {
     console.error("Bundle audit failed:");
     for (const violation of violations) {
@@ -91,7 +129,7 @@ const main = async () => {
   }
 
   console.log(
-    `Bundle audit passed: ${assets.length} JavaScript chunks checked, ${initialScripts.size} initial script(s).`
+    `Bundle audit passed: ${assets.length} JavaScript chunks checked, ${initialAssets.size} initial asset(s), ${formatKiB(initialPayloadBytes)} initial payload.`
   );
 };
 

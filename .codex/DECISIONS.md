@@ -125,3 +125,10 @@
 - Context: Smart Nutrition needs to be discoverable by search engines without exposing authenticated app surfaces, token routes, or user data pages as public SEO content.
 - Decision: Release quality must verify `index.html`, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` as one SEO discovery contract. The sitemap may list only canonical public entry routes, while protected SPA screens and token routes must be blocked from crawler discovery.
 - Consequences: Search discoverability cannot rely on one-off manual edits. Any route, domain, manifest, canonical URL, or crawler policy change must keep `npm run audit:seo` passing before release.
+
+## ADR-019: Route-Heavy Vendors Must Stay Out Of Initial Payload
+
+- Status: Accepted.
+- Context: Scanner, photo compression, markdown rendering, analytics SDKs, native bridges, and 3D companion vendors can make mobile/PWA startup feel slow even when each chunk is below the generic size limit.
+- Decision: Bundle audit must inspect both initial scripts and modulepreload assets, cap total initial JavaScript payload, and block route-heavy vendors from being preloaded by `index.html`.
+- Consequences: Heavy capabilities remain available through route-local lazy chunks, but landing/auth/startup must not pay for scanner, photo, markdown, analytics, native, or 3D runtime before the user opens those surfaces.

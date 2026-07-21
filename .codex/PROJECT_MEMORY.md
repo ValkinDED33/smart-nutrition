@@ -63,6 +63,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Verified latest stabilization with build, tests, lint, dependency audit, cycle audit, and architecture audit.
 - Hardened frontend remote API routing so public deployments prefer the canonical configured Render backend over stale browser-stored API base URLs; added regression coverage for registration availability when old localStorage state exists.
 - Added SEO discovery as a release-gated contract: `robots.txt` now exposes the canonical sitemap while blocking protected/token SPA surfaces, `sitemap.xml` uses current canonical public URLs, and `npm run audit:seo` verifies index metadata, crawler policy, sitemap scope, lastmod freshness, and manifest identity.
+- Hardened bundle audit so it counts `modulepreload` assets as initial payload, caps total startup JavaScript, and blocks scanner, photo compression, markdown, analytics, native bridge, and 3D vendors from being preloaded by `index.html`.
 
 ## Current Architecture
 
@@ -113,6 +114,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Scanner runtime must be deterministic: permission, stream start, scan, cleanup, and errors must be explicit.
 - 3D companion must be lazy/on-demand and isolated from core flows.
 - 3D companion runtime must stay 2D on mobile, low-power, data-saver, reduced-motion, and unsupported WebGL contexts even if 3D is selected in profile preferences.
+- Route-heavy vendors for scanner, photo compression, markdown, analytics, native bridges, and 3D companion must stay behind route-local lazy boundaries and must not appear in initial `index.html` scripts or modulepreload assets.
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
@@ -150,7 +152,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Stored remote API base URLs are cache/hints only and must not outrank the canonical backend on public deployments.
 - Reminder database fields still have legacy `medicationReminders` naming in compatibility paths; write behavior now delegates through canonical reminder methods, and field/schema migration should happen deliberately after production safety is proven.
 - Env example guard currently covers common provider key shapes; extend it when adding a new provider or deploy platform secret.
-- Vite still reports a large lazy `three-core-vendor` chunk; mobile/low-power runtime is guarded, but desktop 3D bundle size still needs a deeper Three.js strategy if warning-free builds become mandatory.
+- Vite still reports a large lazy `three-core-vendor` chunk; startup preload is guarded by bundle audit, and mobile/low-power runtime is guarded, but desktop 3D bundle size still needs a deeper Three.js strategy if warning-free builds become mandatory.
 - Lint passes with existing warnings; warnings should be burned down without broad rewrites.
 
 ## Next Highest-Impact Tasks

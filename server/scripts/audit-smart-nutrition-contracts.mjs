@@ -42,6 +42,7 @@ const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReport
 const serviceWorkerSource = readSource("public/sw.js");
 const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
+const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
@@ -417,6 +418,22 @@ addCheck(
     companionAvatarModelSource.includes("lowPowerDevice") &&
     companionAvatarModelSource.includes("return false"),
   "3D companion must not load heavy WebGL on mobile, reduced-motion, save-data, low-power, or unsupported devices."
+);
+
+addCheck(
+  "bundle audit protects initial payload from route-heavy vendors",
+  bundleAuditSource.includes("modulePreloadPattern") &&
+    bundleAuditSource.includes("acceptedInitialPayloadLimitBytes") &&
+    bundleAuditSource.includes("initialPayloadBytes") &&
+    bundleAuditSource.includes("routeHeavyVendorPrefixes") &&
+    bundleAuditSource.includes('"scanner-vendor-"') &&
+    bundleAuditSource.includes('"three-core-vendor-"') &&
+    bundleAuditSource.includes('"react-three-vendor-"') &&
+    bundleAuditSource.includes('"markdown-vendor-"') &&
+    bundleAuditSource.includes('"browser-image-compression-"') &&
+    bundleAuditSource.includes('"analytics-vendor-"') &&
+    bundleAuditSource.includes("must stay route-lazy"),
+  "Bundle audit must inspect modulepreload initial assets, cap initial payload, and block scanner/photo/markdown/analytics/native/3D vendors from startup."
 );
 
 const failed = checks.filter((check) => !check.pass);
