@@ -90,6 +90,7 @@ const cloudSyncStatusCardSource = readSource(
 const accountDataCardSource = readSource("src/features/profile/AccountDataCard.tsx");
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
 const premiumAccessCardSource = readSource("src/features/profile/PremiumAccessCard.tsx");
+const lazyModuleRecoverySource = readSource("src/shared/ui/lazyModuleRecovery.ts");
 const reminderManagementCardSource = readSource(
   "src/features/profile/ReminderManagementCard.tsx"
 );
@@ -1223,6 +1224,26 @@ addCheck(
     pwaUpdateBannerSource.includes("latest fixes") &&
     !/stale cache|deployment|деплою|wdrożeniu/i.test(pwaUpdateBannerSource),
   "PWA update prompts must explain fixes and stability to regular users, not cache/deployment internals."
+);
+
+const userFacingRecoveryCopySources = [
+  sharedI18nUkSource,
+  sharedI18nPlSource,
+  sharedI18nEnSource,
+  sharedLanguageSource,
+  lazyModuleRecoverySource,
+].join("\n");
+
+addCheck(
+  "crash and lazy-section recovery copy hides cache internals",
+  userFacingRecoveryCopySources.includes("стабільний екран") &&
+    userFacingRecoveryCopySources.includes("stabilny ekran") &&
+    userFacingRecoveryCopySources.includes("stable screen") &&
+    userFacingRecoveryCopySources.includes("without signing you out") &&
+    !/stale UI cache|old cache|cache UI|старий UI-кеш|старий кеш|stary cache|stary plik/i.test(
+      userFacingRecoveryCopySources
+    ),
+  "Crash and lazy-section recovery prompts must explain safe recovery to regular users, not cache/file internals."
 );
 
 addCheck(

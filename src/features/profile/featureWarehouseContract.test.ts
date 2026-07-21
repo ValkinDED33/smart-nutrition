@@ -105,4 +105,24 @@ describe("profile feature warehouse contract", () => {
     expect(source).toContain("latest fixes");
     expect(source).not.toMatch(/stale cache|deployment|деплою|wdrożeniu/i);
   });
+
+  it("keeps crash and lazy-section recovery copy user-facing", () => {
+    const userFacingRecoverySources = [
+      "src/shared/i18n/uk.ts",
+      "src/shared/i18n/pl.ts",
+      "src/shared/i18n/en.ts",
+      "src/shared/language/index.tsx",
+      "src/shared/ui/lazyModuleRecovery.ts",
+    ]
+      .map(readSource)
+      .join("\n");
+
+    expect(userFacingRecoverySources).toContain("стабільний екран");
+    expect(userFacingRecoverySources).toContain("stabilny ekran");
+    expect(userFacingRecoverySources).toContain("stable screen");
+    expect(userFacingRecoverySources).toContain("without signing you out");
+    expect(userFacingRecoverySources).not.toMatch(
+      /stale UI cache|old cache|cache UI|старий UI-кеш|старий кеш|stary cache|stary plik/i
+    );
+  });
 });

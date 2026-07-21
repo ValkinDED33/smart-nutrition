@@ -5,14 +5,14 @@ import { onboarding } from "./onboarding";
 export const uk = {
   "errorBoundary.title": "Щось пішло не так",
   "errorBoundary.subtitle":
-    "Можна спробувати повернути екран без перезавантаження або безпечно очистити старий UI-кеш. Сесія акаунта не видаляється.",
+    "Можна спробувати повернути екран без перезавантаження або безпечно відновити застосунок. Сесія акаунта не видаляється.",
   "errorBoundary.action": "Перезавантажити застосунок",
   "errorBoundary.retry": "Спробувати ще раз",
   "errorBoundary.safeReset": "Безпечно відновити",
   "errorBoundary.home": "На головну",
   "errorBoundary.diagnostic": "Код діагностики",
-  "errorBoundary.recovering": "Оновлюємо застосунок і очищаємо старий кеш...",
-  "errorBoundary.resetting": "Очищаємо UI-стан і старий кеш...",
+  "errorBoundary.recovering": "Оновлюємо застосунок і повертаємо стабільний екран...",
+  "errorBoundary.resetting": "Відновлюємо екран без виходу з акаунта...",
   "auth.forgotPassword": "Забули пароль?",
   "auth.showPassword": "Показати пароль",
   "auth.hidePassword": "Сховати пароль",

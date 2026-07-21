@@ -5,14 +5,14 @@ import { onboarding } from "./onboarding";
 export const pl = {
   "errorBoundary.title": "Coś poszło nie tak",
   "errorBoundary.subtitle":
-    "Możesz spróbować wrócić do ekranu, odświeżyć aplikację albo bezpiecznie wyczyścić stary cache UI. Sesja konta nie zostanie usunięta.",
+    "Możesz spróbować wrócić do ekranu, odświeżyć aplikację albo bezpiecznie naprawić widok. Sesja konta nie zostanie usunięta.",
   "errorBoundary.action": "Przeładuj aplikację",
   "errorBoundary.retry": "Spróbuj ponownie",
   "errorBoundary.safeReset": "Bezpiecznie napraw",
   "errorBoundary.home": "Na stronę główną",
   "errorBoundary.diagnostic": "Kod diagnostyczny",
-  "errorBoundary.recovering": "Odświeżamy aplikację i czyścimy stary cache...",
-  "errorBoundary.resetting": "Czyścimy stan UI i stary cache...",
+  "errorBoundary.recovering": "Odświeżamy aplikację i przywracamy stabilny ekran...",
+  "errorBoundary.resetting": "Naprawiamy widok bez wylogowania z konta...",
   "auth.forgotPassword": "Zapomniałeś hasła?",
   "auth.showPassword": "Pokaż hasło",
   "auth.hidePassword": "Ukryj hasło",
