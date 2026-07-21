@@ -24,6 +24,13 @@ const toMealType = (value) =>
 
 const createAssistantMealIntakeKey = () => `assistant-meal-${crypto.randomUUID()}`;
 
+const toWeightKg = (value) => {
+  const weight = Number(value);
+  return Number.isFinite(weight) && weight >= 30 && weight <= 400
+    ? Math.round(weight * 10) / 10
+    : null;
+};
+
 const calculateEntryNutrients = (entry) =>
   calculateMealTotalNutrients([entry]);
 
@@ -259,6 +266,62 @@ export const createAgentTools = ({
     };
   };
 
+  const logWeight = async (user, { weightKg }) => {
+    if (!stateService?.getProfileState || !stateService?.saveProfileState) {
+      return { ok: false, code: "WEIGHT_TOOL_UNAVAILABLE" };
+    }
+
+    const normalizedWeightKg = toWeightKg(weightKg);
+
+    if (!normalizedWeightKg) {
+      return { ok: false, code: "INVALID_WEIGHT" };
+    }
+
+    const currentProfileState = await stateService.getProfileState(user);
+    const previousWeight =
+      Array.isArray(currentProfileState?.weightHistory) &&
+      currentProfileState.weightHistory.length > 0
+        ? Number(currentProfileState.weightHistory.at(-1)?.weight)
+        : Number(user?.weight ?? 0);
+    const recordedAt = now().toISOString();
+    const weightHistory = Array.isArray(currentProfileState?.weightHistory)
+      ? currentProfileState.weightHistory
+      : [];
+    const nextProfileState = {
+      ...currentProfileState,
+      weightHistory: [
+        ...weightHistory,
+        {
+          date: recordedAt,
+          weight: normalizedWeightKg,
+        },
+      ].slice(-180),
+    };
+
+    await stateService.saveProfileState(user, nextProfileState, {
+      source: "assistant-agent",
+    });
+
+    const confirmedProfileState = await stateService.getProfileState(user);
+    const confirmedEntry = Array.isArray(confirmedProfileState?.weightHistory)
+      ? confirmedProfileState.weightHistory.find(
+          (entry) => entry?.date === recordedAt && Number(entry?.weight) === normalizedWeightKg
+        )
+      : null;
+
+    if (!confirmedEntry) {
+      return { ok: false, code: "WEIGHT_NOT_CONFIRMED" };
+    }
+
+    return {
+      ok: true,
+      type: "weight_logged",
+      weightKg: normalizedWeightKg,
+      previousWeightKg: Number.isFinite(previousWeight) && previousWeight > 0 ? previousWeight : null,
+      recordedAt,
+    };
+  };
+
   const createMedicationReminder = async (user, { text }) => {
     const createMedicationReminderFromText = getTypedReminderCreator(
       reminders,
@@ -393,6 +456,7 @@ export const createAgentTools = ({
   return {
     addWater,
     addMeal,
+    logWeight,
     searchProducts,
     createMedicationReminder,
     createTaskReminder,

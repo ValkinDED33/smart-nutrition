@@ -70,6 +70,15 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "weight_logged") {
+    return {
+      userId: user?.id,
+      habits: ["logs weight through assistant"],
+      motivationTriggers: ["progress check-in feedback"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "product_search") {
     return {
       userId: user?.id,

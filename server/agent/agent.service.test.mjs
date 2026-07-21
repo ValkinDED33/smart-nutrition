@@ -179,6 +179,94 @@ describe("createAssistantAgentService", () => {
     expect(stateService.getWaterState).toHaveBeenCalledWith(user);
   });
 
+  it("logs weight through backend-confirmed profile state and updates memory", async () => {
+    const currentProfileState = {
+      dailyCalories: 2100,
+      weightHistory: [{ date: "2026-06-20T09:00:00.000Z", weight: 97.2 }],
+    };
+    const confirmedProfileState = {
+      ...currentProfileState,
+      weightHistory: [
+        ...currentProfileState.weightHistory,
+        { date: fixedNow.toISOString(), weight: 98.4 },
+      ],
+    };
+    const stateService = {
+      getProfileState: vi
+        .fn()
+        .mockResolvedValueOnce(currentProfileState)
+        .mockResolvedValueOnce(confirmedProfileState),
+      saveProfileState: vi.fn(async () => undefined),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "запиши вес 98.4 кг",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "log_weight", entities: { weightKg: 98.4 } },
+      actions: [{ id: "log_weight", ok: true, resultType: "weight_logged" }],
+      memoryUpdated: true,
+    });
+    expect(result.text).toContain("98.4 кг");
+    expect(result.text).toContain("+1.2 кг");
+    expect(stateService.saveProfileState).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({
+        weightHistory: [
+          { date: "2026-06-20T09:00:00.000Z", weight: 97.2 },
+          { date: fixedNow.toISOString(), weight: 98.4 },
+        ],
+      }),
+      { source: "assistant-agent" }
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["logs weight through assistant"]),
+      })
+    );
+  });
+
+  it("does not claim weight success without confirmed backend profile restore", async () => {
+    const stateService = {
+      getProfileState: vi
+        .fn()
+        .mockResolvedValueOnce({ weightHistory: [] })
+        .mockResolvedValueOnce({ weightHistory: [] }),
+      saveProfileState: vi.fn(async () => undefined),
+    };
+    const logger = { warn: vi.fn() };
+    const agent = createAssistantAgentService({
+      stateService,
+      logger,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "мой вес 82 кг",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "log_weight" },
+      actions: [{ id: "log_weight", ok: false, code: "WEIGHT_NOT_CONFIRMED" }],
+    });
+    expect(result.text).toContain("не зміг підтвердити збереження");
+    expect(result.text).not.toContain("Записав вагу");
+  });
+
   it("creates medication reminders through the medication tool", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({

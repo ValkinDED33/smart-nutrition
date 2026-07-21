@@ -95,6 +95,8 @@ const serverIndexSource = readSource("server/index.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
+const assistantAgentIntentsSource = readSource("server/agent/agent.intents.mjs");
+const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
@@ -300,6 +302,22 @@ addCheck(
     assistantAgentToolsSource.includes("intakeResult?.outcomes?.mealAdded !== true") &&
     !/stateService\.addMealEntries\(/.test(assistantAgentToolsSource),
   "AI-created food entries must flow through canonical backend-confirmed product intake and must not bypass it with direct addMealEntries."
+);
+
+addCheck(
+  "assistant weight tool uses backend-confirmed profile state",
+  assistantAgentIntentsSource.includes('intent: "log_weight"') &&
+    assistantAgentServiceSource.includes('intent.intent === "log_weight"') &&
+    assistantAgentServiceSource.includes("tools.logWeight(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const logWeight = async") &&
+    assistantAgentToolsSource.includes("stateService.saveProfileState(user, nextProfileState") &&
+    assistantAgentToolsSource.includes("const confirmedProfileState = await stateService.getProfileState(user)") &&
+    assistantAgentToolsSource.includes('return { ok: false, code: "WEIGHT_NOT_CONFIRMED" }') &&
+    assistantAgentActionsSource.includes("weightLogged") &&
+    assistantAgentActionsSource.includes("weightFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "weight_logged"') &&
+    assistantAgentMemorySource.includes("logs weight through assistant"),
+  "AI-created weight check-ins must update canonical profile state, verify the saved history after backend persistence, and refuse visible success without confirmation."
 );
 
 addCheck(

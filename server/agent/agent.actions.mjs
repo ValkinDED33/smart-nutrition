@@ -51,6 +51,10 @@ const copy = {
       "Відкрийте пошук їжі або додайте продукт у спільну базу, щоб я міг використовувати його наступного разу.",
     ],
     foodFailed: "Я зрозумів дію з їжею, але зараз не зміг безпечно виконати пошук у каталозі.",
+    weightFailed: [
+      "Я зрозумів вагу, але зараз не зміг підтвердити збереження в Smart Nutrition.",
+      "Спробуйте ще раз трохи пізніше — я не покажу це як записане без підтвердження хмари.",
+    ],
     medicationScheduleFailed: [
       "Я не зміг безпечно розібрати розклад ліків.",
       "Напишіть так: /addmed Вітамін D 1 капсула щодня о 09:00",
@@ -80,6 +84,9 @@ const copy = {
     mealTypeLine: (mealType) => `Прийом: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
       `Орієнтовно: ${calories} ккал, білок ${protein} г, жири ${fat} г, вуглеводи ${carbs} г.`,
+    weightLogged: (weight) => `Готово. Записав вагу ${weight} кг.`,
+    weightTrend: (delta) => `Зміна від попереднього запису: ${delta} кг.`,
+    weightTrendFirst: "Це перший запис ваги в історії прогресу.",
     medicationCreated: "Готово 💊 Нагадування створено.",
     medicationButtons: "Я нагадаю і дам кнопки: прийнято, пізніше або пропустити.",
     pregnancySafety:
@@ -144,6 +151,10 @@ const copy = {
       "Otwórz wyszukiwanie jedzenia albo dodaj produkt do wspólnej bazy, żebym mógł użyć go następnym razem.",
     ],
     foodFailed: "Rozumiem działanie z jedzeniem, ale nie mogę teraz bezpiecznie wykonać wyszukiwania w katalogu.",
+    weightFailed: [
+      "Rozumiem wagę, ale nie mogę teraz potwierdzić zapisu w Smart Nutrition.",
+      "Spróbuj ponownie trochę później — nie pokażę tego jako zapisane bez potwierdzenia w chmurze.",
+    ],
     medicationScheduleFailed: [
       "Nie udało mi się bezpiecznie odczytać harmonogramu leku.",
       "Napisz tak: /addmed Witamina D 1 kapsułka codziennie o 09:00",
@@ -173,6 +184,9 @@ const copy = {
     mealTypeLine: (mealType) => `Posiłek: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
       `Szacunkowo: ${calories} kcal, białko ${protein} g, tłuszcz ${fat} g, węglowodany ${carbs} g.`,
+    weightLogged: (weight) => `Gotowe. Zapisałem wagę ${weight} kg.`,
+    weightTrend: (delta) => `Zmiana od poprzedniego wpisu: ${delta} kg.`,
+    weightTrendFirst: "To pierwszy wpis wagi w historii postępów.",
     medicationCreated: "Gotowe 💊 Przypomnienie utworzone.",
     medicationButtons: "Przypomnę i dam przyciski: przyjęte, później albo pomiń.",
     pregnancySafety:
@@ -237,6 +251,10 @@ const copy = {
       "Open food search or add the product to the shared catalog so I can use it next time.",
     ],
     foodFailed: "I understood the food action, but could not safely search the catalog right now.",
+    weightFailed: [
+      "I understood the weight, but I could not confirm the save in Smart Nutrition right now.",
+      "Try again a bit later — I will not show it as saved without cloud confirmation.",
+    ],
     medicationScheduleFailed: [
       "I could not safely parse the medication schedule.",
       "Write it like this: /addmed Vitamin D 1 capsule daily at 09:00",
@@ -266,6 +284,9 @@ const copy = {
     mealTypeLine: (mealType) => `Meal: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
       `Estimated: ${calories} kcal, protein ${protein} g, fat ${fat} g, carbs ${carbs} g.`,
+    weightLogged: (weight) => `Done. Logged weight ${weight} kg.`,
+    weightTrend: (delta) => `Change from the previous entry: ${delta} kg.`,
+    weightTrendFirst: "This is the first weight entry in your progress history.",
     medicationCreated: "Done 💊 Reminder created.",
     medicationButtons: "I will remind you and show buttons: taken, later, or skip.",
     pregnancySafety:
@@ -358,6 +379,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.foodFailed;
     }
 
+    if (intent.intent === "log_weight") {
+      return text.weightFailed.join("\n");
+    }
+
     if (intent.intent === "create_medication_reminder") {
       return text.medicationScheduleFailed.join("\n");
     }
@@ -427,6 +452,22 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
         formatNumber(nutrients.fat, 1),
         formatNumber(nutrients.carbs, 1)
       ),
+    ].join("\n");
+  }
+
+  if (toolResult.type === "weight_logged") {
+    const previousWeight = Number(toolResult.previousWeightKg);
+    const currentWeight = Number(toolResult.weightKg);
+    const hasPreviousWeight = Number.isFinite(previousWeight) && previousWeight > 0;
+    const delta = hasPreviousWeight
+      ? Math.round((currentWeight - previousWeight) * 10) / 10
+      : 0;
+
+    return [
+      text.weightLogged(formatNumber(currentWeight, 1)),
+      hasPreviousWeight
+        ? text.weightTrend(`${delta > 0 ? "+" : ""}${formatNumber(delta, 1)}`)
+        : text.weightTrendFirst,
     ].join("\n");
   }
 

@@ -18,6 +18,10 @@ const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
 const NUTRITION_WORD_PATTERN =
   /(калор|ккал|белк|білк|protein|нутри|нутрі|жир|carb|углев|вуглев|клетчат|клітков)/i;
+const WEIGHT_WORD_PATTERN =
+  /(вес|вага|важу|вешу|weight|kg|кг|кілограм|килограмм)/i;
+const WEIGHT_ACTION_PATTERN =
+  /(^|\s)(запиши|занеси|додай|добавь|онови|обнови|update|log|add|record)(\s|$)/i;
 const MEAL_ACTION_PATTERN =
   /(^|\s)(добавь|добави|додай|запиши|занеси|записати|додати|съел|съела|з'їв|зʼїв|зїла|їла|ел|ела|ate|add|log)(\s|$)/i;
 const PRODUCT_SEARCH_PATTERN =
@@ -60,6 +64,21 @@ const readFoodQuantity = (message) => {
 
   return Number.isFinite(quantity) && quantity > 0
     ? Math.min(Math.round(quantity * 10) / 10, 5000)
+    : null;
+};
+
+const readWeightKg = (message) => {
+  const normalized = normalizeMessage(message).toLowerCase();
+  const directMatch = normalized.match(
+    /(?:вес|вага|важу|вешу|weight)\D{0,20}(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:кг|kg|кілограм|килограмм)?/i
+  );
+  const unitMatch = normalized.match(
+    /(\d{2,3}(?:[.,]\d{1,2})?)\s*(?:кг|kg|кілограм|килограмм)\b/i
+  );
+  const weight = Number((directMatch?.[1] ?? unitMatch?.[1] ?? "").replace(",", "."));
+
+  return Number.isFinite(weight) && weight >= 30 && weight <= 400
+    ? Math.round(weight * 10) / 10
     : null;
 };
 
@@ -199,6 +218,24 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         text: normalized.replace(/^\/?(?:addtask|task|reminder)\b/i, "").trim() || normalized,
       },
       reason: "task_reminder_request",
+    };
+  }
+
+  const weightKg = readWeightKg(normalized);
+
+  if (
+    weightKg &&
+    (WEIGHT_WORD_PATTERN.test(normalized) ||
+      WEIGHT_ACTION_PATTERN.test(normalized) ||
+      /^\/?(?:weight|logweight|addweight)\b/i.test(normalized))
+  ) {
+    return {
+      intent: "log_weight",
+      confidence: 0.9,
+      entities: {
+        weightKg,
+      },
+      reason: "weight_value_detected",
     };
   }
 

@@ -94,6 +94,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Simplified regular account settings: operational runtime chips and backup restore-point lists are role-gated behind admin-center access and are not fetched or rendered for ordinary users.
 - Reworked assistant action-failure replies so users see Smart Nutrition cloud-confirmation language while the code still enforces backend-confirmed tool success.
 - Routed AI-created meal logging through the canonical backend product-intake contract with `source=recommendation`, assistant sync context, and an explicit `mealAdded` confirmation guard before any success reply.
+- Added backend-confirmed AI weight logging: assistant text commands now append to canonical profile `weightHistory`, verify the saved entry after persistence, update assistant memory, and refuse visible success when the profile restore does not confirm the entry.
 
 ## Current Architecture
 
@@ -103,6 +104,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
+- AI-created weight check-ins must use canonical profile state and verify the saved `weightHistory` entry before reporting success.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
@@ -139,6 +141,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Production canonical storage may be MongoDB Atlas or Postgres, but it must be backend-owned, configured explicitly, and non-placeholder.
 - Product and meal intake must use a canonical backend-confirmed flow.
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.
+- AI weight logging must append to backend profile `weightHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved entry.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.
