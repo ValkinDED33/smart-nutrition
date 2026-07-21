@@ -82,7 +82,7 @@ const fridgeCopy = {
     missing: "Brakuje jeszcze",
     cookNow: "Dodaj jako posiłek",
     remove: "Usuń",
-    saveFailed: "Nie udalo sie zapisac lodowki w chmurze.",
+    saveFailed: "Nie udało się zapisać lodówki w chmurze.",
     addedToFridge: "Produkt dodany do lodówki.",
     quantityUpdated: "Ilość zaktualizowana.",
     removedFromFridge: "Produkt usunięty z lodówki.",

@@ -15,10 +15,10 @@ const syncMessageCopy = {
     queuedMany: (count: number) =>
       `${count} zmian czeka na potwierdzenie z chmury.`,
     conflict:
-      "Dane w chmurze zmienily sie na innym urzadzeniu. Najpierw pobierz najnowsza wersje z chmury.",
-    saveFailed: "Nie udalo sie zapisac ostatnich zmian w chmurze.",
-    pullFailed: "Nie udalo sie pobrac najnowszego snapshotu z chmury.",
-    inactive: "Synchronizacja z chmura nie jest teraz aktywna dla tego konta.",
+      "Dane w chmurze zmieniły się na innym urządzeniu. Najpierw pobierz najnowszą wersję z chmury.",
+    saveFailed: "Nie udało się zapisać ostatnich zmian w chmurze.",
+    pullFailed: "Nie udało się pobrać najnowszego snapshotu z chmury.",
+    inactive: "Synchronizacja z chmurą nie jest teraz aktywna dla tego konta.",
   },
   en: {
     queuedOne: "1 change is waiting for cloud confirmation.",

@@ -11,7 +11,7 @@ const syncFeedbackCopy = {
     retrySuccess: "Хмарна синхронізація завершилася успішно.",
   },
   pl: {
-    retrySuccess: "Synchronizacja z chmura zakonczona pomyslnie.",
+    retrySuccess: "Synchronizacja z chmurą zakończona pomyślnie.",
   },
   en: {
     retrySuccess: "Cloud sync completed successfully.",

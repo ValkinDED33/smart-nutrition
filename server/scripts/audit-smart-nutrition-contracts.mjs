@@ -51,6 +51,14 @@ const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
 );
+const syncFeedbackAlertSource = readSource("src/widgets/SyncFeedbackAlert.tsx");
+const syncStatusChipSource = readSource("src/widgets/SyncStatusChip.tsx");
+const syncMessagingSource = readSource("src/shared/lib/syncMessaging.ts");
+const cloudSyncStatusCardSource = readSource(
+  "src/features/profile/CloudSyncStatusCard.tsx"
+);
+const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
+const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePlanner.tsx");
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
@@ -431,6 +439,29 @@ addCheck(
     partnerInvitePageSource.includes("bez pełnej synchronizacji kont") &&
     partnerInvitePageSource.includes("without full account synchronization"),
   "QR partner access must feel native to the app language, route through backend invite acceptance, and communicate limited pregnancy sharing instead of full account synchronization."
+);
+
+const polishedPolishSyncSources = [
+  syncFeedbackAlertSource,
+  syncStatusChipSource,
+  syncMessagingSource,
+  cloudSyncStatusCardSource,
+  accountDataCardCopySource,
+  fridgeRecipePlannerSource,
+].join("\n");
+
+addCheck(
+  "polish cloud account and sync UI uses polished native copy",
+  polishedPolishSyncSources.includes("Synchronizacja z chmurą zakończona pomyślnie.") &&
+    polishedPolishSyncSources.includes("Błąd synchronizacji") &&
+    polishedPolishSyncSources.includes("Dane w chmurze zmieniły się na innym urządzeniu.") &&
+    polishedPolishSyncSources.includes("To konto jest połączone z backendem.") &&
+    polishedPolishSyncSources.includes("Telegram odłączony.") &&
+    polishedPolishSyncSources.includes("Nie udało się zapisać lodówki w chmurze.") &&
+    !/\b(chmura zakonczona pomyslnie|Blad synchronizacji|czekaja na udana synchronizacje|zmienily sie|urzadzeniu|Nie udalo sie|Nie polaczono|Polaczono|Odlacz|Otworzylismy|lodowki)\b/.test(
+      polishedPolishSyncSources
+    ),
+  "Visible Polish account, cloud-sync, Telegram-link, and fridge-save statuses must not regress into ASCII-only or broken-language copy."
 );
 
 addCheck(
