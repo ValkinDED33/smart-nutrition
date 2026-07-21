@@ -1061,6 +1061,17 @@ export const createTelegramMedicationReminderRuntime = ({
         getReminderLanguageFromContext(ctx)
     );
 
+  const replyWithProfileLanguageHint = async (ctx, buildMessage) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return;
+    }
+
+    const language = await resolveUserLanguage(user, ctx);
+    await ctx.reply(buildMessage(language));
+  };
+
   const replyWithList = async (ctx, { medicationsOnly = false } = {}) => {
     const user = await getConnectedUser(ctx);
 
@@ -1479,7 +1490,7 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(buildMedicationReminderUsageMessage(getReminderLanguageFromContext(ctx)));
+        await replyWithProfileLanguageHint(ctx, buildMedicationReminderUsageMessage);
         return;
       }
 
@@ -1490,7 +1501,7 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).addTaskHint);
+        await replyWithProfileLanguageHint(ctx, (language) => getReminderCopy(language).addTaskHint);
         return;
       }
 
@@ -1501,7 +1512,7 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).addWaterHint);
+        await replyWithProfileLanguageHint(ctx, (language) => getReminderCopy(language).addWaterHint);
         return;
       }
 
@@ -1512,7 +1523,7 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).addHabitHint);
+        await replyWithProfileLanguageHint(ctx, (language) => getReminderCopy(language).addHabitHint);
         return;
       }
 
@@ -1523,7 +1534,7 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).addSupplementHint);
+        await replyWithProfileLanguageHint(ctx, (language) => getReminderCopy(language).addSupplementHint);
         return;
       }
 
@@ -1534,7 +1545,9 @@ export const createTelegramMedicationReminderRuntime = ({
       const text = getCommandArgument(ctx);
 
       if (!text) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).addGenericHint.join("\n"));
+        await replyWithProfileLanguageHint(ctx, (language) =>
+          getReminderCopy(language).addGenericHint.join("\n")
+        );
         return;
       }
 
@@ -1554,7 +1567,9 @@ export const createTelegramMedicationReminderRuntime = ({
       const match = text.match(/^(\S+)\s+(.+)$/u);
 
       if (!match) {
-        await ctx.reply(getReminderCopy(getReminderLanguageFromContext(ctx)).setTimeHint.join("\n"));
+        await replyWithProfileLanguageHint(ctx, (language) =>
+          getReminderCopy(language).setTimeHint.join("\n")
+        );
         return;
       }
 

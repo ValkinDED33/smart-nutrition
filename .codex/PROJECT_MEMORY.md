@@ -76,6 +76,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Tightened ignored local backup storage so nested `server/data/backups/**` snapshots stay out of Git, with a contract allowing only `server/data/.gitkeep` under runtime data.
 - Expanded backend external product mapping so OpenFoodFacts and USDA preserve the full canonical nutrient profile, including iodine, selenium, copper, fatty acids, cholesterol, sugar types, water, and vitamins when providers supply them.
 - Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
+- Hardened Telegram reminder command hints so empty `/addmed`, `/addtask`, `/addwater`, `/addhabit`, `/addsupplement`, `/add`, and `/settime` prompts use the connected Smart Nutrition profile language instead of drifting to the Telegram client language.
 
 ## Current Architecture
 
@@ -140,6 +141,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Authenticated deploy smoke must use a dedicated verified smoke account via `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`; the npm script loads ignored `.env` for these values, and personal/admin credentials must not be committed, echoed, or required for routine verification.
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
+- Telegram reminder command hints, reminder lists, management buttons, callback feedback, and scheduled reminder notifications must use the connected profile language when a profile is available; Telegram client language is only a disconnected fallback.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
 - Reminder persistence should use `updateUserReminders`; `updateUserMedicationReminders` is a legacy compatibility alias that must delegate to the canonical method and must not contain separate write logic.
 - Reminder UI surfaces that create or update backend-confirmed reminders must keep the visible reminder manager synchronized with the returned canonical reminder item.

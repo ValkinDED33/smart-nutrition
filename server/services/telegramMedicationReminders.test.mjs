@@ -144,6 +144,35 @@ describe("telegramMedicationReminders", () => {
     expect(ctx.reply.mock.calls[0][0]).toContain("нагадування створено");
   });
 
+  it("uses the profile language for empty reminder command hints", async () => {
+    const { bot, commands } = createBotHarness();
+    const user = { id: "user-1", telegramChatId: "123", languagePreference: "pl" };
+    const runtime = createTelegramMedicationReminderRuntime({
+      configured: true,
+      authRepository: { listUsers: vi.fn() },
+      medicationReminderService: {
+        createReminderFromText: vi.fn(),
+        getUserReminders: vi.fn(() => []),
+      },
+      getConnectedUser: vi.fn(async () => user),
+      writeAuditLog: vi.fn(),
+      sendTelegramMessage: vi.fn(),
+      logger: { warn: vi.fn() },
+    });
+    const ctx = {
+      from: { language_code: "en" },
+      message: { text: "/addmed" },
+      reply: vi.fn(async () => {}),
+    };
+
+    runtime.registerHandlers(bot);
+    await commands.addmed(ctx);
+
+    expect(ctx.reply.mock.calls[0][0]).toContain("Napisz przypomnienie o lekach");
+    expect(ctx.reply.mock.calls[0][0]).toContain("/addmed <tekst>");
+    expect(ctx.reply.mock.calls[0][0]).not.toContain("Write a medication reminder");
+  });
+
   it("creates an ordinary task reminder through /addtask", async () => {
     const { bot, commands } = createBotHarness();
     const user = { id: "user-1", telegramChatId: "123" };

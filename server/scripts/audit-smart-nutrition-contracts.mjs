@@ -31,6 +31,9 @@ const frontendProductApiSource = readSource("src/shared/api/products.ts");
 const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
+const telegramMedicationRemindersSource = readSource(
+  "server/services/telegramMedicationReminders.mjs"
+);
 const registerPageSource = readSource("src/pages/RegisterPage.tsx");
 const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
@@ -236,6 +239,31 @@ addCheck(
     assistantAgentActionsSource.includes("waterUnit") &&
     assistantAgentActionsSource.includes("${text.waterUnit}"),
   "Telegram quick buttons, callback feedback, assistant context, and water units must follow the user's profile language."
+);
+
+addCheck(
+  "telegram reminder command hints use profile language",
+  telegramMedicationRemindersSource.includes("replyWithProfileLanguageHint") &&
+    telegramMedicationRemindersSource.includes("const language = await resolveUserLanguage(user, ctx)") &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).addTaskHint"
+    ) &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).addWaterHint"
+    ) &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).addHabitHint"
+    ) &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).addSupplementHint"
+    ) &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).addGenericHint"
+    ) &&
+    !telegramMedicationRemindersSource.includes(
+      "getReminderCopy(getReminderLanguageFromContext(ctx)).setTimeHint"
+    ),
+  "Empty Telegram reminder commands must not fall back to Telegram client language when a connected profile language exists."
 );
 
 addCheck(
