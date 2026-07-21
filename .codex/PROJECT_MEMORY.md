@@ -133,6 +133,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 - Hardened fridge planner recipe and fridge-save feedback so meal/fridge failures stay product-language and do not leak backend/provider exception details.
+- Removed the obsolete Depcheck config and locked dead-code auditing to the canonical Knip setup so the root stays clean without duplicate quality tools.
 
 ## Current Architecture
 
@@ -249,6 +250,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Photo meal fallback must not substitute user history or generic templates for visual recognition. If providers cannot identify visible food, the draft must stay unselected/empty, use the profile/request language, and explain how to retake or manually add ingredients.
 - Environment example files must never contain real-looking provider secrets or duplicate sensitive backend assignments.
 - Tracked Git files must exclude runtime/generated artifacts such as `.codex/chrome*`, `.codex/cdp*`, `.codex-remote-attachments`, screenshots, caches, logs, `dist`, and `node_modules`.
+- `.gitignore` is a tracked project contract and must stay in the repository so every machine ignores the same runtime/generated artifacts.
+- Dead-code auditing uses `knip.json` and `npm run audit:dead`; do not reintroduce `.depcheckrc` or a second depcheck configuration.
 - Runtime data under `server/data` is never source code; only `server/data/.gitkeep` may be tracked.
 - Vite preload/chunk failures must trigger controlled stale-build recovery instead of leaving a white screen.
 - Scanner runtime must be deterministic: permission, stream start, scan, cleanup, and errors must be explicit.

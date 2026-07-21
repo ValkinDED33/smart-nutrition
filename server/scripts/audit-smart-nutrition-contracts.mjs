@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,6 +7,8 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.
 
 const readSource = (relativePath) =>
   readFileSync(path.join(rootDir, relativePath), "utf8");
+
+const fileExists = (relativePath) => existsSync(path.join(rootDir, relativePath));
 
 const readTrackedFiles = () =>
   execSync("git ls-files", {
@@ -293,6 +295,15 @@ addCheck(
       )
   ),
   "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, local storage snapshots, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
+);
+
+addCheck(
+  "dead-code audit has a single canonical tool",
+  trackedFiles.includes("knip.json") &&
+    packageJsonSource.includes('"audit:dead": "knip"') &&
+    !fileExists(".depcheckrc") &&
+    !packageJsonSource.includes('"depcheck"'),
+  "Dead-code detection must use the canonical Knip setup only; old Depcheck config must not remain as a parallel unused-audit system."
 );
 
 addCheck(
