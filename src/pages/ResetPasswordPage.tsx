@@ -24,6 +24,8 @@ type FormData = {
   confirmPassword: string;
 };
 
+const AUTH_INVALID_RESET_TOKEN_KEY = "auth.invalidResetToken";
+
 const ResetPasswordPage = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -95,16 +97,16 @@ const ResetPasswordPage = () => {
     } catch (error) {
       if (error instanceof AuthApiError) {
         if (error.code === "INVALID_RESET_TOKEN") {
-          setServerError(t("auth.invalidResetToken"));
+          setServerError(t(AUTH_INVALID_RESET_TOKEN_KEY));
         } else if (error.code === "WEAK_PASSWORD") {
           setServerError(t("auth.weakResetPassword"));
         } else if (error.code === "REMOTE_API_UNAVAILABLE") {
           setServerError(t("error.backendUnavailable"));
         } else {
-          setServerError(error.message);
+          setServerError(t(AUTH_INVALID_RESET_TOKEN_KEY));
         }
       } else {
-        setServerError(t("auth.invalidResetToken"));
+        setServerError(t(AUTH_INVALID_RESET_TOKEN_KEY));
       }
     } finally {
       setSubmitting(false);

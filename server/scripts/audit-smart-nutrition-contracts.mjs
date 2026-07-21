@@ -45,6 +45,7 @@ const telegramMedicationRemindersSource = readSource(
 const registerPageSource = readSource("src/pages/RegisterPage.tsx");
 const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
+const forgotPasswordPageSource = readSource("src/pages/ForgotPasswordPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const homePageSource = readSource("src/pages/HomePage.tsx");
@@ -54,6 +55,7 @@ const profileCloudActionSource = readSource("src/features/profile/useProfileClou
 const waterCloudActionSource = readSource("src/features/water/useWaterCloudAction.ts");
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
+const communityHubCardSource = readSource("src/features/community/CommunityHubCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const barcodeScannerModelSource = readSource("src/features/meal/barcodeScannerModel.ts");
 const productCardSource = readSource("src/features/meal/ProductCard.tsx");
@@ -865,6 +867,21 @@ addCheck(
     resetPasswordPageSource.includes("resetPassword(token, data.password)") &&
     resetPasswordPageSource.includes("disabled={!token || submitting || Boolean(successMessage)}"),
   "Password reset must capture then remove token query data and keep submit disabled without a token."
+);
+
+addCheck(
+  "auth and community visible errors hide raw API exception text",
+  resetPasswordPageSource.includes("AUTH_INVALID_RESET_TOKEN_KEY") &&
+    resetPasswordPageSource.includes('t("auth.weakResetPassword")') &&
+    !resetPasswordPageSource.includes("setServerError(error.message)") &&
+    forgotPasswordPageSource.includes('t("auth.forgotGenericError")') &&
+    !forgotPasswordPageSource.includes(": error.message") &&
+    communityHubCardSource.includes("saveFailed") &&
+    communityHubCardSource.includes("message: copy.saveFailed") &&
+    !communityHubCardSource.includes("getCommunityErrorMessage") &&
+    !communityHubCardSource.includes("error instanceof Error && error.message") &&
+    !communityHubCardSource.includes("Could not save community changes. Please try again."),
+  "Auth recovery and community action failures must render localized product-language retry copy instead of raw backend/API exception text."
 );
 
 addCheck(

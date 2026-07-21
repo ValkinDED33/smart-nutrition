@@ -138,6 +138,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Removed the obsolete Depcheck config and locked dead-code auditing to the canonical Knip setup so the root stays clean without duplicate quality tools.
 - Introduced the branded AI Discovery Cards home pattern: living story cards generated from canonical day context and existing assistant actions, with tests and contract audit guarding against mock/random/local-only AI cards.
 - Accepted Living AI Interface as the product-level UX philosophy: AI Discovery, ambient intelligence, predictive surfaces, emotional companion behavior, AI memory moments, and morphing UI are allowed only when they reuse canonical data/actions and preserve honest backend-confirmed state.
+- Hardened auth recovery and community action failure copy so reset/forgot/community surfaces show localized product-language recovery instead of raw backend/API exception text.
+- Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
 
 ## Current Architecture
 
@@ -171,6 +173,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
 - Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
+- Auth recovery and community action UI must not render raw backend/API exception text; reset, forgot-password, and community failures use localized recovery copy while diagnostics stay in code/logs.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.
@@ -264,6 +267,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - 3D companion must be lazy/on-demand and isolated from core flows.
 - 3D companion runtime must stay 2D on mobile, low-power, data-saver, reduced-motion, and unsupported WebGL contexts even if 3D is selected in profile preferences.
 - Route-heavy vendors for scanner, photo compression, markdown, analytics, native bridges, and 3D companion must stay behind route-local lazy boundaries and must not appear in initial `index.html` scripts or modulepreload assets.
+- Heavy native/image-processing dependencies must be justified by a real source path and kept within dependency-audit thresholds; `sharp` is currently owned by backend photo analysis for safe image normalization.
 - Deploy-sensitive readiness must include `npm run audit:live` after deployment or domain/backend/CORS/SEO changes. The live audit may use only public unauthenticated endpoints and must not include secrets, login, protected user data, or fake success.
 - Authenticated deploy smoke must use a dedicated verified smoke account via `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`; the npm script loads ignored `.env` for these values, and personal/admin credentials must not be committed, echoed, or required for routine verification.
 - Telegram is a retention layer, not the main application or a separate reminder backend.

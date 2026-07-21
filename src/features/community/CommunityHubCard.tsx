@@ -123,6 +123,7 @@ const communityCopy = {
     duplicate:
       "Схожа публікація вже є. Відправлю на перевірку з позначкою дубля.",
     emptyPosts: "Публікацій поки немає.",
+    saveFailed: "Не вдалося зберегти дію спільноти. Спробуйте ще раз.",
     types: {
       recipe: "Рецепт",
       advice: "Порада",
@@ -201,6 +202,7 @@ const communityCopy = {
     duplicate:
       "Podobna publikacja już istnieje. Wyślę ją do moderacji z oznaczeniem duplikatu.",
     emptyPosts: "Brak publikacji.",
+    saveFailed: "Nie udało się zapisać działania społeczności. Spróbuj ponownie.",
     types: {
       recipe: "Przepis",
       advice: "Porada",
@@ -279,6 +281,7 @@ const communityCopy = {
     duplicate:
       "A similar post already exists. I will send it for review as a duplicate.",
     emptyPosts: "No posts yet.",
+    saveFailed: "Could not save the community action. Please try again.",
     types: {
       recipe: "Recipe",
       advice: "Advice",
@@ -361,11 +364,6 @@ const formatDateTime = (value: string, language: AppLanguage) =>
 
 const sanitizeCommunityText = (value: string) =>
   sanitizeHtml(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
-
-const getCommunityErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message
-    ? error.message
-    : "Could not save community changes. Please try again.";
 
 export const CommunityHubCard = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -477,10 +475,10 @@ export const CommunityHubCard = () => {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       setCommunityFeedback({
         severity: "error",
-        message: getCommunityErrorMessage(error),
+        message: copy.saveFailed,
       });
       return false;
     }
@@ -595,10 +593,10 @@ export const CommunityHubCard = () => {
         reason: `Reported by ${authorName}`,
         reporterName: authorName,
       });
-    } catch (error) {
+    } catch {
       setCommunityFeedback({
         severity: "error",
-        message: getCommunityErrorMessage(error),
+        message: copy.saveFailed,
       });
       return;
     }
