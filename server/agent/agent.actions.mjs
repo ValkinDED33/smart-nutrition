@@ -220,6 +220,14 @@ const copy = {
       count > 0 ? `Активні нагадування враховано: ${count}.` : "Активних нагадувань зараз немає.",
     dailyPlanReviewOnly:
       "Це чернетка для перевірки: я нічого не зберіг у щоденник і не створив нових нагадувань.",
+    dailyPlanApplyFailed: [
+      "Я зрозумів підтвердження пункту плану, але зараз не зміг виконати його через підтверджений контур Smart Nutrition.",
+      "Не буду показувати пункт як застосований, поки дія не пройде через їжу або нагадування.",
+    ],
+    dailyPlanAppliedWater: "Готово. Пункт плану з водою перенесено у нагадування Smart Nutrition.",
+    dailyPlanAppliedReview: "Готово. Пункт перевірки плану перенесено у нагадування Smart Nutrition.",
+    foodOpening:
+      "Відкриваю додавання їжі. Оберіть продукт через пошук або швидку порцію — збереження буде тільки після підтвердження.",
     foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
     waterLine: (consumed, target) => `💧 Вода: ${consumed} / ${target} мл`,
     nextFirstStep: "Найпростіший наступний крок — додати перший прийом їжі або воду.",
@@ -428,6 +436,14 @@ const copy = {
       count > 0 ? `Uwzględnione aktywne przypomnienia: ${count}.` : "Brak aktywnych przypomnień.",
     dailyPlanReviewOnly:
       "To szkic do sprawdzenia: niczego nie zapisałem w dzienniku i nie utworzyłem nowych przypomnień.",
+    dailyPlanApplyFailed: [
+      "Rozumiem potwierdzenie punktu planu, ale nie mogę teraz wykonać go przez potwierdzony przepływ Smart Nutrition.",
+      "Nie pokażę punktu jako zastosowanego, dopóki nie przejdzie przez jedzenie albo przypomnienia.",
+    ],
+    dailyPlanAppliedWater: "Gotowe. Punkt planu z wodą został przeniesiony do przypomnienia Smart Nutrition.",
+    dailyPlanAppliedReview: "Gotowe. Punkt przeglądu planu został przeniesiony do przypomnienia Smart Nutrition.",
+    foodOpening:
+      "Otwieram dodawanie jedzenia. Wybierz produkt przez wyszukiwanie albo szybką porcję — zapis nastąpi dopiero po potwierdzeniu.",
     foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
     waterLine: (consumed, target) => `💧 Woda: ${consumed} / ${target} ml`,
     nextFirstStep: "Najprostszy następny krok — dodaj pierwszy posiłek albo wodę.",
@@ -636,6 +652,14 @@ const copy = {
       count > 0 ? `Active reminders considered: ${count}.` : "No active reminders right now.",
     dailyPlanReviewOnly:
       "This is a review draft: I did not save meals to the diary or create new reminders.",
+    dailyPlanApplyFailed: [
+      "I understood the plan item confirmation, but I could not run it through a confirmed Smart Nutrition flow right now.",
+      "I will not show the item as applied until it goes through food logging or reminders.",
+    ],
+    dailyPlanAppliedWater: "Done. The water plan item was moved into a Smart Nutrition reminder.",
+    dailyPlanAppliedReview: "Done. The plan review item was moved into a Smart Nutrition reminder.",
+    foodOpening:
+      "Opening food add. Choose a product through search or a quick portion; it will save only after confirmation.",
     foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
     waterLine: (consumed, target) => `💧 Water: ${consumed} / ${target} ml`,
     nextFirstStep: "The simplest next step is to add the first meal or water.",
@@ -792,6 +816,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.dailyPlanFailed.join("\n");
     }
 
+    if (intent.intent === "apply_daily_plan_item") {
+      return text.dailyPlanApplyFailed.join("\n");
+    }
+
     if (
       intent.intent === "create_water_reminder" ||
       intent.intent === "create_habit_reminder" ||
@@ -911,6 +939,13 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
     return text.photoMealOpening;
   }
 
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "food"
+  ) {
+    return text.foodOpening;
+  }
+
   if (toolResult.type === "weight_logged") {
     const previousWeight = Number(toolResult.previousWeightKg);
     const currentWeight = Number(toolResult.weightKg);
@@ -994,6 +1029,22 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       reminder?.repeat === "once" ? text.repeatOnce : text.repeatDaily,
       safetyLine,
       text.telegramButtons(getReminderActionPhrase(reminderKind, language)),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (toolResult.type === "daily_plan_item_applied") {
+    const reminder = toolResult.reminder;
+    const appliedLine =
+      toolResult.appliedAction === "review_reminder"
+        ? text.dailyPlanAppliedReview
+        : text.dailyPlanAppliedWater;
+
+    return [
+      appliedLine,
+      `${getMedicationReminderTitle(reminder, language)} — ${formatReminderTimes(reminder, language)}`,
+      text.telegramButtons(text.actionPhrases[reminder?.type] ?? text.actionPhrases.task),
     ]
       .filter(Boolean)
       .join("\n");

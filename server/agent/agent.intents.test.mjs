@@ -196,6 +196,23 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects confirmed daily plan item application before drafting a new plan", () => {
+    expect(detectAgentIntent("примени белковый пункт плана")).toMatchObject({
+      intent: "apply_daily_plan_item",
+      confidence: 0.82,
+      entities: {
+        planItem: "protein",
+      },
+    });
+    expect(detectAgentIntent("підтвердь воду з плану")).toMatchObject({
+      intent: "apply_daily_plan_item",
+      confidence: 0.82,
+      entities: {
+        planItem: "water",
+      },
+    });
+  });
+
   it("detects weekly and monthly progress report requests", () => {
     expect(detectAgentIntent("сделай отчет за неделю")).toMatchObject({
       intent: "generate_report",

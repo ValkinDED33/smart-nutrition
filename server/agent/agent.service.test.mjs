@@ -650,6 +650,127 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("applies a protein daily plan item by opening the canonical food flow without fake meal saving", async () => {
+    const stateService = {
+      addProductIntake: vi.fn(),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "примени белковый пункт плана",
+      context: {
+        language: "uk",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: {
+        intent: "apply_daily_plan_item",
+        entities: {
+          planItem: "protein",
+        },
+      },
+      actions: [
+        {
+          id: "apply_daily_plan_item",
+          ok: true,
+          resultType: "navigation_handoff",
+          targetRoute: "/meals?mode=search",
+          targetSurface: "food",
+        },
+      ],
+      memoryUpdated: true,
+      followUpQuestionIds: ["day_status", "search_product", "water_help"],
+    });
+    expect(result.text).toContain("Відкриваю додавання їжі");
+    expect(result.text).toContain("тільки після підтвердження");
+    expect(result.text).not.toContain("Додав");
+    expect(result.text).not.toContain("збережено");
+    expect(stateService.addProductIntake).not.toHaveBeenCalled();
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["applies daily plan items through food flow"]),
+      })
+    );
+  });
+
+  it("applies a hydration daily plan item through the canonical typed reminder contract", async () => {
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async (_user, payload) => ({
+        ok: true,
+        reminder: {
+          id: "plan-water-1",
+          type: payload.type,
+          title: "Пити воду",
+          dose: "250 мл",
+          times: ["12:30"],
+          repeat: "once",
+        },
+      })),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "підтвердь воду з плану",
+      context: {
+        language: "uk",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: {
+        intent: "apply_daily_plan_item",
+        entities: {
+          planItem: "water",
+        },
+      },
+      actions: [
+        {
+          id: "apply_daily_plan_item",
+          ok: true,
+          resultType: "daily_plan_item_applied",
+        },
+      ],
+      memoryUpdated: true,
+    });
+    expect(result.text).toContain("Пункт плану з водою");
+    expect(result.text).toContain("Пити воду");
+    expect(result.text).toContain("12:30");
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(
+      user,
+      {
+        type: "water",
+        text: "пити воду о 12:30",
+      },
+      fixedNow
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["applies daily plan items through reminders"]),
+      })
+    );
+  });
+
   it("generates a progress report from backend snapshot and canonical reminders", async () => {
     const stateService = {
       getSnapshot: vi.fn(async () => ({

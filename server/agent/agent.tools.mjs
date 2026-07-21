@@ -109,6 +109,12 @@ const buildFollowUpReminderText = (text, currentNow) => {
   return `${cleaned || "follow up"} о ${normalizeClockTime(followUpAt)}`;
 };
 
+const buildPlanReminderTime = (currentNow) => {
+  const reminderAt = new Date(currentNow.getTime() + 90 * 60 * 1000);
+
+  return normalizeClockTime(reminderAt);
+};
+
 const calculateEntryNutrients = (entry) =>
   calculateMealTotalNutrients([entry]);
 
@@ -1144,6 +1150,57 @@ export const createAgentTools = ({
     };
   };
 
+  const applyDailyPlanItem = async (user, { planItem = "food" } = {}) => {
+    const normalizedPlanItem = String(planItem ?? "food");
+
+    if (normalizedPlanItem === "water" || normalizedPlanItem === "review") {
+      const type = normalizedPlanItem === "water" ? "water" : "task";
+      const createReminder = getTypedReminderCreator(reminders, type);
+
+      if (!createReminder) {
+        return { ok: false, code: "PLAN_REMINDER_TOOL_UNAVAILABLE" };
+      }
+
+      const reminderTime = buildPlanReminderTime(now());
+      const text =
+        normalizedPlanItem === "water"
+          ? `пити воду о ${reminderTime}`
+          : `перевірити план Smart Nutrition о ${reminderTime}`;
+      const result = await createReminder(user, text, now());
+
+      if (!result?.ok) {
+        return {
+          ok: false,
+          code: result?.code ?? "PLAN_REMINDER_PARSE_FAILED",
+        };
+      }
+
+      return {
+        ok: true,
+        type: "daily_plan_item_applied",
+        appliedAction: normalizedPlanItem === "water" ? "water_reminder" : "review_reminder",
+        reminder: result.reminder,
+        reminderText: text,
+      };
+    }
+
+    if (normalizedPlanItem === "photo") {
+      return requestPhotoMealAnalysis(user, {});
+    }
+
+    if (normalizedPlanItem === "scanner") {
+      return openScanner(user, {});
+    }
+
+    return {
+      ok: true,
+      type: "navigation_handoff",
+      targetSurface: "food",
+      targetRoute: "/meals?mode=search",
+      planItem: normalizedPlanItem === "protein" ? "protein" : "food",
+    };
+  };
+
   const generateReport = async (user, { period = "week" } = {}) => {
     const currentNow = now();
     const summary = await createSnapshotSummary({ user, stateService, now: currentNow });
@@ -1216,6 +1273,7 @@ export const createAgentTools = ({
     getDayStatus,
     generateDaySummary,
     generateDailyPlan,
+    applyDailyPlanItem,
     generateReport,
     getWaterStatus,
     getNutritionStatus,

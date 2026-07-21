@@ -511,6 +511,28 @@ addCheck(
 );
 
 addCheck(
+  "assistant daily plan item application uses existing canonical food/reminder flows",
+  assistantAgentIntentsSource.includes('intent: "apply_daily_plan_item"') &&
+    assistantAgentIntentsSource.includes("APPLY_PLAN_PATTERN") &&
+    assistantAgentIntentsSource.includes("readDailyPlanApplyTarget") &&
+    assistantAgentServiceSource.includes('intent.intent === "apply_daily_plan_item"') &&
+    assistantAgentServiceSource.includes("tools.applyDailyPlanItem(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const applyDailyPlanItem = async") &&
+    assistantAgentToolsSource.includes("getTypedReminderCreator(reminders, type)") &&
+    assistantAgentToolsSource.includes('type: "daily_plan_item_applied"') &&
+    assistantAgentToolsSource.includes('targetSurface: "food"') &&
+    assistantAgentToolsSource.includes('targetRoute: "/meals?mode=search"') &&
+    assistantAgentActionsSource.includes('toolResult.type === "daily_plan_item_applied"') &&
+    assistantAgentActionsSource.includes("dailyPlanApplyFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "daily_plan_item_applied"') &&
+    assistantAgentMemorySource.includes("applies daily plan items through reminders") &&
+    assistantPromptStackSource.includes("applyDailyPlanItem") &&
+    !/applyDailyPlanItem[\s\S]*stateService\.addProductIntake\(/.test(assistantAgentToolsSource) &&
+    !/applyDailyPlanItem[\s\S]*stateService\.addMealTemplate\(/.test(assistantAgentToolsSource),
+  "Applying a daily plan item must route through existing food navigation or canonical reminders; it must not create a second planner or silently save meals/templates."
+);
+
+addCheck(
   "women health UI surfaces symptom history as non-diagnostic care context",
   womenHealthOverviewCardSource.includes('data-women-health-symptom-history="true"') &&
     womenHealthOverviewCardSource.includes("womenHealth.symptomHistory") &&

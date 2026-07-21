@@ -118,11 +118,12 @@ Gap:
 - Agent now completes safe catalog-backed food search and meal logging, plus
   backend-confirmed favorite product saves, weight, symptom check-ins, daily
   summaries, weekly/monthly progress reports, follow-ups, and scanner
-  navigation handoff, photo meal handoff, and review-only daily plan drafts from
-  canonical food routes and backend snapshots, but it still needs safe
-  apply-after-confirmation planning actions.
-- Missing practical tool group: apply confirmed daily-plan items into existing
-  meal/reminder flows without creating a second meal planner.
+  navigation handoff, photo meal handoff, review-only daily plan drafts from
+  canonical food routes and backend snapshots, and safe daily-plan item
+  application through existing food/reminder flows.
+- Remaining practical tool group: richer user confirmation for applying exact
+  meal-plan foods or portions after a search/photo result is selected, without
+  creating a second meal planner.
 
 ### Telegram and Medication Reminders
 
@@ -248,17 +249,18 @@ intake, log weight through confirmed profile state, log symptoms through
 confirmed women-health profile state, generate backend-backed daily and
 weekly/monthly reports, create reusable meal-template recipes, create
 reminders, open the canonical scanner route, and open the canonical photo meal
-review route from assistant commands, and draft a schedule-aware daily plan from
-backend snapshot/reminder state, but it still cannot apply selected plan items
-after user confirmation.
+review route from assistant commands, draft a schedule-aware daily plan from
+backend snapshot/reminder state, and apply selected plan items through existing
+food/reminder flows after user confirmation.
 
 WHY IT IS A PROBLEM:
 The assistant is positioned as a worker. A worker must act, not only explain.
 
 RISK:
 Users will approve a useful plan item and expect it to become an existing meal,
-template, search action, or reminder through the canonical flows. Without an
-apply step, the plan remains helpful text rather than project work.
+template, search action, or reminder through the canonical flows. The first safe
+apply step now exists, but exact food/portion application should still require a
+selected confirmed product or reviewed photo result before saving.
 
 RECOMMENDED FIX:
 Add apply-after-confirmation planning tools only through existing meal,

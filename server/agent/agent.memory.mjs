@@ -122,6 +122,27 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "food"
+  ) {
+    return {
+      userId: user?.id,
+      habits: ["applies daily plan items through food flow"],
+      motivationTriggers: ["assistant-guided food confirmation"],
+      lastMood: "focused",
+    };
+  }
+
+  if (toolResult.type === "daily_plan_item_applied") {
+    return {
+      userId: user?.id,
+      habits: ["applies daily plan items through reminders"],
+      motivationTriggers: ["assistant-guided plan follow-through"],
+      lastMood: "organized",
+    };
+  }
+
   if (toolResult.type === "weight_logged") {
     return {
       userId: user?.id,

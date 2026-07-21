@@ -24,6 +24,8 @@ const DAY_SUMMARY_PATTERN =
   /(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд).*(?:дня|день|сегодня|сьогодні|today)|(?:дня|день|сегодня|сьогодні|today).*(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд)/i;
 const DAILY_PLAN_PATTERN =
   /(?:план|расплан|сплан|заплан|меню|рацион|раціон|plan|schedule|menu).*(?:дня|день|сегодня|сьогодні|today|їж|еды|food|meal|питан|харчув)|(?:дня|день|сегодня|сьогодні|today).*(?:план|расплан|сплан|заплан|меню|рацион|раціон|plan|schedule|menu)/i;
+const APPLY_PLAN_PATTERN =
+  /(?:примени|применить|подтверди|выполни|застосуй|підтвердь|виконай|apply|confirm|use).*(?:план|пункт|рекомендац|чернетк|draft|plan)|(?:план|пункт|рекомендац|чернетк|draft|plan).*(?:примени|применить|подтверди|выполни|застосуй|підтвердь|виконай|apply|confirm|use)/i;
 const REPORT_WORD_PATTERN =
   /(?:отчет|отчёт|звіт|report|recap|обзор|огляд|аналитик|аналітик|analytics|progress)/i;
 const REPORT_PERIOD_PATTERN =
@@ -214,6 +216,36 @@ const readReportPeriod = (message) => {
   return null;
 };
 
+const readDailyPlanApplyTarget = (message) => {
+  const normalized = normalizeMessage(message).toLowerCase();
+
+  if (/(вода|воды|води|воду|water|hydration|гидратац|гідратац)/iu.test(normalized)) {
+    return "water";
+  }
+
+  if (/(белк|білк|protein|протеин|протеїн)/iu.test(normalized)) {
+    return "protein";
+  }
+
+  if (/(фото|photo|picture|image|тарелк|тарілк)/iu.test(normalized)) {
+    return "photo";
+  }
+
+  if (/(скан|штрихкод|barcode)/iu.test(normalized)) {
+    return "scanner";
+  }
+
+  if (/(итог|підсумок|review|обзор|огляд|закрыт|закрит)/iu.test(normalized)) {
+    return "review";
+  }
+
+  if (/(еда|їжа|їжу|meal|food|обед|обід|ужин|вечер|снідан|завтрак)/iu.test(normalized)) {
+    return "food";
+  }
+
+  return "food";
+};
+
 export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   const normalized = normalizeMessage(message);
 
@@ -275,6 +307,18 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         text: normalized.replace(/^\/?(?:followup|follow-up)\b/i, "").trim() || normalized,
       },
       reason: "follow_up_request",
+    };
+  }
+
+  if (/^\/?(?:applyplan|apply-plan|confirmplan|confirm-plan)\b/i.test(normalized) || APPLY_PLAN_PATTERN.test(normalized)) {
+    return {
+      intent: "apply_daily_plan_item",
+      confidence: 0.82,
+      entities: {
+        text: normalized,
+        planItem: readDailyPlanApplyTarget(normalized),
+      },
+      reason: "daily_plan_apply_request",
     };
   }
 
