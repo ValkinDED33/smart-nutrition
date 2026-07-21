@@ -38,6 +38,7 @@ const registerPageSource = readSource("src/pages/RegisterPage.tsx");
 const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
+const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
@@ -418,6 +419,18 @@ addCheck(
     photoAssistantSource.includes("addMealEntriesToCloud(dispatch, meal, resolvedEntries)") &&
     photoAssistantSource.includes("runMealAction"),
   "Photo meal analysis must remain an editable draft and save only selected reviewed items through backend-confirmed meal sync."
+);
+
+addCheck(
+  "partner invite page is localized and limited to pregnancy sharing",
+  partnerInvitePageSource.includes("partnerInviteCopy") &&
+    partnerInvitePageSource.includes("getPartnerInviteCopy(appLanguage)") &&
+    partnerInvitePageSource.includes("PENDING_PARTNER_INVITE_KEY") &&
+    partnerInvitePageSource.includes("acceptRemotePartnerInvite") &&
+    partnerInvitePageSource.includes("без повної синхронізації акаунтів") &&
+    partnerInvitePageSource.includes("bez pełnej synchronizacji kont") &&
+    partnerInvitePageSource.includes("without full account synchronization"),
+  "QR partner access must feel native to the app language, route through backend invite acceptance, and communicate limited pregnancy sharing instead of full account synchronization."
 );
 
 addCheck(
