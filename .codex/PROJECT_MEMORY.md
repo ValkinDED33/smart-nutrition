@@ -129,6 +129,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked assistant settings so ordinary users see assistant readiness/product-language status while provider, model, priority, and fallback-route diagnostics stay behind admin-center role access.
 - Hardened `/api/ai/status` so ordinary authenticated users receive assistant readiness only while provider models, base URLs, raw provider errors, and provider lists stay role-gated for helper/moderator/admin operations.
 - Reworked assistant unavailable/fallback copy so regular users see limited-helper/live-dialog recovery language instead of Cloud AI, production AI, or local-context internals.
+- Hardened frontend assistant API helpers so request, history, clear, network, and invalid-payload failures throw typed product-language errors instead of backend/provider/debug `Error.message` strings.
 - Hardened shared sync error messaging so unknown backend/provider exceptions fall back to localized retry guidance instead of leaking raw technical text into regular sync chips or profile sync panels.
 - Hardened shared meal action feedback so food add/edit/delete/repeat/template/product failures remain retryable without leaking raw backend/provider exception text to regular users.
 - Hardened quick meal composer save feedback so manual multi-product meal failures stay retryable without exposing backend/provider exception details in the food UI.
@@ -159,6 +160,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular assistant settings must present assistant readiness and useful product behavior; provider names, model ids, priority order, and fallback-route diagnostics belong behind owner/admin/moderator/helper access gates.
 - Assistant runtime status APIs must enforce the same role boundary as the UI: ordinary users may receive readiness, provider count, memory limit, and cooldown timing, but never provider base URLs, model identifiers, provider error text, or provider lists.
 - Regular assistant unavailable/fallback states must describe what the helper can still do and how recovery happens; Cloud AI, production AI, provider, and local-context terminology belongs in diagnostics, not everyday assistant copy.
+- Frontend assistant API helpers must throw typed safe errors with product-language messages; backend, provider, raw payload, stack, and fetch diagnostics must not become user-visible `error.message` text in future assistant screens.
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
 - AI-created favorite product saves must use canonical meal `savedProducts`, verify the saved product after backend restore, and must not create a separate favorite/product library.
 - AI-created follow-ups must use the canonical typed task reminder contract with explicit local reminder time; they are proactive assistant work, not a separate reminder engine.

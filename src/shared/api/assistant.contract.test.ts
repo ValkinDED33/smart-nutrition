@@ -20,4 +20,20 @@ describe("assistant API contracts", () => {
     expect(source).toContain("targetSurface === \"food\"");
     expect(source).toContain("actions: parseAssistantActions(payload.actions)");
   });
+
+  it("throws typed safe errors instead of backend/provider infrastructure messages", () => {
+    expect(source).toContain("class AssistantApiError");
+    expect(source).toContain("getAssistantSafeMessage");
+    expect(source).toContain("ASSISTANT_AUTH_REQUIRED");
+    expect(source).toContain("ASSISTANT_UNAVAILABLE");
+    expect(source).toContain("ASSISTANT_REQUEST_FAILED");
+    expect(source).toContain("ASSISTANT_RESPONSE_INVALID");
+    expect(source).not.toContain("Backend session is required for assistant requests");
+    expect(source).not.toContain("Backend unavailable for assistant requests");
+    expect(source).not.toContain("AI request failed");
+    expect(source).not.toContain("AI history request failed");
+    expect(source).not.toContain("AI history clear failed");
+    expect(source).not.toContain("Invalid AI response payload");
+    expect(source).not.toContain("Invalid AI history payload");
+  });
 });

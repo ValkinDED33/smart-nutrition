@@ -20,6 +20,38 @@ const AI_STATUS_PATH = "/ai/status";
 const AGENT_ACTION_MODE = "agent-action";
 const REMOTE_CLOUD_MODE = "remote-cloud";
 
+export type AssistantApiErrorCode =
+  | "ASSISTANT_AUTH_REQUIRED"
+  | "ASSISTANT_UNAVAILABLE"
+  | "ASSISTANT_REQUEST_FAILED"
+  | "ASSISTANT_RESPONSE_INVALID";
+
+const getAssistantSafeMessage = (code: AssistantApiErrorCode): string => {
+  switch (code) {
+    case "ASSISTANT_AUTH_REQUIRED":
+      return "The assistant needs your protected Smart Nutrition session before it can answer.";
+    case "ASSISTANT_UNAVAILABLE":
+      return "The assistant is temporarily unavailable. Try again in a moment.";
+    case "ASSISTANT_RESPONSE_INVALID":
+      return "The assistant response could not be read safely. Try again in a moment.";
+    case "ASSISTANT_REQUEST_FAILED":
+    default:
+      return "The assistant could not complete this request. Try again in a moment.";
+  }
+};
+
+export class AssistantApiError extends Error {
+  code: AssistantApiErrorCode;
+  status?: number;
+
+  constructor(code: AssistantApiErrorCode, status?: number) {
+    super(getAssistantSafeMessage(code));
+    this.name = "AssistantApiError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
 const isSafeInternalRoute = (value: unknown): value is string =>
   typeof value === "string" &&
   value.startsWith("/") &&
@@ -71,13 +103,13 @@ const parseAssistantActions = (value: unknown): AssistantRuntimeAction[] =>
 
 const getRequiredAssistantBaseUrl = () => {
   if (!isCloudSyncActive()) {
-    throw new Error("Backend session is required for assistant requests.");
+    throw new AssistantApiError("ASSISTANT_AUTH_REQUIRED");
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
 
   if (!baseUrl) {
-    throw new Error("Backend unavailable for assistant requests.");
+    throw new AssistantApiError("ASSISTANT_UNAVAILABLE");
   }
 
   return baseUrl;
@@ -89,7 +121,7 @@ const parseAiResponse = async (
   const payload = (await response.json()) as Partial<AssistantRuntimeResponse>;
 
   if (typeof payload.text !== "string" || !payload.text.trim()) {
-    throw new Error("Invalid AI response payload.");
+    throw new AssistantApiError("ASSISTANT_RESPONSE_INVALID", response.status);
   }
 
   return {
@@ -115,7 +147,7 @@ const parseAiHistory = async (
   };
 
   if (!Array.isArray(payload.items)) {
-    throw new Error("Invalid AI history payload.");
+    throw new AssistantApiError("ASSISTANT_RESPONSE_INVALID", response.status);
   }
 
   return payload.items
@@ -158,22 +190,28 @@ export const askAssistantQuestion = async (
   input: AssistantQuestionInput
 ): Promise<AssistantRuntimeResponse> => {
   const baseUrl = getRequiredAssistantBaseUrl();
-  const response = await fetch(`${baseUrl}${AI_PATH}`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      question: input.question,
-      quickQuestionId: input.quickQuestionId ?? null,
-      context: input.context,
-    }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${AI_PATH}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        question: input.question,
+        quickQuestionId: input.quickQuestionId ?? null,
+        context: input.context,
+      }),
+    });
+  } catch {
+    throw new AssistantApiError("ASSISTANT_UNAVAILABLE");
+  }
 
   if (!response.ok) {
-    throw new Error("AI request failed.");
+    throw new AssistantApiError("ASSISTANT_REQUEST_FAILED", response.status);
   }
 
   return parseAiResponse(response);
@@ -184,16 +222,22 @@ export const getAssistantConversationHistory = async (): Promise<
 > => {
   const baseUrl = getRequiredAssistantBaseUrl();
 
-  const response = await fetch(`${baseUrl}${AI_PATH}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    credentials: "include",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${AI_PATH}`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+    });
+  } catch {
+    throw new AssistantApiError("ASSISTANT_UNAVAILABLE");
+  }
 
   if (!response.ok) {
-    throw new Error("AI history request failed.");
+    throw new AssistantApiError("ASSISTANT_REQUEST_FAILED", response.status);
   }
 
   return parseAiHistory(response);
@@ -202,16 +246,22 @@ export const getAssistantConversationHistory = async (): Promise<
 export const clearAssistantConversationHistory = async () => {
   const baseUrl = getRequiredAssistantBaseUrl();
 
-  const response = await fetch(`${baseUrl}${AI_PATH}`, {
-    method: "DELETE",
-    headers: {
-      Accept: "application/json",
-    },
-    credentials: "include",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${baseUrl}${AI_PATH}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+    });
+  } catch {
+    throw new AssistantApiError("ASSISTANT_UNAVAILABLE");
+  }
 
   if (!response.ok) {
-    throw new Error("AI history clear failed.");
+    throw new AssistantApiError("ASSISTANT_REQUEST_FAILED", response.status);
   }
 
   return true;

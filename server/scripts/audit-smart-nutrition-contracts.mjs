@@ -1547,6 +1547,20 @@ addCheck(
 );
 
 addCheck(
+  "assistant client errors hide backend and provider internals",
+  assistantApiSource.includes("class AssistantApiError") &&
+    assistantApiSource.includes("getAssistantSafeMessage") &&
+    assistantApiSource.includes("ASSISTANT_AUTH_REQUIRED") &&
+    assistantApiSource.includes("ASSISTANT_UNAVAILABLE") &&
+    assistantApiSource.includes("ASSISTANT_REQUEST_FAILED") &&
+    assistantApiSource.includes("ASSISTANT_RESPONSE_INVALID") &&
+    !/Backend session is required for assistant requests|Backend unavailable for assistant requests|AI request failed|AI history request failed|AI history clear failed|Invalid AI response payload|Invalid AI history payload/.test(
+      assistantApiSource
+    ),
+  "Assistant API helpers must throw typed product-language errors; backend/provider/raw payload details must not become future user-visible error.message text."
+);
+
+addCheck(
   "stale chunk failures recover by clearing runtime caches",
   clientErrorReportingSource.includes('window.addEventListener("vite:preloadError"') &&
     clientErrorReportingSource.includes("preloadEvent.preventDefault()") &&
