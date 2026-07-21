@@ -186,6 +186,16 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects daily plan requests before generic day status", () => {
+    expect(detectAgentIntent("составь план питания на сегодня")).toMatchObject({
+      intent: "generate_daily_plan",
+      confidence: 0.84,
+    });
+    expect(detectAgentIntent("daily meal plan today")).toMatchObject({
+      intent: "generate_daily_plan",
+    });
+  });
+
   it("detects weekly and monthly progress report requests", () => {
     expect(detectAgentIntent("сделай отчет за неделю")).toMatchObject({
       intent: "generate_report",

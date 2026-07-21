@@ -22,6 +22,8 @@ const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
 const DAY_SUMMARY_PATTERN =
   /(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд).*(?:дня|день|сегодня|сьогодні|today)|(?:дня|день|сегодня|сьогодні|today).*(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд)/i;
+const DAILY_PLAN_PATTERN =
+  /(?:план|расплан|сплан|заплан|меню|рацион|раціон|plan|schedule|menu).*(?:дня|день|сегодня|сьогодні|today|їж|еды|food|meal|питан|харчув)|(?:дня|день|сегодня|сьогодні|today).*(?:план|расплан|сплан|заплан|меню|рацион|раціон|plan|schedule|menu)/i;
 const REPORT_WORD_PATTERN =
   /(?:отчет|отчёт|звіт|report|recap|обзор|огляд|аналитик|аналітик|analytics|progress)/i;
 const REPORT_PERIOD_PATTERN =
@@ -273,6 +275,17 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         text: normalized.replace(/^\/?(?:followup|follow-up)\b/i, "").trim() || normalized,
       },
       reason: "follow_up_request",
+    };
+  }
+
+  if (/^\/?(?:dailyplan|daily-plan|mealplan|meal-plan)\b/i.test(normalized) || DAILY_PLAN_PATTERN.test(normalized)) {
+    return {
+      intent: "generate_daily_plan",
+      confidence: 0.84,
+      entities: {
+        text: normalized,
+      },
+      reason: "daily_plan_request",
     };
   }
 

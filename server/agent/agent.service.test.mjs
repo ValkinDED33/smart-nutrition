@@ -558,6 +558,98 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("generates a review-only daily plan draft from backend snapshot and reminders", async () => {
+    const stateService = {
+      getSnapshot: vi.fn(async () => ({
+        meal: {
+          items: [
+            {
+              id: "meal-1",
+              quantity: 200,
+              mealType: "breakfast",
+              eatenAt: "2026-06-21T08:30:00.000Z",
+              product: {
+                name: "Greek yogurt",
+                unit: "g",
+                nutrients: {
+                  calories: 59,
+                  protein: 10,
+                  fat: 0.4,
+                  carbs: 3.6,
+                },
+              },
+            },
+          ],
+        },
+        water: {
+          dailyWaterGoal: 2000,
+          consumedMl: 750,
+          glassSizeMl: 250,
+          lastLoggedOn: "2026-06-21",
+          history: [],
+        },
+        profile: {
+          dailyCalories: 2100,
+          macroTargets: {
+            protein: 130,
+          },
+        },
+      })),
+      addProductIntake: vi.fn(),
+      addMealTemplate: vi.fn(),
+    };
+    const reminderService = {
+      getUserReminders: vi.fn(() => [
+        { id: "reminder-1", active: true, title: "Вода", type: "water" },
+        { id: "reminder-2", active: false, title: "Old", type: "task" },
+      ]),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "составь план питания на сегодня",
+      context: {
+        language: "uk",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "generate_daily_plan" },
+      actions: [{ id: "generate_daily_plan", ok: true, resultType: "daily_plan_draft" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["search_product", "water_help", "coach_focus"],
+    });
+    expect(result.text).toContain("Чернетка плану Smart Nutrition");
+    expect(result.text).toContain("1982 ккал");
+    expect(result.text).toContain("110 г");
+    expect(result.text).toContain("1250 мл");
+    expect(result.text).toContain("Білковий акцент");
+    expect(result.text).toContain("Активні нагадування враховано: 1");
+    expect(result.text).toContain("нічого не зберіг");
+    expect(result.text).not.toContain("protein-led");
+    expect(result.text).not.toContain("збережено");
+    expect(stateService.getSnapshot).toHaveBeenCalledWith(user);
+    expect(reminderService.getUserReminders).toHaveBeenCalledWith(user);
+    expect(stateService.addProductIntake).not.toHaveBeenCalled();
+    expect(stateService.addMealTemplate).not.toHaveBeenCalled();
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["asks assistant for reviewable daily plans"]),
+      })
+    );
+  });
+
   it("generates a progress report from backend snapshot and canonical reminders", async () => {
     const stateService = {
       getSnapshot: vi.fn(async () => ({

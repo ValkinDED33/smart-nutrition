@@ -298,6 +298,77 @@ const buildReportFocus = ({ mealCount, water, weight, symptoms }) => {
   return focus.slice(0, 3);
 };
 
+const getDailyPlanProteinTarget = (profile = {}, user = {}) => {
+  const explicitTarget = Number(profile?.macroTargets?.protein ?? profile?.proteinTarget);
+
+  if (Number.isFinite(explicitTarget) && explicitTarget > 0) {
+    return Math.round(explicitTarget);
+  }
+
+  const weight = Number(profile?.weight ?? user?.weight ?? 0);
+
+  return Number.isFinite(weight) && weight > 0
+    ? Math.round(Math.min(Math.max(weight * 1.4, 70), 180))
+    : 100;
+};
+
+const createDailyPlanSlot = (id, focusKey, actionKey, value, reasonKey) => ({
+  id,
+  focusKey,
+  actionKey,
+  value,
+  reasonKey,
+});
+
+const buildDailyPlanDraft = ({ summary, activeReminders, user }) => {
+  const dailyCalories = Number(summary.profile?.dailyCalories ?? 0) || 2000;
+  const consumedCalories = Math.round(Number(summary.nutrients?.calories ?? 0) || 0);
+  const proteinTarget = getDailyPlanProteinTarget(summary.profile, user);
+  const proteinConsumed = Math.round(Number(summary.nutrients?.protein ?? 0) || 0);
+  const caloriesLeft = Math.max(dailyCalories - consumedCalories, 0);
+  const proteinLeft = Math.max(proteinTarget - proteinConsumed, 0);
+  const waterLeftMl = Math.max(summary.water.targetMl - summary.water.consumedMl, 0);
+  const mealCount = summary.mealEntries.length;
+  const slots = [
+    createDailyPlanSlot(
+      "morning",
+      mealCount === 0 ? "first_meal" : "morning_rhythm",
+      mealCount === 0 ? "log_first_meal" : "keep_breakfast_stable",
+      null,
+      "confirmed_meals"
+    ),
+    createDailyPlanSlot(
+      "midday",
+      proteinLeft > 35 ? "protein_anchor" : "balanced_main_meal",
+      proteinLeft > 35 ? "protein_lunch" : "steady_lunch",
+      proteinLeft,
+      "backend_gaps"
+    ),
+    createDailyPlanSlot(
+      "evening",
+      waterLeftMl > 500 ? "gentle_hydration" : "light_recovery",
+      waterLeftMl > 500 ? "spread_water" : "simple_dinner",
+      waterLeftMl,
+      "confirmed_water"
+    ),
+    createDailyPlanSlot(
+      "night",
+      "close_day",
+      activeReminders.length > 0 ? "review_with_reminders" : "review_without_reminders",
+      activeReminders.length,
+      "review_only"
+    ),
+  ];
+
+  return {
+    caloriesLeft,
+    proteinLeft,
+    waterLeftMl,
+    slots,
+    activeReminderCount: activeReminders.length,
+  };
+};
+
 const splitRecipeIngredientQueries = (text) =>
   normalizeSearchQuery(text)
     .replace(/\s+(?:и|та|і|and|plus|with|з|с)\s+/giu, ",")
@@ -1045,6 +1116,34 @@ export const createAgentTools = ({
     };
   };
 
+  const generateDailyPlan = async (user) => {
+    const summary = await createSnapshotSummary({ user, stateService, now: now() });
+
+    if (!summary) {
+      return { ok: false, code: "STATE_TOOL_UNAVAILABLE" };
+    }
+
+    const activeReminders = getActiveReminders(reminders, user);
+    const dailyCalories = Number(summary.profile?.dailyCalories ?? 0) || 2000;
+    const plan = buildDailyPlanDraft({ summary, activeReminders, user });
+
+    return {
+      ok: true,
+      type: "daily_plan_draft",
+      date: createDateKey(now()),
+      mealCount: summary.mealEntries.length,
+      nutrients: summary.nutrients,
+      dailyCalories,
+      water: {
+        ...summary.water,
+        percent: calculatePercent(summary.water.consumedMl, summary.water.targetMl),
+      },
+      activeReminders,
+      plan,
+      reviewOnly: true,
+    };
+  };
+
   const generateReport = async (user, { period = "week" } = {}) => {
     const currentNow = now();
     const summary = await createSnapshotSummary({ user, stateService, now: currentNow });
@@ -1116,6 +1215,7 @@ export const createAgentTools = ({
     createTypedReminder,
     getDayStatus,
     generateDaySummary,
+    generateDailyPlan,
     generateReport,
     getWaterStatus,
     getNutritionStatus,

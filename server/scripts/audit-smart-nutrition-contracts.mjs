@@ -488,6 +488,29 @@ addCheck(
 );
 
 addCheck(
+  "assistant daily plans are backend-backed review-only drafts",
+  assistantAgentIntentsSource.includes('intent: "generate_daily_plan"') &&
+    assistantAgentIntentsSource.includes("DAILY_PLAN_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "generate_daily_plan"') &&
+    assistantAgentServiceSource.includes("tools.generateDailyPlan(user)") &&
+    assistantAgentToolsSource.includes("const generateDailyPlan = async") &&
+    assistantAgentToolsSource.includes("createSnapshotSummary({ user, stateService") &&
+    assistantAgentToolsSource.includes("getActiveReminders(reminders, user)") &&
+    assistantAgentToolsSource.includes("buildDailyPlanDraft({ summary, activeReminders, user })") &&
+    assistantAgentToolsSource.includes('type: "daily_plan_draft"') &&
+    assistantAgentToolsSource.includes("reviewOnly: true") &&
+    assistantAgentActionsSource.includes('toolResult.type === "daily_plan_draft"') &&
+    assistantAgentActionsSource.includes("dailyPlanReviewOnly") &&
+    assistantAgentMemorySource.includes('toolResult.type === "daily_plan_draft"') &&
+    assistantAgentMemorySource.includes("asks assistant for reviewable daily plans") &&
+    assistantPromptStackSource.includes("generateDailyPlan") &&
+    !assistantPromptStackSource.includes("createDailyPlan") &&
+    !/generateDailyPlan[\s\S]*stateService\.addProductIntake\(/.test(assistantAgentToolsSource) &&
+    !/generateDailyPlan[\s\S]*createReminderFromUserText\(/.test(assistantAgentToolsSource),
+  "AI daily planning must be a read-only review draft over canonical snapshot/reminder state, not a second meal planner, fake saved diary, or reminder creator."
+);
+
+addCheck(
   "women health UI surfaces symptom history as non-diagnostic care context",
   womenHealthOverviewCardSource.includes('data-women-health-symptom-history="true"') &&
     womenHealthOverviewCardSource.includes("womenHealth.symptomHistory") &&

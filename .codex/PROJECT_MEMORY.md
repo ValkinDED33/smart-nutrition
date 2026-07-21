@@ -104,6 +104,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added backend-confirmed AI reusable recipe creation: assistant recipe requests now resolve ingredients through the canonical catalog or snapshot/fridge context, save a canonical meal template, verify backend restore, and avoid pretending that a saved recipe was already logged as eaten.
 - Added AI scanner navigation handoff: assistant scanner requests now return a structured `navigation_handoff` receipt to `/meals?mode=barcode`, the frontend validates the internal route before navigating, and the assistant does not pretend a scan/product result exists before the scanner resolves one.
 - Added AI photo meal navigation handoff: assistant photo-food requests now return a structured `navigation_handoff` receipt to `/meals?mode=photo`, the frontend validates the internal route before navigating, and the assistant does not pretend recognition or saving happened before the user uploads and reviews a photo.
+- Added backend-backed AI daily plan drafts: assistant plan requests now read canonical snapshot meal, water, profile, and reminders, reply with a localized review-only plan, and explicitly avoid saving meals or creating reminders until a future confirmation flow exists.
 
 ## Current Architecture
 
@@ -123,6 +124,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI-created recipes must save canonical meal templates and verify backend meal-state restore before visible success; saving a recipe is not the same as logging food into the diary.
 - AI scanner opening is a navigation handoff to the existing meal scanner route (`/meals?mode=barcode`), not a second scanner, product lookup, or fake scan success; camera permission and product resolution remain owned by the canonical scanner/product flow.
 - AI photo meal opening is a navigation handoff to the existing review-first photo route (`/meals?mode=photo`), not a second photo recognizer, saved meal, or fake recognition result; upload, analysis, editing, and save confirmation remain owned by PhotoMealAssistant and canonical meal persistence.
+- AI daily plans are read-only review drafts over backend snapshot and reminder state; they must not create meals, templates, reminders, or saved state until the user explicitly confirms an existing canonical action.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
@@ -167,6 +169,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI recipe creation must use canonical meal-template persistence and backend restore confirmation; prompt-only recipe ideas must not be shown as saved recipes.
 - AI scanner handoff must return a safe internal navigation receipt for `/meals?mode=barcode`; frontend navigation must validate the route and must not create a second scanner surface or claim a product was scanned.
 - AI photo meal handoff must return a safe internal navigation receipt for `/meals?mode=photo`; frontend navigation must validate the route and must not create a second photo meal surface, claim recognition happened, or save an unconfirmed photo estimate.
+- AI daily plan drafts must read canonical snapshot/reminder state, remain localized, and clearly state that no meal diary entry or reminder was saved.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.

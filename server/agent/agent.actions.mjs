@@ -181,6 +181,45 @@ const copy = {
     reportNoSymptoms: "🩺 Нових симптомів у журналі за період немає.",
     reportReminders: (count) => `⏰ Активні нагадування: ${count}.`,
     reportNext: (focus) => `Фокус далі: ${focus}.`,
+    dailyPlanFailed: [
+      "Я зрозумів запит на план дня, але зараз не зміг прочитати підтверджені дані Smart Nutrition.",
+      "Не буду вигадувати план без вашого хмарного стану. Спробуйте ще раз трохи пізніше.",
+    ],
+    dailyPlanTitle: "Чернетка плану Smart Nutrition на сьогодні:",
+    dailyPlanContext: (caloriesLeft, proteinLeft, waterLeft) =>
+      `Залишилось орієнтовно: ${caloriesLeft} ккал, білок ${proteinLeft} г, вода ${waterLeft} мл.`,
+    dailyPlanFocus: {
+      first_meal: "Ранок",
+      morning_rhythm: "Ранковий ритм",
+      protein_anchor: "Білковий акцент",
+      balanced_main_meal: "Основний прийом їжі",
+      gentle_hydration: "Вода без поспіху",
+      light_recovery: "Легке відновлення",
+      close_day: "Закриття дня",
+    },
+    dailyPlanActions: {
+      log_first_meal:
+        "додайте перший прийом їжі через фото, пошук або сканер, щоб день став вимірюваним.",
+      keep_breakfast_stable:
+        "залиште сніданок стабільним і не переписуйте весь день через дрібні відхилення.",
+      protein_lunch: (value) =>
+        `зробіть обід з білковою основою — ще близько ${value} г білка до цілі.`,
+      steady_lunch:
+        "тримайте обід рівним за калоріями, без різкого урізання всього дня.",
+      spread_water: (value) =>
+        `розподіліть приблизно ${value} мл води спокійно до вечора, не все одразу пізно.`,
+      simple_dinner:
+        "залиште вечерю простою і не добирайте їжу силою, якщо день уже близько до плану.",
+      review_with_reminders: (value) =>
+        `перевірте щоденник і тримайте в полі зору активні нагадування: ${value}.`,
+      review_without_reminders:
+        "перевірте щоденник і залиште на завтра один зрозумілий наступний крок.",
+    },
+    dailyPlanSlot: (focus, action) => `- ${focus}: ${action}`,
+    dailyPlanReminders: (count) =>
+      count > 0 ? `Активні нагадування враховано: ${count}.` : "Активних нагадувань зараз немає.",
+    dailyPlanReviewOnly:
+      "Це чернетка для перевірки: я нічого не зберіг у щоденник і не створив нових нагадувань.",
     foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
     waterLine: (consumed, target) => `💧 Вода: ${consumed} / ${target} мл`,
     nextFirstStep: "Найпростіший наступний крок — додати перший прийом їжі або воду.",
@@ -350,6 +389,45 @@ const copy = {
     reportNoSymptoms: "🩺 Brak nowych objawów w dzienniku za ten okres.",
     reportReminders: (count) => `⏰ Aktywne przypomnienia: ${count}.`,
     reportNext: (focus) => `Dalszy fokus: ${focus}.`,
+    dailyPlanFailed: [
+      "Rozumiem prośbę o plan dnia, ale nie mogę teraz odczytać potwierdzonych danych Smart Nutrition.",
+      "Nie będę wymyślać planu bez Twojego stanu w chmurze. Spróbuj ponownie trochę później.",
+    ],
+    dailyPlanTitle: "Szkic planu Smart Nutrition na dziś:",
+    dailyPlanContext: (caloriesLeft, proteinLeft, waterLeft) =>
+      `Orientacyjnie zostało: ${caloriesLeft} kcal, białko ${proteinLeft} g, woda ${waterLeft} ml.`,
+    dailyPlanFocus: {
+      first_meal: "Rano",
+      morning_rhythm: "Poranny rytm",
+      protein_anchor: "Akcent białkowy",
+      balanced_main_meal: "Główny posiłek",
+      gentle_hydration: "Woda bez pośpiechu",
+      light_recovery: "Lekka regeneracja",
+      close_day: "Zamknięcie dnia",
+    },
+    dailyPlanActions: {
+      log_first_meal:
+        "dodaj pierwszy posiłek przez zdjęcie, wyszukiwanie albo skaner, żeby dzień był mierzalny.",
+      keep_breakfast_stable:
+        "zostaw śniadanie stabilne i nie przebudowuj całego dnia przez drobne odchylenia.",
+      protein_lunch: (value) =>
+        `oprzyj obiad o białko — do celu zostało około ${value} g białka.`,
+      steady_lunch:
+        "utrzymaj obiad spokojny kalorycznie, bez ostrego cięcia całego dnia.",
+      spread_water: (value) =>
+        `rozłóż około ${value} ml wody spokojnie do wieczora, nie wszystko naraz późno.`,
+      simple_dinner:
+        "zostaw kolację prostą i nie dojadaj na siłę, jeśli dzień jest blisko planu.",
+      review_with_reminders: (value) =>
+        `sprawdź dziennik i miej pod ręką aktywne przypomnienia: ${value}.`,
+      review_without_reminders:
+        "sprawdź dziennik i zostaw na jutro jeden jasny następny krok.",
+    },
+    dailyPlanSlot: (focus, action) => `- ${focus}: ${action}`,
+    dailyPlanReminders: (count) =>
+      count > 0 ? `Uwzględnione aktywne przypomnienia: ${count}.` : "Brak aktywnych przypomnień.",
+    dailyPlanReviewOnly:
+      "To szkic do sprawdzenia: niczego nie zapisałem w dzienniku i nie utworzyłem nowych przypomnień.",
     foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
     waterLine: (consumed, target) => `💧 Woda: ${consumed} / ${target} ml`,
     nextFirstStep: "Najprostszy następny krok — dodaj pierwszy posiłek albo wodę.",
@@ -519,6 +597,45 @@ const copy = {
     reportNoSymptoms: "🩺 No new symptoms logged in this period.",
     reportReminders: (count) => `⏰ Active reminders: ${count}.`,
     reportNext: (focus) => `Next focus: ${focus}.`,
+    dailyPlanFailed: [
+      "I understood the day plan request, but I could not read confirmed Smart Nutrition data right now.",
+      "I will not invent a plan without your cloud state. Try again a bit later.",
+    ],
+    dailyPlanTitle: "Smart Nutrition draft plan for today:",
+    dailyPlanContext: (caloriesLeft, proteinLeft, waterLeft) =>
+      `Roughly left: ${caloriesLeft} kcal, protein ${proteinLeft} g, water ${waterLeft} ml.`,
+    dailyPlanFocus: {
+      first_meal: "Morning",
+      morning_rhythm: "Morning rhythm",
+      protein_anchor: "Protein anchor",
+      balanced_main_meal: "Main meal",
+      gentle_hydration: "Gentle hydration",
+      light_recovery: "Light recovery",
+      close_day: "Close the day",
+    },
+    dailyPlanActions: {
+      log_first_meal:
+        "add the first meal through photo, search, or scanner so the day becomes measurable.",
+      keep_breakfast_stable:
+        "keep breakfast stable and do not rewrite the whole day because of small deviations.",
+      protein_lunch: (value) =>
+        `make lunch protein-led — about ${value} g protein remains for the day.`,
+      steady_lunch:
+        "keep lunch steady on calories instead of cutting the whole day aggressively.",
+      spread_water: (value) =>
+        `spread about ${value} ml water calmly before evening, not all at once late.`,
+      simple_dinner:
+        "keep dinner simple and do not force extra food if the day is already close.",
+      review_with_reminders: (value) =>
+        `review the diary and keep active reminders visible: ${value}.`,
+      review_without_reminders:
+        "review the diary and leave tomorrow one clear next step.",
+    },
+    dailyPlanSlot: (focus, action) => `- ${focus}: ${action}`,
+    dailyPlanReminders: (count) =>
+      count > 0 ? `Active reminders considered: ${count}.` : "No active reminders right now.",
+    dailyPlanReviewOnly:
+      "This is a review draft: I did not save meals to the diary or create new reminders.",
     foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
     waterLine: (consumed, target) => `💧 Water: ${consumed} / ${target} ml`,
     nextFirstStep: "The simplest next step is to add the first meal or water.",
@@ -592,6 +709,23 @@ const formatSymptomSummary = (symptoms = []) =>
     .filter(Boolean)
     .join(", ");
 
+const formatDailyPlanAction = (text, slot) => {
+  const action = text.dailyPlanActions?.[slot?.actionKey];
+
+  if (typeof action === "function") {
+    return action(formatNumber(slot?.value));
+  }
+
+  return action ?? text.dailyPlanActions?.review_without_reminders;
+};
+
+const formatDailyPlanSlot = (text, slot) => {
+  const focus = text.dailyPlanFocus?.[slot?.focusKey] ?? text.dailyPlanFocus?.close_day;
+  const action = formatDailyPlanAction(text, slot);
+
+  return text.dailyPlanSlot(focus, action);
+};
+
 export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
   const text = getCopy(language);
 
@@ -652,6 +786,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
 
     if (intent.intent === "generate_report") {
       return text.reportFailed.join("\n");
+    }
+
+    if (intent.intent === "generate_daily_plan") {
+      return text.dailyPlanFailed.join("\n");
     }
 
     if (
@@ -990,6 +1128,23 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
     ]
       .filter(Boolean)
       .join("\n");
+  }
+
+  if (toolResult.type === "daily_plan_draft") {
+    const plan = toolResult.plan ?? {};
+    const slots = Array.isArray(plan.slots) ? plan.slots : [];
+
+    return [
+      text.dailyPlanTitle,
+      text.dailyPlanContext(
+        formatNumber(plan.caloriesLeft),
+        formatNumber(plan.proteinLeft),
+        formatNumber(plan.waterLeftMl)
+      ),
+      ...slots.map((slot) => formatDailyPlanSlot(text, slot)),
+      text.dailyPlanReminders(plan.activeReminderCount ?? 0),
+      text.dailyPlanReviewOnly,
+    ].join("\n");
   }
 
   return text.done;

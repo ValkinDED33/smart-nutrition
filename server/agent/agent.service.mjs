@@ -29,6 +29,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["day_status", "protein_help", "coach_focus"];
   }
 
+  if (intent === "generate_daily_plan") {
+    return ["search_product", "water_help", "coach_focus"];
+  }
+
   if (intent === "create_follow_up") {
     return ["day_status", "coach_focus"];
   }
@@ -171,6 +175,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "generate_day_summary") {
       return tools.generateDaySummary(user);
+    }
+
+    if (intent.intent === "generate_daily_plan") {
+      return tools.generateDailyPlan(user);
     }
 
     if (intent.intent === "generate_report") {

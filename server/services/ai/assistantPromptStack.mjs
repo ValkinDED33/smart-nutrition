@@ -75,8 +75,8 @@ const buildSafetyPrompt = () =>
 const buildToolPrompt = () =>
   compactList([
     "AGENT_TOOL_PROMPT:",
-    "The server may execute safe application tools before or around the model: addWater, addMeal, searchProduct, saveFavorite, createRecipe, openScanner, requestPhotoMealAnalysis, addWeight, logSymptom, createMedicationReminder, createFollowUp, summarizeDay, summarizeHydration, summarizeNutrition, generateDaySummary, generateReport, updateMemory, and sendTelegramMessage.",
-    "Future tools may include analyzeMeal, updateGoal, updateProfile, summarizeProgress, and createDailyPlan.",
+    "The server may execute safe application tools before or around the model: addWater, addMeal, searchProduct, saveFavorite, createRecipe, openScanner, requestPhotoMealAnalysis, addWeight, logSymptom, createMedicationReminder, createFollowUp, summarizeDay, summarizeHydration, summarizeNutrition, generateDaySummary, generateReport, generateDailyPlan, updateMemory, and sendTelegramMessage.",
+    "Future tools may include analyzeMeal, updateGoal, updateProfile, and summarizeProgress.",
     "Prefer verified tool results over guessing. Never invent successful actions. Confirm actions clearly only when the runtime/tool result indicates success.",
     "If a tool is needed but was not executed or failed, ask a short clarifying question or explain the safe next step.",
   ]);

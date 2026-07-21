@@ -152,7 +152,8 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     toolResult.type === "day_status" ||
     toolResult.type === "nutrition_status" ||
     toolResult.type === "day_summary" ||
-    toolResult.type === "progress_report"
+    toolResult.type === "progress_report" ||
+    toolResult.type === "daily_plan_draft"
   ) {
     return {
       userId: user?.id,
@@ -161,7 +162,9 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
           ? ["asks assistant for daily summaries"]
           : toolResult.type === "progress_report"
             ? ["asks assistant for progress reports"]
-          : ["asks assistant for nutrition status"],
+            : toolResult.type === "daily_plan_draft"
+              ? ["asks assistant for reviewable daily plans"]
+              : ["asks assistant for nutrition status"],
       lastMood: "curious",
     };
   }
