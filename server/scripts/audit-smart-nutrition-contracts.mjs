@@ -57,6 +57,9 @@ const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
 const projectRulesSource = readSource(".codex/PROJECT_RULES.md");
 const chiefSkillSource = readSource(".codex/skills/smart-nutrition-chief/SKILL.md");
+const aiReadyDocSource = readSource("docs/AI_READY_TO_USE.md");
+const aiIntegrationDocSource = readSource("docs/AI_INTEGRATION_SETUP.md");
+const envSetupDocSource = readSource("docs/ENV_SETUP_GUIDE.md");
 const specialistSkillPaths = [
   ".codex/skills/ai-architect/SKILL.md",
   ".codex/skills/knowledge-curator/SKILL.md",
@@ -72,6 +75,11 @@ const specialistSkillSources = specialistSkillPaths.map((skillPath) => ({
   path: skillPath,
   source: readSource(skillPath),
 }));
+const retiredPhotoDocPhrases = [
+  ["manual", "draft", "mode"],
+  ["low-confidence", "manual", "draft"],
+  ["does", "not", "enable", "paid", "AI", "vision"],
+].map((parts) => new RegExp(parts.join("\\s+"), "i"));
 
 addCheck(
   "photo assistant does not hard-code template recognition foods",
@@ -120,6 +128,18 @@ addCheck(
   visionAnalysisSource.includes("looksLikeTemplateBreakfastDraft") &&
     visionAnalysisSource.includes("Never return a generic template breakfast"),
   "Vision normalization must reject low-confidence generic breakfast templates."
+);
+
+addCheck(
+  "photo recognition docs match backend vision contract",
+  [aiReadyDocSource, aiIntegrationDocSource, envSetupDocSource].every(
+    (source) =>
+      retiredPhotoDocPhrases.every((pattern) => !pattern.test(source))
+  ) &&
+    aiReadyDocSource.includes("vision-capable providers") &&
+    aiIntegrationDocSource.includes("Saving still requires user confirmation") &&
+    envSetupDocSource.includes("фото еды не должно быть шаблоном"),
+  "AI docs must not preserve the old manual-draft-only story; docs must reflect backend vision recognition with honest fallback and user confirmation."
 );
 
 addCheck(

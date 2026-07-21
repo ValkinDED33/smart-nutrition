@@ -69,6 +69,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Removed direct MongoDB success `console.log` output from storage adapters and protected the behavior with contract audit so database/host startup details stay behind controlled sanitized logging.
 - Blocked `SMART_NUTRITION_AI_DEBUG_LOGS=true` in production and protected it with config tests plus contract audit so raw AI provider debug stdout cannot be enabled live.
 - Blocked `SMART_NUTRITION_DEBUG_STARTUP_ENABLED=true` in production and gated full startup diagnostics logging behind the debug flag so `/api/debug/startup` and broad config dumps stay development-only.
+- Removed stale AI setup documentation that described photo uploads as manual-draft-only, and added a contract audit guard so docs stay aligned with backend vision recognition, honest fallback, profile language, and user-confirmed saving.
 
 ## Current Architecture
 
@@ -117,6 +118,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Startup debug diagnostics are development-only; production must not register `/api/debug/startup` or print full startup config/provider dumps.
 - Frontend health probes must validate public liveness shape (`ok`, `mode=remote-cloud`, `auth=httpOnly-cookie-session`, `storage.engine`) instead of depending on removed diagnostic provider fields.
 - Product lookup provider resilience belongs in `productLookupService`; do not reintroduce frontend OpenFoodFacts calls to paper over backend provider failures.
+- Photo meal documentation must describe backend vision recognition with honest fallback, not the retired manual-draft-only behavior.
 - Environment example files must never contain real-looking provider secrets or duplicate sensitive backend assignments.
 - Vite preload/chunk failures must trigger controlled stale-build recovery instead of leaving a white screen.
 - Scanner runtime must be deterministic: permission, stream start, scan, cleanup, and errors must be explicit.

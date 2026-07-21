@@ -7,10 +7,12 @@ Smart Nutrition currently has two assistant modes:
 
 The cloud runtime uses an OpenAI-compatible Chat Completions endpoint for the primary provider and can keep additional providers configured as automatic fallbacks. That means you can point the main runtime at OpenAI, Groq, OpenRouter, or Google AI Studio and keep the others ready as backups.
 
-Important limitation:
+Photo meal recognition:
 
-- the current build does not enable paid AI vision for food photos
-- `/api/photo-analysis` still returns a low-confidence manual draft
+- `/api/photo-analysis` uses the same backend-owned provider configuration as the assistant runtime and selects vision-capable providers when available.
+- The request sends the user's profile language, meal type, diet style, and blocked ingredients so returned dish names, ingredients, cautions, and questions match the user's context.
+- If the provider cannot identify the food honestly, the fallback asks for a clearer photo or manual correction. It must not return a fixed breakfast template or pretend that hidden ingredients were seen.
+- Saving still requires user confirmation and then uses the canonical backend meal/product intake contract.
 
 ## Quick Start
 

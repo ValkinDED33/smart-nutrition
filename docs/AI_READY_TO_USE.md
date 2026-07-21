@@ -7,7 +7,8 @@ What already works:
 - context fallback assistant without any paid API keys
 - backend route `POST /api/ai`
 - backend history routes on `GET` / `DELETE /api/ai`
-- short conversation memory stored in SQLite
+- backend-owned conversation memory through the configured storage provider
+- backend photo meal analysis through configured vision-capable providers, with an honest fallback when the photo/provider cannot produce a reliable draft
 
 What you still need to do:
 
@@ -81,10 +82,12 @@ Expected:
 - `configured` is `true`
 - `model` matches your selected model
 
-Important limitation:
+Photo meal behavior:
 
-- this build does not enable paid AI photo recognition
-- photo uploads still stay in manual draft mode
+- `/api/photo-analysis` first tries configured vision-capable providers from the assistant provider chain
+- the request includes the user's app language, diet style, and blocked ingredients
+- low-confidence or unclear photos require user review before saving
+- the fallback must not invent a generic meal; it may only use user-confirmed photo history or ask for a better/manual correction
 
 See:
 
