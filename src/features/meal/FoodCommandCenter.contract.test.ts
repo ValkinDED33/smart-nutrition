@@ -42,4 +42,11 @@ describe("FoodCommandCenter production contract", () => {
     expect(commandSource).not.toContain("localStorage");
     expect(commandSource).not.toContain("addMealEntriesToCloud");
   });
+
+  it("keeps command save failures product-language instead of rendering backend exceptions", () => {
+    expect(commandSource).toContain("saveFailed");
+    expect(commandSource).toContain("setActionError(copy.saveFailed)");
+    expect(commandSource).not.toContain("error instanceof Error ? error.message");
+    expect(commandSource).not.toContain("Could not save meal to cloud.");
+  });
 });

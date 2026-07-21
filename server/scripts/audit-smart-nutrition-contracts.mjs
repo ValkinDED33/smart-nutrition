@@ -62,6 +62,7 @@ const foodCommandCenterModelSource = readSource(
 const mealActionFeedbackModelSource = readSource(
   "src/features/meal/mealActionFeedbackModel.ts"
 );
+const mealEntryEditorSource = readSource("src/features/meal/hooks/useMealEntryEditor.ts");
 const quickMealComposerModelSource = readSource(
   "src/features/meal/quickMealComposerModel.ts"
 );
@@ -1177,6 +1178,42 @@ addCheck(
     !barcodeScannerModelSource.includes("${state.message") &&
     !barcodeScannerModelSource.includes("state.message || copy.catalogRetry"),
   "Scanner manual-product catalog moderation failures must stay retryable without rendering raw backend/provider exception text."
+);
+
+addCheck(
+  "food command surface hides raw backend/provider save failure details",
+  foodCommandCenterSource.includes("setActionError(copy.saveFailed)") &&
+    !foodCommandCenterSource.includes("error instanceof Error ? error.message") &&
+    !foodCommandCenterSource.includes("Could not save meal to cloud."),
+  "FoodCommandCenter save and recent-product failures must render product-language recovery copy instead of raw backend/provider exception text."
+);
+
+addCheck(
+  "barcode scanner surface hides raw backend/provider save failure details",
+  barcodeScannerSource.includes("setSaveError(copy.saveFailed)") &&
+    barcodeScannerSource.includes("message: copy.catalogRetry") &&
+    !barcodeScannerSource.includes("CLOUD_SAVE_ERROR_MESSAGE") &&
+    !barcodeScannerSource.includes("intakeCatalog.message") &&
+    !barcodeScannerSource.includes("PlatformApiError") &&
+    !barcodeScannerSource.includes("error instanceof Error ? error.message") &&
+    !barcodeScannerSource.includes("error.message"),
+  "Barcode scanner save, history, and catalog submission failures must render product-language recovery copy instead of raw backend/provider exception text."
+);
+
+addCheck(
+  "meal entry editor hides raw backend/provider save failure details",
+  mealEntryEditorSource.includes("Could not save meal. Please try again.") &&
+    !mealEntryEditorSource.includes("error instanceof Error ? error.message") &&
+    !mealEntryEditorSource.includes("Could not save meal to cloud."),
+  "Meal entry edit/remove failures must render product-language recovery copy instead of raw backend/provider exception text."
+);
+
+addCheck(
+  "catalog contribution card hides raw backend/provider save failure details",
+  catalogContributionCardSource.includes("message: copy.retry") &&
+    !catalogContributionCardSource.includes("PlatformApiError") &&
+    !catalogContributionCardSource.includes("nextError.message"),
+  "Shared catalog contribution component failures must render retry copy instead of raw backend/provider exception text."
 );
 
 addCheck(

@@ -131,6 +131,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened quick meal composer save feedback so manual multi-product meal failures stay retryable without exposing backend/provider exception details in the food UI.
 - Hardened shared catalog contribution and scanner catalog-moderation feedback so product correction failures stay retryable without exposing backend/provider exception details.
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
+- Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 
 ## Current Architecture
 
@@ -206,6 +207,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Quick meal composer save feedback must not render raw backend/provider exception text; it may keep retry state and product-language recovery copy only.
 - Shared catalog contribution and scanner catalog-moderation failure feedback must not render raw backend/provider exception text; user-facing copy may confirm meal/profile state and offer retry only.
 - Water and profile save/retry feedback must not render raw backend/provider exception text; cloud action hooks and consuming cards must expose product-language recovery copy only.
+- Food command, barcode scanner, meal entry editor, and catalog contribution components must not render raw backend/provider exception text in visible save errors; diagnostics belong in logs/admin tooling.
 - Typed and browser-voice food commands must resolve inside `FoodCommandCenter`, require a clear product, quantity, and compatible units, and persist only through `addProductIntakeToCloud`; vague speech/text must search or ask for confirmation instead of saving.
 - Product correction after scanner/search/photo review must create a prefilled shared-catalog moderation submission through the existing catalog contribution contract; it must not mutate product facts locally or claim the global catalog changed before moderation confirms it.
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.

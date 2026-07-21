@@ -13,7 +13,6 @@ import {
 import type { CatalogProductItem } from "../../shared/types/platform";
 import type { Product } from "@domain/products/types";
 import {
-  PlatformApiError,
   findCatalogDuplicateCandidates,
   listOwnCatalogSubmissions,
   submitCatalogSubmission,
@@ -207,13 +206,9 @@ export const CatalogContributionCard = ({
       const items = await listOwnCatalogSubmissions();
       setSubmissions(items);
       setLoadError(null);
-    } catch (nextError) {
+    } catch {
       setSubmissions([]);
-      setLoadError(
-        nextError instanceof PlatformApiError
-          ? nextError.message
-          : copy.backendUnavailable
-      );
+      setLoadError(copy.backendUnavailable);
     }
   }, [copy.backendUnavailable]);
 
@@ -269,12 +264,11 @@ export const CatalogContributionCard = ({
         setForm(createInitialCatalogContributionForm());
         setSubmissionState({ status: "accepted" });
         await loadSubmissions();
-      } catch (nextError) {
+      } catch {
         setSubmissionState({
           status: "failed",
           payload,
-          message:
-            nextError instanceof PlatformApiError ? nextError.message : copy.retry,
+          message: copy.retry,
         });
       }
     },

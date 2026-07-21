@@ -27,10 +27,7 @@ import type { AppLanguage } from "../../shared/types/i18n";
 import { ProductCard } from "./ProductCard";
 import { selectPersonalBarcodeProducts } from "./selectors";
 import { getProductDisplayName } from "@domain/products/productDisplay";
-import {
-  PlatformApiError,
-  submitCatalogSubmission,
-} from "../../shared/api/platform";
+import { submitCatalogSubmission } from "../../shared/api/platform";
 import {
   getKnownProductCategoryOptions,
   getProductCategoryLabel,
@@ -108,6 +105,7 @@ const scannerCopy = {
     added: "Додано до щоденника",
     notFound: "Продукт за цим кодом не знайдено",
     failed: "Не вдалося перевірити штрихкод",
+    saveFailed: "Не вдалося зберегти продукт. Спробуйте ще раз.",
     preview: "Останній знайдений продукт",
     scannedProduct: "Відскановано",
     scannedCodeReady: "Код зчитано. Перевірте продукт нижче.",
@@ -193,6 +191,7 @@ const scannerCopy = {
     added: "Dodano do dziennika",
     notFound: "Nie znaleziono produktu po tym kodzie",
     failed: "Nie udało się sprawdzić kodu kreskowego",
+    saveFailed: "Nie udało się zapisać produktu. Spróbuj ponownie.",
     preview: "Ostatnio znaleziony produkt",
     scannedProduct: "Zeskanowano",
     scannedCodeReady: "Kod odczytany. Sprawdź produkt poniżej.",
@@ -278,6 +277,7 @@ const scannerCopy = {
     added: "Added to diary",
     notFound: "No product found for this code",
     failed: "Could not check barcode",
+    saveFailed: "Could not save product. Please try again.",
     preview: "Last found product",
     scannedProduct: "Scanned",
     scannedCodeReady: "Code captured. Check the product below.",
@@ -353,7 +353,6 @@ const scannerCopy = {
 
 type ScannerCopy = (typeof scannerCopy)[keyof typeof scannerCopy];
 
-const CLOUD_SAVE_ERROR_MESSAGE = "Could not save meal to cloud.";
 const SCANNER_FLEX_START = "flex-start";
 const SCANNER_TEXT_TRANSFORM_NONE = "none";
 const SCANNER_STRONG_FONT_WEIGHT = 800;
@@ -702,12 +701,11 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       try {
         await submitCatalogSubmission(payload);
         setCatalogSubmissionState({ status: "confirmed" });
-      } catch (error) {
+      } catch {
         setCatalogSubmissionState({
           status: "failed",
           payload,
-          message:
-            error instanceof PlatformApiError ? error.message : copy.catalogRetry,
+          message: copy.catalogRetry,
         });
       }
     },
@@ -787,10 +785,8 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
           playScannerSuccess();
           setScannerRuntimeState("addConfirmed");
         } else {
-          void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
-            setSaveError(
-              error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
-            );
+          void rememberRecentMealProductInCloud(dispatch, meal, product).catch(() => {
+            setSaveError(copy.saveFailed);
           });
           playScannerSuccess();
         }
@@ -799,9 +795,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
         setMessage(autoAdd ? `${copy.added}: ${displayName}` : displayName);
       } catch (error) {
         console.error(error);
-        setSaveError(
-          error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
-        );
+        setSaveError(copy.saveFailed);
         setLookupState("error");
         setScannerRuntimeState("saveFailed");
         setFoundProduct(null);
@@ -1086,10 +1080,8 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
 
       intakeCatalog = intakeResult.catalog ?? null;
       pendingManualIntakeKeyRef.current = null;
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : CLOUD_SAVE_ERROR_MESSAGE
-      );
+    } catch {
+      setSaveError(copy.saveFailed);
       setScannerRuntimeState("saveFailed");
       playScannerFailure();
       return;
@@ -1110,7 +1102,7 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
       setCatalogSubmissionState({
         status: "failed",
         payload: catalogPayload,
-        message: intakeCatalog.message ?? copy.catalogRetry,
+        message: copy.catalogRetry,
       });
     }
   };
@@ -1487,12 +1479,8 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
                             dispatch,
                             meal,
                             product
-                          ).catch((error) => {
-                            setSaveError(
-                              error instanceof Error
-                                ? error.message
-                                : CLOUD_SAVE_ERROR_MESSAGE
-                            );
+                          ).catch(() => {
+                            setSaveError(copy.saveFailed);
                           });
                         }}
                       >

@@ -122,10 +122,8 @@ export const useMealEntryEditor = (entry: MealEntry) => {
         mealType,
       });
       setOpen(false);
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
+    } catch {
+      setSaveError("Could not save meal. Please try again.");
     }
   }, [dispatch, entry.id, meal, mealType, quantity, selectedProduct]);
 
@@ -135,10 +133,8 @@ export const useMealEntryEditor = (entry: MealEntry) => {
     try {
       await removeMealEntryFromCloud(dispatch, meal, entry.id);
       setOpen(false);
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
+    } catch {
+      setSaveError("Could not save meal. Please try again.");
     }
   }, [dispatch, entry.id, meal]);
 

@@ -57,4 +57,12 @@ describe("ProductCard contract", () => {
     expect(catalogCardSource).toContain("initialProduct");
     expect(catalogCardSource).toContain("createCatalogContributionFormFromProduct");
   });
+
+  it("keeps catalog contribution failures retryable without rendering backend exceptions", async () => {
+    const catalogCardSource = await readFile(CATALOG_CONTRIBUTION_CARD_PATH, "utf8");
+
+    expect(catalogCardSource).toContain("message: copy.retry");
+    expect(catalogCardSource).not.toContain("PlatformApiError");
+    expect(catalogCardSource).not.toContain("nextError.message");
+  });
 });

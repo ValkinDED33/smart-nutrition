@@ -136,6 +136,7 @@ const commandCopy = {
     commandUnitMismatch:
       "Одиниці у команді не збігаються з одиницями продукту. Перевірте кількість перед збереженням.",
     addCommand: "Додати команду",
+    saveFailed: "Не вдалося зберегти їжу. Спробуйте ще раз.",
   },
   pl: {
     title: "Dodaj jedzenie",
@@ -170,6 +171,7 @@ const commandCopy = {
     commandUnitMismatch:
       "Jednostki w poleceniu nie pasują do jednostek produktu. Sprawdź ilość przed zapisem.",
     addCommand: "Dodaj z polecenia",
+    saveFailed: "Nie udało się zapisać jedzenia. Spróbuj ponownie.",
   },
   en: {
     title: "Add food",
@@ -204,6 +206,7 @@ const commandCopy = {
     commandUnitMismatch:
       "The command unit does not match the product unit. Check the amount before saving.",
     addCommand: "Add command",
+    saveFailed: "Could not save food. Please try again.",
   },
 } as const;
 
@@ -407,10 +410,8 @@ export const FoodCommandCenter = ({
           product.unit
         )}`
       );
-    } catch (error) {
-      setActionError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
+    } catch {
+      setActionError(copy.saveFailed);
     } finally {
       setIsSaving(false);
     }
@@ -419,10 +420,8 @@ export const FoodCommandCenter = ({
   const chooseProduct = (product: Product) => {
     setSelectedProduct(product);
     setQuery(getProductDisplayName(product, appLanguage));
-    void rememberRecentMealProductInCloud(dispatch, meal, product).catch((error) => {
-      setActionError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
+    void rememberRecentMealProductInCloud(dispatch, meal, product).catch(() => {
+      setActionError(copy.saveFailed);
     });
   };
 
