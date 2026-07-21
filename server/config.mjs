@@ -1137,6 +1137,11 @@ export const createServerConfig = (rawEnv = process.env) => {
     !isProduction
   );
   const aiDebugLogging = readBooleanFlag(env.SMART_NUTRITION_AI_DEBUG_LOGS, false);
+
+  if (isProduction && aiDebugLogging) {
+    errors.push("SMART_NUTRITION_AI_DEBUG_LOGS must be disabled in production.");
+  }
+
   const sentryDsn = toTrimmedString(env.SMART_NUTRITION_SENTRY_DSN) || null;
   const sentryTracesSampleRate = readNumberInRange(
     env.SMART_NUTRITION_SENTRY_TRACES_SAMPLE_RATE,

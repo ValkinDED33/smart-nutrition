@@ -33,6 +33,8 @@ const productLookupServiceSource = readSource("server/services/productLookupServ
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
+const serverConfigSource = readSource("server/config.mjs");
+const serverConfigTestSource = readSource("server/config.test.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
@@ -493,6 +495,15 @@ addCheck(
       `${mongoStorageSource}\n${mongoAiRepositorySource}`
     ),
   "MongoDB storage and AI adapters must not print database/host success details directly to stdout; startup diagnostics must stay controlled and sanitized."
+);
+
+addCheck(
+  "production config rejects AI debug stdout logging",
+  serverConfigSource.includes("SMART_NUTRITION_AI_DEBUG_LOGS must be disabled in production.") &&
+    /isProduction\s*&&\s*aiDebugLogging/.test(serverConfigSource) &&
+    serverConfigTestSource.includes("rejects AI debug logs in production") &&
+    serverConfigTestSource.includes("SMART_NUTRITION_AI_DEBUG_LOGS"),
+  "Production must not allow raw AI debug stdout logging; provider diagnostics belong in controlled audit/status/error telemetry."
 );
 
 const failed = checks.filter((check) => !check.pass);

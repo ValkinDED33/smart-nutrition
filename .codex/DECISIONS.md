@@ -153,3 +153,10 @@
 - Context: Public health endpoints were already reduced to liveness summaries, but storage adapters could still print MongoDB database and host details directly during successful startup. Logs are not public UI, yet they are operational evidence and should not become an uncontrolled diagnostics channel.
 - Decision: Storage adapters must not call `console.log` for infrastructure success details. If connection summaries are needed, they must go through an explicit logger path with sanitized fields.
 - Consequences: Retry/failure warnings may remain operational, but successful database/host output must stay controlled. Contract audit protects MongoDB storage and AI repository adapters from reintroducing direct success stdout.
+
+## ADR-023: AI Debug Stdout Is Forbidden In Production
+
+- Status: Accepted.
+- Context: AI provider fallback, model routing, provider errors, and prompt orchestration are sensitive operational surfaces. Debug stdout can accidentally expose provider details, user context, or raw upstream errors when enabled in a live deployment.
+- Decision: `SMART_NUTRITION_AI_DEBUG_LOGS=true` is allowed only outside production. Production observability must use controlled audit logs, public sanitized runtime status, Sentry, or explicit admin/debug surfaces.
+- Consequences: Production config fails fast if AI debug stdout logging is enabled. AI troubleshooting can still be done locally or in controlled non-production environments.

@@ -202,6 +202,16 @@ describe("createServerConfig", () => {
     expect(config.keepAliveTimeoutMs).toBe(5000);
   });
 
+  it("rejects AI debug logs in production", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_AI_DEBUG_LOGS: "true",
+      })
+    ).toThrow(/SMART_NUTRITION_AI_DEBUG_LOGS/);
+  });
+
   it("enables online product lookup with OpenFoodFacts by default and optional USDA key", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
