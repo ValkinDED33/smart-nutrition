@@ -75,6 +75,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added a tracked-files cleanliness contract so Codex/browser profiles, screenshots, remote attachments, logs, caches, build output, and `node_modules` cannot be committed as project source.
 - Tightened ignored local backup storage so nested `server/data/backups/**` snapshots stay out of Git, with a contract allowing only `server/data/.gitkeep` under runtime data.
 - Expanded backend external product mapping so OpenFoodFacts and USDA preserve the full canonical nutrient profile, including iodine, selenium, copper, fatty acids, cholesterol, sugar types, water, and vitamins when providers supply them.
+- Added honest micronutrient guidance for seaweed/algae products: when provider data does not include a numeric iodine value, the product card flags iodine as a likely product signal without inventing a dose.
 - Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
 - Hardened Telegram reminder command hints so empty `/addmed`, `/addtask`, `/addwater`, `/addhabit`, `/addsupplement`, `/add`, and `/settime` prompts use the connected Smart Nutrition profile language instead of drifting to the Telegram client language.
 - Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
@@ -89,6 +90,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
+- Product facts may explain obvious product micronutrient signals, such as iodine in seaweed/algae, only as guidance when the provider has no numeric value; do not calculate or persist fake micronutrient amounts.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.
 - Security/CSP: Frontend `connect-src` must not allow direct external food catalog providers for product lookup.

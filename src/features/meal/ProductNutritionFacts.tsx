@@ -34,6 +34,7 @@ import {
   getProductCategoryKey,
   getProductCategoryLabel,
 } from "@domain/products/productCategory";
+import { getProductMicronutrientInsights } from "@domain/products/productMicronutrientInsights";
 import { formatProductBaseAmount } from "@domain/products/productPortions";
 import type { AppLanguage } from "@shared/types/i18n";
 import { useLanguage } from "../../shared/language";
@@ -202,6 +203,11 @@ const productFactCopy = {
     en: "If you have an allergy or strong intolerance, check the label before eating.",
   },
   additiveDose: { uk: "Орієнтир ADI для 70 кг", pl: "Orientacyjny ADI dla 70 kg", en: "ADI guide for 70 kg" },
+  micronutrientSignals: {
+    uk: "Мікронутрієнтні підказки",
+    pl: "Wskazówki mikroelementów",
+    en: "Micronutrient signals",
+  },
   additiveDoseUnknown: {
     uk: "Точну дозу не визначити без кількості добавки на етикетці.",
     pl: "Dokładnej dawki nie da się określić bez ilości dodatku na etykiecie.",
@@ -497,6 +503,7 @@ export const ProductNutritionFacts = ({ product }: Props) => {
   const additiveFindings = additiveAnalysisText
     ? analyzeProductAdditives(additiveAnalysisText)
     : [];
+  const micronutrientInsights = getProductMicronutrientInsights(product);
   const allergens = product.facts?.allergens ?? [];
   const traces = product.facts?.traces ?? [];
   const hasAllergenInfo = allergens.length > 0 || traces.length > 0;
@@ -634,6 +641,48 @@ export const ProductNutritionFacts = ({ product }: Props) => {
           </TableBody>
         </Table>
       </Paper>
+
+      {micronutrientInsights.length > 0 ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 1.4,
+            borderRadius: 1,
+            borderColor: "rgba(14, 165, 233, 0.42)",
+            backgroundColor: "rgba(14, 165, 233, 0.08)",
+          }}
+        >
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {getLocalizedText(productFactCopy.micronutrientSignals, appLanguage)}
+            </Typography>
+            {micronutrientInsights.map((insight) => (
+              <Stack key={insight.id} spacing={0.4}>
+                <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                  <Chip
+                    label={getLocalizedText(insight.title, appLanguage)}
+                    size="small"
+                    color="info"
+                    variant="filled"
+                  />
+                  <Chip
+                    label={getNutrientLabel(insight.nutrientKey, appLanguage)}
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                  />
+                </Stack>
+                <Typography variant="body2">
+                  {getLocalizedText(insight.body, appLanguage)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {getLocalizedText(insight.evidence, appLanguage)}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
+      ) : null}
 
       {ingredientsText ? (
         <Paper

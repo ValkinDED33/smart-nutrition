@@ -6,6 +6,8 @@ describe("ProductNutritionFacts contract", () => {
     const source = await readFile("src/features/meal/ProductNutritionFacts.tsx", "utf8");
 
     expect(source).toContain("analyzeProductIngredientInsights");
+    expect(source).toContain("getProductMicronutrientInsights");
+    expect(source).toContain("micronutrientSignals");
     expect(source).toContain("ingredientsSummary");
     expect(source).toContain("ingredientsRaw");
     expect(source).toContain("product.facts?.additivesText");

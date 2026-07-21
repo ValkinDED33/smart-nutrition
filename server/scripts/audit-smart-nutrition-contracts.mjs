@@ -43,6 +43,9 @@ const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
+const productMicronutrientInsightsSource = readSource(
+  "src/domain/products/productMicronutrientInsights.ts"
+);
 const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
@@ -358,11 +361,16 @@ addCheck(
   "product facts table includes vitamins minerals iodine and additive safety",
   productNutritionFactsSource.includes("micronutrientTableKeys") &&
     productNutritionFactsSource.includes('"iodine"') &&
+    productNutritionFactsSource.includes("getProductMicronutrientInsights") &&
+    productNutritionFactsSource.includes("micronutrientSignals") &&
+    productMicronutrientInsightsSource.includes("seaweed-iodine-source") &&
+    productMicronutrientInsightsSource.includes("product.nutrients.iodine") &&
+    productMicronutrientInsightsSource.includes("не рахується автоматично") &&
     productNutritionFactsSource.includes("analyzeProductAdditives") &&
     productNutritionFactsSource.includes("getAdditiveRiskColor") &&
     productNutritionFactsSource.includes("additiveDose") &&
     productNutritionFactsSource.includes("additiveCompositionMissing"),
-  "Product details must expose micronutrients, iodine, additive risk, dose guidance, and a clear missing-composition state."
+  "Product details must expose micronutrients, iodine, honest seaweed iodine guidance when provider data lacks a number, additive risk, dose guidance, and a clear missing-composition state."
 );
 
 addCheck(
