@@ -42,17 +42,28 @@ describe("BarcodeScanner mobile preview layout", () => {
   it("shows the found product result before scan history, fallback, and manual catalog form", () => {
     const source = scannerSource();
     const foundProductIndex = source.indexOf('data-scanner-found-product="primary-result"');
+    const manualInputIndex = source.indexOf("label={copy.barcode}");
     const historyIndex = source.indexOf("{copy.scanHistory}");
     const fallbackIndex = source.indexOf("copy.fallbackTitle");
     const manualFormIndex = source.indexOf("copy.manualTitle");
 
     expect(foundProductIndex).toBeGreaterThan(-1);
+    expect(manualInputIndex).toBeGreaterThan(-1);
     expect(historyIndex).toBeGreaterThan(-1);
     expect(fallbackIndex).toBeGreaterThan(-1);
     expect(manualFormIndex).toBeGreaterThan(-1);
+    expect(foundProductIndex).toBeLessThan(manualInputIndex);
     expect(foundProductIndex).toBeLessThan(historyIndex);
     expect(foundProductIndex).toBeLessThan(fallbackIndex);
     expect(foundProductIndex).toBeLessThan(manualFormIndex);
+  });
+
+  it("shows the scanned product name inside the stopped preview state", () => {
+    const source = scannerSource();
+
+    expect(source).toContain("? getProductDisplayName(foundProduct, appLanguage)");
+    expect(source).toContain("label={copy.scannedCodeReady}");
+    expect(source).toContain('color="success"');
   });
 
   it("keeps the video node mounted and decouples camera lifecycle from meal state changes", () => {

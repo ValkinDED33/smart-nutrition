@@ -361,11 +361,15 @@ addCheck(
   "barcode scanner shows the confirmed product result before secondary panels",
   barcodeScannerSource.includes('data-scanner-found-product="primary-result"') &&
     barcodeScannerSource.includes('data-scanner-result-alert="confirmed"') &&
+    barcodeScannerSource.includes("? getProductDisplayName(foundProduct, appLanguage)") &&
+    barcodeScannerSource.includes("label={copy.scannedCodeReady}") &&
+    barcodeScannerSource.indexOf('data-scanner-found-product="primary-result"') <
+      barcodeScannerSource.indexOf("label={copy.barcode}") &&
     barcodeScannerSource.indexOf('data-scanner-found-product="primary-result"') <
       barcodeScannerSource.indexOf("{copy.scanHistory}") &&
     barcodeScannerSource.indexOf('data-scanner-found-product="primary-result"') <
       barcodeScannerSource.indexOf("copy.manualTitle"),
-  "After scan, the product result must be visible above history/fallback/manual panels so users know what was scanned."
+  "After scan, the product result must be visible above manual controls/history/fallback panels and the stopped preview must show what was scanned."
 );
 
 addCheck(

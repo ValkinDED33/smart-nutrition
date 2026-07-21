@@ -86,6 +86,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
+- Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
 
 ## Current Architecture
 
@@ -104,6 +105,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Product facts may explain obvious product micronutrient signals, such as iodine in seaweed/algae, only as guidance when the provider has no numeric value; do not calculate or persist fake micronutrient amounts.
 - Photo meal recognition must never accept a generic template food set as visual truth; provider confidence alone is not enough when the title and foods match a known template.
 - Photo meal UX must show a clear review/retry state for unavailable analysis; it must not imply a saved or recognized result, and it must not leave users guessing after upload.
+- Barcode scanner UX must make the resolved product immediately visible after scan; manual barcode controls, history, and fallback panels are secondary after a confirmed product result.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.
 - Security/CSP: Frontend `connect-src` must not allow direct external food catalog providers for product lookup.

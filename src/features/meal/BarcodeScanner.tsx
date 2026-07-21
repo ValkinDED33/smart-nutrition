@@ -1217,16 +1217,40 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
               sx={{ px: 2, textAlign: "center" }}
             >
               <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>
-                {foundProduct ? copy.scannedCodeReady : copy.cameraIdle}
+                {foundProduct
+                  ? getProductDisplayName(foundProduct, appLanguage)
+                  : copy.cameraIdle}
               </Typography>
               <Typography color="text.secondary" variant="body2">
                 {foundProduct
                   ? `${copy.detectedCode}: ${normalizeBarcode(foundProduct.barcode ?? barcodeInput)}`
                   : copy.cameraHint}
               </Typography>
+              {foundProduct ? (
+                <Chip
+                  label={copy.scannedCodeReady}
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                />
+              ) : null}
             </Stack>
           )}
         </Box>
+
+        {foundProduct ? (
+          <Stack spacing={1.2} data-scanner-found-product="primary-result">
+            <Alert severity="success" data-scanner-result-alert="confirmed">
+              <AlertTitle>{copy.scannedProduct}</AlertTitle>
+              {getProductDisplayName(foundProduct, appLanguage)}
+              {normalizeBarcode(foundProduct.barcode ?? barcodeInput)
+                ? ` · ${copy.detectedCode}: ${normalizeBarcode(foundProduct.barcode ?? barcodeInput)}`
+                : ""}
+            </Alert>
+            <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
+            <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
+          </Stack>
+        ) : null}
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           {!scanning ? (
@@ -1311,20 +1335,6 @@ export const BarcodeScanner = ({ mealType, onOpenProductSearch }: Props) => {
             {copy.search}
           </Button>
         </Stack>
-
-        {foundProduct ? (
-          <Stack spacing={1.2} data-scanner-found-product="primary-result">
-            <Alert severity="success" data-scanner-result-alert="confirmed">
-              <AlertTitle>{copy.scannedProduct}</AlertTitle>
-              {getProductDisplayName(foundProduct, appLanguage)}
-              {normalizeBarcode(foundProduct.barcode ?? barcodeInput)
-                ? ` · ${copy.detectedCode}: ${normalizeBarcode(foundProduct.barcode ?? barcodeInput)}`
-                : ""}
-            </Alert>
-            <Typography sx={{ fontWeight: SCANNER_STRONG_FONT_WEIGHT }}>{copy.preview}</Typography>
-            <ProductCard product={foundProduct} mealType={mealType} origin="barcode" />
-          </Stack>
-        ) : null}
 
         {scanTimedOut ? (
           <Alert severity="warning">
