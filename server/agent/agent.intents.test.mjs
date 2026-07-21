@@ -102,6 +102,22 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects direct scanner opening requests before generic food chat", () => {
+    expect(detectAgentIntent("открой сканер")).toMatchObject({
+      intent: "open_scanner",
+      confidence: 0.9,
+      entities: {
+        targetRoute: "/meals?mode=barcode",
+      },
+    });
+    expect(detectAgentIntent("open barcode scanner")).toMatchObject({
+      intent: "open_scanner",
+      entities: {
+        targetRoute: "/meals?mode=barcode",
+      },
+    });
+  });
+
   it("detects water reminder requests before treating the text as water logging", () => {
     expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
       intent: "create_water_reminder",

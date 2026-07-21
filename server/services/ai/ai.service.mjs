@@ -1338,6 +1338,7 @@ export const createAiService = ({
           providerId: agentResult.providerId,
           providerLabel: agentResult.providerLabel,
           followUpQuestionIds: agentResult.followUpQuestionIds,
+          actions: agentResult.actions ?? [],
           agent: {
             intent: agentResult.intent,
             actions: agentResult.actions,

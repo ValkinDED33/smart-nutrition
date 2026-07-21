@@ -101,6 +101,10 @@ const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
 const assistantAgentIntentsSource = readSource("server/agent/agent.intents.mjs");
 const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
 const assistantPromptStackSource = readSource("server/services/ai/assistantPromptStack.mjs");
+const assistantApiSource = readSource("src/shared/api/assistant.ts");
+const assistantRuntimeCardSource = readSource(
+  "src/features/assistant/AssistantRuntimeCard.tsx"
+);
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
@@ -363,6 +367,30 @@ addCheck(
     assistantPromptStackSource.includes("createRecipe") &&
     !assistantPromptStackSource.includes("Future tools may include createRecipe"),
   "AI recipe creation must save canonical meal templates, verify backend restore, and avoid prompt-only recipe success or a second recipe system."
+);
+
+addCheck(
+  "assistant scanner handoff opens canonical scanner route",
+  assistantAgentIntentsSource.includes('intent: "open_scanner"') &&
+    assistantAgentIntentsSource.includes("SCANNER_WORD_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "open_scanner"') &&
+    assistantAgentServiceSource.includes("tools.openScanner(user, intent.entities)") &&
+    assistantAgentServiceSource.includes("targetRoute: toolResult?.targetRoute ?? null") &&
+    assistantAgentToolsSource.includes("const openScanner = async") &&
+    assistantAgentToolsSource.includes('type: "navigation_handoff"') &&
+    assistantAgentToolsSource.includes('targetSurface: "scanner"') &&
+    assistantAgentToolsSource.includes('targetRoute: "/meals?mode=barcode"') &&
+    assistantAgentActionsSource.includes("scannerOpening") &&
+    assistantAgentMemorySource.includes('toolResult.type === "navigation_handoff"') &&
+    assistantAgentMemorySource.includes("opens scanner through assistant") &&
+    assistantPromptStackSource.includes("openScanner") &&
+    assistantApiSource.includes("parseAssistantActions(payload.actions)") &&
+    assistantApiSource.includes("isSafeInternalRoute") &&
+    assistantRuntimeCardSource.includes("getNavigationTarget") &&
+    assistantRuntimeCardSource.includes("navigate(targetRoute)") &&
+    mealBuilderPageSource.includes('searchParams.get("mode")') &&
+    mealBuilderPageSource.includes('inputMode === "barcode"'),
+  "AI scanner requests must produce a safe navigation handoff to the existing meal scanner route, not a second scanner, fake scan result, or text-only instruction."
 );
 
 addCheck(

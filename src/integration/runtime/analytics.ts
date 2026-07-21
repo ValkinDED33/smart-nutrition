@@ -18,6 +18,7 @@ export type RuntimeAnalyticsEvent =
   | "weight_updated"
   | "global_assistant_opened"
   | "assistant_followup_clicked"
+  | "assistant_navigation_handoff"
   | "onboarding_completed";
 
 export type RuntimeAnalyticsPropertyValue =

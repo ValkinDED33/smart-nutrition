@@ -119,6 +119,52 @@ describe("createAssistantAgentService", () => {
     expect(result.text).not.toContain("Додав");
   });
 
+  it("hands scanner requests to the canonical meal scanner route without fake scan success", async () => {
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "открой сканер",
+      context: {
+        language: "uk",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      mode: "agent-action",
+      providerId: "assistant-agent",
+      intent: { intent: "open_scanner" },
+      actions: [
+        {
+          id: "open_scanner",
+          ok: true,
+          resultType: "navigation_handoff",
+          targetRoute: "/meals?mode=barcode",
+          targetSurface: "scanner",
+        },
+      ],
+      memoryUpdated: true,
+      followUpQuestionIds: ["search_product", "day_status", "coach_focus"],
+    });
+    expect(result.text).toContain("Відкриваю сканер їжі");
+    expect(result.text).toContain("після дозволу пристрою");
+    expect(result.text).not.toContain("відсканував");
+    expect(result.text).not.toContain("додав");
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["opens scanner through assistant"]),
+      })
+    );
+  });
+
   it("returns visible failure when cloud-confirmed water save is unavailable", async () => {
     const stateService = {
       getWaterState: vi.fn(async () => ({

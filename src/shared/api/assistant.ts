@@ -1,6 +1,7 @@
 import type {
   AssistantQuestionInput,
   AssistantConversationMessage,
+  AssistantRuntimeAction,
   AssistantRuntimeResponse,
   AssistantRuntimeStatus,
   AssistantRuntimeStatusProvider,
@@ -18,6 +19,55 @@ const AI_PATH = "/ai";
 const AI_STATUS_PATH = "/ai/status";
 const AGENT_ACTION_MODE = "agent-action";
 const REMOTE_CLOUD_MODE = "remote-cloud";
+
+const isSafeInternalRoute = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.startsWith("/") &&
+  !value.startsWith("//") &&
+  !/[\r\n]/u.test(value) &&
+  value.length <= 180;
+
+const parseAssistantActions = (value: unknown): AssistantRuntimeAction[] =>
+  Array.isArray(value)
+    ? value
+        .map((item): AssistantRuntimeAction | null => {
+          if (!item || typeof item !== "object") {
+            return null;
+          }
+
+          const action = item as Partial<AssistantRuntimeAction>;
+
+          if (typeof action.id !== "string" || !action.id.trim()) {
+            return null;
+          }
+
+          const targetRoute = isSafeInternalRoute(action.targetRoute)
+            ? action.targetRoute
+            : null;
+          const targetSurface =
+            action.targetSurface === "scanner" ||
+            action.targetSurface === "photo_meal" ||
+            action.targetSurface === "food"
+              ? action.targetSurface
+              : null;
+
+          return {
+            id: action.id.trim(),
+            ok: action.ok === true,
+            resultType:
+              typeof action.resultType === "string" && action.resultType.trim()
+                ? action.resultType.trim()
+                : null,
+            code:
+              typeof action.code === "string" && action.code.trim()
+                ? action.code.trim()
+                : null,
+            targetRoute,
+            targetSurface,
+          };
+        })
+        .filter((item): item is AssistantRuntimeAction => item !== null)
+    : [];
 
 const getRequiredAssistantBaseUrl = () => {
   if (!isCloudSyncActive()) {
@@ -45,6 +95,7 @@ const parseAiResponse = async (
   return {
     text: payload.text.trim(),
     mode: payload.mode === AGENT_ACTION_MODE ? AGENT_ACTION_MODE : REMOTE_CLOUD_MODE,
+    actions: parseAssistantActions(payload.actions),
     followUpQuestionIds: Array.isArray(payload.followUpQuestionIds)
       ? payload.followUpQuestionIds.filter(isAssistantQuickQuestionId)
       : [],

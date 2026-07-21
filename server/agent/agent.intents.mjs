@@ -50,6 +50,10 @@ const RECIPE_CREATE_PATTERN =
   /(^|\s)(создай|сделай|придумай|составь|зроби|створи|придумай|склади|create|make|build|suggest)(\s|$)/i;
 const FRIDGE_WORD_PATTERN =
   /(холодильник|холодильника|fridge|pantry|що є|что есть|залишків|остатков)/i;
+const SCANNER_WORD_PATTERN =
+  /(сканер|скан|штрихкод|barcode|bar code|scan)/i;
+const SCANNER_OPEN_PATTERN =
+  /(^|\s)(открой|відкрий|відкрити|запусти|запустити|покажи|показати|open|start|launch)(\s|$)/i;
 
 const normalizeMessage = (value) =>
   String(value ?? "")
@@ -376,6 +380,20 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         reason: "favorite_product_save_request",
       };
     }
+  }
+
+  if (
+    /^\/?(?:scanner|openscanner|open-scanner|scan)\b/i.test(normalized) ||
+    (SCANNER_WORD_PATTERN.test(normalized) && SCANNER_OPEN_PATTERN.test(normalized))
+  ) {
+    return {
+      intent: "open_scanner",
+      confidence: 0.9,
+      entities: {
+        targetRoute: "/meals?mode=barcode",
+      },
+      reason: "scanner_navigation_request",
+    };
   }
 
   if (

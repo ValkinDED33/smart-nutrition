@@ -165,6 +165,16 @@ export interface AssistantRuntimeResponse {
   text: string;
   mode: AssistantRuntimeMode;
   followUpQuestionIds: AssistantQuickQuestionId[];
+  actions?: AssistantRuntimeAction[];
+}
+
+export interface AssistantRuntimeAction {
+  id: string;
+  ok: boolean;
+  resultType: string | null;
+  code?: string | null;
+  targetRoute?: string | null;
+  targetSurface?: "scanner" | "photo_meal" | "food" | null;
 }
 
 export interface AssistantConversationMessage {
@@ -173,6 +183,7 @@ export interface AssistantConversationMessage {
   text: string;
   mode?: AssistantRuntimeMode;
   followUpQuestionIds?: AssistantQuickQuestionId[];
+  actions?: AssistantRuntimeAction[];
   createdAt?: string;
 }
 

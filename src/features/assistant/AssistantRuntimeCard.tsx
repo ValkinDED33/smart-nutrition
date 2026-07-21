@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -39,6 +40,7 @@ import { useAssistantChatStore } from "@features/assistant/model/store";
 import type {
   AssistantConversationMessage,
   AssistantQuickQuestionId,
+  AssistantRuntimeAction,
   AssistantRuntimeContext,
 } from "@domain/assistant/types";
 import {
@@ -237,7 +239,24 @@ const getQuickQuestionLabel = (
   }
 };
 
+const getNavigationTarget = (
+  actions?: AssistantRuntimeAction[]
+): string | null => {
+  const targetRoute =
+    actions?.find(
+      (action) =>
+        action.ok &&
+        action.resultType === "navigation_handoff" &&
+        typeof action.targetRoute === "string"
+    )?.targetRoute ?? null;
+
+  return targetRoute?.startsWith("/") && !targetRoute.startsWith("//")
+    ? targetRoute
+    : null;
+};
+
 export const AssistantRuntimeCard = () => {
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const water = useSelector((state: RootState) => state.water);
@@ -441,11 +460,21 @@ export const AssistantRuntimeCard = () => {
         text: response.text,
         mode: response.mode,
         followUpQuestionIds: response.followUpQuestionIds,
+        actions: response.actions,
       };
       const savedMessages = [...nextMessages, assistantMessage];
+      const targetRoute = getNavigationTarget(response.actions);
 
       setMessages(savedMessages);
       void saveAssistantConversationHistory(savedMessages, userId);
+
+      if (targetRoute) {
+        trackRuntimeEvent("assistant_navigation_handoff", {
+          targetRoute,
+          source: "assistant-runtime-card",
+        });
+        navigate(targetRoute);
+      }
     } catch {
       const fallback = buildGuidedAssistantReply({
         question: trimmedQuestion,

@@ -45,6 +45,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["day_status", "search_product", "coach_focus"];
   }
 
+  if (intent === "open_scanner") {
+    return ["search_product", "day_status", "coach_focus"];
+  }
+
   if (intent === "log_weight") {
     return ["day_status", "coach_focus"];
   }
@@ -145,6 +149,10 @@ export const createAssistantAgentService = ({
       return tools.createRecipe(user, intent.entities);
     }
 
+    if (intent.intent === "open_scanner") {
+      return tools.openScanner(user, intent.entities);
+    }
+
     if (intent.intent === "log_weight") {
       return tools.logWeight(user, intent.entities);
     }
@@ -237,6 +245,8 @@ export const createAssistantAgentService = ({
           ok: Boolean(toolResult?.ok),
           resultType: toolResult?.type ?? null,
           code: toolResult?.code ?? null,
+          targetRoute: toolResult?.targetRoute ?? null,
+          targetSurface: toolResult?.targetSurface ?? null,
         },
       ],
       memoryUpdated: Boolean(memory),

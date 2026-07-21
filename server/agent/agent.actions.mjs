@@ -71,6 +71,10 @@ const copy = {
       "Я зрозумів follow-up, але не зміг безпечно створити нагадування в Smart Nutrition.",
       "Напишіть з часом: повернись до цього о 18:00 або через 30 хв.",
     ],
+    scannerOpenFailed:
+      "Я зрозумів, що треба відкрити сканер, але зараз не можу безпечно перейти до нього автоматично. Відкрийте Їжа -> Сканер.",
+    scannerOpening:
+      "Відкриваю сканер їжі. Камера стартує на екрані їжі після дозволу пристрою.",
     typedReminderFailed: [
       "Я зрозумів тип нагадування, але не зміг безпечно розібрати розклад.",
       "Напишіть з конкретним часом: щодня о 09:00, 13:00 або 21:00.",
@@ -232,6 +236,10 @@ const copy = {
       "Rozumiem follow-up, ale nie mogę bezpiecznie utworzyć przypomnienia w Smart Nutrition.",
       "Napisz z godziną: wróć do tego o 18:00 albo za 30 min.",
     ],
+    scannerOpenFailed:
+      "Rozumiem, że trzeba otworzyć skaner, ale teraz nie mogę bezpiecznie przejść do niego automatycznie. Otwórz Jedzenie -> Skaner.",
+    scannerOpening:
+      "Otwieram skaner jedzenia. Kamera startuje na ekranie jedzenia po zgodzie urządzenia.",
     typedReminderFailed: [
       "Rozumiem typ przypomnienia, ale nie mogę bezpiecznie odczytać harmonogramu.",
       "Napisz z konkretną godziną: codziennie o 09:00, 13:00 albo 21:00.",
@@ -393,6 +401,10 @@ const copy = {
       "I understood the follow-up, but could not safely create the reminder in Smart Nutrition.",
       "Write it with time: check back at 18:00 or in 30 min.",
     ],
+    scannerOpenFailed:
+      "I understood that you want the scanner, but I cannot safely navigate there automatically right now. Open Food -> Scanner.",
+    scannerOpening:
+      "Opening the food scanner. The camera starts on the food screen after your device permission.",
     typedReminderFailed: [
       "I understood the reminder type, but could not safely parse the schedule.",
       "Write a specific time: daily at 09:00, 13:00, or 21:00.",
@@ -618,6 +630,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.followUpFailed.join("\n");
     }
 
+    if (intent.intent === "open_scanner") {
+      return text.scannerOpenFailed;
+    }
+
     if (intent.intent === "generate_report") {
       return text.reportFailed.join("\n");
     }
@@ -725,6 +741,13 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
     ]
       .filter(Boolean)
       .join("\n");
+  }
+
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "scanner"
+  ) {
+    return text.scannerOpening;
   }
 
   if (toolResult.type === "weight_logged") {

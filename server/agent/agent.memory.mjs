@@ -98,6 +98,18 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "scanner"
+  ) {
+    return {
+      userId: user?.id,
+      habits: ["opens scanner through assistant"],
+      motivationTriggers: ["fast barcode food logging"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "weight_logged") {
     return {
       userId: user?.id,
