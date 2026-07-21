@@ -525,12 +525,14 @@ process.once("SIGINT", () => shutdown("SIGINT"));
 process.once("SIGTERM", () => shutdown("SIGTERM"));
 
 server.listen(serverConfig.port, () => {
-  logStartupDiagnostics(
-    createStartupDiagnostics({
-      config: serverConfig,
-      requestDiagnostics,
-    })
-  );
+  if (serverConfig.debugStartupEnabled) {
+    logStartupDiagnostics(
+      createStartupDiagnostics({
+        config: serverConfig,
+        requestDiagnostics,
+      })
+    );
+  }
 
   console.log(`Smart Nutrition API listening on port ${serverConfig.port}`);
   void telegramService.start();

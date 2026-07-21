@@ -1136,6 +1136,11 @@ export const createServerConfig = (rawEnv = process.env) => {
     env.SMART_NUTRITION_DEBUG_STARTUP_ENABLED,
     !isProduction
   );
+
+  if (isProduction && debugStartupEnabled) {
+    errors.push("SMART_NUTRITION_DEBUG_STARTUP_ENABLED must be disabled in production.");
+  }
+
   const aiDebugLogging = readBooleanFlag(env.SMART_NUTRITION_AI_DEBUG_LOGS, false);
 
   if (isProduction && aiDebugLogging) {

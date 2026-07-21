@@ -160,3 +160,10 @@
 - Context: AI provider fallback, model routing, provider errors, and prompt orchestration are sensitive operational surfaces. Debug stdout can accidentally expose provider details, user context, or raw upstream errors when enabled in a live deployment.
 - Decision: `SMART_NUTRITION_AI_DEBUG_LOGS=true` is allowed only outside production. Production observability must use controlled audit logs, public sanitized runtime status, Sentry, or explicit admin/debug surfaces.
 - Consequences: Production config fails fast if AI debug stdout logging is enabled. AI troubleshooting can still be done locally or in controlled non-production environments.
+
+## ADR-024: Startup Debug Diagnostics Are Development-Only
+
+- Status: Accepted.
+- Context: Startup diagnostics include environment presence checks, CORS origins, cookie policy, storage/AI provider summaries, product lookup status, warnings, and request diagnostics. This is useful locally but too broad for a live production debug surface or unconditional startup dump.
+- Decision: `SMART_NUTRITION_DEBUG_STARTUP_ENABLED=true` is forbidden in production, `/api/debug/startup` must not be registered in production, and full startup diagnostics must be logged only when debug startup diagnostics are enabled.
+- Consequences: Production startup logs keep only concise service lifecycle messages and controlled warnings. Detailed config/debug dumps remain available for local development and non-production troubleshooting.

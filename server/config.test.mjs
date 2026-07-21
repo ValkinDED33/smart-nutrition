@@ -212,6 +212,16 @@ describe("createServerConfig", () => {
     ).toThrow(/SMART_NUTRITION_AI_DEBUG_LOGS/);
   });
 
+  it("rejects startup debug diagnostics in production", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_DEBUG_STARTUP_ENABLED: "true",
+      })
+    ).toThrow(/SMART_NUTRITION_DEBUG_STARTUP_ENABLED/);
+  });
+
   it("enables online product lookup with OpenFoodFacts by default and optional USDA key", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),

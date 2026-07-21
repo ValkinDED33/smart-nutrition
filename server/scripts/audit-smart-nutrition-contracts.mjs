@@ -35,6 +35,7 @@ const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.t
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
 const serverConfigSource = readSource("server/config.mjs");
 const serverConfigTestSource = readSource("server/config.test.mjs");
+const serverIndexSource = readSource("server/index.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
@@ -504,6 +505,19 @@ addCheck(
     serverConfigTestSource.includes("rejects AI debug logs in production") &&
     serverConfigTestSource.includes("SMART_NUTRITION_AI_DEBUG_LOGS"),
   "Production must not allow raw AI debug stdout logging; provider diagnostics belong in controlled audit/status/error telemetry."
+);
+
+addCheck(
+  "production config rejects startup debug diagnostics and startup dump is gated",
+  serverConfigSource.includes(
+    "SMART_NUTRITION_DEBUG_STARTUP_ENABLED must be disabled in production."
+  ) &&
+    /isProduction\s*&&\s*debugStartupEnabled/.test(serverConfigSource) &&
+    serverConfigTestSource.includes("rejects startup debug diagnostics in production") &&
+    /if\s*\(serverConfig\.debugStartupEnabled\)\s*\{[\s\S]*?logStartupDiagnostics/.test(
+      serverIndexSource
+    ),
+  "Production must not expose /api/debug/startup or print full startup diagnostics; detailed startup dumps are development-only."
 );
 
 const failed = checks.filter((check) => !check.pass);
