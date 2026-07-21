@@ -245,8 +245,10 @@ export const createAgentTools = ({
   };
 
   const createMedicationReminder = async (user, { text }) => {
-    const createMedicationReminderFromText =
-      reminders?.createMedicationReminderFromText ?? reminders?.createReminderFromText;
+    const createMedicationReminderFromText = getTypedReminderCreator(
+      reminders,
+      "medication"
+    );
 
     if (!createMedicationReminderFromText) {
       return { ok: false, code: "MEDICATION_TOOL_UNAVAILABLE" };
@@ -275,11 +277,13 @@ export const createAgentTools = ({
   };
 
   const createTaskReminder = async (user, { text }) => {
-    if (!reminders?.createTaskReminderFromText) {
+    const createTaskReminderFromText = getTypedReminderCreator(reminders, "task");
+
+    if (!createTaskReminderFromText) {
       return { ok: false, code: "TASK_REMINDER_TOOL_UNAVAILABLE" };
     }
 
-    const result = await reminders.createTaskReminderFromText(
+    const result = await createTaskReminderFromText(
       user,
       text,
       now()

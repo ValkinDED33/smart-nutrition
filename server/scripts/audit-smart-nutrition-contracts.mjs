@@ -86,6 +86,7 @@ const serverConfigTestSource = readSource("server/config.test.mjs");
 const serverIndexSource = readSource("server/index.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
+const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
@@ -256,6 +257,15 @@ addCheck(
     assistantAgentActionsSource.includes("I will not show it as saved until the backend confirms it.") &&
     assistantAgentActionsSource.includes("не буду показувати це як збережене, поки бекенд не підтвердить"),
   "Telegram assistant worker must not claim saved actions unless the canonical backend tool result is ok."
+);
+
+addCheck(
+  "assistant reminder tools prefer canonical typed reminder contract",
+  assistantAgentToolsSource.includes("getTypedReminderCreator(") &&
+    assistantAgentToolsSource.includes("reminders.createReminderFromUserText(user, { type, text }, currentNow)") &&
+    assistantAgentToolsSource.includes('getTypedReminderCreator(\n      reminders,\n      "medication"\n    )') &&
+    assistantAgentToolsSource.includes('getTypedReminderCreator(reminders, "task")'),
+  "AI-created medication and task reminders must prefer createReminderFromUserText and use legacy reminder methods only as compatibility fallback."
 );
 
 addCheck(

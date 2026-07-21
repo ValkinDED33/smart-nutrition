@@ -83,6 +83,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
 - Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
 - Replaced raw Telegram main-menu command buttons with profile-language labels and routed label taps back into canonical snapshot/profile/help handlers, keeping Telegram as the same assistant worker surface instead of a command-list bolt-on.
+- Routed AI-created medication and task reminders through the canonical typed `createReminderFromUserText` contract first, leaving legacy medication/task reminder methods as compatibility fallback only.
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
@@ -167,6 +168,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reminder persistence should use `updateUserReminders`; `updateUserMedicationReminders` is a legacy compatibility alias that must delegate to the canonical method and must not contain separate write logic.
 - Reminder UI surfaces that create or update backend-confirmed reminders must keep the visible reminder manager synchronized with the returned canonical reminder item.
 - AI saved actions must call backend tools/contracts and report only confirmed, pending, or failed states.
+- AI-created reminders must prefer the canonical typed reminder contract (`createReminderFromUserText`) and may use legacy medication/task-specific methods only as compatibility fallback.
 - AI conversation history reset must be backend-confirmed; local cleanup is hygiene only and cannot report success by itself.
 - Legacy browser-stored assistant history is privacy-sensitive migration debt and must be purged on startup, not treated as canonical memory.
 - UI success must be backend-confirmed unless clearly marked as queued/offline.

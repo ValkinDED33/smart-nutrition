@@ -218,6 +218,53 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("prefers the canonical typed reminder contract for medication reminders", async () => {
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async () => ({
+        ok: true,
+        reminder: {
+          id: "med-canonical",
+          type: "medication",
+          title: "Вітамін D",
+          times: ["09:00"],
+        },
+      })),
+      createReminderFromText: vi.fn(),
+      createMedicationReminderFromText: vi.fn(),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "Напомни пить Вітамін D щодня о 09:00",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_medication_reminder" },
+      actions: [
+        {
+          id: "create_medication_reminder",
+          ok: true,
+          resultType: "medication_reminder_created",
+        },
+      ],
+    });
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(
+      user,
+      {
+        type: "medication",
+        text: "Напомни пить Вітамін D щодня о 09:00",
+      },
+      fixedNow
+    );
+    expect(reminderService.createReminderFromText).not.toHaveBeenCalled();
+    expect(reminderService.createMedicationReminderFromText).not.toHaveBeenCalled();
+  });
+
   it("creates medication reminders from natural 'at/in time' wording", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({
@@ -309,6 +356,52 @@ describe("createAssistantAgentService", () => {
         habits: expect.arrayContaining(["uses assistant task reminders"]),
       })
     );
+  });
+
+  it("prefers the canonical typed reminder contract for ordinary task reminders", async () => {
+    const reminderService = {
+      createReminderFromUserText: vi.fn(async () => ({
+        ok: true,
+        reminder: {
+          id: "task-canonical",
+          type: "task",
+          title: "позвонить врачу",
+          times: ["10:00"],
+          repeat: "once",
+        },
+      })),
+      createTaskReminderFromText: vi.fn(),
+    };
+    const agent = createAssistantAgentService({
+      reminderService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "Напомни позвонить врачу о 10:00",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "create_task_reminder" },
+      actions: [
+        {
+          id: "create_task_reminder",
+          ok: true,
+          resultType: "task_reminder_created",
+        },
+      ],
+    });
+    expect(reminderService.createReminderFromUserText).toHaveBeenCalledWith(
+      user,
+      {
+        type: "task",
+        text: "Напомни позвонить врачу о 10:00",
+      },
+      fixedNow
+    );
+    expect(reminderService.createTaskReminderFromText).not.toHaveBeenCalled();
   });
 
   it("creates typed water reminders through the canonical reminder tool", async () => {
