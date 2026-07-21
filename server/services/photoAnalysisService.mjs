@@ -169,6 +169,7 @@ export const createPhotoAnalysisService = ({ config = {} } = {}) => ({
       blockedTokens,
       mealState: context?.mealState,
       image: toPublicPhotoMeta(photoMeta),
+      language,
     });
   },
 });

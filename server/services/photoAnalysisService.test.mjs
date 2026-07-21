@@ -92,6 +92,26 @@ describe("photoAnalysisService", () => {
     expect(result.summary).toContain("better light");
   });
 
+  it("returns localized fallback copy when vision cannot identify food", async () => {
+    const service = createPhotoAnalysisService();
+    const result = await service.analyzePhoto(
+      { dietStyle: "balanced" },
+      {
+        imageDataUrl: `data:image/png;base64,${tinyPng}`,
+        mealType: "lunch",
+        language: "uk",
+      }
+    );
+
+    expect(result.dishName).toBe("Фото потребує ручної перевірки");
+    expect(result.summary).toContain("Я не зміг");
+    expect(result.cautions.join(" ")).toContain("Щоденник не зміниться");
+    expect(result.hiddenIngredientQuestions).toEqual(
+      expect.arrayContaining([expect.stringContaining("кращому світлі")])
+    );
+    expect(result.summary).not.toContain("I could not confidently identify");
+  });
+
   it("uses a configured vision provider without trusting fake certainty", async () => {
     const originalFetch = globalThis.fetch;
 

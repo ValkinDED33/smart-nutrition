@@ -51,6 +51,7 @@ const productLookupServiceSource = readSource("server/services/productLookupServ
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
+const photoAnalysisServiceSource = readSource("server/services/photoAnalysisService.mjs");
 const serverConfigSource = readSource("server/config.mjs");
 const serverConfigTestSource = readSource("server/config.test.mjs");
 const serverIndexSource = readSource("server/index.mjs");
@@ -435,6 +436,10 @@ addCheck(
 addCheck(
   "photo fallback never invents foods from templates or user history",
   fallbackPhotoDraftSource.includes("I could not confidently identify visible foods") &&
+    fallbackPhotoDraftSource.includes("language = FALLBACK_LANGUAGE") &&
+    fallbackPhotoDraftSource.includes("normalizeFallbackLanguage(language)") &&
+    fallbackPhotoDraftSource.includes("Фото потребує ручної перевірки") &&
+    fallbackPhotoDraftSource.includes("Zdjęcie wymaga ręcznego sprawdzenia") &&
     fallbackPhotoDraftSource.includes("No food was automatically identified") &&
     fallbackPhotoDraftSource.includes("void mealState") &&
     fallbackPhotoDraftSource.includes("const items = []") &&
@@ -443,8 +448,9 @@ addCheck(
     fallbackPhotoDraftSource.includes("confidence: 0") &&
     !fallbackPhotoDraftSource.includes("photo-feedback:user-confirmed") &&
     !fallbackPhotoDraftSource.includes("Previously confirmed by you") &&
+    photoAnalysisServiceSource.includes("language,") &&
     !/\b(Greek yogurt|Oats|Banana|Breakfast photo draft)\b/.test(fallbackPhotoDraftSource),
-  "When vision providers cannot identify food, fallback must request a better/manual photo and must not fill the draft from templates or previous user corrections."
+  "When vision providers cannot identify food, fallback must use the request language, request a better/manual photo, and must not fill the draft from templates or previous user corrections."
 );
 
 addCheck(

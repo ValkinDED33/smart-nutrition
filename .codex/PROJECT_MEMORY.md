@@ -77,7 +77,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Expanded backend external product mapping so OpenFoodFacts and USDA preserve the full canonical nutrient profile, including iodine, selenium, copper, fatty acids, cholesterol, sugar types, water, and vitamins when providers supply them.
 - Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
 - Hardened Telegram reminder command hints so empty `/addmed`, `/addtask`, `/addwater`, `/addhabit`, `/addsupplement`, `/add`, and `/settime` prompts use the connected Smart Nutrition profile language instead of drifting to the Telegram client language.
-- Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty and asks for a clearer photo or manual ingredient confirmation.
+- Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
 
 ## Current Architecture
 
@@ -130,7 +130,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Frontend health probes must validate public liveness shape (`ok`, `mode=remote-cloud`, `auth=httpOnly-cookie-session`, `storage.engine`) instead of depending on removed diagnostic provider fields.
 - Product lookup provider resilience belongs in `productLookupService`; do not reintroduce frontend OpenFoodFacts calls to paper over backend provider failures.
 - Photo meal documentation must describe backend vision recognition with honest fallback, not the retired manual-draft-only behavior.
-- Photo meal fallback must not substitute user history or generic templates for visual recognition. If providers cannot identify visible food, the draft must stay unselected/empty and explain how to retake or manually add ingredients.
+- Photo meal fallback must not substitute user history or generic templates for visual recognition. If providers cannot identify visible food, the draft must stay unselected/empty, use the profile/request language, and explain how to retake or manually add ingredients.
 - Environment example files must never contain real-looking provider secrets or duplicate sensitive backend assignments.
 - Tracked Git files must exclude runtime/generated artifacts such as `.codex/chrome*`, `.codex/cdp*`, `.codex-remote-attachments`, screenshots, caches, logs, `dist`, and `node_modules`.
 - Runtime data under `server/data` is never source code; only `server/data/.gitkeep` may be tracked.

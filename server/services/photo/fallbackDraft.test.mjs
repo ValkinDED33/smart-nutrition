@@ -59,6 +59,25 @@ describe("fallbackDraft", () => {
     expect(result.uncertainIngredients).toEqual([]);
   });
 
+  it("localizes unclear-photo fallback copy", () => {
+    const result = createFallbackPhotoAnalysis({
+      mealType: "lunch",
+      dietStyle: "balanced",
+      blockedTokens: [],
+      mealState: {},
+      image,
+      language: "pl",
+    });
+
+    expect(result.dishName).toBe("Zdjęcie wymaga ręcznego sprawdzenia");
+    expect(result.summary).toContain("Nie udało mi się");
+    expect(result.cautions.join(" ")).toContain("Dziennik nie zmieni się");
+    expect(result.hiddenIngredientQuestions).toEqual(
+      expect.arrayContaining([expect.stringContaining("lepszym świetle")])
+    );
+    expect(result.summary).not.toContain("I could not confidently identify");
+  });
+
   it("does not reuse previously confirmed photo corrections as visual recognition", () => {
     const result = createFallbackPhotoAnalysis({
       mealType: "lunch",
