@@ -146,4 +146,19 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain('label="stale build"');
     expect(source).not.toContain("diagnostic.errorName}: ${this.state.diagnostic.message");
   });
+
+  it("gates AI provider diagnostics away from the regular assistant settings", () => {
+    const source = readSource("src/pages/AiCompanionPage.tsx");
+
+    expect(source).toContain("canAccessAdminCenter(user?.role)");
+    expect(source).toContain("const canSeeAssistantOperations");
+    expect(source).toContain("canSeeAssistantOperations ? copy.operationsTitle : copy.readinessTitle");
+    expect(source).toContain("Assistant readiness");
+    expect(source).toContain("Gotowość asystenta");
+    expect(source).toContain("Готовність помічника");
+    expect(source).toContain("Team diagnostics");
+    expect(source).not.toContain("Below you can see active providers");
+    expect(source).not.toContain("Niżej widać aktywnych providerów");
+    expect(source).not.toContain("Нижче видно активних провайдерів");
+  });
 });

@@ -128,6 +128,7 @@ const assistantAgentIntentsSource = readSource("server/agent/agent.intents.mjs")
 const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
 const assistantPromptStackSource = readSource("server/services/ai/assistantPromptStack.mjs");
 const assistantApiSource = readSource("src/shared/api/assistant.ts");
+const aiCompanionPageSource = readSource("src/pages/AiCompanionPage.tsx");
 const assistantRuntimeCardSource = readSource(
   "src/features/assistant/AssistantRuntimeCard.tsx"
 );
@@ -1259,6 +1260,23 @@ addCheck(
     !errorBoundarySource.includes('label="stale build"') &&
     !errorBoundarySource.includes("diagnostic.errorName}: ${this.state.diagnostic.message"),
   "Crash UI may show a short diagnostic code, but raw stale-build/error-name/message details must stay in telemetry, not ordinary UI."
+);
+
+addCheck(
+  "regular assistant settings hide AI provider diagnostics",
+  aiCompanionPageSource.includes("canAccessAdminCenter(user?.role)") &&
+    aiCompanionPageSource.includes("const canSeeAssistantOperations") &&
+    aiCompanionPageSource.includes(
+      "canSeeAssistantOperations ? copy.operationsTitle : copy.readinessTitle"
+    ) &&
+    aiCompanionPageSource.includes("Assistant readiness") &&
+    aiCompanionPageSource.includes("Gotowość asystenta") &&
+    aiCompanionPageSource.includes("Готовність помічника") &&
+    aiCompanionPageSource.includes("Team diagnostics") &&
+    !/Below you can see active providers|Niżej widać aktywnych providerów|Нижче видно активних провайдерів/.test(
+      aiCompanionPageSource
+    ),
+  "Regular assistant settings must show product readiness language; provider/model/fallback diagnostics belong behind admin-center role access."
 );
 
 addCheck(

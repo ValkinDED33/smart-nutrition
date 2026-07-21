@@ -34,6 +34,7 @@ import {
 } from "@shared/ui";
 import type { AssistantRuntimeStatus } from "@domain/assistant/types";
 import { getDaysSince } from "@domain/profile/bodyMetrics";
+import { canAccessAdminCenter } from "@domain/user/roles";
 import {
   buildAssistantCoreSnapshot,
   type AssistantCoreEmotion,
@@ -62,10 +63,16 @@ const aiCopy = {
     title: "Помічник",
     subtitle:
       "Особистий companion для харчування, мотивації і щоденного ритму. Він тримає контекст, пам'ятає стиль підтримки і веде до наступної дії.",
-    runtimeTitle: "Стан AI",
-    runtimeSubtitle:
-      "Нижче видно активних провайдерів і резервний маршрут, який використовує асистент.",
+    readinessTitle: "Готовність помічника",
+    readinessSubtitle:
+      "Помічник підключений до вашого дня і готовий допомагати з їжею, водою, нагадуваннями та прогресом.",
+    operationsTitle: "Операційний стан AI",
+    operationsSubtitle:
+      "Діагностика для команди: активні провайдери і резервний маршрут асистента.",
     providerChain: "Провайдери AI",
+    assistantReady: "Помічник готовий",
+    assistantBackupReady: "Резерв підтримки готовий",
+    assistantBackupUnavailable: "Працює основний маршрут",
     configured: "Хмарний AI готовий",
     fallbackOn: "Резерв увімкнено",
     fallbackOff: "Без резерву",
@@ -137,10 +144,16 @@ const aiCopy = {
     title: "Asystent",
     subtitle:
       "Osobisty companion do jedzenia, motywacji i codziennego rytmu. Trzyma kontekst, pamięta styl wsparcia i prowadzi do kolejnej akcji.",
-    runtimeTitle: "Status AI",
-    runtimeSubtitle:
-      "Niżej widać aktywnych providerów i trasę zapasową, której używa asystent.",
+    readinessTitle: "Gotowość asystenta",
+    readinessSubtitle:
+      "Asystent jest połączony z Twoim dniem i gotowy pomagać w jedzeniu, wodzie, przypomnieniach oraz progresie.",
+    operationsTitle: "Operacyjny status AI",
+    operationsSubtitle:
+      "Diagnostyka dla zespołu: aktywni providerzy i trasa zapasowa asystenta.",
     providerChain: "Providerzy AI",
+    assistantReady: "Asystent gotowy",
+    assistantBackupReady: "Rezerwa wsparcia gotowa",
+    assistantBackupUnavailable: "Działa główna trasa",
     configured: "Chmurowy AI gotowy",
     fallbackOn: "Rezerwa aktywna",
     fallbackOff: "Bez rezerwy",
@@ -212,10 +225,16 @@ const aiCopy = {
     title: "Assistant",
     subtitle:
       "A personal companion for nutrition, motivation, and daily rhythm. It keeps context, remembers your support style, and guides the next action.",
-    runtimeTitle: "AI status",
-    runtimeSubtitle:
-      "Below you can see active providers and the fallback route used by the assistant.",
+    readinessTitle: "Assistant readiness",
+    readinessSubtitle:
+      "The assistant is connected to your day and ready to help with food, water, reminders, and progress.",
+    operationsTitle: "AI operations status",
+    operationsSubtitle:
+      "Team diagnostics: active providers and the assistant fallback route.",
     providerChain: "AI providers",
+    assistantReady: "Assistant ready",
+    assistantBackupReady: "Support backup ready",
+    assistantBackupUnavailable: "Primary route active",
     configured: "Cloud AI ready",
     fallbackOn: "Fallback enabled",
     fallbackOff: "No fallback",
@@ -393,6 +412,7 @@ const AiCompanionPage = () => {
   const companionRenderModePreference = useCompanionRenderModePreference();
   const isCompactCompanionStage = useMediaQuery("(max-width: 599.95px)");
   const companionStageSize = isCompactCompanionStage ? 144 : 220;
+  const canSeeAssistantOperations = canAccessAdminCenter(user?.role);
 
   useEffect(() => {
     let active = true;
@@ -777,62 +797,84 @@ const AiCompanionPage = () => {
         <Stack spacing={2}>
           <Stack spacing={0.7}>
             <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-              {copy.runtimeTitle}
+              {canSeeAssistantOperations ? copy.operationsTitle : copy.readinessTitle}
             </Typography>
-            <Typography color="text.secondary">{copy.runtimeSubtitle}</Typography>
+            <Typography color="text.secondary">
+              {canSeeAssistantOperations ? copy.operationsSubtitle : copy.readinessSubtitle}
+            </Typography>
           </Stack>
 
-          {runtimeStatus?.configured ? (
-            <>
+          {canSeeAssistantOperations ? (
+            runtimeStatus?.configured ? (
+              <>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <Chip label={copy.configured} color="success" variant="outlined" />
+                  <Chip
+                    label={runtimeStatus.fallbackEnabled ? copy.fallbackOn : copy.fallbackOff}
+                    color={runtimeStatus.fallbackEnabled ? "primary" : "default"}
+                    variant="outlined"
+                  />
+                </Stack>
+
+                <Stack spacing={1}>
+                  <Typography sx={{ fontWeight: 700 }}>{copy.providerChain}</Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
+                      gap: 1.5,
+                    }}
+                  >
+                    {providers.map((provider) => (
+                      <Paper
+                        key={provider.id}
+                        variant="outlined"
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 1,
+                          borderColor: provider.primary
+                            ? "rgba(15,118,110,0.25)"
+                            : "rgba(15,23,42,0.08)",
+                        }}
+                      >
+                        <Stack spacing={0.8}>
+                          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                            <Chip
+                              size="small"
+                              color={provider.primary ? "success" : "default"}
+                              label={provider.primary ? copy.primary : copy.backup}
+                            />
+                            <Chip size="small" variant="outlined" label={`#${provider.priority}`} />
+                          </Stack>
+                          <Typography sx={{ fontWeight: 800 }}>{provider.label}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {provider.model ?? provider.id}
+                          </Typography>
+                        </Stack>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Stack>
+              </>
+            ) : (
+              <Alert severity="warning">{copy.cloudUnavailable}</Alert>
+            )
+          ) : runtimeStatus?.configured ? (
+            <Stack spacing={1.2}>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={copy.configured} color="success" variant="outlined" />
+                <Chip label={copy.assistantReady} color="success" variant="outlined" />
                 <Chip
-                  label={runtimeStatus.fallbackEnabled ? copy.fallbackOn : copy.fallbackOff}
+                  label={
+                    runtimeStatus.fallbackEnabled
+                      ? copy.assistantBackupReady
+                      : copy.assistantBackupUnavailable
+                  }
                   color={runtimeStatus.fallbackEnabled ? "primary" : "default"}
                   variant="outlined"
                 />
               </Stack>
-
-              <Stack spacing={1}>
-                <Typography sx={{ fontWeight: 700 }}>{copy.providerChain}</Typography>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
-                    gap: 1.5,
-                  }}
-                >
-                  {providers.map((provider) => (
-                    <Paper
-                      key={provider.id}
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        borderColor: provider.primary
-                          ? "rgba(15,118,110,0.25)"
-                          : "rgba(15,23,42,0.08)",
-                      }}
-                    >
-                      <Stack spacing={0.8}>
-                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                          <Chip
-                            size="small"
-                            color={provider.primary ? "success" : "default"}
-                            label={provider.primary ? copy.primary : copy.backup}
-                          />
-                          <Chip size="small" variant="outlined" label={`#${provider.priority}`} />
-                        </Stack>
-                        <Typography sx={{ fontWeight: 800 }}>{provider.label}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {provider.model ?? provider.id}
-                        </Typography>
-                      </Stack>
-                    </Paper>
-                  ))}
-                </Box>
-              </Stack>
-            </>
+              <Typography color="text.secondary">{copy.assistantSettings}</Typography>
+            </Stack>
           ) : (
             <Alert severity="warning">{copy.cloudUnavailable}</Alert>
           )}
