@@ -174,6 +174,16 @@ addCheck(
 );
 
 addCheck(
+  "scanner manual catalog fallback avoids local-only save language",
+  barcodeScannerSource.includes("хмарному профілі") &&
+    barcodeScannerSource.includes("profilu w chmurze") &&
+    barcodeScannerSource.includes("cloud profile") &&
+    !/saved locally|local-only/i.test(barcodeScannerSource) &&
+    !/saved locally|local-only/i.test(readSource("src/features/meal/barcodeScannerModel.test.ts")),
+  "Scanner manual product fallback may report cloud-confirmed meal/library state and retryable catalog moderation failure, but must not describe persistence as local-only."
+);
+
+addCheck(
   "project knowledge layer is committed while codex runtime artifacts stay ignored",
   gitignoreSource.includes(".codex/") &&
     gitignoreSource.includes("!.codex/PROJECT_MEMORY.md") &&

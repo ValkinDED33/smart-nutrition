@@ -159,7 +159,7 @@ describe("barcodeScannerModel", () => {
     const copy = {
       catalogSubmitting: "Sending",
       catalogConfirmed: "Accepted",
-      catalogFailed: "Saved locally for user, catalog failed.",
+      catalogFailed: "Meal was confirmed in your cloud profile, but catalog moderation failed.",
       catalogRetry: "Retry",
     };
     const payload = {
@@ -191,9 +191,37 @@ describe("barcodeScannerModel", () => {
       )
     ).toEqual({
       severity: "warning",
-      text: "Saved locally for user, catalog failed. Provider unavailable.",
+      text: "Meal was confirmed in your cloud profile, but catalog moderation failed. Provider unavailable.",
       retryable: true,
     });
+  });
+
+  it("does not describe manual scanner fallback as browser-only persistence", () => {
+    const copy = {
+      catalogSubmitting: "Sending",
+      catalogConfirmed: "Accepted",
+      catalogFailed: "Meal was confirmed in your cloud profile, but catalog moderation failed.",
+      catalogRetry: "Retry",
+    };
+
+    const notice = resolveCatalogNotice(
+      {
+        status: "failed",
+        payload: {
+          name: NORMALIZED_GREEK_YOGURT_NAME,
+          calories: 110,
+          protein: 9,
+          fat: 4,
+          carbs: 8,
+          unit: "g",
+        },
+        message: "Provider unavailable.",
+      },
+      copy
+    );
+
+    expect(notice?.text).toContain("cloud profile");
+    expect(notice?.text).not.toMatch(/saved\s+locally/i);
   });
 
   it("detects camera scanner availability before starting browser APIs", () => {

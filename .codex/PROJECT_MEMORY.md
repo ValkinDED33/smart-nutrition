@@ -116,6 +116,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened the progress overview into a tested counted-domain model: calories, protein, water, meals, weight goal, and body check-ins are calculated together, water glasses stay visible on the first progress screen, and each domain routes to its detailed section.
 - Added web reminder adherence period reports inside the existing reminder manager: 7-day and 30-day summaries read canonical backend reminder events, show completed/skipped/snoozed counts, active reminder coverage, last action, and honest missing-data state without a second reminder/report store.
 - Hardened guided registration so final account creation requires backend-confirmed available nickname and email; stale, unchecked, unavailable, or taken availability states route back to the exact field instead of relying on a late register failure.
+- Hardened barcode/manual product fallback copy so catalog moderation failure is presented separately from backend-confirmed meal/profile save, with contract coverage preventing local-only save language from returning to the scanner flow.
 
 ## Current Architecture
 
@@ -151,6 +152,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Photo meal recognition must never accept a generic template food set as visual truth; provider confidence alone is not enough when the title and foods match a known template.
 - Photo meal UX must show a clear review/retry state for unavailable analysis; it must not imply a saved or recognized result, and it must not leave users guessing after upload.
 - Barcode scanner UX must make the resolved product immediately visible after scan; manual barcode controls, history, and fallback panels are secondary after a confirmed product result.
+- Scanner manual product fallback may report confirmed meal/profile state and retryable catalog moderation failure, but visible copy must not describe canonical persistence as local-only.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Progress overview calculations must live in the tested progress overview model; the UI may render the cards, but it must not quietly collapse the product back into a weight-only chart.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.

@@ -160,7 +160,7 @@ const scannerCopy = {
     catalogSubmitting: "Відправляю продукт у спільну базу...",
     catalogConfirmed: "Спільна база прийняла продукт на модерацію.",
     catalogFailed:
-      "Продукт збережено у вас, але спільна база зараз не прийняла зміни.",
+      "Прийом їжі підтверджено у вашому хмарному профілі, але спільна база зараз не прийняла зміни.",
     catalogRetry: "Спробувати ще раз",
     manualNameRequired: "Вкажіть назву продукту",
     detectedCode: "Розпізнаний код",
@@ -245,7 +245,7 @@ const scannerCopy = {
     catalogSubmitting: "Wysyłam produkt do wspólnej bazy...",
     catalogConfirmed: "Wspólna baza przyjęła produkt do moderacji.",
     catalogFailed:
-      "Produkt został zapisany u Ciebie, ale wspólna baza nie przyjęła teraz zmian.",
+      "Posiłek jest potwierdzony w Twoim profilu w chmurze, ale wspólna baza nie przyjęła teraz zmian.",
     catalogRetry: "Spróbuj ponownie",
     manualNameRequired: "Podaj nazwę produktu",
     detectedCode: "Rozpoznany kod",
@@ -330,7 +330,7 @@ const scannerCopy = {
     catalogSubmitting: "Sending product to the shared catalog...",
     catalogConfirmed: "Shared catalog accepted the product for moderation.",
     catalogFailed:
-      "Product is saved for you, but the shared catalog did not accept it right now.",
+      "Meal is confirmed in your cloud profile, but the shared catalog did not accept it right now.",
     catalogRetry: "Try again",
     manualNameRequired: "Enter product name",
     detectedCode: "Detected code",
