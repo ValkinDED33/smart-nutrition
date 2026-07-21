@@ -64,6 +64,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened frontend remote API routing so public deployments prefer the canonical configured Render backend over stale browser-stored API base URLs; added regression coverage for registration availability when old localStorage state exists.
 - Added SEO discovery as a release-gated contract: `robots.txt` now exposes the canonical sitemap while blocking protected/token SPA surfaces, `sitemap.xml` uses current canonical public URLs, and `npm run audit:seo` verifies index metadata, crawler policy, sitemap scope, lastmod freshness, and manifest identity.
 - Hardened bundle audit so it counts `modulepreload` assets as initial payload, caps total startup JavaScript, and blocks scanner, photo compression, markdown, analytics, native bridge, and 3D vendors from being preloaded by `index.html`.
+- Added `npm run audit:live` as a safe public live production smoke command for Vercel app HTML/assets, SEO discovery, PWA manifest, Render health/readiness, sanitized diagnostics, and credentialed CORS origin behavior.
 
 ## Current Architecture
 
@@ -115,6 +116,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - 3D companion must be lazy/on-demand and isolated from core flows.
 - 3D companion runtime must stay 2D on mobile, low-power, data-saver, reduced-motion, and unsupported WebGL contexts even if 3D is selected in profile preferences.
 - Route-heavy vendors for scanner, photo compression, markdown, analytics, native bridges, and 3D companion must stay behind route-local lazy boundaries and must not appear in initial `index.html` scripts or modulepreload assets.
+- Deploy-sensitive readiness must include `npm run audit:live` after deployment or domain/backend/CORS/SEO changes. The live audit may use only public unauthenticated endpoints and must not include secrets, login, protected user data, or fake success.
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
@@ -148,6 +150,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Architecture decisions need timestamps/status updates when contracts evolve.
 - Current risks should be retired only after code inspection and validation.
 - Smoke check evidence exists under `.codex/runtime-smoke` locally, but the directory is intentionally ignored; durable release notes should summarize results without committing screenshots unless explicitly requested.
+- Live smoke automation now covers public deployment wiring, but authenticated product flows, scanner camera, admin access, and Telegram delivery still require targeted smoke evidence when those areas change.
 - Any local storage usage must be classified as cache, draft, preference, or bug.
 - Stored remote API base URLs are cache/hints only and must not outrank the canonical backend on public deployments.
 - Reminder database fields still have legacy `medicationReminders` naming in compatibility paths; write behavior now delegates through canonical reminder methods, and field/schema migration should happen deliberately after production safety is proven.
@@ -166,6 +169,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 7. Check email deliverability DNS/reputation so verification messages stop landing in spam.
 8. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
 9. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
+10. Run `npm run audit:live` after every Render/Vercel redeploy that changes app URLs, CORS, SEO discovery, PWA assets, public health, or bundle startup behavior.
 
 ## Release Checklist
 
@@ -176,6 +180,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - `npm run audit:cycles`
 - `npm run audit:architecture`
 - `npm run audit:seo`
+- `npm run audit:live` after deploy or deploy-sensitive configuration changes.
 - Mobile smoke checklist completed.
 - Scanner smoke checklist completed.
 - Auth restore verified after refresh and relogin.

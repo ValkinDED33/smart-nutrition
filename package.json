@@ -17,6 +17,7 @@
     "audit:security": "npm audit --omit=dev --audit-level=high",
     "audit:bundle": "node server/scripts/audit-vite-bundle.mjs",
     "audit:seo": "node server/scripts/audit-seo-discovery.mjs",
+    "audit:live": "node server/scripts/audit-live-production.mjs",
     "audit:contracts": "node server/scripts/audit-smart-nutrition-contracts.mjs",
     "audit:cycles": "madge --circular --extensions js --extensions mjs --extensions ts --extensions tsx --ts-config tsconfig.app.json src server",
     "audit:dead": "knip",

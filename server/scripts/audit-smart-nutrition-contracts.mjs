@@ -43,6 +43,8 @@ const serviceWorkerSource = readSource("public/sw.js");
 const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
+const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
+const packageJsonSource = readSource("package.json");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
@@ -434,6 +436,23 @@ addCheck(
     bundleAuditSource.includes('"analytics-vendor-"') &&
     bundleAuditSource.includes("must stay route-lazy"),
   "Bundle audit must inspect modulepreload initial assets, cap initial payload, and block scanner/photo/markdown/analytics/native/3D vendors from startup."
+);
+
+addCheck(
+  "live production audit verifies public deployed chain without secrets",
+  packageJsonSource.includes('"audit:live": "node server/scripts/audit-live-production.mjs"') &&
+    liveAuditSource.includes("https://smart-nutrition.club") &&
+    liveAuditSource.includes("https://smart-nutrition-sk5r.onrender.com") &&
+    liveAuditSource.includes("/api/health") &&
+    liveAuditSource.includes("/api/ready") &&
+    liveAuditSource.includes("robots.txt") &&
+    liveAuditSource.includes("sitemap.xml") &&
+    liveAuditSource.includes("manifest.webmanifest") &&
+    liveAuditSource.includes("routeHeavyVendorPrefixes") &&
+    liveAuditSource.includes("access-control-allow-origin") &&
+    liveAuditSource.includes("access-control-allow-credentials") &&
+    !/\/api\/auth\/login|@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(liveAuditSource),
+  "Deploy verification must have a safe public live smoke command that checks Vercel, Render, SEO, CORS, assets, and sanitized health without protected auth flows or secrets."
 );
 
 const failed = checks.filter((check) => !check.pass);

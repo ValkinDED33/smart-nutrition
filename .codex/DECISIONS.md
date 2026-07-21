@@ -132,3 +132,10 @@
 - Context: Scanner, photo compression, markdown rendering, analytics SDKs, native bridges, and 3D companion vendors can make mobile/PWA startup feel slow even when each chunk is below the generic size limit.
 - Decision: Bundle audit must inspect both initial scripts and modulepreload assets, cap total initial JavaScript payload, and block route-heavy vendors from being preloaded by `index.html`.
 - Consequences: Heavy capabilities remain available through route-local lazy chunks, but landing/auth/startup must not pay for scanner, photo, markdown, analytics, native, or 3D runtime before the user opens those surfaces.
+
+## ADR-020: Live Production Smoke Is Separate From Local Release Gate
+
+- Status: Accepted.
+- Context: Local release checks are deterministic and must not depend on live network state, but deploy-sensitive fixes still need evidence that Vercel, Render, public SEO files, CORS, frontend assets, and sanitized health endpoints work together after deployment.
+- Decision: `npm run audit:live` is the canonical public live smoke command. It checks the deployed app and backend through public unauthenticated endpoints only, uses no secrets, performs no protected user actions, and is intentionally kept outside `npm run quality` and `npm run release:gate`.
+- Consequences: Run `npm run audit:live` after deployment, after domain/CORS/SEO/backend URL changes, and before claiming live production readiness. Protected flows such as registration, login, admin, scanner camera, and meal writes still need separate authenticated smoke checks.
