@@ -321,6 +321,24 @@ addCheck(
 );
 
 addCheck(
+  "assistant symptom tool uses backend-confirmed women health profile state",
+  assistantAgentIntentsSource.includes('intent: "log_symptom"') &&
+    assistantAgentServiceSource.includes('intent.intent === "log_symptom"') &&
+    assistantAgentServiceSource.includes("tools.logSymptom(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const logSymptom = async") &&
+    assistantAgentToolsSource.includes("womenHealth") &&
+    assistantAgentToolsSource.includes("symptomHistory") &&
+    assistantAgentToolsSource.includes("stateService.saveProfileState(user, nextProfileState") &&
+    assistantAgentToolsSource.includes("const confirmedProfileState = await stateService.getProfileState(user)") &&
+    assistantAgentToolsSource.includes('return { ok: false, code: "SYMPTOM_NOT_CONFIRMED" }') &&
+    assistantAgentActionsSource.includes("symptomLogged") &&
+    assistantAgentActionsSource.includes("symptomSafety") &&
+    assistantAgentMemorySource.includes('toolResult.type === "symptom_logged"') &&
+    assistantAgentMemorySource.includes("logs symptoms through assistant"),
+  "AI-created symptom check-ins must update canonical womenHealth profile state, verify the saved symptom after backend persistence, and answer with safety language rather than diagnosis."
+);
+
+addCheck(
   "telegram assistant uses profile language for menus callbacks and agent context",
   telegramServiceSource.includes("getTelegramLanguageFromSnapshot(snapshot)") &&
     telegramServiceSource.includes("normalizeTelegramLanguage(user?.languagePreference)") &&

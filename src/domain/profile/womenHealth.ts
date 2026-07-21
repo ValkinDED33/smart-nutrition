@@ -8,6 +8,9 @@ import type {
 } from "./types";
 
 const MAX_NOTE_LENGTH = 220;
+const MAX_SYMPTOM_LABEL_LENGTH = 80;
+const MAX_SYMPTOM_NOTE_LENGTH = 180;
+const MAX_SYMPTOM_HISTORY = 60;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -79,6 +82,7 @@ export const createDefaultWomenHealthState = (): WomenHealthState => ({
   lastPeriodStartDate: null,
   doctorConfirmed: false,
   notes: "",
+  symptomHistory: [],
   partnerEyeColor: "unknown",
   motherZodiac: "unknown",
   fatherZodiac: "unknown",
@@ -109,6 +113,48 @@ const normalizePregnancyWeek = (value: unknown) => {
   const rounded = Math.round(numberValue);
   return rounded >= 1 && rounded <= 42 ? rounded : null;
 };
+
+const normalizeSymptomSeverity = (value: unknown) => {
+  const severity = Number(value);
+
+  if (!Number.isFinite(severity)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(Math.round(severity), 10));
+};
+
+const normalizeText = (value: unknown, maxLength: number) =>
+  typeof value === "string"
+    ? value.trim().replace(/\s+/g, " ").slice(0, maxLength)
+    : "";
+
+const normalizeSymptomHistory = (value: unknown): WomenHealthState["symptomHistory"] =>
+  Array.isArray(value)
+    ? value
+        .filter(isRecord)
+        .map((entry, index) => {
+          const recordedAt = toIsoDateOrNull(entry.recordedAt);
+          const label = normalizeText(entry.label, MAX_SYMPTOM_LABEL_LENGTH);
+
+          if (!recordedAt || !label) {
+            return null;
+          }
+
+          return {
+            id:
+              normalizeText(entry.id, 96) ||
+              `symptom-${recordedAt.replace(/[^a-zA-Z0-9_-]+/g, "-")}-${index}`,
+            recordedAt,
+            label,
+            severity: normalizeSymptomSeverity(entry.severity),
+            note: normalizeText(entry.note, MAX_SYMPTOM_NOTE_LENGTH),
+            source: entry.source === "assistant" ? "assistant" : "manual",
+          };
+        })
+        .filter((entry): entry is WomenHealthState["symptomHistory"][number] => Boolean(entry))
+        .slice(-MAX_SYMPTOM_HISTORY)
+    : [];
 
 const PREGNANCY_DAYS = 280;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -165,9 +211,7 @@ export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
   const pregnancyWeek =
     mode === "pregnant" ? normalizePregnancyWeek(record.pregnancyWeek) : null;
   const notes =
-    typeof record.notes === "string"
-      ? record.notes.trim().replace(/\s+/g, " ").slice(0, MAX_NOTE_LENGTH)
-      : "";
+    normalizeText(record.notes, MAX_NOTE_LENGTH);
 
   return {
     mode,
@@ -182,6 +226,7 @@ export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
         ? Boolean(record.doctorConfirmed)
         : false,
     notes,
+    symptomHistory: normalizeSymptomHistory(record.symptomHistory),
     partnerEyeColor: isEyeColor(record.partnerEyeColor)
       ? record.partnerEyeColor
       : fallback.partnerEyeColor,

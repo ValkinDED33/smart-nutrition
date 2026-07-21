@@ -224,6 +224,41 @@ describe("profileSlice women health", () => {
     });
     expect(state.womenHealth.updatedAt).toEqual(expect.any(String));
   });
+
+  it("normalizes women health symptom history for safe profile restore", () => {
+    const state = normalizeProfileState({
+      womenHealth: {
+        mode: "pregnant",
+        symptomHistory: [
+          {
+            id: "symptom-1",
+            recordedAt: "2026-07-21T08:00:00.000Z",
+            label: "  headache   and nausea  ",
+            severity: 12,
+            note: "  morning   after breakfast  ",
+            source: "assistant",
+          },
+          {
+            id: "bad",
+            recordedAt: "not-a-date",
+            label: "ignored",
+            severity: 5,
+          },
+        ],
+      },
+    });
+
+    expect(state.womenHealth.symptomHistory).toEqual([
+      {
+        id: "symptom-1",
+        recordedAt: "2026-07-21T08:00:00.000Z",
+        label: "headache and nausea",
+        severity: 10,
+        note: "morning after breakfast",
+        source: "assistant",
+      },
+    ]);
+  });
 });
 
 describe("profileSlice assistant onboarding", () => {

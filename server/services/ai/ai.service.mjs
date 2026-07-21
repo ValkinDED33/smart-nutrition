@@ -224,6 +224,19 @@ const normalizeWomenHealth = (value, gender) => {
   const allowedModes = ["none", "trying_to_conceive", "pregnant", "postpartum"];
   const mode =
     gender === "female" && allowedModes.includes(record.mode) ? record.mode : "none";
+  const symptomHistory = Array.isArray(record.symptomHistory)
+    ? record.symptomHistory
+        .filter(isRecord)
+        .map((entry) => ({
+          recordedAt: normalizeIsoDateOrNull(entry.recordedAt),
+          label: normalizeText(entry.label, { maxLength: 80, fallback: "" }),
+          severity: Math.max(1, Math.min(Math.round(toFiniteNumber(entry.severity) || 1), 10)),
+          note: normalizeText(entry.note, { maxLength: 180, fallback: "" }),
+          source: entry.source === "assistant" ? "assistant" : "manual",
+        }))
+        .filter((entry) => entry.recordedAt && entry.label)
+        .slice(-10)
+    : [];
 
   return {
     mode,
@@ -238,6 +251,7 @@ const normalizeWomenHealth = (value, gender) => {
         ? Boolean(record.doctorConfirmed)
         : false,
     notes: normalizeText(record.notes, { maxLength: 220, fallback: "" }),
+    symptomHistory,
   };
 };
 

@@ -79,6 +79,15 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "symptom_logged") {
+    return {
+      userId: user?.id,
+      habits: ["logs symptoms through assistant"],
+      motivationTriggers: ["care context tracking"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "product_search") {
     return {
       userId: user?.id,

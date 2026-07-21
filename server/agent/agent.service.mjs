@@ -29,6 +29,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["day_status", "coach_focus"];
   }
 
+  if (intent === "log_symptom") {
+    return ["coach_focus", "day_status"];
+  }
+
   if (
     intent === "create_medication_reminder" ||
     intent === "create_medication_course_reminder" ||
@@ -111,6 +115,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "log_weight") {
       return tools.logWeight(user, intent.entities);
+    }
+
+    if (intent.intent === "log_symptom") {
+      return tools.logSymptom(user, intent.entities);
     }
 
     if (intent.intent === "show_day_status") {

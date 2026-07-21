@@ -55,6 +55,10 @@ const copy = {
       "Я зрозумів вагу, але зараз не зміг підтвердити збереження в Smart Nutrition.",
       "Спробуйте ще раз трохи пізніше — я не покажу це як записане без підтвердження хмари.",
     ],
+    symptomFailed: [
+      "Я зрозумів симптом, але зараз не зміг підтвердити запис у Smart Nutrition.",
+      "Спробуйте ще раз трохи пізніше — без підтвердження хмари я не покажу це як збережене.",
+    ],
     medicationScheduleFailed: [
       "Я не зміг безпечно розібрати розклад ліків.",
       "Напишіть так: /addmed Вітамін D 1 капсула щодня о 09:00",
@@ -87,6 +91,9 @@ const copy = {
     weightLogged: (weight) => `Готово. Записав вагу ${weight} кг.`,
     weightTrend: (delta) => `Зміна від попереднього запису: ${delta} кг.`,
     weightTrendFirst: "Це перший запис ваги в історії прогресу.",
+    symptomLogged: (label, severity) => `Готово. Записав симптом: ${label}, ${severity}/10.`,
+    symptomSafety:
+      "Я збережу це як контекст для турботи. Якщо є сильний біль, кровотеча, запаморочення або стан швидко погіршується, зверніться до лікаря чи екстреної допомоги.",
     medicationCreated: "Готово 💊 Нагадування створено.",
     medicationButtons: "Я нагадаю і дам кнопки: прийнято, пізніше або пропустити.",
     pregnancySafety:
@@ -155,6 +162,10 @@ const copy = {
       "Rozumiem wagę, ale nie mogę teraz potwierdzić zapisu w Smart Nutrition.",
       "Spróbuj ponownie trochę później — nie pokażę tego jako zapisane bez potwierdzenia w chmurze.",
     ],
+    symptomFailed: [
+      "Rozumiem objaw, ale nie mogę teraz potwierdzić zapisu w Smart Nutrition.",
+      "Spróbuj ponownie trochę później — bez potwierdzenia w chmurze nie pokażę tego jako zapisane.",
+    ],
     medicationScheduleFailed: [
       "Nie udało mi się bezpiecznie odczytać harmonogramu leku.",
       "Napisz tak: /addmed Witamina D 1 kapsułka codziennie o 09:00",
@@ -187,6 +198,9 @@ const copy = {
     weightLogged: (weight) => `Gotowe. Zapisałem wagę ${weight} kg.`,
     weightTrend: (delta) => `Zmiana od poprzedniego wpisu: ${delta} kg.`,
     weightTrendFirst: "To pierwszy wpis wagi w historii postępów.",
+    symptomLogged: (label, severity) => `Gotowe. Zapisałem objaw: ${label}, ${severity}/10.`,
+    symptomSafety:
+      "Zapisuję to jako kontekst opieki. Jeśli pojawi się silny ból, krwawienie, zawroty głowy albo stan szybko się pogarsza, skontaktuj się z lekarzem lub pomocą pilną.",
     medicationCreated: "Gotowe 💊 Przypomnienie utworzone.",
     medicationButtons: "Przypomnę i dam przyciski: przyjęte, później albo pomiń.",
     pregnancySafety:
@@ -255,6 +269,10 @@ const copy = {
       "I understood the weight, but I could not confirm the save in Smart Nutrition right now.",
       "Try again a bit later — I will not show it as saved without cloud confirmation.",
     ],
+    symptomFailed: [
+      "I understood the symptom, but I could not confirm the save in Smart Nutrition right now.",
+      "Try again a bit later — I will not show it as saved without cloud confirmation.",
+    ],
     medicationScheduleFailed: [
       "I could not safely parse the medication schedule.",
       "Write it like this: /addmed Vitamin D 1 capsule daily at 09:00",
@@ -287,6 +305,9 @@ const copy = {
     weightLogged: (weight) => `Done. Logged weight ${weight} kg.`,
     weightTrend: (delta) => `Change from the previous entry: ${delta} kg.`,
     weightTrendFirst: "This is the first weight entry in your progress history.",
+    symptomLogged: (label, severity) => `Done. Logged symptom: ${label}, ${severity}/10.`,
+    symptomSafety:
+      "I will keep it as care context. If there is severe pain, bleeding, dizziness, or symptoms are getting worse quickly, contact a clinician or emergency care.",
     medicationCreated: "Done 💊 Reminder created.",
     medicationButtons: "I will remind you and show buttons: taken, later, or skip.",
     pregnancySafety:
@@ -383,6 +404,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.weightFailed.join("\n");
     }
 
+    if (intent.intent === "log_symptom") {
+      return text.symptomFailed.join("\n");
+    }
+
     if (intent.intent === "create_medication_reminder") {
       return text.medicationScheduleFailed.join("\n");
     }
@@ -468,6 +493,18 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       hasPreviousWeight
         ? text.weightTrend(`${delta > 0 ? "+" : ""}${formatNumber(delta, 1)}`)
         : text.weightTrendFirst,
+    ].join("\n");
+  }
+
+  if (toolResult.type === "symptom_logged") {
+    const symptom = toolResult.symptom ?? {};
+
+    return [
+      text.symptomLogged(
+        String(symptom.label ?? "").trim() || "symptom",
+        formatNumber(symptom.severity)
+      ),
+      text.symptomSafety,
     ].join("\n");
   }
 

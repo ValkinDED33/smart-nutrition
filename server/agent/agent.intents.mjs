@@ -22,6 +22,8 @@ const WEIGHT_WORD_PATTERN =
   /(вес|вага|важу|вешу|weight|kg|кг|кілограм|килограмм)/i;
 const WEIGHT_ACTION_PATTERN =
   /(^|\s)(запиши|занеси|додай|добавь|онови|обнови|update|log|add|record)(\s|$)/i;
+const SYMPTOM_WORD_PATTERN =
+  /(болит|біль|болить|тошнит|нудить|тошнота|нудота|головокруж|запамороч|спазм|кровотеч|bleeding|pain|ache|nausea|dizzy|dizziness|cramp|symptom)/i;
 const MEAL_ACTION_PATTERN =
   /(^|\s)(добавь|добави|додай|запиши|занеси|записати|додати|съел|съела|з'їв|зʼїв|зїла|їла|ел|ела|ate|add|log)(\s|$)/i;
 const PRODUCT_SEARCH_PATTERN =
@@ -80,6 +82,30 @@ const readWeightKg = (message) => {
   return Number.isFinite(weight) && weight >= 30 && weight <= 400
     ? Math.round(weight * 10) / 10
     : null;
+};
+
+const readSymptomSeverity = (message) => {
+  const normalized = normalizeMessage(message).toLowerCase();
+  const scoreMatch = normalized.match(/(?:на|severity|score)?\s*(10|[1-9])\s*(?:\/\s*10|из\s*10|з\s*10|out\s+of\s+10)?/i);
+  const severity = Number(scoreMatch?.[1] ?? 0);
+
+  return Number.isFinite(severity) && severity >= 1 && severity <= 10
+    ? Math.round(severity)
+    : 5;
+};
+
+const cleanSymptomLabel = (message) => {
+  const cleaned = normalizeMessage(message)
+    .replace(/^\/?(?:symptom|logsymptom|addsymptom)\b/i, " ")
+    .replace(MEAL_ACTION_PATTERN, " ")
+    .replace(WEIGHT_ACTION_PATTERN, " ")
+    .replace(/(?:на|severity|score)?\s*(10|[1-9])\s*(?:\/\s*10|из\s*10|з\s*10|out\s+of\s+10)?/giu, " ")
+    .replace(/(^|\s)(?:симптом|symptom|пожалуйста|будь ласка|please)(?=\s|$)/giu, " ")
+    .replace(/[,:;.!?]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned.length >= 2 ? cleaned.slice(0, 80) : "";
 };
 
 const readMealType = (message) => {
@@ -237,6 +263,23 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
       },
       reason: "weight_value_detected",
     };
+  }
+
+  if (/^\/?(?:symptom|logsymptom|addsymptom)\b/i.test(normalized) || SYMPTOM_WORD_PATTERN.test(normalized)) {
+    const label = cleanSymptomLabel(normalized);
+
+    if (label) {
+      return {
+        intent: "log_symptom",
+        confidence: 0.84,
+        entities: {
+          label,
+          severity: readSymptomSeverity(normalized),
+          text: normalized,
+        },
+        reason: "symptom_detected",
+      };
+    }
   }
 
   if (/^\/?(?:addmeal|food|meal)\b/i.test(normalized) || MEAL_ACTION_PATTERN.test(normalized)) {

@@ -177,12 +177,22 @@ export interface WomenHealthState {
   lastPeriodStartDate: string | null;
   doctorConfirmed: boolean;
   notes: string;
+  symptomHistory: WomenHealthSymptomEntry[];
   partnerEyeColor: EyeColor;
   motherZodiac: ZodiacSign;
   fatherZodiac: ZodiacSign;
   motherChineseZodiac: ChineseZodiacSign;
   fatherChineseZodiac: ChineseZodiacSign;
   updatedAt: string | null;
+}
+
+export interface WomenHealthSymptomEntry {
+  id: string;
+  recordedAt: string;
+  label: string;
+  severity: number;
+  note: string;
+  source: "assistant" | "manual";
 }
 
 export type PartnerSharePermission = "pregnancy_timeline";

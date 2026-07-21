@@ -31,6 +31,19 @@ const toWeightKg = (value) => {
     : null;
 };
 
+const createAssistantSymptomId = () => `assistant-symptom-${crypto.randomUUID()}`;
+
+const normalizeSymptomLabel = (value) =>
+  String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+
+const toSymptomSeverity = (value) => {
+  const severity = Number(value);
+  return Number.isFinite(severity) ? Math.max(1, Math.min(Math.round(severity), 10)) : 5;
+};
+
 const calculateEntryNutrients = (entry) =>
   calculateMealTotalNutrients([entry]);
 
@@ -322,6 +335,59 @@ export const createAgentTools = ({
     };
   };
 
+  const logSymptom = async (user, { label, severity = 5, text = "" }) => {
+    if (!stateService?.getProfileState || !stateService?.saveProfileState) {
+      return { ok: false, code: "SYMPTOM_TOOL_UNAVAILABLE" };
+    }
+
+    const normalizedLabel = normalizeSymptomLabel(label);
+
+    if (!normalizedLabel) {
+      return { ok: false, code: "INVALID_SYMPTOM" };
+    }
+
+    const currentProfileState = await stateService.getProfileState(user);
+    const currentWomenHealth = currentProfileState?.womenHealth ?? {};
+    const currentHistory = Array.isArray(currentWomenHealth.symptomHistory)
+      ? currentWomenHealth.symptomHistory
+      : [];
+    const entry = {
+      id: createAssistantSymptomId(),
+      recordedAt: now().toISOString(),
+      label: normalizedLabel,
+      severity: toSymptomSeverity(severity),
+      note: String(text ?? "").trim().replace(/\s+/g, " ").slice(0, 180),
+      source: "assistant",
+    };
+    const nextProfileState = {
+      ...currentProfileState,
+      womenHealth: {
+        ...currentWomenHealth,
+        symptomHistory: [...currentHistory, entry].slice(-60),
+        updatedAt: entry.recordedAt,
+      },
+    };
+
+    await stateService.saveProfileState(user, nextProfileState, {
+      source: "assistant-agent",
+    });
+
+    const confirmedProfileState = await stateService.getProfileState(user);
+    const confirmedEntry = Array.isArray(confirmedProfileState?.womenHealth?.symptomHistory)
+      ? confirmedProfileState.womenHealth.symptomHistory.find((item) => item?.id === entry.id)
+      : null;
+
+    if (!confirmedEntry) {
+      return { ok: false, code: "SYMPTOM_NOT_CONFIRMED" };
+    }
+
+    return {
+      ok: true,
+      type: "symptom_logged",
+      symptom: confirmedEntry,
+    };
+  };
+
   const createMedicationReminder = async (user, { text }) => {
     const createMedicationReminderFromText = getTypedReminderCreator(
       reminders,
@@ -457,6 +523,7 @@ export const createAgentTools = ({
     addWater,
     addMeal,
     logWeight,
+    logSymptom,
     searchProducts,
     createMedicationReminder,
     createTaskReminder,

@@ -267,6 +267,96 @@ describe("createAssistantAgentService", () => {
     expect(result.text).not.toContain("Записав вагу");
   });
 
+  it("logs symptoms through backend-confirmed women health profile state", async () => {
+    const currentProfileState = {
+      womenHealth: {
+        mode: "pregnant",
+        symptomHistory: [],
+      },
+    };
+    const stateService = {
+      getProfileState: vi
+        .fn()
+        .mockResolvedValueOnce(currentProfileState)
+        .mockImplementation(async () => {
+          const saved = stateService.saveProfileState.mock.calls.at(-1)?.[1];
+          return saved;
+        }),
+      saveProfileState: vi.fn(async () => undefined),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "запиши симптом болит голова 6/10",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "log_symptom", entities: { severity: 6 } },
+      actions: [{ id: "log_symptom", ok: true, resultType: "symptom_logged" }],
+      memoryUpdated: true,
+    });
+    expect(result.text).toContain("6/10");
+    expect(result.text).toContain("контекст");
+    expect(stateService.saveProfileState).toHaveBeenCalledWith(
+      user,
+      expect.objectContaining({
+        womenHealth: expect.objectContaining({
+          symptomHistory: [
+            expect.objectContaining({
+              label: expect.stringContaining("болит голова"),
+              severity: 6,
+              recordedAt: fixedNow.toISOString(),
+              source: "assistant",
+            }),
+          ],
+        }),
+      }),
+      { source: "assistant-agent" }
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["logs symptoms through assistant"]),
+      })
+    );
+  });
+
+  it("does not claim symptom success without confirmed backend profile restore", async () => {
+    const stateService = {
+      getProfileState: vi
+        .fn()
+        .mockResolvedValueOnce({ womenHealth: { symptomHistory: [] } })
+        .mockResolvedValueOnce({ womenHealth: { symptomHistory: [] } }),
+      saveProfileState: vi.fn(async () => undefined),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "тошнота 5/10",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "log_symptom" },
+      actions: [{ id: "log_symptom", ok: false, code: "SYMPTOM_NOT_CONFIRMED" }],
+    });
+    expect(result.text).toContain("не зміг підтвердити запис");
+    expect(result.text).not.toContain("Записав симптом");
+  });
+
   it("creates medication reminders through the medication tool", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({

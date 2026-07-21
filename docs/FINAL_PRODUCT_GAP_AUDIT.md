@@ -109,16 +109,16 @@ Current state:
 - Agent loop exists.
 - Current safe agent intents include water logging, product search, meal logging
   through canonical product intake, weight logging through confirmed profile
-  state, medication/task/typed reminders, day status, water status, and
-  nutrition status.
+  state, symptom logging through confirmed women-health profile state,
+  medication/task/typed reminders, day status, water status, and nutrition
+  status.
 
 Gap:
 
 - Agent now completes safe catalog-backed food search and meal logging, plus
-  backend-confirmed weight check-ins, but it still needs more practical tools
-  around planning and reporting.
-- Missing practical tools: `create_recipe`, `save_favorite`, `log_symptom`,
-  `generate_report`,
+  backend-confirmed weight and symptom check-ins, but it still needs more
+  practical tools around planning and reporting.
+- Missing practical tools: `create_recipe`, `save_favorite`, `generate_report`,
   `open_scanner`, `request_photo_meal_analysis`, and `create_follow_up`.
 
 ### Telegram and Medication Reminders
@@ -241,8 +241,9 @@ FILE:
 
 PROBLEM:
 The agent can log water, search products, add meals through canonical product
-intake, log weight through confirmed profile state, and create reminders, but it
-cannot yet complete the surrounding planning/reporting loop.
+intake, log weight through confirmed profile state, log symptoms through
+confirmed women-health profile state, and create reminders, but it cannot yet
+complete the surrounding planning/reporting loop.
 
 WHY IT IS A PROBLEM:
 The assistant is positioned as a worker. A worker must act, not only explain.
@@ -253,8 +254,8 @@ Users will try natural commands like "сделай отчёт за неделю"
 the product.
 
 RECOMMENDED FIX:
-Add safe tools for `create_recipe`, `save_favorite`, `log_symptom`,
-`generate_daily_report`, and follow-up actions.
+Add safe tools for `create_recipe`, `save_favorite`, `generate_daily_report`,
+and follow-up actions.
 
 EXAMPLE CODE:
 
@@ -553,9 +554,8 @@ Includes:
 
 - Done: `search_product`, `add_meal`, `add_water`,
   `create_medication_reminder`, `create_task_reminder`, typed reminders, and
-  `log_weight`.
+  `log_weight`, and `log_symptom`.
 - Remaining:
-- `log_symptom`
 - `generate_day_summary`
 - `create_follow_up`
 

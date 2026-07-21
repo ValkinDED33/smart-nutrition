@@ -505,6 +505,7 @@ export const createInitialProfileState = (userInput) => {
       lastPeriodStartDate: null,
       doctorConfirmed: false,
       notes: "",
+      symptomHistory: [],
       updatedAt: null,
     },
     partnerSharing: {
