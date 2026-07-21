@@ -179,6 +179,123 @@ const sortByIsoDateDesc = (items, dateKey) =>
       (Number.isFinite(firstTime) ? firstTime : 0);
   });
 
+const startOfUtcDay = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+
+const addUtcDays = (date, days) => {
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+
+  return nextDate;
+};
+
+const createReportWindow = (period, currentNow) => {
+  const normalizedPeriod = period === "month" ? "month" : "week";
+  const days = normalizedPeriod === "month" ? 30 : 7;
+  const end = addUtcDays(startOfUtcDay(currentNow), 1);
+  const start = addUtcDays(end, -days);
+
+  return {
+    period: normalizedPeriod,
+    days,
+    start,
+    end,
+    startDate: createDateKey(start),
+    endDate: createDateKey(addUtcDays(end, -1)),
+  };
+};
+
+const isInReportWindow = (value, window) => {
+  const time = Date.parse(value ?? "");
+
+  return Number.isFinite(time) && time >= window.start.getTime() && time < window.end.getTime();
+};
+
+const getReportMealEntries = (mealState = {}, window) => {
+  const items = Array.isArray(mealState?.items) ? mealState.items : [];
+
+  return items.filter((item) => isInReportWindow(item?.eatenAt, window));
+};
+
+const getReportWaterEntries = (waterState = {}, window) => {
+  const history = Array.isArray(waterState?.history) ? waterState.history : [];
+
+  return history.filter((entry) => {
+    const date = String(entry?.date ?? "").slice(0, 10);
+    return isInReportWindow(`${date}T00:00:00.000Z`, window);
+  });
+};
+
+const getReportWeightEntries = (profile = {}, window) => {
+  const history = Array.isArray(profile.weightHistory) ? profile.weightHistory : [];
+
+  return sortByIsoDateDesc(
+    history.filter((entry) => isInReportWindow(entry?.date, window)),
+    "date"
+  ).reverse();
+};
+
+const getReportSymptomEntries = (profile = {}, window, limit = 5) => {
+  const symptomHistory = Array.isArray(profile?.womenHealth?.symptomHistory)
+    ? profile.womenHealth.symptomHistory
+    : [];
+
+  return sortByIsoDateDesc(
+    symptomHistory.filter((entry) => isInReportWindow(entry?.recordedAt, window)),
+    "recordedAt"
+  ).slice(0, limit);
+};
+
+const calculateReportWater = (waterState, window) => {
+  const history = getReportWaterEntries(waterState, window);
+  const fallbackTargetMl = normalizeWaterGoal(waterState);
+  const totalConsumedMl = history.reduce(
+    (sum, entry) => sum + Math.max(Math.round(Number(entry?.consumedMl ?? 0) || 0), 0),
+    0
+  );
+  const totalTargetMl = history.reduce(
+    (sum, entry) => sum + Math.max(Math.round(Number(entry?.targetMl ?? fallbackTargetMl) || 0), 0),
+    0
+  );
+
+  return {
+    daysLogged: history.filter((entry) => Number(entry?.consumedMl ?? 0) > 0).length,
+    totalConsumedMl,
+    averageConsumedMl: Math.round(totalConsumedMl / window.days),
+    averageTargetMl: Math.round((totalTargetMl || fallbackTargetMl * window.days) / window.days),
+    goalHitDays: history.filter(
+      (entry) => Number(entry?.targetMl ?? fallbackTargetMl) > 0 &&
+        Number(entry?.consumedMl ?? 0) >= Number(entry?.targetMl ?? fallbackTargetMl)
+    ).length,
+  };
+};
+
+const buildReportFocus = ({ mealCount, water, weight, symptoms }) => {
+  const focus = [];
+
+  if (mealCount === 0) {
+    focus.push("add real meal entries so progress is measurable");
+  }
+
+  if (Number(water?.averageConsumedMl ?? 0) < Number(water?.averageTargetMl ?? 0) * 0.75) {
+    focus.push("raise hydration gradually instead of catching up at night");
+  }
+
+  if (weight?.deltaKg !== null && Math.abs(Number(weight.deltaKg)) >= 2) {
+    focus.push("review weight trend gently and avoid aggressive corrections");
+  }
+
+  if (Array.isArray(symptoms) && symptoms.length > 0) {
+    focus.push("keep symptoms as care context and contact a clinician for severe or worsening signs");
+  }
+
+  if (focus.length === 0) {
+    focus.push("keep the current rhythm and adjust one small habit at a time");
+  }
+
+  return focus.slice(0, 3);
+};
+
 const getLatestWeightEntry = (profile = {}) =>
   Array.isArray(profile.weightHistory) && profile.weightHistory.length > 0
     ? sortByIsoDateDesc(profile.weightHistory, "date")[0]
@@ -728,6 +845,61 @@ export const createAgentTools = ({
     };
   };
 
+  const generateReport = async (user, { period = "week" } = {}) => {
+    const currentNow = now();
+    const summary = await createSnapshotSummary({ user, stateService, now: currentNow });
+
+    if (!summary) {
+      return { ok: false, code: "STATE_TOOL_UNAVAILABLE" };
+    }
+
+    const window = createReportWindow(period, currentNow);
+    const mealEntries = getReportMealEntries(summary.snapshot?.meal, window);
+    const nutrients = calculateMealTotalNutrients(mealEntries);
+    const water = calculateReportWater(summary.snapshot?.water, window);
+    const weightEntries = getReportWeightEntries(summary.profile, window);
+    const firstWeight = Number(weightEntries[0]?.weight);
+    const lastWeight = Number(weightEntries.at(-1)?.weight);
+    const hasWeightTrend =
+      Number.isFinite(firstWeight) && firstWeight > 0 &&
+      Number.isFinite(lastWeight) && lastWeight > 0;
+    const symptoms = getReportSymptomEntries(summary.profile, window);
+    const activeReminders = getActiveReminders(reminders, user);
+    const averageCalories = Math.round(Number(nutrients.calories ?? 0) / window.days);
+    const dailyCalories = Number(summary.profile?.dailyCalories ?? 0) || 0;
+    const weight = {
+      entries: weightEntries.length,
+      firstKg: hasWeightTrend ? firstWeight : null,
+      lastKg: hasWeightTrend ? lastWeight : null,
+      deltaKg: hasWeightTrend ? Math.round((lastWeight - firstWeight) * 10) / 10 : null,
+    };
+
+    return {
+      ok: true,
+      type: "progress_report",
+      period: window.period,
+      startDate: window.startDate,
+      endDate: window.endDate,
+      days: window.days,
+      mealCount: mealEntries.length,
+      nutrients,
+      averageCalories,
+      dailyCalories,
+      caloriePercent: calculatePercent(averageCalories, dailyCalories),
+      water,
+      weight,
+      recentSymptoms: symptoms,
+      activeReminders,
+      womenHealthMode: summary.profile?.womenHealth?.mode ?? "none",
+      coachingFocus: buildReportFocus({
+        mealCount: mealEntries.length,
+        water,
+        weight,
+        symptoms,
+      }),
+    };
+  };
+
   return {
     addWater,
     addMeal,
@@ -741,6 +913,7 @@ export const createAgentTools = ({
     createTypedReminder,
     getDayStatus,
     generateDaySummary,
+    generateReport,
     getWaterStatus,
     getNutritionStatus,
   };

@@ -144,6 +144,26 @@ const copy = {
     daySummaryNextLowFood: "Наступний крок: додати прийом їжі, щоб я бачив реальний день.",
     daySummaryNextLowWater: "Наступний крок: випити воду і закрити гідратацію м'яко.",
     daySummaryNextSteady: "Наступний крок: тримати темп без тиску і не добивати день силою.",
+    reportFailed: [
+      "Я зрозумів запит на звіт, але зараз не зміг прочитати підтверджені дані Smart Nutrition.",
+      "Не буду вигадувати прогрес без хмарного стану. Спробуйте ще раз трохи пізніше.",
+    ],
+    reportTitle: (period) =>
+      `Звіт Smart Nutrition за ${period === "month" ? "30 днів" : "7 днів"}:`,
+    reportRange: (startDate, endDate) => `Період: ${startDate} — ${endDate}.`,
+    reportFood: (mealCount, averageCalories, target, percent) =>
+      `🥗 Їжа: ${mealCount} запис(ів), у середньому ${averageCalories} / ${target} ккал (${percent}) на день.`,
+    reportMacros: (protein, fat, carbs, fiber) =>
+      `Макро за період: білок ${protein} г, жири ${fat} г, вуглеводи ${carbs} г, клітковина ${fiber} г.`,
+    reportWater: (averageConsumed, averageTarget, goalHitDays) =>
+      `💧 Вода: у середньому ${averageConsumed} / ${averageTarget} мл на день, ціль закрита ${goalHitDays} дн.`,
+    reportWeightTrend: (first, last, delta) =>
+      `⚖️ Вага: ${first} → ${last} кг (${delta}).`,
+    reportWeightMissing: "⚖️ Вага: за період недостатньо записів для тренду.",
+    reportSymptoms: (items) => `🩺 Самопочуття: ${items}.`,
+    reportNoSymptoms: "🩺 Нових симптомів у журналі за період немає.",
+    reportReminders: (count) => `⏰ Активні нагадування: ${count}.`,
+    reportNext: (focus) => `Фокус далі: ${focus}.`,
     foodEntries: (count) => `🥗 Їжа: ${count} запис(ів)`,
     waterLine: (consumed, target) => `💧 Вода: ${consumed} / ${target} мл`,
     nextFirstStep: "Найпростіший наступний крок — додати перший прийом їжі або воду.",
@@ -276,6 +296,26 @@ const copy = {
     daySummaryNextLowFood: "Następny krok: dodaj posiłek, żebym widział realny dzień.",
     daySummaryNextLowWater: "Następny krok: wypij wodę i domknij nawodnienie spokojnie.",
     daySummaryNextSteady: "Następny krok: trzymaj rytm bez presji i bez nadrabiania na siłę.",
+    reportFailed: [
+      "Rozumiem prośbę o raport, ale nie mogę teraz odczytać potwierdzonych danych Smart Nutrition.",
+      "Nie będę wymyślać postępu bez stanu w chmurze. Spróbuj ponownie trochę później.",
+    ],
+    reportTitle: (period) =>
+      `Raport Smart Nutrition za ${period === "month" ? "30 dni" : "7 dni"}:`,
+    reportRange: (startDate, endDate) => `Okres: ${startDate} — ${endDate}.`,
+    reportFood: (mealCount, averageCalories, target, percent) =>
+      `🥗 Jedzenie: ${mealCount} wpis(y), średnio ${averageCalories} / ${target} kcal (${percent}) dziennie.`,
+    reportMacros: (protein, fat, carbs, fiber) =>
+      `Makro za okres: białko ${protein} g, tłuszcz ${fat} g, węglowodany ${carbs} g, błonnik ${fiber} g.`,
+    reportWater: (averageConsumed, averageTarget, goalHitDays) =>
+      `💧 Woda: średnio ${averageConsumed} / ${averageTarget} ml dziennie, cel zamknięty ${goalHitDays} dni.`,
+    reportWeightTrend: (first, last, delta) =>
+      `⚖️ Waga: ${first} → ${last} kg (${delta}).`,
+    reportWeightMissing: "⚖️ Waga: za mało wpisów w tym okresie, żeby pokazać trend.",
+    reportSymptoms: (items) => `🩺 Samopoczucie: ${items}.`,
+    reportNoSymptoms: "🩺 Brak nowych objawów w dzienniku za ten okres.",
+    reportReminders: (count) => `⏰ Aktywne przypomnienia: ${count}.`,
+    reportNext: (focus) => `Dalszy fokus: ${focus}.`,
     foodEntries: (count) => `🥗 Jedzenie: ${count} wpis(y)`,
     waterLine: (consumed, target) => `💧 Woda: ${consumed} / ${target} ml`,
     nextFirstStep: "Najprostszy następny krok — dodaj pierwszy posiłek albo wodę.",
@@ -408,6 +448,26 @@ const copy = {
     daySummaryNextLowFood: "Next step: add a meal so I can see the real day.",
     daySummaryNextLowWater: "Next step: drink water and close hydration gently.",
     daySummaryNextSteady: "Next step: keep the rhythm without pressure or forced catch-up.",
+    reportFailed: [
+      "I understood the report request, but I could not read confirmed Smart Nutrition data right now.",
+      "I will not invent progress without cloud state. Try again a bit later.",
+    ],
+    reportTitle: (period) =>
+      `Smart Nutrition ${period === "month" ? "30-day" : "7-day"} report:`,
+    reportRange: (startDate, endDate) => `Period: ${startDate} — ${endDate}.`,
+    reportFood: (mealCount, averageCalories, target, percent) =>
+      `🥗 Food: ${mealCount} entr${mealCount === 1 ? "y" : "ies"}, averaging ${averageCalories} / ${target} kcal (${percent}) per day.`,
+    reportMacros: (protein, fat, carbs, fiber) =>
+      `Period macros: protein ${protein} g, fat ${fat} g, carbs ${carbs} g, fiber ${fiber} g.`,
+    reportWater: (averageConsumed, averageTarget, goalHitDays) =>
+      `💧 Water: average ${averageConsumed} / ${averageTarget} ml per day, goal hit ${goalHitDays} days.`,
+    reportWeightTrend: (first, last, delta) =>
+      `⚖️ Weight: ${first} → ${last} kg (${delta}).`,
+    reportWeightMissing: "⚖️ Weight: not enough entries in this period to show a trend.",
+    reportSymptoms: (items) => `🩺 Wellbeing: ${items}.`,
+    reportNoSymptoms: "🩺 No new symptoms logged in this period.",
+    reportReminders: (count) => `⏰ Active reminders: ${count}.`,
+    reportNext: (focus) => `Next focus: ${focus}.`,
     foodEntries: (count) => `🥗 Food: ${count} entr${count === 1 ? "y" : "ies"}`,
     waterLine: (consumed, target) => `💧 Water: ${consumed} / ${target} ml`,
     nextFirstStep: "The simplest next step is to add the first meal or water.",
@@ -525,6 +585,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
 
     if (intent.intent === "create_follow_up") {
       return text.followUpFailed.join("\n");
+    }
+
+    if (intent.intent === "generate_report") {
+      return text.reportFailed.join("\n");
     }
 
     if (
@@ -766,6 +830,54 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
         : null,
       symptoms ? text.daySummarySymptoms(symptoms) : text.daySummaryNoSymptoms,
       getDaySummaryNextStep(text, toolResult),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (toolResult.type === "progress_report") {
+    const nutrients = toolResult.nutrients ?? {};
+    const water = toolResult.water ?? {};
+    const weight = toolResult.weight ?? {};
+    const symptoms = formatSymptomSummary(toolResult.recentSymptoms);
+    const reminders = Array.isArray(toolResult.activeReminders)
+      ? toolResult.activeReminders
+      : [];
+    const weightDelta = Number(weight.deltaKg);
+    const focus = Array.isArray(toolResult.coachingFocus)
+      ? toolResult.coachingFocus[0]
+      : null;
+
+    return [
+      text.reportTitle(toolResult.period),
+      text.reportRange(toolResult.startDate, toolResult.endDate),
+      text.reportFood(
+        toolResult.mealCount,
+        formatNumber(toolResult.averageCalories),
+        formatNumber(toolResult.dailyCalories),
+        `${formatNumber(toolResult.caloriePercent)}%`
+      ),
+      text.reportMacros(
+        formatNumber(nutrients.protein, 1),
+        formatNumber(nutrients.fat, 1),
+        formatNumber(nutrients.carbs, 1),
+        formatNumber(nutrients.fiber, 1)
+      ),
+      text.reportWater(
+        formatNumber(water.averageConsumedMl),
+        formatNumber(water.averageTargetMl),
+        formatNumber(water.goalHitDays)
+      ),
+      Number.isFinite(weightDelta) && weight.firstKg !== null && weight.lastKg !== null
+        ? text.reportWeightTrend(
+            formatNumber(weight.firstKg, 1),
+            formatNumber(weight.lastKg, 1),
+            `${weightDelta > 0 ? "+" : ""}${formatNumber(weightDelta, 1)}`
+          )
+        : text.reportWeightMissing,
+      symptoms ? text.reportSymptoms(symptoms) : text.reportNoSymptoms,
+      text.reportReminders(reminders.length),
+      focus ? text.reportNext(focus) : null,
     ]
       .filter(Boolean)
       .join("\n");

@@ -117,10 +117,11 @@ Gap:
 
 - Agent now completes safe catalog-backed food search and meal logging, plus
   backend-confirmed favorite product saves, weight, symptom check-ins, daily
-  summaries, and follow-ups, but it still needs more practical tools around
-  planning, reporting, scanner opening, and photo meal handoff.
-- Missing practical tools: `create_recipe`, `generate_report`, `open_scanner`,
-  and `request_photo_meal_analysis`.
+  summaries, weekly/monthly progress reports, and follow-ups, but it still
+  needs more practical tools around planning, scanner opening, and photo meal
+  handoff.
+- Missing practical tools: `create_recipe`, `open_scanner`, and
+  `request_photo_meal_analysis`.
 
 ### Telegram and Medication Reminders
 
@@ -243,21 +244,22 @@ FILE:
 PROBLEM:
 The agent can log water, search products, add meals through canonical product
 intake, log weight through confirmed profile state, log symptoms through
-confirmed women-health profile state, and create reminders, but it cannot yet
-complete the surrounding planning/reporting loop.
+confirmed women-health profile state, generate backend-backed daily and
+weekly/monthly reports, and create reminders, but it cannot yet complete the
+surrounding planning loop.
 
 WHY IT IS A PROBLEM:
 The assistant is positioned as a worker. A worker must act, not only explain.
 
 RISK:
-Users will try natural commands like "сделай отчёт за неделю" or "сохрани это
-как любимое" and the assistant will fall back to text advice instead of updating
-the product.
+Users will try natural commands like "создай рецепт из того, что есть" or
+"открой сканер" and the assistant will fall back to text advice instead of
+performing the product action.
 
 RECOMMENDED FIX:
-Add safe tools for `create_recipe` and weekly/monthly `generate_report`;
-keep `save_favorite` and follow-up actions on their backend-confirmed
-contracts.
+Add safe tools for `create_recipe`, `open_scanner`, and
+`request_photo_meal_analysis`; keep `save_favorite`, `generate_report`, and
+follow-up actions on their backend-confirmed/read-only contracts.
 
 EXAMPLE CODE:
 
@@ -557,7 +559,7 @@ Includes:
 - Done: `search_product`, `add_meal`, `add_water`,
   `create_medication_reminder`, `create_task_reminder`, typed reminders,
   `log_weight`, `log_symptom`, `generate_day_summary`, `create_follow_up`, and
-  `save_favorite`.
+  `save_favorite`, and `generate_report`.
 - Remaining: continue expanding higher-value worker tools only through
   backend-confirmed contracts, without adding a second reminder, product, meal,
   or AI system.

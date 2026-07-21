@@ -118,13 +118,16 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
   if (
     toolResult.type === "day_status" ||
     toolResult.type === "nutrition_status" ||
-    toolResult.type === "day_summary"
+    toolResult.type === "day_summary" ||
+    toolResult.type === "progress_report"
   ) {
     return {
       userId: user?.id,
       habits:
         toolResult.type === "day_summary"
           ? ["asks assistant for daily summaries"]
+          : toolResult.type === "progress_report"
+            ? ["asks assistant for progress reports"]
           : ["asks assistant for nutrition status"],
       lastMood: "curious",
     };

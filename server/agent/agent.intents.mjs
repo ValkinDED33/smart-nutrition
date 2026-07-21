@@ -22,6 +22,10 @@ const TODAY_WORD_PATTERN =
   /(today|день|сегодня|сьогодні|статус|план|summary|итог|підсумок)/i;
 const DAY_SUMMARY_PATTERN =
   /(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд).*(?:дня|день|сегодня|сьогодні|today)|(?:дня|день|сегодня|сьогодні|today).*(?:итог|підсумок|отчет|отчёт|звіт|summary|report|recap|обзор|огляд)/i;
+const REPORT_WORD_PATTERN =
+  /(?:отчет|отчёт|звіт|report|recap|обзор|огляд|аналитик|аналітик|analytics|progress)/i;
+const REPORT_PERIOD_PATTERN =
+  /(?:недел|тижд|week|weekly|месяц|місяц|month|monthly|30\s*(?:дн|днів|days?))/i;
 const NUTRITION_WORD_PATTERN =
   /(калор|ккал|белк|білк|protein|нутри|нутрі|жир|carb|углев|вуглев|клетчат|клітков)/i;
 const WEIGHT_WORD_PATTERN =
@@ -164,6 +168,20 @@ const cleanFavoriteProductQuery = (message) => {
 const hasMedicationCourseIntent = (message) =>
   /(?:^|\s)(?:курс|course)(?:\s|$)/iu.test(message) ||
   /(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/iu.test(message);
+
+const readReportPeriod = (message) => {
+  const normalized = normalizeMessage(message).toLowerCase();
+
+  if (/(месяц|місяц|month|monthly|30\s*(?:дн|днів|days?))/iu.test(normalized)) {
+    return "month";
+  }
+
+  if (/(недел|тижд|week|weekly)/iu.test(normalized)) {
+    return "week";
+  }
+
+  return null;
+};
 
 export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   const normalized = normalizeMessage(message);
@@ -380,6 +398,19 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
       confidence: 0.78,
       entities: {},
       reason: "water_status_request",
+    };
+  }
+
+  if (REPORT_WORD_PATTERN.test(normalized) && REPORT_PERIOD_PATTERN.test(normalized)) {
+    const period = readReportPeriod(normalized);
+
+    return {
+      intent: "generate_report",
+      confidence: period ? 0.86 : 0.72,
+      entities: {
+        period: period ?? "week",
+      },
+      reason: "progress_report_request",
     };
   }
 

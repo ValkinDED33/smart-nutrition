@@ -135,4 +135,20 @@ describe("detectAgentIntent", () => {
       intent: "generate_day_summary",
     });
   });
+
+  it("detects weekly and monthly progress report requests", () => {
+    expect(detectAgentIntent("сделай отчет за неделю")).toMatchObject({
+      intent: "generate_report",
+      confidence: 0.86,
+      entities: {
+        period: "week",
+      },
+    });
+    expect(detectAgentIntent("monthly progress report")).toMatchObject({
+      intent: "generate_report",
+      entities: {
+        period: "month",
+      },
+    });
+  });
 });

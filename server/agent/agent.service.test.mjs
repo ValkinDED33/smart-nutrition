@@ -454,6 +454,138 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("generates a progress report from backend snapshot and canonical reminders", async () => {
+    const stateService = {
+      getSnapshot: vi.fn(async () => ({
+        meal: {
+          items: [
+            {
+              id: "meal-1",
+              quantity: 200,
+              mealType: "lunch",
+              eatenAt: "2026-06-21T12:30:00.000Z",
+              product: {
+                name: "Greek yogurt",
+                unit: "g",
+                nutrients: {
+                  calories: 59,
+                  protein: 10,
+                  fat: 0.4,
+                  carbs: 3.6,
+                  fiber: 0,
+                },
+              },
+            },
+            {
+              id: "meal-2",
+              quantity: 100,
+              mealType: "breakfast",
+              eatenAt: "2026-06-19T08:00:00.000Z",
+              product: {
+                name: "Oats",
+                unit: "g",
+                nutrients: {
+                  calories: 389,
+                  protein: 16.9,
+                  fat: 6.9,
+                  carbs: 66.3,
+                  fiber: 10.6,
+                },
+              },
+            },
+            {
+              id: "old-meal",
+              quantity: 100,
+              mealType: "snack",
+              eatenAt: "2026-05-01T12:00:00.000Z",
+              product: {
+                name: "Old",
+                nutrients: {
+                  calories: 999,
+                },
+              },
+            },
+          ],
+        },
+        water: {
+          dailyWaterGoal: 2000,
+          consumedMl: 900,
+          glassSizeMl: 250,
+          lastLoggedOn: "2026-06-21",
+          history: [
+            { date: "2026-06-21", consumedMl: 2000, targetMl: 2000 },
+            { date: "2026-06-20", consumedMl: 1500, targetMl: 2000 },
+            { date: "2026-05-01", consumedMl: 3000, targetMl: 2000 },
+          ],
+        },
+        profile: {
+          dailyCalories: 2100,
+          weightHistory: [
+            { date: "2026-06-18T09:00:00.000Z", weight: 97.5 },
+            { date: "2026-06-21T08:00:00.000Z", weight: 96.9 },
+            { date: "2026-05-01T08:00:00.000Z", weight: 101 },
+          ],
+          womenHealth: {
+            mode: "pregnant",
+            symptomHistory: [
+              {
+                id: "symptom-1",
+                recordedAt: "2026-06-20T07:00:00.000Z",
+                label: "нудота",
+                severity: 4,
+                source: "assistant",
+              },
+            ],
+          },
+        },
+      })),
+    };
+    const reminderService = {
+      getUserReminders: vi.fn(() => [
+        { id: "reminder-1", active: true, title: "Вода", type: "water" },
+      ]),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      reminderService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "сделай отчет за неделю",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "generate_report", entities: { period: "week" } },
+      actions: [{ id: "generate_report", ok: true, resultType: "progress_report" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["day_status", "protein_help", "coach_focus"],
+    });
+    expect(result.text).toContain("Звіт Smart Nutrition за 7 днів");
+    expect(result.text).toContain("2026-06-15");
+    expect(result.text).toContain("2026-06-21");
+    expect(result.text).toContain("Їжа: 2");
+    expect(result.text).toContain("Вода");
+    expect(result.text).toContain("97.5");
+    expect(result.text).toContain("96.9");
+    expect(result.text).toContain("нудота 4/10");
+    expect(result.text).toContain("Активні нагадування: 1");
+    expect(stateService.getSnapshot).toHaveBeenCalledWith(user);
+    expect(reminderService.getUserReminders).toHaveBeenCalledWith(user);
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["asks assistant for progress reports"]),
+      })
+    );
+  });
+
   it("creates medication reminders through the medication tool", async () => {
     const medicationReminderService = {
       createReminderFromText: vi.fn(async () => ({

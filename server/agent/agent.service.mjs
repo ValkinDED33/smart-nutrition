@@ -25,6 +25,10 @@ const getFollowUpsForIntent = (intent) => {
     return ["protein_help", "water_help", "coach_focus"];
   }
 
+  if (intent === "generate_report") {
+    return ["day_status", "protein_help", "coach_focus"];
+  }
+
   if (intent === "create_follow_up") {
     return ["day_status", "coach_focus"];
   }
@@ -147,6 +151,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "generate_day_summary") {
       return tools.generateDaySummary(user);
+    }
+
+    if (intent.intent === "generate_report") {
+      return tools.generateReport(user, intent.entities);
     }
 
     if (intent.intent === "show_water_status") {

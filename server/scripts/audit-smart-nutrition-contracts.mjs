@@ -100,6 +100,7 @@ const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs")
 const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
 const assistantAgentIntentsSource = readSource("server/agent/agent.intents.mjs");
 const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
+const assistantPromptStackSource = readSource("server/services/ai/assistantPromptStack.mjs");
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
@@ -393,6 +394,28 @@ addCheck(
     assistantAgentMemorySource.includes('toolResult.type === "day_summary"') &&
     assistantAgentMemorySource.includes("asks assistant for daily summaries"),
   "AI-generated day summaries must read canonical backend snapshot/profile/reminder state and respond as an action receipt, not a generic model guess or a second report system."
+);
+
+addCheck(
+  "assistant progress reports use backend snapshot and canonical reminders",
+  assistantAgentIntentsSource.includes('intent: "generate_report"') &&
+    assistantAgentIntentsSource.includes("REPORT_WORD_PATTERN") &&
+    assistantAgentIntentsSource.includes("REPORT_PERIOD_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "generate_report"') &&
+    assistantAgentServiceSource.includes("tools.generateReport(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const generateReport = async") &&
+    assistantAgentToolsSource.includes("createReportWindow(period, currentNow)") &&
+    assistantAgentToolsSource.includes("getReportMealEntries(summary.snapshot?.meal, window)") &&
+    assistantAgentToolsSource.includes("calculateReportWater(summary.snapshot?.water, window)") &&
+    assistantAgentToolsSource.includes("getActiveReminders(reminders, user)") &&
+    assistantAgentActionsSource.includes('toolResult.type === "progress_report"') &&
+    assistantAgentActionsSource.includes("reportTitle") &&
+    assistantAgentActionsSource.includes("reportFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "progress_report"') &&
+    assistantAgentMemorySource.includes("asks assistant for progress reports") &&
+    assistantPromptStackSource.includes("generateReport") &&
+    !assistantPromptStackSource.includes("Future tools may include createRecipe, analyzeMeal, analyzePhoto, updateGoal, updateProfile, summarizeProgress, generateReport"),
+  "AI weekly/monthly progress reports must read canonical backend snapshot/profile/water/reminder state and respond as a report receipt, not model-generated progress fiction."
 );
 
 addCheck(
