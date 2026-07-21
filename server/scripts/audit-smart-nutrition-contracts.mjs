@@ -141,6 +141,7 @@ const photoAnalysisServiceSource = readSource("server/services/photoAnalysisServ
 const serverConfigSource = readSource("server/config.mjs");
 const serverConfigTestSource = readSource("server/config.test.mjs");
 const serverIndexSource = readSource("server/index.mjs");
+const serverErrorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const assistantAgentServiceSource = readSource("server/agent/agent.service.mjs");
 const assistantAgentActionsSource = readSource("server/agent/agent.actions.mjs");
 const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
@@ -1216,6 +1217,20 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy before they reach auth state or visible sync UI instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "backend route errors expose safe public messages instead of raw exception text",
+  serverErrorHandlerSource.includes("authErrorMessages") &&
+    serverErrorHandlerSource.includes("platformErrorMessages") &&
+    serverErrorHandlerSource.includes("assistantErrorMessages") &&
+    serverErrorHandlerSource.includes("stateErrorMessages") &&
+    serverErrorHandlerSource.includes("getPublicAssistantDetails") &&
+    serverErrorHandlerSource.includes("Product catalog is temporarily unavailable.") &&
+    !serverErrorHandlerSource.includes("sendError(response, statusCode, error.code, error.message") &&
+    !serverErrorHandlerSource.includes("sendError(response, statusCode, error.code, error.message, error.details") &&
+    !serverErrorHandlerSource.includes("providerMessage"),
+  "Backend route error envelopes must preserve codes/status while mapping public messages from safe code dictionaries and stripping provider/backend details from ordinary API responses."
 );
 
 addCheck(
