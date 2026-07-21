@@ -73,6 +73,20 @@ describe("visionAnalysis", () => {
     expect(normalizeVisionAnalysis(templateBreakfastPayload)).toBeNull();
   });
 
+  it("rejects the same generic breakfast template even when the provider claims high confidence", () => {
+    expect(
+      normalizeVisionAnalysis({
+        ...templateBreakfastPayload,
+        confidence: 0.99,
+        interpretations: templateBreakfastPayload.interpretations.map((interpretation) => ({
+          ...interpretation,
+          confidence: 0.99,
+          items: interpretation.items.map((item) => ({ ...item, confidence: 0.99 })),
+        })),
+      })
+    ).toBeNull();
+  });
+
   it("keeps specific visible meal candidates for user review", () => {
     const result = normalizeVisionAnalysis({
       dishName: "Chicken rice bowl",

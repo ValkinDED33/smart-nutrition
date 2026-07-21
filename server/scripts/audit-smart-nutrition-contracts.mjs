@@ -27,6 +27,7 @@ const addCheck = (label, pass, detail) => {
 const photoAssistantSource = readSource("src/features/meal/PhotoMealAssistant.tsx");
 const authRemoteSource = readSource("src/shared/api/authRemote.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
+const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
 const frontendProductApiSource = readSource("src/shared/api/products.ts");
 const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
@@ -192,8 +193,10 @@ addCheck(
 addCheck(
   "vision normalization rejects generic breakfast hallucinations",
   visionAnalysisSource.includes("looksLikeTemplateBreakfastDraft") &&
-    visionAnalysisSource.includes("Never return a generic template breakfast"),
-  "Vision normalization must reject low-confidence generic breakfast templates."
+    visionAnalysisSource.includes("Never return a generic template breakfast") &&
+    visionAnalysisTestSource.includes("provider claims high confidence") &&
+    visionAnalysisTestSource.includes("confidence: 0.99"),
+  "Vision normalization must reject generic breakfast templates even when a provider claims high confidence."
 );
 
 addCheck(

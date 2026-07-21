@@ -56,10 +56,6 @@ const hasGenericDraftTitle = (value) => {
 };
 
 const looksLikeTemplateBreakfastDraft = ({ payload, interpretations, confidence }) => {
-  if (confidence >= 0.7) {
-    return false;
-  }
-
   const firstInterpretation = interpretations[0];
   const itemNames = (firstInterpretation?.items ?? [])
     .map((item) => normalizeFoodName(item.name))
@@ -71,7 +67,8 @@ const looksLikeTemplateBreakfastDraft = ({ payload, interpretations, confidence 
 
   return (
     hasGenericDraftTitle(payload?.dishName) ||
-    hasGenericDraftTitle(firstInterpretation?.title)
+    hasGenericDraftTitle(firstInterpretation?.title) ||
+    confidence < 0.7
   );
 };
 
