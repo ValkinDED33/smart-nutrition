@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,6 +7,16 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.
 
 const readSource = (relativePath) =>
   readFileSync(path.join(rootDir, relativePath), "utf8");
+
+const readTrackedFiles = () =>
+  execSync("git ls-files", {
+    cwd: rootDir,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
 const checks = [];
 
@@ -76,6 +87,7 @@ const specialistSkillSources = specialistSkillPaths.map((skillPath) => ({
   path: skillPath,
   source: readSource(skillPath),
 }));
+const trackedFiles = readTrackedFiles();
 const retiredPhotoDocPhrases = [
   ["manual", "draft", "mode"],
   ["low-confidence", "manual", "draft"],
@@ -103,6 +115,23 @@ addCheck(
     chiefSkillSource.includes("Project Knowledge Layer") &&
     specialistSkillSources.every(({ source }) => source.includes("---") && source.includes("##")),
   "Project memory, ADRs, rules, and specialist SKILL.md files must be allowed into git, while Codex browser profiles, agents, caches, screenshots, and logs stay ignored."
+);
+
+addCheck(
+  "tracked repository excludes runtime and generated artifacts",
+  trackedFiles.every(
+    (filePath) =>
+      !/^\.codex\/(?:chrome|cdp|preview|runtime-smoke|screenshots|vite-dev)/.test(
+        filePath
+      ) &&
+      !/^\.codex-remote-attachments\//.test(filePath) &&
+      !/^dist\//.test(filePath) &&
+      !/^node_modules\//.test(filePath) &&
+      !/Cache_Data|Secure Preferences|(?:^|\/)Preferences$|\.log$|ScreenClip|Photo [0-9]/.test(
+        filePath
+      )
+  ),
+  "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
 );
 
 addCheck(
