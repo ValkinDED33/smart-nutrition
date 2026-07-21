@@ -1279,6 +1279,25 @@ addCheck(
   "Regular assistant settings must show product readiness language; provider/model/fallback diagnostics belong behind admin-center role access."
 );
 
+const regularAssistantCopySources = [
+  aiCompanionPageSource,
+  assistantRuntimeCardSource,
+].join("\n");
+
+addCheck(
+  "regular assistant fallback copy hides AI infrastructure language",
+  regularAssistantCopySources.includes("Помічник тимчасово працює в обмеженому режимі") &&
+    regularAssistantCopySources.includes("Asystent tymczasowo działa w ograniczonym trybie") &&
+    regularAssistantCopySources.includes("The assistant is temporarily in limited mode") &&
+    regularAssistantCopySources.includes("Живий діалог тимчасово обмежений") &&
+    regularAssistantCopySources.includes("Żywy dialog jest chwilowo ograniczony") &&
+    regularAssistantCopySources.includes("Live conversation is temporarily limited") &&
+    !/Cloud AI is unavailable|Хмарний AI зараз недоступний|Chmurowy AI jest teraz niedostępny|production AI|local context|локального контексту|lokalnego kontekstu/.test(
+      regularAssistantCopySources
+    ),
+  "Regular assistant unavailable/fallback states must explain limited helper behavior, not cloud AI, production AI, or local-context internals."
+);
+
 addCheck(
   "stale chunk failures recover by clearing runtime caches",
   clientErrorReportingSource.includes('window.addEventListener("vite:preloadError"') &&

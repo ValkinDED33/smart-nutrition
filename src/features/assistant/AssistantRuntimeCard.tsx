@@ -146,7 +146,7 @@ const cardCopy = {
     empty: "Поставте питання або оберіть один зі швидких варіантів.",
     error: "Не вдалося отримати відповідь. Спробуйте ще раз за секунду.",
     localFallback:
-      "Хмарний AI зараз недоступний, тому я відповів з локального контексту.",
+      "Живий діалог тимчасово обмежений, тому я відповів за поточними даними дня.",
   },
   pl: {
     title: "Asystent",
@@ -172,7 +172,7 @@ const cardCopy = {
     empty: "Zadaj pytanie albo wybierz jeden z szybkich wariantów.",
     error: "Nie udało się pobrać odpowiedzi. Spróbuj jeszcze raz za chwilę.",
     localFallback:
-      "Chmurowy AI jest teraz niedostępny, więc odpowiedź powstała z lokalnego kontekstu.",
+      "Żywy dialog jest chwilowo ograniczony, więc odpowiedziałem na podstawie dzisiejszych danych.",
   },
   en: {
     title: "Assistant",
@@ -198,7 +198,7 @@ const cardCopy = {
     empty: "Ask a question or choose one of the quick options.",
     error: "Could not get an answer. Try again in a moment.",
     localFallback:
-      "Cloud AI is unavailable right now, so I answered from local context.",
+      "Live conversation is temporarily limited, so I answered from today's available data.",
   },
 } as const;
 

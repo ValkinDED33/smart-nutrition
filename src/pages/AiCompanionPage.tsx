@@ -77,7 +77,7 @@ const aiCopy = {
     fallbackOn: "Резерв увімкнено",
     fallbackOff: "Без резерву",
     cloudUnavailable:
-      "Хмарний AI зараз недоступний. Базові підказки лишаються доступними, але бойовий AI не активний.",
+      "Помічник тимчасово працює в обмеженому режимі. Ви можете користуватися підказками дня, а живий діалог відновиться автоматично.",
     assistantSettings: "Поведінка помічника береться з налаштувань профілю.",
     renderModeTitle: "Вигляд companion",
     renderMode2d: "Швидкий 2D",
@@ -158,7 +158,7 @@ const aiCopy = {
     fallbackOn: "Rezerwa aktywna",
     fallbackOff: "Bez rezerwy",
     cloudUnavailable:
-      "Chmurowy AI jest teraz niedostępny. Podstawowe wskazówki zostają dostępne, ale produkcyjny AI nie jest aktywny.",
+      "Asystent tymczasowo działa w ograniczonym trybie. Wskazówki dnia zostają dostępne, a żywy dialog wróci automatycznie.",
     assistantSettings: "Zachowanie asystenta bierze się z ustawień profilu.",
     renderModeTitle: "Wygląd companion",
     renderMode2d: "Szybki 2D",
@@ -239,7 +239,7 @@ const aiCopy = {
     fallbackOn: "Fallback enabled",
     fallbackOff: "No fallback",
     cloudUnavailable:
-      "Cloud AI is unavailable right now. Basic guidance remains available, but production AI is not active.",
+      "The assistant is temporarily in limited mode. Day guidance remains available, and live conversation will recover automatically.",
     assistantSettings: "Assistant behavior comes from your profile settings.",
     renderModeTitle: "Companion view",
     renderMode2d: "Fast 2D",

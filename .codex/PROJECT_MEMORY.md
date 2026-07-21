@@ -125,6 +125,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked food/scanner lazy-tool recovery copy so meal tools explain interrupted loading instead of exposing old chunk/cache internals.
 - Reworked the crash screen diagnostics so ordinary users see a short recovery code and saved-details message instead of raw stale-build/error-name/error-message internals.
 - Reworked assistant settings so ordinary users see assistant readiness/product-language status while provider, model, priority, and fallback-route diagnostics stay behind admin-center role access.
+- Reworked assistant unavailable/fallback copy so regular users see limited-helper/live-dialog recovery language instead of Cloud AI, production AI, or local-context internals.
 
 ## Current Architecture
 
@@ -134,6 +135,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
 - Regular assistant settings must present assistant readiness and useful product behavior; provider names, model ids, priority order, and fallback-route diagnostics belong behind owner/admin/moderator/helper access gates.
+- Regular assistant unavailable/fallback states must describe what the helper can still do and how recovery happens; Cloud AI, production AI, provider, and local-context terminology belongs in diagnostics, not everyday assistant copy.
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
 - AI-created favorite product saves must use canonical meal `savedProducts`, verify the saved product after backend restore, and must not create a separate favorite/product library.
 - AI-created follow-ups must use the canonical typed task reminder contract with explicit local reminder time; they are proactive assistant work, not a separate reminder engine.
