@@ -91,6 +91,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
 - Hardened community mutations so saved social/profile-community actions return canonical backend `community` state and the frontend refuses to confirm locally computed community state when the backend omits the canonical payload.
 - Replaced raw product provider ids in regular nutrition UI with localized source labels, so scanner/product cards/quick meal/library surfaces show human product language instead of `OpenFoodFacts`, `USDA`, or `Manual`.
+- Simplified regular account settings: operational runtime chips and backup restore-point lists are role-gated behind admin-center access and are not fetched or rendered for ordinary users.
 
 ## Current Architecture
 
@@ -105,6 +106,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
+- Regular account/profile settings must show calm user-owned actions first; operational runtime, backup, and diagnostic details belong behind owner/admin/moderator/helper access gates.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
 - Product facts may explain obvious product micronutrient signals, such as iodine in seaweed/algae, only as guidance when the provider has no numeric value; do not calculate or persist fake micronutrient amounts.
@@ -139,6 +141,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Frontend CSP must not reopen direct browser access to external food catalog providers.
 - SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.
 - Profile mutations must use unified cloud actions, not isolated local state.
+- Regular account settings must not fetch or display backup restore points, runtime provider/session chips, or diagnostic details unless the profile role can access the admin center.
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.

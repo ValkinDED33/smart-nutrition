@@ -25,4 +25,14 @@ describe("AccountDataCard production UX contracts", () => {
       expect(copy.telegramConnected).not.toBe(copy.telegramConnectPending);
     });
   });
+
+  it("keeps operational account details away from regular profile settings", () => {
+    expect(source).toContain("canAccessAdminCenter(user?.role)");
+    expect(source).toContain("if (!canSeeOperationalDetails)");
+    expect(source).toContain("return undefined;");
+    expect(source).toContain("const backupsLoading = canSeeOperationalDetails && backups === null");
+    expect(source).toContain("{canSeeOperationalDetails && (");
+    expect(source).toContain("runtimeLabels.provider");
+    expect(source).toContain("{copy.backupsTitle}");
+  });
 });

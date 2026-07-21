@@ -71,6 +71,7 @@ const syncMessagingSource = readSource("src/shared/lib/syncMessaging.ts");
 const cloudSyncStatusCardSource = readSource(
   "src/features/profile/CloudSyncStatusCard.tsx"
 );
+const accountDataCardSource = readSource("src/features/profile/AccountDataCard.tsx");
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
 const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePlanner.tsx");
 const catalogContributionCardSource = readSource(
@@ -629,6 +630,19 @@ addCheck(
       humanProfileSyncCopySources
     ),
   "Regular profile/account/sync surfaces must present cloud profile and protected-session language, while infrastructure terms stay inside code and admin diagnostics."
+);
+
+addCheck(
+  "regular account settings hide operational backup and runtime details",
+  accountDataCardSource.includes("canAccessAdminCenter(user?.role)") &&
+    accountDataCardSource.includes("if (!canSeeOperationalDetails)") &&
+    accountDataCardSource.includes("return undefined;") &&
+    accountDataCardSource.includes("const backupsLoading = canSeeOperationalDetails && backups === null") &&
+    accountDataCardSource.includes("getRemoteAccountBackups()") &&
+    accountDataCardSource.includes("{canSeeOperationalDetails && (") &&
+    accountDataCardSource.includes("runtimeLabels.provider") &&
+    accountDataCardSource.includes("copy.backupsTitle"),
+  "Regular users must not see or fetch operational backup/runtime details in account settings; those details belong to admin, moderator, helper, or owner diagnostics."
 );
 
 addCheck(

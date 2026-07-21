@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
+import { canAccessAdminCenter } from "@domain/user/roles";
 import {
   deleteAccount,
   createTelegramConnectLink,
@@ -94,8 +95,7 @@ export const AccountDataCard = () => {
     message: string;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [backups, setBackups] = useState<AccountBackupSummary[]>([]);
-  const [backupsLoading, setBackupsLoading] = useState(true);
+  const [backups, setBackups] = useState<AccountBackupSummary[] | null>(null);
   const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(null);
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -114,8 +114,14 @@ export const AccountDataCard = () => {
   const telegramBotUsername = telegramStatus?.botUsername
     ? `@${telegramStatus.botUsername.replace(/^@+/, "")}`
     : null;
+  const canSeeOperationalDetails = canAccessAdminCenter(user?.role);
+  const backupsLoading = canSeeOperationalDetails && backups === null;
 
   useEffect(() => {
+    if (!canSeeOperationalDetails) {
+      return undefined;
+    }
+
     let cancelled = false;
 
     void getRemoteAccountBackups()
@@ -131,14 +137,14 @@ export const AccountDataCard = () => {
       })
       .finally(() => {
         if (!cancelled) {
-          setBackupsLoading(false);
+          setBackups((currentBackups) => currentBackups ?? []);
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [copy.backupError]);
+  }, [canSeeOperationalDetails, copy.backupError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -413,12 +419,14 @@ export const AccountDataCard = () => {
 
         {notice && <Alert severity={notice.type}>{notice.message}</Alert>}
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip label={`${copy.provider}: ${runtimeLabels.provider}`} />
-          <Chip label={`${copy.session}: ${runtimeLabels.session}`} />
-          <Chip label={`${copy.sync}: ${copy.syncRemote}`} />
-          <Chip label={`${copy.security}: ${runtimeLabels.security}`} />
-        </Stack>
+        {canSeeOperationalDetails && (
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip label={`${copy.provider}: ${runtimeLabels.provider}`} />
+            <Chip label={`${copy.session}: ${runtimeLabels.session}`} />
+            <Chip label={`${copy.sync}: ${copy.syncRemote}`} />
+            <Chip label={`${copy.security}: ${runtimeLabels.security}`} />
+          </Stack>
+        )}
 
         <Alert severity="info" sx={{ borderRadius: 3 }}>
           {copy.remoteNotice}
@@ -535,49 +543,51 @@ export const AccountDataCard = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-          <Stack spacing={1.2}>
-            <Stack spacing={0.4}>
-              <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>
-              <Typography color="text.secondary">{copy.backupsSubtitle}</Typography>
-            </Stack>
-            {backupsLoading ? (
-              <Typography color="text.secondary">{copy.backupsLoading}</Typography>
-            ) : backups.length === 0 ? (
-              <Typography color="text.secondary">{copy.backupsEmpty}</Typography>
-            ) : (
-              backups.slice(0, 4).map((backup) => (
-                <Stack
-                  key={backup.id}
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={1}
-                  justifyContent="space-between"
-                  alignItems={{ xs: "flex-start", md: "center" }}
-                >
-                  <Box>
-                    <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatBackupTimestamp(backup.updatedAt, appLanguage)} ·{" "}
-                      {formatBytes(backup.sizeBytes)}
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      void handleBackupDownload(backup);
-                    }}
-                    disabled={downloadingBackupId === backup.id}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
+        {canSeeOperationalDetails && (
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
+            <Stack spacing={1.2}>
+              <Stack spacing={0.4}>
+                <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>
+                <Typography color="text.secondary">{copy.backupsSubtitle}</Typography>
+              </Stack>
+              {backupsLoading ? (
+                <Typography color="text.secondary">{copy.backupsLoading}</Typography>
+              ) : !backups || backups.length === 0 ? (
+                <Typography color="text.secondary">{copy.backupsEmpty}</Typography>
+              ) : (
+                backups.slice(0, 4).map((backup) => (
+                  <Stack
+                    key={backup.id}
+                    direction={{ xs: "column", md: "row" }}
+                    spacing={1}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "flex-start", md: "center" }}
                   >
-                    {downloadingBackupId === backup.id
-                      ? copy.backupBusy
-                      : copy.backupDownload}
-                  </Button>
-                </Stack>
-              ))
-            )}
-          </Stack>
-        </Paper>
+                    <Box>
+                      <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatBackupTimestamp(backup.updatedAt, appLanguage)} ·{" "}
+                        {formatBytes(backup.sizeBytes)}
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        void handleBackupDownload(backup);
+                      }}
+                      disabled={downloadingBackupId === backup.id}
+                      sx={{ textTransform: "none", fontWeight: 700 }}
+                    >
+                      {downloadingBackupId === backup.id
+                        ? copy.backupBusy
+                        : copy.backupDownload}
+                    </Button>
+                  </Stack>
+                ))
+              )}
+            </Stack>
+          </Paper>
+        )}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
           {runtime.supportsDataExport && (
