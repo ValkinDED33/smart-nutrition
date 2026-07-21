@@ -327,6 +327,24 @@ addCheck(
 );
 
 addCheck(
+  "assistant favorite product saves use canonical saved meal products",
+  assistantAgentIntentsSource.includes('intent: "save_favorite"') &&
+    assistantAgentIntentsSource.includes("FAVORITE_SAVE_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "save_favorite"') &&
+    assistantAgentServiceSource.includes("tools.saveFavorite(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const saveFavorite = async") &&
+    assistantAgentToolsSource.includes('stateService.upsertMealProduct(user, "saved", product') &&
+    assistantAgentToolsSource.includes("const confirmedMealState = await stateService.getMealState(user)") &&
+    assistantAgentToolsSource.includes("confirmedMealState?.savedProducts") &&
+    assistantAgentToolsSource.includes('return { ok: false, code: "FAVORITE_NOT_CONFIRMED" }') &&
+    assistantAgentActionsSource.includes("favoriteSaved") &&
+    assistantAgentActionsSource.includes("favoriteFailed") &&
+    assistantAgentMemorySource.includes('toolResult.type === "favorite_saved"') &&
+    assistantAgentMemorySource.includes("saves quick products through assistant"),
+  "AI save-favorite requests must use canonical meal savedProducts persistence and verify backend restore before visible success."
+);
+
+addCheck(
   "assistant weight tool uses backend-confirmed profile state",
   assistantAgentIntentsSource.includes('intent: "log_weight"') &&
     assistantAgentServiceSource.includes('intent.intent === "log_weight"') &&

@@ -79,6 +79,16 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (toolResult.type === "favorite_saved") {
+    return {
+      userId: user?.id,
+      favoriteFoods: [toolResult.product?.name ?? intent.entities?.productQuery].filter(Boolean),
+      habits: ["saves quick products through assistant"],
+      motivationTriggers: ["fast repeat food logging"],
+      lastMood: "organized",
+    };
+  }
+
   if (toolResult.type === "weight_logged") {
     return {
       userId: user?.id,
@@ -140,6 +150,7 @@ export const mergeAgentMemoryPatch = (previousMemory = {}, patch = {}) => ({
   goals: appendUnique(previousMemory.goals, patch.goals).filter(Boolean),
   struggles: appendUnique(previousMemory.struggles, patch.struggles).filter(Boolean),
   habits: appendUnique(previousMemory.habits, patch.habits).filter(Boolean),
+  favoriteFoods: appendUnique(previousMemory.favoriteFoods, patch.favoriteFoods).filter(Boolean),
   motivationTriggers: appendUnique(
     previousMemory.motivationTriggers,
     patch.motivationTriggers

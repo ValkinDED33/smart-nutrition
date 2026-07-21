@@ -34,6 +34,9 @@ const toWeightKg = (value) => {
 const createAssistantSymptomId = () => `assistant-symptom-${crypto.randomUUID()}`;
 const DEFAULT_REMINDER_TIMEZONE = "Europe/Warsaw";
 
+const productMatchesById = (product, expectedId) =>
+  Boolean(product?.id) && String(product.id) === String(expectedId);
+
 const normalizeSymptomLabel = (value) =>
   String(value ?? "")
     .trim()
@@ -384,6 +387,50 @@ export const createAgentTools = ({
     };
   };
 
+  const saveFavorite = async (user, { productQuery }) => {
+    if (!stateService?.upsertMealProduct || !stateService?.getMealState) {
+      return { ok: false, code: "FAVORITE_TOOL_UNAVAILABLE" };
+    }
+
+    const productResult = await searchProducts(user, {
+      productQuery,
+      limit: 4,
+    });
+
+    if (!productResult.ok) {
+      return productResult;
+    }
+
+    const product = productResult.products[0] ?? null;
+
+    if (!product) {
+      return {
+        ok: false,
+        code: "PRODUCT_NOT_FOUND",
+        query: productResult.query,
+      };
+    }
+
+    await stateService.upsertMealProduct(user, "saved", product, {
+      source: "assistant-agent",
+    });
+
+    const confirmedMealState = await stateService.getMealState(user);
+    const confirmedProduct = Array.isArray(confirmedMealState?.savedProducts)
+      ? confirmedMealState.savedProducts.find((item) => productMatchesById(item, product.id))
+      : null;
+
+    if (!confirmedProduct) {
+      return { ok: false, code: "FAVORITE_NOT_CONFIRMED" };
+    }
+
+    return {
+      ok: true,
+      type: "favorite_saved",
+      product: confirmedProduct,
+    };
+  };
+
   const logWeight = async (user, { weightKg }) => {
     if (!stateService?.getProfileState || !stateService?.saveProfileState) {
       return { ok: false, code: "WEIGHT_TOOL_UNAVAILABLE" };
@@ -684,6 +731,7 @@ export const createAgentTools = ({
   return {
     addWater,
     addMeal,
+    saveFavorite,
     logWeight,
     logSymptom,
     searchProducts,

@@ -88,6 +88,10 @@ const copy = {
     productSearchHeader: (count, query) => `Знайшов ${count} варіант(и) для "${query}":`,
     productSearchHint:
       "Напишіть: додай назву і кількість, наприклад “додай chicken breast 150 г”.",
+    favoriteFailed:
+      "Я зрозумів продукт, але зараз не зміг підтвердити збереження в хмарі Smart Nutrition.",
+    favoriteSaved: (name) => `Готово. ${name} збережено у ваших швидких продуктах.`,
+    favoriteHint: "Ви знайдете його у збережених продуктах для швидкого додавання.",
     mealAdded: (title, quantity, unit) => `Готово 🥗 Додав ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Прийом: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -216,6 +220,10 @@ const copy = {
     productSearchHeader: (count, query) => `Znalazłem ${count} wariant(y) dla "${query}":`,
     productSearchHint:
       "Napisz: dodaj nazwę i ilość, na przykład „dodaj chicken breast 150 g”.",
+    favoriteFailed:
+      "Rozumiem produkt, ale teraz nie mogę potwierdzić zapisu w chmurze Smart Nutrition.",
+    favoriteSaved: (name) => `Gotowe. ${name} zapisano w szybkich produktach.`,
+    favoriteHint: "Znajdziesz go w zapisanych produktach do szybkiego dodania.",
     mealAdded: (title, quantity, unit) => `Gotowe 🥗 Dodałem ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Posiłek: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -344,6 +352,10 @@ const copy = {
     productSearchHeader: (count, query) => `Found ${count} option(s) for "${query}":`,
     productSearchHint:
       "Write: add the name and quantity, for example “add chicken breast 150 g”.",
+    favoriteFailed:
+      "I understood the product, but I could not confirm saving it in Smart Nutrition cloud right now.",
+    favoriteSaved: (name) => `Done. ${name} is saved to your quick products.`,
+    favoriteHint: "You will find it in saved products for fast meal logging.",
     mealAdded: (title, quantity, unit) => `Done 🥗 Added ${title} — ${quantity} ${unit}.`,
     mealTypeLine: (mealType) => `Meal: ${mealType}.`,
     mealNutrients: (calories, protein, fat, carbs) =>
@@ -477,11 +489,19 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.waterFailed.join("\n");
     }
 
-    if (intent.intent === "add_meal" || intent.intent === "search_product") {
+    if (
+      intent.intent === "add_meal" ||
+      intent.intent === "search_product" ||
+      intent.intent === "save_favorite"
+    ) {
       if (toolResult?.code === "PRODUCT_NOT_FOUND") {
         return text
           .productNotFound(toolResult.query ?? intent.entities?.productQuery)
           .join("\n");
+      }
+
+      if (intent.intent === "save_favorite") {
+        return text.favoriteFailed;
       }
 
       return text.foodFailed;
@@ -568,6 +588,15 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
         formatNumber(nutrients.fat, 1),
         formatNumber(nutrients.carbs, 1)
       ),
+    ].join("\n");
+  }
+
+  if (toolResult.type === "favorite_saved") {
+    const product = toolResult.product;
+
+    return [
+      text.favoriteSaved(getProductTitle(product, language)),
+      text.favoriteHint,
     ].join("\n");
   }
 

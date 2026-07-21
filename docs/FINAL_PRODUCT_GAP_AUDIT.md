@@ -116,10 +116,11 @@ Current state:
 Gap:
 
 - Agent now completes safe catalog-backed food search and meal logging, plus
-  backend-confirmed weight, symptom check-ins, and daily summaries, but it still
-  needs more practical tools around planning and reporting.
-- Missing practical tools: `create_recipe`, `save_favorite`, `generate_report`,
-  `open_scanner`, `request_photo_meal_analysis`, and `create_follow_up`.
+  backend-confirmed favorite product saves, weight, symptom check-ins, daily
+  summaries, and follow-ups, but it still needs more practical tools around
+  planning, reporting, scanner opening, and photo meal handoff.
+- Missing practical tools: `create_recipe`, `generate_report`, `open_scanner`,
+  and `request_photo_meal_analysis`.
 
 ### Telegram and Medication Reminders
 
@@ -254,8 +255,9 @@ Users will try natural commands like "сделай отчёт за неделю"
 the product.
 
 RECOMMENDED FIX:
-Add safe tools for `create_recipe`, `save_favorite`, weekly/monthly
-`generate_report`, and follow-up actions.
+Add safe tools for `create_recipe` and weekly/monthly `generate_report`;
+keep `save_favorite` and follow-up actions on their backend-confirmed
+contracts.
 
 EXAMPLE CODE:
 
@@ -554,8 +556,8 @@ Includes:
 
 - Done: `search_product`, `add_meal`, `add_water`,
   `create_medication_reminder`, `create_task_reminder`, typed reminders,
-  `log_weight`, `log_symptom`, `generate_day_summary`, and
-  `create_follow_up`.
+  `log_weight`, `log_symptom`, `generate_day_summary`, `create_follow_up`, and
+  `save_favorite`.
 - Remaining: continue expanding higher-value worker tools only through
   backend-confirmed contracts, without adding a second reminder, product, meal,
   or AI system.

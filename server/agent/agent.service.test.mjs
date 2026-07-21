@@ -911,6 +911,95 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("saves favorite products through canonical saved meal products", async () => {
+    const stateService = {
+      upsertMealProduct: vi.fn(async () => undefined),
+      getMealState: vi.fn(async () => ({
+        items: [],
+        templates: [],
+        recentProducts: [],
+        savedProducts: [chickenProduct],
+      })),
+    };
+    const platformService = {
+      listVisibleCatalogProducts: vi.fn(async () => [chickenProduct]),
+    };
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [], favoriteFoods: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      platformService,
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "сохрани chicken breast в избранное",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "save_favorite" },
+      actions: [{ id: "save_favorite", ok: true, resultType: "favorite_saved" }],
+      memoryUpdated: true,
+      followUpQuestionIds: ["search_product", "coach_focus"],
+    });
+    expect(result.text).toContain("Chicken breast");
+    expect(result.text).toContain("швидких продуктах");
+    expect(platformService.listVisibleCatalogProducts).toHaveBeenCalledWith(user, {
+      search: "chicken breast",
+      limit: 4,
+    });
+    expect(stateService.upsertMealProduct).toHaveBeenCalledWith(
+      user,
+      "saved",
+      chickenProduct,
+      { source: "assistant-agent" }
+    );
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["saves quick products through assistant"]),
+        favoriteFoods: expect.arrayContaining(["Chicken breast"]),
+      })
+    );
+  });
+
+  it("does not claim favorite save success without backend restore confirmation", async () => {
+    const stateService = {
+      upsertMealProduct: vi.fn(async () => undefined),
+      getMealState: vi.fn(async () => ({
+        items: [],
+        templates: [],
+        recentProducts: [],
+        savedProducts: [],
+      })),
+    };
+    const platformService = {
+      listVisibleCatalogProducts: vi.fn(async () => [chickenProduct]),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      platformService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "сохрани chicken breast в избранное",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "save_favorite" },
+      actions: [{ id: "save_favorite", ok: false, code: "FAVORITE_NOT_CONFIRMED" }],
+    });
+    expect(result.text).not.toContain("збережено у ваших швидких продуктах");
+    expect(result.text).toContain("не зміг підтвердити");
+  });
+
   it("does not add a meal when the product is not found", async () => {
     const stateService = {
       addProductIntake: vi.fn(async () => undefined),

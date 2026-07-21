@@ -69,6 +69,21 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects saved favorite product requests before meal logging", () => {
+    expect(detectAgentIntent("сохрани chicken breast в избранное")).toMatchObject({
+      intent: "save_favorite",
+      entities: {
+        productQuery: "chicken breast",
+      },
+    });
+    expect(detectAgentIntent("save skyr as favorite")).toMatchObject({
+      intent: "save_favorite",
+      entities: {
+        productQuery: "skyr",
+      },
+    });
+  });
+
   it("detects water reminder requests before treating the text as water logging", () => {
     expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
       intent: "create_water_reminder",

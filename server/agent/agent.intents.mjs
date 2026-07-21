@@ -36,6 +36,10 @@ const PRODUCT_SEARCH_PATTERN =
   /(^|\s)(найди|знайди|поищи|пошукай|search|find)(\s|$)/i;
 const MEAL_TYPE_PATTERN =
   /(breakfast|lunch|dinner|snack|завтрак|сніданок|обед|обід|ужин|вечеря|перекус)/i;
+const FAVORITE_SAVE_PATTERN =
+  /(^|\s)(сохрани|сохранить|збережи|зберегти|додай в обране|добавь в избранное|save|favorite|favourite|bookmark)(\s|$)/i;
+const FAVORITE_TARGET_PATTERN =
+  /(избран[а-яё]*|обран[а-яіїєґ]*|улюблен[а-яіїєґ]*|favorite|favourite|saved|збережен[а-яіїєґ]*|сохранен[а-яё]*)/i;
 
 const normalizeMessage = (value) =>
   String(value ?? "")
@@ -136,6 +140,20 @@ const cleanFoodQuery = (message) => {
       " "
     )
     .replace(/(^|\s)(?:на|for|to|please|пожалуйста|будь ласка)(?=\s|$)/giu, " ")
+    .replace(/[,:;.!?]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned.length >= 2 ? cleaned.slice(0, 120) : "";
+};
+
+const cleanFavoriteProductQuery = (message) => {
+  const cleaned = normalizeMessage(message)
+    .replace(/^\/?(?:savefavorite|save-favorite|favorite|favourite|bookmark)\b/i, " ")
+    .replace(FAVORITE_SAVE_PATTERN, " ")
+    .replace(FAVORITE_TARGET_PATTERN, " ")
+    .replace(PRODUCT_SEARCH_PATTERN, " ")
+    .replace(/(^|\s)(?:продукт|product|food|їжу|еду|в|до|to|as|please|пожалуйста|будь ласка)(?=\s|$)/giu, " ")
     .replace(/[,:;.!?]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -299,6 +317,24 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
           text: normalized,
         },
         reason: "symptom_detected",
+      };
+    }
+  }
+
+  if (
+    /^\/?(?:savefavorite|save-favorite|favorite|favourite|bookmark)\b/i.test(normalized) ||
+    (FAVORITE_SAVE_PATTERN.test(normalized) && FAVORITE_TARGET_PATTERN.test(normalized))
+  ) {
+    const productQuery = cleanFavoriteProductQuery(normalized);
+
+    if (productQuery) {
+      return {
+        intent: "save_favorite",
+        confidence: 0.78,
+        entities: {
+          productQuery,
+        },
+        reason: "favorite_product_save_request",
       };
     }
   }
