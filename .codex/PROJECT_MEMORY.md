@@ -142,6 +142,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
 - Hardened quick meal and shared meal-action failure state so food save retries cannot carry raw exception text even if future UI starts reading failure messages directly.
 - Hardened final onboarding save failure state so sync outbox and sync status cannot surface raw exception text after profile setup fails.
+- Hardened backend product-intake catalog retry responses so a saved meal with failed catalog moderation returns safe retry copy instead of raw provider/backend exception text.
 
 ## Current Architecture
 
@@ -239,6 +240,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI Discovery Cards are the signature living-card pattern for the home screen; they must read canonical `DailyContext`, reuse existing assistant actions, and must not introduce a second AI brain, random mock feed, localStorage state, fake findings, or unconfirmed saved actions.
 - Living AI Interface is the long-term product pattern: ambient motion, aura, emotional companion reactions, predictive UI, AI memory moments, living notifications, and morphing surfaces must be subtle, useful, accessible, and backed by canonical state. They must not become decorative noise, fake personalization, diagnosis, guilt copy, or duplicated persistence.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
+- Product-intake catalog moderation failures may be retryable while the meal save succeeds, but API responses must not expose raw catalog/provider/backend exception text.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.
 - Backend product lookup may use multiple backend-owned provider hosts for resilience, but the frontend must still call only the Smart Nutrition backend contract.

@@ -37,6 +37,7 @@ const communityCloudSyncSource = readSource(
   "src/features/community/communityCloudSync.ts"
 );
 const stateControllerSource = readSource("server/controllers/state.controller.mjs");
+const stateServiceSource = readSource("server/services/stateService.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
 const telegramMedicationRemindersSource = readSource(
@@ -399,6 +400,15 @@ addCheck(
       mealCloudSyncSource
     ),
   "Granular meal mutations must reject backend ok responses that do not return canonical meal state."
+);
+
+addCheck(
+  "product intake catalog retry response hides raw submission errors",
+  stateServiceSource.includes("CATALOG_SUBMISSION_RETRY_MESSAGE") &&
+    stateServiceSource.includes("message: CATALOG_SUBMISSION_RETRY_MESSAGE") &&
+    !stateServiceSource.includes("message: error instanceof Error ? error.message") &&
+    !stateServiceSource.includes('"Catalog submission failed."'),
+  "Product intake may save the meal when catalog moderation fails, but the API retry message must not leak raw provider/backend exception text."
 );
 
 addCheck(

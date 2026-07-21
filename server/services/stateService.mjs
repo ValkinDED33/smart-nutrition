@@ -35,6 +35,8 @@ const requireEntries = (value) => {
 const mealTypes = new Set(["breakfast", "lunch", "dinner", "snack"]);
 const intakeSources = new Set(["barcode", "search", "manual", "recommendation", "photo"]);
 const productCatalogStatuses = new Set(["pending", "approved", "rejected", "personal"]);
+const CATALOG_SUBMISSION_RETRY_MESSAGE =
+  "Catalog review is temporarily unavailable. The meal was saved; try catalog submission again later.";
 
 const toSafeIdPart = (value) =>
   String(value ?? "")
@@ -312,13 +314,13 @@ export const createStateService = ({ stateRepository }) => ({
           retryable: false,
           message: null,
         };
-      } catch (error) {
+      } catch {
         catalogStatus = {
           requested: true,
           accepted: false,
           failed: true,
           retryable: true,
-          message: error instanceof Error ? error.message : "Catalog submission failed.",
+          message: CATALOG_SUBMISSION_RETRY_MESSAGE,
         };
       }
     }

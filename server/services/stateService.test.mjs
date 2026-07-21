@@ -159,7 +159,7 @@ describe("stateService", () => {
     });
   });
 
-  it("keeps meal success explicit when catalog submission fails", async () => {
+  it("keeps meal success explicit without leaking raw catalog submission errors", async () => {
     const product = createProduct();
     const stateRepository = createStateRepositoryFixture();
     const entries = [];
@@ -204,8 +204,10 @@ describe("stateService", () => {
       requested: true,
       failed: true,
       retryable: true,
-      message: "Catalog unavailable",
+      message:
+        "Catalog review is temporarily unavailable. The meal was saved; try catalog submission again later.",
     });
+    expect(result.catalog.message).not.toContain("Catalog unavailable");
   });
 
   it("rejects product intake when provider resolution finds nothing", async () => {
