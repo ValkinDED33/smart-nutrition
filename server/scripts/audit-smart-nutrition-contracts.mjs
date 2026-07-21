@@ -48,6 +48,7 @@ const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
+const waterCloudActionSource = readSource("src/features/water/useWaterCloudAction.ts");
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
@@ -199,9 +200,11 @@ addCheck(
     waterTrackerSource.includes("Woda została zapisana") &&
     quickWeightCheckInSource.includes("Вагу збережено") &&
     quickWeightCheckInSource.includes("Waga została zapisana") &&
+    !waterTrackerSource.includes("${copy.rewardSyncWarning} ${error.message}") &&
+    !quickWeightCheckInSource.includes("${copy.rewardSyncWarning} ${rewardError.message}") &&
     !/Water saved, but companion progress could not sync/.test(waterTrackerSource) &&
     !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource),
-  "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English copy."
+  "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English or raw backend/provider copy."
 );
 
 addCheck(
@@ -1119,6 +1122,29 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "water cloud action feedback hides raw backend/provider failure details",
+  waterCloudActionSource.includes("resolveWaterCloudActionErrorMessage") &&
+    waterCloudActionSource.includes("USER_WATER_SAVE_ERROR") &&
+    waterCloudActionSource.includes("USER_WATER_SAVE_IN_PROGRESS_ERROR") &&
+    !waterCloudActionSource.includes("setError(message)") &&
+    !waterCloudActionSource.includes("setError(inProgressError.message)") &&
+    !waterTrackerSource.includes("error instanceof Error ? error.message"),
+  "Water save and retry failures must stay retryable without rendering raw backend/provider exception text."
+);
+
+addCheck(
+  "profile cloud action feedback hides raw backend/provider failure details",
+  profileCloudActionSource.includes("resolveProfileCloudActionErrorMessage") &&
+    profileCloudActionSource.includes("USER_PROFILE_SAVE_ERROR") &&
+    profileCloudActionSource.includes("USER_PROFILE_SAVE_IN_PROGRESS_ERROR") &&
+    !profileCloudActionSource.includes("setError(message)") &&
+    !profileCloudActionSource.includes("setError(inProgressError.message)") &&
+    !profileCloudActionSource.includes("error.message :") &&
+    !profileCloudActionSource.includes("? caughtError.message"),
+  "Profile action, profile state, and profile+user saves must not render raw backend/provider exception text."
 );
 
 addCheck(

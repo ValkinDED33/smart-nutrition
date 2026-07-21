@@ -193,8 +193,8 @@ export const MeasurementsCheckInCard = () => {
         nextProfile
       );
       setSuccessMessage(copy.saved);
-    } catch (error) {
-      setServerError(error instanceof Error ? error.message : copy.saveError);
+    } catch {
+      setServerError(copy.saveError);
     }
   };
 

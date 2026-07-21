@@ -12,7 +12,16 @@ import { setUser } from "../auth/authSlice";
 
 type AuthUser = NonNullable<RootState["auth"]["user"]>;
 
-const CLOUD_PROFILE_SAVE_FAILED = "Cloud profile save failed.";
+const PROFILE_SAVE_IN_PROGRESS_ERROR = "Cloud profile save is already in progress.";
+const USER_PROFILE_SAVE_ERROR =
+  "Profile changes could not be saved. Please try again.";
+const USER_PROFILE_SAVE_IN_PROGRESS_ERROR =
+  "Profile changes are already being saved. Please wait a moment.";
+
+export const resolveProfileCloudActionErrorMessage = (error: unknown) =>
+  error instanceof Error && error.message === PROFILE_SAVE_IN_PROGRESS_ERROR
+    ? USER_PROFILE_SAVE_IN_PROGRESS_ERROR
+    : USER_PROFILE_SAVE_ERROR;
 
 export const useProfileCloudAction = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -32,11 +41,7 @@ export const useProfileCloudAction = () => {
       try {
         return await applyProfileActionInCloud(dispatch, profile, action);
       } catch (caughtError) {
-        const message =
-          caughtError instanceof Error
-            ? caughtError.message
-            : CLOUD_PROFILE_SAVE_FAILED;
-        setError(message);
+        setError(resolveProfileCloudActionErrorMessage(caughtError));
         throw caughtError;
       } finally {
         setSaving(false);
@@ -59,11 +64,7 @@ export const useProfileCloudAction = () => {
         dispatch(replaceProfileState(nextProfile));
         return nextProfile;
       } catch (caughtError) {
-        const message =
-          caughtError instanceof Error
-            ? caughtError.message
-            : CLOUD_PROFILE_SAVE_FAILED;
-        setError(message);
+        setError(resolveProfileCloudActionErrorMessage(caughtError));
         throw caughtError;
       } finally {
         setSaving(false);
@@ -75,8 +76,8 @@ export const useProfileCloudAction = () => {
   const runProfileAndUserSave = useCallback(
     async (nextUser: AuthUser, nextProfile: ProfileState) => {
       if (saving) {
-        const inProgressError = new Error("Cloud profile save is already in progress.");
-        setError(inProgressError.message);
+        const inProgressError = new Error(PROFILE_SAVE_IN_PROGRESS_ERROR);
+        setError(resolveProfileCloudActionErrorMessage(inProgressError));
         throw inProgressError;
       }
 
@@ -93,11 +94,7 @@ export const useProfileCloudAction = () => {
         dispatch(replaceProfileState(nextProfile));
         return { user: savedUser, profile: nextProfile };
       } catch (caughtError) {
-        const message =
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Cloud profile save failed.";
-        setError(message);
+        setError(resolveProfileCloudActionErrorMessage(caughtError));
         throw caughtError;
       } finally {
         setSaving(false);

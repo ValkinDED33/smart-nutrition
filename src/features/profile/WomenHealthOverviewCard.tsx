@@ -925,8 +925,8 @@ const WomenHealthOverviewCard = () => {
       const result = await createRemotePartnerInvite();
       setInvite(result);
       setPartnerStatus(copy.partnerInviteReady);
-    } catch (error) {
-      setPartnerError(error instanceof Error ? error.message : copy.shareLoadError);
+    } catch {
+      setPartnerError(copy.shareLoadError);
     } finally {
       setPartnerLoading(false);
     }
@@ -942,8 +942,8 @@ const WomenHealthOverviewCard = () => {
       setPartnerShares([result.share]);
       setPartnerStatus(copy.partnerConnected);
       setPartnerCode("");
-    } catch (error) {
-      setPartnerError(error instanceof Error ? error.message : copy.shareLoadError);
+    } catch {
+      setPartnerError(copy.shareLoadError);
     } finally {
       setPartnerLoading(false);
     }
@@ -979,10 +979,8 @@ const WomenHealthOverviewCard = () => {
       await saveProfileStateToCloud(dispatch, nextProfile);
       dispatch(replaceProfileState(nextProfile));
       setBabyPreviewStatus(copy.babyPreviewSaved);
-    } catch (error) {
-      setBabyPreviewError(
-        error instanceof Error ? error.message : copy.babyPreviewError
-      );
+    } catch {
+      setBabyPreviewError(copy.babyPreviewError);
     } finally {
       setBabyPreviewSaving(false);
     }

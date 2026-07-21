@@ -14,6 +14,7 @@ const PROFILE_ACTION_SAVING = "profileAction.saving";
 const PROFILE_ACTION_ERROR = "profileAction.error";
 const SAVE_PROFILE_AND_USER_TO_CLOUD = "saveProfileAndUserToCloud";
 const REPLACE_PROFILE_STATE = "replaceProfileState";
+const RAW_ERROR_MESSAGE_TERNARY = "error instanceof Error ? error.message";
 
 describe("profile settings persistence contract", () => {
   it("exposes one shared cloud-backed action hook for profile setting saves", async () => {
@@ -28,7 +29,10 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain(REPLACE_PROFILE_STATE);
     expect(source).toContain("setUser");
     expect(source).toContain("setError");
+    expect(source).toContain("resolveProfileCloudActionErrorMessage");
     expect(source).toContain("throw caughtError");
+    expect(source).not.toContain("setError(message)");
+    expect(source).not.toContain("setError(inProgressError.message)");
   });
 
   it("persists authenticated language changes through the profile cloud contract", async () => {
@@ -113,6 +117,7 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
     expect(source).toContain(PROFILE_ACTION_SAVING);
     expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(RAW_ERROR_MESSAGE_TERNARY);
     expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
@@ -126,6 +131,7 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
     expect(source).toContain(PROFILE_ACTION_SAVING);
     expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(RAW_ERROR_MESSAGE_TERNARY);
     expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
@@ -139,6 +145,7 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
     expect(source).toContain(PROFILE_ACTION_SAVING);
     expect(source).toContain(PROFILE_ACTION_ERROR);
+    expect(source).not.toContain(RAW_ERROR_MESSAGE_TERNARY);
     expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
@@ -152,6 +159,8 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain("Вагу збережено");
     expect(source).toContain("Waga została zapisana");
     expect(source).toContain("Weight was saved");
+    expect(source).not.toContain("rewardError instanceof Error");
+    expect(source).not.toContain("${copy.rewardSyncWarning} ${rewardError.message}");
     expect(source).not.toContain("Weight saved, but companion progress could not sync");
   });
 });

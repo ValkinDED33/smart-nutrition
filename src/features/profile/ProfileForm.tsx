@@ -675,10 +675,8 @@ const ProfileForm = () => {
         nextProfile
       );
       setSuccessMessage(t("profile.saved"));
-    } catch (error) {
-      setServerError(
-        error instanceof Error ? error.message : t("error.genericProfile")
-      );
+    } catch {
+      setServerError(t("error.genericProfile"));
     }
   };
 

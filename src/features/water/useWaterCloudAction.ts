@@ -4,12 +4,20 @@ import type { AppDispatch } from "../../app/store";
 import { replaceWaterState, type WaterState } from "./waterSlice";
 import { saveWaterStateToCloud } from "./waterCloudSync";
 
-const DEFAULT_WATER_SAVE_ERROR = "Cloud water save failed.";
 const WATER_SAVE_IN_PROGRESS_ERROR = "Cloud water save is already in progress.";
+const USER_WATER_SAVE_ERROR =
+  "Water could not be saved. Please try again.";
+const USER_WATER_SAVE_IN_PROGRESS_ERROR =
+  "Water is already being saved. Please wait a moment.";
 
 type WaterSaveOptions = {
   surfaceFailure?: boolean;
 };
+
+export const resolveWaterCloudActionErrorMessage = (error: unknown) =>
+  error instanceof Error && error.message === WATER_SAVE_IN_PROGRESS_ERROR
+    ? USER_WATER_SAVE_IN_PROGRESS_ERROR
+    : USER_WATER_SAVE_ERROR;
 
 export const useWaterCloudAction = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +35,7 @@ export const useWaterCloudAction = () => {
       if (savingRef.current) {
         const inProgressError = new Error(WATER_SAVE_IN_PROGRESS_ERROR);
         if (surfaceFailure) {
-          setError(inProgressError.message);
+          setError(resolveWaterCloudActionErrorMessage(inProgressError));
         }
         throw inProgressError;
       }
@@ -47,12 +55,8 @@ export const useWaterCloudAction = () => {
           failedWaterRef.current = nextWater;
           setHasRetry(true);
         }
-        const message =
-          caughtError instanceof Error
-            ? caughtError.message
-            : DEFAULT_WATER_SAVE_ERROR;
         if (surfaceFailure) {
-          setError(message);
+          setError(resolveWaterCloudActionErrorMessage(caughtError));
         }
         throw caughtError;
       } finally {

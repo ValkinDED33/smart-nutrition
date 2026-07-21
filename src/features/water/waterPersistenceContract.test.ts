@@ -18,7 +18,10 @@ describe("water persistence contract", () => {
     expect(source).toContain("retryLastWaterSave");
     expect(source).toContain("failedWaterRef.current = nextWater");
     expect(source).toContain("surfaceFailure");
+    expect(source).toContain("resolveWaterCloudActionErrorMessage");
     expect(source).toContain("throw caughtError");
+    expect(source).not.toContain("setError(message)");
+    expect(source).not.toContain("setError(inProgressError.message)");
   });
 
   it("keeps WaterTracker on the shared cloud action contract", async () => {
@@ -57,6 +60,8 @@ describe("water persistence contract", () => {
     expect(source).toContain("Воду збережено");
     expect(source).toContain("Woda została zapisana");
     expect(source).toContain("Water was saved");
+    expect(source).not.toContain("error instanceof Error ? error.message");
+    expect(source).not.toContain("${copy.rewardSyncWarning} ${error.message}");
     expect(source).not.toContain("Water saved, but companion progress could not sync");
   });
 });

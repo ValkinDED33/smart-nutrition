@@ -230,12 +230,8 @@ export const QuickWeightCheckInCard = () => {
         );
         companionRewardPayload =
           createCompanionRewardAnalyticsPayload("weight_updated");
-      } catch (rewardError) {
-        setSaveError(
-          rewardError instanceof Error
-            ? `${copy.rewardSyncWarning} ${rewardError.message}`
-            : copy.rewardSyncWarning
-        );
+      } catch {
+        setSaveError(copy.rewardSyncWarning);
       }
       trackRuntimeEvent("weight_updated", {
         weightKg: roundedWeight,
@@ -246,8 +242,8 @@ export const QuickWeightCheckInCard = () => {
       });
       setWeightDraft(roundedWeight.toFixed(1));
       setSaved(true);
-    } catch (error) {
-      setSaveError(error instanceof Error ? error.message : copy.saveError);
+    } catch {
+      setSaveError(copy.saveError);
     }
   };
 

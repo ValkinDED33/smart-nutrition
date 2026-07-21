@@ -290,8 +290,8 @@ const WaterTracker = () => {
       try {
         await runWaterStateSave(nextWater);
         return true;
-      } catch (error) {
-        setSaveError(error instanceof Error ? error.message : copy.saveError);
+      } catch {
+        setSaveError(copy.saveError);
         return false;
       }
     },
@@ -515,12 +515,8 @@ const WaterTracker = () => {
       );
       companionRewardPayload =
         createCompanionRewardAnalyticsPayload("water_logged");
-    } catch (error) {
-      setSaveError(
-        error instanceof Error
-          ? `${copy.rewardSyncWarning} ${error.message}`
-          : copy.rewardSyncWarning
-      );
+    } catch {
+      setSaveError(copy.rewardSyncWarning);
     }
 
     trackRuntimeEvent("water_added", {
@@ -704,10 +700,8 @@ const WaterTracker = () => {
                   disabled={savingWater}
                   onClick={() => {
                     setSaveError(null);
-                    void retryLastWaterSave().catch((error) => {
-                      setSaveError(
-                        error instanceof Error ? error.message : copy.saveError
-                      );
+                    void retryLastWaterSave().catch(() => {
+                      setSaveError(copy.saveError);
                     });
                   }}
                 >
