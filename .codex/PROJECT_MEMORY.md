@@ -75,6 +75,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added a tracked-files cleanliness contract so Codex/browser profiles, screenshots, remote attachments, logs, caches, build output, and `node_modules` cannot be committed as project source.
 - Tightened ignored local backup storage so nested `server/data/backups/**` snapshots stay out of Git, with a contract allowing only `server/data/.gitkeep` under runtime data.
 - Expanded backend external product mapping so OpenFoodFacts and USDA preserve the full canonical nutrient profile, including iodine, selenium, copper, fatty acids, cholesterol, sugar types, water, and vitamins when providers supply them.
+- Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
 
 ## Current Architecture
 
@@ -86,6 +87,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
+- Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.
 - Security/CSP: Frontend `connect-src` must not allow direct external food catalog providers for product lookup.
 - Scanner security headers: backend-served app responses must allow `camera=(self)` so barcode scanning is not blocked by Permissions Policy.

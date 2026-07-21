@@ -18,6 +18,11 @@ describe("ProgressOverviewCard contract", () => {
     expect(source).toContain("createWaterGlassSlots");
     expect(source).toContain("overviewWaterGlasses");
     expect(source).toContain('data-testid="overview-water-glass"');
+    expect(source).toContain("onSelectDomain");
+    expect(source).toContain("data-progress-domain={item.domain}");
+    expect(pageSource).toContain("getSectionForProgressDomain");
+    expect(pageSource).toContain('case "water":');
+    expect(pageSource).toContain('return "water";');
     expect(source).toContain("mealsProgress");
     expect(source).toContain("weightProgress");
     expect(source).toContain("checkInProgress");

@@ -1,7 +1,10 @@
 import { lazy, Suspense, useState } from "react";
 import { Box, Stack } from "@mui/material";
 import { ProgressActionBar } from "../features/profile/ProgressActionBar";
-import { ProgressOverviewCard } from "../features/profile/ProgressOverviewCard";
+import {
+  ProgressOverviewCard,
+  type ProgressDomain,
+} from "../features/profile/ProgressOverviewCard";
 import { QuickWeightCheckInCard } from "../features/profile/QuickWeightCheckInCard";
 import { useLanguage } from "../shared/language";
 import {
@@ -114,6 +117,22 @@ const getProgressSectionLabel = (
   }
 };
 
+const getSectionForProgressDomain = (domain: ProgressDomain): ProgressSection => {
+  switch (domain) {
+    case "water":
+      return "water";
+    case "checkIn":
+      return "body";
+    case "calories":
+    case "protein":
+    case "meals":
+      return "trends";
+    case "weight":
+    default:
+      return "weight";
+  }
+};
+
 const ProgressPage = () => {
   const { appLanguage } = useLanguage();
   const [activeSection, setActiveSection] = useState<ProgressSection>("weight");
@@ -136,7 +155,9 @@ const ProgressPage = () => {
       assistantHint={<EcosystemPulse focus="progress" />}
     >
       <ProgressActionBar />
-      <ProgressOverviewCard />
+      <ProgressOverviewCard
+        onSelectDomain={(domain) => setActiveSection(getSectionForProgressDomain(domain))}
+      />
 
       <SectionTabs
         sections={sections}

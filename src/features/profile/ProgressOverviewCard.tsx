@@ -1,4 +1,12 @@
-import { Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  ButtonBase,
+  Chip,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
@@ -60,8 +68,18 @@ const progressOverviewCopy = {
 } as const;
 
 type ProgressTone = "good" | "watch" | "missing";
-type ProgressDomain = "calories" | "protein" | "water" | "meals" | "weight" | "checkIn";
+export type ProgressDomain =
+  | "calories"
+  | "protein"
+  | "water"
+  | "meals"
+  | "weight"
+  | "checkIn";
 type ProgressOverviewCopy = (typeof progressOverviewCopy)[AppLanguage];
+
+interface ProgressOverviewCardProps {
+  onSelectDomain?: (domain: ProgressDomain) => void;
+}
 
 const getProgressOverviewCopy = (language: AppLanguage): ProgressOverviewCopy => {
   switch (language) {
@@ -99,7 +117,7 @@ const getToneColor = (tone: ProgressTone, color: string) => {
 
 const formatPercent = (value: number | null) => (value === null ? "-" : `${value}%`);
 
-export const ProgressOverviewCard = () => {
+export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardProps) => {
   const { appLanguage } = useLanguage();
   const copy = getProgressOverviewCopy(appLanguage);
   const profile = useSelector((state: RootState) => state.profile);
@@ -224,7 +242,27 @@ export const ProgressOverviewCard = () => {
             const barColor = getToneColor(item.tone, item.color);
 
             return (
-              <Paper key={item.label} variant="outlined" sx={{ p: 1.35, borderRadius: 1 }}>
+              <Paper
+                key={item.label}
+                variant="outlined"
+                component={ButtonBase}
+                type="button"
+                onClick={() => onSelectDomain?.(item.domain)}
+                data-progress-domain={item.domain}
+                sx={{
+                  p: 1.35,
+                  borderRadius: 1,
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  color: "inherit",
+                  transition: "border-color 160ms ease, transform 160ms ease",
+                  "&:hover, &:focus-visible": {
+                    borderColor: barColor,
+                    transform: "translateY(-1px)",
+                  },
+                }}
+              >
                 <Stack spacing={0.75}>
                   <Stack direction="row" justifyContent="space-between" spacing={1}>
                     <Typography sx={{ fontWeight: 850 }}>{item.label}</Typography>

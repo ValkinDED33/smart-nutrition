@@ -40,6 +40,10 @@ const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
+const progressPageSource = readSource("src/pages/ProgressPage.tsx");
+const progressOverviewCardSource = readSource(
+  "src/features/profile/ProgressOverviewCard.tsx"
+);
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
@@ -330,6 +334,20 @@ addCheck(
     productNutritionFactsSource.includes("additiveDose") &&
     productNutritionFactsSource.includes("additiveCompositionMissing"),
   "Product details must expose micronutrients, iodine, additive risk, dose guidance, and a clear missing-composition state."
+);
+
+addCheck(
+  "progress overview keeps water glasses visible and opens counted domains",
+  progressPageSource.includes("getSectionForProgressDomain") &&
+    progressPageSource.includes('case "water":') &&
+    progressPageSource.includes('return "water";') &&
+    progressPageSource.includes("onSelectDomain") &&
+    progressOverviewCardSource.includes("createWaterGlassSlots") &&
+    progressOverviewCardSource.includes("overviewWaterGlasses") &&
+    progressOverviewCardSource.includes('data-testid="overview-water-glass"') &&
+    progressOverviewCardSource.includes("data-progress-domain={item.domain}") &&
+    progressOverviewCardSource.includes("onSelectDomain?.(item.domain)"),
+  "Progress must show water glass slots in the first overview and let users open the water tab directly from the counted-domain card."
 );
 
 addCheck(
