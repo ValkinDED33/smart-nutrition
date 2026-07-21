@@ -60,6 +60,9 @@ const foodCommandCenterModelSource = readSource(
 const mealActionFeedbackModelSource = readSource(
   "src/features/meal/mealActionFeedbackModel.ts"
 );
+const quickMealComposerModelSource = readSource(
+  "src/features/meal/quickMealComposerModel.ts"
+);
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
@@ -1123,6 +1126,14 @@ addCheck(
     !mealActionFeedbackModelSource.includes("${state.message") &&
     !mealActionFeedbackModelSource.includes("state.message || copy.retry"),
   "Food add/edit/delete/repeat/template/product failure notices must stay retryable without rendering raw backend/provider exception text."
+);
+
+addCheck(
+  "quick meal composer feedback hides raw backend/provider failure details",
+  quickMealComposerModelSource.includes("text: `${copy.failed} ${copy.retry}`") &&
+    !quickMealComposerModelSource.includes("${state.message") &&
+    !quickMealComposerModelSource.includes("state.message || copy.retry"),
+  "Quick meal composer save failures must stay retryable without rendering raw backend/provider exception text."
 );
 
 addCheck(

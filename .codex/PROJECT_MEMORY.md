@@ -128,6 +128,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked assistant unavailable/fallback copy so regular users see limited-helper/live-dialog recovery language instead of Cloud AI, production AI, or local-context internals.
 - Hardened shared sync error messaging so unknown backend/provider exceptions fall back to localized retry guidance instead of leaking raw technical text into regular sync chips or profile sync panels.
 - Hardened shared meal action feedback so food add/edit/delete/repeat/template/product failures remain retryable without leaking raw backend/provider exception text to regular users.
+- Hardened quick meal composer save feedback so manual multi-product meal failures stay retryable without exposing backend/provider exception details in the food UI.
 
 ## Current Architecture
 
@@ -200,6 +201,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Product and meal intake must use a canonical backend-confirmed flow.
 - Food logging must keep `FoodCommandCenter` as the primary entry surface for search, barcode, photo, saved products, builder, and catalog contribution; new food inputs such as voice or correction must extend that command surface instead of adding another warehouse.
 - Food action failure feedback must stay product-language and retryable; raw backend/provider exception text belongs in diagnostics, not meal, scanner, photo, template, or saved-product notices.
+- Quick meal composer save feedback must not render raw backend/provider exception text; it may keep retry state and product-language recovery copy only.
 - Typed and browser-voice food commands must resolve inside `FoodCommandCenter`, require a clear product, quantity, and compatible units, and persist only through `addProductIntakeToCloud`; vague speech/text must search or ask for confirmation instead of saving.
 - Product correction after scanner/search/photo review must create a prefilled shared-catalog moderation submission through the existing catalog contribution contract; it must not mutate product facts locally or claim the global catalog changed before moderation confirms it.
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.

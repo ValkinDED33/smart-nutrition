@@ -8,6 +8,8 @@ import {
   hasValidComposerMealRows,
 } from "./quickMealComposerModel";
 
+const TEST_EATEN_AT = "2026-07-03T08:00:00.000Z";
+
 const createProduct = (): Product => ({
   id: "product-1",
   name: "Greek yogurt",
@@ -54,7 +56,7 @@ describe("quickMealComposerModel", () => {
         quantity,
         mealType,
         origin,
-        eatenAt: "2026-07-03T08:00:00.000Z",
+        eatenAt: TEST_EATEN_AT,
       })
     );
 
@@ -96,7 +98,7 @@ describe("quickMealComposerModel", () => {
               quantity: 100,
               mealType: "snack",
               origin: "manual",
-              eatenAt: "2026-07-03T08:00:00.000Z",
+              eatenAt: TEST_EATEN_AT,
             },
           ],
         },
@@ -104,8 +106,27 @@ describe("quickMealComposerModel", () => {
       )
     ).toEqual({
       severity: "warning",
-      text: "Failed Backend unavailable",
+      text: "Failed Retry",
       retryable: true,
     });
+    expect(
+      resolveQuickMealSaveNotice(
+        {
+          status: "failed",
+          message: "Provider unavailable: REMOTE_API_TIMEOUT",
+          entries: [
+            {
+              id: "entry-2",
+              product,
+              quantity: 80,
+              mealType: "snack",
+              origin: "manual",
+              eatenAt: TEST_EATEN_AT,
+            },
+          ],
+        },
+        copy
+      )?.text
+    ).not.toMatch(/backend|provider|unavailable|REMOTE_API/i);
   });
 });
