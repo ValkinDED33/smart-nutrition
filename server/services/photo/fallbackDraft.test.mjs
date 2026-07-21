@@ -59,7 +59,7 @@ describe("fallbackDraft", () => {
     expect(result.uncertainIngredients).toEqual([]);
   });
 
-  it("prioritizes previously confirmed photo corrections without making them certain", () => {
+  it("does not reuse previously confirmed photo corrections as visual recognition", () => {
     const result = createFallbackPhotoAnalysis({
       mealType: "lunch",
       dietStyle: "balanced",
@@ -86,21 +86,11 @@ describe("fallbackDraft", () => {
       },
     });
 
-    expect(result.interpretations[0]).toMatchObject({
-      id: "user-confirmed-history",
-      title: "Previously confirmed by you",
-    });
-    expect(result.recognitionStatus).toBe("needs_review");
-    expect(result.items[0]).toMatchObject({
-      name: "Turkey wrap",
-      reason: expect.stringContaining("Previously confirmed"),
-      estimatedNutritionPer100g: {
-        calories: 210,
-        protein: 16,
-        fat: 8,
-        carbs: 22,
-      },
-    });
-    expect(result.confidence).toBeLessThan(0.7);
+    expect(result.recognitionStatus).toBe("needs_better_photo");
+    expect(result.confidence).toBe(0);
+    expect(result.items).toEqual([]);
+    expect(result.interpretations).toEqual([]);
+    expect(result.uncertainIngredients).toEqual([]);
+    expect(result.summary).toContain("better light");
   });
 });

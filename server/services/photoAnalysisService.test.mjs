@@ -57,7 +57,7 @@ describe("photoAnalysisService", () => {
     expect(result.cautions.join(" ")).not.toContain("AI estimate");
   });
 
-  it("uses previous confirmed photo corrections as future low-confidence candidates", async () => {
+  it("does not reuse previous confirmed photo corrections as visual recognition", async () => {
     const service = createPhotoAnalysisService();
     const result = await service.analyzePhoto(
       { dietStyle: "balanced" },
@@ -85,15 +85,11 @@ describe("photoAnalysisService", () => {
       }
     );
 
-    expect(result.items[0]).toMatchObject({
-      name: "Turkey wrap",
-      confidence: expect.any(Number),
-      reason: expect.stringContaining("Previously confirmed"),
-    });
-    expect(result.confidence).toBeLessThan(0.7);
-    expect(result.interpretations?.[0]).toMatchObject({
-      id: "user-confirmed-history",
-    });
+    expect(result.recognitionStatus).toBe("needs_better_photo");
+    expect(result.confidence).toBe(0);
+    expect(result.items).toEqual([]);
+    expect(result.interpretations).toEqual([]);
+    expect(result.summary).toContain("better light");
   });
 
   it("uses a configured vision provider without trusting fake certainty", async () => {

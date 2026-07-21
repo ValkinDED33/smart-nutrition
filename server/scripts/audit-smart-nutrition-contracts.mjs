@@ -433,12 +433,18 @@ addCheck(
 );
 
 addCheck(
-  "photo fallback never invents generic foods without user history",
-  fallbackPhotoDraftSource.includes("getFeedbackItemsFromMealState") &&
-    fallbackPhotoDraftSource.includes("photo-feedback:user-confirmed") &&
-    fallbackPhotoDraftSource.includes('recognitionStatus: feedbackItems.length > 0 ? "needs_review" : "needs_better_photo"') &&
+  "photo fallback never invents foods from templates or user history",
+  fallbackPhotoDraftSource.includes("I could not confidently identify visible foods") &&
+    fallbackPhotoDraftSource.includes("No food was automatically identified") &&
+    fallbackPhotoDraftSource.includes("void mealState") &&
+    fallbackPhotoDraftSource.includes("const items = []") &&
+    fallbackPhotoDraftSource.includes("const interpretations = []") &&
+    fallbackPhotoDraftSource.includes('recognitionStatus: "needs_better_photo"') &&
+    fallbackPhotoDraftSource.includes("confidence: 0") &&
+    !fallbackPhotoDraftSource.includes("photo-feedback:user-confirmed") &&
+    !fallbackPhotoDraftSource.includes("Previously confirmed by you") &&
     !/\b(Greek yogurt|Oats|Banana|Breakfast photo draft)\b/.test(fallbackPhotoDraftSource),
-  "Fallback photo analysis must use only user-confirmed history or request a better/manual photo, never a generic food template."
+  "When vision providers cannot identify food, fallback must request a better/manual photo and must not fill the draft from templates or previous user corrections."
 );
 
 addCheck(
