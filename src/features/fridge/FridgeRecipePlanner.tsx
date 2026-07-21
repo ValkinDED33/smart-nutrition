@@ -53,7 +53,8 @@ const fridgeCopy = {
     missing: "Ще потрібні",
     cookNow: "Додати як прийом їжі",
     remove: "Видалити",
-    saveFailed: "Не вдалося зберегти холодильник у хмарі.",
+    saveFailed: "Не вдалося зберегти холодильник. Спробуйте ще раз.",
+    mealSaveFailed: "Не вдалося додати рецепт у щоденник. Спробуйте ще раз.",
     addedToFridge: "Продукт додано в холодильник.",
     quantityUpdated: "Кількість оновлено.",
     removedFromFridge: "Продукт видалено з холодильника.",
@@ -82,7 +83,8 @@ const fridgeCopy = {
     missing: "Brakuje jeszcze",
     cookNow: "Dodaj jako posiłek",
     remove: "Usuń",
-    saveFailed: "Nie udało się zapisać lodówki w chmurze.",
+    saveFailed: "Nie udało się zapisać lodówki. Spróbuj ponownie.",
+    mealSaveFailed: "Nie udało się dodać przepisu do dziennika. Spróbuj ponownie.",
     addedToFridge: "Produkt dodany do lodówki.",
     quantityUpdated: "Ilość zaktualizowana.",
     removedFromFridge: "Produkt usunięty z lodówki.",
@@ -111,7 +113,8 @@ const fridgeCopy = {
     missing: "Still needed",
     cookNow: "Add as meal",
     remove: "Remove",
-    saveFailed: "Could not save fridge to cloud.",
+    saveFailed: "Could not save the fridge. Please try again.",
+    mealSaveFailed: "Could not add the recipe to the diary. Please try again.",
     addedToFridge: "Product added to the fridge.",
     quantityUpdated: "Quantity updated.",
     removedFromFridge: "Product removed from the fridge.",
@@ -309,16 +312,12 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       try {
         await consumeFridgeItemsInCloud(dispatch, fridge, recipe.ingredients);
         setMealSaveNotice(copy.mealAdded);
-      } catch (fridgeError) {
+      } catch {
         setMealSaveNotice(copy.mealAddedFridgeFailed);
-        setFridgeSaveError(
-          fridgeError instanceof Error ? fridgeError.message : copy.saveFailed
-        );
+        setFridgeSaveError(copy.saveFailed);
       }
-    } catch (error) {
-      setMealSaveError(
-        error instanceof Error ? error.message : "Could not save meal to cloud."
-      );
+    } catch {
+      setMealSaveError(copy.mealSaveFailed);
     } finally {
       setSavingFridgeAction(null);
     }
@@ -336,10 +335,8 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
     try {
       await action();
       setFridgeSaveNotice(successMessage ?? null);
-    } catch (error) {
-      setFridgeSaveError(
-        error instanceof Error ? error.message : copy.saveFailed
-      );
+    } catch {
+      setFridgeSaveError(copy.saveFailed);
     } finally {
       setSavingFridgeAction(null);
     }

@@ -981,7 +981,7 @@ addCheck(
     polishedPolishSyncSources.includes("Profil w chmurze") &&
     polishedPolishSyncSources.includes("Chroniona sesja") &&
     polishedPolishSyncSources.includes("Telegram odłączony.") &&
-    polishedPolishSyncSources.includes("Nie udało się zapisać lodówki w chmurze.") &&
+    polishedPolishSyncSources.includes("Nie udało się zapisać lodówki. Spróbuj ponownie.") &&
     !/\b(chmura zakonczona pomyslnie|Blad synchronizacji|czekaja na udana synchronizacje|zmienily sie|urzadzeniu|Nie udalo sie|Nie polaczono|Polaczono|Odlacz|Otworzylismy|lodowki)\b/.test(
       polishedPolishSyncSources
     ),
@@ -1214,6 +1214,20 @@ addCheck(
     !catalogContributionCardSource.includes("PlatformApiError") &&
     !catalogContributionCardSource.includes("nextError.message"),
   "Shared catalog contribution component failures must render retry copy instead of raw backend/provider exception text."
+);
+
+addCheck(
+  "fridge planner hides raw backend/provider save failure details",
+  fridgeRecipePlannerSource.includes("mealSaveFailed") &&
+    fridgeRecipePlannerSource.includes("setFridgeSaveError(copy.saveFailed)") &&
+    fridgeRecipePlannerSource.includes("setMealSaveError(copy.mealSaveFailed)") &&
+    !fridgeRecipePlannerSource.includes("error instanceof Error ? error.message") &&
+    !fridgeRecipePlannerSource.includes("fridgeError instanceof Error") &&
+    !fridgeRecipePlannerSource.includes("Could not save meal to cloud.") &&
+    !/save(?:d)? fridge to cloud|lodówki w chmurze|хмар/i.test(
+      fridgeRecipePlannerSource
+    ),
+  "Fridge planner meal/fridge save failures must show product-language retry copy instead of raw backend/provider exception text."
 );
 
 addCheck(
