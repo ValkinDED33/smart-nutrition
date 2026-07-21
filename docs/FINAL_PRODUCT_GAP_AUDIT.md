@@ -144,14 +144,18 @@ Current state:
   update.
 - Success reply is `Telegram connected ✅`.
 - Medication reminders can be created from natural text.
+- Medication reminders can be tied to real meal events, for example after
+  lunch within the lunch window, and the web reminder manager now shows that
+  event-based schedule instead of a blank fixed time.
 - Reminders send buttons: taken, snooze, skipped, delete.
 - Dose actions are stored in reminder event history.
 
 Gap:
 
 - The web reminder manager now shows backend-confirmed adherence history
-  (taken/done, skipped, snoozed, completion rate, latest action), but deeper
-  medication reports and export are still not a full module.
+  (taken/done, skipped, snoozed, completion rate, latest action) and
+  event-based after-meal schedules, but deeper medication reports and export
+  are still not a full module.
 - There is no caregiver/family sharing mode yet.
 - Medication tracking should stay a reminder/logging feature, not medical
   prescription advice.

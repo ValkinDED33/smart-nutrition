@@ -2,6 +2,7 @@ import type {
   ReminderAction,
   ReminderEvent,
   ReminderItem,
+  ReminderTrigger,
   ReminderType,
 } from "@shared/api/reminders";
 
@@ -73,6 +74,7 @@ export const upsertReminderItem = (items: ReminderItem[], item: ReminderItem) =>
   sortReminders([item, ...items.filter((entry) => entry.id !== item.id)]);
 
 const fallbackReminderTimeZone = "Europe/Warsaw";
+const afterMealTriggerKind = "after_meal";
 const positiveAdherenceActions = new Set(["taken", "done"]);
 const trackedAdherenceActions = new Set(["taken", "done", "skipped", "snoozed"]);
 
@@ -143,4 +145,41 @@ export const formatReminderDateTime = (
       timeZone: fallbackReminderTimeZone,
     }).format(date);
   }
+};
+
+export const isAfterMealReminderTrigger = (
+  trigger: ReminderTrigger | null | undefined
+): trigger is ReminderTrigger => trigger?.kind === afterMealTriggerKind;
+
+export const formatReminderScheduleLabel = ({
+  reminder,
+  mealLabels,
+  afterMealLabel,
+  windowLabel,
+  offsetLabel,
+  noScheduleLabel,
+}: {
+  reminder: Pick<ReminderItem, "times" | "trigger">;
+  mealLabels: Record<ReminderTrigger["mealType"], string>;
+  afterMealLabel: (mealTypeLabel: string) => string;
+  windowLabel: (from: string, to: string) => string;
+  offsetLabel: (minutes: number) => string;
+  noScheduleLabel: string;
+}) => {
+  if (isAfterMealReminderTrigger(reminder.trigger)) {
+    const mealTypeLabel = mealLabels[reminder.trigger.mealType];
+    const parts = [afterMealLabel(mealTypeLabel)];
+
+    if (reminder.trigger.windowStart && reminder.trigger.windowEnd) {
+      parts.push(windowLabel(reminder.trigger.windowStart, reminder.trigger.windowEnd));
+    }
+
+    if (reminder.trigger.offsetMinutes > 0) {
+      parts.push(offsetLabel(reminder.trigger.offsetMinutes));
+    }
+
+    return parts.join(" · ");
+  }
+
+  return reminder.times.length > 0 ? reminder.times.join(", ") : noScheduleLabel;
 };

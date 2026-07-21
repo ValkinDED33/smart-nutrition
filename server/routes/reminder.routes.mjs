@@ -21,6 +21,16 @@ const toReminderResponse = (reminder) => ({
   timezone: reminder.timezone,
   durationDays: reminder.durationDays ?? null,
   repeat: reminder.repeat === "once" ? "once" : "daily",
+  trigger:
+    reminder.trigger?.kind === "after_meal" && reminder.trigger.mealType
+      ? {
+          kind: "after_meal",
+          mealType: reminder.trigger.mealType,
+          offsetMinutes: Number(reminder.trigger.offsetMinutes) || 0,
+          windowStart: reminder.trigger.windowStart ?? null,
+          windowEnd: reminder.trigger.windowEnd ?? null,
+        }
+      : null,
   active: reminder.active !== false,
   nextRunAt: reminder.nextRunAt ?? null,
   lastSentAt: reminder.lastSentAt ?? null,

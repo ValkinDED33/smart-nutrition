@@ -38,6 +38,7 @@ import {
 } from "@shared/api/reminders";
 import {
   formatReminderDateTime,
+  formatReminderScheduleLabel,
   getReminderAdherenceSummary,
   getReminderPrimaryAction,
   isMedicationLikeReminderType,
@@ -95,6 +96,22 @@ const reminderCopy = {
     confirmDelete: "Так, видалити",
     deleteConfirm: "Точно видалити?",
     timePlaceholder: "Наприклад: 22:00 або о 9 ранку",
+    noSchedule: "Очікує події",
+    scheduleAfterMeal: (mealType: string) => `Після прийому їжі: ${mealType}`,
+    scheduleWindow: (from: string, to: string) => `вікно ${from}-${to}`,
+    scheduleOffset: (minutes: number) => `через ${minutes} хв`,
+    mealLabels: {
+      breakfast: "сніданок",
+      lunch: "обід",
+      dinner: "вечеря",
+      snack: "перекус",
+    },
+    afterMealEditText: {
+      breakfast: "після сніданку",
+      lunch: "після обіду",
+      dinner: "після вечері",
+      snack: "після перекусу",
+    },
     statusActive: "Активне",
     statusPaused: "Пауза",
     oneTime: "Один раз",
@@ -161,6 +178,22 @@ const reminderCopy = {
     confirmDelete: "Tak, usuń",
     deleteConfirm: "Na pewno usunąć?",
     timePlaceholder: "Np. 22:00 albo o 9 rano",
+    noSchedule: "Czeka na zdarzenie",
+    scheduleAfterMeal: (mealType: string) => `Po posiłku: ${mealType}`,
+    scheduleWindow: (from: string, to: string) => `okno ${from}-${to}`,
+    scheduleOffset: (minutes: number) => `po ${minutes} min`,
+    mealLabels: {
+      breakfast: "śniadanie",
+      lunch: "obiad",
+      dinner: "kolacja",
+      snack: "przekąska",
+    },
+    afterMealEditText: {
+      breakfast: "po śniadaniu",
+      lunch: "po obiedzie",
+      dinner: "po kolacji",
+      snack: "po przekąsce",
+    },
     statusActive: "Aktywne",
     statusPaused: "Pauza",
     oneTime: "Jednorazowo",
@@ -227,6 +260,22 @@ const reminderCopy = {
     confirmDelete: "Yes, delete",
     deleteConfirm: "Delete this reminder?",
     timePlaceholder: "Example: 22:00 or at 9 in the morning",
+    noSchedule: "Waiting for event",
+    scheduleAfterMeal: (mealType: string) => `After meal: ${mealType}`,
+    scheduleWindow: (from: string, to: string) => `window ${from}-${to}`,
+    scheduleOffset: (minutes: number) => `after ${minutes} min`,
+    mealLabels: {
+      breakfast: "breakfast",
+      lunch: "lunch",
+      dinner: "dinner",
+      snack: "snack",
+    },
+    afterMealEditText: {
+      breakfast: "after breakfast",
+      lunch: "after lunch",
+      dinner: "after dinner",
+      snack: "after snack",
+    },
     statusActive: "Active",
     statusPaused: "Paused",
     oneTime: "One time",
@@ -463,7 +512,11 @@ const ReminderManagementCard = () => {
 
   const startEditing = (reminder: ReminderItem) => {
     setEditingReminderId(reminder.id);
-    setEditingText(reminder.times.join(", "));
+    setEditingText(
+      reminder.trigger?.kind === "after_meal"
+        ? copy.afterMealEditText[reminder.trigger.mealType]
+        : reminder.times.join(", ")
+    );
     setConfirmingDeleteId(null);
     setNotice(null);
   };
@@ -608,6 +661,14 @@ const ReminderManagementCard = () => {
               const lastActionLabel = adherence.lastEvent
                 ? getReminderActionLabel(copy, adherence.lastEvent.action)
                 : null;
+              const scheduleLabel = formatReminderScheduleLabel({
+                reminder,
+                mealLabels: copy.mealLabels,
+                afterMealLabel: copy.scheduleAfterMeal,
+                windowLabel: copy.scheduleWindow,
+                offsetLabel: copy.scheduleOffset,
+                noScheduleLabel: copy.noSchedule,
+              });
 
               return (
                 <Box
@@ -649,7 +710,7 @@ const ReminderManagementCard = () => {
                           {reminder.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {reminder.times.join(", ")}
+                          {scheduleLabel}
                           {reminder.dose && quantityLabel
                             ? ` · ${quantityLabel}: ${reminder.dose}`
                             : ""}

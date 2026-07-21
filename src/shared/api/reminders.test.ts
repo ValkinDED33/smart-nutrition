@@ -22,6 +22,7 @@ const createReminderItem = (overrides = {}) => ({
   timezone: "Europe/Warsaw",
   durationDays: 1,
   repeat: "once",
+  trigger: null,
   active: true,
   nextRunAt: REMINDER_NEXT_RUN_AT,
   lastSentAt: null,
@@ -55,6 +56,42 @@ describe("reminders api", () => {
     );
     expect(reminders).toHaveLength(2);
     expect(reminders[1]).toMatchObject({ id: "paused-1", active: false });
+  });
+
+  it("preserves backend after-meal reminder triggers", async () => {
+    authRemoteMock.requestRemote.mockResolvedValueOnce({
+      data: {
+        items: [
+          createReminderItem({
+            id: "after-lunch-1",
+            times: [],
+            nextRunAt: null,
+            trigger: {
+              kind: "after_meal",
+              mealType: "lunch",
+              offsetMinutes: 20,
+              windowStart: "12:00",
+              windowEnd: "16:30",
+            },
+          }),
+        ],
+      },
+    });
+
+    const reminders = await listRemoteReminders({ activeOnly: false });
+
+    expect(reminders[0]).toMatchObject({
+      id: "after-lunch-1",
+      times: [],
+      nextRunAt: null,
+      trigger: {
+        kind: "after_meal",
+        mealType: "lunch",
+        offsetMinutes: 20,
+        windowStart: "12:00",
+        windowEnd: "16:30",
+      },
+    });
   });
 
   it("passes snooze duration through the canonical reminder action endpoint", async () => {

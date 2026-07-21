@@ -46,6 +46,7 @@ const reminder = {
   timezone: "Europe/Warsaw",
   durationDays: 1,
   repeat: "once",
+  trigger: null,
   active: true,
   nextRunAt: "2026-06-22T08:00:00.000Z",
   createdAt: "2026-06-22T07:00:00.000Z",
@@ -112,6 +113,52 @@ describe("reminder routes", () => {
         id: "task-1",
         title: "позвонить врачу",
       },
+    });
+  });
+
+  it("returns after-meal trigger details for event-based reminders", async () => {
+    const afterMealReminder = {
+      ...reminder,
+      id: "after-lunch-1",
+      type: "medication",
+      times: [],
+      nextRunAt: null,
+      trigger: {
+        kind: "after_meal",
+        mealType: "lunch",
+        offsetMinutes: 15,
+        windowStart: "12:00",
+        windowEnd: "16:30",
+      },
+    };
+    const reminderService = {
+      listReminders: vi.fn(() => [afterMealReminder]),
+    };
+    const controller = createReminderController({ reminderService, bodyLimitBytes: 4096 });
+    const response = new MemoryResponse();
+
+    await controller.listReminders({
+      response,
+      auth,
+      url: new URL("https://api.example/api/reminders"),
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(parseResponse(response)).toMatchObject({
+      items: [
+        {
+          id: "after-lunch-1",
+          times: [],
+          nextRunAt: null,
+          trigger: {
+            kind: "after_meal",
+            mealType: "lunch",
+            offsetMinutes: 15,
+            windowStart: "12:00",
+            windowEnd: "16:30",
+          },
+        },
+      ],
     });
   });
 

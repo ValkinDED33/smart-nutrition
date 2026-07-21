@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ReminderItem } from "@shared/api/reminders";
 import {
   formatReminderDateTime,
+  formatReminderScheduleLabel,
   getReminderAdherenceSummary,
   getReminderPrimaryAction,
   getReminderPrimaryActionLabelKey,
@@ -24,6 +25,7 @@ const createReminder = (overrides: Partial<ReminderItem>): ReminderItem => ({
   timezone: "Europe/Warsaw",
   durationDays: null,
   repeat: "once",
+  trigger: null,
   active: true,
   nextRunAt: null,
   lastSentAt: null,
@@ -176,5 +178,32 @@ describe("reminderManagementModel", () => {
         action: "skipped",
       },
     });
+  });
+
+  it("formats after-meal reminder triggers as visible schedule labels", () => {
+    const label = formatReminderScheduleLabel({
+      reminder: {
+        times: [],
+        trigger: {
+          kind: "after_meal",
+          mealType: "lunch",
+          offsetMinutes: 20,
+          windowStart: "12:00",
+          windowEnd: "16:30",
+        },
+      },
+      mealLabels: {
+        breakfast: "breakfast",
+        lunch: "lunch",
+        dinner: "dinner",
+        snack: "snack",
+      },
+      afterMealLabel: (mealType) => `After meal: ${mealType}`,
+      windowLabel: (from, to) => `window ${from}-${to}`,
+      offsetLabel: (minutes) => `after ${minutes} min`,
+      noScheduleLabel: "Waiting for event",
+    });
+
+    expect(label).toBe("After meal: lunch · window 12:00-16:30 · after 20 min");
   });
 });

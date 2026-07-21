@@ -17,6 +17,7 @@ const createReminder = (overrides: Partial<ReminderItem> = {}): ReminderItem => 
   timezone: "Europe/Warsaw",
   durationDays: null,
   repeat: "once",
+  trigger: null,
   active: true,
   nextRunAt: null,
   lastSentAt: null,

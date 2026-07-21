@@ -8,6 +8,13 @@ export type ReminderType =
   | "habit"
   | "task";
 type ReminderRepeat = "daily" | "once";
+export type ReminderTrigger = {
+  kind: "after_meal";
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  offsetMinutes: number;
+  windowStart: string | null;
+  windowEnd: string | null;
+};
 export type ReminderAction =
   | "taken"
   | "done"
@@ -32,6 +39,7 @@ export type ReminderItem = {
   timezone: string;
   durationDays: number | null;
   repeat: ReminderRepeat;
+  trigger: ReminderTrigger | null;
   active: boolean;
   nextRunAt: string | null;
   lastSentAt: string | null;
@@ -59,6 +67,31 @@ const readReminderItem = (value: unknown): ReminderItem | null => {
     return null;
   }
 
+  const trigger =
+    record.trigger?.kind === "after_meal" &&
+    (record.trigger.mealType === "breakfast" ||
+      record.trigger.mealType === "lunch" ||
+      record.trigger.mealType === "dinner" ||
+      record.trigger.mealType === "snack")
+      ? {
+          kind: "after_meal" as const,
+          mealType: record.trigger.mealType,
+          offsetMinutes:
+            typeof record.trigger.offsetMinutes === "number" &&
+            Number.isFinite(record.trigger.offsetMinutes)
+              ? Math.max(0, Math.min(Math.round(record.trigger.offsetMinutes), 180))
+              : 0,
+          windowStart:
+            typeof record.trigger.windowStart === "string"
+              ? record.trigger.windowStart
+              : null,
+          windowEnd:
+            typeof record.trigger.windowEnd === "string"
+              ? record.trigger.windowEnd
+              : null,
+        }
+      : null;
+
   return {
     id: record.id,
     type:
@@ -80,6 +113,7 @@ const readReminderItem = (value: unknown): ReminderItem | null => {
         ? record.durationDays
         : null,
     repeat: record.repeat === "once" ? "once" : "daily",
+    trigger,
     active: record.active !== false,
     nextRunAt: typeof record.nextRunAt === "string" ? record.nextRunAt : null,
     lastSentAt: typeof record.lastSentAt === "string" ? record.lastSentAt : null,

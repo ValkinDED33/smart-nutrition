@@ -181,6 +181,48 @@ describe("reminderService", () => {
     });
   });
 
+  it("creates medication reminders tied to a real meal event window", async () => {
+    const repository = {
+      updateUserReminders: vi.fn(async (userId, reminders) => ({
+        ...createUser({ id: userId }),
+        medicationReminders: reminders,
+      })),
+    };
+    const service = createReminderService({ authRepository: repository });
+    const result = await service.createReminderFromUserText(
+      createUser(),
+      {
+        type: "medication",
+        text: "Нужно выпить таблетку после обеда",
+      },
+      new Date("2026-06-20T05:00:00.000Z")
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      reminder: {
+        type: "medication",
+        times: [],
+        nextRunAt: null,
+        trigger: {
+          kind: "after_meal",
+          mealType: "lunch",
+          offsetMinutes: 0,
+          windowStart: "12:00",
+          windowEnd: "16:30",
+        },
+      },
+    });
+    expect(repository.updateUserReminders).toHaveBeenCalledWith(
+      "user-1",
+      expect.arrayContaining([
+        expect.objectContaining({
+          trigger: expect.objectContaining({ kind: "after_meal", mealType: "lunch" }),
+        }),
+      ])
+    );
+  });
+
   it("keeps the complete lifecycle storage-backed for generic reminders", async () => {
     const repository = {
       updateUserMedicationReminders: vi.fn(async (userId, reminders) => ({

@@ -80,6 +80,11 @@ const accountDataCardCopySource = readSource("src/features/profile/accountDataCa
 const reminderManagementCardSource = readSource(
   "src/features/profile/ReminderManagementCard.tsx"
 );
+const reminderManagementModelSource = readSource(
+  "src/features/profile/reminderManagementModel.ts"
+);
+const reminderApiSource = readSource("src/shared/api/reminders.ts");
+const reminderRoutesSource = readSource("server/routes/reminder.routes.mjs");
 const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePlanner.tsx");
 const catalogContributionCardSource = readSource(
   "src/features/platform/CatalogContributionCard.tsx"
@@ -550,6 +555,18 @@ addCheck(
     reminderManagementCardSource.includes("copy.lastAction") &&
     reminderManagementCardSource.includes("copy.noEvents"),
   "The web reminder manager must show confirmed reminder event history from canonical backend state instead of hiding taken/skipped/snoozed actions in Telegram only."
+);
+
+addCheck(
+  "event-based after-meal reminders stay visible in web reminder contracts",
+  reminderRoutesSource.includes("trigger:") &&
+    reminderRoutesSource.includes('kind: "after_meal"') &&
+    reminderApiSource.includes("export type ReminderTrigger") &&
+    reminderApiSource.includes('kind: "after_meal"') &&
+    reminderManagementModelSource.includes("formatReminderScheduleLabel") &&
+    reminderManagementCardSource.includes("formatReminderScheduleLabel({") &&
+    reminderManagementCardSource.includes("copy.afterMealEditText"),
+  "After-meal medication reminders are canonical reminder triggers backed by meal-state delivery; the API and web UI must not hide them as blank fixed-time reminders."
 );
 
 addCheck(
