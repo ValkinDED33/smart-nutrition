@@ -127,4 +127,23 @@ describe("profile feature warehouse contract", () => {
     );
     expect(userFacingRecoverySources).not.toMatch(/old chunk|старий chunk|stary chunk/i);
   });
+
+  it("keeps error boundary diagnostics user-facing", () => {
+    const source = readSource("src/shared/components/ErrorBoundary.tsx");
+    const recoveryCopy = [
+      "src/shared/i18n/uk.ts",
+      "src/shared/i18n/pl.ts",
+      "src/shared/i18n/en.ts",
+      "src/shared/language/index.tsx",
+    ]
+      .map(readSource)
+      .join("\n");
+
+    expect(source).toContain("recoveryDetailsLabel");
+    expect(recoveryCopy).toContain("Деталі збережено для відновлення");
+    expect(recoveryCopy).toContain("Szczegóły zapisano do naprawy");
+    expect(recoveryCopy).toContain("Recovery details saved");
+    expect(source).not.toContain('label="stale build"');
+    expect(source).not.toContain("diagnostic.errorName}: ${this.state.diagnostic.message");
+  });
 });

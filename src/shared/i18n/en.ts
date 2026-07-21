@@ -13,6 +13,7 @@ export const en = {
   "errorBoundary.safeReset": "Safe recovery",
   "errorBoundary.home": "Go home",
   "errorBoundary.diagnostic": "Diagnostic code",
+  "errorBoundary.recoveryDetails": "Recovery details saved",
   "errorBoundary.recovering": "Refreshing the app and restoring a stable screen...",
   "errorBoundary.resetting": "Recovering the view without signing you out...",
   "nav.dashboard": "Dashboard",

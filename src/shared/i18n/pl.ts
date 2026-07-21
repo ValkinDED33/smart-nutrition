@@ -11,6 +11,7 @@ export const pl = {
   "errorBoundary.safeReset": "Bezpiecznie napraw",
   "errorBoundary.home": "Na stronę główną",
   "errorBoundary.diagnostic": "Kod diagnostyczny",
+  "errorBoundary.recoveryDetails": "Szczegóły zapisano do naprawy",
   "errorBoundary.recovering": "Odświeżamy aplikację i przywracamy stabilny ekran...",
   "errorBoundary.resetting": "Naprawiamy widok bez wylogowania z konta...",
   "auth.forgotPassword": "Zapomniałeś hasła?",

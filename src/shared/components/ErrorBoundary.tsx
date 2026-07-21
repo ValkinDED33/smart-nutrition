@@ -27,6 +27,7 @@ interface Props {
   safeResetLabel: string;
   homeLabel: string;
   diagnosticLabel: string;
+  recoveryDetailsLabel: string;
   recoveringLabel: string;
   resettingLabel: string;
   resetKey: string;
@@ -212,14 +213,8 @@ class ErrorBoundaryInner extends Component<Props, State> {
                     variant="outlined"
                   />
                   {this.state.diagnostic.staleBuildLikely ? (
-                    <Chip label="stale build" size="small" color="warning" />
+                    <Chip label={this.props.recoveryDetailsLabel} size="small" color="warning" />
                   ) : null}
-                  <Chip
-                    label={`${this.state.diagnostic.errorName}: ${this.state.diagnostic.message}`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ maxWidth: "100%", "& .MuiChip-label": { whiteSpace: "normal" } }}
-                  />
                 </Stack>
               ) : null}
 
@@ -286,6 +281,7 @@ const ErrorBoundary = ({ children }: WrapperProps) => {
       safeResetLabel={t("errorBoundary.safeReset")}
       homeLabel={t("errorBoundary.home")}
       diagnosticLabel={t("errorBoundary.diagnostic")}
+      recoveryDetailsLabel={t("errorBoundary.recoveryDetails")}
       recoveringLabel={t("errorBoundary.recovering")}
       resettingLabel={t("errorBoundary.resetting")}
       resetKey={appLanguage}

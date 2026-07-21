@@ -90,6 +90,7 @@ const cloudSyncStatusCardSource = readSource(
 const accountDataCardSource = readSource("src/features/profile/AccountDataCard.tsx");
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
 const premiumAccessCardSource = readSource("src/features/profile/PremiumAccessCard.tsx");
+const errorBoundarySource = readSource("src/shared/components/ErrorBoundary.tsx");
 const lazyModuleRecoverySource = readSource("src/shared/ui/lazyModuleRecovery.ts");
 const reminderManagementCardSource = readSource(
   "src/features/profile/ReminderManagementCard.tsx"
@@ -1247,6 +1248,17 @@ addCheck(
     ) &&
     !/old chunk|старий chunk|stary chunk/i.test(userFacingRecoveryCopySources),
   "Crash and lazy-section recovery prompts must explain safe recovery to regular users, not cache/file internals."
+);
+
+addCheck(
+  "error boundary diagnostics are user-facing while details stay internal",
+  errorBoundarySource.includes("recoveryDetailsLabel") &&
+    sharedI18nUkSource.includes("Деталі збережено для відновлення") &&
+    sharedI18nPlSource.includes("Szczegóły zapisano do naprawy") &&
+    sharedI18nEnSource.includes("Recovery details saved") &&
+    !errorBoundarySource.includes('label="stale build"') &&
+    !errorBoundarySource.includes("diagnostic.errorName}: ${this.state.diagnostic.message"),
+  "Crash UI may show a short diagnostic code, but raw stale-build/error-name/message details must stay in telemetry, not ordinary UI."
 );
 
 addCheck(

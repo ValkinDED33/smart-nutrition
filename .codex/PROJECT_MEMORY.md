@@ -123,6 +123,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked the PWA update banner so ordinary users see latest-fixes/stability wording instead of stale-cache/deployment internals.
 - Reworked crash and lazy-section recovery copy so ordinary users see safe recovery/stable-screen language instead of cache/file internals.
 - Reworked food/scanner lazy-tool recovery copy so meal tools explain interrupted loading instead of exposing old chunk/cache internals.
+- Reworked the crash screen diagnostics so ordinary users see a short recovery code and saved-details message instead of raw stale-build/error-name/error-message internals.
 
 ## Current Architecture
 
@@ -157,6 +158,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.
 - Food, scanner, and photo meal lazy-tool failures must use the same product-language recovery contract; module/chunk/cache internals must not appear in ordinary food capture UI.
+- Crash UI may show a short diagnostic code, but raw error names, error messages, stale-build labels, and recovery internals must stay in telemetry, logs, or admin/support diagnostics.
 - Regular account/profile settings must show calm user-owned actions first; operational runtime, backup, and diagnostic details belong behind owner/admin/moderator/helper access gates.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.

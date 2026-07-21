@@ -11,6 +11,7 @@ export const uk = {
   "errorBoundary.safeReset": "Безпечно відновити",
   "errorBoundary.home": "На головну",
   "errorBoundary.diagnostic": "Код діагностики",
+  "errorBoundary.recoveryDetails": "Деталі збережено для відновлення",
   "errorBoundary.recovering": "Оновлюємо застосунок і повертаємо стабільний екран...",
   "errorBoundary.resetting": "Відновлюємо екран без виходу з акаунта...",
   "auth.forgotPassword": "Забули пароль?",
