@@ -107,6 +107,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added backend-backed AI daily plan drafts: assistant plan requests now read canonical snapshot meal, water, profile, and reminders, reply with a localized review-only plan, and explicitly avoid saving meals or creating reminders from the draft itself.
 - Added safe AI daily-plan item application: confirmed water/review items create canonical typed reminders, while food/protein/photo/scanner items hand off to existing meal entry surfaces without fake meal saves or a second planner.
 - Added focused AI food-plan handoff: protein plan items now navigate to `/meals?mode=search&focus=protein`, and the meal builder preselects lunch plus a protein search query instead of dropping users into an empty generic food screen.
+- Surfaced backend-confirmed reminder adherence history in the web reminder manager: each reminder now shows taken/done, skipped, snoozed counts, completion rate, and latest action from canonical reminder events.
 
 ## Current Architecture
 
@@ -212,6 +213,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram reminder command hints, reminder lists, management buttons, callback feedback, and scheduled reminder notifications must use the connected profile language when a profile is available; Telegram client language is only a disconnected fallback.
 - Telegram main-menu quick buttons must use the connected profile language and must route to existing canonical handlers instead of creating a second command/router system.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
+- Web reminder management must surface canonical reminder event history so taken/done, skipped, and snoozed actions are visible in the app, not only inside Telegram callbacks.
 - Reminder persistence should use `updateUserReminders`; `updateUserMedicationReminders` is a legacy compatibility alias that must delegate to the canonical method and must not contain separate write logic.
 - Reminder UI surfaces that create or update backend-confirmed reminders must keep the visible reminder manager synchronized with the returned canonical reminder item.
 - AI saved actions must call backend tools/contracts and report only confirmed, pending, or failed states.

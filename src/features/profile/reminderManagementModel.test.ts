@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ReminderItem } from "@shared/api/reminders";
 import {
   formatReminderDateTime,
+  getReminderAdherenceSummary,
   getReminderPrimaryAction,
   getReminderPrimaryActionLabelKey,
   getReminderQuantityLabelKey,
@@ -130,5 +131,50 @@ describe("reminderManagementModel", () => {
     });
 
     expect(formatReminderDateTime(reminder, "uk-UA")).toContain("10:00");
+  });
+
+  it("summarizes backend-confirmed reminder adherence events", () => {
+    const summary = getReminderAdherenceSummary(
+      createReminder({
+        events: [
+          {
+            id: "event-1",
+            action: "taken",
+            scheduledFor: "2026-06-23T08:00:00.000Z",
+            createdAt: "2026-06-23T08:02:00.000Z",
+          },
+          {
+            id: "event-2",
+            action: "skipped",
+            scheduledFor: "2026-06-24T08:00:00.000Z",
+            createdAt: "2026-06-24T08:05:00.000Z",
+          },
+          {
+            id: "event-3",
+            action: "snoozed",
+            scheduledFor: "2026-06-24T08:00:00.000Z",
+            createdAt: "2026-06-24T08:04:00.000Z",
+          },
+          {
+            id: "event-4",
+            action: "schedule_updated",
+            scheduledFor: null,
+            createdAt: "2026-06-25T08:00:00.000Z",
+          },
+        ],
+      })
+    );
+
+    expect(summary).toMatchObject({
+      total: 3,
+      completed: 1,
+      skipped: 1,
+      snoozed: 1,
+      completionRate: 50,
+      lastEvent: {
+        id: "event-2",
+        action: "skipped",
+      },
+    });
   });
 });

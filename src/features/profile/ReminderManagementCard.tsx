@@ -38,6 +38,7 @@ import {
 } from "@shared/api/reminders";
 import {
   formatReminderDateTime,
+  getReminderAdherenceSummary,
   getReminderPrimaryAction,
   isMedicationLikeReminderType,
   reminderTypeOptions,
@@ -101,6 +102,18 @@ const reminderCopy = {
     next: "Наступне",
     dose: "Доза",
     portion: "Порція",
+    adherence: "Історія",
+    completionRate: (rate: number) => `${rate}% виконано`,
+    eventCounts: (completed: number, skipped: number, snoozed: number) =>
+      `Прийнято/зроблено: ${completed} · пропущено: ${skipped} · перенесено: ${snoozed}`,
+    noEvents: "Дій ще не було.",
+    lastAction: (label: string) => `Останнє: ${label}`,
+    actionLabels: {
+      taken: "прийнято",
+      done: "зроблено",
+      skipped: "пропущено",
+      snoozed: "перенесено",
+    },
   },
   pl: {
     title: "Przypomnienia asystenta",
@@ -155,6 +168,18 @@ const reminderCopy = {
     next: "Następne",
     dose: "Dawka",
     portion: "Porcja",
+    adherence: "Historia",
+    completionRate: (rate: number) => `${rate}% wykonane`,
+    eventCounts: (completed: number, skipped: number, snoozed: number) =>
+      `Przyjęte/zrobione: ${completed} · pominięte: ${skipped} · przesunięte: ${snoozed}`,
+    noEvents: "Nie ma jeszcze działań.",
+    lastAction: (label: string) => `Ostatnio: ${label}`,
+    actionLabels: {
+      taken: "przyjęte",
+      done: "zrobione",
+      skipped: "pominięte",
+      snoozed: "przesunięte",
+    },
   },
   en: {
     title: "Assistant reminders",
@@ -209,6 +234,18 @@ const reminderCopy = {
     next: "Next",
     dose: "Dose",
     portion: "Serving",
+    adherence: "History",
+    completionRate: (rate: number) => `${rate}% completed`,
+    eventCounts: (completed: number, skipped: number, snoozed: number) =>
+      `Taken/done: ${completed} · skipped: ${skipped} · snoozed: ${snoozed}`,
+    noEvents: "No actions yet.",
+    lastAction: (label: string) => `Last: ${label}`,
+    actionLabels: {
+      taken: "taken",
+      done: "done",
+      skipped: "skipped",
+      snoozed: "snoozed",
+    },
   },
 } as const;
 
@@ -302,6 +339,18 @@ const getReminderPrimaryActionLabel = (
   }
 
   return copy.done;
+};
+
+const getReminderActionLabel = (
+  copy: (typeof reminderCopy)[keyof typeof reminderCopy],
+  action: string
+) => {
+  if (action === "taken") return copy.actionLabels.taken;
+  if (action === "done") return copy.actionLabels.done;
+  if (action === "skipped") return copy.actionLabels.skipped;
+  if (action === "snoozed") return copy.actionLabels.snoozed;
+
+  return action;
 };
 
 const ReminderManagementCard = () => {
@@ -555,6 +604,10 @@ const ReminderManagementCard = () => {
               const primaryAction: ReminderAction = getReminderPrimaryAction(reminder.type);
               const primaryActionLabel = getReminderPrimaryActionLabel(copy, reminder.type);
               const quantityLabel = getReminderQuantityLabel(copy, reminder.type);
+              const adherence = getReminderAdherenceSummary(reminder);
+              const lastActionLabel = adherence.lastEvent
+                ? getReminderActionLabel(copy, adherence.lastEvent.action)
+                : null;
 
               return (
                 <Box
@@ -606,6 +659,42 @@ const ReminderManagementCard = () => {
                             {copy.next}: {formatReminderDateTime(reminder, locale)}
                           </Typography>
                         )}
+                        <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                          <Chip
+                            size="small"
+                            label={
+                              adherence.completionRate === null
+                                ? copy.noEvents
+                                : copy.completionRate(adherence.completionRate)
+                            }
+                            color={
+                              adherence.completionRate !== null &&
+                              adherence.completionRate >= 80
+                                ? "success"
+                                : adherence.skipped > 0
+                                  ? "warning"
+                                  : "default"
+                            }
+                            variant={adherence.completionRate === null ? "outlined" : "filled"}
+                          />
+                          {lastActionLabel ? (
+                            <Chip
+                              size="small"
+                              label={copy.lastAction(lastActionLabel)}
+                              variant="outlined"
+                            />
+                          ) : null}
+                        </Stack>
+                        {adherence.total > 0 ? (
+                          <Typography variant="caption" color="text.secondary">
+                            {copy.adherence}:{" "}
+                            {copy.eventCounts(
+                              adherence.completed,
+                              adherence.skipped,
+                              adherence.snoozed
+                            )}
+                          </Typography>
+                        ) : null}
                       </Stack>
                     </Stack>
 

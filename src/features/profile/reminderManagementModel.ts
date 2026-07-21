@@ -1,4 +1,9 @@
-import type { ReminderAction, ReminderItem, ReminderType } from "@shared/api/reminders";
+import type {
+  ReminderAction,
+  ReminderEvent,
+  ReminderItem,
+  ReminderType,
+} from "@shared/api/reminders";
 
 export const reminderTypeOptions: ReminderType[] = [
   "task",
@@ -68,6 +73,46 @@ export const upsertReminderItem = (items: ReminderItem[], item: ReminderItem) =>
   sortReminders([item, ...items.filter((entry) => entry.id !== item.id)]);
 
 const fallbackReminderTimeZone = "Europe/Warsaw";
+const positiveAdherenceActions = new Set(["taken", "done"]);
+const trackedAdherenceActions = new Set(["taken", "done", "skipped", "snoozed"]);
+
+export type ReminderAdherenceSummary = {
+  total: number;
+  completed: number;
+  skipped: number;
+  snoozed: number;
+  completionRate: number | null;
+  lastEvent: ReminderEvent | null;
+};
+
+const getEventTime = (event: ReminderEvent) => {
+  const time = Date.parse(event.createdAt);
+
+  return Number.isFinite(time) ? time : 0;
+};
+
+export const getReminderAdherenceSummary = (
+  reminder: Pick<ReminderItem, "events">
+): ReminderAdherenceSummary => {
+  const events = Array.isArray(reminder.events)
+    ? reminder.events
+        .filter((event) => trackedAdherenceActions.has(event.action))
+        .sort((first, second) => getEventTime(second) - getEventTime(first))
+    : [];
+  const completed = events.filter((event) => positiveAdherenceActions.has(event.action)).length;
+  const skipped = events.filter((event) => event.action === "skipped").length;
+  const snoozed = events.filter((event) => event.action === "snoozed").length;
+  const decisiveTotal = completed + skipped;
+
+  return {
+    total: events.length,
+    completed,
+    skipped,
+    snoozed,
+    completionRate: decisiveTotal > 0 ? Math.round((completed / decisiveTotal) * 100) : null,
+    lastEvent: events[0] ?? null,
+  };
+};
 
 export const formatReminderDateTime = (
   reminder: Pick<ReminderItem, "nextRunAt" | "timezone">,

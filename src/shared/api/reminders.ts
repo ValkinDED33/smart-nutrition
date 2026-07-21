@@ -16,7 +16,7 @@ export type ReminderAction =
   | "pause"
   | "resume";
 
-type ReminderEvent = {
+export type ReminderEvent = {
   id: string;
   action: string;
   scheduledFor: string | null;

@@ -149,7 +149,9 @@ Current state:
 
 Gap:
 
-- There is no full web UI for medication schedule and adherence history yet.
+- The web reminder manager now shows backend-confirmed adherence history
+  (taken/done, skipped, snoozed, completion rate, latest action), but deeper
+  medication reports and export are still not a full module.
 - There is no caregiver/family sharing mode yet.
 - Medication tracking should stay a reminder/logging feature, not medical
   prescription advice.
@@ -340,15 +342,17 @@ schedule and adherence view.
 
 WHY IT IS A PROBLEM:
 Medication reminders are now a critical real-life use case. Users need to see,
-edit, pause, delete, and audit reminders outside Telegram.
+edit, pause, delete, and audit reminders outside Telegram. The app now exposes
+basic confirmed adherence history, but it still needs richer long-term reports.
 
 RISK:
-Users may create reminders but lose confidence if they cannot inspect them in
-the app.
+Users may create reminders but lose confidence if they cannot inspect long-term
+adherence patterns in the app.
 
 RECOMMENDED FIX:
-Create `MedicationRemindersPage` or a profile section with active reminders,
-next run, history, taken/skipped rate, and safety disclaimer.
+Extend the existing reminder manager into a fuller medication/reminder module:
+long-range adherence charts, per-reminder history detail, exportable report,
+and safety disclaimer.
 
 EXAMPLE CODE:
 

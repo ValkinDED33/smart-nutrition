@@ -77,6 +77,9 @@ const cloudSyncStatusCardSource = readSource(
 );
 const accountDataCardSource = readSource("src/features/profile/AccountDataCard.tsx");
 const accountDataCardCopySource = readSource("src/features/profile/accountDataCardCopy.ts");
+const reminderManagementCardSource = readSource(
+  "src/features/profile/ReminderManagementCard.tsx"
+);
 const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePlanner.tsx");
 const catalogContributionCardSource = readSource(
   "src/features/platform/CatalogContributionCard.tsx"
@@ -536,6 +539,17 @@ addCheck(
     !/applyDailyPlanItem[\s\S]*stateService\.addProductIntake\(/.test(assistantAgentToolsSource) &&
     !/applyDailyPlanItem[\s\S]*stateService\.addMealTemplate\(/.test(assistantAgentToolsSource),
   "Applying a daily plan item must route through existing food navigation or canonical reminders; it must not create a second planner or silently save meals/templates."
+);
+
+addCheck(
+  "reminder manager surfaces backend-confirmed adherence history",
+  reminderManagementCardSource.includes("getReminderAdherenceSummary(reminder)") &&
+    reminderManagementCardSource.includes("adherence.completionRate") &&
+    reminderManagementCardSource.includes("adherence.lastEvent") &&
+    reminderManagementCardSource.includes("copy.eventCounts") &&
+    reminderManagementCardSource.includes("copy.lastAction") &&
+    reminderManagementCardSource.includes("copy.noEvents"),
+  "The web reminder manager must show confirmed reminder event history from canonical backend state instead of hiding taken/skipped/snoozed actions in Telegram only."
 );
 
 addCheck(
