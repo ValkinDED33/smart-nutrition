@@ -1232,6 +1232,7 @@ const userFacingRecoveryCopySources = [
   sharedI18nEnSource,
   sharedLanguageSource,
   lazyModuleRecoverySource,
+  mealBuilderPageSource,
 ].join("\n");
 
 addCheck(
@@ -1240,9 +1241,11 @@ addCheck(
     userFacingRecoveryCopySources.includes("stabilny ekran") &&
     userFacingRecoveryCopySources.includes("stable screen") &&
     userFacingRecoveryCopySources.includes("without signing you out") &&
+    mealBuilderPageSource.includes("interrupted this tool") &&
     !/stale UI cache|old cache|cache UI|старий UI-кеш|старий кеш|stary cache|stary plik/i.test(
       userFacingRecoveryCopySources
-    ),
+    ) &&
+    !/old chunk|старий chunk|stary chunk/i.test(userFacingRecoveryCopySources),
   "Crash and lazy-section recovery prompts must explain safe recovery to regular users, not cache/file internals."
 );
 

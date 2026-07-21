@@ -125,7 +125,7 @@ const mealInputCopy = {
     loadingModule: "Завантажуємо інструмент",
     moduleErrorTitle: "Інструмент не завантажився",
     moduleErrorBody:
-      "Можливо, мережа або кеш отримали старий chunk. Оновіть модуль і спробуйте ще раз.",
+      "З'єднання могло перервати завантаження інструмента. Оновіть його і спробуйте ще раз.",
     reloadModule: "Оновити",
     sections: {
       day: "День",
@@ -165,7 +165,7 @@ const mealInputCopy = {
     loadingModule: "Ładujemy narzędzie",
     moduleErrorTitle: "Narzędzie się nie załadowało",
     moduleErrorBody:
-      "Sieć albo cache mogły zachować stary chunk. Odśwież moduł i spróbuj ponownie.",
+      "Połączenie mogło przerwać ładowanie narzędzia. Odśwież je i spróbuj ponownie.",
     reloadModule: "Odśwież",
     sections: {
       day: "Dzień",
@@ -205,7 +205,7 @@ const mealInputCopy = {
     loadingModule: "Loading tool",
     moduleErrorTitle: "Tool did not load",
     moduleErrorBody:
-      "The network or cache may have kept an old chunk. Refresh the module and try again.",
+      "The connection may have interrupted this tool. Refresh it and try again.",
     reloadModule: "Refresh",
     sections: {
       day: "Day",

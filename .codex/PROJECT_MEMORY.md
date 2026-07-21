@@ -122,6 +122,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized premium plan labels, plan features, current-state labels, and subscription statuses in the profile card so Ukrainian/Polish interfaces no longer show English plan-feature constants or raw subscription enums.
 - Reworked the PWA update banner so ordinary users see latest-fixes/stability wording instead of stale-cache/deployment internals.
 - Reworked crash and lazy-section recovery copy so ordinary users see safe recovery/stable-screen language instead of cache/file internals.
+- Reworked food/scanner lazy-tool recovery copy so meal tools explain interrupted loading instead of exposing old chunk/cache internals.
 
 ## Current Architecture
 
@@ -155,6 +156,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.
+- Food, scanner, and photo meal lazy-tool failures must use the same product-language recovery contract; module/chunk/cache internals must not appear in ordinary food capture UI.
 - Regular account/profile settings must show calm user-owned actions first; operational runtime, backup, and diagnostic details belong behind owner/admin/moderator/helper access gates.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.

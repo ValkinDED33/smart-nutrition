@@ -113,6 +113,7 @@ describe("profile feature warehouse contract", () => {
       "src/shared/i18n/en.ts",
       "src/shared/language/index.tsx",
       "src/shared/ui/lazyModuleRecovery.ts",
+      "src/pages/MealBuilderPage.tsx",
     ]
       .map(readSource)
       .join("\n");
@@ -124,5 +125,6 @@ describe("profile feature warehouse contract", () => {
     expect(userFacingRecoverySources).not.toMatch(
       /stale UI cache|old cache|cache UI|старий UI-кеш|старий кеш|stary cache|stary plik/i
     );
+    expect(userFacingRecoverySources).not.toMatch(/old chunk|старий chunk|stary chunk/i);
   });
 });
