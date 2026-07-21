@@ -292,6 +292,17 @@ addCheck(
 );
 
 addCheck(
+  "assistant meal tool uses canonical product intake",
+  assistantAgentToolsSource.includes("stateService.addProductIntake(") &&
+    assistantAgentToolsSource.includes('source: "recommendation"') &&
+    assistantAgentToolsSource.includes('idempotencyKey: createAssistantMealIntakeKey()') &&
+    assistantAgentToolsSource.includes('source: "assistant-agent"') &&
+    assistantAgentToolsSource.includes("intakeResult?.outcomes?.mealAdded !== true") &&
+    !/stateService\.addMealEntries\(/.test(assistantAgentToolsSource),
+  "AI-created food entries must flow through canonical backend-confirmed product intake and must not bypass it with direct addMealEntries."
+);
+
+addCheck(
   "telegram assistant uses profile language for menus callbacks and agent context",
   telegramServiceSource.includes("getTelegramLanguageFromSnapshot(snapshot)") &&
     telegramServiceSource.includes("normalizeTelegramLanguage(user?.languagePreference)") &&

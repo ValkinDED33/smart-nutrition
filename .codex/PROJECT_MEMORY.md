@@ -93,6 +93,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Replaced raw product provider ids in regular nutrition UI with localized source labels, so scanner/product cards/quick meal/library surfaces show human product language instead of `OpenFoodFacts`, `USDA`, or `Manual`.
 - Simplified regular account settings: operational runtime chips and backup restore-point lists are role-gated behind admin-center access and are not fetched or rendered for ordinary users.
 - Reworked assistant action-failure replies so users see Smart Nutrition cloud-confirmation language while the code still enforces backend-confirmed tool success.
+- Routed AI-created meal logging through the canonical backend product-intake contract with `source=recommendation`, assistant sync context, and an explicit `mealAdded` confirmation guard before any success reply.
 
 ## Current Architecture
 
@@ -101,6 +102,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Storage: MongoDB Atlas is the current production canonical backend storage. Postgres remains a supported future migration path, and SQLite remains local/development storage.
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
 - AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
+- AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
@@ -136,6 +138,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Backend/cloud is the source of truth for canonical user data.
 - Production canonical storage may be MongoDB Atlas or Postgres, but it must be backend-owned, configured explicitly, and non-placeholder.
 - Product and meal intake must use a canonical backend-confirmed flow.
+- AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.
@@ -187,7 +190,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 ## Open Risks
 
 - Duplicate meal/product/reminder/AI/profile systems can appear if new features bypass canonical contracts.
-- Scanner and photo meal flows can drift into separate product/meal persistence paths.
+- Scanner, photo meal, and AI meal flows can drift into separate product/meal persistence paths if future changes bypass canonical product intake.
 - Local-only state can masquerade as real persistence.
 - Stale PWA/service-worker cache or stale localStorage API routing can make production users see old behavior after redeploy unless deploy-sensitive fixes verify the full live chain.
 - Local `server:check` passes required checks with the ignored `.env`; Redis is no longer a warning for explicit single-instance runtime, but horizontal scaling requires Redis.
@@ -222,7 +225,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 3. Review large bundle chunks and lazy-load high-cost scanner, AI, companion, markdown, and vendor paths where safe.
 4. Complete reminder naming migration plan from legacy `medicationReminders` to canonical `reminders`.
 5. Run real-device mobile/PWA/Telegram WebView smoke checks for safe areas, keyboard, bottom nav, scanner camera permission, stale chunks, and service worker recovery.
-6. Trace canonical product/meal intake end-to-end across manual add, photo add, AI actions, scanner UI camera scan, and refresh/relogin restore.
+6. Trace canonical product/meal intake end-to-end across manual add, photo add, scanner UI camera scan, and refresh/relogin restore.
 7. Check email deliverability DNS/reputation so verification messages stop landing in spam.
 8. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
 9. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.

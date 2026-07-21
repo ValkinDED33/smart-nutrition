@@ -510,9 +510,23 @@ describe("createAssistantAgentService", () => {
     expect(result.text).toContain("нагадування про воду");
   });
 
-  it("adds meals through online catalog search and state tool", async () => {
+  it("adds meals through online catalog search and canonical product intake", async () => {
     const stateService = {
-      addMealEntries: vi.fn(async () => undefined),
+      addProductIntake: vi.fn(async (_user, request) => ({
+        ok: true,
+        product: request.product,
+        entry: {
+          id: "meal-intake-assistant-meal-1",
+          product: request.product,
+          quantity: request.quantity,
+          mealType: request.mealType,
+          eatenAt: request.eatenAt,
+          origin: "manual",
+        },
+        outcomes: {
+          mealAdded: true,
+        },
+      })),
     };
     const platformService = {
       listVisibleCatalogProducts: vi.fn(async () => [chickenProduct]),
@@ -545,19 +559,21 @@ describe("createAssistantAgentService", () => {
       search: "chicken breast",
       limit: 4,
     });
-    expect(stateService.addMealEntries).toHaveBeenCalledWith(
+    expect(stateService.addProductIntake).toHaveBeenCalledWith(
       user,
       {
-        entries: [
-          expect.objectContaining({
-            product: chickenProduct,
-            quantity: 150,
-            mealType: "lunch",
-            eatenAt: fixedNow.toISOString(),
-            origin: "manual",
-          }),
-        ],
+        source: "recommendation",
+        product: chickenProduct,
+        quantity: 150,
+        mealType: "lunch",
+        eatenAt: fixedNow.toISOString(),
+        idempotencyKey: expect.stringMatching(/^assistant-meal-/),
+        options: {
+          saveToLibrary: false,
+          submitToCatalog: false,
+        },
       },
+      undefined,
       { source: "assistant-agent" }
     );
     expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
@@ -569,7 +585,7 @@ describe("createAssistantAgentService", () => {
 
   it("does not add a meal when the product is not found", async () => {
     const stateService = {
-      addMealEntries: vi.fn(async () => undefined),
+      addProductIntake: vi.fn(async () => undefined),
     };
     const platformService = {
       listVisibleCatalogProducts: vi.fn(async () => []),
@@ -591,7 +607,48 @@ describe("createAssistantAgentService", () => {
       actions: [{ id: "add_meal", ok: false, code: "PRODUCT_NOT_FOUND" }],
     });
     expect(result.text).toContain("не знайшов");
-    expect(stateService.addMealEntries).not.toHaveBeenCalled();
+    expect(stateService.addProductIntake).not.toHaveBeenCalled();
+  });
+
+  it("does not claim meal success when canonical intake is not confirmed", async () => {
+    const stateService = {
+      addProductIntake: vi.fn(async (_user, request) => ({
+        ok: true,
+        product: request.product,
+        entry: {
+          id: "meal-intake-unconfirmed",
+          product: request.product,
+          quantity: request.quantity,
+          mealType: request.mealType,
+          eatenAt: request.eatenAt,
+          origin: "manual",
+        },
+        outcomes: {
+          mealAdded: false,
+        },
+      })),
+    };
+    const platformService = {
+      listVisibleCatalogProducts: vi.fn(async () => [chickenProduct]),
+    };
+    const agent = createAssistantAgentService({
+      stateService,
+      platformService,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "добавь chicken breast 150 г на обед",
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "add_meal" },
+      actions: [{ id: "add_meal", ok: false, code: "MEAL_NOT_CONFIRMED" }],
+    });
+    expect(result.text).not.toContain("Додав Chicken breast");
+    expect(result.text).toContain("не зміг безпечно виконати");
   });
 
   it("does not handle unsafe unknown messages", async () => {

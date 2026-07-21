@@ -22,7 +22,7 @@ const toMealType = (value) =>
     ? value
     : "snack";
 
-const createMealEntryId = () => `meal-${crypto.randomUUID()}`;
+const createAssistantMealIntakeKey = () => `assistant-meal-${crypto.randomUUID()}`;
 
 const calculateEntryNutrients = (entry) =>
   calculateMealTotalNutrients([entry]);
@@ -192,7 +192,7 @@ export const createAgentTools = ({
   };
 
   const addMeal = async (user, { productQuery, quantity, mealType }) => {
-    if (!stateService?.addMealEntries) {
+    if (!stateService?.addProductIntake) {
       return { ok: false, code: "MEAL_TOOL_UNAVAILABLE" };
     }
 
@@ -216,28 +216,43 @@ export const createAgentTools = ({
     }
 
     const normalizedQuantity = Math.min(toPositiveInteger(quantity, 100), 5000);
-    const entry = {
-      id: createMealEntryId(),
-      product,
-      quantity: normalizedQuantity,
-      mealType: toMealType(mealType),
-      eatenAt: now().toISOString(),
-      origin: "manual",
-    };
-
-    await stateService.addMealEntries(
+    const normalizedMealType = toMealType(mealType);
+    const eatenAt = now().toISOString();
+    const intakeResult = await stateService.addProductIntake(
       user,
       {
-        entries: [entry],
+        source: "recommendation",
+        product,
+        quantity: normalizedQuantity,
+        mealType: normalizedMealType,
+        eatenAt,
+        idempotencyKey: createAssistantMealIntakeKey(),
+        options: {
+          saveToLibrary: false,
+          submitToCatalog: false,
+        },
       },
+      undefined,
       { source: "assistant-agent" }
     );
+
+    if (intakeResult?.outcomes?.mealAdded !== true) {
+      return { ok: false, code: "MEAL_NOT_CONFIRMED" };
+    }
+
+    const entry = intakeResult?.entry ?? {
+      product,
+      quantity: normalizedQuantity,
+      mealType: normalizedMealType,
+      eatenAt,
+      origin: "manual",
+    };
 
     return {
       ok: true,
       type: "meal_added",
       entry,
-      product,
+      product: intakeResult?.product ?? product,
       quantity: normalizedQuantity,
       mealType: entry.mealType,
       nutrients: calculateEntryNutrients(entry),
