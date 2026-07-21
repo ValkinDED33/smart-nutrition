@@ -875,6 +875,21 @@ addCheck(
   "Scanner, product cards, quick meal composer, and library surfaces must show localized source labels instead of raw provider ids such as OpenFoodFacts, USDA, or Manual."
 );
 
+addCheck(
+  "saved nutrition library is one hub over canonical meal and community state",
+  nutritionLibraryPanelSource.includes('data-my-library-overview="true"') &&
+    nutritionLibraryPanelSource.includes("savedOverviewItems") &&
+    nutritionLibraryPanelSource.includes("count: savedProducts.length") &&
+    nutritionLibraryPanelSource.includes("count: templates.length") &&
+    nutritionLibraryPanelSource.includes("count: visibleSavedPosts.length") &&
+    nutritionLibraryPanelSource.includes("useSelector(selectSavedProducts)") &&
+    nutritionLibraryPanelSource.includes("useSelector(selectMealTemplates)") &&
+    nutritionLibraryPanelSource.includes("state.community.favoritePostIds") &&
+    !nutritionLibraryPanelSource.includes("localStorage") &&
+    !nutritionLibraryPanelSource.includes("myLibrarySlice"),
+  "My Library must be a visible hub over canonical saved products, meal templates, and saved community materials, not a second local library system."
+);
+
 const humanAuthPlatformCopySources = [
   platformApiSource,
   catalogContributionCardSource,

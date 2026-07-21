@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Divider,
   InputAdornment,
+  Paper,
   Stack,
   TextField,
   Typography,
@@ -84,6 +85,10 @@ const copy = {
     builtInRecipes: "Рецепти",
     savedDishes: "Ваші збережені страви",
     savedArticles: "Збережені матеріали",
+    myHubTitle: "Моя бібліотека",
+    myHubDescription:
+      "Усе ваше збережене в одному місці: продукти для швидкого додавання, власні страви і матеріали зі спільноти.",
+    openSection: "Відкрити",
     noSavedProducts: "Збережених продуктів ще немає.",
     noSavedDishes: "Збережених страв ще немає.",
     noSavedArticles: "Збережених матеріалів ще немає.",
@@ -127,6 +132,10 @@ const copy = {
     builtInRecipes: "Przepisy",
     savedDishes: "Twoje zapisane dania",
     savedArticles: "Zapisane materiały",
+    myHubTitle: "Moja biblioteka",
+    myHubDescription:
+      "Wszystko zapisane w jednym miejscu: produkty do szybkiego dodania, własne dania i materiały ze społeczności.",
+    openSection: "Otwórz",
     noSavedProducts: "Nie masz jeszcze zapisanych produktów.",
     noSavedDishes: "Nie masz jeszcze zapisanych dań.",
     noSavedArticles: "Nie masz jeszcze zapisanych materiałów.",
@@ -170,6 +179,10 @@ const copy = {
     builtInRecipes: "Recipes",
     savedDishes: "Your saved dishes",
     savedArticles: "Saved materials",
+    myHubTitle: "My library",
+    myHubDescription:
+      "Everything you saved in one place: quick-add products, reusable dishes, and community materials.",
+    openSection: "Open",
     noSavedProducts: "No saved products yet.",
     noSavedDishes: "No saved dishes yet.",
     noSavedArticles: "No saved materials yet.",
@@ -441,6 +454,26 @@ const NutritionLibraryPanel = ({
       badge: visibleSavedPosts.length,
     },
   ];
+  const savedOverviewItems = [
+    {
+      id: "products" as const,
+      title: labels.savedProducts,
+      count: savedProducts.length,
+      icon: <Star size={18} />,
+    },
+    {
+      id: "dishes" as const,
+      title: labels.savedDishes,
+      count: templates.length,
+      icon: <Utensils size={18} />,
+    },
+    {
+      id: "articles" as const,
+      title: labels.savedArticles,
+      count: visibleSavedPosts.length,
+      icon: <BookOpen size={18} />,
+    },
+  ];
 
   return (
     <SectionCard
@@ -449,6 +482,87 @@ const NutritionLibraryPanel = ({
       description={mode === "saved" ? labels.savedDescription : labels.libraryDescription}
     >
       <Stack spacing={2}>
+        {mode === "saved" ? (
+          <Box
+            data-my-library-overview="true"
+            sx={{
+              p: { xs: 1.4, md: 1.8 },
+              borderRadius: 1,
+              border: LIBRARY_CARD_BORDER,
+              bgcolor: "rgba(20, 184, 166, 0.08)",
+            }}
+          >
+            <Stack spacing={1.4}>
+              <Stack spacing={0.35}>
+                <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
+                  {labels.myHubTitle}
+                </Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                  {labels.myHubDescription}
+                </Typography>
+              </Stack>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(3, minmax(0, 1fr))",
+                  },
+                  gap: 1,
+                }}
+              >
+                {savedOverviewItems.map((item) => (
+                  <Paper
+                    key={item.id}
+                    component="button"
+                    type="button"
+                    onClick={() => setActiveTab(item.id)}
+                    variant="outlined"
+                    sx={{
+                      p: 1.2,
+                      borderRadius: 1,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      bgcolor:
+                        activeTab === item.id
+                          ? "var(--sn-accent-soft)"
+                          : LIBRARY_CARD_BACKGROUND,
+                      borderColor:
+                        activeTab === item.id
+                          ? "var(--sn-border-strong)"
+                          : "var(--sn-border-soft)",
+                      "&:hover": { borderColor: "primary.main" },
+                    }}
+                  >
+                    <Stack spacing={0.85}>
+                      <Stack direction="row" spacing={0.8} alignItems="center">
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 1,
+                            display: "grid",
+                            placeItems: "center",
+                            color: "#0f766e",
+                            bgcolor: "rgba(20,184,166,0.12)",
+                          }}
+                        >
+                          {item.icon}
+                        </Box>
+                        <Chip label={item.count} size="small" color="primary" />
+                      </Stack>
+                      <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
+                      <Typography color="text.secondary" variant="caption">
+                        {labels.openSection}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Box>
+            </Stack>
+          </Box>
+        ) : null}
+
         <SectionTabs
           sections={sectionTabs}
           activeSection={activeTab}

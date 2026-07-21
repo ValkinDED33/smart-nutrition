@@ -109,6 +109,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added focused AI food-plan handoff: protein plan items now navigate to `/meals?mode=search&focus=protein`, and the meal builder preselects lunch plus a protein search query instead of dropping users into an empty generic food screen.
 - Surfaced backend-confirmed reminder adherence history in the web reminder manager: each reminder now shows taken/done, skipped, snoozed counts, completion rate, and latest action from canonical reminder events.
 - Surfaced canonical after-meal medication reminders end to end: text such as "take a pill after lunch" creates a meal-state-backed `after_meal` trigger, `/api/reminders` returns it, and the web reminder manager shows the meal window instead of a blank fixed-time schedule.
+- Added a visible My Library overview over existing canonical saved nutrition state: saved products, reusable meal templates, and saved community materials now appear as one hub with counts and quick tab navigation, without a separate local library store.
 
 ## Current Architecture
 
@@ -135,6 +136,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
+- My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular account/profile settings must show calm user-owned actions first; operational runtime, backup, and diagnostic details belong behind owner/admin/moderator/helper access gates.
 - Nutrition: Scanner, search, manual add, photo recognition, recipes, products, and meals must converge on one canonical backend-confirmed intake flow.

@@ -468,19 +468,21 @@ FILE:
 `src/features/meal/TemplateVault.tsx`
 
 PROBLEM:
-Saved recipes/products/templates exist in places, but there is no obvious "My"
-hub for saved recipes, favorite products, articles, meal templates, and recent
-actions.
+Saved recipes/products/templates no longer live only as separate fragments:
+the saved nutrition library now has a visible My Library overview for favorite
+products, reusable meal templates, and saved community materials.
 
 WHY IT IS A PROBLEM:
 Retention depends on returning to personal shortcuts.
 
 RISK:
-The user repeats the same search work every day.
+The core saved-items hub is now visible, but it should keep expanding through
+canonical state as more personal shortcuts are added.
 
 RECOMMENDED FIX:
-Create `MyLibrary` sections inside Food/Recipes/Profile: saved recipes,
-favorites, recent products, own catalog submissions, and articles.
+Continue extending the existing saved nutrition library instead of creating a
+new persistence model: next candidates are own catalog submissions and recent
+actions.
 
 ### 9. Observability Is Not Yet Product-Level
 
@@ -530,8 +532,8 @@ provider with guardrails.
 1. Build `FoodCommandCenter` as the first screen inside Food.
 2. Add agent tools for meal add/search/product lookup.
 3. Add web UI for medication reminders and adherence history.
-4. Add "My Library" for saved recipes, products, templates, articles, and own
-   submissions.
+4. Extend the existing My Library overview with own catalog submissions and
+   recent actions.
 5. Add product trust badges everywhere food data appears.
 6. Add product correction/version UI after photo or barcode logging.
 7. Add women health dashboard with pregnancy week, symptoms, appointments, and
