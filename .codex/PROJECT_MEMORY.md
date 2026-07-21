@@ -117,6 +117,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added web reminder adherence period reports inside the existing reminder manager: 7-day and 30-day summaries read canonical backend reminder events, show completed/skipped/snoozed counts, active reminder coverage, last action, and honest missing-data state without a second reminder/report store.
 - Hardened guided registration so final account creation requires backend-confirmed available nickname and email; stale, unchecked, unavailable, or taken availability states route back to the exact field instead of relying on a late register failure.
 - Hardened barcode/manual product fallback copy so catalog moderation failure is presented separately from backend-confirmed meal/profile save, with contract coverage preventing local-only save language from returning to the scanner flow.
+- Localized water and quick-weight companion reward sync warnings so backend-confirmed hydration/weight saves remain honest while secondary companion-progress failures are shown in the user's selected language.
 
 ## Current Architecture
 
@@ -141,6 +142,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
+- Secondary sync warnings after backend-confirmed actions must use profile-language copy and must not weaken the primary cloud-confirmed save contract.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
 - My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.

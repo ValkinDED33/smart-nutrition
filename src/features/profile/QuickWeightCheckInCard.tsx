@@ -39,6 +39,8 @@ const quickWeightCopy = {
     saving: "Зберігаю...",
     saved: "Вага додана в історію.",
     saveError: "Не вдалося зберегти вагу в хмарі.",
+    rewardSyncWarning:
+      "Вагу збережено, але прогрес companion тимчасово не синхронізувався.",
     invalid: "Введіть вагу від 30 до 300 кг.",
     underweight: "Нижче норми",
     normal: "Норма",
@@ -61,6 +63,8 @@ const quickWeightCopy = {
     saving: "Zapisuję...",
     saved: "Waga dodana do historii.",
     saveError: "Nie udało się zapisać wagi w chmurze.",
+    rewardSyncWarning:
+      "Waga została zapisana, ale postęp companion chwilowo się nie zsynchronizował.",
     invalid: "Wpisz wagę od 30 do 300 kg.",
     underweight: "Poniżej normy",
     normal: "Norma",
@@ -83,6 +87,8 @@ const quickWeightCopy = {
     saving: "Saving...",
     saved: "Weight added to history.",
     saveError: "Could not save weight to cloud.",
+    rewardSyncWarning:
+      "Weight was saved, but companion progress could not sync yet.",
     invalid: "Enter a weight from 30 to 300 kg.",
     underweight: "Underweight",
     normal: "Normal",
@@ -227,8 +233,8 @@ export const QuickWeightCheckInCard = () => {
       } catch (rewardError) {
         setSaveError(
           rewardError instanceof Error
-            ? `Weight saved, but companion progress could not sync: ${rewardError.message}`
-            : "Weight saved, but companion progress could not sync."
+            ? `${copy.rewardSyncWarning} ${rewardError.message}`
+            : copy.rewardSyncWarning
         );
       }
       trackRuntimeEvent("weight_updated", {

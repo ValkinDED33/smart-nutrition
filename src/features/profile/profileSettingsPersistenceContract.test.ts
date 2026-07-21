@@ -142,4 +142,16 @@ describe("profile settings persistence contract", () => {
     expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
+
+  it("localizes quick weight companion reward sync warnings after confirmed profile save", async () => {
+    const source = await readSource(
+      "src/features/profile/QuickWeightCheckInCard.tsx"
+    );
+
+    expect(source).toContain("rewardSyncWarning");
+    expect(source).toContain("Вагу збережено");
+    expect(source).toContain("Waga została zapisana");
+    expect(source).toContain("Weight was saved");
+    expect(source).not.toContain("Weight saved, but companion progress could not sync");
+  });
 });

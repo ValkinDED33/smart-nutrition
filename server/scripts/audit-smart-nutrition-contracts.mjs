@@ -48,6 +48,8 @@ const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
+const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
+const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productCardSource = readSource("src/features/meal/ProductCard.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
@@ -171,6 +173,19 @@ addCheck(
   "photo assistant does not hard-code template recognition foods",
   !/\b(Greek yogurt|Oats|Banana|Breakfast photo draft)\b/.test(photoAssistantSource),
   "PhotoMealAssistant must render provider/user-reviewed results, not a fixed breakfast template."
+);
+
+addCheck(
+  "water and weight companion reward warnings follow profile-language copy",
+  waterTrackerSource.includes("rewardSyncWarning") &&
+    quickWeightCheckInSource.includes("rewardSyncWarning") &&
+    waterTrackerSource.includes("Воду збережено") &&
+    waterTrackerSource.includes("Woda została zapisana") &&
+    quickWeightCheckInSource.includes("Вагу збережено") &&
+    quickWeightCheckInSource.includes("Waga została zapisana") &&
+    !/Water saved, but companion progress could not sync/.test(waterTrackerSource) &&
+    !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource),
+  "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English copy."
 );
 
 addCheck(

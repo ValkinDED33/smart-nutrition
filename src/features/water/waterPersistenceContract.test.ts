@@ -49,4 +49,14 @@ describe("water persistence contract", () => {
     expect(source).toContain("const saved = await saveWaterState(nextWater)");
     expect(source).toContain("if (!saved) {\n      return;\n    }\n\n    setEditingSlot(null);");
   });
+
+  it("localizes companion reward sync warnings without weakening water save success", async () => {
+    const source = await readSource(WATER_TRACKER_SOURCE_PATH);
+
+    expect(source).toContain("rewardSyncWarning");
+    expect(source).toContain("Воду збережено");
+    expect(source).toContain("Woda została zapisana");
+    expect(source).toContain("Water was saved");
+    expect(source).not.toContain("Water saved, but companion progress could not sync");
+  });
 });

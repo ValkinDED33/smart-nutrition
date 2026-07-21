@@ -115,6 +115,8 @@ const waterCopy = {
     save: "Зберегти",
     cancel: "Скасувати",
     saveError: "Не вдалося зберегти воду в хмарі.",
+    rewardSyncWarning:
+      "Воду збережено, але прогрес companion тимчасово не синхронізувався.",
     saving: "Зберігаю...",
     retry: "Повторити",
   },
@@ -167,6 +169,8 @@ const waterCopy = {
     save: "Zapisz",
     cancel: "Anuluj",
     saveError: "Nie udało się zapisać wody w chmurze.",
+    rewardSyncWarning:
+      "Woda została zapisana, ale postęp companion chwilowo się nie zsynchronizował.",
     saving: "Zapisuję...",
     retry: "Ponów",
   },
@@ -218,6 +222,8 @@ const waterCopy = {
     save: "Save",
     cancel: "Cancel",
     saveError: "Could not save water to cloud.",
+    rewardSyncWarning:
+      "Water was saved, but companion progress could not sync yet.",
     saving: "Saving...",
     retry: "Retry",
   },
@@ -512,8 +518,8 @@ const WaterTracker = () => {
     } catch (error) {
       setSaveError(
         error instanceof Error
-          ? `Water saved, but companion progress could not sync: ${error.message}`
-          : "Water saved, but companion progress could not sync."
+          ? `${copy.rewardSyncWarning} ${error.message}`
+          : copy.rewardSyncWarning
       );
     }
 
