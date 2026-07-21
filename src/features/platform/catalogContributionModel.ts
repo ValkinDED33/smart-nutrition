@@ -1,4 +1,5 @@
 import type { CatalogProductSubmissionPayload } from "@shared/types/platform";
+import type { Product } from "@domain/products/types";
 
 export type CatalogContributionForm = {
   name: string;
@@ -47,6 +48,26 @@ export const createInitialCatalogContributionForm = (
   protein: "",
   fat: "",
   carbs: "",
+});
+
+const formatCatalogNumber = (value: number | undefined) =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? String(Number(value.toFixed(2)))
+    : "";
+
+export const createCatalogContributionFormFromProduct = (
+  product: Product,
+  initialName = product.name
+): CatalogContributionForm => ({
+  name: initialName.trim() || product.name.trim(),
+  category: product.category?.trim() ?? "",
+  brand: product.brand?.trim() ?? "",
+  barcode: product.barcode?.replace(/\D/g, "") ?? "",
+  imageUrl: product.imageUrl?.trim() ?? "",
+  calories: formatCatalogNumber(product.nutrients.calories),
+  protein: formatCatalogNumber(product.nutrients.protein),
+  fat: formatCatalogNumber(product.nutrients.fat),
+  carbs: formatCatalogNumber(product.nutrients.carbs),
 });
 
 export const createInitialCatalogContributionSubmissionState =

@@ -86,11 +86,14 @@ Current state:
 - Food now has a primary `FoodCommandCenter` that routes text/search,
   barcode, photo, saved products, builder, and catalog contribution into
   existing canonical surfaces.
+- Product cards now offer correction through a prefilled shared-catalog
+  moderation submission based on the scanned/searched product facts.
 
 Gap:
 
-- Food is no longer only a loose set of tools, but voice logging and deeper
-  product correction still need to fold into the same command surface.
+- Food is no longer only a loose set of tools, but voice logging and richer
+  correction history/versioning still need to fold into the same command
+  surface.
 - User-added products go to the shared backend catalog, but the lifecycle is not
   visible enough in the daily path.
 
@@ -234,8 +237,9 @@ features add new cards beside the command center instead of routing through it.
 RECOMMENDED FIX:
 Keep `FoodCommandCenter` as the primary mobile-first entry point. It already
 routes text/search, barcode, photo, saved products, recent products, builder,
-and catalog contribution into existing surfaces; next, add voice and product
-correction through the same contract.
+and catalog contribution into existing surfaces. Product cards now send
+prefilled correction submissions to shared catalog moderation; next, add voice
+and correction/version history through the same contract.
 
 EXAMPLE CODE:
 
@@ -534,14 +538,14 @@ provider with guardrails.
 
 ## Top 20 Useful Improvements
 
-1. Extend `FoodCommandCenter` with voice logging and product correction without
-   creating another food entry surface.
+1. Extend `FoodCommandCenter` with voice logging and correction/version history
+   without creating another food entry surface.
 2. Add agent tools for meal add/search/product lookup.
 3. Add web UI for medication reminders and adherence history.
 4. Extend the existing My Library overview with own catalog submissions and
    recent actions.
 5. Add product trust badges everywhere food data appears.
-6. Add product correction/version UI after photo or barcode logging.
+6. Expand product correction/version history after photo or barcode logging.
 7. Add women health dashboard with pregnancy week, symptoms, appointments, and
    reports.
 8. Add privacy mode for sensitive health data and analytics exclusion.

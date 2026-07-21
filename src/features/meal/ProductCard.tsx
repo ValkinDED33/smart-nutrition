@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
@@ -44,6 +44,12 @@ import {
 import { useMealActionFeedback } from "./useMealActionFeedback";
 import type { AppLanguage } from "../../shared/types/i18n";
 
+const CatalogContributionCard = lazy(() =>
+  import("@features/platform/CatalogContributionCard").then((module) => ({
+    default: module.CatalogContributionCard,
+  }))
+);
+
 interface Props {
   product: Product;
   mealType?: MealType;
@@ -70,6 +76,10 @@ const productCardCopy = {
     statusPending: "На модерації",
     statusRejected: "Потрібна перевірка",
     statusPersonal: "Ваш продукт",
+    correction: "Уточнити дані",
+    correctionHint:
+      "Якщо в продукті помилка, надішліть уточнення в спільний каталог. Запис з'явиться після підтвердження.",
+    correctionLoading: "Відкриваємо форму уточнення...",
   },
   pl: {
     addedToMeal: "Dodano do bieżącego posiłku",
@@ -84,6 +94,10 @@ const productCardCopy = {
     statusPending: "W moderacji",
     statusRejected: "Wymaga sprawdzenia",
     statusPersonal: "Twój produkt",
+    correction: "Popraw dane",
+    correctionHint:
+      "Jeśli produkt ma błąd, wyślij poprawkę do wspólnego katalogu. Wpis pojawi się po zatwierdzeniu.",
+    correctionLoading: "Otwieramy formularz poprawki...",
   },
   en: {
     addedToMeal: "Added to the current meal",
@@ -98,6 +112,10 @@ const productCardCopy = {
     statusPending: "In moderation",
     statusRejected: "Needs review",
     statusPersonal: "Your product",
+    correction: "Correct details",
+    correctionHint:
+      "If this product is wrong, send a correction to the shared catalog. It appears after moderation confirms it.",
+    correctionLoading: "Opening correction form...",
   },
 } as const;
 
@@ -142,6 +160,7 @@ export const ProductCard = ({
   const [qty, setQty] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
   const idempotencySequenceRef = useRef(0);
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
@@ -515,6 +534,34 @@ export const ProductCard = ({
               </Button>
             )}
           </Box>
+
+          <Button
+            variant="text"
+            onClick={() => setCorrectionOpen((current) => !current)}
+            data-product-correction-action="catalog-contribution"
+            sx={{ alignSelf: "flex-start", px: 0.5, fontWeight: 800 }}
+          >
+            {copy.correction}
+          </Button>
+
+          <Collapse in={correctionOpen} timeout="auto" unmountOnExit>
+            <Alert severity="info" sx={{ mb: 1.2 }}>
+              {copy.correctionHint}
+            </Alert>
+            <Suspense
+              fallback={
+                <Typography color="text.secondary" variant="body2">
+                  {copy.correctionLoading}
+                </Typography>
+              }
+            >
+              <CatalogContributionCard
+                key={`product-correction-${savedKey}`}
+                compact
+                initialProduct={product}
+              />
+            </Suspense>
+          </Collapse>
 
           <Button
             variant="text"

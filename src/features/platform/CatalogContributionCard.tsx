@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { CatalogProductItem } from "../../shared/types/platform";
+import type { Product } from "@domain/products/types";
 import {
   PlatformApiError,
   findCatalogDuplicateCandidates,
@@ -24,6 +25,7 @@ import { getKnownProductCategoryOptions } from "@domain/products/productCategory
 import {
   buildCatalogContributionPayload,
   canSubmitCatalogContribution,
+  createCatalogContributionFormFromProduct,
   createInitialCatalogContributionForm,
   createInitialCatalogContributionSubmissionState,
   resolveCatalogContributionNotice,
@@ -166,11 +168,13 @@ const getSubmissionStatusLabel = (
 
 interface CatalogContributionCardProps {
   initialName?: string;
+  initialProduct?: Product;
   compact?: boolean;
 }
 
 export const CatalogContributionCard = ({
   initialName = "",
+  initialProduct,
   compact = false,
 }: CatalogContributionCardProps) => {
   const { appLanguage } = useLanguage();
@@ -180,7 +184,9 @@ export const CatalogContributionCard = ({
     [appLanguage]
   );
   const [form, setForm] = useState(() =>
-    createInitialCatalogContributionForm(initialName)
+    initialProduct
+      ? createCatalogContributionFormFromProduct(initialProduct, initialName)
+      : createInitialCatalogContributionForm(initialName)
   );
   const [submissions, setSubmissions] = useState<CatalogProductItem[]>([]);
   const [duplicates, setDuplicates] = useState<CatalogProductItem[]>([]);

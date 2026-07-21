@@ -89,6 +89,9 @@ const fridgeRecipePlannerSource = readSource("src/features/fridge/FridgeRecipePl
 const catalogContributionCardSource = readSource(
   "src/features/platform/CatalogContributionCard.tsx"
 );
+const catalogContributionModelSource = readSource(
+  "src/features/platform/catalogContributionModel.ts"
+);
 const adminCenterCardSource = readSource("src/features/platform/AdminCenterCard.tsx");
 const sharedLanguageSource = readSource("src/shared/language/index.tsx");
 const sharedI18nUkSource = readSource("src/shared/i18n/uk.ts");
@@ -562,6 +565,24 @@ addCheck(
     !mealBuilderPageSource.includes("getMealInputModeCopy") &&
     !mealBuilderPageSource.includes("MEAL_INPUT_GRID_COLUMNS"),
   "Food logging must feel like one command surface. Barcode, photo, search, saved products, builder, and catalog contribution must route into existing canonical flows instead of duplicating mode-picking UI or looping catalog fallback back to search."
+);
+
+addCheck(
+  "product corrections route through shared catalog moderation",
+  productCardSource.includes('data-product-correction-action="catalog-contribution"') &&
+    productCardSource.includes("<CatalogContributionCard") &&
+    productCardSource.includes("initialProduct={product}") &&
+    catalogContributionCardSource.includes("initialProduct") &&
+    catalogContributionCardSource.includes("createCatalogContributionFormFromProduct") &&
+    catalogContributionModelSource.includes("createCatalogContributionFormFromProduct") &&
+    catalogContributionModelSource.includes("product.barcode?.replace(/\\D/g, \"\")") &&
+    catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.calories)") &&
+    catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.protein)") &&
+    catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.fat)") &&
+    catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.carbs)") &&
+    !productCardSource.includes("setProduct(") &&
+    !productCardSource.includes("localStorage"),
+  "Product correction after scan/search must be a prefilled shared-catalog moderation submission, not a local fake product edit or second catalog persistence path."
 );
 
 addCheck(
