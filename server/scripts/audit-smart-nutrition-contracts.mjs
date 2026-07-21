@@ -262,7 +262,11 @@ addCheck(
   "telegram assistant uses profile language for menus callbacks and agent context",
   telegramServiceSource.includes("getTelegramLanguageFromSnapshot(snapshot)") &&
     telegramServiceSource.includes("normalizeTelegramLanguage(user?.languagePreference)") &&
+    telegramServiceSource.includes("mainMenuButtons") &&
     telegramServiceSource.includes("buildTelegramMainMenuKeyboard(language)") &&
+    telegramServiceSource.includes("getTelegramMainMenuCommandFromText") &&
+    telegramServiceSource.includes("handleTelegramMainMenuText(ctx, message)") &&
+    telegramServiceSource.includes("buildReminderListMessage(reminders.getUserReminders(user), language)") &&
     telegramServiceSource.includes("buildTelegramWaterActionKeyboard({ language") &&
     telegramServiceSource.includes("copy.waterSaved") &&
     telegramServiceSource.includes("copy.waterSaveFailed") &&

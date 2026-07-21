@@ -813,8 +813,9 @@ describe("telegramService", () => {
       expect.objectContaining({
         reply_markup: expect.objectContaining({
           keyboard: expect.arrayContaining([
-            expect.arrayContaining([expect.objectContaining({ text: "/reminders" })]),
-            expect.arrayContaining([expect.objectContaining({ text: "/addtask" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "📊 День" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "💧 Вода" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "👤 Профіль" })]),
           ]),
           resize_keyboard: true,
         }),
@@ -940,10 +941,116 @@ describe("telegramService", () => {
       expect.stringContaining("Smart Nutrition jest obok, Ihor"),
       expect.objectContaining({
         reply_markup: expect.objectContaining({
+          keyboard: expect.arrayContaining([
+            expect.arrayContaining([expect.objectContaining({ text: "📊 Dzień" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "💧 Woda" })]),
+            expect.arrayContaining([expect.objectContaining({ text: "❔ Pomoc" })]),
+          ]),
           input_field_placeholder: "Napisz działanie albo wybierz przycisk",
         }),
       })
     );
+
+    service.stop("test shutdown");
+  });
+
+  it("routes localized Telegram menu button text through canonical snapshot handlers", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.handlers = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        this.handlers[eventName] = handler;
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+      languagePreference: "en",
+    };
+    const stateService = {
+      getSnapshot: vi.fn(async () => ({
+        ...snapshot,
+        profile: {
+          ...snapshot.profile,
+          languagePreference: "en",
+        },
+      })),
+    };
+    const assistantAgent = {
+      run: vi.fn(),
+    };
+    const reminderService = {
+      getUserReminders: vi.fn(() => []),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService,
+      reminderService,
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+
+    await instances[0].handlers.text({
+      chat: { id: 42 },
+      message: { text: "💧 Water" },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Water today"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.any(Array),
+        }),
+      })
+    );
+    expect(stateService.getSnapshot).toHaveBeenCalledWith(connectedUser);
+    expect(assistantAgent.run).not.toHaveBeenCalled();
+
+    await instances[0].handlers.text({
+      chat: { id: 42 },
+      message: { text: "📊 Day" },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Today status:"));
+    expect(assistantAgent.run).not.toHaveBeenCalled();
+
+    await instances[0].handlers.text({
+      chat: { id: 42 },
+      message: { text: "⏰ Reminders" },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("There are no active reminders yet.")
+    );
+    expect(reminderService.getUserReminders).toHaveBeenCalledWith(connectedUser);
+    expect(assistantAgent.run).not.toHaveBeenCalled();
 
     service.stop("test shutdown");
   });

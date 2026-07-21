@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { Telegraf } from "telegraf";
 import { AuthApiError, calculateMealTotalNutrients } from "../lib/domain.mjs";
-import { createTelegramMedicationReminderRuntime } from "./telegramMedicationReminders.mjs";
+import {
+  buildReminderListMessage,
+  createTelegramMedicationReminderRuntime,
+} from "./telegramMedicationReminders.mjs";
 
 const TELEGRAM_CONNECT_PURPOSE = "telegram_connect";
 const TELEGRAM_START_RETRY_DELAY_MS = 60_000;
@@ -92,6 +95,8 @@ const TELEGRAM_COPY = {
     profileDataUnavailable:
       "Дані профілю тимчасово недоступні. Спробуйте трохи пізніше.",
     waterDataUnavailable: "Дані води тимчасово недоступні. Спробуйте трохи пізніше.",
+    remindersDataUnavailable:
+      "Нагадування тимчасово недоступні. Спробуйте трохи пізніше.",
     assistantUnavailable:
       "Асистент тимчасово недоступний. Спробуйте трохи пізніше.",
     assistantSafeFailure:
@@ -131,6 +136,14 @@ const TELEGRAM_COPY = {
     mainMenuPlaceholder: "Напишіть дію або оберіть кнопку",
     mainMenuGreeting: "Smart Nutrition поруч",
     mainMenuTitle: "Що можна зробити зараз:",
+    mainMenuButtons: {
+      today: "📊 День",
+      reminders: "⏰ Нагадування",
+      water: "💧 Вода",
+      nutrition: "🧬 Харчування",
+      profile: "👤 Профіль",
+      help: "❔ Допомога",
+    },
     todayAction: "📊 /today — швидкий підсумок дня",
     remindersAction: "⏰ /reminders — нагадування і задачі з кнопками керування",
     waterAction: "💧 /water — вода сьогодні",
@@ -193,6 +206,8 @@ const TELEGRAM_COPY = {
     profileDataUnavailable:
       "Dane profilu są chwilowo niedostępne. Spróbuj trochę później.",
     waterDataUnavailable: "Dane wody są chwilowo niedostępne. Spróbuj trochę później.",
+    remindersDataUnavailable:
+      "Przypomnienia są chwilowo niedostępne. Spróbuj trochę później.",
     assistantUnavailable:
       "Asystent jest chwilowo niedostępny. Spróbuj trochę później.",
     assistantSafeFailure:
@@ -232,6 +247,14 @@ const TELEGRAM_COPY = {
     mainMenuPlaceholder: "Napisz działanie albo wybierz przycisk",
     mainMenuGreeting: "Smart Nutrition jest obok",
     mainMenuTitle: "Co możesz zrobić teraz:",
+    mainMenuButtons: {
+      today: "📊 Dzień",
+      reminders: "⏰ Przypomnienia",
+      water: "💧 Woda",
+      nutrition: "🧬 Odżywianie",
+      profile: "👤 Profil",
+      help: "❔ Pomoc",
+    },
     todayAction: "📊 /today — szybkie podsumowanie dnia",
     remindersAction: "⏰ /reminders — przypomnienia i zadania z przyciskami",
     waterAction: "💧 /water — woda dzisiaj",
@@ -292,6 +315,7 @@ const TELEGRAM_COPY = {
     disconnected: "Telegram disconnected from Smart Nutrition.",
     profileDataUnavailable: "Profile data is temporarily unavailable. Try again soon.",
     waterDataUnavailable: "Water data is temporarily unavailable. Try again soon.",
+    remindersDataUnavailable: "Reminders are temporarily unavailable. Try again soon.",
     assistantUnavailable: "Assistant is temporarily unavailable. Try again soon.",
     assistantSafeFailure:
       "I could not safely perform this action. Try writing it more specifically.",
@@ -330,6 +354,14 @@ const TELEGRAM_COPY = {
     mainMenuPlaceholder: "Type an action or choose a button",
     mainMenuGreeting: "Smart Nutrition is nearby",
     mainMenuTitle: "What you can do now:",
+    mainMenuButtons: {
+      today: "📊 Day",
+      reminders: "⏰ Reminders",
+      water: "💧 Water",
+      nutrition: "🧬 Nutrition",
+      profile: "👤 Profile",
+      help: "❔ Help",
+    },
     todayAction: "📊 /today — quick day summary",
     remindersAction: "⏰ /reminders — reminders and tasks with action buttons",
     waterAction: "💧 /water — water today",
@@ -402,20 +434,62 @@ const getTelegramLanguageFromCode = (value) => {
 
 const buildTelegramMainMenuKeyboard = (language = TELEGRAM_LANGUAGE_FALLBACK) => {
   const copy = getTelegramCopy(language);
+  const buttons = copy.mainMenuButtons;
 
   return {
     reply_markup: {
       keyboard: [
-        [{ text: "/today" }, { text: "/reminders" }],
-        [{ text: "/water" }, { text: "/nutrition" }],
-        [{ text: "/addtask" }, { text: "/addmed" }],
-        [{ text: "/profile" }, { text: "/help" }],
+        [{ text: buttons.today }, { text: buttons.reminders }],
+        [{ text: buttons.water }, { text: buttons.nutrition }],
+        [{ text: buttons.profile }, { text: buttons.help }],
       ],
       resize_keyboard: true,
       one_time_keyboard: false,
       input_field_placeholder: copy.mainMenuPlaceholder,
     },
   };
+};
+
+const normalizeTelegramButtonText = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}/]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getTelegramMainMenuCommandFromText = (value) => {
+  const normalized = normalizeTelegramButtonText(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const commands = {
+    "/today": "today",
+    "/water": "water",
+    "/nutrition": "nutrition",
+    "/profile": "profile",
+    "/help": "help",
+    "/menu": "menu",
+  };
+
+  if (commands[normalized]) {
+    return commands[normalized];
+  }
+
+  for (const copy of Object.values(TELEGRAM_COPY)) {
+    for (const [command, label] of Object.entries(copy.mainMenuButtons)) {
+      if (normalizeTelegramButtonText(label) === normalized) {
+        return command;
+      }
+    }
+  }
+
+  if (/^(меню|menu|главное меню|головне меню)$/iu.test(value)) {
+    return "menu";
+  }
+
+  return null;
 };
 
 const TELEGRAM_WATER_QUICK_AMOUNTS_ML = [250, 500];
@@ -1294,6 +1368,23 @@ export const createTelegramService = ({
     );
   };
 
+  const replyWithReminderList = async (ctx) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return;
+    }
+    const language = await getTelegramUserLanguage(user);
+    const copy = getTelegramCopy(language);
+
+    if (!reminders?.getUserReminders) {
+      await ctx.reply(copy.remindersDataUnavailable);
+      return;
+    }
+
+    await ctx.reply(buildReminderListMessage(reminders.getUserReminders(user), language));
+  };
+
   const getWaterRetryAmountFromAgentResult = (agentResult) => {
     const amountMl = Number(agentResult?.intent?.entities?.amountMl);
 
@@ -1401,6 +1492,67 @@ export const createTelegramService = ({
       buildTelegramMainMenuMessage(user, language),
       buildTelegramMainMenuKeyboard(language)
     );
+  };
+
+  const handleTelegramMainMenuText = async (ctx, message) => {
+    const command = getTelegramMainMenuCommandFromText(message);
+
+    if (!command) {
+      return false;
+    }
+
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return true;
+    }
+
+    if (command === "menu") {
+      await replyWithMainMenu(ctx, user);
+      return true;
+    }
+
+    if (command === "help") {
+      const language = await getTelegramUserLanguage(user);
+      await sendAssistantReaction(ctx, "greeting");
+      await ctx.reply(
+        buildTelegramAssistantCapabilitiesMessage(language),
+        buildTelegramMainMenuKeyboard(language)
+      );
+      return true;
+    }
+
+    if (command === "today") {
+      await replyWithSnapshot(ctx, (snapshot, language) =>
+        buildTelegramDailySummary(snapshot, new Date(), language)
+      );
+      return true;
+    }
+
+    if (command === "water") {
+      await replyWithWaterSnapshot(ctx);
+      return true;
+    }
+
+    if (command === "reminders") {
+      await replyWithReminderList(ctx);
+      return true;
+    }
+
+    if (command === "nutrition") {
+      await replyWithSnapshot(ctx, (snapshot, language) =>
+        buildTelegramNutritionSummary(snapshot, new Date(), language)
+      );
+      return true;
+    }
+
+    if (command === "profile") {
+      const language = await getTelegramUserLanguage(user);
+      await ctx.reply(getTelegramCopy(language).profileConnected(user.name));
+      return true;
+    }
+
+    return false;
   };
 
   const getMedicationReminderRuntime = () => {
@@ -1703,13 +1855,7 @@ export const createTelegramService = ({
         return;
       }
 
-      if (/^(меню|menu|главное меню|головне меню)$/iu.test(message)) {
-        const user = await getConnectedUser(ctx);
-
-        if (user) {
-          await replyWithMainMenu(ctx, user);
-        }
-
+      if (await handleTelegramMainMenuText(ctx, message)) {
         return;
       }
 

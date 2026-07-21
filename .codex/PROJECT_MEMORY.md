@@ -82,6 +82,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through the backend invite contract, not full account synchronization.
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
 - Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
+- Replaced raw Telegram main-menu command buttons with profile-language labels and routed label taps back into canonical snapshot/profile/help handlers, keeping Telegram as the same assistant worker surface instead of a command-list bolt-on.
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
@@ -161,6 +162,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram reminder command hints, reminder lists, management buttons, callback feedback, and scheduled reminder notifications must use the connected profile language when a profile is available; Telegram client language is only a disconnected fallback.
+- Telegram main-menu quick buttons must use the connected profile language and must route to existing canonical handlers instead of creating a second command/router system.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
 - Reminder persistence should use `updateUserReminders`; `updateUserMedicationReminders` is a legacy compatibility alias that must delegate to the canonical method and must not contain separate write logic.
 - Reminder UI surfaces that create or update backend-confirmed reminders must keep the visible reminder manager synchronized with the returned canonical reminder item.
