@@ -345,8 +345,12 @@ export const createStateController = ({
 
     saveCommunityState: async ({ request, response, auth }) => {
       const body = await readJsonBody(request, bodyLimitBytes);
-      await stateService.saveCommunityState(auth.user, body, getSyncContext(request));
-      await sendSavedMeta(response, auth.user);
+      const community = await stateService.saveCommunityState(
+        auth.user,
+        body,
+        getSyncContext(request)
+      );
+      await sendSavedMeta(response, auth.user, { community });
     },
 
     getCompanionState: async ({ response, auth }) => {

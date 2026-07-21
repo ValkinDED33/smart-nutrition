@@ -12,6 +12,7 @@ export const getSnapshotMetaFromSnapshot = (
     profileUpdatedAt: snapshot.profileUpdatedAt ?? null,
     mealUpdatedAt: snapshot.mealUpdatedAt ?? null,
     waterUpdatedAt: snapshot.waterUpdatedAt ?? null,
+    communityUpdatedAt: snapshot.communityUpdatedAt ?? null,
     backupEnabled: snapshot.backupEnabled,
     lastWriterDeviceId: snapshot.lastWriterDeviceId ?? null,
   };
@@ -44,6 +45,7 @@ export const buildAppSnapshot = ({
   profileUpdatedAt: meta?.profileUpdatedAt ?? meta?.updatedAt ?? null,
   mealUpdatedAt: meta?.mealUpdatedAt ?? meta?.updatedAt ?? null,
   waterUpdatedAt: meta?.waterUpdatedAt ?? meta?.updatedAt ?? null,
+  communityUpdatedAt: meta?.communityUpdatedAt ?? meta?.updatedAt ?? null,
   backupEnabled: meta?.backupEnabled,
   lastWriterDeviceId: meta?.lastWriterDeviceId ?? null,
 });

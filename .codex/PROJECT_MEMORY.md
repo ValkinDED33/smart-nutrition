@@ -89,6 +89,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
+- Hardened community mutations so saved social/profile-community actions return canonical backend `community` state and the frontend refuses to confirm locally computed community state when the backend omits the canonical payload.
 
 ## Current Architecture
 
@@ -136,6 +137,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Frontend CSP must not reopen direct browser access to external food catalog providers.
 - SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.
 - Profile mutations must use unified cloud actions, not isolated local state.
+- Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.
 - Production readiness checks must reject placeholder secrets, database URLs, and email settings.

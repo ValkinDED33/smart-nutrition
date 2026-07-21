@@ -11,6 +11,8 @@ import communityReducer, {
 } from "./communitySlice";
 
 type RemoteResult = Awaited<ReturnType<typeof syncRemoteCommunityState>>;
+const MISSING_CANONICAL_COMMUNITY_ERROR =
+  "Backend did not return canonical community state.";
 
 export const buildCommunityStateAfterAction = (
   community: CommunityState,
@@ -43,8 +45,14 @@ const saveCommunityStateToCloud = async (
 ) => {
   const result = await syncRemoteCommunityState(nextCommunity);
   await assertCloudSaved(dispatch, result);
-  dispatch(replaceCommunityState(nextCommunity));
-  return nextCommunity;
+
+  if (!result.community) {
+    throw new Error(MISSING_CANONICAL_COMMUNITY_ERROR);
+  }
+
+  const confirmedCommunity = result.community as CommunityState;
+  dispatch(replaceCommunityState(confirmedCommunity));
+  return confirmedCommunity;
 };
 
 export const applyCommunityActionInCloud = async (

@@ -30,6 +30,10 @@ const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mj
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
 const frontendProductApiSource = readSource("src/shared/api/products.ts");
 const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
+const communityCloudSyncSource = readSource(
+  "src/features/community/communityCloudSync.ts"
+);
+const stateControllerSource = readSource("server/controllers/state.controller.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
 const telegramMedicationRemindersSource = readSource(
@@ -229,6 +233,18 @@ addCheck(
       mealCloudSyncSource
     ),
   "Granular meal mutations must reject backend ok responses that do not return canonical meal state."
+);
+
+addCheck(
+  "community cloud mutations require canonical backend community state",
+  stateControllerSource.includes("sendSavedMeta(response, auth.user, { community })") &&
+    authRemoteSource.includes("community?: unknown") &&
+    authRemoteSource.includes("data.community") &&
+    authRemoteSource.includes("communityUpdatedAt") &&
+    communityCloudSyncSource.includes("MISSING_CANONICAL_COMMUNITY_ERROR") &&
+    communityCloudSyncSource.includes("if (!result.community)") &&
+    communityCloudSyncSource.includes("dispatch(replaceCommunityState(confirmedCommunity))"),
+  "Community actions must not dispatch locally computed state as success; backend must return canonical community state and frontend must reject missing canonical payloads."
 );
 
 addCheck(

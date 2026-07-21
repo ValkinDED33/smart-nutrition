@@ -3,6 +3,7 @@ export interface AppSnapshotMeta {
   profileUpdatedAt?: string | null;
   mealUpdatedAt?: string | null;
   waterUpdatedAt?: string | null;
+  communityUpdatedAt?: string | null;
   backupEnabled?: boolean;
   lastWriterDeviceId?: string | null;
 }

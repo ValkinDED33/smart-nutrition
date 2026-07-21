@@ -46,6 +46,7 @@ describe("remoteStateCache", () => {
       profileUpdatedAt: PROFILE_UPDATED_AT,
       mealUpdatedAt: SNAPSHOT_UPDATED_AT,
       waterUpdatedAt: null,
+      communityUpdatedAt: null,
       lastWriterDeviceId: DEVICE_A_ID,
       backupEnabled: true,
     });

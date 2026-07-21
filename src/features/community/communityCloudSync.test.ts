@@ -37,12 +37,16 @@ describe("communityCloudSync", () => {
 
   it("updates local community only after the cloud save succeeds", async () => {
     const dispatch = vi.fn();
+    const confirmedCommunity = normalizeCommunityState({
+      friends: [{ id: "friend-cloud", name: "Cloud Maks", status: "online" }],
+    });
     authApiMock.syncRemoteCommunityState.mockResolvedValueOnce({
       ok: true,
       meta: { updatedAt: "2026-07-01T08:00:00.000Z" },
+      community: confirmedCommunity,
     });
 
-    await applyCommunityActionInCloud(
+    const result = await applyCommunityActionInCloud(
       dispatch as never,
       normalizeCommunityState({}),
       addFriend({ name: FRIEND_NAME })
@@ -52,6 +56,28 @@ describe("communityCloudSync", () => {
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       "community/replaceCommunityState",
     ]);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: confirmedCommunity })
+    );
+    expect(result).toBe(confirmedCommunity);
+  });
+
+  it("does not confirm community actions when backend omits canonical state", async () => {
+    const dispatch = vi.fn();
+    authApiMock.syncRemoteCommunityState.mockResolvedValueOnce({
+      ok: true,
+      meta: { updatedAt: "2026-07-01T08:00:00.000Z" },
+    });
+
+    await expect(
+      applyCommunityActionInCloud(
+        dispatch as never,
+        normalizeCommunityState({}),
+        addFriend({ name: FRIEND_NAME })
+      )
+    ).rejects.toThrow("Backend did not return canonical community state.");
+
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("pulls the latest cloud snapshot instead of applying stale community state on conflict", async () => {

@@ -44,6 +44,7 @@ export interface RemoteSyncResult {
   code?: string;
   meta?: AppSnapshotMeta | null;
   meal?: unknown;
+  community?: unknown;
 }
 
 const REMOTE_API_UNAVAILABLE_MESSAGE = "Backend unavailable. Please reconnect.";
@@ -136,6 +137,7 @@ interface RemoteMutationResponse {
   ok: true;
   meta: AppSnapshotMeta | null;
   meal?: unknown;
+  community?: unknown;
 }
 
 interface RemoteProfileAndStateResponse extends RemoteMutationResponse {
@@ -921,10 +923,25 @@ const getRemoteMutationResult = async (
       }
     }
 
+    if (data.community) {
+      const cachedSnapshot = readCachedRemoteSnapshot();
+
+      if (cachedSnapshot) {
+        writeCachedRemoteSnapshot({
+          ...cachedSnapshot,
+          community: data.community,
+          communityUpdatedAt:
+            data.meta?.communityUpdatedAt ?? cachedSnapshot.communityUpdatedAt,
+          updatedAt: data.meta?.updatedAt ?? cachedSnapshot.updatedAt,
+        });
+      }
+    }
+
     return {
       ok: true,
       meta: data.meta,
       meal: data.meal,
+      community: data.community,
     };
   } catch (error) {
     return toRemoteSyncResult(error);
