@@ -112,6 +112,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added a visible My Library overview over existing canonical saved nutrition state: saved products, reusable meal templates, and saved community materials now appear as one hub with counts and quick tab navigation, without a separate local library store.
 - Simplified the food logging entry path around the existing `FoodCommandCenter`: barcode, photo, search, saved products, builder, and catalog contribution now route from one primary command surface, while the duplicate mode-selection card was removed.
 - Added product correction as a backend-confirmed catalog moderation path: product cards open a prefilled shared-catalog contribution from the scanned/searched product facts instead of locally editing or inventing corrected product state.
+- Added typed/browser-voice meal commands inside the existing `FoodCommandCenter`: explicit commands such as "add lunch 200 g rice" are parsed deterministically, matched against the canonical product catalog, checked for compatible product units, and saved only through backend-confirmed product intake.
 
 ## Current Architecture
 
@@ -169,6 +170,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Production canonical storage may be MongoDB Atlas or Postgres, but it must be backend-owned, configured explicitly, and non-placeholder.
 - Product and meal intake must use a canonical backend-confirmed flow.
 - Food logging must keep `FoodCommandCenter` as the primary entry surface for search, barcode, photo, saved products, builder, and catalog contribution; new food inputs such as voice or correction must extend that command surface instead of adding another warehouse.
+- Typed and browser-voice food commands must resolve inside `FoodCommandCenter`, require a clear product, quantity, and compatible units, and persist only through `addProductIntakeToCloud`; vague speech/text must search or ask for confirmation instead of saving.
 - Product correction after scanner/search/photo review must create a prefilled shared-catalog moderation submission through the existing catalog contribution contract; it must not mutate product facts locally or claim the global catalog changed before moderation confirms it.
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.
 - AI weight logging must append to backend profile `weightHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved entry.

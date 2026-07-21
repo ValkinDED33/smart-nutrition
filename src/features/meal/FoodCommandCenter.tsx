@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Camera, Plus, ScanBarcode, Search, Sparkles, Star } from "lucide-react";
+import { Camera, Mic, Plus, ScanBarcode, Search, Sparkles, Star } from "lucide-react";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import {
@@ -28,6 +28,8 @@ import { useLanguage } from "../../shared/language";
 import {
   createInitialFoodCommandQuantity,
   createNutritionGoogleSearchUrl,
+  isFoodCommandUnitCompatible,
+  parseFoodCommandText,
   shouldShowQuickSearchDeadEnd,
 } from "./foodCommandCenterModel";
 import { getProductSuggestions } from "./productSuggestionModel";
@@ -55,6 +57,51 @@ interface FoodCommandCenterProps {
   onOpenTarget: (target: FoodCommandTarget) => void;
 }
 
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+  readonly 0: SpeechRecognitionAlternativeLike;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error?: string;
+  message?: string;
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+const getSpeechRecognitionConstructor = (): SpeechRecognitionConstructor | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const speechWindow = window as Window &
+    Partial<{
+      SpeechRecognition: SpeechRecognitionConstructor;
+      webkitSpeechRecognition: SpeechRecognitionConstructor;
+    }>;
+
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+};
+
 const commandCopy = {
   uk: {
     title: "Додати їжу",
@@ -81,6 +128,14 @@ const commandCopy = {
     source: "джерело",
     recent: "Недавнє",
     saved: "Збережене",
+    voice: "Голос",
+    listening: "Слухаю...",
+    voiceUnavailable: "Голосове введення недоступне у цьому браузері.",
+    commandReady: "Зрозумів команду",
+    commandNeedsMatch: "Знайдіть продукт у каталозі, потім я збережу його у прийом їжі.",
+    commandUnitMismatch:
+      "Одиниці у команді не збігаються з одиницями продукту. Перевірте кількість перед збереженням.",
+    addCommand: "Додати команду",
   },
   pl: {
     title: "Dodaj jedzenie",
@@ -107,6 +162,14 @@ const commandCopy = {
     source: "źródło",
     recent: "Ostatnie",
     saved: "Zapisane",
+    voice: "Głos",
+    listening: "Słucham...",
+    voiceUnavailable: "Wprowadzanie głosowe jest niedostępne w tej przeglądarce.",
+    commandReady: "Rozumiem polecenie",
+    commandNeedsMatch: "Znajdź produkt w katalogu, a potem zapiszę go do posiłku.",
+    commandUnitMismatch:
+      "Jednostki w poleceniu nie pasują do jednostek produktu. Sprawdź ilość przed zapisem.",
+    addCommand: "Dodaj z polecenia",
   },
   en: {
     title: "Add food",
@@ -133,6 +196,14 @@ const commandCopy = {
     source: "source",
     recent: "Recent",
     saved: "Saved",
+    voice: "Voice",
+    listening: "Listening...",
+    voiceUnavailable: "Voice input is unavailable in this browser.",
+    commandReady: "Command understood",
+    commandNeedsMatch: "Find the product in the catalog, then I will save it to the meal.",
+    commandUnitMismatch:
+      "The command unit does not match the product unit. Check the amount before saving.",
+    addCommand: "Add command",
   },
 } as const;
 
@@ -174,8 +245,15 @@ export const FoodCommandCenter = ({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const previousInitialQueryRef = useRef(initialQuery);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const normalizedQuery = normalizeQuery(query);
+  const parsedCommand = useMemo(
+    () => parseFoodCommandText(normalizedQuery),
+    [normalizedQuery]
+  );
+  const commandSuggestionQuery = parsedCommand?.query ?? normalizedQuery;
 
   useEffect(() => {
     const normalizedInitialQuery = normalizeQuery(initialQuery);
@@ -195,11 +273,18 @@ export const FoodCommandCenter = ({
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setDebouncedQuery(normalizedQuery);
+      setDebouncedQuery(commandSuggestionQuery);
     }, 220);
 
     return () => window.clearTimeout(timeoutId);
-  }, [normalizedQuery]);
+  }, [commandSuggestionQuery]);
+
+  useEffect(
+    () => () => {
+      speechRecognitionRef.current?.stop();
+    },
+    []
+  );
 
   useEffect(() => {
     if (!feedback) {
@@ -222,16 +307,16 @@ export const FoodCommandCenter = ({
   const suggestions = useMemo(
     () =>
       getProductSuggestions({
-        query: normalizedQuery,
+        query: commandSuggestionQuery,
         onlineProducts: productQuery.data ?? [],
         savedProducts,
         recentProducts,
         personalBarcodeProducts,
-        includeStarterCatalog: !normalizedQuery,
-        limit: normalizedQuery ? 8 : 6,
+        includeStarterCatalog: !commandSuggestionQuery,
+        limit: commandSuggestionQuery ? 8 : 6,
       }).filter((product) => productMatchesPreferences(product, preferences)),
     [
-      normalizedQuery,
+      commandSuggestionQuery,
       personalBarcodeProducts,
       preferences,
       productQuery.data,
@@ -265,21 +350,27 @@ export const FoodCommandCenter = ({
     typeof quantity === "number" && Number.isFinite(quantity) && quantity > 0
       ? quantity
       : null;
+  const commandProduct = parsedCommand ? suggestions[0] ?? null : null;
+  const commandUnitIsCompatible =
+    parsedCommand !== null && commandProduct !== null
+      ? isFoodCommandUnitCompatible(parsedCommand.unit, commandProduct.unit)
+      : false;
   const selectedPortions = getProductPortionPresets(selectedProduct?.unit ?? "g");
   const isSearching =
-    normalizedQuery.length >= 2 &&
-    (normalizedQuery !== debouncedQuery || productQuery.isFetching);
+    commandSuggestionQuery.length >= 2 &&
+    (commandSuggestionQuery !== debouncedQuery || productQuery.isFetching);
   const hasQuickSearchDeadEnd = shouldShowQuickSearchDeadEnd({
-    query: normalizedQuery,
+    query: commandSuggestionQuery,
     isSearching,
     isError: productQuery.isError,
     suggestionCount: suggestions.length,
   });
-  const googleSearchUrl = createNutritionGoogleSearchUrl(normalizedQuery);
+  const googleSearchUrl = createNutritionGoogleSearchUrl(commandSuggestionQuery);
 
   const addSelectedProduct = async (
     product = selectedProduct,
-    amount = selectedQuantity
+    amount = selectedQuantity,
+    targetMealType = mealType
   ) => {
     if (!product || amount === null) {
       return;
@@ -294,8 +385,8 @@ export const FoodCommandCenter = ({
         product,
         barcode: product.barcode,
         quantity: amount,
-        mealType,
-        idempotencyKey: `command-${mealType}-${product.barcode || product.id}-${
+        mealType: targetMealType,
+        idempotencyKey: `command-${targetMealType}-${product.barcode || product.id}-${
           globalThis.crypto?.randomUUID?.() ?? Date.now()
         }`,
         options: {
@@ -335,6 +426,55 @@ export const FoodCommandCenter = ({
     });
   };
 
+  const addParsedCommand = () => {
+    if (!parsedCommand || !commandProduct || !commandUnitIsCompatible) {
+      return;
+    }
+
+    setSelectedProduct(commandProduct);
+    setQuantity(parsedCommand.quantity);
+    void addSelectedProduct(
+      commandProduct,
+      parsedCommand.quantity,
+      parsedCommand.mealType ?? mealType
+    );
+  };
+
+  const startVoiceInput = () => {
+    const SpeechRecognitionConstructor = getSpeechRecognitionConstructor();
+
+    if (!SpeechRecognitionConstructor) {
+      setActionError(copy.voiceUnavailable);
+      return;
+    }
+
+    const recognition = new SpeechRecognitionConstructor();
+    recognition.lang =
+      appLanguage === "pl" ? "pl-PL" : appLanguage === "en" ? "en-US" : "uk-UA";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript ?? "")
+        .join(" ")
+        .trim();
+
+      if (transcript) {
+        setQuery(transcript);
+        setSelectedProduct(null);
+      }
+    };
+    recognition.onerror = (event) => {
+      setActionError(event.message || event.error || copy.voiceUnavailable);
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+    speechRecognitionRef.current = recognition;
+    setActionError(null);
+    setIsListening(true);
+    recognition.start();
+  };
+
   return (
     <Paper
       className="sn-premium-panel"
@@ -372,7 +512,10 @@ export const FoodCommandCenter = ({
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) 150px auto" },
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "minmax(0, 1fr) auto 150px auto",
+            },
             gap: 1,
             alignItems: "start",
           }}
@@ -398,6 +541,15 @@ export const FoodCommandCenter = ({
               },
             }}
           />
+          <Button
+            variant={isListening ? "contained" : "outlined"}
+            startIcon={<Mic size={18} />}
+            onClick={startVoiceInput}
+            data-food-command-voice-action="speech-recognition"
+            sx={{ minHeight: 56, px: 2.4 }}
+          >
+            {isListening ? copy.listening : copy.voice}
+          </Button>
           <TextField
             type="text"
             label={selectedProduct ? `${selectedProduct.unit}` : copy.grams}
@@ -430,6 +582,32 @@ export const FoodCommandCenter = ({
             {copy.title}
           </Button>
         </Box>
+
+        {parsedCommand ? (
+          <Alert
+            severity={commandProduct && commandUnitIsCompatible ? "success" : "info"}
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                disabled={!commandProduct || !commandUnitIsCompatible || isSaving}
+                onClick={addParsedCommand}
+                data-food-command-intake-action="typed-command"
+                sx={{ fontWeight: 800, textTransform: "none" }}
+              >
+                {copy.addCommand}
+              </Button>
+            }
+          >
+            <strong>{copy.commandReady}:</strong> {parsedCommand.query},{" "}
+            {formatProductPortion(parsedCommand.quantity, parsedCommand.unit)}
+            {commandProduct && !commandUnitIsCompatible
+              ? ` · ${copy.commandUnitMismatch}`
+              : !commandProduct
+                ? ` · ${copy.commandNeedsMatch}`
+                : ""}
+          </Alert>
+        ) : null}
 
         {selectedProduct ? (
           <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">

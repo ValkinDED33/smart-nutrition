@@ -7,6 +7,7 @@ const readSource = (path: string) =>
 
 describe("FoodCommandCenter production contract", () => {
   const commandSource = readSource("src/features/meal/FoodCommandCenter.tsx");
+  const commandModelSource = readSource("src/features/meal/foodCommandCenterModel.ts");
   const mealBuilderSource = readSource("src/pages/MealBuilderPage.tsx");
 
   it("keeps one primary food command center over existing canonical entry flows", () => {
@@ -27,5 +28,18 @@ describe("FoodCommandCenter production contract", () => {
     expect(commandSource).toContain('onClick={() => onOpenTarget("catalog")}');
     expect(mealBuilderSource).toContain('target === "catalog"');
     expect(mealBuilderSource).toContain('setActiveSection("templates")');
+  });
+
+  it("supports typed and voice-style meal commands only through canonical product intake", () => {
+    expect(commandModelSource).toContain("parseFoodCommandText");
+    expect(commandModelSource).toContain("isFoodCommandUnitCompatible");
+    expect(commandSource).toContain("parseFoodCommandText(normalizedQuery)");
+    expect(commandSource).toContain('data-food-command-voice-action="speech-recognition"');
+    expect(commandSource).toContain('data-food-command-intake-action="typed-command"');
+    expect(commandSource).toContain("addSelectedProduct(");
+    expect(commandSource).toContain("addProductIntakeToCloud");
+    expect(commandSource).toContain("parsedCommand.mealType ?? mealType");
+    expect(commandSource).not.toContain("localStorage");
+    expect(commandSource).not.toContain("addMealEntriesToCloud");
   });
 });

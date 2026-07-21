@@ -52,6 +52,9 @@ const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const productCardSource = readSource("src/features/meal/ProductCard.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
 const foodCommandCenterSource = readSource("src/features/meal/FoodCommandCenter.tsx");
+const foodCommandCenterModelSource = readSource(
+  "src/features/meal/foodCommandCenterModel.ts"
+);
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
@@ -565,6 +568,22 @@ addCheck(
     !mealBuilderPageSource.includes("getMealInputModeCopy") &&
     !mealBuilderPageSource.includes("MEAL_INPUT_GRID_COLUMNS"),
   "Food logging must feel like one command surface. Barcode, photo, search, saved products, builder, and catalog contribution must route into existing canonical flows instead of duplicating mode-picking UI or looping catalog fallback back to search."
+);
+
+addCheck(
+  "food command center parses text and voice-style meal commands through canonical intake",
+  foodCommandCenterModelSource.includes("parseFoodCommandText") &&
+    foodCommandCenterModelSource.includes("isFoodCommandUnitCompatible") &&
+    foodCommandCenterModelSource.includes("FOOD_ACTION_PATTERN") &&
+    foodCommandCenterSource.includes("parseFoodCommandText(normalizedQuery)") &&
+    foodCommandCenterSource.includes('data-food-command-voice-action="speech-recognition"') &&
+    foodCommandCenterSource.includes('data-food-command-intake-action="typed-command"') &&
+    foodCommandCenterSource.includes("addSelectedProduct(") &&
+    foodCommandCenterSource.includes("addProductIntakeToCloud") &&
+    foodCommandCenterSource.includes("parsedCommand.mealType ?? mealType") &&
+    !foodCommandCenterSource.includes("localStorage") &&
+    !foodCommandCenterSource.includes("addMealEntriesToCloud"),
+  "Typed and browser voice food commands must resolve into the existing FoodCommandCenter and save only through backend-confirmed product intake with compatible units."
 );
 
 addCheck(
