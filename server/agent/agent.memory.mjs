@@ -110,6 +110,18 @@ export const buildAgentMemoryPatch = ({ user, intent, toolResult }) => {
     };
   }
 
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "photo_meal"
+  ) {
+    return {
+      userId: user?.id,
+      habits: ["opens photo meal analysis through assistant"],
+      motivationTriggers: ["visual food logging with review"],
+      lastMood: "focused",
+    };
+  }
+
   if (toolResult.type === "weight_logged") {
     return {
       userId: user?.id,

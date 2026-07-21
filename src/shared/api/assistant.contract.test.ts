@@ -16,6 +16,7 @@ describe("assistant API contracts", () => {
     expect(source).toContain(String.raw`!/[\r\n]/u.test(value)`);
     expect(source).toContain("value.length <= 180");
     expect(source).toContain("targetSurface === \"scanner\"");
+    expect(source).toContain("targetSurface === \"photo_meal\"");
     expect(source).toContain("actions: parseAssistantActions(payload.actions)");
   });
 });

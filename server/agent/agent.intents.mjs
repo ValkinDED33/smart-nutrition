@@ -54,6 +54,10 @@ const SCANNER_WORD_PATTERN =
   /(сканер|скан|штрихкод|barcode|bar code|scan)/i;
 const SCANNER_OPEN_PATTERN =
   /(^|\s)(открой|відкрий|відкрити|запусти|запустити|покажи|показати|open|start|launch)(\s|$)/i;
+const PHOTO_MEAL_WORD_PATTERN =
+  /(фото|фотограф|снимок|знімок|картинк|image|photo|picture|plate|тарелк|тарілк)/i;
+const PHOTO_MEAL_ACTION_PATTERN =
+  /(^|\s)(проанализируй|проаналізуй|аналіз|анализ|розпізнай|распознай|открой|відкрий|загрузи|завантаж|open|analyze|analyse|recognize|upload)(\s|$)/i;
 
 const normalizeMessage = (value) =>
   String(value ?? "")
@@ -393,6 +397,20 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
         targetRoute: "/meals?mode=barcode",
       },
       reason: "scanner_navigation_request",
+    };
+  }
+
+  if (
+    /^\/?(?:photo-meal|photomeal|mealphoto|photofood|foodphoto)\b/i.test(normalized) ||
+    (PHOTO_MEAL_WORD_PATTERN.test(normalized) && PHOTO_MEAL_ACTION_PATTERN.test(normalized))
+  ) {
+    return {
+      intent: "request_photo_meal_analysis",
+      confidence: 0.88,
+      entities: {
+        targetRoute: "/meals?mode=photo",
+      },
+      reason: "photo_meal_navigation_request",
     };
   }
 

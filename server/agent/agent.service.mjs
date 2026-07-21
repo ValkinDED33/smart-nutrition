@@ -45,7 +45,7 @@ const getFollowUpsForIntent = (intent) => {
     return ["day_status", "search_product", "coach_focus"];
   }
 
-  if (intent === "open_scanner") {
+  if (intent === "open_scanner" || intent === "request_photo_meal_analysis") {
     return ["search_product", "day_status", "coach_focus"];
   }
 
@@ -151,6 +151,10 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "open_scanner") {
       return tools.openScanner(user, intent.entities);
+    }
+
+    if (intent.intent === "request_photo_meal_analysis") {
+      return tools.requestPhotoMealAnalysis(user, intent.entities);
     }
 
     if (intent.intent === "log_weight") {

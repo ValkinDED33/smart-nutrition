@@ -165,6 +165,52 @@ describe("createAssistantAgentService", () => {
     );
   });
 
+  it("hands photo meal requests to the canonical photo capture route without fake recognition", async () => {
+    const assistantMemoryRepository = {
+      findByUserId: vi.fn(async () => ({ userId: user.id, habits: [] })),
+      upsert: vi.fn(async (memory) => memory),
+    };
+    const agent = createAssistantAgentService({
+      assistantMemoryRepository,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "проанализируй фото еды",
+      context: {
+        language: "uk",
+      },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      mode: "agent-action",
+      providerId: "assistant-agent",
+      intent: { intent: "request_photo_meal_analysis" },
+      actions: [
+        {
+          id: "request_photo_meal_analysis",
+          ok: true,
+          resultType: "navigation_handoff",
+          targetRoute: "/meals?mode=photo",
+          targetSurface: "photo_meal",
+        },
+      ],
+      memoryUpdated: true,
+      followUpQuestionIds: ["search_product", "day_status", "coach_focus"],
+    });
+    expect(result.text).toContain("Відкриваю фото-аналіз їжі");
+    expect(result.text).toContain("чернетку для перевірки");
+    expect(result.text).not.toContain("розпізнав");
+    expect(result.text).not.toContain("збережено");
+    expect(assistantMemoryRepository.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        habits: expect.arrayContaining(["opens photo meal analysis through assistant"]),
+      })
+    );
+  });
+
   it("returns visible failure when cloud-confirmed water save is unavailable", async () => {
     const stateService = {
       getWaterState: vi.fn(async () => ({

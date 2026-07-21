@@ -118,6 +118,22 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects photo meal analysis handoff requests before generic food chat", () => {
+    expect(detectAgentIntent("проанализируй фото еды")).toMatchObject({
+      intent: "request_photo_meal_analysis",
+      confidence: 0.88,
+      entities: {
+        targetRoute: "/meals?mode=photo",
+      },
+    });
+    expect(detectAgentIntent("open food photo analysis")).toMatchObject({
+      intent: "request_photo_meal_analysis",
+      entities: {
+        targetRoute: "/meals?mode=photo",
+      },
+    });
+  });
+
   it("detects water reminder requests before treating the text as water logging", () => {
     expect(detectAgentIntent("Напоминай пить воду каждый день о 09:00")).toMatchObject({
       intent: "create_water_reminder",

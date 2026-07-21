@@ -118,9 +118,10 @@ Gap:
 - Agent now completes safe catalog-backed food search and meal logging, plus
   backend-confirmed favorite product saves, weight, symptom check-ins, daily
   summaries, weekly/monthly progress reports, follow-ups, and scanner
-  navigation handoff to the canonical food scanner route, but it still needs
-  more practical tools around planning and photo meal handoff.
-- Missing practical tool: `request_photo_meal_analysis`.
+  navigation handoff and photo meal handoff to canonical food routes, but it
+  still needs more practical tools around planning.
+- Missing practical tool group: planning actions such as safe daily plan drafts
+  and schedule-aware food prep suggestions.
 
 ### Telegram and Medication Reminders
 
@@ -245,20 +246,23 @@ The agent can log water, search products, add meals through canonical product
 intake, log weight through confirmed profile state, log symptoms through
 confirmed women-health profile state, generate backend-backed daily and
 weekly/monthly reports, create reusable meal-template recipes, create
-reminders, and open the canonical scanner route from assistant commands, but it
-cannot yet request the photo meal handoff from assistant commands.
+reminders, open the canonical scanner route, and open the canonical photo meal
+review route from assistant commands, but it still cannot draft schedule-aware
+daily plans.
 
 WHY IT IS A PROBLEM:
 The assistant is positioned as a worker. A worker must act, not only explain.
 
 RISK:
-Users will try natural commands like "проанализируй фото еды" and the assistant
-will fall back to text advice instead of performing the product action.
+Users will try natural commands like "составь план питания на сегодня" and the
+assistant will fall back to text advice instead of producing a reviewable plan
+connected to the app's real meals, reminders, and profile context.
 
 RECOMMENDED FIX:
-Add a safe tool for `request_photo_meal_analysis`; keep `open_scanner`,
-`create_recipe`, `save_favorite`, `generate_report`, and follow-up actions on
-their canonical navigation, backend-confirmed, or read-only contracts.
+Add safe planning tools only as reviewable drafts; keep `open_scanner`,
+`request_photo_meal_analysis`, `create_recipe`, `save_favorite`,
+`generate_report`, and follow-up actions on their canonical navigation,
+backend-confirmed, or read-only contracts.
 
 EXAMPLE CODE:
 
@@ -558,7 +562,8 @@ Includes:
 - Done: `search_product`, `add_meal`, `add_water`,
   `create_medication_reminder`, `create_task_reminder`, typed reminders,
   `log_weight`, `log_symptom`, `generate_day_summary`, `create_follow_up`, and
-  `save_favorite`, `generate_report`, `create_recipe`, and `open_scanner`.
+  `save_favorite`, `generate_report`, `create_recipe`, `open_scanner`, and
+  `request_photo_meal_analysis`.
 - Remaining: continue expanding higher-value worker tools only through
   backend-confirmed contracts, without adding a second reminder, product, meal,
   or AI system.

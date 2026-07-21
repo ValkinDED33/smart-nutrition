@@ -394,6 +394,27 @@ addCheck(
 );
 
 addCheck(
+  "assistant photo meal handoff opens canonical photo route",
+  assistantAgentIntentsSource.includes('intent: "request_photo_meal_analysis"') &&
+    assistantAgentIntentsSource.includes("PHOTO_MEAL_WORD_PATTERN") &&
+    assistantAgentServiceSource.includes('intent.intent === "request_photo_meal_analysis"') &&
+    assistantAgentServiceSource.includes("tools.requestPhotoMealAnalysis(user, intent.entities)") &&
+    assistantAgentToolsSource.includes("const requestPhotoMealAnalysis = async") &&
+    assistantAgentToolsSource.includes('targetSurface: "photo_meal"') &&
+    assistantAgentToolsSource.includes('targetRoute: "/meals?mode=photo"') &&
+    assistantAgentActionsSource.includes("photoMealOpening") &&
+    assistantAgentMemorySource.includes("opens photo meal analysis through assistant") &&
+    assistantPromptStackSource.includes("requestPhotoMealAnalysis") &&
+    assistantApiSource.includes('targetSurface === "photo_meal"') &&
+    assistantRuntimeCardSource.includes("getNavigationTarget") &&
+    assistantRuntimeCardSource.includes("navigate(targetRoute)") &&
+    mealBuilderPageSource.includes('value === "photo"') &&
+    mealBuilderPageSource.includes('data-meal-builder-direct-capture="photo"') &&
+    mealBuilderPageSource.includes("<PhotoMealAssistant mealType={mealType} />"),
+  "AI photo-food requests must hand off to the existing review-first PhotoMealAssistant route, not invent a recognition result or create a second photo meal system."
+);
+
+addCheck(
   "assistant weight tool uses backend-confirmed profile state",
   assistantAgentIntentsSource.includes('intent: "log_weight"') &&
     assistantAgentServiceSource.includes('intent.intent === "log_weight"') &&

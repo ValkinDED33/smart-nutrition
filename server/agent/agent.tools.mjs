@@ -741,6 +741,13 @@ export const createAgentTools = ({
     targetRoute: "/meals?mode=barcode",
   });
 
+  const requestPhotoMealAnalysis = async () => ({
+    ok: true,
+    type: "navigation_handoff",
+    targetSurface: "photo_meal",
+    targetRoute: "/meals?mode=photo",
+  });
+
   const logWeight = async (user, { weightKg }) => {
     if (!stateService?.getProfileState || !stateService?.saveProfileState) {
       return { ok: false, code: "WEIGHT_TOOL_UNAVAILABLE" };
@@ -1099,6 +1106,7 @@ export const createAgentTools = ({
     saveFavorite,
     createRecipe,
     openScanner,
+    requestPhotoMealAnalysis,
     logWeight,
     logSymptom,
     searchProducts,

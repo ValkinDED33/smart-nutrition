@@ -75,6 +75,10 @@ const copy = {
       "Я зрозумів, що треба відкрити сканер, але зараз не можу безпечно перейти до нього автоматично. Відкрийте Їжа -> Сканер.",
     scannerOpening:
       "Відкриваю сканер їжі. Камера стартує на екрані їжі після дозволу пристрою.",
+    photoMealOpenFailed:
+      "Я зрозумів, що треба перевірити фото їжі, але зараз не можу безпечно перейти до цього екрана автоматично. Відкрийте Їжа -> Фото.",
+    photoMealOpening:
+      "Відкриваю фото-аналіз їжі. Завантажте чітке фото тарілки, а я підготую чернетку для перевірки перед збереженням.",
     typedReminderFailed: [
       "Я зрозумів тип нагадування, але не зміг безпечно розібрати розклад.",
       "Напишіть з конкретним часом: щодня о 09:00, 13:00 або 21:00.",
@@ -240,6 +244,10 @@ const copy = {
       "Rozumiem, że trzeba otworzyć skaner, ale teraz nie mogę bezpiecznie przejść do niego automatycznie. Otwórz Jedzenie -> Skaner.",
     scannerOpening:
       "Otwieram skaner jedzenia. Kamera startuje na ekranie jedzenia po zgodzie urządzenia.",
+    photoMealOpenFailed:
+      "Rozumiem, że trzeba sprawdzić zdjęcie jedzenia, ale teraz nie mogę bezpiecznie przejść do tego ekranu automatycznie. Otwórz Jedzenie -> Zdjęcie.",
+    photoMealOpening:
+      "Otwieram analizę zdjęcia jedzenia. Wgraj wyraźne zdjęcie talerza, a przygotuję szkic do sprawdzenia przed zapisem.",
     typedReminderFailed: [
       "Rozumiem typ przypomnienia, ale nie mogę bezpiecznie odczytać harmonogramu.",
       "Napisz z konkretną godziną: codziennie o 09:00, 13:00 albo 21:00.",
@@ -405,6 +413,10 @@ const copy = {
       "I understood that you want the scanner, but I cannot safely navigate there automatically right now. Open Food -> Scanner.",
     scannerOpening:
       "Opening the food scanner. The camera starts on the food screen after your device permission.",
+    photoMealOpenFailed:
+      "I understood that you want to check a food photo, but I cannot safely navigate there automatically right now. Open Food -> Photo.",
+    photoMealOpening:
+      "Opening food photo analysis. Upload a clear plate photo and I will prepare an editable draft for review before anything is saved.",
     typedReminderFailed: [
       "I understood the reminder type, but could not safely parse the schedule.",
       "Write a specific time: daily at 09:00, 13:00, or 21:00.",
@@ -634,6 +646,10 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
       return text.scannerOpenFailed;
     }
 
+    if (intent.intent === "request_photo_meal_analysis") {
+      return text.photoMealOpenFailed;
+    }
+
     if (intent.intent === "generate_report") {
       return text.reportFailed.join("\n");
     }
@@ -748,6 +764,13 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
     toolResult.targetSurface === "scanner"
   ) {
     return text.scannerOpening;
+  }
+
+  if (
+    toolResult.type === "navigation_handoff" &&
+    toolResult.targetSurface === "photo_meal"
+  ) {
+    return text.photoMealOpening;
   }
 
   if (toolResult.type === "weight_logged") {
