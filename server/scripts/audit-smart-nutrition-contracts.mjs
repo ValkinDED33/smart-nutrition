@@ -333,13 +333,25 @@ addCheck(
 );
 
 addCheck(
-  "backend product lookup imports label micronutrients and additive text",
+  "backend product lookup imports full canonical nutrients and additive text",
   productLookupServiceSource.includes("additives_tags") &&
     productLookupServiceSource.includes("additives_original_tags") &&
     productLookupServiceSource.includes("readOpenFoodFactsAdditivesText") &&
     productLookupServiceSource.includes("readFirstMicronutrientPerBase(nutriments, [\"iodine\", \"iodide\", \"iodides\"]") &&
-    productLookupServiceSource.includes("vitamin-b12"),
-  "Backend product lookup must preserve additive and micronutrient facts from provider data before the frontend renders product facts."
+    productLookupServiceSource.includes("readFirstNutrimentPerBase") &&
+    productLookupServiceSource.includes("monounsaturatedFat") &&
+    productLookupServiceSource.includes("polyunsaturatedFat") &&
+    productLookupServiceSource.includes("omega3") &&
+    productLookupServiceSource.includes("cholesterol") &&
+    productLookupServiceSource.includes("glucose") &&
+    productLookupServiceSource.includes("fructose") &&
+    productLookupServiceSource.includes("sucrose") &&
+    productLookupServiceSource.includes("water") &&
+    productLookupServiceSource.includes("vitamin-b12") &&
+    productLookupServiceSource.includes("readUsdaNutrient(food, [1100]") &&
+    productLookupServiceSource.includes("readUsdaNutrient(food, [1103]") &&
+    productLookupServiceSource.includes("copper"),
+  "Backend product lookup must preserve additive, micronutrient, fatty-acid, sugar-type, water, iodine, selenium, and copper facts from provider data before the frontend renders product facts."
 );
 
 addCheck(

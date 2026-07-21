@@ -157,13 +157,26 @@ const createNutrients = ({
   protein = 0,
   fat = 0,
   saturatedFat = 0,
+  monounsaturatedFat = 0,
+  polyunsaturatedFat = 0,
   transFat = 0,
+  omega3 = 0,
+  omega6 = 0,
+  omega9 = 0,
+  cholesterol = 0,
   carbs = 0,
   fiber = 0,
   sugars = 0,
+  starch = 0,
+  glucose = 0,
+  fructose = 0,
+  sucrose = 0,
+  lactose = 0,
+  water = 0,
   sodium = 0,
   potassium = 0,
   vitaminA = 0,
+  vitaminB = 0,
   vitaminB1 = 0,
   vitaminB2 = 0,
   vitaminB3 = 0,
@@ -182,18 +195,33 @@ const createNutrients = ({
   zinc = 0,
   phosphorus = 0,
   iodine = 0,
+  selenium = 0,
+  copper = 0,
 } = {}) => ({
   calories: clampNumber(calories),
   protein: clampNumber(protein),
   fat: clampNumber(fat),
   saturatedFat: clampNumber(saturatedFat),
+  monounsaturatedFat: clampNumber(monounsaturatedFat),
+  polyunsaturatedFat: clampNumber(polyunsaturatedFat),
   transFat: clampNumber(transFat),
+  omega3: clampNumber(omega3),
+  omega6: clampNumber(omega6),
+  omega9: clampNumber(omega9),
+  cholesterol: clampNumber(cholesterol),
   carbs: clampNumber(carbs),
   fiber: clampNumber(fiber),
   sugars: clampNumber(sugars),
+  starch: clampNumber(starch),
+  glucose: clampNumber(glucose),
+  fructose: clampNumber(fructose),
+  sucrose: clampNumber(sucrose),
+  lactose: clampNumber(lactose),
+  water: clampNumber(water),
   sodium: clampNumber(sodium),
   potassium: clampNumber(potassium),
   vitaminA: clampNumber(vitaminA),
+  vitaminB: clampNumber(vitaminB),
   vitaminB1: clampNumber(vitaminB1),
   vitaminB2: clampNumber(vitaminB2),
   vitaminB3: clampNumber(vitaminB3),
@@ -212,6 +240,8 @@ const createNutrients = ({
   zinc: clampNumber(zinc),
   phosphorus: clampNumber(phosphorus),
   iodine: clampNumber(iodine),
+  selenium: clampNumber(selenium),
+  copper: clampNumber(copper),
 });
 
 const hasUsefulNutrition = (nutrients) =>
@@ -388,6 +418,18 @@ const readFirstMicronutrientPerBase = (nutriments, keys, unit, targetUnit) => {
   return 0;
 };
 
+const readFirstNutrimentPerBase = (nutriments, keys, unit) => {
+  for (const key of keys) {
+    const value = readNutrimentPerBase(nutriments, key, unit);
+
+    if (value > 0) {
+      return value;
+    }
+  }
+
+  return 0;
+};
+
 const readOpenFoodFactsEnergyKcal = (nutriments, unit) => {
   const unitEnergyKcal = toNumber(nutriments[`energy-kcal_100${unit}`], NaN);
 
@@ -513,15 +555,40 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     protein: readNutrimentPerBase(nutriments, "proteins", unit),
     fat: readNutrimentPerBase(nutriments, "fat", unit),
     saturatedFat: readNutrimentPerBase(nutriments, "saturated-fat", unit),
+    monounsaturatedFat: readNutrimentPerBase(nutriments, "monounsaturated-fat", unit),
+    polyunsaturatedFat: readNutrimentPerBase(nutriments, "polyunsaturated-fat", unit),
     transFat: readNutrimentPerBase(nutriments, "trans-fat", unit),
+    omega3: readFirstNutrimentPerBase(
+      nutriments,
+      ["omega-3-fat", "omega-3", "alpha-linolenic-acid", "epa", "dha"],
+      unit
+    ),
+    omega6: readFirstNutrimentPerBase(
+      nutriments,
+      ["omega-6-fat", "omega-6", "linoleic-acid"],
+      unit
+    ),
+    omega9: readFirstNutrimentPerBase(
+      nutriments,
+      ["omega-9-fat", "omega-9", "oleic-acid"],
+      unit
+    ),
+    cholesterol: readMicronutrientPerBase(nutriments, "cholesterol", unit, "mg"),
     carbs: readNutrimentPerBase(nutriments, "carbohydrates", unit),
     fiber: readNutrimentPerBase(nutriments, "fiber", unit),
     sugars: readNutrimentPerBase(nutriments, "sugars", unit),
+    starch: readNutrimentPerBase(nutriments, "starch", unit),
+    glucose: readNutrimentPerBase(nutriments, "glucose", unit),
+    fructose: readNutrimentPerBase(nutriments, "fructose", unit),
+    sucrose: readNutrimentPerBase(nutriments, "sucrose", unit),
+    lactose: readNutrimentPerBase(nutriments, "lactose", unit),
+    water: readNutrimentPerBase(nutriments, "water", unit),
     sodium:
       readNutrimentPerBase(nutriments, "sodium", unit, NaN) * 1000 ||
       readNutrimentPerBase(nutriments, "salt", unit, 0) * 393.4,
     potassium: readMicronutrientPerBase(nutriments, "potassium", unit, "mg"),
     vitaminA: readMicronutrientPerBase(nutriments, "vitamin-a", unit, "ug"),
+    vitaminB: readFirstMicronutrientPerBase(nutriments, ["vitamin-b", "vitamins-b"], unit, "mg"),
     vitaminB1: readFirstMicronutrientPerBase(nutriments, ["vitamin-b1", "thiamin"], unit, "mg"),
     vitaminB2: readFirstMicronutrientPerBase(nutriments, ["vitamin-b2", "riboflavin"], unit, "mg"),
     vitaminB3: readFirstMicronutrientPerBase(nutriments, ["vitamin-b3", "vitamin-pp", "niacin"], unit, "mg"),
@@ -540,6 +607,8 @@ const parseOpenFoodFactsProduct = (rawProduct) => {
     zinc: readMicronutrientPerBase(nutriments, "zinc", unit, "mg"),
     phosphorus: readMicronutrientPerBase(nutriments, "phosphorus", unit, "mg"),
     iodine: readFirstMicronutrientPerBase(nutriments, ["iodine", "iodide", "iodides"], unit, "ug"),
+    selenium: readMicronutrientPerBase(nutriments, "selenium", unit, "ug"),
+    copper: readMicronutrientPerBase(nutriments, "copper", unit, "mg"),
   });
 
   if (!hasUsefulNutrition(nutrients)) {
@@ -614,10 +683,45 @@ const parseUsdaProduct = (food) => {
     calories: readUsdaNutrient(food, [1008], ["energy"]),
     protein: readUsdaNutrient(food, [1003], ["protein"]),
     fat: readUsdaNutrient(food, [1004], ["total lipid", "fat"]),
+    saturatedFat: readUsdaNutrient(food, [1258], ["saturated"]),
+    monounsaturatedFat: readUsdaNutrient(food, [1292], ["monounsaturated"]),
+    polyunsaturatedFat: readUsdaNutrient(food, [1293], ["polyunsaturated"]),
+    transFat: readUsdaNutrient(food, [1257], ["trans"]),
+    omega3: readUsdaNutrient(food, [851], ["omega-3", "alpha-linolenic", "epa", "dha"]),
+    omega6: readUsdaNutrient(food, [675], ["omega-6", "linoleic"]),
+    cholesterol: readUsdaNutrient(food, [1253], ["cholesterol"]),
     carbs: readUsdaNutrient(food, [1005], ["carbohydrate"]),
     fiber: readUsdaNutrient(food, [1079], ["fiber"]),
     sugars: readUsdaNutrient(food, [2000], ["sugars"]),
+    starch: readUsdaNutrient(food, [1009], ["starch"]),
+    glucose: readUsdaNutrient(food, [1011], ["glucose"]),
+    fructose: readUsdaNutrient(food, [1012], ["fructose"]),
+    sucrose: readUsdaNutrient(food, [1010], ["sucrose"]),
+    lactose: readUsdaNutrient(food, [1013], ["lactose"]),
+    water: readUsdaNutrient(food, [1051], ["water"]),
     sodium: readUsdaNutrient(food, [1093], ["sodium"]),
+    potassium: readUsdaNutrient(food, [1092], ["potassium"]),
+    vitaminA: readUsdaNutrient(food, [1106, 1104], ["vitamin a"]),
+    vitaminB1: readUsdaNutrient(food, [1165], ["thiamin"]),
+    vitaminB2: readUsdaNutrient(food, [1166], ["riboflavin"]),
+    vitaminB3: readUsdaNutrient(food, [1167], ["niacin"]),
+    vitaminB5: readUsdaNutrient(food, [1170], ["pantothenic"]),
+    vitaminB6: readUsdaNutrient(food, [1175], ["vitamin b-6", "pyridoxine"]),
+    vitaminB7: readUsdaNutrient(food, [1176], ["biotin"]),
+    vitaminB9: readUsdaNutrient(food, [1177, 1186], ["folate", "folic"]),
+    vitaminB12: readUsdaNutrient(food, [1178], ["vitamin b-12"]),
+    vitaminC: readUsdaNutrient(food, [1162], ["vitamin c"]),
+    vitaminD: readUsdaNutrient(food, [1114], ["vitamin d"]),
+    vitaminE: readUsdaNutrient(food, [1109], ["vitamin e"]),
+    vitaminK: readUsdaNutrient(food, [1185], ["vitamin k"]),
+    calcium: readUsdaNutrient(food, [1087], ["calcium"]),
+    iron: readUsdaNutrient(food, [1089], ["iron"]),
+    magnesium: readUsdaNutrient(food, [1090], ["magnesium"]),
+    zinc: readUsdaNutrient(food, [1095], ["zinc"]),
+    phosphorus: readUsdaNutrient(food, [1091], ["phosphorus"]),
+    iodine: readUsdaNutrient(food, [1100], ["iodine"]),
+    selenium: readUsdaNutrient(food, [1103], ["selenium"]),
+    copper: readUsdaNutrient(food, [1098], ["copper"]),
   });
 
   if (!hasUsefulNutrition(nutrients)) {

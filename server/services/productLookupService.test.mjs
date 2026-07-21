@@ -48,9 +48,20 @@ const openFoodFactsBeverageProduct = {
     proteins_100ml: 0,
     fat_100ml: 0,
     "saturated-fat_100ml": 0,
+    "monounsaturated-fat_100ml": 0.1,
+    "polyunsaturated-fat_100ml": 0.2,
+    "omega-3-fat_100ml": 0.03,
+    "omega-6-fat_100ml": 0.07,
+    cholesterol_100ml: 0.001,
+    cholesterol_unit: "g",
     carbohydrates_100ml: 10.6,
     sugars_100ml: 10.6,
+    glucose_100ml: 3.2,
+    fructose_100ml: 2.4,
+    sucrose_100ml: 5,
+    water_100ml: 89,
     sodium_100ml: 0,
+    potassium_100ml: 11,
     "vitamin-a_100ml": 232,
     "vitamin-a_unit": "ug",
     "vitamin-c_100ml": 6,
@@ -67,6 +78,12 @@ const openFoodFactsBeverageProduct = {
     "folic-acid_unit": "ug",
     "pantothenic-acid_100ml": 0.45,
     "pantothenic-acid_unit": "mg",
+    calcium_100ml: 5,
+    calcium_unit: "mg",
+    selenium_100ml: 0.000002,
+    selenium_unit: "g",
+    copper_100ml: 0.01,
+    copper_unit: "mg",
     iodine_100ml: 22,
     iodine_unit: "ug",
   },
@@ -156,7 +173,17 @@ describe("productLookupService", () => {
         calories: 42,
         carbs: 10.6,
         saturatedFat: 0,
+        monounsaturatedFat: 0.1,
+        polyunsaturatedFat: 0.2,
+        omega3: 0.03,
+        omega6: 0.07,
+        cholesterol: 1,
         sugars: 10.6,
+        glucose: 3.2,
+        fructose: 2.4,
+        sucrose: 5,
+        water: 89,
+        potassium: 11,
         vitaminA: 232,
         vitaminB1: 0.0825,
         vitaminB2: 0.105,
@@ -165,7 +192,10 @@ describe("productLookupService", () => {
         vitaminB7: 3.75,
         vitaminB9: 15,
         vitaminC: 6,
+        calcium: 5,
         iodine: 22,
+        selenium: 2,
+        copper: 0.01,
       }),
       facts: expect.objectContaining({
         foodGroup: "beverages",
@@ -186,6 +216,75 @@ describe("productLookupService", () => {
     expect(fetchImpl.mock.calls[0][0]).toContain("additives_tags");
     expect(fetchImpl.mock.calls[0][0]).toContain("allergens_tags");
     expect(fetchImpl.mock.calls[0][0]).toContain("traces_tags");
+  });
+
+  it("maps USDA micronutrients and fatty acids into the canonical product shape", async () => {
+    const fetchImpl = vi.fn(async () =>
+      createResponse({
+        body: {
+          foods: [
+            {
+              fdcId: 123,
+              description: "Atlantic salmon",
+              brandName: "USDA",
+              foodCategory: "Fish",
+              foodNutrients: [
+                { nutrientId: 1008, value: 208 },
+                { nutrientId: 1003, value: 20.4 },
+                { nutrientId: 1004, value: 13.4 },
+                { nutrientId: 1258, value: 3.1 },
+                { nutrientId: 1292, value: 3.8 },
+                { nutrientId: 1293, value: 3.9 },
+                { nutrientId: 851, value: 2.2 },
+                { nutrientId: 1253, value: 55 },
+                { nutrientId: 1092, value: 363 },
+                { nutrientId: 1091, value: 252 },
+                { nutrientId: 1095, value: 0.6 },
+                { nutrientId: 1100, value: 35 },
+                { nutrientId: 1103, value: 36.5 },
+                { nutrientId: 1098, value: 0.25 },
+                { nutrientId: 1178, value: 3.2 },
+                { nutrientId: 1114, value: 11 },
+              ],
+            },
+          ],
+        },
+      })
+    );
+    const service = createProductLookupService({
+      config: {
+        openFoodFactsEnabled: false,
+        usdaApiKey: "demo-key",
+      },
+      fetchImpl,
+    });
+
+    const results = await service.searchProducts({ search: "salmon", limit: 1 });
+
+    expect(results[0]).toMatchObject({
+      id: "usda-123",
+      name: "Atlantic salmon",
+      unit: "g",
+      source: "USDA",
+      nutrients: expect.objectContaining({
+        calories: 208,
+        protein: 20.4,
+        fat: 13.4,
+        saturatedFat: 3.1,
+        monounsaturatedFat: 3.8,
+        polyunsaturatedFat: 3.9,
+        omega3: 2.2,
+        cholesterol: 55,
+        potassium: 363,
+        phosphorus: 252,
+        zinc: 0.6,
+        iodine: 35,
+        selenium: 36.5,
+        copper: 0.25,
+        vitaminB12: 3.2,
+        vitaminD: 11,
+      }),
+    });
   });
 
   it("falls back to the secondary OpenFoodFacts host when the primary search host fails", async () => {
