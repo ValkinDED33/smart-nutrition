@@ -244,14 +244,11 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         ...companionRewardPayload,
       });
       navigate(nextPath, { replace: true });
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : t("error.genericProfile");
+    } catch {
+      const message = t("error.genericProfile");
       dispatch(hydrateSyncOutbox(enqueueSyncOutbox(message)));
       dispatch(markSyncError(message));
-      setSaveError(t("error.genericProfile"));
+      setSaveError(message);
     } finally {
       setSaving(false);
     }

@@ -82,6 +82,16 @@ describe("onboarding and profile flow contract", () => {
     expect(finishSource).toContain("fatherChineseZodiac: state.fatherChineseZodiac");
   });
 
+  it("keeps onboarding finish sync failures in product-language recovery copy", async () => {
+    const finishSource = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+
+    expect(finishSource).toContain('const message = t("error.genericProfile")');
+    expect(finishSource).toContain("enqueueSyncOutbox(message)");
+    expect(finishSource).toContain("markSyncError(message)");
+    expect(finishSource).not.toContain("error instanceof Error");
+    expect(finishSource).not.toContain("error.message");
+  });
+
   it("keeps profile editing behind an explicit edit action and gates admin details", async () => {
     const profileSource = await readSource("src/pages/ProfilePage.tsx");
 

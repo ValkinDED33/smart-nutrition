@@ -141,6 +141,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened auth recovery and community action failure copy so reset/forgot/community surfaces show localized product-language recovery instead of raw backend/API exception text.
 - Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
 - Hardened quick meal and shared meal-action failure state so food save retries cannot carry raw exception text even if future UI starts reading failure messages directly.
+- Hardened final onboarding save failure state so sync outbox and sync status cannot surface raw exception text after profile setup fails.
 
 ## Current Architecture
 
@@ -175,6 +176,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
 - Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
 - Auth recovery and community action UI must not render raw backend/API exception text; reset, forgot-password, and community failures use localized recovery copy while diagnostics stay in code/logs.
+- Final onboarding/profile setup failures must not store or render raw exception text in sync outbox, sync status, or visible alerts; use localized profile recovery copy only.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.

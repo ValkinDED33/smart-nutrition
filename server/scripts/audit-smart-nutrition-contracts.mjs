@@ -47,6 +47,7 @@ const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const forgotPasswordPageSource = readSource("src/pages/ForgotPasswordPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
+const onboardingFinishSource = readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const homePageSource = readSource("src/pages/HomePage.tsx");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
@@ -885,6 +886,16 @@ addCheck(
     !communityHubCardSource.includes("error instanceof Error && error.message") &&
     !communityHubCardSource.includes("Could not save community changes. Please try again."),
   "Auth recovery and community action failures must render localized product-language retry copy instead of raw backend/API exception text."
+);
+
+addCheck(
+  "onboarding finish sync failures hide raw API exception text",
+  onboardingFinishSource.includes('const message = t("error.genericProfile")') &&
+    onboardingFinishSource.includes("enqueueSyncOutbox(message)") &&
+    onboardingFinishSource.includes("markSyncError(message)") &&
+    !onboardingFinishSource.includes("error instanceof Error") &&
+    !onboardingFinishSource.includes("error.message"),
+  "Final onboarding save failures must keep sync outbox and visible alerts in localized product-language recovery copy."
 );
 
 addCheck(
