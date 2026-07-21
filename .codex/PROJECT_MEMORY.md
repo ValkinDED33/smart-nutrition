@@ -144,6 +144,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened final onboarding save failure state so sync outbox and sync status cannot surface raw exception text after profile setup fails.
 - Hardened backend product-intake catalog retry responses so a saved meal with failed catalog moderation returns safe retry copy instead of raw provider/backend exception text.
 - Hardened FoodCommandCenter voice-input failure handling so browser/WebView speech-recognition errors show localized product-language guidance instead of raw browser exception text.
+- Hardened shared auth cloud-sync state so backend/provider failure messages are sanitized before reaching `syncError` or the visible cloud status UI.
+- Updated the locked DOMPurify runtime dependency to the patched release after `npm audit` reported a low-severity sanitizer advisory.
 
 ## Current Architecture
 
@@ -177,6 +179,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
 - Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
+- Shared auth cloud-sync state must sanitize retry, pull, outbox, and manual sync failure messages before storing them in `syncError`; visible sync UI must never depend on raw backend/provider failure text.
 - Auth recovery and community action UI must not render raw backend/API exception text; reset, forgot-password, and community failures use localized recovery copy while diagnostics stay in code/logs.
 - Final onboarding/profile setup failures must not store or render raw exception text in sync outbox, sync status, or visible alerts; use localized profile recovery copy only.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.

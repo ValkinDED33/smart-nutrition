@@ -86,13 +86,46 @@ const getSyncStatus = (syncOutbox: SyncOutboxMeta): SyncStatus =>
 
 const getSyncError = (syncOutbox: SyncOutboxMeta) =>
   syncOutbox.pendingChanges > 0
-    ? syncOutbox.lastError ?? getQueuedSyncMessage(syncOutbox.pendingChanges)
+    ? sanitizeSyncErrorMessage(syncOutbox.lastError) ??
+      getQueuedSyncMessage(syncOutbox.pendingChanges)
     : null;
+
+const SYNC_SAVE_FAILED_MESSAGE =
+  "Cloud sync could not save the latest app data.";
+const SYNC_CHANGE_FAILED_MESSAGE =
+  "Cloud sync could not save the latest change.";
+const SYNC_PULL_FAILED_MESSAGE = "Could not pull the latest cloud data.";
+const SYNC_INACTIVE_MESSAGE = "Cloud sync is not active for this account.";
+const SYNC_CONFLICT_MESSAGE =
+  "Cloud data changed on another device. Use the latest cloud version before retrying.";
+
+const sanitizeSyncErrorMessage = (message: string | null | undefined) => {
+  if (!message) {
+    return null;
+  }
+
+  if (/another device/i.test(message)) {
+    return SYNC_CONFLICT_MESSAGE;
+  }
+
+  if (/latest cloud (?:snapshot|data)|pull/i.test(message)) {
+    return SYNC_PULL_FAILED_MESSAGE;
+  }
+
+  if (/not enabled|not active/i.test(message)) {
+    return SYNC_INACTIVE_MESSAGE;
+  }
+
+  return SYNC_SAVE_FAILED_MESSAGE;
+};
 
 const getSyncErrorMessage = (result: RemoteSyncResult) =>
   result.code === "STATE_CONFLICT"
-    ? "Cloud data changed on another device. Use the latest cloud version before retrying."
-    : result.message ?? "Cloud sync could not save the latest app data.";
+    ? SYNC_CONFLICT_MESSAGE
+    : sanitizeSyncErrorMessage(result.message) ?? SYNC_SAVE_FAILED_MESSAGE;
+
+const getActionSyncErrorMessage = (message: string | undefined) =>
+  sanitizeSyncErrorMessage(message) ?? SYNC_CHANGE_FAILED_MESSAGE;
 
 const cacheCurrentRemoteSnapshot = (
   state: AuthRootState,
@@ -412,7 +445,7 @@ const authSlice = createSlice({
       }
 
       state.syncStatus = "error";
-      state.syncError = action.payload ?? "Cloud sync could not save the latest change.";
+      state.syncError = getActionSyncErrorMessage(action.payload);
     },
     hydrateSyncOutbox(state, action: PayloadAction<SyncOutboxMeta>) {
       state.syncOutbox = action.payload;
@@ -518,7 +551,7 @@ const authSlice = createSlice({
 
         state.syncStatus = "error";
         state.syncError =
-          action.payload ?? "Cloud sync could not save the latest app data.";
+          sanitizeSyncErrorMessage(action.payload) ?? SYNC_SAVE_FAILED_MESSAGE;
       })
       .addCase(pullLatestCloudSnapshot.pending, (state) => {
         if (!state.isAuthenticated || state.syncMode !== REMOTE_CLOUD_SYNC_MODE) {
@@ -545,7 +578,8 @@ const authSlice = createSlice({
         }
 
         state.syncStatus = "error";
-        state.syncError = action.payload ?? "Could not pull the latest cloud snapshot.";
+        state.syncError =
+          sanitizeSyncErrorMessage(action.payload) ?? SYNC_PULL_FAILED_MESSAGE;
       });
   },
 });

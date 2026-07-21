@@ -1,6 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import authReducer, { initializeAuth, setCredentials } from "./authSlice";
+import authReducer, {
+  initializeAuth,
+  markSyncError,
+  retryCloudSync,
+  setCredentials,
+} from "./authSlice";
 import type { User } from "@domain/user/types";
 import { createEmptyNutrients } from "@domain/meal/nutrients";
 import profileReducer, { setAssistantCustomization } from "../profile/profileSlice";
@@ -51,6 +56,7 @@ vi.mock("../../shared/lib/authSessionHint", () => sessionHintMock);
 const ONBOARDING_COMPLETED_AT = "2026-06-20T10:00:00.000Z";
 const CHAOTIC_SCHEDULE_FRICTION = "chaotic_schedule";
 const GENTLE_MOTIVATION_STYLE = "gentle";
+const TEST_REMOTE_CLOUD_SYNC_MODE = "remote-cloud";
 
 const createTestStore = () =>
   configureStore({
@@ -403,7 +409,7 @@ describe("authSlice", () => {
     store.dispatch(
       setCredentials({
         user,
-        syncMode: "remote-cloud",
+        syncMode: TEST_REMOTE_CLOUD_SYNC_MODE,
         syncOutbox: {
           pendingChanges: 0,
           firstQueuedAt: null,
@@ -420,5 +426,46 @@ describe("authSlice", () => {
       isInitialized: true,
       isLoading: false,
     });
+  });
+
+  it("keeps shared cloud sync status free of raw backend failure text", async () => {
+    const store = createTestStore();
+    const user = createUser("sync-safe-copy-user");
+
+    store.dispatch(
+      setCredentials({
+        user,
+        syncMode: TEST_REMOTE_CLOUD_SYNC_MODE,
+        syncOutbox: {
+          pendingChanges: 0,
+          firstQueuedAt: null,
+          lastQueuedAt: null,
+          lastError: null,
+        },
+        cloudMeta: null,
+      })
+    );
+
+    authApiMock.syncRemoteProfileState.mockResolvedValue({
+      ok: false,
+      code: "SYNC_FAILED",
+      message: "MongoDB connection failed: ECONNRESET provider stack trace",
+      meta: null,
+    });
+
+    await store.dispatch(retryCloudSync());
+
+    expect(store.getState().auth.syncError).toBe(
+      "Cloud sync could not save the latest app data."
+    );
+
+    store.dispatch(markSyncError("Redis timeout from backend provider"));
+
+    expect(store.getState().auth.syncError).toBe(
+      "Cloud sync could not save the latest app data."
+    );
+    expect(store.getState().auth.syncError).not.toContain("MongoDB");
+    expect(store.getState().auth.syncError).not.toContain("Redis");
+    expect(store.getState().auth.syncError).not.toContain("ECONNRESET");
   });
 });

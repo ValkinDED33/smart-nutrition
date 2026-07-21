@@ -28,6 +28,7 @@ const addCheck = (label, pass, detail) => {
 
 const photoAssistantSource = readSource("src/features/meal/PhotoMealAssistant.tsx");
 const authRemoteSource = readSource("src/shared/api/authRemote.ts");
+const authSliceSource = readSource("src/features/auth/authSlice.ts");
 const platformApiSource = readSource("src/shared/api/platform.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
@@ -1205,11 +1206,16 @@ addCheck(
 addCheck(
   "regular sync errors never render raw backend/provider messages",
   syncMessagingSource.includes("unknownIssue") &&
+    authSliceSource.includes("sanitizeSyncErrorMessage") &&
+    authSliceSource.includes("getActionSyncErrorMessage") &&
+    authSliceSource.includes("SYNC_SAVE_FAILED_MESSAGE") &&
+    !authSliceSource.includes(": result.message ??") &&
+    !authSliceSource.includes("state.syncError = action.payload ??") &&
     syncMessagingSource.includes("Останні зміни поки не підтвердилися") &&
     syncMessagingSource.includes("Ostatnie zmiany nie zostały jeszcze potwierdzone") &&
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
-  "Unknown sync errors must fall back to localized product-language retry copy instead of exposing raw backend/provider exception text."
+  "Unknown sync errors must fall back to localized product-language retry copy before they reach auth state or visible sync UI instead of exposing raw backend/provider exception text."
 );
 
 addCheck(
