@@ -14,4 +14,20 @@ describe("WaterTracker contract", () => {
     expect(quickAmountsIndex).toBeGreaterThan(-1);
     expect(glassSlotsIndex).toBeLessThan(quickAmountsIndex);
   });
+
+  it("renders dynamic water amounts through localized units", async () => {
+    const source = await readFile("src/features/water/WaterTracker.tsx", "utf8");
+
+    expect(source).toContain('unitMl: "мл"');
+    expect(source).toContain("const formatMl =");
+    expect(source).toContain("formatMl(water.consumedMl)");
+    expect(source).toContain("formatMl(remainingMl)");
+    expect(source).toContain("formatMl(glass.fill * water.glassSizeMl)");
+    expect(source).toContain("formatMl(weeklyAverageMl)");
+    expect(source).toContain("formatMl(item.consumedMl)");
+    expect(source).toContain("copy.manualTarget");
+    expect(source).toContain("copy.autoTarget");
+    expect(source).not.toContain("remainingMl.toFixed(0)");
+    expect(source).not.toContain("{value} ml");
+  });
 });

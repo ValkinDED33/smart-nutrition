@@ -73,12 +73,15 @@ const waterCopy = {
     drank: "Випито",
     remaining: "Залишилося",
     target: "Норма на день",
+    unitMl: "мл",
+    autoTarget: "Авто",
+    manualTarget: "Ручна норма",
     glassSize: "Об'єм стакана",
     statusUnder: "Менше норми",
     statusOnTrack: "В нормі",
     statusAbove: "Вище норми",
     progress: "Випито {current} л з {target} л",
-    remainingLabel: "Залишилося {value} мл",
+    remainingLabel: "Залишилося {value}",
     customAmount: "Нецілий стакан",
     quickAmounts: "Швидкі об'єми",
     addGlass: "Додати стакан",
@@ -102,7 +105,7 @@ const waterCopy = {
     reminderInterval: "Інтервал",
     reminderStart: "Початок",
     reminderEnd: "Кінець",
-    reminderDue: "Час випити воду. Залишилося {value} мл до норми.",
+    reminderDue: "Час випити воду. Залишилося {value} до норми.",
     reminderPermission:
       "Для системних повідомлень дозвольте notifications у браузері.",
     minutes: "хв",
@@ -122,12 +125,15 @@ const waterCopy = {
     drank: "Wypito",
     remaining: "Pozostało",
     target: "Norma na dzień",
+    unitMl: "ml",
+    autoTarget: "Auto",
+    manualTarget: "Ręczny cel",
     glassSize: "Objętość szklanki",
     statusUnder: "Poniżej normy",
     statusOnTrack: "W normie",
     statusAbove: "Powyżej normy",
     progress: "Wypito {current} l z {target} l",
-    remainingLabel: "Pozostało {value} ml",
+    remainingLabel: "Pozostało {value}",
     customAmount: "Niepełna szklanka",
     quickAmounts: "Szybkie objętości",
     addGlass: "Dodaj szklankę",
@@ -151,7 +157,7 @@ const waterCopy = {
     reminderInterval: "Interwał",
     reminderStart: "Początek",
     reminderEnd: "Koniec",
-    reminderDue: "Czas wypić wodę. Do normy zostało {value} ml.",
+    reminderDue: "Czas wypić wodę. Do normy zostało {value}.",
     reminderPermission:
       "Dla powiadomień systemowych zezwól na notifications w przeglądarce.",
     minutes: "min",
@@ -170,12 +176,15 @@ const waterCopy = {
     drank: "Drank",
     remaining: "Remaining",
     target: "Daily target",
+    unitMl: "ml",
+    autoTarget: "Auto",
+    manualTarget: "Manual target",
     glassSize: "Glass size",
     statusUnder: "Below target",
     statusOnTrack: "On track",
     statusAbove: "Above target",
     progress: "Drank {current} L of {target} L",
-    remainingLabel: "{value} ml remaining",
+    remainingLabel: "{value} remaining",
     customAmount: "Partial glass",
     quickAmounts: "Quick amounts",
     addGlass: "Add glass",
@@ -199,7 +208,7 @@ const waterCopy = {
     reminderInterval: "Interval",
     reminderStart: "Start",
     reminderEnd: "End",
-    reminderDue: "Time to drink water. {value} ml left to target.",
+    reminderDue: "Time to drink water. {value} left to target.",
     reminderPermission:
       "Allow browser notifications to receive system reminders.",
     minutes: "min",
@@ -382,6 +391,10 @@ const WaterTracker = () => {
       ),
     [appLanguage]
   );
+  const formatMl = useCallback(
+    (value: number) => `${Math.round(value)} ${copy.unitMl}`,
+    [copy.unitMl]
+  );
 
   useEffect(() => {
     if (!water.reminders.enabled) {
@@ -408,7 +421,7 @@ const WaterTracker = () => {
         return;
       }
 
-      const text = copy.reminderDue.replace("{value}", remainingMl.toFixed(0));
+      const text = copy.reminderDue.replace("{value}", formatMl(remainingMl));
       const nextWater = buildWaterStateAfterReminderShown(
         water,
         new Date().toISOString()
@@ -430,6 +443,7 @@ const WaterTracker = () => {
   }, [
     copy.reminderDue,
     copy.remindersTitle,
+    formatMl,
     remainingMl,
     saveWaterState,
     water,
@@ -778,7 +792,7 @@ const WaterTracker = () => {
                 .replace("{target}", formatWaterLiters(water.dailyWaterGoal))}
             </Typography>
             <Typography color="text.secondary">
-              {copy.remainingLabel.replace("{value}", remainingMl.toFixed(0))}
+              {copy.remainingLabel.replace("{value}", formatMl(remainingMl))}
             </Typography>
             <LinearProgress
               variant="determinate"
@@ -786,13 +800,15 @@ const WaterTracker = () => {
               sx={{ height: 12, borderRadius: 999 }}
             />
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              <Chip label={`${copy.drank}: ${water.consumedMl} ml`} color="info" />
-              <Chip label={`${copy.remaining}: ${remainingMl} ml`} variant="outlined" />
+              <Chip label={`${copy.drank}: ${formatMl(water.consumedMl)}`} color="info" />
+              <Chip label={`${copy.remaining}: ${formatMl(remainingMl)}`} variant="outlined" />
               <Chip
                 label={
                   water.targetMode === "automatic"
-                    ? `Auto ${Math.round(latestWeight * 30)}-${Math.round(latestWeight * 35)} ml`
-                    : "Manual target"
+                    ? `${copy.autoTarget} ${Math.round(latestWeight * 30)}-${formatMl(
+                        Math.round(latestWeight * 35)
+                      )}`
+                    : copy.manualTarget
                 }
                 variant="outlined"
               />
@@ -976,7 +992,7 @@ const WaterTracker = () => {
                     fontWeight: 850,
                   }}
                 >
-                  {Math.round(glass.fill * water.glassSizeMl)} ml
+                  {formatMl(glass.fill * water.glassSizeMl)}
                 </Typography>
               </Box>
             </Box>
@@ -994,7 +1010,7 @@ const WaterTracker = () => {
                 onClick={() => addWaterAmount(amount, "quick_amount")}
                 sx={{ minWidth: 82 }}
               >
-                +{amount} ml
+                +{formatMl(amount)}
               </Button>
             ))}
           </Stack>
@@ -1081,7 +1097,7 @@ const WaterTracker = () => {
                     disabled={savingWater}
                     onClick={() => setPartialAmountMl(amount)}
                   >
-                    {amount} ml
+                    {formatMl(amount)}
                   </Button>
                 ))}
               </Stack>
@@ -1189,14 +1205,14 @@ const WaterTracker = () => {
           <Stack spacing={1.5}>
             <Typography sx={{ fontWeight: 800 }}>{copy.analyticsTitle}</Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              <Chip label={`${copy.average}: ${weeklyAverageMl} ml`} color="info" />
+              <Chip label={`${copy.average}: ${formatMl(weeklyAverageMl)}`} color="info" />
               <Chip
                 label={`${copy.goalDays}: ${weeklyGoalDays}/7`}
                 color={weeklyGoalDays >= 5 ? "success" : "default"}
                 variant="outlined"
               />
               <Chip
-                label={`${copy.bestDay}: ${weeklyBestDay.consumedMl} ml`}
+                label={`${copy.bestDay}: ${formatMl(weeklyBestDay.consumedMl)}`}
                 variant="outlined"
               />
             </Stack>
@@ -1274,7 +1290,7 @@ const WaterTracker = () => {
                       {dayFormatter.format(new Date(`${item.date}T12:00:00`))}
                     </Typography>
                     <Typography color="text.secondary">
-                      {item.consumedMl} / {item.targetMl} ml
+                      {formatMl(item.consumedMl)} / {formatMl(item.targetMl)}
                     </Typography>
                   </Stack>
                 ))
