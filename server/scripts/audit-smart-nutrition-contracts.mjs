@@ -51,6 +51,7 @@ const profileCloudActionSource = readSource("src/features/profile/useProfileClou
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
+const barcodeScannerModelSource = readSource("src/features/meal/barcodeScannerModel.ts");
 const productCardSource = readSource("src/features/meal/ProductCard.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
 const foodCommandCenterSource = readSource("src/features/meal/FoodCommandCenter.tsx");
@@ -1134,6 +1135,22 @@ addCheck(
     !quickMealComposerModelSource.includes("${state.message") &&
     !quickMealComposerModelSource.includes("state.message || copy.retry"),
   "Quick meal composer save failures must stay retryable without rendering raw backend/provider exception text."
+);
+
+addCheck(
+  "catalog contribution feedback hides raw backend/provider failure details",
+  catalogContributionModelSource.includes("text: `${copy.failed} ${copy.retry}`") &&
+    !catalogContributionModelSource.includes("${state.message") &&
+    !catalogContributionModelSource.includes("state.message || copy.retry"),
+  "Shared catalog contribution failures must stay retryable without rendering raw backend/provider exception text."
+);
+
+addCheck(
+  "scanner catalog moderation feedback hides raw backend/provider failure details",
+  barcodeScannerModelSource.includes("text: `${copy.catalogFailed} ${copy.catalogRetry}`") &&
+    !barcodeScannerModelSource.includes("${state.message") &&
+    !barcodeScannerModelSource.includes("state.message || copy.catalogRetry"),
+  "Scanner manual-product catalog moderation failures must stay retryable without rendering raw backend/provider exception text."
 );
 
 addCheck(

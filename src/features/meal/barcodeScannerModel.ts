@@ -288,7 +288,7 @@ export const resolveCatalogNotice = (
 
   return {
     severity: "warning",
-    text: `${copy.catalogFailed} ${state.message || copy.catalogRetry}`,
+    text: `${copy.catalogFailed} ${copy.catalogRetry}`,
     retryable: true,
   };
 };

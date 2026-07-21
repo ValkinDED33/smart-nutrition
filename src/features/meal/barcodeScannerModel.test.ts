@@ -191,7 +191,7 @@ describe("barcodeScannerModel", () => {
       )
     ).toEqual({
       severity: "warning",
-      text: "Meal was confirmed in your cloud profile, but catalog moderation failed. Provider unavailable.",
+      text: "Meal was confirmed in your cloud profile, but catalog moderation failed. Retry",
       retryable: true,
     });
   });
@@ -222,6 +222,7 @@ describe("barcodeScannerModel", () => {
 
     expect(notice?.text).toContain("cloud profile");
     expect(notice?.text).not.toMatch(/saved\s+locally/i);
+    expect(notice?.text).not.toMatch(/backend|provider|unavailable|REMOTE_API/i);
   });
 
   it("detects camera scanner availability before starting browser APIs", () => {

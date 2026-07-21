@@ -147,7 +147,7 @@ export const resolveCatalogContributionNotice = (
 
   return {
     severity: "warning",
-    text: `${copy.failed} ${state.message || copy.retry}`,
+    text: `${copy.failed} ${copy.retry}`,
     retryable: true,
   };
 };

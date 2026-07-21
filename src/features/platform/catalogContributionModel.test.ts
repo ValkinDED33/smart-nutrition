@@ -177,8 +177,18 @@ describe("catalogContributionModel", () => {
       )
     ).toEqual({
       severity: "warning",
-      text: "Catalog failed. Provider unavailable.",
+      text: "Catalog failed. Retry",
       retryable: true,
     });
+    expect(
+      resolveCatalogContributionNotice(
+        {
+          status: "failed",
+          payload,
+          message: "Backend unavailable: REMOTE_API_TIMEOUT",
+        },
+        copy
+      )?.text
+    ).not.toMatch(/backend|provider|unavailable|REMOTE_API/i);
   });
 });
