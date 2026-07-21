@@ -23,16 +23,24 @@ export type ProductLookupErrorCode =
   | "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE"
   | "PRODUCT_LOOKUP_FAILED";
 
+const getProductLookupSafeMessage = (code: ProductLookupErrorCode): string => {
+  switch (code) {
+    case "PRODUCT_LOOKUP_AUTH_REQUIRED":
+      return "Sign in is required before the online product catalog can be checked.";
+    case "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE":
+      return "The online product catalog is temporarily unavailable. Try again in a moment.";
+    case "PRODUCT_LOOKUP_FAILED":
+    default:
+      return "The online product catalog could not check this product. Try again in a moment.";
+  }
+};
+
 export class ProductLookupError extends Error {
   code: ProductLookupErrorCode;
   status?: number;
 
-  constructor(
-    code: ProductLookupErrorCode,
-    message: string,
-    status?: number
-  ) {
-    super(message);
+  constructor(code: ProductLookupErrorCode, status?: number) {
+    super(getProductLookupSafeMessage(code));
     this.name = "ProductLookupError";
     this.code = code;
     this.status = status;
@@ -225,19 +233,13 @@ const readProduct = (value: unknown): Product | null => {
 
 const requireProductBackendBaseUrl = () => {
   if (!isCloudSyncActive()) {
-    throw new ProductLookupError(
-      "PRODUCT_LOOKUP_AUTH_REQUIRED",
-      "Backend session is required for product lookup."
-    );
+    throw new ProductLookupError("PRODUCT_LOOKUP_AUTH_REQUIRED");
   }
 
   const baseUrl = getRemoteAuthBaseUrl();
 
   if (!baseUrl) {
-    throw new ProductLookupError(
-      "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE",
-      "Backend unavailable for product lookup."
-    );
+    throw new ProductLookupError("PRODUCT_LOOKUP_BACKEND_UNAVAILABLE");
   }
 
   return baseUrl.replace(/\/+$/, "");
@@ -277,31 +279,17 @@ const fetchBackendProducts = async ({
       credentials: "include",
       signal: timeout.signal,
     });
-  } catch (error) {
-    throw new ProductLookupError(
-      "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE",
-      error instanceof Error && error.name === "AbortError"
-        ? "Product lookup timed out."
-        : "Product lookup backend is unavailable."
-    );
+  } catch {
+    throw new ProductLookupError("PRODUCT_LOOKUP_BACKEND_UNAVAILABLE");
   } finally {
     timeout.clear();
   }
 
   if (!response.ok) {
-    let payload: ProductSearchResponse = {};
-
-    try {
-      payload = (await response.json()) as ProductSearchResponse;
-    } catch {
-      payload = {};
-    }
-
     throw new ProductLookupError(
       response.status === 401
         ? "PRODUCT_LOOKUP_AUTH_REQUIRED"
         : "PRODUCT_LOOKUP_FAILED",
-      payload.message ?? "Product lookup failed.",
       response.status
     );
   }

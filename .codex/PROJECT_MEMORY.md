@@ -136,6 +136,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened shared catalog contribution and scanner catalog-moderation feedback so product correction failures stay retryable without exposing backend/provider exception details.
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
+- Hardened frontend product lookup errors so scanner/search/barcode failures preserve typed codes and statuses while exposing only safe online-catalog messages, never backend/provider payload text.
 - Hardened fridge planner recipe and fridge-save feedback so meal/fridge failures stay product-language and do not leak backend/provider exception details.
 - Removed the obsolete Depcheck config and locked dead-code auditing to the canonical Knip setup so the root stays clean without duplicate quality tools.
 - Introduced the branded AI Discovery Cards home pattern: living story cards generated from canonical day context and existing assistant actions, with tests and contract audit guarding against mock/random/local-only AI cards.
@@ -254,6 +255,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Product-intake catalog moderation failures may be retryable while the meal save succeeds, but API responses must not expose raw catalog/provider/backend exception text.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.
+- Frontend product lookup helpers must throw typed safe errors with product-language messages; backend session, provider payload, timeout, stack, and raw catalog diagnostics must not become user-visible `error.message` text.
 - Backend product lookup may use multiple backend-owned provider hosts for resilience, but the frontend must still call only the Smart Nutrition backend contract.
 - Frontend CSP must not reopen direct browser access to external food catalog providers.
 - SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.

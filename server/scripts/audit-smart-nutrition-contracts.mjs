@@ -396,6 +396,18 @@ addCheck(
 );
 
 addCheck(
+  "frontend product lookup errors hide backend and provider internals",
+  frontendProductApiSource.includes("getProductLookupSafeMessage") &&
+    frontendProductApiSource.includes("PRODUCT_LOOKUP_AUTH_REQUIRED") &&
+    frontendProductApiSource.includes("PRODUCT_LOOKUP_BACKEND_UNAVAILABLE") &&
+    frontendProductApiSource.includes("PRODUCT_LOOKUP_FAILED") &&
+    !/Backend session is required for product lookup|Backend unavailable for product lookup|Product lookup backend is unavailable|Product lookup timed out|Product lookup failed|payload\.message/.test(
+      frontendProductApiSource
+    ),
+  "Frontend product lookup errors must preserve typed codes/statuses while keeping backend/provider/raw payload details out of future user-visible error.message text."
+);
+
+addCheck(
   "granular meal cloud mutations require canonical backend meal state",
   mealCloudSyncSource.includes("MISSING_CANONICAL_MEAL_ERROR") &&
     mealCloudSyncSource.includes("requireConfirmedMealState") &&

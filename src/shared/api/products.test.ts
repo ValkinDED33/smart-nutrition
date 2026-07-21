@@ -18,6 +18,12 @@ const PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE_CODE =
   "PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE";
 const PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS = 502;
 const PROVIDER_UNAVAILABLE_MESSAGE = "Provider unavailable.";
+const PRODUCT_LOOKUP_AUTH_REQUIRED_MESSAGE =
+  "Sign in is required before the online product catalog can be checked.";
+const PRODUCT_LOOKUP_UNAVAILABLE_MESSAGE =
+  "The online product catalog is temporarily unavailable. Try again in a moment.";
+const PRODUCT_LOOKUP_FAILED_MESSAGE =
+  "The online product catalog could not check this product. Try again in a moment.";
 
 const createProductPayload = (overrides: Record<string, unknown> = {}) => ({
   id: "catalog-oats",
@@ -157,6 +163,7 @@ describe("products api", () => {
 
     await expect(searchProducts("oats")).rejects.toMatchObject({
       code: "PRODUCT_LOOKUP_AUTH_REQUIRED",
+      message: PRODUCT_LOOKUP_AUTH_REQUIRED_MESSAGE,
     });
     await expect(fetchProductByBarcode("4820000730030")).rejects.toBeInstanceOf(
       ProductLookupError
@@ -204,11 +211,19 @@ describe("products api", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(searchProducts("oats")).rejects.toMatchObject({
-      code: "PRODUCT_LOOKUP_FAILED",
-      status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
-      message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
-    });
+    try {
+      await searchProducts("oats");
+      throw new Error("Expected product lookup to fail.");
+    } catch (error) {
+      expect(error).toMatchObject({
+        code: "PRODUCT_LOOKUP_FAILED",
+        status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
+        message: PRODUCT_LOOKUP_FAILED_MESSAGE,
+      });
+      expect(error).not.toMatchObject({
+        message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
+      });
+    }
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("world.openfoodfacts.org");
   });
@@ -221,11 +236,19 @@ describe("products api", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(fetchProductByBarcode("1234567890123")).rejects.toMatchObject({
-      code: "PRODUCT_LOOKUP_FAILED",
-      status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
-      message: PROVIDER_UNAVAILABLE_MESSAGE,
-    });
+    try {
+      await fetchProductByBarcode("1234567890123");
+      throw new Error("Expected barcode lookup to fail.");
+    } catch (error) {
+      expect(error).toMatchObject({
+        code: "PRODUCT_LOOKUP_FAILED",
+        status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
+        message: PRODUCT_LOOKUP_FAILED_MESSAGE,
+      });
+      expect(error).not.toMatchObject({
+        message: PROVIDER_UNAVAILABLE_MESSAGE,
+      });
+    }
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("world.openfoodfacts.org");
   });
@@ -247,7 +270,19 @@ describe("products api", () => {
     await expect(searchProducts("oats")).rejects.toMatchObject({
       code: "PRODUCT_LOOKUP_FAILED",
       status: PRODUCT_LOOKUP_PROVIDER_FAILURE_STATUS,
-      message: PRODUCT_LOOKUP_PROVIDER_UNAVAILABLE,
+      message: PRODUCT_LOOKUP_FAILED_MESSAGE,
+    });
+  });
+
+  it("does not expose raw network failures in product lookup errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("connect ECONNREFUSED catalog.internal"))
+    );
+
+    await expect(searchProducts("oats")).rejects.toMatchObject({
+      code: "PRODUCT_LOOKUP_BACKEND_UNAVAILABLE",
+      message: PRODUCT_LOOKUP_UNAVAILABLE_MESSAGE,
     });
   });
 });
