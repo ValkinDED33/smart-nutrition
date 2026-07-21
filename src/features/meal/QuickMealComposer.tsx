@@ -26,7 +26,10 @@ import type { Product } from "@domain/products/types";
 import type { AppDispatch, RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
-import { getProductDisplayName } from "@domain/products/productDisplay";
+import {
+  getProductDisplayName,
+  getProductSourceLabel,
+} from "@domain/products/productDisplay";
 import { productMatchesPreferences } from "@domain/user/preferences";
 import {
   formatProductPortion,
@@ -396,7 +399,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
           const helperText = lookupFailed
             ? copy.unavailable
             : selectedProduct
-              ? `${selectedProduct.source} • ${Math.round(
+              ? `${getProductSourceLabel(selectedProduct.source, appLanguage)} • ${Math.round(
                   selectedProduct.nutrients.calories
                 )} ${t(COMMON_KCAL_KEY)} / 100 ${selectedProduct.unit}`
               : copy.onlineHint;
@@ -606,7 +609,11 @@ export const QuickMealComposer = ({ mealType }: Props) => {
                                   COMMON_KCAL_KEY
                                 )}`}
                               />
-                              <Chip size="small" label={product.source} variant="outlined" />
+                              <Chip
+                                size="small"
+                                label={getProductSourceLabel(product.source, appLanguage)}
+                                variant="outlined"
+                              />
                             </Stack>
                           </Stack>
                         </Button>

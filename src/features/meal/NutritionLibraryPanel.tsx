@@ -14,7 +14,10 @@ import {
   Typography,
 } from "@mui/material";
 import { BookOpen, Plus, Search, Star, Utensils } from "lucide-react";
-import { getProductDisplayName } from "@domain/products/productDisplay";
+import {
+  getProductDisplayName,
+  getProductSourceLabel,
+} from "@domain/products/productDisplay";
 import { recipes } from "@domain/meal/recipes";
 import type { MealTemplate, MealType, Recipe } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
@@ -578,7 +581,10 @@ const NutritionLibraryPanel = ({
                                   )}
                                   size="small"
                                 />
-                                <Chip label={product.source ?? labels.online} size="small" />
+                                <Chip
+                                  label={getProductSourceLabel(product.source, appLanguage)}
+                                  size="small"
+                                />
                               </Stack>
                               <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
                                 <Button

@@ -136,3 +136,43 @@ export const getProductDisplayName = (product: Product, language: AppLanguage) =
 
   return names ? getNameForLanguage(names, language) : product.name;
 };
+
+const sourceLabels: Record<Product["source"], Record<AppLanguage, string>> = {
+  Manual: {
+    uk: "Власний продукт",
+    pl: "Produkt własny",
+    en: "Your product",
+  },
+  OpenFoodFacts: {
+    uk: "Онлайн-каталог",
+    pl: "Katalog online",
+    en: "Online catalog",
+  },
+  Recipe: {
+    uk: "Рецепт",
+    pl: "Przepis",
+    en: "Recipe",
+  },
+  USDA: {
+    uk: "Харчова база",
+    pl: "Baza żywieniowa",
+    en: "Nutrition database",
+  },
+};
+
+export const getProductSourceLabel = (
+  source: Product["source"],
+  language: AppLanguage
+) => {
+  switch (source) {
+    case "OpenFoodFacts":
+      return getNameForLanguage(sourceLabels.OpenFoodFacts, language);
+    case "USDA":
+      return getNameForLanguage(sourceLabels.USDA, language);
+    case "Recipe":
+      return getNameForLanguage(sourceLabels.Recipe, language);
+    case "Manual":
+    default:
+      return getNameForLanguage(sourceLabels.Manual, language);
+  }
+};

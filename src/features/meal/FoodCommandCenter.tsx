@@ -15,7 +15,10 @@ import {
 import { Camera, Plus, ScanBarcode, Search, Sparkles, Star } from "lucide-react";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
-import { getProductDisplayName } from "@domain/products/productDisplay";
+import {
+  getProductDisplayName,
+  getProductSourceLabel,
+} from "@domain/products/productDisplay";
 import { getProductPortionPresets, formatProductPortion } from "@domain/products/productPortions";
 import { productMatchesPreferences } from "@domain/user/preferences";
 import type { AppDispatch, RootState } from "../../app/store";
@@ -413,7 +416,10 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
               />
             ))}
             <Chip
-              label={`${copy.source}: ${selectedProduct.source}`}
+              label={`${copy.source}: ${getProductSourceLabel(
+                selectedProduct.source,
+                appLanguage
+              )}`}
               variant="outlined"
             />
           </Stack>

@@ -18,7 +18,10 @@ import type { AppDispatch, RootState } from "../../app/store";
 import type { Product } from "@domain/products/types";
 import type { MealType } from "@domain/meal/types";
 import { useLanguage } from "../../shared/language";
-import { getProductDisplayName } from "@domain/products/productDisplay";
+import {
+  getProductDisplayName,
+  getProductSourceLabel,
+} from "@domain/products/productDisplay";
 import { getProductArtwork } from "@domain/products/productArtwork";
 import { ProductNutritionFacts } from "./ProductNutritionFacts";
 import {
@@ -146,6 +149,7 @@ export const ProductCard = ({
   const { t, appLanguage } = useLanguage();
   const copy = getProductCardCopy(appLanguage);
   const displayName = getProductDisplayName(product, appLanguage);
+  const sourceLabel = getProductSourceLabel(product.source, appLanguage);
   const categoryKey = getProductCategoryKey(product);
   const categoryLabel = getProductCategoryLabel(categoryKey, appLanguage);
   const statusChip = getProductStatusChip(product, copy);
@@ -350,7 +354,7 @@ export const ProductCard = ({
 
           {(product.brand || product.source) && (
             <Typography variant="body2" color="text.secondary">
-              {[product.brand, product.source].filter(Boolean).join(" / ")}
+              {[product.brand, sourceLabel].filter(Boolean).join(" / ")}
             </Typography>
           )}
 

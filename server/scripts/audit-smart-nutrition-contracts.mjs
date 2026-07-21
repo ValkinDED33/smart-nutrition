@@ -48,6 +48,7 @@ const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
+const productCardSource = readSource("src/features/meal/ProductCard.tsx");
 const productNutritionFactsSource = readSource("src/features/meal/ProductNutritionFacts.tsx");
 const foodCommandCenterSource = readSource("src/features/meal/FoodCommandCenter.tsx");
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
@@ -56,6 +57,7 @@ const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibra
 const mealDayOverviewSource = readSource("src/features/meal/MealDayOverview.tsx");
 const yesterdayRepeaterSource = readSource("src/features/meal/YesterdayRepeater.tsx");
 const templateVaultSource = readSource("src/features/meal/TemplateVault.tsx");
+const productDisplaySource = readSource("src/domain/products/productDisplay.ts");
 const productMicronutrientInsightsSource = readSource(
   "src/domain/products/productMicronutrientInsights.ts"
 );
@@ -554,6 +556,23 @@ addCheck(
       humanNutritionCopySources
     ),
   "Food search, photo meal, library, composer, and diary success states must keep backend-confirmed behavior while presenting human product language to regular users."
+);
+
+addCheck(
+  "nutrition product source labels hide provider ids from regular users",
+  productDisplaySource.includes("getProductSourceLabel") &&
+    productDisplaySource.includes("Онлайн-каталог") &&
+    productDisplaySource.includes("Katalog online") &&
+    productDisplaySource.includes("Online catalog") &&
+    productCardSource.includes("getProductSourceLabel") &&
+    foodCommandCenterSource.includes("getProductSourceLabel") &&
+    quickMealComposerSource.includes("getProductSourceLabel") &&
+    nutritionLibraryPanelSource.includes("getProductSourceLabel") &&
+    !productCardSource.includes("product.source].filter") &&
+    !foodCommandCenterSource.includes("selectedProduct.source}`") &&
+    !quickMealComposerSource.includes("${selectedProduct.source}") &&
+    !nutritionLibraryPanelSource.includes("label={product.source"),
+  "Scanner, product cards, quick meal composer, and library surfaces must show localized source labels instead of raw provider ids such as OpenFoodFacts, USDA, or Manual."
 );
 
 const humanAuthPlatformCopySources = [
