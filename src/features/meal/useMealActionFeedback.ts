@@ -9,7 +9,27 @@ import {
   type MealActionKind,
 } from "./mealActionFeedbackModel";
 
-const defaultErrorMessage = "Could not save meal to cloud.";
+const getFailedMealActionCopy = (
+  copy: MealActionFeedbackCopy,
+  kind: MealActionKind
+) => {
+  switch (kind) {
+    case "add":
+      return copy.failed.add;
+    case "edit":
+      return copy.failed.edit;
+    case "delete":
+      return copy.failed.delete;
+    case "repeat":
+      return copy.failed.repeat;
+    case "saveTemplate":
+      return copy.failed.saveTemplate;
+    case "applyTemplate":
+      return copy.failed.applyTemplate;
+    case "saveProduct":
+      return copy.failed.saveProduct;
+  }
+};
 
 export const useMealActionFeedback = (copy: MealActionFeedbackCopy) => {
   const [feedback, setFeedback] = useState(createInitialMealActionFeedbackState);
@@ -42,19 +62,19 @@ export const useMealActionFeedback = (copy: MealActionFeedbackCopy) => {
         await action();
         setFeedback(createMealActionConfirmedState(kind, actionId));
         return true;
-      } catch (error) {
+      } catch {
         retryActionRef.current = action;
         setFeedback(
           createMealActionFailedState({
             kind,
             actionId,
-            message: error instanceof Error ? error.message : defaultErrorMessage,
+            message: getFailedMealActionCopy(copy, kind),
           })
         );
         return false;
       }
     },
-    []
+    [copy]
   );
 
   const retryMealAction = useCallback(async () => {

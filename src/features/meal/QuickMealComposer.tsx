@@ -128,7 +128,6 @@ const composerStatusCopy = {
 
 type ComposerStatusCopy = (typeof composerStatusCopy)[keyof typeof composerStatusCopy];
 
-const QUICK_MEAL_SAVE_ERROR = "Could not save meal to cloud.";
 const QUICK_MEAL_TEXT_SECONDARY = "text.secondary";
 const COMMON_KCAL_KEY = "common.kcal";
 
@@ -248,12 +247,11 @@ export const QuickMealComposer = ({ mealType }: Props) => {
 
     try {
       await addMealEntriesToCloud(dispatch, meal, entries);
-    } catch (error) {
+    } catch {
       setSaveState({
         status: "failed",
         entries,
-        message:
-          error instanceof Error ? error.message : QUICK_MEAL_SAVE_ERROR,
+        message: copy.mealSaveFailed,
       });
       return;
     }
@@ -262,7 +260,7 @@ export const QuickMealComposer = ({ mealType }: Props) => {
     setRows([nextRow]);
     setActiveRowId(nextRow.id);
     setSaveState({ status: "saved", entryCount: entries.length });
-  }, [dispatch, meal]);
+  }, [copy.mealSaveFailed, dispatch, meal]);
 
   const handleSaveMeal = async () => {
     const entries = buildQuickMealEntryDrafts(rows, mealType, createMealEntryDraft);

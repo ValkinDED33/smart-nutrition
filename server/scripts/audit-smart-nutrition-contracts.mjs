@@ -67,6 +67,9 @@ const foodCommandCenterModelSource = readSource(
 const mealActionFeedbackModelSource = readSource(
   "src/features/meal/mealActionFeedbackModel.ts"
 );
+const mealActionFeedbackHookSource = readSource(
+  "src/features/meal/useMealActionFeedback.ts"
+);
 const mealEntryEditorSource = readSource("src/features/meal/hooks/useMealEntryEditor.ts");
 const quickMealComposerModelSource = readSource(
   "src/features/meal/quickMealComposerModel.ts"
@@ -1211,7 +1214,10 @@ addCheck(
   "meal action feedback hides raw backend/provider failure details",
   mealActionFeedbackModelSource.includes("text: `${copy.failed[state.kind]} ${copy.retry}`") &&
     !mealActionFeedbackModelSource.includes("${state.message") &&
-    !mealActionFeedbackModelSource.includes("state.message || copy.retry"),
+    !mealActionFeedbackModelSource.includes("state.message || copy.retry") &&
+    mealActionFeedbackHookSource.includes("message: getFailedMealActionCopy(copy, kind)") &&
+    !mealActionFeedbackHookSource.includes("error instanceof Error ? error.message") &&
+    !mealActionFeedbackHookSource.includes("defaultErrorMessage"),
   "Food add/edit/delete/repeat/template/product failure notices must stay retryable without rendering raw backend/provider exception text."
 );
 
@@ -1219,7 +1225,10 @@ addCheck(
   "quick meal composer feedback hides raw backend/provider failure details",
   quickMealComposerModelSource.includes("text: `${copy.failed} ${copy.retry}`") &&
     !quickMealComposerModelSource.includes("${state.message") &&
-    !quickMealComposerModelSource.includes("state.message || copy.retry"),
+    !quickMealComposerModelSource.includes("state.message || copy.retry") &&
+    quickMealComposerSource.includes("message: copy.mealSaveFailed") &&
+    !quickMealComposerSource.includes("error instanceof Error ? error.message") &&
+    !quickMealComposerSource.includes("QUICK_MEAL_SAVE_ERROR"),
   "Quick meal composer save failures must stay retryable without rendering raw backend/provider exception text."
 );
 

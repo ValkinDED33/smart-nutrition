@@ -140,6 +140,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Accepted Living AI Interface as the product-level UX philosophy: AI Discovery, ambient intelligence, predictive surfaces, emotional companion behavior, AI memory moments, and morphing UI are allowed only when they reuse canonical data/actions and preserve honest backend-confirmed state.
 - Hardened auth recovery and community action failure copy so reset/forgot/community surfaces show localized product-language recovery instead of raw backend/API exception text.
 - Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
+- Hardened quick meal and shared meal-action failure state so food save retries cannot carry raw exception text even if future UI starts reading failure messages directly.
 
 ## Current Architecture
 
@@ -214,6 +215,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Food logging must keep `FoodCommandCenter` as the primary entry surface for search, barcode, photo, saved products, builder, and catalog contribution; new food inputs such as voice or correction must extend that command surface instead of adding another warehouse.
 - Food action failure feedback must stay product-language and retryable; raw backend/provider exception text belongs in diagnostics, not meal, scanner, photo, template, or saved-product notices.
 - Quick meal composer save feedback must not render raw backend/provider exception text; it may keep retry state and product-language recovery copy only.
+- Shared meal action feedback must not store or render raw exception text; add/edit/delete/repeat/template/product failures use product-language retry copy only.
 - Shared catalog contribution and scanner catalog-moderation failure feedback must not render raw backend/provider exception text; user-facing copy may confirm meal/profile state and offer retry only.
 - Water and profile save/retry feedback must not render raw backend/provider exception text; cloud action hooks and consuming cards must expose product-language recovery copy only.
 - Food command, barcode scanner, meal entry editor, and catalog contribution components must not render raw backend/provider exception text in visible save errors; diagnostics belong in logs/admin tooling.
