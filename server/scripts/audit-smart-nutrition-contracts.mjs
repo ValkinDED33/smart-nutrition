@@ -66,6 +66,9 @@ const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
 );
+const womenHealthOverviewCardSource = readSource(
+  "src/features/profile/WomenHealthOverviewCard.tsx"
+);
 const syncFeedbackAlertSource = readSource("src/widgets/SyncFeedbackAlert.tsx");
 const syncStatusChipSource = readSource("src/widgets/SyncStatusChip.tsx");
 const syncMessagingSource = readSource("src/shared/lib/syncMessaging.ts");
@@ -336,6 +339,19 @@ addCheck(
     assistantAgentMemorySource.includes('toolResult.type === "symptom_logged"') &&
     assistantAgentMemorySource.includes("logs symptoms through assistant"),
   "AI-created symptom check-ins must update canonical womenHealth profile state, verify the saved symptom after backend persistence, and answer with safety language rather than diagnosis."
+);
+
+addCheck(
+  "women health UI surfaces symptom history as non-diagnostic care context",
+  womenHealthOverviewCardSource.includes('data-women-health-symptom-history="true"') &&
+    womenHealthOverviewCardSource.includes("womenHealth.symptomHistory") &&
+    womenHealthOverviewCardSource.includes("recentSymptomHistory") &&
+    womenHealthOverviewCardSource.includes("copy.symptomHistoryTitle") &&
+    womenHealthOverviewCardSource.includes("copy.symptomSafetyNote") &&
+    womenHealthOverviewCardSource.includes("getSymptomSeverityColor") &&
+    womenHealthOverviewCardSource.includes("formatSymptomDate") &&
+    !womenHealthOverviewCardSource.includes("localStorage"),
+  "Backend-confirmed AI symptom logs must be visible in the existing women-health profile surface as an observation journal, without local persistence or diagnostic certainty."
 );
 
 addCheck(

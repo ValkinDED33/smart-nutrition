@@ -53,6 +53,19 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("replaceProfileState(nextProfile)");
   });
 
+  it("surfaces backend-confirmed symptom history as care context", async () => {
+    const source = await readSource(womenHealthCardPath);
+
+    expect(source).toContain('data-women-health-symptom-history="true"');
+    expect(source).toContain("womenHealth.symptomHistory");
+    expect(source).toContain("recentSymptomHistory");
+    expect(source).toContain("copy.symptomHistoryTitle");
+    expect(source).toContain("copy.symptomSafetyNote");
+    expect(source).toContain("getSymptomSeverityColor");
+    expect(source).toContain("formatSymptomDate");
+    expect(source).not.toContain("localStorage");
+  });
+
   it("surfaces the women-health center through the existing profile shell", async () => {
     const source = await readSource("src/pages/ProfilePage.tsx");
 

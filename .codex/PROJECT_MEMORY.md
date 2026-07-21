@@ -96,6 +96,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Routed AI-created meal logging through the canonical backend product-intake contract with `source=recommendation`, assistant sync context, and an explicit `mealAdded` confirmation guard before any success reply.
 - Added backend-confirmed AI weight logging: assistant text commands now append to canonical profile `weightHistory`, verify the saved entry after persistence, update assistant memory, and refuse visible success when the profile restore does not confirm the entry.
 - Added backend-confirmed AI symptom logging: assistant symptom text now appends to canonical `womenHealth.symptomHistory`, verifies the saved symptom after persistence, updates assistant memory, and replies with safety language instead of diagnosis.
+- Surfaced backend-confirmed symptom history in the existing women-health profile card as a care-context journal with localized copy, severity color, source labels, and a non-diagnostic safety note.
 
 ## Current Architecture
 
@@ -107,6 +108,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI-created meal entries must use the same backend product-intake contract as scanner/search/manual/photo flows; the assistant may search the catalog, but it must not write meals through a separate direct entry path or claim success without `mealAdded`.
 - AI-created weight check-ins must use canonical profile state and verify the saved `weightHistory` entry before reporting success.
 - AI-created symptom check-ins must use canonical women-health profile state and verify the saved `symptomHistory` entry before reporting success; symptom replies must be care-context logs, not diagnosis or treatment advice.
+- Women-health UI must surface canonical `symptomHistory` from profile state as an observation journal; it must not use local-only symptom persistence or present symptom logs as diagnosis.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
@@ -145,6 +147,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI meal logging must call canonical product intake with `source=recommendation`, preserve assistant execution in sync context, and refuse visible success when canonical `mealAdded` is not confirmed.
 - AI weight logging must append to backend profile `weightHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved entry.
 - AI symptom logging must append to backend profile `womenHealth.symptomHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved symptom.
+- Women-health profile UI must render backend-confirmed symptom history with safety-bound, non-diagnostic language and no local persistence.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.

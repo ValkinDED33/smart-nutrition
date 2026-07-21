@@ -100,6 +100,16 @@ const womenHealthCopy = {
     doctorPlan: "План лікаря",
     doctorYes: "підтверджено",
     doctorNo: "не вказано",
+    symptomHistoryTitle: "Журнал самопочуття",
+    symptomHistorySubtitle:
+      "Останні симптоми, які ви або помічник зберегли в хмарному профілі.",
+    symptomHistoryEmpty:
+      "Поки немає записів. Можна сказати помічнику: \"болить голова 6 з 10\", і він збереже це як контекст.",
+    symptomSeverity: "Інтенсивність",
+    symptomSourceAssistant: "помічник",
+    symptomSourceManual: "вручну",
+    symptomSafetyNote:
+      "Це журнал спостережень, не діагноз. Сильний біль, кровотеча, запаморочення або швидке погіршення — привід звернутися до лікаря.",
     notes: "Важливо пам'ятати",
     noNotes: "Нотаток поки немає.",
     nutrition: "Фокус харчування",
@@ -183,6 +193,16 @@ const womenHealthCopy = {
     doctorPlan: "Plan lekarza",
     doctorYes: "potwierdzony",
     doctorNo: "brak",
+    symptomHistoryTitle: "Dziennik samopoczucia",
+    symptomHistorySubtitle:
+      "Ostatnie objawy zapisane przez Ciebie albo asystenta w profilu chmurowym.",
+    symptomHistoryEmpty:
+      "Nie ma jeszcze wpisów. Możesz powiedzieć asystentowi: \"boli mnie głowa 6 na 10\", a zapisze to jako kontekst.",
+    symptomSeverity: "Natężenie",
+    symptomSourceAssistant: "asystent",
+    symptomSourceManual: "ręcznie",
+    symptomSafetyNote:
+      "To dziennik obserwacji, nie diagnoza. Silny ból, krwawienie, zawroty głowy albo szybkie pogorszenie wymagają kontaktu z lekarzem.",
     notes: "Ważny kontekst",
     noNotes: "Brak notatek.",
     nutrition: "Fokus żywienia",
@@ -266,6 +286,16 @@ const womenHealthCopy = {
     doctorPlan: "Clinician plan",
     doctorYes: "confirmed",
     doctorNo: "not set",
+    symptomHistoryTitle: "Wellbeing log",
+    symptomHistorySubtitle:
+      "Recent symptoms saved by you or the assistant into the cloud profile.",
+    symptomHistoryEmpty:
+      "No entries yet. You can tell the assistant: \"headache 6 out of 10\", and it will save it as context.",
+    symptomSeverity: "Intensity",
+    symptomSourceAssistant: "assistant",
+    symptomSourceManual: "manual",
+    symptomSafetyNote:
+      "This is an observation log, not a clinical conclusion. Severe pain, bleeding, dizziness, or quickly worsening symptoms need clinician support.",
     notes: "Important context",
     noNotes: "No notes yet.",
     nutrition: "Nutrition focus",
@@ -402,6 +432,33 @@ const getFocusText = (copy: WomenHealthCopy, state: WomenHealthState) => {
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
+const getSymptomSeverityColor = (severity: number) => {
+  if (severity >= 8) {
+    return "#ef4444";
+  }
+
+  if (severity >= 5) {
+    return "#f59e0b";
+  }
+
+  return "#14b8a6";
+};
+
+const formatSymptomDate = (value: string, language: AppLanguage) => {
+  const timestamp = Date.parse(value);
+
+  if (!Number.isFinite(timestamp)) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(language, {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+};
+
 const babySizeLabels = {
   uk: new Map([
     ["poppy_seed", "макове зернятко"],
@@ -459,6 +516,8 @@ const chineseZodiacOptions: ChineseZodiacSign[] = chineseZodiacSigns;
 const UK_NOT_SET = "Не вказано";
 const PL_NOT_SET = "Nie podano";
 const THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
+const SOFT_BORDER = "1px solid var(--sn-border-soft)";
+const FLEX_START_SX = { alignSelf: "flex-start" } as const;
 
 const valueLabels = {
   uk: {
@@ -958,6 +1017,9 @@ const WomenHealthOverviewCard = () => {
     motherChineseZodiac: babyPreviewDraft.motherChineseZodiac,
     fatherChineseZodiac: babyPreviewDraft.fatherChineseZodiac,
   });
+  const recentSymptomHistory = [...womenHealth.symptomHistory]
+    .sort((first, second) => Date.parse(second.recordedAt) - Date.parse(first.recordedAt))
+    .slice(0, 4);
 
   return (
     <Paper
@@ -965,7 +1027,7 @@ const WomenHealthOverviewCard = () => {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: SOFT_BORDER,
         background:
           "linear-gradient(135deg, rgba(236, 72, 153, 0.09), rgba(20, 184, 166, 0.08))",
       }}
@@ -1222,7 +1284,7 @@ const WomenHealthOverviewCard = () => {
                 variant="contained"
                 onClick={() => void saveBabyPreview()}
                 disabled={babyPreviewSaving}
-                sx={{ alignSelf: "flex-start" }}
+                sx={FLEX_START_SX}
               >
                 {babyPreviewSaving ? copy.loading : copy.saveBabyPreview}
               </Button>
@@ -1407,6 +1469,106 @@ const WomenHealthOverviewCard = () => {
           </Stack>
         </Paper>}
 
+        {isWomenHealthOwner && (
+          <Paper
+            variant="outlined"
+            sx={{ p: 1.6, borderRadius: 1 }}
+            data-women-health-symptom-history="true"
+          >
+            <Stack spacing={1.2}>
+              <Stack spacing={0.4}>
+                <Typography sx={{ fontWeight: 900 }}>{copy.symptomHistoryTitle}</Typography>
+                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                  {copy.symptomHistorySubtitle}
+                </Typography>
+              </Stack>
+
+              {recentSymptomHistory.length > 0 ? (
+                <Stack spacing={1}>
+                  {recentSymptomHistory.map((symptom) => {
+                    const severityColor = getSymptomSeverityColor(symptom.severity);
+                    const recordedAt = formatSymptomDate(symptom.recordedAt, appLanguage);
+
+                    return (
+                      <Box
+                        key={symptom.id}
+                        sx={{
+                          p: 1.2,
+                          borderRadius: 1,
+                          border: SOFT_BORDER,
+                          background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(20,184,166,0.06))",
+                        }}
+                      >
+                        <Stack spacing={0.8}>
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={0.8}
+                            justifyContent="space-between"
+                            alignItems={{ xs: "flex-start", sm: "center" }}
+                          >
+                            <Typography sx={{ fontWeight: 850 }}>{symptom.label}</Typography>
+                            <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                              {recordedAt && <Chip size="small" label={recordedAt} />}
+                              <Chip
+                                size="small"
+                                variant="outlined"
+                                label={
+                                  symptom.source === "assistant"
+                                    ? copy.symptomSourceAssistant
+                                    : copy.symptomSourceManual
+                                }
+                              />
+                            </Stack>
+                          </Stack>
+                          <Stack spacing={0.5}>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Typography color="text.secondary" variant="body2">
+                                {copy.symptomSeverity}
+                              </Typography>
+                              <Typography sx={{ color: severityColor, fontWeight: 900 }}>
+                                {symptom.severity}/10
+                              </Typography>
+                            </Stack>
+                            <LinearProgress
+                              variant="determinate"
+                              value={clampPercent((symptom.severity / 10) * 100)}
+                              sx={{
+                                height: 8,
+                                borderRadius: 999,
+                                backgroundColor: "rgba(148, 163, 184, 0.18)",
+                                "& .MuiLinearProgress-bar": {
+                                  backgroundColor: severityColor,
+                                },
+                              }}
+                            />
+                          </Stack>
+                          {symptom.note && (
+                            <Typography color="text.secondary" variant="body2">
+                              {symptom.note}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              ) : (
+                <Alert severity="info">{copy.symptomHistoryEmpty}</Alert>
+              )}
+
+              <Alert severity="warning">
+                <Typography variant="body2">{copy.symptomSafetyNote}</Typography>
+              </Alert>
+            </Stack>
+          </Paper>
+        )}
+
         <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
           <Stack spacing={1.4}>
             <Stack spacing={0.5}>
@@ -1425,7 +1587,7 @@ const WomenHealthOverviewCard = () => {
                   variant="contained"
                   onClick={createPartnerInvite}
                   disabled={partnerLoading}
-                  sx={{ alignSelf: "flex-start" }}
+                  sx={FLEX_START_SX}
                 >
                   {partnerLoading ? copy.loading : copy.createPartnerInvite}
                 </Button>
@@ -1447,7 +1609,7 @@ const WomenHealthOverviewCard = () => {
                           width: 160,
                           height: 160,
                           borderRadius: 1,
-                          border: "1px solid var(--sn-border-soft)",
+                          border: SOFT_BORDER,
                         }}
                       />
                     )}
