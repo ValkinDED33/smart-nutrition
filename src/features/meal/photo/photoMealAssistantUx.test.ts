@@ -122,6 +122,14 @@ describe("photo meal assistant UX contract", () => {
     expect(componentSource).toContain("image is not blurry");
   });
 
+  it("shows an honest review state when backend photo analysis is unavailable", () => {
+    expect(componentSource).toContain("createUnavailablePhotoAnalysis");
+    expect(componentSource).toContain("setAnalysis(createUnavailablePhotoAnalysis(copy))");
+    expect(componentSource).toContain("items: []");
+    expect(componentSource).toContain('recognitionStatus: "needs_better_photo"');
+    expect(componentSource).not.toContain("setError(copy.analysisError)");
+  });
+
   it("keeps the save action reachable on narrow mobile screens", () => {
     expect(photoMealSaveButtonSx.alignSelf.xs).toBe("stretch");
     expect(photoMealSaveButtonSx.position.xs).toBe("sticky");

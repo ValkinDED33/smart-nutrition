@@ -78,6 +78,7 @@ const sharedI18nEnSource = readSource("src/shared/i18n/en.ts");
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
+const photoUxTestSource = readSource("src/features/meal/photo/photoMealAssistantUx.test.ts");
 const fallbackPhotoDraftSource = readSource("server/services/photo/fallbackDraft.mjs");
 const photoAnalysisServiceSource = readSource("server/services/photoAnalysisService.mjs");
 const serverConfigSource = readSource("server/config.mjs");
@@ -581,11 +582,15 @@ addCheck(
   "photo meal unclear images start unselected and show better-photo recovery",
   photoAssistantSource.includes("shouldShowBetterPhotoGuidance") &&
     photoAssistantSource.includes("betterPhotoGuidanceVisible") &&
+    photoAssistantSource.includes("createUnavailablePhotoAnalysis") &&
+    photoAssistantSource.includes("setAnalysis(createUnavailablePhotoAnalysis(copy))") &&
+    !photoAssistantSource.includes("setError(copy.analysisError)") &&
     photoAssistantSource.includes("copy.poorPhotoTips") &&
     photoAssistantSource.includes("copy.retakeClearPhoto") &&
     photoDraftSource.includes('analysis.recognitionStatus === "needs_better_photo"') &&
-    photoDraftSource.includes("analysis.confidence < 0.35"),
-  "Unclear or very low-confidence photo results must not auto-select foods and must guide users to retake a clearer photo."
+    photoDraftSource.includes("analysis.confidence < 0.35") &&
+    photoUxTestSource.includes("backend photo analysis is unavailable"),
+  "Unclear, unavailable, or very low-confidence photo results must not auto-select foods and must guide users to retake a clearer photo."
 );
 
 addCheck(

@@ -85,6 +85,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
+- Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 
 ## Current Architecture
 
@@ -102,6 +103,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Product facts: backend provider normalization must not drop available micronutrients, fatty acids, sugar types, water, iodine, selenium, copper, or vitamins before the UI can render them.
 - Product facts may explain obvious product micronutrient signals, such as iodine in seaweed/algae, only as guidance when the provider has no numeric value; do not calculate or persist fake micronutrient amounts.
 - Photo meal recognition must never accept a generic template food set as visual truth; provider confidence alone is not enough when the title and foods match a known template.
+- Photo meal UX must show a clear review/retry state for unavailable analysis; it must not imply a saved or recognized result, and it must not leave users guessing after upload.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Product Lookup: Frontend calls the backend product contract only; external catalog provider fallback belongs behind the backend.
 - Security/CSP: Frontend `connect-src` must not allow direct external food catalog providers for product lookup.

@@ -603,6 +603,22 @@ const shouldShowBetterPhotoGuidance = (analysis: PhotoMealAnalysis) =>
   analysis.recognitionStatus === "needs_better_photo" ||
   (analysis.items.length === 0 && analysis.confidence === 0);
 
+const createUnavailablePhotoAnalysis = (
+  copy: ReturnType<typeof getPhotoCopy>
+): PhotoMealAnalysis => ({
+  dishName: copy.needsManualPhotoTitle,
+  summary: copy.analysisError,
+  recognitionStatus: "needs_better_photo",
+  confidence: 0,
+  estimatedPortions: 1,
+  cautions: [copy.poorPhotoTitle, ...copy.poorPhotoTips],
+  uncertainIngredients: [],
+  hiddenIngredientQuestions: [...copy.hiddenQuestionList],
+  interpretations: [],
+  manualReviewRequired: true,
+  items: [],
+});
+
 type Props = {
   mealType: MealType;
 };
@@ -740,7 +756,10 @@ export const PhotoMealAssistant = ({ mealType }: Props) => {
         setQuantityDrafts({});
         setAnalysisMode("cloud");
       } catch {
-        setError(copy.analysisError);
+        setAnalysis(createUnavailablePhotoAnalysis(copy));
+        setSelectedItemIndexes([]);
+        setQuantityDrafts({});
+        setAnalysisMode("cloud");
       }
     } catch (readError) {
       const message =
