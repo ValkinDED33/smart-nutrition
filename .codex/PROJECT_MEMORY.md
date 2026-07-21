@@ -106,6 +106,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added AI photo meal navigation handoff: assistant photo-food requests now return a structured `navigation_handoff` receipt to `/meals?mode=photo`, the frontend validates the internal route before navigating, and the assistant does not pretend recognition or saving happened before the user uploads and reviews a photo.
 - Added backend-backed AI daily plan drafts: assistant plan requests now read canonical snapshot meal, water, profile, and reminders, reply with a localized review-only plan, and explicitly avoid saving meals or creating reminders from the draft itself.
 - Added safe AI daily-plan item application: confirmed water/review items create canonical typed reminders, while food/protein/photo/scanner items hand off to existing meal entry surfaces without fake meal saves or a second planner.
+- Added focused AI food-plan handoff: protein plan items now navigate to `/meals?mode=search&focus=protein`, and the meal builder preselects lunch plus a protein search query instead of dropping users into an empty generic food screen.
 
 ## Current Architecture
 
@@ -172,6 +173,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI photo meal handoff must return a safe internal navigation receipt for `/meals?mode=photo`; frontend navigation must validate the route and must not create a second photo meal surface, claim recognition happened, or save an unconfirmed photo estimate.
 - AI daily plan drafts must read canonical snapshot/reminder state, remain localized, and clearly state that no meal diary entry or reminder was saved.
 - AI daily-plan item application must not save meals/templates directly from a draft; food and protein items open the canonical food flow, and water/review items use canonical typed reminders with backend-confirmed success.
+- AI food-plan handoffs must preserve user intent in the route and UI focus; a protein plan item should land in a focused food search, not a blank generic meal screen or a fake saved meal.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
 - External product catalog lookup and provider fallback must run behind backend contracts.

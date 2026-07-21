@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -45,6 +45,7 @@ type FoodCommandTarget = "search" | "photo" | "barcode" | "composer" | "favorite
 
 interface FoodCommandCenterProps {
   mealType: MealType;
+  initialQuery?: string;
   onOpenTarget: (target: FoodCommandTarget) => void;
 }
 
@@ -142,7 +143,11 @@ const getProductKey = (product: Product) =>
   product.barcode?.trim() ||
   `${product.name.trim().toLowerCase()}-${product.brand?.trim().toLowerCase() ?? ""}`;
 
-export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterProps) => {
+export const FoodCommandCenter = ({
+  mealType,
+  initialQuery = "",
+  onOpenTarget,
+}: FoodCommandCenterProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const meal = useSelector((state: RootState) => state.meal);
   const savedProducts = useSelector(selectSavedProducts);
@@ -156,14 +161,31 @@ export const FoodCommandCenter = ({ mealType, onOpenTarget }: FoodCommandCenterP
   }));
   const { appLanguage } = useLanguage();
   const copy = getCommandCopy(appLanguage);
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<number | "">(createInitialFoodCommandQuantity);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const previousInitialQueryRef = useRef(initialQuery);
   const normalizedQuery = normalizeQuery(query);
+
+  useEffect(() => {
+    const normalizedInitialQuery = normalizeQuery(initialQuery);
+
+    if (
+      initialQuery === previousInitialQueryRef.current ||
+      !normalizedInitialQuery
+    ) {
+      return;
+    }
+
+    previousInitialQueryRef.current = initialQuery;
+    setQuery(normalizedInitialQuery);
+    setDebouncedQuery(normalizedInitialQuery);
+    setSelectedProduct(null);
+  }, [initialQuery]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

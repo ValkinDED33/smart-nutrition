@@ -1196,8 +1196,11 @@ export const createAgentTools = ({
       ok: true,
       type: "navigation_handoff",
       targetSurface: "food",
-      targetRoute: "/meals?mode=search",
       planItem: normalizedPlanItem === "protein" ? "protein" : "food",
+      targetRoute:
+        normalizedPlanItem === "protein"
+          ? "/meals?mode=search&focus=protein"
+          : "/meals?mode=search&focus=food",
     };
   };
 

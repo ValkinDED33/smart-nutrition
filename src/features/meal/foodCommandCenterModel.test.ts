@@ -1,13 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
+  createFoodCommandFocusQuery,
   createInitialFoodCommandQuantity,
   createNutritionGoogleSearchUrl,
+  normalizeFoodCommandFocus,
   shouldShowQuickSearchDeadEnd,
 } from "./foodCommandCenterModel";
 
 describe("foodCommandCenterModel", () => {
   it("starts quantity empty so mobile users can type immediately", () => {
     expect(createInitialFoodCommandQuantity()).toBe("");
+  });
+
+  it("normalizes assistant food handoff focus into a safe initial query", () => {
+    expect(normalizeFoodCommandFocus("protein")).toBe("protein");
+    expect(normalizeFoodCommandFocus("food")).toBe("food");
+    expect(normalizeFoodCommandFocus("scanner")).toBeNull();
+    expect(createFoodCommandFocusQuery("protein")).toBe("protein");
+    expect(createFoodCommandFocusQuery("food")).toBe("");
+    expect(createFoodCommandFocusQuery(null)).toBe("");
   });
 
   it("shows a recovery path when quick search has no online or saved suggestions", () => {

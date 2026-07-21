@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -48,6 +48,7 @@ const CatalogContributionCard = lazy(() =>
 
 interface Props {
   mealType: MealType;
+  initialQuery?: string;
 }
 
 const QUICK_PRESETS = [
@@ -157,9 +158,10 @@ const formatSuggestionLabel = (product: Product) => {
   return name.toLowerCase().includes(brand.toLowerCase()) ? name : `${brand} ${name}`;
 };
 
-export const ProductSearch = ({ mealType }: Props) => {
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const previousInitialQueryRef = useRef(initialQuery);
   const {
     categoryFilter,
     clearRecentQueries,
@@ -181,6 +183,21 @@ export const ProductSearch = ({ mealType }: Props) => {
   const [showContributionForm, setShowContributionForm] = useState(false);
   const normalizedQuery = normalizeProductLookupQuery(query);
   const copy = getSuggestionCopy(appLanguage);
+
+  useEffect(() => {
+    const normalizedInitialQuery = normalizeProductLookupQuery(initialQuery);
+
+    if (
+      initialQuery === previousInitialQueryRef.current ||
+      !normalizedInitialQuery
+    ) {
+      return;
+    }
+
+    previousInitialQueryRef.current = initialQuery;
+    setQuery(normalizedInitialQuery);
+    setDebouncedQuery(normalizedInitialQuery);
+  }, [initialQuery]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

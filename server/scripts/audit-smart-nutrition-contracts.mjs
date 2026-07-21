@@ -410,7 +410,7 @@ addCheck(
     assistantRuntimeCardSource.includes("navigate(targetRoute)") &&
     mealBuilderPageSource.includes('value === "photo"') &&
     mealBuilderPageSource.includes('data-meal-builder-direct-capture="photo"') &&
-    mealBuilderPageSource.includes("<PhotoMealAssistant mealType={mealType} />"),
+    mealBuilderPageSource.includes("<PhotoMealAssistant mealType={displayedMealType} />"),
   "AI photo-food requests must hand off to the existing review-first PhotoMealAssistant route, not invent a recognition result or create a second photo meal system."
 );
 
@@ -521,12 +521,18 @@ addCheck(
     assistantAgentToolsSource.includes("getTypedReminderCreator(reminders, type)") &&
     assistantAgentToolsSource.includes('type: "daily_plan_item_applied"') &&
     assistantAgentToolsSource.includes('targetSurface: "food"') &&
-    assistantAgentToolsSource.includes('targetRoute: "/meals?mode=search"') &&
+    assistantAgentToolsSource.includes('"/meals?mode=search&focus=protein"') &&
+    assistantAgentToolsSource.includes('"/meals?mode=search&focus=food"') &&
     assistantAgentActionsSource.includes('toolResult.type === "daily_plan_item_applied"') &&
     assistantAgentActionsSource.includes("dailyPlanApplyFailed") &&
     assistantAgentMemorySource.includes('toolResult.type === "daily_plan_item_applied"') &&
     assistantAgentMemorySource.includes("applies daily plan items through reminders") &&
     assistantPromptStackSource.includes("applyDailyPlanItem") &&
+    mealBuilderPageSource.includes("normalizeFoodCommandFocus(searchParams.get(\"focus\"))") &&
+    mealBuilderPageSource.includes("createFoodCommandFocusQuery(commandFocus)") &&
+    mealBuilderPageSource.includes("initialQuery={commandFocusQuery}") &&
+    foodCommandCenterSource.includes("initialQuery = \"\"") &&
+    productSearchSource.includes("initialQuery = \"\"") &&
     !/applyDailyPlanItem[\s\S]*stateService\.addProductIntake\(/.test(assistantAgentToolsSource) &&
     !/applyDailyPlanItem[\s\S]*stateService\.addMealTemplate\(/.test(assistantAgentToolsSource),
   "Applying a daily plan item must route through existing food navigation or canonical reminders; it must not create a second planner or silently save meals/templates."

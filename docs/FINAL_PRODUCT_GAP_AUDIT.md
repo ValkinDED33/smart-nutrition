@@ -120,7 +120,9 @@ Gap:
   summaries, weekly/monthly progress reports, follow-ups, and scanner
   navigation handoff, photo meal handoff, review-only daily plan drafts from
   canonical food routes and backend snapshots, and safe daily-plan item
-  application through existing food/reminder flows.
+  application through existing food/reminder flows. Protein plan application now
+  preserves intent into the food screen with `focus=protein` instead of opening
+  an empty generic search.
 - Remaining practical tool group: richer user confirmation for applying exact
   meal-plan foods or portions after a search/photo result is selected, without
   creating a second meal planner.
@@ -251,7 +253,9 @@ weekly/monthly reports, create reusable meal-template recipes, create
 reminders, open the canonical scanner route, and open the canonical photo meal
 review route from assistant commands, draft a schedule-aware daily plan from
 backend snapshot/reminder state, and apply selected plan items through existing
-food/reminder flows after user confirmation.
+food/reminder flows after user confirmation. Protein plan items open canonical
+food search with protein focus and lunch context, while water/review items
+create canonical reminders.
 
 WHY IT IS A PROBLEM:
 The assistant is positioned as a worker. A worker must act, not only explain.
@@ -260,7 +264,9 @@ RISK:
 Users will approve a useful plan item and expect it to become an existing meal,
 template, search action, or reminder through the canonical flows. The first safe
 apply step now exists, but exact food/portion application should still require a
-selected confirmed product or reviewed photo result before saving.
+selected confirmed product or reviewed photo result before saving. If the apply
+step opens a blank generic screen, the user still experiences it as lost work
+rather than guided execution.
 
 RECOMMENDED FIX:
 Add apply-after-confirmation planning tools only through existing meal,

@@ -685,7 +685,7 @@ describe("createAssistantAgentService", () => {
           id: "apply_daily_plan_item",
           ok: true,
           resultType: "navigation_handoff",
-          targetRoute: "/meals?mode=search",
+          targetRoute: "/meals?mode=search&focus=protein",
           targetSurface: "food",
         },
       ],
