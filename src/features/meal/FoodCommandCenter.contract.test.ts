@@ -49,4 +49,11 @@ describe("FoodCommandCenter production contract", () => {
     expect(commandSource).not.toContain("error instanceof Error ? error.message");
     expect(commandSource).not.toContain("Could not save meal to cloud.");
   });
+
+  it("keeps speech recognition failures product-language instead of browser exception text", () => {
+    expect(commandSource).toContain("recognition.onerror = () =>");
+    expect(commandSource).toContain("setActionError(copy.voiceUnavailable)");
+    expect(commandSource).not.toContain("setActionError(event.message");
+    expect(commandSource).not.toContain("event.message || event.error");
+  });
 });

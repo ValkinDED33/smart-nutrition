@@ -463,8 +463,8 @@ export const FoodCommandCenter = ({
         setSelectedProduct(null);
       }
     };
-    recognition.onerror = (event) => {
-      setActionError(event.message || event.error || copy.voiceUnavailable);
+    recognition.onerror = () => {
+      setActionError(copy.voiceUnavailable);
       setIsListening(false);
     };
     recognition.onend = () => setIsListening(false);

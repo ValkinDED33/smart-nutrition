@@ -726,6 +726,10 @@ addCheck(
     foodCommandCenterSource.includes("parseFoodCommandText(normalizedQuery)") &&
     foodCommandCenterSource.includes('data-food-command-voice-action="speech-recognition"') &&
     foodCommandCenterSource.includes('data-food-command-intake-action="typed-command"') &&
+    foodCommandCenterSource.includes("recognition.onerror = () =>") &&
+    foodCommandCenterSource.includes("setActionError(copy.voiceUnavailable)") &&
+    !foodCommandCenterSource.includes("setActionError(event.message") &&
+    !foodCommandCenterSource.includes("event.message || event.error") &&
     foodCommandCenterSource.includes("addSelectedProduct(") &&
     foodCommandCenterSource.includes("addProductIntakeToCloud") &&
     foodCommandCenterSource.includes("parsedCommand.mealType ?? mealType") &&
