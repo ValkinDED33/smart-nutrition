@@ -167,3 +167,10 @@
 - Context: Startup diagnostics include environment presence checks, CORS origins, cookie policy, storage/AI provider summaries, product lookup status, warnings, and request diagnostics. This is useful locally but too broad for a live production debug surface or unconditional startup dump.
 - Decision: `SMART_NUTRITION_DEBUG_STARTUP_ENABLED=true` is forbidden in production, `/api/debug/startup` must not be registered in production, and full startup diagnostics must be logged only when debug startup diagnostics are enabled.
 - Consequences: Production startup logs keep only concise service lifecycle messages and controlled warnings. Detailed config/debug dumps remain available for local development and non-production troubleshooting.
+
+## ADR-025: Redis Requirement Follows Backend Instance Count
+
+- Status: Accepted.
+- Context: Redis backs distributed cache and rate limiting. A single backend instance can safely use in-memory cache/rate limiting, but multiple backend instances would otherwise drift into separate per-instance runtime state.
+- Decision: `SMART_NUTRITION_RUNTIME_INSTANCE_COUNT` declares the intended production backend instance count. Production may run without Redis only when the count is `1`. If the count is greater than `1`, `SMART_NUTRITION_REDIS_URL` is required and production config fails fast when it is missing.
+- Consequences: `server:check` does not warn about Redis for an explicitly single-instance deployment, but horizontal scaling must configure Redis before deploy. Scaling decisions are visible, test-covered, and protected by contract audit.

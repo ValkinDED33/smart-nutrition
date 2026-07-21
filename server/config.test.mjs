@@ -151,6 +151,27 @@ describe("createServerConfig", () => {
     expect(config.redisKeyPrefix).toBe("smart-prod");
   });
 
+  it("accepts single production instances without Redis", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_RUNTIME_INSTANCE_COUNT: "1",
+    });
+
+    expect(config.runtimeInstanceCount).toBe(1);
+    expect(config.redisEnabled).toBe(false);
+  });
+
+  it("requires Redis for multi-instance production runtime state", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_RUNTIME_INSTANCE_COUNT: "2",
+      })
+    ).toThrow(/SMART_NUTRITION_REDIS_URL/);
+  });
+
   it("allows per-route auth rate limit overrides", () => {
     const config = createServerConfig({
       SMART_NUTRITION_JWT_SECRET: "x".repeat(40),

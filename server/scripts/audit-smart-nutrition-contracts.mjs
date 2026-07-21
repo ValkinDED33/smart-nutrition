@@ -52,6 +52,7 @@ const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
 const packageJsonSource = readSource("package.json");
+const productionCheckSource = readSource("server/production-check.mjs");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
@@ -538,6 +539,20 @@ addCheck(
       serverIndexSource
     ),
   "Production must not expose /api/debug/startup or print full startup diagnostics; detailed startup dumps are development-only."
+);
+
+addCheck(
+  "multi-instance production runtime requires Redis",
+  serverConfigSource.includes("SMART_NUTRITION_RUNTIME_INSTANCE_COUNT") &&
+    serverConfigSource.includes(
+      "SMART_NUTRITION_REDIS_URL is required in production when SMART_NUTRITION_RUNTIME_INSTANCE_COUNT is greater than 1."
+    ) &&
+    serverConfigTestSource.includes("requires Redis for multi-instance production runtime state") &&
+    serverConfigTestSource.includes("accepts single production instances without Redis") &&
+    productionCheckSource.includes("Redis matches runtime instance topology") &&
+    productionCheckSource.includes("required: config.runtimeInstanceCount > 1") &&
+    envExampleSource.includes("SMART_NUTRITION_RUNTIME_INSTANCE_COUNT=1"),
+  "A single backend instance may use memory cache/rate limiting, but multi-instance production must require Redis instead of silently drifting into per-instance state."
 );
 
 const failed = checks.filter((check) => !check.pass);

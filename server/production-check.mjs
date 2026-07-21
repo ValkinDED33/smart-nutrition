@@ -163,12 +163,14 @@ const run = () => {
     }),
     createCheck({
       id: "redis",
-      label: "Redis is configured for distributed production state",
-      ok: config.redisEnabled,
+      label: "Redis matches runtime instance topology",
+      ok: config.runtimeInstanceCount <= 1 || config.redisEnabled,
       detail: config.redisEnabled
-        ? `Redis key prefix: ${config.redisKeyPrefix}, connect timeout: ${config.redisConnectTimeoutMs} ms`
-        : "Set SMART_NUTRITION_REDIS_URL before running multiple Render instances.",
-      required: false,
+        ? `Instances: ${config.runtimeInstanceCount}, Redis key prefix: ${config.redisKeyPrefix}, connect timeout: ${config.redisConnectTimeoutMs} ms`
+        : config.runtimeInstanceCount <= 1
+          ? "Single backend instance: in-memory cache/rate limiting is acceptable. Set SMART_NUTRITION_REDIS_URL before scaling horizontally."
+          : "Multiple backend instances require SMART_NUTRITION_REDIS_URL for distributed cache/rate limiting.",
+      required: config.runtimeInstanceCount > 1,
     }),
     createCheck({
       id: "super-admin-seed",

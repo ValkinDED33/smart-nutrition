@@ -1000,6 +1000,13 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 1 }
   );
+  const runtimeInstanceCount = readPositiveInteger(
+    env.SMART_NUTRITION_RUNTIME_INSTANCE_COUNT,
+    1,
+    "SMART_NUTRITION_RUNTIME_INSTANCE_COUNT",
+    errors,
+    { min: 1 }
+  );
   const passwordIterations = readPositiveInteger(
     env.SMART_NUTRITION_PASSWORD_ITERATIONS,
     180_000,
@@ -1026,6 +1033,12 @@ export const createServerConfig = (rawEnv = process.env) => {
 
   if (isProduction && redisUrl && hasPlaceholderValue(redisUrl)) {
     errors.push("SMART_NUTRITION_REDIS_URL must not use a placeholder value in production.");
+  }
+
+  if (isProduction && runtimeInstanceCount > 1 && !redisUrl) {
+    errors.push(
+      "SMART_NUTRITION_REDIS_URL is required in production when SMART_NUTRITION_RUNTIME_INSTANCE_COUNT is greater than 1."
+    );
   }
 
   const jwtSecret = toTrimmedString(
@@ -1502,6 +1515,7 @@ export const createServerConfig = (rawEnv = process.env) => {
       verifyEmail: authVerifyEmailRateLimitMax,
     },
     tokenCleanupIntervalMs,
+    runtimeInstanceCount,
     redisUrl,
     redisKeyPrefix,
     redisConnectTimeoutMs,
