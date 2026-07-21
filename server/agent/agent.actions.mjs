@@ -44,7 +44,7 @@ const copy = {
     },
     waterFailed: [
       "Я зрозумів дію з водою, але зараз не зміг підтвердити збереження в Smart Nutrition.",
-      "Спробуйте ще раз трохи пізніше — я не буду показувати це як збережене, поки бекенд не підтвердить.",
+      "Спробуйте ще раз трохи пізніше — я не буду показувати це як збережене, поки хмара Smart Nutrition не підтвердить.",
     ],
     productNotFound: (query) => [
       `Я не знайшов продукт "${query}" в онлайн-базі.`,
@@ -137,7 +137,7 @@ const copy = {
     },
     waterFailed: [
       "Rozumiem działanie z wodą, ale nie mogę teraz potwierdzić zapisu w Smart Nutrition.",
-      "Spróbuj ponownie trochę później — nie pokażę tego jako zapisane, dopóki backend tego nie potwierdzi.",
+      "Spróbuj ponownie trochę później — nie pokażę tego jako zapisane, dopóki chmura Smart Nutrition tego nie potwierdzi.",
     ],
     productNotFound: (query) => [
       `Nie znalazłem produktu "${query}" w bazie online.`,
@@ -230,7 +230,7 @@ const copy = {
     },
     waterFailed: [
       "I understood the water action, but I could not confirm the save in Smart Nutrition right now.",
-      "Try again a bit later — I will not show it as saved until the backend confirms it.",
+      "Try again a bit later — I will not show it as saved until Smart Nutrition cloud confirms it.",
     ],
     productNotFound: (query) => [
       `I did not find "${query}" in the online database.`,

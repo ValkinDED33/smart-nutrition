@@ -92,6 +92,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened community mutations so saved social/profile-community actions return canonical backend `community` state and the frontend refuses to confirm locally computed community state when the backend omits the canonical payload.
 - Replaced raw product provider ids in regular nutrition UI with localized source labels, so scanner/product cards/quick meal/library surfaces show human product language instead of `OpenFoodFacts`, `USDA`, or `Manual`.
 - Simplified regular account settings: operational runtime chips and backup restore-point lists are role-gated behind admin-center access and are not fetched or rendered for ordinary users.
+- Reworked assistant action-failure replies so users see Smart Nutrition cloud-confirmation language while the code still enforces backend-confirmed tool success.
 
 ## Current Architecture
 
@@ -99,6 +100,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Backend: Node backend owns canonical business actions and persistence contracts.
 - Storage: MongoDB Atlas is the current production canonical backend storage. Postgres remains a supported future migration path, and SQLite remains local/development storage.
 - AI: Assistant behavior must run through backend tools/contracts for saved actions and must not invent completion.
+- AI/Telegram assistant replies must explain pending or failed saves with product cloud-confirmation language; backend/tool terminology belongs in code, tests, and audits, not visible helper copy.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
@@ -175,6 +177,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reminder persistence should use `updateUserReminders`; `updateUserMedicationReminders` is a legacy compatibility alias that must delegate to the canonical method and must not contain separate write logic.
 - Reminder UI surfaces that create or update backend-confirmed reminders must keep the visible reminder manager synchronized with the returned canonical reminder item.
 - AI saved actions must call backend tools/contracts and report only confirmed, pending, or failed states.
+- AI visible replies must not say an action is saved until the canonical backend tool succeeds, and failure copy should say Smart Nutrition cloud could not confirm the save rather than exposing backend jargon.
 - AI-created reminders must prefer the canonical typed reminder contract (`createReminderFromUserText`) and may use legacy medication/task-specific methods only as compatibility fallback.
 - AI conversation history reset must be backend-confirmed; local cleanup is hygiene only and cannot report success by itself.
 - Legacy browser-stored assistant history is privacy-sensitive migration debt and must be purged on startup, not treated as canonical memory.

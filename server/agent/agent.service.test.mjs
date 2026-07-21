@@ -107,7 +107,7 @@ describe("createAssistantAgentService", () => {
     expect(result.text).not.toContain("Додав");
   });
 
-  it("returns visible failure when backend water save is unavailable", async () => {
+  it("returns visible failure when cloud-confirmed water save is unavailable", async () => {
     const stateService = {
       getWaterState: vi.fn(async () => ({
         dailyWaterGoal: 2000,
@@ -138,7 +138,8 @@ describe("createAssistantAgentService", () => {
       actions: [{ id: "add_water", ok: false, code: "Error" }],
     });
     expect(result.text).toContain("не зміг підтвердити збереження");
-    expect(result.text).toContain("бекенд");
+    expect(result.text).toContain("хмара Smart Nutrition");
+    expect(result.text).not.toContain("бекенд");
     expect(stateService.saveWaterState).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledWith(
       "[assistant-agent] action failed",

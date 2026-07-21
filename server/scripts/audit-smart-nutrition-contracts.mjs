@@ -274,9 +274,12 @@ addCheck(
     assistantAgentServiceSource.includes("actions: [") &&
     assistantAgentServiceSource.includes("ok: Boolean(toolResult?.ok)") &&
     assistantAgentActionsSource.includes("if (!toolResult?.ok)") &&
-    assistantAgentActionsSource.includes("I will not show it as saved until the backend confirms it.") &&
-    assistantAgentActionsSource.includes("не буду показувати це як збережене, поки бекенд не підтвердить"),
-  "Telegram assistant worker must not claim saved actions unless the canonical backend tool result is ok."
+    assistantAgentActionsSource.includes("I will not show it as saved until Smart Nutrition cloud confirms it.") &&
+    assistantAgentActionsSource.includes("не буду показувати це як збережене, поки хмара Smart Nutrition не підтвердить") &&
+    !/поки бекенд не підтвердить|until the backend confirms|dopóki backend tego nie potwierdzi/i.test(
+      assistantAgentActionsSource
+    ),
+  "Telegram assistant worker must not claim saved actions unless the canonical backend tool result is ok, while visible replies use product cloud language instead of backend jargon."
 );
 
 addCheck(
