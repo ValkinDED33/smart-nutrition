@@ -125,13 +125,14 @@ addCheck(
         filePath
       ) &&
       !/^\.codex-remote-attachments\//.test(filePath) &&
+      !/^server\/data\/(?!\.gitkeep$)/.test(filePath) &&
       !/^dist\//.test(filePath) &&
       !/^node_modules\//.test(filePath) &&
       !/Cache_Data|Secure Preferences|(?:^|\/)Preferences$|\.log$|ScreenClip|Photo [0-9]/.test(
         filePath
       )
   ),
-  "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
+  "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, local storage snapshots, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
 );
 
 addCheck(

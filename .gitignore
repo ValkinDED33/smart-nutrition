@@ -40,7 +40,7 @@ dist-ssr
 server/data/*.sqlite
 server/data/*.sqlite-*
 server/data/*.json
-server/data/backups/*
+server/data/backups/**
 !server/data/.gitkeep
 instrument.js/
 SECURITY_FIXES_*.md

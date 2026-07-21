@@ -73,6 +73,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Made Redis readiness instance-aware: single-instance production may use in-memory cache/rate limiting, while `SMART_NUTRITION_RUNTIME_INSTANCE_COUNT>1` requires `SMART_NUTRITION_REDIS_URL` and is protected by tests plus contract audit.
 - Made live smoke scripts load ignored local `.env` files so deploy URLs and dedicated smoke-account credentials can be provided locally without committing secrets.
 - Added a tracked-files cleanliness contract so Codex/browser profiles, screenshots, remote attachments, logs, caches, build output, and `node_modules` cannot be committed as project source.
+- Tightened ignored local backup storage so nested `server/data/backups/**` snapshots stay out of Git, with a contract allowing only `server/data/.gitkeep` under runtime data.
 
 ## Current Architecture
 
@@ -125,6 +126,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Photo meal documentation must describe backend vision recognition with honest fallback, not the retired manual-draft-only behavior.
 - Environment example files must never contain real-looking provider secrets or duplicate sensitive backend assignments.
 - Tracked Git files must exclude runtime/generated artifacts such as `.codex/chrome*`, `.codex/cdp*`, `.codex-remote-attachments`, screenshots, caches, logs, `dist`, and `node_modules`.
+- Runtime data under `server/data` is never source code; only `server/data/.gitkeep` may be tracked.
 - Vite preload/chunk failures must trigger controlled stale-build recovery instead of leaving a white screen.
 - Scanner runtime must be deterministic: permission, stream start, scan, cleanup, and errors must be explicit.
 - 3D companion must be lazy/on-demand and isolated from core flows.
