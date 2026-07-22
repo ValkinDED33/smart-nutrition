@@ -95,7 +95,7 @@ const waterCopy = {
     goalDays: "Днів у нормі",
     bestDay: "Найкращий день",
     remindersTitle: "Нагадування пити воду",
-    aiTitle: "Реакція companion",
+    aiTitle: "Реакція помічника",
     aiLow:
       "Вода поки відстає. Давайте закриємо один маленький стакан без драматизації.",
     aiMid:
@@ -108,7 +108,7 @@ const waterCopy = {
     reminderEnd: "Кінець",
     reminderDue: "Час випити воду. Залишилося {value} до норми.",
     reminderPermission:
-      "Для системних повідомлень дозвольте notifications у браузері.",
+      "Для системних повідомлень дозвольте сповіщення у браузері.",
     minutes: "хв",
     partialTitle: "Скільки випито?",
     partialHint: "Вкажіть об'єм для цього стакана.",
@@ -117,7 +117,7 @@ const waterCopy = {
     cancel: "Скасувати",
     saveError: "Не вдалося зберегти воду в хмарі.",
     rewardSyncWarning:
-      "Воду збережено, але прогрес companion тимчасово не синхронізувався.",
+      "Воду збережено, але прогрес помічника тимчасово не синхронізувався.",
     saveInProgress: "Вода вже зберігається. Зачекайте кілька секунд.",
     saving: "Зберігаю...",
     retry: "Повторити",
@@ -150,7 +150,7 @@ const waterCopy = {
     goalDays: "Dni w normie",
     bestDay: "Najlepszy dzień",
     remindersTitle: "Przypomnienia o wodzie",
-    aiTitle: "Reakcja companion",
+    aiTitle: "Reakcja asystenta",
     aiLow:
       "Woda jest jeszcze z tyłu. Domknijmy jedną małą szklankę bez presji.",
     aiMid:
@@ -163,7 +163,7 @@ const waterCopy = {
     reminderEnd: "Koniec",
     reminderDue: "Czas wypić wodę. Do normy zostało {value}.",
     reminderPermission:
-      "Dla powiadomień systemowych zezwól na notifications w przeglądarce.",
+      "Dla powiadomień systemowych zezwól na powiadomienia w przeglądarce.",
     minutes: "min",
     partialTitle: "Ile wypito?",
     partialHint: "Ustaw objętość dla tej szklanki.",
@@ -172,7 +172,7 @@ const waterCopy = {
     cancel: "Anuluj",
     saveError: "Nie udało się zapisać wody w chmurze.",
     rewardSyncWarning:
-      "Woda została zapisana, ale postęp companion chwilowo się nie zsynchronizował.",
+      "Woda została zapisana, ale postęp asystenta chwilowo się nie zsynchronizował.",
     saveInProgress: "Woda już się zapisuje. Poczekaj kilka sekund.",
     saving: "Zapisuję...",
     retry: "Ponów",
@@ -185,7 +185,7 @@ const waterCopy = {
     target: "Daily target",
     unitMl: "ml",
     autoTarget: "Auto",
-    manualTarget: "Manual target",
+    manualTarget: "Personal target",
     glassSize: "Glass size",
     statusUnder: "Below target",
     statusOnTrack: "On track",
@@ -204,7 +204,7 @@ const waterCopy = {
     goalDays: "Days on target",
     bestDay: "Best day",
     remindersTitle: "Water reminders",
-    aiTitle: "Companion reaction",
+    aiTitle: "Assistant reaction",
     aiLow:
       "Water is running behind. Let's close one small glass without drama.",
     aiMid:
@@ -226,7 +226,7 @@ const waterCopy = {
     cancel: "Cancel",
     saveError: "Could not save water to cloud.",
     rewardSyncWarning:
-      "Water was saved, but companion progress could not sync yet.",
+      "Water was saved, but assistant progress could not sync yet.",
     saveInProgress: "Water is already being saved. Please wait a moment.",
     saving: "Saving...",
     retry: "Retry",

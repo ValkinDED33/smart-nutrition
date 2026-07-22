@@ -238,11 +238,17 @@ addCheck(
     quickWeightCheckInSource.includes("rewardSyncWarning") &&
     waterTrackerSource.includes("Воду збережено") &&
     waterTrackerSource.includes("Woda została zapisana") &&
+    waterTrackerSource.includes("прогрес помічника") &&
+    waterTrackerSource.includes("postęp asystenta") &&
+    waterTrackerSource.includes("assistant progress") &&
     quickWeightCheckInSource.includes("Вагу збережено") &&
     quickWeightCheckInSource.includes("Waga została zapisana") &&
     !waterTrackerSource.includes("${copy.rewardSyncWarning} ${error.message}") &&
     !quickWeightCheckInSource.includes("${copy.rewardSyncWarning} ${rewardError.message}") &&
     !/Water saved, but companion progress could not sync/.test(waterTrackerSource) &&
+    !/прогрес companion|postęp companion|notifications у браузері|notifications w przeglądarce/.test(
+      waterTrackerSource
+    ) &&
     !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource),
   "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English or raw backend/provider copy."
 );

@@ -66,8 +66,13 @@ describe("water persistence contract", () => {
     expect(source).toContain("Воду збережено");
     expect(source).toContain("Woda została zapisana");
     expect(source).toContain("Water was saved");
+    expect(source).toContain("прогрес помічника");
+    expect(source).toContain("postęp asystenta");
+    expect(source).toContain("assistant progress");
     expect(source).not.toContain("error instanceof Error ? error.message");
     expect(source).not.toContain("${copy.rewardSyncWarning} ${error.message}");
     expect(source).not.toContain("Water saved, but companion progress could not sync");
+    expect(source).not.toContain("прогрес companion");
+    expect(source).not.toContain("postęp companion");
   });
 });
