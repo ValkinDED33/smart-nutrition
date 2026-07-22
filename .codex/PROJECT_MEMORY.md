@@ -137,6 +137,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened the shared platform API client so admin/catalog actions preserve error codes/status while replacing raw backend/provider payload messages with safe product-language copy.
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
 - Moved profile cloud-action visible save/retry copy into a localized profile copy owner and updated all profile-language, assistant settings, body progress, weight, measurements, motivation, notification, adaptive-goal, and companion render-mode consumers to pass explicit active-language copy into the shared persistence hook.
+- Routed women-health baby preview/profile prediction saves through the shared profile cloud-action state-save contract instead of a component-local `saveProfileStateToCloud` plus `replaceProfileState` path.
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 - Hardened frontend product lookup errors so scanner/search/barcode failures preserve typed codes and statuses while exposing only safe online-catalog messages, never backend/provider payload text.
 - Hardened meal, profile, water, fridge, community, companion, automatic sync, and auth-unavailable cloud-sync errors so raw backend/provider sync messages collapse into domain-safe product copy before reaching visible sync state.
@@ -262,6 +263,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI weight logging must append to backend profile `weightHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved entry.
 - AI symptom logging must append to backend profile `womenHealth.symptomHistory`, preserve assistant execution in sync context, and refuse visible success when backend profile restore does not contain the saved symptom.
 - Women-health profile UI must render backend-confirmed symptom history with safety-bound, non-diagnostic language and no local persistence.
+- Women-health baby preview and related profile prediction fields are profile state; saves must use `useProfileCloudAction(...).runProfileStateSave(nextProfile)` with active-language copy, not direct component-local profile cloud sync and reducer replacement.
 - AI day summaries must be backend-backed read actions with an action receipt; generic model text is not enough when the user asks for the real day summary.
 - AI progress reports must be backend-backed read actions over canonical snapshot/profile/water/reminder state; generic model text is not enough when the user asks for weekly or monthly progress.
 - AI recipe creation must use canonical meal-template persistence and backend restore confirmation; prompt-only recipe ideas must not be shown as saved recipes.

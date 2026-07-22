@@ -11,8 +11,11 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("state.profile.womenHealth");
     expect(source).toContain("isWomenHealthVisibleForGender");
     expect(source).not.toContain("localStorage");
-    expect(source).toContain("saveProfileStateToCloud");
-    expect(source).toContain("dispatch(replaceProfileState(nextProfile))");
+    expect(source).toContain("useProfileCloudAction");
+    expect(source).toContain("getProfileCloudActionCopy");
+    expect(source).toContain("profileAction.runProfileStateSave(nextProfile)");
+    expect(source).not.toContain("saveProfileStateToCloud");
+    expect(source).not.toContain("replaceProfileState(nextProfile)");
   });
 
   it("keeps women-health guidance safety-bound instead of medical certainty", async () => {
@@ -49,8 +52,10 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("buildProfileStateAfterAction");
     expect(source).toContain("updatePersonalDetails");
     expect(source).toContain("updateWomenHealth(womenHealthPatch)");
-    expect(source).toContain("saveProfileStateToCloud");
-    expect(source).toContain("replaceProfileState(nextProfile)");
+    expect(source).toContain("profileAction.runProfileStateSave(nextProfile)");
+    expect(source).toContain("profileActionCopy.saveInProgress");
+    expect(source).not.toContain("saveProfileStateToCloud");
+    expect(source).not.toContain("replaceProfileState(nextProfile)");
   });
 
   it("surfaces backend-confirmed symptom history as care context", async () => {

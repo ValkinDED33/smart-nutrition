@@ -835,6 +835,22 @@ addCheck(
 );
 
 addCheck(
+  "women health baby preview uses shared profile cloud action",
+  womenHealthOverviewCardSource.includes("useProfileCloudAction") &&
+    womenHealthOverviewCardSource.includes("getProfileCloudActionCopy") &&
+    womenHealthOverviewCardSource.includes("profileActionCopy") &&
+    womenHealthOverviewCardSource.includes(
+      "profileAction.runProfileStateSave(nextProfile)"
+    ) &&
+    womenHealthOverviewCardSource.includes("profileActionCopy.saveInProgress") &&
+    womenHealthOverviewCardSource.includes("buildProfileStateAfterAction") &&
+    womenHealthOverviewCardSource.includes("updateWomenHealth(womenHealthPatch)") &&
+    !womenHealthOverviewCardSource.includes("saveProfileStateToCloud") &&
+    !womenHealthOverviewCardSource.includes("replaceProfileState(nextProfile)"),
+  "Women-health baby preview is profile state and must use the shared cloud-confirmed profile action path instead of a component-local save/replace path."
+);
+
+addCheck(
   "telegram assistant uses profile language for menus callbacks and agent context",
   telegramServiceSource.includes("getTelegramLanguageFromSnapshot(snapshot)") &&
     telegramServiceSource.includes("normalizeTelegramLanguage(user?.languagePreference)") &&

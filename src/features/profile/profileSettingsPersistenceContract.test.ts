@@ -188,6 +188,22 @@ describe("profile settings persistence contract", () => {
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });
 
+  it("keeps women-health baby preview on the shared profile state save contract", async () => {
+    const source = await readSource(
+      "src/features/profile/WomenHealthOverviewCard.tsx"
+    );
+
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(source).toContain(PROFILE_CLOUD_COPY_VARIABLE);
+    expect(source).toContain("profileAction.runProfileStateSave(nextProfile)");
+    expect(source).toContain("profileActionCopy.saveInProgress");
+    expect(source).toContain("buildProfileStateAfterAction");
+    expect(source).toContain("updateWomenHealth(womenHealthPatch)");
+    expect(source).not.toContain("saveProfileStateToCloud");
+    expect(source).not.toContain("replaceProfileState(nextProfile)");
+  });
+
   it("localizes quick weight companion reward sync warnings after confirmed profile save", async () => {
     const source = await readSource(
       "src/features/profile/QuickWeightCheckInCard.tsx"

@@ -12,8 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 import QRCode from "qrcode";
-import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "../../app/store";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../app/store";
 import type {
   ChineseZodiacSign,
   EyeColor,
@@ -29,15 +29,10 @@ import {
   isWomenHealthVisibleForGender,
   zodiacSigns,
 } from "@domain/profile/womenHealth";
-import {
-  buildProfileStateAfterAction,
-  saveProfileStateToCloud,
-} from "./profileCloudSync";
-import {
-  replaceProfileState,
-  updatePersonalDetails,
-  updateWomenHealth,
-} from "./profileSlice";
+import { buildProfileStateAfterAction } from "./profileCloudSync";
+import { updatePersonalDetails, updateWomenHealth } from "./profileSlice";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
+import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
   acceptRemotePartnerInvite,
   createRemotePartnerInvite,
@@ -830,13 +825,14 @@ const getTraitLabel = (language: AppLanguage, value: string) => {
 };
 
 const WomenHealthOverviewCard = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
   const partnerSharing = useSelector((state: RootState) => state.profile.partnerSharing);
   const { appLanguage } = useLanguage();
   const copy = getWomenHealthCopy(appLanguage);
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const [invite, setInvite] = useState<PartnerInviteResult | null>(null);
   const [inviteQrDataUrl, setInviteQrDataUrl] = useState<string | null>(null);
   const [partnerCode, setPartnerCode] = useState("");
@@ -955,9 +951,15 @@ const WomenHealthOverviewCard = () => {
   };
 
   const saveBabyPreview = async () => {
+    if (profileAction.saving) {
+      setBabyPreviewError(profileActionCopy.saveInProgress);
+      return;
+    }
+
     setBabyPreviewSaving(true);
     setBabyPreviewStatus(null);
     setBabyPreviewError(null);
+    profileAction.clearError();
 
     try {
       const womenHealthPatch = {
@@ -976,8 +978,7 @@ const WomenHealthOverviewCard = () => {
         updateWomenHealth(womenHealthPatch)
       );
 
-      await saveProfileStateToCloud(dispatch, nextProfile);
-      dispatch(replaceProfileState(nextProfile));
+      await profileAction.runProfileStateSave(nextProfile);
       setBabyPreviewStatus(copy.babyPreviewSaved);
     } catch {
       setBabyPreviewError(copy.babyPreviewError);
