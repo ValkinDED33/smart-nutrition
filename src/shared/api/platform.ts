@@ -14,13 +14,80 @@ import { getRemoteAuthBaseUrl } from "./auth";
 
 export class PlatformApiError extends Error {
   code: string;
+  status: number | null;
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, status: number | null = null) {
     super(message);
     this.name = "PlatformApiError";
     this.code = code;
+    this.status = status;
   }
 }
+
+const PLATFORM_ERROR_MESSAGES = {
+  REMOTE_API_UNAVAILABLE:
+    "The cloud service is temporarily unavailable. Try again later.",
+  UNAUTHORIZED: "Sign in again before using platform tools.",
+  FORBIDDEN: "Your account does not have access to this platform action.",
+  NOT_FOUND: "This platform item is no longer available.",
+  VALIDATION_ERROR: "Check the platform form and try again.",
+  CONFLICT: "This platform item changed in the cloud. Refresh and try again.",
+  TOO_MANY_REQUESTS: "Too many platform requests. Wait a moment and try again.",
+  PLATFORM_REQUEST_FAILED: "The platform action could not be completed.",
+} as const;
+
+const getPlatformErrorMessage = (code: string, status: number) => {
+  switch (code) {
+    case "REMOTE_API_UNAVAILABLE":
+      return PLATFORM_ERROR_MESSAGES.REMOTE_API_UNAVAILABLE;
+    case "UNAUTHORIZED":
+      return PLATFORM_ERROR_MESSAGES.UNAUTHORIZED;
+    case "FORBIDDEN":
+      return PLATFORM_ERROR_MESSAGES.FORBIDDEN;
+    case "NOT_FOUND":
+      return PLATFORM_ERROR_MESSAGES.NOT_FOUND;
+    case "VALIDATION_ERROR":
+      return PLATFORM_ERROR_MESSAGES.VALIDATION_ERROR;
+    case "CONFLICT":
+      return PLATFORM_ERROR_MESSAGES.CONFLICT;
+    case "TOO_MANY_REQUESTS":
+      return PLATFORM_ERROR_MESSAGES.TOO_MANY_REQUESTS;
+    case "PLATFORM_REQUEST_FAILED":
+      return PLATFORM_ERROR_MESSAGES.PLATFORM_REQUEST_FAILED;
+    default:
+      break;
+  }
+
+  if (status === 401) {
+    return PLATFORM_ERROR_MESSAGES.UNAUTHORIZED;
+  }
+
+  if (status === 403) {
+    return PLATFORM_ERROR_MESSAGES.FORBIDDEN;
+  }
+
+  if (status === 404) {
+    return PLATFORM_ERROR_MESSAGES.NOT_FOUND;
+  }
+
+  if (status === 409) {
+    return PLATFORM_ERROR_MESSAGES.CONFLICT;
+  }
+
+  if (status === 422) {
+    return PLATFORM_ERROR_MESSAGES.VALIDATION_ERROR;
+  }
+
+  if (status === 429) {
+    return PLATFORM_ERROR_MESSAGES.TOO_MANY_REQUESTS;
+  }
+
+  if (status >= 500) {
+    return PLATFORM_ERROR_MESSAGES.REMOTE_API_UNAVAILABLE;
+  }
+
+  return PLATFORM_ERROR_MESSAGES.PLATFORM_REQUEST_FAILED;
+};
 
 const requestPlatform = async <T>(
   pathname: string,
@@ -31,7 +98,7 @@ const requestPlatform = async <T>(
   if (!baseUrl) {
     throw new PlatformApiError(
       "REMOTE_API_UNAVAILABLE",
-      "The cloud service is temporarily unavailable. Try again later."
+      PLATFORM_ERROR_MESSAGES.REMOTE_API_UNAVAILABLE
     );
   }
 
@@ -51,9 +118,12 @@ const requestPlatform = async <T>(
   } & T;
 
   if (!response.ok) {
+    const code: string = payload.code ?? "PLATFORM_REQUEST_FAILED";
+
     throw new PlatformApiError(
-      payload.code ?? "PLATFORM_REQUEST_FAILED",
-      payload.message ?? "Platform request failed."
+      code,
+      getPlatformErrorMessage(code, response.status),
+      response.status
     );
   }
 

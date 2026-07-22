@@ -1198,6 +1198,18 @@ addCheck(
   "Registration, email delivery, catalog, and admin unavailable states must not expose API/backend setup instructions to regular users."
 );
 
+addCheck(
+  "platform api errors never expose raw backend/provider payload messages",
+  platformApiSource.includes("getPlatformErrorMessage") &&
+    platformApiSource.includes("PLATFORM_ERROR_MESSAGES") &&
+    platformApiSource.includes("status: number | null") &&
+    !platformApiSource.includes("payload.message ??") &&
+    !platformApiSource.includes("new PlatformApiError(\n      payload.code") &&
+    adminCenterCardSource.includes("nextError instanceof PlatformApiError") &&
+    catalogContributionCardSource.includes("setLoadError(copy.backendUnavailable)"),
+  "Platform API callers may preserve error codes/status, but visible admin/catalog surfaces must receive safe product-language messages instead of raw backend/provider payload text."
+);
+
 const humanProfileSyncCopySources = [
   accountDataCardCopySource,
   cloudSyncStatusCardSource,
