@@ -126,7 +126,7 @@ const cardCopy = {
   uk: {
     title: "Помічник",
     subtitle:
-      "Швидкий діалоговий блок відповідає по калоріях, білку, coach-аналітиці та мотивації на базі ваших поточних даних.",
+      "Швидкий діалоговий блок відповідає по калоріях, білку, харчовому аналізу та мотивації на базі ваших поточних даних.",
     inputLabel: "Поставте швидке питання",
     inputPlaceholder: "Наприклад: що мені краще зробити далі сьогодні?",
     ask: "Запитати",
@@ -141,7 +141,7 @@ const cardCopy = {
       water_help: "Що з водою?",
       weight_help: "Що з вагою?",
       next_meal: "Що з'їсти зараз?",
-      coach_focus: "Який зараз focus коуча?",
+      coach_focus: "Який зараз головний напрям?",
       motivation_focus: "Що з мотивацією?",
     } satisfies Record<AssistantQuickQuestionId, string>,
     empty: "Поставте питання або оберіть один зі швидких варіантів.",
@@ -152,7 +152,7 @@ const cardCopy = {
   pl: {
     title: "Asystent",
     subtitle:
-      "Szybki blok dialogowy odpowiada na podstawie bieżących kalorii, białka, analizy coacha i motywacji.",
+      "Szybki blok dialogowy odpowiada na podstawie bieżących kalorii, białka, analizy żywienia i motywacji.",
     inputLabel: "Zadaj szybkie pytanie",
     inputPlaceholder: "Na przykład: co najlepiej zrobić dalej dzisiaj?",
     ask: "Zapytaj",
@@ -167,7 +167,7 @@ const cardCopy = {
       water_help: "Co z wodą?",
       weight_help: "Co z wagą?",
       next_meal: "Co zjeść teraz?",
-      coach_focus: "Jaki jest fokus coacha?",
+      coach_focus: "Jaki jest teraz główny kierunek?",
       motivation_focus: "Co z motywacją?",
     } satisfies Record<AssistantQuickQuestionId, string>,
     empty: "Zadaj pytanie albo wybierz jeden z szybkich wariantów.",

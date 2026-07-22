@@ -31,4 +31,15 @@ describe("AssistantRuntimeCard contracts", () => {
     expect(source).not.toContain("локального контексту");
     expect(source).not.toContain("lokalnego kontekstu");
   });
+
+  it("keeps Ukrainian and Polish assistant prompts free from coach/focus jargon", () => {
+    expect(source).toContain("харчовому аналізу");
+    expect(source).toContain("Який зараз головний напрям?");
+    expect(source).toContain("analizy żywienia");
+    expect(source).toContain("Jaki jest teraz główny kierunek?");
+    expect(source).not.toContain("coach-аналітиці");
+    expect(source).not.toContain("focus коуча");
+    expect(source).not.toContain("analizy coacha");
+    expect(source).not.toContain("fokus coacha");
+  });
 });

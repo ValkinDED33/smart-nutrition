@@ -189,6 +189,7 @@ const assistantCustomizationCardSource = readSource(
 const assistantRuntimeCardSource = readSource(
   "src/features/assistant/AssistantRuntimeCard.tsx"
 );
+const nutritionCoachCardSource = readSource("src/features/meal/NutritionCoachCard.tsx");
 const aiDiscoveryCardsSource = readSource("src/features/assistant/AIDiscoveryCards.tsx");
 const aiDiscoveryCardsModelSource = readSource(
   "src/features/assistant/aiDiscoveryCardsModel.ts"
@@ -1830,6 +1831,27 @@ addCheck(
       localizedAssistantExperienceSources
     ),
   "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language instead of mixed companion/onboarding planning jargon."
+);
+
+const localizedAssistantCoachSources = [
+  assistantRuntimeCardSource,
+  nutritionCoachCardSource,
+].join("\n");
+
+addCheck(
+  "assistant and nutrition coach surfaces keep native helper language",
+  localizedAssistantCoachSources.includes("харчовому аналізу") &&
+    localizedAssistantCoachSources.includes("Який зараз головний напрям?") &&
+    localizedAssistantCoachSources.includes("Харчовий помічник") &&
+    localizedAssistantCoachSources.includes("Оцінка помічника") &&
+    localizedAssistantCoachSources.includes("analizy żywienia") &&
+    localizedAssistantCoachSources.includes("Jaki jest teraz główny kierunek?") &&
+    localizedAssistantCoachSources.includes("Asystent żywieniowy") &&
+    localizedAssistantCoachSources.includes("Ocena asystenta") &&
+    !/coach-аналітиці|focus коуча|Харчовий коуч|Оцінка коуча|Головний фокус|analizy coacha|fokus coacha|Coach żywieniowy|Ocena coacha|Główny fokus/.test(
+      localizedAssistantCoachSources
+    ),
+  "Assistant runtime and nutrition analysis surfaces must speak native helper language in Ukrainian/Polish instead of coach/focus planning jargon."
 );
 
 const localizedBodyProgressSources = [

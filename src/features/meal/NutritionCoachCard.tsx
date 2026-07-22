@@ -14,11 +14,11 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 
 const coachCopy = {
   uk: {
-    title: "Харчовий коуч",
+    title: "Харчовий помічник",
     subtitle: (name: string) =>
       `${name} переглянув останні 7 днів і підсвітив, що зараз найсильніше впливає на результат.`,
-    score: "Оцінка коуча",
-    focus: "Головний фокус",
+    score: "Оцінка помічника",
+    focus: "Головний напрям",
     nextAction: "Наступна дія",
     stats: {
       daysLogged: "Днів із логами",
@@ -98,11 +98,11 @@ const coachCopy = {
     },
   },
   pl: {
-    title: "Coach żywieniowy",
+    title: "Asystent żywieniowy",
     subtitle: (name: string) =>
       `${name} przejrzał ostatnie 7 dni i wskazał, co teraz najmocniej wpływa na wynik.`,
-    score: "Ocena coacha",
-    focus: "Główny fokus",
+    score: "Ocena asystenta",
+    focus: "Główny kierunek",
     nextAction: "Następny krok",
     stats: {
       daysLogged: "Dni z logami",
