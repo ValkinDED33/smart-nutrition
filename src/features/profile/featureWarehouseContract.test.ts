@@ -172,4 +172,22 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain("Niżej widać aktywnych providerów");
     expect(source).not.toContain("Нижче видно активних провайдерів");
   });
+
+  it("keeps assistant growth and customization copy native in Ukrainian and Polish", () => {
+    const source = [
+      readSource("src/features/companion/CompanionProgressCard.tsx"),
+      readSource("src/features/profile/AssistantCustomizationCard.tsx"),
+      readSource("src/features/assistant/EcosystemPulse.tsx"),
+    ].join("\n");
+
+    expect(source).toContain("Розвиток помічника");
+    expect(source).toContain("помічник отримав перший справжній контекст");
+    expect(source).toContain("Превʼю помічника");
+    expect(source).toContain("Rozwój asystenta");
+    expect(source).toContain("asystent dostał pierwszy prawdziwy kontekst");
+    expect(source).toContain("Podgląd asystenta");
+    expect(source).not.toMatch(
+      /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Rozwój companiona|companion dostał|Podgląd companion|постійним companion|stałego companion|зв'язок з companion|więź z companion/
+    );
+  });
 });

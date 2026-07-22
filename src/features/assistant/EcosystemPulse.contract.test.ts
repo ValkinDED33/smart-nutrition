@@ -16,6 +16,15 @@ describe("EcosystemPulse contract", () => {
     expect(source).not.toContain("localStorage");
   });
 
+  it("keeps localized assistant pulse copy free from mixed companion jargon", async () => {
+    const source = await readSource("src/features/assistant/EcosystemPulse.tsx");
+
+    expect(source).toContain("зв'язок з помічником");
+    expect(source).toContain("więź z asystentem");
+    expect(source).not.toContain("зв'язок з companion");
+    expect(source).not.toContain("więź z companion");
+  });
+
   it("surfaces the ecosystem pulse on key product areas", async () => {
     const pages = [
       "src/pages/MealBuilderPage.tsx",

@@ -11,7 +11,7 @@ import { buildCompanionProgressCardModel } from "./companionProgressCardModel";
 
 const companionProgressCopy = {
   uk: {
-    title: "Розвиток компаньйона",
+    title: "Розвиток помічника",
     description: "Персонаж росте від реальних дій: їжі, води, цілей і спілкування.",
     level: "Рівень",
     xp: "XP",
@@ -26,7 +26,7 @@ const companionProgressCopy = {
       deep: "Глибокий контекст",
     },
     rituals: {
-      complete_onboarding: "Завершіть анкету, щоб компаньйон отримав перший справжній контекст.",
+      complete_onboarding: "Завершіть анкету, щоб помічник отримав перший справжній контекст.",
       log_meal: "Додайте прийом їжі або скан продукту, щоб він краще бачив ваш день.",
       log_water: "Позначте воду кілька разів за день, щоб посилити зв'язок і нагадування.",
       keep_rhythm: "Тримайте ритм кілька днів поспіль, щоб відкривати глибші реакції.",
@@ -37,7 +37,7 @@ const companionProgressCopy = {
     noAchievements: "Досягнення з'являться після перших реальних дій.",
   },
   pl: {
-    title: "Rozwój companiona",
+    title: "Rozwój asystenta",
     description: "Postać rośnie dzięki realnym akcjom: jedzeniu, wodzie, celom i rozmowie.",
     level: "Poziom",
     xp: "XP",
@@ -52,7 +52,7 @@ const companionProgressCopy = {
       deep: "Głęboki kontekst",
     },
     rituals: {
-      complete_onboarding: "Dokończ ankietę, aby companion dostał pierwszy prawdziwy kontekst.",
+      complete_onboarding: "Dokończ ankietę, aby asystent dostał pierwszy prawdziwy kontekst.",
       log_meal: "Dodaj posiłek albo zeskanuj produkt, aby lepiej widział Twój dzień.",
       log_water: "Zapisz wodę kilka razy dziennie, aby wzmocnić więź i przypomnienia.",
       keep_rhythm: "Utrzymaj rytm przez kilka dni, aby odblokować głębsze reakcje.",

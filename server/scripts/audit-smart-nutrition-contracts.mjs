@@ -174,6 +174,13 @@ const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
 const assistantPromptStackSource = readSource("server/services/ai/assistantPromptStack.mjs");
 const assistantApiSource = readSource("src/shared/api/assistant.ts");
 const aiCompanionPageSource = readSource("src/pages/AiCompanionPage.tsx");
+const ecosystemPulseSource = readSource("src/features/assistant/EcosystemPulse.tsx");
+const companionProgressCardSource = readSource(
+  "src/features/companion/CompanionProgressCard.tsx"
+);
+const assistantCustomizationCardSource = readSource(
+  "src/features/profile/AssistantCustomizationCard.tsx"
+);
 const assistantRuntimeCardSource = readSource(
   "src/features/assistant/AssistantRuntimeCard.tsx"
 );
@@ -1795,6 +1802,28 @@ addCheck(
       landingPageSource
     ),
   "Public landing copy must sell the assistant experience in the selected language instead of exposing mixed English product-planning labels."
+);
+
+const localizedAssistantExperienceSources = [
+  ecosystemPulseSource,
+  companionProgressCardSource,
+  assistantCustomizationCardSource,
+].join("\n");
+
+addCheck(
+  "assistant growth and settings keep localized helper language",
+  localizedAssistantExperienceSources.includes("Розвиток помічника") &&
+    localizedAssistantExperienceSources.includes("помічник отримав перший справжній контекст") &&
+    localizedAssistantExperienceSources.includes("Превʼю помічника") &&
+    localizedAssistantExperienceSources.includes("зв'язок з помічником") &&
+    localizedAssistantExperienceSources.includes("Rozwój asystenta") &&
+    localizedAssistantExperienceSources.includes("asystent dostał pierwszy prawdziwy kontekst") &&
+    localizedAssistantExperienceSources.includes("Podgląd asystenta") &&
+    localizedAssistantExperienceSources.includes("więź z asystentem") &&
+    !/Розвиток компаньйона|компаньйон отримав|Превʼю companion|Rozwój companiona|companion dostał|Podgląd companion|постійним companion|stałego companion|зв'язок з companion|więź z companion/.test(
+      localizedAssistantExperienceSources
+    ),
+  "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language instead of mixed companion/onboarding planning jargon."
 );
 
 addCheck(

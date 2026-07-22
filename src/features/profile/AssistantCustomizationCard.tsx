@@ -51,7 +51,7 @@ const assistantCopy = {
     proactiveHints: "Контекстні підказки",
     memoryTitle: "Пам'ять і стиль підтримки",
     memorySubtitle:
-      "Це той контекст, який робить помічника постійним companion, а не окремим чатом.",
+      "Це той контекст, який робить помічника постійним провідником, а не окремим чатом.",
     primaryGoalNote: "Що саме важливо змінити",
     healthyGoalNote: "Харчуватись здоровіше",
     supportNote: "Що помічнику варто пам'ятати",
@@ -63,7 +63,7 @@ const assistantCopy = {
     saving: "Зберігаю...",
     saved: "Збережено в хмарі",
     saveError: "Не вдалося зберегти. Спробуйте ще раз.",
-    renderModeTitle: "Превʼю companion",
+    renderModeTitle: "Превʼю помічника",
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
     renderModeHint:
@@ -114,7 +114,7 @@ const assistantCopy = {
     proactiveHints: "Podpowiedzi kontekstowe",
     memoryTitle: "Pamięć i styl wsparcia",
     memorySubtitle:
-      "To kontekst, który robi z asystenta stałego companion, nie osobny chat.",
+      "To kontekst, który robi z asystenta stałego przewodnika, a nie osobny czat.",
     primaryGoalNote: "Co konkretnie ma się zmienić",
     healthyGoalNote: "Jeść zdrowiej",
     supportNote: "Co asystent ma pamiętać",
@@ -126,7 +126,7 @@ const assistantCopy = {
     saving: "Zapisuję...",
     saved: "Zapisano w chmurze",
     saveError: "Nie udało się zapisać. Spróbuj ponownie.",
-    renderModeTitle: "Podgląd companion",
+    renderModeTitle: "Podgląd asystenta",
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
     renderModeHint:

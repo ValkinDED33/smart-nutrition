@@ -94,6 +94,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished water-tracker copy so hydration controls use native product language for assistant reactions, browser notifications, reward sync, and personal targets instead of mixed `companion`/`notifications` wording.
 - Polished the AI companion page Ukrainian/Polish copy so regular assistant surfaces say assistant/helper language instead of mixed `companion`, `providerzy`, `focus`, or `check-in` wording.
 - Polished the public landing page Ukrainian/Polish copy so the first product screen sells the assistant experience in native language instead of mixed `companion`, `proactive nudges`, `eye tracking`, `gamification`, or `community` planning labels.
+- Polished assistant growth, ecosystem pulse, and profile customization copy so Ukrainian/Polish helper surfaces use native `помічник`/`asystent` language instead of mixed `companion` planning jargon.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
@@ -296,6 +297,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Water tracker copy must keep hydration, assistant reaction, notification permission, and reward-sync warnings in the active product language; mixed `companion`/`notifications` wording is forbidden in regular user copy.
 - AI companion page copy must distinguish internal enum names from visible user language; Ukrainian/Polish regular surfaces must not show mixed `companion`, `providerzy`, `focus`, or `check-in` copy.
 - Public landing copy is part of the product contract: Ukrainian/Polish first-screen and feature copy must use native assistant/product language, while English planning labels may exist only in internal constants or the English locale.
+- Assistant growth, ecosystem pulse, and profile customization copy must use native helper language in Ukrainian/Polish; `companion` may remain an internal domain/English-locale concept, but it must not leak into regular localized helper copy.
 - Regular account settings must not fetch or display backup restore points, runtime provider/session chips, or diagnostic details unless the profile role can access the admin center.
 - Regular assistant status consumers must not depend on provider diagnostics from `/api/ai/status`; the backend returns a sanitized readiness shape unless the authenticated role can access assistant operations diagnostics.
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
