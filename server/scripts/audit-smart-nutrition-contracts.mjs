@@ -80,6 +80,11 @@ const waterCloudActionSource = readSource("src/features/water/useWaterCloudActio
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
 const adaptiveGoalCardSource = readSource("src/features/profile/AdaptiveGoalCard.tsx");
+const weightTrendCardSource = readSource("src/features/profile/WeightTrendCard.tsx");
+const bodyWeeklyReportCardSource = readSource("src/features/profile/BodyWeeklyReportCard.tsx");
+const measurementsCheckInCardSource = readSource(
+  "src/features/profile/MeasurementsCheckInCard.tsx"
+);
 const communityHubCardSource = readSource("src/features/community/CommunityHubCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const barcodeScannerModelSource = readSource("src/features/meal/barcodeScannerModel.ts");
@@ -257,7 +262,8 @@ addCheck(
     !/прогрес companion|postęp companion|notifications у браузері|notifications w przeglądarce/.test(
       waterTrackerSource
     ) &&
-    !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource),
+    !/Weight saved, but companion progress could not sync/.test(quickWeightCheckInSource) &&
+    !/прогрес companion|postęp companion/.test(quickWeightCheckInSource),
   "Water/weight cloud saves may surface companion reward sync failure separately, but visible warnings must be localized and must not reintroduce hard-coded English or raw backend/provider copy."
 );
 
@@ -1824,6 +1830,29 @@ addCheck(
       localizedAssistantExperienceSources
     ),
   "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language instead of mixed companion/onboarding planning jargon."
+);
+
+const localizedBodyProgressSources = [
+  quickWeightCheckInSource,
+  weightTrendCardSource,
+  bodyWeeklyReportCardSource,
+  measurementsCheckInCardSource,
+].join("\n");
+
+addCheck(
+  "body progress surfaces keep localized measurement language",
+  localizedBodyProgressSources.includes("Останні записи ваги") &&
+    localizedBodyProgressSources.includes("AI-сигнал стабілізації ваги") &&
+    localizedBodyProgressSources.includes("щотижневий запис") &&
+    localizedBodyProgressSources.includes("прогрес помічника") &&
+    localizedBodyProgressSources.includes("Ostatnie zapisy wagi") &&
+    localizedBodyProgressSources.includes("AI-sygnał stabilizacji wagi") &&
+    localizedBodyProgressSources.includes("tygodniowy zapis") &&
+    localizedBodyProgressSources.includes("postęp asystenta") &&
+    !/Останні check-in|Перші два check-in|Ще немає weekly check-in|AI визначення plateau|сигнал plateau|Ostatnie check-iny|Pierwsze dwa check-iny|Brak zapisanych weekly check-in|Osobisty fokus asystenta|postęp companion|прогрес companion/.test(
+      localizedBodyProgressSources
+    ),
+  "Weight, measurements, and weekly body-report surfaces must use native body-progress language in Ukrainian/Polish instead of check-in, plateau, focus, or companion planning jargon."
 );
 
 addCheck(

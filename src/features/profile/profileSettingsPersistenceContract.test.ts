@@ -249,8 +249,12 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain("Вагу збережено");
     expect(source).toContain("Waga została zapisana");
     expect(source).toContain("Weight was saved");
+    expect(source).toContain("прогрес помічника");
+    expect(source).toContain("postęp asystenta");
     expect(source).not.toContain("rewardError instanceof Error");
     expect(source).not.toContain("${copy.rewardSyncWarning} ${rewardError.message}");
     expect(source).not.toContain("Weight saved, but companion progress could not sync");
+    expect(source).not.toContain("прогрес companion");
+    expect(source).not.toContain("postęp companion");
   });
 });

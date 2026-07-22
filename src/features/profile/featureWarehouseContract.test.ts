@@ -190,4 +190,23 @@ describe("profile feature warehouse contract", () => {
       /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Rozwój companiona|companion dostał|Podgląd companion|постійним companion|stałego companion|зв'язок з companion|więź z companion/
     );
   });
+
+  it("keeps body progress copy native in Ukrainian and Polish", () => {
+    const source = [
+      readSource("src/features/profile/QuickWeightCheckInCard.tsx"),
+      readSource("src/features/profile/WeightTrendCard.tsx"),
+      readSource("src/features/profile/BodyWeeklyReportCard.tsx"),
+      readSource("src/features/profile/MeasurementsCheckInCard.tsx"),
+    ].join("\n");
+
+    expect(source).toContain("Останні записи ваги");
+    expect(source).toContain("AI-сигнал стабілізації ваги");
+    expect(source).toContain("щотижневий запис");
+    expect(source).toContain("Ostatnie zapisy wagi");
+    expect(source).toContain("AI-sygnał stabilizacji wagi");
+    expect(source).toContain("tygodniowy zapis");
+    expect(source).not.toMatch(
+      /Останні check-in|Перші два check-in|Ще немає weekly check-in|AI визначення plateau|сигнал plateau|Ostatnie check-iny|Pierwsze dwa check-iny|Brak zapisanych weekly check-in|Osobisty fokus asystenta|postęp companion|прогрес companion/
+    );
+  });
 });

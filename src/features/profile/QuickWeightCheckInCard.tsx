@@ -27,7 +27,7 @@ import type { AppLanguage } from "../../shared/types/i18n";
 const quickWeightCopy = {
   uk: {
     title: "Вага сьогодні",
-    subtitle: "Швидко запишіть check-in без переходу в профіль.",
+    subtitle: "Швидко додайте запис ваги без переходу в профіль.",
     current: "Поточна",
     target: "Ціль",
     toGoal: "До цілі",
@@ -41,7 +41,7 @@ const quickWeightCopy = {
     saved: "Вага додана в історію.",
     saveError: "Не вдалося зберегти вагу в хмарі.",
     rewardSyncWarning:
-      "Вагу збережено, але прогрес companion тимчасово не синхронізувався.",
+      "Вагу збережено, але прогрес помічника тимчасово не синхронізувався.",
     invalid: "Введіть вагу від 30 до 300 кг.",
     underweight: "Нижче норми",
     normal: "Норма",
@@ -51,7 +51,7 @@ const quickWeightCopy = {
   },
   pl: {
     title: "Waga dzisiaj",
-    subtitle: "Dodaj szybki check-in bez przechodzenia do profilu.",
+    subtitle: "Dodaj szybki zapis wagi bez przechodzenia do profilu.",
     current: "Aktualna",
     target: "Cel",
     toGoal: "Do celu",
@@ -65,7 +65,7 @@ const quickWeightCopy = {
     saved: "Waga dodana do historii.",
     saveError: "Nie udało się zapisać wagi w chmurze.",
     rewardSyncWarning:
-      "Waga została zapisana, ale postęp companion chwilowo się nie zsynchronizował.",
+      "Waga została zapisana, ale postęp asystenta chwilowo się nie zsynchronizował.",
     invalid: "Wpisz wagę od 30 do 300 kg.",
     underweight: "Poniżej normy",
     normal: "Norma",
