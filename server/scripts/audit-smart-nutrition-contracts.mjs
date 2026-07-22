@@ -127,6 +127,7 @@ const womenHealthOverviewCardSource = readSource(
 );
 const syncFeedbackAlertSource = readSource("src/widgets/SyncFeedbackAlert.tsx");
 const syncStatusChipSource = readSource("src/widgets/SyncStatusChip.tsx");
+const habitReminderAgentSource = readSource("src/widgets/HabitReminderAgent.tsx");
 const syncMessagingSource = readSource("src/shared/lib/syncMessaging.ts");
 const backendOfflineBannerSource = readSource("src/shared/components/BackendOfflineBanner.tsx");
 const sessionRestoreFallbackSource = readSource(
@@ -1852,6 +1853,20 @@ addCheck(
       localizedAssistantCoachSources
     ),
   "Assistant runtime and nutrition analysis surfaces must speak native helper language in Ukrainian/Polish instead of coach/focus planning jargon."
+);
+
+addCheck(
+  "habit reminders keep native localized copy and product-owned notification keys",
+  habitReminderAgentSource.includes("Нагадування про сніданок") &&
+    habitReminderAgentSource.includes("Щотижневе оновлення вже на часі") &&
+    habitReminderAgentSource.includes("Przypomnienie o śniadaniu") &&
+    habitReminderAgentSource.includes("Cotygodniowa aktualizacja jest już na czasie") &&
+    habitReminderAgentSource.includes("weekly-body-update") &&
+    habitReminderAgentSource.includes("assistant-evening-insight") &&
+    !/Чек-ін по сніданку|Check-in śniadania|Щотижневий check-in|Weekly check-in jest już na czasie|weekly-check-in|coach-focus|const focus =/.test(
+      habitReminderAgentSource
+    ),
+  "PWA/browser reminder notifications must not leak check-in, coach-focus, or mixed planning jargon into Ukrainian/Polish user copy or notification identifiers."
 );
 
 const localizedBodyProgressSources = [

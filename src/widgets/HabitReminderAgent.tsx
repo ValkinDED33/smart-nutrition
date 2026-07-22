@@ -57,7 +57,7 @@ const maybeSendNotification = (key: string, title: string, body: string) => {
 const mealNotificationCopy = {
   uk: {
     breakfast: {
-      title: "Чек-ін по сніданку",
+      title: "Нагадування про сніданок",
       body: "Сніданок ще не зафіксований. Додайте його, поки деталі свіжі в пам'яті.",
     },
     lunch: {
@@ -75,7 +75,7 @@ const mealNotificationCopy = {
   },
   pl: {
     breakfast: {
-      title: "Check-in śniadania",
+      title: "Przypomnienie o śniadaniu",
       body: "Śniadanie nie jest jeszcze zapisane. Dodaj je, póki szczegóły są świeże.",
     },
     lunch: {
@@ -267,7 +267,7 @@ const wellbeingNotificationCopy = {
     waterTitle: "Вода сьогодні нижче норми",
     waterBody: "Ви випили менше плану. Додайте ще води, щоб наблизитися до цілі.",
     checkInTitle: "Пора оновити вагу і заміри",
-    checkInBody: "Щотижневий check-in вже на часі. Оновіть вагу, талію або інші об’єми.",
+    checkInBody: "Щотижневе оновлення вже на часі. Оновіть вагу, талію або інші об’єми.",
     goal: {
       cut: "Пам'ятайте про ціль зниження ваги без різких компенсацій.",
       maintain: "Пам'ятайте про ціль стабільного ритму без зайвих гойдалок.",
@@ -282,7 +282,7 @@ const wellbeingNotificationCopy = {
     waterTitle: "Woda jest dziś poniżej normy",
     waterBody: "Wypito mniej niż plan. Dodaj jeszcze trochę wody, aby zbliżyć się do celu.",
     checkInTitle: "Czas odświeżyć wagę i pomiary",
-    checkInBody: "Weekly check-in jest już na czasie. Zapisz wagę i obwody.",
+    checkInBody: "Cotygodniowa aktualizacja jest już na czasie. Zapisz wagę i obwody.",
     goal: {
       cut: "Pamiętaj o celu redukcji bez ostrych kompensacji.",
       maintain: "Pamiętaj o celu stabilnego rytmu bez dużych wahań.",
@@ -517,7 +517,7 @@ const HabitReminderAgent = () => {
         getDaysSince(weeklyCheckIn.lastRecordedAt) >= weeklyCheckIn.remindIntervalDays
       ) {
         maybeSendNotification(
-          `${todayKey}-weekly-check-in`,
+          `${todayKey}-weekly-body-update`,
           wellbeingCopy.checkInTitle,
           withPersonalNotificationContext(wellbeingCopy.checkInBody, personalContext)
         );
@@ -533,18 +533,18 @@ const HabitReminderAgent = () => {
           weightHistory,
           waterHistory: water.history,
         });
-        const focus = analysis.insights.find((insight) => insight.code !== "on_track");
+        const primaryInsight = analysis.insights.find((insight) => insight.code !== "on_track");
 
-        if (focus) {
+        if (primaryInsight) {
           const body = getCoachInsightBody({
-            code: focus.code,
+            code: primaryInsight.code,
             analysis,
             copy: coachCopy,
           });
 
           if (body) {
             maybeSendNotification(
-              `${todayKey}-coach-focus`,
+              `${todayKey}-assistant-evening-insight`,
               coachCopy.title(assistantDisplayName),
               withPersonalNotificationContext(body, personalContext)
             );
