@@ -68,6 +68,7 @@ const assistantDisplayNameSource = readSource(
 );
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const homePageSource = readSource("src/pages/HomePage.tsx");
+const landingPageSource = readSource("src/pages/LandingPage.tsx");
 const communitySliceSource = readSource("src/features/community/communitySlice.ts");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
@@ -1778,6 +1779,22 @@ addCheck(
       regularAssistantCopySources
     ),
   "Regular assistant unavailable/fallback states must explain limited helper behavior, not cloud AI, production AI, or local-context internals."
+);
+
+addCheck(
+  "guest landing page keeps localized assistant language",
+  landingPageSource.includes("Побачити помічника") &&
+    landingPageSource.includes("простір з помічником") &&
+    landingPageSource.includes("запитати помічника") &&
+    landingPageSource.includes("AI-сканер їжі") &&
+    landingPageSource.includes("Zobacz asystenta") &&
+    landingPageSource.includes("przestrzeń z asystentem") &&
+    landingPageSource.includes("zapytaj asystenta") &&
+    landingPageSource.includes("AI skaner jedzenia") &&
+    !/Побачити companion|companion-платформа|запитати companion|Zobacz companion|companion-platforma|zapytaj companion/.test(
+      landingPageSource
+    ),
+  "Public landing copy must sell the assistant experience in the selected language instead of exposing mixed English product-planning labels."
 );
 
 addCheck(

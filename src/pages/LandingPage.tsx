@@ -35,6 +35,8 @@ type LandingLanguage = "uk" | "pl" | "en";
 const BRAND_NAME = "Smart Nutrition";
 const AI_WELLNESS_ECOSYSTEM = "AI wellness ecosystem";
 const AI_COMPANION_LABEL = "AI companion";
+const UK_AI_ASSISTANT_LABEL = "AI-помічник";
+const PL_AI_ASSISTANT_LABEL = "AI asystent";
 const COMMUNITY_FOOD_HUB_TITLE = "Community food hub";
 const PROACTIVE_NUDGES_LABEL = "proactive nudges";
 const TELEGRAM_RETENTION_LABEL = "Telegram retention";
@@ -63,10 +65,10 @@ const GLASS_BLUR_14 = "blur(14px)";
 
 const landingCopy = {
   uk: {
-    eyebrow: AI_WELLNESS_ECOSYSTEM,
+    eyebrow: "AI wellness-простір",
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: "Твій AI-компаньйон для",
+      prefix: `Твій ${UK_AI_ASSISTANT_LABEL} для`,
       accent: "здоровішого",
       suffix: "дня.",
     },
@@ -77,14 +79,14 @@ const landingCopy = {
       "Реагує на день, а не просто рахує цифри.",
     ],
     subtitle:
-      "Живий AI-компаньйон для їжі, води, ліків, прогресу і м'якої мотивації. Він не просто трекає, а веде день разом із вами.",
+      `Живий ${UK_AI_ASSISTANT_LABEL} для їжі, води, ліків, прогресу і м'якої мотивації. Він не просто трекає дані, а веде день разом із вами.`,
     primary: "Почати безкоштовно",
-    secondary: "Побачити companion",
+    secondary: "Побачити помічника",
     telegramCta: "Підключити Telegram",
     navOverview: "Огляд продукту",
-    socialProof: "10 000+ користувачів будують звички разом з companion",
-    proof: [AI_COMPANION_LABEL, "пам'ять", PROACTIVE_NUDGES_LABEL, "Telegram поруч"],
-    presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
+    socialProof: "10 000+ користувачів будують звички разом з помічником",
+    proof: [UK_AI_ASSISTANT_LABEL, "пам'ять", "розумні підказки", "Telegram поруч"],
+    presencePills: ["дихає", "стежить за увагою", "змінює настрій", "пам'ятає день"],
     sceneCards: [
       {
         title: "Ранковий фокус",
@@ -97,7 +99,7 @@ const landingCopy = {
         tone: "coach",
       },
       {
-        title: TELEGRAM_RETENTION_LABEL,
+        title: "Telegram поруч",
         body: "Швидкий лог води або ліків без відкриття застосунку.",
         tone: "warm",
       },
@@ -113,7 +115,7 @@ const landingCopy = {
       { label: "Білок", value: PROTEIN_STAT_VALUE, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
-      name: AI_COMPANION_LABEL,
+      name: UK_AI_ASSISTANT_LABEL,
       title: "AI-помічник поруч",
       body: "Сьогодні залишилось 600 ккал. Я б додала воду і легку вечерю з білком.",
       mood: "жива реакція",
@@ -121,20 +123,20 @@ const landingCopy = {
     },
     quickActions: ["Фото їжі", "Штрихкод", "Повторити вчора", "Ручний ввід"],
     featureRail: [
-      { title: FOOD_SCANNER_TITLE, body: "Фото їжі і швидкий аналіз" },
-      { title: HYDRATION_TRACKER_TITLE, body: "Вода без ручного хаосу" },
-      { title: CALORIE_MACRO_TITLE, body: "Калорії, білок, жири, вуглеводи" },
-      { title: AI_COACHING_TITLE, body: "Підказки під твій день" },
-      { title: PROGRESS_INSIGHTS_TITLE, body: "Зміни без сухої статистики" },
-      { title: SMART_REMINDERS_TITLE, body: "Вода, їжа, ліки і звички" },
+      { title: "AI-сканер їжі", body: "Фото їжі і швидкий аналіз" },
+      { title: "Трекер води", body: "Вода без ручного хаосу" },
+      { title: "Калорії та БЖВ", body: "Калорії, білок, жири, вуглеводи" },
+      { title: "AI-підтримка", body: "Підказки під твій день" },
+      { title: "Живий прогрес", body: "Зміни без сухої статистики" },
+      { title: "Розумні нагадування", body: "Вода, їжа, ліки і звички" },
     ],
     sectionEyebrow: "За 5 секунд зрозуміло, що робити",
-    ecosystemTitle: "Не калькулятор, а companion-платформа",
+    ecosystemTitle: "Не калькулятор, а простір з помічником",
     ecosystemBody:
-      "Smart Nutrition об'єднує нутриціологію, gamification, analytics, воду, прогрес і community в один спокійний щоденний маршрут.",
+      "Smart Nutrition об'єднує харчування, мотивацію, аналітику, воду, прогрес і спільноту в один спокійний щоденний маршрут.",
     ecosystem: [
       {
-        title: "AI-компаньйон",
+        title: UK_AI_ASSISTANT_LABEL,
         body: "Дивиться за курсором, реагує на дії, радіє досягненням і попереджає про ризики без тиску.",
       },
       {
@@ -143,10 +145,10 @@ const landingCopy = {
       },
       {
         title: "Жива мотивація",
-        body: "Серії, XP, рівні, досягнення, day-off і м'які завдання, які не ламають настрій.",
+        body: "Серії, XP, рівні, досягнення, день паузи і м'які завдання, які не ламають настрій.",
       },
       {
-        title: COMMUNITY_FOOD_HUB_TITLE,
+        title: "Спільнота їжі",
         body: "Рецепти, коментарі, збереження, рейтинги і модерація страв перед публікацією.",
       },
     ],
@@ -167,29 +169,29 @@ const landingCopy = {
     ],
     progressAdvice:
       "Я бачу плато за вагою. Це нормально: білок стабільний, воду краще підняти на 2 склянки.",
-    communityTitle: "Community і модерація вже в логіці продукту",
+    communityTitle: "Спільнота і модерація вже в логіці продукту",
     communityItems: [
       "Друзі",
       "Форум",
       "Рецепти",
       "Статті",
       "Модератори",
-      ADMIN_PANEL_LABEL,
+      "Панель адміністратора",
     ],
-    mobileTitle: "Працює як responsive web app і PWA",
+    mobileTitle: "Працює як мобільний веб-застосунок і PWA",
     mobileBody:
-      "Перший екран після входу дає три дії: додати їжу, випити воду, запитати companion. Без інструкцій.",
-    learningTitle: "Полезно знати",
+      "Перший екран після входу дає три дії: додати їжу, випити воду, запитати помічника. Без інструкцій.",
+    learningTitle: "Корисно знати",
     learningTopics: ["сон", "стрес", "магній", "цукор", "ЖКТ", "вода"],
     finalTitle: "Ціль продукту проста",
     finalBody:
       "Користувач має відчувати не складну програму, а живого помічника, який допомагає ставати кращим кожного дня.",
   },
   pl: {
-    eyebrow: AI_WELLNESS_ECOSYSTEM,
+    eyebrow: "AI wellness-przestrzeń",
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: `Twój ${AI_COMPANION_LABEL} dla`,
+      prefix: `Twój ${PL_AI_ASSISTANT_LABEL} dla`,
       accent: "zdrowszego",
       suffix: "dnia.",
     },
@@ -200,17 +202,17 @@ const landingCopy = {
       "Reaguje na dzień, a nie tylko liczy liczby.",
     ],
     subtitle:
-      `Żywy ${AI_COMPANION_LABEL} do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.`,
+      `Żywy ${PL_AI_ASSISTANT_LABEL} do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.`,
     primary: "Zacznij za darmo",
-    secondary: "Zobacz companion",
+    secondary: "Zobacz asystenta",
     telegramCta: "Połącz Telegram",
     navOverview: "Przegląd produktu",
-    socialProof: "10 000+ użytkowników buduje nawyki z companion",
-    proof: [AI_COMPANION_LABEL, "pamięć", PROACTIVE_NUDGES_LABEL, "Telegram obok"],
-    presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
+    socialProof: "10 000+ użytkowników buduje nawyki z asystentem",
+    proof: [PL_AI_ASSISTANT_LABEL, "pamięć", "mądre podpowiedzi", "Telegram obok"],
+    presencePills: ["oddycha", "reaguje na uwagę", "zmienia nastrój", "pamięta dzień"],
     sceneCards: [
       {
-        title: "Poranny fokus",
+        title: "Poranny rytm",
         body: "Woda, białko i tabletka o 09:00 są już w planie.",
         tone: "calm",
       },
@@ -220,7 +222,7 @@ const landingCopy = {
         tone: "coach",
       },
       {
-        title: TELEGRAM_RETENTION_LABEL,
+        title: "Telegram obok",
         body: "Szybki log wody lub leków bez otwierania aplikacji.",
         tone: "warm",
       },
@@ -236,7 +238,7 @@ const landingCopy = {
       { label: "Białko", value: PROTEIN_STAT_VALUE_EN, progress: 80, color: PROTEIN_STAT_COLOR },
     ],
     mascot: {
-      name: AI_COMPANION_LABEL,
+      name: PL_AI_ASSISTANT_LABEL,
       title: "AI asystent jest obok",
       body: "Zostało dziś 600 kcal. Dodałabym wodę i lekką kolację z białkiem.",
       mood: "żywa reakcja",
@@ -244,20 +246,20 @@ const landingCopy = {
     },
     quickActions: ["Zdjęcie", "Kod kreskowy", "Powtórz wczoraj", "Ręczny wpis"],
     featureRail: [
-      { title: FOOD_SCANNER_TITLE, body: "Zdjęcie posiłku i szybka analiza" },
-      { title: HYDRATION_TRACKER_TITLE, body: "Woda bez ręcznego chaosu" },
-      { title: CALORIE_MACRO_TITLE, body: "Kalorie, białko, tłuszcz, węgle" },
-      { title: AI_COACHING_TITLE, body: "Podpowiedzi pod Twój dzień" },
-      { title: PROGRESS_INSIGHTS_TITLE, body: "Zmiany bez suchej statystyki" },
-      { title: SMART_REMINDERS_TITLE, body: "Woda, jedzenie, leki i nawyki" },
+      { title: "AI skaner jedzenia", body: "Zdjęcie posiłku i szybka analiza" },
+      { title: "Tracker wody", body: "Woda bez ręcznego chaosu" },
+      { title: "Kalorie i makro", body: "Kalorie, białko, tłuszcz, węgle" },
+      { title: "AI wsparcie", body: "Podpowiedzi pod Twój dzień" },
+      { title: "Żywy progres", body: "Zmiany bez suchej statystyki" },
+      { title: "Mądre przypomnienia", body: "Woda, jedzenie, leki i nawyki" },
     ],
     sectionEyebrow: "W 5 sekund wiadomo, co zrobić",
-    ecosystemTitle: "Nie kalkulator, tylko companion-platforma",
+    ecosystemTitle: "Nie kalkulator, tylko przestrzeń z asystentem",
     ecosystemBody:
-      "Smart Nutrition łączy dietetykę, gamification, analytics, wodę, progres i community w jeden spokojny codzienny rytm.",
+      "Smart Nutrition łączy żywienie, motywację, analitykę, wodę, progres i społeczność w jeden spokojny codzienny rytm.",
     ecosystem: [
       {
-        title: AI_COMPANION_LABEL,
+        title: PL_AI_ASSISTANT_LABEL,
         body: "Patrzy za kursorem, reaguje na akcje, cieszy się z osiągnięć i ostrzega bez presji.",
       },
       {
@@ -266,10 +268,10 @@ const landingCopy = {
       },
       {
         title: "Żywa motywacja",
-        body: "Serie, XP, poziomy, osiągnięcia, day-off i łagodne zadania, które nie psują nastroju.",
+        body: "Serie, XP, poziomy, osiągnięcia, dzień przerwy i łagodne zadania, które nie psują nastroju.",
       },
       {
-        title: COMMUNITY_FOOD_HUB_TITLE,
+        title: "Społeczność jedzenia",
         body: "Przepisy, komentarze, zapisy, oceny i moderacja potraw przed publikacją.",
       },
     ],
@@ -297,11 +299,11 @@ const landingCopy = {
       "Przepisy",
       "Artykuły",
       "Moderatorzy",
-      ADMIN_PANEL_LABEL,
+      "Panel administratora",
     ],
-    mobileTitle: "Działa jako responsive web app i PWA",
+    mobileTitle: "Działa jako mobilna aplikacja webowa i PWA",
     mobileBody:
-      "Pierwszy ekran po wejściu daje trzy akcje: dodaj jedzenie, wypij wodę, zapytaj companion. Bez instrukcji.",
+      "Pierwszy ekran po wejściu daje trzy akcje: dodaj jedzenie, wypij wodę, zapytaj asystenta. Bez instrukcji.",
     learningTitle: "Warto wiedzieć",
     learningTopics: ["sen", "stres", "magnez", "cukier", "jelita", "woda"],
     finalTitle: "Cel produktu jest prosty",

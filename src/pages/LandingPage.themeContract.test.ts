@@ -39,4 +39,23 @@ describe("LandingPage theme contract", () => {
       'boxShadow: isLandingRoute && !user ? "none" : "var(--sn-shadow-soft)"',
     );
   });
+
+  it("keeps Ukrainian and Polish landing copy in native product language", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain("Побачити помічника");
+    expect(source).toContain("простір з помічником");
+    expect(source).toContain("запитати помічника");
+    expect(source).toContain("AI-сканер їжі");
+    expect(source).toContain("Zobacz asystenta");
+    expect(source).toContain("przestrzeń z asystentem");
+    expect(source).toContain("zapytaj asystenta");
+    expect(source).toContain("AI skaner jedzenia");
+    expect(source).not.toContain("Побачити companion");
+    expect(source).not.toContain("companion-платформа");
+    expect(source).not.toContain("запитати companion");
+    expect(source).not.toContain("Zobacz companion");
+    expect(source).not.toContain("companion-platforma");
+    expect(source).not.toContain("zapytaj companion");
+  });
 });
