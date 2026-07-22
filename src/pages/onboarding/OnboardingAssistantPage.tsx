@@ -241,7 +241,6 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
           <Stack direction="row" spacing={1.2}>
             <Button
               variant="contained"
-              disabled={state.assistantName.trim().length < 2}
               onClick={() => navigate(stepPaths.name)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >

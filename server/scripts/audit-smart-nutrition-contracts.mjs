@@ -59,7 +59,13 @@ const envExampleSource = readSource(".env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const forgotPasswordPageSource = readSource("src/pages/ForgotPasswordPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
+const onboardingAssistantSource = readSource(
+  "src/pages/onboarding/OnboardingAssistantPage.tsx"
+);
 const onboardingFinishSource = readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+const assistantDisplayNameSource = readSource(
+  "src/features/assistant/assistantDisplayName.ts"
+);
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const homePageSource = readSource("src/pages/HomePage.tsx");
 const communitySliceSource = readSource("src/features/community/communitySlice.ts");
@@ -911,6 +917,21 @@ addCheck(
       communitySliceSource
     ),
   "The first community experience must use the selected profile language from registration; frontend fallback defaults must not show mixed English/Russian seed content before cloud restore."
+);
+
+addCheck(
+  "assistant naming stays user-owned and display-safe",
+  domainSource.includes("assistantName: \"\"") &&
+    onboardingAssistantSource.includes("getAssistantPreviewName") &&
+    !onboardingAssistantSource.includes("disabled={state.assistantName.trim()") &&
+    onboardingFinishSource.includes("name: state.assistantName.trim()") &&
+    assistantDisplayNameSource.includes("legacyAssistantNames") &&
+    assistantDisplayNameSource.includes("getAssistantFallbackName") &&
+    assistantDisplayNameSource.includes("getAssistantDisplayName") &&
+    ["ваш помічник", "Twój asystent", "your assistant"].every((fallback) =>
+      assistantDisplayNameSource.includes(fallback)
+    ),
+  "The assistant must not get a fake default name or block onboarding. Empty or legacy names remain empty in cloud state and only use localized display fallbacks in UI."
 );
 
 addCheck(

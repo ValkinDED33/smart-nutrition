@@ -6,8 +6,8 @@ export const onboarding = {
     languageAdd: "+ Додати мову",
     assistantTitle: "Давайте познайомимось",
     assistantBody:
-      "Я буду вашим персональним помічником з харчування і звичок. Оберіть, як до мене звертатися, щоб спілкування відчувалося природно.",
-    assistantQuestion: "Як мені до вас представлятися?",
+      "Я буду вашим персональним помічником з харчування і звичок. Якщо хочете, дайте мені ім'я зараз або зробіть це пізніше в профілі.",
+    assistantQuestion: "Як мене називати? Можна залишити порожнім і вибрати пізніше.",
     avatarQuestion: "Обери мій образ",
     personalityQuestion: "Яким стилем мені говорити з тобою?",
     nameTitle: "Як тебе звати?",
@@ -55,8 +55,8 @@ export const onboarding = {
     languageAdd: "+ Dodaj język",
     assistantTitle: "Poznajmy się",
     assistantBody:
-      "Będę Twoim osobistym asystentem żywienia i nawyków. Wybierz, jak mam się przedstawiać, żeby rozmowa była naturalna.",
-    assistantQuestion: "Jak mam się do Ciebie przedstawiać?",
+      "Będę Twoim osobistym asystentem żywienia i nawyków. Jeśli chcesz, nadaj mi imię teraz albo zrób to później w profilu.",
+    assistantQuestion: "Jak mam się nazywać? Możesz zostawić puste i wybrać później.",
     avatarQuestion: "Wybierz mój wygląd",
     personalityQuestion: "Jakim stylem mam do Ciebie mówić?",
     nameTitle: "Jak masz na imię?",
@@ -104,8 +104,8 @@ export const onboarding = {
     languageAdd: "+ Add language",
     assistantTitle: "Let's get acquainted",
     assistantBody:
-      "I will be your personal nutrition and habits assistant. Choose how I should introduce myself so the experience feels natural.",
-    assistantQuestion: "What should I introduce myself as?",
+      "I will be your personal nutrition and habits assistant. Name me now if you want, or choose later in profile settings.",
+    assistantQuestion: "What should I be called? You can leave this empty and choose later.",
     avatarQuestion: "Choose my look",
     personalityQuestion: "How should I talk with you?",
     nameTitle: "What's your name?",

@@ -47,6 +47,7 @@ describe("onboarding and profile flow contract", () => {
   it("keeps the post-confirmation questionnaire order user-friendly", async () => {
     const onboardingSource = await readSource(ONBOARDING_PAGE_PATH);
     const assistantSource = await readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
+    const onboardingI18nSource = await readSource("src/shared/i18n/onboarding.ts");
     const genderSource = await readSource("src/pages/onboarding/OnboardingGenderPage.tsx");
     const nameSource = await readSource("src/pages/onboarding/OnboardingNamePage.tsx");
     const ageSource = await readSource("src/pages/onboarding/OnboardingAgePage.tsx");
@@ -54,7 +55,9 @@ describe("onboarding and profile flow contract", () => {
 
     expect(onboardingSource).not.toContain("DEFAULT_ASSISTANT_NAME");
     expect(assistantSource).toContain("getAssistantPreviewName");
+    expect(assistantSource).not.toContain("disabled={state.assistantName.trim()");
     expect(assistantSource).not.toContain('placeholder={"Alex"');
+    expect(onboardingI18nSource).toContain("Можна залишити порожнім");
     expect(genderSource).toContain("navigate(stepPaths.name)");
     expect(nameSource).toContain("navigate(stepPaths.age)");
     expect(ageSource).toContain("stepPaths.womenHealth");

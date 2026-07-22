@@ -155,6 +155,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened backend route error envelopes so Auth, Platform, Assistant, State, and product-provider failures preserve public codes/status while returning safe product-language messages instead of raw backend/provider exception text.
 - Polished regular community UI copy so report sync warnings, hub titles, and core action labels are localized product-language text instead of leaking implementation terms such as local community status or English controls into UA/PL screens.
 - Connected registration language selection to backend initial profile and community snapshot creation, with language-aware starter community content and Ukrainian frontend fallback copy instead of mixed English/Russian seed text.
+- Made assistant naming user-owned in onboarding: users may continue without naming the companion, cloud state stays empty until they choose a name, and visible UI/notifications use localized display fallbacks while hiding legacy accidental names.
 
 ## Current Architecture
 
@@ -181,6 +182,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - AI daily plans are read-only review drafts over backend snapshot and reminder state; applying a selected item must route into existing canonical food, scanner, photo, or reminder flows instead of creating a second planner.
 - Telegram: Retention and notification layer that must reuse canonical backend reminder/task contracts.
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
+- Assistant identity: the assistant must not receive a hardcoded default name. Empty or legacy accidental names remain unsaved/hidden in persistent state and use localized display-only fallbacks until the user chooses a name.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
 - New-user community seed content must follow the selected profile language where backend registration knows it; frontend pre-restore fallback defaults to coherent Ukrainian copy and must not mix English/Russian demo posts into ordinary startup UI.
@@ -224,6 +226,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Auth session responses must place access/refresh tokens only into HTTP-only cookies and return user/snapshot data in the JSON body without raw tokens.
 - Guided registration must show inline backend-confirmed availability for nickname and email and must not submit account creation unless both fields are confirmed available.
 - Guided registration language selection must be canonical input, not decoration: `languagePreference` must reach backend registration, initial profile state, Telegram/profile language context, and the starter community snapshot.
+- Assistant naming in onboarding is optional and user-owned: no fake default assistant name, no legacy accidental display names, and no blocked onboarding step solely because the assistant name is blank.
 - Configured owner promotion belongs to the explicit awaited access-control bootstrap path, not to fire-and-forget service construction side effects.
 - Email verification and reset password tokens may be consumed from URL links only long enough to capture them into runtime state; the browser address bar/history entry must be cleaned before user interaction continues.
 - Vercel-served frontend routes must keep `Referrer-Policy: strict-origin-when-cross-origin` so auth link query data is not sent cross-origin.

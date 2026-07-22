@@ -32,14 +32,18 @@ describe("Smart Nutrition visual system contract", () => {
   });
 
   it("keeps authenticated home using theme-aware companion colors", async () => {
-    const source = await readSource("../../pages/HomePage.tsx");
+    const [source, assistantDisplayNameSource] = await Promise.all([
+      readSource("../../pages/HomePage.tsx"),
+      readSource("../../features/assistant/assistantDisplayName.ts"),
+    ]);
 
     expect(source).toContain("useAppColorMode");
     expect(source).toContain("heroBackground");
     expect(source).toContain("heroOverlay");
     expect(source).toContain("heroRing");
     expect(source).toContain("Smart Nutrition AI");
-    expect(source).toContain("LEGACY_ASSISTANT_NAMES");
+    expect(source).toContain("getAssistantDisplayName");
+    expect(assistantDisplayNameSource).toContain("legacyAssistantNames");
     expect(source).toContain("env(safe-area-inset-bottom");
     expect(source).not.toContain('className="sn-companion-panel"');
     expect(source).not.toContain("HyeMye");

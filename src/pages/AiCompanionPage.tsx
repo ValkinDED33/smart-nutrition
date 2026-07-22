@@ -44,6 +44,7 @@ import {
 import { useCompanionRenderModePreference } from "../features/profile/useCompanionRenderModePreference";
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const AssistantRuntimeCard = lazy(() =>
   import("../features/assistant/AssistantRuntimeCard").then((module) => ({
@@ -540,6 +541,7 @@ const AiCompanionPage = () => {
     { id: "memory", label: getSectionLabel(copy, "memory") },
     { id: "settings", label: getSectionLabel(copy, "settings") },
   ];
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
 
   return (
     <PageShell
@@ -589,7 +591,7 @@ const AiCompanionPage = () => {
             }}
           >
             <AssistantAvatar
-              name={assistant.name}
+              name={assistantDisplayName}
               variant={assistant.companionKind}
               size={companionStageSize}
               renderMode={companionRenderModePreference.value}
@@ -606,14 +608,14 @@ const AiCompanionPage = () => {
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0 }}>
             <Typography variant="overline" sx={{ color: COMPANION_MUTED_COLOR }}>
-              {assistant.name}
+              {assistantDisplayName}
             </Typography>
             <Typography
               component="h2"
               variant="h4"
               sx={{ fontWeight: 900, fontSize: { xs: 38, md: 42 } }}
             >
-              {assistant.name}
+              {assistantDisplayName}
             </Typography>
             {user && (
               <Typography

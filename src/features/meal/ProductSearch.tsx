@@ -39,6 +39,7 @@ import {
   shouldRunOnlineProductLookup,
 } from "./productLookupUiModel";
 import type { AppLanguage } from "@shared/types/i18n";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const CatalogContributionCard = lazy(() =>
   import("@features/platform/CatalogContributionCard").then((module) => ({
@@ -178,11 +179,12 @@ export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
-  const assistantName = useSelector((state: RootState) => state.profile.assistant.name);
+  const rawAssistantName = useSelector((state: RootState) => state.profile.assistant.name);
   const { appLanguage, t } = useLanguage();
   const [showContributionForm, setShowContributionForm] = useState(false);
   const normalizedQuery = normalizeProductLookupQuery(query);
   const copy = getSuggestionCopy(appLanguage);
+  const assistantName = getAssistantDisplayName(rawAssistantName, appLanguage);
 
   useEffect(() => {
     const normalizedInitialQuery = normalizeProductLookupQuery(initialQuery);

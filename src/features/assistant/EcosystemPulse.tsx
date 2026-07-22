@@ -4,6 +4,7 @@ import type { RootState } from "../../app/store";
 import { selectTodayMealItems } from "../meal/selectors";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
+import { getAssistantDisplayName } from "./assistantDisplayName";
 import type { AppLanguage } from "../../shared/types/i18n";
 
 type EcosystemPulseFocus =
@@ -104,12 +105,6 @@ const getFocusText = (copy: PulseCopy, focus: EcosystemPulseFocus) => {
   }
 };
 
-const getDisplayAssistantName = (name: string, fallback: string) => {
-  const trimmedName = name.trim();
-
-  return trimmedName.length > 0 ? trimmedName : fallback;
-};
-
 const formatPercent = (value: number) => `${Math.max(0, Math.min(100, Math.round(value)))}%`;
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
@@ -130,7 +125,11 @@ export const EcosystemPulse = ({ focus }: EcosystemPulseProps) => {
   const combinedSignal = Math.round(
     (Math.min(100, foodSignal) + Math.min(100, waterPercent) + companionBondPercent) / 3
   );
-  const assistantName = getDisplayAssistantName(assistant.name, copy.assistantFallback);
+  const assistantName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+    copy.assistantFallback
+  );
 
   return (
     <Box

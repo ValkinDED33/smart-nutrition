@@ -40,6 +40,7 @@ import {
   type AssistantHomeAction,
 } from "@features/assistant/assistantHomeIntelligence";
 import { AIDiscoveryCards } from "@features/assistant/AIDiscoveryCards";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
@@ -51,15 +52,6 @@ const COMMON_GRAMS_KEY = "common.g";
 const ELEVATED_SURFACE_COLOR = "var(--sn-surface-elevated)";
 const ACCENT_SOFT_COLOR = "var(--sn-accent-soft)";
 const ALIGN_START = "flex-start";
-const LEGACY_ASSISTANT_NAMES = new Set(["hyemye", "hye-mye", "hue-mue", "huemue"]);
-
-const getAssistantDisplayName = (name: string) => {
-  const normalized = name.trim().toLowerCase();
-
-  return normalized && !LEGACY_ASSISTANT_NAMES.has(normalized)
-    ? name.trim()
-    : "Smart Nutrition AI";
-};
 
 const homeCopy = {
   uk: {
@@ -217,7 +209,11 @@ const HomePage = () => {
   }
 
   const firstName = user.name.split(" ")[0] || user.name;
-  const assistantDisplayName = getAssistantDisplayName(assistant.name);
+  const assistantDisplayName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+    "Smart Nutrition AI"
+  );
   const heroTextColor = isDarkMode ? "#ffffff" : "#102a43";
   const heroMutedColor = isDarkMode ? "rgba(226,232,240,0.74)" : "rgba(15,23,42,0.66)";
   const heroOverlineColor = isDarkMode ? "rgba(236,253,245,0.82)" : "#0f766e";

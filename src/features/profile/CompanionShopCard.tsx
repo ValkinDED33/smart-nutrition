@@ -21,6 +21,7 @@ import {
 import { useLanguage } from "../../shared/language";
 import { applyCompanionShopSelectionInCloud } from "../companion/companionCloudSync";
 import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const shopCopy = {
   uk: {
@@ -211,6 +212,7 @@ const CompanionShopCard = () => {
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
   const copy = getShopCopy(locale);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const equippedItems = useMemo(
     () => getEquippedCompanionItems(companion),
     [companion]
@@ -327,7 +329,7 @@ const CompanionShopCard = () => {
             <Stack spacing={1.2} alignItems="center" textAlign="center">
               <Typography sx={{ fontWeight: 800 }}>{copy.preview}</Typography>
               <AssistantAvatar
-                name={assistant.name}
+                name={assistantDisplayName}
                 variant={activePreview?.companionKind ?? assistant.companionKind}
                 mood="happy"
                 size={96}
@@ -350,7 +352,7 @@ const CompanionShopCard = () => {
                 <Typography color="text.secondary">
                   {activePreview
                     ? getCatalogText(activePreview.description, locale)
-                    : assistant.name}
+                    : assistantDisplayName}
                 </Typography>
               </Stack>
               <CompanionRenderModeControl

@@ -43,6 +43,7 @@ import type {
 } from "@domain/profile/types";
 import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
 import { useProfileCloudAction } from "./useProfileCloudAction";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 type FormData = {
   gender: "male" | "female";
@@ -565,6 +566,7 @@ const ProfileForm = () => {
     shouldShowWomenHealth &&
     (selectedWomenHealthMode === "pregnant" ||
       selectedWomenHealthMode === "trying_to_conceive");
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
 
   useEffect(() => {
     if (!user) {
@@ -843,7 +845,7 @@ const ProfileForm = () => {
                 {copy.sectionPersonal}
               </Typography>
               <Typography color="text.secondary">
-                {copy.personalSubtitle(assistant.name)}
+                {copy.personalSubtitle(assistantDisplayName)}
               </Typography>
             </Stack>
 

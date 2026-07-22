@@ -64,6 +64,7 @@ import {
 } from "./waterSaveModel";
 import { useWaterCloudAction } from "./useWaterCloudAction";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const waterCopy = {
   uk: {
@@ -365,6 +366,7 @@ const WaterTracker = () => {
     progress >= 100 ? "celebrate" : progress >= 55 ? "happy" : "coach";
   const assistantReaction =
     progress >= 100 ? copy.aiDone : progress >= 55 ? copy.aiMid : copy.aiLow;
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const weeklyRecords = useMemo(
     () =>
       createWeeklyWaterRecords({
@@ -829,7 +831,7 @@ const WaterTracker = () => {
             >
               <Stack direction="row" spacing={1.3} alignItems="center">
                 <AssistantAvatar
-                  name={assistant.name}
+                  name={assistantDisplayName}
                   variant={assistant.companionKind}
                   mood={assistantMood}
                   active={progress >= 55}

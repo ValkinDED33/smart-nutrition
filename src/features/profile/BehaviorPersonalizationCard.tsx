@@ -12,6 +12,7 @@ import { selectMealItems } from "../meal/selectors";
 import { updateNotificationPreferences } from "./profileSlice";
 import type { MealType } from "@domain/meal/types";
 import type { AppLanguage } from "@shared/types/i18n";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const HABIT_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 const ALIGN_START = "flex-start";
@@ -158,6 +159,7 @@ const BehaviorPersonalizationCard = () => {
   const { reminderTimes, assistant } = useSelector((state: RootState) => state.profile);
   const { t, appLanguage } = useLanguage();
   const copy = getCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
 
   const analysis = generateBehaviorProfileAnalysis({
     items,
@@ -189,7 +191,7 @@ const BehaviorPersonalizationCard = () => {
             <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.title}
             </Typography>
-            <Typography color="text.secondary">{copy.subtitle(assistant.name)}</Typography>
+            <Typography color="text.secondary">{copy.subtitle(assistantDisplayName)}</Typography>
           </Stack>
           <Chip
             label={`${copy.score}: ${analysis.consistencyScore}/100`}

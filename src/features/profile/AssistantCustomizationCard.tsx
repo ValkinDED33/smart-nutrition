@@ -34,6 +34,7 @@ import type {
   AssistantMotivationStyle,
   AssistantTone,
 } from "@domain/profile/types";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const assistantCopy = {
   uk: {
@@ -315,6 +316,7 @@ const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = getAssistantCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const companionRenderModePreference = useCompanionRenderModePreference();
   const profileAction = useProfileCloudAction();
   const primaryGoalNoteValue =
@@ -482,7 +484,7 @@ const AssistantCustomizationCard = () => {
             }}
           >
             <AssistantAvatar
-              name={assistant.name}
+              name={assistantDisplayName}
               variant={assistant.companionKind}
               size={136}
               mood="happy"
@@ -499,7 +501,7 @@ const AssistantCustomizationCard = () => {
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0, flex: 1 }}>
             <Typography color="text.secondary">
-              {getCompanionLabel(copy, assistant.companionKind)} · {assistant.name}
+              {getCompanionLabel(copy, assistant.companionKind)} · {assistantDisplayName}
             </Typography>
             <CompanionRenderModeControl
               value={companionRenderModePreference.value}

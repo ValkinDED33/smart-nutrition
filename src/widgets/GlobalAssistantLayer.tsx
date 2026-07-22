@@ -27,6 +27,7 @@ import {
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveGlobalAssistantLayerModel } from "./globalAssistantLayerModel";
 import type { AppLanguage } from "@shared/types/i18n";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const layerCopy = {
   uk: {
@@ -435,7 +436,9 @@ export const GlobalAssistantLayer = () => {
     ? copy.coachFallbackAction
     : visibleCopy.action || copy.action;
   const isPublicCompanion = !user && area === "auth";
-  const companionName = user ? assistant.name : "Smart";
+  const companionName = user
+    ? getAssistantDisplayName(assistant.name, appLanguage)
+    : "Smart";
   const companionKind = user ? assistant.companionKind : "dragon";
   const companionSize = isDenseMobileCompanion ? 58 : isMobile ? 64 : 76;
 

@@ -8,6 +8,7 @@ import { generateNutritionCoachAnalysis } from "@domain/meal/nutritionCoach";
 import type { NutritionCoachInsightCode } from "@domain/meal/nutritionCoach";
 import { syncWaterDay } from "@features/water/waterSlice";
 import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizationPlan";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import type { AppLanguage } from "@shared/types/i18n";
 import type { Goal } from "@domain/user/types";
 import {
@@ -433,6 +434,7 @@ const HabitReminderAgent = () => {
       const localizedMealCopy = getMealNotificationCopy(appLanguage);
       const coachCopy = getCoachNotificationCopy(appLanguage);
       const wellbeingCopy = getWellbeingNotificationCopy(appLanguage);
+      const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
       const personalization = buildAssistantPersonalizationPlan(
         assistant.onboarding,
         appLanguage
@@ -451,7 +453,7 @@ const HabitReminderAgent = () => {
       if (nowMinutes >= 10 * 60) {
         maybeSendNotification(
           `${todayKey}-daily-motivation`,
-          wellbeingCopy.dailyTitle(assistant.name),
+          wellbeingCopy.dailyTitle(assistantDisplayName),
           withPersonalNotificationContext(
             personalization.notificationBody || wellbeingCopy.dailyBody,
             personalContext
@@ -543,7 +545,7 @@ const HabitReminderAgent = () => {
           if (body) {
             maybeSendNotification(
               `${todayKey}-coach-focus`,
-              coachCopy.title(assistant.name),
+              coachCopy.title(assistantDisplayName),
               withPersonalNotificationContext(body, personalContext)
             );
           }

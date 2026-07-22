@@ -52,6 +52,7 @@ import {
 import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveAssistantPromptContext } from "./assistantPromptContext";
+import { getAssistantDisplayName } from "./assistantDisplayName";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -525,6 +526,10 @@ export const AssistantRuntimeCard = () => {
   const followUpQuestionIds =
     latestAssistantMessage?.followUpQuestionIds ??
     (latestAssistantMessage ? assistantQuickQuestionIds : []);
+  const assistantDisplayName = getAssistantDisplayName(
+    profile.assistant.name,
+    appLanguage
+  );
 
   const handleFollowUpClick = (id: AssistantQuickQuestionId) => {
     trackRuntimeEvent("assistant_followup_clicked", {
@@ -661,7 +666,7 @@ export const AssistantRuntimeCard = () => {
                         color: message.role === "user" ? "var(--sn-accent)" : "text.secondary",
                       }}
                     >
-                      {message.role === "user" ? user.name : profile.assistant.name}
+                      {message.role === "user" ? user.name : assistantDisplayName}
                     </Typography>
                     {message.role === "assistant" ? (
                       <AssistantMessageMarkdown text={message.text} />

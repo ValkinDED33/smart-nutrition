@@ -10,6 +10,7 @@ import {
 } from "@domain/meal/nutritionCoach";
 import { selectMealItems } from "./selectors";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const coachCopy = {
   uk: {
@@ -378,6 +379,10 @@ const NutritionCoachCard = () => {
   }
 
   const copy = getCoachCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    profile.assistant.name,
+    appLanguage
+  );
   const analysis = generateNutritionCoachAnalysis({
     items,
     dailyCalories: profile.dailyCalories,
@@ -416,7 +421,7 @@ const NutritionCoachCard = () => {
               {copy.title}
             </Typography>
             <Typography color="text.secondary">
-              {copy.subtitle(profile.assistant.name)}
+              {copy.subtitle(assistantDisplayName)}
             </Typography>
           </Stack>
           <Chip
