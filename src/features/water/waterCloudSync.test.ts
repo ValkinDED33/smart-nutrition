@@ -11,6 +11,8 @@ vi.mock("@shared/api/auth", () => authApiMock);
 
 const MARK_SYNC_STARTED = "auth/markSyncStarted";
 const MARK_SYNC_ERROR = "auth/markSyncError";
+const WATER_SYNC_FAILED_MESSAGE = "Cloud sync could not save the latest water data.";
+const RAW_WATER_SYNC_ERROR = "Provider stack trace: water write failed";
 
 describe("waterCloudSync", () => {
   it("marks water sync success only after remote save", async () => {
@@ -37,17 +39,21 @@ describe("waterCloudSync", () => {
     authApiMock.syncRemoteWaterState.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: "water failed",
+      message: RAW_WATER_SYNC_ERROR,
     });
 
     await expect(
       saveWaterStateToCloud(dispatch, createInitialWaterState())
-    ).rejects.toThrow("water failed");
+    ).rejects.toThrow(WATER_SYNC_FAILED_MESSAGE);
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       MARK_SYNC_STARTED,
       MARK_SYNC_ERROR,
     ]);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: MARK_SYNC_ERROR,
+      payload: WATER_SYNC_FAILED_MESSAGE,
+    });
   });
 
   it("pulls and applies the latest cloud snapshot when water save conflicts", async () => {

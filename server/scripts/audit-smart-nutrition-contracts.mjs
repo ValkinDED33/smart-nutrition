@@ -34,6 +34,12 @@ const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mj
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
 const frontendProductApiSource = readSource("src/shared/api/products.ts");
 const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
+const profileCloudSyncSource = readSource("src/features/profile/profileCloudSync.ts");
+const waterCloudSyncSource = readSource("src/features/water/waterCloudSync.ts");
+const companionCloudSyncSource = readSource(
+  "src/features/companion/companionCloudSync.ts"
+);
+const cloudSyncErrorsSource = readSource("src/shared/lib/cloudSyncErrors.ts");
 const communityCloudSyncSource = readSource(
   "src/features/community/communityCloudSync.ts"
 );
@@ -1230,6 +1236,22 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy before they reach auth state or visible sync UI instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "cloud action sync wrappers sanitize backend/provider messages",
+  cloudSyncErrorsSource.includes("resolveCloudSyncFailureMessage") &&
+    profileCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    waterCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    companionCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    !profileCloudSyncSource.includes("result.message ??") &&
+    !waterCloudSyncSource.includes("result.message ??") &&
+    !companionCloudSyncSource.includes("result.message ??") &&
+    !authRemoteSource.includes("Backend unavailable. Please reconnect.") &&
+    authRemoteSource.includes(
+      "The Smart Nutrition cloud service is temporarily unavailable"
+    ),
+  "Profile, water, companion, and auth unavailable errors must preserve cloud/conflict meaning without exposing raw backend/provider message text."
 );
 
 addCheck(

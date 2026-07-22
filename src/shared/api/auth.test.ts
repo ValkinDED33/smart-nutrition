@@ -41,6 +41,8 @@ describe("auth provider selection", () => {
       register(createRegisterPayload("cloud-required@example.com"))
     ).rejects.toMatchObject({
       code: "REMOTE_API_UNAVAILABLE",
+      message:
+        "The Smart Nutrition cloud service is temporarily unavailable. Try again in a moment.",
     } satisfies Partial<AuthApiError>);
 
     expect(getAuthRuntimeInfo().mode).toBe("remote-cloud");

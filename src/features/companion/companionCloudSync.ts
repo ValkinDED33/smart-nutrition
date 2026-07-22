@@ -2,6 +2,7 @@ import type { AnyAction } from "@reduxjs/toolkit";
 import { buildAppSnapshot } from "@domain/appSnapshot";
 import type { AppSnapshotMeta } from "@shared/types/appSnapshot";
 import { syncRemoteAppSnapshot, syncRemoteCompanionState } from "@shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import {
   hydrateSyncOutbox,
@@ -53,9 +54,13 @@ const getCompanionSyncErrorMessage = (result: {
   message?: string;
   code?: string;
 }) =>
-  result.code === "STATE_CONFLICT"
-    ? "Cloud data changed on another device. Pull the latest cloud version before saving again."
-    : result.message ?? "Cloud sync could not save the latest companion data.";
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage:
+      "Cloud data changed on another device. Pull the latest cloud version before saving again.",
+    fallbackMessage: "Cloud sync could not save the latest companion data.",
+  });
 
 const buildCompanionStateAfterAction = (
   companion: CompanionState,

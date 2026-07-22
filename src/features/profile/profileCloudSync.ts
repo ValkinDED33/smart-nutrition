@@ -15,6 +15,7 @@ import {
   syncRemoteProfileWithUser,
 } from "@shared/api/auth";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import type { User } from "@domain/user/types";
 import profileReducer, { replaceProfileState, type ProfileState } from "./profileSlice";
 
@@ -32,9 +33,13 @@ const getProfileSyncErrorMessage = (result: {
   message?: string;
   code?: string;
 }) =>
-  result.code === "STATE_CONFLICT"
-    ? "Cloud data changed on another device. Pull the latest cloud version before saving again."
-    : result.message ?? "Cloud sync could not save the latest profile data.";
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage:
+      "Cloud data changed on another device. Pull the latest cloud version before saving again.",
+    fallbackMessage: "Cloud sync could not save the latest profile data.",
+  });
 
 export const saveProfileStateToCloud = async (
   dispatch: ProfileSyncDispatch,

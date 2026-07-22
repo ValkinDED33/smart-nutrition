@@ -137,6 +137,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 - Hardened frontend product lookup errors so scanner/search/barcode failures preserve typed codes and statuses while exposing only safe online-catalog messages, never backend/provider payload text.
+- Hardened profile, water, companion, and auth-unavailable cloud-sync errors so raw backend/provider sync messages collapse into domain-safe product copy before reaching visible sync state.
 - Hardened fridge planner recipe and fridge-save feedback so meal/fridge failures stay product-language and do not leak backend/provider exception details.
 - Removed the obsolete Depcheck config and locked dead-code auditing to the canonical Knip setup so the root stays clean without duplicate quality tools.
 - Introduced the branded AI Discovery Cards home pattern: living story cards generated from canonical day context and existing assistant actions, with tests and contract audit guarding against mock/random/local-only AI cards.
@@ -186,6 +187,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
 - Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
 - Shared auth cloud-sync state must sanitize retry, pull, outbox, and manual sync failure messages before storing them in `syncError`; visible sync UI must never depend on raw backend/provider failure text.
+- Profile, water, companion, and auth-unavailable cloud-sync wrappers must sanitize backend/provider result messages through shared cloud-sync error handling; conflict/inactive meaning may remain, but unknown raw text must collapse to domain fallback copy.
 - Backend route error envelopes must map public messages from stable error codes and strip provider/backend details before ordinary API responses reach the frontend; raw exception text belongs in logs/admin diagnostics only.
 - Auth recovery and community action UI must not render raw backend/API exception text; reset, forgot-password, and community failures use localized recovery copy while diagnostics stay in code/logs.
 - Final onboarding/profile setup failures must not store or render raw exception text in sync outbox, sync status, or visible alerts; use localized profile recovery copy only.

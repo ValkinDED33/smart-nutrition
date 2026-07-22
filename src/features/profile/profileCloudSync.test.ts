@@ -17,7 +17,9 @@ vi.mock("@shared/api/auth", () => authApiMock);
 
 const ASSISTANT_NAME = "Alex";
 const CLOUD_DEVICE_ID = "device-1";
-const PROFILE_SYNC_FAILED_MESSAGE = "profile failed";
+const PROFILE_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest profile data.";
+const RAW_PROFILE_SYNC_ERROR = "Provider stack trace: profile database failed";
 const PROFILE_RENDER_MODE_3D = "3d";
 const PROFILE_CALORIES = 2100;
 const PROFILE_UPDATED_AT = "2026-07-01T08:20:00.000Z";
@@ -120,7 +122,7 @@ describe("profileCloudSync", () => {
     authApiMock.syncRemoteProfileState.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: PROFILE_SYNC_FAILED_MESSAGE,
+      message: RAW_PROFILE_SYNC_ERROR,
     });
 
     await expect(
@@ -135,6 +137,10 @@ describe("profileCloudSync", () => {
       ACTION_SYNC_STARTED,
       ACTION_SYNC_ERROR,
     ]);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ACTION_SYNC_ERROR,
+      payload: PROFILE_SYNC_FAILED_MESSAGE,
+    });
   });
 
   it("marks profile sync success only after the remote profile state is saved", async () => {
@@ -203,7 +209,7 @@ describe("profileCloudSync", () => {
     authApiMock.syncRemoteProfileWithUser.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: "combined profile failed",
+      message: RAW_PROFILE_SYNC_ERROR,
     });
 
     await expect(
@@ -213,12 +219,16 @@ describe("profileCloudSync", () => {
         profile,
         PROFILE_PREVIOUS_UPDATED_AT
       )
-    ).rejects.toThrow("combined profile failed");
+    ).rejects.toThrow(PROFILE_SYNC_FAILED_MESSAGE);
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       ACTION_SYNC_STARTED,
       ACTION_SYNC_ERROR,
     ]);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ACTION_SYNC_ERROR,
+      payload: PROFILE_SYNC_FAILED_MESSAGE,
+    });
   });
 
   it("throws and marks sync error when the cloud rejects the profile state", async () => {
@@ -226,7 +236,7 @@ describe("profileCloudSync", () => {
     authApiMock.syncRemoteProfileState.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: PROFILE_SYNC_FAILED_MESSAGE,
+      message: RAW_PROFILE_SYNC_ERROR,
     });
 
     await expect(

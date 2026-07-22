@@ -23,6 +23,10 @@ const REWARD_SYNCED_AT = "2026-07-01T08:12:00.000Z";
 const PREMIUM_DRAGON_ITEM_ID = "dragon-premium";
 const MEAL_ADDED_REWARD_EVENT = "meal_added";
 const MARK_SYNC_STARTED_ACTION = "auth/markSyncStarted";
+const MARK_SYNC_ERROR_ACTION = "auth/markSyncError";
+const COMPANION_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest companion data.";
+const RAW_COMPANION_SYNC_ERROR = "Provider stack trace: companion write failed";
 
 const createCompanionSnapshotState = () => ({
   auth: {
@@ -125,17 +129,21 @@ describe("companionCloudSync", () => {
     authApiMock.syncRemoteCompanionState.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: "reward failed",
+      message: RAW_COMPANION_SYNC_ERROR,
     });
 
     await expect(
       applyCompanionRewardInCloud(dispatch, state, MEAL_ADDED_REWARD_EVENT)
-    ).rejects.toThrow("reward failed");
+    ).rejects.toThrow(COMPANION_SYNC_FAILED_MESSAGE);
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       MARK_SYNC_STARTED_ACTION,
-      "auth/markSyncError",
+      MARK_SYNC_ERROR_ACTION,
     ]);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: MARK_SYNC_ERROR_ACTION,
+      payload: COMPANION_SYNC_FAILED_MESSAGE,
+    });
   });
 
   it("does not update local companion or profile when the cloud save fails", async () => {
@@ -145,16 +153,20 @@ describe("companionCloudSync", () => {
     authApiMock.syncRemoteAppSnapshot.mockResolvedValueOnce({
       ok: false,
       code: "SYNC_FAILED",
-      message: "snapshot failed",
+      message: RAW_COMPANION_SYNC_ERROR,
     });
 
     await expect(
       applyCompanionShopSelectionInCloud(dispatch, state, item!)
-    ).rejects.toThrow("snapshot failed");
+    ).rejects.toThrow(COMPANION_SYNC_FAILED_MESSAGE);
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       MARK_SYNC_STARTED_ACTION,
-      "auth/markSyncError",
+      MARK_SYNC_ERROR_ACTION,
     ]);
+    expect(dispatch).toHaveBeenCalledWith({
+      type: MARK_SYNC_ERROR_ACTION,
+      payload: COMPANION_SYNC_FAILED_MESSAGE,
+    });
   });
 });

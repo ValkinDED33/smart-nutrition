@@ -47,7 +47,8 @@ export interface RemoteSyncResult {
   community?: unknown;
 }
 
-const REMOTE_API_UNAVAILABLE_MESSAGE = "Backend unavailable. Please reconnect.";
+const REMOTE_API_UNAVAILABLE_MESSAGE =
+  "The Smart Nutrition cloud service is temporarily unavailable. Try again in a moment.";
 const CLOUD_SYNC_DISABLED_MESSAGE = "Cloud sync is not active for this account.";
 
 export interface ProductIntakePayload {

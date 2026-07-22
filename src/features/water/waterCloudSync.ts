@@ -11,6 +11,7 @@ import {
   recoverLatestCloudSnapshotAfterConflict,
 } from "@features/auth/cloudConflictRecovery";
 import { syncRemoteWaterState } from "@shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import type { WaterState } from "./waterSlice";
 
@@ -28,9 +29,13 @@ const getWaterSyncErrorMessage = (result: {
   message?: string;
   code?: string;
 }) =>
-  result.code === "STATE_CONFLICT"
-    ? "Cloud data changed on another device. Pull the latest cloud version before saving water again."
-    : result.message ?? "Cloud sync could not save the latest water data.";
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage:
+      "Cloud data changed on another device. Pull the latest cloud version before saving water again.",
+    fallbackMessage: "Cloud sync could not save the latest water data.",
+  });
 
 export const saveWaterStateToCloud = async (
   dispatch: WaterSyncDispatch,
