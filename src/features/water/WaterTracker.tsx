@@ -118,6 +118,7 @@ const waterCopy = {
     saveError: "Не вдалося зберегти воду в хмарі.",
     rewardSyncWarning:
       "Воду збережено, але прогрес companion тимчасово не синхронізувався.",
+    saveInProgress: "Вода вже зберігається. Зачекайте кілька секунд.",
     saving: "Зберігаю...",
     retry: "Повторити",
   },
@@ -172,6 +173,7 @@ const waterCopy = {
     saveError: "Nie udało się zapisać wody w chmurze.",
     rewardSyncWarning:
       "Woda została zapisana, ale postęp companion chwilowo się nie zsynchronizował.",
+    saveInProgress: "Woda już się zapisuje. Poczekaj kilka sekund.",
     saving: "Zapisuję...",
     retry: "Ponów",
   },
@@ -225,6 +227,7 @@ const waterCopy = {
     saveError: "Could not save water to cloud.",
     rewardSyncWarning:
       "Water was saved, but companion progress could not sync yet.",
+    saveInProgress: "Water is already being saved. Please wait a moment.",
     saving: "Saving...",
     retry: "Retry",
   },
@@ -256,7 +259,14 @@ const WaterTracker = () => {
   const latestWeight = latestWeightHistoryWeight ?? authWeight ?? 0;
   const { appLanguage } = useLanguage();
   const copy = getWaterCopy(appLanguage);
-  const waterAction = useWaterCloudAction();
+  const waterActionCopy = useMemo(
+    () => ({
+      saveFailed: copy.saveError,
+      saveInProgress: copy.saveInProgress,
+    }),
+    [copy.saveError, copy.saveInProgress]
+  );
+  const waterAction = useWaterCloudAction(waterActionCopy);
   const {
     clearError: clearWaterActionError,
     error: waterActionError,

@@ -158,6 +158,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Made assistant naming user-owned in onboarding: users may continue without naming the companion, cloud state stays empty until they choose a name, and visible UI/notifications use localized display fallbacks while hiding legacy accidental names.
 - Hardened meal entry editing and recipe-builder actions so visible save failures and action buttons come from localized product copy instead of hardcoded English strings inside food hooks or builder controls.
 - Completed the recipe-builder localization contract: builder headings, field labels, helper text, custom-recipe descriptions, reuse/remove/publish actions, and community publish fallback copy now come from the active language layer.
+- Hardened water cloud-action retry feedback so the shared save hook receives localized copy from `WaterTracker` instead of storing English visible errors in shared persistence logic.
 
 ## Current Architecture
 
@@ -250,6 +251,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Shared meal action feedback must not store or render raw exception text; add/edit/delete/repeat/template/product failures use product-language retry copy only.
 - Shared catalog contribution and scanner catalog-moderation failure feedback must not render raw backend/provider exception text; user-facing copy may confirm meal/profile state and offer retry only.
 - Water and profile save/retry feedback must not render raw backend/provider exception text; cloud action hooks and consuming cards must expose product-language recovery copy only.
+- Shared cloud-action hooks may own retry state and backend-confirmed persistence, but visible error text must be injected from the active UI language layer.
 - Food command, barcode scanner, meal entry editor, and catalog contribution components must not render raw backend/provider exception text in visible save errors; diagnostics belong in logs/admin tooling.
 - Fridge planner recipe and fridge-save feedback must not render raw backend/provider exception text or infrastructure wording; recipe diary and fridge update failures use product-language retry copy.
 - Typed and browser-voice food commands must resolve inside `FoodCommandCenter`, require a clear product, quantity, and compatible units, and persist only through `addProductIntakeToCloud`; vague speech/text must search or ask for confirmation instead of saving.

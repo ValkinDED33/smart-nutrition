@@ -1358,8 +1358,12 @@ addCheck(
 addCheck(
   "water cloud action feedback hides raw backend/provider failure details",
   waterCloudActionSource.includes("resolveWaterCloudActionErrorMessage") &&
-    waterCloudActionSource.includes("USER_WATER_SAVE_ERROR") &&
-    waterCloudActionSource.includes("USER_WATER_SAVE_IN_PROGRESS_ERROR") &&
+    waterCloudActionSource.includes("copy.saveFailed") &&
+    waterCloudActionSource.includes("copy.saveInProgress") &&
+    waterTrackerSource.includes("saveFailed: copy.saveError") &&
+    waterTrackerSource.includes("saveInProgress: copy.saveInProgress") &&
+    !waterCloudActionSource.includes("Water could not be saved. Please try again.") &&
+    !waterCloudActionSource.includes("Water is already being saved. Please wait a moment.") &&
     !waterCloudActionSource.includes("setError(message)") &&
     !waterCloudActionSource.includes("setError(inProgressError.message)") &&
     !waterTrackerSource.includes("error instanceof Error ? error.message"),

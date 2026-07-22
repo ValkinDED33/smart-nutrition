@@ -19,7 +19,11 @@ describe("water persistence contract", () => {
     expect(source).toContain("failedWaterRef.current = nextWater");
     expect(source).toContain("surfaceFailure");
     expect(source).toContain("resolveWaterCloudActionErrorMessage");
+    expect(source).toContain("copy.saveFailed");
+    expect(source).toContain("copy.saveInProgress");
     expect(source).toContain("throw caughtError");
+    expect(source).not.toContain("Water could not be saved. Please try again.");
+    expect(source).not.toContain("Water is already being saved. Please wait a moment.");
     expect(source).not.toContain("setError(message)");
     expect(source).not.toContain("setError(inProgressError.message)");
   });
@@ -30,6 +34,8 @@ describe("water persistence contract", () => {
     );
 
     expect(source).toContain("useWaterCloudAction");
+    expect(source).toContain("saveFailed: copy.saveError");
+    expect(source).toContain("saveInProgress: copy.saveInProgress");
     expect(source).toContain("runWaterStateSave(nextWater)");
     expect(source).toContain("retryLastWaterSave");
     expect(source).toContain("waterActionHasRetry");
