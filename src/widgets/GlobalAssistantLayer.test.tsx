@@ -37,6 +37,26 @@ describe("GlobalAssistantLayer", () => {
     expect(source).not.toContain("renderMode=");
   });
 
+  it("keeps visible global assistant copy free from coach/focus jargon", async () => {
+    const source = await readFile(
+      new URL("./GlobalAssistantLayer.tsx", import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain("Головне на день");
+    expect(source).toContain("Відкрити помічника");
+    expect(source).toContain("Kierunek dnia");
+    expect(source).toContain("Otwórz asystenta");
+    expect(source).toContain("Today’s direction");
+    expect(source).toContain("Open assistant");
+    expect(source).not.toContain("Відкрити коуча");
+    expect(source).not.toContain("Fokus na dzień");
+    expect(source).not.toContain("Otwórz coacha");
+    expect(source).not.toContain('chip: "coach"');
+    expect(source).not.toContain("Daily focus");
+    expect(source).not.toContain("Open coach");
+  });
+
   it("lets public auth surfaces guide themselves and hides on onboarding", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {

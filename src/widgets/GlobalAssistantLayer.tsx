@@ -29,6 +29,9 @@ import { resolveGlobalAssistantLayerModel } from "./globalAssistantLayerModel";
 import type { AppLanguage } from "@shared/types/i18n";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
+const OPEN_ASSISTANT_PL = "Otwórz asystenta";
+const OPEN_ASSISTANT_EN = "Open assistant";
+
 const layerCopy = {
   uk: {
     eyebrow: "Асистент поруч",
@@ -53,9 +56,9 @@ const layerCopy = {
       },
       home: {
         chip: "сьогодні",
-        title: "Фокус на день",
+        title: "Головне на день",
         body: "Підкажу, що важливіше саме зараз: їжа, вода, прогрес або підтримка.",
-        action: "Відкрити коуча",
+        action: "Відкрити помічника",
       },
       meals: {
         chip: "харчування",
@@ -64,10 +67,10 @@ const layerCopy = {
         action: "Перевірити день",
       },
       coach: {
-        chip: "коуч",
+        chip: "помічник",
         title: "Готовий до діалогу",
         body: "Можу пояснити план, помітити ризики і запропонувати наступний крок.",
-        action: "Відкрити коуча",
+        action: "Відкрити помічника",
       },
       progress: {
         chip: "прогрес",
@@ -120,7 +123,7 @@ const layerCopy = {
       "Dopasowuję podpowiedzi do bieżącego ekranu, profilu i celu.",
     action: "Otwórz AI",
     coachFallbackAction: "Zapytaj asystenta",
-    mobileLabel: "Otwórz asystenta",
+    mobileLabel: OPEN_ASSISTANT_PL,
     areas: {
       auth: {
         chip: "start",
@@ -136,9 +139,9 @@ const layerCopy = {
       },
       home: {
         chip: "dzisiaj",
-        title: "Fokus na dzień",
+        title: "Kierunek dnia",
         body: "Podpowiem, co jest teraz ważniejsze: jedzenie, woda, postęp albo wsparcie.",
-        action: "Otwórz coacha",
+        action: OPEN_ASSISTANT_PL,
       },
       meals: {
         chip: "jedzenie",
@@ -147,10 +150,10 @@ const layerCopy = {
         action: "Sprawdź dzień",
       },
       coach: {
-        chip: "coach",
+        chip: "asystent",
         title: "Gotowy do rozmowy",
         body: "Mogę wyjaśnić plan, zauważyć ryzyka i zaproponować kolejny krok.",
-        action: "Otwórz coacha",
+        action: OPEN_ASSISTANT_PL,
       },
       progress: {
         chip: "postęp",
@@ -203,7 +206,7 @@ const layerCopy = {
       "I adapt guidance to the current screen, profile, and goal.",
     action: "Open AI",
     coachFallbackAction: "Ask assistant",
-    mobileLabel: "Open assistant",
+    mobileLabel: OPEN_ASSISTANT_EN,
     areas: {
       auth: {
         chip: "start",
@@ -219,9 +222,9 @@ const layerCopy = {
       },
       home: {
         chip: "today",
-        title: "Daily focus",
+        title: "Today’s direction",
         body: "I can help decide what matters now: food, water, progress, or support.",
-        action: "Open coach",
+        action: OPEN_ASSISTANT_EN,
       },
       meals: {
         chip: "food",
@@ -230,10 +233,10 @@ const layerCopy = {
         action: "Review day",
       },
       coach: {
-        chip: "coach",
+        chip: "assistant",
         title: "Ready to talk",
         body: "I can explain the plan, spot risks, and suggest the next step.",
-        action: "Open coach",
+        action: OPEN_ASSISTANT_EN,
       },
       progress: {
         chip: "progress",

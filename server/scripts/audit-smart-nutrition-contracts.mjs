@@ -209,6 +209,7 @@ const companionAvatarModelSource = readSource("src/features/assistant-3d/compone
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
+const globalAssistantLayerSource = readSource("src/widgets/GlobalAssistantLayer.tsx");
 const packageJsonSource = readSource("package.json");
 const productionCheckSource = readSource("server/production-check.mjs");
 const gitignoreSource = readSource(".gitignore");
@@ -1853,6 +1854,20 @@ addCheck(
       localizedAssistantCoachSources
     ),
   "Assistant runtime and nutrition analysis surfaces must speak native helper language in Ukrainian/Polish instead of coach/focus planning jargon."
+);
+
+addCheck(
+  "global assistant layer keeps visible assistant language",
+  globalAssistantLayerSource.includes("Головне на день") &&
+    globalAssistantLayerSource.includes("Відкрити помічника") &&
+    globalAssistantLayerSource.includes("Kierunek dnia") &&
+    globalAssistantLayerSource.includes("Otwórz asystenta") &&
+    globalAssistantLayerSource.includes("Today’s direction") &&
+    globalAssistantLayerSource.includes("Open assistant") &&
+    !/Відкрити коуча|коуч",|Fokus na dzień|Otwórz coacha|chip: "coach"|Daily focus|Open coach/.test(
+      globalAssistantLayerSource
+    ),
+  "The global assistant overlay is visible across the app and must speak as Smart Nutrition's assistant, not expose coach/focus planning labels."
 );
 
 addCheck(
