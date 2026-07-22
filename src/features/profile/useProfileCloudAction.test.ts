@@ -23,4 +23,14 @@ describe("useProfileCloudAction", () => {
       )
     ).toBe(copy.saveInProgress);
   });
+
+  it("keeps optional confirmation timestamps on the shared hook contract", async () => {
+    const source = await import("node:fs/promises").then(({ readFile }) =>
+      readFile("src/features/profile/useProfileCloudAction.ts", "utf8")
+    );
+
+    expect(source).toContain("confirmedAt?: string");
+    expect(source).toContain("saveProfileStateToCloud(dispatch, nextProfile, confirmedAt)");
+    expect(source).toContain("nextProfile,\n          confirmedAt");
+  });
 });

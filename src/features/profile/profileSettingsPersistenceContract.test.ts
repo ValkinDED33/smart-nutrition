@@ -204,6 +204,36 @@ describe("profile settings persistence contract", () => {
     expect(source).not.toContain("replaceProfileState(nextProfile)");
   });
 
+  it("keeps registration and verification profile bootstrap on the shared profile save contract", async () => {
+    const registerSource = await readSource("src/pages/RegisterPage.tsx");
+    const verifySource = await readSource("src/pages/VerifyEmailPage.tsx");
+
+    expect(registerSource).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(registerSource).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
+    expect(registerSource).not.toContain("saveProfileStateToCloud");
+    expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
+    expect(verifySource).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(verifySource).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(verifySource).toContain(
+      "profileActionRef.current.runProfileStateSave(sessionProfile)"
+    );
+    expect(verifySource).not.toContain("saveProfileStateToCloud");
+    expect(verifySource).not.toContain("replaceProfileState(sessionProfile)");
+  });
+
+  it("keeps onboarding finish on the shared user/profile cloud save contract", async () => {
+    const source = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+
+    expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
+    expect(source).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(source).toContain(
+      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
+    );
+    expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
+    expect(source).not.toContain(REPLACE_PROFILE_STATE);
+  });
+
   it("localizes quick weight companion reward sync warnings after confirmed profile save", async () => {
     const source = await readSource(
       "src/features/profile/QuickWeightCheckInCard.tsx"

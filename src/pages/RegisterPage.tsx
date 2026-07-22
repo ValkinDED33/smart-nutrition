@@ -25,10 +25,8 @@ import {
 import { buildSessionProfileState } from "@features/auth/authSessionProfile";
 import { createCompanionRewardAnalyticsPayload } from "../features/companion";
 import { applyCompanionRewardInCloud } from "../features/companion/companionCloudSync";
-import {
-  replaceProfileState,
-} from "../features/profile/profileSlice";
-import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
+import { getProfileCloudActionCopy } from "../features/profile/profileCloudActionCopy";
+import { useProfileCloudAction } from "../features/profile/useProfileCloudAction";
 import { normalizeCompanionState } from "../features/companion/model/store";
 import {
   AuthApiError,
@@ -327,6 +325,8 @@ const RegisterPage = () => {
   const { t, appLanguage, languageLabels, setLanguage, resetOnboarding } = useLanguage();
   const { mode: colorMode, setMode: setColorMode } = useAppColorMode();
   const stepCopy = getRegistrationCopy(appLanguage);
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const [registrationStep, setRegistrationStep] =
     useState<RegistrationStep>("language");
   const [serverError, setServerError] = useState<string | null>(null);
@@ -511,8 +511,7 @@ const RegisterPage = () => {
     });
 
     try {
-      await saveProfileStateToCloud(dispatch, sessionProfile);
-      dispatch(replaceProfileState(sessionProfile));
+      await profileAction.runProfileStateSave(sessionProfile);
     } catch {
       // Registration/session succeeded. The sync slice records the profile
       // language failure, and we avoid showing unsaved profile data locally.

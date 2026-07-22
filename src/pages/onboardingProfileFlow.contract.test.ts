@@ -28,6 +28,11 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("registrationProgress");
     expect(registerSource).toContain("This is not a calorie calculator");
     expect(registerSource).toContain("languagePreference: appLanguage");
+    expect(registerSource).toContain("useProfileCloudAction");
+    expect(registerSource).toContain("getProfileCloudActionCopy");
+    expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
+    expect(registerSource).not.toContain("saveProfileStateToCloud");
+    expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
   });
 
   it("routes confirmed users to an explicit onboarding choice before the questionnaire", async () => {
@@ -36,6 +41,13 @@ describe("onboarding and profile flow contract", () => {
     const choiceSource = await readSource("src/pages/onboarding/OnboardingChoicePage.tsx");
 
     expect(verifyEmailSource).toContain('"/onboarding/choice"');
+    expect(verifyEmailSource).toContain("useProfileCloudAction");
+    expect(verifyEmailSource).toContain("getProfileCloudActionCopy");
+    expect(verifyEmailSource).toContain(
+      "profileActionRef.current.runProfileStateSave(sessionProfile)"
+    );
+    expect(verifyEmailSource).not.toContain("saveProfileStateToCloud");
+    expect(verifyEmailSource).not.toContain("replaceProfileState(sessionProfile)");
     expect(onboardingSource).toContain('path="choice"');
     expect(onboardingSource).toContain("OnboardingChoicePage");
     expect(choiceSource).toContain("navigate(stepPaths.gender)");
@@ -80,6 +92,13 @@ describe("onboarding and profile flow contract", () => {
     expect(onboardingSource).toContain("partnerEyeColor");
     expect(onboardingSource).toContain("motherChineseZodiac");
     expect(finishSource).toContain("updatePersonalDetails");
+    expect(finishSource).toContain("useProfileCloudAction");
+    expect(finishSource).toContain("getProfileCloudActionCopy");
+    expect(finishSource).toContain(
+      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
+    );
+    expect(finishSource).not.toContain("saveProfileAndUserToCloud");
+    expect(finishSource).not.toContain("replaceProfileState(nextProfile)");
     expect(finishSource).toContain("eyeColor:");
     expect(finishSource).toContain("partnerEyeColor: state.partnerEyeColor");
     expect(finishSource).toContain("motherZodiac: state.motherZodiac");

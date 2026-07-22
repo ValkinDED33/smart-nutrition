@@ -1025,6 +1025,32 @@ addCheck(
 );
 
 addCheck(
+  "auth and onboarding profile bootstrap use shared cloud-confirmed action path",
+  registerPageSource.includes("useProfileCloudAction") &&
+    registerPageSource.includes("getProfileCloudActionCopy") &&
+    registerPageSource.includes(
+      "profileAction.runProfileStateSave(sessionProfile)"
+    ) &&
+    !registerPageSource.includes("saveProfileStateToCloud") &&
+    !registerPageSource.includes("replaceProfileState(sessionProfile)") &&
+    verifyEmailPageSource.includes("useProfileCloudAction") &&
+    verifyEmailPageSource.includes("getProfileCloudActionCopy") &&
+    verifyEmailPageSource.includes(
+      "profileActionRef.current.runProfileStateSave(sessionProfile)"
+    ) &&
+    !verifyEmailPageSource.includes("saveProfileStateToCloud") &&
+    !verifyEmailPageSource.includes("replaceProfileState(sessionProfile)") &&
+    onboardingFinishSource.includes("useProfileCloudAction") &&
+    onboardingFinishSource.includes("getProfileCloudActionCopy") &&
+    onboardingFinishSource.includes(
+      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
+    ) &&
+    !onboardingFinishSource.includes("saveProfileAndUserToCloud") &&
+    !onboardingFinishSource.includes("replaceProfileState(nextProfile)"),
+  "Registration, email verification, and onboarding completion must not own a second profile save/replace path; they must use the shared profile cloud-action hook."
+);
+
+addCheck(
   "barcode scanner shows the confirmed product result before secondary panels",
   barcodeScannerSource.includes('data-scanner-found-product="primary-result"') &&
     barcodeScannerSource.includes('data-scanner-result-alert="confirmed"') &&

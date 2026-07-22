@@ -12,8 +12,8 @@ import { buildSessionProfileState } from "@features/auth/authSessionProfile";
 import { createCompanionRewardAnalyticsPayload } from "../features/companion";
 import { applyCompanionRewardInCloud } from "../features/companion/companionCloudSync";
 import { normalizeCompanionState } from "../features/companion/model/store";
-import { replaceProfileState } from "../features/profile/profileSlice";
-import { saveProfileStateToCloud } from "../features/profile/profileCloudSync";
+import { getProfileCloudActionCopy } from "../features/profile/profileCloudActionCopy";
+import { useProfileCloudAction } from "../features/profile/useProfileCloudAction";
 import {
   AuthApiError,
   acceptRemotePartnerInvite,
@@ -42,6 +42,9 @@ const VerifyEmailPage = () => {
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const verifiedTokenRef = useRef<string | null>(null);
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
+  const profileActionRef = useRef(profileAction);
 
   useEffect(() => {
     clearSensitiveSearchParamsFromCurrentUrl(["token"]);
@@ -50,6 +53,10 @@ const VerifyEmailPage = () => {
   useEffect(() => {
     companionRef.current = companion;
   }, [companion]);
+
+  useEffect(() => {
+    profileActionRef.current = profileAction;
+  }, [profileAction]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,8 +103,7 @@ const VerifyEmailPage = () => {
         });
 
         try {
-          await saveProfileStateToCloud(dispatch, sessionProfile);
-          dispatch(replaceProfileState(sessionProfile));
+          await profileActionRef.current.runProfileStateSave(sessionProfile);
         } catch {
           // Email verification/session succeeded. The sync slice records the
           // profile language failure without showing unsaved profile data.

@@ -51,7 +51,7 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
   );
 
   const runProfileStateSave = useCallback(
-    async (nextProfile: ProfileState) => {
+    async (nextProfile: ProfileState, confirmedAt?: string) => {
       if (saving) {
         return null;
       }
@@ -60,7 +60,7 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
       setError(null);
 
       try {
-        await saveProfileStateToCloud(dispatch, nextProfile);
+        await saveProfileStateToCloud(dispatch, nextProfile, confirmedAt);
         dispatch(replaceProfileState(nextProfile));
         return nextProfile;
       } catch (caughtError) {
@@ -74,7 +74,7 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
   );
 
   const runProfileAndUserSave = useCallback(
-    async (nextUser: AuthUser, nextProfile: ProfileState) => {
+    async (nextUser: AuthUser, nextProfile: ProfileState, confirmedAt?: string) => {
       if (saving) {
         const inProgressError = new Error(PROFILE_SAVE_IN_PROGRESS_ERROR);
         setError(resolveProfileCloudActionErrorMessage(inProgressError, copy));
@@ -88,7 +88,8 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
         const savedUser = await saveProfileAndUserToCloud(
           dispatch,
           nextUser,
-          nextProfile
+          nextProfile,
+          confirmedAt
         );
         dispatch(setUser(savedUser));
         dispatch(replaceProfileState(nextProfile));

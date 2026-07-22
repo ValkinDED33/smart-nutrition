@@ -6,18 +6,17 @@ import type { AppDispatch, RootState } from "../../app/store";
 import {
   hydrateSyncOutbox,
   markSyncError,
-  setUser,
 } from "../../features/auth/authSlice";
 import profileReducer from "../../features/profile/profileSlice";
 import {
   applyProfileTargets,
-  replaceProfileState,
   setAssistantCustomization,
   setProfileLanguage,
   updatePersonalDetails,
   updateWomenHealth,
 } from "../../features/profile/profileSlice";
-import { saveProfileAndUserToCloud } from "../../features/profile/profileCloudSync";
+import { getProfileCloudActionCopy } from "../../features/profile/profileCloudActionCopy";
+import { useProfileCloudAction } from "../../features/profile/useProfileCloudAction";
 import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
@@ -44,6 +43,8 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
   const { appLanguage, completeOnboarding, t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
 
   const saveOnboarding = async (nextPath: "/dashboard" | "/profile") => {
     if (!user) {
@@ -201,15 +202,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
     );
 
     try {
-      const updatedUser = await saveProfileAndUserToCloud(
-        dispatch,
-        nextUser,
-        nextProfile,
-        completedAt
-      );
-
-      dispatch(setUser(updatedUser));
-      dispatch(replaceProfileState(nextProfile));
+      await profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt);
       clearPreAuthOnboardingDraft();
       completeOnboarding();
       let companionRewardPayload = {};
