@@ -96,6 +96,7 @@ const quickMealComposerModelSource = readSource(
 );
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
+const recipeSectionSource = readSource("src/features/meal/RecipeSection.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
 const mealDayOverviewSource = readSource("src/features/meal/MealDayOverview.tsx");
 const yesterdayRepeaterSource = readSource("src/features/meal/YesterdayRepeater.tsx");
@@ -1442,6 +1443,19 @@ addCheck(
     !mealEntryEditorSource.includes("Could not save meal. Please try again.") &&
     !mealEntryEditorSource.includes("Could not save meal to cloud."),
   "Meal entry edit/remove failures must render product-language recovery copy instead of raw backend/provider exception text."
+);
+
+addCheck(
+  "recipe builder visible actions are localized through recipe copy",
+  recipeSectionSource.includes("{copy.builderTitle}") &&
+    recipeSectionSource.includes("label={copy.recipeNameLabel}") &&
+    recipeSectionSource.includes("label={copy.ingredientSearchLabel}") &&
+    recipeSectionSource.includes("{copy.publishRecipe}") &&
+    !recipeSectionSource.includes(">Custom recipe builder<") &&
+    !recipeSectionSource.includes('label="Recipe name"') &&
+    !recipeSectionSource.includes('label="Search ingredient"') &&
+    !recipeSectionSource.includes(">Publish recipe<"),
+  "Recipe builder labels, helper text, custom descriptions, and publish actions must stay in the active language copy layer instead of leaking hard-coded English into localized food UI."
 );
 
 addCheck(

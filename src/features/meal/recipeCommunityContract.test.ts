@@ -24,9 +24,21 @@ describe("recipe community contract", () => {
 
     expect(source).toContain("addRecipeNow");
     expect(source).toContain("saveAsReusableRecipe");
+    expect(source).toContain("builderTitle");
+    expect(source).toContain("recipeNameLabel");
+    expect(source).toContain("ingredientSearchLabel");
+    expect(source).toContain("publishRecipe");
     expect(source).toContain("{copy.addRecipeNow}");
     expect(source).toContain("{copy.saveAsReusableRecipe}");
+    expect(source).toContain("{copy.builderTitle}");
+    expect(source).toContain("label={copy.recipeNameLabel}");
+    expect(source).toContain("label={copy.ingredientSearchLabel}");
+    expect(source).toContain("{copy.publishRecipe}");
     expect(source).not.toContain(">Add recipe now<");
     expect(source).not.toContain(">Save as reusable recipe<");
+    expect(source).not.toContain(">Custom recipe builder<");
+    expect(source).not.toContain('label="Recipe name"');
+    expect(source).not.toContain('label="Search ingredient"');
+    expect(source).not.toContain(">Publish recipe<");
   });
 });

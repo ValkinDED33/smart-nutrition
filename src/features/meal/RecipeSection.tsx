@@ -80,6 +80,20 @@ const recipeActionCopy = {
     confirmedApply: "Шаблон рецепта застосовано.",
     confirmedDelete: "Шаблон рецепта видалено.",
     confirmedPublish: "Рецепт опубліковано в спільноті.",
+    builderTitle: "Конструктор власного рецепта",
+    builderBody:
+      "Зберіть рецепт з інгредієнтів, перевірте розраховані нутрієнти, додайте його зараз або збережіть як шаблон.",
+    recipeNameLabel: "Назва рецепта",
+    ingredientSearchLabel: "Пошук інгредієнта",
+    ingredientSearching: "Шукаємо...",
+    ingredientSearchHint: "Введіть продукт, ресторанну позицію або домашню страву",
+    quantityLabel: "Кількість",
+    remove: "Видалити",
+    reuse: "Використати знову",
+    publishRecipe: "Опублікувати рецепт",
+    customRecipeDescription: "Власний рецепт, зібраний з ваших інгредієнтів.",
+    publishBody: (count: number, calories: string, kcalLabel: string) =>
+      `Рецепт із ${count} інгредієнтів та ${calories} ${kcalLabel}.`,
     addRecipeNow: "Додати рецепт зараз",
     saveAsReusableRecipe: "Зберегти як шаблон",
     failedAdd: "Не вдалося додати рецепт до щоденника.",
@@ -96,6 +110,20 @@ const recipeActionCopy = {
     confirmedApply: "Szablon przepisu został zastosowany.",
     confirmedDelete: "Szablon przepisu został usunięty.",
     confirmedPublish: "Przepis opublikowano w społeczności.",
+    builderTitle: "Kreator własnego przepisu",
+    builderBody:
+      "Zbuduj przepis ze składników, sprawdź wyliczone wartości, dodaj go teraz albo zapisz jako szablon.",
+    recipeNameLabel: "Nazwa przepisu",
+    ingredientSearchLabel: "Szukaj składnika",
+    ingredientSearching: "Szukamy...",
+    ingredientSearchHint: "Wpisz produkt, danie z restauracji albo domowy posiłek",
+    quantityLabel: "Ilość",
+    remove: "Usuń",
+    reuse: "Użyj ponownie",
+    publishRecipe: "Opublikuj przepis",
+    customRecipeDescription: "Własny przepis zbudowany z Twoich składników.",
+    publishBody: (count: number, calories: string, kcalLabel: string) =>
+      `Przepis z ${count} składników i ${calories} ${kcalLabel}.`,
     addRecipeNow: "Dodaj przepis teraz",
     saveAsReusableRecipe: "Zapisz jako szablon",
     failedAdd: "Nie udało się dodać przepisu do dziennika.",
@@ -112,6 +140,20 @@ const recipeActionCopy = {
     confirmedApply: "Recipe template applied.",
     confirmedDelete: "Recipe template removed.",
     confirmedPublish: "Recipe published to the community.",
+    builderTitle: "Custom recipe builder",
+    builderBody:
+      "Build a reusable recipe from ingredients, check the calculated nutrients, add it now, or save it for later.",
+    recipeNameLabel: "Recipe name",
+    ingredientSearchLabel: "Search ingredient",
+    ingredientSearching: "Searching...",
+    ingredientSearchHint: "Type a product, restaurant item, or home dish",
+    quantityLabel: "Quantity",
+    remove: "Remove",
+    reuse: "Reuse",
+    publishRecipe: "Publish recipe",
+    customRecipeDescription: "Custom recipe built from your own ingredients.",
+    publishBody: (count: number, calories: string, kcalLabel: string) =>
+      `Recipe with ${count} ingredients and ${calories} ${kcalLabel}.`,
     addRecipeNow: "Add recipe now",
     saveAsReusableRecipe: "Save as reusable recipe",
     failedAdd: "Could not add recipe to your diary.",
@@ -265,7 +307,7 @@ export const RecipeSection = ({ mealType }: Props) => {
             id: template.id,
             title: template.name.replace(CUSTOM_RECIPE_PREFIX, ""),
             mealType: template.mealType,
-            description: "Custom recipe built from your own ingredients.",
+            description: copy.customRecipeDescription,
             ingredients: template.items,
             steps: [],
             calories: nutrients.calories,
@@ -274,7 +316,7 @@ export const RecipeSection = ({ mealType }: Props) => {
             carbs: nutrients.carbs,
           };
         }),
-    [mealType, preferences, templates]
+    [copy.customRecipeDescription, mealType, preferences, templates]
   );
   const validBuilderItems = useMemo<MealTemplateItem[]>(
     () =>
@@ -445,9 +487,11 @@ export const RecipeSection = ({ mealType }: Props) => {
       title: recipe.title,
       body:
         recipe.description ||
-        `Recipe with ${recipe.ingredients.length} ingredients and ${recipe.calories.toFixed(
-          0
-        )} ${t(COMMON_KCAL_KEY)}.`,
+        copy.publishBody(
+          recipe.ingredients.length,
+          recipe.calories.toFixed(0),
+          t(COMMON_KCAL_KEY)
+        ),
       authorId: user.id,
       authorName: user.name,
       ingredients: recipe.ingredients.map((ingredient) =>
@@ -494,28 +538,27 @@ export const RecipeSection = ({ mealType }: Props) => {
         }}
       >
         <Stack spacing={1.5}>
-          <Typography sx={{ fontWeight: 800 }}>Custom recipe builder</Typography>
+          <Typography sx={{ fontWeight: 800 }}>{copy.builderTitle}</Typography>
           <Typography color={RECIPE_TEXT_SECONDARY}>
-            Build a reusable recipe from ingredients, check the calculated macros, add it now,
-            and save it for later as your own recipe.
+            {copy.builderBody}
           </Typography>
 
           <TextField
             fullWidth
-            label="Recipe name"
+            label={copy.recipeNameLabel}
             value={recipeName}
             onChange={(event) => setRecipeName(event.target.value)}
           />
 
           <TextField
             fullWidth
-            label="Search ingredient"
+            label={copy.ingredientSearchLabel}
             value={ingredientQuery}
             onChange={(event) => setIngredientQuery(event.target.value)}
             helperText={
               searchPending
-                ? "Searching..."
-                : "Type a product, restaurant item, or home dish"
+                ? copy.ingredientSearching
+                : copy.ingredientSearchHint
             }
           />
 
@@ -546,7 +589,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                     </Typography>
                     <TextField
                       type="text"
-                      label="Qty"
+                      label={copy.quantityLabel}
                       value={item.quantity}
                       slotProps={{
                         htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
@@ -578,7 +621,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                         );
                       }}
                     >
-                      Remove
+                      {copy.remove}
                     </Button>
                   </Stack>
                 </Paper>
@@ -682,20 +725,20 @@ export const RecipeSection = ({ mealType }: Props) => {
                     onClick={() => void handleReuseTemplateRecipe(recipe.id)}
                     disabled={isSavingAction(`recipe-template-apply-${recipe.id}`)}
                   >
-                    Reuse
+                    {copy.reuse}
                   </Button>
                   <Button
                     onClick={() => void handlePublishRecipe(recipe)}
                     disabled={!user || isSavingAction(`recipe-publish-${recipe.id}`)}
                   >
-                    Publish recipe
+                    {copy.publishRecipe}
                   </Button>
                   <Button
                     color="error"
                     onClick={() => void handleDeleteTemplateRecipe(recipe.id)}
                     disabled={isSavingAction(`recipe-template-delete-${recipe.id}`)}
                   >
-                    Remove
+                    {copy.remove}
                   </Button>
                 </Stack>
               )}

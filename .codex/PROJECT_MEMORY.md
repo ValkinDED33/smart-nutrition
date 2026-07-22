@@ -157,6 +157,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Connected registration language selection to backend initial profile and community snapshot creation, with language-aware starter community content and Ukrainian frontend fallback copy instead of mixed English/Russian seed text.
 - Made assistant naming user-owned in onboarding: users may continue without naming the companion, cloud state stays empty until they choose a name, and visible UI/notifications use localized display fallbacks while hiding legacy accidental names.
 - Hardened meal entry editing and recipe-builder actions so visible save failures and action buttons come from localized product copy instead of hardcoded English strings inside food hooks or builder controls.
+- Completed the recipe-builder localization contract: builder headings, field labels, helper text, custom-recipe descriptions, reuse/remove/publish actions, and community publish fallback copy now come from the active language layer.
 
 ## Current Architecture
 
@@ -244,6 +245,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Food logging must keep `FoodCommandCenter` as the primary entry surface for search, barcode, photo, saved products, builder, and catalog contribution; new food inputs such as voice or correction must extend that command surface instead of adding another warehouse.
 - Food action failure feedback must stay product-language and retryable; raw backend/provider exception text belongs in diagnostics, not meal, scanner, photo, template, or saved-product notices.
 - Food action controls and visible failure text must be owned by the active language copy layer; hooks and shared food logic must not invent hardcoded English UI text.
+- Recipe-builder UI and community publish fallback copy must remain localized through recipe copy; custom template recipes must not leak English-only builder labels or descriptions into UA/PL food screens.
 - Quick meal composer save feedback must not render raw backend/provider exception text; it may keep retry state and product-language recovery copy only.
 - Shared meal action feedback must not store or render raw exception text; add/edit/delete/repeat/template/product failures use product-language retry copy only.
 - Shared catalog contribution and scanner catalog-moderation failure feedback must not render raw backend/provider exception text; user-facing copy may confirm meal/profile state and offer retry only.
