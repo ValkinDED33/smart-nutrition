@@ -441,6 +441,54 @@ describe("authService", () => {
     );
   });
 
+  it("uses the selected registration language for the initial profile and community seed", async () => {
+    const { stateRepository, emailService, service } = createAuthServiceFixture({
+      configOverrides: {
+        registrationVerificationTokenTtlMs: 900000,
+      },
+    });
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: true,
+      messageId: "email-pl",
+    });
+
+    await service.register({
+      name: "Polish User",
+      email: "polish-user@example.com",
+      password: "StrongPass123!",
+      age: 31,
+      weight: 72,
+      height: 178,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "pl",
+    });
+
+    expect(stateRepository.upsertSnapshot).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        profile: expect.objectContaining({
+          languagePreference: "pl",
+        }),
+        community: expect.objectContaining({
+          posts: expect.arrayContaining([
+            expect.objectContaining({
+              title: "Białkowe śniadanie w słoiku",
+              body: expect.stringContaining("Jogurt grecki"),
+            }),
+          ]),
+          progressCards: expect.arrayContaining([
+            expect.objectContaining({
+              metricLabel: "Rytm wody",
+              metricValue: "7 dni",
+            }),
+          ]),
+        }),
+      })
+    );
+  });
+
   it("rejects registration for an already verified email", async () => {
     const { authRepository, emailService, service } = createAuthServiceFixture({
       configOverrides: {

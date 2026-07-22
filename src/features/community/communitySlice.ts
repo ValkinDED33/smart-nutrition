@@ -28,7 +28,7 @@ const createId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const DEFAULT_COMMUNITY_AUTHOR_NAME = "Smart User";
-const DEFAULT_COMMUNITY_COACH_NAME = "Coach Denis";
+const DEFAULT_COMMUNITY_COACH_NAME = "Коуч Smart Nutrition";
 const ANNA_FRIEND_ID = "friend-anna";
 const createCommunityTimestamp = () => new Date().toISOString();
 
@@ -259,14 +259,14 @@ const initialState: CommunityState = {
       id: "message-1",
       friendId: ANNA_FRIEND_ID,
       author: "friend",
-      text: "Собрала белковый завтрак на завтра. Хочешь рецепт?",
+      text: "Зібрала білковий сніданок на завтра. Хочеш рецепт?",
       createdAt: "2026-04-25T18:31:00.000Z",
     },
     {
       id: "message-2",
       friendId: ANNA_FRIEND_ID,
       author: "self",
-      text: "Да, пришли, пожалуйста.",
+      text: "Так, надішли, будь ласка.",
       createdAt: "2026-04-25T18:34:00.000Z",
     },
   ],
@@ -274,13 +274,13 @@ const initialState: CommunityState = {
     {
       id: "room-message-1",
       authorName: "Marta",
-      text: "Сегодня делаю лёгкий ужин и держу воду по 250 мл чекпоинтами.",
+      text: "Сьогодні роблю легку вечерю і тримаю воду по 250 мл чекпоінтами.",
       createdAt: "2026-04-25T17:20:00.000Z",
     },
     {
       id: "room-message-2",
       authorName: DEFAULT_COMMUNITY_COACH_NAME,
-      text: "Если вес стоит, сначала смотрим среднюю неделю, воду и точность логирования.",
+      text: "Якщо вага стоїть, спершу дивимося середній тиждень, воду і точність записів.",
       createdAt: "2026-04-25T17:28:00.000Z",
     },
   ],
@@ -288,9 +288,9 @@ const initialState: CommunityState = {
     {
       id: "post-1",
       type: "recipe",
-      title: "High-protein breakfast jar",
-      body: "Greek yogurt, oats, banana, and chia. Simple prep for busy mornings.",
-      ingredients: ["Greek yogurt", "oats", "banana", "chia"],
+      title: "Білковий сніданок у банці",
+      body: "Грецький йогурт, вівсянка, банан і чіа. Зручно підготувати ввечері.",
+      ingredients: ["грецький йогурт", "вівсянка", "банан", "чіа"],
       authorName: "Anna",
       status: "approved",
       moderationReason: null,
@@ -303,8 +303,8 @@ const initialState: CommunityState = {
     {
       id: "post-2",
       type: "experience",
-      title: "How I broke a hydration slump",
-      body: "I switched to 250 ml checkpoints and water finally became easier to track.",
+      title: "Як я повернула ритм води",
+      body: "Перейшла на чекпоінти по 250 мл, і воду стало набагато легше відстежувати.",
       ingredients: [],
       authorName: "Marta",
       status: "approved",
@@ -318,8 +318,8 @@ const initialState: CommunityState = {
     {
       id: "post-3",
       type: "advice",
-      title: "Plateau week checklist",
-      body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
+      title: "Чеклист тижня без прогресу",
+      body: "Перед новим зниженням калорій перевірте точність записів, воду, сон і середню активність.",
       ingredients: [],
       authorName: DEFAULT_COMMUNITY_COACH_NAME,
       status: "approved",
@@ -336,7 +336,7 @@ const initialState: CommunityState = {
       id: "comment-1",
       postId: "post-1",
       authorName: "Oleh",
-      text: "Добавил ягоды вместо банана, тоже отлично зашло.",
+      text: "Додав ягоди замість банана, теж чудово вийшло.",
       createdAt: "2026-04-25T09:05:00.000Z",
     },
   ],
@@ -345,18 +345,18 @@ const initialState: CommunityState = {
     {
       id: "progress-1",
       authorName: "Anna",
-      metricLabel: "Weight",
-      metricValue: "-2.4 kg",
-      caption: "Три недели без жёстких запретов, просто стабильный белок и вода.",
+      metricLabel: "Вага",
+      metricValue: "-2.4 кг",
+      caption: "Три тижні без жорстких заборон, просто стабільний білок і вода.",
       createdAt: "2026-04-25T12:00:00.000Z",
       likes: 16,
     },
     {
       id: "progress-2",
       authorName: "Marta",
-      metricLabel: "Water streak",
-      metricValue: "7 days",
-      caption: "250 мл стаканы наконец сделали привычку понятной.",
+      metricLabel: "Ритм води",
+      metricValue: "7 днів",
+      caption: "Склянки по 250 мл нарешті зробили звичку зрозумілою.",
       createdAt: "2026-04-24T18:40:00.000Z",
       likes: 11,
     },

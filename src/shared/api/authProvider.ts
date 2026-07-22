@@ -4,6 +4,7 @@ import type {
   User,
 } from "@domain/user/types";
 import type { AppSnapshot } from "../types/appSnapshot";
+import type { AppLanguage } from "../types/i18n";
 
 export type { RegistrationVerificationPending } from "@domain/user/types";
 
@@ -17,6 +18,7 @@ export interface RegisterPayload {
   gender: "male" | "female";
   activity: "sedentary" | "light" | "moderate" | "active" | "very_active";
   goal: "cut" | "maintain" | "bulk";
+  languagePreference?: AppLanguage;
 }
 
 export interface AuthRuntimeInfo {

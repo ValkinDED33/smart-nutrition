@@ -47,6 +47,8 @@ const communityCloudSyncSource = readSource(
 );
 const stateControllerSource = readSource("server/controllers/state.controller.mjs");
 const stateServiceSource = readSource("server/services/stateService.mjs");
+const authServiceSource = readSource("server/services/authService.mjs");
+const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
 const telegramMedicationRemindersSource = readSource(
@@ -60,6 +62,7 @@ const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const onboardingFinishSource = readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
 const homePageSource = readSource("src/pages/HomePage.tsx");
+const communitySliceSource = readSource("src/features/community/communitySlice.ts");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
@@ -883,13 +886,31 @@ addCheck(
     (step) => registerPageSource.includes(step)
   ) &&
     registerPageSource.includes("checkRegistrationAvailability") &&
+    registerPageSource.includes("languagePreference: appLanguage") &&
     registerPageSource.includes("availabilityBlocksNext") &&
     registerPageSource.includes("availabilityBlocksSubmit") &&
     registerPageSource.includes("disabled={availabilityBlocksNext}") &&
     registerPageSource.includes("disabled={submitting || availabilityBlocksSubmit}") &&
     registerPageSource.includes('setRegistrationStep("name")') &&
     registerPageSource.includes('setRegistrationStep("email")'),
-  "Registration must stay a guided language/theme/account flow and block taken, unchecked, stale, or unavailable name/email values before account creation."
+  "Registration must stay a guided language/theme/account flow, pass the selected app language into backend profile creation, and block taken, unchecked, stale, or unavailable name/email values before account creation."
+);
+
+addCheck(
+  "new-user community seed follows the selected profile language",
+  authServiceSource.includes("languagePreference: readEnumValue") &&
+    authServiceSource.includes("createInitialCommunityState(user.languagePreference)") &&
+    domainSource.includes("const communitySeeds") &&
+    domainSource.includes("createInitialCommunityState = (languagePreference = \"uk\")") &&
+    domainSource.includes("communitySeeds[normalizeAppLanguage(languagePreference)]") &&
+    domainSource.includes("Białkowe śniadanie w słoiku") &&
+    domainSource.includes("Білковий сніданок у банці") &&
+    communitySliceSource.includes("Білковий сніданок у банці") &&
+    communitySliceSource.includes("Коуч Smart Nutrition") &&
+    !/High-protein breakfast jar|How I broke a hydration slump|Собрала белковый|Сегодня делаю|Если вес стоит|стаканы наконец/.test(
+      communitySliceSource
+    ),
+  "The first community experience must use the selected profile language from registration; frontend fallback defaults must not show mixed English/Russian seed content before cloud restore."
 );
 
 addCheck(

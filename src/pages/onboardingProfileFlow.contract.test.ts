@@ -27,6 +27,7 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("portalTitle");
     expect(registerSource).toContain("registrationProgress");
     expect(registerSource).toContain("This is not a calorie calculator");
+    expect(registerSource).toContain("languagePreference: appLanguage");
   });
 
   it("routes confirmed users to an explicit onboarding choice before the questionnaire", async () => {

@@ -56,6 +56,11 @@ const nutrientKeys = [
   "copper",
 ];
 
+const appLanguages = new Set(["uk", "pl", "en"]);
+
+const normalizeAppLanguage = (value, fallback = "uk") =>
+  appLanguages.has(value) ? value : fallback;
+
 export class AuthApiError extends Error {
   constructor(code, message) {
     super(message);
@@ -405,7 +410,7 @@ export const createInitialProfileState = (userInput) => {
       dinner: "19:00",
       snack: "16:30",
     },
-    languagePreference: "uk",
+    languagePreference: normalizeAppLanguage(userInput.languagePreference),
     motivation: {
       points: 0,
       level: 1,
@@ -551,7 +556,112 @@ export const createInitialFridgeState = () => ({
   items: [],
 });
 
-export const createInitialCommunityState = () => ({
+const communitySeeds = {
+  uk: {
+    messages: [
+      "Зібрала білковий сніданок на завтра. Хочеш рецепт?",
+      "Так, надішли, будь ласка.",
+    ],
+    roomMessages: [
+      "Сьогодні роблю легку вечерю і тримаю воду по 250 мл чекпоінтами.",
+      "Якщо вага стоїть, спершу дивимося середній тиждень, воду і точність записів.",
+    ],
+    posts: [
+      {
+        title: "Білковий сніданок у банці",
+        body: "Грецький йогурт, вівсянка, банан і чіа. Зручно підготувати ввечері.",
+        ingredients: ["грецький йогурт", "вівсянка", "банан", "чіа"],
+      },
+      {
+        title: "Як я повернула ритм води",
+        body: "Перейшла на чекпоінти по 250 мл, і воду стало набагато легше відстежувати.",
+        ingredients: [],
+      },
+      {
+        title: "Чеклист тижня без прогресу",
+        body: "Перед новим зниженням калорій перевірте точність записів, воду, сон і середню активність.",
+        ingredients: [],
+      },
+    ],
+    comment: "Додав ягоди замість банана, теж чудово вийшло.",
+    progress: [
+      { label: "Вага", value: "-2.4 кг" },
+      { label: "Ритм води", value: "7 днів" },
+    ],
+    coach: "Коуч Smart Nutrition",
+  },
+  pl: {
+    messages: [
+      "Przygotowałam białkowe śniadanie na jutro. Chcesz przepis?",
+      "Tak, podeślij proszę.",
+    ],
+    roomMessages: [
+      "Dzisiaj robię lekką kolację i pilnuję wody punktami po 250 ml.",
+      "Jeśli waga stoi, najpierw sprawdzamy średni tydzień, wodę i dokładność zapisów.",
+    ],
+    posts: [
+      {
+        title: "Białkowe śniadanie w słoiku",
+        body: "Jogurt grecki, płatki owsiane, banan i chia. Wygodne do przygotowania wieczorem.",
+        ingredients: ["jogurt grecki", "płatki owsiane", "banan", "chia"],
+      },
+      {
+        title: "Jak wróciłam do rytmu picia wody",
+        body: "Przeszłam na punkty po 250 ml i woda stała się dużo łatwiejsza do śledzenia.",
+        ingredients: [],
+      },
+      {
+        title: "Checklista tygodnia bez postępu",
+        body: "Zanim znów obetniesz kalorie, sprawdź dokładność wpisów, wodę, sen i średnią aktywność.",
+        ingredients: [],
+      },
+    ],
+    comment: "Dodałem jagody zamiast banana, też wyszło świetnie.",
+    progress: [
+      { label: "Waga", value: "-2.4 kg" },
+      { label: "Rytm wody", value: "7 dni" },
+    ],
+    coach: "Coach Smart Nutrition",
+  },
+  en: {
+    messages: [
+      "I prepared a high-protein breakfast for tomorrow. Want the recipe?",
+      "Yes, please send it.",
+    ],
+    roomMessages: [
+      "Today I am making a light dinner and tracking water in 250 ml checkpoints.",
+      "If weight stalls, check the weekly average, water, and logging accuracy first.",
+    ],
+    posts: [
+      {
+        title: "High-protein breakfast jar",
+        body: "Greek yogurt, oats, banana, and chia. Simple prep for busy mornings.",
+        ingredients: ["Greek yogurt", "oats", "banana", "chia"],
+      },
+      {
+        title: "How I rebuilt my water rhythm",
+        body: "I switched to 250 ml checkpoints and water finally became easier to track.",
+        ingredients: [],
+      },
+      {
+        title: "Plateau week checklist",
+        body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
+        ingredients: [],
+      },
+    ],
+    comment: "I added berries instead of banana, and it worked really well too.",
+    progress: [
+      { label: "Weight", value: "-2.4 kg" },
+      { label: "Water rhythm", value: "7 days" },
+    ],
+    coach: "Smart Nutrition Coach",
+  },
+};
+
+export const createInitialCommunityState = (languagePreference = "uk") => {
+  const seed = communitySeeds[normalizeAppLanguage(languagePreference)];
+
+  return {
   friends: [
     {
       id: "friend-anna",
@@ -573,14 +683,14 @@ export const createInitialCommunityState = () => ({
       id: "message-1",
       friendId: "friend-anna",
       author: "friend",
-      text: "Собрала белковый завтрак на завтра. Хочешь рецепт?",
+      text: seed.messages[0],
       createdAt: "2026-04-25T18:31:00.000Z",
     },
     {
       id: "message-2",
       friendId: "friend-anna",
       author: "self",
-      text: "Да, пришли, пожалуйста.",
+      text: seed.messages[1],
       createdAt: "2026-04-25T18:34:00.000Z",
     },
   ],
@@ -588,13 +698,13 @@ export const createInitialCommunityState = () => ({
     {
       id: "room-message-1",
       authorName: "Marta",
-      text: "Сегодня делаю лёгкий ужин и держу воду по 250 мл чекпоинтами.",
+      text: seed.roomMessages[0],
       createdAt: "2026-04-25T17:20:00.000Z",
     },
     {
       id: "room-message-2",
-      authorName: "Coach Denis",
-      text: "Если вес стоит, сначала смотрим среднюю неделю, воду и точность логирования.",
+      authorName: seed.coach,
+      text: seed.roomMessages[1],
       createdAt: "2026-04-25T17:28:00.000Z",
     },
   ],
@@ -602,14 +712,14 @@ export const createInitialCommunityState = () => ({
     {
       id: "post-1",
       type: "recipe",
-      title: "High-protein breakfast jar",
-      body: "Greek yogurt, oats, banana, and chia. Simple prep for busy mornings.",
-      ingredients: ["Greek yogurt", "oats", "banana", "chia"],
+      title: seed.posts[0].title,
+      body: seed.posts[0].body,
+      ingredients: seed.posts[0].ingredients,
       authorName: "Anna",
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-25T08:12:00.000Z",
-      reviewedBy: "Coach Denis",
+      reviewedBy: seed.coach,
       publishedAt: "2026-04-25T08:12:00.000Z",
       createdAt: "2026-04-25T08:10:00.000Z",
       likes: 14,
@@ -617,14 +727,14 @@ export const createInitialCommunityState = () => ({
     {
       id: "post-2",
       type: "experience",
-      title: "How I broke a hydration slump",
-      body: "I switched to 250 ml checkpoints and water finally became easier to track.",
-      ingredients: [],
+      title: seed.posts[1].title,
+      body: seed.posts[1].body,
+      ingredients: seed.posts[1].ingredients,
       authorName: "Marta",
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-24T11:48:00.000Z",
-      reviewedBy: "Coach Denis",
+      reviewedBy: seed.coach,
       publishedAt: "2026-04-24T11:48:00.000Z",
       createdAt: "2026-04-24T11:45:00.000Z",
       likes: 9,
@@ -632,10 +742,10 @@ export const createInitialCommunityState = () => ({
     {
       id: "post-3",
       type: "advice",
-      title: "Plateau week checklist",
-      body: "Before cutting calories again, verify logging accuracy, water, sleep, and average steps.",
-      ingredients: [],
-      authorName: "Coach Denis",
+      title: seed.posts[2].title,
+      body: seed.posts[2].body,
+      ingredients: seed.posts[2].ingredients,
+      authorName: seed.coach,
       status: "approved",
       moderationReason: null,
       reviewedAt: "2026-04-23T09:03:00.000Z",
@@ -650,7 +760,7 @@ export const createInitialCommunityState = () => ({
       id: "comment-1",
       postId: "post-1",
       authorName: "Oleh",
-      text: "Добавил ягоды вместо банана, тоже отлично зашло.",
+      text: seed.comment,
       createdAt: "2026-04-25T09:05:00.000Z",
     },
   ],
@@ -658,25 +768,36 @@ export const createInitialCommunityState = () => ({
     {
       id: "progress-1",
       authorName: "Anna",
-      metricLabel: "Weight",
-      metricValue: "-2.4 kg",
-      caption: "Три недели без жёстких запретов, просто стабильный белок и вода.",
+      metricLabel: seed.progress[0].label,
+      metricValue: seed.progress[0].value,
+      caption:
+        languagePreference === "pl"
+          ? "Trzy tygodnie bez ostrych zakazów, tylko stabilne białko i woda."
+          : languagePreference === "en"
+            ? "Three weeks without strict bans, just steady protein and water."
+            : "Три тижні без жорстких заборон, просто стабільний білок і вода.",
       createdAt: "2026-04-25T12:00:00.000Z",
       likes: 16,
     },
     {
       id: "progress-2",
       authorName: "Marta",
-      metricLabel: "Water streak",
-      metricValue: "7 days",
-      caption: "250 мл стаканы наконец сделали привычку понятной.",
+      metricLabel: seed.progress[1].label,
+      metricValue: seed.progress[1].value,
+      caption:
+        languagePreference === "pl"
+          ? "Szklanki po 250 ml wreszcie zrobiły z tej czynności jasny nawyk."
+          : languagePreference === "en"
+            ? "250 ml glasses finally made the habit easy to understand."
+            : "Склянки по 250 мл нарешті зробили звичку зрозумілою.",
       createdAt: "2026-04-24T18:40:00.000Z",
       likes: 11,
     },
   ],
   favoritePostIds: ["post-1"],
   score: 180,
-});
+  };
+};
 
 const createInitialCompanionState = () => {
   const now = new Date().toISOString();

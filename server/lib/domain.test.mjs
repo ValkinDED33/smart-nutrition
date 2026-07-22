@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInitialProfileState } from "./domain.mjs";
+import { createInitialCommunityState, createInitialProfileState } from "./domain.mjs";
 
 describe("domain profile defaults", () => {
   it("does not assign an assistant name before the user chooses one", () => {
@@ -34,5 +34,33 @@ describe("domain profile defaults", () => {
         motivationStyles: ["gentle"],
       },
     });
+  });
+});
+
+describe("domain community defaults", () => {
+  it("uses the selected profile language for initial community seed content", () => {
+    const polishCommunity = createInitialCommunityState("pl");
+
+    expect(polishCommunity.posts[0]).toMatchObject({
+      title: "Białkowe śniadanie w słoiku",
+      ingredients: ["jogurt grecki", "płatki owsiane", "banan", "chia"],
+    });
+    expect(polishCommunity.messages[0]?.text).toContain("Przygotowałam");
+    expect(polishCommunity.roomMessages[1]?.authorName).toBe("Coach Smart Nutrition");
+    expect(polishCommunity.progressCards[1]).toMatchObject({
+      metricLabel: "Rytm wody",
+      metricValue: "7 dni",
+    });
+  });
+
+  it("keeps Ukrainian startup community copy coherent by default", () => {
+    const community = createInitialCommunityState();
+    const visibleText = JSON.stringify(community);
+
+    expect(community.posts[0]?.title).toBe("Білковий сніданок у банці");
+    expect(community.progressCards[0]?.metricLabel).toBe("Вага");
+    expect(visibleText).not.toMatch(
+      /High-protein breakfast jar|How I broke|Plateau week|Собрала|Сегодня|Если вес|стаканы/
+    );
   });
 });

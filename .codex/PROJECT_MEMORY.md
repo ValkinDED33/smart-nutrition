@@ -154,6 +154,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Updated the locked DOMPurify runtime dependency to the patched release after `npm audit` reported a low-severity sanitizer advisory.
 - Hardened backend route error envelopes so Auth, Platform, Assistant, State, and product-provider failures preserve public codes/status while returning safe product-language messages instead of raw backend/provider exception text.
 - Polished regular community UI copy so report sync warnings, hub titles, and core action labels are localized product-language text instead of leaking implementation terms such as local community status or English controls into UA/PL screens.
+- Connected registration language selection to backend initial profile and community snapshot creation, with language-aware starter community content and Ukrainian frontend fallback copy instead of mixed English/Russian seed text.
 
 ## Current Architecture
 
@@ -182,6 +183,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram AI: Telegram is an AI companion surface for the same Smart Nutrition assistant runtime as the website; commands/reminders are tools and shortcuts, not a separate bot product or second AI brain.
 - Partner sharing: QR invites connect profiles through backend one-time invite contracts and may expose pregnancy timeline context only; visible copy should say secure cloud sync/family access, not backend jargon, and must not imply full account synchronization.
 - Localization: visible user-facing copy must feel native in the selected language; do not ship broken transliteration on core account, sync, scanner, product, reminder, or Telegram surfaces.
+- New-user community seed content must follow the selected profile language where backend registration knows it; frontend pre-restore fallback defaults to coherent Ukrainian copy and must not mix English/Russian demo posts into ordinary startup UI.
 - Secondary sync warnings after backend-confirmed actions must use profile-language copy and must not weaken the primary cloud-confirmed save contract.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
@@ -221,6 +223,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Auth cookies: production frontend/backend split deployments must use `SameSite=None; Secure=true` for restore and authenticated API calls.
 - Auth session responses must place access/refresh tokens only into HTTP-only cookies and return user/snapshot data in the JSON body without raw tokens.
 - Guided registration must show inline backend-confirmed availability for nickname and email and must not submit account creation unless both fields are confirmed available.
+- Guided registration language selection must be canonical input, not decoration: `languagePreference` must reach backend registration, initial profile state, Telegram/profile language context, and the starter community snapshot.
 - Configured owner promotion belongs to the explicit awaited access-control bootstrap path, not to fire-and-forget service construction side effects.
 - Email verification and reset password tokens may be consumed from URL links only long enough to capture them into runtime state; the browser address bar/history entry must be cleaned before user interaction continues.
 - Vercel-served frontend routes must keep `Referrer-Policy: strict-origin-when-cross-origin` so auth link query data is not sent cross-origin.

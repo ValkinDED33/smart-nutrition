@@ -690,6 +690,7 @@ const RegisterPage = () => {
         email: data.email,
         password: data.password,
         ...defaultProfileBootstrap,
+        languagePreference: appLanguage,
       });
 
       if (isVerificationPending(response)) {

@@ -45,6 +45,7 @@ export const createAuthService = ({
   ]);
   const validGoals = new Set(["cut", "maintain", "bulk"]);
   const validGenders = new Set(["male", "female"]);
+  const validLanguages = new Set(["uk", "pl", "en"]);
 
   const hasOwn = (value, key) =>
     Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
@@ -191,6 +192,14 @@ export const createAuthService = ({
       validGoals,
       "maintain",
       "Goal"
+    ),
+    languagePreference: readEnumValue(
+      hasOwn(body, "languagePreference")
+        ? body.languagePreference
+        : fallback.languagePreference,
+      validLanguages,
+      "uk",
+      "Language"
     ),
     measurements: readMeasurements(
       hasOwn(body, "measurements") ? body.measurements : fallback.measurements
@@ -572,7 +581,7 @@ export const createAuthService = ({
         meal: createInitialMealState(),
         water: createInitialWaterState(),
         fridge: createInitialFridgeState(),
-        community: createInitialCommunityState(),
+        community: createInitialCommunityState(user.languagePreference),
         updatedAt: new Date().toISOString(),
       });
 
