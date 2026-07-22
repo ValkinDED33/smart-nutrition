@@ -153,6 +153,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened shared auth cloud-sync state so backend/provider failure messages are sanitized before reaching `syncError` or the visible cloud status UI.
 - Updated the locked DOMPurify runtime dependency to the patched release after `npm audit` reported a low-severity sanitizer advisory.
 - Hardened backend route error envelopes so Auth, Platform, Assistant, State, and product-provider failures preserve public codes/status while returning safe product-language messages instead of raw backend/provider exception text.
+- Polished regular community UI copy so report sync warnings, hub titles, and core action labels are localized product-language text instead of leaking implementation terms such as local community status or English controls into UA/PL screens.
 
 ## Current Architecture
 
@@ -186,6 +187,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
 - My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
+- Regular community UX must use localized product-language copy for moderation/report sync states and core actions; local state, raw community status, backend/API, and English-only controls belong in code/tests/admin diagnostics, not ordinary UA/PL screens.
 - Regular recovery/offline/subscription status copy must describe the cloud service and protected sync in product language; API/server/backend terminology belongs in code and admin diagnostics, not ordinary user-facing copy.
 - Regular sync error UI must never render raw backend/provider exception text; unknown sync failures must become localized product-language retry guidance while detailed diagnostics stay in code, logs, or admin/support tooling.
 - Shared auth cloud-sync state must sanitize retry, pull, outbox, and manual sync failure messages before storing them in `syncError`; visible sync UI must never depend on raw backend/provider failure text.

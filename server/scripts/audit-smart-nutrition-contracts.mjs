@@ -919,10 +919,19 @@ addCheck(
     !forgotPasswordPageSource.includes(": error.message") &&
     communityHubCardSource.includes("saveFailed") &&
     communityHubCardSource.includes("message: copy.saveFailed") &&
+    communityHubCardSource.includes("Спільнота Smart Nutrition") &&
+    communityHubCardSource.includes("Społeczność Smart Nutrition") &&
+    communityHubCardSource.includes("Оновлення стрічки") &&
+    communityHubCardSource.includes("synchronizacji w chmurze") &&
+    communityHubCardSource.includes('like: "Підтримати"') &&
+    communityHubCardSource.includes('like: "Wesprzyj"') &&
+    !/локальний статус community|lokalny status community|local community status/.test(
+      communityHubCardSource
+    ) &&
     !communityHubCardSource.includes("getCommunityErrorMessage") &&
     !communityHubCardSource.includes("error instanceof Error && error.message") &&
     !communityHubCardSource.includes("Could not save community changes. Please try again."),
-  "Auth recovery and community action failures must render localized product-language retry copy instead of raw backend/API exception text."
+  "Auth recovery and community action failures must render localized product-language retry copy instead of raw backend/API exception text; regular community controls must not leak English or implementation-status wording into localized UI."
 );
 
 addCheck(

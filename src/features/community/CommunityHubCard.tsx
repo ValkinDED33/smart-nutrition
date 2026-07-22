@@ -53,7 +53,7 @@ const COMMUNITY_ALIGN_START_BUTTON_SX = {
 
 const communityCopy = {
   uk: {
-    title: COMMUNITY_HUB_TITLE,
+    title: "Спільнота Smart Nutrition",
     subtitle:
       "Друзі, приватні повідомлення, рецепт-форум і особисті бали в одному місці.",
     personalFocus: (friction: string, motivation: string) =>
@@ -102,7 +102,7 @@ const communityCopy = {
     report: "Поскаржитися",
     reportSent: "Скаргу відправлено на модерацію",
     reportSyncWarning:
-      "Скаргу відправлено на модерацію, але локальний статус community не синхронізувався.",
+      "Скаргу відправлено на модерацію. Оновлення стрічки може з'явитися після наступної хмарної синхронізації.",
     approve: "Схвалити",
     reject: "Відхилити",
     deleteSpam: "Видалити спам",
@@ -117,9 +117,9 @@ const communityCopy = {
     progressCaption: "Короткий опис",
     progressFeed: "Картки прогресу",
     noProgressCards: "Карток прогресу поки немає.",
-    like: "Like",
-    save: "Save",
-    unsave: "Unsave",
+    like: "Підтримати",
+    save: "Зберегти",
+    unsave: "Прибрати",
     duplicate:
       "Схожа публікація вже є. Відправлю на перевірку з позначкою дубля.",
     emptyPosts: "Публікацій поки немає.",
@@ -132,7 +132,7 @@ const communityCopy = {
     },
   },
   pl: {
-    title: COMMUNITY_HUB_TITLE,
+    title: "Społeczność Smart Nutrition",
     subtitle:
       "Znajomi, prywatne wiadomości, forum z przepisami i osobiste punkty w jednym miejscu.",
     personalFocus: (friction: string, motivation: string) =>
@@ -181,7 +181,7 @@ const communityCopy = {
     report: "Zgłoś",
     reportSent: "Zgłoszenie wysłane do moderacji",
     reportSyncWarning:
-      "Zgłoszenie wysłano do moderacji, ale lokalny status community nie zsynchronizował się.",
+      "Zgłoszenie wysłano do moderacji. Aktualizacja tablicy może pojawić się po kolejnej synchronizacji w chmurze.",
     approve: "Zatwierdź",
     reject: "Odrzuć",
     deleteSpam: "Usuń spam",
@@ -196,9 +196,9 @@ const communityCopy = {
     progressCaption: "Krótki opis",
     progressFeed: "Karty postępu",
     noProgressCards: "Brak kart postępu.",
-    like: "Like",
-    save: "Save",
-    unsave: "Unsave",
+    like: "Wesprzyj",
+    save: "Zapisz",
+    unsave: "Usuń zapis",
     duplicate:
       "Podobna publikacja już istnieje. Wyślę ją do moderacji z oznaczeniem duplikatu.",
     emptyPosts: "Brak publikacji.",
@@ -260,7 +260,7 @@ const communityCopy = {
     report: "Report",
     reportSent: "Report sent to moderation",
     reportSyncWarning:
-      "Report sent to moderation, but the local community status could not sync.",
+      "Report sent to moderation. The feed update may appear after the next cloud sync.",
     approve: "Approve",
     reject: "Reject",
     deleteSpam: "Delete spam",
