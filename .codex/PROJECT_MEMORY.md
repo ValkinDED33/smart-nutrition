@@ -80,6 +80,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Added honest micronutrient guidance for seaweed/algae products: when provider data does not include a numeric iodine value, the product card flags iodine as a likely product signal without inventing a dose.
 - Connected the progress overview to counted-domain navigation so water glasses remain visible on the first progress screen and tapping the water domain opens the full water tracker.
 - Hardened Telegram reminder command hints so empty `/addmed`, `/addtask`, `/addwater`, `/addhabit`, `/addsupplement`, `/add`, and `/settime` prompts use the connected Smart Nutrition profile language instead of drifting to the Telegram client language.
+- Hardened Telegram after-meal reminder copy so creation receipts and due notifications explain diary-triggered meal timing, meal windows, and localized offsets instead of implying a fixed clock reminder.
 - Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
 - Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through secure cloud sync, not full account synchronization or visible backend jargon.
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
@@ -318,6 +319,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram reminder command hints, reminder lists, management buttons, callback feedback, and scheduled reminder notifications must use the connected profile language when a profile is available; Telegram client language is only a disconnected fallback.
+- Telegram after-meal reminders must be explained as diary-triggered actions: the user should see which meal unlocks the reminder, the relevant time window, and localized offset wording without mixed-language `min` fragments.
 - Telegram main-menu quick buttons must use the connected profile language and must route to existing canonical handlers instead of creating a second command/router system.
 - Telegram connect-link creation must not be reported as confirmed connection; only backend-confirmed status polling can show connected success.
 - Web reminder management must surface canonical reminder event history so taken/done, skipped, and snoozed actions are visible in the app, not only inside Telegram callbacks.

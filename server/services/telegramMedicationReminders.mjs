@@ -70,6 +70,12 @@ const REMINDER_COPY = {
     },
     notificationHint: "Позначте дію кнопкою нижче, щоб я вів журнал.",
     taskNotificationHint: "Позначте дію кнопкою нижче, щоб я не губив контекст.",
+    afterMealCreatedHint: (triggerLabel, windowLabel) =>
+      `Я нагадаю ${triggerLabel}, коли у щоденнику з'явиться такий прийом їжі${windowLabel}.`,
+    afterMealNotificationHint: (triggerLabel) =>
+      `Я побачив прийом їжі в щоденнику і нагадав ${triggerLabel}.`,
+    triggerWindow: (start, end) => ` у вікні ${start}-${end}`,
+    offsetMinutes: (minutes) => `+${minutes} хв`,
     noMedicationReminders: [
       "Активних нагадувань про ліки поки немає.",
       "",
@@ -218,6 +224,12 @@ const REMINDER_COPY = {
     },
     notificationHint: "Zaznacz akcję przyciskiem niżej, żebym prowadził dziennik.",
     taskNotificationHint: "Zaznacz akcję przyciskiem niżej, żebym nie zgubił kontekstu.",
+    afterMealCreatedHint: (triggerLabel, windowLabel) =>
+      `Przypomnę ${triggerLabel}, gdy taki posiłek pojawi się w dzienniku${windowLabel}.`,
+    afterMealNotificationHint: (triggerLabel) =>
+      `Zobaczyłem posiłek w dzienniku i przypomniałem ${triggerLabel}.`,
+    triggerWindow: (start, end) => ` w oknie ${start}-${end}`,
+    offsetMinutes: (minutes) => `+${minutes} min`,
     noMedicationReminders: [
       "Nie ma jeszcze aktywnych przypomnień o lekach.",
       "",
@@ -366,6 +378,12 @@ const REMINDER_COPY = {
     },
     notificationHint: "Mark an action with the button below so I can keep the log.",
     taskNotificationHint: "Mark an action with the button below so I keep the context.",
+    afterMealCreatedHint: (triggerLabel, windowLabel) =>
+      `I will remind you ${triggerLabel} when that meal appears in the diary${windowLabel}.`,
+    afterMealNotificationHint: (triggerLabel) =>
+      `I saw the meal in the diary and reminded you ${triggerLabel}.`,
+    triggerWindow: (start, end) => ` in the ${start}-${end} window`,
+    offsetMinutes: (minutes) => `+${minutes} min`,
     noMedicationReminders: [
       "There are no active medication reminders yet.",
       "",
@@ -579,7 +597,49 @@ const formatReminderTrigger = (reminder, language = REMINDER_LANGUAGE_FALLBACK) 
 
   const label = copy.afterMeal[mealType] ?? copy.afterMeal.lunch;
   const offsetMinutes = Number(reminder.trigger.offsetMinutes) || 0;
-  return offsetMinutes > 0 ? `${label} +${offsetMinutes} min` : label;
+  return offsetMinutes > 0 ? `${label} ${copy.offsetMinutes(offsetMinutes)}` : label;
+};
+
+const formatReminderTriggerWindow = (
+  reminder,
+  language = REMINDER_LANGUAGE_FALLBACK
+) => {
+  const copy = getReminderCopy(language);
+  const trigger = reminder?.trigger;
+  const windowStart = String(trigger?.windowStart ?? "").trim();
+  const windowEnd = String(trigger?.windowEnd ?? "").trim();
+
+  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(windowStart) &&
+    /^([01]\d|2[0-3]):([0-5]\d)$/.test(windowEnd)
+    ? copy.triggerWindow(windowStart, windowEnd)
+    : "";
+};
+
+const buildAfterMealCreatedHint = (
+  reminder,
+  language = REMINDER_LANGUAGE_FALLBACK
+) => {
+  const triggerLabel = formatReminderTrigger(reminder, language);
+
+  if (!triggerLabel) {
+    return null;
+  }
+
+  return getReminderCopy(language).afterMealCreatedHint(
+    triggerLabel,
+    formatReminderTriggerWindow(reminder, language)
+  );
+};
+
+const buildAfterMealNotificationHint = (
+  reminder,
+  language = REMINDER_LANGUAGE_FALLBACK
+) => {
+  const triggerLabel = formatReminderTrigger(reminder, language);
+
+  return triggerLabel
+    ? getReminderCopy(language).afterMealNotificationHint(triggerLabel)
+    : null;
 };
 
 const formatReminderScheduleLine = (
@@ -691,6 +751,7 @@ export const buildMedicationReminderCreatedMessage = (
     reminder.nextRunAt
       ? `${copy.nextReminder}: ${formatReminderDateTime(reminder, reminder.nextRunAt, language)}`
       : null,
+    buildAfterMealCreatedHint(reminder, language),
     "",
     copy.medicationCreatedHint,
     "",
@@ -700,7 +761,7 @@ export const buildMedicationReminderCreatedMessage = (
     .join("\n");
 };
 
-const buildMedicationReminderNotificationMessage = (
+export const buildMedicationReminderNotificationMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
 ) => {
@@ -712,6 +773,7 @@ const buildMedicationReminderNotificationMessage = (
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
     formatReminderScheduleLine(reminder, language),
     formatMedicationReminderDose(reminder, language).trim() || null,
+    buildAfterMealNotificationHint(reminder, language),
     "",
     copy.notificationHint,
   ]
@@ -850,6 +912,7 @@ export const buildTaskReminderCreatedMessage = (
     reminder.nextRunAt
       ? `${copy.nextReminder}: ${formatReminderDateTime(reminder, reminder.nextRunAt, language)}`
       : null,
+    buildAfterMealCreatedHint(reminder, language),
     "",
     copy.taskCreatedHint,
   ]
@@ -857,7 +920,7 @@ export const buildTaskReminderCreatedMessage = (
     .join("\n");
 };
 
-const buildTaskReminderNotificationMessage = (
+export const buildTaskReminderNotificationMessage = (
   reminder,
   language = REMINDER_LANGUAGE_FALLBACK
 ) => {
@@ -868,6 +931,7 @@ const buildTaskReminderNotificationMessage = (
     "",
     `${formatReminderKindTitle(reminder, language)}: ${reminder.title}`,
     formatReminderScheduleLine(reminder, language),
+    buildAfterMealNotificationHint(reminder, language),
     "",
     copy.taskNotificationHint,
   ].join("\n");

@@ -895,6 +895,19 @@ addCheck(
 );
 
 addCheck(
+  "telegram after-meal reminders explain diary-triggered timing",
+  telegramMedicationRemindersSource.includes("afterMealCreatedHint") &&
+    telegramMedicationRemindersSource.includes("afterMealNotificationHint") &&
+    telegramMedicationRemindersSource.includes("triggerWindow") &&
+    telegramMedicationRemindersSource.includes("offsetMinutes") &&
+    telegramMedicationRemindersSource.includes("buildAfterMealCreatedHint(reminder, language)") &&
+    telegramMedicationRemindersSource.includes("buildAfterMealNotificationHint(reminder, language)") &&
+    telegramMedicationRemindersSource.includes("formatReminderTriggerWindow(reminder, language)") &&
+    !telegramMedicationRemindersSource.includes("`${label} +${offsetMinutes} min`"),
+  "After-meal Telegram reminders must explain that they fire from a real meal diary entry, keep the active language, and avoid presenting a fixed time as truth."
+);
+
+addCheck(
   "auth session responses keep tokens in httpOnly cookies only",
   authCookiesSource.includes("applyAuthCookies(response, payload)") &&
     authCookiesSource.includes("sendJson(response, statusCode, {") &&

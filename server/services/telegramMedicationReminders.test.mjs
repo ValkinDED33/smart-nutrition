@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   buildMedicationReminderCreatedMessage,
   buildMedicationReminderListMessage,
+  buildMedicationReminderNotificationMessage,
   buildReminderListMessage,
+  buildTaskReminderNotificationMessage,
   buildTaskReminderCreatedMessage,
   createTelegramMedicationReminderRuntime,
 } from "./telegramMedicationReminders.mjs";
@@ -82,7 +84,37 @@ describe("telegramMedicationReminders", () => {
     const message = buildMedicationReminderCreatedMessage(reminder);
 
     expect(message).toContain("Умова: після обіду");
+    expect(message).toContain(
+      "Я нагадаю після обіду, коли у щоденнику з'явиться такий прийом їжі у вікні 12:00-16:30."
+    );
     expect(message).not.toContain("Час: час не задан");
+  });
+
+  it("explains after-meal trigger context in due Telegram notifications", () => {
+    const reminder = createReminder({
+      times: [],
+      nextRunAt: null,
+      trigger: {
+        kind: "after_meal",
+        mealType: "lunch",
+        offsetMinutes: 20,
+        windowStart: "12:00",
+        windowEnd: "16:30",
+      },
+    });
+    const taskReminder = {
+      ...reminder,
+      type: "task",
+      title: "Прогулянка",
+      dose: "",
+    };
+
+    expect(buildMedicationReminderNotificationMessage(reminder)).toContain(
+      "Я побачив прийом їжі в щоденнику і нагадав після обіду +20 хв."
+    );
+    expect(buildTaskReminderNotificationMessage(taskReminder)).toContain(
+      "Я побачив прийом їжі в щоденнику і нагадав після обіду +20 хв."
+    );
   });
 
   it("formats next reminder time in the reminder timezone instead of server UTC", () => {
