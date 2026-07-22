@@ -1199,6 +1199,19 @@ addCheck(
 );
 
 addCheck(
+  "auth api errors preserve codes without exposing raw backend payload messages",
+  authRemoteSource.includes("AUTH_API_ERROR_MESSAGES") &&
+    authRemoteSource.includes("const createAuthError") &&
+    authRemoteSource.includes("A user with this email already exists.") &&
+    authRemoteSource.includes("Invalid email or password.") &&
+    !authRemoteSource.includes('new AuthApiError("EMAIL_IN_USE", error.message)') &&
+    !authRemoteSource.includes('new AuthApiError("NAME_IN_USE", error.message)') &&
+    !authRemoteSource.includes('new AuthApiError("INVALID_CREDENTIALS", error.message)') &&
+    !authRemoteSource.includes('new AuthApiError("WEAK_PASSWORD", error.message)'),
+  "Frontend auth API errors may use backend codes/status for control flow, but AuthApiError messages must come from safe product-language client copy."
+);
+
+addCheck(
   "platform api errors never expose raw backend/provider payload messages",
   platformApiSource.includes("getPlatformErrorMessage") &&
     platformApiSource.includes("PLATFORM_ERROR_MESSAGES") &&

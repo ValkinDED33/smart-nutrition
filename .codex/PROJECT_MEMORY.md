@@ -147,6 +147,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
 - Hardened quick meal and shared meal-action failure state so food save retries cannot carry raw exception text even if future UI starts reading failure messages directly.
 - Hardened final onboarding save failure state so sync outbox and sync status cannot surface raw exception text after profile setup fails.
+- Hardened frontend auth API errors so backend response codes still drive login/register/recovery behavior while raw backend/provider payload messages are replaced by safe product-language `AuthApiError` copy.
 - Hardened backend product-intake catalog retry responses so a saved meal with failed catalog moderation returns safe retry copy instead of raw provider/backend exception text.
 - Hardened FoodCommandCenter voice-input failure handling so browser/WebView speech-recognition errors show localized product-language guidance instead of raw browser exception text.
 - Hardened shared auth cloud-sync state so backend/provider failure messages are sanitized before reaching `syncError` or the visible cloud status UI.
@@ -191,6 +192,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Meal, profile, water, fridge, community, companion, automatic sync, and auth-unavailable cloud-sync wrappers must sanitize backend/provider result messages through shared cloud-sync error handling; conflict/inactive meaning may remain, but unknown raw text must collapse to domain fallback copy.
 - Backend route error envelopes must map public messages from stable error codes and strip provider/backend details before ordinary API responses reach the frontend; raw exception text belongs in logs/admin diagnostics only.
 - Auth recovery and community action UI must not render raw backend/API exception text; reset, forgot-password, and community failures use localized recovery copy while diagnostics stay in code/logs.
+- Frontend auth API errors must preserve backend codes/status for control flow but must not pass raw backend/provider payload messages into `AuthApiError.message`; use stable product-language copy for login, registration, verification, recovery, profile, and session failures.
 - Platform/admin/catalog API errors must preserve typed codes and status for control flow, but visible surfaces must receive safe product-language messages from the platform client instead of raw backend/provider payload text.
 - Final onboarding/profile setup failures must not store or render raw exception text in sync outbox, sync status, or visible alerts; use localized profile recovery copy only.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.

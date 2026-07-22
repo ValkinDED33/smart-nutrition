@@ -50,6 +50,59 @@ export interface RemoteSyncResult {
 const REMOTE_API_UNAVAILABLE_MESSAGE =
   "The Smart Nutrition cloud service is temporarily unavailable. Try again in a moment.";
 const CLOUD_SYNC_DISABLED_MESSAGE = "Cloud sync is not active for this account.";
+const AUTH_API_ERROR_MESSAGES: Record<AuthApiError["code"], string> = {
+  EMAIL_IN_USE: "A user with this email already exists.",
+  NAME_IN_USE: "This name is already used.",
+  INVALID_CREDENTIALS: "Invalid email or password.",
+  INVALID_REFRESH_TOKEN: "Session expired. Log in again.",
+  TOO_MANY_ATTEMPTS: "Too many failed attempts. Try again later.",
+  INVALID_RESET_TOKEN: "The reset link is invalid or has expired.",
+  EMAIL_DELIVERY_UNAVAILABLE:
+    "Password reset by email is temporarily unavailable. Try again later.",
+  VERIFICATION_DELIVERY_UNAVAILABLE:
+    "The confirmation email could not be sent. Try again shortly or contact support.",
+  INVALID_VERIFICATION_LINK: "Invalid or expired confirmation link.",
+  REGISTRATION_NOT_VERIFIED:
+    "Confirm your email with the button in the message before logging in.",
+  ACCOUNT_BANNED: "This account has been blocked by an administrator.",
+  WEAK_PASSWORD:
+    "Password must have at least 10 characters, an uppercase letter, a lowercase letter, a digit, and a symbol.",
+  INVALID_PROFILE: "Could not save profile.",
+  REMOTE_API_UNAVAILABLE: REMOTE_API_UNAVAILABLE_MESSAGE,
+};
+
+const getAuthApiErrorMessage = (code: AuthApiError["code"]) => {
+  switch (code) {
+    case "EMAIL_IN_USE":
+      return AUTH_API_ERROR_MESSAGES.EMAIL_IN_USE;
+    case "NAME_IN_USE":
+      return AUTH_API_ERROR_MESSAGES.NAME_IN_USE;
+    case "INVALID_CREDENTIALS":
+      return AUTH_API_ERROR_MESSAGES.INVALID_CREDENTIALS;
+    case "INVALID_REFRESH_TOKEN":
+      return AUTH_API_ERROR_MESSAGES.INVALID_REFRESH_TOKEN;
+    case "TOO_MANY_ATTEMPTS":
+      return AUTH_API_ERROR_MESSAGES.TOO_MANY_ATTEMPTS;
+    case "INVALID_RESET_TOKEN":
+      return AUTH_API_ERROR_MESSAGES.INVALID_RESET_TOKEN;
+    case "EMAIL_DELIVERY_UNAVAILABLE":
+      return AUTH_API_ERROR_MESSAGES.EMAIL_DELIVERY_UNAVAILABLE;
+    case "VERIFICATION_DELIVERY_UNAVAILABLE":
+      return AUTH_API_ERROR_MESSAGES.VERIFICATION_DELIVERY_UNAVAILABLE;
+    case "INVALID_VERIFICATION_LINK":
+      return AUTH_API_ERROR_MESSAGES.INVALID_VERIFICATION_LINK;
+    case "REGISTRATION_NOT_VERIFIED":
+      return AUTH_API_ERROR_MESSAGES.REGISTRATION_NOT_VERIFIED;
+    case "ACCOUNT_BANNED":
+      return AUTH_API_ERROR_MESSAGES.ACCOUNT_BANNED;
+    case "WEAK_PASSWORD":
+      return AUTH_API_ERROR_MESSAGES.WEAK_PASSWORD;
+    case "INVALID_PROFILE":
+      return AUTH_API_ERROR_MESSAGES.INVALID_PROFILE;
+    case "REMOTE_API_UNAVAILABLE":
+      return AUTH_API_ERROR_MESSAGES.REMOTE_API_UNAVAILABLE;
+  }
+};
 
 export interface ProductIntakePayload {
   source: "barcode" | "search" | "manual" | "recommendation" | "photo";
@@ -432,59 +485,59 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
   }
 
   if (error instanceof RemoteRequestError) {
+    const createAuthError = (code: AuthApiError["code"]) =>
+      new AuthApiError(code, getAuthApiErrorMessage(code));
+
     if (error.code === "EMAIL_IN_USE") {
-      return new AuthApiError("EMAIL_IN_USE", error.message);
+      return createAuthError("EMAIL_IN_USE");
     }
 
     if (error.code === "NAME_IN_USE") {
-      return new AuthApiError("NAME_IN_USE", error.message);
+      return createAuthError("NAME_IN_USE");
     }
 
     if (error.code === "TOO_MANY_ATTEMPTS") {
-      return new AuthApiError("TOO_MANY_ATTEMPTS", error.message);
+      return createAuthError("TOO_MANY_ATTEMPTS");
     }
 
     if (error.code === "INVALID_RESET_TOKEN") {
-      return new AuthApiError("INVALID_RESET_TOKEN", error.message);
+      return createAuthError("INVALID_RESET_TOKEN");
     }
 
     if (error.code === "EMAIL_DELIVERY_UNAVAILABLE") {
-      return new AuthApiError("EMAIL_DELIVERY_UNAVAILABLE", error.message);
+      return createAuthError("EMAIL_DELIVERY_UNAVAILABLE");
     }
 
     if (error.code === "VERIFICATION_DELIVERY_UNAVAILABLE") {
-      return new AuthApiError(
-        "VERIFICATION_DELIVERY_UNAVAILABLE",
-        error.message
-      );
+      return createAuthError("VERIFICATION_DELIVERY_UNAVAILABLE");
     }
 
     if (error.code === "INVALID_VERIFICATION_LINK") {
-      return new AuthApiError("INVALID_VERIFICATION_LINK", error.message);
+      return createAuthError("INVALID_VERIFICATION_LINK");
     }
 
     if (error.code === "REGISTRATION_NOT_VERIFIED") {
-      return new AuthApiError("REGISTRATION_NOT_VERIFIED", error.message);
+      return createAuthError("REGISTRATION_NOT_VERIFIED");
     }
 
     if (error.code === "ACCOUNT_BANNED") {
-      return new AuthApiError("ACCOUNT_BANNED", error.message);
+      return createAuthError("ACCOUNT_BANNED");
     }
 
     if (error.code === "WEAK_PASSWORD") {
-      return new AuthApiError("WEAK_PASSWORD", error.message);
+      return createAuthError("WEAK_PASSWORD");
     }
 
     if (error.code === "INVALID_PROFILE") {
-      return new AuthApiError("INVALID_PROFILE", error.message);
+      return createAuthError("INVALID_PROFILE");
     }
 
     if (error.code === "INVALID_REFRESH_TOKEN") {
-      return new AuthApiError("INVALID_REFRESH_TOKEN", error.message);
+      return createAuthError("INVALID_REFRESH_TOKEN");
     }
 
     if (error.status === 401 || error.code === "INVALID_CREDENTIALS") {
-      return new AuthApiError("INVALID_CREDENTIALS", error.message);
+      return createAuthError("INVALID_CREDENTIALS");
     }
 
     return null;
