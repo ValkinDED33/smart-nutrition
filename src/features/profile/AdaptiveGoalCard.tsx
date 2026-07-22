@@ -19,14 +19,20 @@ const adaptiveGoalSaveCopy = {
   uk: {
     saving: "Зберігаю ціль у хмарі...",
     saveError: "Не вдалося зберегти ціль. Спробуйте ще раз.",
+    automaticMode: "Автоматичний режим м'яко підлаштовує ціль під ваш реальний тренд.",
+    manualMode: "Ручний режим залишає рішення за вами: зміни застосовуються тільки після підтвердження.",
   },
   pl: {
     saving: "Zapisuję cel w chmurze...",
     saveError: "Nie udało się zapisać celu. Spróbuj ponownie.",
+    automaticMode: "Tryb automatyczny delikatnie dopasowuje cel do Twojego realnego trendu.",
+    manualMode: "Tryb ręczny zostawia decyzję Tobie: zmiany są stosowane dopiero po potwierdzeniu.",
   },
   en: {
     saving: "Saving goal to cloud...",
     saveError: "Could not save the goal. Try again.",
+    automaticMode: "Automatic mode gently keeps the target aligned with your real trend.",
+    manualMode: "Manual mode leaves the decision to you: changes apply only after confirmation.",
   },
 } as const;
 
@@ -94,9 +100,7 @@ export const AdaptiveGoalCard = () => {
           {t("adaptive.average")}: {averageIntake.toFixed(0)} {t(COMMON_KCAL_KEY)}
         </Typography>
         <Typography color="text.secondary">
-          {adaptiveMode === "automatic"
-            ? "Automatic mode keeps the target aligned with your trend."
-            : "Manual mode waits for you to apply changes yourself."}
+          {adaptiveMode === "automatic" ? copy.automaticMode : copy.manualMode}
         </Typography>
         {profileAction.saving ? (
           <Alert severity="info" sx={{ borderRadius: 3 }}>

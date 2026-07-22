@@ -78,6 +78,7 @@ const profileCloudActionCopySource = readSource(
 const waterCloudActionSource = readSource("src/features/water/useWaterCloudAction.ts");
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
+const adaptiveGoalCardSource = readSource("src/features/profile/AdaptiveGoalCard.tsx");
 const communityHubCardSource = readSource("src/features/community/CommunityHubCard.tsx");
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const barcodeScannerModelSource = readSource("src/features/meal/barcodeScannerModel.ts");
@@ -1340,6 +1341,7 @@ addCheck(
 
 const humanProfileSyncCopySources = [
   accountDataCardCopySource,
+  adaptiveGoalCardSource,
   cloudSyncStatusCardSource,
   syncMessagingSource,
   sharedI18nUkSource,
@@ -1359,7 +1361,13 @@ addCheck(
     humanProfileSyncCopySources.includes("Protected session") &&
     humanProfileSyncCopySources.includes("profile, meals, water, and settings are stored in the cloud") &&
     humanProfileSyncCopySources.includes("Password reset by email is temporarily unavailable") &&
+    humanProfileSyncCopySources.includes("Автоматичний режим") &&
+    humanProfileSyncCopySources.includes("Tryb ręczny") &&
+    humanProfileSyncCopySources.includes("Automatic mode gently") &&
     !/Remote API account|Zdalne konto API|Віддалений API-акаунт|API-сесія|API session|access \+ refresh|snapshot|snapshots|connected to the backend|підключений до бекенда|połączone z backendem|serwerze nie skonfigurowano|server yet/.test(
+      humanProfileSyncCopySources
+    ) &&
+    !/Automatic mode keeps the target aligned|Manual mode waits/.test(
       humanProfileSyncCopySources
     ),
   "Regular profile/account/sync surfaces must present cloud profile and protected-session language, while infrastructure terms stay inside code and admin diagnostics."

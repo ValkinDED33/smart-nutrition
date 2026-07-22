@@ -108,6 +108,12 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain("setAdaptiveCalories");
     expect(source).toContain(PROFILE_ACTION_HAS_ERROR);
     expect(source).toContain("disabled={profileAction.saving}");
+    expect(source).toContain("copy.automaticMode");
+    expect(source).toContain("copy.manualMode");
+    expect(source).toContain("Автоматичний режим");
+    expect(source).toContain("Tryb ręczny");
+    expect(source).not.toContain("Automatic mode keeps the target aligned");
+    expect(source).not.toContain("Manual mode waits");
     expect(source).not.toContain(APPLY_PROFILE_ACTION_IN_CLOUD);
   });
 
