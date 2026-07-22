@@ -29,6 +29,7 @@ const addCheck = (label, pass, detail) => {
 const photoAssistantSource = readSource("src/features/meal/PhotoMealAssistant.tsx");
 const authRemoteSource = readSource("src/shared/api/authRemote.ts");
 const authSliceSource = readSource("src/features/auth/authSlice.ts");
+const syncListenersSource = readSource("src/app/syncListeners.ts");
 const platformApiSource = readSource("src/shared/api/platform.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
@@ -36,6 +37,7 @@ const frontendProductApiSource = readSource("src/shared/api/products.ts");
 const mealCloudSyncSource = readSource("src/features/meal/mealCloudSync.ts");
 const profileCloudSyncSource = readSource("src/features/profile/profileCloudSync.ts");
 const waterCloudSyncSource = readSource("src/features/water/waterCloudSync.ts");
+const fridgeCloudSyncSource = readSource("src/features/fridge/fridgeCloudSync.ts");
 const companionCloudSyncSource = readSource(
   "src/features/companion/companionCloudSync.ts"
 );
@@ -1241,17 +1243,25 @@ addCheck(
 addCheck(
   "cloud action sync wrappers sanitize backend/provider messages",
   cloudSyncErrorsSource.includes("resolveCloudSyncFailureMessage") &&
+    mealCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
     profileCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
     waterCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    fridgeCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
     companionCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    communityCloudSyncSource.includes("resolveCloudSyncFailureMessage") &&
+    syncListenersSource.includes("resolveCloudSyncFailureMessage") &&
+    !mealCloudSyncSource.includes("result.message || result.code") &&
     !profileCloudSyncSource.includes("result.message ??") &&
     !waterCloudSyncSource.includes("result.message ??") &&
+    !fridgeCloudSyncSource.includes("result.message || result.code") &&
     !companionCloudSyncSource.includes("result.message ??") &&
+    !communityCloudSyncSource.includes("result.message || result.code") &&
+    !syncListenersSource.includes("result.message ??") &&
     !authRemoteSource.includes("Backend unavailable. Please reconnect.") &&
     authRemoteSource.includes(
       "The Smart Nutrition cloud service is temporarily unavailable"
     ),
-  "Profile, water, companion, and auth unavailable errors must preserve cloud/conflict meaning without exposing raw backend/provider message text."
+  "Meal, profile, water, fridge, community, companion, automatic sync, and auth unavailable errors must preserve cloud/conflict meaning without exposing raw backend/provider message text."
 );
 
 addCheck(

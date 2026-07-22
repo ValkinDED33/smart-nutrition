@@ -14,6 +14,7 @@ import {
   syncRemoteMealState,
   type ProductIntakePayload,
 } from "@shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import type { MealEntry } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import type { MealState } from "./mealSlice";
@@ -31,6 +32,17 @@ import {
 
 type RemoteResult = Awaited<ReturnType<typeof syncRemoteMealState>>;
 const MISSING_CANONICAL_MEAL_ERROR = "Backend did not return canonical meal state.";
+const MEAL_SYNC_FAILED_MESSAGE = "Cloud sync could not save the latest meal data.";
+const MEAL_SYNC_CONFLICT_MESSAGE =
+  "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the meal action.";
+
+const getMealSyncErrorMessage = (result: RemoteResult) =>
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage: MEAL_SYNC_CONFLICT_MESSAGE,
+    fallbackMessage: MEAL_SYNC_FAILED_MESSAGE,
+  });
 
 const recoverIfCloudConflict = async (
   dispatch: AppDispatch,
@@ -38,9 +50,7 @@ const recoverIfCloudConflict = async (
 ) => {
   if (isCloudStateConflict(result)) {
     await recoverLatestCloudSnapshotAfterConflict(dispatch);
-    throw new Error(
-      "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the meal action."
-    );
+    throw new Error(MEAL_SYNC_CONFLICT_MESSAGE);
   }
 };
 
@@ -48,9 +58,7 @@ const assertCloudSaved = async (dispatch: AppDispatch, result: RemoteResult) => 
   if (!result.ok) {
     await recoverIfCloudConflict(dispatch, result);
 
-    throw new Error(
-      result.message || result.code || "Could not save meal to cloud."
-    );
+    throw new Error(getMealSyncErrorMessage(result));
   }
 };
 

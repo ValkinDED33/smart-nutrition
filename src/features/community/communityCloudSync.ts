@@ -5,6 +5,7 @@ import {
   recoverLatestCloudSnapshotAfterConflict,
 } from "@features/auth/cloudConflictRecovery";
 import { syncRemoteCommunityState } from "@shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import communityReducer, {
   replaceCommunityState,
   type CommunityState,
@@ -13,6 +14,18 @@ import communityReducer, {
 type RemoteResult = Awaited<ReturnType<typeof syncRemoteCommunityState>>;
 const MISSING_CANONICAL_COMMUNITY_ERROR =
   "Backend did not return canonical community state.";
+const COMMUNITY_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest community data.";
+const COMMUNITY_SYNC_CONFLICT_MESSAGE =
+  "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the community action.";
+
+const getCommunitySyncErrorMessage = (result: RemoteResult) =>
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage: COMMUNITY_SYNC_CONFLICT_MESSAGE,
+    fallbackMessage: COMMUNITY_SYNC_FAILED_MESSAGE,
+  });
 
 export const buildCommunityStateAfterAction = (
   community: CommunityState,
@@ -29,14 +42,10 @@ const assertCloudSaved = async (
 
   if (isCloudStateConflict(result)) {
     await recoverLatestCloudSnapshotAfterConflict(dispatch);
-    throw new Error(
-      "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the community action."
-    );
+    throw new Error(COMMUNITY_SYNC_CONFLICT_MESSAGE);
   }
 
-  throw new Error(
-    result.message || result.code || "Could not save community changes to cloud."
-  );
+  throw new Error(getCommunitySyncErrorMessage(result));
 };
 
 const saveCommunityStateToCloud = async (

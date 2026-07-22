@@ -8,6 +8,9 @@ import {
 } from "./fridgeCloudSync";
 
 const replaceFridgeStateAction = "fridge/replaceFridgeState";
+const FRIDGE_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest fridge data.";
+const RAW_FRIDGE_SYNC_ERROR = "Provider stack trace: fridge write failed";
 
 const authApiMock = vi.hoisted(() => ({
   syncRemoteFridgeState: vi.fn(),
@@ -118,5 +121,25 @@ describe("fridgeCloudSync", () => {
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
       replaceFridgeStateAction,
     ]);
+  });
+
+  it("does not expose raw backend or provider text when the cloud save fails", async () => {
+    const dispatch = vi.fn();
+    authApiMock.syncRemoteFridgeState.mockResolvedValueOnce({
+      ok: false,
+      code: "SYNC_FAILED",
+      message: RAW_FRIDGE_SYNC_ERROR,
+      meta: null,
+    });
+
+    await expect(
+      upsertFridgeItemInCloud(
+        dispatch as never,
+        normalizeFridgeState({}),
+        { product: createProduct("one"), quantity: 100 }
+      )
+    ).rejects.toThrow(FRIDGE_SYNC_FAILED_MESSAGE);
+
+    expect(dispatch).not.toHaveBeenCalled();
   });
 });

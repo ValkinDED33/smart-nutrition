@@ -4,6 +4,7 @@ import {
   recoverLatestCloudSnapshotAfterConflict,
 } from "@features/auth/cloudConflictRecovery";
 import { syncRemoteFridgeState } from "@shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "@shared/lib/cloudSyncErrors";
 import type { Product } from "@domain/products/types";
 import { replaceFridgeState, type FridgeState } from "./fridgeSlice";
 import {
@@ -14,6 +15,18 @@ import {
 } from "./fridgeSaveModel";
 
 type RemoteResult = Awaited<ReturnType<typeof syncRemoteFridgeState>>;
+const FRIDGE_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest fridge data.";
+const FRIDGE_SYNC_CONFLICT_MESSAGE =
+  "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the fridge action.";
+
+const getFridgeSyncErrorMessage = (result: RemoteResult) =>
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage: FRIDGE_SYNC_CONFLICT_MESSAGE,
+    fallbackMessage: FRIDGE_SYNC_FAILED_MESSAGE,
+  });
 
 const assertCloudSaved = async (dispatch: AppDispatch, result: RemoteResult) => {
   if (result.ok) {
@@ -22,14 +35,10 @@ const assertCloudSaved = async (dispatch: AppDispatch, result: RemoteResult) => 
 
   if (isCloudStateConflict(result)) {
     await recoverLatestCloudSnapshotAfterConflict(dispatch);
-    throw new Error(
-      "Cloud data changed on another device. The latest cloud version has been loaded; please repeat the fridge action."
-    );
+    throw new Error(FRIDGE_SYNC_CONFLICT_MESSAGE);
   }
 
-  throw new Error(
-    result.message || result.code || "Could not save fridge to cloud."
-  );
+  throw new Error(getFridgeSyncErrorMessage(result));
 };
 
 const saveFridgeStateToCloud = async (

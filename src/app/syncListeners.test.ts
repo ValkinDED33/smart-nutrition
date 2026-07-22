@@ -1,5 +1,5 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   registerRemoteSyncListeners,
   remoteSyncListenerMiddleware,
@@ -21,6 +21,11 @@ const { syncRemoteCompanionStateMock, syncRemoteWaterStateMock } = vi.hoisted(()
 const TEST_USER_ID = "user-1";
 const TEST_USER_EMAIL = "test@example.com";
 const TEST_SYNC_MODE = "remote-cloud";
+const CLOUD_BASE_VERSION = "base-version";
+const SYNC_ERROR_MESSAGE = "Cloud sync could not save the latest change.";
+const VISIBLE_SYNC_ERROR_MESSAGE =
+  "Cloud sync could not save the latest app data.";
+const RAW_SYNC_ERROR = "Provider stack trace: automatic sync write failed";
 
 vi.mock("../shared/api/auth", () => {
   const okResult = { ok: true, meta: { updatedAt: "sync-ok" } };
@@ -90,6 +95,10 @@ const createTestStore = () =>
   });
 
 describe("remote sync listeners", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("syncs companion state when companion rewards change", async () => {
     syncRemoteCompanionStateMock.mockResolvedValue({
       ok: true,
@@ -119,7 +128,7 @@ describe("remote sync listeners", () => {
           lastQueuedAt: null,
           lastError: null,
         },
-        cloudMeta: { updatedAt: "base-version" },
+        cloudMeta: { updatedAt: CLOUD_BASE_VERSION },
       })
     );
 
@@ -169,7 +178,7 @@ describe("remote sync listeners", () => {
           lastQueuedAt: null,
           lastError: null,
         },
-        cloudMeta: { updatedAt: "base-version" },
+        cloudMeta: { updatedAt: CLOUD_BASE_VERSION },
       })
     );
 
@@ -181,5 +190,54 @@ describe("remote sync listeners", () => {
     });
 
     expect(syncedWaterAmounts).toEqual([500]);
+  });
+
+  it("stores product-language sync failure copy instead of raw provider text", async () => {
+    syncRemoteWaterStateMock.mockResolvedValueOnce({
+      ok: false,
+      code: "SYNC_FAILED",
+      message: RAW_SYNC_ERROR,
+      meta: null,
+    });
+    registerRemoteSyncListeners();
+    const store = createTestStore();
+
+    store.dispatch(
+      setCredentials({
+        user: {
+          id: TEST_USER_ID,
+          name: "Test User",
+          email: TEST_USER_EMAIL,
+          age: 30,
+          weight: 80,
+          height: 180,
+          gender: "male",
+          activity: "moderate",
+          goal: "maintain",
+          role: "VERIFIED_USER",
+        },
+        syncMode: TEST_SYNC_MODE,
+        syncOutbox: {
+          pendingChanges: 0,
+          firstQueuedAt: null,
+          lastQueuedAt: null,
+          lastError: null,
+        },
+        cloudMeta: { updatedAt: CLOUD_BASE_VERSION },
+      })
+    );
+
+    store.dispatch(incrementWater(250));
+
+    await vi.waitFor(() => {
+      expect(syncRemoteWaterStateMock).toHaveBeenCalledTimes(1);
+    });
+
+    await vi.waitFor(() => {
+      expect(store.getState().auth.syncError).toBe(VISIBLE_SYNC_ERROR_MESSAGE);
+    });
+    expect(store.getState().auth.syncOutbox.lastError).toBe(SYNC_ERROR_MESSAGE);
+    expect(store.getState().auth.syncError).not.toContain(RAW_SYNC_ERROR);
+    expect(store.getState().auth.syncOutbox.lastError).not.toContain(RAW_SYNC_ERROR);
   });
 });

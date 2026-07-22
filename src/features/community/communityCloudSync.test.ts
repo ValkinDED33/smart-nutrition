@@ -19,6 +19,9 @@ vi.mock("@shared/api/auth", () => authApiMock);
 const COMMUNITY_MESSAGE_TEXT = "Cloud-first hello";
 const COMMUNITY_AUTHOR_NAME = "Ihor";
 const FRIEND_NAME = "Maks";
+const COMMUNITY_SYNC_FAILED_MESSAGE =
+  "Cloud sync could not save the latest community data.";
+const RAW_COMMUNITY_SYNC_ERROR = "Provider stack trace: community write failed";
 
 describe("communityCloudSync", () => {
   it("reuses the community reducer to build the next cloud state", () => {
@@ -76,6 +79,26 @@ describe("communityCloudSync", () => {
         addFriend({ name: FRIEND_NAME })
       )
     ).rejects.toThrow("Backend did not return canonical community state.");
+
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does not expose raw backend or provider text when cloud save fails", async () => {
+    const dispatch = vi.fn();
+    authApiMock.syncRemoteCommunityState.mockResolvedValueOnce({
+      ok: false,
+      code: "SYNC_FAILED",
+      message: RAW_COMMUNITY_SYNC_ERROR,
+      meta: null,
+    });
+
+    await expect(
+      applyCommunityActionInCloud(
+        dispatch as never,
+        normalizeCommunityState({}),
+        addFriend({ name: FRIEND_NAME })
+      )
+    ).rejects.toThrow(COMMUNITY_SYNC_FAILED_MESSAGE);
 
     expect(dispatch).not.toHaveBeenCalled();
   });

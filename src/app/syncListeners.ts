@@ -15,6 +15,7 @@ import {
   syncRemoteProfileState,
   syncRemoteWaterState,
 } from "../shared/api/auth";
+import { resolveCloudSyncFailureMessage } from "../shared/lib/cloudSyncErrors";
 import type { AppSnapshotMeta } from "../shared/types/appSnapshot";
 import {
   hydrateSyncOutbox,
@@ -183,9 +184,13 @@ const WATER_SYNC_DEBOUNCE_MS = 250;
 let cloudSyncQueue: Promise<void> = Promise.resolve();
 
 const getRemoteSyncErrorMessage = (result: RemoteSyncResult) =>
-  result.code === "STATE_CONFLICT"
-    ? "Cloud data changed on another device. Use the latest cloud version before retrying."
-    : result.message ?? SYNC_ERROR_MESSAGE;
+  resolveCloudSyncFailureMessage({
+    code: result.code,
+    message: result.message,
+    conflictMessage:
+      "Cloud data changed on another device. Use the latest cloud version before retrying.",
+    fallbackMessage: SYNC_ERROR_MESSAGE,
+  });
 
 const runCloudSync = async (
   listenerApi: RemoteSyncListenerApi,

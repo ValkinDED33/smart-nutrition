@@ -27,6 +27,8 @@ const ENTRY_ID_ONE = "one";
 const TEMPLATE_ID_ONE = "template-one";
 const TEMPLATE_CREATED_AT = "2026-07-03T08:00:00.000Z";
 const MISSING_CANONICAL_MEAL_ERROR = "Backend did not return canonical meal state.";
+const MEAL_SYNC_FAILED_MESSAGE = "Cloud sync could not save the latest meal data.";
+const RAW_MEAL_SYNC_ERROR = "Provider stack trace: meal write failed";
 
 const createEntry = (id: string): MealEntry => ({
   id,
@@ -105,7 +107,7 @@ describe("mealCloudSync", () => {
     authApiMock.createRemoteMealEntries.mockResolvedValueOnce({
       ok: false,
       code: "REMOTE_UNAVAILABLE",
-      message: "backend sleeping",
+      message: RAW_MEAL_SYNC_ERROR,
       meta: null,
     });
 
@@ -115,7 +117,7 @@ describe("mealCloudSync", () => {
         createInitialMealState(),
         [createEntry(ENTRY_ID_ONE)]
       )
-    ).rejects.toThrow("backend sleeping");
+    ).rejects.toThrow(MEAL_SYNC_FAILED_MESSAGE);
 
     expect(dispatch).not.toHaveBeenCalled();
   });
