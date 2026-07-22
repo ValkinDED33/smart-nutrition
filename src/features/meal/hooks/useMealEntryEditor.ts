@@ -19,7 +19,12 @@ const selectProductPreferences = (state: RootState) => ({
   adaptiveMode: state.profile.adaptiveMode,
 });
 
-export const useMealEntryEditor = (entry: MealEntry) => {
+export const useMealEntryEditor = (
+  entry: MealEntry,
+  copy: {
+    saveFailed: string;
+  }
+) => {
   const dispatch = useDispatch<AppDispatch>();
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
@@ -123,9 +128,9 @@ export const useMealEntryEditor = (entry: MealEntry) => {
       });
       setOpen(false);
     } catch {
-      setSaveError("Could not save meal. Please try again.");
+      setSaveError(copy.saveFailed);
     }
-  }, [dispatch, entry.id, meal, mealType, quantity, selectedProduct]);
+  }, [copy.saveFailed, dispatch, entry.id, meal, mealType, quantity, selectedProduct]);
 
   const removeEntry = useCallback(async () => {
     setSaveError(null);
@@ -134,9 +139,9 @@ export const useMealEntryEditor = (entry: MealEntry) => {
       await removeMealEntryFromCloud(dispatch, meal, entry.id);
       setOpen(false);
     } catch {
-      setSaveError("Could not save meal. Please try again.");
+      setSaveError(copy.saveFailed);
     }
-  }, [dispatch, entry.id, meal]);
+  }, [copy.saveFailed, dispatch, entry.id, meal]);
 
   return {
     candidateProducts,

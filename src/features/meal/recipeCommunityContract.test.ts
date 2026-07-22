@@ -18,4 +18,15 @@ describe("recipe community contract", () => {
     expect(publishBlock).toContain("applyCommunityActionInCloud");
     expect(publishBlock).not.toContain("dispatch(\n      publishCommunityPost");
   });
+
+  it("keeps recipe builder actions localized through recipe copy", () => {
+    const source = recipeSectionSource();
+
+    expect(source).toContain("addRecipeNow");
+    expect(source).toContain("saveAsReusableRecipe");
+    expect(source).toContain("{copy.addRecipeNow}");
+    expect(source).toContain("{copy.saveAsReusableRecipe}");
+    expect(source).not.toContain(">Add recipe now<");
+    expect(source).not.toContain(">Save as reusable recipe<");
+  });
 });

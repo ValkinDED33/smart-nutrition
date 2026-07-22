@@ -80,6 +80,8 @@ const recipeActionCopy = {
     confirmedApply: "Шаблон рецепта застосовано.",
     confirmedDelete: "Шаблон рецепта видалено.",
     confirmedPublish: "Рецепт опубліковано в спільноті.",
+    addRecipeNow: "Додати рецепт зараз",
+    saveAsReusableRecipe: "Зберегти як шаблон",
     failedAdd: "Не вдалося додати рецепт до щоденника.",
     failedSave: "Не вдалося зберегти рецепт.",
     failedApply: "Не вдалося застосувати рецепт.",
@@ -94,6 +96,8 @@ const recipeActionCopy = {
     confirmedApply: "Szablon przepisu został zastosowany.",
     confirmedDelete: "Szablon przepisu został usunięty.",
     confirmedPublish: "Przepis opublikowano w społeczności.",
+    addRecipeNow: "Dodaj przepis teraz",
+    saveAsReusableRecipe: "Zapisz jako szablon",
     failedAdd: "Nie udało się dodać przepisu do dziennika.",
     failedSave: "Nie udało się zapisać przepisu.",
     failedApply: "Nie udało się zastosować przepisu.",
@@ -108,6 +112,8 @@ const recipeActionCopy = {
     confirmedApply: "Recipe template applied.",
     confirmedDelete: "Recipe template removed.",
     confirmedPublish: "Recipe published to the community.",
+    addRecipeNow: "Add recipe now",
+    saveAsReusableRecipe: "Save as reusable recipe",
     failedAdd: "Could not add recipe to your diary.",
     failedSave: "Could not save recipe.",
     failedApply: "Could not apply recipe.",
@@ -607,7 +613,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                     isSavingAction("recipe-builder-add-now")
                   }
                 >
-                  Add recipe now
+                  {copy.addRecipeNow}
                 </Button>
                 <Button
                   variant="outlined"
@@ -618,7 +624,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                     isSavingAction("recipe-builder-save")
                   }
                 >
-                  Save as reusable recipe
+                  {copy.saveAsReusableRecipe}
                 </Button>
               </Stack>
             </Stack>

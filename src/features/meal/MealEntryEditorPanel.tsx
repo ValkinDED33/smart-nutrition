@@ -34,6 +34,7 @@ const editorCopy = {
     select: "Використати",
     cancel: "Скасувати",
     save: "Зберегти",
+    saveFailed: "Не вдалося зберегти зміни. Спробуйте ще раз.",
     quickPortions: "Швидкі порції",
     noMatches: "Не знайдено відповідних продуктів у каталозі або онлайн-базах.",
   },
@@ -47,6 +48,7 @@ const editorCopy = {
     select: "Użyj",
     cancel: "Anuluj",
     save: "Zapisz",
+    saveFailed: "Nie udało się zapisać zmian. Spróbuj ponownie.",
     quickPortions: "Szybkie porcje",
     noMatches: "Nie znaleziono pasujących produktów w katalogu ani bazach online.",
   },
@@ -60,6 +62,7 @@ const editorCopy = {
     select: "Use",
     cancel: "Cancel",
     save: "Save",
+    saveFailed: "Could not save changes. Please try again.",
     quickPortions: "Quick portions",
     noMatches: "No matching products found in catalog or online databases.",
   },
@@ -128,7 +131,7 @@ const CandidateProductCard = ({
 export const MealEntryEditorPanel = ({ entry }: Props) => {
   const { appLanguage, t } = useLanguage();
   const copy = getEditorCopy(appLanguage);
-  const editor = useMealEntryEditor(entry);
+  const editor = useMealEntryEditor(entry, { saveFailed: copy.saveFailed });
 
   const mealLabels: Record<MealType, string> = {
     breakfast: t("mealType.breakfast"),

@@ -18,11 +18,14 @@ describe("food surface error contract", () => {
   });
 
   it("keeps meal entry editor failures free of raw backend/provider messages", async () => {
-    const source = await readSource("src/features/meal/hooks/useMealEntryEditor.ts");
+    const editorHookSource = await readSource("src/features/meal/hooks/useMealEntryEditor.ts");
+    const editorPanelSource = await readSource("src/features/meal/MealEntryEditorPanel.tsx");
 
-    expect(source).toContain("Could not save meal. Please try again.");
-    expect(source).not.toContain(RAW_ERROR_TERNARY);
-    expect(source).not.toContain("Could not save meal to cloud.");
+    expect(editorHookSource).toContain("setSaveError(copy.saveFailed)");
+    expect(editorPanelSource).toContain("saveFailed");
+    expect(editorHookSource).not.toContain(RAW_ERROR_TERNARY);
+    expect(editorHookSource).not.toContain("Could not save meal. Please try again.");
+    expect(editorHookSource).not.toContain("Could not save meal to cloud.");
   });
 
   it("keeps quick meal and shared meal action feedback free of raw exception text", async () => {

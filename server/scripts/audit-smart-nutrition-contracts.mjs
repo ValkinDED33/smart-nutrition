@@ -1437,8 +1437,9 @@ addCheck(
 
 addCheck(
   "meal entry editor hides raw backend/provider save failure details",
-  mealEntryEditorSource.includes("Could not save meal. Please try again.") &&
+  mealEntryEditorSource.includes("setSaveError(copy.saveFailed)") &&
     !mealEntryEditorSource.includes("error instanceof Error ? error.message") &&
+    !mealEntryEditorSource.includes("Could not save meal. Please try again.") &&
     !mealEntryEditorSource.includes("Could not save meal to cloud."),
   "Meal entry edit/remove failures must render product-language recovery copy instead of raw backend/provider exception text."
 );
