@@ -23,7 +23,7 @@ const copyByLanguage = {
   uk: {
     title: "Персоналізація звичок",
     subtitle: (name: string) =>
-      `${name} переглянув ваші патерни логування та підготував персональні часові підказки і фокус на звички.`,
+      `${name} переглянув ваш ритм записів і підготував персональні часові підказки та головний напрям звичок.`,
     score: "Оцінка ритму",
     activeDays: "Активних днів",
     currentStreak: "Поточна серія",
@@ -46,7 +46,7 @@ const copyByLanguage = {
   pl: {
     title: "Personalizacja zachowań",
     subtitle: (name: string) =>
-      `${name} przeanalizował Twoje wzorce logowania i przygotował osobiste podpowiedzi czasowe oraz fokus na nawyki.`,
+      `${name} przeanalizował Twój rytm wpisów i przygotował osobiste podpowiedzi czasowe oraz główny kierunek nawyków.`,
     score: "Ocena rytmu",
     activeDays: "Aktywne dni",
     currentStreak: "Aktualna seria",

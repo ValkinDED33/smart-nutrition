@@ -86,6 +86,9 @@ const measurementsCheckInCardSource = readSource(
   "src/features/profile/MeasurementsCheckInCard.tsx"
 );
 const communityHubCardSource = readSource("src/features/community/CommunityHubCard.tsx");
+const behaviorPersonalizationCardSource = readSource(
+  "src/features/profile/BehaviorPersonalizationCard.tsx"
+);
 const barcodeScannerSource = readSource("src/features/meal/BarcodeScanner.tsx");
 const barcodeScannerModelSource = readSource("src/features/meal/barcodeScannerModel.ts");
 const productCardSource = readSource("src/features/meal/ProductCard.tsx");
@@ -107,6 +110,7 @@ const quickMealComposerModelSource = readSource(
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
 const recipeSectionSource = readSource("src/features/meal/RecipeSection.tsx");
+const smartRecommendationsSource = readSource("src/features/meal/SmartRecommendations.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
 const mealDayOverviewSource = readSource("src/features/meal/MealDayOverview.tsx");
 const yesterdayRepeaterSource = readSource("src/features/meal/YesterdayRepeater.tsx");
@@ -302,14 +306,45 @@ addCheck(
   "premium access copy does not leak English constants into localized profile UI",
   premiumAccessCardSource.includes("Поточний") &&
     premiumAccessCardSource.includes("Aktualny") &&
+    premiumAccessCardSource.includes("AI-супровід") &&
+    premiumAccessCardSource.includes("Opieka AI") &&
+    premiumAccessCardSource.includes("AI Guidance") &&
+    premiumAccessCardSource.includes("Підсумок помічника") &&
+    premiumAccessCardSource.includes("Podsumowanie asystenta") &&
+    premiumAccessCardSource.includes("Assistant summary") &&
     premiumAccessCardSource.includes("Їжа і вода") &&
     premiumAccessCardSource.includes("Jedzenie i woda") &&
     premiumAccessCardSource.includes("Без активної підписки") &&
     premiumAccessCardSource.includes("Brak aktywnej subskrypcji") &&
     premiumAccessCardSource.includes("getPremiumStatusLabel(copy, premium.status)") &&
+    !/coach-режим|tryb coach|coach mode|Підсумок coach|Podsumowanie coach|Coach summary/.test(
+      premiumAccessCardSource
+    ) &&
     !premiumAccessCardSource.includes("FOOD_WATER_TRACKING_FEATURE") &&
     !premiumAccessCardSource.includes("label={`${copy.status}: ${premium.status}`"),
   "Premium profile UI must localize plan names, feature labels, current-state labels, and subscription status instead of rendering English constants or raw enum values."
+);
+
+const localizedPersonalizationSources = [
+  communityHubCardSource,
+  behaviorPersonalizationCardSource,
+  smartRecommendationsSource,
+].join("\n");
+
+addCheck(
+  "personalization surfaces keep native profile direction language",
+  localizedPersonalizationSources.includes("Ваш напрям із стартового профілю") &&
+    localizedPersonalizationSources.includes("Twój kierunek z profilu startowego") &&
+    localizedPersonalizationSources.includes("Your starting profile direction") &&
+    localizedPersonalizationSources.includes("головний напрям звичок") &&
+    localizedPersonalizationSources.includes("główny kierunek nawyków") &&
+    localizedPersonalizationSources.includes("Особистий напрям") &&
+    localizedPersonalizationSources.includes("Osobisty kierunek") &&
+    localizedPersonalizationSources.includes("Personal direction") &&
+    !/Ваш фокус із онбордингу|Twój fokus z onboardingu|Your onboarding focus|фокус на звички|fokus na nawyki|Особистий фокус|Osobisty fokus|Personal focus/.test(
+      localizedPersonalizationSources
+    ),
+  "Community, behavior personalization, and smart recommendation copy must use profile direction language instead of onboarding/fokus planning labels."
 );
 
 addCheck(

@@ -12,7 +12,7 @@ const COACH_PLAN_PRICE = "$14.99 / month";
 const premiumCopy = {
   uk: {
     title: "Premium",
-    subtitle: "Pro-доступ, coach-режим і статус підписки.",
+    subtitle: "Pro-доступ, AI-супровід і статус підписки.",
     status: "Статус",
     renews: "Наступне оновлення",
     trialEnds: "Trial до",
@@ -31,9 +31,9 @@ const premiumCopy = {
         features: ["Розумний AI Pro", "Фото їжі з AI", "Тижневі звіти"],
       },
       coach: {
-        name: "Coach",
+        name: "AI-супровід",
         price: COACH_PLAN_PRICE,
-        features: ["Підсумок coach", "Оцінка звичок", "Пріоритетні нагадування"],
+        features: ["Підсумок помічника", "Оцінка звичок", "Пріоритетні нагадування"],
       },
     },
     statuses: {
@@ -45,7 +45,7 @@ const premiumCopy = {
   },
   pl: {
     title: "Premium",
-    subtitle: "Dostęp Pro, tryb coach i status subskrypcji.",
+    subtitle: "Dostęp Pro, opieka AI i status subskrypcji.",
     status: "Status",
     renews: "Odnowienie",
     trialEnds: "Trial do",
@@ -64,9 +64,9 @@ const premiumCopy = {
         features: ["Smart AI Pro", "Zdjęcia jedzenia AI", "Raporty tygodniowe"],
       },
       coach: {
-        name: "Coach",
+        name: "Opieka AI",
         price: COACH_PLAN_PRICE,
-        features: ["Podsumowanie coach", "Ocena nawyków", "Priorytetowe przypomnienia"],
+        features: ["Podsumowanie asystenta", "Ocena nawyków", "Priorytetowe przypomnienia"],
       },
     },
     statuses: {
@@ -78,7 +78,7 @@ const premiumCopy = {
   },
   en: {
     title: "Premium",
-    subtitle: "Pro access, coach mode, and subscription status.",
+    subtitle: "Pro access, AI guidance, and subscription status.",
     status: "Status",
     renews: "Next renewal",
     trialEnds: "Trial until",
@@ -97,9 +97,9 @@ const premiumCopy = {
         features: ["Smart AI Pro", "Photo Food AI", "Weekly reports"],
       },
       coach: {
-        name: "Coach",
+        name: "AI Guidance",
         price: COACH_PLAN_PRICE,
-        features: ["Coach summary", "Habit score", "Priority reminders"],
+        features: ["Assistant summary", "Habit score", "Priority reminders"],
       },
     },
     statuses: {

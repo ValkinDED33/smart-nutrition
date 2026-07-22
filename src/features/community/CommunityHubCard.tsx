@@ -57,7 +57,7 @@ const communityCopy = {
     subtitle:
       "Друзі, приватні повідомлення, рецепт-форум і особисті бали в одному місці.",
     personalFocus: (friction: string, motivation: string) =>
-      `Ваш фокус із онбордингу: ${friction}. Стиль підтримки: ${motivation}. Тут можна знайти приклади, підтримку або поділитися прогресом саме під цей сценарій.`,
+      `Ваш напрям із стартового профілю: ${friction}. Стиль підтримки: ${motivation}. Тут можна знайти приклади, підтримку або поділитися прогресом саме під цей сценарій.`,
     tabs: {
       friends: "Друзі",
       chat: "Чат",
@@ -136,7 +136,7 @@ const communityCopy = {
     subtitle:
       "Znajomi, prywatne wiadomości, forum z przepisami i osobiste punkty w jednym miejscu.",
     personalFocus: (friction: string, motivation: string) =>
-      `Twój fokus z onboardingu: ${friction}. Styl wsparcia: ${motivation}. Tutaj możesz znaleźć przykłady, wsparcie albo pokazać postęp pod ten scenariusz.`,
+      `Twój kierunek z profilu startowego: ${friction}. Styl wsparcia: ${motivation}. Tutaj możesz znaleźć przykłady, wsparcie albo pokazać postęp pod ten scenariusz.`,
     tabs: {
       friends: "Znajomi",
       chat: "Czat",
@@ -215,7 +215,7 @@ const communityCopy = {
     subtitle:
       "Friends, private messages, recipe forum, and personal points in one place.",
     personalFocus: (friction: string, motivation: string) =>
-      `Your onboarding focus: ${friction}. Support style: ${motivation}. Here you can find examples, support, or share progress for this exact scenario.`,
+      `Your starting profile direction: ${friction}. Support style: ${motivation}. Here you can find examples, support, or share progress for this exact scenario.`,
     tabs: {
       friends: "Friends",
       chat: "Chat",

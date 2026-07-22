@@ -68,7 +68,7 @@ const recommendationCopy = {
     todayBalancedTitle: "Сьогодні все виглядає збалансовано",
     todayBalancedDetail:
       "Калорії та макроси поки виглядають рівно. Збережіть подібну якість і розмір порції в наступному прийомі їжі.",
-    personalFocusTitle: (friction: string) => `Особистий фокус: ${friction}`,
+    personalFocusTitle: (friction: string) => `Особистий напрям: ${friction}`,
     personalFocusDetail: (motivation: string, hint: string) =>
       `Стиль підтримки: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>
@@ -120,7 +120,7 @@ const recommendationCopy = {
     todayBalancedTitle: "Dzisiejszy dzień wygląda dobrze",
     todayBalancedDetail:
       "Kalorie i makroskładniki wyglądają na razie stabilnie. Zachowaj podobną jakość i wielkość kolejnego posiłku.",
-    personalFocusTitle: (friction: string) => `Osobisty fokus: ${friction}`,
+    personalFocusTitle: (friction: string) => `Osobisty kierunek: ${friction}`,
     personalFocusDetail: (motivation: string, hint: string) =>
       `Styl wsparcia: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>
@@ -172,7 +172,7 @@ const recommendationCopy = {
     todayBalancedTitle: "Today looks balanced",
     todayBalancedDetail:
       "Calories and macros look steady so far. Keep similar quality and portion size in the next meal.",
-    personalFocusTitle: (friction: string) => `Personal focus: ${friction}`,
+    personalFocusTitle: (friction: string) => `Personal direction: ${friction}`,
     personalFocusDetail: (motivation: string, hint: string) =>
       `Support style: ${motivation}. ${hint}`,
     addAction: (quantity: number, unit: string, productName: string) =>

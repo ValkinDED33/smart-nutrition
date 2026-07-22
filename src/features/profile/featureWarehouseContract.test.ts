@@ -49,13 +49,45 @@ describe("profile feature warehouse contract", () => {
 
     expect(source).toContain("Поточний");
     expect(source).toContain("Aktualny");
+    expect(source).toContain("AI-супровід");
+    expect(source).toContain("Opieka AI");
+    expect(source).toContain("AI Guidance");
+    expect(source).toContain("Підсумок помічника");
+    expect(source).toContain("Podsumowanie asystenta");
+    expect(source).toContain("Assistant summary");
     expect(source).toContain("Їжа і вода");
     expect(source).toContain("Jedzenie i woda");
     expect(source).toContain("Без активної підписки");
     expect(source).toContain("Brak aktywnej subskrypcji");
     expect(source).toContain("getPremiumStatusLabel(copy, premium.status)");
+    expect(source).not.toContain("coach-режим");
+    expect(source).not.toContain("tryb coach");
+    expect(source).not.toContain("coach mode");
+    expect(source).not.toContain("Підсумок coach");
+    expect(source).not.toContain("Podsumowanie coach");
+    expect(source).not.toContain("Coach summary");
     expect(source).not.toContain("FOOD_WATER_TRACKING_FEATURE");
     expect(source).not.toContain("label={`${copy.status}: ${premium.status}`");
+  });
+
+  it("keeps personalization surfaces free from onboarding/fokus planning labels", () => {
+    const source = [
+      readSource("src/features/community/CommunityHubCard.tsx"),
+      readSource("src/features/profile/BehaviorPersonalizationCard.tsx"),
+      readSource("src/features/meal/SmartRecommendations.tsx"),
+    ].join("\n");
+
+    expect(source).toContain("Ваш напрям із стартового профілю");
+    expect(source).toContain("Twój kierunek z profilu startowego");
+    expect(source).toContain("Your starting profile direction");
+    expect(source).toContain("головний напрям звичок");
+    expect(source).toContain("główny kierunek nawyków");
+    expect(source).toContain("Особистий напрям");
+    expect(source).toContain("Osobisty kierunek");
+    expect(source).toContain("Personal direction");
+    expect(source).not.toMatch(
+      /Ваш фокус із онбордингу|Twój fokus z onboardingu|Your onboarding focus|фокус на звички|fokus na nawyki|Особистий фокус|Osobisty fokus|Personal focus/
+    );
   });
 
   it("does not show unavailable companion shop items as coming soon inventory", () => {
