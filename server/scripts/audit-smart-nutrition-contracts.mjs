@@ -787,9 +787,14 @@ addCheck(
     catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.protein)") &&
     catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.fat)") &&
     catalogContributionModelSource.includes("formatCatalogNumber(product.nutrients.carbs)") &&
+    catalogContributionCardSource.includes("categoryCustom") &&
+    catalogContributionCardSource.includes("getSubmissionCategoryLabel") &&
+    catalogContributionCardSource.includes("copy.categoryCustom") &&
+    !catalogContributionCardSource.includes('<MenuItem value="">Manual</MenuItem>') &&
+    !catalogContributionCardSource.includes('item.category ?? item.brand ?? "Manual"') &&
     !productCardSource.includes("setProduct(") &&
     !productCardSource.includes("localStorage"),
-  "Product correction after scan/search must be a prefilled shared-catalog moderation submission, not a local fake product edit or second catalog persistence path."
+  "Product correction after scan/search must be a prefilled shared-catalog moderation submission with localized fallback labels, not a local fake product edit or second catalog persistence path."
 );
 
 addCheck(

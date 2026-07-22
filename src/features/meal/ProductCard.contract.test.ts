@@ -65,4 +65,16 @@ describe("ProductCard contract", () => {
     expect(catalogCardSource).not.toContain("PlatformApiError");
     expect(catalogCardSource).not.toContain("nextError.message");
   });
+
+  it("localizes catalog contribution category fallback instead of showing raw Manual source text", async () => {
+    const catalogCardSource = await readFile(CATALOG_CONTRIBUTION_CARD_PATH, "utf8");
+
+    expect(catalogCardSource).toContain("categoryCustom");
+    expect(catalogCardSource).toContain("getSubmissionCategoryLabel");
+    expect(catalogCardSource).toContain(
+      "{getSubmissionCategoryLabel({ item, categoryOptions, copy })}"
+    );
+    expect(catalogCardSource).not.toContain('<MenuItem value="">Manual</MenuItem>');
+    expect(catalogCardSource).not.toContain('item.category ?? item.brand ?? "Manual"');
+  });
 });

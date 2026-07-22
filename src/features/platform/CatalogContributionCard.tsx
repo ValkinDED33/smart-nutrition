@@ -38,6 +38,7 @@ const catalogCopy = {
       "Додайте відсутній продукт у каталог. Якщо модератор підтвердить запис, він стане доступним усім.",
     name: "Назва",
     category: "Категорія",
+    categoryCustom: "Власна категорія",
     brand: "Бренд",
     barcode: "Штрихкод",
     imageUrl: "Фото / URL упаковки",
@@ -72,6 +73,7 @@ const catalogCopy = {
       "Dodaj brakujący produkt do katalogu. Gdy moderator go zatwierdzi, będzie dostępny dla wszystkich.",
     name: "Nazwa",
     category: "Kategoria",
+    categoryCustom: "Własna kategoria",
     brand: "Marka",
     barcode: "Kod kreskowy",
     imageUrl: "Zdjęcie / URL opakowania",
@@ -106,6 +108,7 @@ const catalogCopy = {
       "Add a missing product to the catalog. If a moderator approves it, it becomes available to everyone.",
     name: "Name",
     category: "Category",
+    categoryCustom: "Custom category",
     brand: "Brand",
     barcode: "Barcode",
     imageUrl: "Photo / package URL",
@@ -163,6 +166,27 @@ const getSubmissionStatusLabel = (
     default:
       return copy.status.pending;
   }
+};
+
+const getSubmissionCategoryLabel = ({
+  item,
+  categoryOptions,
+  copy,
+}: {
+  item: CatalogProductItem;
+  categoryOptions: { key: string; label: string }[];
+  copy: CatalogCopy;
+}) => {
+  const category = String(item.category ?? "").trim();
+  const brand = String(item.brand ?? "").trim();
+
+  if (category) {
+    return (
+      categoryOptions.find((option) => option.key === category)?.label || category
+    );
+  }
+
+  return brand || copy.categoryCustom;
 };
 
 interface CatalogContributionCardProps {
@@ -352,7 +376,7 @@ export const CatalogContributionCard = ({
               setForm((current) => ({ ...current, category: event.target.value }))
             }
           >
-            <MenuItem value="">Manual</MenuItem>
+            <MenuItem value="">{copy.categoryCustom}</MenuItem>
             {categoryOptions.map((option) => (
               <MenuItem key={option.key} value={option.key}>
                 {option.label}
@@ -515,7 +539,7 @@ export const CatalogContributionCard = ({
                     <Stack spacing={0.4}>
                       <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
                       <Typography color="text.secondary" variant="body2">
-                        {item.category ?? item.brand ?? "Manual"}
+                        {getSubmissionCategoryLabel({ item, categoryOptions, copy })}
                       </Typography>
                     </Stack>
                     <Chip

@@ -88,6 +88,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Replaced raw Telegram main-menu command buttons with profile-language labels and routed label taps back into canonical snapshot/profile/help handlers, keeping Telegram as the same assistant worker surface instead of a command-list bolt-on.
 - Routed AI-created medication and task reminders through the canonical typed `createReminderFromUserText` contract first, leaving legacy medication/task reminder methods as compatibility fallback only.
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
+- Localized catalog-contribution category fallbacks so product correction and personal catalog submissions do not show raw `Manual` source text to regular users.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
@@ -196,6 +197,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Secondary sync warnings after backend-confirmed actions must use profile-language copy and must not weaken the primary cloud-confirmed save contract.
 - User-facing nutrition UX may say "online catalog" or "confirmed in the cloud"; it must not expose backend implementation jargon in regular food search, photo meal, library, composer, or diary success states.
 - Product source/provider ids are implementation details; regular scanner, product card, composer, and library surfaces must render localized source labels instead of raw provider names.
+- Product correction and catalog contribution surfaces must localize empty/custom category fallbacks; raw source ids such as `Manual` belong in data contracts and tests only, not visible submission UI.
 - My Library must be a visible hub over canonical meal/community state (`savedProducts`, meal `templates`, and saved community posts); it must not introduce a second library persistence model.
 - Regular profile/account/sync UX must present clear cloud-profile language; API, access-token, snapshot, provider, and server setup details belong in code, audits, or admin diagnostics, not everyday settings copy.
 - Regular community UX must use localized product-language copy for moderation/report sync states and core actions; local state, raw community status, backend/API, and English-only controls belong in code/tests/admin diagnostics, not ordinary UA/PL screens.
