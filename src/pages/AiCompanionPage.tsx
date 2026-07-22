@@ -63,7 +63,7 @@ const aiCopy = {
   uk: {
     title: "Помічник",
     subtitle:
-      "Особистий companion для харчування, мотивації і щоденного ритму. Він тримає контекст, пам'ятає стиль підтримки і веде до наступної дії.",
+      "Особистий помічник для харчування, мотивації і щоденного ритму. Він тримає контекст, пам'ятає стиль підтримки і веде до наступної дії.",
     readinessTitle: "Готовність помічника",
     readinessSubtitle:
       "Помічник підключений до вашого дня і готовий допомагати з їжею, водою, нагадуваннями та прогресом.",
@@ -80,7 +80,7 @@ const aiCopy = {
     cloudUnavailable:
       "Помічник тимчасово працює в обмеженому режимі. Ви можете користуватися підказками дня, а живий діалог відновиться автоматично.",
     assistantSettings: "Поведінка помічника береться з налаштувань профілю.",
-    renderModeTitle: "Вигляд companion",
+    renderModeTitle: "Вигляд помічника",
     renderMode2d: "Швидкий 2D",
     renderMode3d: "Живий 3D",
     renderModeHint:
@@ -89,13 +89,13 @@ const aiCopy = {
     renderModeError: "3D не завантажився, залишив 2D",
     greeting: (name: string) => `Привіт, ${name}. Я вже дивлюся на ваш день.`,
     coreTitle: "Ядро помічника",
-    coreSubtitle: "Це не окрема карточка з AI, а поточний стан особистого companion.",
+    coreSubtitle: "Це не окрема карточка з AI, а поточний стан особистого помічника.",
     memoryGoals: "Цілі",
     memoryStruggles: "Що враховувати",
     memoryTriggers: "Як підтримувати",
     emptyMemory: "Після onboarding тут з'явиться більше особистого контексту.",
     relationshipLabels: {
-      new_companion: "Новий companion",
+      new_companion: "Новий помічник",
       warming_up: "Знайомимось",
       trusted_companion: "Є довіра",
       deep_context: "Глибокий контекст",
@@ -105,7 +105,7 @@ const aiCopy = {
       hydration_attention: "Фокус на воді",
       protein_attention: "Фокус на білку",
       over_target: "День вище плану",
-      weekly_check_in: "Час check-in",
+      weekly_check_in: "Час перевірити прогрес",
       steady_day: "День стабільний",
     } satisfies Record<AssistantCoreState, string>,
     emotionLabels: {
@@ -144,14 +144,14 @@ const aiCopy = {
   pl: {
     title: "Asystent",
     subtitle:
-      "Osobisty companion do jedzenia, motywacji i codziennego rytmu. Trzyma kontekst, pamięta styl wsparcia i prowadzi do kolejnej akcji.",
+      "Osobisty asystent do jedzenia, motywacji i codziennego rytmu. Trzyma kontekst, pamięta styl wsparcia i prowadzi do kolejnej akcji.",
     readinessTitle: "Gotowość asystenta",
     readinessSubtitle:
       "Asystent jest połączony z Twoim dniem i gotowy pomagać w jedzeniu, wodzie, przypomnieniach oraz progresie.",
     operationsTitle: "Operacyjny status AI",
     operationsSubtitle:
-      "Diagnostyka dla zespołu: aktywni providerzy i trasa zapasowa asystenta.",
-    providerChain: "Providerzy AI",
+      "Diagnostyka dla zespołu: aktywni dostawcy AI i ścieżka zapasowa asystenta.",
+    providerChain: "Dostawcy AI",
     assistantReady: "Asystent gotowy",
     assistantBackupReady: "Rezerwa wsparcia gotowa",
     assistantBackupUnavailable: "Działa główna trasa",
@@ -161,7 +161,7 @@ const aiCopy = {
     cloudUnavailable:
       "Asystent tymczasowo działa w ograniczonym trybie. Wskazówki dnia zostają dostępne, a żywy dialog wróci automatycznie.",
     assistantSettings: "Zachowanie asystenta bierze się z ustawień profilu.",
-    renderModeTitle: "Wygląd companion",
+    renderModeTitle: "Wygląd asystenta",
     renderMode2d: "Szybki 2D",
     renderMode3d: "Żywy 3D",
     renderModeHint:
@@ -170,23 +170,23 @@ const aiCopy = {
     renderModeError: "3D się nie załadowało, zostaje 2D",
     greeting: (name: string) => `Cześć, ${name}. Już patrzę na Twój dzień.`,
     coreTitle: "Rdzeń asystenta",
-    coreSubtitle: "To nie osobna karta z AI, tylko bieżący stan osobistego companion.",
+    coreSubtitle: "To nie osobna karta z AI, tylko bieżący stan osobistego asystenta.",
     memoryGoals: "Cele",
     memoryStruggles: "Co brać pod uwagę",
     memoryTriggers: "Jak wspierać",
     emptyMemory: "Po onboardingu pojawi się tu więcej osobistego kontekstu.",
     relationshipLabels: {
-      new_companion: "Nowy companion",
+      new_companion: "Nowy asystent",
       warming_up: "Poznajemy się",
       trusted_companion: "Jest zaufanie",
       deep_context: "Głęboki kontekst",
     } satisfies Record<AssistantRelationshipLevel, string>,
     stateLabels: {
       needs_context: "Potrzebny pierwszy wpis",
-      hydration_attention: "Fokus na wodzie",
-      protein_attention: "Fokus na białku",
+      hydration_attention: "Uwaga na wodę",
+      protein_attention: "Uwaga na białko",
       over_target: "Dzień ponad plan",
-      weekly_check_in: "Czas na check-in",
+      weekly_check_in: "Czas sprawdzić progres",
       steady_day: "Dzień stabilny",
     } satisfies Record<AssistantCoreState, string>,
     emotionLabels: {
@@ -216,7 +216,7 @@ const aiCopy = {
     primary: "Główny",
     backup: "Zapasowy",
     sections: {
-      companion: "Companion",
+      companion: "Asystent",
       progress: "Progres",
       memory: "Pamięć",
       settings: "Ustawienia",

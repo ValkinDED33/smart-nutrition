@@ -92,6 +92,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Localized adaptive-goal mode explanations so profile goal controls use product-language copy in the active app language instead of hard-coded technical English.
 - Polished water-tracker copy so hydration controls use native product language for assistant reactions, browser notifications, reward sync, and personal targets instead of mixed `companion`/`notifications` wording.
+- Polished the AI companion page Ukrainian/Polish copy so regular assistant surfaces say assistant/helper language instead of mixed `companion`, `providerzy`, `focus`, or `check-in` wording.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
@@ -292,6 +293,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Profile mutations must use unified cloud actions, not isolated local state.
 - Adaptive-goal profile UI must use localized product-language copy for automatic/manual behavior and must not render hard-coded English mode explanations.
 - Water tracker copy must keep hydration, assistant reaction, notification permission, and reward-sync warnings in the active product language; mixed `companion`/`notifications` wording is forbidden in regular user copy.
+- AI companion page copy must distinguish internal enum names from visible user language; Ukrainian/Polish regular surfaces must not show mixed `companion`, `providerzy`, `focus`, or `check-in` copy.
 - Regular account settings must not fetch or display backup restore points, runtime provider/session chips, or diagnostic details unless the profile role can access the admin center.
 - Regular assistant status consumers must not depend on provider diagnostics from `/api/ai/status`; the backend returns a sanitized readiness shape unless the authenticated role can access assistant operations diagnostics.
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.

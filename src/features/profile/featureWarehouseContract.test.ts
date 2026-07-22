@@ -157,6 +157,17 @@ describe("profile feature warehouse contract", () => {
     expect(source).toContain("Gotowość asystenta");
     expect(source).toContain("Готовність помічника");
     expect(source).toContain("Team diagnostics");
+    expect(source).toContain("Osobisty asystent");
+    expect(source).toContain("Dostawcy AI");
+    expect(source).toContain("Uwaga na wodę");
+    expect(source).toContain("Особистий помічник");
+    expect(source).toContain("Час перевірити прогрес");
+    expect(source).not.toContain("Osobisty companion");
+    expect(source).not.toContain("Providerzy AI");
+    expect(source).not.toContain("Fokus na wodzie");
+    expect(source).not.toContain("Nowy companion");
+    expect(source).not.toContain("Особистий companion");
+    expect(source).not.toContain("Новий companion");
     expect(source).not.toContain("Below you can see active providers");
     expect(source).not.toContain("Niżej widać aktywnych providerów");
     expect(source).not.toContain("Нижче видно активних провайдерів");

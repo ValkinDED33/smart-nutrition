@@ -1747,6 +1747,14 @@ addCheck(
     aiCompanionPageSource.includes("Gotowość asystenta") &&
     aiCompanionPageSource.includes("Готовність помічника") &&
     aiCompanionPageSource.includes("Team diagnostics") &&
+    aiCompanionPageSource.includes("Osobisty asystent") &&
+    aiCompanionPageSource.includes("Dostawcy AI") &&
+    aiCompanionPageSource.includes("Uwaga na wodę") &&
+    aiCompanionPageSource.includes("Особистий помічник") &&
+    aiCompanionPageSource.includes("Час перевірити прогрес") &&
+    !/Osobisty companion|Providerzy AI|Fokus na wodzie|Nowy companion|Особистий companion|Новий companion/.test(
+      aiCompanionPageSource
+    ) &&
     !/Below you can see active providers|Niżej widać aktywnych providerów|Нижче видно активних провайдерів/.test(
       aiCompanionPageSource
     ),
