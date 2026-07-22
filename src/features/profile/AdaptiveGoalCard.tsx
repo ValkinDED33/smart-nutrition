@@ -4,6 +4,7 @@ import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { selectMealItems } from "../meal/selectors";
 import { setAdaptiveCalories } from "./profileSlice";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
   calculateAdaptiveCalorieTarget,
@@ -46,7 +47,8 @@ const getAdaptiveGoalSaveCopy = (language: AppLanguage): AdaptiveGoalSaveCopy =>
 export const AdaptiveGoalCard = () => {
   const { appLanguage, t } = useLanguage();
   const copy = getAdaptiveGoalSaveCopy(appLanguage);
-  const profileAction = useProfileCloudAction();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const { maintenanceCalories, goal, adaptiveCalories, weightHistory, adaptiveMode } = useSelector(
     (state: RootState) => state.profile
   );

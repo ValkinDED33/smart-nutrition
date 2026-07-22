@@ -23,6 +23,7 @@ import {
 } from "@features/assistant-3d";
 import CompanionProgressCard from "../companion/CompanionProgressCard";
 import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import {
   assistantDietFrictions,
@@ -318,7 +319,8 @@ const AssistantCustomizationCard = () => {
   const copy = getAssistantCopy(appLanguage);
   const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const companionRenderModePreference = useCompanionRenderModePreference();
-  const profileAction = useProfileCloudAction();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const primaryGoalNoteValue =
     assistant.onboarding.primaryGoalNote === "healthy"
       ? copy.healthyGoalNote

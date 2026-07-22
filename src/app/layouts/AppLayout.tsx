@@ -39,6 +39,7 @@ import {
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
 import { setProfileLanguage } from "@features/profile/model/store";
+import { getProfileCloudActionCopy } from "@features/profile/profileCloudActionCopy";
 import { useProfileCloudAction } from "@features/profile/useProfileCloudAction";
 import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
@@ -105,7 +106,8 @@ const Layout = () => {
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
   const logoutLabel = t("nav.logout");
-  const languageProfileAction = useProfileCloudAction();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const languageProfileAction = useProfileCloudAction(profileActionCopy);
 
   useEffect(() => {
     const assistantContext = resolveAssistantContext(location.pathname);

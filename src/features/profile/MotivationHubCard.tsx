@@ -18,6 +18,7 @@ import {
   resetMotivationProgress,
 } from "./profileSlice";
 import { buildProfileStateAfterAction } from "./profileCloudSync";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import { useLanguage } from "../../shared/language";
 import {
@@ -178,7 +179,8 @@ const MotivationHubCard = () => {
   const { motivation, goal } = profile;
   const { appLanguage } = useLanguage();
   const copy = getMotivationCopy(appLanguage);
-  const profileAction = useProfileCloudAction();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
   const [savingAction, setSavingAction] = useState<PendingAction>(null);

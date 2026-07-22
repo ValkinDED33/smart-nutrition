@@ -42,6 +42,7 @@ import type {
   SupportSystem,
 } from "@domain/profile/types";
 import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
@@ -440,7 +441,6 @@ const createProfileFormValues = (
 const ProfileForm = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
-  const profileAction = useProfileCloudAction();
   const {
     dietStyle,
     adaptiveMode,
@@ -449,6 +449,8 @@ const ProfileForm = () => {
     assistant,
   } = profile;
   const { t, appLanguage } = useLanguage();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const copy = getProfileCopy(appLanguage);
   const dietLabels = getLocalizedProfileValue(dietStyleLabels, appLanguage);
   const bloodLabels = getLocalizedProfileValue(bloodGroupLabels, appLanguage);

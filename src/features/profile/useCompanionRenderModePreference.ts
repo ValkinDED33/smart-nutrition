@@ -2,13 +2,17 @@ import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@app/store";
 import type { AssistantCompanionRenderMode } from "@domain/profile/types";
+import { useLanguage } from "@shared/language";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { setAssistantCustomization } from "./profileSlice";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
 export type CompanionRenderModePreference = AssistantCompanionRenderMode;
 
 export const useCompanionRenderModePreference = () => {
-  const profileAction = useProfileCloudAction();
+  const { appLanguage } = useLanguage();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const profile = useSelector((state: RootState) => state.profile);
   const preferredMode = profile.assistant.preferredCompanionRenderMode;
   const [runtime3dError, setRuntime3dError] = useState(false);

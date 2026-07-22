@@ -136,6 +136,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened shared catalog contribution and scanner catalog-moderation feedback so product correction failures stay retryable without exposing backend/provider exception details.
 - Hardened the shared platform API client so admin/catalog actions preserve error codes/status while replacing raw backend/provider payload messages with safe product-language copy.
 - Hardened water and profile cloud action feedback so save/retry failures and companion reward sync warnings do not leak raw backend/provider exception details.
+- Moved profile cloud-action visible save/retry copy into a localized profile copy owner and updated all profile-language, assistant settings, body progress, weight, measurements, motivation, notification, adaptive-goal, and companion render-mode consumers to pass explicit active-language copy into the shared persistence hook.
 - Hardened food command, barcode scanner, meal entry editor, and catalog contribution component save errors so user-facing food surfaces no longer render raw backend/provider exception text.
 - Hardened frontend product lookup errors so scanner/search/barcode failures preserve typed codes and statuses while exposing only safe online-catalog messages, never backend/provider payload text.
 - Hardened meal, profile, water, fridge, community, companion, automatic sync, and auth-unavailable cloud-sync errors so raw backend/provider sync messages collapse into domain-safe product copy before reaching visible sync state.
@@ -251,7 +252,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Shared meal action feedback must not store or render raw exception text; add/edit/delete/repeat/template/product failures use product-language retry copy only.
 - Shared catalog contribution and scanner catalog-moderation failure feedback must not render raw backend/provider exception text; user-facing copy may confirm meal/profile state and offer retry only.
 - Water and profile save/retry feedback must not render raw backend/provider exception text; cloud action hooks and consuming cards must expose product-language recovery copy only.
-- Shared cloud-action hooks may own retry state and backend-confirmed persistence, but visible error text must be injected from the active UI language layer.
+- Shared cloud-action hooks may own retry state and backend-confirmed persistence, but visible error text must be injected from the active UI language layer. `useProfileCloudAction` must receive `ProfileCloudActionCopy` from `getProfileCloudActionCopy(appLanguage)` rather than storing user-facing strings inside shared persistence logic.
 - Food command, barcode scanner, meal entry editor, and catalog contribution components must not render raw backend/provider exception text in visible save errors; diagnostics belong in logs/admin tooling.
 - Fridge planner recipe and fridge-save feedback must not render raw backend/provider exception text or infrastructure wording; recipe diary and fridge update failures use product-language retry copy.
 - Typed and browser-voice food commands must resolve inside `FoodCommandCenter`, require a clear product, quantity, and compatible units, and persist only through `addProductIntakeToCloud`; vague speech/text must search or ask for confirmation instead of saving.

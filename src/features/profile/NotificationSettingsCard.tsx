@@ -20,6 +20,7 @@ import {
   requestSafeNotificationPermission,
 } from "@shared/lib/notifications";
 import { updateNotificationPreferences } from "./profileSlice";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const notificationCopy = {
@@ -142,7 +143,8 @@ export const NotificationSettingsCard = () => {
     reminderTimes,
   } = useSelector((state: RootState) => state.profile);
   const { appLanguage } = useLanguage();
-  const profileAction = useProfileCloudAction();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const [permission, setPermission] = useState<PermissionState>(() =>
     getSafeNotificationPermission()
   );

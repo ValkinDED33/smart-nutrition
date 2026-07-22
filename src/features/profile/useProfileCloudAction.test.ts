@@ -1,18 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { resolveProfileCloudActionErrorMessage } from "./useProfileCloudAction";
+import type { ProfileCloudActionCopy } from "./profileCloudActionCopy";
+
+const copy: ProfileCloudActionCopy = {
+  saveFailed: "Не вдалося зберегти зміни профілю.",
+  saveInProgress: "Зміни профілю вже зберігаються.",
+};
 
 describe("useProfileCloudAction", () => {
-  it("keeps user-facing profile errors free of backend/provider exception text", () => {
+  it("keeps user-facing profile errors injected and free of backend/provider exception text", () => {
     expect(
       resolveProfileCloudActionErrorMessage(
-        new Error("Backend unavailable: REMOTE_API_TIMEOUT")
+        new Error("Backend unavailable: REMOTE_API_TIMEOUT"),
+        copy
       )
-    ).toBe("Profile changes could not be saved. Please try again.");
+    ).toBe(copy.saveFailed);
 
     expect(
       resolveProfileCloudActionErrorMessage(
-        new Error("Cloud profile save is already in progress.")
+        new Error("Cloud profile save is already in progress."),
+        copy
       )
-    ).toBe("Profile changes are already being saved. Please wait a moment.");
+    ).toBe(copy.saveInProgress);
   });
 });

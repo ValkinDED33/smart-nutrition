@@ -20,6 +20,7 @@ import { selectInputValue } from "../../shared/lib/inputSelection";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { buildProfileStateAfterMeasurementSave } from "./profileSaveModel";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
 type FormData = {
@@ -114,9 +115,10 @@ const createMeasurementFormValues = (
 export const MeasurementsCheckInCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
-  const profileAction = useProfileCloudAction();
   const { measurementHistory, weeklyCheckIn } = profile;
   const { t, appLanguage } = useLanguage();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const copy = getCheckInCopy(appLanguage);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

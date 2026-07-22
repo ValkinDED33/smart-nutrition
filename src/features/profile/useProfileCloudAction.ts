@@ -7,23 +7,23 @@ import {
   saveProfileAndUserToCloud,
   saveProfileStateToCloud,
 } from "./profileCloudSync";
+import type { ProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { replaceProfileState, type ProfileState } from "./profileSlice";
 import { setUser } from "../auth/authSlice";
 
 type AuthUser = NonNullable<RootState["auth"]["user"]>;
 
 const PROFILE_SAVE_IN_PROGRESS_ERROR = "Cloud profile save is already in progress.";
-const USER_PROFILE_SAVE_ERROR =
-  "Profile changes could not be saved. Please try again.";
-const USER_PROFILE_SAVE_IN_PROGRESS_ERROR =
-  "Profile changes are already being saved. Please wait a moment.";
 
-export const resolveProfileCloudActionErrorMessage = (error: unknown) =>
+export const resolveProfileCloudActionErrorMessage = (
+  error: unknown,
+  copy: ProfileCloudActionCopy
+) =>
   error instanceof Error && error.message === PROFILE_SAVE_IN_PROGRESS_ERROR
-    ? USER_PROFILE_SAVE_IN_PROGRESS_ERROR
-    : USER_PROFILE_SAVE_ERROR;
+    ? copy.saveInProgress
+    : copy.saveFailed;
 
-export const useProfileCloudAction = () => {
+export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
   const dispatch = useDispatch<AppDispatch>();
   const profile = useSelector((state: RootState) => state.profile);
   const [saving, setSaving] = useState(false);
@@ -41,13 +41,13 @@ export const useProfileCloudAction = () => {
       try {
         return await applyProfileActionInCloud(dispatch, profile, action);
       } catch (caughtError) {
-        setError(resolveProfileCloudActionErrorMessage(caughtError));
+        setError(resolveProfileCloudActionErrorMessage(caughtError, copy));
         throw caughtError;
       } finally {
         setSaving(false);
       }
     },
-    [dispatch, profile, saving]
+    [copy, dispatch, profile, saving]
   );
 
   const runProfileStateSave = useCallback(
@@ -64,20 +64,20 @@ export const useProfileCloudAction = () => {
         dispatch(replaceProfileState(nextProfile));
         return nextProfile;
       } catch (caughtError) {
-        setError(resolveProfileCloudActionErrorMessage(caughtError));
+        setError(resolveProfileCloudActionErrorMessage(caughtError, copy));
         throw caughtError;
       } finally {
         setSaving(false);
       }
     },
-    [dispatch, saving]
+    [copy, dispatch, saving]
   );
 
   const runProfileAndUserSave = useCallback(
     async (nextUser: AuthUser, nextProfile: ProfileState) => {
       if (saving) {
         const inProgressError = new Error(PROFILE_SAVE_IN_PROGRESS_ERROR);
-        setError(resolveProfileCloudActionErrorMessage(inProgressError));
+        setError(resolveProfileCloudActionErrorMessage(inProgressError, copy));
         throw inProgressError;
       }
 
@@ -94,13 +94,13 @@ export const useProfileCloudAction = () => {
         dispatch(replaceProfileState(nextProfile));
         return { user: savedUser, profile: nextProfile };
       } catch (caughtError) {
-        setError(resolveProfileCloudActionErrorMessage(caughtError));
+        setError(resolveProfileCloudActionErrorMessage(caughtError, copy));
         throw caughtError;
       } finally {
         setSaving(false);
       }
     },
-    [dispatch, saving]
+    [copy, dispatch, saving]
   );
 
   const clearError = useCallback(() => {

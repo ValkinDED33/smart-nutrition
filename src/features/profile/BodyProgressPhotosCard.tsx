@@ -17,6 +17,7 @@ import { formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { addProgressPhoto, removeProgressPhoto } from "./profileSlice";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const MAX_PHOTO_BYTES = 8_000_000;
@@ -159,9 +160,10 @@ const getProgressPhotoCopy = (language: AppLanguage): ProgressPhotoCopy => {
 
 export const BodyProgressPhotosCard = () => {
   const profile = useSelector((state: RootState) => state.profile);
-  const profileAction = useProfileCloudAction();
   const photos = profile.progressPhotos;
   const { appLanguage } = useLanguage();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const copy = getProgressPhotoCopy(appLanguage);
   const [rawPreview, setRawPreview] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);

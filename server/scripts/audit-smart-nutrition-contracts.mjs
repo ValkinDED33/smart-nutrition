@@ -72,6 +72,9 @@ const communitySliceSource = readSource("src/features/community/communitySlice.t
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
+const profileCloudActionCopySource = readSource(
+  "src/features/profile/profileCloudActionCopy.ts"
+);
 const waterCloudActionSource = readSource("src/features/water/useWaterCloudAction.ts");
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
@@ -1373,8 +1376,18 @@ addCheck(
 addCheck(
   "profile cloud action feedback hides raw backend/provider failure details",
   profileCloudActionSource.includes("resolveProfileCloudActionErrorMessage") &&
-    profileCloudActionSource.includes("USER_PROFILE_SAVE_ERROR") &&
-    profileCloudActionSource.includes("USER_PROFILE_SAVE_IN_PROGRESS_ERROR") &&
+    profileCloudActionSource.includes("copy.saveFailed") &&
+    profileCloudActionSource.includes("copy.saveInProgress") &&
+    profileCloudActionCopySource.includes("ProfileCloudActionCopy") &&
+    profileCloudActionCopySource.includes("getProfileCloudActionCopy") &&
+    profileCloudActionCopySource.includes("Не вдалося зберегти зміни профілю") &&
+    profileCloudActionCopySource.includes("Nie udało się zapisać zmian profilu") &&
+    !profileCloudActionSource.includes(
+      "Profile changes could not be saved. Please try again."
+    ) &&
+    !profileCloudActionSource.includes(
+      "Profile changes are already being saved. Please wait a moment."
+    ) &&
     !profileCloudActionSource.includes("setError(message)") &&
     !profileCloudActionSource.includes("setError(inProgressError.message)") &&
     !profileCloudActionSource.includes("error.message :") &&

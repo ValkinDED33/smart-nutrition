@@ -20,6 +20,7 @@ import { createCompanionRewardAnalyticsPayload } from "@features/companion";
 import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
 import { SectionCard } from "@shared/ui";
 import { buildProfileStateAfterWeightSave } from "./profileSaveModel";
+import { getProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { useProfileCloudAction } from "./useProfileCloudAction";
 import type { AppLanguage } from "../../shared/types/i18n";
 
@@ -161,9 +162,10 @@ export const QuickWeightCheckInCard = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const companion = useSelector((state: RootState) => state.companion);
-  const profileAction = useProfileCloudAction();
   const { targetWeight, targetWeightStart, weightHistory } = profile;
   const { appLanguage } = useLanguage();
+  const profileActionCopy = getProfileCloudActionCopy(appLanguage);
+  const profileAction = useProfileCloudAction(profileActionCopy);
   const copy = getQuickWeightCopy(appLanguage);
   const latestEntry = weightHistory.at(-1);
   const latestWeight = latestEntry?.weight ?? user?.weight ?? 0;
