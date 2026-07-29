@@ -18,6 +18,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 10. Every action must be recoverable.
 11. Env examples must contain placeholders only, never real-looking provider secrets.
 12. Deploy-sensitive fixes are not complete until the live production chain is checked: Git commit on remote, backend endpoint, frontend bundle, CORS, service worker/cache risk, and stale localStorage/base URL risk.
+13. Family Wellness must be one lifecycle layer inside the existing account/profile/cloud/AI/Telegram ecosystem, not a second family app or local family store.
 
 ## Enforcement
 
@@ -30,6 +31,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Every release-impacting change must run through validation or report exactly what could not be validated.
 - Every new provider/deploy secret must update env example guards before release.
 - Every fix that changes frontend/backend contracts must verify production routing, not just local tests: confirm the pushed commit, probe the live backend route, inspect the live frontend bundle for the new contract, and check whether PWA/service-worker cache or saved browser state can mask the change.
+- Family, pregnancy, partner, postpartum, breastfeeding, and baby features must extend canonical profile or backend-owned family contracts with scoped permissions.
 
 ## Forbidden Anti-Patterns
 
@@ -39,6 +41,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Adding another reminder/task model for Telegram.
 - Adding another product/meal model for scanner, AI, photo recognition, or recipes.
 - Adding another AI memory or assistant runtime disconnected from backend tools.
+- Adding a separate pregnancy/baby/family store, Telegram flow, or partner dashboard that bypasses canonical profile cloud state and permission-scoped backend sharing.
 - Creating UI controls that do nothing.
 - Catching errors and still showing success.
 - Committing real-looking API keys or credentials into env templates, docs, project memory, or examples.
@@ -68,5 +71,6 @@ Before accepting a change, ask:
 - Does this work on mobile/PWA/Telegram WebView if relevant?
 - What happens when auth expires, network fails, or backend rejects the action?
 - Did this introduce a new provider/deploy secret, and is the example guarded against leaks?
+- Does this family/pregnancy/partner/baby feature use canonical lifecycle/profile/sharing state with explicit permissions?
 - What tests or smoke checks prove the behavior?
 - Did the live production chain prove the same behavior, including stale cache/localStorage failure modes?

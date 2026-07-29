@@ -174,3 +174,10 @@
 - Context: Redis backs distributed cache and rate limiting. A single backend instance can safely use in-memory cache/rate limiting, but multiple backend instances would otherwise drift into separate per-instance runtime state.
 - Decision: `SMART_NUTRITION_RUNTIME_INSTANCE_COUNT` declares the intended production backend instance count. Production may run without Redis only when the count is `1`. If the count is greater than `1`, `SMART_NUTRITION_REDIS_URL` is required and production config fails fast when it is missing.
 - Consequences: `server:check` does not warn about Redis for an explicitly single-instance deployment, but horizontal scaling must configure Redis before deploy. Scaling decisions are visible, test-covered, and protected by contract audit.
+
+## ADR-026: Family Wellness Is A Lifecycle Layer
+
+- Status: Accepted.
+- Context: Smart Nutrition is expanding from personal nutrition into planning, pregnancy, partner support, postpartum, breastfeeding, baby care, and family habits. Building a separate family app, local family store, second AI memory, or separate Telegram flow would recreate the same architecture drift the project rules are designed to prevent.
+- Decision: Family Wellness is a lifecycle layer inside the existing Smart Nutrition account, profile cloud state, AI runtime, Telegram retention layer, and backend-owned sharing contracts. Existing `womenHealth` profile state remains the canonical owner for planning, pregnancy, postpartum, symptom, and baby-preview context. Partner access remains permission-scoped and must not become full account synchronization.
+- Consequences: New family modes must extend canonical backend/profile/family contracts instead of adding local-only state or duplicate systems. AI and Telegram must read lifecycle context through canonical profile/sharing data and must keep medical safety boundaries. Pregnancy, baby, breastfeeding, partner, and family-goal actions can show success only after backend confirmation or explicit queued/offline state.

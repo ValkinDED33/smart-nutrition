@@ -231,6 +231,7 @@ const chiefSkillSource = readSource(".codex/skills/smart-nutrition-chief/SKILL.m
 const aiReadyDocSource = readSource("docs/AI_READY_TO_USE.md");
 const aiIntegrationDocSource = readSource("docs/AI_INTEGRATION_SETUP.md");
 const envSetupDocSource = readSource("docs/ENV_SETUP_GUIDE.md");
+const familyWellnessDocSource = readSource("docs/FAMILY_WELLNESS_ECOSYSTEM.md");
 const specialistSkillPaths = [
   ".codex/skills/ai-architect/SKILL.md",
   ".codex/skills/knowledge-curator/SKILL.md",
@@ -2040,6 +2041,21 @@ addCheck(
     profilePageSource.includes("copy.tabs.womenHealth") &&
     profilePageSource.includes("<WomenHealthOverviewCard />"),
   "Female accounts and accounts with canonical women-health profile context must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class profile section, not as hidden data-tab content or a stale auth-gender casualty."
+);
+
+addCheck(
+  "family wellness is documented as one lifecycle layer",
+  familyWellnessDocSource.includes("Family Wellness is a lifecycle layer") &&
+    familyWellnessDocSource.includes("Backend/cloud is the source of truth") &&
+    familyWellnessDocSource.includes("The existing `womenHealth` profile state remains the canonical owner") &&
+    familyWellnessDocSource.includes("Partner Mode is a scoped family view, not full account synchronization") &&
+    familyWellnessDocSource.includes("Baby data must be backend-owned and permission-scoped") &&
+    familyWellnessDocSource.includes("Never diagnoses") &&
+    familyWellnessDocSource.includes("No duplicate family app") &&
+    projectDecisionsSource.includes("ADR-026: Family Wellness Is A Lifecycle Layer") &&
+    projectRulesSource.includes("Family Wellness must be one lifecycle layer") &&
+    projectMemorySource.includes("Family Wellness is now an accepted strategic product layer"),
+  "Family Wellness must be governed as one account/profile/cloud/AI/Telegram lifecycle system with scoped partner permissions, medical safety boundaries, and no local-only family truth."
 );
 
 addCheck(

@@ -8,6 +8,8 @@ The product must feel trustworthy, fast, recoverable, and coherent. Every user a
 
 The signature product direction is a Living AI Interface: Smart Nutrition should feel less like opening a calorie calculator and more like entering a calm AI wellness space where the assistant notices, explains, remembers, and accompanies the user. The interface may breathe, morph, surface discoveries, and react emotionally, but every magical moment must be grounded in canonical context, backend-confirmed actions, safe memory, and honest recovery.
 
+Family Wellness is now an accepted strategic product layer. Smart Nutrition should support personal wellness, couple planning, pregnancy, partner support, postpartum recovery, breastfeeding, baby care, and family goals through one account and one canonical cloud-backed lifecycle model, not through a separate family app.
+
 ## Current Production Status
 
 Status: stabilizing with live smoke checks passing; not yet fully certified for production.
@@ -102,6 +104,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished premium, community, behavior-personalization, and smart-recommendation copy so user-facing surfaces say AI guidance/profile direction instead of leaking `coach`, `fokus`, or `onboarding focus` planning labels.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
 - Hardened shared language-menu focus handling so MUI popovers do not leave the trigger focused inside an `aria-hidden` app root and no longer pollute production console/a11y checks.
+- Accepted Family Wellness as a lifecycle layer inside the existing Smart Nutrition account/profile/cloud/AI/Telegram ecosystem and documented the implementation contract in `docs/FAMILY_WELLNESS_ECOSYSTEM.md`.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
 - Hardened community mutations so saved social/profile-community actions return canonical backend `community` state and the frontend refuses to confirm locally computed community state when the backend omits the canonical payload.
@@ -327,6 +330,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Public startup auth restore must be gated by a recent session hint. Guest landing/register/login views must not create red 401/refresh console noise just because no account is signed in.
 - Shared modal menu triggers must release focus before opening MUI modal-backed menus; visible UI must not produce `aria-hidden` focus conflicts in normal navigation, language switching, profile, or onboarding flows.
+- Family Wellness modes must extend canonical profile or backend-owned family contracts. Pregnancy, partner, postpartum, breastfeeding, baby, and family-goal features must not create local-only canonical state, a second AI brain, a second Telegram truth, or full-account partner synchronization.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.
 - Production readiness checks must reject placeholder secrets, database URLs, and email settings.
 - Production readiness checks must reject cross-site cookie settings that break auth restore.
@@ -412,12 +416,13 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 3. Review large bundle chunks and lazy-load high-cost scanner, AI, companion, markdown, and vendor paths where safe.
 4. Complete reminder naming migration plan from legacy `medicationReminders` to canonical `reminders`.
 5. Run real-device mobile/PWA/Telegram WebView smoke checks for safe areas, keyboard, bottom nav, scanner camera permission, stale chunks, and service worker recovery.
-6. Trace canonical product/meal intake end-to-end across manual add, photo add, scanner UI camera scan, and refresh/relogin restore.
-7. Check email deliverability DNS/reputation so verification messages stop landing in spam.
-8. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
-9. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
-10. Run `npm run audit:live` after every Render/Vercel redeploy that changes app URLs, CORS, SEO discovery, PWA assets, public health, or bundle startup behavior.
-11. Create/maintain a dedicated verified production smoke account and run `npm run audit:live:auth` with its credentials after auth, state, meal, reminder, Telegram status, or cookie changes.
+6. Implement the first backend-confirmed Family Wellness lifecycle slice: explicit lifecycle mode, pregnancy screen data model, partner scoped dashboard, and AI/Telegram context trace.
+7. Trace canonical product/meal intake end-to-end across manual add, photo add, scanner UI camera scan, and refresh/relogin restore.
+8. Check email deliverability DNS/reputation so verification messages stop landing in spam.
+9. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
+10. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
+11. Run `npm run audit:live` after every Render/Vercel redeploy that changes app URLs, CORS, SEO discovery, PWA assets, public health, or bundle startup behavior.
+12. Create/maintain a dedicated verified production smoke account and run `npm run audit:live:auth` with its credentials after auth, state, meal, reminder, Telegram status, or cookie changes.
 
 ## Release Checklist
 
