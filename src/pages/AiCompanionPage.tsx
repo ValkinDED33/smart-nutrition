@@ -140,6 +140,7 @@ const aiCopy = {
       memory: "Пам'ять",
       settings: "Налаштування",
     },
+    sectionsAriaLabel: "Розділи помічника",
   },
   pl: {
     title: "Asystent",
@@ -221,6 +222,7 @@ const aiCopy = {
       memory: "Pamięć",
       settings: "Ustawienia",
     },
+    sectionsAriaLabel: "Sekcje asystenta",
   },
   en: {
     title: "Assistant",
@@ -302,6 +304,7 @@ const aiCopy = {
       memory: "Memory",
       settings: "Settings",
     },
+    sectionsAriaLabel: "Assistant sections",
   },
 } as const;
 
@@ -553,7 +556,7 @@ const AiCompanionPage = () => {
         sections={sections}
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as AiCompanionSection)}
-        ariaLabel="Assistant companion sections"
+        ariaLabel={copy.sectionsAriaLabel}
       />
 
       {activeSection === "companion" ? (

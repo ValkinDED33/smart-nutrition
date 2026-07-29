@@ -1944,6 +1944,17 @@ addCheck(
   "Regular assistant settings and /api/ai/status must show product readiness language for regular users; provider/model/fallback diagnostics belong behind admin-center role access."
 );
 
+addCheck(
+  "AI companion section navigation uses active-language accessibility copy",
+  aiCompanionPageSource.includes("sectionsAriaLabel") &&
+    aiCompanionPageSource.includes("Розділи помічника") &&
+    aiCompanionPageSource.includes("Sekcje asystenta") &&
+    aiCompanionPageSource.includes("Assistant sections") &&
+    aiCompanionPageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
+    !aiCompanionPageSource.includes('ariaLabel="Assistant companion sections"'),
+  "AI companion section tabs must use active-language accessibility copy instead of hardcoded English labels."
+);
+
 const regularAssistantCopySources = [
   aiCompanionPageSource,
   assistantRuntimeCardSource,

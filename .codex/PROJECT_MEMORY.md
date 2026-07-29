@@ -192,6 +192,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened profile-only cloud saves against profile-state conflicts: direct profile updates now replay only the user's changed fields on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm the rebased backend state instead of overwriting unrelated fresh cloud fields.
 - Hardened combined user/profile-state saves against duplicate profile names: backend now rejects `NAME_IN_USE` before writing profile state and maps it to a public `409`, preventing partial cloud profile saves when a nickname is already used by another account.
 - Localized progress surface accessibility and copied-report text so progress tabs and exported daily summary follow the active app language instead of leaking hardcoded English labels.
+- Localized AI companion section-tab accessibility copy and added contract coverage so the assistant surface cannot silently return to hardcoded English navigation labels.
 
 ## Current Architecture
 
