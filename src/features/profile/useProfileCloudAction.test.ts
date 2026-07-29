@@ -30,7 +30,8 @@ describe("useProfileCloudAction", () => {
     );
 
     expect(source).toContain("confirmedAt?: string");
-    expect(source).toContain("saveProfileStateToCloud(dispatch, nextProfile, confirmedAt)");
+    expect(source).toContain("saveProfileStateToCloudWithConflictRebase");
+    expect(source).toContain("profile,\n          nextProfile,\n          undefined,\n          confirmedAt");
     expect(source).toContain("saveProfileAndUserToCloudWithConflictRebase");
     expect(source).toContain("rebaseProfile?: (freshProfile: ProfileState) => ProfileState");
     expect(source).toContain("nextProfile,\n              rebaseProfile,\n              confirmedAt");

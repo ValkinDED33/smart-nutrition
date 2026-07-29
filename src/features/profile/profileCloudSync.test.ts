@@ -3,9 +3,11 @@ import { normalizeProfileState, setAssistantCustomization } from "./profileSlice
 import {
   applyProfileActionInCloud,
   buildProfileStateAfterAction,
+  rebaseProfileStateChange,
   saveProfileAndUserToCloud,
   saveProfileAndUserToCloudWithConflictRebase,
   saveProfileStateToCloud,
+  saveProfileStateToCloudWithConflictRebase,
 } from "./profileCloudSync";
 
 const authApiMock = vi.hoisted(() => ({
@@ -24,6 +26,7 @@ const RAW_PROFILE_SYNC_ERROR = "Provider stack trace: profile database failed";
 const PROFILE_RENDER_MODE_3D = "3d";
 const PROFILE_CALORIES = 2100;
 const PROFILE_REBASED_CALORIES = 2400;
+const CLOUD_SNAPSHOT_UPDATED_AT = "2026-07-02T08:20:00.000Z";
 const PROFILE_UPDATED_AT = "2026-07-01T08:20:00.000Z";
 const PROFILE_PREVIOUS_UPDATED_AT = "2026-07-01T08:19:00.000Z";
 const ACTION_SYNC_STARTED = "auth/markSyncStarted";
@@ -32,6 +35,7 @@ const ACTION_SET_CLOUD_META = "auth/setCloudMeta";
 const ACTION_SYNC_SUCCESS = "auth/markSyncSuccess";
 const ACTION_SYNC_ERROR = "auth/markSyncError";
 const ACTION_REPLACE_PROFILE = "profile/replaceProfileState";
+const ACTION_HYDRATE_COMPANION = "companion/hydrateCompanionState";
 const USER_PROFILE_FIXTURE = {
   id: "user-1",
   email: "profile@example.com",
@@ -60,6 +64,33 @@ describe("profileCloudSync", () => {
 
     expect(next.assistant.name).toBe(ASSISTANT_NAME);
     expect(current.assistant.name).not.toBe(ASSISTANT_NAME);
+  });
+
+  it("rebases only the changed profile fields onto a fresh cloud snapshot", () => {
+    const baseProfile = normalizeProfileState({
+      dailyCalories: 2100,
+      targetWeight: 80,
+      assistant: { name: "Helper" },
+    });
+    const nextProfile = normalizeProfileState({
+      ...baseProfile,
+      targetWeight: 75,
+    });
+    const freshProfile = normalizeProfileState({
+      dailyCalories: 2300,
+      targetWeight: 80,
+      assistant: { name: "Cloud Helper" },
+    });
+
+    const rebasedProfile = rebaseProfileStateChange(
+      baseProfile,
+      nextProfile,
+      freshProfile
+    );
+
+    expect(rebasedProfile.dailyCalories).toBe(2300);
+    expect(rebasedProfile.targetWeight).toBe(75);
+    expect(rebasedProfile.assistant.name).toBe("Cloud Helper");
   });
 
   it("updates local profile only after the cloud save succeeds", async () => {
@@ -281,8 +312,8 @@ describe("profileCloudSync", () => {
       fridge: null,
       community: null,
       companion: null,
-      updatedAt: "2026-07-02T08:20:00.000Z",
-      profileUpdatedAt: "2026-07-02T08:20:00.000Z",
+      updatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
       mealUpdatedAt: null,
       waterUpdatedAt: null,
     });
@@ -310,7 +341,7 @@ describe("profileCloudSync", () => {
       ACTION_SYNC_STARTED,
       ACTION_SYNC_STARTED,
       ACTION_REPLACE_PROFILE,
-      "companion/hydrateCompanionState",
+      ACTION_HYDRATE_COMPANION,
       ACTION_HYDRATE_SYNC_OUTBOX,
       ACTION_SET_CLOUD_META,
       ACTION_SYNC_SUCCESS,
@@ -370,6 +401,80 @@ describe("profileCloudSync", () => {
       ACTION_SYNC_STARTED,
       ACTION_REPLACE_PROFILE,
       "companion/hydrateCompanionState",
+      ACTION_HYDRATE_SYNC_OUTBOX,
+      ACTION_SET_CLOUD_META,
+      ACTION_SYNC_SUCCESS,
+    ]);
+  });
+
+  it("rebases a profile-only save after a cloud conflict", async () => {
+    const dispatch = vi.fn();
+    const staleProfile = normalizeProfileState({
+      dailyCalories: PROFILE_CALORIES,
+      targetWeight: 80,
+    });
+    const nextProfile = normalizeProfileState({
+      ...staleProfile,
+      targetWeight: 75,
+    });
+    const cloudProfile = normalizeProfileState({
+      dailyCalories: PROFILE_REBASED_CALORIES,
+      targetWeight: 80,
+    });
+
+    authApiMock.syncRemoteProfileState
+      .mockResolvedValueOnce({
+        ok: false,
+        code: "STATE_CONFLICT",
+        message: "conflict",
+        meta: null,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        meta: {
+          updatedAt: PROFILE_UPDATED_AT,
+          deviceId: CLOUD_DEVICE_ID,
+        },
+      });
+    authApiMock.pullRemoteAppSnapshot.mockResolvedValueOnce({
+      profile: cloudProfile,
+      meal: null,
+      water: null,
+      fridge: null,
+      community: null,
+      companion: null,
+      updatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
+      mealUpdatedAt: null,
+      waterUpdatedAt: null,
+    });
+
+    const result = await saveProfileStateToCloudWithConflictRebase(
+      dispatch,
+      staleProfile,
+      nextProfile,
+      undefined,
+      PROFILE_PREVIOUS_UPDATED_AT
+    );
+
+    expect(result.profile.dailyCalories).toBe(PROFILE_REBASED_CALORIES);
+    expect(result.profile.targetWeight).toBe(75);
+    expect(authApiMock.syncRemoteProfileState).toHaveBeenNthCalledWith(
+      1,
+      nextProfile
+    );
+    expect(authApiMock.syncRemoteProfileState).toHaveBeenNthCalledWith(
+      2,
+      result.profile
+    );
+    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+      ACTION_SYNC_STARTED,
+      ACTION_SYNC_STARTED,
+      ACTION_REPLACE_PROFILE,
+      ACTION_HYDRATE_COMPANION,
+      ACTION_HYDRATE_SYNC_OUTBOX,
+      ACTION_SET_CLOUD_META,
+      ACTION_SYNC_SUCCESS,
       ACTION_HYDRATE_SYNC_OUTBOX,
       ACTION_SET_CLOUD_META,
       ACTION_SYNC_SUCCESS,

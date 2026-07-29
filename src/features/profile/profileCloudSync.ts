@@ -50,6 +50,66 @@ const getProfileSyncErrorMessage = (result: {
     fallbackMessage: "Cloud sync could not save the latest profile data.",
   });
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const profileValuesEqual = (left: unknown, right: unknown): boolean => {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  return JSON.stringify(left) === JSON.stringify(right);
+};
+
+const applyProfileStateDelta = (
+  baseValue: unknown,
+  nextValue: unknown,
+  freshValue: unknown
+): unknown => {
+  if (profileValuesEqual(baseValue, nextValue)) {
+    return freshValue;
+  }
+
+  if (
+    isPlainObject(baseValue) &&
+    isPlainObject(nextValue) &&
+    isPlainObject(freshValue)
+  ) {
+    const changedEntries = Object.entries(nextValue).flatMap(
+      ([key, nextChildValue]) => {
+        const baseChildValue = Object.getOwnPropertyDescriptor(baseValue, key)?.value;
+        const freshChildValue = Object.getOwnPropertyDescriptor(freshValue, key)?.value;
+
+        return profileValuesEqual(baseChildValue, nextChildValue)
+          ? []
+          : [
+              [
+                key,
+                applyProfileStateDelta(
+                  baseChildValue,
+                  nextChildValue,
+                  freshChildValue
+                ),
+              ],
+            ];
+      }
+    );
+
+    return Object.fromEntries([...Object.entries(freshValue), ...changedEntries]);
+  }
+
+  return nextValue;
+};
+
+export const rebaseProfileStateChange = (
+  baseProfile: ProfileState,
+  nextProfile: ProfileState,
+  freshProfile: ProfileState
+) =>
+  normalizeProfileState(
+    applyProfileStateDelta(baseProfile, nextProfile, freshProfile)
+  );
+
 export const saveProfileStateToCloud = async (
   dispatch: ProfileSyncDispatch,
   profile: ProfileState,
@@ -74,6 +134,54 @@ export const saveProfileStateToCloud = async (
   dispatch(markSyncSuccess(result.meta?.updatedAt ?? confirmedAt));
 
   return result;
+};
+
+export const saveProfileStateToCloudWithConflictRebase = async (
+  dispatch: ProfileSyncDispatch,
+  baseProfile: ProfileState,
+  nextProfile: ProfileState,
+  rebaseProfile: ProfileConflictRebase = (freshProfile) =>
+    rebaseProfileStateChange(baseProfile, nextProfile, freshProfile),
+  confirmedAt = new Date().toISOString()
+) => {
+  dispatch(markSyncStarted());
+  const result = await syncRemoteProfileState(nextProfile);
+
+  if (!result.ok) {
+    if (!isCloudStateConflict(result)) {
+      const message = getProfileSyncErrorMessage(result);
+      dispatch(markSyncError(message));
+      throw new Error(message);
+    }
+
+    const snapshot = await recoverLatestCloudSnapshotAfterConflict(dispatch);
+    const freshProfile = normalizeProfileState(snapshot.profile);
+    const rebasedProfile = rebaseProfile(freshProfile);
+    const rebasedResult = await syncRemoteProfileState(rebasedProfile);
+
+    if (!rebasedResult.ok) {
+      if (isCloudStateConflict(rebasedResult)) {
+        await recoverLatestCloudSnapshotAfterConflict(dispatch);
+        throw new Error(PROFILE_CONFLICT_RETRY_MESSAGE);
+      }
+
+      const message = getProfileSyncErrorMessage(rebasedResult);
+      dispatch(markSyncError(message));
+      throw new Error(message);
+    }
+
+    dispatch(hydrateSyncOutbox(clearSyncOutbox()));
+    dispatch(setCloudMeta(rebasedResult.meta ?? null));
+    dispatch(markSyncSuccess(rebasedResult.meta?.updatedAt ?? confirmedAt));
+
+    return { profile: rebasedProfile, result: rebasedResult };
+  }
+
+  dispatch(hydrateSyncOutbox(clearSyncOutbox()));
+  dispatch(setCloudMeta(result.meta ?? null));
+  dispatch(markSyncSuccess(result.meta?.updatedAt ?? confirmedAt));
+
+  return { profile: nextProfile, result };
 };
 
 export const saveProfileAndUserToCloud = async (
@@ -162,9 +270,15 @@ export const applyProfileActionInCloud = async (
   confirmedAt = new Date().toISOString()
 ) => {
   const nextProfile = buildProfileStateAfterAction(profile, action);
+  const saved = await saveProfileStateToCloudWithConflictRebase(
+    dispatch,
+    profile,
+    nextProfile,
+    (freshProfile) => buildProfileStateAfterAction(freshProfile, action),
+    confirmedAt
+  );
 
-  await saveProfileStateToCloud(dispatch, nextProfile, confirmedAt);
-  dispatch(replaceProfileState(nextProfile));
+  dispatch(replaceProfileState(saved.profile));
 
-  return nextProfile;
+  return saved.profile;
 };

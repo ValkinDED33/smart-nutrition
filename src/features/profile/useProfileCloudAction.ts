@@ -6,7 +6,7 @@ import {
   applyProfileActionInCloud,
   saveProfileAndUserToCloud,
   saveProfileAndUserToCloudWithConflictRebase,
-  saveProfileStateToCloud,
+  saveProfileStateToCloudWithConflictRebase,
 } from "./profileCloudSync";
 import type { ProfileCloudActionCopy } from "./profileCloudActionCopy";
 import { replaceProfileState, type ProfileState } from "./profileSlice";
@@ -61,9 +61,15 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
       setError(null);
 
       try {
-        await saveProfileStateToCloud(dispatch, nextProfile, confirmedAt);
-        dispatch(replaceProfileState(nextProfile));
-        return nextProfile;
+        const saved = await saveProfileStateToCloudWithConflictRebase(
+          dispatch,
+          profile,
+          nextProfile,
+          undefined,
+          confirmedAt
+        );
+        dispatch(replaceProfileState(saved.profile));
+        return saved.profile;
       } catch (caughtError) {
         setError(resolveProfileCloudActionErrorMessage(caughtError, copy));
         throw caughtError;
@@ -71,7 +77,7 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
         setSaving(false);
       }
     },
-    [copy, dispatch, saving]
+    [copy, dispatch, profile, saving]
   );
 
   const runProfileAndUserSave = useCallback(

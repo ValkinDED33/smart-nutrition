@@ -12,6 +12,7 @@ const RUN_PROFILE_AND_USER_SAVE = "profileAction.runProfileAndUserSave";
 const PROFILE_ACTION_HAS_ERROR = "profileAction.hasError";
 const PROFILE_ACTION_SAVING = "profileAction.saving";
 const PROFILE_ACTION_ERROR = "profileAction.error";
+const SAVE_PROFILE_STATE_WITH_REBASE = "saveProfileStateToCloudWithConflictRebase";
 const SAVE_PROFILE_AND_USER_TO_CLOUD = "saveProfileAndUserToCloud";
 const REPLACE_PROFILE_STATE = "replaceProfileState";
 const RAW_ERROR_MESSAGE_TERNARY = "error instanceof Error ? error.message";
@@ -26,7 +27,7 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain("setSaving(true)");
     expect(source).toContain("runProfileStateSave");
     expect(source).toContain("runProfileAndUserSave");
-    expect(source).toContain("saveProfileStateToCloud");
+    expect(source).toContain(SAVE_PROFILE_STATE_WITH_REBASE);
     expect(source).toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).toContain(REPLACE_PROFILE_STATE);
     expect(source).toContain("setUser");

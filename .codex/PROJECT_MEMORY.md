@@ -180,6 +180,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Removed embedded base64/Howler scanner-water sound playback after browser `atob` decode errors; UI feedback now uses Web Audio oscillator tones only, with optional sound failures swallowed so scanner/water actions never fail because audio failed.
 - Added full direct-translation coverage for all active app languages so UI cannot render raw i18n keys such as `weekly.title`, `productFacts.title`, or `nav.home` after future copy changes.
 - Hardened public app startup so first-time guests are initialized locally as unauthenticated instead of calling `/api/auth/session` and `/api/auth/refresh`; returning users still restore only through the recent session-hint path.
+- Hardened profile-only cloud saves against profile-state conflicts: direct profile updates now replay only the user's changed fields on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm the rebased backend state instead of overwriting unrelated fresh cloud fields.
 
 ## Current Architecture
 
@@ -350,6 +351,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Heavy native/image-processing dependencies must be justified by a real source path and kept within dependency-audit thresholds; `sharp` is currently owned by backend photo analysis for safe image normalization.
 - Deploy-sensitive readiness must include `npm run audit:live` after deployment or domain/backend/CORS/SEO changes. The live audit may use only public unauthenticated endpoints and must not include secrets, login, protected user data, or fake success.
 - Authenticated deploy smoke must use a dedicated verified smoke account via `SMART_NUTRITION_LIVE_SMOKE_EMAIL` and `SMART_NUTRITION_LIVE_SMOKE_PASSWORD`; the npm script loads ignored `.env` for these values, and personal/admin credentials must not be committed, echoed, or required for routine verification.
+- Direct profile state saves must replay only changed profile fields on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`; ordinary users should not have to repeat the same profile action, and stale local state must not overwrite unrelated fresh cloud fields.
 - Telegram is a retention layer, not the main application or a separate reminder backend.
 - Telegram free text must route through the canonical assistant runtime after deterministic backend-confirmed agent actions are checked.
 - Telegram reminder command hints, reminder lists, management buttons, callback feedback, and scheduled reminder notifications must use the connected profile language when a profile is available; Telegram client language is only a disconnected fallback.

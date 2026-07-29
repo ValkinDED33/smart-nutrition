@@ -1111,12 +1111,23 @@ addCheck(
 
 addCheck(
   "profile settings use one shared cloud-confirmed action path",
-  profileCloudActionSource.includes("saveProfileStateToCloud") &&
+  profileCloudActionSource.includes("saveProfileStateToCloudWithConflictRebase") &&
     profileCloudActionSource.includes("saveProfileAndUserToCloud") &&
     profileCloudActionSource.includes("replaceProfileState") &&
     profileCloudActionSource.includes("setUser") &&
     profileCloudActionSource.includes("throw caughtError"),
   "Profile settings must use the shared cloud action path and throw on failed persistence instead of fake success."
+);
+
+addCheck(
+  "profile-only saves rebase cloud conflicts instead of surfacing stale-profile failure",
+  profileCloudSyncSource.includes("rebaseProfileStateChange") &&
+    profileCloudSyncSource.includes("saveProfileStateToCloudWithConflictRebase") &&
+    profileCloudSyncSource.includes("applyProfileStateDelta") &&
+    profileCloudSyncSource.includes("syncRemoteProfileState(rebasedProfile)") &&
+    profileCloudActionSource.includes("saveProfileStateToCloudWithConflictRebase") &&
+    profileCloudActionSource.includes("dispatch(replaceProfileState(saved.profile))"),
+  "Direct profile state saves must replay the user's profile change on top of the latest cloud snapshot after STATE_CONFLICT, not ask ordinary users to repeat the same action or overwrite fresh cloud fields with stale local state."
 );
 
 addCheck(
