@@ -73,6 +73,7 @@ describe("WomenHealthOverviewCard contract", () => {
 
   it("surfaces the women-health center through the existing profile shell", async () => {
     const source = await readSource("src/pages/ProfilePage.tsx");
+    const cardSource = await readSource(womenHealthCardPath);
 
     expect(source).toContain("WomenHealthOverviewCard");
     expect(source).toContain("../features/profile/WomenHealthOverviewCard");
@@ -80,6 +81,8 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
     expect(source).toContain('id: "women-health"');
     expect(source).toContain("copy.tabs.womenHealth");
+    expect(cardSource).toContain("hasWomenHealthContext(womenHealth)");
+    expect(cardSource).toContain("isWomenHealthVisibleForGender(user?.gender) ||");
   });
 
   it("uses backend-confirmed partner sharing instead of a local family mock", async () => {

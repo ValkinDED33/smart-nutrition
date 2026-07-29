@@ -26,6 +26,7 @@ import {
   chineseZodiacSigns,
   eyeColors,
   getEffectivePregnancyWeek,
+  hasWomenHealthContext,
   isWomenHealthVisibleForGender,
   zodiacSigns,
 } from "@domain/profile/womenHealth";
@@ -851,7 +852,9 @@ const WomenHealthOverviewCard = () => {
   const [babyPreviewSaving, setBabyPreviewSaving] = useState(false);
   const [babyPreviewStatus, setBabyPreviewStatus] = useState<string | null>(null);
   const [babyPreviewError, setBabyPreviewError] = useState<string | null>(null);
-  const isWomenHealthOwner = isWomenHealthVisibleForGender(user?.gender);
+  const isWomenHealthOwner =
+    isWomenHealthVisibleForGender(user?.gender) ||
+    hasWomenHealthContext(womenHealth);
   const hasPartnerLink = partnerSharing.links.some(
     (link) => link.role === "partner" && link.status === "active"
   );

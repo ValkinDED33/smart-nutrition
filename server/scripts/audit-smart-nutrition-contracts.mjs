@@ -2173,6 +2173,8 @@ addCheck(
   "female profile and saved women-health context expose a dedicated profile section",
   profilePageSource.includes("isWomenHealthVisibleForGender(user.gender)") &&
     profilePageSource.includes("hasWomenHealthContext(profile.womenHealth)") &&
+    womenHealthOverviewCardSource.includes("hasWomenHealthContext(womenHealth)") &&
+    womenHealthOverviewCardSource.includes("isWomenHealthVisibleForGender(user?.gender) ||") &&
     profilePageSource.includes('id: "women-health"') &&
     profilePageSource.includes("copy.tabs.womenHealth") &&
     profilePageSource.includes("<WomenHealthOverviewCard />"),
