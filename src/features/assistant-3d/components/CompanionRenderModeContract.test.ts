@@ -73,4 +73,16 @@ describe("explicit 3D companion surface contract", () => {
     expect(source).not.toContain("localStorage");
     expect(source).not.toContain("sessionStorage");
   });
+
+  it("makes the lazy 3D chunk visibly earn its weight with a living scene", async () => {
+    const source = await readSource("CompanionCanvas.tsx");
+
+    expect(source).toContain("CompanionAuraField");
+    expect(source).toContain("companionSignalNodes");
+    expect(source).toContain('name="companion-3d-living-aura"');
+    expect(source).toContain("torusGeometry");
+    expect(source).toContain("pointLight");
+    expect(source).toContain("useFrame");
+    expect(source).toContain("active ? 0.82 : 0.58");
+  });
 });

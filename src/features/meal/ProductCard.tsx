@@ -1,4 +1,6 @@
 import { lazy, Suspense, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
@@ -36,6 +38,7 @@ import {
 } from "@domain/products/productPortions";
 import { getNutrientLabel } from "@domain/meal/nutrients";
 import { selectInputValue } from "../../shared/lib/inputSelection";
+import { playGentleClickSound } from "../../shared/lib/sound";
 import {
   addProductIntakeToCloud,
   removeSavedMealProductFromCloud,
@@ -120,6 +123,39 @@ const productCardCopy = {
 } as const;
 
 type ProductCardCopy = (typeof productCardCopy)[AppLanguage];
+
+const SN_SOFT_BORDER = "1px solid var(--sn-border-soft)";
+
+const productRevealVariants = {
+  hidden: { opacity: 0, y: -8, scale: 0.985 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 180, damping: 22 },
+  },
+} as const;
+
+const magicExpandButtonSx = {
+  alignSelf: "flex-start",
+  px: 0.75,
+  borderRadius: 1,
+  fontWeight: 900,
+  textTransform: "none",
+  color: "var(--sn-accent-strong)",
+  "&:hover": {
+    bgcolor: "rgba(20,184,166,0.08)",
+  },
+  "& .product-card-expand-icon": {
+    display: "inline-flex",
+    transition: "transform 180ms ease",
+  },
+  "@media (prefers-reduced-motion: reduce)": {
+    "& .product-card-expand-icon": {
+      transition: "none",
+    },
+  },
+} as const;
 
 const getProductCardCopy = (language: AppLanguage): ProductCardCopy => {
   switch (language) {
@@ -282,6 +318,16 @@ export const ProductCard = ({
     });
   };
 
+  const toggleCorrection = () => {
+    playGentleClickSound();
+    setCorrectionOpen((current) => !current);
+  };
+
+  const toggleDetails = () => {
+    playGentleClickSound();
+    setDetailsOpen((current) => !current);
+  };
+
   const nutrients = product.nutrients;
   const parsedQuantity = Number(qty);
   const trackedQuantity =
@@ -301,7 +347,7 @@ export const ProductCard = ({
         alignSelf: "start",
         overflow: "hidden",
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: SN_SOFT_BORDER,
         boxShadow: "none",
         "& .MuiButton-root": {
           minWidth: 0,
@@ -463,7 +509,7 @@ export const ProductCard = ({
               p: 1.2,
               borderRadius: 1,
               backgroundColor: "var(--sn-surface-elevated)",
-              border: "1px solid var(--sn-border-soft)",
+              border: SN_SOFT_BORDER,
             }}
           >
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -537,43 +583,99 @@ export const ProductCard = ({
 
           <Button
             variant="text"
-            onClick={() => setCorrectionOpen((current) => !current)}
+            onClick={toggleCorrection}
+            aria-expanded={correctionOpen}
             data-product-correction-action="catalog-contribution"
-            sx={{ alignSelf: "flex-start", px: 0.5, fontWeight: 800 }}
+            data-product-magic-expand="catalog-correction"
+            endIcon={
+              <Box
+                component="span"
+                className="product-card-expand-icon"
+                sx={{ transform: correctionOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                <ChevronDown size={16} aria-hidden="true" />
+              </Box>
+            }
+            sx={magicExpandButtonSx}
           >
             {copy.correction}
           </Button>
 
           <Collapse in={correctionOpen} timeout="auto" unmountOnExit>
-            <Alert severity="info" sx={{ mb: 1.2 }}>
-              {copy.correctionHint}
-            </Alert>
-            <Suspense
-              fallback={
-                <Typography color="text.secondary" variant="body2">
-                  {copy.correctionLoading}
-                </Typography>
-              }
+            <Box
+              component={motion.div}
+              data-product-magic-expand-panel="catalog-correction"
+              variants={productRevealVariants}
+              initial="hidden"
+              animate="visible"
+              sx={{
+                mt: 0.2,
+                "@media (prefers-reduced-motion: reduce)": {
+                  transform: "none !important",
+                },
+              }}
             >
-              <CatalogContributionCard
-                key={`product-correction-${savedKey}`}
-                compact
-                initialProduct={product}
-              />
-            </Suspense>
+              <Alert severity="info" sx={{ mb: 1.2 }}>
+                {copy.correctionHint}
+              </Alert>
+              <Suspense
+                fallback={
+                  <Typography color="text.secondary" variant="body2">
+                    {copy.correctionLoading}
+                  </Typography>
+                }
+              >
+                <CatalogContributionCard
+                  key={`product-correction-${savedKey}`}
+                  compact
+                  initialProduct={product}
+                />
+              </Suspense>
+            </Box>
           </Collapse>
 
           <Button
             variant="text"
-            onClick={() => setDetailsOpen((current) => !current)}
-            sx={{ alignSelf: "flex-start", px: 0.5 }}
+            onClick={toggleDetails}
+            aria-expanded={detailsOpen}
+            data-product-magic-expand="nutrition-facts"
+            endIcon={
+              <Box
+                component="span"
+                className="product-card-expand-icon"
+                sx={{ transform: detailsOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+              >
+                <ChevronDown size={16} aria-hidden="true" />
+              </Box>
+            }
+            sx={magicExpandButtonSx}
           >
             {detailsOpen ? t("productCard.hide") : t("productCard.details")}
           </Button>
 
           <Collapse in={detailsOpen} timeout="auto" unmountOnExit>
-            <Divider sx={{ my: 1.5 }} />
-            <ProductNutritionFacts product={product} />
+            <Box
+              component={motion.div}
+              data-product-magic-expand-panel="nutrition-facts"
+              variants={productRevealVariants}
+              initial="hidden"
+              animate="visible"
+              sx={{
+                mt: 0.2,
+                p: { xs: 0.85, sm: 1 },
+                borderRadius: 1,
+                border: SN_SOFT_BORDER,
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,0.78), var(--sn-surface-glass))",
+                boxShadow: "0 18px 44px rgba(15,23,42,0.08)",
+                "@media (prefers-reduced-motion: reduce)": {
+                  transform: "none !important",
+                },
+              }}
+            >
+              <Divider sx={{ mb: 1.5 }} />
+              <ProductNutritionFacts product={product} />
+            </Box>
           </Collapse>
         </Stack>
       </CardContent>

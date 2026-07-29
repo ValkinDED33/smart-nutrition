@@ -58,6 +58,24 @@ describe("ProductCard contract", () => {
     expect(catalogCardSource).toContain("createCatalogContributionFormFromProduct");
   });
 
+  it("keeps product details as a branded magic expand surface without changing canonical actions", async () => {
+    const productCardSource = await readFile(PRODUCT_CARD_PATH, "utf8");
+
+    expect(productCardSource).toContain("productRevealVariants");
+    expect(productCardSource).toContain("playGentleClickSound");
+    expect(productCardSource).toContain('data-product-magic-expand="nutrition-facts"');
+    expect(productCardSource).toContain(
+      'data-product-magic-expand-panel="nutrition-facts"'
+    );
+    expect(productCardSource).toContain('data-product-magic-expand="catalog-correction"');
+    expect(productCardSource).toContain("aria-expanded={detailsOpen}");
+    expect(productCardSource).toContain("aria-expanded={correctionOpen}");
+    expect(productCardSource).toContain("rotate(180deg)");
+    expect(productCardSource).toContain("<ProductNutritionFacts product={product} />");
+    expect(productCardSource).toContain("addProductIntakeToCloud");
+    expect(productCardSource).toContain("saveMealProductToCloud");
+  });
+
   it("keeps catalog contribution failures retryable without rendering backend exceptions", async () => {
     const catalogCardSource = await readFile(CATALOG_CONTRIBUTION_CARD_PATH, "utf8");
 

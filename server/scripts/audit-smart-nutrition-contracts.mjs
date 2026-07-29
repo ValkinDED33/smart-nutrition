@@ -228,6 +228,7 @@ const errorRecoverySource = readSource("src/shared/lib/errorRecovery.ts");
 const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReporting.ts");
 const serviceWorkerSource = readSource("public/sw.js");
 const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
+const companionCanvasSource = readSource("src/features/assistant-3d/components/CompanionCanvas.tsx");
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
@@ -1313,6 +1314,22 @@ addCheck(
 );
 
 addCheck(
+  "product card details use branded magic expand without replacing canonical actions",
+  productCardSource.includes("productRevealVariants") &&
+    productCardSource.includes("playGentleClickSound") &&
+    productCardSource.includes('data-product-magic-expand="nutrition-facts"') &&
+    productCardSource.includes('data-product-magic-expand-panel="nutrition-facts"') &&
+    productCardSource.includes('data-product-magic-expand="catalog-correction"') &&
+    productCardSource.includes("aria-expanded={detailsOpen}") &&
+    productCardSource.includes("aria-expanded={correctionOpen}") &&
+    productCardSource.includes("rotate(180deg)") &&
+    productCardSource.includes("<ProductNutritionFacts product={product} />") &&
+    productCardSource.includes("addProductIntakeToCloud") &&
+    productCardSource.includes("saveMealProductToCloud"),
+  "Product card expand/collapse interactions must feel like the Smart Nutrition living UI while preserving canonical product add, save, details, and catalog-correction flows."
+);
+
+addCheck(
   "progress overview keeps water glasses visible and opens counted domains",
   progressPageSource.includes("getSectionForProgressDomain") &&
     progressPageSource.includes('case "water":') &&
@@ -2340,6 +2357,18 @@ addCheck(
     companionAvatarModelSource.includes("lowPowerDevice") &&
     companionAvatarModelSource.includes("return false"),
   "3D companion must not load heavy WebGL on mobile, reduced-motion, save-data, low-power, or unsupported devices."
+);
+
+addCheck(
+  "3d companion visibly earns its lazy vendor weight",
+  companionCanvasSource.includes("CompanionAuraField") &&
+    companionCanvasSource.includes("companionSignalNodes") &&
+    companionCanvasSource.includes('name="companion-3d-living-aura"') &&
+    companionCanvasSource.includes("torusGeometry") &&
+    companionCanvasSource.includes("pointLight") &&
+    companionCanvasSource.includes("useFrame") &&
+    companionCanvasSource.includes("active ? 0.82 : 0.58"),
+  "Lazy 3D companion code must produce a visibly richer living scene, not a heavy WebGL chunk that looks like the 2D avatar."
 );
 
 addCheck(

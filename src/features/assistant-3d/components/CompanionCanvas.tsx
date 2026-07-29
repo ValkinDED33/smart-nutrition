@@ -543,6 +543,76 @@ const HaloRing = ({
   </mesh>
 );
 
+const companionSignalNodes = [
+  { color: "#22d3ee", position: [0.86, 0.38, 0.18], scale: [0.045, 0.045, 0.045] },
+  { color: "#a3e635", position: [-0.78, 0.06, 0.08], scale: [0.038, 0.038, 0.038] },
+  { color: "#fbbf24", position: [0.62, -0.58, 0.12], scale: [0.035, 0.035, 0.035] },
+  { color: "#38bdf8", position: [-0.46, -0.72, 0.18], scale: [0.03, 0.03, 0.03] },
+] satisfies Array<{ color: string; position: Vector3Tuple; scale: Vector3Tuple }>;
+
+const CompanionAuraField = ({
+  palette,
+  mood,
+  active,
+}: {
+  palette: ModelPalette;
+  mood: AssistantAvatarMood;
+  active: boolean;
+}) => {
+  const auraRef = useRef<Group>(null);
+  const signalRef = useRef<Group>(null);
+  const intensity = getMotionIntensity(mood, active);
+
+  useFrame(({ clock }) => {
+    const elapsed = clock.getElapsedTime();
+
+    if (auraRef.current) {
+      auraRef.current.rotation.z = elapsed * 0.18;
+      auraRef.current.rotation.y = Math.sin(elapsed * 0.28) * 0.12;
+      const breath = 1 + Math.sin(elapsed * 1.15) * 0.035 * intensity;
+      auraRef.current.scale.set(breath, breath, breath);
+    }
+
+    if (signalRef.current) {
+      signalRef.current.rotation.y = elapsed * 0.42;
+      signalRef.current.rotation.z = Math.sin(elapsed * 0.55) * 0.1;
+    }
+  });
+
+  return (
+    <group name="companion-3d-living-aura">
+      <group ref={auraRef}>
+        <mesh position={[0, -0.05, -0.28]} rotation={[0.42, 0, 0]}>
+          <torusGeometry args={[0.92, 0.012, 10, 96]} />
+          <meshBasicMaterial color={palette.accent} transparent opacity={0.3} side={DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.05, -0.33]} rotation={[1.06, 0, 0.54]}>
+          <torusGeometry args={[1.08, 0.009, 8, 96]} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={0.2} side={DoubleSide} />
+        </mesh>
+        <mesh position={[0, 0.02, -0.46]} scale={[1.12, 1.12, 0.02]}>
+          <sphereGeometry args={[1, 48, 24]} />
+          <meshBasicMaterial color={palette.head} transparent opacity={0.08} />
+        </mesh>
+      </group>
+      <group ref={signalRef}>
+        {companionSignalNodes.map((node, index) => (
+          <group key={`${node.color}-${index}`} position={node.position}>
+            <mesh scale={node.scale}>
+              <sphereGeometry args={[1, 18, 12]} />
+              <meshBasicMaterial color={node.color} transparent opacity={0.92} />
+            </mesh>
+            <mesh scale={[node.scale[0] * 2.5, node.scale[1] * 2.5, node.scale[2] * 0.3]}>
+              <sphereGeometry args={[1, 18, 8]} />
+              <meshBasicMaterial color={node.color} transparent opacity={0.16} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+};
+
 const Mouth = ({
   palette,
   mood,
@@ -997,9 +1067,20 @@ export const CompanionCanvas = ({
         width: size,
         height: size,
         position: "relative",
+        borderRadius: "50%",
         filter: `drop-shadow(0 ${Math.round(size * 0.18)}px ${Math.round(
           size * 0.28
         )}px ${palette.shadow})`,
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          inset: "-12%",
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle at 50% 46%, rgba(255,255,255,0.52), transparent 24%), radial-gradient(circle at 48% 58%, rgba(34,211,238,0.24), transparent 48%), radial-gradient(circle at 52% 54%, rgba(163,230,53,0.24), transparent 62%)",
+          filter: "blur(4px)",
+          opacity: active ? 0.82 : 0.58,
+        },
       }}
     >
       <Canvas
@@ -1013,6 +1094,7 @@ export const CompanionCanvas = ({
         <directionalLight position={[-2, 1, 2]} intensity={0.55} color="#d9f99d" />
         <pointLight position={[-2, 1.5, 3]} intensity={0.95} color="#ccfbf1" />
         <pointLight position={[1.4, -0.6, 2.4]} intensity={0.55} color={palette.accent} />
+        <CompanionAuraField palette={palette} mood={mood} active={active} />
         <CompanionModel
           variant={variant}
           mood={mood}
