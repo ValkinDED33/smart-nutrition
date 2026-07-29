@@ -36,7 +36,10 @@ import {
 import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
-import { isWomenHealthVisibleForGender } from "@domain/profile/womenHealth";
+import {
+  hasWomenHealthContext,
+  isWomenHealthVisibleForGender,
+} from "@domain/profile/womenHealth";
 
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
@@ -585,6 +588,7 @@ const getLanguageLabel = (
 const ProfilePage = () => {
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
+  const profile = useSelector((state: RootState) => state.profile);
   const {
     dailyCalories,
     targetWeight,
@@ -595,9 +599,7 @@ const ProfilePage = () => {
     adaptiveMode,
     languagePreference,
     personalDetails,
-  } = useSelector(
-    (state: RootState) => state.profile
-  );
+  } = profile;
   const totalMealNutrients = useSelector(selectTodayMealTotalNutrients);
   const currentWeight = useSelector(selectCurrentWeight);
   const macroTargets = useSelector(selectDailyMacroTargets);
@@ -638,7 +640,9 @@ const ProfilePage = () => {
   const communityStatus =
     user.communityStatus ?? resolveCommunityStatus(user.reputationScore);
   const canSeeOperationalDetails = canAccessAdminCenter(user.role);
-  const canSeeWomenHealthSection = isWomenHealthVisibleForGender(user.gender);
+  const canSeeWomenHealthSection =
+    isWomenHealthVisibleForGender(user.gender) ||
+    hasWomenHealthContext(profile.womenHealth);
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;

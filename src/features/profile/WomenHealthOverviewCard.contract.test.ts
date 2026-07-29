@@ -77,6 +77,7 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("WomenHealthOverviewCard");
     expect(source).toContain("../features/profile/WomenHealthOverviewCard");
     expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
+    expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
     expect(source).toContain('id: "women-health"');
     expect(source).toContain("copy.tabs.womenHealth");
   });

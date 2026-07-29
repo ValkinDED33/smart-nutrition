@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getEffectivePregnancyWeek, normalizeWomenHealthState } from "./womenHealth";
+import {
+  createDefaultWomenHealthState,
+  getEffectivePregnancyWeek,
+  hasWomenHealthContext,
+  normalizeWomenHealthState,
+} from "./womenHealth";
 
 const NOW = new Date("2026-07-12T12:00:00.000Z");
 
@@ -60,5 +65,41 @@ describe("women health domain", () => {
       motherChineseZodiac: "tiger",
       fatherChineseZodiac: "goat",
     });
+  });
+
+  it("detects saved women-health context even when auth gender is stale", () => {
+    expect(hasWomenHealthContext(createDefaultWomenHealthState())).toBe(false);
+
+    expect(
+      hasWomenHealthContext(
+        normalizeWomenHealthState({
+          mode: "pregnant",
+          pregnancyWeek: 12,
+        })
+      )
+    ).toBe(true);
+
+    expect(
+      hasWomenHealthContext({
+        ...createDefaultWomenHealthState(),
+        symptomHistory: [
+          {
+            id: "symptom-1",
+            recordedAt: "2026-07-12T12:00:00.000Z",
+            label: "headache",
+            severity: 5,
+            note: "",
+            source: "assistant",
+          },
+        ],
+      })
+    ).toBe(true);
+
+    expect(
+      hasWomenHealthContext({
+        ...createDefaultWomenHealthState(),
+        partnerEyeColor: "blue",
+      })
+    ).toBe(true);
   });
 });

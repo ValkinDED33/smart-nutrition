@@ -94,6 +94,34 @@ export const createDefaultWomenHealthState = (): WomenHealthState => ({
 export const isWomenHealthVisibleForGender = (gender: Gender | null | undefined) =>
   gender === "female";
 
+export const hasWomenHealthContext = (
+  state: Pick<
+    WomenHealthState,
+    | "mode"
+    | "pregnancyWeek"
+    | "dueDate"
+    | "lastPeriodStartDate"
+    | "notes"
+    | "symptomHistory"
+    | "partnerEyeColor"
+    | "motherZodiac"
+    | "fatherZodiac"
+    | "motherChineseZodiac"
+    | "fatherChineseZodiac"
+  >
+) =>
+  state.mode !== "none" ||
+  state.pregnancyWeek !== null ||
+  state.dueDate !== null ||
+  state.lastPeriodStartDate !== null ||
+  state.notes.trim().length > 0 ||
+  state.symptomHistory.length > 0 ||
+  state.partnerEyeColor !== "unknown" ||
+  state.motherZodiac !== "unknown" ||
+  state.fatherZodiac !== "unknown" ||
+  state.motherChineseZodiac !== "unknown" ||
+  state.fatherChineseZodiac !== "unknown";
+
 const toIsoDateOrNull = (value: unknown) => {
   if (typeof value !== "string" || !value.trim()) {
     return null;
