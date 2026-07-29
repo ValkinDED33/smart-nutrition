@@ -175,6 +175,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened meal entry editing and recipe-builder actions so visible save failures and action buttons come from localized product copy instead of hardcoded English strings inside food hooks or builder controls.
 - Completed the recipe-builder localization contract: builder headings, field labels, helper text, custom-recipe descriptions, reuse/remove/publish actions, and community publish fallback copy now come from the active language layer.
 - Hardened water cloud-action retry feedback so the shared save hook receives localized copy from `WaterTracker` instead of storing English visible errors in shared persistence logic.
+- Hardened quick weight cloud saves against profile-state conflicts: quick check-ins now replay the same weight-save intent on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm local state only after the rebased backend save succeeds.
 
 ## Current Architecture
 
@@ -248,6 +249,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Guided registration must show inline backend-confirmed availability for nickname and email and must not submit account creation unless both fields are confirmed available.
 - Guided registration language selection must be canonical input, not decoration: `languagePreference` must reach backend registration, initial profile state, Telegram/profile language context, and the starter community snapshot.
 - Registration, email verification, and onboarding completion may build session/profile state, but profile persistence and local replacement must go through `useProfileCloudAction` rather than direct page-level `saveProfileStateToCloud`, `saveProfileAndUserToCloud`, or `replaceProfileState` calls.
+- Quick weight check-ins must keep backend-confirmed success while automatically rebasing `STATE_CONFLICT` saves through `useProfileCloudAction(...).runProfileAndUserSave(..., rebaseProfile)`; the UI must not ask users to repeat the same one-step weight action after the latest cloud snapshot has already been recovered.
 - Assistant naming in onboarding is optional and user-owned: no fake default assistant name, no legacy accidental display names, and no blocked onboarding step solely because the assistant name is blank.
 - Configured owner promotion belongs to the explicit awaited access-control bootstrap path, not to fire-and-forget service construction side effects.
 - Email verification and reset password tokens may be consumed from URL links only long enough to capture them into runtime state; the browser address bar/history entry must be cleaned before user interaction continues.

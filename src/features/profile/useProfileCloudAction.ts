@@ -5,6 +5,7 @@ import type { AppDispatch, RootState } from "@app/store";
 import {
   applyProfileActionInCloud,
   saveProfileAndUserToCloud,
+  saveProfileAndUserToCloudWithConflictRebase,
   saveProfileStateToCloud,
 } from "./profileCloudSync";
 import type { ProfileCloudActionCopy } from "./profileCloudActionCopy";
@@ -74,7 +75,12 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
   );
 
   const runProfileAndUserSave = useCallback(
-    async (nextUser: AuthUser, nextProfile: ProfileState, confirmedAt?: string) => {
+    async (
+      nextUser: AuthUser,
+      nextProfile: ProfileState,
+      confirmedAt?: string,
+      rebaseProfile?: (freshProfile: ProfileState) => ProfileState
+    ) => {
       if (saving) {
         const inProgressError = new Error(PROFILE_SAVE_IN_PROGRESS_ERROR);
         setError(resolveProfileCloudActionErrorMessage(inProgressError, copy));
@@ -85,15 +91,27 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
       setError(null);
 
       try {
-        const savedUser = await saveProfileAndUserToCloud(
-          dispatch,
-          nextUser,
-          nextProfile,
-          confirmedAt
-        );
-        dispatch(setUser(savedUser));
-        dispatch(replaceProfileState(nextProfile));
-        return { user: savedUser, profile: nextProfile };
+        const saved = rebaseProfile
+          ? await saveProfileAndUserToCloudWithConflictRebase(
+              dispatch,
+              nextUser,
+              nextProfile,
+              rebaseProfile,
+              confirmedAt
+            )
+          : {
+              user: await saveProfileAndUserToCloud(
+                dispatch,
+                nextUser,
+                nextProfile,
+                confirmedAt
+              ),
+              profile: nextProfile,
+            };
+
+        dispatch(setUser(saved.user));
+        dispatch(replaceProfileState(saved.profile));
+        return saved;
       } catch (caughtError) {
         setError(resolveProfileCloudActionErrorMessage(caughtError, copy));
         throw caughtError;

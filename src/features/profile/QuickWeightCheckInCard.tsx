@@ -220,7 +220,10 @@ export const QuickWeightCheckInCard = () => {
           ...user,
           weight: roundedWeight,
         },
-        nextProfile
+        nextProfile,
+        undefined,
+        (freshProfile) =>
+          buildProfileStateAfterWeightSave(freshProfile, roundedWeight)
       );
       let companionRewardPayload = {};
 

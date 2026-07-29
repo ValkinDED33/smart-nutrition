@@ -1129,6 +1129,27 @@ addCheck(
 );
 
 addCheck(
+  "quick weight save rebases cloud conflicts instead of surfacing fake failure",
+  quickWeightCheckInSource.includes("profileAction.runProfileAndUserSave") &&
+    quickWeightCheckInSource.includes("buildProfileStateAfterWeightSave") &&
+    quickWeightCheckInSource.includes("(freshProfile) =>") &&
+    quickWeightCheckInSource.includes(
+      "buildProfileStateAfterWeightSave(freshProfile, roundedWeight)"
+    ) &&
+    profileCloudSyncSource.includes(
+      "saveProfileAndUserToCloudWithConflictRebase"
+    ) &&
+    profileCloudSyncSource.includes(
+      "recoverLatestCloudSnapshotAfterConflict(dispatch)"
+    ) &&
+    profileCloudSyncSource.includes("const rebasedProfile = rebaseProfile(freshProfile)") &&
+    profileCloudSyncSource.includes(
+      "const rebasedResult = await syncRemoteProfileWithUser(user, rebasedProfile)"
+    ),
+  "Quick weight check-ins must preserve backend-confirmed success while automatically replaying the same user intent on top of the latest cloud snapshot after a STATE_CONFLICT."
+);
+
+addCheck(
   "barcode scanner shows the confirmed product result before secondary panels",
   barcodeScannerSource.includes('data-scanner-found-product="primary-result"') &&
     barcodeScannerSource.includes('data-scanner-result-alert="confirmed"') &&

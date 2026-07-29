@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeProfileState, setAssistantCustomization } from "./profileSlice";
 import {
   applyProfileActionInCloud,
   buildProfileStateAfterAction,
   saveProfileAndUserToCloud,
+  saveProfileAndUserToCloudWithConflictRebase,
   saveProfileStateToCloud,
 } from "./profileCloudSync";
 
@@ -22,6 +23,7 @@ const PROFILE_SYNC_FAILED_MESSAGE =
 const RAW_PROFILE_SYNC_ERROR = "Provider stack trace: profile database failed";
 const PROFILE_RENDER_MODE_3D = "3d";
 const PROFILE_CALORIES = 2100;
+const PROFILE_REBASED_CALORIES = 2400;
 const PROFILE_UPDATED_AT = "2026-07-01T08:20:00.000Z";
 const PROFILE_PREVIOUS_UPDATED_AT = "2026-07-01T08:19:00.000Z";
 const ACTION_SYNC_STARTED = "auth/markSyncStarted";
@@ -45,6 +47,10 @@ const USER_PROFILE_FIXTURE = {
 } as const;
 
 describe("profileCloudSync", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("reuses the profile reducer to build the next cloud state", () => {
     const current = normalizeProfileState({});
     const next = buildProfileStateAfterAction(
@@ -229,6 +235,89 @@ describe("profileCloudSync", () => {
       type: ACTION_SYNC_ERROR,
       payload: PROFILE_SYNC_FAILED_MESSAGE,
     });
+  });
+
+  it("rebases a combined profile and user save after a cloud conflict", async () => {
+    const dispatch = vi.fn();
+    const staleProfile = normalizeProfileState({
+      dailyCalories: PROFILE_CALORIES,
+      weightHistory: [{ date: "2026-07-01", weight: 76 }],
+    });
+    const cloudProfile = normalizeProfileState({
+      dailyCalories: PROFILE_REBASED_CALORIES,
+      weightHistory: [{ date: "2026-07-02", weight: 75 }],
+    });
+    const rebasedProfile = normalizeProfileState({
+      ...cloudProfile,
+      weightHistory: [
+        ...cloudProfile.weightHistory,
+        { date: "2026-07-03", weight: 74 },
+      ],
+    });
+    const user = {
+      ...USER_PROFILE_FIXTURE,
+      weight: 74,
+    };
+
+    authApiMock.syncRemoteProfileWithUser
+      .mockResolvedValueOnce({
+        ok: false,
+        code: "STATE_CONFLICT",
+        message: "conflict",
+        meta: null,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        user,
+        meta: {
+          updatedAt: PROFILE_UPDATED_AT,
+          deviceId: CLOUD_DEVICE_ID,
+        },
+      });
+    authApiMock.pullRemoteAppSnapshot.mockResolvedValueOnce({
+      profile: cloudProfile,
+      meal: null,
+      water: null,
+      fridge: null,
+      community: null,
+      companion: null,
+      updatedAt: "2026-07-02T08:20:00.000Z",
+      profileUpdatedAt: "2026-07-02T08:20:00.000Z",
+      mealUpdatedAt: null,
+      waterUpdatedAt: null,
+    });
+
+    const result = await saveProfileAndUserToCloudWithConflictRebase(
+      dispatch,
+      user,
+      staleProfile,
+      () => rebasedProfile,
+      PROFILE_PREVIOUS_UPDATED_AT
+    );
+
+    expect(result).toEqual({ user, profile: rebasedProfile });
+    expect(authApiMock.syncRemoteProfileWithUser).toHaveBeenNthCalledWith(
+      1,
+      user,
+      staleProfile
+    );
+    expect(authApiMock.syncRemoteProfileWithUser).toHaveBeenNthCalledWith(
+      2,
+      user,
+      rebasedProfile
+    );
+    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
+      ACTION_SYNC_STARTED,
+      ACTION_SYNC_STARTED,
+      ACTION_REPLACE_PROFILE,
+      "companion/hydrateCompanionState",
+      ACTION_HYDRATE_SYNC_OUTBOX,
+      ACTION_SET_CLOUD_META,
+      ACTION_SYNC_SUCCESS,
+      ACTION_HYDRATE_SYNC_OUTBOX,
+      ACTION_SET_CLOUD_META,
+      ACTION_SYNC_SUCCESS,
+    ]);
   });
 
   it("throws and marks sync error when the cloud rejects the profile state", async () => {
