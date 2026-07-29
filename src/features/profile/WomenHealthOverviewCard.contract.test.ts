@@ -97,6 +97,9 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("fetchRemotePartnerPregnancyShares");
     expect(source).toContain("QRCode.toDataURL");
     expect(source).toContain('data-partner-pregnancy-weekly-view="true"');
+    expect(source).toContain('data-partner-baby-week-visual="true"');
+    expect(source).toContain("BabyWeekVisual");
+    expect(source).toContain("getBabyVisualPalette");
     expect(source).toContain("formatPregnancyAge");
     expect(source).toContain("copy.partnerBabyThisWeek");
     expect(source).toContain("share.timeline?.trimester");

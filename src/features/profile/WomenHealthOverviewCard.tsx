@@ -141,6 +141,7 @@ const womenHealthCopy = {
     partnerConnected: "Профілі підключені",
     partnerEmpty: "Партнерських даних поки немає.",
     partnerBabyThisWeek: "Малюк цього тижня",
+    babyVisualTitle: "Візуальний розмір малюка",
     gestationalAge: "Термін",
     pregnancyMonth: "Місяць",
     measuredAt: "Станом на",
@@ -249,6 +250,7 @@ const womenHealthCopy = {
     partnerConnected: "Profile połączone",
     partnerEmpty: "Nie ma jeszcze danych partnera.",
     partnerBabyThisWeek: "Dziecko w tym tygodniu",
+    babyVisualTitle: "Wizualny rozmiar dziecka",
     gestationalAge: "Wiek ciąży",
     pregnancyMonth: "Miesiąc",
     measuredAt: "Stan na",
@@ -357,6 +359,7 @@ const womenHealthCopy = {
     partnerConnected: "Profiles connected",
     partnerEmpty: "No partner data yet.",
     partnerBabyThisWeek: "Your baby this week",
+    babyVisualTitle: "Baby size visual",
     gestationalAge: "Pregnancy age",
     pregnancyMonth: "Month",
     measuredAt: "As of",
@@ -666,6 +669,129 @@ const formatPregnancyDate = (value: string | null | undefined, language: AppLang
     month: "short",
     year: "numeric",
   }).format(new Date(timestamp));
+};
+
+const getBabyVisualPalette = (sizeKey: string) => {
+  if (/lemon|lime|banana|corn|pineapple|honeydew|watermelon/.test(sizeKey)) {
+    return {
+      fruit: "#facc15",
+      fruitShadow: "#84cc16",
+      aura: "rgba(250, 204, 21, 0.28)",
+    };
+  }
+
+  if (/raspberry|cherry|strawberry|fig|apple/.test(sizeKey)) {
+    return {
+      fruit: "#fb7185",
+      fruitShadow: "#be123c",
+      aura: "rgba(251, 113, 133, 0.24)",
+    };
+  }
+
+  if (/avocado|pear|cabbage|romaine|swiss_chard|leek/.test(sizeKey)) {
+    return {
+      fruit: "#86efac",
+      fruitShadow: "#16a34a",
+      aura: "rgba(34, 197, 94, 0.24)",
+    };
+  }
+
+  return {
+    fruit: "#fdba74",
+    fruitShadow: "#ea580c",
+    aura: "rgba(251, 146, 60, 0.24)",
+  };
+};
+
+const BabyWeekVisual = ({
+  title,
+  sizeKey,
+  sizeLabel,
+}: {
+  title: string;
+  sizeKey: string;
+  sizeLabel: string;
+}) => {
+  const palette = getBabyVisualPalette(sizeKey);
+
+  return (
+    <Box
+      component="svg"
+      viewBox="0 0 420 240"
+      role="img"
+      aria-label={`${title}: ${sizeLabel}`}
+      sx={{
+        width: "100%",
+        display: "block",
+        borderRadius: 1,
+        border: SOFT_BORDER,
+        background:
+          "radial-gradient(circle at 30% 45%, rgba(20,184,166,0.18), transparent 34%), linear-gradient(135deg, rgba(255,255,255,0.86), rgba(236,254,255,0.68))",
+      }}
+      data-partner-baby-week-visual="true"
+    >
+      <defs>
+        <filter id="sn-baby-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#0f172a" floodOpacity="0.14" />
+        </filter>
+      </defs>
+      <circle cx="138" cy="118" r="82" fill="rgba(45, 212, 191, 0.16)" />
+      <circle cx="138" cy="118" r="58" fill="rgba(255, 255, 255, 0.72)" />
+      <g filter="url(#sn-baby-soft-shadow)">
+        <ellipse cx="130" cy="108" rx="28" ry="34" fill="#f9a8d4" opacity="0.9" />
+        <circle cx="154" cy="84" r="22" fill="#fbcfe8" />
+        <path
+          d="M114 118c16 28 48 32 65 10 7 23-5 48-29 55-28 8-58-11-63-39-3-16 5-24 27-26Z"
+          fill="#f0abfc"
+          opacity="0.88"
+        />
+        <path
+          d="M162 116c15 6 23 17 22 31"
+          fill="none"
+          stroke="#c084fc"
+          strokeWidth="8"
+          strokeLinecap="round"
+          opacity="0.85"
+        />
+        <path
+          d="M123 142c10 9 22 12 36 8"
+          fill="none"
+          stroke="#be185d"
+          strokeWidth="5"
+          strokeLinecap="round"
+          opacity="0.45"
+        />
+      </g>
+      <circle cx="296" cy="115" r="70" fill={palette.aura} />
+      <g filter="url(#sn-baby-soft-shadow)">
+        <ellipse cx="296" cy="122" rx="48" ry="58" fill={palette.fruit} />
+        <ellipse cx="310" cy="133" rx="28" ry="40" fill={palette.fruitShadow} opacity="0.28" />
+        <path
+          d="M302 61c9-19 27-23 44-13-10 18-26 25-44 13Z"
+          fill="#22c55e"
+          opacity="0.86"
+        />
+        <path
+          d="M296 72c5-14 14-24 29-30"
+          fill="none"
+          stroke="#166534"
+          strokeWidth="5"
+          strokeLinecap="round"
+          opacity="0.65"
+        />
+      </g>
+      <text
+        x="296"
+        y="206"
+        textAnchor="middle"
+        fill="#0f766e"
+        fontSize="15"
+        fontWeight="800"
+      >
+        {sizeLabel}
+      </text>
+    </Box>
+  );
 };
 
 const eyeColorOptions: EyeColor[] = eyeColors;
@@ -1875,6 +2001,14 @@ const WomenHealthOverviewCard = () => {
                           {share.owner.name}: {getModeLabel(copy, share.pregnancy.mode)}
                         </Typography>
                       </Stack>
+
+                      {share.baby && sizeLabel && (
+                        <BabyWeekVisual
+                          title={copy.babyVisualTitle}
+                          sizeKey={share.baby.sizeKey}
+                          sizeLabel={sizeLabel}
+                        />
+                      )}
 
                       <Box
                         sx={{

@@ -1468,6 +1468,9 @@ addCheck(
     authRemoteSource.includes("completedWeeks: number") &&
     authRemoteSource.includes("lengthCm: number") &&
     womenHealthOverviewCardSource.includes('data-partner-pregnancy-weekly-view="true"') &&
+    womenHealthOverviewCardSource.includes('data-partner-baby-week-visual="true"') &&
+    womenHealthOverviewCardSource.includes("BabyWeekVisual") &&
+    womenHealthOverviewCardSource.includes("getBabyVisualPalette") &&
     womenHealthOverviewCardSource.includes("copy.partnerBabyThisWeek") &&
     womenHealthOverviewCardSource.includes("formatPregnancyAge") &&
     womenHealthOverviewCardSource.includes("share.timeline?.trimester") &&
