@@ -455,11 +455,20 @@ addCheck(
     homePageSource.includes("onClick={item.action ? () => runAssistantAction") &&
     aiDiscoveryCardsSource.includes("buildAIDiscoveryCards") &&
     aiDiscoveryCardsSource.includes("buildAIDiscoveryTimeline") &&
+    aiDiscoveryCardsSource.includes("buildAIDiscoveryAura") &&
+    aiDiscoveryCardsSource.includes('data-ai-discovery-aura="true"') &&
+    aiDiscoveryCardsSource.includes("motion.section") &&
+    aiDiscoveryCardsSource.includes("discoveryRevealVariants") &&
+    aiDiscoveryCardsSource.includes("playAIDiscoverySound") &&
+    aiDiscoveryCardsSource.includes("runDiscoveryAction") &&
     aiDiscoveryCardsSource.includes("aria-label={text.timelineTitle}") &&
-    aiDiscoveryCardsSource.includes("onRunAction(item.action") &&
+    aiDiscoveryCardsSource.includes("runDiscoveryAction(action") &&
     aiDiscoveryCardsModelSource.includes("DailyContext") &&
     aiDiscoveryCardsModelSource.includes("AssistantHomeAction") &&
     aiDiscoveryCardsModelSource.includes("AIDiscoveryTimelineItem") &&
+    aiDiscoveryCardsModelSource.includes("AIDiscoveryAura") &&
+    aiDiscoveryCardsModelSource.includes("context.progress.calories") &&
+    aiDiscoveryCardsModelSource.includes("context.week.daysLogged") &&
     aiDiscoveryCardsModelSource.includes("buildAIDiscoveryTimeline") &&
     aiDiscoveryCardsModelSource.includes("context.today.entries") &&
     aiDiscoveryCardsModelSource.includes("context.primaryFocus") &&
@@ -467,7 +476,7 @@ addCheck(
     !/localStorage|Math\.random|setTimeout|fetch\(|axios|mock|placeholder/i.test(
       `${aiDiscoveryCardsSource}\n${aiDiscoveryCardsModelSource}`
     ),
-  "AI Discovery Cards and AI Timeline must be branded living-card layers over canonical day context and existing assistant actions, not a second AI brain, random mock feed, or local-only state."
+  "AI Discovery Cards, AI Aura, AI Timeline, motion, and optional click sound must be branded living-card layers over canonical day context and existing assistant actions, not a second AI brain, autoplay noise, random mock feed, or local-only state."
 );
 
 addCheck(
@@ -1261,10 +1270,13 @@ addCheck(
 );
 
 addCheck(
-  "scanner and water sounds avoid base64 audio decoding crashes",
+  "scanner water and AI discovery sounds avoid base64 audio decoding crashes",
   soundSource.includes("createOscillator") &&
     soundSource.includes("playUiTickSound") &&
+    soundSource.includes("playAIDiscoverySound") &&
     waterTrackerSource.includes("playUiTickSound") &&
+    aiDiscoveryCardsSource.includes("playAIDiscoverySound") &&
+    aiDiscoveryCardsSource.includes("runDiscoveryAction") &&
     !soundSource.includes("atob") &&
     !soundSource.includes("base64") &&
     !soundSource.includes("data:audio") &&
@@ -1272,7 +1284,7 @@ addCheck(
     !soundSource.includes("howler") &&
     !waterTrackerSource.includes("use-sound") &&
     !waterTrackerSource.includes("uiTickSoundDataUrl"),
-  "Scanner and water feedback must use Web Audio oscillator tones only; embedded base64 audio or Howler/use-sound decoding can crash Android/WebView with InvalidCharacterError."
+  "Scanner, water, and AI discovery feedback must use Web Audio oscillator tones only and play from user-driven UI actions; embedded base64 audio or Howler/use-sound decoding can crash Android/WebView with InvalidCharacterError."
 );
 
 addCheck(

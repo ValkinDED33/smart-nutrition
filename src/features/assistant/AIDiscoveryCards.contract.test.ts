@@ -15,11 +15,20 @@ describe("AI Discovery Cards contract", () => {
 
     expect(componentSource).toContain("buildAIDiscoveryCards");
     expect(componentSource).toContain("buildAIDiscoveryTimeline");
+    expect(componentSource).toContain("buildAIDiscoveryAura");
+    expect(componentSource).toContain('data-ai-discovery-aura="true"');
+    expect(componentSource).toContain("motion.section");
+    expect(componentSource).toContain("discoveryRevealVariants");
+    expect(componentSource).toContain("playAIDiscoverySound");
+    expect(componentSource).toContain("runDiscoveryAction");
     expect(componentSource).toContain("aria-label={text.timelineTitle}");
-    expect(componentSource).toContain("onRunAction(item.action");
+    expect(componentSource).toContain("runDiscoveryAction(action");
     expect(modelSource).toContain("DailyContext");
     expect(modelSource).toContain("AssistantHomeAction");
     expect(modelSource).toContain("AIDiscoveryTimelineItem");
+    expect(modelSource).toContain("AIDiscoveryAura");
+    expect(modelSource).toContain("context.progress.calories");
+    expect(modelSource).toContain("context.week.daysLogged");
     expect(modelSource).toContain("buildAIDiscoveryTimeline");
     expect(homeSource).toContain("buildAIDiscoveryTimeline");
     expect(homeSource).toContain("const heroStory = useMemo");

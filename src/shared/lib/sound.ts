@@ -106,3 +106,10 @@ export const playAchievementSound = () =>
     { frequency: 880, durationMs: 85, type: "triangle", gain: 0.05 },
     { frequency: 1180, durationMs: 115, type: "sine", gain: 0.045 },
   ]);
+
+export const playAIDiscoverySound = () =>
+  void playSequence([
+    { frequency: 554, durationMs: 46, type: "sine", gain: 0.022 },
+    { frequency: 740, durationMs: 62, type: "triangle", gain: 0.026 },
+    { frequency: 988, durationMs: 96, type: "sine", gain: 0.022 },
+  ]);

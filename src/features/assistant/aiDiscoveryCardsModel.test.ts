@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DailyContext } from "./dailyContext";
 import type { AssistantHomeAction } from "./assistantHomeIntelligence";
 import {
+  buildAIDiscoveryAura,
   buildAIDiscoveryCards,
   buildAIDiscoveryTimeline,
 } from "./aiDiscoveryCardsModel";
@@ -154,5 +155,52 @@ describe("buildAIDiscoveryCards", () => {
       id: "timeline-action-meal_search",
       action: primaryAction,
     });
+  });
+
+  it("builds an ambient AI aura from canonical day progress", () => {
+    const aura = buildAIDiscoveryAura({
+      context,
+      language: "en",
+    });
+
+    expect(aura).toMatchObject({
+      mood: "building",
+      label: "AI Discovery",
+      title: "The day is taking shape",
+    });
+    expect(aura.score).toBeGreaterThan(0);
+    expect(aura.signals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Energy", value: "19%" }),
+        expect.objectContaining({ label: "Protein", value: "14%" }),
+        expect.objectContaining({ label: "Water", value: "27%" }),
+        expect.objectContaining({ label: "Rhythm", value: "4/7" }),
+      ])
+    );
+  });
+
+  it("turns steady streaks into a celebratory living aura without fake actions", () => {
+    const aura = buildAIDiscoveryAura({
+      context: {
+        ...context,
+        primaryFocus: "steady",
+        nudgeTone: "celebratory",
+        progress: {
+          calories: 86,
+          protein: 92,
+          fat: 80,
+          carbs: 82,
+          fiber: 78,
+          water: 94,
+        },
+      },
+      language: "uk",
+    });
+
+    expect(aura).toMatchObject({
+      mood: "celebrating",
+      title: "Живий прогрес",
+    });
+    expect(aura.score).toBeGreaterThan(80);
   });
 });

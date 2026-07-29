@@ -17,6 +17,7 @@ export interface AIDiscoveryCard {
 }
 
 type TimelineTone = "food" | "ai" | "water" | "action";
+type AuraMood = "waiting" | "building" | "thirsty" | "hungry" | "steady" | "celebrating";
 
 export interface AIDiscoveryTimelineItem {
   id: string;
@@ -26,6 +27,20 @@ export interface AIDiscoveryTimelineItem {
   body: string;
   metric: string;
   action?: AssistantHomeAction;
+}
+
+export interface AIDiscoveryAura {
+  mood: AuraMood;
+  label: string;
+  title: string;
+  body: string;
+  score: number;
+  glow: string;
+  signals: Array<{
+    label: string;
+    value: string;
+    score: number;
+  }>;
 }
 
 type DiscoveryCopy = (typeof copy)[AppLanguage];
@@ -90,6 +105,14 @@ const copy = {
       entriesUnit: "зап.",
       waterUnit: "води",
     },
+    aura: {
+      waiting: ["Тиха підготовка", "Я чекаю перший реальний сигнал дня."],
+      building: ["День збирається", "Контекст уже з'явився, але ще потрібна одна опора."],
+      thirsty: ["Вода просить уваги", "Гідратація зараз найшвидше змінить відчуття дня."],
+      hungry: ["Потрібна енергія", "День просить спокійний прийом їжі замість вечірнього хаосу."],
+      steady: ["Рівний ритм", "День читається спокійно. Зберігаємо темп."],
+      celebrating: ["Живий прогрес", "Я бачу хороший ритм і підсвічую те, що вже працює."],
+    },
   },
   pl: {
     eyebrow: AI_DISCOVERY_LABEL,
@@ -147,6 +170,14 @@ const copy = {
       actionBody: "Jeden krok teraz daje więcej niż długa lista opcji.",
       entriesUnit: "wpisy",
       waterUnit: "wody",
+    },
+    aura: {
+      waiting: ["Ciche przygotowanie", "Czekam na pierwszy prawdziwy sygnał dnia."],
+      building: ["Dzień się układa", "Kontekst już jest, ale potrzebuje jeszcze jednej podpory."],
+      thirsty: ["Woda prosi o uwagę", "Nawodnienie najszybciej zmieni odczucie dnia."],
+      hungry: ["Potrzeba energii", "Dzień prosi o spokojny posiłek zamiast wieczornego chaosu."],
+      steady: ["Równy rytm", "Dzień czyta się spokojnie. Trzymamy tempo."],
+      celebrating: ["Żywy postęp", "Widzę dobry rytm i podświetlam to, co już działa."],
     },
   },
   en: {
@@ -206,6 +237,14 @@ const copy = {
       entriesUnit: "entries",
       waterUnit: "water",
     },
+    aura: {
+      waiting: ["Quiet preparation", "I am waiting for the first real signal of the day."],
+      building: ["The day is taking shape", "Context is already here, but it needs one more anchor."],
+      thirsty: ["Water needs attention", "Hydration is the fastest way to change the feel of today."],
+      hungry: ["Energy is needed", "The day asks for a calm meal instead of evening chaos."],
+      steady: ["Steady rhythm", "The day reads calmly. Keep the pace."],
+      celebrating: ["Living progress", "I see a good rhythm and highlight what already works."],
+    },
   },
 } as const;
 
@@ -223,6 +262,69 @@ const getCopy = (language: AppLanguage): DiscoveryCopy => {
 
 const formatPercent = (value: number) =>
   `${Math.max(0, Math.min(100, Math.round(value)))}%`;
+
+const clampAuraScore = (value: number) =>
+  Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 0;
+
+const getAuraMood = (context: DailyContext): AuraMood => {
+  if (context.primaryFocus === "steady" && context.nudgeTone === "celebratory") {
+    return "celebrating";
+  }
+
+  if (context.primaryFocus === "steady") {
+    return "steady";
+  }
+
+  if (context.primaryFocus === "water") {
+    return "thirsty";
+  }
+
+  if (context.primaryFocus === "calories_low" || context.primaryFocus === "complete_day") {
+    return "hungry";
+  }
+
+  if (context.primaryFocus === "log_first_meal") {
+    return "waiting";
+  }
+
+  return "building";
+};
+
+const getAuraGlow = (mood: AuraMood) => {
+  switch (mood) {
+    case "celebrating":
+      return "linear-gradient(135deg, rgba(163,230,53,0.34), rgba(20,184,166,0.2), rgba(34,211,238,0.16))";
+    case "steady":
+      return "linear-gradient(135deg, rgba(20,184,166,0.28), rgba(34,211,238,0.16), rgba(255,255,255,0.08))";
+    case "thirsty":
+      return "linear-gradient(135deg, rgba(14,165,233,0.3), rgba(34,211,238,0.22), rgba(20,184,166,0.1))";
+    case "hungry":
+      return "linear-gradient(135deg, rgba(245,158,11,0.26), rgba(34,197,94,0.14), rgba(20,184,166,0.1))";
+    case "waiting":
+      return "linear-gradient(135deg, rgba(148,163,184,0.2), rgba(20,184,166,0.1), rgba(255,255,255,0.08))";
+    case "building":
+    default:
+      return "linear-gradient(135deg, rgba(20,184,166,0.24), rgba(59,130,246,0.14), rgba(168,85,247,0.1))";
+  }
+};
+
+const getAuraMessage = (text: DiscoveryCopy, mood: AuraMood) => {
+  switch (mood) {
+    case "celebrating":
+      return text.aura.celebrating;
+    case "steady":
+      return text.aura.steady;
+    case "thirsty":
+      return text.aura.thirsty;
+    case "hungry":
+      return text.aura.hungry;
+    case "waiting":
+      return text.aura.waiting;
+    case "building":
+    default:
+      return text.aura.building;
+  }
+};
 
 const getMetricForFocus = (context: DailyContext, text: DiscoveryCopy) => {
   switch (context.primaryFocus) {
@@ -260,6 +362,55 @@ const getMetricForFocus = (context: DailyContext, text: DiscoveryCopy) => {
         value: `${context.today.entries}/4`,
       };
   }
+};
+
+export const buildAIDiscoveryAura = ({
+  context,
+  language,
+}: {
+  context: DailyContext;
+  language: AppLanguage;
+}): AIDiscoveryAura => {
+  const text = getCopy(language);
+  const mood = getAuraMood(context);
+  const [title, body] = getAuraMessage(text, mood);
+  const nutritionScore = clampAuraScore(
+    (context.progress.calories + context.progress.protein + context.progress.fiber) / 3
+  );
+  const waterScore = clampAuraScore(context.progress.water);
+  const rhythmScore = clampAuraScore((context.week.daysLogged / 7) * 100);
+  const score = clampAuraScore(nutritionScore * 0.46 + waterScore * 0.34 + rhythmScore * 0.2);
+
+  return {
+    mood,
+    label: text.eyebrow,
+    title,
+    body,
+    score,
+    glow: getAuraGlow(mood),
+    signals: [
+      {
+        label: text.metric.calories,
+        value: formatPercent(context.progress.calories),
+        score: clampAuraScore(context.progress.calories),
+      },
+      {
+        label: text.metric.protein,
+        value: formatPercent(context.progress.protein),
+        score: clampAuraScore(context.progress.protein),
+      },
+      {
+        label: text.metric.water,
+        value: formatPercent(context.progress.water),
+        score: waterScore,
+      },
+      {
+        label: text.metric.rhythm,
+        value: `${context.week.daysLogged}/7`,
+        score: rhythmScore,
+      },
+    ],
+  };
 };
 
 const getToneForFocus = (focus: DailyContextFocus): DiscoveryTone => {

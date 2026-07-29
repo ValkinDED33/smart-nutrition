@@ -16,6 +16,7 @@ describe("scanner sound contract", () => {
     expect(source).not.toContain("howler");
     expect(source).toContain("createOscillator");
     expect(source).toContain("playUiTickSound");
+    expect(source).toContain("playAIDiscoverySound");
   });
 
   it("uses a calm soft failure tone instead of an alarm-like oscillator", () => {
@@ -29,5 +30,15 @@ describe("scanner sound contract", () => {
     expect(failureBlock).toContain('type: "triangle"');
     expect(failureBlock).not.toContain('type: "sawtooth"');
     expect(failureBlock).toContain("gain: 0.024");
+  });
+
+  it("keeps AI discovery sound as a short oscillator chime", () => {
+    const source = soundSource();
+    const discoveryBlock = source.slice(source.indexOf("export const playAIDiscoverySound"));
+
+    expect(discoveryBlock).toContain('type: "sine"');
+    expect(discoveryBlock).toContain('type: "triangle"');
+    expect(discoveryBlock).toContain("durationMs: 96");
+    expect(discoveryBlock).not.toContain("Audio(");
   });
 });
