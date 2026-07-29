@@ -13,6 +13,7 @@ describe("domain profile defaults", () => {
     });
 
     expect(profile.assistant.name).toBe("");
+    expect(profile.familyLifecycleMode).toBe("personal");
     expect(profile.assistant).toMatchObject({
       assistantName: "",
       companionKind: "robot",

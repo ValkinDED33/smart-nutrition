@@ -77,6 +77,16 @@ export type WomenHealthMode =
   | "trying_to_conceive"
   | "pregnant"
   | "postpartum";
+export type FamilyLifecycleMode =
+  | "personal"
+  | "couple"
+  | "trying_to_conceive"
+  | "pregnant"
+  | "partner"
+  | "postpartum"
+  | "breastfeeding"
+  | "baby"
+  | "family";
 export type ZodiacSign =
   | "unknown"
   | "aries"

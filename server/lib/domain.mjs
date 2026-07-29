@@ -503,6 +503,7 @@ export const createInitialProfileState = (userInput) => {
       supportSystem: "self",
       petCompanion: "none",
     },
+    familyLifecycleMode: "personal",
     womenHealth: {
       mode: "none",
       pregnancyWeek: null,

@@ -11,6 +11,7 @@ import reducer, {
   activatePremiumPlan,
   cancelPremiumSubscription,
   normalizeProfileState,
+  setFamilyLifecycleMode,
   setAssistantCustomization,
   startPremiumTrial,
   updatePersonalDetails,
@@ -223,6 +224,7 @@ describe("profileSlice women health", () => {
       notes: "doctor plan exists",
     });
     expect(state.womenHealth.updatedAt).toEqual(expect.any(String));
+    expect(state.familyLifecycleMode).toBe("pregnant");
   });
 
   it("normalizes women health symptom history for safe profile restore", () => {
@@ -258,6 +260,52 @@ describe("profileSlice women health", () => {
         source: "assistant",
       },
     ]);
+  });
+});
+
+describe("profileSlice family lifecycle", () => {
+  it("normalizes family lifecycle through canonical profile state", () => {
+    const pregnantState = normalizeProfileState({
+      familyLifecycleMode: "personal",
+      womenHealth: {
+        mode: "pregnant",
+        pregnancyWeek: 18,
+      },
+    });
+
+    expect(pregnantState.familyLifecycleMode).toBe("pregnant");
+
+    const partnerState = normalizeProfileState({
+      partnerSharing: {
+        links: [
+          {
+            id: "link-1",
+            partnerUserId: "owner-1",
+            role: "partner",
+            permissions: ["pregnancy_timeline"],
+            status: "active",
+            connectedAt: "2026-07-25T12:00:00.000Z",
+            revokedAt: null,
+          },
+        ],
+      },
+    });
+
+    expect(partnerState.familyLifecycleMode).toBe("partner");
+  });
+
+  it("does not let manual lifecycle selection override pregnancy truth", () => {
+    let state = reducer(
+      undefined,
+      updateWomenHealth({
+        mode: "pregnant",
+        pregnancyWeek: 12,
+      })
+    );
+
+    state = reducer(state, setFamilyLifecycleMode("personal"));
+
+    expect(state.familyLifecycleMode).toBe("pregnant");
   });
 });
 

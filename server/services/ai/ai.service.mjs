@@ -255,6 +255,34 @@ const normalizeWomenHealth = (value, gender) => {
   };
 };
 
+const familyLifecycleModes = new Set([
+  "personal",
+  "couple",
+  "trying_to_conceive",
+  "pregnant",
+  "partner",
+  "postpartum",
+  "breastfeeding",
+  "baby",
+  "family",
+]);
+
+const normalizeFamilyLifecycleMode = (value, womenHealth) => {
+  if (womenHealth.mode === "pregnant") {
+    return "pregnant";
+  }
+
+  if (womenHealth.mode === "trying_to_conceive") {
+    return "trying_to_conceive";
+  }
+
+  if (womenHealth.mode === "postpartum") {
+    return value === "breastfeeding" ? "breastfeeding" : "postpartum";
+  }
+
+  return familyLifecycleModes.has(value) ? value : "personal";
+};
+
 const normalizeDailyContextDay = (value) => {
   const record = isRecord(value) ? value : {};
 
@@ -588,6 +616,11 @@ const normalizeContext = (payload, currentUser) => {
     maxLength: 120,
     fallback: "/",
   });
+  const womenHealth = normalizeWomenHealth(record.womenHealth, gender);
+  const familyLifecycleMode = normalizeFamilyLifecycleMode(
+    record.familyLifecycleMode ?? record.profile?.familyLifecycleMode,
+    womenHealth
+  );
 
   return {
     language: normalizeLanguage(record.language),
@@ -631,7 +664,8 @@ const normalizeContext = (payload, currentUser) => {
     assistantPersonality,
     communicationStyle,
     personalDetails: normalizePersonalDetails(record.personalDetails),
-    womenHealth: normalizeWomenHealth(record.womenHealth, gender),
+    familyLifecycleMode,
+    womenHealth,
     dailyContext: normalizeDailyContext(record.dailyContext),
     coachPrimaryInsight: normalizeText(record.coachPrimaryInsight, {
       maxLength: 40,
@@ -668,6 +702,7 @@ const normalizeContext = (payload, currentUser) => {
       dietStyle: normalizeText(record.dietStyle, { maxLength: 24, fallback: "balanced" }),
       latestWeight: toFiniteNumber(record.latestWeight, currentUser.weight ?? 0),
       weeklyCheckInDue: Boolean(record.weeklyCheckInDue),
+      familyLifecycleMode,
     },
     nutritionState: {
       dailyCalories: toFiniteNumber(record.dailyCalories),

@@ -74,6 +74,9 @@ const communitySliceSource = readSource("src/features/community/communitySlice.t
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
+const profileStoreSource = readSource("src/features/profile/model/store.ts");
+const profileTypesSource = readSource("src/domain/profile/types.ts");
+const familyLifecycleSource = readSource("src/domain/profile/familyLifecycle.ts");
 const profileCloudActionCopySource = readSource(
   "src/features/profile/profileCloudActionCopy.ts"
 );
@@ -232,6 +235,8 @@ const aiReadyDocSource = readSource("docs/AI_READY_TO_USE.md");
 const aiIntegrationDocSource = readSource("docs/AI_INTEGRATION_SETUP.md");
 const envSetupDocSource = readSource("docs/ENV_SETUP_GUIDE.md");
 const familyWellnessDocSource = readSource("docs/FAMILY_WELLNESS_ECOSYSTEM.md");
+const aiServiceSource = readSource("server/services/ai/ai.service.mjs");
+const aiSharedSource = readSource("server/services/ai/ai.shared.mjs");
 const specialistSkillPaths = [
   ".codex/skills/ai-architect/SKILL.md",
   ".codex/skills/knowledge-curator/SKILL.md",
@@ -2056,6 +2061,26 @@ addCheck(
     projectRulesSource.includes("Family Wellness must be one lifecycle layer") &&
     projectMemorySource.includes("Family Wellness is now an accepted strategic product layer"),
   "Family Wellness must be governed as one account/profile/cloud/AI/Telegram lifecycle system with scoped partner permissions, medical safety boundaries, and no local-only family truth."
+);
+
+addCheck(
+  "family lifecycle mode is canonical profile and AI context",
+  profileTypesSource.includes("export type FamilyLifecycleMode") &&
+    familyLifecycleSource.includes("resolveFamilyLifecycleMode") &&
+    familyLifecycleSource.includes("womenHealth.mode === \"pregnant\"") &&
+    familyLifecycleSource.includes("link.role === \"partner\"") &&
+    familyLifecycleSource.includes("permissions.includes(\"pregnancy_timeline\")") &&
+    !familyLifecycleSource.includes("localStorage") &&
+    profileStoreSource.includes("familyLifecycleMode: FamilyLifecycleMode") &&
+    profileStoreSource.includes("familyLifecycleMode: \"personal\"") &&
+    profileStoreSource.includes("resolveFamilyLifecycleMode({") &&
+    domainSource.includes("familyLifecycleMode: \"personal\"") &&
+    aiServiceSource.includes("normalizeFamilyLifecycleMode") &&
+    aiSharedSource.includes("familyLifecycleMode:") &&
+    aiSharedSource.includes("Family lifecycle mode:") &&
+    projectMemorySource.includes("familyLifecycleMode") &&
+    projectDecisionsSource.includes("canonical `familyLifecycleMode`"),
+  "Family Wellness lifecycle must live in canonical profile state, derive pregnancy/partner truth from existing womenHealth/partner-sharing contracts, and feed AI context without creating a second family store."
 );
 
 addCheck(

@@ -45,6 +45,8 @@ Allowed lifecycle modes:
 
 The existing `womenHealth` profile state remains the canonical owner for pregnancy, planning, postpartum, symptom, and baby-preview context. New lifecycle fields must extend canonical profile cloud state or a backend-owned family state contract; they must not create a second local family store.
 
+The current canonical lifecycle field is `familyLifecycleMode` on profile state. It is normalized from existing profile truth: `pregnant`, `trying_to_conceive`, and `postpartum` come from `womenHealth`, `partner` comes from an active permission-scoped pregnancy partner link, and explicit modes such as `personal`, `couple`, `breastfeeding`, `baby`, and `family` are accepted only inside that profile contract. AI context must receive this field as context, not as a separate memory store.
+
 ## Source Of Truth
 
 Backend/cloud is the source of truth.

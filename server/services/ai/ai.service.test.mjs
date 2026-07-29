@@ -178,6 +178,7 @@ describe("ai.service", () => {
           doctorConfirmed: true,
           notes: "doctor advised steady hydration",
         },
+        familyLifecycleMode: "personal",
         assistantName: "Diana",
         assistantRole: "assistant",
         assistantTone: "gentle",
@@ -230,6 +231,8 @@ describe("ai.service", () => {
     expect(providerBody.messages[1].content).toContain("currentCalories: 1600");
     expect(providerBody.messages[1].content).toContain("waterToday: 1000 / 2200 ml");
     expect(providerBody.messages[1].content).toContain("Interaction channel: web");
+    expect(providerBody.messages[1].content).toContain("familyLifecycleMode: pregnant");
+    expect(providerBody.messages[1].content).toContain("Family lifecycle mode: pregnant");
     expect(providerBody.messages[1].content).toContain("womenHealthMode: pregnant");
     expect(providerBody.messages[1].content).toContain("Pregnancy week: 18");
     expect(providerBody.messages[1].content).toContain(

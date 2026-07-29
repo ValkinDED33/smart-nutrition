@@ -118,6 +118,9 @@ const buildContextBlock = (context) =>
       context.memory?.struggles
     )}; habits=${formatList(context.memory?.habits)}`,
     `assistantMode: ${context.promptContext?.area ?? context.screen ?? "assistant"}`,
+    `familyLifecycleMode: ${
+      context.familyLifecycleMode ?? context.profile?.familyLifecycleMode ?? "personal"
+    }`,
     `womenHealthMode: ${
       context.gender === "female" && context.womenHealth?.mode
         ? context.womenHealth.mode
@@ -129,6 +132,9 @@ const buildContextBlock = (context) =>
     `- Interaction channel: ${context.interactionChannel ?? "web"}`,
     formatPromptContextLine(context),
     `- User: ${context.userName}`,
+    `- Family lifecycle mode: ${
+      context.familyLifecycleMode ?? context.profile?.familyLifecycleMode ?? "personal"
+    }`,
     `- Goal: ${context.goal}`,
     `- Diet style: ${context.profile?.dietStyle ?? "balanced"}`,
     `- Onboarding preferred name: ${context.onboarding?.preferredName ?? "unknown"}`,

@@ -47,11 +47,16 @@ import type {
   RelationshipStatus,
   ReminderTimes,
   SupportSystem,
+  FamilyLifecycleMode,
   WomenHealthState,
   WeeklyCheckInState,
 } from "@domain/profile/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { normalizeAssistantOnboardingProfile } from "@core/assistant";
+import {
+  isFamilyLifecycleMode,
+  resolveFamilyLifecycleMode,
+} from "@domain/profile/familyLifecycle";
 import {
   createDefaultWomenHealthState,
   normalizeWomenHealthState,
@@ -88,6 +93,7 @@ export interface ProfileState {
   personalDetails: PersonalProfileDetails;
   womenHealth: WomenHealthState;
   partnerSharing: PartnerSharingState;
+  familyLifecycleMode: FamilyLifecycleMode;
 }
 
 interface ProfileTargetsPayload {
@@ -678,6 +684,7 @@ const createInitialProfileState = (): ProfileState => ({
   personalDetails: createDefaultPersonalDetails(),
   womenHealth: createDefaultWomenHealthState(),
   partnerSharing: createDefaultPartnerSharingState(),
+  familyLifecycleMode: "personal",
 });
 
 export const normalizeProfileState = (value: unknown): ProfileState => {
@@ -686,6 +693,9 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
   if (!isRecord(value)) {
     return fallback;
   }
+
+  const womenHealth = normalizeWomenHealthState(value.womenHealth);
+  const partnerSharing = normalizePartnerSharingState(value.partnerSharing);
 
   return {
     dailyCalories: toNumber(value.dailyCalories),
@@ -725,8 +735,13 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     assistant: normalizeAssistantCustomization(value.assistant),
     premium: normalizePremiumSubscription(value.premium),
     personalDetails: normalizePersonalDetails(value.personalDetails),
-    womenHealth: normalizeWomenHealthState(value.womenHealth),
-    partnerSharing: normalizePartnerSharingState(value.partnerSharing),
+    womenHealth,
+    partnerSharing,
+    familyLifecycleMode: resolveFamilyLifecycleMode({
+      explicitMode: value.familyLifecycleMode,
+      womenHealth,
+      partnerSharing,
+    }),
   };
 };
 
@@ -914,6 +929,23 @@ const profileSlice = createSlice({
         ...action.payload,
         updatedAt: new Date().toISOString(),
       });
+      state.familyLifecycleMode = resolveFamilyLifecycleMode({
+        explicitMode: state.familyLifecycleMode,
+        womenHealth: state.womenHealth,
+        partnerSharing: state.partnerSharing,
+      });
+    },
+
+    setFamilyLifecycleMode(state, action: PayloadAction<FamilyLifecycleMode>) {
+      if (!isFamilyLifecycleMode(action.payload)) {
+        return;
+      }
+
+      state.familyLifecycleMode = resolveFamilyLifecycleMode({
+        explicitMode: action.payload,
+        womenHealth: state.womenHealth,
+        partnerSharing: state.partnerSharing,
+      });
     },
 
     refreshMotivationTasks(state, action: PayloadAction<string | undefined>) {
@@ -1038,6 +1070,7 @@ export const {
   setAssistantCustomization,
   updatePersonalDetails,
   updateWomenHealth,
+  setFamilyLifecycleMode,
   refreshMotivationTasks,
   completeMotivationTask,
   activateWeeklyDayOff,
