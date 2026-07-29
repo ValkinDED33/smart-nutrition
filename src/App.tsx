@@ -3,7 +3,11 @@ import { Helmet } from "react-helmet-async";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "./app/store";
-import { initializeAuth, selectAuth } from "./features/auth/authSlice";
+import {
+  clearSavedSessionHint,
+  initializeAuth,
+  selectAuth,
+} from "./features/auth/authSlice";
 import Layout from "@app/layouts/AppLayout";
 import ErrorBoundary from "./shared/components/ErrorBoundary";
 import Loader from "./shared/components/Loader/PacmanLoader";
@@ -78,7 +82,11 @@ function App() {
 
   useEffect(() => {
     if (!isInitialized && !isLoading) {
-      dispatch(initializeAuth());
+      if (hasSessionHint) {
+        dispatch(initializeAuth());
+      } else {
+        dispatch(clearSavedSessionHint());
+      }
       return undefined;
     }
 

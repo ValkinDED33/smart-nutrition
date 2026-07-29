@@ -179,6 +179,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened quick weight cloud saves against profile-state conflicts: quick check-ins now replay the same weight-save intent on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm local state only after the rebased backend save succeeds.
 - Removed embedded base64/Howler scanner-water sound playback after browser `atob` decode errors; UI feedback now uses Web Audio oscillator tones only, with optional sound failures swallowed so scanner/water actions never fail because audio failed.
 - Added full direct-translation coverage for all active app languages so UI cannot render raw i18n keys such as `weekly.title`, `productFacts.title`, or `nav.home` after future copy changes.
+- Hardened public app startup so first-time guests are initialized locally as unauthenticated instead of calling `/api/auth/session` and `/api/auth/refresh`; returning users still restore only through the recent session-hint path.
 
 ## Current Architecture
 
@@ -322,6 +323,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Regular assistant status consumers must not depend on provider diagnostics from `/api/ai/status`; the backend returns a sanitized readiness shape unless the authenticated role can access assistant operations diagnostics.
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
+- Public startup auth restore must be gated by a recent session hint. Guest landing/register/login views must not create red 401/refresh console noise just because no account is signed in.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.
 - Production readiness checks must reject placeholder secrets, database URLs, and email settings.
 - Production readiness checks must reject cross-site cookie settings that break auth restore.

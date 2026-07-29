@@ -29,6 +29,7 @@ const addCheck = (label, pass, detail) => {
 const photoAssistantSource = readSource("src/features/meal/PhotoMealAssistant.tsx");
 const authRemoteSource = readSource("src/shared/api/authRemote.ts");
 const authSliceSource = readSource("src/features/auth/authSlice.ts");
+const appSource = readSource("src/App.tsx");
 const syncListenersSource = readSource("src/app/syncListeners.ts");
 const platformApiSource = readSource("src/shared/api/platform.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
@@ -395,6 +396,18 @@ addCheck(
       )
   ),
   "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, local storage snapshots, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
+);
+
+addCheck(
+  "public startup auth restore is gated by a recent session hint",
+  appSource.includes("clearSavedSessionHint") &&
+    appSource.includes("if (hasSessionHint)") &&
+    appSource.includes("dispatch(initializeAuth())") &&
+    appSource.includes("dispatch(clearSavedSessionHint())") &&
+    !appSource.includes(
+      "if (!isInitialized && !isLoading) {\n      dispatch(initializeAuth());"
+    ),
+  "Public startup must not call /api/auth/session or /api/auth/refresh for first-time guests. Returning users may restore through the existing session-hint path; guests initialize locally as unauthenticated."
 );
 
 addCheck(
