@@ -1165,6 +1165,18 @@ addCheck(
 );
 
 addCheck(
+  "combined profile-state saves return backend-confirmed profile",
+  authServiceSource.includes("const savedProfile = await saveProfileState(body?.profile)") &&
+    authServiceSource.includes("profile: savedProfile") &&
+    authRemoteSource.includes("profile?: unknown") &&
+    authRemoteSource.includes("profile: data.profile") &&
+    authRemoteSource.includes("profileUpdatedAt:") &&
+    profileCloudSyncSource.includes("normalizeProfileState(rebasedResult.profile ?? rebasedProfile)") &&
+    profileCloudSyncSource.includes("normalizeProfileState(result.profile ?? profile)"),
+  "Combined profile/user updates must return and consume the normalized backend-confirmed profile so frontend state cannot drift from the cloud source of truth."
+);
+
+addCheck(
   "profile-only saves rebase cloud conflicts instead of surfacing stale-profile failure",
   profileCloudSyncSource.includes("rebaseProfileStateChange") &&
     profileCloudSyncSource.includes("saveProfileStateToCloudWithConflictRebase") &&

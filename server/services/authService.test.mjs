@@ -920,11 +920,12 @@ describe("authService", () => {
       weight: 77,
     };
     const profileState = { dailyCalories: 2200 };
+    const savedProfileState = { dailyCalories: 2200, normalized: true };
     const meta = {
       updatedAt: "2026-07-01T08:20:00.000Z",
       deviceId: "device-1",
     };
-    const saveProfileState = vi.fn(async () => undefined);
+    const saveProfileState = vi.fn(async () => savedProfileState);
     const getProfileMeta = vi.fn(async () => meta);
     authRepository.updateUser.mockResolvedValue(nextUser);
 
@@ -945,6 +946,7 @@ describe("authService", () => {
     expect(result).toMatchObject({
       ok: true,
       user: { id: currentUser.id, weight: 77 },
+      profile: savedProfileState,
       meta,
     });
   });

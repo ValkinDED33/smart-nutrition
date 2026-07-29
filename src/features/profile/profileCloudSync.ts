@@ -248,14 +248,17 @@ export const saveProfileAndUserToCloudWithConflictRebase = async (
     dispatch(setCloudMeta(rebasedResult.meta ?? null));
     dispatch(markSyncSuccess(rebasedResult.meta?.updatedAt ?? confirmedAt));
 
-    return { user: rebasedResult.user, profile: rebasedProfile };
+    return {
+      user: rebasedResult.user,
+      profile: normalizeProfileState(rebasedResult.profile ?? rebasedProfile),
+    };
   }
 
   dispatch(hydrateSyncOutbox(clearSyncOutbox()));
   dispatch(setCloudMeta(result.meta ?? null));
   dispatch(markSyncSuccess(result.meta?.updatedAt ?? confirmedAt));
 
-  return { user: result.user, profile };
+  return { user: result.user, profile: normalizeProfileState(result.profile ?? profile) };
 };
 
 export const buildProfileStateAfterAction = (

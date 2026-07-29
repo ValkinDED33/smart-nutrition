@@ -991,7 +991,7 @@ export const createAuthService = ({
         throw new AuthApiError("INVALID_PROFILE", "Cloud profile sync is unavailable.");
       }
 
-      await saveProfileState(body?.profile);
+      const savedProfile = await saveProfileState(body?.profile);
       const updatedUser = await authRepository.updateUser({
         ...currentUser,
         ...profileInput,
@@ -1008,6 +1008,7 @@ export const createAuthService = ({
       return {
         ok: true,
         user: toPublicUser(updatedUser),
+        profile: savedProfile,
         meta:
           typeof getProfileMeta === "function"
             ? await getProfileMeta()

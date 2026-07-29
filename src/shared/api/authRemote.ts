@@ -43,6 +43,7 @@ export interface RemoteSyncResult {
   message?: string;
   code?: string;
   meta?: AppSnapshotMeta | null;
+  profile?: unknown;
   meal?: unknown;
   community?: unknown;
 }
@@ -196,6 +197,7 @@ interface RemoteMutationResponse {
 
 interface RemoteProfileAndStateResponse extends RemoteMutationResponse {
   user: User;
+  profile?: unknown;
 }
 
 interface RemoteBackupListResponse {
@@ -1047,9 +1049,24 @@ export const updateRemoteProfileWithState = async (
       writeCachedRemoteMeta(data.meta);
     }
 
+    if (data.profile) {
+      const cachedSnapshot = readCachedRemoteSnapshot();
+
+      if (cachedSnapshot) {
+        writeCachedRemoteSnapshot({
+          ...cachedSnapshot,
+          profile: data.profile,
+          profileUpdatedAt:
+            data.meta?.profileUpdatedAt ?? cachedSnapshot.profileUpdatedAt,
+          updatedAt: data.meta?.updatedAt ?? cachedSnapshot.updatedAt,
+        });
+      }
+    }
+
     return {
       ok: true,
       user: data.user,
+      profile: data.profile,
       meta: data.meta,
     };
   } catch (error) {

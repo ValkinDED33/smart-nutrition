@@ -351,6 +351,72 @@ describe("profileCloudSync", () => {
     ]);
   });
 
+  it("uses backend-confirmed profile after a combined conflict rebase", async () => {
+    const dispatch = vi.fn();
+    const staleProfile = normalizeProfileState({
+      dailyCalories: PROFILE_CALORIES,
+      weightHistory: [{ date: "2026-07-01", weight: 76 }],
+    });
+    const cloudProfile = normalizeProfileState({
+      dailyCalories: PROFILE_REBASED_CALORIES,
+      weightHistory: [{ date: "2026-07-02", weight: 75 }],
+    });
+    const rebasedProfile = normalizeProfileState({
+      ...cloudProfile,
+      weightHistory: [
+        ...cloudProfile.weightHistory,
+        { date: "2026-07-03", weight: 74 },
+      ],
+    });
+    const backendConfirmedProfile = normalizeProfileState({
+      ...rebasedProfile,
+      dailyCalories: 2500,
+    });
+    const user = {
+      ...USER_PROFILE_FIXTURE,
+      weight: 74,
+    };
+
+    authApiMock.syncRemoteProfileWithUser
+      .mockResolvedValueOnce({
+        ok: false,
+        code: "STATE_CONFLICT",
+        message: "conflict",
+        meta: null,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        user,
+        profile: backendConfirmedProfile,
+        meta: {
+          updatedAt: PROFILE_UPDATED_AT,
+          deviceId: CLOUD_DEVICE_ID,
+        },
+      });
+    authApiMock.pullRemoteAppSnapshot.mockResolvedValueOnce({
+      profile: cloudProfile,
+      meal: null,
+      water: null,
+      fridge: null,
+      community: null,
+      companion: null,
+      updatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: CLOUD_SNAPSHOT_UPDATED_AT,
+      mealUpdatedAt: null,
+      waterUpdatedAt: null,
+    });
+
+    const result = await saveProfileAndUserToCloudWithConflictRebase(
+      dispatch,
+      user,
+      staleProfile,
+      () => rebasedProfile,
+      PROFILE_PREVIOUS_UPDATED_AT
+    );
+
+    expect(result).toEqual({ user, profile: backendConfirmedProfile });
+  });
+
   it("throws and marks sync error when the cloud rejects the profile state", async () => {
     const dispatch = vi.fn();
     authApiMock.syncRemoteProfileState.mockResolvedValueOnce({
