@@ -21,6 +21,10 @@ describe("AI Discovery Cards contract", () => {
     expect(modelSource).toContain("AssistantHomeAction");
     expect(modelSource).toContain("AIDiscoveryTimelineItem");
     expect(modelSource).toContain("buildAIDiscoveryTimeline");
+    expect(homeSource).toContain("buildAIDiscoveryTimeline");
+    expect(homeSource).toContain("const heroStory = useMemo");
+    expect(homeSource).toContain("aria-label={copy.heroStoryLabel}");
+    expect(homeSource).toContain("onClick={item.action ? () => runAssistantAction");
     expect(homeSource).toContain("<AIDiscoveryCards");
     expect(homeSource).toContain("context={dailyContext}");
     expect(homeSource).toContain("intelligence={intelligence}");

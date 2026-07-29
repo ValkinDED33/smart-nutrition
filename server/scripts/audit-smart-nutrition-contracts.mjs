@@ -439,6 +439,10 @@ addCheck(
     homePageSource.includes("context={dailyContext}") &&
     homePageSource.includes("intelligence={intelligence}") &&
     homePageSource.includes("onRunAction={runAssistantAction}") &&
+    homePageSource.includes("buildAIDiscoveryTimeline") &&
+    homePageSource.includes("const heroStory = useMemo") &&
+    homePageSource.includes("aria-label={copy.heroStoryLabel}") &&
+    homePageSource.includes("onClick={item.action ? () => runAssistantAction") &&
     aiDiscoveryCardsSource.includes("buildAIDiscoveryCards") &&
     aiDiscoveryCardsSource.includes("buildAIDiscoveryTimeline") &&
     aiDiscoveryCardsSource.includes("aria-label={text.timelineTitle}") &&

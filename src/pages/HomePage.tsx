@@ -40,6 +40,7 @@ import {
   type AssistantHomeAction,
 } from "@features/assistant/assistantHomeIntelligence";
 import { AIDiscoveryCards } from "@features/assistant/AIDiscoveryCards";
+import { buildAIDiscoveryTimeline } from "@features/assistant/aiDiscoveryCardsModel";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
@@ -52,6 +53,13 @@ const COMMON_GRAMS_KEY = "common.g";
 const ELEVATED_SURFACE_COLOR = "var(--sn-surface-elevated)";
 const ACCENT_SOFT_COLOR = "var(--sn-accent-soft)";
 const ALIGN_START = "flex-start";
+const HERO_STORY_BORDER = "rgba(255,255,255,0.54)";
+const HERO_STORY_ACCENT = {
+  food: "#0f766e",
+  ai: "#2563eb",
+  water: "#0284c7",
+  action: "#4d7c0f",
+} as const;
 
 const homeCopy = {
   uk: {
@@ -76,6 +84,7 @@ const homeCopy = {
     addManually: "Додати вручну",
     quickAddTitle: "Додати їжу",
     quickAddSubtitle: "Оберіть найшвидший спосіб для цього моменту.",
+    heroStoryLabel: "Жива історія дня",
     water: "Додати воду",
     close: "Закрити",
     sections: {
@@ -108,6 +117,7 @@ const homeCopy = {
     addManually: "Dodaj ręcznie",
     quickAddTitle: "Dodaj jedzenie",
     quickAddSubtitle: "Wybierz najszybszy sposób na ten moment.",
+    heroStoryLabel: "Żywa historia dnia",
     water: "Dodaj wodę",
     close: "Zamknij",
     sections: {
@@ -140,6 +150,7 @@ const homeCopy = {
     addManually: "Add manually",
     quickAddTitle: "Add food",
     quickAddSubtitle: "Choose the fastest method for this moment.",
+    heroStoryLabel: "Living day story",
     water: "Add water",
     close: "Close",
     sections: {
@@ -202,6 +213,15 @@ const HomePage = () => {
         onboarding: assistant.onboarding,
       }),
     [appLanguage, assistant.onboarding, dailyContext]
+  );
+  const heroStory = useMemo(
+    () =>
+      buildAIDiscoveryTimeline({
+        context: dailyContext,
+        language: appLanguage,
+        primaryAction: intelligence.primaryAction,
+      }),
+    [appLanguage, dailyContext, intelligence.primaryAction]
   );
 
   if (!user) {
@@ -404,6 +424,107 @@ const HomePage = () => {
               {copy.subtitle}
             </Typography>
           </Stack>
+
+          <Box
+            aria-label={copy.heroStoryLabel}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(4, minmax(0, 1fr))",
+              },
+              gap: 0.75,
+            }}
+          >
+            {heroStory.map((item, index) => {
+              const accent = HERO_STORY_ACCENT[item.tone];
+              const isAction = Boolean(item.action);
+
+              return (
+                <Box
+                  key={item.id}
+                  component={isAction ? "button" : "article"}
+                  type={isAction ? "button" : undefined}
+                  onClick={item.action ? () => runAssistantAction(item.action as AssistantHomeAction) : undefined}
+                  sx={{
+                    position: "relative",
+                    minHeight: 96,
+                    p: 1,
+                    borderRadius: 1,
+                    border: `1px solid ${HERO_STORY_BORDER}`,
+                    color: heroTextColor,
+                    textAlign: "left",
+                    background: isDarkMode
+                      ? "rgba(255,255,255,0.09)"
+                      : "rgba(255,255,255,0.58)",
+                    backdropFilter: "blur(18px)",
+                    cursor: isAction ? "pointer" : "default",
+                    overflow: "hidden",
+                    transition: "transform 160ms ease, border-color 160ms ease",
+                    "&:hover": isAction
+                      ? {
+                          transform: "translateY(-1px)",
+                          borderColor: accent,
+                        }
+                      : undefined,
+                    "&:focus-visible": {
+                      outline: `2px solid ${accent}`,
+                      outlineOffset: 2,
+                    },
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      width: { xs: 2, md: 22 },
+                      height: { xs: 18, md: 2 },
+                      left: { xs: 19, md: "auto" },
+                      right: { xs: "auto", md: -12 },
+                      bottom: { xs: -10, md: "auto" },
+                      top: { xs: "auto", md: 22 },
+                      backgroundColor:
+                        index === heroStory.length - 1 ? "transparent" : HERO_STORY_BORDER,
+                    },
+                  }}
+                >
+                  <Stack spacing={0.55}>
+                    <Stack direction="row" spacing={0.7} alignItems="center" minWidth={0}>
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          background: accent,
+                          boxShadow: `0 0 18px ${accent}55`,
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        sx={{ color: accent, fontWeight: 950, minWidth: 0 }}
+                      >
+                        {item.label}
+                      </Typography>
+                    </Stack>
+                    <Typography
+                      sx={{
+                        fontWeight: 950,
+                        lineHeight: 1.15,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {item.title}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: heroMutedColor, fontWeight: 850 }}>
+                      {item.metric}
+                    </Typography>
+                  </Stack>
+                </Box>
+              );
+            })}
+          </Box>
 
           <Stack
             direction={{ xs: "column", sm: "row" }}
