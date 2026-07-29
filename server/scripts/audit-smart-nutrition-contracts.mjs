@@ -223,8 +223,15 @@ const companionAvatarModelSource = readSource("src/features/assistant-3d/compone
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
+const seoAuditSource = readSource("server/scripts/audit-seo-discovery.mjs");
 const globalAssistantLayerSource = readSource("src/widgets/GlobalAssistantLayer.tsx");
 const packageJsonSource = readSource("package.json");
+const indexHtmlSource = readSource("index.html");
+const robotsTxtSource = readSource("public/robots.txt");
+const sitemapXmlSource = readSource("public/sitemap.xml");
+const imageSitemapXmlSource = readSource("public/sitemap-images.xml");
+const llmsTxtSource = readSource("public/llms.txt");
+const aiTxtSource = readSource("public/ai.txt");
 const productionCheckSource = readSource("server/production-check.mjs");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
@@ -2151,6 +2158,32 @@ addCheck(
     bundleAuditSource.includes('"analytics-vendor-"') &&
     bundleAuditSource.includes("must stay route-lazy"),
   "Bundle audit must inspect modulepreload initial assets, cap initial payload, and block scanner/photo/markdown/analytics/native/3D vendors from startup."
+);
+
+addCheck(
+  "search discovery covers broad crawler and AI answer engine entry points",
+  packageJsonSource.includes('"audit:seo": "node server/scripts/audit-seo-discovery.mjs"') &&
+    indexHtmlSource.includes('name="googlebot"') &&
+    indexHtmlSource.includes('name="bingbot"') &&
+    indexHtmlSource.includes('"@graph"') &&
+    indexHtmlSource.includes('"@type": "Organization"') &&
+    indexHtmlSource.includes('"@type": "WebSite"') &&
+    indexHtmlSource.includes('"@type": "WebApplication"') &&
+    robotsTxtSource.includes("Sitemap: https://smart-nutrition.club/sitemap.xml") &&
+    robotsTxtSource.includes("Sitemap: https://smart-nutrition.club/sitemap-images.xml") &&
+    robotsTxtSource.includes("Allow: /llms.txt") &&
+    robotsTxtSource.includes("Allow: /ai.txt") &&
+    robotsTxtSource.includes("Disallow: /*?token=") &&
+    sitemapXmlSource.includes("<lastmod>2026-07-29</lastmod>") &&
+    imageSitemapXmlSource.includes("<image:loc>https://smart-nutrition.club/og.png</image:loc>") &&
+    llmsTxtSource.includes("Backend/cloud state is the source of truth") &&
+    aiTxtSource.includes("LLM summary: https://smart-nutrition.club/llms.txt") &&
+    seoAuditSource.includes("image sitemap exposes public visual discovery assets only") &&
+    seoAuditSource.includes("AI answer engines receive a public project summary") &&
+    liveAuditSource.includes("/sitemap-images.xml") &&
+    liveAuditSource.includes("/llms.txt") &&
+    liveAuditSource.includes("/ai.txt"),
+  "Search discovery must expose canonical public metadata, text/image sitemaps, and AI discovery summaries while keeping protected/token routes blocked from crawler discovery."
 );
 
 addCheck(

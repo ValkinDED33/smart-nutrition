@@ -10,7 +10,19 @@
       content="Smart Nutrition is an AI nutrition companion for meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching."
     />
     <meta name="robots" content="index,follow" />
+    <meta
+      name="googlebot"
+      content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"
+    />
+    <meta
+      name="bingbot"
+      content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1"
+    />
     <meta name="application-name" content="Smart Nutrition" />
+    <meta
+      name="keywords"
+      content="AI nutrition companion, meal planning, calorie tracker, water tracker, barcode scanner, photo meal recognition, wellness assistant, pregnancy nutrition, Telegram nutrition assistant, PWA health app"
+    />
     <meta name="theme-color" content="#0f766e" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -57,26 +69,69 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Smart Nutrition",
-        "alternateName": "Smart Nutrition AI Companion",
-        "url": "https://smart-nutrition.club/",
-        "description": "AI nutrition companion for meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching.",
-        "applicationCategory": "HealthApplication",
-        "operatingSystem": "Web",
-        "inLanguage": ["uk", "pl", "en"],
-        "image": "https://smart-nutrition.club/og.png",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "name": "Smart Nutrition",
-          "url": "https://smart-nutrition.club/",
-          "logo": "https://smart-nutrition.club/icon-512.png"
-        }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://smart-nutrition.club/#organization",
+            "name": "Smart Nutrition",
+            "url": "https://smart-nutrition.club/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://smart-nutrition.club/icon-512.png",
+              "width": 512,
+              "height": 512
+            },
+            "sameAs": ["https://t.me/SmartNutritionAssistBot"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://smart-nutrition.club/#website",
+            "name": "Smart Nutrition",
+            "alternateName": "Smart Nutrition AI Companion",
+            "url": "https://smart-nutrition.club/",
+            "inLanguage": ["uk", "pl", "en"],
+            "publisher": {
+              "@id": "https://smart-nutrition.club/#organization"
+            },
+            "potentialAction": {
+              "@type": "RegisterAction",
+              "target": "https://smart-nutrition.club/register",
+              "name": "Create a Smart Nutrition account"
+            }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://smart-nutrition.club/#webapp",
+            "name": "Smart Nutrition",
+            "alternateName": "Smart Nutrition AI Companion",
+            "url": "https://smart-nutrition.club/",
+            "description": "AI nutrition companion for meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching.",
+            "applicationCategory": ["HealthApplication", "LifestyleApplication"],
+            "operatingSystem": "Web, Android, iOS",
+            "browserRequirements": "Requires JavaScript. Works as a PWA in modern mobile and desktop browsers.",
+            "inLanguage": ["uk", "pl", "en"],
+            "image": "https://smart-nutrition.club/og.png",
+            "screenshot": "https://smart-nutrition.club/og.png",
+            "featureList": [
+              "AI nutrition assistant",
+              "Meal planning",
+              "Barcode scanner",
+              "Photo meal recognition",
+              "Water tracking",
+              "Progress analytics",
+              "Telegram assistant integration",
+              "Family and pregnancy wellness context"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "publisher": {
+              "@id": "https://smart-nutrition.club/#organization"
+            }
+          }
+        ]
       }
     </script>
   </head>

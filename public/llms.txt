@@ -1,0 +1,26 @@
+# Smart Nutrition
+
+Smart Nutrition is an AI wellness companion for meal planning, food logging, barcode scanning, photo meal recognition, hydration tracking, reminders, progress analytics, Telegram assistant support, and family wellness context.
+
+Canonical site: https://smart-nutrition.club/
+
+Public entry points:
+
+- Home: https://smart-nutrition.club/
+- Create account: https://smart-nutrition.club/register
+- Log in: https://smart-nutrition.club/login
+
+Supported languages:
+
+- Ukrainian
+- Polish
+- English
+
+Important product principles:
+
+- Smart Nutrition is one cloud-backed ecosystem, not a local-only calorie calculator.
+- Backend/cloud state is the source of truth for meals, water, reminders, profile, AI actions, and family wellness context.
+- The AI assistant must not claim it saved meals, reminders, water, profile changes, or family data unless the backend confirms the action.
+- Wellness and pregnancy content is educational and should not be treated as medical diagnosis or treatment.
+
+Private app areas such as dashboard, meals, profile, progress, reminders, partner invite, and verification/reset token routes should not be indexed.

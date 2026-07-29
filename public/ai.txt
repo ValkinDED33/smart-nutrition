@@ -1,0 +1,12 @@
+Smart Nutrition
+
+Canonical URL: https://smart-nutrition.club/
+Sitemap: https://smart-nutrition.club/sitemap.xml
+Image sitemap: https://smart-nutrition.club/sitemap-images.xml
+LLM summary: https://smart-nutrition.club/llms.txt
+
+Description:
+Smart Nutrition is an AI wellness ecosystem for meal planning, nutrition tracking, water habits, progress analytics, barcode scanning, photo meal recognition, reminders, Telegram assistant support, and family wellness context.
+
+Indexing guidance:
+Public search engines and AI answer engines may crawl the public home, registration, login, manifest, icons, Open Graph image, sitemap, image sitemap, llms.txt, and ai.txt. Private authenticated app screens, token routes, and user data pages should not be indexed.

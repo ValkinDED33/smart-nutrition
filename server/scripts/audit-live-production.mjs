@@ -162,10 +162,14 @@ const inspectSeoDiscovery = async () => {
   addCheck(
     "live robots points to canonical sitemap and blocks protected routes",
     robotsText.includes("Sitemap: https://smart-nutrition.club/sitemap.xml") &&
+      robotsText.includes("Sitemap: https://smart-nutrition.club/sitemap-images.xml") &&
+      robotsText.includes("Allow: /llms.txt") &&
+      robotsText.includes("Allow: /ai.txt") &&
       robotsText.includes("Disallow: /admin") &&
       robotsText.includes("Disallow: /verify-email") &&
-      robotsText.includes("Disallow: /reset-password"),
-    "robots.txt must advertise the sitemap while blocking protected/token routes."
+      robotsText.includes("Disallow: /reset-password") &&
+      robotsText.includes("Disallow: /*?token="),
+    "robots.txt must advertise text/image/AI discovery files while blocking protected/token routes."
   );
 
   const sitemapResponse = await fetchWithTimeout(joinUrl(appOrigin, "/sitemap.xml"));
@@ -184,6 +188,37 @@ const inspectSeoDiscovery = async () => {
       sitemapText.includes("<loc>https://smart-nutrition.club/login</loc>") &&
       protectedSitemapFragments.every((fragment) => !sitemapText.includes(fragment)),
     "sitemap.xml must include public entry routes and exclude protected or token routes."
+  );
+
+  const imageSitemapResponse = await fetchWithTimeout(
+    joinUrl(appOrigin, "/sitemap-images.xml")
+  );
+  const imageSitemapText = await readText(imageSitemapResponse);
+
+  addCheck(
+    "live image sitemap exposes public brand imagery",
+    imageSitemapResponse.ok &&
+      imageSitemapText.includes("<image:loc>https://smart-nutrition.club/og.png</image:loc>") &&
+      imageSitemapText.includes("<image:loc>https://smart-nutrition.club/icon-512.png</image:loc>") &&
+      protectedSitemapFragments.every((fragment) => !imageSitemapText.includes(fragment)),
+    "sitemap-images.xml must be reachable and must not list protected app routes."
+  );
+
+  const llmsResponse = await fetchWithTimeout(joinUrl(appOrigin, "/llms.txt"));
+  const llmsText = await readText(llmsResponse);
+  const aiResponse = await fetchWithTimeout(joinUrl(appOrigin, "/ai.txt"));
+  const aiText = await readText(aiResponse);
+
+  addCheck(
+    "live AI discovery files describe public product only",
+    llmsResponse.ok &&
+      aiResponse.ok &&
+      llmsText.includes("Canonical site: https://smart-nutrition.club/") &&
+      llmsText.includes("Backend/cloud state is the source of truth") &&
+      aiText.includes("LLM summary: https://smart-nutrition.club/llms.txt") &&
+      protectedSitemapFragments.every((fragment) => !llmsText.includes(fragment)) &&
+      protectedSitemapFragments.every((fragment) => !aiText.includes(fragment)),
+    "llms.txt and ai.txt must be reachable and must not advertise protected app routes."
   );
 
   const manifestResponse = await fetchWithTimeout(

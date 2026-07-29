@@ -67,6 +67,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Verified latest stabilization with build, tests, lint, dependency audit, cycle audit, and architecture audit.
 - Hardened frontend remote API routing so public deployments prefer the canonical configured Render backend over stale browser-stored API base URLs; added regression coverage for registration availability when old localStorage state exists.
 - Added SEO discovery as a release-gated contract: `robots.txt` now exposes the canonical sitemap while blocking protected/token SPA surfaces, `sitemap.xml` uses current canonical public URLs, and `npm run audit:seo` verifies index metadata, crawler policy, sitemap scope, lastmod freshness, and manifest identity.
+- Expanded SEO/search discovery so public crawlers and AI answer engines can find Smart Nutrition through crawler-specific metadata, Organization/WebSite/WebApplication JSON-LD, image sitemap, `llms.txt`, and `ai.txt`, while protected app/token routes remain blocked.
 - Hardened bundle audit so it counts `modulepreload` assets as initial payload, caps total startup JavaScript, and blocks scanner, photo compression, markdown, analytics, native bridge, and 3D vendors from being preloaded by `index.html`.
 - Added `npm run audit:live` as a safe public live production smoke command for Vercel app HTML/assets, SEO discovery, PWA manifest, Render health/readiness, sanitized diagnostics, and credentialed CORS origin behavior.
 - Added `npm run audit:live:auth` as the authenticated production smoke contract for dedicated verified smoke accounts: login cookies, session restore, `/api/state`, water mutation/restore, product intake/delete, reminder create/list/delete, and Telegram status without token exposure.
@@ -314,6 +315,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Backend product lookup may use multiple backend-owned provider hosts for resilience, but the frontend must still call only the Smart Nutrition backend contract.
 - Frontend CSP must not reopen direct browser access to external food catalog providers.
 - SEO discovery is a release contract: public metadata, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` must remain aligned with `https://smart-nutrition.club`, while protected app screens and token routes must not be promoted as public search pages.
+- Search discovery must include only public product entry points and brand assets: regular sitemap, image sitemap, `llms.txt`, and `ai.txt` may describe the app, but they must not advertise private authenticated surfaces, token URLs, user data, or admin areas.
 - Profile mutations must use unified cloud actions, not isolated local state.
 - Adaptive-goal profile UI must use localized product-language copy for automatic/manual behavior and must not render hard-coded English mode explanations.
 - Water tracker copy must keep hydration, assistant reaction, notification permission, and reward-sync warnings in the active product language; mixed `companion`/`notifications` wording is forbidden in regular user copy.

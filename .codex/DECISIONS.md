@@ -123,8 +123,8 @@
 
 - Status: Accepted.
 - Context: Smart Nutrition needs to be discoverable by search engines without exposing authenticated app surfaces, token routes, or user data pages as public SEO content.
-- Decision: Release quality must verify `index.html`, `robots.txt`, `sitemap.xml`, and `manifest.webmanifest` as one SEO discovery contract. The sitemap may list only canonical public entry routes, while protected SPA screens and token routes must be blocked from crawler discovery.
-- Consequences: Search discoverability cannot rely on one-off manual edits. Any route, domain, manifest, canonical URL, or crawler policy change must keep `npm run audit:seo` passing before release.
+- Decision: Release quality must verify `index.html`, `robots.txt`, `sitemap.xml`, `sitemap-images.xml`, `manifest.webmanifest`, `llms.txt`, and `ai.txt` as one SEO/search discovery contract. The sitemap may list only canonical public entry routes, the image sitemap may list only public brand assets, and protected SPA screens or token routes must be blocked from crawler discovery.
+- Consequences: Search discoverability cannot rely on one-off manual edits. Any route, domain, manifest, canonical URL, crawler policy, image discovery, or AI answer-engine summary change must keep `npm run audit:seo` passing before release, and `npm run audit:live` must verify deployed discovery files after Vercel/Render redeploy.
 
 ## ADR-019: Route-Heavy Vendors Must Stay Out Of Initial Payload
 

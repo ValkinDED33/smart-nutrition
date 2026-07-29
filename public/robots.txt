@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+Allow: /og.png
+Allow: /icon-512.png
+Allow: /manifest.webmanifest
+Allow: /llms.txt
+Allow: /ai.txt
 Disallow: /admin
 Disallow: /coach
 Disallow: /community
@@ -15,6 +20,11 @@ Disallow: /recipes
 Disallow: /reset-password
 Disallow: /verify-email
 Disallow: /water
+Disallow: /*?token=
+Disallow: /*?*token=
+Disallow: /*?code=
+Disallow: /*?*code=
 
 Host: https://smart-nutrition.club
 Sitemap: https://smart-nutrition.club/sitemap.xml
+Sitemap: https://smart-nutrition.club/sitemap-images.xml
