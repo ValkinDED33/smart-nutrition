@@ -93,6 +93,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Reworked visible meal/product/photo copy so regular users see online catalog and cloud-confirmed language instead of backend/API jargon while canonical backend-confirmed behavior remains intact.
 - Localized catalog-contribution category fallbacks so product correction and personal catalog submissions do not show raw `Manual` source text to regular users.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
+- Polished profile role chips so Ukrainian/Polish profile headers show localized role names instead of internal English `User`, `Verified User`, `Admin`, or `Owner` labels.
 - Localized adaptive-goal mode explanations so profile goal controls use product-language copy in the active app language instead of hard-coded technical English.
 - Polished water-tracker copy so hydration controls use native product language for assistant reactions, browser notifications, reward sync, and personal targets instead of mixed `companion`/`notifications` wording.
 - Polished the AI companion page Ukrainian/Polish copy so regular assistant surfaces say assistant/helper language instead of mixed `companion`, `providerzy`, `focus`, or `check-in` wording.

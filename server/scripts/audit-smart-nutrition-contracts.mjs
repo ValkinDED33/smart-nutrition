@@ -2180,6 +2180,20 @@ addCheck(
 );
 
 addCheck(
+  "profile role chips use localized labels",
+  profilePageSource.includes('USER: "Користувач"') &&
+    profilePageSource.includes('VERIFIED_USER: "Підтверджений користувач"') &&
+    profilePageSource.includes('ADMIN: "Адміністратор"') &&
+    profilePageSource.includes('OWNER: "Власник"') &&
+    profilePageSource.includes('USER: "Użytkownik"') &&
+    profilePageSource.includes('VERIFIED_USER: "Potwierdzony użytkownik"') &&
+    profilePageSource.includes('ADMIN: "Administrator"') &&
+    profilePageSource.includes('OWNER: "Właściciel"') &&
+    profilePageSource.includes("getRoleLabel(appLanguage, user.role)"),
+  "Regular profile chips must show user-role names in the active app language and not leak internal English role labels into Ukrainian or Polish surfaces."
+);
+
+addCheck(
   "family wellness is documented as one lifecycle layer",
   familyWellnessDocSource.includes("Family Wellness is a lifecycle layer") &&
     familyWellnessDocSource.includes("Backend/cloud is the source of truth") &&

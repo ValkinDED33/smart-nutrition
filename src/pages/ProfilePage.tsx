@@ -44,7 +44,7 @@ import {
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
 const USER_ROLE_LABEL = "User";
-const VERIFIED_USER_ROLE_LABEL = "Verified User";
+const VERIFIED_USER_ROLE_LABEL = "Verified user";
 const OWNER_ROLE_LABEL = "Owner";
 
 const WeightTrendCard = lazy(() =>
@@ -270,24 +270,24 @@ const profileCopy = {
 
 const roleLabels = {
   uk: {
-    USER: USER_ROLE_LABEL,
-    VERIFIED_USER: VERIFIED_USER_ROLE_LABEL,
-    HELPER: "Helper",
-    NUTRITIONIST: "Nutritionist",
-    MODERATOR: "Moderator",
-    ADMIN: "Admin",
-    OWNER: OWNER_ROLE_LABEL,
-    SUPER_ADMIN: OWNER_ROLE_LABEL,
+    USER: "Користувач",
+    VERIFIED_USER: "Підтверджений користувач",
+    HELPER: "Помічник",
+    NUTRITIONIST: "Нутриціолог",
+    MODERATOR: "Модератор",
+    ADMIN: "Адміністратор",
+    OWNER: "Власник",
+    SUPER_ADMIN: "Власник",
   },
   pl: {
-    USER: USER_ROLE_LABEL,
-    VERIFIED_USER: VERIFIED_USER_ROLE_LABEL,
-    HELPER: "Helper",
-    NUTRITIONIST: "Nutritionist",
+    USER: "Użytkownik",
+    VERIFIED_USER: "Potwierdzony użytkownik",
+    HELPER: "Pomocnik",
+    NUTRITIONIST: "Dietetyk",
     MODERATOR: "Moderator",
-    ADMIN: "Admin",
-    OWNER: OWNER_ROLE_LABEL,
-    SUPER_ADMIN: OWNER_ROLE_LABEL,
+    ADMIN: "Administrator",
+    OWNER: "Właściciel",
+    SUPER_ADMIN: "Właściciel",
   },
   en: {
     USER: USER_ROLE_LABEL,
