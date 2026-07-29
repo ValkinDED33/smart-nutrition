@@ -208,6 +208,7 @@ const aiDiscoveryCardsModelSource = readSource(
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
+const languageMenuButtonSource = readSource("src/shared/components/LanguageMenuButton.tsx");
 const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
 const pwaUpdateBannerSource = readSource("src/shared/components/PwaUpdateBanner.tsx");
 const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
@@ -1982,6 +1983,16 @@ addCheck(
       globalAssistantLayerSource
     ),
   "The global assistant overlay is visible across the app and must speak as Smart Nutrition's assistant, not expose coach/focus planning labels."
+);
+
+addCheck(
+  "language menu avoids MUI aria-hidden focus conflicts",
+  appLayoutSource.includes('id="language-menu-button"') &&
+    languageMenuButtonSource.includes("const trigger = event.currentTarget") &&
+    languageMenuButtonSource.includes("trigger.blur()") &&
+    languageMenuButtonSource.includes("setAnchorEl(trigger)") &&
+    languageMenuButtonSource.includes("disableRestoreFocus"),
+  "Shared language menu triggers must release focus before opening MUI modal menus so the app root is not aria-hidden while it still contains the focused button."
 );
 
 addCheck(

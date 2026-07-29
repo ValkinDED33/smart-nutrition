@@ -101,6 +101,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished the global floating assistant layer so cross-app overlay copy uses assistant/direction language instead of `coach`/`focus` labels on Ukrainian, Polish, and English surfaces.
 - Polished premium, community, behavior-personalization, and smart-recommendation copy so user-facing surfaces say AI guidance/profile direction instead of leaking `coach`, `fokus`, or `onboarding focus` planning labels.
 - Hardened photo meal recognition against provider hallucination: generic breakfast templates such as yogurt/oats/banana must be rejected even when a vision provider claims high confidence.
+- Hardened shared language-menu focus handling so MUI popovers do not leave the trigger focused inside an `aria-hidden` app root and no longer pollute production console/a11y checks.
 - Added an honest unavailable-analysis state to photo meal UX: failed vision analysis now shows a review card with retake guidance and zero selected ingredients instead of leaving the user with only a raw error.
 - Promoted barcode scan results in the mobile scanner flow: after a product is resolved, the stopped preview and the first panel both show the scanned product before manual controls or history.
 - Hardened community mutations so saved social/profile-community actions return canonical backend `community` state and the frontend refuses to confirm locally computed community state when the backend omits the canonical payload.
@@ -325,6 +326,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Community mutations must use backend-confirmed canonical `community` state; frontend reducers may prepare drafts, but visible success and state replacement must come from the backend response.
 - Warm session restore must recover authenticated user state and critical data after refresh/relogin.
 - Public startup auth restore must be gated by a recent session hint. Guest landing/register/login views must not create red 401/refresh console noise just because no account is signed in.
+- Shared modal menu triggers must release focus before opening MUI modal-backed menus; visible UI must not produce `aria-hidden` focus conflicts in normal navigation, language switching, profile, or onboarding flows.
 - Remote device id is a non-secret client identifier used for sync conflict ownership; it may persist locally, but it must not contain tokens, user data, or authorization state.
 - Production readiness checks must reject placeholder secrets, database URLs, and email settings.
 - Production readiness checks must reject cross-site cookie settings that break auth restore.

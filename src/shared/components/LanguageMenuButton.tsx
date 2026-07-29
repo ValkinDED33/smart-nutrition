@@ -60,7 +60,10 @@ export const LanguageMenuButton = ({
     languageOptions[1]!;
 
   const handleOpen = (event: MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+    const trigger = event.currentTarget;
+
+    trigger.blur();
+    setAnchorEl(trigger);
   };
 
   const handleClose = () => {
@@ -133,6 +136,7 @@ export const LanguageMenuButton = ({
         anchorEl={anchorEl}
         open={isOpen}
         onClose={handleClose}
+        disableRestoreFocus
         MenuListProps={{
           "aria-labelledby": buttonId,
         }}
