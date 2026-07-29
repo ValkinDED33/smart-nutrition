@@ -55,6 +55,23 @@ describe("route error handler", () => {
     expect(JSON.stringify(payload)).not.toContain("duplicate key");
   });
 
+  it("maps duplicate profile names to a public conflict", () => {
+    const { handled, response, payload } = handleAndParse(
+      new AuthApiError(
+        "NAME_IN_USE",
+        "duplicate key value violates unique constraint users_name_idx"
+      )
+    );
+
+    expect(handled).toBe(true);
+    expect(response.statusCode).toBe(409);
+    expect(payload).toMatchObject({
+      code: "NAME_IN_USE",
+      message: "This name is already used.",
+    });
+    expect(JSON.stringify(payload)).not.toContain("duplicate key");
+  });
+
   it("does not expose assistant provider details in public API errors", () => {
     const { handled, response, payload } = handleAndParse(
       new AssistantApiError(

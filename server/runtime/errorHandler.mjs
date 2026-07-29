@@ -82,28 +82,30 @@ export const handleRouteError = (error, response) => {
         ? 400
         : error.code === "EMAIL_IN_USE"
           ? 409
-          : error.code === "INVALID_VERIFICATION_LINK"
-            ? 400
-            : error.code === "REGISTRATION_NOT_VERIFIED"
-              ? 403
-              : error.code === "ACCOUNT_BANNED"
+          : error.code === "NAME_IN_USE"
+            ? 409
+            : error.code === "INVALID_VERIFICATION_LINK"
+              ? 400
+              : error.code === "REGISTRATION_NOT_VERIFIED"
                 ? 403
-                : error.code === "INVALID_REFRESH_TOKEN"
-                  ? 401
-                  : error.code === "TOO_MANY_ATTEMPTS"
-                    ? 429
-                    : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
-                      ? 503
-                      : error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
+                : error.code === "ACCOUNT_BANNED"
+                  ? 403
+                  : error.code === "INVALID_REFRESH_TOKEN"
+                    ? 401
+                    : error.code === "TOO_MANY_ATTEMPTS"
+                      ? 429
+                      : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
                         ? 503
-                        : error.code === "INVALID_RESET_TOKEN" ||
-                            error.code === "WEAK_PASSWORD"
-                          ? 400
-                          : error.code === "BACKUP_NOT_FOUND"
-                            ? 404
-                            : error.code === "FORBIDDEN"
-                              ? 403
-                              : 401;
+                        : error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
+                          ? 503
+                          : error.code === "INVALID_RESET_TOKEN" ||
+                              error.code === "WEAK_PASSWORD"
+                            ? 400
+                            : error.code === "BACKUP_NOT_FOUND"
+                              ? 404
+                              : error.code === "FORBIDDEN"
+                                ? 403
+                                : 401;
     sendError(
       response,
       statusCode,

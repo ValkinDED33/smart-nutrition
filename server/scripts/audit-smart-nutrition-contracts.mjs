@@ -49,6 +49,7 @@ const communityCloudSyncSource = readSource(
 const stateControllerSource = readSource("server/controllers/state.controller.mjs");
 const stateServiceSource = readSource("server/services/stateService.mjs");
 const authServiceSource = readSource("server/services/authService.mjs");
+const errorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
@@ -1144,6 +1145,18 @@ addCheck(
     profileCloudActionSource.includes("setUser") &&
     profileCloudActionSource.includes("throw caughtError"),
   "Profile settings must use the shared cloud action path and throw on failed persistence instead of fake success."
+);
+
+addCheck(
+  "combined profile-state saves reject duplicate names before state persistence",
+  authServiceSource.includes("const assertProfileNameAvailable") &&
+    authServiceSource.includes("existingNameUser.id !== currentUserId") &&
+    authServiceSource.includes('throw new AuthApiError("NAME_IN_USE"') &&
+    authServiceSource.indexOf("await assertProfileNameAvailable(profileInput.name, currentUser.id)") <
+      authServiceSource.indexOf("await saveProfileState(body?.profile)") &&
+    errorHandlerSource.includes('error.code === "NAME_IN_USE"') &&
+    errorHandlerSource.includes("This name is already used."),
+  "Combined profile/user updates must reject duplicate names with a public conflict before writing profile-state so failed user updates cannot leave partial cloud state."
 );
 
 addCheck(

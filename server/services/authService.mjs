@@ -92,6 +92,14 @@ export const createAuthService = ({
     return users.find((user) => normalizeNameForAvailability(user?.name) === normalizedName) ?? null;
   };
 
+  const assertProfileNameAvailable = async (name, currentUserId) => {
+    const existingNameUser = await findUserByName(name);
+
+    if (existingNameUser && existingNameUser.id !== currentUserId) {
+      throw new AuthApiError("NAME_IN_USE", "A user with this name already exists.");
+    }
+  };
+
   const readBoundedNumber = (value, fieldName, { min, max }) => {
     const numberValue = Number(value);
 
@@ -954,6 +962,7 @@ export const createAuthService = ({
 
     updateUserProfile: async (requestBody, currentUser) => {
       const profileInput = readProfileInput(requestBody, currentUser);
+      await assertProfileNameAvailable(profileInput.name, currentUser.id);
       const updatedUser = await authRepository.updateUser({
         ...currentUser,
         ...profileInput,
@@ -976,6 +985,7 @@ export const createAuthService = ({
       getProfileMeta,
     }) => {
       const profileInput = readProfileInput(body?.user ?? {}, currentUser);
+      await assertProfileNameAvailable(profileInput.name, currentUser.id);
 
       if (typeof saveProfileState !== "function") {
         throw new AuthApiError("INVALID_PROFILE", "Cloud profile sync is unavailable.");

@@ -949,6 +949,52 @@ describe("authService", () => {
     });
   });
 
+  it("rejects duplicate profile names before saving profile state in combined updates", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-owner",
+      email: "owner-profile-state@example.com",
+      name: "Current Name",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "male",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const saveProfileState = vi.fn(async () => undefined);
+
+    authRepository.listUsers.mockReturnValue([
+      currentUser,
+      {
+        id: "user-profile-state-taken",
+        email: "taken-profile-state@example.com",
+        name: "Taken Name",
+        role: "USER",
+      },
+    ]);
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, name: "taken name" },
+          profile: { dailyCalories: 2200 },
+        },
+        currentUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toMatchObject({
+      code: "NAME_IN_USE",
+    });
+
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+  });
+
   it("resets the password, revokes sessions, and bumps token version", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
     const user = {
