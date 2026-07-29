@@ -78,6 +78,7 @@ const profileCloudActionCopySource = readSource(
 );
 const waterCloudActionSource = readSource("src/features/water/useWaterCloudAction.ts");
 const waterTrackerSource = readSource("src/features/water/WaterTracker.tsx");
+const soundSource = readSource("src/shared/lib/sound.ts");
 const quickWeightCheckInSource = readSource("src/features/profile/QuickWeightCheckInCard.tsx");
 const adaptiveGoalCardSource = readSource("src/features/profile/AdaptiveGoalCard.tsx");
 const weightTrendCardSource = readSource("src/features/profile/WeightTrendCard.tsx");
@@ -1170,6 +1171,21 @@ addCheck(
     barcodeScannerSource.includes("scannedCodeReady") &&
     barcodeScannerSource.includes("scannerRuntimeState"),
   "Scanner camera must stop and show a stable result state after product resolution instead of leaving users in an endless camera state."
+);
+
+addCheck(
+  "scanner and water sounds avoid base64 audio decoding crashes",
+  soundSource.includes("createOscillator") &&
+    soundSource.includes("playUiTickSound") &&
+    waterTrackerSource.includes("playUiTickSound") &&
+    !soundSource.includes("atob") &&
+    !soundSource.includes("base64") &&
+    !soundSource.includes("data:audio") &&
+    !soundSource.includes("Howl") &&
+    !soundSource.includes("howler") &&
+    !waterTrackerSource.includes("use-sound") &&
+    !waterTrackerSource.includes("uiTickSoundDataUrl"),
+  "Scanner and water feedback must use Web Audio oscillator tones only; embedded base64 audio or Howler/use-sound decoding can crash Android/WebView with InvalidCharacterError."
 );
 
 addCheck(

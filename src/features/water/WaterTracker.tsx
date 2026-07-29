@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { animated, useSpring } from "@react-spring/web";
 import confetti from "canvas-confetti";
-import useSound from "use-sound";
 import {
   Alert,
   Box,
@@ -39,9 +38,8 @@ import {
 import {
   playAchievementSound,
   playGentleClickSound,
-  playHowlerBlip,
+  playUiTickSound,
   playWaterLogSound,
-  uiTickSoundDataUrl,
 } from "../../shared/lib/sound";
 import {
   getSafeNotificationPermission,
@@ -281,7 +279,6 @@ const WaterTracker = () => {
   const [glassSizeDraft, setGlassSizeDraft] = useState<string | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [playTapSound] = useSound(uiTickSoundDataUrl, { volume: 0.18 });
   const didSyncWaterDay = useRef(false);
   const lastAutoTargetWeightRef = useRef<number | null>(null);
   const targetInputValue = targetDraft ?? String(water.dailyWaterGoal);
@@ -483,8 +480,7 @@ const WaterTracker = () => {
   );
 
   const playWaterFeedback = (nextConsumedMl: number, previousConsumedMl = water.consumedMl) => {
-    playTapSound();
-    playHowlerBlip();
+    playUiTickSound();
 
     if (nextConsumedMl > previousConsumedMl) {
       if (

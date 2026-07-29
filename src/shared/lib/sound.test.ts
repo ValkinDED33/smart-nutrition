@@ -6,6 +6,18 @@ const soundSource = () =>
   readFileSync(resolve(process.cwd(), "src/shared/lib/sound.ts"), "utf8");
 
 describe("scanner sound contract", () => {
+  it("does not decode embedded base64 audio in scanner or water feedback", () => {
+    const source = soundSource();
+
+    expect(source).not.toContain("atob");
+    expect(source).not.toContain("base64");
+    expect(source).not.toContain("data:audio");
+    expect(source).not.toContain("Howl");
+    expect(source).not.toContain("howler");
+    expect(source).toContain("createOscillator");
+    expect(source).toContain("playUiTickSound");
+  });
+
   it("uses a calm soft failure tone instead of an alarm-like oscillator", () => {
     const source = soundSource();
     const failureBlock = source.slice(
