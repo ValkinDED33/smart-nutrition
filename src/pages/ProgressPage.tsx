@@ -60,6 +60,7 @@ const progressPageCopy = {
       body: "Тіло",
       trends: "Тренди",
     },
+    sectionsAriaLabel: "Розділи прогресу",
   },
   pl: {
     title: "Progres",
@@ -71,6 +72,7 @@ const progressPageCopy = {
       body: "Ciało",
       trends: "Trendy",
     },
+    sectionsAriaLabel: "Sekcje postępu",
   },
   en: {
     title: "Progress",
@@ -82,6 +84,7 @@ const progressPageCopy = {
       body: "Body",
       trends: "Trends",
     },
+    sectionsAriaLabel: "Progress sections",
   },
 } as const;
 
@@ -163,7 +166,7 @@ const ProgressPage = () => {
         sections={sections}
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as ProgressSection)}
-        ariaLabel="Progress sections"
+        ariaLabel={copy.sectionsAriaLabel}
       />
 
       {activeSection === "weight" ? (

@@ -26,11 +26,22 @@ describe("ProgressOverviewCard contract", () => {
     expect(source).toContain("onSelectDomain");
     expect(source).toContain("data-progress-domain={item.domain}");
     expect(pageSource).toContain("getSectionForProgressDomain");
+    expect(pageSource).toContain("sectionsAriaLabel");
+    expect(pageSource).toContain("ariaLabel={copy.sectionsAriaLabel}");
+    expect(pageSource).not.toContain('ariaLabel="Progress sections"');
     expect(pageSource).toContain('case "water":');
     expect(pageSource).toContain('return "water";');
     expect(modelSource).toContain("mealsProgress");
     expect(modelSource).toContain("weightProgress");
     expect(modelSource).toContain("checkInProgress");
     expect(source).not.toContain("const caloriesProgress");
+  });
+
+  it("keeps progress quick-action report copy localized", async () => {
+    const actionSource = await readSource("src/features/profile/ProgressActionBar.tsx");
+
+    expect(actionSource).toContain("reportTitle");
+    expect(actionSource).toContain("copyText.reportTitle");
+    expect(actionSource).not.toContain('const PROGRESS_REPORT_TITLE = "Smart Nutrition progress"');
   });
 });

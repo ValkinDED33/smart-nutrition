@@ -191,6 +191,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened public app startup so first-time guests are initialized locally as unauthenticated instead of calling `/api/auth/session` and `/api/auth/refresh`; returning users still restore only through the recent session-hint path.
 - Hardened profile-only cloud saves against profile-state conflicts: direct profile updates now replay only the user's changed fields on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm the rebased backend state instead of overwriting unrelated fresh cloud fields.
 - Hardened combined user/profile-state saves against duplicate profile names: backend now rejects `NAME_IN_USE` before writing profile state and maps it to a public `409`, preventing partial cloud profile saves when a nickname is already used by another account.
+- Localized progress surface accessibility and copied-report text so progress tabs and exported daily summary follow the active app language instead of leaking hardcoded English labels.
 
 ## Current Architecture
 
@@ -301,6 +302,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Women-health profile UI must render backend-confirmed symptom history with safety-bound, non-diagnostic language and no local persistence.
 - Women-health baby preview and related profile prediction fields are profile state; saves must use `useProfileCloudAction(...).runProfileStateSave(nextProfile)` with active-language copy, not direct component-local profile cloud sync and reducer replacement.
 - Combined user/profile-state saves must validate duplicate profile names before `saveProfileState`; a taken nickname must return safe `409 NAME_IN_USE` copy and must not write profile state before the user row can be safely updated.
+- Progress surfaces must keep visible labels, accessibility labels, and copied report text in the active language; English-only strings are allowed only inside the `en` copy branch.
 - Women-health profile navigation must use canonical `hasWomenHealthContext(profile.womenHealth)` in addition to `isWomenHealthVisibleForGender(user.gender)` so saved pregnancy/cycle/postpartum/symptom/family-preview state remains reachable after refresh, relogin, or stale auth snapshots.
 - AI day summaries must be backend-backed read actions with an action receipt; generic model text is not enough when the user asks for the real day summary.
 - AI progress reports must be backend-backed read actions over canonical snapshot/profile/water/reminder state; generic model text is not enough when the user asks for weekly or monthly progress.

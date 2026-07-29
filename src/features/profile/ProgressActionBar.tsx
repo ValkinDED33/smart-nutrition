@@ -11,7 +11,6 @@ import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
 const COMMON_KCAL_KEY = "common.kcal";
-const PROGRESS_REPORT_TITLE = "Smart Nutrition progress";
 
 const pulse = keyframes`
   0% { transform: scale(0.86); opacity: 0.52; }
@@ -38,6 +37,7 @@ const StatusDot = styled.span`
 
 const progressActionCopy = {
   uk: {
+    reportTitle: "Прогрес Smart Nutrition",
     title: "Швидкі дії прогресу",
     subtitle: "Скопіюйте короткий підсумок або відкрийте аналітику на весь екран.",
     copy: "Копіювати звіт",
@@ -49,6 +49,7 @@ const progressActionCopy = {
     weight: "Вага",
   },
   pl: {
+    reportTitle: "Postęp Smart Nutrition",
     title: "Szybkie akcje progresu",
     subtitle: "Skopiuj krótkie podsumowanie albo otwórz analitykę pełnoekranowo.",
     copy: "Kopiuj raport",
@@ -60,6 +61,7 @@ const progressActionCopy = {
     weight: "Waga",
   },
   en: {
+    reportTitle: "Smart Nutrition progress",
     title: "Quick progress actions",
     subtitle: "Copy a short summary or open analytics in full screen.",
     copy: "Copy report",
@@ -99,7 +101,7 @@ export const ProgressActionBar = () => {
     : 0;
 
   const report = [
-    PROGRESS_REPORT_TITLE,
+    copyText.reportTitle,
     `${copyText.calories}: ${Math.round(totals.calories)} / ${profile.dailyCalories} ${t(COMMON_KCAL_KEY)}`,
     `${copyText.water}: ${water.consumedMl} / ${water.dailyWaterGoal} ml (${waterProgress}%)`,
     `${copyText.weight}: ${latestWeight.toFixed(1)} ${t("common.kg")}`,

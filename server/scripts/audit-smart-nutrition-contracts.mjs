@@ -133,6 +133,7 @@ const progressOverviewCardSource = readSource(
 const progressOverviewModelSource = readSource(
   "src/features/profile/progressOverviewModel.ts"
 );
+const progressActionBarSource = readSource("src/features/profile/ProgressActionBar.tsx");
 const womenHealthOverviewCardSource = readSource(
   "src/features/profile/WomenHealthOverviewCard.tsx"
 );
@@ -1302,6 +1303,17 @@ addCheck(
     progressOverviewCardSource.includes("onSelectDomain?.(item.domain)") &&
     !progressOverviewCardSource.includes("const caloriesProgress"),
   "Progress must show all counted domains through a tested model, keep water glass slots in the first overview, and let users open detail tabs from each counted-domain card."
+);
+
+addCheck(
+  "progress surface accessibility and copy actions stay localized",
+  progressPageSource.includes("sectionsAriaLabel") &&
+    progressPageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
+    !progressPageSource.includes('ariaLabel="Progress sections"') &&
+    progressActionBarSource.includes("reportTitle") &&
+    progressActionBarSource.includes("copyText.reportTitle") &&
+    !progressActionBarSource.includes("PROGRESS_REPORT_TITLE"),
+  "Progress tabs and copied progress reports must use active-language copy instead of hardcoded English labels."
 );
 
 addCheck(
