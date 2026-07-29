@@ -127,6 +127,7 @@ const productMicronutrientInsightsSource = readSource(
   "src/domain/products/productMicronutrientInsights.ts"
 );
 const profilePageSource = readSource("src/pages/ProfilePage.tsx");
+const profileFormSource = readSource("src/features/profile/ProfileForm.tsx");
 const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
@@ -174,6 +175,7 @@ const sharedLanguageSource = readSource("src/shared/language/index.tsx");
 const sharedI18nUkSource = readSource("src/shared/i18n/uk.ts");
 const sharedI18nPlSource = readSource("src/shared/i18n/pl.ts");
 const sharedI18nEnSource = readSource("src/shared/i18n/en.ts");
+const avatarPresetSource = readSource("src/shared/ui/avatar.ts");
 const languageCoverageTestSource = readSource(
   "src/shared/language/languageCoverage.test.ts"
 );
@@ -1343,6 +1345,21 @@ addCheck(
       localizedSectionTabSources
     ),
   "Primary product SectionTabs must expose localized accessibility labels instead of hardcoded English navigation labels."
+);
+
+addCheck(
+  "profile avatar presets use localized visible and accessibility copy",
+  profileFormSource.includes("avatarImageAlt") &&
+    profileFormSource.includes("avatarPresetAction") &&
+    profileFormSource.includes("getAvatarPresetLabel(copy, preset.id)") &&
+    profileFormSource.includes("alt={copy.avatarImageAlt}") &&
+    profileFormSource.includes("alt={presetLabel}") &&
+    profileFormSource.includes("aria-label={copy.avatarPresetAction(presetLabel)}") &&
+    profileFormSource.includes("Ліс") &&
+    profileFormSource.includes("Wschód słońca") &&
+    !profileFormSource.includes("{preset.label}") &&
+    !avatarPresetSource.includes('aria-label="Avatar"'),
+  "Profile avatar preset buttons must show active-language labels and must not expose generic English avatar labels from SVG data URLs."
 );
 
 addCheck(

@@ -87,6 +87,16 @@ const profileCopy = {
     avatarHint: "Великі фото автоматично стискаються, щоб профіль зберігав легшу версію.",
     avatarError: "Не вдалося обробити зображення. Спробуйте інше фото.",
     presets: "Виберіть зі списку",
+    avatarImageAlt: "Аватар профілю",
+    avatarPresetAction: (label: string) => `Вибрати аватар ${label}`,
+    avatarPresets: {
+      forest: "Ліс",
+      sunrise: "Світанок",
+      ocean: "Океан",
+      berry: "Ягідний",
+      stone: "Камінь",
+      mint: "М'ята",
+    },
     dietStyleLabel: "Стиль харчування",
     allergiesLabel: "Алергії",
     allergiesHint: "Через кому, наприклад: арахіс, лактоза",
@@ -132,6 +142,16 @@ const profileCopy = {
     avatarHint: "Duże zdjęcia są automatycznie zmniejszane, aby profil zapisywał lżejszą wersję.",
     avatarError: "Nie udało się przetworzyć obrazu. Spróbuj innego zdjęcia.",
     presets: "Wybierz z listy",
+    avatarImageAlt: "Awatar profilu",
+    avatarPresetAction: (label: string) => `Wybierz awatar ${label}`,
+    avatarPresets: {
+      forest: "Las",
+      sunrise: "Wschód słońca",
+      ocean: "Ocean",
+      berry: "Jagodowy",
+      stone: "Kamień",
+      mint: "Mięta",
+    },
     dietStyleLabel: "Styl żywienia",
     allergiesLabel: "Alergie",
     allergiesHint: "Lista po przecinku, na przykład: orzechy, laktoza",
@@ -177,6 +197,16 @@ const profileCopy = {
     avatarHint: "Large photos are resized automatically, so the profile saves a lighter version.",
     avatarError: "The image could not be processed. Try another photo.",
     presets: "Choose from the list",
+    avatarImageAlt: "Profile avatar",
+    avatarPresetAction: (label: string) => `Choose ${label} avatar`,
+    avatarPresets: {
+      forest: "Forest",
+      sunrise: "Sunrise",
+      ocean: "Ocean",
+      berry: "Berry",
+      stone: "Stone",
+      mint: "Mint",
+    },
     dietStyleLabel: "Diet style",
     allergiesLabel: "Allergies",
     allergiesHint: "Comma-separated list, for example: peanuts, lactose",
@@ -389,6 +419,27 @@ const getProfileCopy = (language: AppLanguage) => {
     case "uk":
     default:
       return profileCopy.uk;
+  }
+};
+
+const getAvatarPresetLabel = (
+  copy: ReturnType<typeof getProfileCopy>,
+  presetId: string
+) => {
+  switch (presetId) {
+    case "sunrise":
+      return copy.avatarPresets.sunrise;
+    case "ocean":
+      return copy.avatarPresets.ocean;
+    case "berry":
+      return copy.avatarPresets.berry;
+    case "stone":
+      return copy.avatarPresets.stone;
+    case "mint":
+      return copy.avatarPresets.mint;
+    case "forest":
+    default:
+      return copy.avatarPresets.forest;
   }
 };
 
@@ -721,6 +772,7 @@ const ProfileForm = () => {
             >
               <Avatar
                 src={avatarDraft || getDefaultAvatar(user.email)}
+                alt={copy.avatarImageAlt}
                 sx={{ width: 92, height: 92 }}
               >
                 {user.name[0]}
@@ -748,12 +800,14 @@ const ProfileForm = () => {
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 {avatarPresets.map((preset) => {
                   const isSelected = avatarDraft === preset.url;
+                  const presetLabel = getAvatarPresetLabel(copy, preset.id);
 
                   return (
                     <Box
                       key={preset.id}
                       component="button"
                       type="button"
+                      aria-label={copy.avatarPresetAction(presetLabel)}
                       onClick={() => setAvatarDraft(preset.url)}
                       sx={{
                         p: 0.75,
@@ -770,9 +824,13 @@ const ProfileForm = () => {
                         minWidth: 78,
                       }}
                     >
-                      <Avatar src={preset.url} sx={{ width: 52, height: 52, mb: 0.75 }} />
+                      <Avatar
+                        src={preset.url}
+                        alt={presetLabel}
+                        sx={{ width: 52, height: 52, mb: 0.75 }}
+                      />
                       <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                        {preset.label}
+                        {presetLabel}
                       </Typography>
                     </Box>
                   );
