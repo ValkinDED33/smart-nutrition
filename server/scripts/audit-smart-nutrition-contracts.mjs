@@ -225,6 +225,7 @@ const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
 const seoAuditSource = readSource("server/scripts/audit-seo-discovery.mjs");
 const globalAssistantLayerSource = readSource("src/widgets/GlobalAssistantLayer.tsx");
+const globalAssistantLayerModelSource = readSource("src/widgets/globalAssistantLayerModel.ts");
 const packageJsonSource = readSource("package.json");
 const indexHtmlSource = readSource("index.html");
 const robotsTxtSource = readSource("public/robots.txt");
@@ -2000,6 +2001,12 @@ addCheck(
   "global assistant layer keeps visible assistant language",
   globalAssistantLayerSource.includes("Головне на день") &&
     globalAssistantLayerSource.includes("Відкрити помічника") &&
+    globalAssistantLayerSource.includes("livingMessages") &&
+    globalAssistantLayerSource.includes("Почнемо історію дня") &&
+    globalAssistantLayerModelSource.includes("resolveGlobalAssistantNoticeKey") &&
+    globalAssistantLayerModelSource.includes("hasNoMealsToday") &&
+    globalAssistantLayerModelSource.includes("waterBehindTarget") &&
+    globalAssistantLayerModelSource.includes("weightUpdatedToday") &&
     globalAssistantLayerSource.includes("Kierunek dnia") &&
     globalAssistantLayerSource.includes("Otwórz asystenta") &&
     globalAssistantLayerSource.includes("Today’s direction") &&

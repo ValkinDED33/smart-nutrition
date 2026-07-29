@@ -41,6 +41,33 @@ const layerCopy = {
     action: "Відкрити AI",
     coachFallbackAction: "Запитати асистента",
     mobileLabel: "Відкрити асистента",
+    livingMessages: {
+      recent_success: {
+        title: "Дія збережена",
+        body: "Я бачу підтвердження і можу підказати наступний крок без зайвого шуму.",
+      },
+      recent_error: {
+        title: "Потрібно повторити",
+        body: "Збереження не підтвердилось. Я допоможу повернутись до дії без втрати контексту.",
+      },
+      first_meal: {
+        title: "Почнемо історію дня",
+        body: "Поки їжі немає, я не вигадую висновки. Один реальний запис зробить підказки точнішими.",
+      },
+      water: {
+        title: "Вода зараз змінить темп",
+        body: "Невелика дія допоможе прогресу, нагадуванням і наступним підказкам звучати точніше.",
+      },
+      weight: {
+        title: "Вага оновлена",
+        body: "Я врахую сьогоднішній запис у прогресі й підказках без жорстких висновків.",
+      },
+      profile: {
+        title: "Профіль ще можна уточнити",
+        body: "Кілька деталей допоможуть зробити підтримку спокійнішою і персональнішою.",
+      },
+      idle: null,
+    },
     areas: {
       auth: {
         chip: "старт",
@@ -124,6 +151,33 @@ const layerCopy = {
     action: "Otwórz AI",
     coachFallbackAction: "Zapytaj asystenta",
     mobileLabel: OPEN_ASSISTANT_PL,
+    livingMessages: {
+      recent_success: {
+        title: "Działanie zapisane",
+        body: "Widzę potwierdzenie i mogę podpowiedzieć kolejny krok bez zbędnego hałasu.",
+      },
+      recent_error: {
+        title: "Trzeba spróbować ponownie",
+        body: "Zapis nie został potwierdzony. Pomogę wrócić do działania bez utraty kontekstu.",
+      },
+      first_meal: {
+        title: "Zacznijmy historię dnia",
+        body: "Bez jedzenia nie udaję wniosków. Jeden realny wpis sprawi, że wskazówki będą dokładniejsze.",
+      },
+      water: {
+        title: "Woda zmieni teraz tempo",
+        body: "Mały ruch pomoże progresowi, przypomnieniom i kolejnym wskazówkom brzmieć trafniej.",
+      },
+      weight: {
+        title: "Waga zaktualizowana",
+        body: "Uwzględnię dzisiejszy wpis w postępie i wskazówkach bez ostrych ocen.",
+      },
+      profile: {
+        title: "Profil można jeszcze doprecyzować",
+        body: "Kilka szczegółów pomoże stworzyć spokojniejsze i bardziej osobiste wsparcie.",
+      },
+      idle: null,
+    },
     areas: {
       auth: {
         chip: "start",
@@ -207,6 +261,33 @@ const layerCopy = {
     action: "Open AI",
     coachFallbackAction: "Ask assistant",
     mobileLabel: OPEN_ASSISTANT_EN,
+    livingMessages: {
+      recent_success: {
+        title: "Action saved",
+        body: "I see the confirmation and can suggest the next step without extra noise.",
+      },
+      recent_error: {
+        title: "Needs a retry",
+        body: "The save was not confirmed. I can help return to the action without losing context.",
+      },
+      first_meal: {
+        title: "Start the day story",
+        body: "With no food logged, I will not invent insight. One real entry makes guidance sharper.",
+      },
+      water: {
+        title: "Water can shift the pace",
+        body: "A small action helps progress, reminders, and the next nudges become more precise.",
+      },
+      weight: {
+        title: "Weight updated",
+        body: "I will use today's entry in progress and guidance without harsh conclusions.",
+      },
+      profile: {
+        title: "Profile can still sharpen",
+        body: "A few details help make support calmer and more personal.",
+      },
+      idle: null,
+    },
     areas: {
       auth: {
         chip: "start",
@@ -435,6 +516,7 @@ export const GlobalAssistantLayer = () => {
     presence.reason === "compact-dense-surface" &&
     (viewport === "mobile" || viewport === "tablet");
   const visibleCopy = getAreaCopy(copy, area);
+  const livingMessage = copy.livingMessages[layerModel.noticeKey];
   const actionLabel = displayAction?.usesCoachFallback
     ? copy.coachFallbackAction
     : visibleCopy.action || copy.action;
@@ -553,7 +635,7 @@ export const GlobalAssistantLayer = () => {
               variants={fadeUpVariants}
               sx={{ m: 0, fontWeight: 900 }}
             >
-              {visibleCopy.title || copy.fallbackTitle}
+              {livingMessage?.title || visibleCopy.title || copy.fallbackTitle}
             </Typography>
 
             <Typography
@@ -562,7 +644,7 @@ export const GlobalAssistantLayer = () => {
               color="text.secondary"
               sx={{ m: 0 }}
             >
-              {visibleCopy.body || copy.fallbackBody}
+              {livingMessage?.body || visibleCopy.body || copy.fallbackBody}
             </Typography>
 
             <Button

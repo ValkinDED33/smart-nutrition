@@ -14,6 +14,15 @@ const hiddenGlobalAssistantRoutePrefixes = [
   "/onboarding",
 ];
 
+export type GlobalAssistantNoticeKey =
+  | "recent_success"
+  | "recent_error"
+  | "first_meal"
+  | "water"
+  | "weight"
+  | "profile"
+  | "idle";
+
 export const shouldHideAssistantLayer = (pathname: string) =>
   hiddenGlobalAssistantRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
 
@@ -70,6 +79,43 @@ export const resolveGlobalAssistantAvatarRenderMode = ({
   return "2d";
 };
 
+export const resolveGlobalAssistantNoticeKey = (
+  area: ReturnType<typeof resolveAssistantContext>["area"],
+  emotionSignals: AssistantEmotionSignals
+): GlobalAssistantNoticeKey => {
+  if (emotionSignals.recentSuccess) {
+    return "recent_success";
+  }
+
+  if (emotionSignals.recentError) {
+    return "recent_error";
+  }
+
+  if (
+    emotionSignals.hasNoMealsToday &&
+    (area === "home" || area === "meals")
+  ) {
+    return "first_meal";
+  }
+
+  if (
+    emotionSignals.waterBehindTarget &&
+    (area === "home" || area === "water")
+  ) {
+    return "water";
+  }
+
+  if (emotionSignals.weightUpdatedToday) {
+    return "weight";
+  }
+
+  if (!emotionSignals.onboardingCompleted && area === "profile") {
+    return "profile";
+  }
+
+  return "idle";
+};
+
 export const resolveGlobalAssistantLayerModel = (
   pathname: string,
   presenceOptions: Omit<AssistantPresenceOptions, "pathname">,
@@ -94,6 +140,10 @@ export const resolveGlobalAssistantLayerModel = (
     ),
     presence,
     emotion,
+    noticeKey: resolveGlobalAssistantNoticeKey(
+      assistantContext.area,
+      emotionSignals
+    ),
     avatarRenderMode: resolveGlobalAssistantAvatarRenderMode({
       viewport: presenceOptions.viewport,
       presenceMode: presence.mode,
