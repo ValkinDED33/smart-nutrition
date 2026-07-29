@@ -30,6 +30,8 @@ const buildResetSubject = () => "Reset your Smart Nutrition password";
 
 const buildVerificationSubject = () => "Confirm your Smart Nutrition email";
 
+const buildPartnerInviteSubject = () => "Join your Smart Nutrition family space";
+
 const sleep = (delayMs) =>
   new Promise((resolve) => {
     setTimeout(resolve, delayMs);
@@ -159,6 +161,59 @@ const buildResetHtml = ({ name, resetUrl, expiresAt }) => {
       <p style="margin:0 0 20px;word-break:break-all;line-height:1.7;"><a href="${safeUrl}" style="color:#2563eb;">${safeUrl}</a></p>
       <p style="margin:0 0 12px;line-height:1.7;">This link expires at <strong>${expiresLabel}</strong>.</p>
       <p style="margin:0;line-height:1.7;color:#475569;">If you did not request this reset, you can safely ignore this email.</p>
+    </div>
+  </body>
+</html>`;
+};
+
+const buildPartnerInviteText = ({
+  appBaseUrl,
+  inviterName,
+  inviteUrl,
+  code,
+  expiresAt,
+}) => {
+  const displayName = String(inviterName ?? "").trim() || "Someone close to you";
+
+  return [
+    `Hi,`,
+    "",
+    `${displayName} invited you to connect as a partner in Smart Nutrition.`,
+    "",
+    "Use this secure link:",
+    inviteUrl,
+    "",
+    `Or enter this code in the app: ${code}`,
+    "",
+    "The partner view shares only pregnancy timeline and baby development context. Food, weight, notes, and private profile data are not shared.",
+    `This invitation expires at ${new Date(expiresAt).toUTCString()}.`,
+    "",
+    `App: ${appBaseUrl}`,
+  ].join("\n");
+};
+
+const buildPartnerInviteHtml = ({ inviterName, inviteUrl, code, expiresAt }) => {
+  const displayName = escapeHtml(String(inviterName ?? "").trim() || "Someone close to you");
+  const safeUrl = escapeHtml(inviteUrl);
+  const safeCode = escapeHtml(code);
+  const expiresLabel = escapeHtml(new Date(expiresAt).toUTCString());
+
+  return `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f8fafc;color:#0f172a;font-family:Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(15,23,42,0.08);border-radius:20px;padding:32px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;letter-spacing:0.08em;color:#0f766e;text-transform:uppercase;">Smart Nutrition</p>
+      <h1 style="margin:0 0 16px;font-size:28px;line-height:1.15;">Family wellness invitation</h1>
+      <p style="margin:0 0 16px;line-height:1.7;">${displayName} invited you to connect as a partner.</p>
+      <p style="margin:0 0 20px;line-height:1.7;">The partner view shares only pregnancy timeline and baby development context. Food, weight, notes, and private profile data are not shared.</p>
+      <p style="margin:0 0 20px;">
+        <a href="${safeUrl}" style="display:inline-block;padding:14px 22px;border-radius:999px;background:linear-gradient(135deg,#0f766e 0%,#65a30d 100%);color:#ffffff;text-decoration:none;font-weight:700;">Join family space</a>
+      </p>
+      <p style="margin:0 0 12px;line-height:1.7;">Or enter this code in Smart Nutrition:</p>
+      <p style="margin:0 0 20px;font-size:24px;font-weight:800;letter-spacing:0.08em;">${safeCode}</p>
+      <p style="margin:0 0 12px;line-height:1.7;">If the button does not open, copy and paste this link into your browser:</p>
+      <p style="margin:0 0 20px;word-break:break-all;line-height:1.7;"><a href="${safeUrl}" style="color:#2563eb;">${safeUrl}</a></p>
+      <p style="margin:0;line-height:1.7;color:#475569;">This invitation expires at <strong>${expiresLabel}</strong>.</p>
     </div>
   </body>
 </html>`;
@@ -299,6 +354,29 @@ export const createEmailService = ({
       if (result.ok) {
         logger.info?.(
           `[email] registration verification sent to ${to} (${result.messageId ?? "no-message-id"})`
+        );
+      }
+
+      return result;
+    },
+
+    sendPartnerInviteEmail: async ({ to, inviterName, inviteUrl, code, expiresAt }) => {
+      const result = await sendEmail({
+        to,
+        subject: buildPartnerInviteSubject(),
+        text: buildPartnerInviteText({
+          appBaseUrl: config.appBaseUrl,
+          inviterName,
+          inviteUrl,
+          code,
+          expiresAt,
+        }),
+        html: buildPartnerInviteHtml({ inviterName, inviteUrl, code, expiresAt }),
+      });
+
+      if (result.ok) {
+        logger.info?.(
+          `[email] partner invite sent to ${to} (${result.messageId ?? "no-message-id"})`
         );
       }
 

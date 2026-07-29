@@ -131,6 +131,12 @@ const womenHealthCopy = {
     partnerCode: "Код",
     partnerLink: "Посилання",
     partnerInviteReady: "Запрошення створено. Код діє 7 днів.",
+    partnerEmailLabel: "Email партнера",
+    partnerEmailHelper:
+      "Необов'язково: якщо партнер не може сканувати QR поруч, надішлемо цей самий код листом.",
+    partnerEmailSent: "Запрошення створено і надіслано на email партнера.",
+    partnerEmailDeliveryFailed:
+      "Запрошення створено, але лист не вдалося доставити. Код і посилання можна передати вручну.",
     partnerCodeLabel: "Код SN-...",
     partnerConnected: "Профілі підключені",
     partnerEmpty: "Партнерських даних поки немає.",
@@ -224,6 +230,12 @@ const womenHealthCopy = {
     partnerCode: "Kod",
     partnerLink: "Link",
     partnerInviteReady: "Zaproszenie utworzone. Kod działa 7 dni.",
+    partnerEmailLabel: "Email partnera",
+    partnerEmailHelper:
+      "Opcjonalnie: jeśli partner nie może zeskanować QR obok Ciebie, wyślemy ten sam kod mailem.",
+    partnerEmailSent: "Zaproszenie utworzone i wysłane na email partnera.",
+    partnerEmailDeliveryFailed:
+      "Zaproszenie utworzone, ale mail nie został dostarczony. Kod i link można przekazać ręcznie.",
     partnerCodeLabel: "Kod SN-...",
     partnerConnected: "Profile połączone",
     partnerEmpty: "Nie ma jeszcze danych partnera.",
@@ -317,6 +329,12 @@ const womenHealthCopy = {
     partnerCode: "Code",
     partnerLink: "Link",
     partnerInviteReady: "Invite created. The code works for 7 days.",
+    partnerEmailLabel: "Partner email",
+    partnerEmailHelper:
+      "Optional: if your partner cannot scan the QR nearby, we will send the same code by email.",
+    partnerEmailSent: "Invite created and sent to your partner's email.",
+    partnerEmailDeliveryFailed:
+      "Invite created, but email delivery failed. You can still share the code or link manually.",
     partnerCodeLabel: "SN-... code",
     partnerConnected: "Profiles connected",
     partnerEmpty: "No partner data yet.",
@@ -836,6 +854,7 @@ const WomenHealthOverviewCard = () => {
   const profileAction = useProfileCloudAction(profileActionCopy);
   const [invite, setInvite] = useState<PartnerInviteResult | null>(null);
   const [inviteQrDataUrl, setInviteQrDataUrl] = useState<string | null>(null);
+  const [partnerEmail, setPartnerEmail] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [partnerShares, setPartnerShares] = useState<PartnerPregnancyShare[]>([]);
   const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
@@ -858,6 +877,10 @@ const WomenHealthOverviewCard = () => {
   const hasPartnerLink = partnerSharing.links.some(
     (link) => link.role === "partner" && link.status === "active"
   );
+  const normalizedPartnerEmail = partnerEmail.trim();
+  const partnerEmailLooksValid =
+    normalizedPartnerEmail.length === 0 ||
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedPartnerEmail);
   const pageTitle = isWomenHealthOwner ? copy.title : copy.partnerTitle;
   const pageSubtitle = isWomenHealthOwner ? copy.subtitle : copy.partnerHelp;
 
@@ -921,9 +944,15 @@ const WomenHealthOverviewCard = () => {
     setPartnerStatus(null);
 
     try {
-      const result = await createRemotePartnerInvite();
+      const result = await createRemotePartnerInvite(partnerEmail);
       setInvite(result);
-      setPartnerStatus(copy.partnerInviteReady);
+      setPartnerStatus(
+        result.email?.requested
+          ? result.email.delivered
+            ? copy.partnerEmailSent
+            : copy.partnerEmailDeliveryFailed
+          : copy.partnerInviteReady
+      );
     } catch {
       setPartnerError(copy.shareLoadError);
     } finally {
@@ -1585,10 +1614,19 @@ const WomenHealthOverviewCard = () => {
 
             {isWomenHealthOwner && (
               <Stack spacing={1.2}>
+                <TextField
+                  label={copy.partnerEmailLabel}
+                  value={partnerEmail}
+                  onChange={(event) => setPartnerEmail(event.target.value)}
+                  error={!partnerEmailLooksValid}
+                  helperText={copy.partnerEmailHelper}
+                  size="small"
+                  fullWidth
+                />
                 <Button
                   variant="contained"
                   onClick={createPartnerInvite}
-                  disabled={partnerLoading}
+                  disabled={partnerLoading || !partnerEmailLooksValid}
                   sx={FLEX_START_SX}
                 >
                   {partnerLoading ? copy.loading : copy.createPartnerInvite}

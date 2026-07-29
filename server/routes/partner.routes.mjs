@@ -18,8 +18,15 @@ export const createPartnerRoutes = ({ partnerController } = {}) =>
     : [];
 
 export const createPartnerController = ({ partnerService, bodyLimitBytes }) => ({
-  createInvite: async ({ response, auth }) => {
-    sendJson(response, 201, await partnerService.createInvite(auth.user));
+  createInvite: async ({ request, response, auth }) => {
+    const body = await readJsonBody(request, bodyLimitBytes);
+    sendJson(
+      response,
+      201,
+      await partnerService.createInvite(auth.user, {
+        partnerEmail: body?.partnerEmail,
+      })
+    );
   },
 
   acceptInvite: async ({ request, response, auth }) => {

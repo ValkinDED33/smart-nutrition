@@ -86,6 +86,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened Telegram after-meal reminder copy so creation receipts and due notifications explain diary-triggered meal timing, meal windows, and localized offsets instead of implying a fixed clock reminder.
 - Hardened photo meal fallback so failed/unclear vision analysis never fills the draft with template foods or previous user-confirmed corrections; it now stays empty, uses the user's requested language, and asks for a clearer photo or manual ingredient confirmation.
 - Localized QR partner invite acceptance and clarified that family access shares only pregnancy context through secure cloud sync, not full account synchronization or visible backend jargon.
+- Added email delivery to the canonical partner invite flow: the same backend-generated QR/code/link can also be sent to a partner email, while accepted access remains limited to pregnancy timeline and baby development context.
 - Polished visible Polish account, cloud-sync, Telegram-link, and fridge-save copy so production UI no longer exposes ASCII-only broken language in core status surfaces.
 - Aligned Telegram account settings copy with the product architecture: Telegram is presented as the same Smart Nutrition assistant surface, not a separate bot product.
 - Replaced raw Telegram main-menu command buttons with profile-language labels and routed label taps back into canonical snapshot/profile/help handlers, keeping Telegram as the same assistant worker surface instead of a command-list bolt-on.

@@ -9,6 +9,16 @@ const WEEK_MS = 7 * DAY_MS;
 
 const isRecord = (value) => value && typeof value === "object" && !Array.isArray(value);
 
+const normalizeEmail = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const email = value.trim().toLowerCase();
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+};
+
 const normalizePartnerSharing = (value) => {
   const record = isRecord(value) ? value : {};
   const invites = Array.isArray(record.invites) ? record.invites.filter(isRecord).slice(-10) : [];
@@ -150,12 +160,18 @@ const requireProfile = async (stateRepository, user) => {
   };
 };
 
-export const createPartnerService = ({ authRepository, stateRepository, config }) => {
+export const createPartnerService = ({
+  authRepository,
+  stateRepository,
+  emailService = null,
+  config,
+}) => {
   const secret = config.jwtSecret;
 
-  const createInvite = async (currentUser) => {
+  const createInvite = async (currentUser, options = {}) => {
     const ownerProfile = await requireProfile(stateRepository, currentUser);
     const womenHealth = isRecord(ownerProfile.womenHealth) ? ownerProfile.womenHealth : {};
+    const partnerEmail = normalizeEmail(options.partnerEmail);
 
     if (womenHealth.mode !== "pregnant" && womenHealth.mode !== "trying_to_conceive") {
       throw new StateApiError(
@@ -185,19 +201,50 @@ export const createPartnerService = ({ authRepository, stateRepository, config }
     };
 
     await stateRepository.upsertProfileState(currentUser.id, nextProfile, undefined);
+    const inviteUrl = `${config.appBaseUrl}/partner-invite?code=${encodeURIComponent(code)}`;
+    const emailDelivery = partnerEmail
+      ? await emailService?.sendPartnerInviteEmail?.({
+          to: partnerEmail,
+          inviterName: currentUser.name,
+          inviteUrl,
+          code,
+          expiresAt: invite.expiresAt,
+        })
+      : null;
+
     await authRepository.createAuditLog?.({
       id: createShareId("audit"),
       userId: currentUser.id,
       action: "partner_invite_created",
       createdAt: now.toISOString(),
-      metadata: { inviteId: invite.id, permissions: invite.permissions },
+      metadata: {
+        inviteId: invite.id,
+        permissions: invite.permissions,
+        delivery: partnerEmail ? "email" : "manual",
+        emailDelivered: emailDelivery?.ok ?? false,
+      },
     });
 
     return {
       code,
-      inviteUrl: `${config.appBaseUrl}/partner-invite?code=${encodeURIComponent(code)}`,
+      inviteUrl,
       expiresAt: invite.expiresAt,
       permissions: invite.permissions,
+      email: partnerEmail
+        ? {
+            requested: true,
+            delivered: Boolean(emailDelivery?.ok),
+            target: partnerEmail,
+            code: emailDelivery?.ok
+              ? null
+              : emailDelivery?.code ?? "EMAIL_NOT_CONFIGURED",
+          }
+        : {
+            requested: false,
+            delivered: false,
+            target: null,
+            code: null,
+          },
     };
   };
 

@@ -87,11 +87,18 @@ describe("WomenHealthOverviewCard contract", () => {
 
   it("uses backend-confirmed partner sharing instead of a local family mock", async () => {
     const source = await readSource(womenHealthCardPath);
+    const apiSource = await readSource("src/shared/api/authRemote.ts");
 
     expect(source).toContain("createRemotePartnerInvite");
+    expect(source).toContain("partnerEmail");
+    expect(source).toContain("copy.partnerEmailLabel");
+    expect(source).toContain("createRemotePartnerInvite(partnerEmail)");
     expect(source).toContain("acceptRemotePartnerInvite");
     expect(source).toContain("fetchRemotePartnerPregnancyShares");
     expect(source).toContain("QRCode.toDataURL");
+    expect(apiSource).toContain("partnerEmail?: string");
+    expect(apiSource).toContain('"/partner/invites"');
+    expect(apiSource).toContain("body: JSON.stringify({ partnerEmail");
     expect(source).not.toContain("localStorage");
   });
 });

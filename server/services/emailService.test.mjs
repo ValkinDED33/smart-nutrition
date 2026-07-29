@@ -99,6 +99,37 @@ describe("email service", () => {
     });
   });
 
+  it("sends partner invite email with code, link, and scoped privacy copy", async () => {
+    const send = vi.fn().mockResolvedValue({
+      data: { id: "partner-email-1" },
+      error: null,
+    });
+    const { service } = createService({ send });
+
+    const result = await service.sendPartnerInviteEmail({
+      to: "partner@example.com",
+      inviterName: "Anna",
+      inviteUrl: "https://smart-nutrition.club/partner-invite?code=SN-ABC123",
+      code: "SN-ABC123",
+      expiresAt: new Date("2026-06-07T12:00:00.000Z"),
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      messageId: "partner-email-1",
+      attempts: 1,
+    });
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: ["partner@example.com"],
+        subject: "Join your Smart Nutrition family space",
+        text: expect.stringContaining("SN-ABC123"),
+        html: expect.stringContaining("SN-ABC123"),
+      })
+    );
+    expect(send.mock.calls[0][0].text).toContain("private profile data are not shared");
+  });
+
   it("returns EMAIL_SEND_FAILED after max attempts for repeated transient failures", async () => {
     const send = vi.fn().mockResolvedValue({
       data: null,

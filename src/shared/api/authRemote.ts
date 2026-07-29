@@ -157,6 +157,12 @@ export interface PartnerInviteResult {
   inviteUrl: string;
   expiresAt: string;
   permissions: ["pregnancy_timeline"];
+  email?: {
+    requested: boolean;
+    delivered: boolean;
+    target: string | null;
+    code: string | null;
+  };
 }
 
 export interface PartnerPregnancyShare {
@@ -1428,10 +1434,13 @@ export const disconnectRemoteTelegram =
   };
 
 export const createRemotePartnerInvite =
-  async (): Promise<PartnerInviteResult> => {
+  async (partnerEmail?: string): Promise<PartnerInviteResult> => {
     const { data } = await requestRemote<PartnerInviteResult>(
       "/partner/invites",
-      { method: "POST" },
+      {
+        method: "POST",
+        body: JSON.stringify({ partnerEmail: partnerEmail?.trim() || null }),
+      },
       { requireAuth: true }
     );
 

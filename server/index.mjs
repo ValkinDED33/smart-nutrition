@@ -265,6 +265,7 @@ const telegramController = createTelegramController({
 const partnerService = createPartnerService({
   authRepository,
   stateRepository,
+  emailService,
   config: serverConfig,
 });
 const partnerController = createPartnerController({

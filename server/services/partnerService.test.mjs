@@ -46,9 +46,16 @@ const createFixture = () => {
       return profileState;
     }),
   };
+  const emailService = {
+    sendPartnerInviteEmail: vi.fn(async () => ({
+      ok: true,
+      messageId: "partner-email-1",
+    })),
+  };
   const service = createPartnerService({
     authRepository,
     stateRepository,
+    emailService,
     config: {
       jwtSecret: "x".repeat(48),
       appBaseUrl: "https://smart-nutrition.club",
@@ -57,6 +64,7 @@ const createFixture = () => {
 
   return {
     authRepository,
+    emailService,
     owner,
     partner,
     profiles,
@@ -79,6 +87,34 @@ describe("partnerService", () => {
     expect(ownerProfile.partnerSharing.invites[0].permissions).toEqual([
       "pregnancy_timeline",
     ]);
+  });
+
+  it("can deliver the same partner invite by email without creating another sharing system", async () => {
+    const { emailService, owner, profiles, service } = createFixture();
+
+    const invite = await service.createInvite(owner, {
+      partnerEmail: " Igor@Smart.Test ",
+    });
+    const ownerProfile = profiles.get(owner.id);
+
+    expect(invite.email).toMatchObject({
+      requested: true,
+      delivered: true,
+      target: "igor@smart.test",
+      code: null,
+    });
+    expect(emailService.sendPartnerInviteEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "igor@smart.test",
+        inviterName: owner.name,
+        inviteUrl: invite.inviteUrl,
+        code: invite.code,
+        expiresAt: invite.expiresAt,
+      })
+    );
+    expect(ownerProfile.partnerSharing.invites).toHaveLength(1);
+    expect(ownerProfile.partnerSharing.links).toHaveLength(0);
+    expect(ownerProfile.partnerSharing.invites[0].codeHash).not.toBe(invite.code);
   });
 
   it("accepts an invite, links both profiles, and returns only pregnancy timeline data", async () => {

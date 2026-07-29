@@ -69,6 +69,9 @@ const assistantDisplayNameSource = readSource(
   "src/features/assistant/assistantDisplayName.ts"
 );
 const partnerInvitePageSource = readSource("src/pages/PartnerInvitePage.tsx");
+const partnerRoutesSource = readSource("server/routes/partner.routes.mjs");
+const partnerServiceSource = readSource("server/services/partnerService.mjs");
+const emailServiceSource = readSource("server/services/emailService.mjs");
 const homePageSource = readSource("src/pages/HomePage.tsx");
 const landingPageSource = readSource("src/pages/LandingPage.tsx");
 const communitySliceSource = readSource("src/features/community/communitySlice.ts");
@@ -1432,6 +1435,23 @@ addCheck(
     partnerInvitePageSource.includes("without full account synchronization") &&
     !/cloud backend/i.test(partnerInvitePageSource),
   "QR partner access must feel native to the app language, route through backend invite acceptance, and communicate limited pregnancy sharing without exposing backend jargon."
+);
+
+addCheck(
+  "partner invites support email delivery through the canonical invite contract",
+  partnerRoutesSource.includes("partnerEmail: body?.partnerEmail") &&
+    partnerServiceSource.includes("normalizeEmail") &&
+    partnerServiceSource.includes("emailService?.sendPartnerInviteEmail") &&
+    partnerServiceSource.includes("delivery: partnerEmail ? \"email\" : \"manual\"") &&
+    emailServiceSource.includes("sendPartnerInviteEmail") &&
+    emailServiceSource.includes("private profile data are not shared") &&
+    authRemoteSource.includes("partnerEmail?: string") &&
+    authRemoteSource.includes("body: JSON.stringify({ partnerEmail") &&
+    womenHealthOverviewCardSource.includes("partnerEmail") &&
+    womenHealthOverviewCardSource.includes("copy.partnerEmailLabel") &&
+    womenHealthOverviewCardSource.includes("createRemotePartnerInvite(partnerEmail)") &&
+    womenHealthOverviewCardSource.includes("copy.partnerEmailDeliveryFailed"),
+  "Family partner invitations must offer QR/code/link plus optional email delivery through the same backend invite and privacy-scoped partner-sharing contract, not a second family invite system."
 );
 
 const polishedPolishSyncSources = [
