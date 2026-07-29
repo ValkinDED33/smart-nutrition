@@ -36,6 +36,7 @@ import {
 import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
+import { isWomenHealthVisibleForGender } from "@domain/profile/womenHealth";
 
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
@@ -165,6 +166,7 @@ const profileCopy = {
     tabs: {
       data: "Дані",
       goal: "Ціль",
+      womenHealth: "Жіноче здоров'я",
       assistant: "Асистент",
       motivation: "Мотивація",
       security: "Безпека",
@@ -208,6 +210,7 @@ const profileCopy = {
     tabs: {
       data: "Dane",
       goal: "Cel",
+      womenHealth: "Zdrowie kobiet",
       assistant: "Asystent",
       motivation: "Motywacja",
       security: "Bezpieczeństwo",
@@ -251,6 +254,7 @@ const profileCopy = {
     tabs: {
       data: "Data",
       goal: "Goal",
+      womenHealth: "Women health",
       assistant: "Assistant",
       motivation: "Motivation",
       security: "Security",
@@ -634,6 +638,7 @@ const ProfilePage = () => {
   const communityStatus =
     user.communityStatus ?? resolveCommunityStatus(user.reputationScore);
   const canSeeOperationalDetails = canAccessAdminCenter(user.role);
+  const canSeeWomenHealthSection = isWomenHealthVisibleForGender(user.gender);
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;
@@ -820,7 +825,6 @@ const ProfilePage = () => {
                   copy.tabs.data,
                   <LoadingSkeleton cards={3} chart bodyRows={3} />,
                   <Stack spacing={3}>
-                    <WomenHealthOverviewCard />
                     <WeightTrendCard />
                     <MeasurementsCheckInCard />
                     <BodyProgressPhotosCard />
@@ -1040,6 +1044,20 @@ const ProfilePage = () => {
               </Stack>
             ),
           },
+          ...(canSeeWomenHealthSection
+            ? [
+                {
+                  id: "women-health",
+                  label: copy.tabs.womenHealth,
+                  content: renderLazySection(
+                    "women-health",
+                    copy.tabs.womenHealth,
+                    <LoadingSkeleton cards={3} chart bodyRows={3} />,
+                    <WomenHealthOverviewCard />
+                  ),
+                },
+              ]
+            : []),
           {
             id: "assistant",
             label: copy.tabs.assistant,

@@ -29,6 +29,8 @@ tmp-vite-*.log
 tmp-vite-*.err.log
 vite-dev.log
 vite-dev.err.log
+*.exe
+*.torrent
 
 node_modules
 dist

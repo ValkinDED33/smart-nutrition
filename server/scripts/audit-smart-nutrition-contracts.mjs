@@ -119,6 +119,7 @@ const productDisplaySource = readSource("src/domain/products/productDisplay.ts")
 const productMicronutrientInsightsSource = readSource(
   "src/domain/products/productMicronutrientInsights.ts"
 );
+const profilePageSource = readSource("src/pages/ProfilePage.tsx");
 const progressPageSource = readSource("src/pages/ProgressPage.tsx");
 const progressOverviewCardSource = readSource(
   "src/features/profile/ProgressOverviewCard.tsx"
@@ -1940,6 +1941,15 @@ addCheck(
       localizedBodyProgressSources
     ),
   "Weight, measurements, and weekly body-report surfaces must use native body-progress language in Ukrainian/Polish instead of check-in, plateau, focus, or companion planning jargon."
+);
+
+addCheck(
+  "female profile exposes women-health as a dedicated profile section",
+  profilePageSource.includes("isWomenHealthVisibleForGender(user.gender)") &&
+    profilePageSource.includes('id: "women-health"') &&
+    profilePageSource.includes("copy.tabs.womenHealth") &&
+    profilePageSource.includes("<WomenHealthOverviewCard />"),
+  "Female accounts must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class profile section, not as hidden data-tab content."
 );
 
 addCheck(
