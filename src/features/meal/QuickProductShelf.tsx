@@ -91,7 +91,7 @@ export const QuickProductShelf = ({ mealType }: Props) => {
           sections={sections}
           activeSection={activeSection}
           onChange={(sectionId) => setActiveSection(sectionId as ShelfSection)}
-          ariaLabel="Quick product shelf sections"
+          ariaLabel={t("quickShelf.sectionsAriaLabel")}
         />
 
         {activeProducts.length === 0 ? (

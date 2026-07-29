@@ -193,6 +193,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened combined user/profile-state saves against duplicate profile names: backend now rejects `NAME_IN_USE` before writing profile state and maps it to a public `409`, preventing partial cloud profile saves when a nickname is already used by another account.
 - Localized progress surface accessibility and copied-report text so progress tabs and exported daily summary follow the active app language instead of leaking hardcoded English labels.
 - Localized AI companion section-tab accessibility copy and added contract coverage so the assistant surface cannot silently return to hardcoded English navigation labels.
+- Localized primary section-tab accessibility copy across home, food, recipes, profile, nutrition library, and quick products, with contract/audit coverage against hardcoded English tab labels returning.
 
 ## Current Architecture
 

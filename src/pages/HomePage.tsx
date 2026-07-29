@@ -85,6 +85,7 @@ const homeCopy = {
     quickAddTitle: "Додати їжу",
     quickAddSubtitle: "Оберіть найшвидший спосіб для цього моменту.",
     heroStoryLabel: "Жива історія дня",
+    sectionsAriaLabel: "Розділи головної",
     water: "Додати воду",
     close: "Закрити",
     sections: {
@@ -118,6 +119,7 @@ const homeCopy = {
     quickAddTitle: "Dodaj jedzenie",
     quickAddSubtitle: "Wybierz najszybszy sposób na ten moment.",
     heroStoryLabel: "Żywa historia dnia",
+    sectionsAriaLabel: "Sekcje strony głównej",
     water: "Dodaj wodę",
     close: "Zamknij",
     sections: {
@@ -151,6 +153,7 @@ const homeCopy = {
     quickAddTitle: "Add food",
     quickAddSubtitle: "Choose the fastest method for this moment.",
     heroStoryLabel: "Living day story",
+    sectionsAriaLabel: "Home sections",
     water: "Add water",
     close: "Close",
     sections: {
@@ -714,7 +717,7 @@ const HomePage = () => {
         sections={sections}
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as HomeSection)}
-        ariaLabel="Dashboard sections"
+        ariaLabel={copy.sectionsAriaLabel}
       />
 
       {activeSection === "assistant" ? (

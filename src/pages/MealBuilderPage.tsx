@@ -127,6 +127,8 @@ const mealInputCopy = {
     moduleErrorBody:
       "З'єднання могло перервати завантаження інструмента. Оновіть його і спробуйте ще раз.",
     reloadModule: "Оновити",
+    sectionsAriaLabel: "Розділи харчування",
+    addToolsAriaLabel: "Способи додавання їжі",
     sections: {
       day: "День",
       add: "Додати",
@@ -167,6 +169,8 @@ const mealInputCopy = {
     moduleErrorBody:
       "Połączenie mogło przerwać ładowanie narzędzia. Odśwież je i spróbuj ponownie.",
     reloadModule: "Odśwież",
+    sectionsAriaLabel: "Sekcje jedzenia",
+    addToolsAriaLabel: "Sposoby dodawania jedzenia",
     sections: {
       day: "Dzień",
       add: "Dodaj",
@@ -207,6 +211,8 @@ const mealInputCopy = {
     moduleErrorBody:
       "The connection may have interrupted this tool. Refresh it and try again.",
     reloadModule: "Refresh",
+    sectionsAriaLabel: "Meal sections",
+    addToolsAriaLabel: "Meal add tools",
     sections: {
       day: "Day",
       add: "Add",
@@ -627,7 +633,7 @@ const MealBuilderPage = () => {
             sections={sections}
             activeSection={displayedActiveSection}
             onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
-            ariaLabel="Meal sections"
+            ariaLabel={copy.sectionsAriaLabel}
           />
         </>
       ) : null}
@@ -657,7 +663,7 @@ const MealBuilderPage = () => {
               sections={addToolSections}
               activeSection={displayedActiveAddTool}
               onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
-              ariaLabel="Meal add tools"
+              ariaLabel={copy.addToolsAriaLabel}
             />
             {displayedActiveAddTool === "search"
               ? renderLazyModule(copy.addTools.search, (

@@ -114,6 +114,7 @@ const copy = {
     failedAdd: "Не вдалося додати продукт.",
     failedSave: "Не вдалося зберегти продукт.",
     failedApply: "Не вдалося застосувати шаблон.",
+    sectionsAriaLabel: "Розділи бібліотеки харчування",
   },
   pl: {
     libraryTitle: "Katalog online",
@@ -161,6 +162,7 @@ const copy = {
     failedAdd: "Nie udało się dodać produktu.",
     failedSave: "Nie udało się zapisać produktu.",
     failedApply: "Nie udało się użyć szablonu.",
+    sectionsAriaLabel: "Sekcje biblioteki jedzenia",
   },
   en: {
     libraryTitle: "Online catalog",
@@ -208,6 +210,7 @@ const copy = {
     failedAdd: "Could not add the product.",
     failedSave: "Could not save the product.",
     failedApply: "Could not apply the template.",
+    sectionsAriaLabel: "Nutrition library sections",
   },
 } as const;
 
@@ -567,7 +570,7 @@ const NutritionLibraryPanel = ({
           sections={sectionTabs}
           activeSection={activeTab}
           onChange={(sectionId) => setActiveTab(sectionId as InnerTab)}
-          ariaLabel="Nutrition library sections"
+          ariaLabel={labels.sectionsAriaLabel}
         />
 
         <TextField

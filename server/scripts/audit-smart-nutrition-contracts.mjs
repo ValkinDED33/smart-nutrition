@@ -115,6 +115,7 @@ const quickMealComposerModelSource = readSource(
 );
 const productSearchSource = readSource("src/features/meal/ProductSearch.tsx");
 const quickMealComposerSource = readSource("src/features/meal/QuickMealComposer.tsx");
+const quickProductShelfSource = readSource("src/features/meal/QuickProductShelf.tsx");
 const recipeSectionSource = readSource("src/features/meal/RecipeSection.tsx");
 const smartRecommendationsSource = readSource("src/features/meal/SmartRecommendations.tsx");
 const nutritionLibraryPanelSource = readSource("src/features/meal/NutritionLibraryPanel.tsx");
@@ -216,6 +217,7 @@ const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
 const languageMenuButtonSource = readSource("src/shared/components/LanguageMenuButton.tsx");
 const mealBuilderPageSource = readSource("src/pages/MealBuilderPage.tsx");
 const pwaUpdateBannerSource = readSource("src/shared/components/PwaUpdateBanner.tsx");
+const recipesPageSource = readSource("src/pages/RecipesPage.tsx");
 const registerServiceWorkerSource = readSource("src/shared/lib/registerServiceWorker.ts");
 const errorRecoverySource = readSource("src/shared/lib/errorRecovery.ts");
 const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReporting.ts");
@@ -1314,6 +1316,33 @@ addCheck(
     progressActionBarSource.includes("copyText.reportTitle") &&
     !progressActionBarSource.includes("PROGRESS_REPORT_TITLE"),
   "Progress tabs and copied progress reports must use active-language copy instead of hardcoded English labels."
+);
+
+const localizedSectionTabSources = [
+  homePageSource,
+  mealBuilderPageSource,
+  recipesPageSource,
+  profilePageSource,
+  nutritionLibraryPanelSource,
+  quickProductShelfSource,
+].join("\n");
+
+addCheck(
+  "primary section tabs use active-language accessibility copy",
+  homePageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
+    mealBuilderPageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
+    mealBuilderPageSource.includes("ariaLabel={copy.addToolsAriaLabel}") &&
+    recipesPageSource.includes("ariaLabel={sections.sectionsAriaLabel}") &&
+    profilePageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
+    nutritionLibraryPanelSource.includes("ariaLabel={labels.sectionsAriaLabel}") &&
+    quickProductShelfSource.includes('ariaLabel={t("quickShelf.sectionsAriaLabel")}') &&
+    sharedLanguageSource.includes("Розділи швидких продуктів") &&
+    sharedLanguageSource.includes("Sekcje szybkich produktów") &&
+    sharedI18nEnSource.includes("Quick product sections") &&
+    !/ariaLabel="(?:Dashboard sections|Meal sections|Meal add tools|Recipe page sections|Profile sections|Nutrition library sections|Quick product shelf sections)"/.test(
+      localizedSectionTabSources
+    ),
+  "Primary product SectionTabs must expose localized accessibility labels instead of hardcoded English navigation labels."
 );
 
 addCheck(

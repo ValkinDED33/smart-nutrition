@@ -174,6 +174,7 @@ const profileCopy = {
       motivation: "Мотивація",
       security: "Безпека",
     },
+    sectionsAriaLabel: "Розділи профілю",
   },
   pl: {
     weightGoal: "Waga docelowa",
@@ -218,6 +219,7 @@ const profileCopy = {
       motivation: "Motywacja",
       security: "Bezpieczeństwo",
     },
+    sectionsAriaLabel: "Sekcje profilu",
   },
   en: {
     weightGoal: "Target weight",
@@ -262,6 +264,7 @@ const profileCopy = {
       motivation: "Motivation",
       security: "Security",
     },
+    sectionsAriaLabel: "Profile sections",
   },
 } as const;
 
@@ -759,6 +762,7 @@ const ProfilePage = () => {
       </Paper>
 
       <ProfileSectionTabs
+        ariaLabel={copy.sectionsAriaLabel}
         sections={[
           {
             id: "data",

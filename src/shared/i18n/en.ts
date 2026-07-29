@@ -222,6 +222,7 @@ export const en = {
   "quickShelf.savedEmpty": "Save a few products to add them in one tap.",
   "quickShelf.recentEmpty":
     "Products will appear here after search, scan, or adding.",
+  "quickShelf.sectionsAriaLabel": "Quick product sections",
   "composer.title": "Quick meal composer",
   "composer.subtitle":
     "Add several ingredients at once: cottage cheese, meat, tomato, egg, or any other combination.",

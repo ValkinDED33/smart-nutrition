@@ -11,6 +11,7 @@ interface ProfileSectionTab {
 
 interface ProfileSectionTabsProps {
   sections: ProfileSectionTab[];
+  ariaLabel: string;
 }
 
 const getSectionIdFromHash = (hash: string) => {
@@ -25,7 +26,7 @@ const getSectionIdFromHash = (hash: string) => {
   }
 };
 
-export const ProfileSectionTabs = ({ sections }: ProfileSectionTabsProps) => {
+export const ProfileSectionTabs = ({ sections, ariaLabel }: ProfileSectionTabsProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const firstSectionId = sections[0]?.id ?? "";
@@ -56,7 +57,7 @@ export const ProfileSectionTabs = ({ sections }: ProfileSectionTabsProps) => {
         sections={sections.map(({ id, label }) => ({ id, label }))}
         activeSection={safeActiveSection}
         onChange={handleSectionChange}
-        ariaLabel="Profile sections"
+        ariaLabel={ariaLabel}
       />
 
       <Box id={safeActiveSection}>{selectedSection.content}</Box>

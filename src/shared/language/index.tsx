@@ -217,6 +217,7 @@ const uk = {
     "Збережіть кілька продуктів, щоб додавати їх одним кліком.",
   "quickShelf.recentEmpty":
     "Після пошуку, сканування або додавання продукти з'являться тут.",
+  "quickShelf.sectionsAriaLabel": "Розділи швидких продуктів",
   "composer.title": "Швидкий конструктор страви",
   "composer.subtitle":
     "Додайте одразу кілька інгредієнтів: сир, м'ясо, помідор, яйце або будь-яку іншу комбінацію.",
@@ -471,6 +472,7 @@ const pl: Record<keyof typeof uk, string> = {
     "Zapisz kilka produktów, aby dodawać je jednym kliknięciem.",
   "quickShelf.recentEmpty":
     "Po wyszukaniu, skanowaniu lub dodaniu produkty pojawią się tutaj.",
+  "quickShelf.sectionsAriaLabel": "Sekcje szybkich produktów",
   "composer.title": "Szybki kreator posiłku",
   "composer.subtitle":
     "Dodaj od razu kilka składników: ser, mięso, pomidor, jajko albo dowolną inną kombinację.",

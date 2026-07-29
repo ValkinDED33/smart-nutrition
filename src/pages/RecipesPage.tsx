@@ -39,6 +39,7 @@ const sectionCopy = {
     recipes: "Рецепти",
     fridge: "Холодильник",
     recommendations: "Поради",
+    sectionsAriaLabel: "Розділи рецептів",
   },
   pl: {
     library: "Biblioteka",
@@ -46,6 +47,7 @@ const sectionCopy = {
     recipes: "Przepisy",
     fridge: "Lodówka",
     recommendations: "Rekomendacje",
+    sectionsAriaLabel: "Sekcje przepisów",
   },
   en: {
     library: "Library",
@@ -53,6 +55,7 @@ const sectionCopy = {
     recipes: "Recipes",
     fridge: "Fridge",
     recommendations: "Tips",
+    sectionsAriaLabel: "Recipe sections",
   },
 } as const;
 
@@ -171,7 +174,7 @@ const RecipesPage = () => {
         ]}
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as RecipesSection)}
-        ariaLabel="Recipe page sections"
+        ariaLabel={sections.sectionsAriaLabel}
       />
 
       <LazyModuleBoundary
