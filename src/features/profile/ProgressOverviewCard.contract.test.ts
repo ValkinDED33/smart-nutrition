@@ -44,4 +44,14 @@ describe("ProgressOverviewCard contract", () => {
     expect(actionSource).toContain("copyText.reportTitle");
     expect(actionSource).not.toContain('const PROGRESS_REPORT_TITLE = "Smart Nutrition progress"');
   });
+
+  it("keeps localized progress overview labels free from English planning terms", async () => {
+    const source = await readSource("src/features/profile/ProgressOverviewCard.tsx");
+    const localizedCopy = source.slice(source.indexOf("uk:"), source.indexOf("en:"));
+
+    expect(source).toContain('checkIn: "Заміри"');
+    expect(source).toContain('checkIn: "Pomiary"');
+    expect(source).toContain('checkIn: "Check-in"');
+    expect(localizedCopy).not.toContain('checkIn: "Check-in"');
+  });
 });

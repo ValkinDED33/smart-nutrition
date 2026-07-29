@@ -99,6 +99,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Polished the public landing page Ukrainian/Polish copy so the first product screen sells the assistant experience in native language instead of mixed `companion`, `proactive nudges`, `eye tracking`, `gamification`, or `community` planning labels.
 - Polished assistant growth, ecosystem pulse, and profile customization copy so Ukrainian/Polish helper surfaces use native `помічник`/`asystent` language instead of mixed `companion` planning jargon.
 - Polished body progress copy across quick weight, weight trend, weekly body report, and measurements so Ukrainian/Polish users see native measurement/progress language instead of `check-in`, `plateau`, `focus`, or `companion` planning jargon.
+- Polished the overall progress overview so Ukrainian/Polish counted-domain cards show native body measurement labels instead of English `Check-in` while keeping the internal progress domain unchanged.
 - Polished assistant runtime and nutrition analysis copy so Ukrainian/Polish AI helper surfaces use native assistant/direction language instead of mixed `coach`/`focus` planning jargon.
 - Polished PWA/browser habit reminder notifications so Ukrainian/Polish users see native breakfast/body-update/assistant-insight language instead of mixed `check-in` or `coach-focus` planning jargon.
 - Polished the global floating assistant layer so cross-app overlay copy uses assistant/direction language instead of `coach`/`focus` labels on Ukrainian, Polish, and English surfaces.

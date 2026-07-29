@@ -1332,6 +1332,17 @@ addCheck(
   "Progress tabs and copied progress reports must use active-language copy instead of hardcoded English labels."
 );
 
+addCheck(
+  "progress overview check-in label stays localized",
+  progressOverviewCardSource.includes('checkIn: "Заміри"') &&
+    progressOverviewCardSource.includes('checkIn: "Pomiary"') &&
+    progressOverviewCardSource.includes('checkIn: "Check-in"') &&
+    !progressOverviewCardSource
+      .slice(progressOverviewCardSource.indexOf("uk:"), progressOverviewCardSource.indexOf("en:"))
+      .includes('checkIn: "Check-in"'),
+  "Ukrainian and Polish progress overview cards must describe body measurements in native product language; English Check-in is allowed only in the English copy branch."
+);
+
 const localizedSectionTabSources = [
   homePageSource,
   mealBuilderPageSource,
