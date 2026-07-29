@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DailyContext } from "./dailyContext";
 import type { AssistantHomeAction } from "./assistantHomeIntelligence";
-import { buildAIDiscoveryCards } from "./aiDiscoveryCardsModel";
+import {
+  buildAIDiscoveryCards,
+  buildAIDiscoveryTimeline,
+} from "./aiDiscoveryCardsModel";
 
 const primaryAction: AssistantHomeAction = {
   kind: "meal_search",
@@ -117,6 +120,38 @@ describe("buildAIDiscoveryCards", () => {
       id: "focus-steady",
       tone: "celebrate",
       metricLabel: "Ритм",
+      action: primaryAction,
+    });
+  });
+
+  it("builds an AI timeline story from canonical daily context and existing actions", () => {
+    const timeline = buildAIDiscoveryTimeline({
+      context,
+      language: "en",
+      primaryAction,
+    });
+
+    expect(timeline).toHaveLength(4);
+    expect(timeline.map((item) => item.tone)).toEqual([
+      "food",
+      "ai",
+      "water",
+      "action",
+    ]);
+    expect(timeline[0]).toMatchObject({
+      id: "timeline-food",
+      metric: "1 entries",
+    });
+    expect(timeline[1]).toMatchObject({
+      id: "timeline-ai-protein",
+      metric: "Protein: 14%",
+    });
+    expect(timeline[2]).toMatchObject({
+      id: "timeline-water",
+      metric: "27% water",
+    });
+    expect(timeline[3]).toMatchObject({
+      id: "timeline-action-meal_search",
       action: primaryAction,
     });
   });

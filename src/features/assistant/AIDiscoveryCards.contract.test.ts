@@ -14,8 +14,13 @@ describe("AI Discovery Cards contract", () => {
     const homeSource = await readSource("src/pages/HomePage.tsx");
 
     expect(componentSource).toContain("buildAIDiscoveryCards");
+    expect(componentSource).toContain("buildAIDiscoveryTimeline");
+    expect(componentSource).toContain("aria-label={text.timelineTitle}");
+    expect(componentSource).toContain("onRunAction(item.action");
     expect(modelSource).toContain("DailyContext");
     expect(modelSource).toContain("AssistantHomeAction");
+    expect(modelSource).toContain("AIDiscoveryTimelineItem");
+    expect(modelSource).toContain("buildAIDiscoveryTimeline");
     expect(homeSource).toContain("<AIDiscoveryCards");
     expect(homeSource).toContain("context={dailyContext}");
     expect(homeSource).toContain("intelligence={intelligence}");

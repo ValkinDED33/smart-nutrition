@@ -16,6 +16,18 @@ export interface AIDiscoveryCard {
   action: AssistantHomeAction;
 }
 
+type TimelineTone = "food" | "ai" | "water" | "action";
+
+export interface AIDiscoveryTimelineItem {
+  id: string;
+  tone: TimelineTone;
+  label: string;
+  title: string;
+  body: string;
+  metric: string;
+  action?: AssistantHomeAction;
+}
+
 type DiscoveryCopy = (typeof copy)[AppLanguage];
 
 const AI_DISCOVERY_LABEL = "AI Discovery";
@@ -64,6 +76,20 @@ const copy = {
       measured: "Звірив його з цілями профілю.",
       action: "Пропоную одну дію без зайвого шуму.",
     },
+    timeline: {
+      foodLabel: "День",
+      foodEmptyTitle: "Історія ще чекає перший прийом",
+      foodLoggedTitle: "Їжа вже дала контекст",
+      foodEmptyBody: "Почнемо з реального запису, щоб помічник не вигадував висновки.",
+      foodLoggedBody: "Записи дня вже можна читати як живий контекст.",
+      aiLabel: "AI помітив",
+      waterLabel: "Вода",
+      waterBody: "Гідратація впливає на ритм підказок і прогресу.",
+      actionLabel: "Наступний крок",
+      actionBody: "Одна дія зараз корисніша за довгий список варіантів.",
+      entriesUnit: "зап.",
+      waterUnit: "води",
+    },
   },
   pl: {
     eyebrow: AI_DISCOVERY_LABEL,
@@ -108,6 +134,20 @@ const copy = {
       measured: "Porównałem go z celami profilu.",
       action: "Proponuję jeden krok bez zbędnego hałasu.",
     },
+    timeline: {
+      foodLabel: "Dzień",
+      foodEmptyTitle: "Historia czeka na pierwszy posiłek",
+      foodLoggedTitle: "Jedzenie dało już kontekst",
+      foodEmptyBody: "Zacznijmy od realnego zapisu, żeby asystent nie udawał wniosków.",
+      foodLoggedBody: "Dzisiejsze wpisy można już czytać jako żywy kontekst.",
+      aiLabel: "AI zauważył",
+      waterLabel: "Woda",
+      waterBody: "Nawodnienie wpływa na rytm wskazówek i progresu.",
+      actionLabel: "Kolejny krok",
+      actionBody: "Jeden krok teraz daje więcej niż długa lista opcji.",
+      entriesUnit: "wpisy",
+      waterUnit: "wody",
+    },
   },
   en: {
     eyebrow: AI_DISCOVERY_LABEL,
@@ -151,6 +191,20 @@ const copy = {
       noticed: "I noticed a signal in today's data.",
       measured: "I compared it with your profile targets.",
       action: "I suggest one next step without extra noise.",
+    },
+    timeline: {
+      foodLabel: "Day",
+      foodEmptyTitle: "The story is waiting for the first meal",
+      foodLoggedTitle: "Food has already given context",
+      foodEmptyBody: "Start with a real entry so the assistant does not fake insight.",
+      foodLoggedBody: "Today's entries can already be read as living context.",
+      aiLabel: "AI noticed",
+      waterLabel: "Water",
+      waterBody: "Hydration shapes the rhythm of nudges and progress.",
+      actionLabel: "Next step",
+      actionBody: "One action now is better than a long list of options.",
+      entriesUnit: "entries",
+      waterUnit: "water",
     },
   },
 } as const;
@@ -264,4 +318,55 @@ export const buildAIDiscoveryCards = ({
   }
 
   return cards.slice(0, 2);
+};
+
+export const buildAIDiscoveryTimeline = ({
+  context,
+  language,
+  primaryAction,
+}: {
+  context: DailyContext;
+  language: AppLanguage;
+  primaryAction: AssistantHomeAction;
+}): AIDiscoveryTimelineItem[] => {
+  const text = getCopy(language);
+  const metric = getMetricForFocus(context, text);
+  const entries = Math.max(0, context.today.entries);
+  const waterProgress = formatPercent(context.progress.water);
+
+  return [
+    {
+      id: "timeline-food",
+      tone: "food",
+      label: text.timeline.foodLabel,
+      title: entries > 0 ? text.timeline.foodLoggedTitle : text.timeline.foodEmptyTitle,
+      body: entries > 0 ? text.timeline.foodLoggedBody : text.timeline.foodEmptyBody,
+      metric: `${entries} ${text.timeline.entriesUnit}`,
+    },
+    {
+      id: `timeline-ai-${context.primaryFocus}`,
+      tone: "ai",
+      label: text.timeline.aiLabel,
+      title: text.title[context.primaryFocus],
+      body: text.body[context.primaryFocus],
+      metric: `${metric.label}: ${metric.value}`,
+    },
+    {
+      id: "timeline-water",
+      tone: "water",
+      label: text.timeline.waterLabel,
+      title: text.title.water,
+      body: text.timeline.waterBody,
+      metric: `${waterProgress} ${text.timeline.waterUnit}`,
+    },
+    {
+      id: `timeline-action-${primaryAction.kind}`,
+      tone: "action",
+      label: text.timeline.actionLabel,
+      title: primaryAction.label,
+      body: primaryAction.helper || text.timeline.actionBody,
+      metric: text.timeline.actionLabel,
+      action: primaryAction,
+    },
+  ];
 };

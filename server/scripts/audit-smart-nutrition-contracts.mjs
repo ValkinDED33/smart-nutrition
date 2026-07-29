@@ -440,12 +440,20 @@ addCheck(
     homePageSource.includes("intelligence={intelligence}") &&
     homePageSource.includes("onRunAction={runAssistantAction}") &&
     aiDiscoveryCardsSource.includes("buildAIDiscoveryCards") &&
+    aiDiscoveryCardsSource.includes("buildAIDiscoveryTimeline") &&
+    aiDiscoveryCardsSource.includes("aria-label={text.timelineTitle}") &&
+    aiDiscoveryCardsSource.includes("onRunAction(item.action") &&
     aiDiscoveryCardsModelSource.includes("DailyContext") &&
     aiDiscoveryCardsModelSource.includes("AssistantHomeAction") &&
+    aiDiscoveryCardsModelSource.includes("AIDiscoveryTimelineItem") &&
+    aiDiscoveryCardsModelSource.includes("buildAIDiscoveryTimeline") &&
+    aiDiscoveryCardsModelSource.includes("context.today.entries") &&
+    aiDiscoveryCardsModelSource.includes("context.primaryFocus") &&
+    aiDiscoveryCardsModelSource.includes("context.progress.water") &&
     !/localStorage|Math\.random|setTimeout|fetch\(|axios|mock|placeholder/i.test(
       `${aiDiscoveryCardsSource}\n${aiDiscoveryCardsModelSource}`
     ),
-  "AI Discovery Cards must be a branded living-card layer over canonical day context and existing assistant actions, not a second AI brain, random mock feed, or local-only state."
+  "AI Discovery Cards and AI Timeline must be branded living-card layers over canonical day context and existing assistant actions, not a second AI brain, random mock feed, or local-only state."
 );
 
 addCheck(
