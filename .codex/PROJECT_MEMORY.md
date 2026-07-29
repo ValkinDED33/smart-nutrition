@@ -178,6 +178,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Upgraded the backend photo normalization dependency `sharp` after a high-severity audit finding; photo analysis keeps its real image-processing path while dependency risk is handled through `audit:deps`.
 - Hardened quick meal and shared meal-action failure state so food save retries cannot carry raw exception text even if future UI starts reading failure messages directly.
 - Hardened final onboarding save failure state so sync outbox and sync status cannot surface raw exception text after profile setup fails.
+- Expanded scoped partner pregnancy sharing so connected partners see the full weekly baby development context: weeks plus days, trimester, month, days until due date, size equivalent, approximate length/weight, and safety copy through the existing partner-sharing contract.
 - Hardened frontend auth API errors so backend response codes still drive login/register/recovery behavior while raw backend/provider payload messages are replaced by safe product-language `AuthApiError` copy.
 - Hardened backend product-intake catalog retry responses so a saved meal with failed catalog moderation returns safe retry copy instead of raw provider/backend exception text.
 - Hardened FoodCommandCenter voice-input failure handling so browser/WebView speech-recognition errors show localized product-language guidance instead of raw browser exception text.

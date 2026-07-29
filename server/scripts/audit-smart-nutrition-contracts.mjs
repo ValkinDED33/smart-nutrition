@@ -1454,6 +1454,29 @@ addCheck(
   "Family partner invitations must offer QR/code/link plus optional email delivery through the same backend invite and privacy-scoped partner-sharing contract, not a second family invite system."
 );
 
+addCheck(
+  "partner pregnancy share exposes full weekly baby development context",
+  partnerServiceSource.includes("weeklyPregnancyDevelopment") &&
+    partnerServiceSource.includes("getPregnancyAge") &&
+    partnerServiceSource.includes("completedWeeks") &&
+    partnerServiceSource.includes("trimester: getTrimester(week)") &&
+    partnerServiceSource.includes("month: getPregnancyMonth(totalDays)") &&
+    partnerServiceSource.includes("lengthCm") &&
+    partnerServiceSource.includes("weightG") &&
+    partnerServiceSource.includes("timeline: age") &&
+    authRemoteSource.includes("timeline: {") &&
+    authRemoteSource.includes("completedWeeks: number") &&
+    authRemoteSource.includes("lengthCm: number") &&
+    womenHealthOverviewCardSource.includes('data-partner-pregnancy-weekly-view="true"') &&
+    womenHealthOverviewCardSource.includes("copy.partnerBabyThisWeek") &&
+    womenHealthOverviewCardSource.includes("formatPregnancyAge") &&
+    womenHealthOverviewCardSource.includes("share.timeline?.trimester") &&
+    womenHealthOverviewCardSource.includes("share.timeline?.month") &&
+    womenHealthOverviewCardSource.includes("share.baby.lengthCm") &&
+    womenHealthOverviewCardSource.includes("share.baby.weightG"),
+  "A connected partner must see a complete pregnancy timeline: weeks plus days, trimester, month, days to due date, baby size equivalent, length, weight, and weekly development copy through the existing scoped partner-sharing endpoint."
+);
+
 const polishedPolishSyncSources = [
   syncFeedbackAlertSource,
   syncStatusChipSource,

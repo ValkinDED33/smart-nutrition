@@ -140,6 +140,15 @@ const womenHealthCopy = {
     partnerCodeLabel: "Код SN-...",
     partnerConnected: "Профілі підключені",
     partnerEmpty: "Партнерських даних поки немає.",
+    partnerBabyThisWeek: "Малюк цього тижня",
+    gestationalAge: "Термін",
+    pregnancyMonth: "Місяць",
+    measuredAt: "Станом на",
+    babyLength: "Довжина",
+    babyWeight: "Вага",
+    babyEquivalent: "Як",
+    approximateMeasurements:
+      "Показники орієнтовні і можуть відрізнятися в межах нормального перебігу.",
     babySize: "Орієнтовний розмір",
     copy: "Копіювати",
     copied: "Скопійовано",
@@ -239,6 +248,15 @@ const womenHealthCopy = {
     partnerCodeLabel: "Kod SN-...",
     partnerConnected: "Profile połączone",
     partnerEmpty: "Nie ma jeszcze danych partnera.",
+    partnerBabyThisWeek: "Dziecko w tym tygodniu",
+    gestationalAge: "Wiek ciąży",
+    pregnancyMonth: "Miesiąc",
+    measuredAt: "Stan na",
+    babyLength: "Długość",
+    babyWeight: "Waga",
+    babyEquivalent: "Jak",
+    approximateMeasurements:
+      "Pomiary są orientacyjne i mogą się różnić w prawidłowym przebiegu ciąży.",
     babySize: "Orientacyjny rozmiar",
     copy: "Kopiuj",
     copied: "Skopiowano",
@@ -338,6 +356,15 @@ const womenHealthCopy = {
     partnerCodeLabel: "SN-... code",
     partnerConnected: "Profiles connected",
     partnerEmpty: "No partner data yet.",
+    partnerBabyThisWeek: "Your baby this week",
+    gestationalAge: "Pregnancy age",
+    pregnancyMonth: "Month",
+    measuredAt: "As of",
+    babyLength: "Length",
+    babyWeight: "Weight",
+    babyEquivalent: "Equivalent to",
+    approximateMeasurements:
+      "Measurements are approximate and can vary within the normal range.",
     babySize: "Estimated size",
     copy: "Copy",
     copied: "Copied",
@@ -476,38 +503,119 @@ const formatSymptomDate = (value: string, language: AppLanguage) => {
 const babySizeLabels = {
   uk: new Map([
     ["poppy_seed", "макове зернятко"],
+    ["sesame_seed", "кунжут"],
+    ["lentil", "сочевиця"],
+    ["blueberry", "чорниця"],
     ["raspberry", "малина"],
+    ["cherry", "вишня"],
+    ["strawberry", "полуниця"],
+    ["fig", "інжир"],
     ["lime", "лайм"],
+    ["lemon", "лимон"],
+    ["peach", "персик"],
+    ["apple", "яблуко"],
     ["avocado", "авокадо"],
+    ["pear", "груша"],
+    ["bell_pepper", "солодкий перець"],
+    ["mango", "манго"],
     ["banana", "банан"],
+    ["carrot", "морква"],
+    ["papaya", "папая"],
+    ["grapefruit", "грейпфрут"],
     ["corn", "кукурудза"],
+    ["rutabaga", "бруква"],
+    ["scallion_bunch", "пучок зеленої цибулі"],
+    ["cauliflower", "цвітна капуста"],
     ["eggplant", "баклажан"],
+    ["butternut_squash", "мускатний гарбуз"],
+    ["cabbage", "капуста"],
+    ["coconut", "кокос"],
     ["squash", "гарбуз"],
+    ["pineapple", "ананас"],
+    ["cantaloupe", "диня"],
+    ["honeydew", "медова диня"],
     ["romaine", "лист салату"],
+    ["swiss_chard", "мангольд"],
+    ["leek", "порей"],
+    ["pumpkin", "великий гарбуз"],
     ["watermelon", "кавун"],
   ]),
   pl: new Map([
     ["poppy_seed", "ziarenko maku"],
+    ["sesame_seed", "sezam"],
+    ["lentil", "soczewica"],
+    ["blueberry", "borówka"],
     ["raspberry", "malina"],
+    ["cherry", "wiśnia"],
+    ["strawberry", "truskawka"],
+    ["fig", "figa"],
     ["lime", "limonka"],
+    ["lemon", "cytryna"],
+    ["peach", "brzoskwinia"],
+    ["apple", "jabłko"],
     ["avocado", "awokado"],
+    ["pear", "gruszka"],
+    ["bell_pepper", "papryka"],
+    ["mango", "mango"],
     ["banana", "banan"],
+    ["carrot", "marchew"],
+    ["papaya", "papaja"],
+    ["grapefruit", "grejpfrut"],
     ["corn", "kukurydza"],
+    ["rutabaga", "brukiew"],
+    ["scallion_bunch", "pęczek szczypioru"],
+    ["cauliflower", "kalafior"],
     ["eggplant", "bakłażan"],
+    ["butternut_squash", "dynia piżmowa"],
+    ["cabbage", "kapusta"],
+    ["coconut", "kokos"],
     ["squash", "dynia"],
+    ["pineapple", "ananas"],
+    ["cantaloupe", "melon"],
+    ["honeydew", "melon miodowy"],
     ["romaine", "liść sałaty"],
+    ["swiss_chard", "boćwina"],
+    ["leek", "por"],
+    ["pumpkin", "duża dynia"],
     ["watermelon", "arbuz"],
   ]),
   en: new Map([
     ["poppy_seed", "poppy seed"],
+    ["sesame_seed", "sesame seed"],
+    ["lentil", "lentil"],
+    ["blueberry", "blueberry"],
     ["raspberry", "raspberry"],
+    ["cherry", "cherry"],
+    ["strawberry", "strawberry"],
+    ["fig", "fig"],
     ["lime", "lime"],
+    ["lemon", "lemon"],
+    ["peach", "peach"],
+    ["apple", "apple"],
     ["avocado", "avocado"],
+    ["pear", "pear"],
+    ["bell_pepper", "bell pepper"],
+    ["mango", "mango"],
     ["banana", "banana"],
+    ["carrot", "carrot"],
+    ["papaya", "papaya"],
+    ["grapefruit", "grapefruit"],
     ["corn", "corn"],
+    ["rutabaga", "rutabaga"],
+    ["scallion_bunch", "scallion bunch"],
+    ["cauliflower", "cauliflower"],
     ["eggplant", "eggplant"],
+    ["butternut_squash", "butternut squash"],
+    ["cabbage", "cabbage"],
+    ["coconut", "coconut"],
     ["squash", "squash"],
+    ["pineapple", "pineapple"],
+    ["cantaloupe", "cantaloupe"],
+    ["honeydew", "honeydew melon"],
     ["romaine", "romaine leaf"],
+    ["swiss_chard", "Swiss chard"],
+    ["leek", "leek"],
+    ["pumpkin", "pumpkin"],
     ["watermelon", "watermelon"],
   ]),
 } as const;
@@ -521,6 +629,43 @@ const getBabySizeLabel = (language: AppLanguage, sizeKey: string) => {
         : babySizeLabels.uk;
 
   return labels.get(sizeKey) ?? sizeKey;
+};
+
+const formatPregnancyAge = (
+  language: AppLanguage,
+  age: PartnerPregnancyShare["timeline"]
+) => {
+  if (!age) {
+    return null;
+  }
+
+  if (language === "pl") {
+    return `${age.completedWeeks} tyg. ${age.days} dni`;
+  }
+
+  if (language === "en") {
+    return `${age.completedWeeks} weeks ${age.days} days`;
+  }
+
+  return `${age.completedWeeks} тиж. ${age.days} дн.`;
+};
+
+const formatPregnancyDate = (value: string | null | undefined, language: AppLanguage) => {
+  if (!value) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(language, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(timestamp));
 };
 
 const eyeColorOptions: EyeColor[] = eyeColors;
@@ -1696,38 +1841,121 @@ const WomenHealthOverviewCard = () => {
                 <Typography color="text.secondary">{copy.partnerEmpty}</Typography>
               )}
               {partnerShares.map((share) => {
-                const progress = share.pregnancy.pregnancyWeek
-                  ? clampPercent((share.pregnancy.pregnancyWeek / 40) * 100)
-                  : 0;
+                const progress = share.timeline
+                  ? clampPercent((share.timeline.totalDays / 280) * 100)
+                  : share.pregnancy.pregnancyWeek
+                    ? clampPercent((share.pregnancy.pregnancyWeek / 40) * 100)
+                    : 0;
                 const sizeLabel = share.baby
                   ? getBabySizeLabel(appLanguage, share.baby.sizeKey)
                   : null;
+                const ageLabel = formatPregnancyAge(appLanguage, share.timeline);
+                const asOfDate = formatPregnancyDate(
+                  share.timeline?.asOfDate ?? share.pregnancy.updatedAt,
+                  appLanguage
+                );
 
                 return (
-                  <Paper key={share.owner.id} variant="outlined" sx={{ p: 1.4, borderRadius: 1 }}>
-                    <Stack spacing={1}>
-                      <Typography sx={{ fontWeight: 850 }}>
-                        {share.owner.name}: {getModeLabel(copy, share.pregnancy.mode)}
-                      </Typography>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                        {share.pregnancy.pregnancyWeek && (
-                          <Chip
-                            color="primary"
-                            label={`${copy.pregnancyWeek}: ${share.pregnancy.pregnancyWeek}`}
-                          />
-                        )}
-                        {share.pregnancy.dueDate && (
-                          <Chip
-                            variant="outlined"
-                            label={`${copy.dueIn}: ${copy.days(
-                              getDaysUntilIso(share.pregnancy.dueDate) ?? 0
-                            )}`}
-                          />
-                        )}
-                        {sizeLabel && (
-                          <Chip variant="outlined" label={`${copy.babySize}: ${sizeLabel}`} />
-                        )}
+                  <Paper
+                    key={share.owner.id}
+                    variant="outlined"
+                    sx={{ p: { xs: 1.4, md: 1.8 }, borderRadius: 1 }}
+                    data-partner-pregnancy-weekly-view="true"
+                  >
+                    <Stack spacing={1.3}>
+                      <Stack spacing={0.5}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                          {asOfDate ? `${asOfDate} · ` : ""}
+                          {ageLabel ?? getModeLabel(copy, share.pregnancy.mode)}
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 950 }}>
+                          {copy.partnerBabyThisWeek}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {share.owner.name}: {getModeLabel(copy, share.pregnancy.mode)}
+                        </Typography>
                       </Stack>
+
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
+                          gap: 1,
+                        }}
+                      >
+                        <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                          <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                            {copy.gestationalAge}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {ageLabel ?? copy.none}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                          <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                            {copy.trimester}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {share.timeline?.trimester ?? copy.none}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                          <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                            {copy.pregnancyMonth}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {share.timeline?.month ?? copy.none}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                          <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                            {copy.dueIn}
+                          </Typography>
+                          <Typography color="text.secondary">
+                            {share.timeline
+                              ? copy.days(share.timeline.daysRemaining)
+                              : share.pregnancy.dueDate
+                                ? copy.days(getDaysUntilIso(share.pregnancy.dueDate) ?? 0)
+                                : copy.none}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {share.baby && (
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+                            gap: 1,
+                          }}
+                        >
+                          <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                            <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                              {copy.babyLength}
+                            </Typography>
+                            <Typography color="text.secondary">
+                              {share.baby.lengthCm} cm
+                            </Typography>
+                          </Box>
+                          <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                            <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                              {copy.babyWeight}
+                            </Typography>
+                            <Typography color="text.secondary">
+                              {share.baby.weightG} g
+                            </Typography>
+                          </Box>
+                          <Box sx={{ p: 1.2, borderRadius: 1, border: SOFT_BORDER }}>
+                            <Typography variant="body2" sx={{ fontWeight: 850 }}>
+                              {copy.babyEquivalent}
+                            </Typography>
+                            <Typography color="text.secondary">
+                              {sizeLabel ?? copy.none}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+
                       <LinearProgress
                         variant="determinate"
                         value={progress}
@@ -1738,9 +1966,14 @@ const WomenHealthOverviewCard = () => {
                         }}
                       />
                       {share.baby && (
-                        <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
-                          {share.baby.note} {share.baby.disclaimer}
-                        </Typography>
+                        <Stack spacing={0.5}>
+                          <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                            {share.baby.note}
+                          </Typography>
+                          <Typography color="text.secondary" variant="caption" sx={{ lineHeight: 1.55 }}>
+                            {copy.approximateMeasurements} {share.baby.disclaimer}
+                          </Typography>
+                        </Stack>
                       )}
                     </Stack>
                   </Paper>

@@ -177,9 +177,21 @@ export interface PartnerPregnancyShare {
     lastPeriodStartDate: string | null;
     updatedAt: string | null;
   };
+  timeline: {
+    week: number;
+    completedWeeks: number;
+    days: number;
+    totalDays: number;
+    trimester: number | null;
+    month: number | null;
+    daysRemaining: number;
+    asOfDate: string;
+  } | null;
   baby: {
     milestoneWeek: number;
     sizeKey: string;
+    lengthCm: number;
+    weightG: number;
     note: string;
     disclaimer: string;
   } | null;

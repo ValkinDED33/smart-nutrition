@@ -96,7 +96,17 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("acceptRemotePartnerInvite");
     expect(source).toContain("fetchRemotePartnerPregnancyShares");
     expect(source).toContain("QRCode.toDataURL");
+    expect(source).toContain('data-partner-pregnancy-weekly-view="true"');
+    expect(source).toContain("formatPregnancyAge");
+    expect(source).toContain("copy.partnerBabyThisWeek");
+    expect(source).toContain("share.timeline?.trimester");
+    expect(source).toContain("share.timeline?.month");
+    expect(source).toContain("share.baby.lengthCm");
+    expect(source).toContain("share.baby.weightG");
     expect(apiSource).toContain("partnerEmail?: string");
+    expect(apiSource).toContain("timeline: {");
+    expect(apiSource).toContain("lengthCm: number");
+    expect(apiSource).toContain("weightG: number");
     expect(apiSource).toContain('"/partner/invites"');
     expect(apiSource).toContain("body: JSON.stringify({ partnerEmail");
     expect(source).not.toContain("localStorage");

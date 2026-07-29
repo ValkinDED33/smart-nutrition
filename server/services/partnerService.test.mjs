@@ -145,8 +145,17 @@ describe("partnerService", () => {
         pregnancyWeek: 20,
         dueDate: "2026-11-20",
       },
+      timeline: {
+        week: 20,
+        completedWeeks: 20,
+        days: 0,
+        trimester: 2,
+        month: 6,
+      },
       baby: {
         sizeKey: "banana",
+        lengthCm: 16.4,
+        weightG: 331,
       },
     });
     expect(JSON.stringify(result.share)).not.toContain("Private clinician note");
@@ -191,7 +200,14 @@ describe("partnerService", () => {
       const result = await service.acceptInvite(partner, invite.code);
 
       expect(result.share.pregnancy.pregnancyWeek).toBe(21);
-      expect(result.share.baby.sizeKey).toBe("banana");
+      expect(result.share.timeline).toMatchObject({
+        week: 21,
+        completedWeeks: 21,
+        days: 2,
+        trimester: 2,
+        month: 6,
+      });
+      expect(result.share.baby.sizeKey).toBe("carrot");
       expect(JSON.stringify(result.share)).not.toContain("Private clinician note");
     } finally {
       vi.useRealTimers();

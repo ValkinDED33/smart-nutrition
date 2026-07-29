@@ -53,31 +53,61 @@ const upsertActiveLink = (links, link) => {
   return [...links, link].slice(-10);
 };
 
-const pregnancySizes = [
-  [4, "poppy_seed", "Tiny early changes are beginning."],
-  [8, "raspberry", "Major systems are forming quickly."],
-  [12, "lime", "Growth becomes easier to follow week by week."],
-  [16, "avocado", "Movement and proportions become more recognizable."],
-  [20, "banana", "The pregnancy is around the halfway point."],
-  [24, "corn", "Steady growth and sensory development continue."],
-  [28, "eggplant", "The third trimester is approaching or starting."],
-  [32, "squash", "Growth, rest, and gentle routines matter more."],
-  [36, "romaine", "The final weeks are focused on readiness and monitoring."],
-  [40, "watermelon", "The due window is close; medical guidance leads."],
+const weeklyPregnancyDevelopment = [
+  [4, "poppy_seed", 0.2, 0.1, "Implantation and very early development are underway."],
+  [5, "sesame_seed", 0.4, 0.2, "The neural tube, early heart structures, and placenta are developing."],
+  [6, "lentil", 0.6, 0.5, "The heartbeat may begin, and tiny limb buds start forming."],
+  [7, "blueberry", 1.0, 1, "Brain, face, arms, and legs are changing quickly."],
+  [8, "raspberry", 1.6, 2, "Major organs continue forming, and movement starts even if it cannot be felt."],
+  [9, "cherry", 2.3, 2, "Fingers and toes are becoming more defined."],
+  [10, "strawberry", 3.1, 4, "The early organ-building phase is settling into rapid growth."],
+  [11, "fig", 4.1, 7, "Bones, skin, and facial features keep developing."],
+  [12, "lime", 5.4, 14, "Reflexes and steady growth become easier to follow week by week."],
+  [13, "lemon", 6.7, 73, "The second trimester is close; growth, movement, and proportions become clearer."],
+  [14, "peach", 8.7, 93, "The baby is stretching more, and facial expressions begin to appear."],
+  [15, "apple", 10.1, 118, "Hearing structures and bones continue to strengthen."],
+  [16, "avocado", 11.6, 146, "Movement and proportions become more recognizable."],
+  [17, "pear", 13.0, 181, "Fat stores start forming, helping future temperature regulation."],
+  [18, "bell_pepper", 14.2, 223, "The nervous system and senses continue maturing."],
+  [19, "mango", 15.3, 273, "Growth is steady, and protective vernix begins to form."],
+  [20, "banana", 16.4, 331, "The pregnancy is around the halfway point."],
+  [21, "carrot", 26.7, 399, "The baby is growing longer, and movements may become more noticeable."],
+  [22, "papaya", 27.8, 478, "The lungs and senses are still developing; gentle routines matter."],
+  [23, "grapefruit", 28.9, 568, "Hearing and movement continue to become more organized."],
+  [24, "corn", 30.0, 670, "Steady growth and sensory development continue."],
+  [25, "rutabaga", 34.6, 785, "The baby is gaining weight and practicing breathing motions."],
+  [26, "scallion_bunch", 35.6, 913, "Eyes and sleep-wake rhythms continue developing."],
+  [27, "cauliflower", 36.6, 1055, "The final week of the second trimester brings rapid brain growth."],
+  [28, "eggplant", 37.6, 1210, "The third trimester is approaching or starting."],
+  [29, "butternut_squash", 38.6, 1379, "Muscles, lungs, and brain keep maturing."],
+  [30, "cabbage", 39.9, 1559, "Growth continues, and the baby may have stronger sleep cycles."],
+  [31, "coconut", 41.1, 1751, "The baby keeps gaining fat and practicing important reflexes."],
+  [32, "squash", 42.4, 1953, "Growth, rest, and gentle routines matter more."],
+  [33, "pineapple", 43.7, 2162, "Bones are hardening, while the skull remains flexible for birth."],
+  [34, "cantaloupe", 45.0, 2377, "The lungs continue maturing, and weight gain is steady."],
+  [35, "honeydew", 46.2, 2595, "The baby is building reserves for the first weeks after birth."],
+  [36, "romaine", 47.4, 2813, "The final weeks are focused on readiness and monitoring."],
+  [37, "swiss_chard", 48.6, 3028, "The baby is considered early term; position and wellbeing matter."],
+  [38, "leek", 49.8, 3236, "Organs are nearly ready, and weight continues increasing."],
+  [39, "pumpkin", 50.7, 3435, "The due window is close; signs and clinician guidance lead."],
+  [40, "watermelon", 51.2, 3619, "The due window is here; medical guidance leads."],
 ];
 
-const getPregnancyMilestone = (week) => {
+const getPregnancyWeekInfo = (week) => {
   if (!Number.isFinite(week) || week <= 0) {
     return null;
   }
 
-  const [milestoneWeek, sizeKey, note] =
-    [...pregnancySizes].reverse().find(([candidateWeek]) => week >= candidateWeek) ??
-    pregnancySizes[0];
+  const normalizedWeek = Math.max(4, Math.min(40, Math.round(week)));
+  const [milestoneWeek, sizeKey, lengthCm, weightG, note] =
+    weeklyPregnancyDevelopment.find(([candidateWeek]) => candidateWeek === normalizedWeek) ??
+    weeklyPregnancyDevelopment[weeklyPregnancyDevelopment.length - 1];
 
   return {
     milestoneWeek,
     sizeKey,
+    lengthCm,
+    weightG,
     note,
     disclaimer:
       "Educational estimate only. It is not a diagnosis, prescription, or replacement for clinician guidance.",
@@ -94,6 +124,71 @@ const readDateTime = (value) => {
 };
 
 const clampPregnancyWeek = (week) => Math.max(1, Math.min(42, Math.round(week)));
+
+const clampPregnancyDay = (days) =>
+  Math.max(0, Math.min(PREGNANCY_DAYS + 14, Math.floor(days)));
+
+const getTrimester = (week) => {
+  if (!Number.isFinite(week) || week <= 0) {
+    return null;
+  }
+
+  if (week <= 13) {
+    return 1;
+  }
+
+  if (week <= 27) {
+    return 2;
+  }
+
+  return 3;
+};
+
+const getPregnancyMonth = (totalDays) => {
+  if (!Number.isFinite(totalDays) || totalDays < 0) {
+    return null;
+  }
+
+  return Math.max(1, Math.min(10, Math.floor(totalDays / 28) + 1));
+};
+
+const getPregnancyAge = (womenHealth, now = new Date()) => {
+  const nowTime = now.getTime();
+  const dueTime = readDateTime(womenHealth.dueDate);
+  const lastPeriodTime = readDateTime(womenHealth.lastPeriodStartDate);
+  let totalDays = null;
+
+  if (
+    typeof womenHealth.pregnancyWeek === "number" &&
+    Number.isFinite(womenHealth.pregnancyWeek)
+  ) {
+    totalDays = clampPregnancyDay(clampPregnancyWeek(womenHealth.pregnancyWeek) * 7);
+  } else if (dueTime !== null) {
+    totalDays = clampPregnancyDay((nowTime - (dueTime - PREGNANCY_DAYS * DAY_MS)) / DAY_MS);
+  } else if (lastPeriodTime !== null) {
+    totalDays = clampPregnancyDay((nowTime - lastPeriodTime) / DAY_MS);
+  }
+
+  if (totalDays === null) {
+    return null;
+  }
+
+  const weeks = Math.floor(totalDays / 7);
+  const days = totalDays % 7;
+  const week = clampPregnancyWeek(Math.max(1, weeks));
+
+  return {
+    week,
+    completedWeeks: weeks,
+    days,
+    totalDays,
+    trimester: getTrimester(week),
+    month: getPregnancyMonth(totalDays),
+    daysRemaining:
+      dueTime === null ? Math.max(0, PREGNANCY_DAYS - totalDays) : Math.max(0, Math.ceil((dueTime - nowTime) / DAY_MS)),
+    asOfDate: now.toISOString(),
+  };
+};
 
 const getEffectivePregnancyWeek = (womenHealth, now = new Date()) => {
   if (typeof womenHealth.pregnancyWeek === "number" && Number.isFinite(womenHealth.pregnancyWeek)) {
@@ -126,7 +221,8 @@ const getEffectivePregnancyWeek = (womenHealth, now = new Date()) => {
 
 const sanitizePregnancyShare = ({ ownerUser, ownerProfile }) => {
   const womenHealth = isRecord(ownerProfile?.womenHealth) ? ownerProfile.womenHealth : {};
-  const week = getEffectivePregnancyWeek(womenHealth);
+  const age = getPregnancyAge(womenHealth);
+  const week = age?.week ?? getEffectivePregnancyWeek(womenHealth);
 
   return {
     owner: {
@@ -143,7 +239,8 @@ const sanitizePregnancyShare = ({ ownerUser, ownerProfile }) => {
           : null,
       updatedAt: typeof womenHealth.updatedAt === "string" ? womenHealth.updatedAt : null,
     },
-    baby: getPregnancyMilestone(week),
+    timeline: age,
+    baby: getPregnancyWeekInfo(week),
   };
 };
 
