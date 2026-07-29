@@ -177,6 +177,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Hardened water cloud-action retry feedback so the shared save hook receives localized copy from `WaterTracker` instead of storing English visible errors in shared persistence logic.
 - Hardened quick weight cloud saves against profile-state conflicts: quick check-ins now replay the same weight-save intent on top of the freshly recovered cloud snapshot after `STATE_CONFLICT`, then confirm local state only after the rebased backend save succeeds.
 - Removed embedded base64/Howler scanner-water sound playback after browser `atob` decode errors; UI feedback now uses Web Audio oscillator tones only, with optional sound failures swallowed so scanner/water actions never fail because audio failed.
+- Added full direct-translation coverage for all active app languages so UI cannot render raw i18n keys such as `weekly.title`, `productFacts.title`, or `nav.home` after future copy changes.
 
 ## Current Architecture
 
@@ -237,6 +238,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Photo meal UX must show a clear review/retry state for unavailable analysis; it must not imply a saved or recognized result, and it must not leave users guessing after upload.
 - Barcode scanner UX must make the resolved product immediately visible after scan; manual barcode controls, history, and fallback panels are secondary after a confirmed product result.
 - Scanner and water sound feedback must not use embedded base64 audio, `atob`, Howler, or `use-sound`; sounds are optional Web Audio oscillator cues and must never crash Android/WebView scanner or hydration flows.
+- Every direct `t("...")` UI key must exist in every active app language dictionary after nested dictionaries are flattened; missing translations are release blockers, not harmless copy debt.
 - Scanner manual product fallback may report confirmed meal/profile state and retryable catalog moderation failure, but visible copy must not describe canonical persistence as local-only.
 - Progress overview must show all counted domains up front, including water glass slots, and each overview domain should route to its full detail section.
 - Progress overview calculations must live in the tested progress overview model; the UI may render the cards, but it must not quietly collapse the product back into a weight-only chart.

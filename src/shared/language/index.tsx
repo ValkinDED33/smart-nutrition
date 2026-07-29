@@ -34,7 +34,9 @@ const uk = {
   "brand.name": "Smart Nutrition",
   "brand.tagline": "Розумне харчування без хаосу",
   "nav.dashboard": "Панель",
+  "nav.home": "Головна",
   "nav.meals": "Страви",
+  "nav.food": "Їжа",
   "nav.profile": "Профіль",
   "nav.login": "Увійти",
   "nav.register": "Реєстрація",
@@ -287,7 +289,9 @@ const pl: Record<keyof typeof uk, string> = {
   "brand.name": "Smart Nutrition",
   "brand.tagline": "Mądre odżywianie bez chaosu",
   "nav.dashboard": "Panel",
+  "nav.home": "Główna",
   "nav.meals": "Posiłki",
+  "nav.food": "Jedzenie",
   "nav.profile": "Profil",
   "nav.login": "Zaloguj",
   "nav.register": "Rejestracja",
@@ -535,7 +539,7 @@ const pl: Record<keyof typeof uk, string> = {
   "common.mg": "mg",
 };
 
-const dictionaries = {
+export const languageDictionaries = {
   uk: { ...uk, ...i18nDictionaries.uk },
   pl: { ...pl, ...i18nDictionaries.pl },
   en: i18nDictionaries.en,
@@ -548,9 +552,9 @@ const createLanguageI18nInstance = (language: AppLanguage): I18nInstance => {
 
   void i18n.use(initReactI18next).init({
     resources: {
-      uk: { translation: dictionaries.uk },
-      pl: { translation: dictionaries.pl },
-      en: { translation: dictionaries.en },
+      uk: { translation: languageDictionaries.uk },
+      pl: { translation: languageDictionaries.pl },
+      en: { translation: languageDictionaries.en },
     },
     lng: language,
     fallbackLng: "en",

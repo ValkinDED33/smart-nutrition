@@ -167,6 +167,9 @@ const sharedLanguageSource = readSource("src/shared/language/index.tsx");
 const sharedI18nUkSource = readSource("src/shared/i18n/uk.ts");
 const sharedI18nPlSource = readSource("src/shared/i18n/pl.ts");
 const sharedI18nEnSource = readSource("src/shared/i18n/en.ts");
+const languageCoverageTestSource = readSource(
+  "src/shared/language/languageCoverage.test.ts"
+);
 const productLookupServiceSource = readSource("server/services/productLookupService.mjs");
 const photoDraftSource = readSource("src/features/meal/photo/photoDraft.ts");
 const photoUxSource = readSource("src/features/meal/photo/photoMealAssistantUx.ts");
@@ -1482,6 +1485,20 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy before they reach auth state or visible sync UI instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "direct UI translation keys are covered in every app language",
+  languageCoverageTestSource.includes("collectDirectTranslationKeys") &&
+    languageCoverageTestSource.includes("Object.entries(languageDictionaries)") &&
+    languageCoverageTestSource.includes("appLanguages") &&
+    languageCoverageTestSource.includes("missingKeys") &&
+    languageCoverageTestSource.includes("toEqual([])") &&
+    sharedI18nEnSource.includes('"productFacts.title"') &&
+    sharedI18nEnSource.includes('"productSearch.title"') &&
+    sharedI18nEnSource.includes('"templates.title"') &&
+    sharedI18nEnSource.includes('"profile.title"'),
+  "Direct t(\"...\") calls must be backed by all active dictionaries so production UI cannot render raw keys such as weekly.title or productFacts.title."
 );
 
 addCheck(
