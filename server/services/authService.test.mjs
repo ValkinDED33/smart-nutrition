@@ -39,6 +39,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
     cleanupExpiredSessions: vi.fn(),
     cleanupExpiredPasswordResetTokens: vi.fn(),
     promoteUserByEmailToOwner: vi.fn(),
+    createAuditLog: vi.fn(),
   };
   const stateRepository = {
     getSnapshotByUserId: vi.fn(() => null),
@@ -950,6 +951,60 @@ describe("authService", () => {
       profile: savedProfileState,
       meta,
     });
+  });
+
+  it("does not fail a completed combined profile update when audit logging is unavailable", async () => {
+    const { authRepository, logger, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-audit-down",
+      email: "profile-state-audit-down@example.com",
+      name: "Profile State Audit Down",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "uk",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const nextUser = {
+      ...currentUser,
+      weight: 75,
+    };
+    const savedProfileState = { dailyCalories: 2100, normalized: true };
+    const saveProfileState = vi.fn(async () => savedProfileState);
+    const meta = { updatedAt: "2026-08-01T18:00:00.000Z" };
+    authRepository.updateUser.mockResolvedValue(nextUser);
+    authRepository.createAuditLog.mockRejectedValue(new Error("audit offline"));
+
+    const result = await service.updateUserProfileAndState({
+      body: {
+        user: nextUser,
+        profile: { dailyCalories: 2100 },
+      },
+      currentUser,
+      saveProfileState,
+      getProfileMeta: vi.fn(async () => meta),
+    });
+
+    expect(saveProfileState).toHaveBeenCalledTimes(1);
+    expect(authRepository.updateUser).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: currentUser.id, weight: 75, languagePreference: "uk" },
+      profile: savedProfileState,
+      meta,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[auth] audit log write failed",
+      expect.objectContaining({
+        action: "auth.profile_and_state_updated",
+        targetId: currentUser.id,
+      })
+    );
   });
 
   it("rejects duplicate profile names before saving profile state in combined updates", async () => {

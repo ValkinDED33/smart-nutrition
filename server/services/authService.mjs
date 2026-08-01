@@ -222,16 +222,25 @@ export const createAuthService = ({
     targetId = null,
     details = null,
   }) => {
-    await authRepository.createAuditLog?.({
-      id: createId("audit"),
-      actorUserId,
-      actorRole,
-      action,
-      targetType,
-      targetId,
-      details,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      await authRepository.createAuditLog?.({
+        id: createId("audit"),
+        actorUserId,
+        actorRole,
+        action,
+        targetType,
+        targetId,
+        details,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.warn?.("[auth] audit log write failed", {
+        action,
+        targetType,
+        targetId,
+        code: String(error?.code ?? error?.name ?? "AUDIT_LOG_WRITE_FAILED").slice(0, 80),
+      });
+    }
   };
 
   const buildAuthResponse = async (user, accessToken, refreshToken = undefined) => ({
