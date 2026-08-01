@@ -912,6 +912,7 @@ describe("authService", () => {
       gender: "male",
       activity: "moderate",
       goal: "maintain",
+      languagePreference: "pl",
       role: "USER",
       createdAt: new Date().toISOString(),
     };
@@ -945,7 +946,7 @@ describe("authService", () => {
     );
     expect(result).toMatchObject({
       ok: true,
-      user: { id: currentUser.id, weight: 77 },
+      user: { id: currentUser.id, weight: 77, languagePreference: "pl" },
       profile: savedProfileState,
       meta,
     });

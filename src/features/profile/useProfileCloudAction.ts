@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@app/store";
 import {
   applyProfileActionInCloud,
-  saveProfileAndUserToCloud,
+  rebaseProfileStateChange,
   saveProfileAndUserToCloudWithConflictRebase,
   saveProfileStateToCloudWithConflictRebase,
 } from "./profileCloudSync";
@@ -105,15 +105,14 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
               rebaseProfile,
               confirmedAt
             )
-          : {
-              user: await saveProfileAndUserToCloud(
-                dispatch,
-                nextUser,
-                nextProfile,
-                confirmedAt
-              ),
-              profile: nextProfile,
-            };
+          : await saveProfileAndUserToCloudWithConflictRebase(
+              dispatch,
+              nextUser,
+              nextProfile,
+              (freshProfile) =>
+                rebaseProfileStateChange(profile, nextProfile, freshProfile),
+              confirmedAt
+            );
 
         dispatch(setUser(saved.user));
         dispatch(replaceProfileState(saved.profile));
@@ -125,7 +124,7 @@ export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
         setSaving(false);
       }
     },
-    [copy, dispatch, saving]
+    [copy, dispatch, profile, saving]
   );
 
   const clearError = useCallback(() => {

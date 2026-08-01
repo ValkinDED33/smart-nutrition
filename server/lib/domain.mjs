@@ -942,6 +942,7 @@ export const toPublicUser = (user) => ({
   gender: user.gender,
   activity: user.activity,
   goal: user.goal,
+  languagePreference: normalizeAppLanguage(user.languagePreference),
   measurements: user.measurements,
   role: isUserRole(user.role) ? user.role : "USER",
   communityStatus: user.communityStatus,

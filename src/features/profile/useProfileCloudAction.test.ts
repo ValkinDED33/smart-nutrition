@@ -35,6 +35,6 @@ describe("useProfileCloudAction", () => {
     expect(source).toContain("saveProfileAndUserToCloudWithConflictRebase");
     expect(source).toContain("rebaseProfile?: (freshProfile: ProfileState) => ProfileState");
     expect(source).toContain("nextProfile,\n              rebaseProfile,\n              confirmedAt");
-    expect(source).toContain("nextProfile,\n                confirmedAt");
+    expect(source).toContain("rebaseProfileStateChange(profile, nextProfile, freshProfile)");
   });
 });

@@ -10,6 +10,7 @@ export type ActivityLevel =
   | "very_active";
 
 export type Goal = "cut" | "maintain" | "bulk";
+export type AppLanguage = "uk" | "pl" | "en";
 
 export type UserRole =
   | "USER"
@@ -40,6 +41,7 @@ export interface User {
   gender: Gender;
   activity: ActivityLevel;
   goal: Goal;
+  languagePreference?: AppLanguage;
   role: UserRole;
   communityStatus?: CommunityMemberStatus;
   reputationScore?: number;

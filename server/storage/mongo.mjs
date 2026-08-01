@@ -23,6 +23,7 @@ import {
 
 const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
 const isVerificationChannel = (value) => value === "email";
+const isAppLanguage = (value) => value === "uk" || value === "pl" || value === "en";
 const isProductModerationStatus = (value) =>
   value === "pending" || value === "approved" || value === "rejected";
 const isAssistantMessageRole = (value) => value === "user" || value === "assistant";
@@ -171,6 +172,7 @@ const mapUserDoc = (doc) => {
     gender: doc.gender,
     activity: doc.activity,
     goal: doc.goal,
+    languagePreference: isAppLanguage(doc.languagePreference) ? doc.languagePreference : "uk",
     measurements: doc.measurements,
     createdAt: doc.createdAt,
     lastSessionAt: doc.lastSessionAt ?? null,
