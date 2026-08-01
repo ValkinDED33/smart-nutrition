@@ -56,6 +56,7 @@ export const en = {
   "auth.resend": "Send again",
   "auth.confirmationSent": "We sent a confirmation link to {target}.",
   "auth.openConfirmationEmail": "Open the email and click the confirmation button.",
+  "auth.openMailbox": "Open mailbox",
   "auth.invalidConfirmationLink": "Invalid or expired confirmation link.",
   "auth.deliveryUnavailable":
     "The confirmation email could not be sent. Try again shortly or contact support.",

@@ -277,6 +277,8 @@ const mapUserRow = (row) => {
     goal: row.goal,
     measurements: parseJsonValue(row.measurements_json, undefined),
     createdAt: row.created_at,
+    lastSessionAt: row.last_session_at ?? null,
+    hasActiveSession: toBoolean(row.has_active_session, false),
     role: isUserRole(row.role) ? row.role : "USER",
     bannedAt: row.banned_at ?? null,
     bannedReason: row.banned_reason ?? null,
@@ -1252,9 +1254,67 @@ export const createPostgresStorage = async ({
     },
 
     listUsers: async () =>
-      (await queryMany("SELECT * FROM users ORDER BY created_at ASC"))
+      (
+        await queryMany(
+          `
+            SELECT
+              users.*,
+              MAX(sessions.created_at) AS last_session_at,
+              COALESCE(BOOL_OR(sessions.expires_at > $1), false) AS has_active_session
+            FROM users
+            LEFT JOIN sessions ON sessions.user_id = users.id
+            GROUP BY users.id
+            ORDER BY users.created_at ASC
+          `,
+          [Date.now()]
+        )
+      )
         .map(mapUserRow)
         .filter(Boolean),
+
+    getAdminStats: async () => {
+      const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [
+        usersTotal,
+        usersActive,
+        usersOnline,
+        usersNewThisWeek,
+        usersBanned,
+        aiRequestsTotal,
+        productsTotal,
+        productsPending,
+        suspiciousAccounts,
+      ] = await Promise.all([
+        queryOne("SELECT COUNT(*) AS count FROM users"),
+        queryOne("SELECT COUNT(*) AS count FROM users WHERE banned_at IS NULL"),
+        queryOne(
+          "SELECT COUNT(DISTINCT user_id) AS count FROM sessions WHERE expires_at > $1",
+          [Date.now()]
+        ),
+        queryOne("SELECT COUNT(*) AS count FROM users WHERE created_at >= $1", [weekAgoIso]),
+        queryOne("SELECT COUNT(*) AS count FROM users WHERE banned_at IS NOT NULL"),
+        queryOne("SELECT COUNT(*) AS count FROM ai_usage_events"),
+        queryOne("SELECT COUNT(*) AS count FROM catalog_products"),
+        queryOne("SELECT COUNT(*) AS count FROM catalog_products WHERE status = $1", ["pending"]),
+        queryOne("SELECT COUNT(*) AS count FROM login_attempts WHERE lock_until > $1", [
+          Date.now(),
+        ]),
+      ]);
+
+      return {
+        usersTotal: toNumber(usersTotal?.count, 0),
+        usersActive: toNumber(usersActive?.count, 0),
+        usersOnline: toNumber(usersOnline?.count, 0),
+        usersNewThisWeek: toNumber(usersNewThisWeek?.count, 0),
+        usersBanned: toNumber(usersBanned?.count, 0),
+        aiRequestsTotal: toNumber(aiRequestsTotal?.count, 0),
+        productsTotal: toNumber(productsTotal?.count, 0),
+        productsPending: toNumber(productsPending?.count, 0),
+        reportsOpen: 0,
+        suspiciousAccounts: toNumber(suspiciousAccounts?.count, 0),
+        photoAnalysesTotal: 0,
+      };
+    },
 
     updateUser: async (user) => {
       await pool.query(

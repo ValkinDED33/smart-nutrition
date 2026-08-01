@@ -66,6 +66,7 @@ export const createMongoAdminRepository = (storage) => ({
     return {
       usersTotal: users.length,
       usersActive: users.filter((user) => !user.bannedAt).length,
+      usersOnline: users.filter((user) => Boolean(user.hasActiveSession)).length,
       usersNewThisWeek: users.filter((user) => toDateMs(user.createdAt) >= weekAgo).length,
       usersBanned: users.filter((user) => Boolean(user.bannedAt)).length,
       aiRequestsTotal: 0,

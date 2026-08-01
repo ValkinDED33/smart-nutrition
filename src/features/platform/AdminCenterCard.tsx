@@ -86,6 +86,7 @@ const adminCopy = {
     statsSubtitle: "Ключові показники користувачів, AI і каталогу.",
     usersTotal: UK_USERS_LABEL,
     usersActive: "Активні",
+    usersOnline: "Онлайн зараз",
     usersNewThisWeek: "Нові за тиждень",
     usersBanned: "Заблоковані",
     aiRequestsTotal: "AI-запити",
@@ -121,6 +122,16 @@ const adminCopy = {
     unban: "Розблокувати",
     deleteUser: "Видалити",
     active: "Активний",
+    offline: "Офлайн",
+    accountCreated: "Створено",
+    lastSession: "Остання сесія",
+    noSession: "Сесій ще немає",
+    emailStatus: "Email",
+    emailConfirmed: "Підтверджено",
+    emailPending: "Очікує підтвердження",
+    security: "Безпека",
+    banReason: "Причина",
+    bannedAt: "Дата блокування",
     confirmDelete: "Видалити користувача? Цю дію не можна скасувати.",
     banned: "Заблоковано",
     twoFactor: "2FA",
@@ -146,6 +157,7 @@ const adminCopy = {
     statsSubtitle: "Kluczowe wskaźniki użytkowników, AI i katalogu.",
     usersTotal: PL_USERS_LABEL,
     usersActive: "Aktywni",
+    usersOnline: "Online teraz",
     usersNewThisWeek: "Nowi w tygodniu",
     usersBanned: "Zablokowani",
     aiRequestsTotal: "Zapytania AI",
@@ -181,6 +193,16 @@ const adminCopy = {
     unban: "Odblokuj",
     deleteUser: "Usuń",
     active: "Aktywne",
+    offline: "Offline",
+    accountCreated: "Utworzono",
+    lastSession: "Ostatnia sesja",
+    noSession: "Brak sesji",
+    emailStatus: "Email",
+    emailConfirmed: "Potwierdzony",
+    emailPending: "Czeka na potwierdzenie",
+    security: "Bezpieczeństwo",
+    banReason: "Powód",
+    bannedAt: "Data blokady",
     confirmDelete: "Usunąć użytkownika? Tej akcji nie można cofnąć.",
     banned: "Zablokowane",
     twoFactor: "2FA",
@@ -206,6 +228,7 @@ const adminCopy = {
     statsSubtitle: "Key indicators for users, AI, and catalog.",
     usersTotal: "Users",
     usersActive: "Active",
+    usersOnline: "Online now",
     usersNewThisWeek: "New this week",
     usersBanned: "Banned",
     aiRequestsTotal: "AI requests",
@@ -242,6 +265,16 @@ const adminCopy = {
     unban: "Unban",
     deleteUser: "Delete",
     active: "Active",
+    offline: "Offline",
+    accountCreated: "Created",
+    lastSession: "Last session",
+    noSession: "No sessions yet",
+    emailStatus: "Email",
+    emailConfirmed: "Confirmed",
+    emailPending: "Pending confirmation",
+    security: "Security",
+    banReason: "Reason",
+    bannedAt: "Banned at",
     confirmDelete: "Delete this user? This action cannot be undone.",
     banned: "Banned",
     twoFactor: "2FA",
@@ -326,6 +359,12 @@ const formatDateTime = (value: string, language: AppLanguage) =>
     timeStyle: "short",
   });
 
+const formatOptionalDateTime = (
+  value: string | null | undefined,
+  language: AppLanguage,
+  fallback: string
+) => (value ? formatDateTime(value, language) : fallback);
+
 const assignableRoleValues: AssignableUserRole[] = [
   "USER",
   "HELPER",
@@ -380,6 +419,10 @@ const getPlatformStatsCards = ({
 }) => [
   { label: copy.usersTotal, value: stats?.usersTotal ?? users.length },
   { label: copy.usersActive, value: stats?.usersActive ?? 0 },
+  {
+    label: copy.usersOnline,
+    value: stats?.usersOnline ?? users.filter((user) => user.hasActiveSession).length,
+  },
   { label: copy.usersNewThisWeek, value: stats?.usersNewThisWeek ?? 0 },
   { label: copy.usersBanned, value: stats?.usersBanned ?? 0 },
   { label: copy.aiRequestsTotal, value: stats?.aiRequestsTotal ?? 0 },
@@ -731,127 +774,201 @@ export const AdminCenterCard = () => {
                     (access?.permissions.manageAdmins || user.role !== "ADMIN");
 
                   return (
-                <Stack
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={1.2}
-                  justifyContent="space-between"
-                  alignItems={{ xs: "stretch", md: "center" }}
-                >
-                  <Stack spacing={0.3}>
-                    <Typography sx={{ fontWeight: 700 }}>{user.name}</Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {user.email}
-                    </Typography>
-                  </Stack>
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
-                    <Chip
-                      color={user.isBanned ? "error" : "success"}
-                      label={user.isBanned ? copy.banned : copy.active}
-                      sx={{ alignSelf: "center" }}
-                    />
-                    <TextField
-                      select
-                      size="small"
-                      label={copy.role}
-                      value={roleDraft}
-                      disabled={!canChangeRole}
-                      onChange={(event) =>
-                        setRoleDrafts((current) => {
-                          const next = new Map(current);
-                          next.set(user.id, event.target.value as AssignableUserRole);
+                    <Stack spacing={1.4}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={1}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "stretch", sm: "flex-start" }}
+                      >
+                        <Stack spacing={0.3}>
+                          <Typography sx={{ fontWeight: 850 }}>{user.name}</Typography>
+                          <Typography color="text.secondary" variant="body2">
+                            {user.email}
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                          <Chip
+                            color={user.isBanned ? "error" : "success"}
+                            label={user.isBanned ? copy.banned : copy.active}
+                          />
+                          <Chip
+                            color={user.hasActiveSession ? "success" : "default"}
+                            label={user.hasActiveSession ? copy.usersOnline : copy.offline}
+                            variant={user.hasActiveSession ? "filled" : "outlined"}
+                          />
+                        </Stack>
+                      </Stack>
 
-                          return next;
-                        })
-                      }
-                      sx={{ minWidth: 180 }}
-                    >
-                      {roleOptions.map((role) => (
-                        <MenuItem key={role} value={role}>
-                          {getUserRoleLabel(role)}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <Button
-                      disabled={!canChangeRole}
-                      startIcon={<ShieldCheck size={16} />}
-                      onClick={() => {
-                        void updateAdminUserRole(user.id, roleDraft)
-                          .then((updatedUser) => {
-                            setUsers((current) =>
-                              current.map((entry) =>
-                                entry.id === updatedUser.id ? updatedUser : entry
-                              )
-                            );
-                            setError(null);
-                          })
-                          .catch(handlePlatformMutationError);
-                      }}
-                    >
-                      {copy.applyRole}
-                    </Button>
-                    {access?.permissions.banUsers && (
-                      <Button
-                      color={user.isBanned ? "success" : "error"}
-                      disabled={user.id === currentUser.id || isProtectedOwnerRole(user.role)}
-                      startIcon={<Ban size={16} />}
-                      onClick={() => {
-                          void updateAdminUserBan(user.id, {
-                            banned: !user.isBanned,
-                            reason: "Admin moderation action",
-                          })
-                            .then((updatedUser) => {
-                              setUsers((current) =>
-                                current.map((entry) =>
-                                  entry.id === updatedUser.id ? updatedUser : entry
-                                )
-                              );
-                              setError(null);
-                            })
-                            .catch(handlePlatformMutationError);
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gap: 1,
+                          gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            lg: "repeat(4, minmax(0, 1fr))",
+                          },
                         }}
                       >
-                        {user.isBanned ? copy.unban : copy.ban}
-                      </Button>
-                    )}
-                    {access?.permissions.manageAdmins && (
-                      <Button
-                        color="error"
-                        disabled={user.id === currentUser.id || isProtectedOwnerRole(user.role)}
-                        startIcon={<Trash2 size={16} />}
-                        onClick={() => {
-                          if (!window.confirm(copy.confirmDelete)) {
-                            return;
+                        {[
+                          [copy.accountCreated, formatDateTime(user.createdAt, appLanguage)],
+                          [
+                            copy.lastSession,
+                            formatOptionalDateTime(
+                              user.lastSessionAt,
+                              appLanguage,
+                              copy.noSession
+                            ),
+                          ],
+                          [
+                            copy.emailStatus,
+                            user.emailVerified ? copy.emailConfirmed : copy.emailPending,
+                          ],
+                          [
+                            copy.security,
+                            user.twoFactorEnabled || user.twoFactorRequired
+                              ? `${copy.twoFactor}: ${
+                                  user.twoFactorRequired ? copy.required : copy.optional
+                                }`
+                              : `${copy.twoFactor}: ${copy.optional}`,
+                          ],
+                        ].map(([label, value]) => (
+                          <Box key={label}>
+                            <Typography variant="caption" color="text.secondary">
+                              {label}
+                            </Typography>
+                            <Typography sx={{ fontWeight: 800 }}>{value}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+
+                      {user.isBanned && (
+                        <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                          <Stack spacing={0.3}>
+                            {user.bannedAt && (
+                              <Typography variant="body2">
+                                {copy.bannedAt}:{" "}
+                                {formatDateTime(user.bannedAt, appLanguage)}
+                              </Typography>
+                            )}
+                            {user.bannedReason && (
+                              <Typography variant="body2">
+                                {copy.banReason}: {user.bannedReason}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Alert>
+                      )}
+
+                      <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+                        <TextField
+                          select
+                          size="small"
+                          label={copy.role}
+                          value={roleDraft}
+                          disabled={!canChangeRole}
+                          onChange={(event) =>
+                            setRoleDrafts((current) => {
+                              const next = new Map(current);
+                              next.set(user.id, event.target.value as AssignableUserRole);
+
+                              return next;
+                            })
                           }
+                          sx={{ minWidth: 180 }}
+                        >
+                          {roleOptions.map((role) => (
+                            <MenuItem key={role} value={role}>
+                              {getUserRoleLabel(role)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <Button
+                          disabled={!canChangeRole}
+                          startIcon={<ShieldCheck size={16} />}
+                          onClick={() => {
+                            void updateAdminUserRole(user.id, roleDraft)
+                              .then((updatedUser) => {
+                                setUsers((current) =>
+                                  current.map((entry) =>
+                                    entry.id === updatedUser.id ? updatedUser : entry
+                                  )
+                                );
+                                setError(null);
+                              })
+                              .catch(handlePlatformMutationError);
+                          }}
+                        >
+                          {copy.applyRole}
+                        </Button>
+                        {access?.permissions.banUsers && (
+                          <Button
+                            color={user.isBanned ? "success" : "error"}
+                            disabled={
+                              user.id === currentUser.id || isProtectedOwnerRole(user.role)
+                            }
+                            startIcon={<Ban size={16} />}
+                            onClick={() => {
+                              void updateAdminUserBan(user.id, {
+                                banned: !user.isBanned,
+                                reason: "Admin moderation action",
+                              })
+                                .then((updatedUser) => {
+                                  setUsers((current) =>
+                                    current.map((entry) =>
+                                      entry.id === updatedUser.id ? updatedUser : entry
+                                    )
+                                  );
+                                  setError(null);
+                                })
+                                .catch(handlePlatformMutationError);
+                            }}
+                          >
+                            {user.isBanned ? copy.unban : copy.ban}
+                          </Button>
+                        )}
+                        {access?.permissions.manageAdmins && (
+                          <Button
+                            color="error"
+                            disabled={
+                              user.id === currentUser.id || isProtectedOwnerRole(user.role)
+                            }
+                            startIcon={<Trash2 size={16} />}
+                            onClick={() => {
+                              if (!window.confirm(copy.confirmDelete)) {
+                                return;
+                              }
 
-                          void deleteAdminUser(user.id)
-                            .then(() => {
-                              setUsers((current) =>
-                                current.filter((entry) => entry.id !== user.id)
-                              );
-                              setStats((current) =>
-                                current
-                                  ? {
-                                      ...current,
-                                      usersTotal: Math.max(current.usersTotal - 1, 0),
-                                      usersActive: user.isBanned
-                                        ? current.usersActive
-                                        : Math.max(current.usersActive - 1, 0),
-                                      usersBanned: user.isBanned
-                                        ? Math.max(current.usersBanned - 1, 0)
-                                        : current.usersBanned,
-                                    }
-                                  : current
-                              );
-                              setError(null);
-                            })
-                            .catch(handlePlatformMutationError);
-                        }}
-                      >
-                        {copy.deleteUser}
-                      </Button>
-                    )}
-                  </Stack>
-                </Stack>
+                              void deleteAdminUser(user.id)
+                                .then(() => {
+                                  setUsers((current) =>
+                                    current.filter((entry) => entry.id !== user.id)
+                                  );
+                                  setStats((current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          usersTotal: Math.max(current.usersTotal - 1, 0),
+                                          usersActive: user.isBanned
+                                            ? current.usersActive
+                                            : Math.max(current.usersActive - 1, 0),
+                                          usersBanned: user.isBanned
+                                            ? Math.max(current.usersBanned - 1, 0)
+                                            : current.usersBanned,
+                                        }
+                                      : current
+                                  );
+                                  setError(null);
+                                })
+                                .catch(handlePlatformMutationError);
+                            }}
+                          >
+                            {copy.deleteUser}
+                          </Button>
+                        )}
+                      </Stack>
+                    </Stack>
                   );
                 })()}
               </Paper>

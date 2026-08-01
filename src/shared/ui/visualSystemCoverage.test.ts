@@ -55,4 +55,16 @@ describe("Smart Nutrition visual system coverage", () => {
     expect(source).toContain("env(safe-area-inset-bottom");
     expect(source).not.toContain('border: "1px solid rgba(20, 33, 61, 0.08)"');
   });
+
+  it("keeps admin user cards useful instead of status-only", async () => {
+    const source = await readSource("../../features/platform/AdminCenterCard.tsx");
+
+    expect(source).toContain("accountCreated");
+    expect(source).toContain("lastSession");
+    expect(source).toContain("hasActiveSession");
+    expect(source).toContain("usersOnline");
+    expect(source).toContain("emailConfirmed");
+    expect(source).toContain("bannedAt");
+    expect(source).toContain("banReason");
+  });
 });

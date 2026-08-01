@@ -95,6 +95,13 @@ const normalizeImageUrl = (value) => {
 
 const assignableRoles = ["USER", "HELPER", "MODERATOR", "ADMIN"];
 
+const toAdminUserSummary = (user) => ({
+  ...toPublicUser(user),
+  createdAt: user.createdAt,
+  lastSessionAt: user.lastSessionAt ?? null,
+  hasActiveSession: Boolean(user.hasActiveSession),
+});
+
 const canModerate = (role) =>
   role === "NUTRITIONIST" || hasRoleAtLeast(role, "MODERATOR");
 
@@ -296,6 +303,13 @@ export const createPlatformService = ({
       details,
       createdAt: new Date().toISOString(),
     });
+  };
+
+  const readFreshAdminUserSummary = async (fallbackUser) => {
+    const users = await platformRepository.listUsers?.();
+    const freshUser = users?.find((item) => item.id === fallbackUser.id);
+
+    return toAdminUserSummary(freshUser ?? fallbackUser);
   };
 
   return {
@@ -565,10 +579,7 @@ export const createPlatformService = ({
     listUsers: async (currentUser) => {
       assertAdminAccess(currentUser);
 
-      return (await platformRepository.listUsers()).map((user) => ({
-        ...toPublicUser(user),
-        createdAt: user.createdAt,
-      }));
+      return (await platformRepository.listUsers()).map(toAdminUserSummary);
     },
 
     updateUserRole: async (currentUser, targetUserId, payload) => {
@@ -628,10 +639,7 @@ export const createPlatformService = ({
         }),
       });
 
-      return {
-        ...toPublicUser(updatedUser),
-        createdAt: updatedUser.createdAt,
-      };
+      return readFreshAdminUserSummary(updatedUser);
     },
 
     updateUserBan: async (currentUser, targetUserId, payload) => {
@@ -678,10 +686,7 @@ export const createPlatformService = ({
         }),
       });
 
-      return {
-        ...toPublicUser(updatedUser),
-        createdAt: updatedUser.createdAt,
-      };
+      return readFreshAdminUserSummary(updatedUser);
     },
   };
 };

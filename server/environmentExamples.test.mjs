@@ -6,7 +6,8 @@ import { describe, expect, it } from "vitest";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const envExampleFiles = [".env.example", "render.env.example", "vercel.env.example"];
+const backendEnvExampleFile = "render.env.example";
+const envExampleFiles = [backendEnvExampleFile, "vercel.env.example"];
 
 const readProjectFile = (fileName) =>
   readFileSync(path.join(rootDir, fileName), "utf8");
@@ -44,15 +45,15 @@ describe("environment example files", () => {
     }
   });
 
-  it("define sensitive backend keys at most once in .env.example", () => {
-    const source = readProjectFile(".env.example");
+  it("define sensitive backend keys at most once in the backend env example", () => {
+    const source = readProjectFile(backendEnvExampleFile);
 
     for (const key of uniqueSecretKeys) {
       const assignments = source.match(new RegExp(`^${key}=`, "gm")) ?? [];
 
       expect(
         assignments.length,
-        `${key} is duplicated in .env.example`,
+        `${key} is duplicated in ${backendEnvExampleFile}`,
       ).toBeLessThanOrEqual(1);
     }
   });

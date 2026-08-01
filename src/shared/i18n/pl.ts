@@ -31,6 +31,7 @@ export const pl = {
   "auth.resend": "Wyślij ponownie",
   "auth.confirmationSent": "Wysłaliśmy link potwierdzający na {target}.",
   "auth.openConfirmationEmail": "Otwórz wiadomość i kliknij przycisk potwierdzenia emaila.",
+  "auth.openMailbox": "Przejdź do poczty",
   "auth.invalidConfirmationLink": "Nieprawidłowy albo wygasły link potwierdzający.",
   "auth.deliveryUnavailable":
     "Nie udało się wysłać emaila potwierdzającego. Spróbuj ponownie za chwilę albo skontaktuj się ze wsparciem.",

@@ -31,6 +31,7 @@ export const uk = {
   "auth.resend": "Надіслати ще раз",
   "auth.confirmationSent": "Ми надіслали посилання для підтвердження на {target}.",
   "auth.openConfirmationEmail": "Відкрийте лист і натисніть кнопку підтвердження email.",
+  "auth.openMailbox": "Перейти в пошту",
   "auth.invalidConfirmationLink": "Недійсне або застаріле посилання підтвердження.",
   "auth.deliveryUnavailable":
     "Лист підтвердження не вдалося відправити. Спробуйте ще раз трохи пізніше або зверніться до підтримки.",

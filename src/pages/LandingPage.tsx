@@ -661,12 +661,12 @@ const CompanionExperienceScene = ({
     <Box
       id="ai-overview"
       sx={{
-        position: { xs: "relative", md: "absolute" },
+        position: { xs: "relative", lg: "absolute" },
         zIndex: 2,
-        right: { md: 0 },
-        bottom: { md: 0 },
-        minHeight: { xs: 320, sm: 500, md: 600 },
-        width: { xs: "100%", md: "64%" },
+        right: { lg: 0 },
+        bottom: { lg: 0 },
+        minHeight: { xs: 320, sm: 500, md: 470, lg: 600 },
+        width: { xs: "100%", md: "100%", lg: "64%" },
         mt: { xs: 1, md: 0 },
         display: { xs: "none", sm: "grid" },
         placeItems: "center",
@@ -693,11 +693,11 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 1,
-          width: { sm: 460, md: 690 },
-          height: { sm: 460, md: 690 },
+          width: { sm: 460, md: 560, lg: 690 },
+          height: { sm: 460, md: 560, lg: 690 },
           borderRadius: "50%",
-          right: { sm: 8, md: 44 },
-          top: { sm: -16, md: -18 },
+          right: { sm: 8, md: 18, lg: 44 },
+          top: { sm: -16, md: -10, lg: -18 },
           background: isDarkMode
             ? "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.2) 43%, rgba(163,230,53,0.26) 47%, rgba(20,184,166,0.12) 54%, transparent 61%)"
             : "radial-gradient(circle, transparent 40%, rgba(255,255,255,0.92) 41%, rgba(14,165,233,0.32) 47%, rgba(20,184,166,0.2) 55%, transparent 63%)",
@@ -729,10 +729,10 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 2,
-          width: { sm: 380, md: 520 },
-          height: { sm: 380, md: 520 },
-          right: { sm: 42, md: 118 },
-          top: { sm: 44, md: 68 },
+          width: { sm: 380, md: 430, lg: 520 },
+          height: { sm: 380, md: 430, lg: 520 },
+          right: { sm: 42, md: 76, lg: 118 },
+          top: { sm: 44, md: 46, lg: 68 },
           pointerEvents: "none",
           "@media (prefers-reduced-motion: reduce)": {
             "& [data-landing-orbit-ring], & [data-landing-signal-node]": {
@@ -810,7 +810,7 @@ const CompanionExperienceScene = ({
           display: "grid",
           placeItems: "center",
           width: { sm: 300, md: 390 },
-          height: { sm: 390, md: 500 },
+          height: { sm: 390, md: 440, lg: 500 },
           mt: { sm: 1, md: 2 },
           pointerEvents: "auto",
           cursor: "default",
@@ -1046,14 +1046,21 @@ const Hero = ({
       component="section"
       sx={{
         position: "relative",
-        minHeight: { xs: "100svh", md: "100svh" },
-        maxHeight: { md: 840 },
+        minHeight: { xs: "100svh", md: "auto", lg: "100svh" },
+        maxHeight: { lg: 840 },
         overflow: "hidden",
         borderRadius: { xs: 0, md: 1 },
-        px: { xs: 2, sm: 3, md: 5 },
+        px: { xs: 2, sm: 3, md: 4, lg: 5 },
         pt: { xs: 11, md: 12 },
         pb: { xs: 3, md: 4 },
-        display: "flex",
+        display: { xs: "flex", md: "grid", lg: "flex" },
+        gridTemplateColumns: {
+          md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)",
+          lg: "1fr",
+        },
+        gridTemplateRows: { md: "auto auto", lg: "auto" },
+        columnGap: { md: 2.5, lg: 0 },
+        rowGap: { md: 2, lg: 0 },
         flexDirection: "column",
         justifyContent: "space-between",
         color: scene.heroText,
@@ -1086,7 +1093,7 @@ const Hero = ({
       sx={{
         position: "relative",
         zIndex: 3,
-        maxWidth: { xs: 980, md: 760 },
+        maxWidth: { xs: 980, md: 640, lg: 760 },
         pt: { xs: 1, md: 2 },
         pb: { md: 3 },
       }}
@@ -1105,11 +1112,11 @@ const Hero = ({
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 42, sm: 68, md: 76, lg: 82 },
+          fontSize: { xs: 42, sm: 68, md: 56, lg: 82 },
           lineHeight: 0.98,
           fontWeight: 900,
           letterSpacing: 0,
-          maxWidth: 760,
+          maxWidth: { xs: 760, md: 640, lg: 760 },
           textShadow: scene.titleShadow,
           "@media (min-width: 900px) and (max-height: 760px)": {
             fontSize: 62,
@@ -1132,7 +1139,7 @@ const Hero = ({
         component="p"
         sx={{
           minHeight: { xs: 62, sm: 36 },
-          fontSize: { xs: 23, md: 32 },
+          fontSize: { xs: 23, md: 25, lg: 32 },
           lineHeight: 1.15,
           fontWeight: 900,
           color: scene.typingColor,
@@ -1319,7 +1326,8 @@ const Hero = ({
         position: "relative",
         zIndex: 3,
         display: { xs: "none", md: "grid" },
-        "@media (max-height: 760px)": {
+        gridColumn: { md: "1 / -1", lg: "auto" },
+        "@media (min-width: 1200px) and (max-height: 760px)": {
           display: "none",
         },
         gridTemplateColumns: "repeat(6, minmax(0, 1fr))",

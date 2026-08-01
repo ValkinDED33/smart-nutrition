@@ -5,6 +5,7 @@ import {
   remoteAuthProvider,
 } from "./authRemote";
 import {
+  getClientStorageItem,
   removeClientStorageItem,
   setClientStorageItem,
 } from "../lib/clientPersistence";
@@ -15,6 +16,7 @@ const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
 const VERCEL_PREVIEW_HOSTNAME = "smart-nutrition-topaz.vercel.app";
 const VERCEL_PREVIEW_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
+const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
 const REMOTE_CLOUD_MODE = "remote-cloud";
 const HTTP_ONLY_COOKIE_SESSION_AUTH = "httpOnly-cookie-session";
 
@@ -23,6 +25,7 @@ describe("remote API base URL guards", () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     removeClientStorageItem(REMOTE_BASE_URL_KEY);
+    removeClientStorageItem(AUTH_SESSION_HINT_KEY);
   });
 
   it("rejects loopback API URLs from deployed browser origins", () => {
@@ -241,6 +244,35 @@ describe("remote API base URL guards", () => {
 
     await expect(sessionPromise).resolves.toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears stale startup auth hints without attempting refresh on a missing session", async () => {
+    const remoteBaseUrl = "https://smart-nutrition.example/api";
+    setClientStorageItem(REMOTE_BASE_URL_KEY, remoteBaseUrl);
+    setClientStorageItem(
+      AUTH_SESSION_HINT_KEY,
+      JSON.stringify({ savedAt: Date.now(), baseUrl: remoteBaseUrl })
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: "INVALID_CREDENTIALS",
+          message: "Session expired.",
+        }),
+        { status: 401 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(remoteAuthProvider.restoreSession()).resolves.toBeNull();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${remoteBaseUrl}/auth/session`,
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(getClientStorageItem(REMOTE_BASE_URL_KEY)).toBeNull();
+    expect(getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBeNull();
   });
 
   it("accepts a healthy Postgres-backed remote API", async () => {

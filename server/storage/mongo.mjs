@@ -173,6 +173,8 @@ const mapUserDoc = (doc) => {
     goal: doc.goal,
     measurements: doc.measurements,
     createdAt: doc.createdAt,
+    lastSessionAt: doc.lastSessionAt ?? null,
+    hasActiveSession: Boolean(doc.hasActiveSession),
     role: appRole,
     communityStatus: doc.communityStatus,
     reputationScore: toNonNegativeNumber(doc.reputationScore, 0),
@@ -1083,10 +1085,45 @@ export const createMongoStorage = async (config) => {
       return mapUserDoc(doc);
     },
 
-    listUsers: async () =>
-      (await collections.users.find({}).sort({ createdAt: -1 }).toArray())
-        .map(mapUserDoc)
-        .filter(Boolean),
+    listUsers: async () => {
+      const now = Date.now();
+      const docs = await collections.users
+        .aggregate([
+          {
+            $lookup: {
+              from: "sessions",
+              localField: "id",
+              foreignField: "userId",
+              as: "sessions",
+            },
+          },
+          {
+            $addFields: {
+              lastSessionAt: { $max: "$sessions.createdAt" },
+              hasActiveSession: {
+                $anyElementTrue: {
+                  $map: {
+                    input: "$sessions",
+                    as: "session",
+                    in: { $gt: ["$$session.expiresAt", now] },
+                  },
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              sessions: 0,
+            },
+          },
+          {
+            $sort: { createdAt: -1 },
+          },
+        ])
+        .toArray();
+
+      return docs.map(mapUserDoc).filter(Boolean);
+    },
 
     updateUser: async (user) => {
       const roleFields = user.role
@@ -1974,6 +2011,7 @@ export const createMongoStorage = async (config) => {
       const [
         usersTotal,
         usersActive,
+        onlineSessionUserIds,
         usersNewThisWeek,
         usersBanned,
         aiRequestsTotal,
@@ -1985,6 +2023,7 @@ export const createMongoStorage = async (config) => {
         collections.users.countDocuments({
           $or: [{ bannedAt: null }, { bannedAt: { $exists: false } }],
         }),
+        collections.sessions.distinct("userId", { expiresAt: { $gt: Date.now() } }),
         collections.users.countDocuments({ createdAt: { $gte: weekAgoIso } }),
         collections.users.countDocuments({ bannedAt: { $exists: true, $ne: null } }),
         collections.aiRequests.countDocuments(),
@@ -1996,6 +2035,7 @@ export const createMongoStorage = async (config) => {
       return {
         usersTotal,
         usersActive,
+        usersOnline: onlineSessionUserIds.length,
         usersNewThisWeek,
         usersBanned,
         aiRequestsTotal,

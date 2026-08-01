@@ -1531,7 +1531,7 @@ export const remoteAuthProvider: AuthProvider = {
       const { data, baseUrl } = await requestRemote<AuthResponse>(
         "/auth/session",
         { method: "GET", signal },
-        { requireAuth: true, timeoutMs }
+        { requireAuth: true, allowRefresh: false, timeoutMs }
       );
 
       return mapAuthResponse(data, baseUrl);

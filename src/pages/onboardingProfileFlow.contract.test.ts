@@ -2,18 +2,22 @@ import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 
 const readSource = (path: string) => readFile(path, "utf8");
+const REGISTER_PAGE_PATH = "src/pages/RegisterPage.tsx";
 const ONBOARDING_PAGE_PATH = "src/pages/OnboardingPage.tsx";
 
 describe("onboarding and profile flow contract", () => {
   it("keeps registration as a guided language-theme-account sequence with backend availability checks", async () => {
-    const registerSource = await readSource("src/pages/RegisterPage.tsx");
+    const registerSource = await readSource(REGISTER_PAGE_PATH);
 
     expect(registerSource).toContain('"language"');
     expect(registerSource).toContain('"theme"');
     expect(registerSource).toContain('"name"');
     expect(registerSource).toContain('"email"');
     expect(registerSource).toContain('"password"');
-    expect(registerSource).toContain('"confirm"');
+    expect(registerSource).toContain("confirmPasswordField");
+    expect(registerSource).not.toContain('| "confirm"');
+    expect(registerSource).not.toContain('case "confirm"');
+    expect(registerSource).not.toContain('registrationStep === "confirm"');
     expect(registerSource).toContain("useAppColorMode");
     expect(registerSource).toContain("checkRegistrationAvailability");
     expect(registerSource).toContain('displayedNameAvailability !== "available"');
@@ -33,6 +37,33 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
     expect(registerSource).not.toContain("saveProfileStateToCloud");
     expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
+  });
+
+  it("does not show a stale confirm-password error immediately after password step validation", async () => {
+    const registerSource = await readSource(REGISTER_PAGE_PATH);
+
+    expect(registerSource).toContain("shouldShowConfirmPasswordError");
+    expect(registerSource).toContain("dirtyFields.confirmPassword");
+    expect(registerSource).toContain("touchedFields.confirmPassword");
+    expect(registerSource).toContain("submitCount > 0");
+    expect(registerSource).toContain('registrationStep === "password" ?');
+    expect(registerSource).toContain("{...confirmPasswordField}");
+    expect(registerSource).toContain("error={shouldShowConfirmPasswordError}");
+  });
+
+  it("lets users open their mailbox after a backend-confirmed verification email", async () => {
+    const registerSource = await readSource(REGISTER_PAGE_PATH);
+    const ukI18nSource = await readSource("src/shared/i18n/uk.ts");
+    const plI18nSource = await readSource("src/shared/i18n/pl.ts");
+    const enI18nSource = await readSource("src/shared/i18n/en.ts");
+
+    expect(registerSource).toContain("getEmailInboxUrl(pendingVerification.email)");
+    expect(registerSource).toContain('href={verificationInboxUrl}');
+    expect(registerSource).toContain('target="_blank"');
+    expect(registerSource).toContain('t("auth.openMailbox")');
+    expect(ukI18nSource).toContain('"auth.openMailbox": "Перейти в пошту"');
+    expect(plI18nSource).toContain('"auth.openMailbox": "Przejdź do poczty"');
+    expect(enI18nSource).toContain('"auth.openMailbox": "Open mailbox"');
   });
 
   it("routes confirmed users to an explicit onboarding choice before the questionnaire", async () => {

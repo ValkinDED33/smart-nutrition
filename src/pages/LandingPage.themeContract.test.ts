@@ -72,4 +72,14 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("playAIDiscoverySound");
     expect(source).toContain("playGentleClickSound");
   });
+
+  it("keeps the landing hero from overlapping on medium desktop widths", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain('display: { xs: "flex", md: "grid", lg: "flex" }');
+    expect(source).toContain('position: { xs: "relative", lg: "absolute" }');
+    expect(source).toContain("gridColumn: { md: \"1 / -1\", lg: \"auto\" }");
+    expect(source).toContain('md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)"');
+    expect(source).toContain("fontSize: { xs: 42, sm: 68, md: 56, lg: 82 }");
+  });
 });

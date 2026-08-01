@@ -25,6 +25,48 @@ const createController = (clientErrorStore) =>
   });
 
 describe("admin controller client errors", () => {
+  it("routes owner user deletion through the canonical repository and audit log", async () => {
+    const targetUser = {
+      id: "user-test-delete",
+      email: "deleted-test@example.com",
+      role: "USER",
+    };
+    const adminRepository = {
+      getAllUsers: vi.fn(async () => [targetUser]),
+      deleteUser: vi.fn(async () => {}),
+      createAuditLog: vi.fn(async () => {}),
+    };
+    const response = new MemoryResponse();
+
+    await createAdminController({
+      platformService: {},
+      adminRepository,
+      bodyLimitBytes: 1024,
+      clientErrorStore: { list: vi.fn() },
+    }).deleteUser({
+      request: { method: "DELETE" },
+      response,
+      auth: { user: { id: "owner-1", role: "OWNER" } },
+      params: { userId: targetUser.id },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(adminRepository.deleteUser).toHaveBeenCalledWith(targetUser.id);
+    expect(adminRepository.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "owner-1",
+        actorRole: "OWNER",
+        action: "access.user_deleted",
+        targetType: "user",
+        targetId: targetUser.id,
+        details: {
+          email: targetUser.email,
+          role: targetUser.role,
+        },
+      })
+    );
+  });
+
   it("returns recent client errors for admins only", async () => {
     const clientErrorStore = {
       list: vi.fn(() => [

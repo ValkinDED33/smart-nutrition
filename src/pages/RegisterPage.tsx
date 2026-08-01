@@ -62,8 +62,7 @@ type RegistrationStep =
   | "theme"
   | "name"
   | "email"
-  | "password"
-  | "confirm";
+  | "password";
 
 type AvailabilityFieldState = "idle" | "checking" | "available" | "taken" | "invalid" | "unavailable";
 
@@ -153,6 +152,40 @@ const AvailabilityAdornment = ({ state }: { state: AvailabilityFieldState }) => 
   return null;
 };
 
+const gmailInboxUrl = "https://mail.google.com/mail/u/0/#inbox";
+const outlookInboxUrl = "https://outlook.live.com/mail/0/inbox";
+const icloudInboxUrl = "https://www.icloud.com/mail/";
+const protonInboxUrl = "https://mail.proton.me/u/0/inbox";
+
+const emailInboxUrlsByDomain = new Map<string, string>([
+  ["gmail.com", gmailInboxUrl],
+  ["googlemail.com", gmailInboxUrl],
+  ["outlook.com", outlookInboxUrl],
+  ["hotmail.com", outlookInboxUrl],
+  ["live.com", outlookInboxUrl],
+  ["yahoo.com", "https://mail.yahoo.com/"],
+  ["icloud.com", icloudInboxUrl],
+  ["me.com", icloudInboxUrl],
+  ["proton.me", protonInboxUrl],
+  ["protonmail.com", protonInboxUrl],
+  ["ukr.net", "https://mail.ukr.net/"],
+  ["i.ua", "https://mail.i.ua/"],
+  ["mail.ru", "https://e.mail.ru/inbox/"],
+  ["yandex.ru", "https://mail.yandex.ru/"],
+  ["yandex.com", "https://mail.yandex.com/"],
+  ["rambler.ru", "https://mail.rambler.ru/"],
+]);
+
+const getEmailInboxUrl = (email: string) => {
+  const domain = email.split("@").pop()?.trim().toLowerCase();
+
+  if (!domain) {
+    return "mailto:";
+  }
+
+  return emailInboxUrlsByDomain.get(domain) ?? `https://${domain}`;
+};
+
 const getAvailabilityBlockMessageKey = (
   field: "name" | "email",
   state: AvailabilityFieldState
@@ -185,7 +218,6 @@ const registrationStepOrder: RegistrationStep[] = [
   "name",
   "email",
   "password",
-  "confirm",
 ];
 
 const registrationCopy = {
@@ -195,7 +227,6 @@ const registrationCopy = {
     nameTitle: "Ваш нікнейм",
     emailTitle: "Ваш email",
     passwordTitle: "Створіть пароль",
-    confirmTitle: "Підтвердіть пароль",
     next: "Далі",
     back: "Назад",
     light: "Світла",
@@ -213,7 +244,6 @@ const registrationCopy = {
     nameTitle: "Twój nick",
     emailTitle: "Twój email",
     passwordTitle: "Utwórz hasło",
-    confirmTitle: "Potwierdź hasło",
     next: "Dalej",
     back: "Wstecz",
     light: "Jasny",
@@ -231,7 +261,6 @@ const registrationCopy = {
     nameTitle: "Your nickname",
     emailTitle: "Your email",
     passwordTitle: "Create password",
-    confirmTitle: "Confirm password",
     next: "Next",
     back: "Back",
     light: "Light",
@@ -253,8 +282,6 @@ const getStepField = (step: RegistrationStep): keyof FormData | null => {
       return "email";
     case "password":
       return "password";
-    case "confirm":
-      return "confirmPassword";
     case "language":
     case "theme":
     default:
@@ -303,10 +330,8 @@ const getRegistrationStepTitle = (
     case "email":
       return copy.emailTitle;
     case "password":
-      return copy.passwordTitle;
-    case "confirm":
     default:
-      return copy.confirmTitle;
+      return copy.passwordTitle;
   }
 };
 
@@ -372,7 +397,7 @@ const RegisterPage = () => {
     trigger,
     setError,
     clearErrors,
-    formState: { errors },
+    formState: { dirtyFields, errors, submitCount, touchedFields },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -402,6 +427,14 @@ const RegisterPage = () => {
     availabilityEmail,
     emailCanCheck
   );
+  const verificationInboxUrl = pendingVerification
+    ? getEmailInboxUrl(pendingVerification.email)
+    : null;
+  const shouldShowConfirmPasswordError =
+    Boolean(errors.confirmPassword) &&
+    (Boolean(dirtyFields.confirmPassword) ||
+      Boolean(touchedFields.confirmPassword) ||
+      submitCount > 0);
 
   useEffect(() => {
     const partnerInvite = searchParams.get("partnerInvite")?.trim().toUpperCase();
@@ -644,7 +677,6 @@ const RegisterPage = () => {
 
     if (currentStepIndex < registrationStepOrder.length - 1) {
       const nextStep = registrationStepOrder[currentStepIndex + 1];
-
       if (nextStep) {
         setRegistrationStep(nextStep);
       }
@@ -906,6 +938,18 @@ const RegisterPage = () => {
                 </Typography>
                 <Typography color="text.secondary">{t("auth.openConfirmationEmail")}</Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  {verificationInboxUrl && (
+                    <Button
+                      component="a"
+                      href={verificationInboxUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="contained"
+                      sx={{ textTransform: "none", fontWeight: 900 }}
+                    >
+                      {t("auth.openMailbox")}
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     disabled={submitting}
@@ -1060,23 +1104,18 @@ const RegisterPage = () => {
                     ),
                   }}
                 />
-              </Stack>
-            )}
-
-            {registrationStep === "confirm" && (
-              <Stack spacing={1.2}>
-                <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
-                  {stepCopy.confirmTitle}
-                </Typography>
                 <TextField
                   fullWidth
-                  autoFocus
                   label={t("form.confirmPassword")}
                   type={confirmPasswordVisible ? "text" : "password"}
                   {...confirmPasswordField}
                   autoComplete="new-password"
-                  error={Boolean(errors.confirmPassword)}
-                  helperText={errors.confirmPassword?.message}
+                  error={shouldShowConfirmPasswordError}
+                  helperText={
+                    shouldShowConfirmPasswordError
+                      ? errors.confirmPassword?.message
+                      : undefined
+                  }
                   inputProps={{
                     autoComplete: "new-password",
                   }}
@@ -1108,7 +1147,7 @@ const RegisterPage = () => {
                   {stepCopy.back}
                 </Button>
               )}
-              {registrationStep === "confirm" ? (
+              {registrationStep === "password" ? (
                 <Button
                   type="submit"
                   variant="contained"

@@ -2,24 +2,32 @@ import { describe, expect, it, vi } from "vitest";
 import { createPlatformService } from "./platformService.mjs";
 
 const createPlatformFixture = ({ productLookupService = null } = {}) => {
-  const targetUser = {
+  let targetUser = {
     id: "target-user-1",
     email: "target@example.com",
     role: "USER",
     name: "Target User",
     createdAt: "2026-01-01T00:00:00.000Z",
+    lastSessionAt: "2026-01-02T12:00:00.000Z",
+    hasActiveSession: true,
   };
   const platformRepository = {
     listCatalogProducts: vi.fn(() => []),
     listAuditLogs: vi.fn(() => []),
     listUsers: vi.fn(() => [targetUser]),
     findUserById: vi.fn(() => targetUser),
-    updateUserRole: vi.fn(({ role }) => ({ ...targetUser, role })),
-    updateUserBan: vi.fn(({ bannedAt, bannedReason }) => ({
-      ...targetUser,
-      bannedAt,
-      bannedReason,
-    })),
+    updateUserRole: vi.fn(({ role }) => {
+      targetUser = { ...targetUser, role };
+      return targetUser;
+    }),
+    updateUserBan: vi.fn(({ bannedAt, bannedReason }) => {
+      targetUser = {
+        ...targetUser,
+        bannedAt,
+        bannedReason,
+      };
+      return targetUser;
+    }),
     promoteUserByEmailToOwner: vi.fn(),
     countCatalogProductsByOwnerSince: vi.fn(() => 0),
     findCatalogDuplicateCandidates: vi.fn(() => []),
@@ -265,23 +273,33 @@ describe("platformService", () => {
     }
   );
 
-  it("allows admins to use strict admin operations", async () => {
+  it("allows admins to use strict admin operations with real account status metadata", async () => {
     const { platformRepository, service } = createPlatformFixture();
 
-    await expect(service.listUsers(admin)).resolves.toHaveLength(1);
+    await expect(service.listUsers(admin)).resolves.toEqual([
+      expect.objectContaining({
+        createdAt: "2026-01-01T00:00:00.000Z",
+        lastSessionAt: "2026-01-02T12:00:00.000Z",
+        hasActiveSession: true,
+      }),
+    ]);
     await expect(
       service.updateUserRole(admin, "target-user-1", { role: "MODERATOR" })
     ).resolves.toMatchObject({
       role: "MODERATOR",
+      lastSessionAt: "2026-01-02T12:00:00.000Z",
+      hasActiveSession: true,
     });
     await expect(
       service.updateUserBan(admin, "target-user-1", { banned: true, reason: "Policy" })
     ).resolves.toMatchObject({
       bannedReason: "Policy",
+      lastSessionAt: "2026-01-02T12:00:00.000Z",
+      hasActiveSession: true,
     });
     await expect(service.listAuditLogs(admin)).resolves.toEqual([]);
 
-    expect(platformRepository.listUsers).toHaveBeenCalledTimes(1);
+    expect(platformRepository.listUsers).toHaveBeenCalledTimes(3);
     expect(platformRepository.updateUserRole).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "target-user-1",

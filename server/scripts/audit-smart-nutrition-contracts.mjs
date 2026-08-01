@@ -32,6 +32,7 @@ const authSliceSource = readSource("src/features/auth/authSlice.ts");
 const appSource = readSource("src/App.tsx");
 const syncListenersSource = readSource("src/app/syncListeners.ts");
 const platformApiSource = readSource("src/shared/api/platform.ts");
+const platformTypesSource = readSource("src/shared/types/platform.ts");
 const visionAnalysisSource = readSource("server/services/photo/visionAnalysis.mjs");
 const visionAnalysisTestSource = readSource("server/services/photo/visionAnalysis.test.mjs");
 const frontendProductApiSource = readSource("src/shared/api/products.ts");
@@ -57,7 +58,7 @@ const telegramMedicationRemindersSource = readSource(
   "server/services/telegramMedicationReminders.mjs"
 );
 const registerPageSource = readSource("src/pages/RegisterPage.tsx");
-const envExampleSource = readSource(".env.example");
+const envExampleSource = readSource("render.env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const forgotPasswordPageSource = readSource("src/pages/ForgotPasswordPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
@@ -1049,9 +1050,19 @@ addCheck(
 
 addCheck(
   "registration keeps guided steps and backend availability gates",
-  ["\"language\"", "\"theme\"", "\"name\"", "\"email\"", "\"password\"", "\"confirm\""].every(
+  ["\"language\"", "\"theme\"", "\"name\"", "\"email\"", "\"password\""].every(
     (step) => registerPageSource.includes(step)
   ) &&
+    registerPageSource.includes("confirmPasswordField") &&
+    registerPageSource.includes("const shouldShowConfirmPasswordError") &&
+    registerPageSource.includes("Boolean(dirtyFields.confirmPassword)") &&
+    registerPageSource.includes("Boolean(touchedFields.confirmPassword)") &&
+    registerPageSource.includes("submitCount > 0") &&
+    registerPageSource.includes("error={shouldShowConfirmPasswordError}") &&
+    registerPageSource.includes("shouldShowConfirmPasswordError") &&
+    !registerPageSource.includes('| "confirm"') &&
+    !registerPageSource.includes('case "confirm"') &&
+    !registerPageSource.includes('registrationStep === "confirm"') &&
     registerPageSource.includes("checkRegistrationAvailability") &&
     registerPageSource.includes("languagePreference: appLanguage") &&
     registerPageSource.includes("availabilityBlocksNext") &&
@@ -1705,6 +1716,21 @@ addCheck(
     syncMessagingSource.includes("The latest changes are not confirmed yet") &&
     !syncMessagingSource.includes("return message;"),
   "Unknown sync errors must fall back to localized product-language retry copy before they reach auth state or visible sync UI instead of exposing raw backend/provider exception text."
+);
+
+addCheck(
+  "admin users view exposes real account and session status metadata",
+  platformTypesSource.includes("lastSessionAt: string | null") &&
+    platformTypesSource.includes("hasActiveSession: boolean") &&
+    platformTypesSource.includes("usersOnline: number") &&
+    adminCenterCardSource.includes("accountCreated") &&
+    adminCenterCardSource.includes("lastSession") &&
+    adminCenterCardSource.includes("hasActiveSession") &&
+    adminCenterCardSource.includes("usersOnline") &&
+    adminCenterCardSource.includes("emailConfirmed") &&
+    adminCenterCardSource.includes("bannedAt") &&
+    adminCenterCardSource.includes("banReason"),
+  "Admin user management must be an operational account/session tool, not a status-only card; online and last-session data must come from backend-confirmed user summaries."
 );
 
 addCheck(

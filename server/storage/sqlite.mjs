@@ -1025,6 +1025,8 @@ const mapUserRow = (row) => {
     goal: row.goal,
     measurements: parseJson(row.measurements_json, undefined),
     createdAt: row.created_at,
+    lastSessionAt: row.last_session_at ?? null,
+    hasActiveSession: toBoolean(row.has_active_session, false),
     role: isUserRole(row.role) ? row.role : "USER",
     bannedAt: row.banned_at ?? null,
     bannedReason: row.banned_reason ?? null,
@@ -2914,10 +2916,52 @@ export const createSqliteStorage = async ({
 
     listUsers: () =>
       database
-        .prepare("SELECT * FROM users ORDER BY created_at ASC")
-        .all()
+        .prepare(
+          `
+            SELECT
+              users.*,
+              MAX(sessions.created_at) AS last_session_at,
+              COALESCE(MAX(CASE WHEN sessions.expires_at > ? THEN 1 ELSE 0 END), 0) AS has_active_session
+            FROM users
+            LEFT JOIN sessions ON sessions.user_id = users.id
+            GROUP BY users.id
+            ORDER BY users.created_at ASC
+          `
+        )
+        .all(Date.now())
         .map(mapUserRow)
         .filter(Boolean),
+
+    getAdminStats: () => {
+      const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const readCount = (sql, params = []) =>
+        toNumber(database.prepare(sql).get(...params)?.count, 0);
+
+      return {
+        usersTotal: readCount("SELECT COUNT(*) AS count FROM users"),
+        usersActive: readCount("SELECT COUNT(*) AS count FROM users WHERE banned_at IS NULL"),
+        usersOnline: readCount(
+          "SELECT COUNT(DISTINCT user_id) AS count FROM sessions WHERE expires_at > ?",
+          [Date.now()]
+        ),
+        usersNewThisWeek: readCount("SELECT COUNT(*) AS count FROM users WHERE created_at >= ?", [
+          weekAgoIso,
+        ]),
+        usersBanned: readCount("SELECT COUNT(*) AS count FROM users WHERE banned_at IS NOT NULL"),
+        aiRequestsTotal: readCount("SELECT COUNT(*) AS count FROM ai_usage_events"),
+        productsTotal: readCount("SELECT COUNT(*) AS count FROM catalog_products"),
+        productsPending: readCount(
+          "SELECT COUNT(*) AS count FROM catalog_products WHERE status = ?",
+          ["pending"]
+        ),
+        reportsOpen: 0,
+        suspiciousAccounts: readCount(
+          "SELECT COUNT(*) AS count FROM login_attempts WHERE lock_until > ?",
+          [Date.now()]
+        ),
+        photoAnalysesTotal: 0,
+      };
+    },
 
     updateUser: (user) => {
       database
