@@ -5,6 +5,7 @@ const BREVO_PROVIDER = "brevo";
 const BREVO_TRANSACTIONAL_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 const MAX_EMAIL_ATTEMPTS = 3;
 const EMAIL_RETRY_DELAYS_MS = [300, 900, 1800];
+const EMAIL_PROVIDER_TIMEOUT_MS = 8000;
 const TRANSIENT_STATUS_CODES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 const NON_RETRY_PROVIDER_CODES = new Set(["daily_quota_exceeded"]);
 const TRANSIENT_ERROR_CODES = new Set([
@@ -40,6 +41,31 @@ const sleep = (delayMs) =>
     setTimeout(resolve, delayMs);
   });
 
+const createTimeoutSignal = (timeoutMs) => {
+  const numericTimeoutMs = Number(timeoutMs);
+
+  if (
+    !Number.isFinite(numericTimeoutMs) ||
+    numericTimeoutMs <= 0 ||
+    typeof AbortController === "undefined"
+  ) {
+    return {
+      signal: undefined,
+      cancel: () => {},
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, numericTimeoutMs);
+
+  return {
+    signal: controller.signal,
+    cancel: () => clearTimeout(timeout),
+  };
+};
+
 const readProviderErrorStatus = (error) => {
   const status = error?.statusCode ?? error?.status;
   const numericStatus = Number(status);
@@ -55,6 +81,12 @@ const readProviderErrorCode = (error) => {
 };
 
 const readProviderErrorMessage = (error) => {
+  if (typeof error === "string") {
+    const directValue = error.replace(/\s+/g, " ").trim();
+
+    return directValue ? directValue.slice(0, 240) : null;
+  }
+
   const message = error?.message ?? error?.error ?? error?.detail;
   const value = String(message ?? "").replace(/\s+/g, " ").trim();
 
@@ -255,6 +287,7 @@ export const createEmailService = ({
   resendClient = null,
   fetchImpl = globalThis.fetch,
   retryDelaysMs = EMAIL_RETRY_DELAYS_MS,
+  providerTimeoutMs = EMAIL_PROVIDER_TIMEOUT_MS,
   wait = sleep,
 } = {}) => {
   const resend = resendClient ?? (config.resendApiKey ? new Resend(config.resendApiKey) : null);
@@ -336,56 +369,84 @@ export const createEmailService = ({
       };
     }
 
-    try {
-      const response = await fetchImpl(BREVO_TRANSACTIONAL_EMAIL_URL, {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "api-key": brevo.apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sender: {
-            email: config.emailFromAddress,
-            name: config.emailFromName,
+    let lastError = null;
+    let attemptsUsed = 0;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      attemptsUsed = attempt;
+      const timeoutSignal = createTimeoutSignal(providerTimeoutMs);
+
+      try {
+        const response = await fetchImpl(BREVO_TRANSACTIONAL_EMAIL_URL, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "api-key": brevo.apiKey,
+            "Content-Type": "application/json",
           },
-          to: [{ email: to }],
-          subject,
-          htmlContent: html,
-          textContent: text,
-        }),
-      });
-
-      if (!response.ok) {
-        const providerError = await readJsonProviderError(response);
-        throw createProviderHttpError({
-          provider: BREVO_PROVIDER,
-          response,
-          code: providerError.code,
-          message: providerError.message,
+          signal: timeoutSignal.signal,
+          body: JSON.stringify({
+            sender: {
+              email: config.emailFromAddress,
+              name: config.emailFromName,
+            },
+            to: [{ email: to }],
+            subject,
+            htmlContent: html,
+            textContent: text,
+          }),
         });
+
+        if (!response.ok) {
+          const providerError = await readJsonProviderError(response);
+          throw createProviderHttpError({
+            provider: BREVO_PROVIDER,
+            response,
+            code: providerError.code,
+            message: providerError.message,
+          });
+        }
+
+        const payload = await response.json().catch(() => ({}));
+
+        return {
+          ok: true,
+          provider: BREVO_PROVIDER,
+          messageId: payload?.messageId ?? payload?.messageIds?.[0] ?? null,
+          attempts: attempt,
+        };
+      } catch (error) {
+        lastError = error;
+        const details = {
+          ...toSafeProviderErrorDetails(error, BREVO_PROVIDER),
+          attempt,
+          maxAttempts,
+          willRetry: attempt < maxAttempts && isTransientProviderError(error),
+        };
+
+        logger.error?.("[email] brevo delivery attempt failed", details);
+
+        if (!details.willRetry) {
+          break;
+        }
+
+        await wait(retryDelaysMs[attempt - 1] ?? retryDelaysMs.at(-1) ?? 0);
+      } finally {
+        timeoutSignal.cancel();
       }
-
-      const payload = await response.json().catch(() => ({}));
-
-      return {
-        ok: true,
-        provider: BREVO_PROVIDER,
-        messageId: payload?.messageId ?? payload?.messageIds?.[0] ?? null,
-        attempts: 1,
-      };
-    } catch (error) {
-      logger.error?.("[email] brevo delivery failed", {
-        ...toSafeProviderErrorDetails(error, BREVO_PROVIDER),
-        attempts: 1,
-      });
-
-      return {
-        ok: false,
-        code: "BREVO_SEND_FAILED",
-        attempts: 1,
-      };
     }
+
+    logger.error?.("[email] brevo delivery failed", {
+      ...toSafeProviderErrorDetails(lastError, BREVO_PROVIDER),
+      attempts: attemptsUsed,
+    });
+
+    return {
+      ok: false,
+      code: "BREVO_SEND_FAILED",
+      provider: BREVO_PROVIDER,
+      attempts: attemptsUsed,
+    };
   };
 
   const sendEmail = async ({ to, subject, html, text }) => {
@@ -427,6 +488,7 @@ export const createEmailService = ({
       fromName: config.emailFromName,
       retryEnabled: true,
       maxAttempts,
+      providerTimeoutMs,
     }),
 
     sendPasswordResetEmail: async ({ to, name, resetUrl, expiresAt }) => {

@@ -205,6 +205,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized AI companion section-tab accessibility copy and added contract coverage so the assistant surface cannot silently return to hardcoded English navigation labels.
 - Localized primary section-tab accessibility copy across home, food, recipes, profile, nutrition library, and quick products, with contract/audit coverage against hardcoded English tab labels returning.
 - Localized profile avatar preset labels and accessibility copy so profile editing no longer exposes generic English `Avatar`/preset labels in Ukrainian or Polish UI.
+- Hardened transactional email delivery for registration, password reset, and partner invites: Brevo is the primary provider with timeout/retry protection, Resend remains the reserve provider, and provider error codes/messages are preserved in sanitized logs without pretending that failed mail was delivered.
 
 ## Current Architecture
 

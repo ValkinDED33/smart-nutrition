@@ -1501,11 +1501,15 @@ addCheck(
   "transactional email has a Brevo primary and Resend reserve inside the canonical email service",
   emailServiceSource.includes("BREVO_TRANSACTIONAL_EMAIL_URL") &&
     emailServiceSource.includes("https://api.brevo.com/v3/smtp/email") &&
+    emailServiceSource.includes("EMAIL_PROVIDER_TIMEOUT_MS") &&
+    emailServiceSource.includes("createTimeoutSignal") &&
+    emailServiceSource.includes("signal: timeoutSignal.signal") &&
     emailServiceSource.includes("const sendWithBrevo") &&
     emailServiceSource.includes("const sendWithResend") &&
+    emailServiceSource.includes("[email] brevo delivery attempt failed") &&
     emailServiceSource.includes("falling back to resend transactional delivery") &&
     emailServiceSource.includes("provider: brevo ? BREVO_PROVIDER : RESEND_PROVIDER"),
-  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider and Resend as reserve, not separate ad hoc mailers."
+  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider, timeout/retry protection, and Resend as reserve, not separate ad hoc mailers."
 );
 
 addCheck(

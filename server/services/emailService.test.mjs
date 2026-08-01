@@ -33,15 +33,19 @@ const createService = ({
   config,
   logger = createLogger(),
   fetchImpl = vi.fn(),
+  providerTimeoutMs,
+  wait = vi.fn(),
 } = {}) => ({
   logger,
+  wait,
   service: createEmailService({
     config: config ?? createConfig(),
     logger,
     resendClient: createResendClient(send),
     fetchImpl,
     retryDelaysMs: [0, 0, 0],
-    wait: vi.fn(),
+    providerTimeoutMs,
+    wait,
   }),
 });
 
@@ -102,6 +106,7 @@ describe("email service", () => {
           "api-key": "brevo-key",
           "Content-Type": "application/json",
         }),
+        signal: expect.any(AbortSignal),
       })
     );
     expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toMatchObject({
@@ -123,8 +128,8 @@ describe("email service", () => {
     const fetchImpl = vi.fn(async () =>
       createFetchResponse({
         ok: false,
-        status: 503,
-        payload: { code: "service_unavailable", message: "Brevo unavailable" },
+        status: 400,
+        payload: { code: "invalid_parameter", message: "Brevo rejected payload" },
       })
     );
     const logger = createLogger();
@@ -158,6 +163,105 @@ describe("email service", () => {
         previousCode: "BREVO_SEND_FAILED",
       })
     );
+  });
+
+  it("retries transient Brevo failures before falling back to Resend reserve", async () => {
+    const send = vi.fn().mockResolvedValue({
+      data: { id: "resend-email-2" },
+      error: null,
+    });
+    const fetchImpl = vi.fn(async () =>
+      createFetchResponse({
+        ok: false,
+        status: 503,
+        payload: { code: "service_unavailable", message: "Brevo unavailable" },
+      })
+    );
+    const logger = createLogger();
+    const wait = vi.fn();
+    const { service } = createService({
+      send,
+      fetchImpl,
+      logger,
+      wait,
+      config: createConfig({ brevoApiKey: "brevo-key" }),
+    });
+
+    const result = await service.sendRegistrationVerificationEmail({
+      to: "user@example.com",
+      name: "User",
+      verificationUrl: "https://smart-nutrition.club/verify-email?token=secret",
+      expiresAt: new Date("2026-06-07T12:00:00.000Z"),
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      messageId: "resend-email-2",
+      attempts: 1,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(wait).toHaveBeenCalledTimes(2);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      "[email] brevo delivery failed",
+      expect.objectContaining({
+        provider: "brevo",
+        status: 503,
+        code: "service_unavailable",
+        message: "Brevo unavailable",
+        attempts: 3,
+      })
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[email] falling back to resend transactional delivery",
+      expect.objectContaining({
+        provider: "resend",
+        previousProvider: "brevo",
+        previousCode: "BREVO_SEND_FAILED",
+      })
+    );
+  });
+
+  it("reports Brevo success after transient retry without using Resend", async () => {
+    const send = vi.fn();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createFetchResponse({
+          ok: false,
+          status: 503,
+          payload: { code: "service_unavailable", message: "Brevo warming up" },
+        })
+      )
+      .mockResolvedValueOnce(
+        createFetchResponse({ payload: { messageId: "brevo-email-2" } })
+      );
+    const wait = vi.fn();
+    const { service } = createService({
+      send,
+      fetchImpl,
+      wait,
+      providerTimeoutMs: 1200,
+      config: createConfig({ brevoApiKey: "brevo-key" }),
+    });
+
+    const result = await service.sendPasswordResetEmail({
+      to: "user@example.com",
+      name: "User",
+      resetUrl: "https://smart-nutrition.club/reset-password?token=secret",
+      expiresAt: new Date("2026-06-07T12:00:00.000Z"),
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      provider: "brevo",
+      messageId: "brevo-email-2",
+      attempts: 2,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(wait).toHaveBeenCalledTimes(1);
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("retries transient provider failures and then succeeds", async () => {
