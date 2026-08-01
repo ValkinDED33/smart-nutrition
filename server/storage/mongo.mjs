@@ -875,41 +875,56 @@ export const createMongoStorage = async (config) => {
       mealUpdatedAt = undefined,
       waterUpdatedAt = undefined,
       deviceId = undefined,
+      baseVersion = null,
     } = {}
   ) => {
     const now = updatedAt ?? new Date().toISOString();
+    const session = client.startSession();
 
-    await Promise.all([
-      collections.profiles.updateOne(
-        { userId },
-        { $set: { userId, state: stripUndefined(snapshot.profile), updatedAt: now } },
-        { upsert: true }
-      ),
-      collections.meals.updateOne(
-        { userId },
-        { $set: { userId, state: stripUndefined(snapshot.meal), updatedAt: now } },
-        { upsert: true }
-      ),
-      collections.states.updateOne(
-        { userId },
-        {
-          $set: stripUndefined({
-            userId,
-            water: snapshot.water,
-            fridge: snapshot.fridge,
-            community: snapshot.community,
-            companion: snapshot.companion,
-            updatedAt: now,
-            profileUpdatedAt,
-            mealUpdatedAt,
-            waterUpdatedAt,
-            backupEnabled: true,
-            lastWriterDeviceId: deviceId,
-          }),
-        },
-        { upsert: true }
-      ),
-    ]);
+    try {
+      await session.withTransaction(async () => {
+        await collections.profiles.updateOne(
+          { userId },
+          { $set: { userId, state: stripUndefined(snapshot.profile), updatedAt: now } },
+          { upsert: true, session }
+        );
+        await collections.meals.updateOne(
+          { userId },
+          { $set: { userId, state: stripUndefined(snapshot.meal), updatedAt: now } },
+          { upsert: true, session }
+        );
+
+        const stateUpdate = await collections.states.updateOne(
+          baseVersion ? { userId, updatedAt: baseVersion } : { userId },
+          {
+            $set: stripUndefined({
+              userId,
+              water: snapshot.water,
+              fridge: snapshot.fridge,
+              community: snapshot.community,
+              companion: snapshot.companion,
+              updatedAt: now,
+              profileUpdatedAt,
+              mealUpdatedAt,
+              waterUpdatedAt,
+              backupEnabled: true,
+              lastWriterDeviceId: deviceId,
+            }),
+          },
+          { upsert: !baseVersion, session }
+        );
+
+        if (baseVersion && stateUpdate.matchedCount === 0) {
+          throw new StateApiError(
+            "STATE_CONFLICT",
+            "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+            { meta: await getSnapshotMeta(userId) }
+          );
+        }
+      });
+    } finally {
+      await session.endSession();
+    }
   };
 
   const listCatalogProductsInternal = async ({
@@ -1019,6 +1034,7 @@ export const createMongoStorage = async (config) => {
       updatedAt,
       mealUpdatedAt: updatedAt,
       deviceId: normalizedSyncContext.deviceId,
+      baseVersion: normalizedSyncContext.baseVersion,
     });
     writeBackupSnapshot(userId, nextSnapshot, "meal-state", updatedAt);
     return normalizedMeal;
@@ -1556,6 +1572,7 @@ export const createMongoStorage = async (config) => {
         mealUpdatedAt: updatedAt,
         waterUpdatedAt: updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, normalizedSnapshot, "snapshot", updatedAt);
       return normalizedSnapshot;
@@ -1594,6 +1611,7 @@ export const createMongoStorage = async (config) => {
         updatedAt,
         profileUpdatedAt: updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, nextSnapshot, "profile-state", updatedAt);
       return normalizedProfile;
@@ -1635,6 +1653,7 @@ export const createMongoStorage = async (config) => {
         updatedAt,
         waterUpdatedAt: updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, nextSnapshot, "water-state", updatedAt);
       return normalizedWater;
@@ -1662,6 +1681,7 @@ export const createMongoStorage = async (config) => {
       await writeSnapshot(userId, nextSnapshot, {
         updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, nextSnapshot, "fridge-state", updatedAt);
       return normalizedFridge;
@@ -1689,6 +1709,7 @@ export const createMongoStorage = async (config) => {
       await writeSnapshot(userId, nextSnapshot, {
         updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, nextSnapshot, "community-state", updatedAt);
       return normalizedCommunity;
@@ -1716,6 +1737,7 @@ export const createMongoStorage = async (config) => {
       await writeSnapshot(userId, nextSnapshot, {
         updatedAt,
         deviceId: normalizedSyncContext.deviceId,
+        baseVersion: normalizedSyncContext.baseVersion,
       });
       writeBackupSnapshot(userId, nextSnapshot, "companion-state", updatedAt);
       return normalizedCompanion;
