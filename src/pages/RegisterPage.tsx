@@ -890,39 +890,41 @@ const RegisterPage = () => {
             </Stack>
           </Box>
 
-          <Box
-            sx={{
-              p: 1.5,
-              borderRadius: 1,
-              border: "1px solid var(--sn-border-soft)",
-              backgroundColor: "var(--sn-surface-glass)",
-            }}
-          >
-            <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between" spacing={1}>
-                <Typography sx={{ fontWeight: 900 }}>{activeStepTitle}</Typography>
-                <Typography color="text.secondary" sx={{ fontWeight: 800 }}>
-                  {stepCopy.progressLabel} {currentStepIndex + 1}/{registrationStepOrder.length}
+          {!pendingVerification && (
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1,
+                border: "1px solid var(--sn-border-soft)",
+                backgroundColor: "var(--sn-surface-glass)",
+              }}
+            >
+              <Stack spacing={1}>
+                <Stack direction="row" justifyContent="space-between" spacing={1}>
+                  <Typography sx={{ fontWeight: 900 }}>{activeStepTitle}</Typography>
+                  <Typography color="text.secondary" sx={{ fontWeight: 800 }}>
+                    {stepCopy.progressLabel} {currentStepIndex + 1}/{registrationStepOrder.length}
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={registrationProgress}
+                  sx={{
+                    height: 8,
+                    borderRadius: 999,
+                    backgroundColor: "var(--sn-surface-muted)",
+                    "& .MuiLinearProgress-bar": {
+                      borderRadius: 999,
+                      background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #84cc16 100%)",
+                    },
+                  }}
+                />
+                <Typography color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                  {stepCopy.stepHint}
                 </Typography>
               </Stack>
-              <LinearProgress
-                variant="determinate"
-                value={registrationProgress}
-                sx={{
-                  height: 8,
-                  borderRadius: 999,
-                  backgroundColor: "var(--sn-surface-muted)",
-                  "& .MuiLinearProgress-bar": {
-                    borderRadius: 999,
-                    background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #84cc16 100%)",
-                  },
-                }}
-              />
-              <Typography color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                {stepCopy.stepHint}
-              </Typography>
-            </Stack>
-          </Box>
+            </Box>
+          )}
 
           {serverError && (
             <Alert severity="error" sx={{ borderRadius: 3 }}>
@@ -930,10 +932,14 @@ const RegisterPage = () => {
             </Alert>
           )}
 
-          {pendingVerification && (
-            <Alert severity="info" sx={{ borderRadius: 3 }}>
-              <Stack spacing={1}>
-                <Typography sx={{ fontWeight: 800 }}>
+          {pendingVerification ? (
+            <Alert
+              severity="info"
+              data-register-verification-panel="true"
+              sx={{ borderRadius: 3 }}
+            >
+              <Stack spacing={1.4}>
+                <Typography sx={{ fontWeight: 900 }}>
                   {t("auth.confirmationSent", { target: pendingVerification.maskedTarget })}
                 </Typography>
                 <Typography color="text.secondary">{t("auth.openConfirmationEmail")}</Typography>
@@ -963,14 +969,15 @@ const RegisterPage = () => {
                 </Stack>
               </Stack>
             </Alert>
-          )}
-
-          <Stack
-            component="form"
-            spacing={2}
-            onSubmit={handleSubmit(onSubmit)}
-            autoComplete="on"
-          >
+          ) : (
+            <Stack spacing={2}>
+              <Stack
+                component="form"
+                data-register-account-form="true"
+                spacing={2}
+                onSubmit={handleSubmit(onSubmit)}
+                autoComplete="on"
+              >
             {registrationStep === "language" && (
               <Stack spacing={1.2}>
                 <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
@@ -1182,23 +1189,25 @@ const RegisterPage = () => {
                 </Button>
               )}
             </Stack>
-          </Stack>
+              </Stack>
 
-          <Typography color="text.secondary" sx={{ textAlign: "center" }}>
-            {t("auth.haveAccount")}{" "}
-            <Box
-              component={Link}
-              to="/login"
-              sx={{
-                color: "#0f766e",
-                fontWeight: 800,
-                textDecoration: "none",
-                display: "inline",
-              }}
-            >
-              {t("auth.loginLink")}
-            </Box>
-          </Typography>
+              <Typography color="text.secondary" sx={{ textAlign: "center" }}>
+                {t("auth.haveAccount")}{" "}
+                <Box
+                  component={Link}
+                  to="/login"
+                  sx={{
+                    color: "#0f766e",
+                    fontWeight: 800,
+                    textDecoration: "none",
+                    display: "inline",
+                  }}
+                >
+                  {t("auth.loginLink")}
+                </Box>
+              </Typography>
+            </Stack>
+          )}
         </Stack>
     </AuthSurface>
   );

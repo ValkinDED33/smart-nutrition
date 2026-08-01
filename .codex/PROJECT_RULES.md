@@ -19,6 +19,8 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 11. Env examples must contain placeholders only, never real-looking provider secrets.
 12. Deploy-sensitive fixes are not complete until the live production chain is checked: Git commit on remote, backend endpoint, frontend bundle, CORS, service worker/cache risk, and stale localStorage/base URL risk.
 13. Family Wellness must be one lifecycle layer inside the existing account/profile/cloud/AI/Telegram ecosystem, not a second family app or local family store.
+14. Do not rush fixes. Slow, verified, root-cause work is mandatory; never ship "quick" UI/code that creates хаос or requires immediate rework.
+15. Completion states must replace the previous input workflow when both shown together would confuse users. For example, after a backend-confirmed registration verification email, password inputs must disappear and the mailbox action becomes the primary UI.
 
 ## Enforcement
 
@@ -32,6 +34,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Every new provider/deploy secret must update env example guards before release.
 - Every fix that changes frontend/backend contracts must verify production routing, not just local tests: confirm the pushed commit, probe the live backend route, inspect the live frontend bundle for the new contract, and check whether PWA/service-worker cache or saved browser state can mask the change.
 - Family, pregnancy, partner, postpartum, breastfeeding, and baby features must extend canonical profile or backend-owned family contracts with scoped permissions.
+- Fixes must be paced for correctness: inspect first, patch narrowly, validate the actual user state, then commit. Speed is not a reason to leave broken composition, duplicated controls, or confusing mixed states.
 
 ## Forbidden Anti-Patterns
 
@@ -49,6 +52,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Loading scanner, photo recognition, 3D companion, or heavy AI UI on unrelated critical routes.
 - Rewriting broad areas when a narrow root-cause fix is possible.
 - Declaring a deployed fix complete after local build/tests only, without checking whether production users can still be pinned to stale service-worker assets, cached chunks, or old localStorage API routing.
+- Shipping rushed UI where old form inputs remain visible beside a completed/sent/confirmed state.
 
 ## Recoverability Standard
 

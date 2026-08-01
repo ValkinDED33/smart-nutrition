@@ -39,7 +39,7 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
   });
 
-  it("does not show a stale confirm-password error immediately after password step validation", async () => {
+  it("keeps password confirmation inside the same human password step", async () => {
     const registerSource = await readSource(REGISTER_PAGE_PATH);
 
     expect(registerSource).toContain("shouldShowConfirmPasswordError");
@@ -47,8 +47,12 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("touchedFields.confirmPassword");
     expect(registerSource).toContain("submitCount > 0");
     expect(registerSource).toContain('registrationStep === "password" ?');
+    expect(registerSource).toContain("{...passwordField}");
     expect(registerSource).toContain("{...confirmPasswordField}");
+    expect(registerSource).toContain("PasswordVisibilityButton");
     expect(registerSource).toContain("error={shouldShowConfirmPasswordError}");
+    expect(registerSource).not.toContain('| "confirm"');
+    expect(registerSource).not.toContain('registrationStep === "confirm"');
   });
 
   it("lets users open their mailbox after a backend-confirmed verification email", async () => {
@@ -58,6 +62,9 @@ describe("onboarding and profile flow contract", () => {
     const enI18nSource = await readSource("src/shared/i18n/en.ts");
 
     expect(registerSource).toContain("getEmailInboxUrl(pendingVerification.email)");
+    expect(registerSource).toContain('data-register-verification-panel="true"');
+    expect(registerSource).toContain('data-register-account-form="true"');
+    expect(registerSource).toContain("pendingVerification ? (");
     expect(registerSource).toContain('href={verificationInboxUrl}');
     expect(registerSource).toContain('target="_blank"');
     expect(registerSource).toContain('t("auth.openMailbox")');

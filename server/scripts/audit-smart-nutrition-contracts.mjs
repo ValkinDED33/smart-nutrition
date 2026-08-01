@@ -1053,6 +1053,7 @@ addCheck(
   ["\"language\"", "\"theme\"", "\"name\"", "\"email\"", "\"password\""].every(
     (step) => registerPageSource.includes(step)
   ) &&
+    registerPageSource.includes("{...passwordField}") &&
     registerPageSource.includes("confirmPasswordField") &&
     registerPageSource.includes("const shouldShowConfirmPasswordError") &&
     registerPageSource.includes("Boolean(dirtyFields.confirmPassword)") &&
@@ -1060,10 +1061,14 @@ addCheck(
     registerPageSource.includes("submitCount > 0") &&
     registerPageSource.includes("error={shouldShowConfirmPasswordError}") &&
     registerPageSource.includes("shouldShowConfirmPasswordError") &&
+    registerPageSource.includes("PasswordVisibilityButton") &&
     !registerPageSource.includes('| "confirm"') &&
     !registerPageSource.includes('case "confirm"') &&
     !registerPageSource.includes('registrationStep === "confirm"') &&
     registerPageSource.includes("checkRegistrationAvailability") &&
+    registerPageSource.includes('data-register-verification-panel="true"') &&
+    registerPageSource.includes('data-register-account-form="true"') &&
+    registerPageSource.includes("pendingVerification ? (") &&
     registerPageSource.includes("languagePreference: appLanguage") &&
     registerPageSource.includes("availabilityBlocksNext") &&
     registerPageSource.includes("availabilityBlocksSubmit") &&
