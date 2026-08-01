@@ -208,6 +208,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized primary section-tab accessibility copy across home, food, recipes, profile, nutrition library, and quick products, with contract/audit coverage against hardcoded English tab labels returning.
 - Localized profile avatar preset labels and accessibility copy so profile editing no longer exposes generic English `Avatar`/preset labels in Ukrainian or Polish UI.
 - Hardened transactional email delivery for registration, password reset, and partner invites: Brevo is the primary provider with timeout/retry protection, Resend remains the reserve provider, and provider error codes/messages are preserved in sanitized logs without pretending that failed mail was delivered.
+- Hardened onboarding restore for female/family profiles: saved canonical `womenHealth` profile context now seeds unfinished onboarding when no user-edited draft exists, and the onboarding page no longer creates a local draft before the user edits the questionnaire.
 
 ## Current Architecture
 

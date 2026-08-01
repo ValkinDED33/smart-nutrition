@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { hasWomenHealthContext } from "@domain/profile/womenHealth";
 import type { RootState } from "../app/store";
 import {
   hasPreAuthOnboardingDraft,
@@ -41,6 +42,14 @@ const OnboardingPage = () => {
       const draftAssistantName = draft.assistantName.trim();
       const preferredName = profile.assistant.onboarding.preferredName.trim();
       const draftUserName = draft.userName.trim();
+      const shouldUseDraftWomenHealth =
+        !onboardingCompleted && hasDraft && draft.gender === "female";
+      const shouldUseProfileWomenHealth =
+        !onboardingCompleted &&
+        !shouldUseDraftWomenHealth &&
+        (user?.gender === "female" || hasWomenHealthContext(profile.womenHealth));
+      const profileDateInputValue = (value: string | null) =>
+        value ? value.slice(0, 10) : "";
 
       return {
         assistantName:
@@ -60,51 +69,63 @@ const OnboardingPage = () => {
         gender:
           !onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male",
         womenHealthMode:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.womenHealthMode
-            : "none",
+            : shouldUseProfileWomenHealth
+              ? profile.womenHealth.mode
+              : "none",
         pregnancyWeek:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.pregnancyWeek
-            : null,
+            : shouldUseProfileWomenHealth
+              ? profile.womenHealth.pregnancyWeek
+              : null,
         dueDate:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.dueDate
-            : "",
+            : shouldUseProfileWomenHealth
+              ? profileDateInputValue(profile.womenHealth.dueDate)
+              : "",
         lastPeriodStartDate:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.lastPeriodStartDate
-            : "",
+            : shouldUseProfileWomenHealth
+              ? profileDateInputValue(profile.womenHealth.lastPeriodStartDate)
+              : "",
         doctorConfirmed:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.doctorConfirmed
-            : false,
+            : shouldUseProfileWomenHealth
+              ? profile.womenHealth.doctorConfirmed
+              : false,
         womenHealthNotes:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.womenHealthNotes
-            : "",
+            : shouldUseProfileWomenHealth
+              ? profile.womenHealth.notes
+              : "",
         motherEyeColor:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.motherEyeColor
             : profile.personalDetails.eyeColor,
         partnerEyeColor:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.partnerEyeColor
             : profile.womenHealth.partnerEyeColor,
         motherZodiac:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.motherZodiac
             : profile.womenHealth.motherZodiac,
         fatherZodiac:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.fatherZodiac
             : profile.womenHealth.fatherZodiac,
         motherChineseZodiac:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.motherChineseZodiac
             : profile.womenHealth.motherChineseZodiac,
         fatherChineseZodiac:
-          !onboardingCompleted && hasDraft && draft.gender === "female"
+          shouldUseDraftWomenHealth
             ? draft.fatherChineseZodiac
             : profile.womenHealth.fatherChineseZodiac,
         height: !onboardingCompleted && hasDraft ? draft.height : user?.height ?? 175,
@@ -162,22 +183,33 @@ const OnboardingPage = () => {
       profile.assistant.onboarding,
       profile.goal,
       profile.personalDetails.eyeColor,
-      profile.womenHealth.fatherChineseZodiac,
-      profile.womenHealth.fatherZodiac,
-      profile.womenHealth.motherChineseZodiac,
-      profile.womenHealth.motherZodiac,
-      profile.womenHealth.partnerEyeColor,
+      profile.womenHealth,
       profile.weightHistory,
       user,
     ]
   );
+  const hasEditedOnboardingRef = useRef(false);
   const [state, setState] = useState(initialState);
-  const updateState = (patch: Partial<OnboardingState>) =>
+  const updateState = (patch: Partial<OnboardingState>) => {
+    hasEditedOnboardingRef.current = true;
     setState((current) => ({ ...current, ...patch }));
+  };
   const stepProps = { state, updateState };
 
   useEffect(() => {
+    if (onboardingCompleted || hasEditedOnboardingRef.current) {
+      return;
+    }
+
+    setState(initialState);
+  }, [initialState, onboardingCompleted]);
+
+  useEffect(() => {
     if (onboardingCompleted) {
+      return;
+    }
+
+    if (!hasEditedOnboardingRef.current && !hasPreAuthOnboardingDraft()) {
       return;
     }
 

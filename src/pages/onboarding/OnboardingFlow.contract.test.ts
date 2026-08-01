@@ -2,10 +2,11 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 const readSource = (path: string) => readFile(path, "utf8");
+const ONBOARDING_PAGE_PATH = "src/pages/OnboardingPage.tsx";
 
 describe("Onboarding flow contract", () => {
   it("does not ask authenticated users to choose language again at onboarding root", async () => {
-    const source = await readSource("src/pages/OnboardingPage.tsx");
+    const source = await readSource(ONBOARDING_PAGE_PATH);
 
     expect(source).toContain(
       '<Route index element={<Navigate to={stepPaths.choice} replace />} />'
@@ -14,7 +15,7 @@ describe("Onboarding flow contract", () => {
   });
 
   it("preserves unfinished female onboarding draft over default registration user values", async () => {
-    const source = await readSource("src/pages/OnboardingPage.tsx");
+    const source = await readSource(ONBOARDING_PAGE_PATH);
 
     expect(source).toContain(
       '!onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male"'
@@ -31,6 +32,18 @@ describe("Onboarding flow contract", () => {
     expect(source).toContain(
       "? draft.goal"
     );
+  });
+
+  it("restores saved women health context before creating a new local draft", async () => {
+    const source = await readSource(ONBOARDING_PAGE_PATH);
+
+    expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
+    expect(source).toContain("shouldUseProfileWomenHealth");
+    expect(source).toContain("profile.womenHealth.mode");
+    expect(source).toContain("profile.womenHealth.pregnancyWeek");
+    expect(source).toContain("profile.womenHealth.notes");
+    expect(source).toContain("hasEditedOnboardingRef.current");
+    expect(source).toContain("!hasEditedOnboardingRef.current && !hasPreAuthOnboardingDraft()");
   });
 
   it("routes female onboarding through women health before the ordinary profile fields", async () => {
