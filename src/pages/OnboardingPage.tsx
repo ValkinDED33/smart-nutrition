@@ -56,8 +56,9 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft && draftUserName
             ? draftUserName
             : preferredName || user?.name || "",
-        age: user?.age ?? (!onboardingCompleted && hasDraft ? draft.age : 25),
-        gender: user?.gender ?? (!onboardingCompleted && hasDraft ? draft.gender : "male"),
+        age: !onboardingCompleted && hasDraft ? draft.age : user?.age ?? 25,
+        gender:
+          !onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male",
         womenHealthMode:
           !onboardingCompleted && hasDraft && draft.gender === "female"
             ? draft.womenHealthMode
@@ -106,11 +107,11 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft && draft.gender === "female"
             ? draft.fatherChineseZodiac
             : profile.womenHealth.fatherChineseZodiac,
-        height: user?.height ?? (!onboardingCompleted && hasDraft ? draft.height : 175),
+        height: !onboardingCompleted && hasDraft ? draft.height : user?.height ?? 175,
         goal:
-          user?.goal ??
-          profile.goal ??
-          (!onboardingCompleted && hasDraft ? draft.goal : "maintain"),
+          !onboardingCompleted && hasDraft
+            ? draft.goal
+            : user?.goal ?? profile.goal ?? "maintain",
         selectedGoals: normalizeSelectedGoals(
           !onboardingCompleted && hasDraft
             ? draft.selectedGoals
@@ -148,10 +149,9 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft
             ? draft.supportNote
             : profile.assistant.onboarding.supportNote,
-        weight:
-          user?.weight ??
-          profile.weightHistory.at(-1)?.weight ??
-          (!onboardingCompleted && hasDraft ? draft.weight : 70),
+        weight: !onboardingCompleted && hasDraft
+          ? draft.weight
+          : user?.weight ?? profile.weightHistory.at(-1)?.weight ?? 70,
       };
     },
     [
@@ -247,7 +247,7 @@ const OnboardingPage = () => {
     <>
       <OnboardingGuide state={state} />
       <Routes>
-        <Route index element={<OnboardingWelcomePage />} />
+        <Route index element={<Navigate to={stepPaths.choice} replace />} />
         <Route path="welcome" element={<OnboardingWelcomePage />} />
         <Route path="choice" element={<OnboardingChoicePage />} />
         <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
