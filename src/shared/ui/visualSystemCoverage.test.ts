@@ -63,6 +63,9 @@ describe("Smart Nutrition visual system coverage", () => {
     expect(source).toContain("lastSession");
     expect(source).toContain("hasActiveSession");
     expect(source).toContain("usersOnline");
+    expect(source).toContain("usersPanelTitle");
+    expect(source).toContain("attentionUsers");
+    expect(source).toContain("protectedUsers");
     expect(source).toContain("emailConfirmed");
     expect(source).toContain("bannedAt");
     expect(source).toContain("banReason");

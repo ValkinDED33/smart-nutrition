@@ -1776,6 +1776,9 @@ addCheck(
     adminCenterCardSource.includes("lastSession") &&
     adminCenterCardSource.includes("hasActiveSession") &&
     adminCenterCardSource.includes("usersOnline") &&
+    adminCenterCardSource.includes("usersPanelTitle") &&
+    adminCenterCardSource.includes("attentionUsers") &&
+    adminCenterCardSource.includes("protectedUsers") &&
     adminCenterCardSource.includes("emailConfirmed") &&
     adminCenterCardSource.includes("bannedAt") &&
     adminCenterCardSource.includes("banReason"),

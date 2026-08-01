@@ -60,6 +60,8 @@ const UK_USERS_LABEL = "Користувачі";
 const PL_REPORTS_LABEL = "Zgłoszenia";
 const PL_USERS_LABEL = "Użytkownicy";
 const ADMIN_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
+const ADMIN_TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
+const ADMIN_SOFT_BORDER = "1px solid var(--sn-border-soft)";
 
 const formatAdminMacro = (
   key: "protein" | "fat" | "carbs",
@@ -121,6 +123,13 @@ const adminCopy = {
     ban: "Заблокувати",
     unban: "Розблокувати",
     deleteUser: "Видалити",
+    usersPanelTitle: "Стан акаунтів",
+    usersPanelSubtitle:
+      "Операційне зведення з хмари: онлайн, підтвердження email і акаунти, які потребують уваги.",
+    verifiedUsers: "Email підтверджено",
+    pendingEmailUsers: "Email очікує",
+    attentionUsers: "Потребують уваги",
+    protectedUsers: "Захищені ролі",
     active: "Активний",
     offline: "Офлайн",
     accountCreated: "Створено",
@@ -192,6 +201,13 @@ const adminCopy = {
     ban: "Zablokuj",
     unban: "Odblokuj",
     deleteUser: "Usuń",
+    usersPanelTitle: "Stan kont",
+    usersPanelSubtitle:
+      "Operacyjny przegląd z chmury: online, potwierdzenie email i konta wymagające uwagi.",
+    verifiedUsers: "Email potwierdzony",
+    pendingEmailUsers: "Email oczekuje",
+    attentionUsers: "Wymagają uwagi",
+    protectedUsers: "Role chronione",
     active: "Aktywne",
     offline: "Offline",
     accountCreated: "Utworzono",
@@ -264,6 +280,13 @@ const adminCopy = {
     ban: "Ban",
     unban: "Unban",
     deleteUser: "Delete",
+    usersPanelTitle: "Account state",
+    usersPanelSubtitle:
+      "Cloud-backed operations summary: online, email confirmation, and accounts needing attention.",
+    verifiedUsers: "Email confirmed",
+    pendingEmailUsers: "Email pending",
+    attentionUsers: "Needs attention",
+    protectedUsers: "Protected roles",
     active: "Active",
     offline: "Offline",
     accountCreated: "Created",
@@ -446,6 +469,39 @@ const getModerationStatsCards = ({
   { label: copy.suspicious, value: stats?.suspiciousAccounts ?? 0 },
 ];
 
+const getAdminUserHealthCards = ({
+  copy,
+  stats,
+  users,
+}: {
+  copy: ReturnType<typeof getAdminCopy>;
+  stats: AdminPlatformStats | null;
+  users: AdminUserSummary[];
+}) => {
+  const bannedCount = stats?.usersBanned ?? users.filter((user) => user.isBanned).length;
+  const pendingEmailCount = users.filter((user) => !user.emailVerified).length;
+  const protectedRoleCount = users.filter((user) => isProtectedOwnerRole(user.role)).length;
+
+  return [
+    { label: copy.usersTotal, value: stats?.usersTotal ?? users.length },
+    {
+      label: copy.usersOnline,
+      value: stats?.usersOnline ?? users.filter((user) => user.hasActiveSession).length,
+    },
+    {
+      label: copy.verifiedUsers,
+      value: users.filter((user) => user.emailVerified).length,
+    },
+    { label: copy.pendingEmailUsers, value: pendingEmailCount },
+    { label: copy.usersBanned, value: bannedCount },
+    {
+      label: copy.attentionUsers,
+      value: bannedCount + pendingEmailCount,
+    },
+    { label: copy.protectedUsers, value: protectedRoleCount },
+  ];
+};
+
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
   const { appLanguage } = useLanguage();
@@ -557,7 +613,7 @@ export const AdminCenterCard = () => {
       sx={{
         p: 3,
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
+        border: ADMIN_SOFT_BORDER,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
@@ -603,7 +659,11 @@ export const AdminCenterCard = () => {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: ADMIN_FOUR_COLUMN_GRID },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: ADMIN_TWO_COLUMN_GRID,
+                  lg: ADMIN_FOUR_COLUMN_GRID,
+                },
                 gap: 1.2,
               }}
             >
@@ -614,7 +674,7 @@ export const AdminCenterCard = () => {
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    border: "1px solid var(--sn-border-soft)",
+                    border: ADMIN_SOFT_BORDER,
                   }}
                 >
                   <Typography color="text.secondary" variant="body2">
@@ -760,6 +820,46 @@ export const AdminCenterCard = () => {
 
         {activeTab === "users" && (access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
           <Stack spacing={1.2}>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+              <Stack spacing={1.2}>
+                <Stack spacing={0.3}>
+                  <Typography sx={{ fontWeight: 900 }}>{copy.usersPanelTitle}</Typography>
+                  <Typography color="text.secondary" variant="body2">
+                    {copy.usersPanelSubtitle}
+                  </Typography>
+                </Stack>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gap: 1,
+                    gridTemplateColumns: {
+                      xs: ADMIN_TWO_COLUMN_GRID,
+                      md: ADMIN_FOUR_COLUMN_GRID,
+                    },
+                  }}
+                >
+                  {getAdminUserHealthCards({ copy, stats, users }).map(({ label, value }) => (
+                    <Box
+                      key={label}
+                      sx={{
+                        p: 1.2,
+                        borderRadius: 1,
+                        border: ADMIN_SOFT_BORDER,
+                        backgroundColor: "var(--sn-surface-glass)",
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        {label}
+                      </Typography>
+                      <Typography sx={{ fontWeight: 900, fontSize: 22 }}>
+                        {value}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Stack>
+            </Paper>
+
             {users.map((user) => (
               <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
                 {(() => {
@@ -806,7 +906,7 @@ export const AdminCenterCard = () => {
                           gap: 1,
                           gridTemplateColumns: {
                             xs: "1fr",
-                            sm: "repeat(2, minmax(0, 1fr))",
+                            sm: ADMIN_TWO_COLUMN_GRID,
                             lg: "repeat(4, minmax(0, 1fr))",
                           },
                         }}
@@ -956,6 +1056,9 @@ export const AdminCenterCard = () => {
                                           usersBanned: user.isBanned
                                             ? Math.max(current.usersBanned - 1, 0)
                                             : current.usersBanned,
+                                          usersOnline: user.hasActiveSession
+                                            ? Math.max(current.usersOnline - 1, 0)
+                                            : current.usersOnline,
                                         }
                                       : current
                                   );
