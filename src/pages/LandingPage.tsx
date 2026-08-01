@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { TypeAnimation } from "react-type-animation";
 import { motion } from "framer-motion";
 import {
   Bell,
   Bot,
   Camera,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Droplets,
   HeartPulse,
   MessageSquareText,
@@ -61,8 +65,25 @@ const PROGRESS_INSIGHTS_TITLE = "Progress insights";
 const SMART_REMINDERS_TITLE = "Smart reminders";
 const GLASS_WHITE_08 = "rgba(255,255,255,0.08)";
 const GLASS_WHITE_14 = "rgba(255,255,255,0.14)";
+const GLASS_WHITE_70 = "rgba(255,255,255,0.7)";
 const GLASS_WHITE_72 = "rgba(255,255,255,0.72)";
 const GLASS_BLUR_14 = "blur(14px)";
+const GLASS_BLUR_18 = "blur(18px)";
+const STRONG_SHADOW = "var(--sn-shadow-strong)";
+const START_ALIGN = "flex-start";
+const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
+const SHOW_EXTENDED_LANDING_SECTIONS = false;
+
+type CompanionCapabilitySlide = {
+  title: string;
+  body: string;
+  tags: string[];
+  Icon: typeof Bot;
+  tone: string;
+};
+
+const getIndexedValue = <T,>(items: readonly T[], requestedIndex: number) =>
+  items.find((_, index) => index === requestedIndex);
 
 const landingCopy = {
   uk: {
@@ -481,7 +502,7 @@ const getLandingScene = (isDarkMode: boolean) => ({
   proofBorder: isDarkMode ? "rgba(255,255,255,0.24)" : "rgba(15,118,110,0.18)",
   proofColor: isDarkMode ? "rgba(255,255,255,0.88)" : "rgba(15,23,42,0.76)",
   proofBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.56)",
-  mobilePanelBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.7)",
+  mobilePanelBg: isDarkMode ? GLASS_WHITE_08 : GLASS_WHITE_70,
   mobilePanelBorder: isDarkMode
     ? GLASS_WHITE_14
     : "rgba(20,184,166,0.16)",
@@ -533,7 +554,7 @@ const getLandingScene = (isDarkMode: boolean) => ({
     : "radial-gradient(circle at 88% 10%, rgba(34,197,94,0.18), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(236,254,255,0.82) 52%, rgba(220,252,231,0.9) 100%)",
   analyticsText: isDarkMode ? "#ffffff" : "#102a43",
   analyticsMuted: isDarkMode ? "rgba(255,255,255,0.66)" : "rgba(15,23,42,0.62)",
-  analyticsCardBg: isDarkMode ? GLASS_WHITE_08 : "rgba(255,255,255,0.7)",
+  analyticsCardBg: isDarkMode ? GLASS_WHITE_08 : GLASS_WHITE_70,
   analyticsCardBorder: isDarkMode ? GLASS_WHITE_14 : "rgba(15,118,110,0.14)",
   analyticsAdviceBg: isDarkMode ? "rgba(20,184,166,0.14)" : "rgba(20,184,166,0.1)",
   analyticsAdviceBorder: isDarkMode ? "rgba(94,234,212,0.22)" : "rgba(15,118,110,0.16)",
@@ -663,10 +684,11 @@ const CompanionExperienceScene = ({
       sx={{
         position: { xs: "relative", lg: "absolute" },
         zIndex: 2,
-        right: { lg: 0 },
-        bottom: { lg: 0 },
-        minHeight: { xs: 320, sm: 500, md: 470, lg: 600 },
-        width: { xs: "100%", md: "100%", lg: "64%" },
+        right: { lg: 22, xl: 36 },
+        top: { lg: 88, xl: 74 },
+        bottom: { lg: "auto" },
+        minHeight: { xs: 320, sm: 460, md: 470, lg: 560 },
+        width: { xs: "100%", md: "100%", lg: "56%", xl: "58%" },
         mt: { xs: 1, md: 0 },
         display: { xs: "none", sm: "grid" },
         placeItems: "center",
@@ -693,11 +715,11 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 1,
-          width: { sm: 460, md: 560, lg: 690 },
-          height: { sm: 460, md: 560, lg: 690 },
+          width: { sm: 430, md: 520, lg: 590, xl: 660 },
+          height: { sm: 430, md: 520, lg: 590, xl: 660 },
           borderRadius: "50%",
-          right: { sm: 8, md: 18, lg: 44 },
-          top: { sm: -16, md: -10, lg: -18 },
+          right: { sm: 8, md: 18, lg: 8, xl: 34 },
+          top: { sm: -16, md: -10, lg: -52, xl: -68 },
           background: isDarkMode
             ? "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.2) 43%, rgba(163,230,53,0.26) 47%, rgba(20,184,166,0.12) 54%, transparent 61%)"
             : "radial-gradient(circle, transparent 40%, rgba(255,255,255,0.92) 41%, rgba(14,165,233,0.32) 47%, rgba(20,184,166,0.2) 55%, transparent 63%)",
@@ -729,10 +751,10 @@ const CompanionExperienceScene = ({
         sx={{
           position: "absolute",
           zIndex: 2,
-          width: { sm: 380, md: 430, lg: 520 },
-          height: { sm: 380, md: 430, lg: 520 },
-          right: { sm: 42, md: 76, lg: 118 },
-          top: { sm: 44, md: 46, lg: 68 },
+          width: { sm: 360, md: 410, lg: 440, xl: 500 },
+          height: { sm: 360, md: 410, lg: 440, xl: 500 },
+          right: { sm: 42, md: 76, lg: 82, xl: 118 },
+          top: { sm: 44, md: 46, lg: 18, xl: 34 },
           pointerEvents: "none",
           "@media (prefers-reduced-motion: reduce)": {
             "& [data-landing-orbit-ring], & [data-landing-signal-node]": {
@@ -809,8 +831,8 @@ const CompanionExperienceScene = ({
           zIndex: 2,
           display: "grid",
           placeItems: "center",
-          width: { sm: 300, md: 390 },
-          height: { sm: 390, md: 440, lg: 500 },
+          width: { sm: 300, md: 360, lg: 360, xl: 390 },
+          height: { sm: 390, md: 430, lg: 430, xl: 470 },
           mt: { sm: 1, md: 2 },
           pointerEvents: "auto",
           cursor: "default",
@@ -963,15 +985,19 @@ const CompanionExperienceScene = ({
           sx={{
             position: "absolute",
             zIndex: 4,
-            width: card.id === "coach" ? { sm: 220, md: 250 } : { sm: 180, md: 210 },
+            width: card.id === "coach" ? { sm: 220, md: 244 } : { sm: 176, md: 200 },
+            display:
+              card.id === "coach" || card.id === "streak"
+                ? { sm: "none", xl: "block" }
+                : "block",
             p: { sm: 1.25, md: 1.45 },
             borderRadius: 1,
             border: isDarkMode
               ? "1px solid rgba(255,255,255,0.16)"
-              : "1px solid rgba(255,255,255,0.72)",
+              : `1px solid ${GLASS_WHITE_72}`,
             bgcolor: isDarkMode ? "rgba(2,6,23,0.58)" : "rgba(255,255,255,0.42)",
             color: isDarkMode ? "#ffffff" : "#102a43",
-            backdropFilter: "blur(18px)",
+            backdropFilter: GLASS_BLUR_18,
             boxShadow: isDarkMode
               ? "0 20px 60px rgba(0,0,0,0.34)"
               : "0 20px 54px rgba(14,165,233,0.18)",
@@ -1046,27 +1072,26 @@ const Hero = ({
       component="section"
       sx={{
         position: "relative",
-        minHeight: { xs: "100svh", md: "auto", lg: "100svh" },
-        maxHeight: { lg: 840 },
+        minHeight: { xs: "auto", md: "auto", lg: "min(760px, calc(100svh - 24px))" },
         overflow: "hidden",
         borderRadius: { xs: 0, md: 1 },
         px: { xs: 2, sm: 3, md: 4, lg: 5 },
-        pt: { xs: 11, md: 12 },
-        pb: { xs: 3, md: 4 },
-        display: { xs: "flex", md: "grid", lg: "flex" },
+        pt: { xs: 10, md: 11, lg: 12 },
+        pb: { xs: 3, md: 4, lg: 5 },
+        display: { xs: "flex", md: "grid", lg: "grid" },
         gridTemplateColumns: {
           md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)",
-          lg: "1fr",
+          lg: "minmax(420px, 0.78fr) minmax(520px, 1fr)",
         },
-        gridTemplateRows: { md: "auto auto", lg: "auto" },
-        columnGap: { md: 2.5, lg: 0 },
+        gridTemplateRows: { md: "auto auto", lg: "1fr" },
+        columnGap: { md: 2.5, lg: 4 },
         rowGap: { md: 2, lg: 0 },
         flexDirection: "column",
         justifyContent: "space-between",
         color: scene.heroText,
         background: scene.heroBackground,
         border: `1px solid ${scene.featureRailBorder}`,
-        boxShadow: "var(--sn-shadow-strong)",
+        boxShadow: STRONG_SHADOW,
       }}
     >
     <Box
@@ -1093,15 +1118,16 @@ const Hero = ({
       sx={{
         position: "relative",
         zIndex: 3,
-        maxWidth: { xs: 980, md: 640, lg: 760 },
-        pt: { xs: 1, md: 2 },
+        maxWidth: { xs: 980, md: 640, lg: 640 },
+        pt: { xs: 1, md: 2, lg: 4 },
         pb: { md: 3 },
+        alignSelf: { lg: "center" },
       }}
     >
       <Chip
         label={copy.eyebrow}
         sx={{
-          alignSelf: "flex-start",
+          alignSelf: START_ALIGN,
           bgcolor: scene.eyebrowBg,
           color: scene.eyebrowColor,
           border: `1px solid ${scene.eyebrowBorder}`,
@@ -1112,14 +1138,15 @@ const Hero = ({
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 42, sm: 68, md: 56, lg: 82 },
-          lineHeight: 0.98,
+          fontSize: { xs: 42, sm: 62, md: 56, lg: 66, xl: 74 },
+          lineHeight: 1,
           fontWeight: 900,
           letterSpacing: 0,
-          maxWidth: { xs: 760, md: 640, lg: 760 },
+          maxWidth: { xs: 760, md: 640, lg: 640 },
+          overflowWrap: "anywhere",
           textShadow: scene.titleShadow,
           "@media (min-width: 900px) and (max-height: 760px)": {
-            fontSize: 62,
+            fontSize: 58,
           },
         }}
       >
@@ -1322,10 +1349,10 @@ const Hero = ({
     <Stack
       direction={{ xs: "column", md: "row" }}
       spacing={1.2}
-      sx={{
-        position: "relative",
-        zIndex: 3,
-        display: { xs: "none", md: "grid" },
+        sx={{
+          position: "relative",
+          zIndex: 3,
+        display: "none",
         gridColumn: { md: "1 / -1", lg: "auto" },
         "@media (min-width: 1200px) and (max-height: 760px)": {
           display: "none",
@@ -1337,7 +1364,7 @@ const Hero = ({
         borderRadius: 1,
         border: `1px solid ${scene.featureRailBorder}`,
         backgroundColor: scene.featureRailBg,
-        backdropFilter: "blur(18px)",
+        backdropFilter: GLASS_BLUR_18,
       }}
     >
       {copy.featureRail.map((feature, index) => {
@@ -1381,6 +1408,258 @@ const Hero = ({
         );
       })}
     </Stack>
+    </Box>
+  );
+};
+
+const AIDiscoveryAccordion = ({
+  copy,
+  isDarkMode,
+}: {
+  copy: LandingCopy;
+  isDarkMode: boolean;
+}) => {
+  const [openItem, setOpenItem] = useState(0);
+  const scene = getLandingScene(isDarkMode);
+  const discoveryItems = [
+    {
+      title: copy.mascot.title,
+      body: copy.mascot.body,
+      meta: copy.mascot.mood,
+      Icon: Bot,
+    },
+    ...copy.sceneCards.map((item) => ({
+      title: item.title,
+      body: item.body,
+      meta: item.tone,
+      Icon: Sparkles,
+    })),
+    ...copy.featureRail.slice(0, 3).map((item, index) => ({
+      title: item.title,
+      body: item.body,
+      meta: getIndexedValue(copy.quickActions, index) ?? copy.navOverview,
+      Icon: getFeatureRailIcon(index),
+    })),
+  ];
+
+  return (
+    <Box
+      id="ai-discovery"
+      component="section"
+      sx={{
+        width: "100%",
+        maxWidth: 1440,
+        mx: "auto",
+        px: { xs: 2, sm: 3, md: 5 },
+        pb: { xs: 4, md: 5 },
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 1,
+          overflow: "hidden",
+          border: `1px solid ${scene.featureRailBorder}`,
+          background: isDarkMode
+            ? "linear-gradient(135deg, rgba(2,6,23,0.9), rgba(6,78,59,0.34))"
+            : "linear-gradient(135deg, rgba(255,255,255,0.88), rgba(220,252,231,0.62))",
+          boxShadow: STRONG_SHADOW,
+          backdropFilter: GLASS_BLUR_18,
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "0.42fr 0.58fr" },
+            minHeight: { md: 460 },
+          }}
+        >
+          <Stack
+            spacing={1.5}
+            sx={{
+              p: { xs: 2.2, md: 3.2 },
+              borderRight: {
+                lg: `1px solid ${scene.featureRailBorder}`,
+              },
+            }}
+          >
+            <Chip
+              label="AI Discovery"
+              sx={{
+                alignSelf: START_ALIGN,
+                bgcolor: scene.eyebrowBg,
+                color: scene.eyebrowColor,
+                border: `1px solid ${scene.eyebrowBorder}`,
+                fontWeight: 900,
+              }}
+            />
+            <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
+              {copy.ecosystemTitle}
+            </Typography>
+            <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
+              {copy.ecosystemBody}
+            </Typography>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {copy.presencePills.map((pill) => (
+                <Chip key={pill} label={pill} variant="outlined" />
+              ))}
+            </Stack>
+          </Stack>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: TWO_COLUMN_GRID },
+              borderTop: {
+                xs: `1px solid ${scene.featureRailBorder}`,
+                lg: "none",
+              },
+            }}
+          >
+            {discoveryItems.map((item, index) => {
+              const isOpen = openItem === index;
+              const buttonId = `ai-discovery-button-${index}`;
+              const panelId = `ai-discovery-panel-${index}`;
+              const Icon = item.Icon;
+
+              return (
+                <Box
+                  key={`${item.title}-${index}`}
+                  sx={{
+                    minHeight: { xs: "auto", md: 176 },
+                    borderRight: {
+                      md:
+                        index % 2 === 0
+                          ? `1px solid ${scene.featureRailBorder}`
+                          : "none",
+                    },
+                    borderBottom: `1px solid ${scene.featureRailBorder}`,
+                    backgroundColor: isOpen
+                      ? isDarkMode
+                        ? "rgba(255,255,255,0.07)"
+                        : GLASS_WHITE_70
+                      : "transparent",
+                    transition:
+                      "background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
+                    "&:hover": {
+                      backgroundColor: isDarkMode
+                        ? "rgba(255,255,255,0.09)"
+                        : "rgba(255,255,255,0.82)",
+                      boxShadow: isDarkMode
+                        ? "inset 0 0 0 1px rgba(163,230,53,0.2)"
+                        : "inset 0 0 0 1px rgba(20,184,166,0.2)",
+                    },
+                  }}
+                >
+                  <Box
+                    component="button"
+                    id={buttonId}
+                    type="button"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => {
+                      playGentleClickSound();
+                      setOpenItem(isOpen ? -1 : index);
+                    }}
+                    sx={{
+                      width: "100%",
+                      minHeight: { xs: 96, md: isOpen ? 96 : 176 },
+                      p: { xs: 2, md: 2.4 },
+                      border: 0,
+                      borderRadius: 0,
+                      display: "grid",
+                      gridTemplateColumns: "auto 1fr auto",
+                      gap: 1.4,
+                      alignItems: "start",
+                      color: "inherit",
+                      textAlign: "left",
+                      background: "transparent",
+                      cursor: "pointer",
+                      transition: "min-height 220ms ease",
+                      "&:focus-visible": {
+                        outline: `3px solid ${scene.accentColor}`,
+                        outlineOffset: -5,
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        color: scene.featureIconColor,
+                        backgroundColor: scene.featureIconBg,
+                        boxShadow: scene.featureIconShadow,
+                      }}
+                    >
+                      <Icon size={20} aria-hidden="true" />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        component="h3"
+                        sx={{
+                          color: scene.heroText,
+                          fontWeight: 900,
+                          fontSize: { xs: 18, md: 20 },
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          mt: 0.5,
+                          color: scene.featureMuted,
+                          fontSize: 13,
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {item.meta}
+                      </Typography>
+                    </Box>
+                    <Box
+                      aria-hidden="true"
+                      sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        border: `1px solid ${scene.featureRailBorder}`,
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 220ms ease, background-color 180ms ease",
+                        backgroundColor: isOpen
+                          ? scene.featureIconBg
+                          : "rgba(255,255,255,0.04)",
+                      }}
+                    >
+                      <ChevronDown size={20} aria-hidden="true" />
+                    </Box>
+                  </Box>
+
+                  <Box
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    hidden={!isOpen}
+                    sx={{
+                      px: { xs: 2, md: 2.4 },
+                      pb: { xs: 2, md: 2.4 },
+                    }}
+                  >
+                    <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      {item.body}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 };
@@ -1505,7 +1784,7 @@ const EcosystemGrid = ({
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+        gridTemplateColumns: { xs: "1fr", md: TWO_COLUMN_GRID },
         gap: 1.5,
       }}
     >
@@ -1579,7 +1858,7 @@ const AnalyticsPanel = ({
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            sm: "repeat(2, minmax(0, 1fr))",
+            sm: TWO_COLUMN_GRID,
             lg: "repeat(4, 1fr)",
           },
           gap: 1.5,
@@ -1789,6 +2068,340 @@ const MobileCommunityPanel = ({
   );
 };
 
+const CompanionCapabilitySlider = ({
+  copy,
+  isDarkMode,
+}: {
+  copy: LandingCopy;
+  isDarkMode: boolean;
+}) => {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const scene = getLandingScene(isDarkMode);
+  const slides: [CompanionCapabilitySlide, ...CompanionCapabilitySlide[]] = [
+    {
+      title: copy.featureRail[0]?.title ?? FOOD_SCANNER_TITLE,
+      body:
+        copy.featureRail[0]?.body ??
+        "Food photo, barcode, and fast product recognition.",
+      tags: [copy.quickActions[0] ?? "Photo", copy.quickActions[1] ?? "Barcode"],
+      Icon: Camera,
+      tone: "#22c55e",
+    },
+    {
+      title: copy.featureRail[1]?.title ?? HYDRATION_TRACKER_TITLE,
+      body: copy.featureRail[1]?.body ?? "Water tracking without manual chaos.",
+      tags: [copy.heroStats[1]?.label ?? "Water", "smart nudges"],
+      Icon: Droplets,
+      tone: "#22d3ee",
+    },
+    {
+      title: copy.featureRail[5]?.title ?? SMART_REMINDERS_TITLE,
+      body:
+        copy.featureRail[5]?.body ??
+        "Water, meals, medication, and habits in one reminder system.",
+      tags: ["Telegram", "medication", "habits"],
+      Icon: Bell,
+      tone: "#a3e635",
+    },
+    {
+      title: copy.mascot.title,
+      body: copy.mascot.body,
+      tags: copy.presencePills.slice(0, 3),
+      Icon: Bot,
+      tone: "#60a5fa",
+    },
+    {
+      title: copy.analyticsTitle,
+      body: copy.progressAdvice,
+      tags: copy.analytics.slice(0, 3).map((item) => item.label),
+      Icon: HeartPulse,
+      tone: "#14b8a6",
+    },
+    {
+      title: copy.mobileTitle,
+      body: copy.mobileBody,
+      tags: ["PWA", "mobile", "safe flow"],
+      Icon: ShieldCheck,
+      tone: "#facc15",
+    },
+  ];
+  const active = getIndexedValue(slides, activeSlide) ?? slides[0];
+  const ActiveIcon = active.Icon;
+  const goToSlide = (direction: -1 | 1) => {
+    playGentleClickSound();
+    setActiveSlide((current) => (current + direction + slides.length) % slides.length);
+  };
+
+  return (
+    <Box
+      component="section"
+      aria-label="Smart Nutrition assistant capabilities"
+      sx={{
+        width: "100%",
+        maxWidth: 1440,
+        mx: "auto",
+        px: { xs: 2, sm: 3, md: 5 },
+        pb: { xs: 4, md: 5 },
+      }}
+    >
+      <Stack spacing={1.2} sx={{ mb: 2 }}>
+        <Typography variant="overline" sx={{ color: scene.accentColor, fontWeight: 900 }}>
+          Living assistant
+        </Typography>
+        <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
+          {copy.title}
+        </Typography>
+      </Stack>
+
+      <Paper
+        elevation={0}
+        sx={{
+          overflow: "hidden",
+          borderRadius: 1,
+          border: `1px solid ${scene.featureRailBorder}`,
+          background: isDarkMode
+            ? "linear-gradient(90deg, rgba(8,13,26,0.98), rgba(3,7,18,0.96))"
+            : "linear-gradient(90deg, rgba(255,255,255,0.96), rgba(241,245,249,0.9))",
+          boxShadow: STRONG_SHADOW,
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" },
+            minHeight: { md: 480 },
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              minHeight: { xs: 360, md: 480 },
+              display: "grid",
+              placeItems: "center",
+              overflow: "hidden",
+              background: isDarkMode
+                ? `radial-gradient(circle at 50% 46%, ${active.tone}44, transparent 25%), radial-gradient(circle at 72% 28%, rgba(255,255,255,0.2), transparent 18%), linear-gradient(135deg, rgba(15,23,42,0.88), rgba(3,7,18,0.96))`
+                : `radial-gradient(circle at 50% 46%, ${active.tone}33, transparent 28%), radial-gradient(circle at 70% 26%, rgba(255,255,255,0.96), transparent 18%), linear-gradient(135deg, rgba(236,253,245,0.92), rgba(224,242,254,0.9))`,
+              borderRight: { lg: `1px solid ${scene.featureRailBorder}` },
+            }}
+          >
+            <Box
+              component={motion.div}
+              key={active.title}
+              initial={{ opacity: 0, scale: 0.92, rotate: -2 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              sx={{
+                width: { xs: 230, md: 320 },
+                height: { xs: 230, md: 320 },
+                borderRadius: "50%",
+                display: "grid",
+                placeItems: "center",
+                background: isDarkMode
+                  ? "rgba(2,6,23,0.52)"
+                  : GLASS_WHITE_72,
+                border: `1px solid ${scene.featureRailBorder}`,
+                boxShadow: `0 0 90px ${active.tone}55`,
+                backdropFilter: "blur(16px)",
+              }}
+            >
+              <Box
+                sx={{
+                  width: { xs: 150, md: 210 },
+                  height: { xs: 150, md: 210 },
+                  borderRadius: "42%",
+                  display: "grid",
+                  placeItems: "center",
+                  color: isDarkMode ? "#ecfeff" : "#042f2e",
+                  background: `linear-gradient(135deg, ${active.tone}, rgba(255,255,255,0.88))`,
+                  boxShadow: `inset 0 0 38px rgba(255,255,255,0.34), 0 28px 90px ${active.tone}55`,
+                }}
+              >
+                <ActiveIcon size={82} aria-hidden="true" />
+              </Box>
+            </Box>
+
+            <Paper
+              elevation={0}
+              component={motion.div}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: [0, -8, 0] }}
+              transition={{
+                opacity: { duration: 0.24 },
+                y: { duration: 4.8, repeat: Infinity, ease: "easeInOut" },
+              }}
+              sx={{
+                position: "absolute",
+                left: { xs: 18, md: 36 },
+                bottom: { xs: 18, md: 36 },
+                maxWidth: { xs: 245, md: 310 },
+                p: 1.5,
+                borderRadius: 1,
+                border: `1px solid ${scene.featureRailBorder}`,
+                bgcolor: isDarkMode ? "rgba(2,6,23,0.68)" : GLASS_WHITE_72,
+                color: scene.heroText,
+                backdropFilter: "blur(16px)",
+              }}
+            >
+              <Typography sx={{ fontSize: 12, color: scene.featureMuted, fontWeight: 900 }}>
+                {copy.mascot.name}
+              </Typography>
+              <Typography sx={{ mt: 0.4, fontWeight: 900, lineHeight: 1.25 }}>
+                {active.tags.join(" / ")}
+              </Typography>
+            </Paper>
+          </Box>
+
+          <Stack
+            spacing={3}
+            sx={{
+              p: { xs: 2.4, md: 4.5, lg: 5 },
+              minHeight: { xs: 390, md: 480 },
+              justifyContent: "space-between",
+              bgcolor: isDarkMode ? "rgba(255,255,255,0.03)" : "#ffffff",
+            }}
+          >
+            <Stack spacing={2.4}>
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {active.tags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    variant="outlined"
+                    sx={{
+                      borderColor: scene.proofBorder,
+                      color: scene.proofColor,
+                      bgcolor: scene.proofBg,
+                      fontWeight: 900,
+                    }}
+                  />
+                ))}
+              </Stack>
+              <Typography
+                component={motion.h3}
+                key={active.title}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22 }}
+                sx={{
+                  m: 0,
+                  color: scene.heroText,
+                  fontSize: { xs: 34, md: 48, lg: 56 },
+                  lineHeight: 1.02,
+                  fontWeight: 900,
+                  letterSpacing: 0,
+                }}
+              >
+                {active.title}
+              </Typography>
+              <Typography
+                key={active.body}
+                component={motion.p}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.24, delay: 0.04 }}
+                sx={{
+                  m: 0,
+                  maxWidth: 680,
+                  color: scene.mutedText,
+                  fontSize: { xs: 16, md: 19 },
+                  lineHeight: 1.65,
+                  fontWeight: 650,
+                }}
+              >
+                {active.body}
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" spacing={1.2} alignItems="center">
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => goToSlide(-1)}
+                aria-label="Previous assistant capability"
+                sx={{
+                  ...iconButtonSx,
+                  width: 58,
+                  height: 58,
+                  borderRadius: "50%",
+                  minWidth: 58,
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: active.tone,
+                  },
+                  "&:focus-visible": {
+                    outline: `3px solid ${active.tone}`,
+                    outlineOffset: 3,
+                  },
+                }}
+              >
+                <ChevronLeft size={24} aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => goToSlide(1)}
+                aria-label="Next assistant capability"
+                sx={{
+                  ...iconButtonSx,
+                  width: 58,
+                  height: 58,
+                  borderRadius: "50%",
+                  minWidth: 58,
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: active.tone,
+                  },
+                  "&:focus-visible": {
+                    outline: `3px solid ${active.tone}`,
+                    outlineOffset: 3,
+                  },
+                }}
+              >
+                <ChevronRight size={24} aria-hidden="true" />
+              </Button>
+              <Stack direction="row" spacing={0.7} sx={{ ml: 1 }}>
+                {slides.map((slide, index) => (
+                  <Box
+                    key={slide.title}
+                    component="button"
+                    type="button"
+                    aria-label={`Show ${slide.title}`}
+                    aria-current={index === activeSlide ? "true" : undefined}
+                    onClick={() => {
+                      playGentleClickSound();
+                      setActiveSlide(index);
+                    }}
+                    sx={{
+                      width: index === activeSlide ? 30 : 10,
+                      height: 10,
+                      borderRadius: 999,
+                      border: 0,
+                      p: 0,
+                      cursor: "pointer",
+                      bgcolor:
+                        index === activeSlide
+                          ? active.tone
+                          : isDarkMode
+                            ? "rgba(255,255,255,0.22)"
+                            : "rgba(15,23,42,0.18)",
+                      transition: "width 180ms ease, background-color 180ms ease",
+                      "&:focus-visible": {
+                        outline: `2px solid ${active.tone}`,
+                        outlineOffset: 3,
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Stack>
+          </Stack>
+        </Box>
+      </Paper>
+    </Box>
+  );
+};
+
 const FinalCta = ({
   copy,
 }: {
@@ -1806,7 +2419,7 @@ const FinalCta = ({
     <Stack
       direction={{ xs: "column", md: "row" }}
       spacing={2}
-      alignItems={{ xs: "flex-start", md: "center" }}
+      alignItems={{ xs: START_ALIGN, md: "center" }}
       justifyContent="space-between"
     >
       <Stack spacing={0.7}>
@@ -1857,22 +2470,38 @@ const LandingPage = () => {
       }}
     >
       <Hero copy={copy} isDarkMode={isDarkMode} />
-      <Stack
-        spacing={{ xs: 4, md: 5 }}
-        sx={{
-          width: "100%",
-          maxWidth: 1440,
-          mx: "auto",
-          px: { xs: 2, sm: 3, md: 5 },
-          pb: { xs: 4, md: 6 },
-        }}
-      >
-        <EcosystemGrid copy={copy} />
-        <QuickFoodPanel copy={copy} />
-        <AnalyticsPanel copy={copy} isDarkMode={isDarkMode} />
-        <MobileCommunityPanel copy={copy} isDarkMode={isDarkMode} />
-        <FinalCta copy={copy} />
-      </Stack>
+      <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
+      <CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />
+      {SHOW_EXTENDED_LANDING_SECTIONS ? (
+        <Stack
+          spacing={{ xs: 4, md: 5 }}
+          sx={{
+            width: "100%",
+            maxWidth: 1440,
+            mx: "auto",
+            px: { xs: 2, sm: 3, md: 5 },
+            pb: { xs: 4, md: 6 },
+          }}
+        >
+          <EcosystemGrid copy={copy} />
+          <QuickFoodPanel copy={copy} />
+          <AnalyticsPanel copy={copy} isDarkMode={isDarkMode} />
+          <MobileCommunityPanel copy={copy} isDarkMode={isDarkMode} />
+          <FinalCta copy={copy} />
+        </Stack>
+      ) : (
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: 1440,
+            mx: "auto",
+            px: { xs: 2, sm: 3, md: 5 },
+            pb: { xs: 4, md: 5 },
+          }}
+        >
+          <FinalCta copy={copy} />
+        </Box>
+      )}
     </Stack>
   );
 };

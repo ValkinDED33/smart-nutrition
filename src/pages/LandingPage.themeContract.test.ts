@@ -62,6 +62,8 @@ describe("LandingPage theme contract", () => {
   it("keeps the first-viewport companion as a living branded scene", async () => {
     const source = await readLandingPageSource();
 
+    expect(source).toContain("AIDiscoveryAccordion");
+    expect(source).toContain("CompanionCapabilitySlider");
     expect(source).toContain("landingCompanionOrbitRings");
     expect(source).toContain("landingCompanionSignalNodes");
     expect(source).toContain('data-landing-living-companion-field="true"');
@@ -76,10 +78,27 @@ describe("LandingPage theme contract", () => {
   it("keeps the landing hero from overlapping on medium desktop widths", async () => {
     const source = await readLandingPageSource();
 
-    expect(source).toContain('display: { xs: "flex", md: "grid", lg: "flex" }');
+    expect(source).toContain('display: { xs: "flex", md: "grid", lg: "grid" }');
     expect(source).toContain('position: { xs: "relative", lg: "absolute" }');
-    expect(source).toContain("gridColumn: { md: \"1 / -1\", lg: \"auto\" }");
+    expect(source).toContain("SHOW_EXTENDED_LANDING_SECTIONS = false");
+    expect(source).toContain('display: "none"');
     expect(source).toContain('md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)"');
-    expect(source).toContain("fontSize: { xs: 42, sm: 68, md: 56, lg: 82 }");
+    expect(source).toContain('lg: "minmax(420px, 0.78fr) minmax(520px, 1fr)"');
+    expect(source).toContain("fontSize: { xs: 42, sm: 62, md: 56, lg: 66, xl: 74 }");
+    expect(source).toContain('width: { xs: "100%", md: "100%", lg: "56%", xl: "58%" }');
+  });
+
+  it("keeps landing magic interactions accessible instead of hover-only", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain("aria-expanded={isOpen}");
+    expect(source).toContain("aria-controls={panelId}");
+    expect(source).toContain("role=\"region\"");
+    expect(source).toContain("transform: isOpen ? \"rotate(180deg)\" : \"rotate(0deg)\"");
+    expect(source).toContain('aria-label="Previous assistant capability"');
+    expect(source).toContain('aria-label="Next assistant capability"');
+    expect(source).toContain('"&:focus-visible"');
+    expect(source).toContain('"&:hover"');
+    expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');
   });
 });
