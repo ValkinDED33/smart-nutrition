@@ -1067,7 +1067,12 @@ addCheck(
     !registerPageSource.includes('registrationStep === "confirm"') &&
     registerPageSource.includes("checkRegistrationAvailability") &&
     registerPageSource.includes('data-register-verification-panel="true"') &&
+    registerPageSource.includes('data-register-delivery-failure-panel="true"') &&
     registerPageSource.includes('data-register-account-form="true"') &&
+    registerPageSource.includes("const showRegistrationForm = !pendingVerification && !deliveryUnavailableEmail") &&
+    registerPageSource.includes("{showRegistrationForm && (") &&
+    registerPageSource.includes("setDeliveryUnavailableEmail(data.email)") &&
+    registerPageSource.includes("void handleSubmit(onSubmit)();") &&
     registerPageSource.includes("pendingVerification ? (") &&
     registerPageSource.includes("languagePreference: appLanguage") &&
     registerPageSource.includes("availabilityBlocksNext") &&

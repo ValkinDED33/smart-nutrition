@@ -63,7 +63,12 @@ describe("onboarding and profile flow contract", () => {
 
     expect(registerSource).toContain("getEmailInboxUrl(pendingVerification.email)");
     expect(registerSource).toContain('data-register-verification-panel="true"');
+    expect(registerSource).toContain('data-register-delivery-failure-panel="true"');
     expect(registerSource).toContain('data-register-account-form="true"');
+    expect(registerSource).toContain("const showRegistrationForm = !pendingVerification && !deliveryUnavailableEmail");
+    expect(registerSource).toContain("{showRegistrationForm && (");
+    expect(registerSource).toContain("setDeliveryUnavailableEmail(data.email)");
+    expect(registerSource).toContain("void handleSubmit(onSubmit)();");
     expect(registerSource).toContain("pendingVerification ? (");
     expect(registerSource).toContain('href={verificationInboxUrl}');
     expect(registerSource).toContain('target="_blank"');

@@ -20,7 +20,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 12. Deploy-sensitive fixes are not complete until the live production chain is checked: Git commit on remote, backend endpoint, frontend bundle, CORS, service worker/cache risk, and stale localStorage/base URL risk.
 13. Family Wellness must be one lifecycle layer inside the existing account/profile/cloud/AI/Telegram ecosystem, not a second family app or local family store.
 14. Do not rush fixes. Slow, verified, root-cause work is mandatory; never ship "quick" UI/code that creates хаос or requires immediate rework.
-15. Completion states must replace the previous input workflow when both shown together would confuse users. For example, after a backend-confirmed registration verification email, password inputs must disappear and the mailbox action becomes the primary UI.
+15. Completion and terminal recovery states must replace the previous input workflow when both shown together would confuse users. For example, after a backend-confirmed registration verification email, password inputs must disappear and the mailbox action becomes the primary UI; if email delivery fails, password inputs must also disappear and the user must get an honest retry/edit recovery panel instead of fake mailbox success.
 
 ## Enforcement
 
@@ -52,7 +52,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Loading scanner, photo recognition, 3D companion, or heavy AI UI on unrelated critical routes.
 - Rewriting broad areas when a narrow root-cause fix is possible.
 - Declaring a deployed fix complete after local build/tests only, without checking whether production users can still be pinned to stale service-worker assets, cached chunks, or old localStorage API routing.
-- Shipping rushed UI where old form inputs remain visible beside a completed/sent/confirmed state.
+- Shipping rushed UI where old form inputs remain visible beside a completed, sent, confirmed, or terminal recovery state.
 
 ## Recoverability Standard
 

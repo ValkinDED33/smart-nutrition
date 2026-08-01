@@ -357,6 +357,8 @@ const RegisterPage = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingVerification, setPendingVerification] =
     useState<RegistrationVerificationPending | null>(null);
+  const [deliveryUnavailableEmail, setDeliveryUnavailableEmail] =
+    useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -430,6 +432,7 @@ const RegisterPage = () => {
   const verificationInboxUrl = pendingVerification
     ? getEmailInboxUrl(pendingVerification.email)
     : null;
+  const showRegistrationForm = !pendingVerification && !deliveryUnavailableEmail;
   const shouldShowConfirmPasswordError =
     Boolean(errors.confirmPassword) &&
     (Boolean(dirtyFields.confirmPassword) ||
@@ -710,6 +713,7 @@ const RegisterPage = () => {
     setSubmitting(true);
     setServerError(null);
     setPendingVerification(null);
+    setDeliveryUnavailableEmail(null);
     trackRuntimeEvent("signup_started", {
       authMode: getAuthRuntimeInfo().mode,
       language: appLanguage,
@@ -776,7 +780,7 @@ const RegisterPage = () => {
         error instanceof AuthApiError &&
         error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
       ) {
-        setServerError(t("auth.deliveryUnavailable"));
+        setDeliveryUnavailableEmail(data.email);
       } else {
         setServerError(t("error.genericRegister"));
       }
@@ -890,7 +894,7 @@ const RegisterPage = () => {
             </Stack>
           </Box>
 
-          {!pendingVerification && (
+          {showRegistrationForm && (
             <Box
               sx={{
                 p: 1.5,
@@ -965,6 +969,46 @@ const RegisterPage = () => {
                     sx={{ textTransform: "none", fontWeight: 800 }}
                   >
                     {t("auth.resend")}
+                  </Button>
+                </Stack>
+              </Stack>
+            </Alert>
+          ) : deliveryUnavailableEmail ? (
+            <Alert
+              severity="error"
+              data-register-delivery-failure-panel="true"
+              sx={{ borderRadius: 3 }}
+            >
+              <Stack spacing={1.4}>
+                <Typography sx={{ fontWeight: 900 }}>
+                  {t("auth.deliveryUnavailable")}
+                </Typography>
+                <Typography color="text.secondary">
+                  {deliveryUnavailableEmail}
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    disabled={submitting}
+                    onClick={() => {
+                      void handleSubmit(onSubmit)();
+                    }}
+                    sx={{ textTransform: "none", fontWeight: 900 }}
+                  >
+                    {t("auth.resend")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    disabled={submitting}
+                    onClick={() => {
+                      setDeliveryUnavailableEmail(null);
+                      setRegistrationStep("email");
+                    }}
+                    sx={{ textTransform: "none", fontWeight: 800 }}
+                  >
+                    {t("auth.backToRegister")}
                   </Button>
                 </Stack>
               </Stack>
