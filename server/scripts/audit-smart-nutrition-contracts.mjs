@@ -2522,6 +2522,10 @@ addCheck(
     authenticatedLiveAuditSource.includes("smart-nutrition-refresh") &&
     authenticatedLiveAuditSource.includes("/api/auth/session") &&
     authenticatedLiveAuditSource.includes("/api/state") &&
+    authenticatedLiveAuditSource.includes("/api/auth/profile-state") &&
+    authenticatedLiveAuditSource.includes("live profile-state save is backend-confirmed") &&
+    authenticatedLiveAuditSource.includes("live profile-state mutation survives session restore") &&
+    authenticatedLiveAuditSource.includes("X-State-Version") &&
     authenticatedLiveAuditSource.includes("/api/water-state") &&
     authenticatedLiveAuditSource.includes("/api/water") &&
     authenticatedLiveAuditSource.includes("/api/meal/product-intake") &&

@@ -20,6 +20,7 @@ const smokeDeviceId = `live-smoke-${Date.now().toString(36)}`;
 const checks = [];
 const cookies = new Map();
 const cleanup = [];
+let authenticatedUser = null;
 
 const addCheck = (label, pass, detail) => {
   checks.push({ label, pass, detail });
@@ -155,6 +156,10 @@ const login = async () => {
     detail:
       "/api/auth/login must authenticate a verified smoke account through httpOnly cookie session JSON without raw refresh tokens.",
   });
+
+  if (result.response.ok && result.data?.user) {
+    authenticatedUser = result.data.user;
+  }
 };
 
 const verifySessionRestore = async () => {
@@ -183,6 +188,93 @@ const verifyStateRead = async () => {
       "water" in data,
     detail:
       "/api/state must return recoverable profile, meal, and water state for the smoke account.",
+  });
+
+  return result;
+};
+
+const verifyProfileStateMutationAndRestore = async () => {
+  const before = await verifyStateRead();
+
+  if (!before.response.ok || !before.data?.profile || !authenticatedUser) {
+    addCheck(
+      "live profile-state mutation was skipped because baseline state is unavailable",
+      false,
+      "/api/auth/profile-state smoke needs a logged-in user and baseline profile snapshot."
+    );
+    return;
+  }
+
+  const profile = before.data.profile;
+  const nextProfile = {
+    ...profile,
+    notificationsEnabled: !Boolean(profile.notificationsEnabled),
+  };
+  const baseVersion =
+    typeof before.data.updatedAt === "string" && before.data.updatedAt
+      ? before.data.updatedAt
+      : null;
+  const mutationHeaders = new Headers();
+
+  if (baseVersion) {
+    mutationHeaders.set("X-State-Version", baseVersion);
+  }
+
+  const result = await requestJson("/api/auth/profile-state", {
+    method: "PATCH",
+    body: JSON.stringify({
+      user: authenticatedUser,
+      profile: nextProfile,
+    }),
+    headers: mutationHeaders,
+    withSyncContext: true,
+  });
+
+  assertResponse({
+    label: "live profile-state save is backend-confirmed",
+    ...result,
+    predicate: (data) =>
+      data?.ok === true &&
+      data?.user?.id === authenticatedUser?.id &&
+      data?.profile?.notificationsEnabled === nextProfile.notificationsEnabled &&
+      typeof data?.meta?.updatedAt === "string",
+    detail:
+      "/api/auth/profile-state must atomically confirm the user/profile save and return canonical profile plus cloud meta.",
+  });
+
+  if (result.response.ok) {
+    cleanup.push(async () => {
+      const latest = await requestJson("/api/state", { method: "GET" });
+      const restoreHeaders = new Headers();
+      const restoreBaseVersion =
+        typeof latest.data?.updatedAt === "string" ? latest.data.updatedAt : null;
+
+      if (restoreBaseVersion) {
+        restoreHeaders.set("X-State-Version", restoreBaseVersion);
+      }
+
+      await requestJson("/api/auth/profile-state", {
+        method: "PATCH",
+        body: JSON.stringify({
+          user: authenticatedUser,
+          profile,
+        }),
+        headers: restoreHeaders,
+        withSyncContext: true,
+      });
+    });
+  }
+
+  const restoredSession = await requestJson("/api/auth/session", { method: "GET" });
+
+  assertResponse({
+    label: "live profile-state mutation survives session restore",
+    ...restoredSession,
+    predicate: (data) =>
+      data?.user?.id === authenticatedUser?.id &&
+      data?.snapshot?.profile?.notificationsEnabled === nextProfile.notificationsEnabled,
+    detail:
+      "After /api/auth/profile-state succeeds, /api/auth/session must restore the backend-confirmed profile state.",
   });
 };
 
@@ -373,7 +465,7 @@ const main = async () => {
   try {
     await login();
     await verifySessionRestore();
-    await verifyStateRead();
+    await verifyProfileStateMutationAndRestore();
     await verifyWaterMutationAndRestore();
     await verifyProductIntakeAndCleanup();
     await verifyReminderLifecycle();
