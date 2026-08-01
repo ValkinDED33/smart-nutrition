@@ -28,6 +28,7 @@ import {
   AssistantAvatar,
 } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
+import { playAIDiscoverySound, playGentleClickSound } from "../shared/lib/sound";
 import { useAppColorMode } from "../shared/theme/colorMode";
 
 type LandingLanguage = "uk" | "pl" | "en";
@@ -599,6 +600,19 @@ const landingSectionTitleSx = {
   letterSpacing: 0,
 } as const;
 
+const landingCompanionOrbitRings = [
+  { size: { sm: 245, md: 322 }, rotate: 0, duration: 15 },
+  { size: { sm: 295, md: 392 }, rotate: 16, duration: 19 },
+  { size: { sm: 345, md: 462 }, rotate: -14, duration: 24 },
+] as const;
+
+const landingCompanionSignalNodes = [
+  { id: "water", angle: 28, distance: { sm: 126, md: 168 }, color: "#22d3ee" },
+  { id: "food", angle: 118, distance: { sm: 116, md: 156 }, color: "#a3e635" },
+  { id: "care", angle: 216, distance: { sm: 122, md: 164 }, color: "#34d399" },
+  { id: "memory", angle: 308, distance: { sm: 134, md: 178 }, color: "#60a5fa" },
+] as const;
+
 const CompanionExperienceScene = ({
   isDarkMode,
 }: {
@@ -709,12 +723,87 @@ const CompanionExperienceScene = ({
           filter: "blur(0.5px)",
         }}
       />
+      <Box
+        aria-hidden
+        data-landing-living-companion-field="true"
+        sx={{
+          position: "absolute",
+          zIndex: 2,
+          width: { sm: 380, md: 520 },
+          height: { sm: 380, md: 520 },
+          right: { sm: 42, md: 118 },
+          top: { sm: 44, md: 68 },
+          pointerEvents: "none",
+          "@media (prefers-reduced-motion: reduce)": {
+            "& [data-landing-orbit-ring], & [data-landing-signal-node]": {
+              animation: "none",
+            },
+          },
+        }}
+      >
+        {landingCompanionOrbitRings.map((ring, index) => (
+          <Box
+            key={ring.duration}
+            data-landing-orbit-ring
+            sx={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: ring.size,
+              height: ring.size,
+              borderRadius: "50%",
+              transform: `translate(-50%, -50%) rotate(${ring.rotate}deg)`,
+              border: isDarkMode
+                ? "1px solid rgba(163,230,53,0.18)"
+                : "1px solid rgba(14,165,233,0.2)",
+              borderTopColor: index === 0 ? "#a3e635" : "rgba(34,211,238,0.46)",
+              borderRightColor: index === 2 ? "#22d3ee" : "rgba(255,255,255,0.28)",
+              boxShadow: isDarkMode
+                ? "0 0 42px rgba(34,211,238,0.1)"
+                : "0 0 50px rgba(14,165,233,0.13)",
+              animation: `landingCompanionOrbit ${ring.duration}s linear infinite`,
+            }}
+          />
+        ))}
+        {landingCompanionSignalNodes.map((node, index) => (
+          <Box
+            key={node.id}
+            data-landing-signal-node={node.id}
+            sx={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: { sm: 12, md: 15 },
+              height: { sm: 12, md: 15 },
+              borderRadius: "50%",
+              bgcolor: node.color,
+              boxShadow: `0 0 22px ${node.color}`,
+              transform: {
+                sm: `rotate(${node.angle}deg) translateX(${node.distance.sm}px) rotate(-${node.angle}deg)`,
+                md: `rotate(${node.angle}deg) translateX(${node.distance.md}px) rotate(-${node.angle}deg)`,
+              },
+              animation: `landingCompanionSignal ${3.8 + index * 0.4}s ease-in-out infinite`,
+              animationDelay: `${index * 0.36}s`,
+            }}
+          />
+        ))}
+      </Box>
 
       <Box
         component={motion.div}
+        data-landing-living-companion-stage="true"
         initial={{ opacity: 0, y: 22, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.72, ease: "easeOut" }}
+        animate={{ opacity: 1, y: [0, -8, 0], scale: [1, 1.015, 1] }}
+        whileHover={{
+          scale: 1.035,
+          rotate: -1.4,
+          transition: { type: "spring", stiffness: 170, damping: 16 },
+        }}
+        transition={{
+          opacity: { duration: 0.72, ease: "easeOut" },
+          y: { duration: 5.8, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: 5.8, repeat: Infinity, ease: "easeInOut" },
+        }}
         sx={{
           position: "relative",
           zIndex: 2,
@@ -723,10 +812,24 @@ const CompanionExperienceScene = ({
           width: { sm: 300, md: 390 },
           height: { sm: 390, md: 500 },
           mt: { sm: 1, md: 2 },
+          pointerEvents: "auto",
+          cursor: "default",
+          "&:hover [data-landing-companion-head]::after": {
+            transform: "translate(-46%, -50%)",
+          },
+          "&:hover [data-landing-companion-body]::before": {
+            transform: "translate(-50%, -50%) scale(1.08) rotate(8deg)",
+          },
+          "@media (prefers-reduced-motion: reduce)": {
+            transform: "none !important",
+          },
         }}
       >
         <Box
           aria-hidden
+          component={motion.div}
+          animate={{ opacity: [0.72, 1, 0.72], scale: [0.96, 1.04, 0.96] }}
+          transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
           sx={{
             position: "absolute",
             width: { sm: 250, md: 330 },
@@ -744,6 +847,10 @@ const CompanionExperienceScene = ({
         />
         <Box
           aria-hidden
+          component={motion.div}
+          data-landing-companion-head
+          animate={{ y: [0, -5, 0], rotate: [0, 1.2, 0] }}
+          transition={{ duration: 5.4, repeat: Infinity, ease: "easeInOut" }}
           sx={{
             position: "absolute",
             top: { sm: 80, md: 108 },
@@ -775,11 +882,13 @@ const CompanionExperienceScene = ({
               background:
                 "radial-gradient(circle at 28% 44%, #86efac 0 14%, transparent 15%), radial-gradient(circle at 72% 44%, #86efac 0 14%, transparent 15%), radial-gradient(ellipse at 50% 78%, transparent 0 56%, #86efac 57% 61%, transparent 62%)",
               filter: "drop-shadow(0 0 12px rgba(134,239,172,0.9))",
+              transition: "transform 180ms ease",
             },
           }}
         />
         <Box
           aria-hidden
+          data-landing-companion-body
           sx={{
             position: "absolute",
             top: { sm: 226, md: 292 },
@@ -803,6 +912,7 @@ const CompanionExperienceScene = ({
               borderRadius: "36% 64% 34% 66%",
               background: "linear-gradient(135deg, #22c55e, #bef264)",
               boxShadow: "0 0 32px rgba(134,239,172,0.74)",
+              transition: "transform 220ms ease",
             },
           }}
         />
@@ -1118,6 +1228,7 @@ const Hero = ({
           to="/register"
           variant="contained"
           size="large"
+          onClick={playAIDiscoverySound}
           sx={{
             px: 3.2,
             py: 1.4,
@@ -1131,6 +1242,7 @@ const Hero = ({
           to="/register"
           variant="outlined"
           size="large"
+          onClick={playGentleClickSound}
           startIcon={<MessageSquareText size={18} aria-hidden="true" />}
           sx={{
             px: 3.2,
@@ -1305,6 +1417,7 @@ const QuickFoodPanel = ({
             <Button
               key={action}
               variant="outlined"
+              onClick={playGentleClickSound}
               sx={iconButtonSx}
               aria-label={action}
             >
@@ -1725,6 +1838,14 @@ const LandingPage = () => {
         background: scene.pageBackground,
         color: scene.heroText,
         transition: "background 240ms ease, color 240ms ease",
+        "@keyframes landingCompanionOrbit": {
+          "0%": { rotate: "0deg" },
+          "100%": { rotate: "360deg" },
+        },
+        "@keyframes landingCompanionSignal": {
+          "0%, 100%": { opacity: 0.58, scale: 0.82 },
+          "45%": { opacity: 1, scale: 1.18 },
+        },
       }}
     >
       <Hero copy={copy} isDarkMode={isDarkMode} />

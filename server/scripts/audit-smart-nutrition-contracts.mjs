@@ -2134,6 +2134,20 @@ addCheck(
   "Public landing copy must sell the assistant experience in the selected language instead of exposing mixed English product-planning labels."
 );
 
+addCheck(
+  "guest landing first viewport exposes a living companion scene",
+  landingPageSource.includes("landingCompanionOrbitRings") &&
+    landingPageSource.includes("landingCompanionSignalNodes") &&
+    landingPageSource.includes('data-landing-living-companion-field="true"') &&
+    landingPageSource.includes('data-landing-living-companion-stage="true"') &&
+    landingPageSource.includes("landingCompanionOrbit") &&
+    landingPageSource.includes("landingCompanionSignal") &&
+    landingPageSource.includes("prefers-reduced-motion: reduce") &&
+    landingPageSource.includes("playAIDiscoverySound") &&
+    landingPageSource.includes("playGentleClickSound"),
+  "The public landing hero must feel like a live AI space with user-triggered feedback and motion safety, not a static calorie-counter splash."
+);
+
 const localizedAssistantExperienceSources = [
   ecosystemPulseSource,
   companionProgressCardSource,

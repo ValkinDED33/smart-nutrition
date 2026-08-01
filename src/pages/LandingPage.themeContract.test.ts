@@ -58,4 +58,18 @@ describe("LandingPage theme contract", () => {
     expect(source).not.toContain("companion-platforma");
     expect(source).not.toContain("zapytaj companion");
   });
+
+  it("keeps the first-viewport companion as a living branded scene", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain("landingCompanionOrbitRings");
+    expect(source).toContain("landingCompanionSignalNodes");
+    expect(source).toContain('data-landing-living-companion-field="true"');
+    expect(source).toContain('data-landing-living-companion-stage="true"');
+    expect(source).toContain("landingCompanionOrbit");
+    expect(source).toContain("landingCompanionSignal");
+    expect(source).toContain("prefers-reduced-motion: reduce");
+    expect(source).toContain("playAIDiscoverySound");
+    expect(source).toContain("playGentleClickSound");
+  });
 });
