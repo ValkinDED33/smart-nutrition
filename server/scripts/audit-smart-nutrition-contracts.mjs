@@ -235,6 +235,9 @@ const companionAvatarModelSource = readSource("src/features/assistant-3d/compone
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
+const transactionalEmailCheckSource = readSource(
+  "server/scripts/check-transactional-email.mjs"
+);
 const seoAuditSource = readSource("server/scripts/audit-seo-discovery.mjs");
 const globalAssistantLayerSource = readSource("src/widgets/GlobalAssistantLayer.tsx");
 const globalAssistantLayerModelSource = readSource("src/widgets/globalAssistantLayerModel.ts");
@@ -1511,8 +1514,16 @@ addCheck(
     emailServiceSource.includes("const sendWithResend") &&
     emailServiceSource.includes("[email] brevo delivery attempt failed") &&
     emailServiceSource.includes("falling back to resend transactional delivery") &&
-    emailServiceSource.includes("provider: brevo ? BREVO_PROVIDER : RESEND_PROVIDER"),
-  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider, timeout/retry protection, and Resend as reserve, not separate ad hoc mailers."
+    emailServiceSource.includes("provider: brevo ? BREVO_PROVIDER : RESEND_PROVIDER") &&
+    packageJsonSource.includes(
+      '"email:check": "node --env-file-if-exists=.env server/scripts/check-transactional-email.mjs"'
+    ) &&
+    transactionalEmailCheckSource.includes("Transactional email delivery is configured.") &&
+    transactionalEmailCheckSource.includes("Available providers:") &&
+    transactionalEmailCheckSource.includes("SMART_NUTRITION_BREVO_API_KEY or SMART_NUTRITION_RESEND_API_KEY") &&
+    !packageJsonSource.includes("check-resend-email.mjs") &&
+    !transactionalEmailCheckSource.includes("Resend email delivery is not configured"),
+  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider, timeout/retry protection, Resend as reserve, and one provider-neutral diagnostic command."
 );
 
 addCheck(

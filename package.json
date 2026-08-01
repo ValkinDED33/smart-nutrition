@@ -7,7 +7,7 @@
     "dev": "vite",
     "server:dev": "node --env-file-if-exists=.env server/index.mjs",
     "server:check": "node --env-file-if-exists=.env server/production-check.mjs",
-    "email:check": "node --env-file-if-exists=.env server/scripts/check-resend-email.mjs",
+    "email:check": "node --env-file-if-exists=.env server/scripts/check-transactional-email.mjs",
     "db:migrate:postgres": "node --env-file-if-exists=.env server/scripts/migrate-sqlite-to-postgres.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
