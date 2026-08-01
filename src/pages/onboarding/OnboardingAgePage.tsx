@@ -36,7 +36,7 @@ export const OnboardingAgePage = ({ state, updateState }: OnboardingStepProps) =
     }
 
     updateState({ age: clampNumber(parsedAge, 10, 120) });
-    navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.height);
+    navigate(stepPaths.height);
   };
 
   return (

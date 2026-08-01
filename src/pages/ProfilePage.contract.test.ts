@@ -22,4 +22,15 @@ describe("ProfilePage contract", () => {
     expect(localizedRoleCopy).not.toContain("VERIFIED_USER_ROLE_LABEL");
     expect(localizedRoleCopy).not.toContain("OWNER_ROLE_LABEL");
   });
+
+  it("keeps women health as a visible profile section for female accounts", async () => {
+    const source = await readSource("src/pages/ProfilePage.tsx");
+
+    expect(source).toContain("const canSeeWomenHealthSection");
+    expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
+    expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
+    expect(source).toContain('id: "women-health"');
+    expect(source).toContain("label: copy.tabs.womenHealth");
+    expect(source).toContain("<WomenHealthOverviewCard />");
+  });
 });

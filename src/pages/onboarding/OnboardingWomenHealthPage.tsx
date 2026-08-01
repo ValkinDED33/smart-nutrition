@@ -741,7 +741,7 @@ export const OnboardingWomenHealthPage = ({
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.height)}
+              onClick={() => navigate(stepPaths.name)}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {t("onboarding.next")}

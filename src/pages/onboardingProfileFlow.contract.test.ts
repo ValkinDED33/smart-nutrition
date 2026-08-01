@@ -113,10 +113,13 @@ describe("onboarding and profile flow contract", () => {
     expect(assistantSource).not.toContain("disabled={state.assistantName.trim()");
     expect(assistantSource).not.toContain('placeholder={"Alex"');
     expect(onboardingI18nSource).toContain("Можна залишити порожнім");
-    expect(genderSource).toContain("navigate(stepPaths.name)");
+    expect(genderSource).toContain(
+      'navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.name)'
+    );
+    expect(womenHealthSource).toContain("onClick={() => navigate(stepPaths.name)}");
     expect(nameSource).toContain("navigate(stepPaths.age)");
-    expect(ageSource).toContain("stepPaths.womenHealth");
     expect(ageSource).toContain("stepPaths.height");
+    expect(ageSource).not.toContain("stepPaths.womenHealth : stepPaths.height");
     expect(womenHealthSource).toContain('data-onboarding-pregnancy-block="true"');
     expect(womenHealthSource).toContain('data-onboarding-family-preview-block="true"');
     expect(womenHealthSource).toContain("pregnancyBlockTitle");

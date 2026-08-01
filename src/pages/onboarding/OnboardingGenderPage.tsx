@@ -25,7 +25,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
     );
   };
   const handleNext = () => {
-    navigate(stepPaths.name);
+    navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.name);
   };
 
   return (

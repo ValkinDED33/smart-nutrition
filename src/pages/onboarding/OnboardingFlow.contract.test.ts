@@ -32,4 +32,28 @@ describe("Onboarding flow contract", () => {
       "? draft.goal"
     );
   });
+
+  it("routes female onboarding through women health before the ordinary profile fields", async () => {
+    const genderSource = await readSource("src/pages/onboarding/OnboardingGenderPage.tsx");
+    const womenHealthSource = await readSource(
+      "src/pages/onboarding/OnboardingWomenHealthPage.tsx"
+    );
+    const nameSource = await readSource("src/pages/onboarding/OnboardingNamePage.tsx");
+    const ageSource = await readSource("src/pages/onboarding/OnboardingAgePage.tsx");
+    const heightSource = await readSource("src/pages/onboarding/OnboardingHeightPage.tsx");
+
+    expect(genderSource).toContain(
+      'navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.name)'
+    );
+    expect(womenHealthSource).toContain("data-onboarding-pregnancy-block");
+    expect(womenHealthSource).toContain("data-onboarding-family-preview-block");
+    expect(womenHealthSource).toContain("onClick={() => navigate(stepPaths.name)}");
+    expect(nameSource).toContain(
+      'navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.gender)'
+    );
+    expect(ageSource).toContain("navigate(stepPaths.height)");
+    expect(ageSource).not.toContain("stepPaths.womenHealth : stepPaths.height");
+    expect(heightSource).toContain("onClick={() => navigate(stepPaths.age)}");
+    expect(heightSource).not.toContain("stepPaths.womenHealth : stepPaths.age");
+  });
 });
