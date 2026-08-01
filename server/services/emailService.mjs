@@ -1,9 +1,12 @@
 import { Resend } from "resend";
 
-const EMAIL_PROVIDER = "resend";
+const RESEND_PROVIDER = "resend";
+const BREVO_PROVIDER = "brevo";
+const BREVO_TRANSACTIONAL_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 const MAX_EMAIL_ATTEMPTS = 3;
 const EMAIL_RETRY_DELAYS_MS = [300, 900, 1800];
 const TRANSIENT_STATUS_CODES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+const NON_RETRY_PROVIDER_CODES = new Set(["daily_quota_exceeded"]);
 const TRANSIENT_ERROR_CODES = new Set([
   "ECONNRESET",
   "ECONNREFUSED",
@@ -59,13 +62,17 @@ const readProviderErrorMessage = (error) => {
 };
 
 const isTransientProviderError = (error) => {
+  const code = readProviderErrorCode(error);
+
+  if (code && NON_RETRY_PROVIDER_CODES.has(code)) {
+    return false;
+  }
+
   const status = readProviderErrorStatus(error);
 
   if (status) {
     return TRANSIENT_STATUS_CODES.has(status) || status >= 500;
   }
-
-  const code = readProviderErrorCode(error);
 
   if (code && TRANSIENT_ERROR_CODES.has(code)) {
     return true;
@@ -74,13 +81,36 @@ const isTransientProviderError = (error) => {
   return error instanceof Error;
 };
 
-const toSafeProviderErrorDetails = (error) => ({
-  provider: EMAIL_PROVIDER,
+const toSafeProviderErrorDetails = (error, provider = RESEND_PROVIDER) => ({
+  provider,
   status: readProviderErrorStatus(error),
   code: readProviderErrorCode(error),
   message: readProviderErrorMessage(error),
   transient: isTransientProviderError(error),
 });
+
+const readJsonProviderError = async (response) => {
+  try {
+    const payload = await response.json();
+    return {
+      code: readProviderErrorMessage(payload?.code),
+      message: readProviderErrorMessage(payload?.message ?? payload?.error),
+    };
+  } catch {
+    return {
+      code: null,
+      message: readProviderErrorMessage(response.statusText),
+    };
+  }
+};
+
+const createProviderHttpError = ({ provider, response, code, message }) => {
+  const error = new Error(message || `${provider} email delivery failed`);
+  error.status = response.status;
+  error.statusCode = response.status;
+  error.code = code || `${provider.toUpperCase()}_${response.status}`;
+  return error;
+};
 
 const buildVerificationText = ({ appBaseUrl, name, verificationUrl, expiresAt }) => {
   const displayName = String(name ?? "").trim() || "there";
@@ -223,20 +253,23 @@ export const createEmailService = ({
   config,
   logger = console,
   resendClient = null,
+  fetchImpl = globalThis.fetch,
   retryDelaysMs = EMAIL_RETRY_DELAYS_MS,
   wait = sleep,
 } = {}) => {
   const resend = resendClient ?? (config.resendApiKey ? new Resend(config.resendApiKey) : null);
+  const brevoApiKey = String(config.brevoApiKey ?? "").trim();
+  const brevo = brevoApiKey && fetchImpl ? { apiKey: brevoApiKey } : null;
   const from = config.emailFromAddress
     ? `"${config.emailFromName}" <${config.emailFromAddress}>`
     : null;
   const maxAttempts = MAX_EMAIL_ATTEMPTS;
 
-  const sendEmail = async ({ to, subject, html, text }) => {
-    if (!resend || !from) {
+  const sendWithResend = async ({ to, subject, html, text }) => {
+    if (!resend) {
       return {
         ok: false,
-        code: "EMAIL_NOT_CONFIGURED",
+        code: "RESEND_NOT_CONFIGURED",
       };
     }
 
@@ -267,7 +300,7 @@ export const createEmailService = ({
       } catch (error) {
         lastError = error;
         const details = {
-          ...toSafeProviderErrorDetails(error),
+          ...toSafeProviderErrorDetails(error, RESEND_PROVIDER),
           attempt,
           maxAttempts,
           willRetry: attempt < maxAttempts && isTransientProviderError(error),
@@ -284,7 +317,7 @@ export const createEmailService = ({
     }
 
     logger.error?.("[email] delivery failed", {
-      ...toSafeProviderErrorDetails(lastError),
+      ...toSafeProviderErrorDetails(lastError, RESEND_PROVIDER),
       attempts: attemptsUsed,
     });
 
@@ -295,12 +328,101 @@ export const createEmailService = ({
     };
   };
 
+  const sendWithBrevo = async ({ to, subject, html, text }) => {
+    if (!brevo) {
+      return {
+        ok: false,
+        code: "BREVO_NOT_CONFIGURED",
+      };
+    }
+
+    try {
+      const response = await fetchImpl(BREVO_TRANSACTIONAL_EMAIL_URL, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "api-key": brevo.apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: {
+            email: config.emailFromAddress,
+            name: config.emailFromName,
+          },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+          textContent: text,
+        }),
+      });
+
+      if (!response.ok) {
+        const providerError = await readJsonProviderError(response);
+        throw createProviderHttpError({
+          provider: BREVO_PROVIDER,
+          response,
+          code: providerError.code,
+          message: providerError.message,
+        });
+      }
+
+      const payload = await response.json().catch(() => ({}));
+
+      return {
+        ok: true,
+        provider: BREVO_PROVIDER,
+        messageId: payload?.messageId ?? payload?.messageIds?.[0] ?? null,
+        attempts: 1,
+      };
+    } catch (error) {
+      logger.error?.("[email] brevo delivery failed", {
+        ...toSafeProviderErrorDetails(error, BREVO_PROVIDER),
+        attempts: 1,
+      });
+
+      return {
+        ok: false,
+        code: "BREVO_SEND_FAILED",
+        attempts: 1,
+      };
+    }
+  };
+
+  const sendEmail = async ({ to, subject, html, text }) => {
+    if (!from || (!resend && !brevo)) {
+      return {
+        ok: false,
+        code: "EMAIL_NOT_CONFIGURED",
+      };
+    }
+
+    if (brevo) {
+      const brevoResult = await sendWithBrevo({ to, subject, html, text });
+
+      if (brevoResult.ok || !resend) {
+        return brevoResult;
+      }
+
+      logger.warn?.("[email] falling back to resend transactional delivery", {
+        provider: RESEND_PROVIDER,
+        previousProvider: BREVO_PROVIDER,
+        previousCode: brevoResult.code,
+      });
+    }
+
+    return sendWithResend({ to, subject, html, text });
+  };
+
   return {
-    isConfigured: () => Boolean(resend && from),
+    isConfigured: () => Boolean(from && (resend || brevo)),
 
     getStatus: () => ({
-      configured: Boolean(resend && from),
-      provider: EMAIL_PROVIDER,
+      configured: Boolean(from && (resend || brevo)),
+      provider: brevo ? BREVO_PROVIDER : RESEND_PROVIDER,
+      providers: {
+        brevo: Boolean(brevo),
+        resend: Boolean(resend),
+      },
       fromAddress: config.emailFromAddress || null,
       fromName: config.emailFromName,
       retryEnabled: true,

@@ -14,6 +14,7 @@ const readProjectFile = (fileName) =>
 
 const realProviderSecretPatterns = [
   /(?:^|\n)SMART_NUTRITION_RESEND_API_KEY=re_[A-Za-z0-9_-]{20,}(?:\n|$)/,
+  /(?:^|\n)SMART_NUTRITION_BREVO_API_KEY=xkeysib-[A-Za-z0-9_-]{20,}(?:\n|$)/,
   /(?:^|\n)SMART_NUTRITION_OPENROUTER_API_KEY=sk-or-[A-Za-z0-9_-]{20,}(?:\n|$)/,
   /(?:^|\n)SMART_NUTRITION_GROQ_API_KEY=gsk_[A-Za-z0-9_-]{20,}(?:\n|$)/,
   /(?:^|\n)SMART_NUTRITION_GOOGLE_API_KEY=AIza[A-Za-z0-9_-]{20,}(?:\n|$)/,
@@ -23,6 +24,7 @@ const realProviderSecretPatterns = [
 const uniqueSecretKeys = [
   "SMART_NUTRITION_JWT_SECRET",
   "SMART_NUTRITION_RESEND_API_KEY",
+  "SMART_NUTRITION_BREVO_API_KEY",
   "SMART_NUTRITION_ASSISTANT_API_KEY",
   "SMART_NUTRITION_OPENROUTER_API_KEY",
   "SMART_NUTRITION_GROQ_API_KEY",

@@ -1261,7 +1261,6 @@ export const createServerConfig = (rawEnv = process.env) => {
     );
   }
 
-  const emailTransportConfigured = Boolean(emailFromAddress && resendApiKey);
   const brevoApiKey = toTrimmedString(env.SMART_NUTRITION_BREVO_API_KEY) || null;
   const brevoListId = readPositiveInteger(
     env.SMART_NUTRITION_BREVO_LIST_ID,
@@ -1270,7 +1269,15 @@ export const createServerConfig = (rawEnv = process.env) => {
     errors,
     { min: 0 }
   );
+  const brevoTransactionalConfigured = Boolean(emailFromAddress && brevoApiKey);
+  const emailTransportConfigured = Boolean(
+    emailFromAddress && (resendApiKey || brevoApiKey)
+  );
   const brevoConfigured = Boolean(brevoApiKey && brevoListId > 0);
+
+  if (isProduction && hasPlaceholderValue(brevoApiKey)) {
+    errors.push("SMART_NUTRITION_BREVO_API_KEY must not use a placeholder value in production.");
+  }
 
   if (brevoApiKey && !brevoConfigured) {
     warnings.push(
@@ -1533,6 +1540,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     emailTransportConfigured,
     brevoApiKey,
     brevoListId,
+    brevoTransactionalConfigured,
     brevoConfigured,
     telegramBotToken,
     telegramBotUsername,

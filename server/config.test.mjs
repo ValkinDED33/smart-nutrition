@@ -440,6 +440,20 @@ describe("createServerConfig", () => {
     expect(config.brevoListId).toBe(42);
   });
 
+  it("uses Brevo API key as a transactional email transport without requiring a marketing list", () => {
+    const config = createServerConfig({
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreply@smart-nutrition.club",
+      SMART_NUTRITION_BREVO_API_KEY: "brevo-key",
+      SMART_NUTRITION_BREVO_LIST_ID: "",
+    });
+
+    expect(config.emailTransportConfigured).toBe(true);
+    expect(config.brevoTransactionalConfigured).toBe(true);
+    expect(config.brevoConfigured).toBe(false);
+    expect(config.brevoApiKey).toBe("brevo-key");
+  });
+
   it("reads Render secret files for Brevo credentials", () => {
     const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
 

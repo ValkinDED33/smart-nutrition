@@ -18,14 +18,28 @@ const createResendClient = (send) => ({
 const createLogger = () => ({
   error: vi.fn(),
   info: vi.fn(),
+  warn: vi.fn(),
 });
 
-const createService = ({ send, config, logger = createLogger() }) => ({
+const createFetchResponse = ({ ok = true, status = 200, payload = {} } = {}) => ({
+  ok,
+  status,
+  statusText: ok ? "OK" : "Bad Request",
+  json: vi.fn(async () => payload),
+});
+
+const createService = ({
+  send = vi.fn(),
+  config,
+  logger = createLogger(),
+  fetchImpl = vi.fn(),
+} = {}) => ({
   logger,
   service: createEmailService({
     config: config ?? createConfig(),
     logger,
     resendClient: createResendClient(send),
+    fetchImpl,
     retryDelaysMs: [0, 0, 0],
     wait: vi.fn(),
   }),
@@ -53,6 +67,97 @@ describe("email service", () => {
     });
 
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses Brevo as the primary transactional provider when configured", async () => {
+    const send = vi.fn();
+    const fetchImpl = vi.fn(async () =>
+      createFetchResponse({ payload: { messageId: "brevo-email-1" } })
+    );
+    const { service } = createService({
+      send,
+      fetchImpl,
+      config: createConfig({ brevoApiKey: "brevo-key" }),
+    });
+
+    await expect(
+      service.sendRegistrationVerificationEmail({
+        to: "user@example.com",
+        name: "User",
+        verificationUrl: "https://smart-nutrition.club/verify-email?token=secret",
+        expiresAt: new Date("2026-06-07T12:00:00.000Z"),
+      })
+    ).resolves.toEqual({
+      ok: true,
+      provider: "brevo",
+      messageId: "brevo-email-1",
+      attempts: 1,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.brevo.com/v3/smtp/email",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "api-key": "brevo-key",
+          "Content-Type": "application/json",
+        }),
+      })
+    );
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toMatchObject({
+      sender: {
+        email: "hello@smart-nutrition.club",
+        name: "Smart Nutrition",
+      },
+      to: [{ email: "user@example.com" }],
+      subject: "Confirm your Smart Nutrition email",
+    });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Resend when Brevo transactional delivery fails", async () => {
+    const send = vi.fn().mockResolvedValue({
+      data: { id: "resend-email-1" },
+      error: null,
+    });
+    const fetchImpl = vi.fn(async () =>
+      createFetchResponse({
+        ok: false,
+        status: 503,
+        payload: { code: "service_unavailable", message: "Brevo unavailable" },
+      })
+    );
+    const logger = createLogger();
+    const { service } = createService({
+      send,
+      fetchImpl,
+      logger,
+      config: createConfig({ brevoApiKey: "brevo-key" }),
+    });
+
+    await expect(
+      service.sendPasswordResetEmail({
+        to: "user@example.com",
+        name: "User",
+        resetUrl: "https://smart-nutrition.club/reset-password?token=secret",
+        expiresAt: new Date("2026-06-07T12:00:00.000Z"),
+      })
+    ).resolves.toEqual({
+      ok: true,
+      messageId: "resend-email-1",
+      attempts: 1,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[email] falling back to resend transactional delivery",
+      expect.objectContaining({
+        provider: "resend",
+        previousProvider: "brevo",
+        previousCode: "BREVO_SEND_FAILED",
+      })
+    );
   });
 
   it("retries transient provider failures and then succeeds", async () => {

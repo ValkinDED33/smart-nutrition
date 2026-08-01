@@ -154,11 +154,15 @@ const run = () => {
       label: "Email delivery is configured",
       ok:
         config.emailTransportConfigured &&
-        !hasPlaceholderValue(config.resendApiKey) &&
+        (!config.resendApiKey || !hasPlaceholderValue(config.resendApiKey)) &&
+        (!config.brevoApiKey || !hasPlaceholderValue(config.brevoApiKey)) &&
         !hasPlaceholderValue(config.emailFromAddress),
       detail: config.emailTransportConfigured
-        ? `From: ${config.emailFromName} <${config.emailFromAddress}>`
-        : "Set SMART_NUTRITION_RESEND_API_KEY and SMART_NUTRITION_EMAIL_FROM_ADDRESS. Do not use placeholders.",
+        ? `From: ${config.emailFromName} <${config.emailFromAddress}>; providers: ${[
+            config.brevoApiKey ? "brevo" : null,
+            config.resendApiKey ? "resend" : null,
+          ].filter(Boolean).join(", ")}`
+        : "Set SMART_NUTRITION_EMAIL_FROM_ADDRESS and SMART_NUTRITION_BREVO_API_KEY or SMART_NUTRITION_RESEND_API_KEY. Do not use placeholders.",
       required: true,
     }),
     createCheck({
