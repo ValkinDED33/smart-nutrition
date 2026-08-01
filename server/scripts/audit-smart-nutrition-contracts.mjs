@@ -246,6 +246,7 @@ const imageSitemapXmlSource = readSource("public/sitemap-images.xml");
 const llmsTxtSource = readSource("public/llms.txt");
 const aiTxtSource = readSource("public/ai.txt");
 const productionCheckSource = readSource("server/production-check.mjs");
+const qualityGateWorkflowSource = readSource(".github/workflows/quality-gate.yml");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
@@ -2526,6 +2527,24 @@ addCheck(
     envExampleSource.includes("Use a dedicated verified smoke account") &&
     !/@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(authenticatedLiveAuditSource),
   "Authenticated production smoke must require a dedicated verified account, use cookie sessions, verify backend-confirmed user flows, clean up smoke mutations, and avoid committed secrets."
+);
+
+addCheck(
+  "github quality gate blocks unsafe master changes",
+  qualityGateWorkflowSource.includes("name: Smart-Nutrition") &&
+    qualityGateWorkflowSource.includes("push:") &&
+    qualityGateWorkflowSource.includes("pull_request:") &&
+    qualityGateWorkflowSource.includes("- master") &&
+    qualityGateWorkflowSource.includes("node-version: 22") &&
+    qualityGateWorkflowSource.includes("npm ci") &&
+    qualityGateWorkflowSource.includes("npm run lint") &&
+    qualityGateWorkflowSource.includes("npm run build") &&
+    qualityGateWorkflowSource.includes("npm test") &&
+    qualityGateWorkflowSource.includes("npm run audit:deps") &&
+    qualityGateWorkflowSource.includes("npm run audit:cycles") &&
+    qualityGateWorkflowSource.includes("npm run audit:architecture") &&
+    qualityGateWorkflowSource.includes("npm run audit:contracts"),
+  "GitHub must run the same production quality gate on master pushes and pull requests so deploys cannot bypass lint, build, tests, dependency, cycle, architecture, and Smart Nutrition contract checks."
 );
 
 addCheck(

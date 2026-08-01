@@ -1,0 +1,53 @@
+name: Smart-Nutrition
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+concurrency:
+  group: smart-nutrition-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Smart-Nutrition
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Smart-Nutrition
+        uses: actions/checkout@v4
+
+      - name: Smart-Nutrition
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Smart-Nutrition
+        run: npm ci
+
+      - name: Smart-Nutrition
+        run: npm run lint
+
+      - name: Smart-Nutrition
+        run: npm run build
+
+      - name: Smart-Nutrition
+        run: npm test
+
+      - name: Smart-Nutrition
+        run: npm run audit:deps
+
+      - name: Smart-Nutrition
+        run: npm run audit:cycles
+
+      - name: Smart-Nutrition
+        run: npm run audit:architecture
+
+      - name: Smart-Nutrition
+        run: npm run audit:contracts
