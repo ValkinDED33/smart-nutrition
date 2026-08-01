@@ -1158,6 +1158,94 @@ export const createMongoStorage = async (config) => {
       return getResolvedUser(user.id);
     },
 
+    upsertUserProfileAndState: async (userId, profileState, user, syncContext = undefined) => {
+      const existingUser = await getResolvedUser(userId);
+
+      if (!existingUser) {
+        return null;
+      }
+
+      const normalizedSyncContext = await assertNoStateConflict(userId, syncContext);
+      const nextUser = {
+        ...existingUser,
+        ...user,
+        id: userId,
+      };
+      const roleFields = nextUser.role
+        ? {
+            role: toMongoUserRole(nextUser.role),
+            appRole: toAppUserRole(nextUser.role),
+          }
+        : {};
+      const normalizedProfile = normalizeProfileState(profileState, nextUser);
+      const updatedAt = new Date().toISOString();
+      const currentSnapshot = await buildSnapshot(userId, nextUser);
+      const nextSnapshot = {
+        ...currentSnapshot,
+        profile: normalizedProfile,
+      };
+      const session = client.startSession();
+
+      try {
+        await session.withTransaction(async () => {
+          await collections.profiles.updateOne(
+            { userId },
+            {
+              $set: {
+                userId,
+                state: stripUndefined(normalizedProfile),
+                updatedAt,
+              },
+            },
+            { upsert: true, session }
+          );
+
+          const stateUpdate = await collections.states.updateOne(
+            normalizedSyncContext.baseVersion
+              ? { userId, updatedAt: normalizedSyncContext.baseVersion }
+              : { userId },
+            {
+              $set: stripUndefined({
+                userId,
+                updatedAt,
+                profileUpdatedAt: updatedAt,
+                backupEnabled: true,
+                lastWriterDeviceId: normalizedSyncContext.deviceId,
+              }),
+            },
+            { upsert: !normalizedSyncContext.baseVersion, session }
+          );
+
+          if (normalizedSyncContext.baseVersion && stateUpdate.matchedCount === 0) {
+            throw new StateApiError(
+              "STATE_CONFLICT",
+              "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+              { meta: await getSnapshotMeta(userId) }
+            );
+          }
+
+          const userUpdate = await collections.users.updateOne(
+            { id: userId },
+            { $set: stripUndefined({ ...nextUser, ...roleFields }) },
+            { session }
+          );
+
+          if (userUpdate.matchedCount === 0) {
+            throw new StateApiError("PROFILE_NOT_FOUND", "Cloud user profile is unavailable.");
+          }
+        });
+      } finally {
+        await session.endSession();
+      }
+
+      writeBackupSnapshot(userId, nextSnapshot, "profile-state", updatedAt);
+
+      return {
+        user: await getResolvedUser(userId),
+        profile: normalizedProfile,
+      };
+    },
+
     updateUserPassword: async ({ userId, passwordHash, passwordSalt, passwordVersion }) => {
       await collections.users.updateOne(
         { id: userId },

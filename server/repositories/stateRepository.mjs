@@ -6,6 +6,8 @@ export const createStateRepository = (storage) => ({
   getProfileStateByUserId: (userId, user) => storage.getProfileStateByUserId(userId, user),
   upsertProfileState: (userId, profileState, syncContext) =>
     storage.upsertProfileState(userId, profileState, syncContext),
+  upsertUserProfileAndState: (userId, profileState, user, syncContext) =>
+    storage.upsertUserProfileAndState?.(userId, profileState, user, syncContext) ?? null,
   getMealStateByUserId: (userId) => storage.getMealStateByUserId(userId),
   upsertMealState: (userId, mealState, syncContext) =>
     storage.upsertMealState(userId, mealState, syncContext),

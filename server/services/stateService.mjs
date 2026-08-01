@@ -218,6 +218,14 @@ export const createStateService = ({ stateRepository }) => ({
       syncContext
     ),
 
+  saveProfileStateWithUser: async (user, profileState, nextUser, syncContext = undefined) =>
+    stateRepository.upsertUserProfileAndState?.(
+      user.id,
+      requireProfileState(profileState),
+      nextUser,
+      syncContext
+    ) ?? null,
+
   getMealState: async (user) => stateRepository.getMealStateByUserId(user.id),
 
   saveMealState: async (user, mealState, syncContext = undefined) =>

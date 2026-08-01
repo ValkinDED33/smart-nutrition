@@ -7,6 +7,7 @@ const createStateRepositoryFixture = () => ({
   upsertSnapshot: vi.fn(),
   getProfileStateByUserId: vi.fn(),
   upsertProfileState: vi.fn(),
+  upsertUserProfileAndState: vi.fn(),
   getMealStateByUserId: vi.fn(),
   upsertMealState: vi.fn(),
   getWaterStateByUserId: vi.fn(),
@@ -111,6 +112,36 @@ describe("stateService", () => {
     expect(stateRepository.upsertProfileState).not.toHaveBeenCalled();
     expect(stateRepository.upsertMealState).not.toHaveBeenCalled();
     expect(stateRepository.upsertCompanionState).not.toHaveBeenCalled();
+  });
+
+  it("validates profile state before saving profile state and user together", async () => {
+    const stateRepository = createStateRepositoryFixture();
+    const service = createStateService({ stateRepository });
+    const user = { id: "user-atomic-profile" };
+    const nextUser = { id: user.id, weight: 75 };
+
+    stateRepository.upsertUserProfileAndState.mockResolvedValue({
+      user: nextUser,
+      profile: { dailyCalories: 2100 },
+    });
+
+    const result = await service.saveProfileStateWithUser(
+      user,
+      { dailyCalories: 2100 },
+      nextUser,
+      { baseVersion: "v1" }
+    );
+
+    expect(stateRepository.upsertUserProfileAndState).toHaveBeenCalledWith(
+      user.id,
+      { dailyCalories: 2100 },
+      nextUser,
+      { baseVersion: "v1" }
+    );
+    expect(result).toMatchObject({
+      user: nextUser,
+      profile: { dailyCalories: 2100 },
+    });
   });
 
   it("adds product intake through one canonical backend-confirmed result", async () => {

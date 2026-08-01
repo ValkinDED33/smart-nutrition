@@ -44,6 +44,7 @@ const createAuthServiceFixture = ({ configOverrides = {} } = {}) => {
   const stateRepository = {
     getSnapshotByUserId: vi.fn(() => null),
     upsertSnapshot: vi.fn(),
+    upsertUserProfileAndState: vi.fn(),
   };
   const emailService = {
     isConfigured: vi.fn(() => false),
@@ -950,6 +951,59 @@ describe("authService", () => {
       user: { id: currentUser.id, weight: 77, languagePreference: "pl" },
       profile: savedProfileState,
       meta,
+    });
+  });
+
+  it("uses one atomic backend save when profile state and user profile can be committed together", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-atomic",
+      email: "profile-state-atomic@example.com",
+      name: "Profile State Atomic",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "uk",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const nextUser = {
+      ...currentUser,
+      gender: "female",
+      weight: 75,
+    };
+    const savedProfileState = { dailyCalories: 2100, normalized: true };
+    const saveProfileAndUser = vi.fn(async () => ({
+      user: nextUser,
+      profile: savedProfileState,
+    }));
+    const saveProfileState = vi.fn();
+
+    const result = await service.updateUserProfileAndState({
+      body: {
+        user: nextUser,
+        profile: { dailyCalories: 2100 },
+      },
+      currentUser,
+      saveProfileAndUser,
+      saveProfileState,
+      getProfileMeta: vi.fn(async () => ({ updatedAt: "2026-08-01T20:00:00.000Z" })),
+    });
+
+    expect(saveProfileAndUser).toHaveBeenCalledWith(
+      { dailyCalories: 2100 },
+      expect.objectContaining({ id: currentUser.id, weight: 75, gender: "female" })
+    );
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: currentUser.id, weight: 75, gender: "female" },
+      profile: savedProfileState,
     });
   });
 

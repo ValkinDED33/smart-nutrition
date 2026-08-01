@@ -53,6 +53,7 @@ const authServiceSource = readSource("server/services/authService.mjs");
 const errorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
+const stateRepositorySource = readSource("server/repositories/stateRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
 const telegramMedicationRemindersSource = readSource(
   "server/services/telegramMedicationReminders.mjs"
@@ -1188,26 +1189,34 @@ addCheck(
 
 addCheck(
   "combined profile-state saves reject duplicate names before state persistence",
-  authServiceSource.includes("const assertProfileNameAvailable") &&
+    authServiceSource.includes("const assertProfileNameAvailable") &&
     authServiceSource.includes("existingNameUser.id !== currentUserId") &&
     authServiceSource.includes('throw new AuthApiError("NAME_IN_USE"') &&
     authServiceSource.indexOf("await assertProfileNameAvailable(profileInput.name, currentUser.id)") <
-      authServiceSource.indexOf("await saveProfileState(body?.profile)") &&
+      authServiceSource.indexOf("const atomicResult") &&
     errorHandlerSource.includes('error.code === "NAME_IN_USE"') &&
     errorHandlerSource.includes("This name is already used."),
   "Combined profile/user updates must reject duplicate names with a public conflict before writing profile-state so failed user updates cannot leave partial cloud state."
 );
 
 addCheck(
-  "combined profile-state saves return backend-confirmed profile",
-  authServiceSource.includes("const savedProfile = await saveProfileState(body?.profile)") &&
+  "combined profile-state saves prefer atomic backend-confirmed profile",
+  authRoutesSource.includes("saveProfileAndUser:") &&
+    authRoutesSource.includes("stateService.saveProfileStateWithUser") &&
+    authServiceSource.includes("typeof saveProfileAndUser === \"function\"") &&
+    authServiceSource.includes("const atomicResult") &&
+    authServiceSource.includes("atomicResult?.profile ?? (await saveProfileState(body?.profile))") &&
     authServiceSource.includes("profile: savedProfile") &&
+    stateServiceSource.includes("saveProfileStateWithUser") &&
+    stateRepositorySource.includes("upsertUserProfileAndState") &&
+    mongoStorageSource.includes("upsertUserProfileAndState") &&
+    mongoStorageSource.includes("await session.withTransaction(async () =>") &&
     authRemoteSource.includes("profile?: unknown") &&
     authRemoteSource.includes("profile: data.profile") &&
     authRemoteSource.includes("profileUpdatedAt:") &&
     profileCloudSyncSource.includes("normalizeProfileState(rebasedResult.profile ?? rebasedProfile)") &&
     profileCloudSyncSource.includes("normalizeProfileState(result.profile ?? profile)"),
-  "Combined profile/user updates must return and consume the normalized backend-confirmed profile so frontend state cannot drift from the cloud source of truth."
+  "Combined profile/user updates must use an atomic storage save when available and return the normalized backend-confirmed profile so frontend state cannot drift from the cloud source of truth."
 );
 
 addCheck(

@@ -990,21 +990,29 @@ export const createAuthService = ({
     updateUserProfileAndState: async ({
       body,
       currentUser,
+      saveProfileAndUser,
       saveProfileState,
       getProfileMeta,
     }) => {
       const profileInput = readProfileInput(body?.user ?? {}, currentUser);
       await assertProfileNameAvailable(profileInput.name, currentUser.id);
+      const nextUser = {
+        ...currentUser,
+        ...profileInput,
+      };
 
-      if (typeof saveProfileState !== "function") {
+      if (typeof saveProfileAndUser !== "function" && typeof saveProfileState !== "function") {
         throw new AuthApiError("INVALID_PROFILE", "Cloud profile sync is unavailable.");
       }
 
-      const savedProfile = await saveProfileState(body?.profile);
-      const updatedUser = await authRepository.updateUser({
-        ...currentUser,
-        ...profileInput,
-      });
+      const atomicResult =
+        typeof saveProfileAndUser === "function"
+          ? await saveProfileAndUser(body?.profile, nextUser)
+          : null;
+      const savedProfile =
+        atomicResult?.profile ?? (await saveProfileState(body?.profile));
+      const updatedUser =
+        atomicResult?.user ?? (await authRepository.updateUser(nextUser));
 
       await writeAuditLog({
         actorUserId: currentUser.id,

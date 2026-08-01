@@ -136,6 +136,16 @@ export const createAuthController = ({
     const result = await authService.updateUserProfileAndState({
       body,
       currentUser: auth.user,
+      saveProfileAndUser:
+        typeof stateService.saveProfileStateWithUser === "function"
+          ? (profileState, nextUser) =>
+              stateService.saveProfileStateWithUser(
+                auth.user,
+                profileState,
+                nextUser,
+                getSyncContext(request)
+              )
+          : undefined,
       saveProfileState: (profileState) =>
         stateService.saveProfileState(auth.user, profileState, getSyncContext(request)),
       getProfileMeta: () => stateService.getSnapshotMeta(auth.user),
