@@ -19,6 +19,15 @@ describe("Mongo state version contract", () => {
     expect(mongoStorageSource).toContain("\"STATE_CONFLICT\"");
   });
 
+  it("falls back without masking real conflicts when Mongo transactions are unsupported", () => {
+    expect(mongoStorageSource).toContain("isMongoTransactionUnsupportedError");
+    expect(mongoStorageSource).toContain("error instanceof StateApiError");
+    expect(mongoStorageSource).toContain("writeSnapshotDocumentsWithoutTransaction");
+    expect(mongoStorageSource).toContain("writeProfileAndUserDocumentsWithoutTransaction");
+    expect(mongoStorageSource).toContain("if (!isMongoTransactionUnsupportedError(error))");
+    expect(mongoStorageSource).toContain("throw error");
+  });
+
   it("passes normalized base versions into every Mongo snapshot mutation", () => {
     const writeCalls = [...mongoStorageSource.matchAll(/writeSnapshot\(userId,/g)];
     const guardedCalls = [

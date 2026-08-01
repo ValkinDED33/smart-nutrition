@@ -1212,6 +1212,9 @@ addCheck(
     stateRepositorySource.includes("upsertUserProfileAndState") &&
     mongoStorageSource.includes("upsertUserProfileAndState") &&
     mongoStorageSource.includes("await session.withTransaction(async () =>") &&
+    mongoStorageSource.includes("isMongoTransactionUnsupportedError") &&
+    mongoStorageSource.includes("writeProfileAndUserDocumentsWithoutTransaction") &&
+    mongoStorageSource.includes("error instanceof StateApiError") &&
     authRemoteSource.includes("profile?: unknown") &&
     authRemoteSource.includes("profile: data.profile") &&
     authRemoteSource.includes("profileUpdatedAt:") &&

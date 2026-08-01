@@ -53,6 +53,25 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getErrorMessage = (error) =>
   error instanceof Error ? error.message : "Unknown MongoDB connection error";
 
+const isMongoTransactionUnsupportedError = (error) => {
+  if (error instanceof StateApiError) {
+    return false;
+  }
+
+  const code = Number(error?.code);
+  const codeName = String(error?.codeName ?? "").toLowerCase();
+  const message = getErrorMessage(error).toLowerCase();
+
+  return (
+    code === 20 ||
+    codeName === "illegaloperation" ||
+    message.includes("transaction numbers are only allowed") ||
+    message.includes("transactions are not supported") ||
+    message.includes("transaction are not supported") ||
+    message.includes("replica set member or mongos")
+  );
+};
+
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
 
@@ -879,9 +898,7 @@ export const createMongoStorage = async (config) => {
     } = {}
   ) => {
     const now = updatedAt ?? new Date().toISOString();
-    const session = client.startSession();
-
-    try {
+    const writeSnapshotDocuments = async (session = undefined) => {
       await session.withTransaction(async () => {
         await collections.profiles.updateOne(
           { userId },
@@ -922,6 +939,57 @@ export const createMongoStorage = async (config) => {
           );
         }
       });
+    };
+    const writeSnapshotDocumentsWithoutTransaction = async () => {
+      await collections.profiles.updateOne(
+        { userId },
+        { $set: { userId, state: stripUndefined(snapshot.profile), updatedAt: now } },
+        { upsert: true }
+      );
+      await collections.meals.updateOne(
+        { userId },
+        { $set: { userId, state: stripUndefined(snapshot.meal), updatedAt: now } },
+        { upsert: true }
+      );
+
+      const stateUpdate = await collections.states.updateOne(
+        baseVersion ? { userId, updatedAt: baseVersion } : { userId },
+        {
+          $set: stripUndefined({
+            userId,
+            water: snapshot.water,
+            fridge: snapshot.fridge,
+            community: snapshot.community,
+            companion: snapshot.companion,
+            updatedAt: now,
+            profileUpdatedAt,
+            mealUpdatedAt,
+            waterUpdatedAt,
+            backupEnabled: true,
+            lastWriterDeviceId: deviceId,
+          }),
+        },
+        { upsert: !baseVersion }
+      );
+
+      if (baseVersion && stateUpdate.matchedCount === 0) {
+        throw new StateApiError(
+          "STATE_CONFLICT",
+          "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+          { meta: await getSnapshotMeta(userId) }
+        );
+      }
+    };
+    const session = client.startSession();
+
+    try {
+      await writeSnapshotDocuments(session);
+    } catch (error) {
+      if (!isMongoTransactionUnsupportedError(error)) {
+        throw error;
+      }
+
+      await writeSnapshotDocumentsWithoutTransaction();
     } finally {
       await session.endSession();
     }
@@ -1184,9 +1252,7 @@ export const createMongoStorage = async (config) => {
         ...currentSnapshot,
         profile: normalizedProfile,
       };
-      const session = client.startSession();
-
-      try {
+      const writeProfileAndUserDocuments = async (session) => {
         await session.withTransaction(async () => {
           await collections.profiles.updateOne(
             { userId },
@@ -1234,6 +1300,63 @@ export const createMongoStorage = async (config) => {
             throw new StateApiError("PROFILE_NOT_FOUND", "Cloud user profile is unavailable.");
           }
         });
+      };
+      const writeProfileAndUserDocumentsWithoutTransaction = async () => {
+        await collections.profiles.updateOne(
+          { userId },
+          {
+            $set: {
+              userId,
+              state: stripUndefined(normalizedProfile),
+              updatedAt,
+            },
+          },
+          { upsert: true }
+        );
+
+        const stateUpdate = await collections.states.updateOne(
+          normalizedSyncContext.baseVersion
+            ? { userId, updatedAt: normalizedSyncContext.baseVersion }
+            : { userId },
+          {
+            $set: stripUndefined({
+              userId,
+              updatedAt,
+              profileUpdatedAt: updatedAt,
+              backupEnabled: true,
+              lastWriterDeviceId: normalizedSyncContext.deviceId,
+            }),
+          },
+          { upsert: !normalizedSyncContext.baseVersion }
+        );
+
+        if (normalizedSyncContext.baseVersion && stateUpdate.matchedCount === 0) {
+          throw new StateApiError(
+            "STATE_CONFLICT",
+            "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+            { meta: await getSnapshotMeta(userId) }
+          );
+        }
+
+        const userUpdate = await collections.users.updateOne(
+          { id: userId },
+          { $set: stripUndefined({ ...nextUser, ...roleFields }) }
+        );
+
+        if (userUpdate.matchedCount === 0) {
+          throw new StateApiError("PROFILE_NOT_FOUND", "Cloud user profile is unavailable.");
+        }
+      };
+      const session = client.startSession();
+
+      try {
+        await writeProfileAndUserDocuments(session);
+      } catch (error) {
+        if (!isMongoTransactionUnsupportedError(error)) {
+          throw error;
+        }
+
+        await writeProfileAndUserDocumentsWithoutTransaction();
       } finally {
         await session.endSession();
       }
