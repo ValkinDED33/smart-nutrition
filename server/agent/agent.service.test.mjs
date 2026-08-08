@@ -1308,6 +1308,96 @@ describe("createAssistantAgentService", () => {
     expect(reminderService.createTaskReminderFromText).not.toHaveBeenCalled();
   });
 
+  it("answers live weather through the backend live data tool", async () => {
+    const liveFetch = vi.fn(async (url) => {
+      const value = String(url);
+
+      if (value.includes("geocoding-api.open-meteo.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            results: [
+              {
+                name: "Warsaw",
+                country: "Poland",
+                latitude: 52.22977,
+                longitude: 21.01178,
+                timezone: "Europe/Warsaw",
+              },
+            ],
+          }),
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => ({
+          daily: {
+            time: ["2026-06-21", "2026-06-22"],
+            weather_code: [2, 61],
+            temperature_2m_max: [22, 24],
+            temperature_2m_min: [13, 15],
+            precipitation_probability_max: [20, 70],
+            wind_speed_10m_max: [18, 25],
+          },
+        }),
+      };
+    });
+    const agent = createAssistantAgentService({
+      liveFetch,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "какая погода завтра в Warsaw",
+      context: { language: "en" },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "get_weather_forecast" },
+      actions: [{ id: "get_weather_forecast", ok: true, resultType: "weather_forecast" }],
+    });
+    expect(result.text).toContain("Weather for Warsaw, Poland on 2026-06-22");
+    expect(result.text).toContain("15.0...24.0 °C");
+    expect(result.text).toContain("Source: Open-Meteo");
+  });
+
+  it("answers exchange rates through the backend live data tool", async () => {
+    const liveFetch = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        result: "success",
+        time_last_update_utc: "Sun, 21 Jun 2026 00:00:01 +0000",
+        rates: {
+          UAH: 44.5,
+          PLN: 3.72,
+          EUR: 0.86,
+        },
+      }),
+    }));
+    const agent = createAssistantAgentService({
+      liveFetch,
+      now: () => fixedNow,
+    });
+
+    const result = await agent.run({
+      user,
+      message: "какой актуальный курс доллара",
+      context: { language: "uk" },
+    });
+
+    expect(result).toMatchObject({
+      handled: true,
+      intent: { intent: "get_exchange_rate" },
+      actions: [{ id: "get_exchange_rate", ok: true, resultType: "exchange_rate" }],
+    });
+    expect(result.text).toContain("Актуальний курс USD");
+    expect(result.text).toContain("1 USD = 44.5000 UAH");
+    expect(result.text).toContain("Джерело: open.er-api.com");
+  });
+
   it("creates typed water reminders through the canonical reminder tool", async () => {
     const reminderService = {
       createReminderFromUserText: vi.fn(async () => ({

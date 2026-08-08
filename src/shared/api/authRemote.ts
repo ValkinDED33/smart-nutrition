@@ -173,6 +173,7 @@ export interface PartnerPregnancyShare {
   pregnancy: {
     mode: "none" | "trying_to_conceive" | "pregnant" | "postpartum";
     pregnancyWeek: number | null;
+    pregnancyDay: number | null;
     dueDate: string | null;
     lastPeriodStartDate: string | null;
     updatedAt: string | null;

@@ -35,6 +35,10 @@ const toWeightKg = (value) => {
 
 const createAssistantSymptomId = () => `assistant-symptom-${crypto.randomUUID()}`;
 const DEFAULT_REMINDER_TIMEZONE = "Europe/Warsaw";
+const OPEN_METEO_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+const EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest";
+const DEFAULT_WEATHER_LOCATION = "Warsaw";
 
 const productMatchesById = (product, expectedId) =>
   Boolean(product?.id) && String(product.id) === String(expectedId);
@@ -63,6 +67,80 @@ const normalizeClockTime = (date, timeZone = DEFAULT_REMINDER_TIMEZONE) => {
 
   return `${hours}:${minutes}`;
 };
+
+const fetchJson = async (fetcher, url) => {
+  if (typeof fetcher !== "function") {
+    return { ok: false, code: "LIVE_FETCH_UNAVAILABLE" };
+  }
+
+  const response = await fetcher(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": "SmartNutritionAssistant/1.0",
+    },
+  });
+
+  if (!response?.ok) {
+    return {
+      ok: false,
+      code: "LIVE_SOURCE_FAILED",
+      status: response?.status ?? null,
+    };
+  }
+
+  return {
+    ok: true,
+    data: await response.json(),
+  };
+};
+
+const normalizeLiveText = (value, maxLength = 80) =>
+  String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, maxLength);
+
+const addUtcDaysToDateKey = (date, days) => {
+  const nextDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  nextDate.setUTCDate(nextDate.getUTCDate() + days);
+
+  return nextDate.toISOString().slice(0, 10);
+};
+
+const weatherCodeLabels = {
+  0: "clear",
+  1: "mostly clear",
+  2: "partly cloudy",
+  3: "cloudy",
+  45: "fog",
+  48: "fog",
+  51: "light drizzle",
+  53: "drizzle",
+  55: "heavy drizzle",
+  61: "light rain",
+  63: "rain",
+  65: "heavy rain",
+  71: "light snow",
+  73: "snow",
+  75: "heavy snow",
+  80: "rain showers",
+  81: "rain showers",
+  82: "strong rain showers",
+  95: "thunderstorm",
+};
+
+const normalizeCurrencyCode = (value) =>
+  String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 3);
+
+const normalizeCurrencyTargets = (targets, base) =>
+  [...new Set((Array.isArray(targets) ? targets : [])
+    .map(normalizeCurrencyCode)
+    .filter((code) => code.length === 3 && code !== base))]
+    .slice(0, 4);
 
 const readRelativeFollowUpMinutes = (text) => {
   const normalized = String(text ?? "").toLowerCase();
@@ -557,6 +635,7 @@ export const createAgentTools = ({
   platformService = null,
   reminderService = null,
   medicationReminderService = null,
+  liveFetch = globalThis.fetch?.bind(globalThis),
   now = () => new Date(),
 } = {}) => {
   const reminders = reminderService ?? medicationReminderService;
@@ -824,6 +903,107 @@ export const createAgentTools = ({
     targetSurface: "photo_meal",
     targetRoute: "/meals?mode=photo",
   });
+
+  const getWeatherForecast = async (_user, { location = "", dayOffset = 0 } = {}) => {
+    const query = normalizeLiveText(location || DEFAULT_WEATHER_LOCATION);
+
+    if (!query) {
+      return { ok: false, code: "WEATHER_LOCATION_REQUIRED" };
+    }
+
+    const geocodingUrl = new URL(OPEN_METEO_GEOCODING_URL);
+    geocodingUrl.searchParams.set("name", query);
+    geocodingUrl.searchParams.set("count", "1");
+    geocodingUrl.searchParams.set("language", "en");
+    geocodingUrl.searchParams.set("format", "json");
+
+    const geocoding = await fetchJson(liveFetch, geocodingUrl);
+
+    if (!geocoding.ok) {
+      return geocoding;
+    }
+
+    const place = Array.isArray(geocoding.data?.results) ? geocoding.data.results[0] : null;
+
+    if (!place) {
+      return { ok: false, code: "WEATHER_LOCATION_NOT_FOUND", query };
+    }
+
+    const offset = Math.max(0, Math.min(Number(dayOffset) || 0, 7));
+    const targetDate = addUtcDaysToDateKey(now(), offset);
+    const forecastUrl = new URL(OPEN_METEO_FORECAST_URL);
+    forecastUrl.searchParams.set("latitude", String(place.latitude));
+    forecastUrl.searchParams.set("longitude", String(place.longitude));
+    forecastUrl.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max");
+    forecastUrl.searchParams.set("timezone", place.timezone || "auto");
+    forecastUrl.searchParams.set("forecast_days", String(Math.max(offset + 1, 1)));
+
+    const forecast = await fetchJson(liveFetch, forecastUrl);
+
+    if (!forecast.ok) {
+      return forecast;
+    }
+
+    const days = forecast.data?.daily ?? {};
+    const index = Array.isArray(days.time) ? days.time.indexOf(targetDate) : -1;
+
+    if (index < 0) {
+      return { ok: false, code: "WEATHER_DAY_NOT_AVAILABLE", targetDate };
+    }
+
+    return {
+      ok: true,
+      type: "weather_forecast",
+      source: "Open-Meteo",
+      location: [place.name, place.country].filter(Boolean).join(", "),
+      date: targetDate,
+      dayOffset: offset,
+      summary: weatherCodeLabels[Number(days.weather_code?.[index])] ?? "weather data available",
+      temperatureMaxC: Number(days.temperature_2m_max?.[index]),
+      temperatureMinC: Number(days.temperature_2m_min?.[index]),
+      precipitationProbability: Number(days.precipitation_probability_max?.[index]),
+      windSpeedKmh: Number(days.wind_speed_10m_max?.[index]),
+    };
+  };
+
+  const getExchangeRate = async (_user, { base = "USD", targets = [] } = {}) => {
+    const baseCode = normalizeCurrencyCode(base) || "USD";
+    const targetCodes = normalizeCurrencyTargets(targets, baseCode);
+
+    if (targetCodes.length === 0) {
+      return { ok: false, code: "EXCHANGE_TARGET_REQUIRED" };
+    }
+
+    const url = `${EXCHANGE_RATE_URL}/${encodeURIComponent(baseCode)}`;
+    const response = await fetchJson(liveFetch, url);
+
+    if (!response.ok) {
+      return response;
+    }
+
+    if (response.data?.result && response.data.result !== "success") {
+      return { ok: false, code: "EXCHANGE_SOURCE_FAILED" };
+    }
+
+    const rates = Object.fromEntries(
+      targetCodes
+        .map((code) => [code, Number(response.data?.rates?.[code])])
+        .filter(([, value]) => Number.isFinite(value) && value > 0)
+    );
+
+    if (Object.keys(rates).length === 0) {
+      return { ok: false, code: "EXCHANGE_RATE_NOT_FOUND", base: baseCode, targets: targetCodes };
+    }
+
+    return {
+      ok: true,
+      type: "exchange_rate",
+      source: "open.er-api.com",
+      base: baseCode,
+      rates,
+      updatedAt: response.data?.time_last_update_utc ?? null,
+    };
+  };
 
   const logWeight = async (user, { weightKg }) => {
     if (!stateService?.getProfileState || !stateService?.saveProfileState) {
@@ -1266,6 +1446,8 @@ export const createAgentTools = ({
     createRecipe,
     openScanner,
     requestPhotoMealAnalysis,
+    getWeatherForecast,
+    getExchangeRate,
     logWeight,
     logSymptom,
     searchProducts,

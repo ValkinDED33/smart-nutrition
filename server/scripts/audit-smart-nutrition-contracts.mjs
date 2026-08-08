@@ -1252,7 +1252,7 @@ addCheck(
     authServiceSource.includes("existingNameUser.id !== currentUserId") &&
     authServiceSource.includes('throw new AuthApiError("NAME_IN_USE"') &&
     authServiceSource.indexOf("await assertProfileNameAvailable(profileInput.name, currentUser.id)") <
-      authServiceSource.indexOf("const atomicResult") &&
+      authServiceSource.indexOf("let atomicResult") &&
     errorHandlerSource.includes('error.code === "NAME_IN_USE"') &&
     errorHandlerSource.includes("This name is already used."),
   "Combined profile/user updates must reject duplicate names with a public conflict before writing profile-state so failed user updates cannot leave partial cloud state."
@@ -1266,9 +1266,13 @@ addCheck(
     authServiceSource.includes("assertCombinedProfileSaveResult") &&
     authServiceSource.includes("assertProfileStatePersistenceError") &&
     authServiceSource.includes("[auth] profile-state persistence failed") &&
+    authServiceSource.includes("atomic-profile-and-user-save") &&
+    authServiceSource.includes("profile-state-save") &&
+    authServiceSource.includes("user-profile-save") &&
     authServiceSource.includes("\"STATE_SYNC_UNAVAILABLE\"") &&
-    authServiceSource.includes("const atomicResult") &&
-    authServiceSource.includes("atomicResult?.profile ?? (await saveProfileState(body?.profile))") &&
+    authServiceSource.includes("let atomicResult") &&
+    authServiceSource.includes("if (!atomicResult)") &&
+    authServiceSource.includes("savedProfile = await saveProfileState(body?.profile)") &&
     authServiceSource.includes("!isRecord(updatedUser) || !isRecord(savedProfile)") &&
     authServiceSource.includes("profile: savedProfile") &&
     stateServiceSource.includes("saveProfileStateWithUser") &&
@@ -1748,6 +1752,8 @@ addCheck(
   "partner pregnancy share exposes full weekly baby development context",
   partnerServiceSource.includes("weeklyPregnancyDevelopment") &&
     partnerServiceSource.includes("getPregnancyAge") &&
+    partnerServiceSource.includes("normalizePregnancyDayOffset") &&
+    partnerServiceSource.includes("pregnancyDay: age?.days ?? null") &&
     partnerServiceSource.includes("completedWeeks") &&
     partnerServiceSource.includes("trimester: getTrimester(week)") &&
     partnerServiceSource.includes("month: getPregnancyMonth(totalDays)") &&
@@ -1755,6 +1761,7 @@ addCheck(
     partnerServiceSource.includes("weightG") &&
     partnerServiceSource.includes("timeline: age") &&
     authRemoteSource.includes("timeline: {") &&
+    authRemoteSource.includes("pregnancyDay: number | null") &&
     authRemoteSource.includes("completedWeeks: number") &&
     authRemoteSource.includes("lengthCm: number") &&
     womenHealthOverviewCardSource.includes('data-partner-pregnancy-weekly-view="true"') &&

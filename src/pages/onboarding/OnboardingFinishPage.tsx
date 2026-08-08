@@ -75,6 +75,12 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         state.gender === "female" && state.womenHealthMode === "pregnant"
           ? state.pregnancyWeek
           : null,
+      pregnancyDay:
+        state.gender === "female" &&
+        state.womenHealthMode === "pregnant" &&
+        state.pregnancyWeek !== null
+          ? state.pregnancyDay ?? 0
+          : null,
       dueDate:
         state.gender === "female" && state.womenHealthMode === "pregnant"
           ? state.dueDate
@@ -222,6 +228,10 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
             mode: state.womenHealthMode,
             pregnancyWeek:
               state.womenHealthMode === "pregnant" ? state.pregnancyWeek : null,
+            pregnancyDay:
+              state.womenHealthMode === "pregnant" && state.pregnancyWeek !== null
+                ? state.pregnancyDay ?? 0
+                : null,
             dueDate:
               state.womenHealthMode === "pregnant" && state.dueDate
                 ? new Date(state.dueDate).toISOString()
@@ -247,6 +257,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         : {
             mode: "none" as const,
             pregnancyWeek: null,
+            pregnancyDay: null,
             dueDate: null,
             lastPeriodStartDate: null,
             doctorConfirmed: false,

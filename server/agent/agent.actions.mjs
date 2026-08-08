@@ -17,6 +17,53 @@ const formatPercent = (current, target) => {
 const normalizeLanguage = (value) =>
   value === "en" || value === "pl" || value === "uk" ? value : "uk";
 
+const formatLiveNumber = (value, digits = 1) => {
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue.toFixed(digits) : "-";
+};
+
+const getLiveDataCopy = (language) => {
+  const normalizedLanguage = normalizeLanguage(language);
+
+  if (normalizedLanguage === "en") {
+    return {
+      liveFailed:
+        "I need live data for that, but the external source is unavailable right now. I will not invent a current answer.",
+      weatherTitle: (location, date) => `Weather for ${location} on ${date}:`,
+      weatherLine: (min, max, summary) => `${min}...${max} °C, ${summary}.`,
+      weatherDetails: (rain, wind) => `Rain chance: ${rain}%. Wind up to ${wind} km/h.`,
+      exchangeTitle: (base) => `Current exchange rate for ${base}:`,
+      exchangeLine: (base, code, rate) => `1 ${base} = ${rate} ${code}`,
+      source: (source, updatedAt) => `Source: ${source}${updatedAt ? `, updated ${updatedAt}` : ""}.`,
+    };
+  }
+
+  if (normalizedLanguage === "pl") {
+    return {
+      liveFailed:
+        "Potrzebuję aktualnych danych, ale zewnętrzne źródło jest teraz niedostępne. Nie będę zgadywać.",
+      weatherTitle: (location, date) => `Pogoda dla ${location} na ${date}:`,
+      weatherLine: (min, max, summary) => `${min}...${max} °C, ${summary}.`,
+      weatherDetails: (rain, wind) => `Szansa opadów: ${rain}%. Wiatr do ${wind} km/h.`,
+      exchangeTitle: (base) => `Aktualny kurs ${base}:`,
+      exchangeLine: (base, code, rate) => `1 ${base} = ${rate} ${code}`,
+      source: (source, updatedAt) => `Źródło: ${source}${updatedAt ? `, aktualizacja ${updatedAt}` : ""}.`,
+    };
+  }
+
+  return {
+    liveFailed:
+      "Для цього потрібні актуальні дані, але зовнішнє джерело зараз недоступне. Я не буду вигадувати відповідь.",
+    weatherTitle: (location, date) => `Погода для ${location} на ${date}:`,
+    weatherLine: (min, max, summary) => `${min}...${max} °C, ${summary}.`,
+    weatherDetails: (rain, wind) => `Ймовірність опадів: ${rain}%. Вітер до ${wind} км/год.`,
+    exchangeTitle: (base) => `Актуальний курс ${base}:`,
+    exchangeLine: (base, code, rate) => `1 ${base} = ${rate} ${code}`,
+    source: (source, updatedAt) => `Джерело: ${source}${updatedAt ? `, оновлено ${updatedAt}` : ""}.`,
+  };
+};
+
 const copy = {
   uk: {
     waterUnit: "мл",
@@ -752,8 +799,13 @@ const formatDailyPlanSlot = (text, slot) => {
 
 export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
   const text = getCopy(language);
+  const liveText = getLiveDataCopy(language);
 
   if (!toolResult?.ok) {
+    if (intent.intent === "get_weather_forecast" || intent.intent === "get_exchange_rate") {
+      return liveText.liveFailed;
+    }
+
     if (intent.intent === "add_water" || intent.intent === "show_water_status") {
       return text.waterFailed.join("\n");
     }
@@ -944,6 +996,32 @@ export const buildAgentReply = ({ intent, toolResult, language = "uk" }) => {
     toolResult.targetSurface === "food"
   ) {
     return text.foodOpening;
+  }
+
+  if (toolResult.type === "weather_forecast") {
+    return [
+      liveText.weatherTitle(toolResult.location, toolResult.date),
+      liveText.weatherLine(
+        formatLiveNumber(toolResult.temperatureMinC),
+        formatLiveNumber(toolResult.temperatureMaxC),
+        toolResult.summary
+      ),
+      liveText.weatherDetails(
+        formatLiveNumber(toolResult.precipitationProbability, 0),
+        formatLiveNumber(toolResult.windSpeedKmh, 0)
+      ),
+      liveText.source(toolResult.source, null),
+    ].join("\n");
+  }
+
+  if (toolResult.type === "exchange_rate") {
+    return [
+      liveText.exchangeTitle(toolResult.base),
+      ...Object.entries(toolResult.rates ?? {}).map(([code, rate]) =>
+        liveText.exchangeLine(toolResult.base, code, formatLiveNumber(rate, rate > 100 ? 0 : 4))
+      ),
+      liveText.source(toolResult.source, toolResult.updatedAt),
+    ].join("\n");
   }
 
   if (toolResult.type === "weight_logged") {

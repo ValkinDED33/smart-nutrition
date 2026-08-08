@@ -86,6 +86,7 @@ export const createAssistantAgentService = ({
   medicationReminderService = null,
   assistantMemoryRepository = null,
   logger = console,
+  liveFetch = globalThis.fetch?.bind(globalThis),
   now = () => new Date(),
 } = {}) => {
   const reminders = reminderService ?? medicationReminderService;
@@ -93,6 +94,7 @@ export const createAssistantAgentService = ({
     stateService,
     platformService,
     reminderService: reminders,
+    liveFetch,
     now,
   });
 
@@ -163,6 +165,14 @@ export const createAssistantAgentService = ({
 
     if (intent.intent === "request_photo_meal_analysis") {
       return tools.requestPhotoMealAnalysis(user, intent.entities);
+    }
+
+    if (intent.intent === "get_weather_forecast") {
+      return tools.getWeatherForecast(user, intent.entities);
+    }
+
+    if (intent.intent === "get_exchange_rate") {
+      return tools.getExchangeRate(user, intent.entities);
     }
 
     if (intent.intent === "log_weight") {

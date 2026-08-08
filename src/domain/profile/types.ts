@@ -183,6 +183,7 @@ export interface PersonalProfileDetails {
 export interface WomenHealthState {
   mode: WomenHealthMode;
   pregnancyWeek: number | null;
+  pregnancyDay: number | null;
   dueDate: string | null;
   lastPeriodStartDate: string | null;
   doctorConfirmed: boolean;

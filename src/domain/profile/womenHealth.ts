@@ -6,6 +6,7 @@ import type {
   WomenHealthState,
   ZodiacSign,
 } from "./types";
+import { normalizePregnancyDay } from "./pregnancyDateMath";
 
 const MAX_NOTE_LENGTH = 220;
 const MAX_SYMPTOM_LABEL_LENGTH = 80;
@@ -78,6 +79,7 @@ const isChineseZodiacSign = (value: unknown): value is ChineseZodiacSign =>
 export const createDefaultWomenHealthState = (): WomenHealthState => ({
   mode: "none",
   pregnancyWeek: null,
+  pregnancyDay: null,
   dueDate: null,
   lastPeriodStartDate: null,
   doctorConfirmed: false,
@@ -99,6 +101,7 @@ export const hasWomenHealthContext = (
     WomenHealthState,
     | "mode"
     | "pregnancyWeek"
+    | "pregnancyDay"
     | "dueDate"
     | "lastPeriodStartDate"
     | "notes"
@@ -112,6 +115,7 @@ export const hasWomenHealthContext = (
 ) =>
   state.mode !== "none" ||
   state.pregnancyWeek !== null ||
+  state.pregnancyDay !== null ||
   state.dueDate !== null ||
   state.lastPeriodStartDate !== null ||
   state.notes.trim().length > 0 ||
@@ -244,6 +248,10 @@ export const normalizeWomenHealthState = (value: unknown): WomenHealthState => {
   return {
     mode,
     pregnancyWeek,
+    pregnancyDay:
+      mode === "pregnant" && pregnancyWeek !== null
+        ? normalizePregnancyDay(record.pregnancyDay) ?? 0
+        : null,
     dueDate: mode === "pregnant" ? toIsoDateOrNull(record.dueDate) : null,
     lastPeriodStartDate:
       mode === "pregnant" || mode === "trying_to_conceive"

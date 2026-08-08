@@ -101,6 +101,7 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("BabyWeekVisual");
     expect(source).toContain("getBabyVisualPalette");
     expect(source).toContain("formatPregnancyAge");
+    expect(apiSource).toContain("pregnancyDay: number | null");
     expect(source).toContain("copy.partnerBabyThisWeek");
     expect(source).toContain("share.timeline?.trimester");
     expect(source).toContain("share.timeline?.month");

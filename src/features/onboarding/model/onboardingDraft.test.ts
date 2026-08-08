@@ -28,6 +28,7 @@ describe("onboardingDraft", () => {
       gender: "female",
       womenHealthMode: "pregnant",
       pregnancyWeek: 12,
+      pregnancyDay: 3,
       dueDate: "2026-12-20",
       lastPeriodStartDate: "2026-03-20",
       doctorConfirmed: true,
@@ -59,6 +60,7 @@ describe("onboardingDraft", () => {
     expect(draft.userName).toBe("Олена");
     expect(draft.womenHealthMode).toBe("pregnant");
     expect(draft.pregnancyWeek).toBe(12);
+    expect(draft.pregnancyDay).toBe(3);
     expect(draft.doctorConfirmed).toBe(true);
     expect(draft.motherEyeColor).toBe("green");
     expect(draft.partnerEyeColor).toBe("blue");

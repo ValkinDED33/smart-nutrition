@@ -26,6 +26,11 @@ import {
   zodiacSigns,
 } from "@domain/profile/womenHealth";
 import {
+  estimatePregnancyDatesFromAge,
+  estimatePregnancyFromDueDate,
+  estimatePregnancyFromLastPeriod,
+} from "@domain/profile/pregnancyDateMath";
+import {
   cardSx,
   parseOnboardingNumber,
   sanitizeOnboardingIntegerInput,
@@ -61,7 +66,14 @@ const copy = {
     pregnant: "Вагітна",
     postpartum: "Після пологів",
     week: "Орієнтовний тиждень",
+    day: "День",
     dueDate: "Орієнтовна дата пологів",
+    conceptionDate: "Орієнтовна дата зачаття",
+    calculatedDatesTitle: "Орієнтовний розрахунок",
+    calculatedDatesBody:
+      "Можу підставити ці дати за вказаним терміном. Якщо лікар назвав іншу дату, змініть дату пологів або дату останньої менструації — термін перерахується.",
+    lastPeriodEstimate: "Орієнтовна дата останньої менструації",
+    applyCalculatedDates: "Застосувати розрахунок",
     lastPeriod: "Дата останньої менструації",
     confirmed: "Є підтвердження / план від лікаря",
     notes: "Що важливо пам'ятати?",
@@ -94,7 +106,14 @@ const copy = {
     pregnant: "Jestem w ciąży",
     postpartum: "Po porodzie",
     week: "Orientacyjny tydzień",
+    day: "Dzień",
     dueDate: "Przewidywany termin porodu",
+    conceptionDate: "Orientacyjna data poczęcia",
+    calculatedDatesTitle: "Orientacyjne wyliczenie",
+    calculatedDatesBody:
+      "Mogę podstawić te daty z podanego wieku ciąży. Jeśli lekarz podał inną datę, zmień termin porodu albo datę ostatniej miesiączki — tydzień przeliczę ponownie.",
+    lastPeriodEstimate: "Orientacyjna data ostatniej miesiączki",
+    applyCalculatedDates: "Zastosuj wyliczenie",
     lastPeriod: "Data ostatniej miesiączki",
     confirmed: "Mam potwierdzenie / plan od lekarza",
     notes: "Co warto pamiętać?",
@@ -127,7 +146,14 @@ const copy = {
     pregnant: "Pregnant",
     postpartum: "Postpartum",
     week: "Estimated week",
+    day: "Day",
     dueDate: "Estimated due date",
+    conceptionDate: "Estimated conception date",
+    calculatedDatesTitle: "Estimated calculation",
+    calculatedDatesBody:
+      "I can fill these dates from the pregnancy age. If your clinician gave another date, edit the due date or last period date and I will recalculate the age.",
+    lastPeriodEstimate: "Estimated last period date",
+    applyCalculatedDates: "Apply estimate",
     lastPeriod: "Last period start date",
     confirmed: "Doctor confirmation / plan exists",
     notes: "What should I remember?",
@@ -424,11 +450,73 @@ export const OnboardingWomenHealthPage = ({
     () => (state.pregnancyWeek ? String(state.pregnancyWeek) : ""),
     [state.pregnancyWeek]
   );
+  const dayValue = useMemo(
+    () =>
+      state.pregnancyWeek !== null && state.pregnancyDay !== null
+        ? String(state.pregnancyDay)
+        : "",
+    [state.pregnancyDay, state.pregnancyWeek]
+  );
+  const pregnancyEstimate = useMemo(
+    () =>
+      isPregnant
+        ? estimatePregnancyDatesFromAge(
+            state.pregnancyWeek,
+            state.pregnancyDay ?? 0
+          )
+        : null,
+    [isPregnant, state.pregnancyDay, state.pregnancyWeek]
+  );
+
+  const applyPregnancyEstimate = () => {
+    if (!pregnancyEstimate) {
+      return;
+    }
+
+    updateState({
+      dueDate: pregnancyEstimate.dueDate,
+      lastPeriodStartDate: pregnancyEstimate.lastPeriodStartDate,
+    });
+  };
+
+  const applyDueDate = (value: string) => {
+    const estimate = estimatePregnancyFromDueDate(value);
+
+    updateState({
+      dueDate: value,
+      ...(estimate
+        ? {
+            pregnancyWeek: Math.max(1, Math.min(42, estimate.age.week)),
+            pregnancyDay: estimate.age.day,
+            lastPeriodStartDate: estimate.lastPeriodStartDate,
+          }
+        : {}),
+    });
+  };
+
+  const applyLastPeriodStartDate = (value: string) => {
+    const estimate = estimatePregnancyFromLastPeriod(value);
+
+    updateState({
+      lastPeriodStartDate: value,
+      ...(isPregnant && estimate
+        ? {
+            pregnancyWeek: Math.max(1, Math.min(42, estimate.age.week)),
+            pregnancyDay: estimate.age.day,
+            dueDate: estimate.dueDate,
+          }
+        : {}),
+    });
+  };
 
   const updateMode = (mode: WomenHealthMode) => {
     updateState({
       womenHealthMode: mode,
       pregnancyWeek: mode === "pregnant" ? state.pregnancyWeek : null,
+      pregnancyDay:
+        mode === "pregnant" && state.pregnancyWeek !== null
+          ? state.pregnancyDay ?? 0
+          : null,
       dueDate: mode === "pregnant" ? state.dueDate : "",
       lastPeriodStartDate:
         mode === "pregnant" || mode === "trying_to_conceive"
@@ -526,37 +614,129 @@ export const OnboardingWomenHealthPage = ({
           </Stack>
 
           {isPregnant && (
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-              <TextField
-                fullWidth
-                type="text"
-                label={text.week}
-                value={weekValue}
-                onChange={(event) => {
-                  const safeValue = sanitizeOnboardingIntegerInput(event.target.value, 2);
-                  const parsed = parseOnboardingNumber(safeValue);
-                  updateState({
-                    pregnancyWeek:
-                      parsed === null ? null : Math.max(1, Math.min(42, Math.round(parsed))),
-                  });
-                }}
-                onFocus={(event) => selectOnboardingInputValue(event.target)}
-                onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
-                slotProps={{
-                  htmlInput: {
-                    inputMode: "numeric",
-                    pattern: "[0-9]*",
-                    enterKeyHint: "next",
-                  },
-                }}
-              />
+            <Stack spacing={1.2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                <TextField
+                  fullWidth
+                  type="text"
+                  label={text.week}
+                  value={weekValue}
+                  onChange={(event) => {
+                    const safeValue = sanitizeOnboardingIntegerInput(event.target.value, 2);
+                    const parsed = parseOnboardingNumber(safeValue);
+                    const pregnancyWeek =
+                      parsed === null
+                        ? null
+                        : Math.max(1, Math.min(42, Math.round(parsed)));
+                    updateState({
+                      pregnancyWeek,
+                      pregnancyDay: pregnancyWeek === null ? null : state.pregnancyDay ?? 0,
+                    });
+                  }}
+                  onFocus={(event) => selectOnboardingInputValue(event.target)}
+                  onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
+                  slotProps={{
+                    htmlInput: {
+                      inputMode: "numeric",
+                      pattern: "[0-9]*",
+                      enterKeyHint: "next",
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  type="text"
+                  label={text.day}
+                  value={dayValue}
+                  disabled={state.pregnancyWeek === null}
+                  onChange={(event) => {
+                    const safeValue = sanitizeOnboardingIntegerInput(event.target.value, 1);
+                    const parsed = parseOnboardingNumber(safeValue);
+                    updateState({
+                      pregnancyDay:
+                        parsed === null ? null : Math.max(0, Math.min(6, Math.round(parsed))),
+                    });
+                  }}
+                  onFocus={(event) => selectOnboardingInputValue(event.target)}
+                  onClick={(event) => selectOnboardingInputValue(event.currentTarget)}
+                  slotProps={{
+                    htmlInput: {
+                      inputMode: "numeric",
+                      pattern: "[0-6]*",
+                      enterKeyHint: "next",
+                    },
+                  }}
+                />
+              </Stack>
+
+              {pregnancyEstimate && (
+                <Box
+                  data-onboarding-pregnancy-estimate="true"
+                  sx={{
+                    p: { xs: 1.4, sm: 1.6 },
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: "rgba(20, 184, 166, 0.28)",
+                    background:
+                      "linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(255,255,255,0.66))",
+                  }}
+                >
+                  <Stack spacing={1.1}>
+                    <Stack spacing={0.25}>
+                      <Typography sx={{ fontWeight: 900 }}>
+                        {text.calculatedDatesTitle}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
+                        {text.calculatedDatesBody}
+                      </Typography>
+                    </Stack>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+                        gap: 1,
+                      }}
+                    >
+                      {[
+                        [text.dueDate, pregnancyEstimate.dueDate],
+                        [text.conceptionDate, pregnancyEstimate.conceptionDate],
+                        [text.lastPeriodEstimate, pregnancyEstimate.lastPeriodStartDate],
+                      ].map(([label, value]) => (
+                        <Box
+                          key={label}
+                          sx={{
+                            p: 1,
+                            borderRadius: 1,
+                            border: 1,
+                            borderColor: "divider",
+                            bgcolor: "rgba(255,255,255,0.72)",
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {label}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 900 }}>{value}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      onClick={applyPregnancyEstimate}
+                      sx={{ alignSelf: "flex-start", borderRadius: 999, textTransform: "none" }}
+                    >
+                      {text.applyCalculatedDates}
+                    </Button>
+                  </Stack>
+                </Box>
+              )}
+
               <TextField
                 fullWidth
                 type="date"
                 label={text.dueDate}
                 value={state.dueDate}
                 InputLabelProps={{ shrink: true }}
-                onChange={(event) => updateState({ dueDate: event.target.value })}
+                onChange={(event) => applyDueDate(event.target.value)}
               />
             </Stack>
           )}
@@ -569,9 +749,7 @@ export const OnboardingWomenHealthPage = ({
                 label={text.lastPeriod}
                 value={state.lastPeriodStartDate}
                 InputLabelProps={{ shrink: true }}
-                onChange={(event) =>
-                  updateState({ lastPeriodStartDate: event.target.value })
-                }
+                onChange={(event) => applyLastPeriodStartDate(event.target.value)}
               />
               <FormControlLabel
                 control={

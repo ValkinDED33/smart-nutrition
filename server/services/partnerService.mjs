@@ -128,6 +128,16 @@ const clampPregnancyWeek = (week) => Math.max(1, Math.min(42, Math.round(week)))
 const clampPregnancyDay = (days) =>
   Math.max(0, Math.min(PREGNANCY_DAYS + 14, Math.floor(days)));
 
+const normalizePregnancyDayOffset = (value) => {
+  const day = Number(value);
+
+  if (!Number.isFinite(day)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(6, Math.floor(day)));
+};
+
 const getTrimester = (week) => {
   if (!Number.isFinite(week) || week <= 0) {
     return null;
@@ -162,7 +172,10 @@ const getPregnancyAge = (womenHealth, now = new Date()) => {
     typeof womenHealth.pregnancyWeek === "number" &&
     Number.isFinite(womenHealth.pregnancyWeek)
   ) {
-    totalDays = clampPregnancyDay(clampPregnancyWeek(womenHealth.pregnancyWeek) * 7);
+    totalDays = clampPregnancyDay(
+      clampPregnancyWeek(womenHealth.pregnancyWeek) * 7 +
+        normalizePregnancyDayOffset(womenHealth.pregnancyDay)
+    );
   } else if (dueTime !== null) {
     totalDays = clampPregnancyDay((nowTime - (dueTime - PREGNANCY_DAYS * DAY_MS)) / DAY_MS);
   } else if (lastPeriodTime !== null) {
@@ -232,6 +245,7 @@ const sanitizePregnancyShare = ({ ownerUser, ownerProfile }) => {
     pregnancy: {
       mode: womenHealth.mode === "pregnant" ? "pregnant" : womenHealth.mode ?? "none",
       pregnancyWeek: week,
+      pregnancyDay: age?.days ?? null,
       dueDate: typeof womenHealth.dueDate === "string" ? womenHealth.dueDate : null,
       lastPeriodStartDate:
         typeof womenHealth.lastPeriodStartDate === "string"

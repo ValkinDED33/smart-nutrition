@@ -170,8 +170,46 @@ const extractDurationDays = (text) => {
   return Number.isInteger(days) && days > 0 && days <= 365 ? days : null;
 };
 
+const extractOneTimeOffsetDays = (text) => {
+  const normalized = String(text ?? "").toLowerCase();
+
+  if (/(^|\s)(завтра|tomorrow|jutro)(\s|$)/iu.test(normalized)) {
+    return 1;
+  }
+
+  if (/(^|\s)(послезавтра|післязавтра|after tomorrow|pojutrze)(\s|$)/iu.test(normalized)) {
+    return 2;
+  }
+
+  const relativeMatch = normalized.match(
+    /(?:через|за|in|w)\s+(?:(\d{1,3})\s*)?(дн(?:я|ей|ів|і)?|days?|тижн(?:я|ів|і)?|недел(?:ю|и|ь)?|weeks?|месяц(?:а|ев)?|місяц(?:і|ів)?|months?|год(?:а|ов)?|рік|рок(?:и|ів)?|year|years?)(?:\s|$|[,.!?])/iu
+  );
+
+  if (!relativeMatch) {
+    return null;
+  }
+
+  const amount = Number(relativeMatch[1] ?? 1);
+
+  if (!Number.isInteger(amount) || amount < 1) {
+    return null;
+  }
+
+  const unit = relativeMatch[2];
+  const multiplier =
+    /тижн|недел|week/iu.test(unit)
+      ? 7
+      : /месяц|місяц|month/iu.test(unit)
+        ? 30
+        : /год|рік|рок|year/iu.test(unit)
+          ? 365
+          : 1;
+
+  return Math.min(amount * multiplier, 365);
+};
+
 const hasDailyRepeatIntent = (text) =>
-  /(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день)(?:\s|$)/iu.test(
+  /(?:^|\s)(?:каждый\s+день|кожен\s+день|щодня|ежедневно|daily|every day)(?:\s|$)/iu.test(
     String(text ?? "")
   );
 
@@ -252,11 +290,11 @@ const cleanTitle = (text) => {
     .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)\d+(?:[,.]\d+)?\s*(?:мг|mg|мл|ml|таблет(?:ка|ки|ок|ку|ке)?|табл\.?|капсул(?:а|ы|у|е|ок)?|капс\.?)(?:\s|$|,|\.)/giu, " ")
     .replace(/(?:^|\s)(?:после|після|after|po)\s+(?:(?:того\s+)?(?:как|як)\s+)?(?:по)?(?:завтрака|сніданку|śniadaniu|breakfast|обеда|обіду|lunch|lunchu|ужина|вечері|dinner|kolacji|перекуса|перекусу|snack)(?:\s|$)/giu, " ")
-    .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|вечером|вечір|вечора|вечера|morning|evening|night)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:каждый\s+день|кожен\s+день|щодня|ежедневно|daily|every day|утром|ранку|утра|вечером|вечір|вечора|вечера|morning|evening|night)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:пить|пити|принимать|приймати|выпить|випити)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:по|by)(?:\s|$)/giu, " ")
-    .replace(/(?:^|\s)(?:в|о|at|по|by|каждый|кожен|щодня|ежедневно|день)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:в|о|at|по|by|каждый|кожен|щодня|ежедневно)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:и|та|і|and)(?:\s|$)/giu, " ")
     .trim();
 
@@ -271,7 +309,12 @@ const cleanTaskTitle = (text) => {
     .replace(/^(?:напоминай|напомни|нагадуй|нагадай|remind me to|remind me|remind)\s+/iu, "")
     .replace(/\b\d{1,2}[:.]\d{2}\b/giu, "")
     .replace(/(?:^|\s)\d{1,3}\s*(?:дн(?:я|ей|ів|і)?|days?)(?:\s|$)/giu, " ")
-    .replace(/(?:^|\s)(?:каждый|кожен|щодня|ежедневно|daily|every day|день|утром|ранку|утра|днем|днём|обед|обід|вечером|вечір|вечора|вечера|morning|afternoon|evening|night)(?:\s|$)/giu, " ")
+    .replace(/(?:^|\s)(?:завтра|tomorrow|jutro|послезавтра|післязавтра|after tomorrow|pojutrze)(?:\s|$)/giu, " ")
+    .replace(
+      /(?:через|за|in|w)\s+(?:(?:\d{1,3})\s*)?(?:дн(?:я|ей|ів|і)?|days?|тижн(?:я|ів|і)?|недел(?:ю|и|ь)?|weeks?|месяц(?:а|ев)?|місяц(?:і|ів)?|months?|год(?:а|ов)?|рік|рок(?:и|ів)?|year|years?)(?:\s|$|[,.!?])/giu,
+      " "
+    )
+    .replace(/(?:^|\s)(?:каждый\s+день|кожен\s+день|щодня|ежедневно|daily|every day|утром|ранку|утра|днем|днём|обед|обід|вечером|вечір|вечора|вечера|morning|afternoon|evening|night)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по)\s+\d{1,2}(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:в|о|at|по|by)(?:\s|$)/giu, " ")
     .replace(/(?:^|\s)(?:и|та|і|and)(?:\s|$)/giu, " ")
@@ -335,6 +378,33 @@ export const calculateNextMedicationRunAt = (
   }
 
   return null;
+};
+
+const calculateOneTimeRunAt = ({
+  offsetDays,
+  time,
+  from = new Date(),
+  timeZone = DEFAULT_TIMEZONE,
+}) => {
+  const [hour, minute] = String(time ?? "").split(":").map(Number);
+
+  if (!Number.isInteger(offsetDays) || offsetDays < 0) {
+    return null;
+  }
+
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    return null;
+  }
+
+  const day = getLocalDayOffset(from, offsetDays, timeZone);
+  const candidate = zonedTimeToUtc({
+    ...day,
+    hour,
+    minute,
+    timeZone,
+  });
+
+  return candidate > from ? candidate.toISOString() : null;
 };
 
 export const parseMedicationReminderText = (
@@ -416,14 +486,22 @@ export const parseTaskReminderText = (
   { now = new Date(), timezone = DEFAULT_TIMEZONE } = {}
 ) => {
   const rawText = normalizeText(text, 500);
-  const times = extractTimes(rawText);
+  const oneTimeOffsetDays = extractOneTimeOffsetDays(rawText);
+  const extractedTimes = extractTimes(rawText);
+  const times = extractedTimes.length > 0
+    ? extractedTimes
+    : oneTimeOffsetDays
+      ? ["09:00"]
+      : [];
 
   if (!rawText || times.length === 0) {
     return null;
   }
 
   const repeatsDaily = hasDailyRepeatIntent(rawText);
-  const durationDays = extractDurationDays(rawText) ?? (repeatsDaily ? null : 1);
+  const durationDays = repeatsDaily
+    ? null
+    : (oneTimeOffsetDays ?? extractDurationDays(rawText) ?? 1);
   const reminder = {
     id: `task-${crypto.randomUUID()}`,
     type: REMINDER_TYPE_TASK,
@@ -443,7 +521,15 @@ export const parseTaskReminderText = (
     nextRunAt: null,
     events: [],
   };
-  reminder.nextRunAt = calculateNextMedicationRunAt(reminder, { from: now });
+  reminder.nextRunAt =
+    !repeatsDaily && oneTimeOffsetDays
+      ? calculateOneTimeRunAt({
+          offsetDays: oneTimeOffsetDays,
+          time: times[0],
+          from: now,
+          timeZone: timezone,
+        })
+      : calculateNextMedicationRunAt(reminder, { from: now });
 
   return reminder.nextRunAt && reminder.title ? reminder : null;
 };

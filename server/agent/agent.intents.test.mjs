@@ -57,6 +57,32 @@ describe("detectAgentIntent", () => {
     });
   });
 
+  it("detects flexible life task reminders for Telegram and web assistant", () => {
+    expect(detectAgentIntent("Напомни завтра вечером померять давление")).toMatchObject({
+      intent: "create_task_reminder",
+      entities: {
+        text: "Напомни завтра вечером померять давление",
+      },
+    });
+    expect(detectAgentIntent("Напомни через год день рождения мамы")).toMatchObject({
+      intent: "create_task_reminder",
+      entities: {
+        text: "Напомни через год день рождения мамы",
+      },
+    });
+  });
+
+  it("detects medication schedule planning as medication reminders", () => {
+    expect(
+      detectAgentIntent("составь график приема таблеток 3 раза в день 7 дней")
+    ).toMatchObject({
+      intent: "create_medication_course_reminder",
+      entities: {
+        text: "составь график приема таблеток 3 раза в день 7 дней",
+      },
+    });
+  });
+
   it("detects follow-up requests before generic task reminders", () => {
     expect(detectAgentIntent("напомни проверить воду через 30 минут")).toMatchObject({
       intent: "create_follow_up",
@@ -130,6 +156,32 @@ describe("detectAgentIntent", () => {
       intent: "request_photo_meal_analysis",
       entities: {
         targetRoute: "/meals?mode=photo",
+      },
+    });
+  });
+
+  it("detects live weather requests instead of answering from memory", () => {
+    expect(detectAgentIntent("какая погода завтра в Варшаве")).toMatchObject({
+      intent: "get_weather_forecast",
+      entities: {
+        location: "Варшаве",
+        dayOffset: 1,
+      },
+    });
+  });
+
+  it("detects live exchange rate requests with flexible currency wording", () => {
+    expect(detectAgentIntent("какой актуальный курс доллара")).toMatchObject({
+      intent: "get_exchange_rate",
+      entities: {
+        base: "USD",
+        targets: ["UAH", "PLN", "EUR"],
+      },
+    });
+    expect(detectAgentIntent("курс вьетнамских донгов")).toMatchObject({
+      intent: "get_exchange_rate",
+      entities: {
+        base: "VND",
       },
     });
   });

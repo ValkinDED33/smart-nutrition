@@ -59,16 +59,21 @@ export const createAuthService = ({
 
     return result;
   };
-  const assertProfileStatePersistenceError = (error) => {
+  const assertProfileStatePersistenceError = (error, stage = "profile-state") => {
     if (error instanceof AuthApiError || error instanceof StateApiError) {
       throw error;
     }
 
     logger.warn?.("[auth] profile-state persistence failed", {
+      stage,
       code: String(error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED").slice(
         0,
         80
       ),
+      message:
+        error instanceof Error
+          ? error.message.slice(0, 240)
+          : "Unknown profile-state persistence failure",
     });
     throw new AuthApiError(
       "STATE_SYNC_UNAVAILABLE",
@@ -1038,14 +1043,34 @@ export const createAuthService = ({
       let profileMeta = null;
 
       try {
-        const atomicResult =
-          typeof saveProfileAndUser === "function"
-            ? assertCombinedProfileSaveResult(await saveProfileAndUser(body?.profile, nextUser))
-            : null;
-        savedProfile =
-          atomicResult?.profile ?? (await saveProfileState(body?.profile));
-        updatedUser =
-          atomicResult?.user ?? (await authRepository.updateUser(nextUser));
+        let atomicResult = null;
+
+        if (typeof saveProfileAndUser === "function") {
+          try {
+            atomicResult = assertCombinedProfileSaveResult(
+              await saveProfileAndUser(body?.profile, nextUser)
+            );
+          } catch (error) {
+            assertProfileStatePersistenceError(error, "atomic-profile-and-user-save");
+          }
+        }
+
+        if (!atomicResult) {
+          try {
+            savedProfile = await saveProfileState(body?.profile);
+          } catch (error) {
+            assertProfileStatePersistenceError(error, "profile-state-save");
+          }
+
+          try {
+            updatedUser = await authRepository.updateUser(nextUser);
+          } catch (error) {
+            assertProfileStatePersistenceError(error, "user-profile-save");
+          }
+        } else {
+          savedProfile = atomicResult.profile;
+          updatedUser = atomicResult.user;
+        }
 
         if (!isRecord(updatedUser) || !isRecord(savedProfile)) {
           throw new AuthApiError(
@@ -1059,7 +1084,7 @@ export const createAuthService = ({
             ? await getProfileMeta()
             : null;
       } catch (error) {
-        assertProfileStatePersistenceError(error);
+        assertProfileStatePersistenceError(error, "profile-state-finalize");
       }
 
       if (!isRecord(updatedUser) || !isRecord(savedProfile)) {

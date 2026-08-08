@@ -128,6 +128,36 @@ describe("medicationReminderService", () => {
     });
   });
 
+  it("parses tomorrow evening pressure reminders as a real one-time task", () => {
+    const reminder = parseTaskReminderText("Напомни завтра вечером померять давление", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+
+    expect(reminder).toMatchObject({
+      type: "task",
+      title: "померять давление",
+      times: ["21:00"],
+      repeat: "once",
+      durationDays: 1,
+      nextRunAt: "2026-06-21T19:00:00.000Z",
+    });
+  });
+
+  it("parses long horizon birthday reminders without losing backend confirmation", () => {
+    const reminder = parseTaskReminderText("Напомни через год день рождения мамы", {
+      now: new Date("2026-06-20T05:00:00.000Z"),
+    });
+
+    expect(reminder).toMatchObject({
+      type: "task",
+      title: "день рождения мамы",
+      times: ["09:00"],
+      repeat: "once",
+      durationDays: 365,
+      nextRunAt: "2027-06-20T07:00:00.000Z",
+    });
+  });
+
   it("calculates next run from local reminder times", () => {
     const nextRunAt = calculateNextMedicationRunAt(
       {

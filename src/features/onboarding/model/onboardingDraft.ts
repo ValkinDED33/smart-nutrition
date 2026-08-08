@@ -28,6 +28,7 @@ export interface PreAuthOnboardingDraft {
   gender: Gender;
   womenHealthMode: WomenHealthMode;
   pregnancyWeek: number | null;
+  pregnancyDay: number | null;
   dueDate: string;
   lastPeriodStartDate: string;
   doctorConfirmed: boolean;
@@ -63,6 +64,7 @@ const defaultPreAuthOnboardingDraft = (
   gender: "male",
   womenHealthMode: "none",
   pregnancyWeek: null,
+  pregnancyDay: null,
   dueDate: "",
   lastPeriodStartDate: "",
   doctorConfirmed: false,
@@ -266,6 +268,13 @@ const normalizePreAuthOnboardingDraft = (
       record.gender === "female" &&
       record.womenHealthMode === "pregnant"
         ? toNullableNumber(record.pregnancyWeek, 1, 42)
+        : null,
+    pregnancyDay:
+      isGender(record.gender) &&
+      record.gender === "female" &&
+      record.womenHealthMode === "pregnant" &&
+      toNullableNumber(record.pregnancyWeek, 1, 42) !== null
+        ? toNullableNumber(record.pregnancyDay, 0, 6) ?? 0
         : null,
     dueDate:
       isGender(record.gender) &&

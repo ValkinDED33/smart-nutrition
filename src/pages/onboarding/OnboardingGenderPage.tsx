@@ -17,6 +17,7 @@ export const OnboardingGenderPage = ({ state, updateState }: OnboardingStepProps
             gender,
             womenHealthMode: "none",
             pregnancyWeek: null,
+            pregnancyDay: null,
             dueDate: "",
             lastPeriodStartDate: "",
             doctorConfirmed: false,

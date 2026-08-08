@@ -219,6 +219,18 @@ const normalizePregnancyWeek = (value) => {
   return rounded >= 1 && rounded <= 42 ? rounded : null;
 };
 
+const normalizePregnancyDay = (value) => {
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(numberValue);
+
+  return rounded >= 0 && rounded <= 6 ? rounded : null;
+};
+
 const normalizeWomenHealth = (value) => {
   const record = isRecord(value) ? value : {};
   const allowedModes = ["none", "trying_to_conceive", "pregnant", "postpartum"];
@@ -240,6 +252,10 @@ const normalizeWomenHealth = (value) => {
   return {
     mode,
     pregnancyWeek: mode === "pregnant" ? normalizePregnancyWeek(record.pregnancyWeek) : null,
+    pregnancyDay:
+      mode === "pregnant" && normalizePregnancyWeek(record.pregnancyWeek) !== null
+        ? normalizePregnancyDay(record.pregnancyDay) ?? 0
+        : null,
     dueDate: mode === "pregnant" ? normalizeIsoDateOrNull(record.dueDate) : null,
     lastPeriodStartDate:
       mode === "pregnant" || mode === "trying_to_conceive"

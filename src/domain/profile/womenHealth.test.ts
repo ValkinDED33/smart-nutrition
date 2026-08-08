@@ -5,8 +5,16 @@ import {
   hasWomenHealthContext,
   normalizeWomenHealthState,
 } from "./womenHealth";
+import {
+  estimatePregnancyDatesFromAge,
+  estimatePregnancyFromDueDate,
+  estimatePregnancyFromLastPeriod,
+} from "./pregnancyDateMath";
 
 const NOW = new Date("2026-07-12T12:00:00.000Z");
+const AGE_14W2D = { week: 14, day: 2, totalDays: 100 };
+const ESTIMATED_DUE_DATE = "2027-01-08";
+const ESTIMATED_LAST_PERIOD = "2026-04-03";
 
 describe("women health domain", () => {
   it("uses an explicitly confirmed pregnancy week first", () => {
@@ -64,6 +72,57 @@ describe("women health domain", () => {
       fatherZodiac: "capricorn",
       motherChineseZodiac: "tiger",
       fatherChineseZodiac: "goat",
+    });
+  });
+
+  it("normalizes pregnancy days only inside a confirmed pregnancy age", () => {
+    expect(
+      normalizeWomenHealthState({
+        mode: "pregnant",
+        pregnancyWeek: 14,
+        pregnancyDay: 2,
+      })
+    ).toMatchObject({
+      pregnancyWeek: 14,
+      pregnancyDay: 2,
+    });
+
+    expect(
+      normalizeWomenHealthState({
+        mode: "pregnant",
+        pregnancyWeek: 14,
+        pregnancyDay: 99,
+      }).pregnancyDay
+    ).toBe(0);
+
+    expect(
+      normalizeWomenHealthState({
+        mode: "trying_to_conceive",
+        pregnancyWeek: 14,
+        pregnancyDay: 2,
+      })
+    ).toMatchObject({
+      pregnancyWeek: null,
+      pregnancyDay: null,
+    });
+  });
+
+  it("calculates pregnancy due, conception, and last-period dates from age or dates", () => {
+    expect(estimatePregnancyDatesFromAge(14, 2, NOW)).toMatchObject({
+      dueDate: ESTIMATED_DUE_DATE,
+      conceptionDate: "2026-04-17",
+      lastPeriodStartDate: ESTIMATED_LAST_PERIOD,
+      age: AGE_14W2D,
+    });
+
+    expect(estimatePregnancyFromDueDate(ESTIMATED_DUE_DATE, NOW)).toMatchObject({
+      age: AGE_14W2D,
+      lastPeriodStartDate: ESTIMATED_LAST_PERIOD,
+    });
+
+    expect(estimatePregnancyFromLastPeriod(ESTIMATED_LAST_PERIOD, NOW)).toMatchObject({
+      age: AGE_14W2D,
+      dueDate: ESTIMATED_DUE_DATE,
     });
   });
 

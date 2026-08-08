@@ -30,6 +30,7 @@ export interface OnboardingState {
   gender: Gender;
   womenHealthMode: WomenHealthMode;
   pregnancyWeek: number | null;
+  pregnancyDay: number | null;
   dueDate: string;
   lastPeriodStartDate: string;
   doctorConfirmed: boolean;

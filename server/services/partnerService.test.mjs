@@ -13,6 +13,7 @@ const createProfile = (overrides = {}) => ({
   womenHealth: {
     mode: "pregnant",
     pregnancyWeek: 20,
+    pregnancyDay: 3,
     dueDate: "2026-11-20",
     lastPeriodStartDate: "2026-02-13",
     doctorConfirmed: true,
@@ -143,12 +144,13 @@ describe("partnerService", () => {
       pregnancy: {
         mode: "pregnant",
         pregnancyWeek: 20,
+        pregnancyDay: 3,
         dueDate: "2026-11-20",
       },
       timeline: {
         week: 20,
         completedWeeks: 20,
-        days: 0,
+        days: 3,
         trimester: 2,
         month: 6,
       },
@@ -173,6 +175,7 @@ describe("partnerService", () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0].owner.name).toBe("Anna");
     expect(result.items[0].pregnancy.pregnancyWeek).toBe(20);
+    expect(result.items[0].pregnancy.pregnancyDay).toBe(3);
   });
 
   it("derives partner pregnancy timeline from due date when week is missing", async () => {
@@ -187,6 +190,7 @@ describe("partnerService", () => {
           womenHealth: {
             mode: "pregnant",
             pregnancyWeek: null,
+            pregnancyDay: null,
             dueDate: "2026-11-20T00:00:00.000Z",
             lastPeriodStartDate: null,
             doctorConfirmed: true,

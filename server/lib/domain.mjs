@@ -507,6 +507,7 @@ export const createInitialProfileState = (userInput) => {
     womenHealth: {
       mode: "none",
       pregnancyWeek: null,
+      pregnancyDay: null,
       dueDate: null,
       lastPeriodStartDate: null,
       doctorConfirmed: false,

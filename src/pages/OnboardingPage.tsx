@@ -84,6 +84,12 @@ const OnboardingPage = () => {
             : shouldUseProfileWomenHealth
               ? profile.womenHealth.pregnancyWeek
               : null,
+        pregnancyDay:
+          shouldUseDraftWomenHealth
+            ? draft.pregnancyDay
+            : shouldUseProfileWomenHealth
+              ? profile.womenHealth.pregnancyDay
+              : null,
         dueDate:
           shouldUseDraftWomenHealth
             ? draft.dueDate
@@ -238,6 +244,12 @@ const OnboardingPage = () => {
       pregnancyWeek:
         state.gender === "female" && state.womenHealthMode === "pregnant"
           ? state.pregnancyWeek
+          : null,
+      pregnancyDay:
+        state.gender === "female" &&
+        state.womenHealthMode === "pregnant" &&
+        state.pregnancyWeek !== null
+          ? state.pregnancyDay ?? 0
           : null,
       dueDate:
         state.gender === "female" && state.womenHealthMode === "pregnant"

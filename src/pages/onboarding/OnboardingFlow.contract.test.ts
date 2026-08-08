@@ -51,6 +51,7 @@ describe("Onboarding flow contract", () => {
     expect(source).toContain('shouldUseProfileWomenHealth\n              ? "female"');
     expect(source).toContain("profile.womenHealth.mode");
     expect(source).toContain("profile.womenHealth.pregnancyWeek");
+    expect(source).toContain("profile.womenHealth.pregnancyDay");
     expect(source).toContain("profile.womenHealth.notes");
     expect(source).toContain("hasEditedOnboardingRef.current");
     expect(source).toContain("!hasEditedOnboardingRef.current && !hasPreAuthOnboardingDraft()");
@@ -69,6 +70,7 @@ describe("Onboarding flow contract", () => {
       'navigate(state.gender === "female" ? stepPaths.womenHealth : stepPaths.name)'
     );
     expect(womenHealthSource).toContain("data-onboarding-pregnancy-block");
+    expect(womenHealthSource).toContain("data-onboarding-pregnancy-estimate");
     expect(womenHealthSource).toContain("data-onboarding-family-preview-block");
     expect(womenHealthSource).toContain("onClick={() => navigate(stepPaths.name)}");
     expect(nameSource).toContain(
@@ -93,5 +95,15 @@ describe("Onboarding flow contract", () => {
     expect(finishSource).not.toContain('saveOnboarding("/profile")');
     expect(motivationSource).toContain("personalizationCompleted: true");
     expect(motivationSource).toContain("navigate(stepPaths.finish)");
+  });
+
+  it("keeps the animated onboarding assistant out of active form fields", async () => {
+    const guideSource = await readSource("src/pages/onboarding/OnboardingGuide.tsx");
+
+    expect(guideSource).toContain("useHideGuideWhileFieldFocused");
+    expect(guideSource).toContain("document.addEventListener(\"focusin\", onFocusIn)");
+    expect(guideSource).toContain("data-onboarding-guide-hidden-while-field-focused");
+    expect(guideSource).toContain("calc((100vw - 720px) / 2 - 300px)");
+    expect(guideSource).toContain("direction=\"row-reverse\"");
   });
 });

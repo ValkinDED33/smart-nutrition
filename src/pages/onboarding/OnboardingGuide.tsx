@@ -133,23 +133,25 @@ const stepMeta: Record<string, StepMeta> = {
   },
 };
 
+const GUIDE_SIDE_RAIL = "max(24px, calc((100vw - 720px) / 2 - 300px))";
+
 const placementSx: Record<GuidePlacement, object> = {
   peekLeft: {
-    left: { xs: 12, md: "calc(50% - 430px)" },
-    top: { xs: "auto", md: "44%" },
+    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   peekRight: {
-    right: { xs: 12, md: "calc(50% - 430px)" },
-    top: { xs: "auto", md: "38%" },
+    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   floatTop: {
-    right: { xs: 12, md: "calc(50% - 420px)" },
+    right: { xs: 12, md: GUIDE_SIDE_RAIL },
     top: { xs: 92, md: 118 },
   },
   floatBottom: {
-    left: { xs: 12, md: "calc(50% - 410px)" },
+    right: { xs: 12, md: GUIDE_SIDE_RAIL },
     bottom: { xs: 92, md: 94 },
   },
 };
@@ -277,10 +279,52 @@ const usePointerLook = () => {
   return lookOffset;
 };
 
+const isFormField = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(
+      "input, textarea, select, [contenteditable='true'], [role='textbox'], .MuiInputBase-root"
+    )
+  );
+};
+
+const useHideGuideWhileFieldFocused = () => {
+  const [fieldFocused, setFieldFocused] = useState(false);
+
+  useEffect(() => {
+    const syncFocusState = () => {
+      setFieldFocused(isFormField(document.activeElement));
+    };
+
+    const onFocusIn = (event: FocusEvent) => {
+      setFieldFocused(isFormField(event.target));
+    };
+
+    const onFocusOut = () => {
+      window.setTimeout(syncFocusState, 0);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    syncFocusState();
+
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
+
+  return fieldFocused;
+};
+
 export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const { pathname } = useLocation();
   const { appLanguage } = useLanguage();
   const lookOffset = usePointerLook();
+  const fieldFocused = useHideGuideWhileFieldFocused();
 
   const meta = resolveStepMeta(pathname);
   const { key, placement, mood } = meta;
@@ -290,11 +334,11 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
 
   const transform = useMemo(() => {
     if (placement === "peekLeft") {
-      return "translate(-18px, -50%)";
+      return "none";
     }
 
     if (placement === "peekRight") {
-      return "translate(18px, -50%)";
+      return "none";
     }
 
     return "none";
@@ -308,16 +352,18 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
         layout
         variants={onboardingGuideShellVariants}
         initial="initial"
-        animate="animate"
+        animate={fieldFocused ? "exit" : "animate"}
         exit="exit"
+        data-onboarding-guide-hidden-while-field-focused={fieldFocused ? "true" : "false"}
         sx={{
           position: "fixed",
           zIndex: 1250,
           pointerEvents: "none",
           display: { xs: "none", sm: "block" },
+          maxWidth: 360,
           ...resolvePlacementSx(placement),
           transform,
-          transformOrigin: placement === "peekLeft" ? "left center" : "right center",
+          transformOrigin: "right top",
         }}
       >
         <Box
@@ -330,7 +376,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
             component={motion.div}
             layout
             variants={onboardingGuideStaggerVariants}
-            direction={placement === "peekLeft" ? "row" : "row-reverse"}
+            direction="row-reverse"
             spacing={1.2}
             alignItems="center"
           >

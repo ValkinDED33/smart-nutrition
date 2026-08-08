@@ -10,10 +10,14 @@ const PREGNANCY_SUPPLEMENT_WORD_PATTERN =
   /(беремен|вагіт|pregnan|prenatal|пренатал|фолиев|фолієв|folic|йод|iodine)/i;
 const HABIT_WORD_PATTERN =
   /(звичк|привычк|habit|routine|рутин|прогулянк|walk|сон|sleep)/i;
+const TASK_EVENT_WORD_PATTERN =
+  /(давлен|тиск|pressure|birthday|день рожден|день народжен|urodzin|событи|поді[яї]|event|встреч|зустріч|appointment|визит|візит)/i;
 const REMINDER_WORD_PATTERN =
   /(напомни|напоминай|нагадай|нагадуй|remind me|remind|reminder|нагадування|напоминание)/i;
 const REMINDER_SCHEDULE_PATTERN =
-  /(\d{1,2}[:.]\d{2}|(?:^|\s)(?:в|о|at)\s*\d{1,2}(?:\s|$)|утром|ранку|вечером|вечір|morning|evening|night)/i;
+  /(\d{1,2}[:.]\d{2}|(?:^|\s)(?:в|о|at)\s*\d{1,2}(?:\s|$)|утром|ранку|вечером|вечір|morning|evening|night|завтра|tomorrow|jutro|послезавтра|післязавтра|pojutrze|(?:через|за|in|w)\s+(?:(?:\d{1,3})\s*)?(?:дн|днів|days?|тижн|недел|weeks?|месяц|місяц|months?|год|рік|рок|years?))/i;
+const MEDICATION_PLAN_PATTERN =
+  /(график|графік|расписан|розклад|schedule|план).*(таблет|ліки|лекарств|препарат|витамин|вітамін|доза|капсул)|(?:таблет|ліки|лекарств|препарат|витамин|вітамін|доза|капсул).*(график|графік|расписан|розклад|schedule|план)/i;
 const FOLLOW_UP_WORD_PATTERN =
   /(follow[-\s]?up|фоллоу|фолоу|вернись|вернуться|повернись|повернутись|провер|перевір|check back|check in|later|позже|пізніше)/i;
 const RELATIVE_SCHEDULE_PATTERN =
@@ -62,6 +66,10 @@ const PHOTO_MEAL_WORD_PATTERN =
   /(фото|фотограф|снимок|знімок|картинк|image|photo|picture|plate|тарелк|тарілк)/i;
 const PHOTO_MEAL_ACTION_PATTERN =
   /(^|\s)(проанализируй|проаналізуй|аналіз|анализ|розпізнай|распознай|открой|відкрий|загрузи|завантаж|open|analyze|analyse|recognize|upload)(\s|$)/i;
+const WEATHER_WORD_PATTERN =
+  /(погод|weather|температур|temperature|дощ|дожд|rain|сніг|снег|snow|вітер|ветер|wind)/i;
+const EXCHANGE_RATE_WORD_PATTERN =
+  /(курс|валют|exchange|rate|currency|доллар|долар|долара|доллара|usd|євро|евро|eur|гривн|uah|злот|pln|фунт|gbp|крон|czk|донг|vnd|вьетнам|в'єтнам)/i;
 
 const normalizeMessage = (value) =>
   String(value ?? "")
@@ -246,6 +254,100 @@ const readDailyPlanApplyTarget = (message) => {
   return "food";
 };
 
+const readWeatherLocation = (message) => {
+  const normalized = normalizeMessage(message);
+  const explicit = normalized.match(
+    /(?:^|\s)(?:в|у|in|для|for)\s+([a-zа-яіїєґёąćęłńóśźż\s-]{2,80})(?:\s|$|[,.!?])/iu
+  );
+
+  if (explicit?.[1]) {
+    return explicit[1]
+      .replace(/\b(?:завтра|сегодня|сьогодні|today|tomorrow|jutro)\b/giu, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80);
+  }
+
+  return "";
+};
+
+const readWeatherDayOffset = (message) => {
+  const normalized = normalizeMessage(message).toLowerCase();
+
+  if (/(послезавтра|післязавтра|after tomorrow|pojutrze)/iu.test(normalized)) {
+    return 2;
+  }
+
+  if (/(завтра|tomorrow|jutro)/iu.test(normalized)) {
+    return 1;
+  }
+
+  return 0;
+};
+
+const currencyAliases = new Map([
+  ["usd", "USD"],
+  ["доллар", "USD"],
+  ["доллара", "USD"],
+  ["долар", "USD"],
+  ["долара", "USD"],
+  ["eur", "EUR"],
+  ["евро", "EUR"],
+  ["євро", "EUR"],
+  ["uah", "UAH"],
+  ["гривна", "UAH"],
+  ["гривны", "UAH"],
+  ["гривні", "UAH"],
+  ["гривня", "UAH"],
+  ["pln", "PLN"],
+  ["злотый", "PLN"],
+  ["злотого", "PLN"],
+  ["злотих", "PLN"],
+  ["злотых", "PLN"],
+  ["gbp", "GBP"],
+  ["фунт", "GBP"],
+  ["фунта", "GBP"],
+  ["czk", "CZK"],
+  ["крона", "CZK"],
+  ["кроны", "CZK"],
+  ["vnd", "VND"],
+  ["донг", "VND"],
+  ["донга", "VND"],
+  ["вьетнамских", "VND"],
+  ["в'єтнамських", "VND"],
+]);
+
+const readCurrencyCode = (value) => {
+  const normalized = String(value ?? "").toLowerCase();
+
+  for (const [alias, code] of currencyAliases.entries()) {
+    if (new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "iu").test(normalized)) {
+      return code;
+    }
+  }
+
+  return "";
+};
+
+const readExchangeCurrencies = (message) => {
+  const normalized = normalizeMessage(message);
+  const pairMatch = normalized.match(
+    /(usd|eur|uah|pln|gbp|czk|vnd|доллар[а]?|долар[а]?|евро|євро|гривн[а-яіїєґ]*|злот[а-яіїєґ]*|фунт[а-яіїєґ]*|крон[а-яіїєґ]*|донг[а-яіїєґ]*|вьетнамск[а-я]*|в'єтнамськ[а-яіїєґ]*)\s+(?:к|до|to|в|у)\s+(usd|eur|uah|pln|gbp|czk|vnd|доллар[а]?|долар[а]?|евро|євро|гривн[а-яіїєґ]*|злот[а-яіїєґ]*|фунт[а-яіїєґ]*|крон[а-яіїєґ]*|донг[а-яіїєґ]*|вьетнамск[а-я]*|в'єтнамськ[а-яіїєґ]*)/iu
+  );
+
+  if (pairMatch) {
+    return {
+      base: readCurrencyCode(pairMatch[1]) || "USD",
+      targets: [readCurrencyCode(pairMatch[2]) || "UAH"],
+    };
+  }
+
+  const base = readCurrencyCode(normalized) || "USD";
+  const targets = base === "USD" ? ["UAH", "PLN", "EUR"] : ["USD", "PLN", "EUR"].filter((code) => code !== base);
+
+  return { base, targets };
+};
+
 export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   const normalized = normalizeMessage(message);
 
@@ -261,6 +363,31 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
   const amountMl = readAmountMl(normalized);
   const hasReminderSchedule =
     REMINDER_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized);
+
+  if (WEATHER_WORD_PATTERN.test(normalized)) {
+    return {
+      intent: "get_weather_forecast",
+      confidence: 0.82,
+      entities: {
+        text: normalized,
+        location: readWeatherLocation(normalized),
+        dayOffset: readWeatherDayOffset(normalized),
+      },
+      reason: "live_weather_request",
+    };
+  }
+
+  if (EXCHANGE_RATE_WORD_PATTERN.test(normalized)) {
+    return {
+      intent: "get_exchange_rate",
+      confidence: 0.82,
+      entities: {
+        text: normalized,
+        ...readExchangeCurrencies(normalized),
+      },
+      reason: "live_exchange_rate_request",
+    };
+  }
 
   if (hasReminderSchedule && WATER_WORD_PATTERN.test(normalized)) {
     return {
@@ -358,6 +485,7 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
 
   if (
     /^\/?addmed\b/i.test(normalized) ||
+    MEDICATION_PLAN_PATTERN.test(normalized) ||
     (MEDICATION_WORD_PATTERN.test(normalized) && /(напомни|нагадуй|remind|кажд|щодня|(?:^|\s)[во]\s+\d{1,2}|at\s+\d{1,2})/i.test(normalized))
   ) {
     const medicationCourseIntent = hasMedicationCourseIntent(normalized);
@@ -378,7 +506,8 @@ export const detectAgentIntent = (message, { quickQuestionId = null } = {}) => {
 
   if (
     /^\/?(?:addtask|task|reminder)\b/i.test(normalized) ||
-    (REMINDER_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized))
+    (REMINDER_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized)) ||
+    (TASK_EVENT_WORD_PATTERN.test(normalized) && REMINDER_SCHEDULE_PATTERN.test(normalized))
   ) {
     return {
       intent: "create_task_reminder",
