@@ -18,6 +18,7 @@ import {
   createInitialWaterState,
   isUserRole,
   normalizeCompanionState,
+  normalizeWomenHealthState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -480,6 +481,7 @@ const normalizeProfileState = (value, user) => {
         ...assistantMemory,
       },
     },
+    womenHealth: normalizeWomenHealthState(record.womenHealth),
   };
 };
 

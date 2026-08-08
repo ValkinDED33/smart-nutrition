@@ -165,6 +165,23 @@ const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKi
   value === "human" ||
   value === "capybara" ||
   value === "dragon" ||
+  value === "raccoon" ||
+  value === "corgi" ||
+  value === "wolf" ||
+  value === "tiger" ||
+  value === "bear" ||
+  value === "rabbit" ||
+  value === "chameleon" ||
+  value === "lion" ||
+  value === "otter" ||
+  value === "hedgehog" ||
+  value === "koala" ||
+  value === "deer" ||
+  value === "turtle" ||
+  value === "axolotl" ||
+  value === "phoenix" ||
+  value === "forest_spirit" ||
+  value === "cosmic_beast" ||
   value === "robot";
 const isAssistantCompanionRenderMode = (
   value: unknown

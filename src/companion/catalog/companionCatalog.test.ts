@@ -6,6 +6,7 @@ import {
 
 const DRAGON_ITEM_ID = "dragon-premium";
 const CAPYBARA_ITEM_ID = "capybara-season";
+const ROBOT_ITEM_ID = "robot-classic";
 
 describe("companionCatalog", () => {
   it("defines a stable shop catalog outside React", () => {
@@ -16,9 +17,21 @@ describe("companionCatalog", () => {
   it("returns catalog items by id", () => {
     expect(getCompanionCatalogItemById(DRAGON_ITEM_ID)).toMatchObject({
       id: DRAGON_ITEM_ID,
-      category: "premium",
+      category: "fantasy",
       price: 260,
+      rarity: "legendary",
       companionKind: "dragon",
+      available: true,
+    });
+  });
+
+  it("keeps base robot customization free and cosmetic", () => {
+    expect(getCompanionCatalogItemById(ROBOT_ITEM_ID)).toMatchObject({
+      id: ROBOT_ITEM_ID,
+      category: "robot",
+      price: 0,
+      rarity: "common",
+      companionKind: "robot",
       available: true,
     });
   });

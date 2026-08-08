@@ -32,6 +32,23 @@ const assistantAvatarLabels = {
     robot: "Робот",
     human: "Тренер",
     capybara: "Капібара",
+    raccoon: "Єнот",
+    corgi: "Коргі",
+    wolf: "Вовк",
+    tiger: "Тигр",
+    bear: "Ведмідь",
+    rabbit: "Кролик",
+    chameleon: "Хамелеон",
+    lion: "Лев",
+    otter: "Видра",
+    hedgehog: "Їжак",
+    koala: "Коала",
+    deer: "Олень",
+    turtle: "Черепаха",
+    axolotl: "Аксолотль",
+    phoenix: "Фенікс",
+    forest_spirit: "Дух лісу",
+    cosmic_beast: "Космічний звір",
   },
   pl: {
     cat: "Kot",
@@ -43,6 +60,23 @@ const assistantAvatarLabels = {
     robot: "Robot",
     human: "Trener",
     capybara: "Kapibara",
+    raccoon: "Szop",
+    corgi: "Corgi",
+    wolf: "Wilk",
+    tiger: "Tygrys",
+    bear: "Niedźwiedź",
+    rabbit: "Królik",
+    chameleon: "Kameleon",
+    lion: "Lew",
+    otter: "Wydra",
+    hedgehog: "Jeż",
+    koala: "Koala",
+    deer: "Jeleń",
+    turtle: "Żółw",
+    axolotl: "Aksolotl",
+    phoenix: "Feniks",
+    forest_spirit: "Duch lasu",
+    cosmic_beast: "Kosmiczny zwierz",
   },
   en: {
     cat: "Cat",
@@ -54,6 +88,23 @@ const assistantAvatarLabels = {
     robot: "Robot",
     human: "Trainer",
     capybara: "Capybara",
+    raccoon: "Raccoon",
+    corgi: "Corgi",
+    wolf: "Wolf",
+    tiger: "Tiger",
+    bear: "Bear",
+    rabbit: "Rabbit",
+    chameleon: "Chameleon",
+    lion: "Lion",
+    otter: "Otter",
+    hedgehog: "Hedgehog",
+    koala: "Koala",
+    deer: "Deer",
+    turtle: "Turtle",
+    axolotl: "Axolotl",
+    phoenix: "Phoenix",
+    forest_spirit: "Forest spirit",
+    cosmic_beast: "Cosmic beast",
   },
 } as const;
 
@@ -94,6 +145,40 @@ const getAssistantAvatarLabel = (
       return labels.human;
     case "capybara":
       return labels.capybara;
+    case "raccoon":
+      return labels.raccoon;
+    case "corgi":
+      return labels.corgi;
+    case "wolf":
+      return labels.wolf;
+    case "tiger":
+      return labels.tiger;
+    case "bear":
+      return labels.bear;
+    case "rabbit":
+      return labels.rabbit;
+    case "chameleon":
+      return labels.chameleon;
+    case "lion":
+      return labels.lion;
+    case "otter":
+      return labels.otter;
+    case "hedgehog":
+      return labels.hedgehog;
+    case "koala":
+      return labels.koala;
+    case "deer":
+      return labels.deer;
+    case "turtle":
+      return labels.turtle;
+    case "axolotl":
+      return labels.axolotl;
+    case "phoenix":
+      return labels.phoenix;
+    case "forest_spirit":
+      return labels.forest_spirit;
+    case "cosmic_beast":
+      return labels.cosmic_beast;
     case "cat":
     default:
       return labels.cat;

@@ -39,27 +39,7 @@ const moodGradients: Record<AssistantAvatarMood, string> = {
 };
 
 const getCompanionVisual = (variant: AssistantAvatarProps["variant"]) => {
-  switch (variant) {
-    case "cat":
-      return companionVisuals.cat;
-    case "dog":
-      return companionVisuals.dog;
-    case "fox":
-      return companionVisuals.fox;
-    case "panda":
-      return companionVisuals.panda;
-    case "owl":
-      return companionVisuals.owl;
-    case "human":
-      return companionVisuals.human;
-    case "capybara":
-      return companionVisuals.capybara;
-    case "dragon":
-      return companionVisuals.dragon;
-    case "robot":
-    default:
-      return companionVisuals.robot;
-  }
+  return companionVisuals[variant ?? "robot"] ?? companionVisuals.robot;
 };
 
 const getMoodGradient = (mood: AssistantAvatarMood) => {

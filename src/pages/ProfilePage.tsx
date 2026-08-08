@@ -858,6 +858,13 @@ const ProfilePage = () => {
         </Stack>
       </Paper>
 
+      {renderLazySection(
+        "telegram",
+        "Telegram",
+        <LoadingSkeleton cards={1} bodyRows={2} />,
+        <TelegramConnectionCard />
+      )}
+
       <ProfileSectionTabs
         ariaLabel={copy.sectionsAriaLabel}
         sections={[
@@ -925,12 +932,6 @@ const ProfilePage = () => {
                 </Paper>
 
                 {profileEditorOpen && <ProfileForm />}
-                {renderLazySection(
-                  "telegram",
-                  "Telegram",
-                  <LoadingSkeleton cards={1} bodyRows={2} />,
-                  <TelegramConnectionCard />
-                )}
                 {renderLazySection(
                   "data",
                   copy.tabs.data,

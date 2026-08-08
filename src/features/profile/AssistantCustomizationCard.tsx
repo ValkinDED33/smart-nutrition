@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Alert,
@@ -29,6 +29,7 @@ import {
   assistantDietFrictions,
   assistantMotivationStyles,
 } from "../../core/assistant";
+import { getOwnedCompanionItems } from "../../companion/inventory/companionInventory";
 import type {
   AssistantCompanionKind,
   AssistantDietFriction,
@@ -99,6 +100,23 @@ const assistantCopy = {
       capybara: "Капібара",
       dragon: "Дракон",
       robot: "Робот",
+      raccoon: "Єнот",
+      corgi: "Коргі",
+      wolf: "Вовк",
+      tiger: "Тигр",
+      bear: "Ведмідь",
+      rabbit: "Кролик",
+      chameleon: "Хамелеон",
+      lion: "Лев",
+      otter: "Видра",
+      hedgehog: "Їжак",
+      koala: "Коала",
+      deer: "Олень",
+      turtle: "Черепаха",
+      axolotl: "Аксолотль",
+      phoenix: "Фенікс",
+      forest_spirit: "Дух лісу",
+      cosmic_beast: "Космічний звір",
     },
   },
   pl: {
@@ -162,6 +180,23 @@ const assistantCopy = {
       capybara: "Kapibara",
       dragon: "Smok",
       robot: "Robot",
+      raccoon: "Szop",
+      corgi: "Corgi",
+      wolf: "Wilk",
+      tiger: "Tygrys",
+      bear: "Niedźwiedź",
+      rabbit: "Królik",
+      chameleon: "Kameleon",
+      lion: "Lew",
+      otter: "Wydra",
+      hedgehog: "Jeż",
+      koala: "Koala",
+      deer: "Jeleń",
+      turtle: "Żółw",
+      axolotl: "Aksolotl",
+      phoenix: "Feniks",
+      forest_spirit: "Duch lasu",
+      cosmic_beast: "Kosmiczny zwierz",
     },
   },
   en: {
@@ -225,18 +260,42 @@ const assistantCopy = {
       capybara: "Capybara",
       dragon: "Dragon",
       robot: "Robot",
+      raccoon: "Raccoon",
+      corgi: "Corgi",
+      wolf: "Wolf",
+      tiger: "Tiger",
+      bear: "Bear",
+      rabbit: "Rabbit",
+      chameleon: "Chameleon",
+      lion: "Lion",
+      otter: "Otter",
+      hedgehog: "Hedgehog",
+      koala: "Koala",
+      deer: "Deer",
+      turtle: "Turtle",
+      axolotl: "Axolotl",
+      phoenix: "Phoenix",
+      forest_spirit: "Forest spirit",
+      cosmic_beast: "Cosmic beast",
     },
   },
 } as const;
 
-const companionKinds: AssistantCompanionKind[] = [
-  "cat",
-  "dog",
-  "fox",
-  "panda",
-  "owl",
-  "dragon",
-];
+const baseCompanionKinds: AssistantCompanionKind[] = ["robot", "human"];
+
+const uniqueCompanionKinds = (
+  kinds: (AssistantCompanionKind | undefined)[]
+): AssistantCompanionKind[] => {
+  const uniqueKinds: AssistantCompanionKind[] = [];
+
+  kinds.forEach((kind) => {
+    if (kind && !uniqueKinds.includes(kind)) {
+      uniqueKinds.push(kind);
+    }
+  });
+
+  return uniqueKinds;
+};
 
 const frictionOptions = assistantDietFrictions;
 const motivationStyleOptions = assistantMotivationStyles;
@@ -284,6 +343,40 @@ const getCompanionLabel = (
       return copy.companions.capybara;
     case "dragon":
       return copy.companions.dragon;
+    case "raccoon":
+      return copy.companions.raccoon;
+    case "corgi":
+      return copy.companions.corgi;
+    case "wolf":
+      return copy.companions.wolf;
+    case "tiger":
+      return copy.companions.tiger;
+    case "bear":
+      return copy.companions.bear;
+    case "rabbit":
+      return copy.companions.rabbit;
+    case "chameleon":
+      return copy.companions.chameleon;
+    case "lion":
+      return copy.companions.lion;
+    case "otter":
+      return copy.companions.otter;
+    case "hedgehog":
+      return copy.companions.hedgehog;
+    case "koala":
+      return copy.companions.koala;
+    case "deer":
+      return copy.companions.deer;
+    case "turtle":
+      return copy.companions.turtle;
+    case "axolotl":
+      return copy.companions.axolotl;
+    case "phoenix":
+      return copy.companions.phoenix;
+    case "forest_spirit":
+      return copy.companions.forest_spirit;
+    case "cosmic_beast":
+      return copy.companions.cosmic_beast;
     case "robot":
       return copy.companions.robot;
     case "cat":
@@ -315,6 +408,7 @@ const getFrictionLabel = (
 
 const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const companion = useSelector((state: RootState) => state.companion);
   const { appLanguage } = useLanguage();
   const copy = getAssistantCopy(appLanguage);
   const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
@@ -335,6 +429,15 @@ const AssistantCustomizationCard = () => {
     assistant.onboarding.motivationStyles.length > 0
       ? assistant.onboarding.motivationStyles
       : [assistant.onboarding.motivationStyle];
+  const selectableCompanionKinds = useMemo(
+    () =>
+      uniqueCompanionKinds([
+        ...baseCompanionKinds,
+        assistant.companionKind,
+        ...getOwnedCompanionItems(companion).map((item) => item.companionKind),
+      ]),
+    [assistant.companionKind, companion]
+  );
 
   const commitAssistantCustomization = async (
     payload: Parameters<typeof setAssistantCustomization>[0]
@@ -422,7 +525,7 @@ const AssistantCustomizationCard = () => {
               }).catch(() => undefined)
             }
           >
-            {companionKinds.map((kind) => (
+            {selectableCompanionKinds.map((kind) => (
               <MenuItem key={kind} value={kind}>
                 {getCompanionLabel(copy, kind)}
               </MenuItem>

@@ -64,12 +64,13 @@ export const createAuthService = ({
       throw error;
     }
 
+    const reasonCode = String(
+      error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED"
+    ).slice(0, 80);
+
     logger.warn?.("[auth] profile-state persistence failed", {
       stage,
-      code: String(error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED").slice(
-        0,
-        80
-      ),
+      code: reasonCode,
       message:
         error instanceof Error
           ? error.message.slice(0, 240)
@@ -77,7 +78,11 @@ export const createAuthService = ({
     });
     throw new AuthApiError(
       "STATE_SYNC_UNAVAILABLE",
-      "Cloud profile sync is temporarily unavailable."
+      "Cloud profile sync is temporarily unavailable.",
+      {
+        syncStage: stage,
+        reasonCode,
+      }
     );
   };
 

@@ -18,9 +18,6 @@ const profilePageSource = readFileSync(
 
 describe("AccountDataCard production UX contracts", () => {
   it("does not report Telegram link creation as a confirmed connection", () => {
-    expect(source).toContain(
-      'setNotice({ type: "info", message: copy.telegramConnectPending });'
-    );
     expect(telegramConnectionSource).toContain(
       'setNotice({ type: "info", message: copy.telegramConnectPending });'
     );
@@ -52,8 +49,17 @@ describe("AccountDataCard production UX contracts", () => {
     expect(profilePageSource).toContain("const TelegramConnectionCard = lazy");
     expect(profilePageSource).toContain("<TelegramConnectionCard />");
     expect(profilePageSource.indexOf("<TelegramConnectionCard />")).toBeLessThan(
-      profilePageSource.indexOf("<WeightTrendCard />")
+      profilePageSource.indexOf("<ProfileSectionTabs")
     );
+    expect(telegramConnectionSource).toContain("createTelegramConnectLink");
+    expect(telegramConnectionSource).toContain("getRemoteTelegramStatus");
+    expect(telegramConnectionSource).toContain("disconnectTelegram");
+  });
+
+  it("keeps Telegram connection logic in one canonical profile component", () => {
+    expect(source).not.toContain("createTelegramConnectLink");
+    expect(source).not.toContain("getRemoteTelegramStatus");
+    expect(source).not.toContain("disconnectTelegram");
     expect(telegramConnectionSource).toContain("createTelegramConnectLink");
     expect(telegramConnectionSource).toContain("getRemoteTelegramStatus");
     expect(telegramConnectionSource).toContain("disconnectTelegram");

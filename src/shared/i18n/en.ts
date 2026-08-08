@@ -251,6 +251,9 @@ export const en = {
   "profile.subtitle":
     "Update your parameters and goal so recommendations become more accurate.",
   "profile.progress": "Calorie progress",
+  "profile.dailyCalories": "Calories",
+  "profile.protein": "Protein",
+  "profile.water": "Water",
   "profile.saved": "Profile saved.",
   "profile.notFound": "User not found.",
   "assistant.memoryReady": "Assistant memory is ready.",

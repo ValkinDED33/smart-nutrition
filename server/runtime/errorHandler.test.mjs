@@ -76,7 +76,11 @@ describe("route error handler", () => {
     const { handled, response, payload } = handleAndParse(
       new AuthApiError(
         "STATE_SYNC_UNAVAILABLE",
-        "Cannot read properties of null while saving profile-state"
+        "Cannot read properties of null while saving profile-state",
+        {
+          syncStage: "profile-state-save",
+          reasonCode: "MongoServerSelectionError",
+        }
       )
     );
 
@@ -85,6 +89,10 @@ describe("route error handler", () => {
     expect(payload).toMatchObject({
       code: "STATE_SYNC_UNAVAILABLE",
       message: "Cloud profile sync is temporarily unavailable.",
+      diagnostics: {
+        syncStage: "profile-state-save",
+        reasonCode: "MongoServerSelectionError",
+      },
     });
     expect(JSON.stringify(payload)).not.toContain("Cannot read properties");
   });

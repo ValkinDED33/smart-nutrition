@@ -1116,6 +1116,10 @@ describe("authService", () => {
       })
     ).rejects.toMatchObject({
       code: "STATE_SYNC_UNAVAILABLE",
+      details: {
+        syncStage: "atomic-profile-and-user-save",
+        reasonCode: "Error",
+      },
     });
 
     expect(saveProfileAndUser).toHaveBeenCalledTimes(1);

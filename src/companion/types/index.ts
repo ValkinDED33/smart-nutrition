@@ -64,6 +64,10 @@ export interface CompanionLevelProgress {
 }
 
 export type CompanionCatalogCategory =
+  | "robot"
+  | "animal"
+  | "fantasy"
+  | "nature"
   | "outfit"
   | "emotion"
   | "accessory"
@@ -72,6 +76,12 @@ export type CompanionCatalogCategory =
   | "seasonal";
 
 export type CompanionCatalogLocale = "uk" | "pl" | "en";
+
+export type CompanionCatalogRarity =
+  | "common"
+  | "rare"
+  | "epic"
+  | "legendary";
 
 type CompanionCatalogCompanionKind =
   | "cat"
@@ -82,7 +92,24 @@ type CompanionCatalogCompanionKind =
   | "dragon"
   | "capybara"
   | "robot"
-  | "human";
+  | "human"
+  | "raccoon"
+  | "corgi"
+  | "wolf"
+  | "tiger"
+  | "bear"
+  | "rabbit"
+  | "chameleon"
+  | "lion"
+  | "otter"
+  | "hedgehog"
+  | "koala"
+  | "deer"
+  | "turtle"
+  | "axolotl"
+  | "phoenix"
+  | "forest_spirit"
+  | "cosmic_beast";
 
 type CompanionItemSlot =
   | "companion"
@@ -98,6 +125,7 @@ export interface CompanionCatalogItem {
   description: Record<CompanionCatalogLocale, string>;
   tagLabel: Record<CompanionCatalogLocale, string>;
   price: number;
+  rarity: CompanionCatalogRarity;
   slot: CompanionItemSlot;
   companionKind?: CompanionCatalogCompanionKind;
   available: boolean;

@@ -62,9 +62,10 @@ const normalizeAppLanguage = (value, fallback = "uk") =>
   appLanguages.has(value) ? value : fallback;
 
 export class AuthApiError extends Error {
-  constructor(code, message) {
+  constructor(code, message, details = undefined) {
     super(message);
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -372,6 +373,189 @@ const createInitialAssistantCustomization = () => ({
   },
 });
 
+const womenHealthModes = new Set([
+  "none",
+  "trying_to_conceive",
+  "pregnant",
+  "postpartum",
+]);
+const eyeColors = new Set([
+  "unknown",
+  "brown",
+  "blue",
+  "green",
+  "gray",
+  "hazel",
+  "amber",
+  "other",
+]);
+const zodiacSigns = new Set([
+  "unknown",
+  "aries",
+  "taurus",
+  "gemini",
+  "cancer",
+  "leo",
+  "virgo",
+  "libra",
+  "scorpio",
+  "sagittarius",
+  "capricorn",
+  "aquarius",
+  "pisces",
+]);
+const chineseZodiacSigns = new Set([
+  "unknown",
+  "rat",
+  "ox",
+  "tiger",
+  "rabbit",
+  "dragon",
+  "snake",
+  "horse",
+  "goat",
+  "monkey",
+  "rooster",
+  "dog",
+  "pig",
+]);
+
+const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const normalizeText = (value, maxLength) =>
+  typeof value === "string"
+    ? value.trim().replace(/\s+/g, " ").slice(0, maxLength)
+    : "";
+
+const toIsoDateOrNull = (value) => {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
+};
+
+const normalizePregnancyWeek = (value) => {
+  const nextValue = Number(value);
+
+  if (!Number.isFinite(nextValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(nextValue);
+  return rounded >= 1 && rounded <= 42 ? rounded : null;
+};
+
+const normalizePregnancyDay = (value) => {
+  const nextValue = Number(value);
+
+  if (!Number.isFinite(nextValue)) {
+    return null;
+  }
+
+  const rounded = Math.round(nextValue);
+  return rounded >= 0 && rounded <= 6 ? rounded : null;
+};
+
+const normalizeSymptomSeverity = (value) => {
+  const severity = Number(value);
+
+  if (!Number.isFinite(severity)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.min(Math.round(severity), 10));
+};
+
+const normalizeSymptomHistory = (value) =>
+  Array.isArray(value)
+    ? value
+        .filter(isRecord)
+        .map((entry, index) => {
+          const recordedAt = toIsoDateOrNull(entry.recordedAt);
+          const label = normalizeText(entry.label, 80);
+
+          if (!recordedAt || !label) {
+            return null;
+          }
+
+          return {
+            id:
+              normalizeText(entry.id, 96) ||
+              `symptom-${recordedAt.replace(/[^a-zA-Z0-9_-]+/g, "-")}-${index}`,
+            recordedAt,
+            label,
+            severity: normalizeSymptomSeverity(entry.severity),
+            note: normalizeText(entry.note, 180),
+            source: entry.source === "assistant" ? "assistant" : "manual",
+          };
+        })
+        .filter(Boolean)
+        .slice(-60)
+    : [];
+
+export const createInitialWomenHealthState = () => ({
+  mode: "none",
+  pregnancyWeek: null,
+  pregnancyDay: null,
+  dueDate: null,
+  lastPeriodStartDate: null,
+  doctorConfirmed: false,
+  notes: "",
+  symptomHistory: [],
+  partnerEyeColor: "unknown",
+  motherZodiac: "unknown",
+  fatherZodiac: "unknown",
+  motherChineseZodiac: "unknown",
+  fatherChineseZodiac: "unknown",
+  updatedAt: null,
+});
+
+export const normalizeWomenHealthState = (value) => {
+  const fallback = createInitialWomenHealthState();
+  const record = isRecord(value) ? value : {};
+  const mode = womenHealthModes.has(record.mode) ? record.mode : fallback.mode;
+  const pregnancyWeek =
+    mode === "pregnant" ? normalizePregnancyWeek(record.pregnancyWeek) : null;
+
+  return {
+    mode,
+    pregnancyWeek,
+    pregnancyDay:
+      mode === "pregnant" && pregnancyWeek !== null
+        ? normalizePregnancyDay(record.pregnancyDay) ?? 0
+        : null,
+    dueDate: mode === "pregnant" ? toIsoDateOrNull(record.dueDate) : null,
+    lastPeriodStartDate:
+      mode === "pregnant" || mode === "trying_to_conceive"
+        ? toIsoDateOrNull(record.lastPeriodStartDate)
+        : null,
+    doctorConfirmed:
+      mode === "pregnant" || mode === "trying_to_conceive"
+        ? Boolean(record.doctorConfirmed)
+        : false,
+    notes: normalizeText(record.notes, 220),
+    symptomHistory: normalizeSymptomHistory(record.symptomHistory),
+    partnerEyeColor: eyeColors.has(record.partnerEyeColor)
+      ? record.partnerEyeColor
+      : fallback.partnerEyeColor,
+    motherZodiac: zodiacSigns.has(record.motherZodiac)
+      ? record.motherZodiac
+      : fallback.motherZodiac,
+    fatherZodiac: zodiacSigns.has(record.fatherZodiac)
+      ? record.fatherZodiac
+      : fallback.fatherZodiac,
+    motherChineseZodiac: chineseZodiacSigns.has(record.motherChineseZodiac)
+      ? record.motherChineseZodiac
+      : fallback.motherChineseZodiac,
+    fatherChineseZodiac: chineseZodiacSigns.has(record.fatherChineseZodiac)
+      ? record.fatherChineseZodiac
+      : fallback.fatherChineseZodiac,
+    updatedAt: toIsoDateOrNull(record.updatedAt),
+  };
+};
+
 export const createInitialProfileState = (userInput) => {
   const maintenanceCalories = calculateMaintenanceCalories(userInput);
   const targetCalories = applyGoalDelta(maintenanceCalories, userInput.goal);
@@ -504,17 +688,7 @@ export const createInitialProfileState = (userInput) => {
       petCompanion: "none",
     },
     familyLifecycleMode: "personal",
-    womenHealth: {
-      mode: "none",
-      pregnancyWeek: null,
-      pregnancyDay: null,
-      dueDate: null,
-      lastPeriodStartDate: null,
-      doctorConfirmed: false,
-      notes: "",
-      symptomHistory: [],
-      updatedAt: null,
-    },
+    womenHealth: createInitialWomenHealthState(),
     partnerSharing: {
       invites: [],
       links: [],

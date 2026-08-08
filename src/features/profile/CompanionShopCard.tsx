@@ -12,6 +12,7 @@ import {
   type CompanionCatalogCategory,
   type CompanionCatalogItem,
   type CompanionCatalogLocale,
+  type CompanionCatalogRarity,
 } from "../../companion";
 import {
   Companion3DLoadingFallback,
@@ -27,7 +28,8 @@ const shopCopy = {
   uk: {
     title: "Студія компаньйона",
     subtitle:
-      "Образи, реакції та аксесуари для ігрового компаньйона. Монети заробляються реальними звичками.",
+      "Обери зовнішність. Мозок, пам'ять і всі інструменти залишаються тим самим Smart Nutrition AI.",
+    sameBrain: "Один помічник: харчування, вода, здоров'я, родина, задачі, нагадування й AI-чат.",
     balance: "Монети",
     equippedCount: "Вибрано",
     ownedCount: "Куплено",
@@ -49,7 +51,20 @@ const shopCopy = {
       "3D відкривається для перегляду образу. На телефонах і в режимі економії лишається 2D.",
     renderModeLoading: "Завантажую 3D",
     renderModeError: "3D не завантажився, показую 2D",
+    filters: {
+      all: "Усі",
+    },
+    rarity: {
+      common: "Звичайний",
+      rare: "Рідкісний",
+      epic: "Епічний",
+      legendary: "Легендарний",
+    } satisfies Record<CompanionCatalogRarity, string>,
     categories: {
+      robot: "Роботи",
+      animal: "Тварини",
+      fantasy: "Фентезі",
+      nature: "Природа",
       outfit: "Одяг",
       emotion: "Емоція",
       accessory: "Аксесуар",
@@ -61,7 +76,9 @@ const shopCopy = {
   pl: {
     title: "Studio kompana",
     subtitle:
-      "Wyglądy, reakcje i akcesoria dla grywalnego kompana. Monety zdobywasz przez realne nawyki.",
+      "Wybierz wygląd. Mózg, pamięć i narzędzia zostają tym samym Smart Nutrition AI.",
+    sameBrain:
+      "Jeden asystent: jedzenie, woda, zdrowie, rodzina, zadania, przypomnienia i AI chat.",
     balance: "Monety",
     equippedCount: "Wybrane",
     ownedCount: "Kupione",
@@ -83,7 +100,20 @@ const shopCopy = {
       "3D otwiera się do podglądu wyglądu. Na telefonach i w trybie oszczędzania zostaje 2D.",
     renderModeLoading: "Ładuję 3D",
     renderModeError: "3D się nie załadowało, pokazuję 2D",
+    filters: {
+      all: "Wszystkie",
+    },
+    rarity: {
+      common: "Zwykły",
+      rare: "Rzadki",
+      epic: "Epicki",
+      legendary: "Legendarny",
+    } satisfies Record<CompanionCatalogRarity, string>,
     categories: {
+      robot: "Roboty",
+      animal: "Zwierzęta",
+      fantasy: "Fantazja",
+      nature: "Natura",
       outfit: "Ubranie",
       emotion: "Emocja",
       accessory: "Akcesorium",
@@ -95,7 +125,9 @@ const shopCopy = {
   en: {
     title: "Companion Studio",
     subtitle:
-      "Looks, reactions, and accessories for the game companion. Coins come from real habits.",
+      "Choose the look. The brain, memory, and tools stay the same Smart Nutrition AI.",
+    sameBrain:
+      "One assistant: food, water, health, family, tasks, reminders, and AI chat.",
     balance: "Coins",
     equippedCount: "Equipped",
     ownedCount: "Owned",
@@ -117,7 +149,20 @@ const shopCopy = {
       "3D opens for previewing the look. Phones and data-saver mode stay in 2D.",
     renderModeLoading: "Loading 3D",
     renderModeError: "3D failed, showing 2D",
+    filters: {
+      all: "All",
+    },
+    rarity: {
+      common: "Common",
+      rare: "Rare",
+      epic: "Epic",
+      legendary: "Legendary",
+    } satisfies Record<CompanionCatalogRarity, string>,
     categories: {
+      robot: "Robots",
+      animal: "Animals",
+      fantasy: "Fantasy",
+      nature: "Nature",
       outfit: "Outfit",
       emotion: "Emotion",
       accessory: "Accessory",
@@ -129,6 +174,16 @@ const shopCopy = {
 } as const;
 
 type ShopCopy = (typeof shopCopy)[keyof typeof shopCopy];
+type CompanionShopFilter = CompanionCatalogCategory | "all";
+
+const companionShopFilters: CompanionShopFilter[] = [
+  "all",
+  "robot",
+  "animal",
+  "fantasy",
+  "nature",
+  "seasonal",
+];
 
 const getShopCopy = (locale: CompanionCatalogLocale): ShopCopy => {
   switch (locale) {
@@ -162,6 +217,14 @@ const getCategoryLabel = (
   category: CompanionCatalogCategory
 ) => {
   switch (category) {
+    case "robot":
+      return categories.robot;
+    case "animal":
+      return categories.animal;
+    case "fantasy":
+      return categories.fantasy;
+    case "nature":
+      return categories.nature;
     case "emotion":
       return categories.emotion;
     case "accessory":
@@ -175,6 +238,23 @@ const getCategoryLabel = (
     case "outfit":
     default:
       return categories.outfit;
+  }
+};
+
+const getRarityLabel = (
+  rarity: Record<CompanionCatalogRarity, string>,
+  value: CompanionCatalogRarity
+) => {
+  switch (value) {
+    case "rare":
+      return rarity.rare;
+    case "epic":
+      return rarity.epic;
+    case "legendary":
+      return rarity.legendary;
+    case "common":
+    default:
+      return rarity.common;
   }
 };
 
@@ -208,6 +288,7 @@ const CompanionShopCard = () => {
   const companion = useSelector((state: RootState) => state.companion);
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<CompanionShopFilter>("all");
   const companionRenderModePreference = useCompanionRenderModePreference();
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
@@ -225,9 +306,16 @@ const CompanionShopCard = () => {
     equippedItems.find((item) => item.slot === "companion") ??
     companionShopCatalog.find((item) => item.companionKind === assistant.companionKind) ??
     null;
-  const visibleCatalogItems = useMemo(
+  const availableCatalogItems = useMemo(
     () => companionShopCatalog.filter((item) => item.available),
     []
+  );
+  const visibleCatalogItems = useMemo(
+    () =>
+      availableCatalogItems.filter(
+        (item) => activeFilter === "all" || item.category === activeFilter
+      ),
+    [activeFilter, availableCatalogItems]
   );
 
   const handleItemAction = async (item: CompanionCatalogItem) => {
@@ -291,6 +379,9 @@ const CompanionShopCard = () => {
               {copy.title}
             </Typography>
             <Typography color="text.secondary">{copy.subtitle}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+              {copy.sameBrain}
+            </Typography>
           </Stack>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip label={`${copy.balance}: ${companion.coins}`} color="primary" />
@@ -310,10 +401,27 @@ const CompanionShopCard = () => {
           </Typography>
         ) : null}
 
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          {companionShopFilters.map((filter) => (
+            <Chip
+              key={filter}
+              label={
+                filter === "all"
+                  ? copy.filters.all
+                  : getCategoryLabel(copy.categories, filter)
+              }
+              color={activeFilter === filter ? "primary" : "default"}
+              variant={activeFilter === filter ? "filled" : "outlined"}
+              onClick={() => setActiveFilter(filter)}
+              sx={{ fontWeight: 900 }}
+            />
+          ))}
+        </Stack>
+
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "0.82fr 1.18fr" },
+            gridTemplateColumns: { xs: "1fr", lg: "0.78fr 1.22fr" },
             gap: 2,
           }}
         >
@@ -376,7 +484,7 @@ const CompanionShopCard = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
               gap: 1.2,
             }}
           >
@@ -402,19 +510,53 @@ const CompanionShopCard = () => {
                   key={item.id}
                   variant="outlined"
                   sx={{
-                    p: 1.5,
+                    p: 1.2,
                     borderRadius: 1,
+                    minHeight: 218,
                     borderColor: isEquipped
                       ? "rgba(15, 118, 110, 0.55)"
                       : "rgba(15, 23, 42, 0.08)",
+                    background:
+                      "linear-gradient(145deg, rgba(15,23,42,0.06), rgba(20,184,166,0.08))",
                   }}
                 >
-                  <Stack spacing={1}>
+                  <Stack spacing={1} sx={{ height: "100%" }}>
+                    {item.companionKind ? (
+                      <Box
+                        sx={{
+                          minHeight: 92,
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: 1,
+                          background:
+                            "radial-gradient(circle at 50% 58%, rgba(34,211,238,0.18), transparent 55%)",
+                        }}
+                      >
+                        <AssistantAvatar
+                          name={getCatalogText(item.title, locale)}
+                          variant={item.companionKind}
+                          mood={isEquipped ? "celebrate" : "happy"}
+                          size={82}
+                          active={isEquipped}
+                        />
+                      </Box>
+                    ) : null}
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       <Chip
                         label={getCategoryLabel(copy.categories, item.category)}
                         size="small"
-                        color={item.category === "premium" ? "secondary" : "default"}
+                        color={
+                          item.rarity === "legendary"
+                            ? "secondary"
+                            : item.category === "robot"
+                              ? "primary"
+                              : "default"
+                        }
+                      />
+                      <Chip
+                        label={getRarityLabel(copy.rarity, item.rarity)}
+                        size="small"
+                        variant="outlined"
                       />
                       <Chip
                         label={getCatalogText(item.tagLabel, locale)}

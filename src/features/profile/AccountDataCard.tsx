@@ -14,26 +14,17 @@ import { resetAppState, type AppDispatch, type RootState } from "../../app/store
 import { canAccessAdminCenter } from "@domain/user/roles";
 import {
   deleteAccount,
-  createTelegramConnectLink,
-  disconnectTelegram,
   exportRemoteAccountData,
   getAuthRuntimeInfo,
   getRemoteAccountBackup,
   getRemoteAccountBackups,
-  getRemoteTelegramStatus,
   logoutEverywhere,
   type AccountBackupSummary,
-  type TelegramConnectLink,
-  type TelegramConnectionStatus,
 } from "../../shared/api/auth";
 import { clearSyncOutbox } from "../../shared/lib/syncOutbox";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { accountCopy } from "./accountDataCardCopy";
-import {
-  TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS,
-  shouldPollTelegramConnectStatus,
-} from "./telegramConnectStatusModel";
 
 type AccountCopy = (typeof accountCopy)[keyof typeof accountCopy];
 
@@ -100,20 +91,6 @@ export const AccountDataCard = () => {
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [telegramStatus, setTelegramStatus] =
-    useState<TelegramConnectionStatus | null>(null);
-  const [telegramConnectLink, setTelegramConnectLink] =
-    useState<TelegramConnectLink | null>(null);
-  const [telegramLoading, setTelegramLoading] = useState(true);
-  const [telegramBusy, setTelegramBusy] = useState(false);
-  const [telegramConnectStartedAtMs, setTelegramConnectStartedAtMs] = useState<number | null>(
-    null
-  );
-  const telegramConfigured = Boolean(telegramStatus?.configured);
-  const telegramConnected = Boolean(telegramStatus?.connected);
-  const telegramBotUsername = telegramStatus?.botUsername
-    ? `@${telegramStatus.botUsername.replace(/^@+/, "")}`
-    : null;
   const canSeeOperationalDetails = canAccessAdminCenter(user?.role);
   const backupsLoading = canSeeOperationalDetails && backups === null;
 
@@ -145,111 +122,6 @@ export const AccountDataCard = () => {
       cancelled = true;
     };
   }, [canSeeOperationalDetails, copy.backupError]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void getRemoteTelegramStatus()
-      .then((status) => {
-        if (!cancelled) {
-          setTelegramStatus(status);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setTelegramStatus(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setTelegramLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const hasConnectLink = Boolean(telegramConnectLink?.url);
-    const shouldPoll = () =>
-      shouldPollTelegramConnectStatus({
-        connected: telegramConnected,
-        hasConnectLink,
-        startedAtMs: telegramConnectStartedAtMs,
-        nowMs: Date.now(),
-      });
-
-    if (!shouldPoll()) {
-      return undefined;
-    }
-
-    let cancelled = false;
-    let intervalId: number | null = null;
-
-    const refreshStatus = async () => {
-      if (!shouldPoll()) {
-        if (intervalId !== null) {
-          window.clearInterval(intervalId);
-        }
-        setTelegramConnectStartedAtMs(null);
-        return;
-      }
-
-      try {
-        const status = await getRemoteTelegramStatus();
-
-        if (cancelled) {
-          return;
-        }
-
-        setTelegramStatus(status);
-
-        if (status.connected) {
-          setTelegramConnectLink(null);
-          setTelegramConnectStartedAtMs(null);
-          setNotice({ type: "success", message: copy.telegramConnected });
-
-          if (intervalId !== null) {
-            window.clearInterval(intervalId);
-          }
-        }
-      } catch {
-        // The profile card keeps the personal link visible; the next poll/focus can recover.
-      }
-    };
-
-    const handleFocus = () => {
-      void refreshStatus();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void refreshStatus();
-      }
-    };
-
-    intervalId = window.setInterval(() => {
-      void refreshStatus();
-    }, TELEGRAM_CONNECT_STATUS_POLL_INTERVAL_MS);
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    void refreshStatus();
-
-    return () => {
-      cancelled = true;
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-      }
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [
-    copy.telegramConnected,
-    telegramConnectLink?.url,
-    telegramConnectStartedAtMs,
-    telegramConnected,
-  ]);
 
   if (!user) return null;
 
@@ -337,65 +209,6 @@ export const AccountDataCard = () => {
     }
   };
 
-  const handleTelegramConnect = async () => {
-    setTelegramBusy(true);
-    setNotice(null);
-    const pendingWindow = window.open("about:blank", "_blank");
-    if (pendingWindow) {
-      pendingWindow.opener = null;
-    }
-
-    try {
-      const status = await createTelegramConnectLink();
-      setTelegramStatus(status);
-      setTelegramConnectLink(status);
-      setTelegramConnectStartedAtMs(Date.now());
-
-      if (pendingWindow) {
-        pendingWindow.location.href = status.url;
-      } else {
-        window.location.assign(status.url);
-      }
-
-      setNotice({ type: "info", message: copy.telegramConnectPending });
-    } catch {
-      pendingWindow?.close();
-      setNotice({ type: "error", message: copy.telegramConnectError });
-    } finally {
-      setTelegramBusy(false);
-    }
-  };
-
-  const handleTelegramCopyLink = async () => {
-    if (!telegramConnectLink?.url) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(telegramConnectLink.url);
-      setNotice({ type: "success", message: copy.telegramCopySuccess });
-    } catch {
-      setNotice({ type: "error", message: copy.telegramConnectError });
-    }
-  };
-
-  const handleTelegramDisconnect = async () => {
-    setTelegramBusy(true);
-    setNotice(null);
-
-    try {
-      const status = await disconnectTelegram();
-      setTelegramStatus(status);
-      setTelegramConnectLink(null);
-      setTelegramConnectStartedAtMs(null);
-      setNotice({ type: "success", message: copy.telegramDisconnectSuccess });
-    } catch {
-      setNotice({ type: "error", message: copy.telegramDisconnectError });
-    } finally {
-      setTelegramBusy(false);
-    }
-  };
-
   return (
     <Paper
       elevation={0}
@@ -431,117 +244,6 @@ export const AccountDataCard = () => {
         <Alert severity="info" sx={{ borderRadius: 3 }}>
           {copy.remoteNotice}
         </Alert>
-
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1.5}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", md: "center" }}
-          >
-            <Stack spacing={0.8}>
-              <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                <Typography sx={{ fontWeight: 800 }}>{copy.telegramTitle}</Typography>
-                <Chip
-                  size="small"
-                  color={telegramConnected ? "success" : "default"}
-                  label={
-                    telegramLoading
-                      ? copy.telegramLoading
-                      : telegramConnected
-                        ? copy.telegramConnected
-                        : copy.telegramDisconnected
-                  }
-                />
-                {telegramBotUsername && (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={`${copy.telegramBot}: ${telegramBotUsername}`}
-                  />
-                )}
-              </Stack>
-              <Typography color="text.secondary">{copy.telegramSubtitle}</Typography>
-              {!telegramLoading && !telegramConfigured && (
-                <Typography variant="body2" color="warning.main">
-                  {copy.telegramUnavailable}
-                </Typography>
-              )}
-              {telegramConnected && telegramStatus?.connectedAt && (
-                <Typography variant="body2" color="text.secondary">
-                  {formatBackupTimestamp(telegramStatus.connectedAt, appLanguage)}
-                </Typography>
-              )}
-              {!telegramConnected && telegramConnectLink?.url && (
-                <Alert severity="info" sx={{ borderRadius: 3 }}>
-                  <Stack spacing={1.2}>
-                    <Typography variant="body2">
-                      {copy.telegramConnectInstruction}
-                    </Typography>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} useFlexGap>
-                      <Button
-                        component="a"
-                        href={telegramConnectLink.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="contained"
-                        sx={{
-                          borderRadius: 999,
-                          textTransform: "none",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {copy.telegramOpenPersonalLink}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          void handleTelegramCopyLink();
-                        }}
-                        sx={{
-                          borderRadius: 999,
-                          textTransform: "none",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {copy.telegramCopyLink}
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Alert>
-              )}
-            </Stack>
-            <Button
-              variant={telegramConnected ? "outlined" : "contained"}
-              disabled={telegramLoading || telegramBusy || !telegramConfigured}
-              onClick={() => {
-                void (telegramConnected
-                  ? handleTelegramDisconnect()
-                  : handleTelegramConnect());
-              }}
-              sx={{
-                borderRadius: 999,
-                textTransform: "none",
-                fontWeight: 800,
-                whiteSpace: "nowrap",
-                ...(telegramConnected
-                  ? {}
-                  : {
-                      background:
-                        "linear-gradient(135deg, #0f766e 0%, #65a30d 100%)",
-                    }),
-              }}
-            >
-              {telegramBusy
-                ? telegramConnected
-                  ? copy.telegramDisconnecting
-                  : copy.telegramConnecting
-                : telegramConnected
-                  ? copy.telegramDisconnect
-                  : copy.telegramConnect}
-            </Button>
-          </Stack>
-        </Paper>
 
         {canSeeOperationalDetails && (
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>

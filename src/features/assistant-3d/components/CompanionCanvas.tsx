@@ -20,6 +20,8 @@ interface ModelPalette {
 
 type Vector3Tuple = [number, number, number];
 
+const slateCompanionShadow = "rgba(71,85,105,0.28)";
+
 const palettes: Record<AssistantCompanionKind, ModelPalette> = {
   robot: {
     body: "#0f766e",
@@ -102,6 +104,159 @@ const palettes: Record<AssistantCompanionKind, ModelPalette> = {
     detail: "#7c3aed",
     shadow: "rgba(34,197,94,0.3)",
   },
+  raccoon: {
+    body: "#334155",
+    head: "#64748b",
+    accent: "#14b8a6",
+    muzzle: "#e2e8f0",
+    eye: "#f8fafc",
+    detail: "#0f172a",
+    shadow: slateCompanionShadow,
+  },
+  corgi: {
+    body: "#f59e0b",
+    head: "#d97706",
+    accent: "#fef3c7",
+    muzzle: "#fff7ed",
+    eye: "#fff7ed",
+    detail: "#7c2d12",
+    shadow: "rgba(245,158,11,0.28)",
+  },
+  wolf: {
+    body: "#475569",
+    head: "#64748b",
+    accent: "#e2e8f0",
+    muzzle: "#e2e8f0",
+    eye: "#f8fafc",
+    detail: "#0f172a",
+    shadow: slateCompanionShadow,
+  },
+  tiger: {
+    body: "#f97316",
+    head: "#f59e0b",
+    accent: "#ffedd5",
+    muzzle: "#fff7ed",
+    eye: "#fff7ed",
+    detail: "#111827",
+    shadow: "rgba(249,115,22,0.3)",
+  },
+  bear: {
+    body: "#78350f",
+    head: "#92400e",
+    accent: "#fde68a",
+    muzzle: "#fef3c7",
+    eye: "#fef3c7",
+    detail: "#451a03",
+    shadow: "rgba(120,53,15,0.28)",
+  },
+  rabbit: {
+    body: "#f9a8d4",
+    head: "#f8fafc",
+    accent: "#c4b5fd",
+    muzzle: "#ffffff",
+    eye: "#ffffff",
+    detail: "#be185d",
+    shadow: "rgba(249,168,212,0.28)",
+  },
+  chameleon: {
+    body: "#16a34a",
+    head: "#22c55e",
+    accent: "#06b6d4",
+    muzzle: "#dcfce7",
+    eye: "#ecfeff",
+    detail: "#14532d",
+    shadow: "rgba(34,197,94,0.28)",
+  },
+  lion: {
+    body: "#d97706",
+    head: "#f59e0b",
+    accent: "#fde68a",
+    muzzle: "#fef3c7",
+    eye: "#fef3c7",
+    detail: "#78350f",
+    shadow: "rgba(217,119,6,0.3)",
+  },
+  otter: {
+    body: "#a16207",
+    head: "#92400e",
+    accent: "#0891b2",
+    muzzle: "#fef3c7",
+    eye: "#ecfeff",
+    detail: "#78350f",
+    shadow: "rgba(8,145,178,0.24)",
+  },
+  hedgehog: {
+    body: "#57534e",
+    head: "#78716c",
+    accent: "#fbbf24",
+    muzzle: "#fef3c7",
+    eye: "#fef3c7",
+    detail: "#292524",
+    shadow: "rgba(68,64,60,0.28)",
+  },
+  koala: {
+    body: "#64748b",
+    head: "#94a3b8",
+    accent: "#e2e8f0",
+    muzzle: "#f1f5f9",
+    eye: "#f8fafc",
+    detail: "#1f2937",
+    shadow: slateCompanionShadow,
+  },
+  deer: {
+    body: "#d97706",
+    head: "#92400e",
+    accent: "#bbf7d0",
+    muzzle: "#fef3c7",
+    eye: "#fef3c7",
+    detail: "#78350f",
+    shadow: "rgba(146,64,14,0.28)",
+  },
+  turtle: {
+    body: "#14532d",
+    head: "#16a34a",
+    accent: "#bef264",
+    muzzle: "#dcfce7",
+    eye: "#f7fee7",
+    detail: "#365314",
+    shadow: "rgba(22,163,74,0.28)",
+  },
+  axolotl: {
+    body: "#fb7185",
+    head: "#f9a8d4",
+    accent: "#22d3ee",
+    muzzle: "#fce7f3",
+    eye: "#ffffff",
+    detail: "#be123c",
+    shadow: "rgba(251,113,133,0.28)",
+  },
+  phoenix: {
+    body: "#f97316",
+    head: "#ef4444",
+    accent: "#facc15",
+    muzzle: "#fef08a",
+    eye: "#fefce8",
+    detail: "#7c2d12",
+    shadow: "rgba(249,115,22,0.32)",
+  },
+  forest_spirit: {
+    body: "#047857",
+    head: "#10b981",
+    accent: "#84cc16",
+    muzzle: "#dcfce7",
+    eye: "#ecfdf5",
+    detail: "#064e3b",
+    shadow: "rgba(16,185,129,0.3)",
+  },
+  cosmic_beast: {
+    body: "#4c1d95",
+    head: "#0e7490",
+    accent: "#22d3ee",
+    muzzle: "#c4b5fd",
+    eye: "#e0f2fe",
+    detail: "#020617",
+    shadow: "rgba(124,58,237,0.32)",
+  },
 };
 
 const getPalette = (variant: AssistantCompanionKind) => {
@@ -122,6 +277,40 @@ const getPalette = (variant: AssistantCompanionKind) => {
       return palettes.capybara;
     case "dragon":
       return palettes.dragon;
+    case "raccoon":
+      return palettes.raccoon;
+    case "corgi":
+      return palettes.corgi;
+    case "wolf":
+      return palettes.wolf;
+    case "tiger":
+      return palettes.tiger;
+    case "bear":
+      return palettes.bear;
+    case "rabbit":
+      return palettes.rabbit;
+    case "chameleon":
+      return palettes.chameleon;
+    case "lion":
+      return palettes.lion;
+    case "otter":
+      return palettes.otter;
+    case "hedgehog":
+      return palettes.hedgehog;
+    case "koala":
+      return palettes.koala;
+    case "deer":
+      return palettes.deer;
+    case "turtle":
+      return palettes.turtle;
+    case "axolotl":
+      return palettes.axolotl;
+    case "phoenix":
+      return palettes.phoenix;
+    case "forest_spirit":
+      return palettes.forest_spirit;
+    case "cosmic_beast":
+      return palettes.cosmic_beast;
     case "robot":
     default:
       return palettes.robot;
@@ -138,6 +327,23 @@ const headScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   human: [0.55, 0.54, 0.48],
   capybara: [0.64, 0.5, 0.52],
   dragon: [0.58, 0.5, 0.52],
+  raccoon: [0.6, 0.52, 0.5],
+  corgi: [0.6, 0.5, 0.5],
+  wolf: [0.58, 0.5, 0.5],
+  tiger: [0.58, 0.5, 0.5],
+  bear: [0.64, 0.56, 0.52],
+  rabbit: [0.52, 0.58, 0.46],
+  chameleon: [0.6, 0.5, 0.52],
+  lion: [0.66, 0.58, 0.52],
+  otter: [0.62, 0.5, 0.5],
+  hedgehog: [0.58, 0.5, 0.5],
+  koala: [0.64, 0.56, 0.52],
+  deer: [0.58, 0.52, 0.5],
+  turtle: [0.62, 0.48, 0.54],
+  axolotl: [0.58, 0.52, 0.5],
+  phoenix: [0.58, 0.5, 0.52],
+  forest_spirit: [0.58, 0.5, 0.52],
+  cosmic_beast: [0.6, 0.52, 0.54],
 };
 
 const getHeadScale = (variant: AssistantCompanionKind) => {
@@ -158,6 +364,40 @@ const getHeadScale = (variant: AssistantCompanionKind) => {
       return headScaleByVariant.capybara;
     case "dragon":
       return headScaleByVariant.dragon;
+    case "raccoon":
+      return headScaleByVariant.raccoon;
+    case "corgi":
+      return headScaleByVariant.corgi;
+    case "wolf":
+      return headScaleByVariant.wolf;
+    case "tiger":
+      return headScaleByVariant.tiger;
+    case "bear":
+      return headScaleByVariant.bear;
+    case "rabbit":
+      return headScaleByVariant.rabbit;
+    case "chameleon":
+      return headScaleByVariant.chameleon;
+    case "lion":
+      return headScaleByVariant.lion;
+    case "otter":
+      return headScaleByVariant.otter;
+    case "hedgehog":
+      return headScaleByVariant.hedgehog;
+    case "koala":
+      return headScaleByVariant.koala;
+    case "deer":
+      return headScaleByVariant.deer;
+    case "turtle":
+      return headScaleByVariant.turtle;
+    case "axolotl":
+      return headScaleByVariant.axolotl;
+    case "phoenix":
+      return headScaleByVariant.phoenix;
+    case "forest_spirit":
+      return headScaleByVariant.forest_spirit;
+    case "cosmic_beast":
+      return headScaleByVariant.cosmic_beast;
     case "robot":
     default:
       return headScaleByVariant.robot;
@@ -174,6 +414,23 @@ const bodyScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   human: [0.45, 0.48, 0.38],
   capybara: [0.58, 0.46, 0.42],
   dragon: [0.5, 0.5, 0.42],
+  raccoon: [0.5, 0.48, 0.42],
+  corgi: [0.5, 0.44, 0.42],
+  wolf: [0.5, 0.48, 0.42],
+  tiger: [0.5, 0.48, 0.42],
+  bear: [0.58, 0.5, 0.44],
+  rabbit: [0.46, 0.5, 0.38],
+  chameleon: [0.5, 0.46, 0.42],
+  lion: [0.56, 0.52, 0.44],
+  otter: [0.54, 0.46, 0.42],
+  hedgehog: [0.5, 0.46, 0.4],
+  koala: [0.56, 0.5, 0.42],
+  deer: [0.5, 0.48, 0.42],
+  turtle: [0.6, 0.42, 0.5],
+  axolotl: [0.5, 0.46, 0.42],
+  phoenix: [0.5, 0.5, 0.42],
+  forest_spirit: [0.5, 0.5, 0.42],
+  cosmic_beast: [0.52, 0.5, 0.44],
 };
 
 const getBodyScale = (variant: AssistantCompanionKind) => {
@@ -194,6 +451,40 @@ const getBodyScale = (variant: AssistantCompanionKind) => {
       return bodyScaleByVariant.capybara;
     case "dragon":
       return bodyScaleByVariant.dragon;
+    case "raccoon":
+      return bodyScaleByVariant.raccoon;
+    case "corgi":
+      return bodyScaleByVariant.corgi;
+    case "wolf":
+      return bodyScaleByVariant.wolf;
+    case "tiger":
+      return bodyScaleByVariant.tiger;
+    case "bear":
+      return bodyScaleByVariant.bear;
+    case "rabbit":
+      return bodyScaleByVariant.rabbit;
+    case "chameleon":
+      return bodyScaleByVariant.chameleon;
+    case "lion":
+      return bodyScaleByVariant.lion;
+    case "otter":
+      return bodyScaleByVariant.otter;
+    case "hedgehog":
+      return bodyScaleByVariant.hedgehog;
+    case "koala":
+      return bodyScaleByVariant.koala;
+    case "deer":
+      return bodyScaleByVariant.deer;
+    case "turtle":
+      return bodyScaleByVariant.turtle;
+    case "axolotl":
+      return bodyScaleByVariant.axolotl;
+    case "phoenix":
+      return bodyScaleByVariant.phoenix;
+    case "forest_spirit":
+      return bodyScaleByVariant.forest_spirit;
+    case "cosmic_beast":
+      return bodyScaleByVariant.cosmic_beast;
     case "robot":
     default:
       return bodyScaleByVariant.robot;

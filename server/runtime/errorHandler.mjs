@@ -76,6 +76,30 @@ const getPublicAssistantDetails = (details) => {
     : undefined;
 };
 
+const getPublicAuthDetails = (code, details) => {
+  if (code !== "STATE_SYNC_UNAVAILABLE") {
+    return undefined;
+  }
+
+  const syncStage =
+    typeof details?.syncStage === "string" && details.syncStage.trim()
+      ? details.syncStage.trim().slice(0, 80)
+      : undefined;
+  const reasonCode =
+    typeof details?.reasonCode === "string" && details.reasonCode.trim()
+      ? details.reasonCode.trim().slice(0, 80)
+      : undefined;
+
+  return syncStage || reasonCode
+    ? {
+        diagnostics: {
+          ...(syncStage ? { syncStage } : {}),
+          ...(reasonCode ? { reasonCode } : {}),
+        },
+      }
+    : undefined;
+};
+
 export const handleRouteError = (error, response) => {
   if (error instanceof AuthApiError) {
     const statusCode =
@@ -113,7 +137,8 @@ export const handleRouteError = (error, response) => {
       response,
       statusCode,
       error.code,
-      getPublicMessage(authErrorMessages, error.code, "Authentication request failed.")
+      getPublicMessage(authErrorMessages, error.code, "Authentication request failed."),
+      getPublicAuthDetails(error.code, error.details)
     );
     return true;
   }

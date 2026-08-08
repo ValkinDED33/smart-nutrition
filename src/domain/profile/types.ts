@@ -16,7 +16,24 @@ export type AssistantCompanionKind =
   | "owl"
   | "human"
   | "capybara"
-  | "dragon";
+  | "dragon"
+  | "raccoon"
+  | "corgi"
+  | "wolf"
+  | "tiger"
+  | "bear"
+  | "rabbit"
+  | "chameleon"
+  | "lion"
+  | "otter"
+  | "hedgehog"
+  | "koala"
+  | "deer"
+  | "turtle"
+  | "axolotl"
+  | "phoenix"
+  | "forest_spirit"
+  | "cosmic_beast";
 export type AssistantRole = "friend" | "assistant" | "coach";
 export type AssistantTone = "gentle" | "playful" | "focused" | "calm" | "scientific";
 export type AssistantMood = "idle" | "happy" | "coach" | "concerned" | "sleepy" | "celebrate";

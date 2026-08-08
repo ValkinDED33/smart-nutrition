@@ -10,7 +10,8 @@ describe("HomePage contract", () => {
     expect(source).toContain("state.profile.womenHealth");
     expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
     expect(source).toContain("hasWomenHealthContext(womenHealth)");
-    expect(source).toContain('path: "/profile#women-health"');
+    expect(source).toContain('const WOMEN_HEALTH_ROUTE = "/profile#women-health"');
+    expect(source).toContain("path: WOMEN_HEALTH_ROUTE");
     expect(source).toContain('testId: "home-women-health-entrypoint"');
     expect(source).toContain("data-home-women-health-entrypoint");
     expect(source).not.toContain("localStorage");

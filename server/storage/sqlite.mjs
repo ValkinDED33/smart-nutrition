@@ -17,6 +17,7 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   normalizeCompanionState,
+  normalizeWomenHealthState,
   StateApiError,
 } from "../lib/domain.mjs";
 
@@ -74,6 +75,23 @@ const isAssistantCompanionKind = (value) =>
   value === "human" ||
   value === "capybara" ||
   value === "dragon" ||
+  value === "raccoon" ||
+  value === "corgi" ||
+  value === "wolf" ||
+  value === "tiger" ||
+  value === "bear" ||
+  value === "rabbit" ||
+  value === "chameleon" ||
+  value === "lion" ||
+  value === "otter" ||
+  value === "hedgehog" ||
+  value === "koala" ||
+  value === "deer" ||
+  value === "turtle" ||
+  value === "axolotl" ||
+  value === "phoenix" ||
+  value === "forest_spirit" ||
+  value === "cosmic_beast" ||
   value === "robot";
 const isAssistantCompanionRenderMode = (value) => value === "2d" || value === "3d";
 const isAssistantMood = (value) =>
@@ -581,9 +599,7 @@ const normalizeProfileState = (value, user) => {
     personalDetails: isRecord(record.personalDetails)
       ? { ...fallback.personalDetails, ...record.personalDetails }
       : fallback.personalDetails,
-    womenHealth: isRecord(record.womenHealth)
-      ? { ...fallback.womenHealth, ...record.womenHealth }
-      : fallback.womenHealth,
+    womenHealth: normalizeWomenHealthState(record.womenHealth),
     partnerSharing: isRecord(record.partnerSharing)
       ? { ...fallback.partnerSharing, ...record.partnerSharing }
       : fallback.partnerSharing,

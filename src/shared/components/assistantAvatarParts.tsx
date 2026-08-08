@@ -26,6 +26,20 @@ const animalEarVariants = new Set<AssistantCompanionKind>([
   "fox",
   "panda",
   "capybara",
+  "raccoon",
+  "corgi",
+  "wolf",
+  "tiger",
+  "bear",
+  "rabbit",
+  "chameleon",
+  "lion",
+  "otter",
+  "hedgehog",
+  "koala",
+  "deer",
+  "turtle",
+  "axolotl",
 ]);
 
 const animalNoseVariants = new Set<AssistantCompanionKind>([
@@ -34,6 +48,20 @@ const animalNoseVariants = new Set<AssistantCompanionKind>([
   "fox",
   "panda",
   "capybara",
+  "raccoon",
+  "corgi",
+  "wolf",
+  "tiger",
+  "bear",
+  "rabbit",
+  "chameleon",
+  "lion",
+  "otter",
+  "hedgehog",
+  "koala",
+  "deer",
+  "turtle",
+  "axolotl",
 ]);
 
 const AnimalEars = ({ variant, size, visual }: CompanionPartsProps) => {
@@ -42,8 +70,22 @@ const AnimalEars = ({ variant, size, visual }: CompanionPartsProps) => {
   }
 
   const earSize = scaled(size, variant === "dog" ? 0.24 : 0.23, 10);
-  const isPointed = variant === "cat" || variant === "fox";
-  const isRound = variant === "panda" || variant === "capybara";
+  const isPointed =
+    variant === "cat" ||
+    variant === "fox" ||
+    variant === "corgi" ||
+    variant === "wolf" ||
+    variant === "tiger" ||
+    variant === "rabbit" ||
+    variant === "deer";
+  const isRound =
+    variant === "panda" ||
+    variant === "capybara" ||
+    variant === "bear" ||
+    variant === "koala" ||
+    variant === "raccoon" ||
+    variant === "otter" ||
+    variant === "hedgehog";
   const top = isRound ? scaled(size, 0.06) : -scaled(size, 0.025);
   const offset = variant === "panda" ? scaled(size, 0.07) : scaled(size, 0.11);
   const earHeight = variant === "dog" ? scaled(size, 0.36, 16) : earSize;
@@ -224,7 +266,12 @@ export const CompanionHeadParts = (props: CompanionPartsProps) => {
     return <OwlTufts size={props.size} visual={props.visual} />;
   }
 
-  if (props.variant === "dragon") {
+  if (
+    props.variant === "dragon" ||
+    props.variant === "phoenix" ||
+    props.variant === "forest_spirit" ||
+    props.variant === "cosmic_beast"
+  ) {
     return <DragonHead size={props.size} visual={props.visual} />;
   }
 
@@ -247,6 +294,23 @@ const bodyVariants = new Set<AssistantCompanionKind>([
   "owl",
   "capybara",
   "dragon",
+  "raccoon",
+  "corgi",
+  "wolf",
+  "tiger",
+  "bear",
+  "rabbit",
+  "chameleon",
+  "lion",
+  "otter",
+  "hedgehog",
+  "koala",
+  "deer",
+  "turtle",
+  "axolotl",
+  "phoenix",
+  "forest_spirit",
+  "cosmic_beast",
 ]);
 
 const tailVariants = new Set<AssistantCompanionKind>([
@@ -255,6 +319,18 @@ const tailVariants = new Set<AssistantCompanionKind>([
   "fox",
   "capybara",
   "dragon",
+  "raccoon",
+  "corgi",
+  "wolf",
+  "tiger",
+  "rabbit",
+  "chameleon",
+  "lion",
+  "otter",
+  "deer",
+  "phoenix",
+  "forest_spirit",
+  "cosmic_beast",
 ]);
 
 const BodyPaws = ({ variant, size, visual }: CompanionPartsProps) => {

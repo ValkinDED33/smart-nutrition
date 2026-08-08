@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TypeAnimation } from "react-type-animation";
 import { motion } from "framer-motion";
 import {
   Bell,
@@ -80,10 +79,51 @@ type CompanionCapabilitySlide = {
   tags: readonly string[];
   Icon: typeof Bot;
   tone: string;
+  product?: string;
+  contains?: string;
+  benefit?: string;
+  note?: string;
+};
+
+type NutritionInsight = {
+  product: string;
+  title: string;
+  contains: string;
+  benefit: string;
+  note: string;
+  tags: readonly string[];
+  tone: string;
+};
+
+type LandingFeatureRailItem = {
+  title: string;
+  body: string;
 };
 
 const getIndexedValue = <T,>(items: readonly T[], requestedIndex: number) =>
   items.find((_, index) => index === requestedIndex);
+
+const getRotatedItems = <T,>(
+  items: readonly T[],
+  startIndex: number,
+  count: number,
+) => {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const rotatedItems: T[] = [];
+  Array.from({ length: Math.min(count, items.length) }).forEach((_, index) => {
+    const normalizedIndex = (startIndex + index) % items.length;
+    const item = items.at(normalizedIndex);
+
+    if (item) {
+      rotatedItems.push(item);
+    }
+  });
+
+  return rotatedItems;
+};
 
 const landingCopy = {
   uk: {
@@ -151,6 +191,120 @@ const landingCopy = {
       { title: "AI-підтримка", body: "Підказки під твій день" },
       { title: "Живий прогрес", body: "Зміни без сухої статистики" },
       { title: "Розумні нагадування", body: "Вода, їжа, ліки і звички" },
+    ],
+    nutritionInsightEyebrow: "AI розбирає продукти",
+    nutritionInsightTitle: "Їжа як зрозуміла карта користі",
+    nutritionInsightBody:
+      "Помічник показує не суху назву продукту, а що в ньому важливого: нутрієнти, користь, контекст і м'яке попередження без діагнозів.",
+    nutritionInsights: [
+      {
+        product: "Морська капуста",
+        title: "Йод і мінерали",
+        contains: "йод, магній, клітковина",
+        benefit: "підтримка щитоподібної залози і мінерального балансу",
+        note: "якщо є обмеження по йоду або щитоподібній залозі, краще узгодити з лікарем",
+        tags: ["йод", "мінерали", "щитовидна"],
+        tone: "#22d3ee",
+      },
+      {
+        product: "Лосось",
+        title: "Омега-3 для раціону",
+        contains: "омега-3, білок, вітамін D",
+        benefit: "підтримка серця, ситості і збалансованого меню",
+        note: "під час вагітності важливо обирати безпечну термічну обробку",
+        tags: ["омега-3", "білок", "D"],
+        tone: "#38bdf8",
+      },
+      {
+        product: "Гарбузове насіння",
+        title: "Цинк і магній",
+        contains: "цинк, магній, рослинні жири",
+        benefit: "підтримка імунної системи, нервової системи і перекусу без цукру",
+        note: "порція важлива: насіння калорійне, але корисне в малих кількостях",
+        tags: ["цинк", "магній", "перекус"],
+        tone: "#a3e635",
+      },
+      {
+        product: "Шпинат",
+        title: "Фолати і залізо",
+        contains: "фолати, залізо, вітамін K",
+        benefit: "допомагає збирати зелену частину тарілки і підтримувати різноманіття",
+        note: "залізо з рослин краще поєднувати з продуктами з вітаміном C",
+        tags: ["фолати", "залізо", "зелень"],
+        tone: "#22c55e",
+      },
+      {
+        product: "Грецький йогурт",
+        title: "Білок і кальцій",
+        contains: "білок, кальцій, пробіотичні культури",
+        benefit: "ситість, підтримка кісток і зручна база для сніданку",
+        note: "краще дивитися склад: без зайвого цукру і з нормальною жирністю під ціль",
+        tags: ["білок", "кальцій", "сніданок"],
+        tone: "#60a5fa",
+      },
+      {
+        product: "Чечевиця",
+        title: "Залізо і клітковина",
+        contains: "рослинний білок, залізо, клітковина",
+        benefit: "підтримка ситості, м'якої енергії і домашнього меню",
+        note: "якщо шлунок реагує важко, починати з невеликої порції",
+        tags: ["залізо", "клітковина", "білок"],
+        tone: "#f59e0b",
+      },
+      {
+        product: "Авокадо",
+        title: "Корисні жири",
+        contains: "мононенасичені жири, калій, клітковина",
+        benefit: "м'яка ситість, підтримка раціону і стабільніший перекус",
+        note: "це не магічний продукт, а корисна жирова частина тарілки",
+        tags: ["жири", "калій", "ситість"],
+        tone: "#84cc16",
+      },
+      {
+        product: "Устриці і морепродукти",
+        title: "Цинк для репродуктивного здоров'я",
+        contains: "цинк, білок, селен, B12",
+        benefit: "часто актуально для чоловічого раціону, імунної системи і нормального гормонального балансу",
+        note: "це не лікування і не гарантія либідо; важливі безпечне походження, порція і загальний раціон",
+        tags: ["чоловікам", "цинк", "B12"],
+        tone: "#0ea5e9",
+      },
+      {
+        product: "Горіхи і насіння",
+        title: "Аргінін, магній і корисні жири",
+        contains: "аргінін, магній, цинк, омега-жири",
+        benefit: "підтримка судинного здоров'я, нервової системи і ситого перекусу без різкого цукру",
+        note: "горіхи калорійні, тому помічник має показувати порцію, а не просто радити їсти більше",
+        tags: ["аргінін", "магній", "порція"],
+        tone: "#f97316",
+      },
+      {
+        product: "Цільнозернові, цитрус і бобові",
+        title: "Інозитол і фолати",
+        contains: "інозитол, фолати, клітковина, вітамін C",
+        benefit: "часто актуально для жіночого здоров'я, енергії, циклу і підготовки якісної тарілки",
+        note: "планування вагітності, вагітність і добавки краще узгоджувати з лікарем",
+        tags: ["жінкам", "фолати", "інозитол"],
+        tone: "#ec4899",
+      },
+      {
+        product: "Червоне м'ясо, печінка або сочевиця",
+        title: "Залізо без сліпих порад",
+        contains: "залізо, білок, B12 або рослинна клітковина",
+        benefit: "допомагає пояснювати втому, аналізи і вибір продуктів у жіночому та сімейному контексті",
+        note: "залізо в добавках не призначається автоматично; потрібні аналізи і рекомендація спеціаліста",
+        tags: ["залізо", "аналізи", "безпека"],
+        tone: "#ef4444",
+      },
+      {
+        product: "Яйця",
+        title: "Холін і повний білок",
+        contains: "білок, холін, вітаміни групи B",
+        benefit: "зручний продукт для сніданку, нервової системи і контролю голоду",
+        note: "важлива нормальна термічна обробка, особливо для чутливих груп",
+        tags: ["холін", "B-вітаміни", "сніданок"],
+        tone: "#facc15",
+      },
     ],
     sectionEyebrow: "За 5 секунд зрозуміло, що робити",
     ecosystemTitle: "Не калькулятор, а простір з помічником",
@@ -284,6 +438,120 @@ const landingCopy = {
       { title: "Żywy progres", body: "Zmiany bez suchej statystyki" },
       { title: "Mądre przypomnienia", body: "Woda, jedzenie, leki i nawyki" },
     ],
+    nutritionInsightEyebrow: "AI rozumie produkty",
+    nutritionInsightTitle: "Jedzenie jako czytelna mapa korzyści",
+    nutritionInsightBody:
+      "Asystent pokazuje nie tylko nazwę produktu, ale składniki odżywcze, korzyść, kontekst i spokojną uwagę bezpieczeństwa bez diagnoz.",
+    nutritionInsights: [
+      {
+        product: "Wodorosty morskie",
+        title: "Jod i minerały",
+        contains: "jod, magnez, błonnik",
+        benefit: "wsparcie tarczycy i równowagi mineralnej",
+        note: "przy ograniczeniach jodu lub chorobach tarczycy warto skonsultować porcję z lekarzem",
+        tags: ["jod", "minerały", "tarczyca"],
+        tone: "#22d3ee",
+      },
+      {
+        product: "Łosoś",
+        title: "Omega-3 w diecie",
+        contains: "omega-3, białko, witamina D",
+        benefit: "wsparcie serca, sytości i zbilansowanego menu",
+        note: "w ciąży ważna jest bezpieczna obróbka termiczna",
+        tags: ["omega-3", "białko", "D"],
+        tone: "#38bdf8",
+      },
+      {
+        product: "Pestki dyni",
+        title: "Cynk i magnez",
+        contains: "cynk, magnez, tłuszcze roślinne",
+        benefit: "wsparcie odporności, układu nerwowego i przekąski bez cukru",
+        note: "porcja ma znaczenie: pestki są kaloryczne, ale wartościowe w małej ilości",
+        tags: ["cynk", "magnez", "przekąska"],
+        tone: "#a3e635",
+      },
+      {
+        product: "Szpinak",
+        title: "Foliany i żelazo",
+        contains: "foliany, żelazo, witamina K",
+        benefit: "pomaga budować zieloną część talerza i różnorodność",
+        note: "żelazo roślinne lepiej łączyć z produktami z witaminą C",
+        tags: ["foliany", "żelazo", "zieleń"],
+        tone: "#22c55e",
+      },
+      {
+        product: "Jogurt grecki",
+        title: "Białko i wapń",
+        contains: "białko, wapń, kultury bakterii",
+        benefit: "sytość, wsparcie kości i wygodna baza śniadania",
+        note: "warto sprawdzić skład: mniej cukru i tłuszcz dopasowany do celu",
+        tags: ["białko", "wapń", "śniadanie"],
+        tone: "#60a5fa",
+      },
+      {
+        product: "Soczewica",
+        title: "Żelazo i błonnik",
+        contains: "białko roślinne, żelazo, błonnik",
+        benefit: "wsparcie sytości, energii i domowego menu",
+        note: "przy wrażliwym brzuchu zacznij od mniejszej porcji",
+        tags: ["żelazo", "błonnik", "białko"],
+        tone: "#f59e0b",
+      },
+      {
+        product: "Awokado",
+        title: "Dobre tłuszcze",
+        contains: "tłuszcze jednonienasycone, potas, błonnik",
+        benefit: "łagodna sytość, wsparcie diety i stabilniejsza przekąska",
+        note: "to nie magiczny produkt, tylko dobra tłuszczowa część talerza",
+        tags: ["tłuszcze", "potas", "sytość"],
+        tone: "#84cc16",
+      },
+      {
+        product: "Ostrygi i owoce morza",
+        title: "Cynk dla zdrowia reprodukcyjnego",
+        contains: "cynk, białko, selen, B12",
+        benefit: "często ważne w męskiej diecie, odporności i prawidłowej równowadze hormonalnej",
+        note: "to nie leczenie ani gwarancja libido; liczy się bezpieczne źródło, porcja i cała dieta",
+        tags: ["dla mężczyzn", "cynk", "B12"],
+        tone: "#0ea5e9",
+      },
+      {
+        product: "Orzechy i nasiona",
+        title: "Arginina, magnez i dobre tłuszcze",
+        contains: "arginina, magnez, cynk, tłuszcze omega",
+        benefit: "wsparcie naczyń, układu nerwowego i sytej przekąski bez skoku cukru",
+        note: "orzechy są kaloryczne, więc asystent powinien pokazać porcję, a nie tylko radzić jeść więcej",
+        tags: ["arginina", "magnez", "porcja"],
+        tone: "#f97316",
+      },
+      {
+        product: "Pełne ziarna, cytrusy i strączki",
+        title: "Inozytol i foliany",
+        contains: "inozytol, foliany, błonnik, witamina C",
+        benefit: "często ważne dla zdrowia kobiet, energii, cyklu i budowania dobrej jakości talerza",
+        note: "planowanie ciąży, ciąża i suplementy najlepiej uzgodnić z lekarzem",
+        tags: ["dla kobiet", "foliany", "inozytol"],
+        tone: "#ec4899",
+      },
+      {
+        product: "Czerwone mięso, wątróbka albo soczewica",
+        title: "Żelazo bez ślepych porad",
+        contains: "żelazo, białko, B12 albo roślinny błonnik",
+        benefit: "pomaga wyjaśniać zmęczenie, badania i wybór produktów w kontekście kobiet i rodziny",
+        note: "żelaza w suplementach nie dobiera się automatycznie; potrzebne są badania i zalecenie specjalisty",
+        tags: ["żelazo", "badania", "bezpieczeństwo"],
+        tone: "#ef4444",
+      },
+      {
+        product: "Jajka",
+        title: "Cholina i pełne białko",
+        contains: "białko, cholina, witaminy z grupy B",
+        benefit: "wygodny produkt śniadaniowy dla sytości i układu nerwowego",
+        note: "ważna jest dobra obróbka termiczna, szczególnie dla grup wrażliwych",
+        tags: ["cholina", "witaminy B", "śniadanie"],
+        tone: "#facc15",
+      },
+    ],
     sectionEyebrow: "W 5 sekund wiadomo, co zrobić",
     ecosystemTitle: "Nie kalkulator, tylko przestrzeń z asystentem",
     ecosystemBody:
@@ -415,6 +683,120 @@ const landingCopy = {
       { title: AI_COACHING_TITLE, body: "Guidance for your day" },
       { title: PROGRESS_INSIGHTS_TITLE, body: "Changes without dry stats" },
       { title: SMART_REMINDERS_TITLE, body: "Water, meals, medication, habits" },
+    ],
+    nutritionInsightEyebrow: "AI understands food",
+    nutritionInsightTitle: "Food as a clear map of benefits",
+    nutritionInsightBody:
+      "The assistant shows more than a product name: nutrients, likely benefit, context, and a calm safety note without diagnosis.",
+    nutritionInsights: [
+      {
+        product: "Seaweed",
+        title: "Iodine and minerals",
+        contains: "iodine, magnesium, fiber",
+        benefit: "supports thyroid nutrition and mineral balance",
+        note: "if iodine or thyroid limits apply, confirm serving size with a clinician",
+        tags: ["iodine", "minerals", "thyroid"],
+        tone: "#22d3ee",
+      },
+      {
+        product: "Salmon",
+        title: "Omega-3 in the menu",
+        contains: "omega-3, protein, vitamin D",
+        benefit: "supports heart-focused meals, satiety, and balanced planning",
+        note: "during pregnancy, safe cooking and fish choices matter",
+        tags: ["omega-3", "protein", "D"],
+        tone: "#38bdf8",
+      },
+      {
+        product: "Pumpkin seeds",
+        title: "Zinc and magnesium",
+        contains: "zinc, magnesium, plant fats",
+        benefit: "supports immune nutrition, nerves, and a low-sugar snack",
+        note: "portion matters: seeds are calorie-dense but useful in small amounts",
+        tags: ["zinc", "magnesium", "snack"],
+        tone: "#a3e635",
+      },
+      {
+        product: "Spinach",
+        title: "Folate and iron",
+        contains: "folate, iron, vitamin K",
+        benefit: "helps build a greener plate and more varied meals",
+        note: "plant iron pairs better with foods rich in vitamin C",
+        tags: ["folate", "iron", "greens"],
+        tone: "#22c55e",
+      },
+      {
+        product: "Greek yogurt",
+        title: "Protein and calcium",
+        contains: "protein, calcium, live cultures",
+        benefit: "satiety, bone-supporting nutrition, and an easy breakfast base",
+        note: "check sugar content and choose fat level by your goal",
+        tags: ["protein", "calcium", "breakfast"],
+        tone: "#60a5fa",
+      },
+      {
+        product: "Lentils",
+        title: "Iron and fiber",
+        contains: "plant protein, iron, fiber",
+        benefit: "supports satiety, steady meals, and home cooking",
+        note: "if digestion is sensitive, start with a smaller portion",
+        tags: ["iron", "fiber", "protein"],
+        tone: "#f59e0b",
+      },
+      {
+        product: "Avocado",
+        title: "Useful fats",
+        contains: "monounsaturated fats, potassium, fiber",
+        benefit: "gentle satiety and a more stable snack",
+        note: "it is not magic, just a useful fat component on the plate",
+        tags: ["fats", "potassium", "satiety"],
+        tone: "#84cc16",
+      },
+      {
+        product: "Oysters and seafood",
+        title: "Zinc for reproductive nutrition",
+        contains: "zinc, protein, selenium, B12",
+        benefit: "often relevant for men's nutrition, immune support, and normal hormonal balance",
+        note: "this is not treatment or a libido guarantee; safe sourcing, serving size, and the whole diet matter",
+        tags: ["men", "zinc", "B12"],
+        tone: "#0ea5e9",
+      },
+      {
+        product: "Nuts and seeds",
+        title: "Arginine, magnesium, and useful fats",
+        contains: "arginine, magnesium, zinc, omega fats",
+        benefit: "supports vascular nutrition, the nervous system, and a filling lower-sugar snack",
+        note: "nuts are calorie-dense, so the assistant should show portions instead of simply saying eat more",
+        tags: ["arginine", "magnesium", "portion"],
+        tone: "#f97316",
+      },
+      {
+        product: "Whole grains, citrus, and legumes",
+        title: "Inositol and folate",
+        contains: "inositol, folate, fiber, vitamin C",
+        benefit: "often relevant for women's health, energy, cycle context, and building a quality plate",
+        note: "pregnancy planning, pregnancy, and supplements should be discussed with a clinician",
+        tags: ["women", "folate", "inositol"],
+        tone: "#ec4899",
+      },
+      {
+        product: "Red meat, liver, or lentils",
+        title: "Iron without blind advice",
+        contains: "iron, protein, B12 or plant fiber",
+        benefit: "helps explain fatigue, lab-work context, and food choices in women's and family wellness",
+        note: "iron supplements are not automatic; labs and clinician guidance matter",
+        tags: ["iron", "labs", "safety"],
+        tone: "#ef4444",
+      },
+      {
+        product: "Eggs",
+        title: "Choline and complete protein",
+        contains: "protein, choline, B vitamins",
+        benefit: "a simple breakfast food for satiety and nervous-system nutrition",
+        note: "proper cooking matters, especially for sensitive groups",
+        tags: ["choline", "B vitamins", "breakfast"],
+        tone: "#facc15",
+      },
     ],
     sectionEyebrow: "Clear next actions in 5 seconds",
     ecosystemTitle: "Not a calculator, a companion platform",
@@ -662,48 +1044,36 @@ const landingCompanionSignalNodes = [
 ] as const;
 
 const CompanionExperienceScene = ({
+  copy,
   isDarkMode,
 }: {
+  copy: LandingCopy;
   isDarkMode: boolean;
 }) => {
   const scene = getLandingScene(isDarkMode);
-  const referenceCards = [
-    {
-      id: "hydration",
-      label: "Hydration",
-      value: "6 / 8 glasses",
-      badge: "62%",
-      sx: { left: { sm: 10, md: 72 }, top: { sm: 24, md: 58 } },
-    },
-    {
-      id: "calories",
-      label: "Today",
-      value: "1,450 kcal",
-      badge: "72%",
-      sx: { right: { sm: 4, md: 42 }, top: { sm: 90, md: 130 } },
-    },
-    {
-      id: "protein",
-      label: "Protein",
-      value: "108 / 150g",
-      badge: null,
-      sx: { left: { sm: 18, md: 22 }, top: { sm: 214, md: 258 } },
-    },
-    {
-      id: "coach",
-      label: "AI Coach",
-      value: "Great job hitting your protein goal.",
-      badge: null,
-      sx: { left: { sm: 94, md: 128 }, bottom: { sm: 68, md: 92 } },
-    },
-    {
-      id: "streak",
-      label: "Streak",
-      value: "12 days",
-      badge: null,
-      sx: { right: { sm: 32, md: 70 }, bottom: { sm: 46, md: 74 } },
-    },
-  ];
+  const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
+  const cardPositions = [
+    { left: { sm: 10, md: 72 }, top: { sm: 24, md: 58 } },
+    { right: { sm: 4, md: 42 }, top: { sm: 90, md: 130 } },
+    { left: { sm: 18, md: 22 }, top: { sm: 214, md: 258 } },
+    { left: { sm: 94, md: 128 }, bottom: { sm: 68, md: 92 } },
+    { right: { sm: 32, md: 70 }, bottom: { sm: 46, md: 74 } },
+  ] as const;
+  const [heroInsightStart] = useState(() =>
+    Math.floor(Math.random() * nutritionInsights.length),
+  );
+  const referenceCards = getRotatedItems(
+    nutritionInsights,
+    heroInsightStart,
+    5,
+  ).map((item, index) => ({
+    ...item,
+    id: `${item.product}-${index}`,
+    label: item.product,
+    value: item.contains,
+    badge: index < 2 ? item.tags[0] : null,
+    sx: cardPositions.at(index) ?? cardPositions[0],
+  }));
 
   return (
     <Box
@@ -1015,9 +1385,9 @@ const CompanionExperienceScene = ({
           sx={{
             position: "absolute",
             zIndex: 4,
-            width: card.id === "coach" ? { sm: 220, md: 244 } : { sm: 176, md: 200 },
+            width: index >= 3 ? { sm: 220, md: 244 } : { sm: 176, md: 218 },
             display:
-              card.id === "coach" || card.id === "streak"
+              index >= 3
                 ? { sm: "none", xl: "block" }
                 : "block",
             p: { sm: 1.25, md: 1.45 },
@@ -1040,9 +1410,9 @@ const CompanionExperienceScene = ({
                 {card.label}
               </Typography>
               <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                {card.value}
+                {index >= 3 ? card.benefit : card.title}
               </Typography>
-              {card.id === "protein" ? (
+              {index === 2 ? (
                 <LinearProgress
                   variant="determinate"
                   value={72}
@@ -1051,35 +1421,34 @@ const CompanionExperienceScene = ({
                     height: 5,
                     borderRadius: 999,
                     bgcolor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(15,23,42,0.1)",
-                    "& .MuiLinearProgress-bar": { bgcolor: "#22d3ee" },
+                    "& .MuiLinearProgress-bar": { bgcolor: card.tone },
                   }}
                 />
+              ) : null}
+              {index < 3 ? (
+                <Typography sx={{ mt: 0.45, color: scene.sceneCardMuted, fontSize: 11, fontWeight: 700 }}>
+                  {card.value}
+                </Typography>
               ) : null}
             </Box>
             {card.badge ? (
               <Box
                 sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
+                  minWidth: 52,
+                  height: 32,
+                  px: 1,
+                  borderRadius: 999,
                   display: "grid",
                   placeItems: "center",
                   fontWeight: 900,
-                  background:
-                    "conic-gradient(from 0deg, #22d3ee 0 38%, #84cc16 38% 72%, rgba(255,255,255,0.16) 72% 100%)",
-                  boxShadow: "0 0 24px rgba(34,211,238,0.28)",
-                  "&::before": {
-                    content: `"${card.badge}"`,
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    display: "grid",
-                    placeItems: "center",
-                    bgcolor: isDarkMode ? "#07111f" : "#ffffff",
-                    fontSize: 12,
-                  },
+                  color: isDarkMode ? "#ecfeff" : "#042f2e",
+                  background: `linear-gradient(135deg, ${card.tone}, rgba(255,255,255,0.18))`,
+                  boxShadow: `0 0 24px ${card.tone}44`,
+                  fontSize: 11,
                 }}
-              />
+              >
+                {card.badge}
+              </Box>
             ) : null}
           </Stack>
         </Paper>
@@ -1096,6 +1465,10 @@ const Hero = ({
   isDarkMode: boolean;
 }) => {
   const scene = getLandingScene(isDarkMode);
+  const [heroLineIndex] = useState(() =>
+    Math.floor(Math.random() * copy.heroTyping.length),
+  );
+  const heroLine = getIndexedValue(copy.heroTyping, heroLineIndex) ?? copy.heroTyping[0];
 
   return (
     <Box
@@ -1205,19 +1578,7 @@ const Hero = ({
           color: scene.typingColor,
         }}
       >
-        <TypeAnimation
-          key={copy.heroTyping.join("|")}
-          sequence={[
-            copy.heroTyping[0],
-            1700,
-            copy.heroTyping[1],
-            1700,
-            copy.heroTyping[2],
-            1700,
-          ]}
-          speed={54}
-          repeat={Infinity}
-        />
+        {heroLine}
       </Typography>
       <Typography
         sx={{
@@ -1377,7 +1738,7 @@ const Hero = ({
       </Stack>
     </Stack>
 
-    <CompanionExperienceScene isDarkMode={isDarkMode} />
+    <CompanionExperienceScene copy={copy} isDarkMode={isDarkMode} />
 
     <Stack
       direction={{ xs: "column", md: "row" }}
@@ -1453,27 +1814,24 @@ const AIDiscoveryAccordion = ({
   isDarkMode: boolean;
 }) => {
   const [openItem, setOpenItem] = useState(0);
+  const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
+  const [insightStart] = useState(() =>
+    Math.floor(Math.random() * nutritionInsights.length),
+  );
   const scene = getLandingScene(isDarkMode);
-  const discoveryItems = [
-    {
-      title: copy.mascot.title,
-      body: copy.mascot.body,
-      meta: copy.mascot.mood,
-      Icon: Bot,
-    },
-    ...copy.sceneCards.map((item) => ({
-      title: item.title,
-      body: item.body,
-      meta: item.tone,
-      Icon: Sparkles,
-    })),
-    ...copy.featureRail.slice(0, 3).map((item, index) => ({
-      title: item.title,
-      body: item.body,
-      meta: getIndexedValue(copy.quickActions, index) ?? copy.navOverview,
-      Icon: getFeatureRailIcon(index),
-    })),
-  ];
+  const discoveryItems = getRotatedItems(
+    nutritionInsights,
+    insightStart,
+    6,
+  ).map((item, index) => ({
+    title: item.product,
+    body: `${item.benefit}. ${item.note}`,
+    meta: item.title,
+    detail: item.contains,
+    tags: item.tags,
+    tone: item.tone,
+    Icon: getFeatureRailIcon(index),
+  }));
 
   return (
     <Box
@@ -1517,7 +1875,7 @@ const AIDiscoveryAccordion = ({
             }}
           >
             <Chip
-              label="AI Discovery"
+              label={copy.nutritionInsightEyebrow}
               sx={{
                 alignSelf: START_ALIGN,
                 bgcolor: scene.eyebrowBg,
@@ -1527,14 +1885,14 @@ const AIDiscoveryAccordion = ({
               }}
             />
             <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
-              {copy.ecosystemTitle}
+              {copy.nutritionInsightTitle}
             </Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
-              {copy.ecosystemBody}
+              {copy.nutritionInsightBody}
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              {copy.presencePills.map((pill) => (
-                <Chip key={pill} label={pill} variant="outlined" />
+              {nutritionInsights.slice(0, 4).map((pill) => (
+                <Chip key={pill.product} label={pill.title} variant="outlined" />
               ))}
             </Stack>
           </Stack>
@@ -1644,7 +2002,7 @@ const AIDiscoveryAccordion = ({
                       <Typography
                         sx={{
                           mt: 0.5,
-                          color: scene.featureMuted,
+                          color: item.tone,
                           fontSize: 13,
                           fontWeight: 800,
                           textTransform: "uppercase",
@@ -1684,8 +2042,27 @@ const AIDiscoveryAccordion = ({
                     }}
                   >
                     <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      <Box component="strong" sx={{ color: scene.heroText }}>
+                        {item.detail}
+                      </Box>
+                      {" - "}
                       {item.body}
                     </Typography>
+                    <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap" sx={{ mt: 1.2 }}>
+                      {item.tags.map((tag) => (
+                        <Chip
+                          key={tag}
+                          size="small"
+                          label={tag}
+                          sx={{
+                            bgcolor: `${item.tone}22`,
+                            color: scene.heroText,
+                            border: `1px solid ${item.tone}55`,
+                            fontWeight: 800,
+                          }}
+                        />
+                      ))}
+                    </Stack>
                   </Box>
                 </Box>
               );
@@ -2109,56 +2486,74 @@ const CompanionCapabilitySlider = ({
   isDarkMode: boolean;
 }) => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
+  const [slideStart] = useState(() =>
+    Math.floor(Math.random() * nutritionInsights.length),
+  );
   const scene = getLandingScene(isDarkMode);
-  const slides: [CompanionCapabilitySlide, ...CompanionCapabilitySlide[]] = [
+  const featureRail: readonly LandingFeatureRailItem[] = copy.featureRail;
+  const fallbackFeature = featureRail[0];
+  const hydrationFeature = getIndexedValue(featureRail, 1) ?? fallbackFeature;
+  const remindersFeature = getIndexedValue(featureRail, 5) ?? fallbackFeature;
+  const mobileFeature = getIndexedValue(featureRail, 3) ?? fallbackFeature;
+
+  if (!hydrationFeature || !remindersFeature || !mobileFeature) {
+    return null;
+  }
+
+  const capabilitySlides: CompanionCapabilitySlide[] = [
     {
-      title: copy.featureRail[0]?.title ?? FOOD_SCANNER_TITLE,
-      body:
-        copy.featureRail[0]?.body ??
-        "Food photo, barcode, and fast product recognition.",
-      tags: [copy.quickActions[0] ?? "Photo", copy.quickActions[1] ?? "Barcode"],
-      Icon: Camera,
-      tone: "#22c55e",
-    },
-    {
-      title: copy.featureRail[1]?.title ?? HYDRATION_TRACKER_TITLE,
-      body: copy.featureRail[1]?.body ?? "Water tracking without manual chaos.",
+      title: hydrationFeature.title,
+      body: hydrationFeature.body,
+      product: copy.sliderEyebrow,
+      contains: copy.sliderTags.hydration.join(" / "),
+      benefit: copy.nutritionInsightBody,
       tags: copy.sliderTags.hydration,
       Icon: Droplets,
       tone: "#22d3ee",
     },
     {
-      title: copy.featureRail[5]?.title ?? SMART_REMINDERS_TITLE,
-      body:
-        copy.featureRail[5]?.body ??
-        "Water, meals, medication, and habits in one reminder system.",
+      title: remindersFeature.title,
+      body: remindersFeature.body,
+      product: copy.sliderEyebrow,
+      contains: copy.sliderTags.reminders.join(" / "),
+      benefit: copy.subtitle,
       tags: copy.sliderTags.reminders,
       Icon: Bell,
       tone: "#a3e635",
     },
     {
-      title: copy.mascot.title,
-      body: copy.mascot.body,
-      tags: copy.presencePills.slice(0, 3),
-      Icon: Bot,
-      tone: "#60a5fa",
-    },
-    {
-      title: copy.analyticsTitle,
-      body: copy.progressAdvice,
-      tags: copy.analytics.slice(0, 3).map((item) => item.label),
-      Icon: HeartPulse,
-      tone: "#14b8a6",
-    },
-    {
-      title: copy.mobileTitle,
-      body: copy.mobileBody,
+      title: mobileFeature.title,
+      body: mobileFeature.body,
+      product: copy.sliderEyebrow,
+      contains: copy.sliderTags.mobile.join(" / "),
+      benefit: copy.finalBody,
       tags: copy.sliderTags.mobile,
-      Icon: ShieldCheck,
-      tone: "#facc15",
+      Icon: Bot,
+      tone: "#8b5cf6",
     },
   ];
-  const active = getIndexedValue(slides, activeSlide) ?? slides[0];
+  const nutritionSlides: CompanionCapabilitySlide[] = getRotatedItems(
+    nutritionInsights,
+    slideStart,
+    6,
+  ).map((item, index) => ({
+    title: item.product,
+    body: item.note,
+    product: item.title,
+    contains: item.contains,
+    benefit: item.benefit,
+    tags: item.tags,
+    Icon: getFeatureRailIcon(index),
+    tone: item.tone,
+  }));
+  const slides = [...capabilitySlides, ...nutritionSlides];
+  const active = getIndexedValue(slides, activeSlide) ?? slides.at(0);
+
+  if (!active) {
+    return null;
+  }
+
   const ActiveIcon = active.Icon;
   const goToSlide = (direction: -1 | 1) => {
     playGentleClickSound();
@@ -2179,10 +2574,10 @@ const CompanionCapabilitySlider = ({
     >
       <Stack spacing={1.2} sx={{ mb: 2 }}>
         <Typography variant="overline" sx={{ color: scene.accentColor, fontWeight: 900 }}>
-          {copy.sliderEyebrow}
+          {copy.nutritionInsightEyebrow}
         </Typography>
         <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
-          {copy.title}
+          {copy.nutritionInsightTitle}
         </Typography>
       </Stack>
 
@@ -2327,6 +2722,39 @@ const CompanionCapabilitySlider = ({
               >
                 {active.title}
               </Typography>
+              {active.product ? (
+                <Typography
+                  sx={{
+                    m: 0,
+                    color: active.tone,
+                    fontSize: { xs: 18, md: 24 },
+                    lineHeight: 1.25,
+                    fontWeight: 900,
+                  }}
+                >
+                  {active.product}
+                </Typography>
+              ) : null}
+              {active.contains ? (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 1.6,
+                    borderRadius: 1,
+                    border: `1px solid ${scene.featureRailBorder}`,
+                    bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(236,253,245,0.72)",
+                  }}
+                >
+                  <Typography sx={{ color: scene.heroText, fontWeight: 900 }}>
+                    {active.contains}
+                  </Typography>
+                  {active.benefit ? (
+                    <Typography sx={{ mt: 0.6, color: scene.mutedText, lineHeight: 1.6 }}>
+                      {active.benefit}
+                    </Typography>
+                  ) : null}
+                </Paper>
+              ) : null}
               <Typography
                 key={active.body}
                 component={motion.p}
