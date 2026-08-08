@@ -103,7 +103,12 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain("useHideGuideWhileFieldFocused");
     expect(guideSource).toContain("document.addEventListener(\"focusin\", onFocusIn)");
     expect(guideSource).toContain("data-onboarding-guide-hidden-while-field-focused");
-    expect(guideSource).toContain("calc((100vw - 720px) / 2 - 300px)");
+    expect(guideSource).toContain("if (fieldFocused)");
+    expect(guideSource).toContain("womenHealth:");
+    expect(guideSource).toContain('"/onboarding/women-health"');
+    expect(guideSource).toContain('key: "womenHealth"');
+    expect(guideSource).toContain("calc((100vw - 720px) / 2 - 430px)");
+    expect(guideSource).toContain('display: { xs: "none", lg: "block" }');
     expect(guideSource).toContain("direction=\"row-reverse\"");
   });
 });

@@ -27,6 +27,8 @@ const guideCopy = {
     name: "Як тебе звати? Я запам'ятаю, як звертатися до тебе.",
     age: "Вік потрібен тільки для точніших норм калорій.",
     gender: "Це допоможе краще порахувати базовий обмін.",
+    womenHealth:
+      "Познач життєвий етап. Я підлаштую цілі, поради й нагадування без зайвого тиску.",
     height: "Зріст уточнює розрахунок цілі.",
     goal: "Тут обираємо напрям: схуднення, набір або стабільність.",
     friction: "Скажи, що найчастіше збиває. Я підлаштую підтримку.",
@@ -40,6 +42,8 @@ const guideCopy = {
     name: "Jak mam się do Ciebie zwracać? Zapamiętam to.",
     age: "Wiek pomaga dokładniej policzyć normę kalorii.",
     gender: "To pomoże lepiej wyliczyć podstawową przemianę.",
+    womenHealth:
+      "Zaznacz aktualny etap. Dopasuję cele, wskazówki i przypomnienia bez presji.",
     height: "Wzrost doprecyzuje cel.",
     goal: "Tu wybieramy kierunek: redukcja, masa albo stabilizacja.",
     friction: "Powiedz, co najczęściej wybija z rytmu. Dopasuję wsparcie.",
@@ -53,6 +57,8 @@ const guideCopy = {
     name: "What should I call you? I will remember it.",
     age: "Age helps me calculate calorie targets more accurately.",
     gender: "This helps estimate your baseline needs.",
+    womenHealth:
+      "Mark your current life stage. I will adapt goals, guidance, and reminders without pressure.",
     height: "Height sharpens the goal calculation.",
     goal: "Pick the direction: fat loss, muscle gain, or stability.",
     friction: "Tell me what usually throws you off. I will adapt the support.",
@@ -101,6 +107,11 @@ const stepMeta: Record<string, StepMeta> = {
     placement: "floatBottom",
     mood: "happy",
   },
+  "/onboarding/women-health": {
+    key: "womenHealth",
+    placement: "peekRight",
+    mood: "coach",
+  },
   "/onboarding/height": {
     key: "height",
     placement: "peekLeft",
@@ -134,24 +145,26 @@ const stepMeta: Record<string, StepMeta> = {
 };
 
 const GUIDE_SIDE_RAIL = "max(24px, calc((100vw - 720px) / 2 - 300px))";
+const GUIDE_OUTSIDE_FORM_RAIL =
+  "max(24px, calc((100vw - 720px) / 2 - 430px))";
 
 const placementSx: Record<GuidePlacement, object> = {
   peekLeft: {
-    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    right: { lg: GUIDE_OUTSIDE_FORM_RAIL },
     top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   peekRight: {
-    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    right: { lg: GUIDE_OUTSIDE_FORM_RAIL },
     top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   floatTop: {
-    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    right: { lg: GUIDE_SIDE_RAIL },
     top: { xs: 92, md: 118 },
   },
   floatBottom: {
-    right: { xs: 12, md: GUIDE_SIDE_RAIL },
+    right: { lg: GUIDE_SIDE_RAIL },
     bottom: { xs: 92, md: 94 },
   },
 };
@@ -202,6 +215,8 @@ const getGuideMessage = (copy: GuideCopy, key: StepMeta["key"]): string => {
       return copy.age;
     case "gender":
       return copy.gender;
+    case "womenHealth":
+      return copy.womenHealth;
     case "height":
       return copy.height;
     case "goal":
@@ -344,6 +359,10 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
     return "none";
   }, [placement]);
 
+  if (fieldFocused) {
+    return null;
+  }
+
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       <Box
@@ -359,7 +378,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
           position: "fixed",
           zIndex: 1250,
           pointerEvents: "none",
-          display: { xs: "none", sm: "block" },
+          display: { xs: "none", lg: "block" },
           maxWidth: 360,
           ...resolvePlacementSx(placement),
           transform,

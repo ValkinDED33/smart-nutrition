@@ -1330,6 +1330,20 @@ addCheck(
 );
 
 addCheck(
+  "mongodb user writes omit nullable Telegram connection fields",
+  mongoStorageSource.includes("const stripNullableTelegramConnection = (user) =>") &&
+    mongoStorageSource.includes("delete nextUser.telegramChatId") &&
+    mongoStorageSource.includes("delete nextUser.telegramConnectedAt") &&
+    mongoStorageSource.includes("const createUserSetMutation = (user) =>") &&
+    mongoStorageSource.includes("telegramChatId: \"\"") &&
+    mongoStorageSource.includes("telegramConnectedAt: \"\"") &&
+    mongoStorageSource.includes("const doc = stripNullableTelegramConnection({") &&
+    mongoStorageSource.includes("createUserSetMutation({ ...user, ...roleFields })") &&
+    mongoStorageSource.includes("createUserSetMutation({ ...nextUser, ...roleFields }),"),
+  "Mongo user inserts and combined profile/user saves must omit and unset empty Telegram connection fields so ordinary users do not collide on the sparse unique telegramChatId index."
+);
+
+addCheck(
   "expired token cleanup is scheduled outside the request hot path",
   serverIndexSource.includes("const runTokenCleanup = () =>") &&
     serverIndexSource.includes("scheduleTokenCleanup(serverConfig.tokenCleanupIntervalMs)") &&

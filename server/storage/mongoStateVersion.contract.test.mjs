@@ -37,4 +37,20 @@ describe("Mongo state version contract", () => {
     expect(writeCalls).toHaveLength(7);
     expect(guardedCalls).toHaveLength(writeCalls.length);
   });
+
+  it("does not write nullable Telegram connection fields into Mongo user documents", () => {
+    expect(mongoStorageSource).toContain("const stripNullableTelegramConnection = (user) =>");
+    expect(mongoStorageSource).toContain("delete nextUser.telegramChatId");
+    expect(mongoStorageSource).toContain("delete nextUser.telegramConnectedAt");
+    expect(mongoStorageSource).toContain("const createUserSetMutation = (user) =>");
+    expect(mongoStorageSource).toContain("telegramChatId: \"\"");
+    expect(mongoStorageSource).toContain("telegramConnectedAt: \"\"");
+    expect(mongoStorageSource).toContain("const doc = stripNullableTelegramConnection({");
+    expect(mongoStorageSource).toContain(
+      "createUserSetMutation({ ...user, ...roleFields })"
+    );
+    expect(mongoStorageSource).toContain(
+      "createUserSetMutation({ ...nextUser, ...roleFields }),"
+    );
+  });
 });

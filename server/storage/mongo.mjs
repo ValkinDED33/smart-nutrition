@@ -158,6 +158,33 @@ const stripUndefined = (value) => {
   );
 };
 
+const stripNullableTelegramConnection = (user) => {
+  const nextUser = stripUndefined(user);
+
+  if (!toTrimmedString(nextUser.telegramChatId)) {
+    delete nextUser.telegramChatId;
+    delete nextUser.telegramConnectedAt;
+  }
+
+  return nextUser;
+};
+
+const createUserSetMutation = (user) => {
+  const $set = stripNullableTelegramConnection(user);
+
+  if (toTrimmedString(user?.telegramChatId)) {
+    return { $set };
+  }
+
+  return {
+    $set,
+    $unset: {
+      telegramChatId: "",
+      telegramConnectedAt: "",
+    },
+  };
+};
+
 const parseJson = (value, fallback) => {
   if (typeof value !== "string" || value.length === 0) {
     return fallback;
@@ -1154,7 +1181,7 @@ export const createMongoStorage = async (config) => {
 
     insertUser: async (user) => {
       const appRole = toAppUserRole(user.role ?? "USER");
-      const doc = stripUndefined({
+      const doc = stripNullableTelegramConnection({
         ...user,
         emailVerified: user.emailVerified !== false,
         verificationChannel: isVerificationChannel(user.verificationChannel)
@@ -1223,7 +1250,7 @@ export const createMongoStorage = async (config) => {
 
       await collections.users.updateOne(
         { id: user.id },
-        { $set: stripUndefined({ ...user, ...roleFields }) }
+        createUserSetMutation({ ...user, ...roleFields })
       );
       return getResolvedUser(user.id);
     },
@@ -1294,7 +1321,7 @@ export const createMongoStorage = async (config) => {
 
           const userUpdate = await collections.users.updateOne(
             { id: userId },
-            { $set: stripUndefined({ ...nextUser, ...roleFields }) },
+            createUserSetMutation({ ...nextUser, ...roleFields }),
             { session }
           );
 
@@ -1342,7 +1369,7 @@ export const createMongoStorage = async (config) => {
 
         const userUpdate = await collections.users.updateOne(
           { id: userId },
-          { $set: stripUndefined({ ...nextUser, ...roleFields }) }
+          createUserSetMutation({ ...nextUser, ...roleFields })
         );
 
         if (userUpdate.matchedCount === 0) {
