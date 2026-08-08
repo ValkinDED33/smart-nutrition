@@ -74,6 +74,9 @@ const onboardingGoalSource = readSource("src/pages/onboarding/OnboardingGoalPage
 const onboardingMotivationSource = readSource(
   "src/pages/onboarding/OnboardingMotivationPage.tsx"
 );
+const onboardingChoiceSource = readSource(
+  "src/pages/onboarding/OnboardingChoicePage.tsx"
+);
 const onboardingFinishSource = readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
 const onboardingPageSource = readSource("src/pages/OnboardingPage.tsx");
 const assistantDisplayNameSource = readSource(
@@ -1396,6 +1399,22 @@ addCheck(
       '<Route index element={<Navigate to={stepPaths.choice} replace />} />'
     ),
   "Authenticated users who still need onboarding must land on the explicit continue-or-skip choice, not a root onboarding screen that feels like language/theme setup is being repeated."
+);
+
+addCheck(
+  "onboarding finish-later is backend-confirmed, not a route-only skip",
+  onboardingPageSource.includes("<OnboardingChoicePage {...stepProps} />") &&
+    onboardingChoiceSource.includes('data-onboarding-finish-later="backend-confirmed"') &&
+    onboardingChoiceSource.includes("useProfileCloudAction") &&
+    onboardingChoiceSource.includes("profileAction.runProfileStateSave(nextProfile, completedAt)") &&
+    onboardingChoiceSource.includes("setAssistantCustomization") &&
+    onboardingChoiceSource.includes("completeOnboarding();") &&
+    onboardingChoiceSource.includes("clearPreAuthOnboardingDraft();") &&
+    onboardingChoiceSource.includes('navigate("/dashboard", { replace: true })') &&
+    !onboardingChoiceSource.includes(
+      'onClick={() => navigate("/dashboard", { replace: true })}'
+    ),
+  "Choosing to finish onboarding later must be a cloud-confirmed profile-state update. It cannot be a fake dashboard navigation that loops back to onboarding or marks local-only completion."
 );
 
 addCheck(

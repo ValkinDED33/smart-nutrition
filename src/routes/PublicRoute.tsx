@@ -58,7 +58,7 @@ const PublicRoute = ({ children }: PublicRouteProps) => {
   }
 
   if (isInitialized && user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

@@ -1,8 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { useSelector } from "react-redux";
+import { Alert, Box, Button, Chip, CircularProgress, Paper, Stack, Typography } from "@mui/material";
+import type { RootState } from "../../app/store";
+import profileReducer, {
+  setAssistantCustomization,
+  setProfileLanguage,
+} from "../../features/profile/profileSlice";
+import { getProfileCloudActionCopy } from "../../features/profile/profileCloudActionCopy";
+import { useProfileCloudAction } from "../../features/profile/useProfileCloudAction";
+import { clearPreAuthOnboardingDraft } from "../../features/onboarding/model/onboardingDraft";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
-import { cardSx, shellSx, stepPaths } from "./types";
+import { cardSx, shellSx, stepPaths, type OnboardingStepProps } from "./types";
 
 const choiceCopy = {
   uk: {
@@ -13,6 +22,7 @@ const choiceCopy = {
     chips: ["Калорії без ручної математики", "Вода і нагадування", "Підказки AI"],
     start: "Так, заповнити зараз",
     later: "Пізніше",
+    savingLater: "Зберігаю вибір...",
   },
   pl: {
     title: "Uzupełnić ankietę teraz?",
@@ -22,6 +32,7 @@ const choiceCopy = {
     chips: ["Kalorie bez ręcznej matematyki", "Woda i przypomnienia", "Wskazówki AI"],
     start: "Tak, wypełnij teraz",
     later: "Później",
+    savingLater: "Zapisuję wybór...",
   },
   en: {
     title: "Complete your profile now?",
@@ -31,6 +42,7 @@ const choiceCopy = {
     chips: ["Calories without manual math", "Water and reminders", "AI guidance"],
     start: "Yes, do it now",
     later: "Later",
+    savingLater: "Saving choice...",
   },
 } as const;
 
@@ -46,10 +58,52 @@ const getChoiceCopy = (language: ReturnType<typeof useLanguage>["appLanguage"]) 
   }
 };
 
-export const OnboardingChoicePage = () => {
+export const OnboardingChoicePage = ({ state }: OnboardingStepProps) => {
   const navigate = useNavigate();
-  const { appLanguage } = useLanguage();
+  const user = useSelector((rootState: RootState) => rootState.auth.user);
+  const profile = useSelector((rootState: RootState) => rootState.profile);
+  const { appLanguage, completeOnboarding } = useLanguage();
   const copy = getChoiceCopy(appLanguage);
+  const profileAction = useProfileCloudAction(getProfileCloudActionCopy(appLanguage));
+
+  const finishLater = async () => {
+    if (!user || profileAction.saving) {
+      if (!user) {
+        navigate("/register", { replace: true });
+      }
+      return;
+    }
+
+    const completedAt = new Date().toISOString();
+    const nextProfile = profileReducer(
+      profileReducer(profile, setProfileLanguage(appLanguage)),
+      setAssistantCustomization({
+        onboarding: {
+          ...profile.assistant.onboarding,
+          preferredName:
+            profile.assistant.onboarding.preferredName.trim() || user.name.trim(),
+          primaryGoalNote: state.primaryGoalNote,
+          goalSelections: state.selectedGoals,
+          mainFriction: state.mainFriction,
+          mainFrictions: state.mainFrictions,
+          motivationStyle: state.motivationStyle,
+          motivationStyles: state.motivationStyles,
+          supportNote: state.supportNote,
+          completedAt,
+        },
+      })
+    );
+
+    try {
+      await profileAction.runProfileStateSave(nextProfile, completedAt);
+      clearPreAuthOnboardingDraft();
+      completeOnboarding();
+      navigate("/dashboard", { replace: true });
+    } catch {
+      // useProfileCloudAction exposes the localized error below. Do not navigate
+      // until the backend confirms that onboarding can be resumed later.
+    }
+  };
 
   return (
     <Box sx={shellSx}>
@@ -129,10 +183,16 @@ export const OnboardingChoicePage = () => {
           </Box>
 
           <Stack spacing={1.2}>
+            {profileAction.error && (
+              <Alert severity="error" sx={{ borderRadius: 1 }}>
+                {profileAction.error}
+              </Alert>
+            )}
             <Button
               variant="contained"
               size="large"
               onClick={() => navigate(stepPaths.gender)}
+              disabled={profileAction.saving}
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >
               {copy.start}
@@ -140,10 +200,15 @@ export const OnboardingChoicePage = () => {
             <Button
               variant="outlined"
               size="large"
-              onClick={() => navigate("/dashboard", { replace: true })}
+              onClick={() => void finishLater()}
+              disabled={profileAction.saving}
+              startIcon={
+                profileAction.saving ? <CircularProgress size={18} color="inherit" /> : undefined
+              }
+              data-onboarding-finish-later="backend-confirmed"
               sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
             >
-              {copy.later}
+              {profileAction.saving ? copy.savingLater : copy.later}
             </Button>
           </Stack>
         </Stack>

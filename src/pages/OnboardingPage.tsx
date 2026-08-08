@@ -288,7 +288,7 @@ const OnboardingPage = () => {
       <Routes>
         <Route index element={<Navigate to={stepPaths.choice} replace />} />
         <Route path="welcome" element={<OnboardingWelcomePage />} />
-        <Route path="choice" element={<OnboardingChoicePage />} />
+        <Route path="choice" element={<OnboardingChoicePage {...stepProps} />} />
         <Route path="assistant" element={<OnboardingAssistantPage {...stepProps} />} />
         <Route path="name" element={<OnboardingNamePage {...stepProps} />} />
         <Route path="age" element={<OnboardingAgePage {...stepProps} />} />

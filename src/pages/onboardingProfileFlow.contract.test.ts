@@ -84,6 +84,10 @@ describe("onboarding and profile flow contract", () => {
     const verifyEmailSource = await readSource("src/pages/VerifyEmailPage.tsx");
     const onboardingSource = await readSource(ONBOARDING_PAGE_PATH);
     const choiceSource = await readSource("src/pages/onboarding/OnboardingChoicePage.tsx");
+    const loginSource = await readSource("src/pages/LoginPage.tsx");
+    const publicRouteSource = await readSource("src/routes/PublicRoute.tsx");
+    const protectedRouteSource = await readSource("src/routes/ProtectedRoute.tsx");
+    const appSource = await readSource("src/App.tsx");
 
     expect(verifyEmailSource).toContain('"/onboarding/choice"');
     expect(verifyEmailSource).toContain("useProfileCloudAction");
@@ -96,7 +100,19 @@ describe("onboarding and profile flow contract", () => {
     expect(onboardingSource).toContain('path="choice"');
     expect(onboardingSource).toContain("OnboardingChoicePage");
     expect(choiceSource).toContain("navigate(stepPaths.gender)");
+    expect(choiceSource).toContain('data-onboarding-finish-later="backend-confirmed"');
+    expect(choiceSource).toContain("useProfileCloudAction");
+    expect(choiceSource).toContain("profileAction.runProfileStateSave(nextProfile, completedAt)");
+    expect(choiceSource).toContain("completeOnboarding();");
+    expect(choiceSource).toContain("clearPreAuthOnboardingDraft();");
+    expect(choiceSource).toContain("setAssistantCustomization");
     expect(choiceSource).toContain('navigate("/dashboard", { replace: true })');
+    expect(choiceSource).not.toContain('onClick={() => navigate("/dashboard", { replace: true })}');
+    expect(loginSource).toContain('navigate("/dashboard")');
+    expect(publicRouteSource).toContain('to="/dashboard"');
+    expect(protectedRouteSource).toContain('to="/dashboard"');
+    expect(appSource).toContain('path="/home"');
+    expect(appSource).toContain('to={shouldShowOnboarding ? ONBOARDING_ENTRY_PATH : "/dashboard"}');
     expect(choiceSource).toContain("AssistantAvatar");
     expect(choiceSource).toContain("Calories without manual math");
   });

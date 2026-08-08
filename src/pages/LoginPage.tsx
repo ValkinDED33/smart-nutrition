@@ -115,7 +115,7 @@ const LoginPage = () => {
         pendingSyncChanges: hydrationResult.syncOutbox.pendingChanges,
       });
 
-      navigate("/home");
+      navigate("/dashboard");
     } catch (error) {
       if (error instanceof AuthApiError) {
         if (error.code === "TOO_MANY_ATTEMPTS") {
