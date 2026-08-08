@@ -49,6 +49,7 @@ export interface OnboardingState {
   motivationStyle: AssistantMotivationStyle;
   motivationStyles: AssistantMotivationStyle[];
   supportNote: string;
+  personalizationCompleted: boolean;
   weight: number;
 }
 

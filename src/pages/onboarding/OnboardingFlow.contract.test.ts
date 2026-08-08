@@ -7,19 +7,28 @@ const ONBOARDING_PAGE_PATH = "src/pages/OnboardingPage.tsx";
 describe("Onboarding flow contract", () => {
   it("does not ask authenticated users to choose language again at onboarding root", async () => {
     const source = await readSource(ONBOARDING_PAGE_PATH);
+    const appSource = await readSource("src/App.tsx");
 
     expect(source).toContain(
       '<Route index element={<Navigate to={stepPaths.choice} replace />} />'
     );
+    expect(source).toContain(
+      '<Route path="*" element={<Navigate to={stepPaths.choice} replace />} />'
+    );
+    expect(source).not.toContain(
+      '<Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />'
+    );
     expect(source).toContain('path="welcome" element={<OnboardingWelcomePage />}');
+    expect(appSource).toContain('const ONBOARDING_ENTRY_PATH = "/onboarding/choice"');
+    expect(appSource).toContain("to={ONBOARDING_ENTRY_PATH}");
   });
 
   it("preserves unfinished female onboarding draft over default registration user values", async () => {
     const source = await readSource(ONBOARDING_PAGE_PATH);
 
-    expect(source).toContain(
-      '!onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male"'
-    );
+    expect(source).toContain("? draft.gender");
+    expect(source).toContain("? \"female\"");
+    expect(source).toContain(": user?.gender ?? \"male\"");
     expect(source).toContain(
       "!onboardingCompleted && hasDraft ? draft.age : user?.age ?? 25"
     );
@@ -39,6 +48,7 @@ describe("Onboarding flow contract", () => {
 
     expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
     expect(source).toContain("shouldUseProfileWomenHealth");
+    expect(source).toContain('shouldUseProfileWomenHealth\n              ? "female"');
     expect(source).toContain("profile.womenHealth.mode");
     expect(source).toContain("profile.womenHealth.pregnancyWeek");
     expect(source).toContain("profile.womenHealth.notes");
@@ -68,5 +78,20 @@ describe("Onboarding flow contract", () => {
     expect(ageSource).not.toContain("stepPaths.womenHealth : stepPaths.height");
     expect(heightSource).toContain("onClick={() => navigate(stepPaths.age)}");
     expect(heightSource).not.toContain("stepPaths.womenHealth : stepPaths.age");
+  });
+
+  it("lets users finish after core profile or continue into optional personalization without completing onboarding", async () => {
+    const goalSource = await readSource("src/pages/onboarding/OnboardingGoalPage.tsx");
+    const motivationSource = await readSource(
+      "src/pages/onboarding/OnboardingMotivationPage.tsx"
+    );
+    const finishSource = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+
+    expect(goalSource).toContain("navigate(stepPaths.finish)");
+    expect(finishSource).toContain("const continuePersonalization = () =>");
+    expect(finishSource).toContain("navigate(stepPaths.friction)");
+    expect(finishSource).not.toContain('saveOnboarding("/profile")');
+    expect(motivationSource).toContain("personalizationCompleted: true");
+    expect(motivationSource).toContain("navigate(stepPaths.finish)");
   });
 });

@@ -284,6 +284,7 @@ describe("assistantRuntime", () => {
   it("keeps pregnancy-aware guidance safe and clinician-bound", () => {
     const context = createContext({
       language: "en",
+      gender: "male",
       womenHealth: {
         ...createDefaultWomenHealthState(),
         mode: "pregnant",

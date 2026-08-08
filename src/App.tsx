@@ -61,6 +61,7 @@ const VerifyEmailPage = lazy(loadVerifyEmailPage);
 const ForgotPasswordPage = lazy(loadForgotPasswordPage);
 const ResetPasswordPage = lazy(loadResetPasswordPage);
 const NotFoundPage = lazy(loadNotFoundPage);
+const ONBOARDING_ENTRY_PATH = "/onboarding/choice";
 
 const RouteFallback = () => <Loader fullScreen={false} size={80} />;
 
@@ -275,7 +276,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <DashboardPage />
                     )}
@@ -287,7 +288,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <Navigate to="/meals" replace />
                     )}
@@ -299,7 +300,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <MealsPage />
                     )}
@@ -311,7 +312,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <RecipesPage />
                     )}
@@ -323,7 +324,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <CommunityPage />
                     )}
@@ -335,7 +336,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <CoachPage />
                     )}
@@ -347,7 +348,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <ProgressPage />
                     )}
@@ -359,7 +360,7 @@ function App() {
                 element={
                   <ProtectedRoute>
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <ProfilePage />
                     )}
@@ -373,7 +374,7 @@ function App() {
                     roles={adminRouteRoles}
                   >
                     {shouldShowOnboarding ? (
-                      <Navigate to="/onboarding" replace />
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <AdminPage />
                     )}
@@ -384,7 +385,7 @@ function App() {
                 path="/home"
                 element={
                   <Navigate
-                    to={shouldShowOnboarding ? "/onboarding" : "/dashboard"}
+                    to={shouldShowOnboarding ? ONBOARDING_ENTRY_PATH : "/dashboard"}
                     replace
                   />
                 }
@@ -402,7 +403,7 @@ function App() {
                 path="*"
                 element={
                   shouldShowOnboarding ? (
-                    <Navigate to="/onboarding" replace />
+                    <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                   ) : (
                     <NotFoundPage />
                   )

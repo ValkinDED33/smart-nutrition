@@ -48,6 +48,7 @@ export interface PreAuthOnboardingDraft {
   motivationStyle: AssistantMotivationStyle;
   motivationStyles: AssistantMotivationStyle[];
   supportNote: string;
+  personalizationCompleted: boolean;
 }
 
 const defaultPreAuthOnboardingDraft = (
@@ -82,6 +83,7 @@ const defaultPreAuthOnboardingDraft = (
   motivationStyle: "gentle",
   motivationStyles: ["gentle"],
   supportNote: "",
+  personalizationCompleted: false,
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -331,6 +333,7 @@ const normalizePreAuthOnboardingDraft = (
     motivationStyles: normalizeMotivationStyles(record.motivationStyles, motivationStyle),
     supportNote:
       typeof record.supportNote === "string" ? record.supportNote.slice(0, 220) : "",
+    personalizationCompleted: Boolean(record.personalizationCompleted),
   };
 };
 

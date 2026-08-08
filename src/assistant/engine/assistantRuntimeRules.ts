@@ -694,7 +694,7 @@ const getPersonalContactLine = (context: AssistantRuntimeContext) => {
 const getWomenHealthLine = (context: AssistantRuntimeContext) => {
   const womenHealth = context.womenHealth;
 
-  if (context.gender !== "female" || womenHealth.mode === "none") {
+  if (womenHealth.mode === "none") {
     return "";
   }
 

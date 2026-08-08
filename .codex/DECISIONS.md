@@ -188,3 +188,80 @@
 - Context: Registration, password reset, and partner invitations depend on transactional email. A single provider quota, outage, timeout, or domain reputation issue must not silently break account creation, but adding separate mailers per feature would create duplicate delivery logic and fake success risks.
 - Decision: `server/services/emailService.mjs` is the canonical transactional email service. Brevo is the primary provider when `SMART_NUTRITION_BREVO_API_KEY` is configured, protected by timeout and transient retry handling. Resend remains the reserve provider when configured. UI success may be shown only after the canonical service returns `ok: true`; delivery failure must remain an honest retry/edit recovery state.
 - Consequences: New transactional emails must use the canonical email service instead of direct provider calls. Provider errors may be logged only as sanitized codes/status/messages. Release checks and contract audit must keep Brevo primary, retry/timeout protection, and Resend fallback in place.
+
+## ADR-028: Onboarding Is A Recoverable State Machine
+
+- Status: Accepted.
+- Context: Registration, email verification, language/theme setup, profile questions, women-health context, optional personalization, and app entry can drift into route-driven traps if each page decides completion on its own.
+- Decision: Onboarding completion is a single backend-confirmed profile/user save contract. `Finish setup` may mark onboarding complete only after the canonical profile save succeeds. `Continue` must keep onboarding open and route to remaining personalization instead of saving completion or navigating to profile as a disguised finish action.
+- Consequences: Onboarding routes are navigation only, not source of truth. Draft answers must be preserved on save failure, retry must be explicit, and users must be able to go back without losing entered data. Final save conflict recovery must replay the same onboarding answer patch on top of the freshly recovered cloud profile so women-health/family context is not lost. Authenticated users who still need setup must enter through `/onboarding/choice`, not a flow that feels like language/theme setup is being repeated. Future family, pregnancy, assistant, and preference questions must extend this state machine rather than adding a second onboarding flow.
+
+## ADR-029: Backend Capabilities Must Be Honest
+
+- Status: Accepted.
+- Context: Repository and service wrappers can accidentally expose optional storage methods even when the active adapter does not implement them, creating fake atomic paths and hiding partial-write risk behind `null` fallbacks.
+- Decision: Optional backend capabilities, including atomic user+profile persistence, may be exposed only when the active storage adapter implements the method. Unsupported capabilities must be absent, not present-but-null.
+- Consequences: Routes and services must branch on real method availability. New storage adapters must either implement the canonical capability completely or leave it absent so callers can use explicit fallback/error behavior instead of assuming backend-confirmed atomic success.
+
+## ADR-030: Women-Health Access Must Be Visible
+
+- Status: Accepted.
+- Context: Smart Nutrition already keeps pregnancy, planning, postpartum, baby preview, and family support inside canonical profile cloud state, but eligible users can reasonably experience the feature as missing if it is reachable only through a hidden or horizontally buried profile tab.
+- Decision: Female accounts and accounts with women-health/family context must expose an obvious visible entrypoint into the canonical `women-health` profile section. The entrypoint may be a profile/header/app shortcut, but it must route to the existing profile-owned section instead of creating a second women-health app, local store, or duplicate family dashboard.
+- Consequences: Discoverability is part of the contract. Future UI changes must keep eligible users able to find women-health features, while all saves and sharing continue through canonical profile cloud and permission-scoped family contracts.
+
+## ADR-031: Combined Profile-State Success Requires Complete Canonical Records
+
+- Status: Accepted.
+- Context: `/api/auth/profile-state` updates both account-facing user fields and profile state. If storage returns an incomplete result, response shaping can crash into a generic `500`, or the UI can be tempted to treat a partial save as success.
+- Decision: Combined profile-state saves may return success only when backend persistence returns both confirmed `user` and `profile` records. Missing or malformed records must be rejected as `STATE_SYNC_UNAVAILABLE` with recoverable `503` behavior.
+- Consequences: Onboarding/profile saves stay honest: no fake success, no partial local confirmation, and no raw `toPublicUser` crashes. Tests and contract audit must keep the complete-result guard in place.
+
+## ADR-032: Onboarding Completion Failures Are Recoverable, Not 500 Traps
+
+- Status: Accepted.
+- Context: A female/new-user onboarding finish can be blocked if `/api/auth/profile-state` exposes ordinary storage failures as generic `500` responses or if stale onboarding URLs route back into the assistant/language step.
+- Decision: Unexpected profile-state persistence or snapshot-meta failures during combined onboarding/profile completion must be converted to `STATE_SYNC_UNAVAILABLE` with public `503` recovery copy. Unknown onboarding routes must return to the explicit onboarding choice step, not to assistant/language setup.
+- Consequences: Users can retry or go back without losing draft answers, female/women-health context remains part of the canonical save contract, and future changes must prove onboarding completion through local tests plus authenticated production smoke after deployment.
+
+## ADR-033: Git Pushes Are Coherent Checkpoints
+
+- Status: Accepted.
+- Context: Pushing after every small edit creates noisy history, CI debugging loops, and partial production states that conflict with the project's stabilization-first policy.
+- Decision: Work should stay local until a coherent validated development batch, substantial milestone, or explicit user request is ready. A push is a release/checkpoint act, not a progress heartbeat.
+- Consequences: Local validation, root-cause fixes, and implementation ledgers come before GitHub updates. Commit messages should remain meaningful and project-standard, and CI should be final verification rather than the primary debugger.
+
+## ADR-034: AI Lifecycle Context Comes From Profile State
+
+- Status: Accepted.
+- Context: Women-health, pregnancy, planning, postpartum, symptoms, baby-preview, and family lifecycle data are saved in canonical profile state. Auth/user snapshots can lag during registration, onboarding, refresh, or recovery, which can make web AI, backend AI, or Telegram behave as if the context is missing.
+- Decision: Web assistant, backend AI, and Telegram assistant context must preserve saved `womenHealth` profile state whenever it exists. `user.gender` may be a helpful display or eligibility hint, but it must not be the only gate for passing canonical lifecycle context to the assistant.
+- Consequences: The assistant can support pregnancy/family scenarios from real saved profile data even after stale session snapshots. Unfinished onboarding must also seed female-context state from saved `womenHealth` data before user gender fallback so final completion cannot erase lifecycle answers. Future web AI, backend AI, Telegram, and onboarding context changes must avoid second lifecycle stores and must keep medical-safety boundaries.
+
+## ADR-035: Mongo Profile-State Writes Use Transactional Compare-And-Set
+
+- Status: Accepted.
+- Context: Profile-state saves touch canonical user/profile/snapshot records and may arrive from multiple devices, refresh recovery, onboarding retry, Telegram, or future mobile sessions. A separate version read followed by an unconditional write can lose a concurrent update.
+- Decision: MongoDB profile-state and full snapshot writes must compare the expected `updatedAt` cloud version inside the `states.updateOne` filter and inspect `matchedCount`. Combined profile/user saves must run profile, state meta, and user updates in one transaction when MongoDB supports transactions.
+- Consequences: Parallel stale writes return `STATE_CONFLICT` instead of silently overwriting newer cloud state. Transaction bodies must avoid `Promise.all`; future storage changes must preserve backend-confirmed complete records or explicit recoverable sync failure.
+
+## ADR-036: GitHub Quality Gate Mirrors Local Stabilization
+
+- Status: Accepted.
+- Context: Smart Nutrition should not use GitHub Actions as a trial-and-error loop, but production deploys also must not bypass checks that local release work treats as mandatory.
+- Decision: The `Smart-Nutrition` GitHub workflow must run the local `quality` suite, dependency security audit, and production config validation on master pushes and pull requests. CI production config uses explicit non-secret CI-only values and must not require live production secrets.
+- Consequences: Broken lint, build, tests, bundle/SEO/dead-code audits, dependency/security issues, architecture violations, contract drift, or production config regressions block the checkpoint before deploy. Render still needs platform-side configuration to wait for this gate before promoting production.
+
+## ADR-037: Token Cleanup Is Scheduled Housekeeping
+
+- Status: Accepted.
+- Context: Expired session, reset, and verification tokens need cleanup, but running that cleanup from every API request couples ordinary user latency to global storage delete scans.
+- Decision: Token cleanup must run at startup and on the scheduled cleanup interval. Request routing must not call expired-token cleanup directly.
+- Consequences: Normal auth/product/profile requests avoid unnecessary storage cleanup work. Token cleanup failures are logged as housekeeping failures and retried by the scheduler instead of affecting unrelated user actions.
+
+## ADR-038: Password Reset Consumes Tokens After Password Persistence
+
+- Status: Accepted.
+- Context: Password reset is a recovery flow. If the reset token is consumed before the new password is saved, a transient storage failure can leave the user locked out with a burned recovery link and unchanged password.
+- Decision: Password reset must validate the token, persist the new password, revoke existing sessions, and only then consume/delete reset tokens.
+- Consequences: Storage failures during password update keep the reset token usable for retry. Tests and contract audit must preserve the ordering so recovery never reports or enforces a terminal state before backend persistence succeeds.

@@ -212,6 +212,24 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized profile avatar preset labels and accessibility copy so profile editing no longer exposes generic English `Avatar`/preset labels in Ukrainian or Polish UI.
 - Hardened transactional email delivery for registration, password reset, and partner invites: Brevo is the primary provider with timeout/retry protection, Resend remains the reserve provider, and provider error codes/messages are preserved in sanitized logs without pretending that failed mail was delivered.
 - Hardened onboarding restore for female/family profiles: saved canonical `womenHealth` profile context now seeds unfinished onboarding when no user-edited draft exists, and the onboarding page no longer creates a local draft before the user edits the questionnaire.
+- Separated final onboarding intents: after core profile answers, `Finish setup` is the only path that marks onboarding complete and enters the app; `Continue` keeps the draft open and routes into optional personalization, while failed final saves preserve the draft and show retry/back recovery.
+- Updated the locked DOMPurify runtime dependency after a sanitizer XSS advisory so production dependency audit and `npm audit --omit=dev` return clean.
+- Hardened final onboarding save conflict recovery: the finish step now replays the exact onboarding answer patch, including women-health/family context, on top of a freshly recovered cloud profile after `STATE_CONFLICT` instead of relying on a generic local draft merge.
+- Routed authenticated but unfinished users directly to `/onboarding/choice` from protected app routes and registration bootstrap so returning users choose whether to continue or finish setup instead of feeling forced back through language/theme setup.
+- Hardened profile-state capability detection: `upsertUserProfileAndState` and `saveProfileStateWithUser` are exposed only when the active storage adapter really supports atomic user+profile persistence, preventing fake atomic capability and partial-save drift.
+- Added an explicit women-health profile entrypoint for female/family-context accounts so pregnancy, planning, postpartum, baby preview, and family support are discoverable from the profile header while still routing into the canonical `women-health` profile section.
+- Hardened combined `/api/auth/profile-state` saves so incomplete user/profile persistence results are rejected as `STATE_SYNC_UNAVAILABLE` with recoverable `503` copy instead of throwing a generic `500` or returning fake success from a partial cloud save.
+- Extended `npm run email:check` from config-only diagnostics into an optional real delivery smoke: without `SMART_NUTRITION_EMAIL_CHECK_TO` it stays secret-safe, and with that explicit recipient it sends one canonical verification email through Brevo-primary/Resend-reserve delivery.
+- Stabilized the public landing first viewport: hero copy, CTA actions, and lightweight companion scene now occupy separate responsive zones so desktop/tablet layouts do not overlap text with the animated assistant, while mobile keeps a focused story-first entry before secondary discovery content.
+- Promoted the public landing companion capability slider into the first detailed section after the hero, with localized labels/tags and accessible previous/next controls so the landing page feels like a guided Smart Nutrition product story instead of a stack of generic feature cards.
+- Hardened onboarding/profile completion against unexpected profile-state storage failures: ordinary persistence errors now map to recoverable `STATE_SYNC_UNAVAILABLE` instead of live `500`, and stale/unknown onboarding routes return to the explicit choice step instead of the assistant/language step.
+- Hardened web assistant, backend AI, Telegram, and shared AI context so saved `womenHealth` profile state remains visible to the assistant even when the auth/user gender snapshot is stale; pregnancy, planning, postpartum, symptom, and family context now come from canonical profile state.
+- Hardened unfinished onboarding seeding so saved canonical `womenHealth` context sets the onboarding state to female-context before final save; this prevents a stale auth/user gender snapshot from erasing pregnancy or family answers at completion.
+- Locked MongoDB profile-state writes behind contract-audited transactional compare-and-set behavior: combined profile/user saves and full snapshot saves must compare `updatedAt` inside the write filter and avoid parallel writes inside transactions.
+- Strengthened the GitHub quality gate so master pushes and pull requests run the local `quality` suite, production dependency security audit, and production config validation with CI-only non-secret environment values.
+- Removed expired session/reset/verification token cleanup from the per-request API hot path; token cleanup now runs as startup/scheduled housekeeping and is protected by contract audit.
+- Hardened password reset ordering so the new password is persisted before the reset token is consumed, preventing transient storage failures from burning a user's recovery link.
+- Hardened the shared language menu focus contract so MUI menu auto-focus no longer causes `aria-hidden` focus warnings in desktop/mobile devtools.
 
 ## Current Architecture
 
@@ -259,6 +277,9 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Frontend auth API errors must preserve backend codes/status for control flow but must not pass raw backend/provider payload messages into `AuthApiError.message`; use stable product-language copy for login, registration, verification, recovery, profile, and session failures.
 - Platform/admin/catalog API errors must preserve typed codes and status for control flow, but visible surfaces must receive safe product-language messages from the platform client instead of raw backend/provider payload text.
 - Final onboarding/profile setup failures must not store or render raw exception text in sync outbox, sync status, or visible alerts; use localized profile recovery copy only.
+- Final onboarding save conflict recovery must replay the same typed onboarding patch on the latest backend profile snapshot before confirming completion, especially for female/women-health/family context.
+- Unfinished onboarding must seed female-context state from saved canonical `womenHealth` profile data before user snapshot gender fallback, otherwise final completion can erase pregnancy/planning/family answers.
+- Protected-route onboarding redirects must enter `/onboarding/choice`; the root onboarding route may redirect internally, but product entry must not feel like language/theme setup is being repeated after login.
 - Premium/profile status surfaces must localize visible plan labels, feature labels, and subscription statuses; raw enum values such as `inactive`, `trial`, `active`, or `cancelled` belong in state and tests, not ordinary UI.
 - PWA update prompts must explain user benefit and stability in localized product language; cache, deployment, and service-worker internals must stay out of ordinary UI.
 - Crash and lazy-section recovery prompts must describe safe screen recovery in localized product language; cache/file internals belong in recovery code and audits, not ordinary UI.
@@ -322,9 +343,18 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Women-health profile UI must render backend-confirmed symptom history with safety-bound, non-diagnostic language and no local persistence.
 - Women-health baby preview and related profile prediction fields are profile state; saves must use `useProfileCloudAction(...).runProfileStateSave(nextProfile)` with active-language copy, not direct component-local profile cloud sync and reducer replacement.
 - Combined user/profile-state saves must validate duplicate profile names before `saveProfileState`; a taken nickname must return safe `409 NAME_IN_USE` copy and must not write profile state before the user row can be safely updated.
+- Repository/service capability methods must be honest: `upsertUserProfileAndState` and `saveProfileStateWithUser` may exist only when the active storage adapter implements atomic user+profile persistence.
 - Mongo profile/state saves must preserve `STATE_CONFLICT` and `PROFILE_NOT_FOUND` semantics even when the deployment cannot run multi-document transactions; transaction fallback may be guarded, but it must not become fake local success or mask real backend conflicts.
+- Combined `/api/auth/profile-state` success requires both backend-confirmed `user` and `profile` records. Missing or malformed persistence results must return recoverable `STATE_SYNC_UNAVAILABLE`/`503` and must not fall through to `toPublicUser`, fake UI success, or partial local confirmation.
+- Unexpected storage or snapshot-meta failures during `/api/auth/profile-state` must also return recoverable `STATE_SYNC_UNAVAILABLE`; onboarding completion may not trap users behind a generic server error or route them back into language setup.
+- Transactional email diagnostics must distinguish configured providers from real delivery proof. `npm run email:check` without `SMART_NUTRITION_EMAIL_CHECK_TO` proves only configuration; with that explicit recipient it must use the canonical verification email service and report sanitized provider/code results.
 - Progress surfaces must keep visible labels, accessibility labels, and copied report text in the active language; English-only strings are allowed only inside the `en` copy branch.
 - Women-health profile navigation must use canonical `hasWomenHealthContext(profile.womenHealth)` in addition to `isWomenHealthVisibleForGender(user.gender)` so saved pregnancy/cycle/postpartum/symptom/family-preview state remains reachable after refresh, relogin, or stale auth snapshots.
+- Web assistant, backend AI, Telegram, and shared AI prompt/runtime context must preserve canonical saved `womenHealth` state when it exists; stale auth/user gender snapshots must not hide pregnancy, planning, postpartum, symptom, baby-preview, or family context from the assistant.
+- MongoDB profile-state and snapshot writes must use write-time compare-and-set on the canonical state version. Separate read-then-write optimistic checks are not enough because they can silently lose updates from another device.
+- GitHub quality checks must cover the same release-critical surface as local stabilization: lint, build, tests, bundle, SEO, dead-code, dependency, security, cycle, architecture, contracts, and production config validation.
+- Expired session/reset/verification token cleanup is housekeeping, not request handling. It must not run as a global storage delete scan on every API request.
+- Password reset must persist the new password before consuming the reset token or deleting reset-token records.
 - AI day summaries must be backend-backed read actions with an action receipt; generic model text is not enough when the user asks for the real day summary.
 - AI progress reports must be backend-backed read actions over canonical snapshot/profile/water/reminder state; generic model text is not enough when the user asks for weekly or monthly progress.
 - AI recipe creation must use canonical meal-template persistence and backend restore confirmation; prompt-only recipe ideas must not be shown as saved recipes.
@@ -337,6 +367,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Authenticated home hero story surfaces must reuse the same canonical AI Timeline model and existing assistant actions; hero visuals may feel magical, but they must not become a separate marketing widget, second insight engine, or decorative action surface.
 - Global floating assistant living notifications must be selected by `globalAssistantLayerModel` from real profile/day/sync signals and localized in `GlobalAssistantLayer`; they must not invent activity, health claims, saved actions, or use random/local-only state.
 - Living AI Interface is the long-term product pattern: ambient motion, aura, emotional companion reactions, predictive UI, AI memory moments, living notifications, and morphing surfaces must be subtle, useful, accessible, and backed by canonical state. They must not become decorative noise, fake personalization, diagnosis, guilt copy, or duplicated persistence.
+- Public landing hero composition must protect the first viewport as a focused product promise: copy, CTA, proof, and companion artwork may feel alive, but animated scene layers and secondary discovery blocks must not overlap text/buttons or crowd the first screen.
+- Public landing feature discovery must keep a coherent order: focused hero first, guided assistant capability slider second, deeper AI Discovery accordion after that. Slider labels, tags, and controls must follow the active app language.
 - Granular meal/product mutations (`/meal-entries`, `/meal-templates`, `/meal-products`, and `/meal/product-intake`) must return canonical backend `meal` state; frontend must not apply locally computed meal state as success for those granular contracts.
 - Product-intake catalog moderation failures may be retryable while the meal save succeeds, but API responses must not expose raw catalog/provider/backend exception text.
 - Product search/barcode resolution must not call external catalogs directly from the frontend.
@@ -422,6 +454,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Live owner/admin access is not active for the tested account until Render has `SMART_NUTRITION_SUPER_ADMIN_EMAIL` set to the real owner email and is redeployed.
 - Ignored/private env files and local browser profiles can contain sensitive machine-specific data; audits must avoid printing secrets and should scan committed templates separately.
 - Email deliverability is functional but at least one confirmation message landed in spam during live testing; DNS sender alignment and mailbox reputation need an external deliverability check outside code.
+- Live onboarding completion recently showed `PATCH /api/auth/profile-state` 500. Local code now maps unexpected persistence failures to `STATE_SYNC_UNAVAILABLE`, but production still needs a redeploy and authenticated smoke proof that onboarding finish saves user/profile state, refresh restores it, and female women-health access is visible.
 - Telegram reminder behavior can diverge from the app reminder/task model if legacy reminder naming is extended instead of migrated.
 - PWA stale chunks and service worker updates are guarded by preload recovery, service-worker cache bypass, explicit update UI, and a fallback reload path; real-device PWA smoke should still validate this after deploy.
 - Mobile safe areas, bottom navigation, keyboard resize, and camera overlays can break core flows.
@@ -431,6 +464,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 ## Technical Debt
 
 - Production status needs regular audit updates after real checks.
+- Render should be configured to deploy only after the GitHub `Smart-Nutrition` quality gate succeeds; code now defines the workflow, but platform-side deployment policy must still be confirmed outside the repository.
 - Architecture decisions need timestamps/status updates when contracts evolve.
 - Current risks should be retired only after code inspection and validation.
 - Smoke check evidence exists under `.codex/runtime-smoke` locally, but the directory is intentionally ignored; durable release notes should summarize results without committing screenshots unless explicitly requested.
@@ -445,18 +479,19 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 
 ## Next Highest-Impact Tasks
 
-1. Set `SMART_NUTRITION_SUPER_ADMIN_EMAIL` in Render to the real owner account email, redeploy Render, and verify `/api/admin/users` returns 200 for that account.
-2. Configure Redis before any horizontal backend scaling beyond one instance.
-3. Review large bundle chunks and lazy-load high-cost scanner, AI, companion, markdown, and vendor paths where safe.
-4. Complete reminder naming migration plan from legacy `medicationReminders` to canonical `reminders`.
-5. Run real-device mobile/PWA/Telegram WebView smoke checks for safe areas, keyboard, bottom nav, scanner camera permission, stale chunks, and service worker recovery.
-6. Build the next Family Wellness slice on top of canonical `familyLifecycleMode`: pregnancy screen data model, partner scoped dashboard, breastfeeding/baby transitions, and Telegram lifecycle message trace.
-7. Trace canonical product/meal intake end-to-end across manual add, photo add, scanner UI camera scan, and refresh/relogin restore.
-8. Check email deliverability DNS/reputation so verification messages stop landing in spam.
-9. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
-10. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
-11. Run `npm run audit:live` after every Render/Vercel redeploy that changes app URLs, CORS, SEO discovery, PWA assets, public health, or bundle startup behavior.
-12. Create/maintain a dedicated verified production smoke account and run `npm run audit:live:auth` with its credentials after auth, state, meal, reminder, Telegram status, or cookie changes.
+1. Redeploy Render/Vercel after the local onboarding/profile-state fixes, then verify onboarding finish saves profile/user state, refresh keeps the user authenticated, and the female women-health section is visible.
+2. Set `SMART_NUTRITION_SUPER_ADMIN_EMAIL` in Render to the real owner account email, redeploy Render, and verify `/api/admin/users` returns 200 for that account.
+3. Configure Redis before any horizontal backend scaling beyond one instance.
+4. Review large bundle chunks and lazy-load high-cost scanner, AI, companion, markdown, and vendor paths where safe.
+5. Complete reminder naming migration plan from legacy `medicationReminders` to canonical `reminders`.
+6. Run real-device mobile/PWA/Telegram WebView smoke checks for safe areas, keyboard, bottom nav, scanner camera permission, stale chunks, and service worker recovery.
+7. Build the next Family Wellness slice on top of canonical `familyLifecycleMode`: pregnancy screen data model, partner scoped dashboard, breastfeeding/baby transitions, and Telegram lifecycle message trace.
+8. Trace canonical product/meal intake end-to-end across manual add, photo add, scanner UI camera scan, and refresh/relogin restore.
+9. Check email deliverability DNS/reputation so verification messages stop landing in spam.
+10. Trace AI tool execution so saved actions and memory changes cannot be hallucinated.
+11. Submit and monitor SEO indexing externally after deployment: Search Console, Bing Webmaster, Yandex/Webmaster, and indexed-result appearance for Smart Nutrition brand queries.
+12. Run `npm run audit:live` after every Render/Vercel redeploy that changes app URLs, CORS, SEO discovery, PWA assets, public health, or bundle startup behavior.
+13. Create/maintain a dedicated verified production smoke account and run `npm run audit:live:auth` with its credentials after auth, state, meal, reminder, Telegram status, or cookie changes.
 
 ## Release Checklist
 

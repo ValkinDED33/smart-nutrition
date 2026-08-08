@@ -25,12 +25,16 @@ import {
   createCompanionRewardAnalyticsPayload,
 } from "@features/companion";
 import { applyCompanionRewardInCloud } from "@features/companion/companionCloudSync";
-import { clearPreAuthOnboardingDraft } from "../../features/onboarding/model/onboardingDraft";
+import {
+  clearPreAuthOnboardingDraft,
+  writePreAuthOnboardingDraft,
+} from "../../features/onboarding/model/onboardingDraft";
 import { enqueueSyncOutbox } from "../../shared/lib/syncOutbox";
 import {
   cardSx,
   personalityValues,
   shellSx,
+  stepPaths,
   type OnboardingStepProps,
 } from "./types";
 
@@ -45,8 +49,79 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const profileActionCopy = getProfileCloudActionCopy(appLanguage);
   const profileAction = useProfileCloudAction(profileActionCopy);
+  const canContinuePersonalization = !state.personalizationCompleted;
+  const recoveryBackPath = state.personalizationCompleted
+    ? stepPaths.motivation
+    : stepPaths.goal;
 
-  const saveOnboarding = async (nextPath: "/dashboard" | "/profile") => {
+  const preserveDraft = () => {
+    writePreAuthOnboardingDraft({
+      language: appLanguage,
+      assistantName: state.assistantName.trim(),
+      assistantAvatar: state.assistantAvatar,
+      assistantPersonality:
+        state.personality === "strict"
+          ? "focused"
+          : state.personality === "energetic"
+            ? "playful"
+            : state.personality === "supportive"
+              ? "gentle"
+              : state.personality,
+      userName: state.name.trim(),
+      age: state.age,
+      gender: state.gender,
+      womenHealthMode: state.gender === "female" ? state.womenHealthMode : "none",
+      pregnancyWeek:
+        state.gender === "female" && state.womenHealthMode === "pregnant"
+          ? state.pregnancyWeek
+          : null,
+      dueDate:
+        state.gender === "female" && state.womenHealthMode === "pregnant"
+          ? state.dueDate
+          : "",
+      lastPeriodStartDate:
+        state.gender === "female" &&
+        (state.womenHealthMode === "pregnant" ||
+          state.womenHealthMode === "trying_to_conceive")
+          ? state.lastPeriodStartDate
+          : "",
+      doctorConfirmed:
+        state.gender === "female" &&
+        (state.womenHealthMode === "pregnant" ||
+          state.womenHealthMode === "trying_to_conceive")
+          ? state.doctorConfirmed
+          : false,
+      womenHealthNotes: state.gender === "female" ? state.womenHealthNotes : "",
+      motherEyeColor: state.gender === "female" ? state.motherEyeColor : "unknown",
+      partnerEyeColor:
+        state.gender === "female" ? state.partnerEyeColor : "unknown",
+      motherZodiac: state.gender === "female" ? state.motherZodiac : "unknown",
+      fatherZodiac: state.gender === "female" ? state.fatherZodiac : "unknown",
+      motherChineseZodiac:
+        state.gender === "female" ? state.motherChineseZodiac : "unknown",
+      fatherChineseZodiac:
+        state.gender === "female" ? state.fatherChineseZodiac : "unknown",
+      height: state.height,
+      weight: state.weight,
+      goal: state.goal,
+      selectedGoals: state.selectedGoals,
+      primaryGoalNote: state.primaryGoalNote,
+      mainFriction: state.mainFriction,
+      mainFrictions: state.mainFrictions,
+      motivationStyle: state.motivationStyle,
+      motivationStyles: state.motivationStyles,
+      supportNote: state.supportNote,
+      personalizationCompleted: state.personalizationCompleted,
+    });
+  };
+
+  const continuePersonalization = () => {
+    setSaveError(null);
+    preserveDraft();
+    navigate(stepPaths.friction);
+  };
+
+  const saveOnboarding = async (nextPath: "/dashboard") => {
     if (!user) {
       navigate("/register", { replace: true });
       return;
@@ -182,27 +257,34 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
             motherChineseZodiac: "unknown" as const,
             fatherChineseZodiac: "unknown" as const,
           };
-    const nextProfile = profileReducer(
+    const applyOnboardingProfilePatch = (baseProfile: typeof profile) =>
       profileReducer(
         profileReducer(
           profileReducer(
-            profileReducer(profile, setProfileLanguage(appLanguage)),
-            setAssistantCustomization(assistantCustomization)
+            profileReducer(
+              profileReducer(baseProfile, setProfileLanguage(appLanguage)),
+              setAssistantCustomization(assistantCustomization)
+            ),
+            updatePersonalDetails({
+              eyeColor:
+                state.gender === "female"
+                  ? state.motherEyeColor
+                  : baseProfile.personalDetails.eyeColor,
+            })
           ),
-          updatePersonalDetails({
-            eyeColor:
-              state.gender === "female"
-                ? state.motherEyeColor
-                : profile.personalDetails.eyeColor,
-          })
+          applyProfileTargets(profileTargets)
         ),
-        applyProfileTargets(profileTargets)
-      ),
-      updateWomenHealth(womenHealthProfile)
-    );
+        updateWomenHealth(womenHealthProfile)
+      );
+    const nextProfile = applyOnboardingProfilePatch(profile);
 
     try {
-      await profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt);
+      await profileAction.runProfileAndUserSave(
+        nextUser,
+        nextProfile,
+        completedAt,
+        applyOnboardingProfilePatch
+      );
       clearPreAuthOnboardingDraft();
       completeOnboarding();
       let companionRewardPayload = {};
@@ -238,6 +320,7 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
       });
       navigate(nextPath, { replace: true });
     } catch {
+      preserveDraft();
       const message = t("error.genericProfile");
       dispatch(hydrateSyncOutbox(enqueueSyncOutbox(message)));
       dispatch(markSyncError(message));
@@ -259,8 +342,41 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
             <Typography color="text.secondary">{t("assistant.memoryReady")}</Typography>
           </Stack>
           {saveError && (
-            <Alert severity="error" sx={{ borderRadius: 3 }}>
-              {saveError}
+            <Alert
+              severity="error"
+              sx={{ borderRadius: 1 }}
+              data-onboarding-save-recovery="true"
+            >
+              <Stack spacing={1.2}>
+                <Typography sx={{ fontWeight: 800 }}>{saveError}</Typography>
+                <Typography variant="body2">
+                  {t("onboarding.saveRecoveryBody")}
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => void saveOnboarding("/dashboard")}
+                    disabled={saving}
+                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+                  >
+                    {saving ? t("auth.resetSaving") : t("onboarding.retrySave")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setSaveError(null);
+                      preserveDraft();
+                      navigate(recoveryBackPath);
+                    }}
+                    disabled={saving}
+                    sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+                  >
+                    {t("onboarding.backToAnswers")}
+                  </Button>
+                </Stack>
+              </Stack>
             </Alert>
           )}
 
@@ -274,15 +390,18 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
             >
               {saving ? t("auth.resetSaving") : t("onboarding.enterApp")}
             </Button>
-            <Button
-              variant="outlined"
-              size="large"
-              onClick={() => void saveOnboarding("/profile")}
-              disabled={saving}
-              sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
-            >
-              {t("onboarding.continueSetup")}
-            </Button>
+            {canContinuePersonalization && (
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={continuePersonalization}
+                disabled={saving}
+                data-onboarding-continue-personalization="true"
+                sx={{ borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+              >
+                {t("onboarding.continueSetup")}
+              </Button>
+            )}
           </Stack>
         </Stack>
       </Paper>

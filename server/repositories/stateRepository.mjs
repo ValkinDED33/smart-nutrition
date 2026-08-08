@@ -1,4 +1,5 @@
-export const createStateRepository = (storage) => ({
+export const createStateRepository = (storage) => {
+  const repository = {
   getSnapshotByUserId: (userId, user) => storage.getSnapshotByUserId(userId, user),
   getSnapshotMetaByUserId: (userId) => storage.getSnapshotMetaByUserId(userId),
   upsertSnapshot: (userId, snapshot, syncContext) =>
@@ -6,8 +7,6 @@ export const createStateRepository = (storage) => ({
   getProfileStateByUserId: (userId, user) => storage.getProfileStateByUserId(userId, user),
   upsertProfileState: (userId, profileState, syncContext) =>
     storage.upsertProfileState(userId, profileState, syncContext),
-  upsertUserProfileAndState: (userId, profileState, user, syncContext) =>
-    storage.upsertUserProfileAndState?.(userId, profileState, user, syncContext) ?? null,
   getMealStateByUserId: (userId) => storage.getMealStateByUserId(userId),
   upsertMealState: (userId, mealState, syncContext) =>
     storage.upsertMealState(userId, mealState, syncContext),
@@ -35,4 +34,12 @@ export const createStateRepository = (storage) => ({
     storage.upsertMealProduct(userId, bucketType, product, syncContext),
   removeMealProduct: (userId, bucketType, productKey, syncContext) =>
     storage.removeMealProduct(userId, bucketType, productKey, syncContext),
-});
+  };
+
+  if (typeof storage.upsertUserProfileAndState === "function") {
+    repository.upsertUserProfileAndState = (userId, profileState, user, syncContext) =>
+      storage.upsertUserProfileAndState(userId, profileState, user, syncContext);
+  }
+
+  return repository;
+};

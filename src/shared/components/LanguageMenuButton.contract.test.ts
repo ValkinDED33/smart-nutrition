@@ -10,6 +10,8 @@ describe("LanguageMenuButton contract", () => {
     expect(source).toContain("const trigger = event.currentTarget");
     expect(source).toContain("trigger.blur()");
     expect(source).toContain("setAnchorEl(trigger)");
+    expect(source).toContain("autoFocus={false}");
+    expect(source).toContain("disableAutoFocusItem");
     expect(source).toContain("disableRestoreFocus");
   });
 });

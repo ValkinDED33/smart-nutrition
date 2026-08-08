@@ -72,6 +72,23 @@ describe("route error handler", () => {
     expect(JSON.stringify(payload)).not.toContain("duplicate key");
   });
 
+  it("maps auth profile-state sync failures to a public 503 instead of a 500", () => {
+    const { handled, response, payload } = handleAndParse(
+      new AuthApiError(
+        "STATE_SYNC_UNAVAILABLE",
+        "Cannot read properties of null while saving profile-state"
+      )
+    );
+
+    expect(handled).toBe(true);
+    expect(response.statusCode).toBe(503);
+    expect(payload).toMatchObject({
+      code: "STATE_SYNC_UNAVAILABLE",
+      message: "Cloud profile sync is temporarily unavailable.",
+    });
+    expect(JSON.stringify(payload)).not.toContain("Cannot read properties");
+  });
+
   it("does not expose assistant provider details in public API errors", () => {
     const { handled, response, payload } = handleAndParse(
       new AssistantApiError(

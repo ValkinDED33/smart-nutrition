@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 const readSource = (path: string) => readFile(path, "utf8");
 const REGISTER_PAGE_PATH = "src/pages/RegisterPage.tsx";
 const ONBOARDING_PAGE_PATH = "src/pages/OnboardingPage.tsx";
+const ONBOARDING_FINISH_PAGE_PATH = "src/pages/onboarding/OnboardingFinishPage.tsx";
 
 describe("onboarding and profile flow contract", () => {
   it("keeps registration as a guided language-theme-account sequence with backend availability checks", async () => {
@@ -37,6 +38,7 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
     expect(registerSource).not.toContain("saveProfileStateToCloud");
     expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
+    expect(registerSource).toContain('navigate("/onboarding/choice")');
   });
 
   it("keeps password confirmation inside the same human password step", async () => {
@@ -99,6 +101,27 @@ describe("onboarding and profile flow contract", () => {
     expect(choiceSource).toContain("Calories without manual math");
   });
 
+  it("keeps finish-now and continue-personalization as separate onboarding intents", async () => {
+    const goalSource = await readSource("src/pages/onboarding/OnboardingGoalPage.tsx");
+    const motivationSource = await readSource(
+      "src/pages/onboarding/OnboardingMotivationPage.tsx"
+    );
+    const finishSource = await readSource(ONBOARDING_FINISH_PAGE_PATH);
+    const draftSource = await readSource(
+      "src/features/onboarding/model/onboardingDraft.ts"
+    );
+
+    expect(goalSource).toContain("navigate(stepPaths.finish)");
+    expect(motivationSource).toContain("personalizationCompleted: true");
+    expect(finishSource).toContain("const canContinuePersonalization = !state.personalizationCompleted");
+    expect(finishSource).toContain("const continuePersonalization = () =>");
+    expect(finishSource).toContain("navigate(stepPaths.friction)");
+    expect(finishSource).toContain('data-onboarding-continue-personalization="true"');
+    expect(finishSource).not.toContain('saveOnboarding("/profile")');
+    expect(finishSource).not.toContain('navigate("/profile"');
+    expect(draftSource).toContain("personalizationCompleted: boolean");
+  });
+
   it("keeps the post-confirmation questionnaire order user-friendly", async () => {
     const onboardingSource = await readSource(ONBOARDING_PAGE_PATH);
     const assistantSource = await readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
@@ -132,7 +155,7 @@ describe("onboarding and profile flow contract", () => {
 
   it("saves family preview onboarding data into the canonical profile contract", async () => {
     const onboardingSource = await readSource("src/pages/OnboardingPage.tsx");
-    const finishSource = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+    const finishSource = await readSource(ONBOARDING_FINISH_PAGE_PATH);
 
     expect(onboardingSource).toContain("motherEyeColor");
     expect(onboardingSource).toContain("partnerEyeColor");
@@ -140,9 +163,11 @@ describe("onboarding and profile flow contract", () => {
     expect(finishSource).toContain("updatePersonalDetails");
     expect(finishSource).toContain("useProfileCloudAction");
     expect(finishSource).toContain("getProfileCloudActionCopy");
+    expect(finishSource).toContain("const applyOnboardingProfilePatch =");
     expect(finishSource).toContain(
-      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
+      "profileAction.runProfileAndUserSave("
     );
+    expect(finishSource).toContain("applyOnboardingProfilePatch");
     expect(finishSource).not.toContain("saveProfileAndUserToCloud");
     expect(finishSource).not.toContain("replaceProfileState(nextProfile)");
     expect(finishSource).toContain("eyeColor:");
@@ -152,9 +177,14 @@ describe("onboarding and profile flow contract", () => {
   });
 
   it("keeps onboarding finish sync failures in product-language recovery copy", async () => {
-    const finishSource = await readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+    const finishSource = await readSource(ONBOARDING_FINISH_PAGE_PATH);
 
     expect(finishSource).toContain('const message = t("error.genericProfile")');
+    expect(finishSource).toContain("writePreAuthOnboardingDraft");
+    expect(finishSource).toContain("preserveDraft();");
+    expect(finishSource).toContain('data-onboarding-save-recovery="true"');
+    expect(finishSource).toContain('t("onboarding.retrySave")');
+    expect(finishSource).toContain('t("onboarding.backToAnswers")');
     expect(finishSource).toContain("enqueueSyncOutbox(message)");
     expect(finishSource).toContain("markSyncError(message)");
     expect(finishSource).not.toContain("error instanceof Error");

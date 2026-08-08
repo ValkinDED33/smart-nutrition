@@ -45,6 +45,10 @@ export const onboarding = {
     start: "Почати",
     continueSetup: "Продовжити",
     enterApp: "Завершити налаштування",
+    retrySave: "Спробувати зберегти ще раз",
+    backToAnswers: "Повернутися до відповідей",
+    saveRecoveryBody:
+      "Відповіді залишилися на цьому пристрої. Можна повторити збереження або повернутися назад без втрати анкети.",
     assistantPlaceholder: "Наприклад: Нова, Лумі, Мій помічник",
     namePlaceholder: "Твоє ім'я",
   },
@@ -94,6 +98,10 @@ export const onboarding = {
     start: "Zacznij",
     continueSetup: "Kontynuuj",
     enterApp: "Zakończ konfigurację",
+    retrySave: "Spróbuj zapisać ponownie",
+    backToAnswers: "Wróć do odpowiedzi",
+    saveRecoveryBody:
+      "Odpowiedzi zostały na tym urządzeniu. Możesz ponowić zapis albo wrócić bez utraty ankiety.",
     assistantPlaceholder: "Np. Nova, Lumi, Mój asystent",
     namePlaceholder: "Twoje imię",
   },
@@ -143,6 +151,10 @@ export const onboarding = {
     start: "Start",
     continueSetup: "Continue",
     enterApp: "Finish setup",
+    retrySave: "Try saving again",
+    backToAnswers: "Back to answers",
+    saveRecoveryBody:
+      "Your answers stayed on this device. You can retry saving or go back without losing the questionnaire.",
     assistantPlaceholder: "For example: Nova, Lumi, My assistant",
     namePlaceholder: "Your name",
   },

@@ -156,7 +156,7 @@ describe("ai.service", () => {
       context: {
         language: "pl",
         userName: "Ira",
-        gender: "female",
+        gender: "male",
         goal: "cut",
         dailyCalories: 2000,
         caloriesConsumed: 1600,

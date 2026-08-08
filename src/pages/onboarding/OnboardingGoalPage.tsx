@@ -79,7 +79,7 @@ export const OnboardingGoalPage = ({ state, updateState }: OnboardingStepProps) 
             </Button>
             <Button
               variant="contained"
-              onClick={() => navigate(stepPaths.friction)}
+              onClick={() => navigate(stepPaths.finish)}
               disabled={selectedGoals.length === 0}
               sx={{ flex: 1, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
             >

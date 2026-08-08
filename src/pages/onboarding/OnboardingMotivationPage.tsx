@@ -61,6 +61,7 @@ export const OnboardingMotivationPage = ({
         motivationStyle: selectedMotivationStyles[0] ?? "gentle",
         motivationStyles: selectedMotivationStyles,
         supportNote,
+        personalizationCompleted: true,
       })
     );
     navigate(stepPaths.finish);

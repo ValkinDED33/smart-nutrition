@@ -234,9 +234,9 @@ describe("profile settings persistence contract", () => {
 
     expect(source).toContain(USE_PROFILE_CLOUD_ACTION);
     expect(source).toContain(PROFILE_CLOUD_COPY_OWNER);
-    expect(source).toContain(
-      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
-    );
+    expect(source).toContain("const applyOnboardingProfilePatch =");
+    expect(source).toContain("profileAction.runProfileAndUserSave(");
+    expect(source).toContain("applyOnboardingProfilePatch");
     expect(source).not.toContain(SAVE_PROFILE_AND_USER_TO_CLOUD);
     expect(source).not.toContain(REPLACE_PROFILE_STATE);
   });

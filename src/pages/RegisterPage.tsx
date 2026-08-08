@@ -746,7 +746,7 @@ const RegisterPage = () => {
         language: appLanguage,
         ...companionRewardPayload,
       });
-      navigate("/onboarding");
+      navigate("/onboarding/choice");
     } catch (error) {
       if (error instanceof AuthApiError && error.code === "EMAIL_IN_USE") {
         setError("email", {

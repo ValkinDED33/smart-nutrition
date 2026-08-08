@@ -48,6 +48,7 @@ describe("onboardingDraft", () => {
       motivationStyle: "direct",
       motivationStyles: ["direct", "gentle"],
       supportNote: "Не тиснути, коли день пішов не за планом",
+      personalizationCompleted: true,
     });
 
     const draft = readPreAuthOnboardingDraft("uk");
@@ -71,6 +72,7 @@ describe("onboardingDraft", () => {
     expect(draft.motivationStyle).toBe("direct");
     expect(draft.motivationStyles).toEqual(["direct", "gentle"]);
     expect(draft.supportNote).toBe("Не тиснути, коли день пішов не за планом");
+    expect(draft.personalizationCompleted).toBe(true);
   });
 
   it("normalizes newer companion variants from stored data", () => {

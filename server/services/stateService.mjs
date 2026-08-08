@@ -195,7 +195,8 @@ const requireSnapshot = (value) => {
   };
 };
 
-export const createStateService = ({ stateRepository }) => ({
+export const createStateService = ({ stateRepository }) => {
+  const service = {
   getSnapshot: async (user) => stateRepository.getSnapshotByUserId(user.id, user),
 
   getSnapshotMeta: async (user) => stateRepository.getSnapshotMetaByUserId(user.id),
@@ -217,14 +218,6 @@ export const createStateService = ({ stateRepository }) => ({
       requireProfileState(profileState),
       syncContext
     ),
-
-  saveProfileStateWithUser: async (user, profileState, nextUser, syncContext = undefined) =>
-    stateRepository.upsertUserProfileAndState?.(
-      user.id,
-      requireProfileState(profileState),
-      nextUser,
-      syncContext
-    ) ?? null,
 
   getMealState: async (user) => stateRepository.getMealStateByUserId(user.id),
 
@@ -398,4 +391,22 @@ export const createStateService = ({ stateRepository }) => ({
       ),
       syncContext
     ),
-});
+  };
+
+  if (typeof stateRepository.upsertUserProfileAndState === "function") {
+    service.saveProfileStateWithUser = async (
+      user,
+      profileState,
+      nextUser,
+      syncContext = undefined
+    ) =>
+      stateRepository.upsertUserProfileAndState(
+        user.id,
+        requireProfileState(profileState),
+        nextUser,
+        syncContext
+      );
+  }
+
+  return service;
+};

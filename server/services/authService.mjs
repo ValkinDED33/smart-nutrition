@@ -1,6 +1,7 @@
 import {
   assertPasswordPolicy,
   AuthApiError,
+  StateApiError,
   createId,
   createInitialCommunityState,
   createInitialFridgeState,
@@ -46,6 +47,34 @@ export const createAuthService = ({
   const validGoals = new Set(["cut", "maintain", "bulk"]);
   const validGenders = new Set(["male", "female"]);
   const validLanguages = new Set(["uk", "pl", "en"]);
+  const isRecord = (value) =>
+    Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  const assertCombinedProfileSaveResult = (result) => {
+    if (!isRecord(result) || !isRecord(result.user) || !isRecord(result.profile)) {
+      throw new AuthApiError(
+        "STATE_SYNC_UNAVAILABLE",
+        "Cloud profile sync is temporarily unavailable."
+      );
+    }
+
+    return result;
+  };
+  const assertProfileStatePersistenceError = (error) => {
+    if (error instanceof AuthApiError || error instanceof StateApiError) {
+      throw error;
+    }
+
+    logger.warn?.("[auth] profile-state persistence failed", {
+      code: String(error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED").slice(
+        0,
+        80
+      ),
+    });
+    throw new AuthApiError(
+      "STATE_SYNC_UNAVAILABLE",
+      "Cloud profile sync is temporarily unavailable."
+    );
+  };
 
   const hasOwn = (value, key) =>
     Boolean(value) && Object.prototype.hasOwnProperty.call(value, key);
@@ -840,9 +869,6 @@ export const createAuthService = ({
         throw new AuthApiError("INVALID_RESET_TOKEN", "Password reset token is invalid or expired.");
       }
 
-      const consumedAt = new Date().toISOString();
-      await authRepository.markPasswordResetTokenConsumed?.(tokenHash, consumedAt);
-
       const passwordRecord = createPasswordRecord(password, config.passwordIterations);
 
       await authRepository.updateUserPassword?.({
@@ -851,6 +877,8 @@ export const createAuthService = ({
       });
       await authRepository.incrementUserTokenVersion?.(user.id);
       await authRepository.deleteSessionsByUserId(user.id);
+      const consumedAt = new Date().toISOString();
+      await authRepository.markPasswordResetTokenConsumed?.(tokenHash, consumedAt);
       await authRepository.deletePasswordResetTokensByUserId?.(user.id);
       await clearLoginAttempts(user.email);
 
@@ -1005,14 +1033,41 @@ export const createAuthService = ({
         throw new AuthApiError("INVALID_PROFILE", "Cloud profile sync is unavailable.");
       }
 
-      const atomicResult =
-        typeof saveProfileAndUser === "function"
-          ? await saveProfileAndUser(body?.profile, nextUser)
-          : null;
-      const savedProfile =
-        atomicResult?.profile ?? (await saveProfileState(body?.profile));
-      const updatedUser =
-        atomicResult?.user ?? (await authRepository.updateUser(nextUser));
+      let savedProfile;
+      let updatedUser;
+      let profileMeta = null;
+
+      try {
+        const atomicResult =
+          typeof saveProfileAndUser === "function"
+            ? assertCombinedProfileSaveResult(await saveProfileAndUser(body?.profile, nextUser))
+            : null;
+        savedProfile =
+          atomicResult?.profile ?? (await saveProfileState(body?.profile));
+        updatedUser =
+          atomicResult?.user ?? (await authRepository.updateUser(nextUser));
+
+        if (!isRecord(updatedUser) || !isRecord(savedProfile)) {
+          throw new AuthApiError(
+            "STATE_SYNC_UNAVAILABLE",
+            "Cloud profile sync is temporarily unavailable."
+          );
+        }
+
+        profileMeta =
+          typeof getProfileMeta === "function"
+            ? await getProfileMeta()
+            : null;
+      } catch (error) {
+        assertProfileStatePersistenceError(error);
+      }
+
+      if (!isRecord(updatedUser) || !isRecord(savedProfile)) {
+        throw new AuthApiError(
+          "STATE_SYNC_UNAVAILABLE",
+          "Cloud profile sync is temporarily unavailable."
+        );
+      }
 
       await writeAuditLog({
         actorUserId: currentUser.id,
@@ -1026,10 +1081,7 @@ export const createAuthService = ({
         ok: true,
         user: toPublicUser(updatedUser),
         profile: savedProfile,
-        meta:
-          typeof getProfileMeta === "function"
-            ? await getProfileMeta()
-            : null,
+        meta: profileMeta,
       };
     },
 

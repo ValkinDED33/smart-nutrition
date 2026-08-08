@@ -236,6 +236,9 @@ const normalizeOptionalEmail = (value) => {
   return email || null;
 };
 
+const isValidEmailAddress = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value ?? "").trim());
+
 const normalizeOrigin = (value) => {
   const nextValue = toTrimmedString(value);
 
@@ -1245,7 +1248,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     toTrimmedString(env.SMART_NUTRITION_EMAIL_FROM_NAME, "Smart Nutrition") ||
     "Smart Nutrition";
 
-  if (resendApiKey && !emailFromAddress) {
+  if ((resendApiKey || toTrimmedString(env.SMART_NUTRITION_BREVO_API_KEY)) && !emailFromAddress) {
     warnings.push(
       "Email delivery is configured without SMART_NUTRITION_EMAIL_FROM_ADDRESS."
     );
@@ -1258,6 +1261,12 @@ export const createServerConfig = (rawEnv = process.env) => {
   if (isProduction && hasPlaceholderValue(emailFromAddress)) {
     errors.push(
       "SMART_NUTRITION_EMAIL_FROM_ADDRESS must not use a placeholder value in production."
+    );
+  }
+
+  if (isProduction && emailFromAddress && !isValidEmailAddress(emailFromAddress)) {
+    errors.push(
+      "SMART_NUTRITION_EMAIL_FROM_ADDRESS must be a valid email address in production."
     );
   }
 

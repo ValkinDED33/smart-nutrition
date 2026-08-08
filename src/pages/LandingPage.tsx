@@ -77,7 +77,7 @@ const SHOW_EXTENDED_LANDING_SECTIONS = false;
 type CompanionCapabilitySlide = {
   title: string;
   body: string;
-  tags: string[];
+  tags: readonly string[];
   Icon: typeof Bot;
   tone: string;
 };
@@ -113,17 +113,17 @@ const landingCopy = {
       {
         title: "Ранковий фокус",
         body: "Вода, білок і таблетка о 09:00 вже у плані.",
-        tone: "calm",
+        tone: "спокійно",
       },
       {
         title: "AI помітив",
         body: "Вчора зрив був увечері, тому сьогодні підказка прийде раніше.",
-        tone: "coach",
+        tone: "підказка",
       },
       {
         title: "Telegram поруч",
         body: "Швидкий лог води або ліків без відкриття застосунку.",
-        tone: "warm",
+        tone: "поруч",
       },
     ],
     heroStats: [
@@ -205,6 +205,15 @@ const landingCopy = {
       "Перший екран після входу дає три дії: додати їжу, випити воду, запитати помічника. Без інструкцій.",
     learningTitle: "Корисно знати",
     learningTopics: ["сон", "стрес", "магній", "цукор", "ЖКТ", "вода"],
+    sliderEyebrow: "Живий помічник",
+    sliderAriaLabel: "Можливості помічника Smart Nutrition",
+    sliderPreviousLabel: "Попередня можливість помічника",
+    sliderNextLabel: "Наступна можливість помічника",
+    sliderTags: {
+      hydration: ["вода", "розумні підказки"],
+      reminders: ["Telegram", "ліки", "звички"],
+      mobile: ["PWA", "мобільно", "безпечний шлях"],
+    },
     finalTitle: "Ціль продукту проста",
     finalBody:
       "Користувач має відчувати не складну програму, а живого помічника, який допомагає ставати кращим кожного дня.",
@@ -236,17 +245,17 @@ const landingCopy = {
       {
         title: "Poranny rytm",
         body: "Woda, białko i tabletka o 09:00 są już w planie.",
-        tone: "calm",
+        tone: "spokojnie",
       },
       {
         title: "AI zauważył",
         body: "Wczoraj trudniej było wieczorem, więc dziś podpowiedź przyjdzie wcześniej.",
-        tone: "coach",
+        tone: "podpowiedź",
       },
       {
         title: "Telegram obok",
         body: "Szybki log wody lub leków bez otwierania aplikacji.",
-        tone: "warm",
+        tone: "blisko",
       },
     ],
     heroStats: [
@@ -328,6 +337,15 @@ const landingCopy = {
       "Pierwszy ekran po wejściu daje trzy akcje: dodaj jedzenie, wypij wodę, zapytaj asystenta. Bez instrukcji.",
     learningTitle: "Warto wiedzieć",
     learningTopics: ["sen", "stres", "magnez", "cukier", "jelita", "woda"],
+    sliderEyebrow: "Żywy asystent",
+    sliderAriaLabel: "Możliwości asystenta Smart Nutrition",
+    sliderPreviousLabel: "Poprzednia możliwość asystenta",
+    sliderNextLabel: "Następna możliwość asystenta",
+    sliderTags: {
+      hydration: ["woda", "mądre podpowiedzi"],
+      reminders: ["Telegram", "leki", "nawyki"],
+      mobile: ["PWA", "mobilnie", "bezpieczny przepływ"],
+    },
     finalTitle: "Cel produktu jest prosty",
     finalBody:
       "Użytkownik ma czuć nie złożoną aplikację, tylko żywego pomocnika, który pomaga stawać się lepszym każdego dnia.",
@@ -451,6 +469,15 @@ const landingCopy = {
       "The first screen after login gives three actions: add food, drink water, ask companion. No instructions needed.",
     learningTitle: "Worth knowing",
     learningTopics: ["sleep", "stress", "magnesium", "sugar", "gut", "water"],
+    sliderEyebrow: "Living assistant",
+    sliderAriaLabel: "Smart Nutrition assistant capabilities",
+    sliderPreviousLabel: "Previous assistant capability",
+    sliderNextLabel: "Next assistant capability",
+    sliderTags: {
+      hydration: ["water", "smart nudges"],
+      reminders: ["Telegram", "medication", "habits"],
+      mobile: ["PWA", "mobile", "safe flow"],
+    },
     finalTitle: "The product goal is simple",
     finalBody:
       "Users should feel a living assistant, not a complicated app: something that helps them improve every day.",
@@ -682,16 +709,19 @@ const CompanionExperienceScene = ({
     <Box
       id="ai-overview"
       sx={{
-        position: { xs: "relative", lg: "absolute" },
+        position: "relative",
         zIndex: 2,
-        right: { lg: 22, xl: 36 },
-        top: { lg: 88, xl: 74 },
-        bottom: { lg: "auto" },
-        minHeight: { xs: 320, sm: 460, md: 470, lg: 560 },
-        width: { xs: "100%", md: "100%", lg: "56%", xl: "58%" },
+        gridColumn: { md: "2", lg: "2" },
+        gridRow: { md: "1", lg: "1" },
+        alignSelf: "center",
+        justifySelf: "stretch",
+        minHeight: { xs: 320, sm: 430, md: 500, lg: 570, xl: 610 },
+        width: "100%",
+        minWidth: 0,
         mt: { xs: 1, md: 0 },
         display: { xs: "none", sm: "grid" },
         placeItems: "center",
+        overflow: "hidden",
         pointerEvents: "none",
       }}
     >
@@ -718,8 +748,8 @@ const CompanionExperienceScene = ({
           width: { sm: 430, md: 520, lg: 590, xl: 660 },
           height: { sm: 430, md: 520, lg: 590, xl: 660 },
           borderRadius: "50%",
-          right: { sm: 8, md: 18, lg: 8, xl: 34 },
-          top: { sm: -16, md: -10, lg: -52, xl: -68 },
+          right: { sm: 8, md: -8, lg: 10, xl: 28 },
+          top: { sm: -16, md: -6, lg: -18, xl: -34 },
           background: isDarkMode
             ? "radial-gradient(circle, transparent 42%, rgba(255,255,255,0.2) 43%, rgba(163,230,53,0.26) 47%, rgba(20,184,166,0.12) 54%, transparent 61%)"
             : "radial-gradient(circle, transparent 40%, rgba(255,255,255,0.92) 41%, rgba(14,165,233,0.32) 47%, rgba(20,184,166,0.2) 55%, transparent 63%)",
@@ -753,8 +783,8 @@ const CompanionExperienceScene = ({
           zIndex: 2,
           width: { sm: 360, md: 410, lg: 440, xl: 500 },
           height: { sm: 360, md: 410, lg: 440, xl: 500 },
-          right: { sm: 42, md: 76, lg: 82, xl: 118 },
-          top: { sm: 44, md: 46, lg: 18, xl: 34 },
+          right: { sm: 42, md: 56, lg: 72, xl: 112 },
+          top: { sm: 44, md: 44, lg: 26, xl: 38 },
           pointerEvents: "none",
           "@media (prefers-reduced-motion: reduce)": {
             "& [data-landing-orbit-ring], & [data-landing-signal-node]": {
@@ -1081,7 +1111,7 @@ const Hero = ({
         display: { xs: "flex", md: "grid", lg: "grid" },
         gridTemplateColumns: {
           md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)",
-          lg: "minmax(420px, 0.78fr) minmax(520px, 1fr)",
+          lg: "minmax(0, 0.82fr) minmax(500px, 1fr)",
         },
         gridTemplateRows: { md: "auto auto", lg: "1fr" },
         columnGap: { md: 2.5, lg: 4 },
@@ -1118,7 +1148,10 @@ const Hero = ({
       sx={{
         position: "relative",
         zIndex: 3,
-        maxWidth: { xs: 980, md: 640, lg: 640 },
+        gridColumn: { md: "1", lg: "1" },
+        gridRow: { md: "1", lg: "1" },
+        maxWidth: { xs: 980, md: 560, lg: 620 },
+        minWidth: 0,
         pt: { xs: 1, md: 2, lg: 4 },
         pb: { md: 3 },
         alignSelf: { lg: "center" },
@@ -1138,15 +1171,15 @@ const Hero = ({
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 42, sm: 62, md: 56, lg: 66, xl: 74 },
+          fontSize: { xs: 40, sm: 58, md: 50, lg: 60, xl: 70 },
           lineHeight: 1,
           fontWeight: 900,
           letterSpacing: 0,
-          maxWidth: { xs: 760, md: 640, lg: 640 },
+          maxWidth: { xs: 760, md: 560, lg: 620 },
           overflowWrap: "anywhere",
           textShadow: scene.titleShadow,
           "@media (min-width: 900px) and (max-height: 760px)": {
-            fontSize: 58,
+            fontSize: 54,
           },
         }}
       >
@@ -2090,7 +2123,7 @@ const CompanionCapabilitySlider = ({
     {
       title: copy.featureRail[1]?.title ?? HYDRATION_TRACKER_TITLE,
       body: copy.featureRail[1]?.body ?? "Water tracking without manual chaos.",
-      tags: [copy.heroStats[1]?.label ?? "Water", "smart nudges"],
+      tags: copy.sliderTags.hydration,
       Icon: Droplets,
       tone: "#22d3ee",
     },
@@ -2099,7 +2132,7 @@ const CompanionCapabilitySlider = ({
       body:
         copy.featureRail[5]?.body ??
         "Water, meals, medication, and habits in one reminder system.",
-      tags: ["Telegram", "medication", "habits"],
+      tags: copy.sliderTags.reminders,
       Icon: Bell,
       tone: "#a3e635",
     },
@@ -2120,7 +2153,7 @@ const CompanionCapabilitySlider = ({
     {
       title: copy.mobileTitle,
       body: copy.mobileBody,
-      tags: ["PWA", "mobile", "safe flow"],
+      tags: copy.sliderTags.mobile,
       Icon: ShieldCheck,
       tone: "#facc15",
     },
@@ -2135,7 +2168,7 @@ const CompanionCapabilitySlider = ({
   return (
     <Box
       component="section"
-      aria-label="Smart Nutrition assistant capabilities"
+      aria-label={copy.sliderAriaLabel}
       sx={{
         width: "100%",
         maxWidth: 1440,
@@ -2146,7 +2179,7 @@ const CompanionCapabilitySlider = ({
     >
       <Stack spacing={1.2} sx={{ mb: 2 }}>
         <Typography variant="overline" sx={{ color: scene.accentColor, fontWeight: 900 }}>
-          Living assistant
+          {copy.sliderEyebrow}
         </Typography>
         <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
           {copy.title}
@@ -2318,7 +2351,7 @@ const CompanionCapabilitySlider = ({
                 type="button"
                 variant="outlined"
                 onClick={() => goToSlide(-1)}
-                aria-label="Previous assistant capability"
+                aria-label={copy.sliderPreviousLabel}
                 sx={{
                   ...iconButtonSx,
                   width: 58,
@@ -2341,7 +2374,7 @@ const CompanionCapabilitySlider = ({
                 type="button"
                 variant="outlined"
                 onClick={() => goToSlide(1)}
-                aria-label="Next assistant capability"
+                aria-label={copy.sliderNextLabel}
                 sx={{
                   ...iconButtonSx,
                   width: 58,
@@ -2470,8 +2503,8 @@ const LandingPage = () => {
       }}
     >
       <Hero copy={copy} isDarkMode={isDarkMode} />
-      <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
       <CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />
+      <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
       {SHOW_EXTENDED_LANDING_SECTIONS ? (
         <Stack
           spacing={{ xs: 4, md: 5 }}

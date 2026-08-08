@@ -67,7 +67,11 @@ const OnboardingPage = () => {
             : preferredName || user?.name || "",
         age: !onboardingCompleted && hasDraft ? draft.age : user?.age ?? 25,
         gender:
-          !onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male",
+          !onboardingCompleted && hasDraft
+            ? draft.gender
+            : shouldUseProfileWomenHealth
+              ? "female"
+              : user?.gender ?? "male",
         womenHealthMode:
           shouldUseDraftWomenHealth
             ? draft.womenHealthMode
@@ -170,6 +174,8 @@ const OnboardingPage = () => {
           !onboardingCompleted && hasDraft
             ? draft.supportNote
             : profile.assistant.onboarding.supportNote,
+        personalizationCompleted:
+          !onboardingCompleted && hasDraft ? draft.personalizationCompleted : false,
         weight: !onboardingCompleted && hasDraft
           ? draft.weight
           : user?.weight ?? profile.weightHistory.at(-1)?.weight ?? 70,
@@ -268,6 +274,7 @@ const OnboardingPage = () => {
       motivationStyle: state.motivationStyle,
       motivationStyles: state.motivationStyles,
       supportNote: state.supportNote,
+      personalizationCompleted: state.personalizationCompleted,
     });
   }, [appLanguage, onboardingCompleted, state]);
 
@@ -293,7 +300,7 @@ const OnboardingPage = () => {
         <Route path="friction" element={<OnboardingFrictionPage {...stepProps} />} />
         <Route path="motivation" element={<OnboardingMotivationPage {...stepProps} />} />
         <Route path="finish" element={<OnboardingFinishPage {...stepProps} />} />
-        <Route path="*" element={<Navigate to={stepPaths.assistant} replace />} />
+        <Route path="*" element={<Navigate to={stepPaths.choice} replace />} />
       </Routes>
     </>
   );

@@ -1,7 +1,10 @@
 import type { AssistantRuntimeContext } from "@domain/assistant/types";
 import type { AssistantContextSource } from "./assistantRuntimeTypes";
 import { buildAssistantCoreSnapshot } from "@core/assistant";
-import { createDefaultWomenHealthState } from "@domain/profile/womenHealth";
+import {
+  createDefaultWomenHealthState,
+  hasWomenHealthContext,
+} from "@domain/profile/womenHealth";
 import { resolveAssistantPromptContext } from "@features/assistant/assistantPromptContext";
 
 const getTodayKey = () => {
@@ -102,7 +105,7 @@ export const createAssistantRuntimeContext = ({
     communicationStyle,
     personalDetails: profile.personalDetails,
     womenHealth:
-      user?.gender === "female"
+      user?.gender === "female" || hasWomenHealthContext(profile.womenHealth)
         ? profile.womenHealth
         : createDefaultWomenHealthState(),
     motivation: profile.motivation,

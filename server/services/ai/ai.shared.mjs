@@ -71,9 +71,15 @@ const formatPromptContextLine = (context) => {
 
 const formatWomenHealthLine = (context) => {
   const womenHealth = context.womenHealth ?? {};
-  const gender = context.gender ?? context.profile?.gender ?? "unknown";
+  const hasWomenHealthContext =
+    Boolean(womenHealth.mode && womenHealth.mode !== "none") ||
+    (womenHealth.pregnancyWeek !== null && womenHealth.pregnancyWeek !== undefined) ||
+    Boolean(womenHealth.dueDate) ||
+    Boolean(womenHealth.lastPeriodStartDate) ||
+    Boolean(womenHealth.notes) ||
+    (Array.isArray(womenHealth.symptomHistory) && womenHealth.symptomHistory.length > 0);
   const mode =
-    gender === "female" && womenHealth.mode && womenHealth.mode !== "none"
+    hasWomenHealthContext && womenHealth.mode && womenHealth.mode !== "none"
       ? womenHealth.mode
       : "not_applicable";
 
@@ -122,7 +128,7 @@ const buildContextBlock = (context) =>
       context.familyLifecycleMode ?? context.profile?.familyLifecycleMode ?? "personal"
     }`,
     `womenHealthMode: ${
-      context.gender === "female" && context.womenHealth?.mode
+      context.womenHealth?.mode && context.womenHealth.mode !== "none"
         ? context.womenHealth.mode
         : "not_applicable"
     }`,

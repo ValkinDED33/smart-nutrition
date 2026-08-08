@@ -454,6 +454,19 @@ describe("createServerConfig", () => {
     expect(config.brevoApiKey).toBe("brevo-key");
   });
 
+  it("rejects invalid production transactional email sender addresses", () => {
+    expect(() =>
+      createServerConfig({
+        NODE_ENV: "production",
+        SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+        SMART_NUTRITION_EMAIL_FROM_ADDRESS: "noreplyàsmart-nutrition.club",
+        SMART_NUTRITION_BREVO_API_KEY: "brevo-key",
+      })
+    ).toThrow(
+      "SMART_NUTRITION_EMAIL_FROM_ADDRESS must be a valid email address in production."
+    );
+  });
+
   it("reads Render secret files for Brevo credentials", () => {
     const secretFileDir = mkdtempSync(path.join(os.tmpdir(), "smart-nutrition-secrets-"));
 

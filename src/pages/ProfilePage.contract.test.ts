@@ -29,6 +29,9 @@ describe("ProfilePage contract", () => {
     expect(source).toContain("const canSeeWomenHealthSection");
     expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
     expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
+    expect(source).toContain('data-women-health-entrypoint="true"');
+    expect(source).toContain('to="/profile#women-health"');
+    expect(source).toContain("copy.womenHealthEntryAction");
     expect(source).toContain('id: "women-health"');
     expect(source).toContain("label: copy.tabs.womenHealth");
     expect(source).toContain("<WomenHealthOverviewCard />");

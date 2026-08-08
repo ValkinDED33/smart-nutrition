@@ -47,10 +47,16 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("простір з помічником");
     expect(source).toContain("запитати помічника");
     expect(source).toContain("AI-сканер їжі");
+    expect(source).toContain("Живий помічник");
+    expect(source).toContain("Попередня можливість помічника");
+    expect(source).toContain("розумні підказки");
     expect(source).toContain("Zobacz asystenta");
     expect(source).toContain("przestrzeń z asystentem");
     expect(source).toContain("zapytaj asystenta");
     expect(source).toContain("AI skaner jedzenia");
+    expect(source).toContain("Żywy asystent");
+    expect(source).toContain("Poprzednia możliwość asystenta");
+    expect(source).toContain("mądre podpowiedzi");
     expect(source).not.toContain("Побачити companion");
     expect(source).not.toContain("companion-платформа");
     expect(source).not.toContain("запитати companion");
@@ -75,17 +81,31 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("playGentleClickSound");
   });
 
+  it("places the capability slider as the first detailed section after the calm hero", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source.indexOf("<Hero copy={copy} isDarkMode={isDarkMode} />")).toBeLessThan(
+      source.indexOf("<CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />"),
+    );
+    expect(
+      source.indexOf("<CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />"),
+    ).toBeLessThan(
+      source.indexOf("<AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />"),
+    );
+  });
+
   it("keeps the landing hero from overlapping on medium desktop widths", async () => {
     const source = await readLandingPageSource();
 
     expect(source).toContain('display: { xs: "flex", md: "grid", lg: "grid" }');
-    expect(source).toContain('position: { xs: "relative", lg: "absolute" }');
+    expect(source).toContain('position: "relative"');
+    expect(source).toContain('gridColumn: { md: "2", lg: "2" }');
     expect(source).toContain("SHOW_EXTENDED_LANDING_SECTIONS = false");
     expect(source).toContain('display: "none"');
     expect(source).toContain('md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)"');
-    expect(source).toContain('lg: "minmax(420px, 0.78fr) minmax(520px, 1fr)"');
-    expect(source).toContain("fontSize: { xs: 42, sm: 62, md: 56, lg: 66, xl: 74 }");
-    expect(source).toContain('width: { xs: "100%", md: "100%", lg: "56%", xl: "58%" }');
+    expect(source).toContain('lg: "minmax(0, 0.82fr) minmax(500px, 1fr)"');
+    expect(source).toContain("fontSize: { xs: 40, sm: 58, md: 50, lg: 60, xl: 70 }");
+    expect(source).toContain('width: "100%"');
   });
 
   it("keeps landing magic interactions accessible instead of hover-only", async () => {
@@ -95,8 +115,12 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("aria-controls={panelId}");
     expect(source).toContain("role=\"region\"");
     expect(source).toContain("transform: isOpen ? \"rotate(180deg)\" : \"rotate(0deg)\"");
-    expect(source).toContain('aria-label="Previous assistant capability"');
-    expect(source).toContain('aria-label="Next assistant capability"');
+    expect(source).toContain("aria-label={copy.sliderPreviousLabel}");
+    expect(source).toContain("aria-label={copy.sliderNextLabel}");
+    expect(source).toContain("aria-label={copy.sliderAriaLabel}");
+    expect(source).toContain("tags: copy.sliderTags.hydration");
+    expect(source).toContain("tags: copy.sliderTags.reminders");
+    expect(source).toContain("tags: copy.sliderTags.mobile");
     expect(source).toContain('"&:focus-visible"');
     expect(source).toContain('"&:hover"');
     expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');

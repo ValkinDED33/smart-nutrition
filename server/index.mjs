@@ -379,8 +379,6 @@ const routeRequest = async (request, response) => {
     response.setHeader("X-AI-RateLimit-Remaining", String(aiRateLimit.remaining));
   }
 
-  await authService.cleanupExpiredSessions();
-
   try {
     if (
       await publicApiRouter({
@@ -463,19 +461,21 @@ const getMsUntilNextTokenCleanup = (now = new Date()) => {
 
 let tokenCleanupTimeout = null;
 
+const runTokenCleanup = () =>
+  authService.cleanupExpiredSessions().catch((error) => {
+    console.error("Expired token cleanup failed.", error);
+  });
+
 const scheduleTokenCleanup = (delayMs = getMsUntilNextTokenCleanup()) => {
   tokenCleanupTimeout = setTimeout(() => {
-    authService.cleanupExpiredSessions()
-      .catch((error) => {
-        console.error("Expired token cleanup failed.", error);
-      })
-      .finally(() => {
-        scheduleTokenCleanup(serverConfig.tokenCleanupIntervalMs);
-      });
+    runTokenCleanup().finally(() => {
+      scheduleTokenCleanup(serverConfig.tokenCleanupIntervalMs);
+    });
   }, delayMs);
   tokenCleanupTimeout.unref?.();
 };
 
+runTokenCleanup();
 scheduleTokenCleanup();
 
 const closeRuntime = async () => {

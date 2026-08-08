@@ -1007,6 +1007,126 @@ describe("authService", () => {
     });
   });
 
+  it("rejects incomplete atomic profile-state saves instead of returning a fake success", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-atomic-incomplete",
+      email: "profile-state-atomic-incomplete@example.com",
+      name: "Profile State Atomic Incomplete",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const saveProfileAndUser = vi.fn(async () => ({
+      user: currentUser,
+      profile: null,
+    }));
+    const saveProfileState = vi.fn();
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, weight: 75 },
+          profile: { dailyCalories: 2100 },
+        },
+        currentUser,
+        saveProfileAndUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toMatchObject({
+      code: "STATE_SYNC_UNAVAILABLE",
+    });
+
+    expect(saveProfileAndUser).toHaveBeenCalledTimes(1);
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects incomplete fallback profile-state saves before building a public user", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-fallback-incomplete",
+      email: "profile-state-fallback-incomplete@example.com",
+      name: "Profile State Fallback Incomplete",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const saveProfileState = vi.fn(async () => null);
+    authRepository.updateUser.mockResolvedValue({ ...currentUser, weight: 75 });
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, weight: 75 },
+          profile: { dailyCalories: 2100 },
+        },
+        currentUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toMatchObject({
+      code: "STATE_SYNC_UNAVAILABLE",
+    });
+
+    expect(saveProfileState).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps unexpected profile-state persistence failures to public sync unavailable", async () => {
+    const { authRepository, logger, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-storage-down",
+      email: "profile-state-storage-down@example.com",
+      name: "Profile State Storage Down",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const saveProfileAndUser = vi.fn(async () => {
+      throw new Error("Mongo primary is unavailable");
+    });
+    const saveProfileState = vi.fn();
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, weight: 75 },
+          profile: { dailyCalories: 2100 },
+        },
+        currentUser,
+        saveProfileAndUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toMatchObject({
+      code: "STATE_SYNC_UNAVAILABLE",
+    });
+
+    expect(saveProfileAndUser).toHaveBeenCalledTimes(1);
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[auth] profile-state persistence failed",
+      expect.objectContaining({ code: "Error" })
+    );
+  });
+
   it("does not fail a completed combined profile update when audit logging is unavailable", async () => {
     const { authRepository, logger, service } = createAuthServiceFixture();
     const currentUser = {
@@ -1145,8 +1265,49 @@ describe("authService", () => {
     expect(authRepository.updateUserPassword).toHaveBeenCalledTimes(1);
     expect(authRepository.incrementUserTokenVersion).toHaveBeenCalledWith(user.id);
     expect(authRepository.deleteSessionsByUserId).toHaveBeenCalledWith(user.id);
+    expect(authRepository.updateUserPassword.mock.invocationCallOrder[0]).toBeLessThan(
+      authRepository.markPasswordResetTokenConsumed.mock.invocationCallOrder[0]
+    );
     expect(authRepository.deletePasswordResetTokensByUserId).toHaveBeenCalledWith(user.id);
     expect(authRepository.clearLoginAttempt).toHaveBeenCalledWith(user.email);
+  });
+
+  it("keeps a password reset token usable when the password update fails", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const user = {
+      id: "user-reset-write-fails",
+      email: "reset-write-fails@example.com",
+      name: "Reset Write Fails",
+      role: "USER",
+      passwordHash: "old",
+      passwordSalt: "salt",
+      passwordVersion: "pbkdf2-sha256",
+      tokenVersion: 0,
+    };
+    const resetToken = {
+      id: "pw-reset-write-fails",
+      userId: user.id,
+      tokenHash: "hash",
+      expiresAt: Date.now() + 10_000,
+      consumedAt: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    authRepository.findPasswordResetTokenByHash.mockReturnValue(resetToken);
+    authRepository.findUserById.mockReturnValue(user);
+    authRepository.updateUserPassword.mockRejectedValue(new Error("database unavailable"));
+
+    await expect(
+      service.resetPassword({
+        token: "still-valid-token",
+        password: "StrongPass123!",
+      })
+    ).rejects.toThrow("database unavailable");
+
+    expect(authRepository.markPasswordResetTokenConsumed).not.toHaveBeenCalled();
+    expect(authRepository.deletePasswordResetTokensByUserId).not.toHaveBeenCalled();
+    expect(authRepository.deleteSessionsByUserId).not.toHaveBeenCalled();
+    expect(authRepository.clearLoginAttempt).not.toHaveBeenCalled();
   });
 
   it("rejects a password reset token after it has been consumed", async () => {

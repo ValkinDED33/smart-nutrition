@@ -19,6 +19,7 @@ const authErrorMessages = {
   INVALID_VERIFICATION_LINK: "Confirmation link is invalid or expired.",
   NAME_IN_USE: "This name is already used.",
   REGISTRATION_NOT_VERIFIED: "Please confirm your email before signing in.",
+  STATE_SYNC_UNAVAILABLE: "Cloud profile sync is temporarily unavailable.",
   TOO_MANY_ATTEMPTS: "Too many attempts. Try again later.",
   VERIFICATION_DELIVERY_UNAVAILABLE:
     "Confirmation email delivery is temporarily unavailable.",
@@ -94,6 +95,8 @@ export const handleRouteError = (error, response) => {
                     ? 401
                     : error.code === "TOO_MANY_ATTEMPTS"
                       ? 429
+                      : error.code === "STATE_SYNC_UNAVAILABLE"
+                        ? 503
                       : error.code === "EMAIL_DELIVERY_UNAVAILABLE"
                         ? 503
                         : error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"

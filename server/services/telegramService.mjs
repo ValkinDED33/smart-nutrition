@@ -804,8 +804,24 @@ const getFirstWeight = (profile = {}, latestWeight = 0) => {
   return Number.isFinite(first) ? first : latestWeight;
 };
 
+const hasWomenHealthContext = (womenHealth = {}) => {
+  if (!womenHealth || typeof womenHealth !== "object" || Array.isArray(womenHealth)) {
+    return false;
+  }
+
+  return (
+    (typeof womenHealth.mode === "string" && womenHealth.mode !== "none") ||
+    Number.isFinite(Number(womenHealth.pregnancyWeek)) ||
+    Boolean(womenHealth.dueDate) ||
+    Boolean(womenHealth.lastPeriodStartDate) ||
+    (typeof womenHealth.notes === "string" && womenHealth.notes.trim().length > 0) ||
+    (Array.isArray(womenHealth.symptomHistory) && womenHealth.symptomHistory.length > 0)
+  );
+};
+
 const buildTelegramAssistantContextFromSnapshot = ({ user, snapshot }) => {
   const profile = snapshot?.profile ?? {};
+  const womenHealth = profile.womenHealth;
   const water = snapshot?.water ?? {};
   const todayEntries = getTodayMealEntries(snapshot?.meal ?? {});
   const nutrients = calculateMealTotalNutrients(todayEntries);
@@ -837,7 +853,10 @@ const buildTelegramAssistantContextFromSnapshot = ({ user, snapshot }) => {
     weightChangeKg: latestWeight - firstWeight,
     weeklyCheckInDue: false,
     personalDetails: profile.personalDetails,
-    womenHealth: user?.gender === "female" ? profile.womenHealth : undefined,
+    womenHealth:
+      user?.gender === "female" || hasWomenHealthContext(womenHealth)
+        ? womenHealth
+        : undefined,
     motivation: {
       points: Number(motivation.points) || 0,
       level: Number(motivation.level) || 1,

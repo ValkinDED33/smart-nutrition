@@ -50,6 +50,7 @@ const communityCloudSyncSource = readSource(
 const stateControllerSource = readSource("server/controllers/state.controller.mjs");
 const stateServiceSource = readSource("server/services/stateService.mjs");
 const authServiceSource = readSource("server/services/authService.mjs");
+const authServiceTestSource = readSource("server/services/authService.test.mjs");
 const errorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
@@ -66,7 +67,12 @@ const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
 const onboardingAssistantSource = readSource(
   "src/pages/onboarding/OnboardingAssistantPage.tsx"
 );
+const onboardingGoalSource = readSource("src/pages/onboarding/OnboardingGoalPage.tsx");
+const onboardingMotivationSource = readSource(
+  "src/pages/onboarding/OnboardingMotivationPage.tsx"
+);
 const onboardingFinishSource = readSource("src/pages/onboarding/OnboardingFinishPage.tsx");
+const onboardingPageSource = readSource("src/pages/OnboardingPage.tsx");
 const assistantDisplayNameSource = readSource(
   "src/features/assistant/assistantDisplayName.ts"
 );
@@ -201,6 +207,8 @@ const assistantAgentToolsSource = readSource("server/agent/agent.tools.mjs");
 const assistantAgentIntentsSource = readSource("server/agent/agent.intents.mjs");
 const assistantAgentMemorySource = readSource("server/agent/agent.memory.mjs");
 const assistantPromptStackSource = readSource("server/services/ai/assistantPromptStack.mjs");
+const aiServiceSource = readSource("server/services/ai/ai.service.mjs");
+const aiSharedSource = readSource("server/services/ai/ai.shared.mjs");
 const assistantApiSource = readSource("src/shared/api/assistant.ts");
 const aiCompanionPageSource = readSource("src/pages/AiCompanionPage.tsx");
 const ecosystemPulseSource = readSource("src/features/assistant/EcosystemPulse.tsx");
@@ -217,6 +225,10 @@ const nutritionCoachCardSource = readSource("src/features/meal/NutritionCoachCar
 const aiDiscoveryCardsSource = readSource("src/features/assistant/AIDiscoveryCards.tsx");
 const aiDiscoveryCardsModelSource = readSource(
   "src/features/assistant/aiDiscoveryCardsModel.ts"
+);
+const assistantContextSource = readSource("src/assistant/engine/assistantContext.ts");
+const assistantRuntimeRulesSource = readSource(
+  "src/assistant/engine/assistantRuntimeRules.ts"
 );
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
@@ -259,8 +271,6 @@ const aiReadyDocSource = readSource("docs/AI_READY_TO_USE.md");
 const aiIntegrationDocSource = readSource("docs/AI_INTEGRATION_SETUP.md");
 const envSetupDocSource = readSource("docs/ENV_SETUP_GUIDE.md");
 const familyWellnessDocSource = readSource("docs/FAMILY_WELLNESS_ECOSYSTEM.md");
-const aiServiceSource = readSource("server/services/ai/ai.service.mjs");
-const aiSharedSource = readSource("server/services/ai/ai.shared.mjs");
 const specialistSkillPaths = [
   ".codex/skills/ai-architect/SKILL.md",
   ".codex/skills/knowledge-curator/SKILL.md",
@@ -601,6 +611,27 @@ addCheck(
   telegramServiceSource.includes("aiService.askQuestion(user") &&
     telegramServiceSource.includes("interactionChannel: \"telegram\""),
   "Telegram conversational text must use the same backend AI assistant runtime as the website."
+);
+
+addCheck(
+  "telegram and AI preserve saved women-health context despite stale user gender snapshots",
+  telegramServiceSource.includes("const hasWomenHealthContext =") &&
+    telegramServiceSource.includes("hasWomenHealthContext(womenHealth)") &&
+    !telegramServiceSource.includes(
+      "womenHealth: user?.gender === \"female\" ? profile.womenHealth : undefined"
+    ) &&
+    aiServiceSource.includes("const normalizeWomenHealth = (value) =>") &&
+    aiServiceSource.includes("const mode = allowedModes.includes(record.mode)") &&
+    !aiServiceSource.includes("gender === \"female\" && allowedModes.includes(record.mode)") &&
+    aiSharedSource.includes("const hasWomenHealthContext =") &&
+    aiSharedSource.includes("context.womenHealth?.mode && context.womenHealth.mode !== \"none\"") &&
+    !aiSharedSource.includes("context.gender === \"female\" && context.womenHealth?.mode") &&
+    assistantContextSource.includes("hasWomenHealthContext(profile.womenHealth)") &&
+    !assistantContextSource.includes(
+      "user?.gender === \"female\"\n        ? profile.womenHealth"
+    ) &&
+    !assistantRuntimeRulesSource.includes("context.gender !== \"female\" || womenHealth.mode"),
+  "Telegram and shared AI prompt context must use canonical women-health profile state when it exists; stale auth/user gender snapshots must not hide pregnancy, planning, postpartum, symptom, or family context from the assistant."
 );
 
 addCheck(
@@ -1139,6 +1170,23 @@ addCheck(
   "Password reset must capture then remove token query data and keep submit disabled without a token."
 );
 
+const updatePasswordIndex = authServiceSource.indexOf("await authRepository.updateUserPassword?.");
+const consumeResetTokenIndex = authServiceSource.indexOf(
+  "await authRepository.markPasswordResetTokenConsumed?."
+);
+
+addCheck(
+  "password reset updates password before consuming reset token",
+  updatePasswordIndex >= 0 &&
+    consumeResetTokenIndex >= 0 &&
+    updatePasswordIndex < consumeResetTokenIndex &&
+    authServiceTestSource.includes(
+      "keeps a password reset token usable when the password update fails"
+    ) &&
+    authServiceTestSource.includes("markPasswordResetTokenConsumed).not.toHaveBeenCalled()"),
+  "Password reset tokens must not be consumed until the new password is saved; otherwise a transient database failure can burn the only recovery link without changing the password."
+);
+
 addCheck(
   "auth and community visible errors hide raw API exception text",
   resetPasswordPageSource.includes("AUTH_INVALID_RESET_TOKEN_KEY") &&
@@ -1208,11 +1256,24 @@ addCheck(
   authRoutesSource.includes("saveProfileAndUser:") &&
     authRoutesSource.includes("stateService.saveProfileStateWithUser") &&
     authServiceSource.includes("typeof saveProfileAndUser === \"function\"") &&
+    authServiceSource.includes("assertCombinedProfileSaveResult") &&
+    authServiceSource.includes("assertProfileStatePersistenceError") &&
+    authServiceSource.includes("[auth] profile-state persistence failed") &&
+    authServiceSource.includes("\"STATE_SYNC_UNAVAILABLE\"") &&
     authServiceSource.includes("const atomicResult") &&
     authServiceSource.includes("atomicResult?.profile ?? (await saveProfileState(body?.profile))") &&
+    authServiceSource.includes("!isRecord(updatedUser) || !isRecord(savedProfile)") &&
     authServiceSource.includes("profile: savedProfile") &&
     stateServiceSource.includes("saveProfileStateWithUser") &&
+    stateServiceSource.includes(
+      'if (typeof stateRepository.upsertUserProfileAndState === "function")'
+    ) &&
     stateRepositorySource.includes("upsertUserProfileAndState") &&
+    stateRepositorySource.includes(
+      'if (typeof storage.upsertUserProfileAndState === "function")'
+    ) &&
+    !stateRepositorySource.includes("storage.upsertUserProfileAndState?.") &&
+    !stateRepositorySource.includes("?? null") &&
     mongoStorageSource.includes("upsertUserProfileAndState") &&
     mongoStorageSource.includes("await session.withTransaction(async () =>") &&
     mongoStorageSource.includes("isMongoTransactionUnsupportedError") &&
@@ -1224,6 +1285,48 @@ addCheck(
     profileCloudSyncSource.includes("normalizeProfileState(rebasedResult.profile ?? rebasedProfile)") &&
     profileCloudSyncSource.includes("normalizeProfileState(result.profile ?? profile)"),
   "Combined profile/user updates must use an atomic storage save when available and return the normalized backend-confirmed profile so frontend state cannot drift from the cloud source of truth."
+);
+
+addCheck(
+  "mongodb profile-state writes use transactional CAS instead of check-then-write",
+  mongoStorageSource.includes("const writeProfileAndUserDocuments = async (session) =>") &&
+    mongoStorageSource.includes("await session.withTransaction(async () =>") &&
+    mongoStorageSource.includes(
+      "normalizedSyncContext.baseVersion\n              ? { userId, updatedAt: normalizedSyncContext.baseVersion }"
+    ) &&
+    mongoStorageSource.includes("if (normalizedSyncContext.baseVersion && stateUpdate.matchedCount === 0)") &&
+    mongoStorageSource.includes("const userUpdate = await collections.users.updateOne(") &&
+    mongoStorageSource.includes("{ session }") &&
+    mongoStorageSource.indexOf("const writeProfileAndUserDocuments = async (session)") <
+      mongoStorageSource.indexOf("const writeProfileAndUserDocumentsWithoutTransaction") &&
+    !/const writeProfileAndUserDocuments = async \(session\)[\s\S]*?Promise\.all[\s\S]*?const writeProfileAndUserDocumentsWithoutTransaction/.test(
+      mongoStorageSource
+    ),
+  "Mongo combined profile/user saves must keep profile, state meta, and user writes in one transaction when supported, compare baseVersion inside the states.updateOne filter, and avoid Promise.all inside the transaction."
+);
+
+addCheck(
+  "mongodb full snapshot writes compare state version inside the write filter",
+  mongoStorageSource.includes("const writeSnapshot = async (") &&
+    mongoStorageSource.includes("const writeSnapshotDocuments = async (session = undefined)") &&
+    mongoStorageSource.includes("await session.withTransaction(async () =>") &&
+    mongoStorageSource.includes("baseVersion ? { userId, updatedAt: baseVersion } : { userId }") &&
+    mongoStorageSource.includes("if (baseVersion && stateUpdate.matchedCount === 0)") &&
+    !/const writeSnapshotDocuments = async \(session = undefined\)[\s\S]*?Promise\.all[\s\S]*?const writeSnapshotDocumentsWithoutTransaction/.test(
+      mongoStorageSource
+    ),
+  "Mongo full snapshot saves must use compare-and-set on states.updatedAt in the write operation itself so concurrent device writes return STATE_CONFLICT instead of silently overwriting each other."
+);
+
+addCheck(
+  "expired token cleanup is scheduled outside the request hot path",
+  serverIndexSource.includes("const runTokenCleanup = () =>") &&
+    serverIndexSource.includes("scheduleTokenCleanup(serverConfig.tokenCleanupIntervalMs)") &&
+    serverIndexSource.includes("runTokenCleanup();\nscheduleTokenCleanup();") &&
+    !/const routeRequest = async[\s\S]*?authService\.cleanupExpiredSessions\(\)[\s\S]*?const server = http\.createServer/.test(
+      serverIndexSource
+    ),
+  "Expired session/reset/verification token cleanup must run as startup/scheduled housekeeping, not as a global storage delete scan on every API request."
 );
 
 addCheck(
@@ -1255,12 +1358,62 @@ addCheck(
     !verifyEmailPageSource.includes("replaceProfileState(sessionProfile)") &&
     onboardingFinishSource.includes("useProfileCloudAction") &&
     onboardingFinishSource.includes("getProfileCloudActionCopy") &&
-    onboardingFinishSource.includes(
-      "profileAction.runProfileAndUserSave(nextUser, nextProfile, completedAt)"
-    ) &&
+    onboardingFinishSource.includes("const applyOnboardingProfilePatch =") &&
+    onboardingFinishSource.includes("profileAction.runProfileAndUserSave(") &&
+    onboardingFinishSource.includes("applyOnboardingProfilePatch") &&
     !onboardingFinishSource.includes("saveProfileAndUserToCloud") &&
     !onboardingFinishSource.includes("replaceProfileState(nextProfile)"),
-  "Registration, email verification, and onboarding completion must not own a second profile save/replace path; they must use the shared profile cloud-action hook."
+  "Registration, email verification, and onboarding completion must not own a second profile save/replace path; they must use the shared profile cloud-action hook, and final onboarding must replay the same answer patch after a cloud conflict."
+);
+
+addCheck(
+  "onboarding finish keeps finish-now separate from optional personalization",
+  onboardingGoalSource.includes("navigate(stepPaths.finish)") &&
+    onboardingMotivationSource.includes("personalizationCompleted: true") &&
+    onboardingFinishSource.includes(
+      "const canContinuePersonalization = !state.personalizationCompleted"
+    ) &&
+    onboardingFinishSource.includes("const continuePersonalization = () =>") &&
+    onboardingFinishSource.includes("navigate(stepPaths.friction)") &&
+    onboardingFinishSource.includes(
+      'data-onboarding-continue-personalization="true"'
+    ) &&
+    !onboardingFinishSource.includes('saveOnboarding("/profile")') &&
+    !onboardingFinishSource.includes('navigate("/profile"'),
+  "Finish now must be the only path that marks onboarding complete; continuing personalization must keep the draft open and route into the optional questionnaire."
+);
+
+addCheck(
+  "protected onboarding redirects enter the choice step directly",
+  appSource.includes('const ONBOARDING_ENTRY_PATH = "/onboarding/choice"') &&
+    appSource.includes("to={ONBOARDING_ENTRY_PATH}") &&
+    registerPageSource.includes('navigate("/onboarding/choice")') &&
+    verifyEmailPageSource.includes('"/onboarding/choice"') &&
+    onboardingPageSource.includes(
+      '<Route index element={<Navigate to={stepPaths.choice} replace />} />'
+    ),
+  "Authenticated users who still need onboarding must land on the explicit continue-or-skip choice, not a root onboarding screen that feels like language/theme setup is being repeated."
+);
+
+addCheck(
+  "saved women-health context controls unfinished onboarding gender seed",
+  onboardingPageSource.includes("shouldUseProfileWomenHealth") &&
+    onboardingPageSource.includes('shouldUseProfileWomenHealth\n              ? "female"') &&
+    onboardingPageSource.includes("hasWomenHealthContext(profile.womenHealth)") &&
+    !onboardingPageSource.includes(
+      '!onboardingCompleted && hasDraft ? draft.gender : user?.gender ?? "male"'
+    ),
+  "Unfinished onboarding must seed female-context state from saved canonical women-health profile data so final onboarding cannot erase pregnancy/family answers because the auth user snapshot is stale."
+);
+
+addCheck(
+  "onboarding completion failures are retryable and preserve draft answers",
+  onboardingFinishSource.includes("writePreAuthOnboardingDraft") &&
+    onboardingFinishSource.includes("preserveDraft();") &&
+    onboardingFinishSource.includes('data-onboarding-save-recovery="true"') &&
+    onboardingFinishSource.includes('t("onboarding.retrySave")') &&
+    onboardingFinishSource.includes('t("onboarding.backToAnswers")'),
+  "A failed final profile save must not discard onboarding answers; the UI needs an explicit retry and safe return path."
 );
 
 addCheck(
@@ -1520,10 +1673,25 @@ addCheck(
     ) &&
     transactionalEmailCheckSource.includes("Transactional email delivery is configured.") &&
     transactionalEmailCheckSource.includes("Available providers:") &&
+    transactionalEmailCheckSource.includes("SMART_NUTRITION_EMAIL_CHECK_TO") &&
+    transactionalEmailCheckSource.includes("sendRegistrationVerificationEmail") &&
+    transactionalEmailCheckSource.includes("Transactional email real delivery smoke passed.") &&
+    transactionalEmailCheckSource.includes("Transactional email real delivery smoke failed.") &&
     transactionalEmailCheckSource.includes("SMART_NUTRITION_BREVO_API_KEY or SMART_NUTRITION_RESEND_API_KEY") &&
     !packageJsonSource.includes("check-resend-email.mjs") &&
     !transactionalEmailCheckSource.includes("Resend email delivery is not configured"),
-  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider, timeout/retry protection, Resend as reserve, and one provider-neutral diagnostic command."
+  "Registration, password reset, and partner invite emails must use one canonical email service with Brevo as the primary transactional provider, timeout/retry protection, Resend as reserve, and one provider-neutral diagnostic command that can optionally prove real delivery."
+);
+
+addCheck(
+  "production transactional email sender address is validated before startup",
+  serverConfigSource.includes("isValidEmailAddress") &&
+    serverConfigSource.includes(
+      "SMART_NUTRITION_EMAIL_FROM_ADDRESS must be a valid email address in production."
+    ) &&
+    serverConfigTestSource.includes("rejects invalid production transactional email sender addresses") &&
+    serverConfigTestSource.includes("noreplyàsmart-nutrition.club"),
+  "Production must not report email as configured when the sender address is malformed; invalid sender addresses must fail config validation before registration users see delivery errors."
 );
 
 addCheck(
@@ -2562,14 +2730,14 @@ addCheck(
     qualityGateWorkflowSource.includes("- master") &&
     qualityGateWorkflowSource.includes("node-version: 22") &&
     qualityGateWorkflowSource.includes("npm ci") &&
-    qualityGateWorkflowSource.includes("npm run lint") &&
-    qualityGateWorkflowSource.includes("npm run build") &&
-    qualityGateWorkflowSource.includes("npm test") &&
-    qualityGateWorkflowSource.includes("npm run audit:deps") &&
-    qualityGateWorkflowSource.includes("npm run audit:cycles") &&
-    qualityGateWorkflowSource.includes("npm run audit:architecture") &&
-    qualityGateWorkflowSource.includes("npm run audit:contracts"),
-  "GitHub must run the same production quality gate on master pushes and pull requests so deploys cannot bypass lint, build, tests, dependency, cycle, architecture, and Smart Nutrition contract checks."
+    qualityGateWorkflowSource.includes("npm run quality") &&
+    qualityGateWorkflowSource.includes("npm run audit:security") &&
+    qualityGateWorkflowSource.includes("npm run server:check") &&
+    qualityGateWorkflowSource.includes("SMART_NUTRITION_DATABASE_PROVIDER: mongodb") &&
+    qualityGateWorkflowSource.includes("SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: None") &&
+    qualityGateWorkflowSource.includes('SMART_NUTRITION_AUTH_COOKIE_SECURE: "true"') &&
+    qualityGateWorkflowSource.includes("SMART_NUTRITION_BREVO_API_KEY: ci_brevo_quality_key_not_a_secret"),
+  "GitHub must run the same production quality gate on master pushes and pull requests so deploys cannot bypass lint, build, tests, bundle, SEO, dead-code, dependency, security, cycle, architecture, contract, and production config checks."
 );
 
 addCheck(

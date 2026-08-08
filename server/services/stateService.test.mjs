@@ -144,6 +144,14 @@ describe("stateService", () => {
     });
   });
 
+  it("does not expose combined profile/user save when repository lacks atomic support", () => {
+    const stateRepository = createStateRepositoryFixture();
+    delete stateRepository.upsertUserProfileAndState;
+    const service = createStateService({ stateRepository });
+
+    expect(service).not.toHaveProperty("saveProfileStateWithUser");
+  });
+
   it("adds product intake through one canonical backend-confirmed result", async () => {
     const product = createProduct();
     const stateRepository = createStateRepositoryFixture();

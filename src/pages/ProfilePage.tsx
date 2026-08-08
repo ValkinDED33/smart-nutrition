@@ -1,5 +1,7 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { ArrowRight, HeartPulse } from "lucide-react";
 import type { RootState } from "../app/store";
 import {
   Avatar,
@@ -43,6 +45,7 @@ import {
 
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
+const PROFILE_ALIGN_START = "flex-start";
 const USER_ROLE_LABEL = "User";
 const VERIFIED_USER_ROLE_LABEL = "Verified user";
 const OWNER_ROLE_LABEL = "Owner";
@@ -164,6 +167,11 @@ const profileCopy = {
     statusLabel: "Статус",
     adaptiveAuto: "Адаптивні калорії оновлюються автоматично.",
     adaptiveManual: "Адаптивні калорії залишаються ручними, доки ви не застосуєте рекомендацію.",
+    womenHealthEntryEyebrow: "Доступ відкрито",
+    womenHealthEntryTitle: "Жіноче здоров'я поруч",
+    womenHealthEntrySubtitle:
+      "Вагітність, підготовка, післяпологовий період і сімейна підтримка живуть у цьому профілі.",
+    womenHealthEntryAction: "Відкрити розділ",
     macroTitle: "Цілі за макроелементами",
     macroSubtitle: "Добові цілі за білками, жирами та вуглеводами на основі калорій, ваги та мети.",
     tabs: {
@@ -209,6 +217,11 @@ const profileCopy = {
     statusLabel: "Status",
     adaptiveAuto: "Adaptacyjne kalorie aktualizują się automatycznie.",
     adaptiveManual: "Adaptacyjne kalorie pozostają ręczne, dopóki nie zastosujesz rekomendacji.",
+    womenHealthEntryEyebrow: "Dostęp aktywny",
+    womenHealthEntryTitle: "Zdrowie kobiet pod ręką",
+    womenHealthEntrySubtitle:
+      "Ciąża, przygotowanie, połóg i wsparcie rodzinne działają w tym samym profilu.",
+    womenHealthEntryAction: "Otwórz sekcję",
     macroTitle: "Cele makroskładników",
     macroSubtitle: "Dzienne cele białka, tłuszczów i węglowodanów wyliczone z kalorii, masy ciała i celu.",
     tabs: {
@@ -254,6 +267,11 @@ const profileCopy = {
     statusLabel: "Status",
     adaptiveAuto: "Adaptive calories update automatically.",
     adaptiveManual: "Adaptive calories stay manual until you apply a recommendation.",
+    womenHealthEntryEyebrow: "Access is active",
+    womenHealthEntryTitle: "Women health is ready",
+    womenHealthEntrySubtitle:
+      "Pregnancy, planning, postpartum, and family support live inside this same profile.",
+    womenHealthEntryAction: "Open section",
     macroTitle: "Macro targets",
     macroSubtitle: "Daily protein, fat, and carbohydrate targets based on calories, weight, and goal.",
     tabs: {
@@ -696,7 +714,7 @@ const ProfilePage = () => {
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={3}
-          alignItems={{ xs: "flex-start", md: "center" }}
+          alignItems={{ xs: PROFILE_ALIGN_START, md: "center" }}
           justifyContent="space-between"
         >
           <Stack direction="row" spacing={2} alignItems="center">
@@ -713,49 +731,125 @@ const ProfilePage = () => {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip
-              label={`${copy.roleLabel}: ${getRoleLabel(appLanguage, user.role)}`}
-              color={user.role === "USER" ? "default" : "primary"}
-              variant={user.role === "USER" ? "outlined" : "filled"}
-            />
-            <Chip
-              label={`${copy.emailLabel}: ${
-                user.emailVerified ? copy.emailVerified : copy.emailUnverified
-              }`}
-              color={user.emailVerified ? "success" : "warning"}
-              variant="outlined"
-            />
-            <Chip label={`${t("dashboard.age")}: ${user.age}`} />
-            <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
-            <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
-            {canSeeOperationalDetails && (
-              <>
-                <Chip
-                  label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
-                  variant="outlined"
-                />
-                <Chip
-                  label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
-                />
-                <Chip
-                  label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
-                />
-                <Chip
-                  label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
-                />
-                <Chip
-                  label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
-                />
-                <Chip
-                  label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
-                />
-              </>
-            )}
-            {hasTargetWeight && (
+          <Stack
+            spacing={1.5}
+            alignItems={{ xs: "stretch", md: "flex-end" }}
+            sx={{ width: { xs: "100%", md: "auto" }, maxWidth: { md: 620 } }}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap="wrap"
+              justifyContent={{ xs: PROFILE_ALIGN_START, md: "flex-end" }}
+            >
               <Chip
-                label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
+                label={`${copy.roleLabel}: ${getRoleLabel(appLanguage, user.role)}`}
+                color={user.role === "USER" ? "default" : "primary"}
+                variant={user.role === "USER" ? "outlined" : "filled"}
               />
+              <Chip
+                label={`${copy.emailLabel}: ${
+                  user.emailVerified ? copy.emailVerified : copy.emailUnverified
+                }`}
+                color={user.emailVerified ? "success" : "warning"}
+                variant="outlined"
+              />
+              <Chip label={`${t("dashboard.age")}: ${user.age}`} />
+              <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
+              <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
+              {canSeeOperationalDetails && (
+                <>
+                  <Chip
+                    label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
+                  />
+                  <Chip
+                    label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
+                  />
+                  <Chip
+                    label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
+                  />
+                  <Chip
+                    label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
+                  />
+                  <Chip
+                    label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
+                  />
+                </>
+              )}
+              {hasTargetWeight && (
+                <Chip
+                  label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
+                />
+              )}
+            </Stack>
+
+            {canSeeWomenHealthSection && (
+              <Stack
+                data-women-health-entrypoint="true"
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                justifyContent="space-between"
+                sx={{
+                  width: "100%",
+                  p: 1.5,
+                  borderRadius: 1,
+                  border: PROFILE_CARD_BORDER,
+                  background:
+                    "linear-gradient(135deg, rgba(20,184,166,0.12) 0%, rgba(132,204,22,0.12) 100%)",
+                }}
+              >
+                <Stack direction="row" spacing={1.2} alignItems="center" minWidth={0}>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      placeItems: "center",
+                      width: 38,
+                      height: 38,
+                      flex: "0 0 auto",
+                      borderRadius: 1,
+                      color: "var(--sn-accent)",
+                      bgcolor: "rgba(20,184,166,0.14)",
+                    }}
+                  >
+                    <HeartPulse size={20} aria-hidden="true" />
+                  </Box>
+                  <Box minWidth={0}>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "var(--sn-accent)", fontWeight: 900 }}
+                    >
+                      {copy.womenHealthEntryEyebrow}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                      {copy.womenHealthEntryTitle}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 0.25, lineHeight: 1.45 }}>
+                      {copy.womenHealthEntrySubtitle}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Button
+                  component={RouterLink}
+                  to="/profile#women-health"
+                  variant="contained"
+                  endIcon={<ArrowRight size={16} aria-hidden="true" />}
+                  sx={{
+                    alignSelf: { xs: "stretch", sm: "center" },
+                    borderRadius: 999,
+                    textTransform: "none",
+                    fontWeight: 900,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {copy.womenHealthEntryAction}
+                </Button>
+              </Stack>
             )}
           </Stack>
         </Stack>
@@ -782,7 +876,7 @@ const ProfilePage = () => {
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       spacing={2}
-                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      alignItems={{ xs: PROFILE_ALIGN_START, sm: "center" }}
                       justifyContent="space-between"
                     >
                       <Box>

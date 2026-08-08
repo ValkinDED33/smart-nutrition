@@ -32,22 +32,22 @@ jobs:
         run: npm ci
 
       - name: Smart-Nutrition
-        run: npm run lint
+        run: npm run quality
 
       - name: Smart-Nutrition
-        run: npm run build
+        run: npm run audit:security
 
       - name: Smart-Nutrition
-        run: npm test
-
-      - name: Smart-Nutrition
-        run: npm run audit:deps
-
-      - name: Smart-Nutrition
-        run: npm run audit:cycles
-
-      - name: Smart-Nutrition
-        run: npm run audit:architecture
-
-      - name: Smart-Nutrition
-        run: npm run audit:contracts
+        env:
+          SMART_NUTRITION_JWT_SECRET: ci-smart-nutrition-quality-secret-1234567890
+          SMART_NUTRITION_DATABASE_PROVIDER: mongodb
+          SMART_NUTRITION_MONGO_URI: mongodb+srv://ci-user:ci-password@cluster0.smart-nutrition.invalid/smart-nutrition
+          SMART_NUTRITION_EMAIL_FROM_ADDRESS: noreply@smart-nutrition.club
+          SMART_NUTRITION_EMAIL_FROM_NAME: Smart Nutrition
+          SMART_NUTRITION_BREVO_API_KEY: ci_brevo_quality_key_not_a_secret
+          SMART_NUTRITION_CORS_ORIGINS: https://smart-nutrition.club,https://www.smart-nutrition.club
+          SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: None
+          SMART_NUTRITION_AUTH_COOKIE_SECURE: "true"
+          SMART_NUTRITION_SERVE_STATIC: "false"
+          SMART_NUTRITION_RUNTIME_INSTANCE_COUNT: "1"
+        run: npm run server:check

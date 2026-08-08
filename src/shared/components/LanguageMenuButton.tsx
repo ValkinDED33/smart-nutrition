@@ -136,6 +136,8 @@ export const LanguageMenuButton = ({
         anchorEl={anchorEl}
         open={isOpen}
         onClose={handleClose}
+        autoFocus={false}
+        disableAutoFocusItem
         disableRestoreFocus
         MenuListProps={{
           "aria-labelledby": buttonId,

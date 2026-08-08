@@ -1948,6 +1948,105 @@ describe("telegramService", () => {
     service.stop("test shutdown");
   });
 
+  it("keeps women-health Telegram context when the user gender snapshot is stale", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        if (eventName === "text") {
+          this.textHandler = handler;
+        }
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ira",
+      role: "USER",
+      gender: "male",
+      goal: "maintain",
+      weight: 72,
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: false,
+        intent: { intent: "unknown" },
+      })),
+    };
+    const aiService = {
+      askQuestion: vi.fn(async () => ({
+        text: "Бачу контекст вагітності з профілю і тримаю відповідь обережною.",
+        mode: "remote-cloud",
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => ({
+          ...snapshot,
+          profile: {
+            ...snapshot.profile,
+            languagePreference: "uk",
+            womenHealth: {
+              mode: "pregnant",
+              pregnancyWeek: 13,
+              dueDate: "2027-01-20T00:00:00.000Z",
+              lastPeriodStartDate: null,
+              doctorConfirmed: false,
+              notes: "needs gentle family support",
+            },
+          },
+        })),
+      },
+      assistantAgent,
+      aiService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    await instances[0].textHandler({
+      chat: { id: 42 },
+      message: { text: "Що зараз важливо?" },
+      reply,
+    });
+
+    expect(aiService.askQuestion).toHaveBeenCalledWith(connectedUser, {
+      question: "Що зараз важливо?",
+      context: expect.objectContaining({
+        interactionChannel: "telegram",
+        language: "uk",
+        gender: "male",
+        womenHealth: expect.objectContaining({
+          mode: "pregnant",
+          pregnancyWeek: 13,
+        }),
+      }),
+    });
+    expect(reply).toHaveBeenCalledWith(
+      "Бачу контекст вагітності з профілю і тримаю відповідь обережною."
+    );
+
+    service.stop("test shutdown");
+  });
+
   it("reports Telegram AI assistant failures without fake success", async () => {
     const instances = [];
     class TestBot {

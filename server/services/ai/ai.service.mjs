@@ -219,11 +219,10 @@ const normalizePregnancyWeek = (value) => {
   return rounded >= 1 && rounded <= 42 ? rounded : null;
 };
 
-const normalizeWomenHealth = (value, gender) => {
+const normalizeWomenHealth = (value) => {
   const record = isRecord(value) ? value : {};
   const allowedModes = ["none", "trying_to_conceive", "pregnant", "postpartum"];
-  const mode =
-    gender === "female" && allowedModes.includes(record.mode) ? record.mode : "none";
+  const mode = allowedModes.includes(record.mode) ? record.mode : "none";
   const symptomHistory = Array.isArray(record.symptomHistory)
     ? record.symptomHistory
         .filter(isRecord)
@@ -616,7 +615,7 @@ const normalizeContext = (payload, currentUser) => {
     maxLength: 120,
     fallback: "/",
   });
-  const womenHealth = normalizeWomenHealth(record.womenHealth, gender);
+  const womenHealth = normalizeWomenHealth(record.womenHealth);
   const familyLifecycleMode = normalizeFamilyLifecycleMode(
     record.familyLifecycleMode ?? record.profile?.familyLifecycleMode,
     womenHealth
