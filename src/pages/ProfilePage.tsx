@@ -114,6 +114,9 @@ const NotificationSettingsCard = lazy(() =>
 const ReminderManagementCard = lazy(
   () => import("../features/profile/ReminderManagementCard")
 );
+const TelegramConnectionCard = lazy(
+  () => import("../features/profile/TelegramConnectionCard")
+);
 const SupplementRecommendationCard = lazy(
   () => import("../features/profile/SupplementRecommendationCard")
 );
@@ -922,6 +925,12 @@ const ProfilePage = () => {
                 </Paper>
 
                 {profileEditorOpen && <ProfileForm />}
+                {renderLazySection(
+                  "telegram",
+                  "Telegram",
+                  <LoadingSkeleton cards={1} bodyRows={2} />,
+                  <TelegramConnectionCard />
+                )}
                 {renderLazySection(
                   "data",
                   copy.tabs.data,

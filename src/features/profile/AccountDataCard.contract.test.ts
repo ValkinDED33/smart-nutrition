@@ -7,13 +7,25 @@ import { accountCopy } from "./accountDataCardCopy";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(path.join(__dirname, "AccountDataCard.tsx"), "utf8");
+const telegramConnectionSource = readFileSync(
+  path.join(__dirname, "TelegramConnectionCard.tsx"),
+  "utf8"
+);
+const profilePageSource = readFileSync(
+  path.join(__dirname, "../../pages/ProfilePage.tsx"),
+  "utf8"
+);
 
 describe("AccountDataCard production UX contracts", () => {
   it("does not report Telegram link creation as a confirmed connection", () => {
     expect(source).toContain(
       'setNotice({ type: "info", message: copy.telegramConnectPending });'
     );
+    expect(telegramConnectionSource).toContain(
+      'setNotice({ type: "info", message: copy.telegramConnectPending });'
+    );
     expect(source).not.toContain("telegramConnectSuccess");
+    expect(telegramConnectionSource).not.toContain("telegramConnectSuccess");
   });
 
   it("keeps Telegram pending copy separate from confirmed connected copy", () => {
@@ -34,5 +46,16 @@ describe("AccountDataCard production UX contracts", () => {
     expect(source).toContain("{canSeeOperationalDetails && (");
     expect(source).toContain("runtimeLabels.provider");
     expect(source).toContain("{copy.backupsTitle}");
+  });
+
+  it("shows Telegram connect entrypoint in the first profile section for existing users", () => {
+    expect(profilePageSource).toContain("const TelegramConnectionCard = lazy");
+    expect(profilePageSource).toContain("<TelegramConnectionCard />");
+    expect(profilePageSource.indexOf("<TelegramConnectionCard />")).toBeLessThan(
+      profilePageSource.indexOf("<WeightTrendCard />")
+    );
+    expect(telegramConnectionSource).toContain("createTelegramConnectLink");
+    expect(telegramConnectionSource).toContain("getRemoteTelegramStatus");
+    expect(telegramConnectionSource).toContain("disconnectTelegram");
   });
 });
