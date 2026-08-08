@@ -45,6 +45,10 @@ import { useAppColorMode } from "@shared/theme/colorMode";
 import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import {
+  hasWomenHealthContext,
+  isWomenHealthVisibleForGender,
+} from "@domain/profile/womenHealth";
+import {
   desktopNavigationItems,
   getVisibleNavigationItems,
   mobileNavigationItems,
@@ -103,6 +107,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state: RootState) => state.auth.user);
+  const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
   const { appLanguage, languageLabels, setLanguage, t } = useLanguage();
   const { isDarkMode, mode, toggleMode } = useAppColorMode();
   const logoutLabel = t("nav.logout");
@@ -203,16 +208,29 @@ const Layout = () => {
   const isLandingRoute = location.pathname === "/";
   const contentMaxWidth = isLandingRoute ? false : user ? "xl" : "sm";
   const landingTabs = getLandingNavigationItems(appLanguage);
+  const canSeeWomenHealthNavigation =
+    isWomenHealthVisibleForGender(user?.gender) ||
+    hasWomenHealthContext(womenHealth);
+  const navigationContext = {
+    womenHealthVisible: canSeeWomenHealthNavigation,
+  };
   const visibleDesktopTabs = getVisibleNavigationItems(
     desktopNavigationItems,
-    user?.role
+    user?.role,
+    navigationContext
   );
   const visibleMobileTabs = getVisibleNavigationItems(
     mobileNavigationItems,
-    user?.role
+    user?.role,
+    navigationContext
   );
+  const activeNavigationPath = `${location.pathname}${location.hash}`;
   const activeMobileTab =
-    visibleMobileTabs.find((tab) => location.pathname.startsWith(tab.value))
+    visibleMobileTabs.find((tab) =>
+      tab.value.includes("#")
+        ? activeNavigationPath === tab.value
+        : location.pathname.startsWith(tab.value)
+    )
       ?.value ?? "/dashboard";
 
   return (
@@ -328,7 +346,9 @@ const Layout = () => {
                 sx={{ display: { xs: "none", md: "flex" } }}
               >
                 {visibleDesktopTabs.map((tab) => {
-                  const selected = location.pathname.startsWith(tab.value);
+                  const selected = tab.value.includes("#")
+                    ? activeNavigationPath === tab.value
+                    : location.pathname.startsWith(tab.value);
 
                   return (
                     <Button

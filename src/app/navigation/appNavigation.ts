@@ -1,4 +1,5 @@
 import {
+  Baby,
   BookOpen,
   BarChart3,
   Bot,
@@ -11,7 +12,10 @@ import {
 import type { UserRole } from "@domain/user/types";
 import { canAccessAdminCenter } from "@domain/user/roles";
 
-type NavigationAccess = "authenticated" | "adminCenter";
+type NavigationAccess = "authenticated" | "adminCenter" | "womenHealth";
+type NavigationContext = {
+  womenHealthVisible?: boolean;
+};
 
 export interface AppNavigationItem {
   value: string;
@@ -25,6 +29,11 @@ export const desktopNavigationItems: AppNavigationItem[] = [
   { value: "/meals", labelKey: "navigation.food", access: "authenticated" },
   { value: "/recipes", labelKey: "navigation.recipes", access: "authenticated" },
   { value: "/coach", labelKey: "navigation.coach", access: "authenticated" },
+  {
+    value: "/profile#women-health",
+    labelKey: "navigation.womenHealth",
+    access: "womenHealth",
+  },
   { value: "/community", labelKey: "navigation.community", access: "authenticated" },
   { value: "/progress", labelKey: "navigation.progress", access: "authenticated" },
   { value: "/profile", labelKey: "navigation.profile", access: "authenticated" },
@@ -49,6 +58,12 @@ export const mobileNavigationItems: AppNavigationItem[] = [
     labelKey: "navigation.coach",
     access: "authenticated",
     icon: Bot,
+  },
+  {
+    value: "/profile#women-health",
+    labelKey: "navigation.womenHealth",
+    access: "womenHealth",
+    icon: Baby,
   },
   {
     value: "/community",
@@ -87,10 +102,15 @@ export const adminRouteRoles: UserRole[] = [
 
 const canAccessNavigationItem = (
   item: AppNavigationItem,
-  role: UserRole | null | undefined
-) => item.access === "authenticated" || canAccessAdminCenter(role);
+  role: UserRole | null | undefined,
+  context: NavigationContext = {}
+) =>
+  item.access === "authenticated" ||
+  (item.access === "womenHealth" && Boolean(context.womenHealthVisible)) ||
+  (item.access === "adminCenter" && canAccessAdminCenter(role));
 
 export const getVisibleNavigationItems = (
   items: AppNavigationItem[],
-  role: UserRole | null | undefined
-) => items.filter((item) => canAccessNavigationItem(item, role));
+  role: UserRole | null | undefined,
+  context: NavigationContext = {}
+) => items.filter((item) => canAccessNavigationItem(item, role, context));
