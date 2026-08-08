@@ -56,17 +56,6 @@ export const OnboardingWelcomePage = () => {
                 <MenuItem value="pl">🇵🇱 {languageLabels.pl}</MenuItem>
                 <MenuItem value="uk">🇺🇦 {languageLabels.uk}</MenuItem>
                 <MenuItem value="en">🇬🇧 {languageLabels.en}</MenuItem>
-                <MenuItem
-                  disabled
-                  value="add"
-                  sx={{
-                    opacity: "1 !important",
-                    color: "text.secondary",
-                    fontWeight: 800,
-                  }}
-                >
-                  + {t("language.add")}
-                </MenuItem>
               </Select>
             </FormControl>
           </Stack>

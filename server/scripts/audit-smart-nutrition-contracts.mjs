@@ -64,6 +64,9 @@ const envExampleSource = readSource("render.env.example");
 const verifyEmailPageSource = readSource("src/pages/VerifyEmailPage.tsx");
 const forgotPasswordPageSource = readSource("src/pages/ForgotPasswordPage.tsx");
 const resetPasswordPageSource = readSource("src/pages/ResetPasswordPage.tsx");
+const onboardingWelcomeSource = readSource(
+  "src/pages/onboarding/OnboardingWelcomePage.tsx"
+);
 const onboardingAssistantSource = readSource(
   "src/pages/onboarding/OnboardingAssistantPage.tsx"
 );
@@ -1393,6 +1396,14 @@ addCheck(
       '<Route index element={<Navigate to={stepPaths.choice} replace />} />'
     ),
   "Authenticated users who still need onboarding must land on the explicit continue-or-skip choice, not a root onboarding screen that feels like language/theme setup is being repeated."
+);
+
+addCheck(
+  "onboarding welcome has no disabled language placeholder",
+  !onboardingWelcomeSource.includes('value="add"') &&
+    !onboardingWelcomeSource.includes('t("language.add")') &&
+    !/disabled[\s\S]{0,220}language\.add/.test(onboardingWelcomeSource),
+  "Onboarding language setup must offer only real selectable languages; disabled add-language placeholders are dead UI."
 );
 
 addCheck(
