@@ -97,6 +97,8 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Localized catalog-contribution category fallbacks so product correction and personal catalog submissions do not show raw `Manual` source text to regular users.
 - Reworked profile/account/sync copy so regular users see cloud profile, protected session, cloud restore, and temporary service availability language instead of API/access-token/snapshot/server setup details.
 - Made female onboarding explicit: choosing a female profile now routes through the women-health/pregnancy/family context step before ordinary profile fields, then continues through name, age, and height without hidden jumps; profile visibility is protected so female accounts keep the women-health section available.
+- Hardened auth/session profile bootstrap so Register and Verify Email save default session profile data only when the backend snapshot has no profile slice; existing cloud profile, onboarding, women-health, pregnancy, and family lifecycle data are not overwritten by a post-auth bootstrap PATCH.
+- Added a HomePage women-health/family wellness entrypoint for eligible female or women-health-context profiles while keeping the full women-health overview lazy and profile/cloud-backed.
 - Polished profile role chips so Ukrainian/Polish profile headers show localized role names instead of internal English `User`, `Verified User`, `Admin`, or `Owner` labels.
 - Localized adaptive-goal mode explanations so profile goal controls use product-language copy in the active app language instead of hard-coded technical English.
 - Polished water-tracker copy so hydration controls use native product language for assistant reactions, browser notifications, reward sync, and personal targets instead of mixed `companion`/`notifications` wording.
@@ -355,6 +357,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - GitHub quality checks must cover the same release-critical surface as local stabilization: lint, build, tests, bundle, SEO, dead-code, dependency, security, cycle, architecture, contracts, and production config validation.
 - Expired session/reset/verification token cleanup is housekeeping, not request handling. It must not run as a global storage delete scan on every API request.
 - Password reset must persist the new password before consuming the reset token or deleting reset-token records.
+- Auth/register/verify profile bootstrap may only create missing cloud profile state. It must not save defaults over an existing backend snapshot or erase onboarding, women-health, pregnancy, or family lifecycle context.
 - AI day summaries must be backend-backed read actions with an action receipt; generic model text is not enough when the user asks for the real day summary.
 - AI progress reports must be backend-backed read actions over canonical snapshot/profile/water/reminder state; generic model text is not enough when the user asks for weekly or monthly progress.
 - AI recipe creation must use canonical meal-template persistence and backend restore confirmation; prompt-only recipe ideas must not be shown as saved recipes.
@@ -454,7 +457,7 @@ The project has a formal Codex governance layer and specialist skill suite. The 
 - Live owner/admin access is not active for the tested account until Render has `SMART_NUTRITION_SUPER_ADMIN_EMAIL` set to the real owner email and is redeployed.
 - Ignored/private env files and local browser profiles can contain sensitive machine-specific data; audits must avoid printing secrets and should scan committed templates separately.
 - Email deliverability is functional but at least one confirmation message landed in spam during live testing; DNS sender alignment and mailbox reputation need an external deliverability check outside code.
-- Live onboarding completion recently showed `PATCH /api/auth/profile-state` 500. Local code now maps unexpected persistence failures to `STATE_SYNC_UNAVAILABLE`, but production still needs a redeploy and authenticated smoke proof that onboarding finish saves user/profile state, refresh restores it, and female women-health access is visible.
+- Live onboarding completion recently showed `PATCH /api/auth/profile-state` 500. Local code now maps unexpected persistence failures to `STATE_SYNC_UNAVAILABLE` and prevents Register/Verify Email from bootstrapping over an existing cloud profile snapshot, but production still needs a redeploy and authenticated smoke proof that onboarding finish saves user/profile state, refresh restores it, and female women-health access is visible from Home and Profile.
 - Telegram reminder behavior can diverge from the app reminder/task model if legacy reminder naming is extended instead of migrated.
 - PWA stale chunks and service worker updates are guarded by preload recovery, service-worker cache bypass, explicit update UI, and a fallback reload path; real-device PWA smoke should still validate this after deploy.
 - Mobile safe areas, bottom navigation, keyboard resize, and camera overlays can break core flows.

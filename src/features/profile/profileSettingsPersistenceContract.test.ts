@@ -217,11 +217,13 @@ describe("profile settings persistence contract", () => {
 
     expect(registerSource).toContain(USE_PROFILE_CLOUD_ACTION);
     expect(registerSource).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(registerSource).toContain("shouldSaveSessionProfileBootstrap");
     expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
     expect(registerSource).not.toContain("saveProfileStateToCloud");
     expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
     expect(verifySource).toContain(USE_PROFILE_CLOUD_ACTION);
     expect(verifySource).toContain(PROFILE_CLOUD_COPY_OWNER);
+    expect(verifySource).toContain("shouldSaveSessionProfileBootstrap");
     expect(verifySource).toContain(
       "profileActionRef.current.runProfileStateSave(sessionProfile)"
     );

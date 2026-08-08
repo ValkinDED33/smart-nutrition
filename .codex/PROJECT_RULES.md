@@ -36,6 +36,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 28. GitHub quality gate must stay aligned with the local release gate. Master/PR checks must not omit bundle, SEO, dead-code, security, architecture, contract, or production config validation.
 29. Expired token cleanup must run as startup/scheduled housekeeping, not inside ordinary API request handling.
 30. Password reset must save the new password before consuming or deleting reset tokens.
+31. Auth/register/verify profile bootstrap may run only when the backend snapshot has no profile slice. It must never write default session profile data over an existing cloud profile, onboarding, women-health, pregnancy, or family lifecycle snapshot.
 
 ## Enforcement
 
@@ -84,6 +85,7 @@ These rules are mandatory for Smart Nutrition architecture, fixes, audits, and r
 - Weakening CI to a smaller subset than the local quality gate, then treating green GitHub status as production readiness.
 - Running expired session/reset/verification token cleanup as a global storage delete scan on every request.
 - Consuming a password reset token before the new password is actually persisted.
+- Saving default session profile data after registration or email verification when the backend already returned a profile snapshot.
 
 ## Recoverability Standard
 

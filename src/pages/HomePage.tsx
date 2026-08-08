@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
+  Baby,
   BarChart3,
   BookOpen,
   Camera,
@@ -33,6 +34,10 @@ import {
 } from "../features/meal/selectors";
 import { incrementWater } from "../features/water/waterSlice";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
+import {
+  hasWomenHealthContext,
+  isWomenHealthVisibleForGender,
+} from "@domain/profile/womenHealth";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { buildDailyContext } from "@domain/meal/dailyContext";
 import {
@@ -79,6 +84,7 @@ const homeCopy = {
     recipes: "Рецепти",
     community: "Спільнота",
     progress: "Прогрес",
+    womenHealth: "Жіночий ритм",
     profile: "Профіль",
     searchFood: "Пошук їжі",
     addManually: "Додати вручну",
@@ -113,6 +119,7 @@ const homeCopy = {
     recipes: "Przepisy",
     community: "Społeczność",
     progress: "Postępy",
+    womenHealth: "Rytm kobiecy",
     profile: "Profil",
     searchFood: "Szukaj jedzenia",
     addManually: "Dodaj ręcznie",
@@ -147,6 +154,7 @@ const homeCopy = {
     recipes: "Recipes",
     community: "Community",
     progress: "Progress",
+    womenHealth: "Women rhythm",
     profile: "Profile",
     searchFood: "Search food",
     addManually: "Add manually",
@@ -186,6 +194,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
   const dailyCalories = useSelector((state: RootState) => state.profile.dailyCalories);
   const water = useSelector((state: RootState) => state.water);
   const items = useSelector(selectMealItems);
@@ -301,6 +310,17 @@ const HomePage = () => {
     { label: copy.recipes, icon: BookOpen, path: "/recipes" },
     { label: copy.community, icon: UsersRound, path: "/community" },
     { label: copy.progress, icon: BarChart3, path: "/progress" },
+    ...(isWomenHealthVisibleForGender(user.gender) ||
+    hasWomenHealthContext(womenHealth)
+      ? [
+          {
+            label: copy.womenHealth,
+            icon: Baby,
+            path: "/profile#women-health",
+            testId: "home-women-health-entrypoint",
+          },
+        ]
+      : []),
     { label: copy.profile, icon: UserRound, path: "/profile" },
   ];
   const sections = [
@@ -809,7 +829,9 @@ const HomePage = () => {
             display: "grid",
             gridTemplateColumns: {
               xs: "1fr",
-              sm: `repeat(${activeSection === "today" ? 5 : 3}, minmax(0, 1fr))`,
+              sm: `repeat(${
+                activeSection === "today" ? Math.min(routeCards.length, 6) : 3
+              }, minmax(0, 1fr))`,
             },
             gap: 1,
           }}
@@ -824,6 +846,7 @@ const HomePage = () => {
               type="button"
               onClick={() => navigate(card.path)}
               variant="outlined"
+              data-home-women-health-entrypoint={card.testId}
               sx={{
                 p: 1.4,
                 minHeight: 96,

@@ -53,3 +53,21 @@ export const buildSessionProfileState = ({
 
   return profileReducer(baseProfile, setProfileLanguage(language));
 };
+
+export const shouldSaveSessionProfileBootstrap = ({
+  snapshot,
+  useSnapshotForSessionBootstrap,
+}: {
+  snapshot?: AppSnapshot | null;
+  useSnapshotForSessionBootstrap: boolean;
+}) => {
+  if (!snapshot) {
+    return true;
+  }
+
+  if (!useSnapshotForSessionBootstrap) {
+    return false;
+  }
+
+  return snapshot.profile === null || snapshot.profile === undefined;
+};

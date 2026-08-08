@@ -1347,9 +1347,10 @@ addCheck(
 );
 
 addCheck(
-  "auth and onboarding profile bootstrap use shared cloud-confirmed action path",
+  "auth profile bootstrap only saves when cloud profile is missing",
   registerPageSource.includes("useProfileCloudAction") &&
     registerPageSource.includes("getProfileCloudActionCopy") &&
+    registerPageSource.includes("shouldSaveSessionProfileBootstrap") &&
     registerPageSource.includes(
       "profileAction.runProfileStateSave(sessionProfile)"
     ) &&
@@ -1357,6 +1358,7 @@ addCheck(
     !registerPageSource.includes("replaceProfileState(sessionProfile)") &&
     verifyEmailPageSource.includes("useProfileCloudAction") &&
     verifyEmailPageSource.includes("getProfileCloudActionCopy") &&
+    verifyEmailPageSource.includes("shouldSaveSessionProfileBootstrap") &&
     verifyEmailPageSource.includes(
       "profileActionRef.current.runProfileStateSave(sessionProfile)"
     ) &&
@@ -1369,7 +1371,7 @@ addCheck(
     onboardingFinishSource.includes("applyOnboardingProfilePatch") &&
     !onboardingFinishSource.includes("saveProfileAndUserToCloud") &&
     !onboardingFinishSource.includes("replaceProfileState(nextProfile)"),
-  "Registration, email verification, and onboarding completion must not own a second profile save/replace path; they must use the shared profile cloud-action hook, and final onboarding must replay the same answer patch after a cloud conflict."
+  "Registration and email verification must not save a bootstrap profile over an existing cloud profile snapshot. They may use the shared profile cloud-action hook only when the cloud profile slice is missing, while final onboarding must use the shared user/profile cloud save and replay the same answer patch after a cloud conflict."
 );
 
 addCheck(

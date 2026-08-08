@@ -35,6 +35,7 @@ describe("onboarding and profile flow contract", () => {
     expect(registerSource).toContain("languagePreference: appLanguage");
     expect(registerSource).toContain("useProfileCloudAction");
     expect(registerSource).toContain("getProfileCloudActionCopy");
+    expect(registerSource).toContain("shouldSaveSessionProfileBootstrap");
     expect(registerSource).toContain("profileAction.runProfileStateSave(sessionProfile)");
     expect(registerSource).not.toContain("saveProfileStateToCloud");
     expect(registerSource).not.toContain("replaceProfileState(sessionProfile)");
@@ -92,6 +93,7 @@ describe("onboarding and profile flow contract", () => {
     expect(verifyEmailSource).toContain('"/onboarding/choice"');
     expect(verifyEmailSource).toContain("useProfileCloudAction");
     expect(verifyEmailSource).toContain("getProfileCloudActionCopy");
+    expect(verifyEmailSource).toContain("shouldSaveSessionProfileBootstrap");
     expect(verifyEmailSource).toContain(
       "profileActionRef.current.runProfileStateSave(sessionProfile)"
     );

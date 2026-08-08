@@ -22,7 +22,10 @@ import { setCredentials } from "../features/auth/authSlice";
 import {
   applyRemoteSnapshotWithSyncPolicy,
 } from "@features/auth/sessionSnapshot";
-import { buildSessionProfileState } from "@features/auth/authSessionProfile";
+import {
+  buildSessionProfileState,
+  shouldSaveSessionProfileBootstrap,
+} from "@features/auth/authSessionProfile";
 import { createCompanionRewardAnalyticsPayload } from "../features/companion";
 import { applyCompanionRewardInCloud } from "../features/companion/companionCloudSync";
 import { getProfileCloudActionCopy } from "../features/profile/profileCloudActionCopy";
@@ -540,17 +543,25 @@ const RegisterPage = () => {
       })
     );
 
-    const sessionProfile = buildSessionProfileState({
-      user,
-      snapshot: hydrationResult.useSnapshotForSessionBootstrap ? snapshot : null,
-      language: appLanguage,
-    });
+    if (
+      shouldSaveSessionProfileBootstrap({
+        snapshot,
+        useSnapshotForSessionBootstrap:
+          hydrationResult.useSnapshotForSessionBootstrap,
+      })
+    ) {
+      const sessionProfile = buildSessionProfileState({
+        user,
+        snapshot: hydrationResult.useSnapshotForSessionBootstrap ? snapshot : null,
+        language: appLanguage,
+      });
 
-    try {
-      await profileAction.runProfileStateSave(sessionProfile);
-    } catch {
-      // Registration/session succeeded. The sync slice records the profile
-      // language failure, and we avoid showing unsaved profile data locally.
+      try {
+        await profileAction.runProfileStateSave(sessionProfile);
+      } catch {
+        // Registration/session succeeded. The sync slice records the profile
+        // bootstrap failure, and we avoid showing unsaved profile data locally.
+      }
     }
 
     resetOnboarding();

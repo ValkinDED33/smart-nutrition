@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { User } from "@domain/user/types";
-import { buildProfileBootstrapState, buildSessionProfileState } from "./authSessionProfile";
+import {
+  buildProfileBootstrapState,
+  buildSessionProfileState,
+  shouldSaveSessionProfileBootstrap,
+} from "./authSessionProfile";
 import { normalizeProfileState } from "@features/profile/profileSlice";
 
 const user: User = {
@@ -49,5 +53,65 @@ describe("authSessionProfile", () => {
     expect(profile.dailyCalories).toBe(1900);
     expect(profile.goal).toBe("cut");
     expect(profile.languagePreference).toBe("en");
+  });
+
+  it("does not run a session bootstrap save over an applied cloud profile", () => {
+    const snapshotProfile = normalizeProfileState({
+      dailyCalories: 1900,
+      goal: "cut",
+    });
+
+    expect(
+      shouldSaveSessionProfileBootstrap({
+        snapshot: {
+          profile: snapshotProfile,
+          meal: null,
+          water: null,
+          fridge: null,
+          community: null,
+          companion: null,
+        },
+        useSnapshotForSessionBootstrap: true,
+      })
+    ).toBe(false);
+  });
+
+  it("runs session bootstrap only when no cloud profile slice exists", () => {
+    expect(
+      shouldSaveSessionProfileBootstrap({
+        snapshot: {
+          profile: null,
+          meal: null,
+          water: null,
+          fridge: null,
+          community: null,
+          companion: null,
+        },
+        useSnapshotForSessionBootstrap: true,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldSaveSessionProfileBootstrap({
+        snapshot: null,
+        useSnapshotForSessionBootstrap: false,
+      })
+    ).toBe(true);
+  });
+
+  it("does not bootstrap over a cloud snapshot kept aside for a fresh local outbox", () => {
+    expect(
+      shouldSaveSessionProfileBootstrap({
+        snapshot: {
+          profile: normalizeProfileState({ dailyCalories: 1900 }),
+          meal: null,
+          water: null,
+          fridge: null,
+          community: null,
+          companion: null,
+        },
+        useSnapshotForSessionBootstrap: false,
+      })
+    ).toBe(false);
   });
 });
