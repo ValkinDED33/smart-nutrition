@@ -411,20 +411,20 @@ addCheck(
 );
 
 addCheck(
-  "project knowledge layer is committed while codex runtime artifacts stay ignored",
+  "project knowledge layer stays local while codex artifacts stay ignored",
   gitignoreSource.includes(".codex/") &&
-    gitignoreSource.includes("!.codex/PROJECT_MEMORY.md") &&
-    gitignoreSource.includes("!.codex/DECISIONS.md") &&
-    gitignoreSource.includes("!.codex/PROJECT_RULES.md") &&
-    gitignoreSource.includes("!.codex/skills/*/SKILL.md") &&
-    gitignoreSource.includes(".codex/skills/*/*") &&
+    !gitignoreSource.includes("!.codex/") &&
+    !gitignoreSource.includes("!.codex/PROJECT_MEMORY.md") &&
+    !gitignoreSource.includes("!.codex/DECISIONS.md") &&
+    !gitignoreSource.includes("!.codex/PROJECT_RULES.md") &&
+    !gitignoreSource.includes("!.codex/skills") &&
     projectMemorySource.includes("## Project Vision") &&
     projectMemorySource.includes("## Active Contracts") &&
     projectDecisionsSource.includes("Backend/Cloud Is Source Of Truth") &&
     projectRulesSource.includes("No duplicate systems") &&
     chiefSkillSource.includes("Project Knowledge Layer") &&
     specialistSkillSources.every(({ source }) => source.includes("---") && source.includes("##")),
-  "Project memory, ADRs, rules, and specialist SKILL.md files must be allowed into git, while Codex browser profiles, agents, caches, screenshots, and logs stay ignored."
+  "Project memory, ADRs, rules, and specialist SKILL.md files must exist locally for Codex, while the entire .codex folder stays out of the GitHub index."
 );
 
 addCheck(
@@ -434,6 +434,7 @@ addCheck(
       !/^\.codex\/(?:chrome|cdp|preview|runtime-smoke|screenshots|vite-dev)/.test(
         filePath
       ) &&
+      !/^\.codex\//.test(filePath) &&
       !/^\.codex-remote-attachments\//.test(filePath) &&
       !/^server\/data\/(?!\.gitkeep$)/.test(filePath) &&
       !/^dist\//.test(filePath) &&
