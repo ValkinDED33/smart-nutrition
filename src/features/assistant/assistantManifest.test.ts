@@ -15,7 +15,11 @@ describe("assistantManifest", () => {
     expect(resolveAssistantArea("/onboarding/friction")).toBe("onboarding");
     expect(resolveAssistantArea("/meals")).toBe("meals");
     expect(resolveAssistantArea("/food")).toBe("meals");
+    expect(resolveAssistantArea("/scanner")).toBe("meals");
+    expect(resolveAssistantArea("/photo-meal")).toBe("meals");
     expect(resolveAssistantArea("/coach")).toBe("coach");
+    expect(resolveAssistantArea("/assistant")).toBe("coach");
+    expect(resolveAssistantArea("/ai")).toBe("coach");
     expect(resolveAssistantArea("/progress")).toBe("progress");
     expect(resolveAssistantArea("/profile")).toBe("profile");
     expect(resolveAssistantArea("/community")).toBe("community");

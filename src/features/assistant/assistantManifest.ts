@@ -90,7 +90,7 @@ const assistantAreas: AssistantAreaManifest[] = [
   {
     area: "meals",
     label: "Meals",
-    routePrefixes: ["/meals", "/food"],
+    routePrefixes: ["/meals", "/food", "/scanner", "/photo-meal"],
     defaultRoute: "/meals",
     tone: "focused",
     visibility: "global",
@@ -98,7 +98,7 @@ const assistantAreas: AssistantAreaManifest[] = [
   {
     area: "coach",
     label: "Coach",
-    routePrefixes: ["/coach"],
+    routePrefixes: ["/coach", "/assistant", "/ai"],
     defaultRoute: "/coach",
     tone: "supportive",
     visibility: "global",

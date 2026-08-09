@@ -395,10 +395,22 @@ function App() {
                 element={<Navigate to="/meals" replace />}
               />
               <Route
+                path="/scanner"
+                element={<Navigate to="/meals?mode=barcode" replace />}
+              />
+              <Route
+                path="/photo-meal"
+                element={<Navigate to="/meals?mode=photo" replace />}
+              />
+              <Route
                 path="/water"
                 element={<Navigate to="/progress" replace />}
               />
               <Route path="/ai" element={<Navigate to="/coach" replace />} />
+              <Route
+                path="/assistant"
+                element={<Navigate to="/coach" replace />}
+              />
               <Route
                 path="*"
                 element={
