@@ -16,7 +16,10 @@ import {
   updateWomenHealth,
 } from "../../features/profile/profileSlice";
 import { getProfileCloudActionCopy } from "../../features/profile/profileCloudActionCopy";
-import { useProfileCloudAction } from "../../features/profile/useProfileCloudAction";
+import {
+  resolveProfileCloudActionErrorMessage,
+  useProfileCloudAction,
+} from "../../features/profile/useProfileCloudAction";
 import { useLanguage } from "../../shared/language";
 import { calculateProfileTargets } from "@domain/profile/profileTargets";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
@@ -330,9 +333,15 @@ export const OnboardingFinishPage = ({ state }: OnboardingStepProps) => {
         ...companionRewardPayload,
       });
       navigate(nextPath, { replace: true });
-    } catch {
+    } catch (caughtError) {
       preserveDraft();
-      const message = t("error.genericProfile");
+      const message = resolveProfileCloudActionErrorMessage(
+        caughtError,
+        {
+          ...profileActionCopy,
+          saveFailed: t("error.genericProfile"),
+        }
+      );
       dispatch(hydrateSyncOutbox(enqueueSyncOutbox(message)));
       dispatch(markSyncError(message));
       setSaveError(message);

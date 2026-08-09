@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { navigation } from "@shared/config/navigation";
 import {
   desktopNavigationItems,
   getVisibleNavigationItems,
@@ -26,6 +27,9 @@ describe("appNavigation", () => {
 
     expect(desktop.map((item) => item.value)).toContain(WOMEN_HEALTH_ROUTE);
     expect(mobile.map((item) => item.value)).toContain(WOMEN_HEALTH_ROUTE);
+    expect(navigation.uk.womenHealth).toBe("Жіноче");
+    expect(navigation.pl.womenHealth).toBe("Kobieta");
+    expect(navigation.en.womenHealth).toBe("Women");
   });
 
   it("does not use admin access as a substitute for women-health context", () => {

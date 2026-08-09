@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFile } from "node:fs/promises";
 import {
   canUseRemoteBaseUrlInCurrentBrowser,
   checkRemoteBackendAvailability,
@@ -343,6 +344,16 @@ describe("remote API base URL guards", () => {
     expect(JSON.stringify(fetchMock.mock.calls)).toContain(
       "https://smart-nutrition-sk5r.onrender.com/api/health"
     );
+  });
+
+  it("preserves profile-state diagnostics from public error payloads", async () => {
+    const source = await readFile("src/shared/api/authRemote.ts", "utf8");
+
+    expect(source).toContain("diagnostics?:");
+    expect(source).toContain("diagnostics: payload.diagnostics");
+    expect(source).toContain("diagnostics: error.diagnostics");
+    expect(source).toContain("syncStage?: string");
+    expect(source).toContain("reasonCode?: string");
   });
 
   it("ignores stale stored API URLs on the public deployment", async () => {

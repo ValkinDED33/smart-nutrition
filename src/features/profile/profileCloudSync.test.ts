@@ -22,6 +22,10 @@ const ASSISTANT_NAME = "Alex";
 const CLOUD_DEVICE_ID = "device-1";
 const PROFILE_SYNC_FAILED_MESSAGE =
   "Cloud sync could not save the latest profile data.";
+const PROFILE_SYNC_FAILED_DIAGNOSTIC_MESSAGE =
+  "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503)";
+const PROFILE_SYNC_FAILED_STAGE_MESSAGE =
+  "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503 · stage:profile-state-finalize · reason:MongoServerError)";
 const RAW_PROFILE_SYNC_ERROR = "Provider stack trace: profile database failed";
 const PROFILE_RENDER_MODE_3D = "3d";
 const PROFILE_CALORIES = 2100;
@@ -266,6 +270,68 @@ describe("profileCloudSync", () => {
       type: ACTION_SYNC_ERROR,
       payload: PROFILE_SYNC_FAILED_MESSAGE,
     });
+  });
+
+  it("keeps profile sync diagnostics typed without exposing backend details", async () => {
+    const dispatch = vi.fn();
+    const profile = normalizeProfileState({ dailyCalories: PROFILE_CALORIES });
+    const user = USER_PROFILE_FIXTURE;
+    authApiMock.syncRemoteProfileWithUser.mockResolvedValueOnce({
+      ok: false,
+      code: "STATE_SYNC_UNAVAILABLE",
+      status: 503,
+      message: RAW_PROFILE_SYNC_ERROR,
+    });
+
+    await expect(
+      saveProfileAndUserToCloud(
+        dispatch,
+        user,
+        profile,
+        PROFILE_PREVIOUS_UPDATED_AT
+      )
+    ).rejects.toThrow(PROFILE_SYNC_FAILED_DIAGNOSTIC_MESSAGE);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ACTION_SYNC_ERROR,
+      payload: PROFILE_SYNC_FAILED_DIAGNOSTIC_MESSAGE,
+    });
+    expect(JSON.stringify(dispatch.mock.calls)).not.toContain(
+      RAW_PROFILE_SYNC_ERROR
+    );
+  });
+
+  it("keeps profile sync failure stage diagnostics for production triage", async () => {
+    const dispatch = vi.fn();
+    const profile = normalizeProfileState({ dailyCalories: PROFILE_CALORIES });
+    const user = USER_PROFILE_FIXTURE;
+    authApiMock.syncRemoteProfileWithUser.mockResolvedValueOnce({
+      ok: false,
+      code: "STATE_SYNC_UNAVAILABLE",
+      status: 503,
+      message: RAW_PROFILE_SYNC_ERROR,
+      diagnostics: {
+        syncStage: "profile-state-finalize",
+        reasonCode: "MongoServerError",
+      },
+    });
+
+    await expect(
+      saveProfileAndUserToCloud(
+        dispatch,
+        user,
+        profile,
+        PROFILE_PREVIOUS_UPDATED_AT
+      )
+    ).rejects.toThrow(PROFILE_SYNC_FAILED_STAGE_MESSAGE);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ACTION_SYNC_ERROR,
+      payload: PROFILE_SYNC_FAILED_STAGE_MESSAGE,
+    });
+    expect(JSON.stringify(dispatch.mock.calls)).not.toContain(
+      RAW_PROFILE_SYNC_ERROR
+    );
   });
 
   it("rebases a combined profile and user save after a cloud conflict", async () => {

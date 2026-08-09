@@ -11,6 +11,7 @@ const COMMUNITY_ROUTE = "/community";
 const PROFILE_ROUTE = "/profile";
 const COACH_ROUTE = "/coach";
 const MEALS_ROUTE = "/meals";
+const GLOBAL_ASSISTANT_LAYER_SOURCE = "./GlobalAssistantLayer.tsx";
 
 const resolveModel = (pathname: string) =>
   resolveGlobalAssistantLayerModel(pathname, {
@@ -29,7 +30,7 @@ const resolveMobileModel = (pathname: string) =>
 describe("GlobalAssistantLayer", () => {
   it("does not import the 3D assistant runtime from the global shell", async () => {
     const source = await readFile(
-      new URL("./GlobalAssistantLayer.tsx", import.meta.url),
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
       "utf8"
     );
 
@@ -39,7 +40,7 @@ describe("GlobalAssistantLayer", () => {
 
   it("keeps visible global assistant copy free from coach/focus jargon", async () => {
     const source = await readFile(
-      new URL("./GlobalAssistantLayer.tsx", import.meta.url),
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
       "utf8"
     );
 
@@ -55,6 +56,34 @@ describe("GlobalAssistantLayer", () => {
     expect(source).not.toContain('chip: "coach"');
     expect(source).not.toContain("Daily focus");
     expect(source).not.toContain("Open coach");
+  });
+
+  it("connects living assistant notices to real cloud sync state", async () => {
+    const source = await readFile(
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain("state.auth.syncStatus");
+    expect(source).toContain("state.auth.syncToast");
+    expect(source).toContain("state.auth.syncOutbox.pendingChanges");
+    expect(source).toContain('recentError: syncStatus === "error" || syncOutboxPendingChanges > 0');
+    expect(source).toContain('recentSuccess: syncToast?.kind === "retry-success"');
+    expect(source).not.toContain("recentError: false");
+    expect(source).not.toContain("recentSuccess: false");
+  });
+
+  it("keeps the global assistant alive without covering active input work", async () => {
+    const source = await readFile(
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain("useAssistantPointerLookOffset");
+    expect(source).toContain("window.addEventListener(\"pointermove\"");
+    expect(source).toContain("window.requestAnimationFrame");
+    expect(source).toContain("enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion");
+    expect(source).toContain("lookOffset={assistantLookOffset}");
   });
 
   it("lets public auth surfaces guide themselves and hides on onboarding", () => {

@@ -107,8 +107,23 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain("womenHealth:");
     expect(guideSource).toContain('"/onboarding/women-health"');
     expect(guideSource).toContain('key: "womenHealth"');
-    expect(guideSource).toContain("calc((100vw - 720px) / 2 - 430px)");
-    expect(guideSource).toContain('display: { xs: "none", lg: "block" }');
+    expect(guideSource).toContain('const GUIDE_FORM_SAFE_LEFT = "calc(50% + 390px)"');
+    expect(guideSource).toContain('display: { xs: "none", xl: "block" }');
+    expect(guideSource).toContain("@media (max-width: 1749px)");
+    expect(guideSource).toContain('data-onboarding-guide-requires-wide-viewport="true"');
     expect(guideSource).toContain("direction=\"row-reverse\"");
+  });
+
+  it("keeps localized assistant copy native and free from mixed-language companion jargon", async () => {
+    const guideSource = await readSource("src/pages/onboarding/OnboardingGuide.tsx");
+
+    expect(guideSource).toContain(
+      'assistant: "Обери, яким я буду. Це твій постійний помічник."'
+    );
+    expect(guideSource).toContain(
+      'assistant: "Wybierz, jaki mam być. To Twój stały asystent."'
+    );
+    expect(guideSource).not.toMatch(/uk:\s*{[\s\S]*companion[\s\S]*},\r?\n\s*pl:/);
+    expect(guideSource).not.toMatch(/pl:\s*{[\s\S]*companion[\s\S]*},\r?\n\s*en:/);
   });
 });

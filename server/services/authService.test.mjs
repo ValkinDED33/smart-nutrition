@@ -1185,6 +1185,61 @@ describe("authService", () => {
     );
   });
 
+  it("does not fail a confirmed profile-state save when cloud meta read is unavailable", async () => {
+    const { authRepository, logger, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-meta-down",
+      email: "profile-state-meta-down@example.com",
+      name: "Profile State Meta Down",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "uk",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const nextUser = {
+      ...currentUser,
+      weight: 75,
+    };
+    const savedProfileState = { dailyCalories: 2100, normalized: true };
+    const saveProfileAndUser = vi.fn(async () => ({
+      user: nextUser,
+      profile: savedProfileState,
+    }));
+    const getProfileMeta = vi.fn(async () => {
+      throw new Error("meta read timeout");
+    });
+
+    const result = await service.updateUserProfileAndState({
+      body: {
+        user: nextUser,
+        profile: { dailyCalories: 2100 },
+      },
+      currentUser,
+      saveProfileAndUser,
+      getProfileMeta,
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: currentUser.id, weight: 75, languagePreference: "uk" },
+      profile: savedProfileState,
+      meta: null,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[auth] profile-state meta read failed after confirmed save",
+      expect.objectContaining({
+        userId: currentUser.id,
+        code: "Error",
+      })
+    );
+  });
+
   it("rejects duplicate profile names before saving profile state in combined updates", async () => {
     const { authRepository, service } = createAuthServiceFixture();
     const currentUser = {

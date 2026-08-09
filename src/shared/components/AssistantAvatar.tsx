@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Box } from "@mui/material";
 import {
+  assistantAuraVariants,
   assistantAvatarHover,
   assistantAvatarRootVariants,
   assistantEyeBlinkTransition,
@@ -147,6 +148,57 @@ export const AssistantAvatar = ({
         },
       }}
     >
+      <Box
+        component={motion.span}
+        variants={assistantAuraVariants}
+        animate={active ? "animate" : false}
+        data-assistant-avatar-living-aura="true"
+        sx={{
+          position: "absolute",
+          inset: -Math.max(round(size * 0.16), 8),
+          borderRadius: getCompanionFaceRadius(variant),
+          background:
+            mood === "concerned"
+              ? "radial-gradient(circle, rgba(249,115,22,0.32), transparent 62%)"
+              : mood === "celebrate"
+                ? "radial-gradient(circle, rgba(132,204,22,0.38), transparent 64%)"
+                : "radial-gradient(circle, rgba(34,211,238,0.28), transparent 64%)",
+          filter: "blur(2px)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+
+      <Box
+        component={motion.span}
+        animate={
+          active
+            ? {
+                rotate: [0, 360],
+              }
+            : false
+        }
+        transition={{
+          duration: mood === "celebrate" ? 5.2 : 8.4,
+          ease: "linear",
+          repeat: Infinity,
+        }}
+        data-assistant-avatar-orbit="true"
+        sx={{
+          position: "absolute",
+          inset: -Math.max(round(size * 0.11), 6),
+          borderRadius: "50%",
+          border: "1px solid rgba(34,211,238,0.22)",
+          borderTopColor:
+            mood === "concerned"
+              ? "rgba(249,115,22,0.52)"
+              : "rgba(132,204,22,0.52)",
+          borderRightColor: "transparent",
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
+
       <CompanionBodyParts variant={variant} size={size} visual={visual} />
       <CompanionHeadParts variant={variant} size={size} visual={visual} />
       <CompanionFaceParts variant={variant} size={size} visual={visual} />

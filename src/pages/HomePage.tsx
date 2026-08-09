@@ -341,11 +341,7 @@ const HomePage = () => {
   }
 
   const firstName = user.name.split(" ")[0] || user.name;
-  const assistantDisplayName = getAssistantDisplayName(
-    assistant.name,
-    appLanguage,
-    "Smart Nutrition AI"
-  );
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const heroTextColor = isDarkMode ? "#ffffff" : "#102a43";
   const heroMutedColor = isDarkMode ? "rgba(226,232,240,0.74)" : "rgba(15,23,42,0.66)";
   const heroOverlineColor = isDarkMode ? "rgba(236,253,245,0.82)" : "#0f766e";

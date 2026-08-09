@@ -47,6 +47,10 @@ describe("AccountDataCard production UX contracts", () => {
 
   it("shows Telegram connect entrypoint in the first profile section for existing users", () => {
     expect(profilePageSource).toContain("const TelegramConnectionCard = lazy");
+    expect(profilePageSource).toContain('data-telegram-entrypoint="true"');
+    expect(profilePageSource).toContain("copy.telegramEntryAction");
+    expect(profilePageSource).toContain('to="/profile#telegram-connect"');
+    expect(telegramConnectionSource).toContain('id="telegram-connect"');
     expect(profilePageSource).toContain("<TelegramConnectionCard />");
     expect(profilePageSource.indexOf("<TelegramConnectionCard />")).toBeLessThan(
       profilePageSource.indexOf("<ProfileSectionTabs")

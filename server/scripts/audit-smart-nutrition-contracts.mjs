@@ -1219,13 +1219,14 @@ addCheck(
 );
 
 addCheck(
-  "onboarding finish sync failures hide raw API exception text",
-  onboardingFinishSource.includes('const message = t("error.genericProfile")') &&
+  "onboarding finish sync failures preserve safe diagnostics only",
+  onboardingFinishSource.includes("resolveProfileCloudActionErrorMessage") &&
+    onboardingFinishSource.includes('saveFailed: t("error.genericProfile")') &&
     onboardingFinishSource.includes("enqueueSyncOutbox(message)") &&
     onboardingFinishSource.includes("markSyncError(message)") &&
-    !onboardingFinishSource.includes("error instanceof Error") &&
-    !onboardingFinishSource.includes("error.message"),
-  "Final onboarding save failures must keep sync outbox and visible alerts in localized product-language recovery copy."
+    !onboardingFinishSource.includes("caughtError instanceof Error") &&
+    !onboardingFinishSource.includes("caughtError.message"),
+  "Final onboarding save failures must keep sync outbox and visible alerts in localized recovery copy while preserving typed cloud diagnostics through the shared sanitizer."
 );
 
 addCheck(

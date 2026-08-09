@@ -184,6 +184,7 @@ export const TelegramConnectionCard = () => {
 
   return (
     <Paper
+      id="telegram-connect"
       variant="outlined"
       sx={{
         p: { xs: 2, md: 2.5 },

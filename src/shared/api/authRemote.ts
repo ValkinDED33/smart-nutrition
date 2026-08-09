@@ -42,6 +42,11 @@ export interface RemoteSyncResult {
   ok: boolean;
   message?: string;
   code?: string;
+  status?: number;
+  diagnostics?: {
+    syncStage?: string;
+    reasonCode?: string;
+  };
   meta?: AppSnapshotMeta | null;
   profile?: unknown;
   meal?: unknown;
@@ -227,22 +232,26 @@ class RemoteRequestError extends Error {
   code: string;
   status: number;
   meta: AppSnapshotMeta | null;
+  diagnostics?: RemoteSyncResult["diagnostics"];
 
   constructor({
     code,
     message,
     status,
     meta = null,
+    diagnostics,
   }: {
     code: string;
     message: string;
     status: number;
     meta?: AppSnapshotMeta | null;
+    diagnostics?: RemoteSyncResult["diagnostics"];
   }) {
     super(message);
     this.code = code;
     this.status = status;
     this.meta = meta;
+    this.diagnostics = diagnostics;
   }
 }
 
@@ -475,6 +484,10 @@ const readRemoteErrorPayload = async (response: Response) => {
       code?: string;
       message?: string;
       meta?: AppSnapshotMeta | null;
+      diagnostics?: {
+        syncStage?: string;
+        reasonCode?: string;
+      };
     };
   } catch {
     return {
@@ -497,6 +510,7 @@ const toRemoteRequestError = async (
     message: payload.message ?? fallbackMessage,
     status: response.status,
     meta: payload.meta ?? null,
+    diagnostics: payload.diagnostics,
   });
 };
 
@@ -585,6 +599,8 @@ const toRemoteSyncResult = (
       ok: false,
       code: error.code,
       message: error.message,
+      status: error.status,
+      diagnostics: error.diagnostics,
       meta: error.meta,
     };
   }

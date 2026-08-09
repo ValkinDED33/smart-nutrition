@@ -31,6 +31,51 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 
 const OPEN_ASSISTANT_PL = "Otwórz asystenta";
 const OPEN_ASSISTANT_EN = "Open assistant";
+const RESTING_ASSISTANT_LOOK_OFFSET = { x: 0, y: 0 };
+
+const clampAssistantLookOffset = (value: number) =>
+  Math.max(Math.min(value, 1), -1);
+
+const useAssistantPointerLookOffset = ({
+  enabled,
+}: {
+  enabled: boolean;
+}) => {
+  const [lookOffset, setLookOffset] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") {
+      return undefined;
+    }
+
+    let animationFrame = 0;
+
+    const updateLookOffset = (event: PointerEvent) => {
+      if (animationFrame) {
+        return;
+      }
+
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = 0;
+        setLookOffset({
+          x: clampAssistantLookOffset((event.clientX / window.innerWidth - 0.5) * 2),
+          y: clampAssistantLookOffset((event.clientY / window.innerHeight - 0.5) * 2),
+        });
+      });
+    };
+
+    window.addEventListener("pointermove", updateLookOffset, { passive: true });
+
+    return () => {
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+      window.removeEventListener("pointermove", updateLookOffset);
+    };
+  }, [enabled]);
+
+  return enabled ? lookOffset : RESTING_ASSISTANT_LOOK_OFFSET;
+};
 
 const layerCopy = {
   uk: {
@@ -450,6 +495,11 @@ export const GlobalAssistantLayer = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
+  const syncStatus = useSelector((state: RootState) => state.auth.syncStatus);
+  const syncToast = useSelector((state: RootState) => state.auth.syncToast);
+  const syncOutboxPendingChanges = useSelector(
+    (state: RootState) => state.auth.syncOutbox.pendingChanges
+  );
   const todayMeals = useSelector(selectTodayMealItems);
   const water = useSelector((state: RootState) => state.water);
   const weightHistory = useSelector(
@@ -478,12 +528,15 @@ export const GlobalAssistantLayer = () => {
         (entry) => getLocalDateKey(entry.date) === todayKey
       ),
       onboardingCompleted: Boolean(assistant.onboarding.completedAt),
-      recentError: false,
-      recentSuccess: false,
+      recentError: syncStatus === "error" || syncOutboxPendingChanges > 0,
+      recentSuccess: syncToast?.kind === "retry-success",
       userInactive: false,
     }),
     [
       assistant.onboarding.completedAt,
+      syncOutboxPendingChanges,
+      syncStatus,
+      syncToast?.kind,
       todayKey,
       todayMeals.length,
       water.consumedMl,
@@ -526,6 +579,9 @@ export const GlobalAssistantLayer = () => {
     : "Smart";
   const companionKind = user ? assistant.companionKind : "dragon";
   const companionSize = isDenseMobileCompanion ? 58 : isMobile ? 64 : 76;
+  const assistantLookOffset = useAssistantPointerLookOffset({
+    enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion,
+  });
 
   if (
     (!user && !isPublicCompanion) ||
@@ -690,6 +746,7 @@ export const GlobalAssistantLayer = () => {
             variant={companionKind}
             size={companionSize}
             mood={layerModel.emotion.mood}
+            lookOffset={assistantLookOffset}
             active
           />
         </Box>

@@ -185,9 +185,9 @@ export const assistantCapabilities: AssistantCapability[] = [
   {
     id: "home-companion",
     area: "home",
-    duties: ["suggest", "motivate", "navigate"],
+    duties: ["suggest", "motivate", "remind", "analyze", "navigate"],
     description:
-      "Turns the user's current nutrition, motivation, and onboarding context into a visible daily focus.",
+      "Turns meals, water, reminders, progress, family context, and onboarding answers into a visible daily focus without creating a second AI brain.",
     entryRoute: DASHBOARD_ROUTE,
     defaultAction: {
       label: "Open daily coach",
@@ -201,7 +201,7 @@ export const assistantCapabilities: AssistantCapability[] = [
     area: "meals",
     duties: ["suggest", "analyze", "warn", "explain"],
     description:
-      "Helps add food, explains calories and macros, and warns when the day needs correction.",
+      "Helps add food through the canonical meal/product flow, explains calories, macros, micronutrients, additives, and warns when the day needs correction.",
     entryRoute: "/meals",
     defaultAction: {
       label: "Add or review food",
@@ -213,9 +213,9 @@ export const assistantCapabilities: AssistantCapability[] = [
   {
     id: "coach-support",
     area: "coach",
-    duties: ["motivate", "analyze", "suggest", "explain"],
+    duties: ["motivate", "analyze", "suggest", "explain", "remind", "navigate"],
     description:
-      "Answers user questions from live profile, diary, coach analysis, motivation state, and assistant memory.",
+      "Answers and routes user needs from live profile, diary, reminders, Telegram, family mode, coach analysis, motivation state, and assistant memory through canonical project contracts.",
     entryRoute: "/coach",
     defaultAction: {
       label: "Open coach",
@@ -229,7 +229,7 @@ export const assistantCapabilities: AssistantCapability[] = [
     area: "progress",
     duties: ["analyze", "explain", "remind"],
     description:
-      "Explains weekly and monthly progress, check-ins, water, body metrics, and recurring patterns.",
+      "Explains weekly and monthly progress, check-ins, water, body metrics, pregnancy/family signals, and recurring patterns.",
     entryRoute: "/progress",
     defaultAction: {
       label: "Review progress",
@@ -241,9 +241,9 @@ export const assistantCapabilities: AssistantCapability[] = [
   {
     id: "profile-memory",
     area: "profile",
-    duties: ["guide", "explain", "remind"],
+    duties: ["guide", "explain", "remind", "navigate"],
     description:
-      "Connects profile settings, onboarding answers, assistant memory, notifications, and data controls.",
+      "Connects profile settings, onboarding answers, women health, partner invites, Telegram connection, assistant memory, notifications, and data controls.",
     entryRoute: "/profile",
     defaultAction: {
       label: "Complete profile",

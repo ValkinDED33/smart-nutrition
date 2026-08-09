@@ -74,6 +74,8 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("landingCompanionSignalNodes");
     expect(source).toContain('data-landing-living-companion-field="true"');
     expect(source).toContain('data-landing-living-companion-stage="true"');
+    expect(source).toContain('data-landing-companion-toolbelt="true"');
+    expect(source).toContain("const companionToolBadges = copy.featureRail.map");
     expect(source).toContain("landingCompanionOrbit");
     expect(source).toContain("landingCompanionSignal");
     expect(source).toContain("prefers-reduced-motion: reduce");
@@ -92,6 +94,19 @@ describe("LandingPage theme contract", () => {
     ).toBeLessThan(
       source.indexOf("<AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />"),
     );
+  });
+
+  it("keeps landing product rotation stable during a render while changing on page load", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain("createLandingRotationStart");
+    expect(source).toContain("globalThis.crypto.getRandomValues");
+    expect(source).not.toContain("Math.random");
+    expect(source).toContain("const [heroInsightStart] = useState(() =>");
+    expect(source).toContain("const [heroLineIndex] = useState(() =>");
+    expect(source).toContain("const [insightStart] = useState(() =>");
+    expect(source).toContain("const [slideStart] = useState(() =>");
+    expect(source).toContain("getRotatedItems(");
   });
 
   it("keeps the landing hero from overlapping on medium desktop widths", async () => {
@@ -121,6 +136,7 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("tags: copy.sliderTags.hydration");
     expect(source).toContain("tags: copy.sliderTags.reminders");
     expect(source).toContain("tags: copy.sliderTags.mobile");
+    expect(source).toContain("const slides = [...nutritionSlides, ...capabilitySlides];");
     expect(source).toContain('"&:focus-visible"');
     expect(source).toContain('"&:hover"');
     expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');

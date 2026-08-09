@@ -41,14 +41,32 @@ const PROFILE_CONFLICT_RETRY_MESSAGE =
 const getProfileSyncErrorMessage = (result: {
   message?: string;
   code?: string;
-}) =>
-  resolveCloudSyncFailureMessage({
+  status?: number;
+  diagnostics?: {
+    syncStage?: string;
+    reasonCode?: string;
+  };
+}) => {
+  const safeMessage = resolveCloudSyncFailureMessage({
     code: result.code,
     message: result.message,
     conflictMessage:
       "Cloud data changed on another device. Pull the latest cloud version before saving again.",
     fallbackMessage: "Cloud sync could not save the latest profile data.",
   });
+  const diagnosticParts = [
+    result.code && !["STATE_CONFLICT", "SYNC_FAILED"].includes(result.code)
+      ? result.code
+      : null,
+    Number.isFinite(result.status) ? `HTTP ${result.status}` : null,
+    result.diagnostics?.syncStage ? `stage:${result.diagnostics.syncStage}` : null,
+    result.diagnostics?.reasonCode ? `reason:${result.diagnostics.reasonCode}` : null,
+  ].filter(Boolean);
+
+  return diagnosticParts.length > 0
+    ? `${safeMessage} (${diagnosticParts.join(" · ")})`
+    : safeMessage;
+};
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

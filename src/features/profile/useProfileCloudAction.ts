@@ -15,14 +15,29 @@ import { setUser } from "../auth/authSlice";
 type AuthUser = NonNullable<RootState["auth"]["user"]>;
 
 const PROFILE_SAVE_IN_PROGRESS_ERROR = "Cloud profile save is already in progress.";
+const SAFE_PROFILE_SYNC_ERROR_PATTERN =
+  /^Cloud (?:data changed|sync could not save)[A-Za-z0-9 .,';-]+(?: \((?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+)(?: · (?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+))*\))?$/;
+
+const getSafeProfileSyncErrorMessage = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const message = error.message.trim();
+
+  return SAFE_PROFILE_SYNC_ERROR_PATTERN.test(message) ? message : null;
+};
 
 export const resolveProfileCloudActionErrorMessage = (
   error: unknown,
   copy: ProfileCloudActionCopy
-) =>
-  error instanceof Error && error.message === PROFILE_SAVE_IN_PROGRESS_ERROR
-    ? copy.saveInProgress
-    : copy.saveFailed;
+) => {
+  if (error instanceof Error && error.message === PROFILE_SAVE_IN_PROGRESS_ERROR) {
+    return copy.saveInProgress;
+  }
+
+  return getSafeProfileSyncErrorMessage(error) ?? copy.saveFailed;
+};
 
 export const useProfileCloudAction = (copy: ProfileCloudActionCopy) => {
   const dispatch = useDispatch<AppDispatch>();

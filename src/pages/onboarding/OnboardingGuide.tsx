@@ -23,7 +23,7 @@ type GuidePlacement = "peekLeft" | "peekRight" | "floatTop" | "floatBottom";
 const guideCopy = {
   uk: {
     welcome: "Я буду поруч на кожному кроці. Почнемо спокійно.",
-    assistant: "Обери, яким я буду. Це твій постійний companion.",
+    assistant: "Обери, яким я буду. Це твій постійний помічник.",
     name: "Як тебе звати? Я запам'ятаю, як звертатися до тебе.",
     age: "Вік потрібен тільки для точніших норм калорій.",
     gender: "Це допоможе краще порахувати базовий обмін.",
@@ -38,7 +38,7 @@ const guideCopy = {
   },
   pl: {
     welcome: "Będę obok na każdym kroku. Zaczynamy spokojnie.",
-    assistant: "Wybierz, jaki mam być. To Twój stały companion.",
+    assistant: "Wybierz, jaki mam być. To Twój stały asystent.",
     name: "Jak mam się do Ciebie zwracać? Zapamiętam to.",
     age: "Wiek pomaga dokładniej policzyć normę kalorii.",
     gender: "To pomoże lepiej wyliczyć podstawową przemianę.",
@@ -144,27 +144,25 @@ const stepMeta: Record<string, StepMeta> = {
   },
 };
 
-const GUIDE_SIDE_RAIL = "max(24px, calc((100vw - 720px) / 2 - 300px))";
-const GUIDE_OUTSIDE_FORM_RAIL =
-  "max(24px, calc((100vw - 720px) / 2 - 430px))";
+const GUIDE_FORM_SAFE_LEFT = "calc(50% + 390px)";
 
 const placementSx: Record<GuidePlacement, object> = {
   peekLeft: {
-    right: { lg: GUIDE_OUTSIDE_FORM_RAIL },
+    left: GUIDE_FORM_SAFE_LEFT,
     top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   peekRight: {
-    right: { lg: GUIDE_OUTSIDE_FORM_RAIL },
+    left: GUIDE_FORM_SAFE_LEFT,
     top: { xs: "auto", md: 146 },
     bottom: { xs: 92, md: "auto" },
   },
   floatTop: {
-    right: { lg: GUIDE_SIDE_RAIL },
+    left: GUIDE_FORM_SAFE_LEFT,
     top: { xs: 92, md: 118 },
   },
   floatBottom: {
-    right: { lg: GUIDE_SIDE_RAIL },
+    left: GUIDE_FORM_SAFE_LEFT,
     bottom: { xs: 92, md: 94 },
   },
 };
@@ -374,11 +372,15 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
         animate={fieldFocused ? "exit" : "animate"}
         exit="exit"
         data-onboarding-guide-hidden-while-field-focused={fieldFocused ? "true" : "false"}
+        data-onboarding-guide-requires-wide-viewport="true"
         sx={{
           position: "fixed",
           zIndex: 1250,
           pointerEvents: "none",
-          display: { xs: "none", lg: "block" },
+          display: { xs: "none", xl: "block" },
+          "@media (max-width: 1749px)": {
+            display: "none",
+          },
           maxWidth: 360,
           ...resolvePlacementSx(placement),
           transform,

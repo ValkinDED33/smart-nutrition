@@ -71,6 +71,7 @@ const GLASS_BLUR_18 = "blur(18px)";
 const STRONG_SHADOW = "var(--sn-shadow-strong)";
 const START_ALIGN = "flex-start";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
+const LANDING_HOVER_LIFT = "translateY(-2px)";
 const SHOW_EXTENDED_LANDING_SECTIONS = false;
 
 type CompanionCapabilitySlide = {
@@ -123,6 +124,20 @@ const getRotatedItems = <T,>(
   });
 
   return rotatedItems;
+};
+
+const createLandingRotationStart = (itemCount: number) => {
+  if (itemCount <= 0) {
+    return 0;
+  }
+
+  if (globalThis.crypto?.getRandomValues) {
+    const randomValues = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(randomValues);
+    return (randomValues[0] ?? 0) % itemCount;
+  }
+
+  return Date.now() % itemCount;
 };
 
 const landingCopy = {
@@ -1060,7 +1075,7 @@ const CompanionExperienceScene = ({
     { right: { sm: 32, md: 70 }, bottom: { sm: 46, md: 74 } },
   ] as const;
   const [heroInsightStart] = useState(() =>
-    Math.floor(Math.random() * nutritionInsights.length),
+    createLandingRotationStart(nutritionInsights.length),
   );
   const referenceCards = getRotatedItems(
     nutritionInsights,
@@ -1073,6 +1088,10 @@ const CompanionExperienceScene = ({
     value: item.contains,
     badge: index < 2 ? item.tags[0] : null,
     sx: cardPositions.at(index) ?? cardPositions[0],
+  }));
+  const companionToolBadges = copy.featureRail.map((feature, index) => ({
+    ...feature,
+    Icon: getFeatureRailIcon(index),
   }));
 
   return (
@@ -1453,6 +1472,104 @@ const CompanionExperienceScene = ({
           </Stack>
         </Paper>
       ))}
+
+      <Paper
+        elevation={0}
+        data-landing-companion-toolbelt="true"
+        sx={{
+          position: "absolute",
+          zIndex: 5,
+          left: { sm: 18, md: 36, lg: 58 },
+          right: { sm: 18, md: 36, lg: 58 },
+          bottom: { sm: 12, md: 20, lg: 28 },
+          p: 1,
+          borderRadius: 1,
+          border: `1px solid ${scene.featureRailBorder}`,
+          bgcolor: isDarkMode ? "rgba(2,6,23,0.66)" : "rgba(255,255,255,0.52)",
+          color: scene.heroText,
+          backdropFilter: GLASS_BLUR_18,
+          boxShadow: isDarkMode
+            ? "0 18px 60px rgba(0,0,0,0.34)"
+            : "0 18px 54px rgba(14,165,233,0.16)",
+          display: { sm: "none", lg: "grid" },
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: 0.8,
+          pointerEvents: "auto",
+        }}
+      >
+        {companionToolBadges.map((tool, index) => {
+          const Icon = tool.Icon;
+
+          return (
+            <Box
+              key={tool.title}
+              component={motion.div}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22 + index * 0.04, duration: 0.24 }}
+              sx={{
+                minWidth: 0,
+                p: 1,
+                borderRadius: 1,
+                border: `1px solid ${scene.featureCardBorder}`,
+                bgcolor: isDarkMode ? "rgba(15,23,42,0.6)" : "rgba(255,255,255,0.56)",
+                transition: "transform 180ms ease, border-color 180ms ease, background-color 180ms ease",
+                "&:hover": {
+                  transform: LANDING_HOVER_LIFT,
+                  borderColor: scene.accentColor,
+                  backgroundColor: isDarkMode ? "rgba(15,23,42,0.78)" : GLASS_WHITE_70,
+                },
+              }}
+            >
+              <Stack direction="row" spacing={0.8} alignItems="center" minWidth={0}>
+                <Box
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    flex: "0 0 auto",
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    color: scene.featureIconColor,
+                    backgroundColor: scene.featureIconBg,
+                    boxShadow: scene.featureIconShadow,
+                  }}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                </Box>
+                <Box minWidth={0}>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      lineHeight: 1.2,
+                      fontWeight: 900,
+                      color: scene.featureText,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tool.title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      mt: 0.15,
+                      fontSize: 10,
+                      lineHeight: 1.25,
+                      color: scene.featureMuted,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tool.body}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          );
+        })}
+      </Paper>
     </Box>
   );
 };
@@ -1466,7 +1583,7 @@ const Hero = ({
 }) => {
   const scene = getLandingScene(isDarkMode);
   const [heroLineIndex] = useState(() =>
-    Math.floor(Math.random() * copy.heroTyping.length),
+    createLandingRotationStart(copy.heroTyping.length),
   );
   const heroLine = getIndexedValue(copy.heroTyping, heroLineIndex) ?? copy.heroTyping[0];
 
@@ -1816,7 +1933,7 @@ const AIDiscoveryAccordion = ({
   const [openItem, setOpenItem] = useState(0);
   const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
   const [insightStart] = useState(() =>
-    Math.floor(Math.random() * nutritionInsights.length),
+    createLandingRotationStart(nutritionInsights.length),
   );
   const scene = getLandingScene(isDarkMode);
   const discoveryItems = getRotatedItems(
@@ -2488,7 +2605,7 @@ const CompanionCapabilitySlider = ({
   const [activeSlide, setActiveSlide] = useState(0);
   const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
   const [slideStart] = useState(() =>
-    Math.floor(Math.random() * nutritionInsights.length),
+    createLandingRotationStart(nutritionInsights.length),
   );
   const scene = getLandingScene(isDarkMode);
   const featureRail: readonly LandingFeatureRailItem[] = copy.featureRail;
@@ -2547,7 +2664,7 @@ const CompanionCapabilitySlider = ({
     Icon: getFeatureRailIcon(index),
     tone: item.tone,
   }));
-  const slides = [...capabilitySlides, ...nutritionSlides];
+  const slides = [...nutritionSlides, ...capabilitySlides];
   const active = getIndexedValue(slides, activeSlide) ?? slides.at(0);
 
   if (!active) {
@@ -2787,7 +2904,7 @@ const CompanionCapabilitySlider = ({
                   borderRadius: "50%",
                   minWidth: 58,
                   "&:hover": {
-                    transform: "translateY(-2px)",
+                    transform: LANDING_HOVER_LIFT,
                     borderColor: active.tone,
                   },
                   "&:focus-visible": {
@@ -2810,7 +2927,7 @@ const CompanionCapabilitySlider = ({
                   borderRadius: "50%",
                   minWidth: 58,
                   "&:hover": {
-                    transform: "translateY(-2px)",
+                    transform: LANDING_HOVER_LIFT,
                     borderColor: active.tone,
                   },
                   "&:focus-visible": {

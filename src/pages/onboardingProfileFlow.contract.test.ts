@@ -197,7 +197,8 @@ describe("onboarding and profile flow contract", () => {
   it("keeps onboarding finish sync failures in product-language recovery copy", async () => {
     const finishSource = await readSource(ONBOARDING_FINISH_PAGE_PATH);
 
-    expect(finishSource).toContain('const message = t("error.genericProfile")');
+    expect(finishSource).toContain("resolveProfileCloudActionErrorMessage");
+    expect(finishSource).toContain("saveFailed: t(\"error.genericProfile\")");
     expect(finishSource).toContain("writePreAuthOnboardingDraft");
     expect(finishSource).toContain("preserveDraft();");
     expect(finishSource).toContain('data-onboarding-save-recovery="true"');
@@ -205,8 +206,8 @@ describe("onboarding and profile flow contract", () => {
     expect(finishSource).toContain('t("onboarding.backToAnswers")');
     expect(finishSource).toContain("enqueueSyncOutbox(message)");
     expect(finishSource).toContain("markSyncError(message)");
-    expect(finishSource).not.toContain("error instanceof Error");
-    expect(finishSource).not.toContain("error.message");
+    expect(finishSource).not.toContain("caughtError instanceof Error");
+    expect(finishSource).not.toContain("caughtError.message");
   });
 
   it("keeps profile editing behind an explicit edit action and gates admin details", async () => {

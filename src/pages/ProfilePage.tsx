@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { ArrowRight, HeartPulse } from "lucide-react";
+import { ArrowRight, HeartPulse, MessageCircle } from "lucide-react";
 import type { RootState } from "../app/store";
 import {
   Avatar,
@@ -46,6 +46,7 @@ import {
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
 const PROFILE_ALIGN_START = "flex-start";
+const PROFILE_ACCENT_COLOR = "var(--sn-accent)";
 const USER_ROLE_LABEL = "User";
 const VERIFIED_USER_ROLE_LABEL = "Verified user";
 const OWNER_ROLE_LABEL = "Owner";
@@ -175,6 +176,10 @@ const profileCopy = {
     womenHealthEntrySubtitle:
       "Вагітність, підготовка, післяпологовий період і сімейна підтримка живуть у цьому профілі.",
     womenHealthEntryAction: "Відкрити розділ",
+    telegramEntryTitle: "Telegram поруч",
+    telegramEntrySubtitle:
+      "Підключіть того самого помічника для нагадувань, задач і персональних підказок.",
+    telegramEntryAction: "Підключити",
     macroTitle: "Цілі за макроелементами",
     macroSubtitle: "Добові цілі за білками, жирами та вуглеводами на основі калорій, ваги та мети.",
     tabs: {
@@ -225,6 +230,10 @@ const profileCopy = {
     womenHealthEntrySubtitle:
       "Ciąża, przygotowanie, połóg i wsparcie rodzinne działają w tym samym profilu.",
     womenHealthEntryAction: "Otwórz sekcję",
+    telegramEntryTitle: "Telegram pod ręką",
+    telegramEntrySubtitle:
+      "Podłącz tego samego asystenta do przypomnień, zadań i osobistych wskazówek.",
+    telegramEntryAction: "Podłącz",
     macroTitle: "Cele makroskładników",
     macroSubtitle: "Dzienne cele białka, tłuszczów i węglowodanów wyliczone z kalorii, masy ciała i celu.",
     tabs: {
@@ -275,6 +284,10 @@ const profileCopy = {
     womenHealthEntrySubtitle:
       "Pregnancy, planning, postpartum, and family support live inside this same profile.",
     womenHealthEntryAction: "Open section",
+    telegramEntryTitle: "Telegram is ready",
+    telegramEntrySubtitle:
+      "Connect the same assistant for reminders, tasks, and personal nudges.",
+    telegramEntryAction: "Connect",
     macroTitle: "Macro targets",
     macroSubtitle: "Daily protein, fat, and carbohydrate targets based on calories, weight, and goal.",
     tabs: {
@@ -816,7 +829,7 @@ const ProfilePage = () => {
                       height: 38,
                       flex: "0 0 auto",
                       borderRadius: 1,
-                      color: "var(--sn-accent)",
+                      color: PROFILE_ACCENT_COLOR,
                       bgcolor: "rgba(20,184,166,0.14)",
                     }}
                   >
@@ -825,7 +838,7 @@ const ProfilePage = () => {
                   <Box minWidth={0}>
                     <Typography
                       variant="caption"
-                      sx={{ color: "var(--sn-accent)", fontWeight: 900 }}
+                      sx={{ color: PROFILE_ACCENT_COLOR, fontWeight: 900 }}
                     >
                       {copy.womenHealthEntryEyebrow}
                     </Typography>
@@ -854,6 +867,62 @@ const ProfilePage = () => {
                 </Button>
               </Stack>
             )}
+
+            <Stack
+              data-telegram-entrypoint="true"
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              alignItems={{ xs: "stretch", sm: "center" }}
+              justifyContent="space-between"
+              sx={{
+                width: "100%",
+                p: 1.5,
+                borderRadius: 1,
+                border: PROFILE_CARD_BORDER,
+                background:
+                  "linear-gradient(135deg, rgba(14,165,233,0.11) 0%, rgba(20,184,166,0.12) 100%)",
+              }}
+            >
+              <Stack direction="row" spacing={1.2} alignItems="center" minWidth={0}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    placeItems: "center",
+                    width: 38,
+                    height: 38,
+                    flex: "0 0 auto",
+                    borderRadius: 1,
+                    color: PROFILE_ACCENT_COLOR,
+                    bgcolor: "rgba(14,165,233,0.14)",
+                  }}
+                >
+                  <MessageCircle size={20} aria-hidden="true" />
+                </Box>
+                <Box minWidth={0}>
+                  <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                    {copy.telegramEntryTitle}
+                  </Typography>
+                  <Typography color="text.secondary" sx={{ mt: 0.25, lineHeight: 1.45 }}>
+                    {copy.telegramEntrySubtitle}
+                  </Typography>
+                </Box>
+              </Stack>
+              <Button
+                component={RouterLink}
+                to="/profile#telegram-connect"
+                variant="outlined"
+                endIcon={<ArrowRight size={16} aria-hidden="true" />}
+                sx={{
+                  alignSelf: { xs: "stretch", sm: "center" },
+                  borderRadius: 999,
+                  textTransform: "none",
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {copy.telegramEntryAction}
+              </Button>
+            </Stack>
           </Stack>
         </Stack>
       </Paper>

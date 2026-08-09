@@ -1084,10 +1084,6 @@ export const createAuthService = ({
           );
         }
 
-        profileMeta =
-          typeof getProfileMeta === "function"
-            ? await getProfileMeta()
-            : null;
       } catch (error) {
         assertProfileStatePersistenceError(error, "profile-state-finalize");
       }
@@ -1097,6 +1093,20 @@ export const createAuthService = ({
           "STATE_SYNC_UNAVAILABLE",
           "Cloud profile sync is temporarily unavailable."
         );
+      }
+
+      if (typeof getProfileMeta === "function") {
+        try {
+          profileMeta = await getProfileMeta();
+        } catch (error) {
+          logger.warn?.("[auth] profile-state meta read failed after confirmed save", {
+            userId: currentUser.id,
+            code: String(error?.code ?? error?.name ?? "PROFILE_STATE_META_READ_FAILED").slice(
+              0,
+              80
+            ),
+          });
+        }
       }
 
       await writeAuditLog({

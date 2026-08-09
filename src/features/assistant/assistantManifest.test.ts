@@ -41,11 +41,45 @@ describe("assistantManifest", () => {
 
   it("derives duties and capabilities from the current route", () => {
     expect(getAssistantDutiesForArea("coach")).toEqual(
-      expect.arrayContaining(["motivate", "analyze", "suggest"])
+      expect.arrayContaining(["motivate", "analyze", "suggest", "remind", "navigate"])
     );
     expect(resolveAssistantCapabilities("/community")[0]?.id).toBe(
       "community-bridge"
     );
+  });
+
+  it("describes one living project worker across core Smart Nutrition domains", () => {
+    const manifestText = assistantCapabilities
+      .map((capability) => `${capability.id}: ${capability.description}`)
+      .join("\n")
+      .toLowerCase();
+
+    [
+      "meals",
+      "water",
+      "reminders",
+      "telegram",
+      "family",
+      "women health",
+      "partner invites",
+      "assistant memory",
+      "canonical",
+      "without creating a second ai brain",
+    ].forEach((contractPhrase) => {
+      expect(manifestText).toContain(contractPhrase);
+    });
+
+    expect(resolveAssistantCapabilities("/coach")[0]).toMatchObject({
+      id: "coach-support",
+      duties: expect.arrayContaining([
+        "motivate",
+        "analyze",
+        "suggest",
+        "explain",
+        "remind",
+        "navigate",
+      ]),
+    });
   });
 
   it("adapts manifest areas to the legacy runtime screen contract", () => {

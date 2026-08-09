@@ -31,6 +31,16 @@ describe("Smart Nutrition visual system contract", () => {
     expect(authSurface).toContain("var(--sn-companion-hero)");
   });
 
+  it("keeps the assistant avatar living effects in the shared avatar component", async () => {
+    const avatarSource = await readSource("../components/AssistantAvatar.tsx");
+
+    expect(avatarSource).toContain("assistantAuraVariants");
+    expect(avatarSource).toContain('data-assistant-avatar-living-aura="true"');
+    expect(avatarSource).toContain('data-assistant-avatar-orbit="true"');
+    expect(avatarSource).toContain('mood === "concerned"');
+    expect(avatarSource).toContain('mood === "celebrate"');
+  });
+
   it("keeps authenticated home using theme-aware companion colors", async () => {
     const [source, assistantDisplayNameSource] = await Promise.all([
       readSource("../../pages/HomePage.tsx"),
@@ -41,8 +51,8 @@ describe("Smart Nutrition visual system contract", () => {
     expect(source).toContain("heroBackground");
     expect(source).toContain("heroOverlay");
     expect(source).toContain("heroRing");
-    expect(source).toContain("Smart Nutrition AI");
-    expect(source).toContain("getAssistantDisplayName");
+    expect(source).toContain("getAssistantDisplayName(assistant.name, appLanguage)");
+    expect(source).not.toContain('"Smart Nutrition AI"');
     expect(assistantDisplayNameSource).toContain("legacyAssistantNames");
     expect(source).toContain("env(safe-area-inset-bottom");
     expect(source).not.toContain('className="sn-companion-panel"');

@@ -121,8 +121,7 @@ export default defineConfig({
           if (
             normalizedId.includes("/node_modules/framer-motion/") ||
             normalizedId.includes("/node_modules/@react-spring/") ||
-            normalizedId.includes("/node_modules/react-countup/") ||
-            normalizedId.includes("/node_modules/react-type-animation/")
+            normalizedId.includes("/node_modules/react-countup/")
           ) {
             return "motion-vendor";
           }

@@ -89,6 +89,9 @@ describe("telegramService", () => {
     expect(message).toContain("Харчування");
     expect(message).toContain("Вода");
     expect(message).toContain("Нутрієнти");
+    expect(message).toContain("дні народження");
+    expect(message).toContain("контроль тиску");
+    expect(message).toContain("Жіноче здоров'я");
     expect(message).toContain("/today");
   });
 
@@ -98,6 +101,9 @@ describe("telegramService", () => {
     expect(message).toContain("Food");
     expect(message).toContain("Water");
     expect(message).toContain("Nutrients");
+    expect(message).toContain("birthdays");
+    expect(message).toContain("blood-pressure checks");
+    expect(message).toContain("Women health");
     expect(message).toContain("/today");
     expect(message).not.toContain("Харчування");
   });

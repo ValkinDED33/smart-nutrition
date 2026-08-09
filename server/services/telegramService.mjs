@@ -120,6 +120,8 @@ const TELEGRAM_COPY = {
       "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
       "🎮 Companion — рівень, XP, досягнення.",
       "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
+      "🗓️ Задачі — події, дні народження, контроль тиску або будь-який побутовий план як підтверджене нагадування.",
+      "🤰 Жіноче здоров'я — термін, обережні підказки, добавки й сімейний контекст без діагнозів.",
     ],
     commandsTitle: "Команди:",
     commandLines: [
@@ -231,6 +233,8 @@ const TELEGRAM_COPY = {
       "🤖 Asystent — personalne podpowiedzi z uwzględnieniem onboardingu.",
       "🎮 Companion — poziom, XP i osiągnięcia.",
       "💊 Leki — przypomnienia, przyciski „przyjęte/później/pomiń” i historia.",
+      "🗓️ Zadania — wydarzenia, urodziny, pomiar ciśnienia albo zwykły plan jako potwierdzone przypomnienie.",
+      "🤰 Zdrowie kobiet — tydzień, ostrożne wskazówki, suplementy i kontekst rodzinny bez diagnoz.",
     ],
     commandsTitle: "Komendy:",
     commandLines: [
@@ -338,6 +342,8 @@ const TELEGRAM_COPY = {
       "🤖 Assistant — personal hints using onboarding context.",
       "🎮 Companion — level, XP, and achievements.",
       "💊 Medication — reminders, taken/later/skip buttons, and history.",
+      "🗓️ Tasks — events, birthdays, blood-pressure checks, or everyday plans as confirmed reminders.",
+      "🤰 Women health — pregnancy age, careful guidance, supplements, and family context without diagnoses.",
     ],
     commandsTitle: "Commands:",
     commandLines: [
