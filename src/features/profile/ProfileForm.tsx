@@ -65,6 +65,7 @@ type FormData = {
   petCompanion: PetCompanion;
   womenHealthMode: WomenHealthMode;
   pregnancyWeek?: number;
+  pregnancyDay?: number;
   dueDate: string;
   lastPeriodStartDate: string;
   doctorConfirmed: boolean;
@@ -119,6 +120,7 @@ const profileCopy = {
     womenHealthPregnant: "Вагітна",
     womenHealthPostpartum: "Після пологів",
     pregnancyWeekLabel: "Орієнтовний тиждень",
+    pregnancyDayLabel: "День тижня",
     dueDateLabel: "Орієнтовна дата пологів",
     lastPeriodLabel: "Дата останньої менструації",
     doctorConfirmedLabel: "Є підтвердження / план від лікаря",
@@ -174,6 +176,7 @@ const profileCopy = {
     womenHealthPregnant: "Jestem w ciąży",
     womenHealthPostpartum: "Po porodzie",
     pregnancyWeekLabel: "Orientacyjny tydzień",
+    pregnancyDayLabel: "Dzień tygodnia",
     dueDateLabel: "Przewidywany termin porodu",
     lastPeriodLabel: "Data ostatniej miesiączki",
     doctorConfirmedLabel: "Mam potwierdzenie / plan od lekarza",
@@ -229,6 +232,7 @@ const profileCopy = {
     womenHealthPregnant: "Pregnant",
     womenHealthPostpartum: "Postpartum",
     pregnancyWeekLabel: "Estimated week",
+    pregnancyDayLabel: "Day of week",
     dueDateLabel: "Estimated due date",
     lastPeriodLabel: "Last period start date",
     doctorConfirmedLabel: "Doctor confirmation / plan exists",
@@ -483,6 +487,10 @@ const createProfileFormValues = (
   petCompanion: profile.personalDetails.petCompanion,
   womenHealthMode: profile.womenHealth.mode,
   pregnancyWeek: profile.womenHealth.pregnancyWeek ?? undefined,
+  pregnancyDay:
+    profile.womenHealth.pregnancyWeek !== null
+      ? profile.womenHealth.pregnancyDay ?? 0
+      : undefined,
   dueDate: toDateInputValue(profile.womenHealth.dueDate),
   lastPeriodStartDate: toDateInputValue(profile.womenHealth.lastPeriodStartDate),
   doctorConfirmed: profile.womenHealth.doctorConfirmed,
@@ -592,6 +600,7 @@ const ProfileForm = () => {
           "postpartum",
         ]),
         pregnancyWeek: z.number().min(1).max(42).optional(),
+        pregnancyDay: z.number().min(0).max(6).optional(),
         dueDate: z.string(),
         lastPeriodStartDate: z.string(),
         doctorConfirmed: z.boolean(),
@@ -666,6 +675,7 @@ const ProfileForm = () => {
         petCompanion,
         womenHealthMode,
         pregnancyWeek,
+        pregnancyDay,
         dueDate,
         lastPeriodStartDate,
         doctorConfirmed,
@@ -678,6 +688,10 @@ const ProfileForm = () => {
               mode: womenHealthMode,
               pregnancyWeek:
                 womenHealthMode === "pregnant" ? pregnancyWeek ?? null : null,
+              pregnancyDay:
+                womenHealthMode === "pregnant" && pregnancyWeek !== undefined
+                  ? pregnancyDay ?? 0
+                  : null,
               dueDate:
                 womenHealthMode === "pregnant" && dueDate
                   ? new Date(dueDate).toISOString()
@@ -1034,26 +1048,52 @@ const ProfileForm = () => {
                 </TextField>
 
                 {shouldShowPregnancyFields && (
-                  <TextField
-                    fullWidth
-                    type="text"
-                    label={copy.pregnancyWeekLabel}
-                    {...register("pregnancyWeek", {
-                      setValueAs: (value) =>
-                        value === "" ? undefined : Number(value),
-                    })}
-                    error={Boolean(errors.pregnancyWeek)}
-                    helperText={errors.pregnancyWeek?.message}
-                    onFocus={(event) => selectInputValue(event.target)}
-                    onClick={(event) => selectInputValue(event.currentTarget)}
-                    slotProps={{
-                      htmlInput: {
-                        inputMode: "numeric",
-                        pattern: "[0-9]*",
-                        enterKeyHint: "next",
-                      },
-                    }}
-                  />
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1.2}
+                    sx={{ flex: 1 }}
+                  >
+                    <TextField
+                      fullWidth
+                      type="text"
+                      label={copy.pregnancyWeekLabel}
+                      {...register("pregnancyWeek", {
+                        setValueAs: (value) =>
+                          value === "" ? undefined : Number(value),
+                      })}
+                      error={Boolean(errors.pregnancyWeek)}
+                      helperText={errors.pregnancyWeek?.message}
+                      onFocus={(event) => selectInputValue(event.target)}
+                      onClick={(event) => selectInputValue(event.currentTarget)}
+                      slotProps={{
+                        htmlInput: {
+                          inputMode: "numeric",
+                          pattern: "[0-9]*",
+                          enterKeyHint: "next",
+                        },
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      type="text"
+                      label={copy.pregnancyDayLabel}
+                      {...register("pregnancyDay", {
+                        setValueAs: (value) =>
+                          value === "" ? undefined : Number(value),
+                      })}
+                      error={Boolean(errors.pregnancyDay)}
+                      helperText={errors.pregnancyDay?.message}
+                      onFocus={(event) => selectInputValue(event.target)}
+                      onClick={(event) => selectInputValue(event.currentTarget)}
+                      slotProps={{
+                        htmlInput: {
+                          inputMode: "numeric",
+                          pattern: "[0-6]*",
+                          enterKeyHint: "next",
+                        },
+                      }}
+                    />
+                  </Stack>
                 )}
               </Stack>
 

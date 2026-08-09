@@ -156,6 +156,11 @@ describe("profile settings persistence contract", () => {
     expect(source).toContain(PROFILE_CLOUD_COPY_OWNER);
     expect(source).toContain(PROFILE_CLOUD_COPY_VARIABLE);
     expect(source).toContain(RUN_PROFILE_AND_USER_SAVE);
+    expect(source).toContain("pregnancyDay?: number");
+    expect(source).toContain("pregnancyDayLabel");
+    expect(source).toContain("profile.womenHealth.pregnancyDay");
+    expect(source).toContain("pregnancyDay: z.number().min(0).max(6).optional()");
+    expect(source).toContain("womenHealthMode === \"pregnant\" && pregnancyWeek !== undefined");
     expect(source).toContain(PROFILE_ACTION_SAVING);
     expect(source).toContain(PROFILE_ACTION_ERROR);
     expect(source).not.toContain(RAW_ERROR_MESSAGE_TERNARY);
