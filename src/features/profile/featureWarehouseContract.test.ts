@@ -104,6 +104,28 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain("Available later");
   });
 
+  it("keeps the companion studio visible as the canonical assistant appearance surface", () => {
+    const coachSource = readSource("src/pages/AiCompanionPage.tsx");
+    const profileSource = readSource("src/pages/ProfilePage.tsx");
+    const onboardingSource = readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
+    const onboardingTypesSource = readSource("src/pages/onboarding/types.ts");
+    const profileShopIndex = profileSource.indexOf("<CompanionShopCard />");
+    const profileSettingsIndex = profileSource.indexOf("<AssistantCustomizationCard />");
+
+    expect(coachSource).toContain(
+      'const CompanionShopCard = lazy(() => import("../features/profile/CompanionShopCard"))'
+    );
+    expect(coachSource).toContain('resetKey="ai-companion:shop"');
+    expect(coachSource).toContain("<CompanionShopCard />");
+    expect(profileShopIndex).toBeGreaterThanOrEqual(0);
+    expect(profileSettingsIndex).toBeGreaterThanOrEqual(0);
+    expect(profileShopIndex).toBeLessThan(profileSettingsIndex);
+    expect(onboardingSource).toContain("companionShopCatalog");
+    expect(onboardingSource).toContain("freeAssistantAvatarItems");
+    expect(onboardingSource).toContain("item.price === 0");
+    expect(onboardingTypesSource).not.toContain("assistantAvatarOptions");
+  });
+
   it("does not let women-health competitor branding become product direction", () => {
     const source = collectSourceFiles(["src", "server"])
       .map((filePath) => readFileSync(filePath, "utf8"))
@@ -198,13 +220,18 @@ describe("profile feature warehouse contract", () => {
     expect(source).toContain("Dostawcy AI");
     expect(source).toContain("Uwaga na wodę");
     expect(source).toContain("Особистий помічник");
-    expect(source).toContain("Час перевірити прогрес");
+    expect(source).toContain("Перевіримо прогрес");
+    expect(source).toContain("Помічник Smart Nutrition");
     expect(source).not.toContain("Osobisty companion");
     expect(source).not.toContain("Providerzy AI");
     expect(source).not.toContain("Fokus na wodzie");
     expect(source).not.toContain("Nowy companion");
     expect(source).not.toContain("Особистий companion");
     expect(source).not.toContain("Новий companion");
+    expect(source).not.toContain("Новий помічник");
+    expect(source).not.toContain("Час перевірити прогрес");
+    expect(source).not.toContain("М'який контроль");
+    expect(source).not.toContain("ваш помічник");
     expect(source).not.toContain("Below you can see active providers");
     expect(source).not.toContain("Niżej widać aktywnych providerów");
     expect(source).not.toContain("Нижче видно активних провайдерів");
@@ -219,15 +246,20 @@ describe("profile feature warehouse contract", () => {
 
     expect(source).toContain("Розвиток помічника");
     expect(source).toContain("помічник отримав перший справжній контекст");
-    expect(source).toContain("Живий образ помічника");
+    expect(source).toContain("Образ помічника");
+    expect(source).toContain('data-assistant-customization-worker-card="true"');
+    expect(source).toContain('data-assistant-customization-worker-toolbelt="true"');
+    expect(source).toContain("Один AI-працівник для всього проєкту");
+    expect(source).toContain("Telegram");
+    expect(source).toContain("Тиск");
     expect(source).toContain("Rozwój asystenta");
     expect(source).toContain("asystent dostał pierwszy prawdziwy kontekst");
-    expect(source).toContain("Żywy wygląd asystenta");
+    expect(source).toContain("Wygląd asystenta");
     expect(source).toContain("Assistant evolution");
     expect(source).toContain("assistant gets its first real context");
-    expect(source).toContain("Living assistant look");
+    expect(source).toContain("Assistant appearance");
     expect(source).not.toMatch(
-      /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|постійним companion|stałego companion|зв'язок з companion|więź z companion|Companion evolution|companion gets|companion bond|persistent companion/
+      /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Живий образ помічника|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|Żywy wygląd asystenta|постійним companion|stałego companion|зв'язок з companion|więź z companion|Companion evolution|companion gets|companion bond|persistent companion|Living assistant look/
     );
   });
 

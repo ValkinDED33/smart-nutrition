@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Alert,
   Box,
   Button,
+  Chip,
   FormControlLabel,
   MenuItem,
   Paper,
@@ -12,6 +13,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import {
+  Bell,
+  Camera,
+  Droplets,
+  HeartPulse,
+  MessageCircle,
+  Salad,
+  Users,
+} from "lucide-react";
 import type { RootState } from "../../app/store";
 import { setAssistantCustomization, type ProfileState } from "./profileSlice";
 import { useLanguage } from "../../shared/language";
@@ -28,7 +38,6 @@ import {
   assistantDietFrictions,
   assistantMotivationStyles,
 } from "../../core/assistant";
-import { getOwnedCompanionItems } from "../../companion/inventory/companionInventory";
 import type {
   AssistantCompanionKind,
   AssistantDietFriction,
@@ -42,6 +51,10 @@ const assistantCopy = {
     title: "Мій помічник",
     subtitle:
       "Налаштуйте, як асистент має звертатися до вас і яким тоном підтримувати вас у щоденній роботі.",
+    workerTitle: "Один AI-працівник для всього проєкту",
+    workerSubtitle:
+      "Він працює в застосунку й Telegram: читає контекст дня, допомагає з їжею, водою, ліками, тиском, фото, родиною й нагадуваннями. Образ змінюється, мозок і пам'ять залишаються єдиними.",
+    workerTools: ["Їжа", "Вода", "Фото", "Тиск", "Telegram", "Родина", "Нагадування"],
     name: "Ім'я асистента",
     companion: "Персонаж",
     role: "Роль",
@@ -63,7 +76,7 @@ const assistantCopy = {
     saving: "Зберігаю...",
     saved: "Збережено в хмарі",
     saveError: "Не вдалося зберегти. Спробуйте ще раз.",
-    appearanceTitle: "Живий образ помічника",
+    appearanceTitle: "Образ помічника",
     appearanceHint:
       "Образ підлаштовується під ваш пристрій, щоб помічник залишався поруч без зависань.",
     renderModeLoading: "Готую образ",
@@ -120,6 +133,10 @@ const assistantCopy = {
     title: "Mój asystent",
     subtitle:
       "Ustaw, jak asystent ma się do Ciebie zwracać i jakim tonem wspierać Cię na co dzień.",
+    workerTitle: "Jeden pracownik AI dla całego projektu",
+    workerSubtitle:
+      "Działa w aplikacji i Telegramie: czyta kontekst dnia, pomaga z jedzeniem, wodą, lekami, ciśnieniem, zdjęciami, rodziną i przypomnieniami. Wygląd się zmienia, ale mózg i pamięć zostają wspólne.",
+    workerTools: ["Jedzenie", "Woda", "Zdjęcia", "Ciśnienie", "Telegram", "Rodzina", "Przypomnienia"],
     name: "Imię asystenta",
     companion: "Postać",
     role: "Rola",
@@ -141,7 +158,7 @@ const assistantCopy = {
     saving: "Zapisuję...",
     saved: "Zapisano w chmurze",
     saveError: "Nie udało się zapisać. Spróbuj ponownie.",
-    appearanceTitle: "Żywy wygląd asystenta",
+    appearanceTitle: "Wygląd asystenta",
     appearanceHint:
       "Wygląd dopasowuje się do urządzenia, żeby asystent był zawsze pod ręką bez zacięć.",
     renderModeLoading: "Przygotowuję wygląd",
@@ -198,6 +215,10 @@ const assistantCopy = {
     title: "My assistant",
     subtitle:
       "Set how the assistant addresses you and what tone it uses for daily support.",
+    workerTitle: "One AI worker for the whole project",
+    workerSubtitle:
+      "It works in the app and Telegram: reads day context, helps with food, water, medication, pressure, photos, family, and reminders. The look changes, but the brain and memory stay unified.",
+    workerTools: ["Food", "Water", "Photos", "Pressure", "Telegram", "Family", "Reminders"],
     name: "Assistant name",
     companion: "Character",
     role: "Role",
@@ -219,7 +240,7 @@ const assistantCopy = {
     saving: "Saving...",
     saved: "Saved to cloud",
     saveError: "Could not save. Try again.",
-    appearanceTitle: "Living assistant look",
+    appearanceTitle: "Assistant appearance",
     appearanceHint:
       "The look adapts to the device so the assistant stays present without slowing the page.",
     renderModeLoading: "Preparing look",
@@ -274,22 +295,6 @@ const assistantCopy = {
   },
 } as const;
 
-const baseCompanionKinds: AssistantCompanionKind[] = ["robot", "human"];
-
-const uniqueCompanionKinds = (
-  kinds: (AssistantCompanionKind | undefined)[]
-): AssistantCompanionKind[] => {
-  const uniqueKinds: AssistantCompanionKind[] = [];
-
-  kinds.forEach((kind) => {
-    if (kind && !uniqueKinds.includes(kind)) {
-      uniqueKinds.push(kind);
-    }
-  });
-
-  return uniqueKinds;
-};
-
 const frictionOptions = assistantDietFrictions;
 const motivationStyleOptions = assistantMotivationStyles;
 type AssistantCopy = (typeof assistantCopy)[keyof typeof assistantCopy];
@@ -303,6 +308,27 @@ type AssistantTextDraftFieldsProps = {
   initialSupportNote: string;
   onboarding: ProfileState["assistant"]["onboarding"];
   onSave: (payload: AssistantCustomizationPayload) => Promise<ProfileState>;
+};
+
+const getAssistantWorkerToolIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return Salad;
+    case 1:
+      return Droplets;
+    case 2:
+      return Camera;
+    case 3:
+      return HeartPulse;
+    case 4:
+      return MessageCircle;
+    case 5:
+      return Users;
+    case 6:
+      return Bell;
+    default:
+      return MessageCircle;
+  }
 };
 
 const getAssistantCopy = (language: AppLanguage): AssistantCopy => {
@@ -401,7 +427,6 @@ const getFrictionLabel = (
 
 const AssistantCustomizationCard = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
-  const companion = useSelector((state: RootState) => state.companion);
   const { appLanguage } = useLanguage();
   const copy = getAssistantCopy(appLanguage);
   const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
@@ -422,15 +447,6 @@ const AssistantCustomizationCard = () => {
     assistant.onboarding.motivationStyles.length > 0
       ? assistant.onboarding.motivationStyles
       : [assistant.onboarding.motivationStyle];
-  const selectableCompanionKinds = useMemo(
-    () =>
-      uniqueCompanionKinds([
-        ...baseCompanionKinds,
-        assistant.companionKind,
-        ...getOwnedCompanionItems(companion).map((item) => item.companionKind),
-      ]),
-    [assistant.companionKind, companion]
-  );
 
   const commitAssistantCustomization = async (
     payload: Parameters<typeof setAssistantCustomization>[0]
@@ -494,6 +510,59 @@ const AssistantCustomizationCard = () => {
           </Alert>
         ) : null}
 
+        <Paper
+          variant="outlined"
+          data-assistant-customization-worker-card="true"
+          sx={{
+            p: { xs: 1.6, md: 2 },
+            borderRadius: 1,
+            borderColor: "rgba(20, 184, 166, 0.28)",
+            background:
+              "linear-gradient(135deg, rgba(20,184,166,0.12), rgba(132,204,22,0.08))",
+          }}
+        >
+          <Stack spacing={1.4}>
+            <Stack spacing={0.5}>
+              <Typography sx={{ fontWeight: 950 }}>
+                {copy.workerTitle}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {copy.workerSubtitle}
+              </Typography>
+            </Stack>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap="wrap"
+              data-assistant-customization-worker-toolbelt="true"
+            >
+              {copy.workerTools.map((tool, index) => {
+                const ToolIcon = getAssistantWorkerToolIcon(index);
+
+                return (
+                  <Chip
+                    key={tool}
+                    icon={<ToolIcon size={15} />}
+                    label={tool}
+                    variant="outlined"
+                    sx={{
+                      minHeight: 34,
+                      borderColor: "rgba(20, 184, 166, 0.34)",
+                      color: "text.primary",
+                      fontWeight: 900,
+                      "& .MuiChip-icon": {
+                        color: "var(--sn-accent-strong)",
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Stack>
+          </Stack>
+        </Paper>
+
         <AssistantTextDraftFields
           key={`${assistant.name}|${primaryGoalNoteValue}|${assistant.onboarding.supportNote}`}
           copy={copy}
@@ -505,26 +574,6 @@ const AssistantCustomizationCard = () => {
         />
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <TextField
-            select
-            fullWidth
-            label={copy.companion}
-            value={assistant.companionKind}
-            disabled={profileAction.saving}
-            onChange={(event) =>
-              void commitAssistantCustomization({
-                companionKind: event.target.value as AssistantCompanionKind,
-                assistantAvatar: event.target.value as AssistantCompanionKind,
-              }).catch(() => undefined)
-            }
-          >
-            {selectableCompanionKinds.map((kind) => (
-              <MenuItem key={kind} value={kind}>
-                {getCompanionLabel(copy, kind)}
-              </MenuItem>
-            ))}
-          </TextField>
-
           <TextField
             select
             fullWidth

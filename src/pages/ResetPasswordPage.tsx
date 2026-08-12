@@ -13,11 +13,10 @@ import {
   Typography,
 } from "@mui/material";
 import { AuthApiError, resetPassword } from "../shared/api/auth";
-import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
 import { useLanguage } from "../shared/language";
 import { clearSensitiveSearchParamsFromCurrentUrl } from "../shared/lib/sensitiveUrl";
-import { AuthSurface } from "@shared/ui";
+import { AuthAssistantIntro, AuthSurface } from "@shared/ui";
 
 type FormData = {
   password: string;
@@ -116,20 +115,13 @@ const ResetPasswordPage = () => {
   return (
     <AuthSurface>
         <Stack spacing={3}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name="Assistant" variant="robot" mood="coach" size={72} />
-            <Box>
-              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                {t("brand.name")}
-              </Typography>
-              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-                {t("auth.resetTitle")}
-              </Typography>
-              <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                {t("auth.resetSubtitle")}
-              </Typography>
-            </Box>
-          </Stack>
+          <AuthAssistantIntro
+            eyebrow={t("brand.name")}
+            title={t("auth.resetTitle")}
+            subtitle={t("auth.resetSubtitle")}
+            mood="coach"
+            size={72}
+          />
 
           {!token && <Alert severity="warning">{t("auth.missingResetToken")}</Alert>}
           {serverError && <Alert severity="error">{serverError}</Alert>}

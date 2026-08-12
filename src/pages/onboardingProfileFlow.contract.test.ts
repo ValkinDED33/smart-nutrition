@@ -115,7 +115,8 @@ describe("onboarding and profile flow contract", () => {
     expect(protectedRouteSource).toContain('to="/dashboard"');
     expect(appSource).toContain('path="/home"');
     expect(appSource).toContain('to={shouldShowOnboarding ? ONBOARDING_ENTRY_PATH : "/dashboard"}');
-    expect(choiceSource).toContain("AssistantAvatar");
+    expect(choiceSource).toContain("AuthAssistantIntro");
+    expect(choiceSource).not.toContain('name="Assistant"');
     expect(choiceSource).toContain("Calories without manual math");
   });
 
@@ -151,6 +152,13 @@ describe("onboarding and profile flow contract", () => {
 
     expect(onboardingSource).not.toContain("DEFAULT_ASSISTANT_NAME");
     expect(assistantSource).toContain("getAssistantPreviewName");
+    expect(assistantSource).toContain("assistantWorkerCopy");
+    expect(assistantSource).toContain('data-onboarding-assistant-worker-tools="true"');
+    expect(assistantSource).toContain("Це твій AI-працівник, не просто картинка");
+    expect(assistantSource).toContain("Telegram");
+    expect(assistantSource).toContain("ASSISTANT_PREVIEW_FALLBACK_NAME");
+    expect(assistantSource).not.toContain('uk: "Помічник"');
+    expect(assistantSource).not.toContain('en: "Assistant"');
     expect(assistantSource).not.toContain("disabled={state.assistantName.trim()");
     expect(assistantSource).not.toContain('placeholder={"Alex"');
     expect(onboardingI18nSource).toContain("Можна залишити порожнім");

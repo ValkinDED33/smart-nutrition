@@ -5,12 +5,12 @@ const legacyAssistantNames = new Set(["hyemye", "hye-mye", "hue-mue", "huemue"])
 const getAssistantFallbackName = (language: AppLanguage) => {
   switch (language) {
     case "pl":
-      return "Twój asystent";
+      return "Asystent Smart Nutrition";
     case "en":
-      return "your assistant";
+      return "Smart Nutrition Assistant";
     case "uk":
     default:
-      return "ваш помічник";
+      return "Помічник Smart Nutrition";
   }
 };
 

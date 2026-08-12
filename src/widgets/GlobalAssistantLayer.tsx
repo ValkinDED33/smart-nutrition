@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot } from "lucide-react";
+import {
+  Bot,
+  CalendarDays,
+  Droplets,
+  HeartPulse,
+  MessageCircle,
+  ScanLine,
+  Utensils,
+  Users,
+} from "lucide-react";
 import {
   Box,
   Button,
@@ -32,6 +41,54 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 const OPEN_ASSISTANT_PL = "Otwórz asystenta";
 const OPEN_ASSISTANT_EN = "Open assistant";
 const RESTING_ASSISTANT_LOOK_OFFSET = { x: 0, y: 0 };
+const ASSISTANT_STRONG_TEXT_COLOR = "var(--sn-text-strong)";
+
+const getGlobalAssistantToolIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return Utensils;
+    case 1:
+      return Droplets;
+    case 2:
+      return ScanLine;
+    case 3:
+      return MessageCircle;
+    case 4:
+      return HeartPulse;
+    case 5:
+      return Users;
+    case 6:
+      return CalendarDays;
+    default:
+      return Bot;
+  }
+};
+
+const getGlobalAssistantOrbitIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return ScanLine;
+    case 1:
+      return MessageCircle;
+    case 2:
+      return CalendarDays;
+    default:
+      return Bot;
+  }
+};
+
+const getGlobalAssistantOrbitPosition = (index: number) => {
+  switch (index) {
+    case 0:
+      return { left: -26, top: -12 };
+    case 1:
+      return { right: -24, top: 10 };
+    case 2:
+      return { left: 4, bottom: -20 };
+    default:
+      return { right: -18, bottom: -16 };
+  }
+};
 
 const clampAssistantLookOffset = (value: number) =>
   Math.max(Math.min(value, 1), -1);
@@ -86,6 +143,25 @@ const layerCopy = {
     action: "Відкрити AI",
     coachFallbackAction: "Запитати асистента",
     mobileLabel: "Відкрити асистента",
+    workerLabel: "AI-працівник",
+    toolbeltLabel: "Що я тримаю поруч",
+    toolbelt: ["Їжа", "Вода", "Фото", "Telegram", "Здоров'я", "Сім'я", "Задачі"],
+    orbitLabels: ["аналіз", "синхронізація", "план"],
+    workerActivityLabel: "Зараз працюю",
+    workerActivities: [
+      {
+        action: "Перевіряю контекст дня",
+        detail: "Їжа, вода, профіль і нагадування в одному маршруті.",
+      },
+      {
+        action: "Готую наступний крок",
+        detail: "Не вигадую висновки, чекаю підтверджені дані.",
+      },
+      {
+        action: "Тримаю Telegram поруч",
+        detail: "Нагадування і задачі мають збігатися з профілем.",
+      },
+    ],
     livingMessages: {
       recent_success: {
         title: "Дія збережена",
@@ -196,6 +272,25 @@ const layerCopy = {
     action: "Otwórz AI",
     coachFallbackAction: "Zapytaj asystenta",
     mobileLabel: OPEN_ASSISTANT_PL,
+    workerLabel: "Pracownik AI",
+    toolbeltLabel: "Co mam pod ręką",
+    toolbelt: ["Jedzenie", "Woda", "Zdjęcia", "Telegram", "Zdrowie", "Rodzina", "Zadania"],
+    orbitLabels: ["analiza", "synchronizacja", "plan"],
+    workerActivityLabel: "Teraz pracuję",
+    workerActivities: [
+      {
+        action: "Sprawdzam kontekst dnia",
+        detail: "Jedzenie, woda, profil i przypomnienia w jednej trasie.",
+      },
+      {
+        action: "Przygotowuję kolejny krok",
+        detail: "Nie udaję wniosków, czekam na potwierdzone dane.",
+      },
+      {
+        action: "Trzymam Telegram blisko",
+        detail: "Przypomnienia i zadania mają pasować do profilu.",
+      },
+    ],
     livingMessages: {
       recent_success: {
         title: "Działanie zapisane",
@@ -306,6 +401,25 @@ const layerCopy = {
     action: "Open AI",
     coachFallbackAction: "Ask assistant",
     mobileLabel: OPEN_ASSISTANT_EN,
+    workerLabel: "AI worker",
+    toolbeltLabel: "What I keep nearby",
+    toolbelt: ["Food", "Water", "Photos", "Telegram", "Health", "Family", "Tasks"],
+    orbitLabels: ["analysis", "sync", "plan"],
+    workerActivityLabel: "Working now",
+    workerActivities: [
+      {
+        action: "Reading today’s context",
+        detail: "Food, water, profile, and reminders stay on one route.",
+      },
+      {
+        action: "Preparing the next step",
+        detail: "I do not invent insight; I wait for confirmed data.",
+      },
+      {
+        action: "Keeping Telegram nearby",
+        detail: "Reminders and tasks should match the profile.",
+      },
+    ],
     livingMessages: {
       recent_success: {
         title: "Action saved",
@@ -507,6 +621,7 @@ export const GlobalAssistantLayer = () => {
   );
   const { appLanguage } = useLanguage();
   const copy = getLayerCopy(appLanguage);
+  const [workerActivityIndex, setWorkerActivityIndex] = useState(0);
   const inputFocused = useInputFocusState();
   const isMobile = useMediaQuery("(max-width: 599.95px)");
   const isTablet = useMediaQuery(
@@ -582,6 +697,22 @@ export const GlobalAssistantLayer = () => {
   const assistantLookOffset = useAssistantPointerLookOffset({
     enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion,
   });
+  const firstWorkerActivity = copy.workerActivities[0];
+  const workerActivity =
+    copy.workerActivities[workerActivityIndex % copy.workerActivities.length] ||
+    firstWorkerActivity;
+
+  useEffect(() => {
+    if (!presence.allowMotion || inputFocused || prefersReducedMotion) {
+      return undefined;
+    }
+
+    const activityTimer = window.setInterval(() => {
+      setWorkerActivityIndex((current) => current + 1);
+    }, 6200);
+
+    return () => window.clearInterval(activityTimer);
+  }, [inputFocused, presence.allowMotion, prefersReducedMotion]);
 
   if (
     (!user && !isPublicCompanion) ||
@@ -685,6 +816,23 @@ export const GlobalAssistantLayer = () => {
                 color="success"
               />
             </Stack>
+            <Chip
+              component={motion.div}
+              variants={fadeUpVariants}
+              size="small"
+              icon={<Bot size={13} />}
+              label={copy.workerLabel}
+              data-global-assistant-worker-chip="true"
+              sx={{
+                alignSelf: "flex-start",
+                borderRadius: 999,
+                border: "1px solid rgba(20, 184, 166, 0.24)",
+                background:
+                  "linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(132, 204, 22, 0.12))",
+                color: ASSISTANT_STRONG_TEXT_COLOR,
+                fontWeight: 900,
+              }}
+            />
 
             <Typography
               component={motion.p}
@@ -702,6 +850,77 @@ export const GlobalAssistantLayer = () => {
             >
               {livingMessage?.body || visibleCopy.body || copy.fallbackBody}
             </Typography>
+            <Stack
+              component={motion.div}
+              variants={fadeUpVariants}
+              spacing={0.75}
+              data-global-assistant-toolbelt="true"
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 900,
+                  letterSpacing: 0,
+                }}
+              >
+                {copy.toolbeltLabel}
+              </Typography>
+              <Stack direction="row" spacing={0.7} useFlexGap flexWrap="wrap">
+                {copy.toolbelt.map((tool, index) => {
+                  const ToolIcon = getGlobalAssistantToolIcon(index);
+
+                  return (
+                    <Chip
+                      key={tool}
+                      size="small"
+                      icon={<ToolIcon size={13} />}
+                      label={tool}
+                      sx={{
+                        height: 26,
+                        borderRadius: 999,
+                        border: "1px solid rgba(20, 184, 166, 0.2)",
+                        background: "rgba(255, 255, 255, 0.58)",
+                        color: ASSISTANT_STRONG_TEXT_COLOR,
+                        fontWeight: 800,
+                        "& .MuiChip-icon": {
+                          color: "var(--sn-accent)",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+            </Stack>
+            <Paper
+              component={motion.div}
+              variants={fadeUpVariants}
+              elevation={0}
+              data-global-assistant-working-state="true"
+              sx={{
+                p: 1.15,
+                borderRadius: 1,
+                border: "1px solid rgba(20, 184, 166, 0.18)",
+                background:
+                  "linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(14, 165, 233, 0.08))",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: "#0f766e", fontWeight: 900, letterSpacing: 0 }}
+              >
+                {copy.workerActivityLabel}
+              </Typography>
+              <Typography sx={{ mt: 0.25, fontWeight: 900, fontSize: 14 }}>
+                {workerActivity.action}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ mt: 0.2, fontSize: 13, lineHeight: 1.35 }}
+              >
+                {workerActivity.detail}
+              </Typography>
+            </Paper>
 
             <Button
               component={motion.button}
@@ -724,12 +943,136 @@ export const GlobalAssistantLayer = () => {
         </Paper>
 
         <Box
-          component={motion.button}
-          type="button"
+          component={motion.div}
           layout={presence.allowMotion}
           variants={fadeUpVariants}
-          onClick={handleOpenAssistant}
-          aria-label={copy.mobileLabel}
+          animate={
+            presence.allowMotion && !inputFocused && !prefersReducedMotion
+              ? {
+                  x: isMobile ? [0, 4, 0, -3, 0] : [0, -10, 0, 8, 0],
+                  y: [0, -7, 0, 5, 0],
+                }
+              : undefined
+          }
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          data-global-ai-worker-roaming="true"
+          sx={{ position: "relative", pointerEvents: "auto" }}
+        >
+          <Box
+            component={motion.div}
+            aria-hidden="true"
+            data-global-ai-worker-activity-pill="true"
+            animate={
+              presence.allowMotion && !prefersReducedMotion
+                ? { opacity: [0.82, 1, 0.82], y: [0, -2, 0] }
+                : undefined
+            }
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            sx={{
+              position: "absolute",
+              right: companionSize - 8,
+              top: -3,
+              maxWidth: { xs: 126, md: 156 },
+              px: 1,
+              py: 0.45,
+              borderRadius: 999,
+              border: "1px solid rgba(20, 184, 166, 0.22)",
+              background: "rgba(255, 255, 255, 0.82)",
+              color: ASSISTANT_STRONG_TEXT_COLOR,
+              boxShadow: "var(--sn-shadow-soft)",
+              backdropFilter: "blur(14px)",
+              fontSize: 11,
+              fontWeight: 900,
+              lineHeight: 1.15,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: presence.allowSpeechBubble ? "none" : "block",
+              pointerEvents: "none",
+            }}
+          >
+            {workerActivity.action}
+          </Box>
+          <Box
+            aria-hidden="true"
+            data-global-ai-worker-orbit="true"
+            sx={{
+              position: "absolute",
+              inset: -22,
+              borderRadius: "50%",
+              pointerEvents: "none",
+              display:
+                presence.allowMotion && !inputFocused && !prefersReducedMotion
+                  ? { xs: isDenseMobileCompanion ? "none" : "block", md: "block" }
+                  : "none",
+            }}
+          >
+            {copy.orbitLabels.map((label, index) => {
+              const OrbitIcon = getGlobalAssistantOrbitIcon(index);
+              const orbitPosition = getGlobalAssistantOrbitPosition(index);
+
+              return (
+                <Box
+                  key={label}
+                  component={motion.div}
+                  data-global-ai-worker-task-node="true"
+                  animate={{
+                    opacity: [0.62, 1, 0.62],
+                    scale: [0.92, 1.04, 0.92],
+                    y: [0, index === 1 ? 3 : -3, 0],
+                  }}
+                  transition={{
+                    duration: 3.8 + index * 0.45,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: index * 0.35,
+                  }}
+                  sx={{
+                    position: "absolute",
+                    ...orbitPosition,
+                    minWidth: 34,
+                    minHeight: 30,
+                    px: 0.75,
+                    borderRadius: 999,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.35,
+                    border: "1px solid rgba(20, 184, 166, 0.24)",
+                    background:
+                      "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(236,253,245,0.78))",
+                    color: ASSISTANT_STRONG_TEXT_COLOR,
+                    boxShadow: "0 12px 26px rgba(15, 118, 110, 0.14)",
+                    backdropFilter: "blur(14px)",
+                    fontSize: 10,
+                    fontWeight: 950,
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <OrbitIcon size={12} />
+                  <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
+                    {label}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+          <Box
+            component={motion.button}
+            type="button"
+            layout={presence.allowMotion}
+            onClick={handleOpenAssistant}
+            aria-label={copy.mobileLabel}
+            data-global-ai-worker-button="true"
           sx={{
             width: companionSize,
             height: companionSize,
@@ -739,6 +1082,30 @@ export const GlobalAssistantLayer = () => {
             p: 0,
             background: "transparent",
             pointerEvents: "auto",
+            position: "relative",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: -7,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(20, 184, 166, 0.24), rgba(132, 204, 22, 0.1) 45%, transparent 72%)",
+              opacity: presence.allowMotion ? 1 : 0.56,
+              transform: "scale(0.92)",
+              animation: presence.allowMotion
+                ? "snGlobalAssistantBreath 3.2s ease-in-out infinite"
+                : "none",
+            },
+            "@keyframes snGlobalAssistantBreath": {
+              "0%, 100%": {
+                opacity: 0.68,
+                transform: "scale(0.9)",
+              },
+              "50%": {
+                opacity: 1,
+                transform: "scale(1.08)",
+              },
+            },
           }}
         >
           <AssistantAvatar
@@ -749,6 +1116,7 @@ export const GlobalAssistantLayer = () => {
             lookOffset={assistantLookOffset}
             active
           />
+          </Box>
         </Box>
       </Box>
     </AnimatePresence>

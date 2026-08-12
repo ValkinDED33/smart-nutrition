@@ -30,6 +30,7 @@ import { Link } from "react-router-dom";
 import {
   AssistantAvatar,
 } from "../shared/components/AssistantAvatar";
+import type { AssistantAvatarMood } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
 import { playAIDiscoverySound, playGentleClickSound } from "../shared/lib/sound";
 import { useAppColorMode } from "../shared/theme/colorMode";
@@ -42,8 +43,6 @@ const AI_COMPANION_LABEL = "AI companion";
 const UK_AI_ASSISTANT_LABEL = "AI-помічник";
 const PL_AI_ASSISTANT_LABEL = "AI asystent";
 const COMMUNITY_FOOD_HUB_TITLE = "Community food hub";
-const PROACTIVE_NUDGES_LABEL = "proactive nudges";
-const TELEGRAM_RETENTION_LABEL = "Telegram retention";
 const BREATHING_PILL = "breathing";
 const EYE_TRACKING_PILL = "eye tracking";
 const MOOD_SHIFT_PILL = "mood shift";
@@ -78,6 +77,30 @@ const START_ALIGN = "flex-start";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 const LANDING_HOVER_LIFT = "translateY(-2px)";
 const SHOW_EXTENDED_LANDING_SECTIONS = false;
+const LANDING_THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
+const LANDING_TEAL_TINT_10 = "rgba(20,184,166,0.1)";
+const LANDING_DEFAULT_COMPANION_KIND = "robot";
+const LANDING_ASSISTANT_WORKER_TEST_ID = "landing-assistant-worker-avatar";
+
+const LandingAssistantWorkerAvatar = ({
+  name,
+  mood = "happy",
+  size,
+}: {
+  name: string;
+  mood?: AssistantAvatarMood;
+  size?: number;
+}) => (
+  <Box data-landing-assistant-worker-avatar={LANDING_ASSISTANT_WORKER_TEST_ID}>
+    <AssistantAvatar
+      name={name}
+      variant={LANDING_DEFAULT_COMPANION_KIND}
+      mood={mood}
+      size={size}
+      active
+    />
+  </Box>
+);
 
 type CompanionCapabilitySlide = {
   title: string;
@@ -155,40 +178,40 @@ const landingCopy = {
     eyebrow: "AI wellness-простір",
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: `Твій ${UK_AI_ASSISTANT_LABEL} для`,
-      accent: "здоровішого",
-      suffix: "дня.",
+      prefix: "Тут працює твій",
+      accent: UK_AI_ASSISTANT_LABEL,
+      suffix: "Smart Nutrition.",
     },
-    title: "AI-помічник харчування і здоров'я",
+    title: "AI-працівник харчування і здоров'я",
     heroTyping: [
-      "Поруч, коли треба випити воду.",
-      "Пам'ятає твої звички і стиль підтримки.",
-      "Реагує на день, а не просто рахує цифри.",
+      "Я вже збираю контекст дня.",
+      "Підкажу наступну дію, коли вона справді потрібна.",
+      "Працюю з їжею, водою, ліками, сім'єю і прогресом.",
     ],
     subtitle:
-      `Живий ${UK_AI_ASSISTANT_LABEL} для їжі, води, ліків, прогресу і м'якої мотивації. Він не просто трекає дані, а веде день разом із вами.`,
+      `Це не сайт із AI-функцією. Це простір, де ${UK_AI_ASSISTANT_LABEL} уже на зміні: помічає, пояснює, нагадує, діє через backend і веде день разом із вами.`,
     primary: "Почати безкоштовно",
     secondary: "Побачити помічника",
     telegramCta: "Підключити Telegram",
     navOverview: "Огляд продукту",
     socialProof: "10 000+ користувачів будують звички разом з помічником",
-    proof: [UK_AI_ASSISTANT_LABEL, "пам'ять", "розумні підказки", "Telegram поруч"],
+    proof: [UK_AI_ASSISTANT_LABEL, "на зміні", "пам'ять", "Telegram поруч"],
     presencePills: ["дихає", "стежить за увагою", "змінює настрій", "пам'ятає день"],
     sceneCards: [
       {
-        title: "Ранковий фокус",
-        body: "Вода, білок і таблетка о 09:00 вже у плані.",
-        tone: "спокійно",
+        title: "Помічник на зміні",
+        body: "Вода, білок, таблетка і перша їжа вже зібрані в маршрут дня.",
+        tone: "працює",
       },
       {
-        title: "AI помітив",
-        body: "Вчора зрив був увечері, тому сьогодні підказка прийде раніше.",
-        tone: "підказка",
+        title: "AI помітив контекст",
+        body: "Вчора важче було ввечері, тому сьогодні підказка прийде раніше.",
+        tone: "аналіз",
       },
       {
-        title: "Telegram поруч",
-        body: "Швидкий лог води або ліків без відкриття застосунку.",
-        tone: "поруч",
+        title: "Один помічник у Telegram",
+        body: "Той самий працівник приймає фото, задачі, воду, ліки і тиск.",
+        tone: "єдиний",
       },
     ],
     heroStats: [
@@ -203,19 +226,19 @@ const landingCopy = {
     ],
     mascot: {
       name: UK_AI_ASSISTANT_LABEL,
-      title: "AI-помічник поруч",
-      body: "Сьогодні залишилось 600 ккал. Я б додала воду і легку вечерю з білком.",
-      mood: "жива реакція",
-      xps: "+25 XP за серію",
+      title: "AI-працівник уже поруч",
+      body: "Я перевіряю їжу, воду, нагадування і прогрес, щоб наступна дія не була випадковою.",
+      mood: "на зміні",
+      xps: "+25 XP за день",
     },
     quickActions: ["Фото їжі", "Штрихкод", "Повторити вчора", "Ручний ввід"],
     featureRail: [
-      { title: "AI-сканер їжі", body: "Фото їжі і швидкий аналіз" },
-      { title: "Трекер води", body: "Вода без ручного хаосу" },
-      { title: "Калорії та БЖВ", body: "Калорії, білок, жири, вуглеводи" },
-      { title: "AI-підтримка", body: "Підказки під твій день" },
-      { title: "Живий прогрес", body: "Зміни без сухої статистики" },
-      { title: "Розумні нагадування", body: "Вода, їжа, ліки і звички" },
+      { title: "AI-сканер їжі", body: "Розпізнаю фото, штрихкод і порцію" },
+      { title: "Трекер води", body: "Тримаю темп без ручного хаосу" },
+      { title: "Калорії та БЖВ", body: "Пояснюю цифри людською мовою" },
+      { title: "AI-підтримка", body: "Веду день, а не читаю статтю" },
+      { title: "Живий прогрес", body: "Збираю висновок з усіх шкал" },
+      { title: "Розумні нагадування", body: "Вода, їжа, ліки, тиск і задачі" },
     ],
     nutritionInsightEyebrow: "AI розбирає продукти",
     nutritionInsightTitle: "Їжа як зрозуміла карта користі",
@@ -457,40 +480,40 @@ const landingCopy = {
     eyebrow: "AI wellness-przestrzeń",
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: `Twój ${PL_AI_ASSISTANT_LABEL} dla`,
-      accent: "zdrowszego",
-      suffix: "dnia.",
+      prefix: "Tu pracuje Twój",
+      accent: PL_AI_ASSISTANT_LABEL,
+      suffix: "Smart Nutrition.",
     },
-    title: "AI asystent żywienia i zdrowia",
+    title: "AI pracownik żywienia i zdrowia",
     heroTyping: [
-      "Jest obok, gdy warto wypić wodę.",
-      "Pamięta nawyki i styl wsparcia.",
-      "Reaguje na dzień, a nie tylko liczy liczby.",
+      "Już zbieram kontekst dnia.",
+      "Podpowiem następną akcję, gdy naprawdę będzie potrzebna.",
+      "Pracuję z jedzeniem, wodą, lekami, rodziną i progresem.",
     ],
     subtitle:
-      `Żywy ${PL_AI_ASSISTANT_LABEL} do jedzenia, wody, leków, progresu i łagodnej motywacji. Nie tylko śledzi dane, ale prowadzi dzień razem z Tobą.`,
+      `To nie strona z funkcją AI. To przestrzeń, w której ${PL_AI_ASSISTANT_LABEL} jest już na zmianie: zauważa, wyjaśnia, przypomina, działa przez backend i prowadzi dzień razem z Tobą.`,
     primary: "Zacznij za darmo",
     secondary: "Zobacz asystenta",
     telegramCta: "Połącz Telegram",
     navOverview: "Przegląd produktu",
     socialProof: "10 000+ użytkowników buduje nawyki z asystentem",
-    proof: [PL_AI_ASSISTANT_LABEL, "pamięć", "mądre podpowiedzi", "Telegram obok"],
+    proof: [PL_AI_ASSISTANT_LABEL, "na zmianie", "pamięć", "Telegram obok"],
     presencePills: ["oddycha", "reaguje na uwagę", "zmienia nastrój", "pamięta dzień"],
     sceneCards: [
       {
-        title: "Poranny rytm",
-        body: "Woda, białko i tabletka o 09:00 są już w planie.",
-        tone: "spokojnie",
+        title: "Asystent na zmianie",
+        body: "Woda, białko, tabletka i pierwszy posiłek są już w rytmie dnia.",
+        tone: "pracuje",
       },
       {
-        title: "AI zauważył",
+        title: "AI zauważył kontekst",
         body: "Wczoraj trudniej było wieczorem, więc dziś podpowiedź przyjdzie wcześniej.",
-        tone: "podpowiedź",
+        tone: "analiza",
       },
       {
-        title: "Telegram obok",
-        body: "Szybki log wody lub leków bez otwierania aplikacji.",
-        tone: "blisko",
+        title: "Jeden asystent w Telegramie",
+        body: "Ten sam pracownik przyjmuje zdjęcia, zadania, wodę, leki i ciśnienie.",
+        tone: "jeden",
       },
     ],
     heroStats: [
@@ -505,19 +528,19 @@ const landingCopy = {
     ],
     mascot: {
       name: PL_AI_ASSISTANT_LABEL,
-      title: "AI asystent jest obok",
-      body: "Zostało dziś 600 kcal. Dodałabym wodę i lekką kolację z białkiem.",
-      mood: "żywa reakcja",
-      xps: "+25 XP za serię",
+      title: "AI pracownik jest już obok",
+      body: "Sprawdzam jedzenie, wodę, przypomnienia i progres, aby kolejna akcja nie była przypadkowa.",
+      mood: "na zmianie",
+      xps: "+25 XP za dzień",
     },
     quickActions: ["Zdjęcie", "Kod kreskowy", "Powtórz wczoraj", "Ręczny wpis"],
     featureRail: [
-      { title: "AI skaner jedzenia", body: "Zdjęcie posiłku i szybka analiza" },
-      { title: "Tracker wody", body: "Woda bez ręcznego chaosu" },
-      { title: "Kalorie i makro", body: "Kalorie, białko, tłuszcz, węgle" },
-      { title: "AI wsparcie", body: "Podpowiedzi pod Twój dzień" },
-      { title: "Żywy progres", body: "Zmiany bez suchej statystyki" },
-      { title: "Mądre przypomnienia", body: "Woda, jedzenie, leki i nawyki" },
+      { title: "AI skaner jedzenia", body: "Rozpoznaję zdjęcie, kod i porcję" },
+      { title: "Tracker wody", body: "Trzymam tempo bez ręcznego chaosu" },
+      { title: "Kalorie i makro", body: "Tłumaczę liczby po ludzku" },
+      { title: "AI wsparcie", body: "Prowadzę dzień, nie czytam artykułu" },
+      { title: "Żywy progres", body: "Składam wniosek ze wszystkich skal" },
+      { title: "Mądre przypomnienia", body: "Woda, jedzenie, leki, ciśnienie i zadania" },
     ],
     nutritionInsightEyebrow: "AI rozumie produkty",
     nutritionInsightTitle: "Jedzenie jako czytelna mapa korzyści",
@@ -759,40 +782,40 @@ const landingCopy = {
     eyebrow: AI_WELLNESS_ECOSYSTEM,
     brandTitle: BRAND_NAME,
     headline: {
-      prefix: `Your ${AI_COMPANION_LABEL} for a`,
-      accent: "healthier",
-      suffix: "you.",
+      prefix: "Your",
+      accent: "AI worker",
+      suffix: "is already on duty.",
     },
-    title: "AI nutrition and health assistant",
+    title: "AI nutrition and health worker",
     heroTyping: [
-      "Nearby when water is due.",
-      "Remembers habits and support style.",
-      "Reacts to the day, not just the numbers.",
+      "I am already reading the day context.",
+      "I suggest the next action when it actually matters.",
+      "I work with food, water, medication, family, and progress.",
     ],
     subtitle:
-      `A living ${AI_COMPANION_LABEL} for food, water, medication, progress, and gentle motivation. It does not just track data; it moves through the day with you.`,
+      `This is not a website with an AI feature. It is a space where the ${AI_COMPANION_LABEL} is on duty: noticing, explaining, reminding, acting through the backend, and moving through the day with you.`,
     primary: "Start free",
     secondary: "See companion",
     telegramCta: "Connect Telegram",
     navOverview: "Product overview",
     socialProof: "10,000+ users building habits with their companion",
-    proof: [AI_COMPANION_LABEL, "memory", PROACTIVE_NUDGES_LABEL, "Telegram nearby"],
+    proof: [AI_COMPANION_LABEL, "on duty", "memory", "Telegram nearby"],
     presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
     sceneCards: [
       {
-        title: "Morning focus",
-        body: "Water, protein, and a 09:00 medication reminder are already in the plan.",
-        tone: "calm",
+        title: "Assistant on duty",
+        body: "Water, protein, medication, and the first meal are already organized into the day route.",
+        tone: "working",
       },
       {
-        title: "AI noticed",
+        title: "AI noticed context",
         body: "Yesterday slipped in the evening, so today the nudge arrives earlier.",
-        tone: "coach",
+        tone: "analysis",
       },
       {
-        title: TELEGRAM_RETENTION_LABEL,
-        body: "Quick water or medication logging without opening the app.",
-        tone: "warm",
+        title: "One assistant in Telegram",
+        body: "The same worker handles photos, tasks, water, medication, and blood pressure.",
+        tone: "unified",
       },
     ],
     heroStats: [
@@ -807,19 +830,19 @@ const landingCopy = {
     ],
     mascot: {
       name: AI_COMPANION_LABEL,
-      title: `${AI_COMPANION_LABEL} is here`,
-      body: "You have 600 kcal left today. I would add water and a light protein dinner.",
-      mood: "live reaction",
-      xps: "+25 XP streak",
+      title: "AI worker is already here",
+      body: "I am checking food, water, reminders, and progress so the next action is not random.",
+      mood: "on duty",
+      xps: "+25 XP today",
     },
     quickActions: ["Food photo", "Barcode", "Repeat yesterday", "Manual entry"],
     featureRail: [
-      { title: FOOD_SCANNER_TITLE, body: "Food photo and quick analysis" },
-      { title: HYDRATION_TRACKER_TITLE, body: "Water without manual chaos" },
-      { title: CALORIE_MACRO_TITLE, body: "Calories, protein, fats, carbs" },
-      { title: AI_COACHING_TITLE, body: "Guidance for your day" },
-      { title: PROGRESS_INSIGHTS_TITLE, body: "Changes without dry stats" },
-      { title: SMART_REMINDERS_TITLE, body: "Water, meals, medication, habits" },
+      { title: FOOD_SCANNER_TITLE, body: "I read photos, barcodes, and portions" },
+      { title: HYDRATION_TRACKER_TITLE, body: "I keep the pace without manual chaos" },
+      { title: CALORIE_MACRO_TITLE, body: "I explain numbers like a human" },
+      { title: AI_COACHING_TITLE, body: "I run the day, not an article" },
+      { title: PROGRESS_INSIGHTS_TITLE, body: "I build insight from every scale" },
+      { title: SMART_REMINDERS_TITLE, body: "Water, food, meds, pressure, tasks" },
     ],
     nutritionInsightEyebrow: "AI understands food",
     nutritionInsightTitle: "Food as a clear map of benefits",
@@ -1138,7 +1161,7 @@ const getLandingScene = (isDarkMode: boolean) => ({
   featureRailBorder: isDarkMode ? GLASS_WHITE_14 : "rgba(15,118,110,0.16)",
   featureCardBg: isDarkMode ? "rgba(15,23,42,0.68)" : "rgba(255,255,255,0.58)",
   featureCardBorder: isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(15,118,110,0.12)",
-  featureIconBg: isDarkMode ? "rgba(163,230,53,0.1)" : "rgba(20,184,166,0.1)",
+  featureIconBg: isDarkMode ? "rgba(163,230,53,0.1)" : LANDING_TEAL_TINT_10,
   featureIconColor: isDarkMode ? "#a3e635" : "#0f766e",
   featureIconShadow: isDarkMode
     ? "0 0 28px rgba(163,230,53,0.14)"
@@ -1158,7 +1181,7 @@ const getLandingScene = (isDarkMode: boolean) => ({
   analyticsMuted: isDarkMode ? "rgba(255,255,255,0.66)" : "rgba(15,23,42,0.62)",
   analyticsCardBg: isDarkMode ? GLASS_WHITE_08 : GLASS_WHITE_70,
   analyticsCardBorder: isDarkMode ? GLASS_WHITE_14 : "rgba(15,118,110,0.14)",
-  analyticsAdviceBg: isDarkMode ? "rgba(20,184,166,0.14)" : "rgba(20,184,166,0.1)",
+  analyticsAdviceBg: isDarkMode ? "rgba(20,184,166,0.14)" : LANDING_TEAL_TINT_10,
   analyticsAdviceBorder: isDarkMode ? "rgba(94,234,212,0.22)" : "rgba(15,118,110,0.16)",
   phoneShellBg: isDarkMode ? "#020617" : "#e2e8f0",
   phoneScreenBg: isDarkMode ? "#07111f" : "#f8fafc",
@@ -1315,6 +1338,10 @@ const CompanionExperienceScene = ({
   const companionToolBadges = copy.featureRail.map((feature, index) => ({
     ...feature,
     Icon: getFeatureRailIcon(index),
+  }));
+  const workerSignals = copy.sceneCards.map((signal, index) => ({
+    ...signal,
+    Icon: getAssistantToolIcon(index),
   }));
 
   return (
@@ -1715,11 +1742,89 @@ const CompanionExperienceScene = ({
             ? "0 18px 60px rgba(0,0,0,0.34)"
             : "0 18px 54px rgba(14,165,233,0.16)",
           display: { sm: "none", lg: "grid" },
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gridTemplateColumns: LANDING_THREE_COLUMN_GRID,
           gap: 0.8,
           pointerEvents: "auto",
         }}
       >
+        <Box
+          sx={{
+            gridColumn: "1 / -1",
+            display: "grid",
+            gridTemplateColumns: LANDING_THREE_COLUMN_GRID,
+            gap: 0.8,
+            mb: 0.2,
+          }}
+        >
+          {workerSignals.map((signal) => {
+            const Icon = signal.Icon;
+
+            return (
+              <Box
+                key={signal.title}
+                data-landing-ai-worker-signal="true"
+                sx={{
+                  minWidth: 0,
+                  p: 1,
+                  borderRadius: 1,
+                  border: `1px solid ${scene.featureCardBorder}`,
+                  bgcolor: isDarkMode ? LANDING_TEAL_TINT_10 : "rgba(236,253,245,0.72)",
+                  transition: "transform 180ms ease, border-color 180ms ease, background-color 180ms ease",
+                  "&:hover": {
+                    transform: LANDING_HOVER_LIFT,
+                    borderColor: scene.accentColor,
+                    backgroundColor: isDarkMode ? "rgba(20,184,166,0.16)" : GLASS_WHITE_70,
+                  },
+                }}
+              >
+                <Stack direction="row" spacing={0.8} alignItems="flex-start" minWidth={0}>
+                  <Box
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      flex: "0 0 auto",
+                      borderRadius: "50%",
+                      display: "grid",
+                      placeItems: "center",
+                      color: scene.featureIconColor,
+                      backgroundColor: scene.featureIconBg,
+                      boxShadow: scene.featureIconShadow,
+                    }}
+                  >
+                    <Icon size={15} aria-hidden="true" />
+                  </Box>
+                  <Box minWidth={0}>
+                    <Typography
+                      sx={{
+                        color: scene.featureText,
+                        fontSize: 11,
+                        fontWeight: 900,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {signal.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: scene.featureMuted,
+                        fontSize: 10,
+                        lineHeight: 1.25,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {signal.body}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            );
+          })}
+        </Box>
         {companionToolBadges.map((tool, index) => {
           const Icon = tool.Icon;
 
@@ -1970,13 +2075,7 @@ const Hero = ({
           backdropFilter: GLASS_BLUR_14,
         }}
       >
-        <AssistantAvatar
-          name={copy.mascot.name}
-          variant="robot"
-          mood="happy"
-          size={58}
-          active
-        />
+        <LandingAssistantWorkerAvatar name={copy.mascot.name} size={58} />
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontWeight: 900 }}>{copy.mascot.title}</Typography>
           <Typography
@@ -2664,12 +2763,7 @@ const AnalyticsPanel = ({
           spacing={1.5}
           alignItems="center"
         >
-          <AssistantAvatar
-            name={copy.mascot.name}
-            variant="robot"
-            mood="coach"
-            active
-          />
+          <LandingAssistantWorkerAvatar name={copy.mascot.name} mood="coach" />
           <Typography sx={{ color: scene.mutedText, lineHeight: 1.7 }}>
             {copy.progressAdvice}
           </Typography>
@@ -2779,13 +2873,7 @@ const MobileCommunityPanel = ({
       >
         <Stack spacing={1.4}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <AssistantAvatar
-              name={copy.mascot.name}
-              variant="robot"
-              mood="happy"
-              size={54}
-              active
-            />
+            <LandingAssistantWorkerAvatar name={copy.mascot.name} size={54} />
             <Box>
               <Typography sx={{ fontWeight: 900 }}>Smart Nutrition</Typography>
               <Typography variant="caption" color="text.secondary">

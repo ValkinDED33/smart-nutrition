@@ -109,8 +109,6 @@ export const personalityValues: Record<
   scientific: { warmth: 0.58, humor: 0.08, strictness: 0.62, motivation: 0.72 },
 };
 
-export const assistantAvatarOptions: AssistantCompanionKind[] = ["robot", "human"];
-
 export const clampNumber = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 

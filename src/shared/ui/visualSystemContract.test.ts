@@ -80,7 +80,9 @@ describe("Smart Nutrition visual system contract", () => {
     expect(source).not.toContain('"Smart Nutrition AI"');
     expect(assistantDisplayNameSource).toContain("legacyAssistantNames");
     expect(source).toContain("env(safe-area-inset-bottom");
-    expect(source).not.toContain('className="sn-companion-panel"');
+    expect(source).toContain('className="sn-companion-panel"');
+    expect(source).toContain('data-ai-worker-home-center="true"');
+    expect(source).toContain('data-ai-worker-tool-grid="true"');
     expect(source).not.toContain("HyeMye");
   });
 });

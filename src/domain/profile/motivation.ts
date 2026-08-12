@@ -29,8 +29,8 @@ const toMonthKey = (value: string | Date) => {
 export const createDefaultAssistantCustomization = (): AssistantCustomization => ({
   name: DEFAULT_ASSISTANT_NAME,
   assistantName: DEFAULT_ASSISTANT_NAME,
-  companionKind: "dragon",
-  assistantAvatar: "dragon",
+  companionKind: "robot",
+  assistantAvatar: "robot",
   preferredCompanionRenderMode: "2d",
   role: "assistant",
   tone: "gentle",

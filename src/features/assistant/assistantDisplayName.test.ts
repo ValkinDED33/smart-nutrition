@@ -7,13 +7,13 @@ describe("assistant display name", () => {
   });
 
   it("uses a localized fallback without saving a fake default name", () => {
-    expect(getAssistantDisplayName("", "uk")).toBe("ваш помічник");
-    expect(getAssistantDisplayName(" ", "pl")).toBe("Twój asystent");
-    expect(getAssistantDisplayName("", "en")).toBe("your assistant");
+    expect(getAssistantDisplayName("", "uk")).toBe("Помічник Smart Nutrition");
+    expect(getAssistantDisplayName(" ", "pl")).toBe("Asystent Smart Nutrition");
+    expect(getAssistantDisplayName("", "en")).toBe("Smart Nutrition Assistant");
   });
 
   it("hides legacy accidental assistant names from the visible interface", () => {
-    expect(getAssistantDisplayName("HyeMye", "uk")).toBe("ваш помічник");
+    expect(getAssistantDisplayName("HyeMye", "uk")).toBe("Помічник Smart Nutrition");
     expect(getAssistantDisplayName("huemue", "en", "Smart Nutrition AI")).toBe(
       "Smart Nutrition AI"
     );

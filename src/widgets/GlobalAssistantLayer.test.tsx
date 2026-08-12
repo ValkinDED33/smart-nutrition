@@ -86,6 +86,34 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("lookOffset={assistantLookOffset}");
   });
 
+  it("surfaces the global assistant as a project worker with real tools", async () => {
+    const source = await readFile(
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain('data-global-assistant-worker-chip="true"');
+    expect(source).toContain('data-global-assistant-toolbelt="true"');
+    expect(source).toContain('data-global-assistant-working-state="true"');
+    expect(source).toContain('data-global-ai-worker-button="true"');
+    expect(source).toContain('data-global-ai-worker-roaming="true"');
+    expect(source).toContain('data-global-ai-worker-activity-pill="true"');
+    expect(source).toContain('data-global-ai-worker-orbit="true"');
+    expect(source).toContain('data-global-ai-worker-task-node="true"');
+    expect(source).toContain("AI-працівник");
+    expect(source).toContain("Pracownik AI");
+    expect(source).toContain("AI worker");
+    expect(source).toContain("workerActivities");
+    expect(source).toContain("orbitLabels");
+    expect(source).toContain("getGlobalAssistantOrbitIcon");
+    expect(source).toContain("getGlobalAssistantOrbitPosition");
+    expect(source).toContain("ScanLine");
+    expect(source).toContain("HeartPulse");
+    expect(source).toContain("Telegram");
+    expect(source).toContain("Сім'я");
+    expect(source).toContain("Задачі");
+  });
+
   it("lets public auth surfaces guide themselves and hides on onboarding", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {

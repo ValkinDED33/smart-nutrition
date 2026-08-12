@@ -264,9 +264,9 @@ export const companionShopCatalog: CompanionCatalogItem[] = [
     category: "animal",
     title: text("Олень", "Jeleń", "Deer"),
     description: text(
-      "Легкий образ для прогулянок, сімейного режиму і тихої підтримки.",
-      "Lekki wygląd do spacerów, rodzinnego rytmu i cichego wsparcia.",
-      "A light look for walks, family rhythm, and quiet support."
+      "Спокійний образ для прогулянок, сімейного режиму і тихої підтримки.",
+      "Spokojny wygląd do spacerów, rodzinnego rytmu i cichego wsparcia.",
+      "A calm look for walks, family rhythm, and quiet support."
     ),
     tagLabel: text("легкість", "lekkość", "light"),
     price: 155,

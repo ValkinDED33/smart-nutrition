@@ -1180,9 +1180,10 @@ addCheck(
     assistantDisplayNameSource.includes("legacyAssistantNames") &&
     assistantDisplayNameSource.includes("getAssistantFallbackName") &&
     assistantDisplayNameSource.includes("getAssistantDisplayName") &&
-    ["ваш помічник", "Twój asystent", "your assistant"].every((fallback) =>
+    ["Помічник Smart Nutrition", "Asystent Smart Nutrition", "Smart Nutrition Assistant"].every((fallback) =>
       assistantDisplayNameSource.includes(fallback)
-    ),
+    ) &&
+    !/ваш помічник|Twój asystent|your assistant/.test(assistantDisplayNameSource),
   "The assistant must not get a fake default name or block onboarding. Empty or legacy names remain empty in cloud state and only use localized display fallbacks in UI."
 );
 
@@ -2406,8 +2407,13 @@ addCheck(
     aiCompanionPageSource.includes("Dostawcy AI") &&
     aiCompanionPageSource.includes("Uwaga na wodę") &&
     aiCompanionPageSource.includes("Особистий помічник") &&
-    aiCompanionPageSource.includes("Час перевірити прогрес") &&
+    aiCompanionPageSource.includes("Помічник Smart Nutrition") &&
+    aiCompanionPageSource.includes("Перевіримо прогрес") &&
+    aiCompanionPageSource.includes("Підтримка без тиску") &&
     !/Osobisty companion|Providerzy AI|Fokus na wodzie|Nowy companion|Особистий companion|Новий companion/.test(
+      aiCompanionPageSource
+    ) &&
+    !/Стиль присутності|Легкий образ|Живий образ|Новий помічник|Час перевірити прогрес|М'який контроль|ваш помічник|Styl obecności|Lekki wygląd|Żywy wygląd|Presence style|Light look|Living look|New assistant|Check-in due|Gentle control/.test(
       aiCompanionPageSource
     ) &&
     !/Below you can see active providers|Niżej widać aktywnych providerów|Нижче видно активних провайдерів/.test(
@@ -2468,12 +2474,32 @@ addCheck(
     landingPageSource.includes("landingCompanionSignalNodes") &&
     landingPageSource.includes('data-landing-living-companion-field="true"') &&
     landingPageSource.includes('data-landing-living-companion-stage="true"') &&
+    landingPageSource.includes('data-landing-ai-worker-signal="true"') &&
+    landingPageSource.includes("const workerSignals = copy.sceneCards.map") &&
     landingPageSource.includes("landingCompanionOrbit") &&
     landingPageSource.includes("landingCompanionSignal") &&
     landingPageSource.includes("prefers-reduced-motion: reduce") &&
     landingPageSource.includes("playAIDiscoverySound") &&
     landingPageSource.includes("playGentleClickSound"),
   "The public landing hero must feel like a live AI space with user-triggered feedback and motion safety, not a static calorie-counter splash."
+);
+
+addCheck(
+  "guest landing positions the assistant as an AI worker, not an AI feature",
+  landingPageSource.includes("Тут працює твій") &&
+    landingPageSource.includes("AI-працівник харчування і здоров'я") &&
+    landingPageSource.includes("Це не сайт із AI-функцією") &&
+    landingPageSource.includes("Помічник на зміні") &&
+    landingPageSource.includes("Той самий працівник приймає фото, задачі, воду, ліки і тиск.") &&
+    landingPageSource.includes("Tu pracuje Twój") &&
+    landingPageSource.includes("AI pracownik żywienia i zdrowia") &&
+    landingPageSource.includes("To nie strona z funkcją AI") &&
+    landingPageSource.includes("Asystent na zmianie") &&
+    landingPageSource.includes("AI worker") &&
+    landingPageSource.includes("is already on duty") &&
+    landingPageSource.includes("This is not a website with an AI feature") &&
+    landingPageSource.includes("Assistant on duty"),
+  "Public landing must make Smart Nutrition feel like entering an AI-worker space, not a generic app with one AI feature."
 );
 
 const localizedAssistantExperienceSources = [
@@ -2486,13 +2512,14 @@ addCheck(
   "assistant growth and settings keep localized helper language",
     localizedAssistantExperienceSources.includes("Розвиток помічника") &&
     localizedAssistantExperienceSources.includes("помічник отримав перший справжній контекст") &&
-    localizedAssistantExperienceSources.includes("Живий образ помічника") &&
+    localizedAssistantExperienceSources.includes("Образ помічника") &&
     localizedAssistantExperienceSources.includes("зв'язок з помічником") &&
     localizedAssistantExperienceSources.includes("Rozwój asystenta") &&
     localizedAssistantExperienceSources.includes("asystent dostał pierwszy prawdziwy kontekst") &&
-    localizedAssistantExperienceSources.includes("Żywy wygląd asystenta") &&
+    localizedAssistantExperienceSources.includes("Wygląd asystenta") &&
     localizedAssistantExperienceSources.includes("więź z asystentem") &&
-    !/Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|постійним companion|stałego companion|зв'язок з companion|więź z companion/.test(
+    localizedAssistantExperienceSources.includes("Assistant appearance") &&
+    !/Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Живий образ помічника|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|Żywy wygląd asystenta|постійним companion|stałego companion|зв'язок з companion|więź z companion|Living assistant look/.test(
       localizedAssistantExperienceSources
     ),
   "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language and product-led appearance copy instead of mixed companion/onboarding/plumbing jargon."

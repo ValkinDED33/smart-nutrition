@@ -1250,8 +1250,8 @@ const ProfilePage = () => {
                 copy.tabs.assistant,
                 <LoadingSkeleton cards={3} bodyRows={3} />,
                 <Stack spacing={3}>
-                  <AssistantCustomizationCard />
                   <CompanionShopCard />
+                  <AssistantCustomizationCard />
                   <CommunityHubCard />
                 </Stack>
               )

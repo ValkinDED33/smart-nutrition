@@ -5,17 +5,41 @@ const readSource = (path: string) =>
   readFile(new URL(path, import.meta.url), "utf8");
 
 describe("Smart Nutrition visual system coverage", () => {
-  it("keeps progress and AI companion hero surfaces on the shared ecosystem pulse", async () => {
-    const [progressPage, ecosystemPulse, companionPage] = await Promise.all([
+  it("keeps product pages on the shared living AI worker ecosystem pulse", async () => {
+    const [
+      assistantPage,
+      communityPage,
+      foodPage,
+      profilePage,
+      progressPage,
+      recipesPage,
+      ecosystemPulse,
+      companionPage,
+    ] = await Promise.all([
+      readSource("../../pages/AiCompanionPage.tsx"),
+      readSource("../../pages/CommunityPage.tsx"),
+      readSource("../../pages/MealBuilderPage.tsx"),
+      readSource("../../pages/ProfilePage.tsx"),
       readSource("../../pages/ProgressPage.tsx"),
+      readSource("../../pages/RecipesPage.tsx"),
       readSource("../../features/assistant/EcosystemPulse.tsx"),
       readSource("../../pages/AiCompanionPage.tsx"),
     ]);
 
+    expect(assistantPage).toContain('assistantHint={<EcosystemPulse focus="assistant" />}');
+    expect(communityPage).toContain('assistantHint={<EcosystemPulse focus="community" />}');
+    expect(foodPage).toContain('assistantHint={<EcosystemPulse focus="food" />}');
+    expect(profilePage).toContain('assistantHint={<EcosystemPulse focus="profile" />}');
     expect(progressPage).toContain('assistantHint={<EcosystemPulse focus="progress" />}');
+    expect(recipesPage).toContain('assistantHint={<EcosystemPulse focus="recipes" />}');
     expect(ecosystemPulse).toContain("AssistantAvatar");
     expect(ecosystemPulse).toContain("selectTodayMealItems");
     expect(ecosystemPulse).toContain("state.water");
+    expect(ecosystemPulse).toContain('data-ai-worker-pulse="true"');
+    expect(ecosystemPulse).toContain('data-ai-worker-pulse-tools="true"');
+    expect(ecosystemPulse).toContain("Telegram");
+    expect(ecosystemPulse).toContain("Health");
+    expect(ecosystemPulse).toContain("Family");
     expect(companionPage).toContain('className="sn-companion-panel"');
     expect(companionPage).toContain("var(--sn-on-companion-muted)");
   });

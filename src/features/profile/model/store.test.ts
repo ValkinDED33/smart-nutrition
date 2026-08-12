@@ -310,6 +310,13 @@ describe("profileSlice family lifecycle", () => {
 });
 
 describe("profileSlice assistant onboarding", () => {
+  it("keeps the free default assistant skin as the product robot", () => {
+    const defaultState = normalizeProfileState({});
+
+    expect(defaultState.assistant.companionKind).toBe("robot");
+    expect(defaultState.assistant.assistantAvatar).toBe("robot");
+  });
+
   it("defaults and normalizes the companion render mode preference", () => {
     const defaultState = normalizeProfileState({});
 

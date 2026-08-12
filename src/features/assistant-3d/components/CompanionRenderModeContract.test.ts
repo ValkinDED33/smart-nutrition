@@ -54,12 +54,17 @@ describe("explicit 3D companion surface contract", () => {
       expect(source).toContain("CompanionRenderModeControl");
       expect(source).toContain("Companion3DLoadingFallback");
       expect(source).toContain("on3dLoadError");
-      expect(source).toContain("Стиль присутності");
-      expect(source).toContain("Żywy wygląd");
-      expect(source).toContain("Living look");
+      expect(source).toContain("Як помічник з'являється");
+      expect(source).toContain("Jak asystent się pojawia");
+      expect(source).toContain("How the assistant appears");
+      expect(source).toContain("Ефектно");
+      expect(source).toContain("Efektownie");
+      expect(source).toContain("Expressive");
       expect(source).not.toContain('renderMode="3d"');
       expect(source).not.toContain('useState<CompanionRenderModeValue>("2d")');
-      expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
+      expect(source).not.toMatch(
+        /Стиль присутності|Легкий образ|Живий образ|Styl obecności|Lekki wygląd|Żywy wygląd|Presence style|Light look|Living look|Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/
+      );
     });
   });
 
@@ -70,7 +75,9 @@ describe("explicit 3D companion surface contract", () => {
     expect(source).toContain("Companion3DLoadingFallback");
     expect(source).toContain("on3dLoadError");
     expect(source).not.toContain("CompanionRenderModeControl");
-    expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
+    expect(source).not.toMatch(
+      /Стиль присутності|Легкий образ|Живий образ|Styl obecności|Lekki wygląd|Żywy wygląd|Presence style|Light look|Living look|Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/
+    );
   });
 
   it("keeps assistant customization product-led instead of exposing renderer jargon", async () => {
@@ -82,7 +89,9 @@ describe("explicit 3D companion surface contract", () => {
     expect(source).toContain("appearanceTitle");
     expect(source).toContain("appearanceHint");
     expect(source).not.toContain("CompanionRenderModeControl");
-    expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
+    expect(source).not.toMatch(
+      /Стиль присутності|Легкий образ|Живий образ|Styl obecności|Lekki wygląd|Żywy wygląd|Presence style|Light look|Living look|Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/
+    );
   });
 
   it("persists render mode through one profile-backed preference hook", async () => {

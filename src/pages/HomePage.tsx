@@ -522,6 +522,9 @@ const HomePage = () => {
     >
       <Stack spacing={{ xs: 1.6, md: 2.4 }}>
       <Paper
+        className="sn-companion-panel"
+        data-ai-worker-command-center="true"
+        data-ai-worker-home-center="true"
         elevation={0}
         sx={{
           position: "relative",
@@ -941,6 +944,7 @@ const HomePage = () => {
             spacing={1.6}
             alignItems={{ xs: ALIGN_START, sm: "center" }}
             justifyContent="space-between"
+            data-ai-worker-route-item="true"
           >
             <Stack direction="row" spacing={1.4} alignItems="center" minWidth={0}>
               <Box
@@ -960,7 +964,7 @@ const HomePage = () => {
               >
                 <AssistantAvatar
                   name={assistantDisplayName}
-                  variant="robot"
+                  variant={assistant.companionKind}
                   mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
                   size={62}
                   active
@@ -1046,7 +1050,7 @@ const HomePage = () => {
                 }}
               >
                 {statusMetrics.map((metric) => (
-                  <Box key={metric.label}>
+                  <Box key={metric.label} data-ai-worker-metric="true">
                     <Stack direction="row" spacing={0.8} alignItems="center">
                       <metric.icon size={16} color={metric.color} />
                       <Typography variant="caption" sx={{ color: heroMutedColor }}>
@@ -1108,6 +1112,7 @@ const HomePage = () => {
           <Paper
             elevation={0}
             data-home-command-center="assistant-dock"
+            data-ai-worker-tool-grid="true"
             sx={{
               p: 1,
               borderRadius: 1,
@@ -1136,6 +1141,7 @@ const HomePage = () => {
                   return (
                     <Button
                       key={action.label}
+                      data-ai-worker-tool="true"
                       onClick={action.onClick}
                       startIcon={<Icon size={16} />}
                       variant="outlined"

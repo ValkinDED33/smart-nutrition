@@ -75,12 +75,37 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain('data-landing-living-companion-field="true"');
     expect(source).toContain('data-landing-living-companion-stage="true"');
     expect(source).toContain('data-landing-companion-toolbelt="true"');
+    expect(source).toContain('data-landing-ai-worker-signal="true"');
     expect(source).toContain("const companionToolBadges = copy.featureRail.map");
+    expect(source).toContain("const workerSignals = copy.sceneCards.map");
     expect(source).toContain("landingCompanionOrbit");
     expect(source).toContain("landingCompanionSignal");
     expect(source).toContain("prefers-reduced-motion: reduce");
     expect(source).toContain("playAIDiscoverySound");
     expect(source).toContain("playGentleClickSound");
+  });
+
+  it("makes the guest landing feel like an AI worker is already on duty", async () => {
+    const source = await readLandingPageSource();
+
+    expect(source).toContain("LandingAssistantWorkerAvatar");
+    expect(source).toContain("LANDING_DEFAULT_COMPANION_KIND");
+    expect(source).toContain('data-landing-assistant-worker-avatar');
+    expect(source).not.toContain('variant="robot"');
+    expect(source).toContain("Тут працює твій");
+    expect(source).toContain("AI-працівник харчування і здоров'я");
+    expect(source).toContain("Це не сайт із AI-функцією");
+    expect(source).toContain("Помічник на зміні");
+    expect(source).toContain("Той самий працівник приймає фото, задачі, воду, ліки і тиск.");
+    expect(source).toContain("Tu pracuje Twój");
+    expect(source).toContain("AI pracownik żywienia i zdrowia");
+    expect(source).toContain("To nie strona z funkcją AI");
+    expect(source).toContain("Asystent na zmianie");
+    expect(source).toContain("Your");
+    expect(source).toContain("AI worker");
+    expect(source).toContain("is already on duty");
+    expect(source).toContain("This is not a website with an AI feature");
+    expect(source).toContain("Assistant on duty");
   });
 
   it("places the capability slider as the first detailed section after the calm hero", async () => {

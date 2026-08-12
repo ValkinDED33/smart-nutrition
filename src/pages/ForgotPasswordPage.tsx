@@ -11,7 +11,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import {
   AuthApiError,
   requestPasswordReset,
@@ -19,7 +18,7 @@ import {
 } from "../shared/api/auth";
 import { readAuthIdentityHint, writeAuthIdentityHint } from "@features/auth/authIdentity";
 import { useLanguage } from "../shared/language";
-import { AuthSurface } from "@shared/ui";
+import { AuthAssistantIntro, AuthSurface } from "@shared/ui";
 
 type FormData = {
   email: string;
@@ -79,20 +78,13 @@ const ForgotPasswordPage = () => {
   return (
     <AuthSurface>
         <Stack spacing={3}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <AssistantAvatar name="Assistant" variant="robot" mood="coach" size={72} />
-            <Box>
-              <Typography variant="overline" sx={{ color: "#0f766e", fontWeight: 800 }}>
-                {t("brand.name")}
-              </Typography>
-              <Typography component="h1" variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
-                {t("auth.forgotTitle")}
-              </Typography>
-              <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                {t("auth.forgotSubtitle")}
-              </Typography>
-            </Box>
-          </Stack>
+          <AuthAssistantIntro
+            eyebrow={t("brand.name")}
+            title={t("auth.forgotTitle")}
+            subtitle={t("auth.forgotSubtitle")}
+            mood="coach"
+            size={72}
+          />
 
           {serverError && <Alert severity="error">{serverError}</Alert>}
           {result && <Alert severity="success">{t("auth.forgotSuccess")}</Alert>}

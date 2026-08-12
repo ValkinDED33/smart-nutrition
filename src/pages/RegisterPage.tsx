@@ -8,7 +8,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   InputAdornment,
   LinearProgress,
@@ -45,9 +44,8 @@ import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 import type { AppLanguage } from "../shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
-import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { PasswordVisibilityButton } from "../shared/components/PasswordVisibilityButton";
-import { AuthSurface } from "@shared/ui";
+import { AuthAssistantIntro, AuthSurface } from "@shared/ui";
 import {
   PENDING_PARTNER_INVITE_KEY,
   setClientStorageItem,
@@ -847,62 +845,17 @@ const RegisterPage = () => {
           <Box
             sx={{
               position: "relative",
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: 1,
-              border: "1px solid var(--sn-border-strong)",
-              background:
-                "radial-gradient(circle at 82% 18%, rgba(132,204,22,0.22), transparent 30%), radial-gradient(circle at 8% 0%, rgba(20,184,166,0.18), transparent 34%), rgba(255,255,255,0.08)",
               overflow: "hidden",
             }}
           >
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box
-                sx={{
-                  position: "relative",
-                  display: "grid",
-                  placeItems: "center",
-                  flex: "0 0 auto",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    width: 104,
-                    height: 104,
-                    borderRadius: "50%",
-                    background: "var(--sn-portal-ring)",
-                    opacity: 0.72,
-                  },
-                }}
-              >
-                <AssistantAvatar name="Assistant" variant="robot" mood="celebrate" size={76} active />
-              </Box>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>
-                  {t("brand.name")}
-                </Typography>
-                <Typography component="h1" variant="h4" sx={{ fontWeight: 950, mb: 0.8 }}>
-                  {stepCopy.portalTitle}
-                </Typography>
-                <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  {stepCopy.portalSubtitle}
-                </Typography>
-              </Box>
-            </Stack>
-
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 2 }}>
-              {stepCopy.capabilities.map((capability) => (
-                <Chip
-                  key={capability}
-                  label={capability}
-                  size="small"
-                  sx={{
-                    border: "1px solid var(--sn-border-soft)",
-                    backgroundColor: "var(--sn-surface-glass)",
-                    color: "var(--sn-text-primary)",
-                    fontWeight: 850,
-                  }}
-                />
-              ))}
-            </Stack>
+            <AuthAssistantIntro
+              eyebrow={t("brand.name")}
+              title={stepCopy.portalTitle}
+              subtitle={stepCopy.portalSubtitle}
+              mood="celebrate"
+              size={76}
+              capabilities={stepCopy.capabilities}
+            />
           </Box>
 
           {showRegistrationForm && (
