@@ -18,6 +18,7 @@ import {
   createInitialProfileState,
   createInitialWaterState,
   isUserRole,
+  normalizeBloodPressureHistory,
   normalizeCompanionState,
   normalizeWomenHealthState,
   StateApiError,
@@ -229,6 +230,7 @@ const normalizeProfileState = (value, user) => {
         ...assistantMemory,
       },
     },
+    bloodPressureHistory: normalizeBloodPressureHistory(record.bloodPressureHistory),
     womenHealth: normalizeWomenHealthState(record.womenHealth),
   };
 };

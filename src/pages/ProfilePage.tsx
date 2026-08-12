@@ -42,6 +42,7 @@ import {
   hasWomenHealthContext,
   isWomenHealthVisibleForGender,
 } from "@domain/profile/womenHealth";
+import { hasActivePregnancyPartnerLink } from "@domain/profile/familyLifecycle";
 
 const PROFILE_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const PROFILE_GLASS_BACKGROUND = "var(--sn-surface-glass)";
@@ -679,7 +680,8 @@ const ProfilePage = () => {
   const canSeeOperationalDetails = canAccessAdminCenter(user.role);
   const canSeeWomenHealthSection =
     isWomenHealthVisibleForGender(user.gender) ||
-    hasWomenHealthContext(profile.womenHealth);
+    hasWomenHealthContext(profile.womenHealth) ||
+    hasActivePregnancyPartnerLink(profile.partnerSharing);
   const caloriePercent = dailyCalories
     ? Math.min((totalMealNutrients.calories / dailyCalories) * 100, 100)
     : 0;

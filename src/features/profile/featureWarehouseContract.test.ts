@@ -94,6 +94,11 @@ describe("profile feature warehouse contract", () => {
     const source = readSource("src/features/profile/CompanionShopCard.tsx");
 
     expect(source).toContain("companionShopCatalog.filter((item) => item.available)");
+    expect(source).toContain('data-companion-shop-studio="true"');
+    expect(source).toContain('data-companion-live-preview="true"');
+    expect(source).toContain('data-companion-shop-capabilities="true"');
+    expect(source).toContain("applyCompanionShopSelectionInCloud");
+    expect(source).toContain('navigate("/coach")');
     expect(source).not.toContain("comingSoon");
     expect(source).not.toContain("futureItem");
     expect(source).not.toContain("Available later");
@@ -214,12 +219,15 @@ describe("profile feature warehouse contract", () => {
 
     expect(source).toContain("Розвиток помічника");
     expect(source).toContain("помічник отримав перший справжній контекст");
-    expect(source).toContain("Превʼю помічника");
+    expect(source).toContain("Живий образ помічника");
     expect(source).toContain("Rozwój asystenta");
     expect(source).toContain("asystent dostał pierwszy prawdziwy kontekst");
-    expect(source).toContain("Podgląd asystenta");
+    expect(source).toContain("Żywy wygląd asystenta");
+    expect(source).toContain("Assistant evolution");
+    expect(source).toContain("assistant gets its first real context");
+    expect(source).toContain("Living assistant look");
     expect(source).not.toMatch(
-      /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Rozwój companiona|companion dostał|Podgląd companion|постійним companion|stałego companion|зв'язок з companion|więź z companion/
+      /Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|постійним companion|stałego companion|зв'язок з companion|więź z companion|Companion evolution|companion gets|companion bond|persistent companion/
     );
   });
 

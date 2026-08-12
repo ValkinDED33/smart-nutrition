@@ -495,6 +495,47 @@ const normalizeSymptomHistory = (value) =>
         .slice(-60)
     : [];
 
+const normalizeBloodPressureValue = (value, min, max) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  const rounded = Math.round(number);
+  return rounded >= min && rounded <= max ? rounded : null;
+};
+
+export const normalizeBloodPressureHistory = (value) =>
+  Array.isArray(value)
+    ? value
+        .filter(isRecord)
+        .map((entry, index) => {
+          const recordedAt = toIsoDateOrNull(entry.recordedAt);
+          const systolic = normalizeBloodPressureValue(entry.systolic, 40, 260);
+          const diastolic = normalizeBloodPressureValue(entry.diastolic, 30, 180);
+
+          if (!recordedAt || systolic === null || diastolic === null) {
+            return null;
+          }
+
+          return {
+            id:
+              normalizeText(entry.id, 96) ||
+              `blood-pressure-${recordedAt.replace(/[^a-zA-Z0-9_-]+/g, "-")}-${index}`,
+            recordedAt,
+            systolic,
+            diastolic,
+            pulse: normalizeBloodPressureValue(entry.pulse, 25, 240),
+            unit: "mmHg",
+            note: normalizeText(entry.note, 160),
+            source: entry.source === "telegram_photo" ? "telegram_photo" : "manual",
+          };
+        })
+        .filter(Boolean)
+        .slice(-180)
+    : [];
+
 export const createInitialWomenHealthState = () => ({
   mode: "none",
   pregnancyWeek: null,
@@ -569,10 +610,11 @@ export const createInitialProfileState = (userInput) => {
         date: new Date().toISOString(),
         weight: userInput.weight,
       },
-      ],
-      measurementHistory: [],
-      progressPhotos: [],
-      weeklyCheckIn: {
+    ],
+    bloodPressureHistory: [],
+    measurementHistory: [],
+    progressPhotos: [],
+    weeklyCheckIn: {
       enabled: true,
       remindIntervalDays: 7,
       lastRecordedAt: null,

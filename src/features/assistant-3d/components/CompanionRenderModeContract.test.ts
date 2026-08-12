@@ -47,20 +47,42 @@ describe("explicit 3D companion surface contract", () => {
   });
 
   it("keeps explicit 3D surfaces user-controlled with local fallback and error recovery", async () => {
-    const sources = await Promise.all([
-      readSource("../../../pages/AiCompanionPage.tsx"),
-      readSource("../../profile/AssistantCustomizationCard.tsx"),
-      readSource("../../profile/CompanionShopCard.tsx"),
-    ]);
+    const sources = await Promise.all([readSource("../../../pages/AiCompanionPage.tsx")]);
 
     sources.forEach((source) => {
       expect(source).toContain("useCompanionRenderModePreference");
       expect(source).toContain("CompanionRenderModeControl");
       expect(source).toContain("Companion3DLoadingFallback");
       expect(source).toContain("on3dLoadError");
+      expect(source).toContain("Стиль присутності");
+      expect(source).toContain("Żywy wygląd");
+      expect(source).toContain("Living look");
       expect(source).not.toContain('renderMode="3d"');
       expect(source).not.toContain('useState<CompanionRenderModeValue>("2d")');
+      expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
     });
+  });
+
+  it("keeps the companion shop magical instead of exposing renderer jargon", async () => {
+    const source = await readSource("../../profile/CompanionShopCard.tsx");
+
+    expect(source).toContain("useCompanionRenderModePreference");
+    expect(source).toContain("Companion3DLoadingFallback");
+    expect(source).toContain("on3dLoadError");
+    expect(source).not.toContain("CompanionRenderModeControl");
+    expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
+  });
+
+  it("keeps assistant customization product-led instead of exposing renderer jargon", async () => {
+    const source = await readSource("../../profile/AssistantCustomizationCard.tsx");
+
+    expect(source).toContain("useCompanionRenderModePreference");
+    expect(source).toContain("Companion3DLoadingFallback");
+    expect(source).toContain("on3dLoadError");
+    expect(source).toContain("appearanceTitle");
+    expect(source).toContain("appearanceHint");
+    expect(source).not.toContain("CompanionRenderModeControl");
+    expect(source).not.toMatch(/Швидкий 2D|Живий 3D|Fast 2D|Live 3D|Szybki 2D|Żywy 3D/);
   });
 
   it("persists render mode through one profile-backed preference hook", async () => {

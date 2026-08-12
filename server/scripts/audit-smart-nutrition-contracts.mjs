@@ -51,11 +51,15 @@ const stateControllerSource = readSource("server/controllers/state.controller.mj
 const stateServiceSource = readSource("server/services/stateService.mjs");
 const authServiceSource = readSource("server/services/authService.mjs");
 const authServiceTestSource = readSource("server/services/authService.test.mjs");
+const indexSource = readSource("server/index.mjs");
 const errorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
 const stateRepositorySource = readSource("server/repositories/stateRepository.mjs");
 const telegramServiceSource = readSource("server/services/telegramService.mjs");
+const telegramPhotoIntakeServiceSource = readSource(
+  "server/services/telegramPhotoIntakeService.mjs"
+);
 const telegramMedicationRemindersSource = readSource(
   "server/services/telegramMedicationReminders.mjs"
 );
@@ -618,6 +622,29 @@ addCheck(
   telegramServiceSource.includes("aiService.askQuestion(user") &&
     telegramServiceSource.includes("interactionChannel: \"telegram\""),
   "Telegram conversational text must use the same backend AI assistant runtime as the website."
+);
+
+addCheck(
+  "telegram photos route through universal intake with canonical food fallback",
+  telegramServiceSource.includes('nextBot.on("photo"') &&
+    telegramServiceSource.includes("replyWithPhotoIntakeDraft(ctx)") &&
+    telegramServiceSource.includes("telegramPhotoIntakeService?.analyzePhoto") &&
+    telegramServiceSource.includes("photoAnalysisService.analyzePhoto") &&
+    telegramServiceSource.includes("downloadTelegramPhotoAsDataUrl") &&
+    telegramServiceSource.includes("buildTelegramPhotoIntakeDraftMessage") &&
+    telegramServiceSource.includes("buildTelegramPhotoMealDraftMessage") &&
+    telegramServiceSource.includes("bp:save:") &&
+    telegramServiceSource.includes("saveTelegramBloodPressureReading") &&
+    telegramServiceSource.includes("bloodPressureHistory") &&
+    telegramServiceSource.includes("I did not save anything without confirmation") &&
+    telegramPhotoIntakeServiceSource.includes('"blood_pressure"') &&
+    telegramPhotoIntakeServiceSource.includes('"medication"') &&
+    telegramPhotoIntakeServiceSource.includes("photoAnalysisService.analyzePhoto") &&
+    telegramPhotoIntakeServiceSource.includes("tryAnalyzeVisionJson") &&
+    indexSource.includes("photoAnalysisService,") &&
+    indexSource.includes("telegramPhotoIntakeService,") &&
+    !telegramServiceSource.includes("stateService.addMealEntries("),
+  "Telegram image uploads must use one universal photo intake: food falls back to the canonical photo-meal analyzer, blood pressure saves only after a backend-confirmed callback, and medication photos stay review-first drafts without fake saved actions."
 );
 
 addCheck(
@@ -2457,18 +2484,18 @@ const localizedAssistantExperienceSources = [
 
 addCheck(
   "assistant growth and settings keep localized helper language",
-  localizedAssistantExperienceSources.includes("Розвиток помічника") &&
+    localizedAssistantExperienceSources.includes("Розвиток помічника") &&
     localizedAssistantExperienceSources.includes("помічник отримав перший справжній контекст") &&
-    localizedAssistantExperienceSources.includes("Превʼю помічника") &&
+    localizedAssistantExperienceSources.includes("Живий образ помічника") &&
     localizedAssistantExperienceSources.includes("зв'язок з помічником") &&
     localizedAssistantExperienceSources.includes("Rozwój asystenta") &&
     localizedAssistantExperienceSources.includes("asystent dostał pierwszy prawdziwy kontekst") &&
-    localizedAssistantExperienceSources.includes("Podgląd asystenta") &&
+    localizedAssistantExperienceSources.includes("Żywy wygląd asystenta") &&
     localizedAssistantExperienceSources.includes("więź z asystentem") &&
-    !/Розвиток компаньйона|компаньйон отримав|Превʼю companion|Rozwój companiona|companion dostał|Podgląd companion|постійним companion|stałego companion|зв'язок з companion|więź z companion/.test(
+    !/Розвиток компаньйона|компаньйон отримав|Превʼю companion|Швидкий 2D|Живий 3D|Rozwój companiona|companion dostał|Podgląd companion|Szybki 2D|Żywy 3D|постійним companion|stałego companion|зв'язок з companion|więź z companion/.test(
       localizedAssistantExperienceSources
     ),
-  "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language instead of mixed companion/onboarding planning jargon."
+  "Assistant growth, profile customization, and ecosystem pulse copy must use native localized helper language and product-led appearance copy instead of mixed companion/onboarding/plumbing jargon."
 );
 
 const localizedAssistantCoachSources = [
@@ -2560,15 +2587,18 @@ addCheck(
 );
 
 addCheck(
-  "female profile and saved women-health context expose a dedicated profile section",
+  "women and family profile context expose a dedicated profile section",
   profilePageSource.includes("isWomenHealthVisibleForGender(user.gender)") &&
     profilePageSource.includes("hasWomenHealthContext(profile.womenHealth)") &&
+    profilePageSource.includes("hasActivePregnancyPartnerLink(profile.partnerSharing)") &&
+    homePageSource.includes("hasActivePregnancyPartnerLink(partnerSharing)") &&
+    homePageSource.includes("canSeeWomenHealthCenter") &&
     womenHealthOverviewCardSource.includes("hasWomenHealthContext(womenHealth)") &&
     womenHealthOverviewCardSource.includes("isWomenHealthVisibleForGender(user?.gender) ||") &&
     profilePageSource.includes('id: "women-health"') &&
     profilePageSource.includes("copy.tabs.womenHealth") &&
     profilePageSource.includes("<WomenHealthOverviewCard />"),
-  "Female accounts and accounts with canonical women-health profile context must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class profile section, not as hidden data-tab content or a stale auth-gender casualty."
+  "Female accounts, accounts with canonical women-health profile context, and connected pregnancy partners must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class profile section, not as hidden data-tab content or a stale auth-gender casualty."
 );
 
 addCheck(

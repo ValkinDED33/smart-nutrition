@@ -190,6 +190,16 @@ describe("GlobalAssistantLayer", () => {
     ).toBe("2d");
   });
 
+  it("uses the free robot as the public global assistant default", async () => {
+    const source = await readFile(
+      new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain('const companionKind = user ? assistant.companionKind : "robot";');
+    expect(source).not.toContain('const companionKind = user ? assistant.companionKind : "dragon";');
+  });
+
   it("keeps global assistant avatars lightweight while the user is editing inputs", () => {
     expect(
       resolveGlobalAssistantAvatarRenderMode({

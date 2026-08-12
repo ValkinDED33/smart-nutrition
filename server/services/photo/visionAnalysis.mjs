@@ -260,7 +260,13 @@ JSON schema:
 }
 `;
 
-const callGoogleVisionProvider = async ({ provider, prompt, normalizedPhoto, signal }) => {
+const callGoogleVisionProvider = async ({
+  provider,
+  prompt,
+  normalizedPhoto,
+  signal,
+  maxOutputTokens = 1_800,
+}) => {
   const response = await fetch(getGoogleNativeGenerateContentUrl(provider), {
     method: "POST",
     headers: {
@@ -285,7 +291,7 @@ const callGoogleVisionProvider = async ({ provider, prompt, normalizedPhoto, sig
       ],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 1_800,
+        maxOutputTokens,
         responseMimeType: "application/json",
       },
     }),
@@ -300,7 +306,15 @@ const callGoogleVisionProvider = async ({ provider, prompt, normalizedPhoto, sig
   return extractProviderText(payload);
 };
 
-const callOpenAiCompatibleVisionProvider = async ({ provider, prompt, normalizedPhoto, signal }) => {
+const callOpenAiCompatibleVisionProvider = async ({
+  provider,
+  prompt,
+  normalizedPhoto,
+  signal,
+  maxOutputTokens = 1_800,
+  systemPrompt =
+    "You return strict JSON for Smart Nutrition photo meal analysis. Never claim certainty. User confirmation is mandatory.",
+}) => {
   const headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -323,13 +337,12 @@ const callOpenAiCompatibleVisionProvider = async ({ provider, prompt, normalized
     body: JSON.stringify({
       model: provider.model,
       temperature: 0.1,
-      max_tokens: 1_800,
+      max_tokens: maxOutputTokens,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
-          content:
-            "You return strict JSON for Smart Nutrition photo meal analysis. Never claim certainty. User confirmation is mandatory.",
+          content: systemPrompt,
         },
         {
           role: "user",
@@ -354,6 +367,61 @@ const callOpenAiCompatibleVisionProvider = async ({ provider, prompt, normalized
   }
 
   return extractProviderText(payload);
+};
+
+export const tryAnalyzeVisionJson = async ({
+  config,
+  normalizedPhoto,
+  prompt,
+  maxOutputTokens = 1_800,
+  systemPrompt,
+  normalizePayload = (payload) => payload,
+}) => {
+  const providers = selectVisionProviders(config);
+
+  if (providers.length === 0) {
+    return null;
+  }
+
+  for (const provider of providers) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      Math.min(Number(provider.timeoutMs) || maxVisionTimeoutMs, maxVisionTimeoutMs)
+    );
+
+    try {
+      const text =
+        provider.id === "google"
+          ? await callGoogleVisionProvider({
+              provider,
+              prompt,
+              normalizedPhoto,
+              signal: controller.signal,
+              maxOutputTokens,
+            })
+          : await callOpenAiCompatibleVisionProvider({
+              provider,
+              prompt,
+              normalizedPhoto,
+              signal: controller.signal,
+              maxOutputTokens,
+              systemPrompt,
+            });
+      const payload = extractJsonObject(text.slice(0, maxVisionResponseLength));
+      const analysis = normalizePayload(payload);
+
+      if (analysis) {
+        return analysis;
+      }
+    } catch {
+      // Try the next configured vision provider before returning an honest unavailable state.
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  return null;
 };
 
 export const normalizeVisionAnalysis = (payload) => {
@@ -421,48 +489,12 @@ export const tryAnalyzeWithVisionProvider = async ({
   blockedTokens,
   language,
 }) => {
-  const providers = selectVisionProviders(config);
-
-  if (providers.length === 0) {
-    return null;
-  }
-
   const prompt = buildVisionPrompt({ mealType, dietStyle, blockedTokens, language });
 
-  for (const provider of providers) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      Math.min(Number(provider.timeoutMs) || maxVisionTimeoutMs, maxVisionTimeoutMs)
-    );
-
-    try {
-      const text =
-        provider.id === "google"
-          ? await callGoogleVisionProvider({
-              provider,
-              prompt,
-              normalizedPhoto,
-              signal: controller.signal,
-            })
-          : await callOpenAiCompatibleVisionProvider({
-              provider,
-              prompt,
-              normalizedPhoto,
-              signal: controller.signal,
-            });
-      const payload = extractJsonObject(text.slice(0, maxVisionResponseLength));
-      const analysis = normalizeVisionAnalysis(payload);
-
-      if (analysis) {
-        return analysis;
-      }
-    } catch {
-      // Try the next configured vision provider before giving the user an honest manual review state.
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  }
-
-  return null;
+  return tryAnalyzeVisionJson({
+    config,
+    normalizedPhoto,
+    prompt,
+    normalizePayload: normalizeVisionAnalysis,
+  });
 };

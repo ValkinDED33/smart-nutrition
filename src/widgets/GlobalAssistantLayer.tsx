@@ -577,7 +577,7 @@ export const GlobalAssistantLayer = () => {
   const companionName = user
     ? getAssistantDisplayName(assistant.name, appLanguage)
     : "Smart";
-  const companionKind = user ? assistant.companionKind : "dragon";
+  const companionKind = user ? assistant.companionKind : "robot";
   const companionSize = isDenseMobileCompanion ? 58 : isMobile ? 64 : 76;
   const assistantLookOffset = useAssistantPointerLookOffset({
     enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion,

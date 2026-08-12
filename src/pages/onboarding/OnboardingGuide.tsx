@@ -144,7 +144,10 @@ const stepMeta: Record<string, StepMeta> = {
   },
 };
 
-const GUIDE_FORM_SAFE_LEFT = "calc(50% + 390px)";
+const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 1880;
+const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)";
+const GUIDE_BUBBLE_WIDTH = 220;
+const GUIDE_AVATAR_SIZE = 76;
 
 const placementSx: Record<GuidePlacement, object> = {
   peekLeft: {
@@ -378,10 +381,10 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
           zIndex: 1250,
           pointerEvents: "none",
           display: { xs: "none", xl: "block" },
-          "@media (max-width: 1749px)": {
+          [`@media (max-width: ${GUIDE_WIDE_VIEWPORT_MIN_WIDTH - 1}px)`]: {
             display: "none",
           },
-          maxWidth: 360,
+          maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24,
           ...resolvePlacementSx(placement),
           transform,
           transformOrigin: "right top",
@@ -397,7 +400,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
             component={motion.div}
             layout
             variants={onboardingGuideStaggerVariants}
-            direction="row-reverse"
+            direction="row"
             spacing={1.2}
             alignItems="center"
           >
@@ -426,7 +429,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
                 mood={mood}
                 lookOffset={lookOffset}
                 active
-                size={92}
+                size={GUIDE_AVATAR_SIZE}
               />
             </Box>
 
@@ -436,7 +439,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
               variants={onboardingGuideBubbleVariants}
               elevation={0}
               sx={{
-                width: 250,
+                width: GUIDE_BUBBLE_WIDTH,
                 p: 1.6,
                 borderRadius: 1,
                 color: "#0f172a",

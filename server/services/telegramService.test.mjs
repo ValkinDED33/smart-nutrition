@@ -4,6 +4,8 @@ import {
   buildTelegramDailySummary,
   buildTelegramMainMenuMessage,
   buildTelegramNutritionSummary,
+  buildTelegramPhotoIntakeDraftMessage,
+  buildTelegramPhotoMealDraftMessage,
   buildTelegramWaterSummary,
   createTelegramConnectToken,
   createTelegramService,
@@ -136,6 +138,31 @@ describe("telegramService", () => {
     expect(buildTelegramWaterSummary(snapshot)).toContain("Ще приблизно 1500 мл");
     expect(buildTelegramNutritionSummary(snapshot, now)).toContain("Білок: 20.0 г");
     expect(buildTelegramNutritionSummary(snapshot, now)).not.toContain("999");
+  });
+
+  it("builds Telegram photo meal drafts as review-first output", () => {
+    const message = buildTelegramPhotoMealDraftMessage(
+      {
+        dishName: "Омлет з овочами",
+        recognitionStatus: "recognized",
+        confidence: 0.82,
+        items: [
+          {
+            name: "Яйця",
+            quantityGrams: 120,
+            estimatedNutritionPer100g: { calories: 155 },
+          },
+        ],
+        hiddenIngredientQuestions: ["Чи була олія або сир?"],
+        cautions: ["Перевірте вагу порції."],
+      },
+      "uk"
+    );
+
+    expect(message).toContain("Фото їжі отримав");
+    expect(message).toContain("Яйця: 120 g");
+    expect(message).toContain("~186 kcal");
+    expect(message).toContain("Я нічого не зберіг без підтвердження");
   });
 
   it("localizes Telegram daily, water and nutrition summaries", () => {
@@ -1197,6 +1224,432 @@ describe("telegramService", () => {
         }),
       })
     );
+
+    service.stop("test shutdown");
+  });
+
+  it("routes Telegram food photos through the canonical photo analysis service", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.handlers = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        this.handlers[eventName] = handler;
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ira",
+      role: "USER",
+      telegramChatId: "42",
+      languagePreference: "en",
+    };
+    const authRepository = createAuthRepository({
+      findUserByTelegramChatId: vi.fn(async () => connectedUser),
+    });
+    const photoAnalysisService = {
+      analyzePhoto: vi.fn(async () => ({
+        dishName: "Salmon bowl",
+        recognitionStatus: "recognized",
+        confidence: 0.88,
+        items: [
+          {
+            name: "Salmon",
+            quantityGrams: 140,
+            estimatedNutritionPer100g: { calories: 208 },
+          },
+        ],
+        cautions: ["Check sauces before saving."],
+        hiddenIngredientQuestions: ["Was there dressing?"],
+      })),
+    };
+    const stateService = {
+      getProfileState: vi.fn(async () => ({
+        languagePreference: "en",
+        dietStyle: "balanced",
+      })),
+      getMealState: vi.fn(async () => ({ items: [] })),
+    };
+    const fetchImplementation = vi.fn(async () => ({
+      ok: true,
+      headers: {
+        get: vi.fn(() => "image/jpeg"),
+      },
+      arrayBuffer: vi.fn(async () => new Uint8Array([1, 2, 3, 4]).buffer),
+    }));
+    const service = createTelegramService({
+      config: createConfig({ appBaseUrl: "https://smart-nutrition.club" }),
+      authRepository,
+      stateService,
+      photoAnalysisService,
+      fetchImplementation,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+    const getFileLink = vi.fn(async () => new URL("https://telegram.test/file.jpg"));
+
+    await instances[0].handlers.photo({
+      chat: { id: 42 },
+      from: { language_code: "en" },
+      telegram: { getFileLink },
+      message: {
+        photo: [
+          { file_id: "small-photo", width: 120, height: 120, file_size: 1000 },
+          { file_id: "large-photo", width: 1024, height: 768, file_size: 4000 },
+        ],
+      },
+      reply,
+    });
+
+    expect(getFileLink).toHaveBeenCalledWith("large-photo");
+    expect(fetchImplementation).toHaveBeenCalledWith("https://telegram.test/file.jpg");
+    expect(photoAnalysisService.analyzePhoto).toHaveBeenCalledWith(
+      expect.objectContaining({ languagePreference: "en" }),
+      expect.objectContaining({
+        imageDataUrl: expect.stringMatching(/^data:image\/jpeg;base64,/),
+        mealType: "meal",
+        language: "en",
+      }),
+      { mealState: { items: [] } }
+    );
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Food photo received"),
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({
+                text: "Open draft in Smart Nutrition",
+                url: "https://smart-nutrition.club/meals?mode=photo&source=telegram",
+              }),
+            ]),
+          ]),
+        }),
+      })
+    );
+    expect(reply.mock.calls.at(-1)?.[0]).toContain(
+      "I did not save anything without confirmation"
+    );
+
+    service.stop("test shutdown");
+  });
+
+  it("does not analyze Telegram photos from unlinked chats", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.handlers = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        this.handlers[eventName] = handler;
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const photoAnalysisService = {
+      analyzePhoto: vi.fn(),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => null),
+      }),
+      photoAnalysisService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+
+    await instances[0].handlers.photo({
+      chat: { id: 42 },
+      from: { language_code: "en" },
+      message: {
+        photo: [{ file_id: "telegram-photo", width: 1024, height: 768 }],
+      },
+      reply,
+    });
+
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("not connected"));
+    expect(photoAnalysisService.analyzePhoto).not.toHaveBeenCalled();
+
+    service.stop("test shutdown");
+  });
+
+  it("routes Telegram blood pressure photos through universal photo intake without meal save claims", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.handlers = {};
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn();
+      on = vi.fn((eventName, handler) => {
+        this.handlers[eventName] = handler;
+      });
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+      languagePreference: "en",
+    };
+    const telegramPhotoIntakeService = {
+      analyzePhoto: vi.fn(async () => ({
+        kind: "blood_pressure",
+        title: "Blood pressure reading",
+        summary: "I can read the visible measurement, but please confirm before saving.",
+        confidence: 0.78,
+        bloodPressure: {
+          systolic: 121,
+          diastolic: 79,
+          pulse: 73,
+          unit: "mmHg",
+          measuredAtText: "today 21:00",
+        },
+        medications: [],
+        visibleText: ["SYS 121", "DIA 79", "PUL 73"],
+        questions: ["Confirm the measurement time."],
+        cautions: ["This is not a diagnosis."],
+      })),
+    };
+    const photoAnalysisService = {
+      analyzePhoto: vi.fn(),
+    };
+    const fetchImplementation = vi.fn(async () => ({
+      ok: true,
+      headers: {
+        get: vi.fn(() => "image/jpeg"),
+      },
+      arrayBuffer: vi.fn(async () => new Uint8Array([1, 2, 3, 4]).buffer),
+    }));
+    const service = createTelegramService({
+      config: createConfig({ appBaseUrl: "https://smart-nutrition.club" }),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService: {
+        getSnapshot: vi.fn(async () => ({
+          profile: { languagePreference: "en" },
+          meal: { items: [] },
+        })),
+      },
+      telegramPhotoIntakeService,
+      photoAnalysisService,
+      fetchImplementation,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const reply = vi.fn();
+
+    await instances[0].handlers.photo({
+      chat: { id: 42 },
+      from: { language_code: "en" },
+      telegram: { getFileLink: vi.fn(async () => new URL("https://telegram.test/bp.jpg")) },
+      message: {
+        caption: "blood pressure",
+        photo: [{ file_id: "bp-photo", width: 1024, height: 768, file_size: 4000 }],
+      },
+      reply,
+    });
+
+    expect(telegramPhotoIntakeService.analyzePhoto).toHaveBeenCalledWith(
+      expect.objectContaining({ languagePreference: "en" }),
+      expect.objectContaining({
+        imageDataUrl: expect.stringMatching(/^data:image\/jpeg;base64,/),
+        caption: "blood pressure",
+      }),
+      { mealState: { items: [] } }
+    );
+    expect(photoAnalysisService.analyzePhoto).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledWith(
+      expect.stringContaining("Blood pressure reading"),
+      expect.any(Object)
+    );
+    expect(reply.mock.calls.at(-1)?.[0]).toContain("Systolic: 121 mmHg");
+    expect(reply.mock.calls.at(-1)?.[0]).toContain("I did not save anything without confirmation");
+    expect(reply.mock.calls.at(-1)?.[1]).toMatchObject({
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Save blood pressure",
+              callback_data: "bp:save:121:79:73",
+            },
+          ],
+        ],
+      },
+    });
+
+    service.stop("test shutdown");
+  });
+
+  it("formats Telegram medication photo drafts as review-only structured intake", () => {
+    const message = buildTelegramPhotoIntakeDraftMessage(
+      {
+        kind: "medication",
+        title: "Medication list",
+        summary: "I can read two visible medicines.",
+        confidence: 0.71,
+        medications: [
+          {
+            name: "Vitamin D",
+            doseText: "2000 IU",
+            scheduleText: "after breakfast",
+            routeText: "oral",
+          },
+          {
+            name: "Magnesium",
+            doseText: "1 tablet",
+            scheduleText: "evening",
+          },
+        ],
+        questions: ["Confirm if this should become reminders."],
+        cautions: ["Medication changes require a clinician."],
+      },
+      "en"
+    );
+
+    expect(message).toContain("What I can read about medication");
+    expect(message).toContain("Vitamin D — 2000 IU; after breakfast; oral");
+    expect(message).toContain("Magnesium — 1 tablet; evening");
+    expect(message).toContain("I did not save anything without confirmation");
+  });
+
+  it("saves confirmed Telegram blood pressure photo readings to profile state", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.actions = [];
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn((matcher, handler) => {
+        this.actions.push({ matcher, handler });
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+      languagePreference: "en",
+    };
+    let profileState = {
+      languagePreference: "en",
+      bloodPressureHistory: [],
+    };
+    const stateService = {
+      getProfileState: vi.fn(async () => profileState),
+      saveProfileState: vi.fn(async (_user, nextState) => {
+        profileState = nextState;
+        return profileState;
+      }),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      stateService,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const saveAction = instances[0].actions.find((item) =>
+      String(item.matcher).includes("bp:save")
+    );
+    const reply = vi.fn();
+    const answerCbQuery = vi.fn();
+
+    await saveAction.handler({
+      match: ["bp:save:121:79:73", "121", "79", "73"],
+      callbackQuery: {
+        data: "bp:save:121:79:73",
+        message: { chat: { id: 42 } },
+      },
+      reply,
+      answerCbQuery,
+    });
+
+    expect(stateService.saveProfileState).toHaveBeenCalledWith(
+      connectedUser,
+      expect.objectContaining({
+        bloodPressureHistory: [
+          expect.objectContaining({
+            systolic: 121,
+            diastolic: 79,
+            pulse: 73,
+            unit: "mmHg",
+            source: "telegram_photo",
+          }),
+        ],
+      }),
+      { source: "telegram-photo-blood-pressure" }
+    );
+    expect(profileState.bloodPressureHistory[0]).toMatchObject({
+      systolic: 121,
+      diastolic: 79,
+      pulse: 73,
+      source: "telegram_photo",
+    });
+    expect(answerCbQuery).toHaveBeenCalledWith("Blood pressure saved to your profile.");
+    expect(reply).toHaveBeenCalledWith(expect.stringContaining("Saved reading: 121/79 mmHg"));
 
     service.stop("test shutdown");
   });

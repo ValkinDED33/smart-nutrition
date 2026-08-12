@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createInitialCommunityState,
   createInitialProfileState,
+  normalizeBloodPressureHistory,
   normalizeWomenHealthState,
 } from "./domain.mjs";
 
@@ -98,6 +99,51 @@ describe("server domain profile contracts", () => {
       fatherChineseZodiac: "unknown",
       updatedAt: null,
     });
+  });
+
+  it("normalizes blood pressure history without accepting broken readings", () => {
+    const profile = createInitialProfileState({
+      age: 25,
+      gender: "female",
+      weight: 70,
+      height: 175,
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "uk",
+    });
+
+    expect(profile.bloodPressureHistory).toEqual([]);
+
+    expect(
+      normalizeBloodPressureHistory([
+        {
+          id: "bp-1",
+          recordedAt: "2026-08-12T10:00:00.000Z",
+          systolic: "121",
+          diastolic: 79,
+          pulse: "73",
+          unit: "anything",
+          note: "  after lunch  ",
+          source: "telegram_photo",
+        },
+        {
+          recordedAt: "not a date",
+          systolic: 999,
+          diastolic: 10,
+        },
+      ])
+    ).toEqual([
+      {
+        id: "bp-1",
+        recordedAt: "2026-08-12T10:00:00.000Z",
+        systolic: 121,
+        diastolic: 79,
+        pulse: 73,
+        unit: "mmHg",
+        note: "after lunch",
+        source: "telegram_photo",
+      },
+    ]);
   });
 
   it("normalizes pregnancy day and family preview fields without storing invalid values", () => {

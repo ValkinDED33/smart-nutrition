@@ -64,6 +64,11 @@ export const createAuthService = ({
       throw error;
     }
 
+    logProfileStatePersistenceFailure(error, stage);
+    throw createProfileStatePersistenceError(error, stage);
+  };
+
+  const logProfileStatePersistenceFailure = (error, stage) => {
     const reasonCode = String(
       error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED"
     ).slice(0, 80);
@@ -76,7 +81,16 @@ export const createAuthService = ({
           ? error.message.slice(0, 240)
           : "Unknown profile-state persistence failure",
     });
-    throw new AuthApiError(
+
+    return reasonCode;
+  };
+
+  const createProfileStatePersistenceError = (error, stage) => {
+    const reasonCode = String(
+      error?.code ?? error?.name ?? "PROFILE_STATE_PERSISTENCE_FAILED"
+    ).slice(0, 80);
+
+    return new AuthApiError(
       "STATE_SYNC_UNAVAILABLE",
       "Cloud profile sync is temporarily unavailable.",
       {
@@ -84,6 +98,14 @@ export const createAuthService = ({
         reasonCode,
       }
     );
+  };
+
+  const canFallbackFromCombinedProfileSaveError = (error) => {
+    if (error instanceof StateApiError) {
+      return false;
+    }
+
+    return !(error instanceof AuthApiError);
   };
 
   const hasOwn = (value, key) =>
@@ -1056,7 +1078,15 @@ export const createAuthService = ({
               await saveProfileAndUser(body?.profile, nextUser)
             );
           } catch (error) {
-            assertProfileStatePersistenceError(error, "atomic-profile-and-user-save");
+            if (
+              typeof saveProfileState !== "function" ||
+              !canFallbackFromCombinedProfileSaveError(error)
+            ) {
+              assertProfileStatePersistenceError(error, "atomic-profile-and-user-save");
+            }
+
+            logProfileStatePersistenceFailure(error, "atomic-profile-and-user-save");
+            atomicResult = null;
           }
         }
 

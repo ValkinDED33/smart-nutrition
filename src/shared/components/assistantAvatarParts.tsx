@@ -441,6 +441,35 @@ const MainMuzzle = ({ variant, size, visual }: CompanionPartsProps) => (
   />
 );
 
+const RobotVisorPanel = ({ size }: Pick<CompanionPartsProps, "size">) => (
+  <Box
+    data-assistant-avatar-robot-visor="true"
+    sx={{
+      position: "absolute",
+      top: scaled(size, 0.3),
+      left: "50%",
+      width: scaled(size, 0.58, 24),
+      height: scaled(size, 0.34, 16),
+      transform: CENTER_X_TRANSFORM,
+      borderRadius: "38% 38% 44% 44%",
+      background:
+        "radial-gradient(circle at 30% 34%, rgba(94,234,212,0.2), transparent 18%), radial-gradient(circle at 70% 34%, rgba(134,239,172,0.18), transparent 18%), linear-gradient(180deg, #020617 0%, #082f49 48%, #031827 100%)",
+      border: "1px solid rgba(125, 211, 252, 0.34)",
+      boxShadow:
+        "inset 0 8px 14px rgba(255,255,255,0.08), inset 0 -10px 18px rgba(0,0,0,0.38), 0 0 18px rgba(34,211,238,0.24)",
+      zIndex: 4,
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        inset: scaled(size, 0.04, 2),
+        borderRadius: "inherit",
+        borderTop: "1px solid rgba(255,255,255,0.26)",
+        opacity: 0.86,
+      },
+    }}
+  />
+);
+
 const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
   if (variant === "fox") {
     return (
@@ -676,8 +705,14 @@ const AnimalNose = ({ variant, size }: Pick<CompanionPartsProps, "variant" | "si
 
 export const CompanionFaceParts = (props: CompanionPartsProps) => (
   <>
-    <MainMuzzle {...props} />
-    <SpeciesFaceMarks {...props} />
-    <AnimalNose variant={props.variant} size={props.size} />
+    {props.variant === "robot" ? (
+      <RobotVisorPanel size={props.size} />
+    ) : (
+      <>
+        <MainMuzzle {...props} />
+        <SpeciesFaceMarks {...props} />
+        <AnimalNose variant={props.variant} size={props.size} />
+      </>
+    )}
   </>
 );

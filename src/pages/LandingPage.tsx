@@ -62,6 +62,11 @@ const CALORIE_MACRO_TITLE = "Calorie & macro";
 const AI_COACHING_TITLE = "AI coaching";
 const PROGRESS_INSIGHTS_TITLE = "Progress insights";
 const SMART_REMINDERS_TITLE = "Smart reminders";
+const AI_TIMELINE_LABEL = "AI Timeline";
+const TASKS_TELEGRAM_LABEL = "Tasks + Telegram";
+const FAMILY_WELLNESS_LABEL = "Family Wellness";
+const LIVING_PROGRESS_LABEL = "Living Progress";
+const UNIVERSAL_ASSISTANT_LABEL = "Universal Assistant";
 const GLASS_WHITE_08 = "rgba(255,255,255,0.08)";
 const GLASS_WHITE_14 = "rgba(255,255,255,0.14)";
 const GLASS_WHITE_70 = "rgba(255,255,255,0.7)";
@@ -96,9 +101,14 @@ type NutritionInsight = {
   tone: string;
 };
 
-type LandingFeatureRailItem = {
+type LandingAssistantTool = {
   title: string;
   body: string;
+  product: string;
+  contains: string;
+  benefit: string;
+  tags: readonly string[];
+  tone: string;
 };
 
 const getIndexedValue = <T,>(items: readonly T[], requestedIndex: number) =>
@@ -383,6 +393,62 @@ const landingCopy = {
       reminders: ["Telegram", "ліки", "звички"],
       mobile: ["PWA", "мобільно", "безпечний шлях"],
     },
+    assistantTools: [
+      {
+        title: "День як жива історія",
+        body: "Сніданок, вода, прогулянка, ліки і підказки складаються в один маршрут, а не в розкидані екрани.",
+        product: AI_TIMELINE_LABEL,
+        contains: "їжа / вода / задачі / прогрес",
+        benefit: "помічник бачить порядок дня і підказує наступну дію в потрібний момент",
+        tags: ["історія дня", "контекст", "без хаосу"],
+        tone: "#22d3ee",
+      },
+      {
+        title: "Сканер їжі без загадок",
+        body: "Фото, штрихкод, пошук і ручне додавання ведуть в один backend-confirmed food flow.",
+        product: "Їжа і продукти",
+        contains: "фото / штрихкод / каталог / БЖВ",
+        benefit: "користувач бачить що розпізнано, що треба перевірити і що реально збережено",
+        tags: ["сканер", "склад", "порція"],
+        tone: "#a3e635",
+      },
+      {
+        title: "Нагадування як працівник проєкту",
+        body: "Помічник може вести воду, таблетки, тиск, день народження, сімейні задачі і Telegram-повідомлення.",
+        product: TASKS_TELEGRAM_LABEL,
+        contains: "події / ліки / тиск / повтори",
+        benefit: "не другий бот, а той самий помічник, який діє через backend-контракти",
+        tags: ["Telegram", "задачі", "пам'ять"],
+        tone: "#facc15",
+      },
+      {
+        title: "Сімейний режим",
+        body: "Вагітність, партнер, після пологів, грудне вигодовування і baby mode живуть в одному акаунті.",
+        product: FAMILY_WELLNESS_LABEL,
+        contains: "тиждень + день / триместр / партнер",
+        benefit: "партнер бачить дозволений контекст і допомагає без доступу до зайвого приватного",
+        tags: ["сім'я", "вагітність", "партнер"],
+        tone: "#ec4899",
+      },
+      {
+        title: "Прогрес без сухої статистики",
+        body: "Калорії, вода, білок, вага, заміри, тиск і звички збираються в зрозумілу картину.",
+        product: LIVING_PROGRESS_LABEL,
+        contains: "кольорові шкали / аналіз / висновок",
+        benefit: "помічник пояснює що змінилось і що зробити далі, без моралі й залякування",
+        tags: ["аналітика", "здоров'я", "пояснення"],
+        tone: "#60a5fa",
+      },
+      {
+        title: "AI-чат без шаблонної стелі",
+        body: "Питання про їжу, погоду, курс валют чи план тижня мають йти через актуальні інструменти, а не вигадку.",
+        product: UNIVERSAL_ASSISTANT_LABEL,
+        contains: "чат / інструменти / fallback / безпека",
+        benefit: "якщо дія збережена, вона підтверджена backend; якщо потрібні свіжі дані, AI не вдає що пам'ятає",
+        tags: ["AI", "інструменти", "чесність"],
+        tone: "#8b5cf6",
+      },
+    ],
     finalTitle: "Ціль продукту проста",
     finalBody:
       "Користувач має відчувати не складну програму, а живого помічника, який допомагає ставати кращим кожного дня.",
@@ -629,6 +695,62 @@ const landingCopy = {
       reminders: ["Telegram", "leki", "nawyki"],
       mobile: ["PWA", "mobilnie", "bezpieczny przepływ"],
     },
+    assistantTools: [
+      {
+        title: "Dzień jako żywa historia",
+        body: "Śniadanie, woda, spacer, leki i sugestie układają się w jeden rytm, a nie porozrzucane ekrany.",
+        product: AI_TIMELINE_LABEL,
+        contains: "jedzenie / woda / zadania / progres",
+        benefit: "asystent zna kolejność dnia i podpowiada następną akcję we właściwym momencie",
+        tags: ["historia dnia", "kontekst", "bez chaosu"],
+        tone: "#22d3ee",
+      },
+      {
+        title: "Skaner jedzenia bez zgadywania",
+        body: "Zdjęcie, kod kreskowy, wyszukiwarka i ręczny wpis prowadzą do jednego potwierdzonego przepływu jedzenia.",
+        product: "Jedzenie i produkty",
+        contains: "zdjęcie / kod / katalog / makro",
+        benefit: "użytkownik widzi co rozpoznano, co trzeba sprawdzić i co naprawdę zapisano",
+        tags: ["skaner", "skład", "porcja"],
+        tone: "#a3e635",
+      },
+      {
+        title: "Przypomnienia jak pracownik produktu",
+        body: "Asystent obsługuje wodę, tabletki, ciśnienie, urodziny, rodzinne zadania i Telegram.",
+        product: TASKS_TELEGRAM_LABEL,
+        contains: "wydarzenia / leki / ciśnienie / powtórki",
+        benefit: "to nie drugi bot, tylko ten sam asystent działający przez kontrakty backendu",
+        tags: ["Telegram", "zadania", "pamięć"],
+        tone: "#facc15",
+      },
+      {
+        title: "Tryb rodzinny",
+        body: "Ciąża, partner, po porodzie, karmienie piersią i baby mode działają w jednym koncie.",
+        product: FAMILY_WELLNESS_LABEL,
+        contains: "tydzień + dzień / trymestr / partner",
+        benefit: "partner widzi dozwolony kontekst i pomaga bez dostępu do nadmiaru prywatnych danych",
+        tags: ["rodzina", "ciąża", "partner"],
+        tone: "#ec4899",
+      },
+      {
+        title: "Progres bez suchych statystyk",
+        body: "Kalorie, woda, białko, waga, pomiary, ciśnienie i nawyki tworzą czytelny obraz.",
+        product: LIVING_PROGRESS_LABEL,
+        contains: "kolorowe skale / analiza / wniosek",
+        benefit: "asystent tłumaczy co się zmieniło i co zrobić dalej, bez oceniania i straszenia",
+        tags: ["analityka", "zdrowie", "wyjaśnienie"],
+        tone: "#60a5fa",
+      },
+      {
+        title: "AI chat bez szablonowego sufitu",
+        body: "Pytania o jedzenie, pogodę, waluty czy plan tygodnia powinny iść przez aktualne narzędzia, nie zgadywanie.",
+        product: UNIVERSAL_ASSISTANT_LABEL,
+        contains: "chat / narzędzia / fallback / bezpieczeństwo",
+        benefit: "jeśli akcja jest zapisana, backend ją potwierdził; jeśli dane muszą być świeże, AI nie udaje pamięci",
+        tags: ["AI", "narzędzia", "uczciwość"],
+        tone: "#8b5cf6",
+      },
+    ],
     finalTitle: "Cel produktu jest prosty",
     finalBody:
       "Użytkownik ma czuć nie złożoną aplikację, tylko żywego pomocnika, który pomaga stawać się lepszym każdego dnia.",
@@ -875,6 +997,62 @@ const landingCopy = {
       reminders: ["Telegram", "medication", "habits"],
       mobile: ["PWA", "mobile", "safe flow"],
     },
+    assistantTools: [
+      {
+        title: "The day as a living story",
+        body: "Breakfast, water, walking, medication, and suggestions become one route instead of scattered screens.",
+        product: AI_TIMELINE_LABEL,
+        contains: "food / water / tasks / progress",
+        benefit: "the assistant understands day order and suggests the next action at the right moment",
+        tags: ["day story", "context", "no chaos"],
+        tone: "#22d3ee",
+      },
+      {
+        title: "Food scanner without guessing",
+        body: "Photo, barcode, search, and manual add converge into one backend-confirmed food flow.",
+        product: "Food and products",
+        contains: "photo / barcode / catalog / macros",
+        benefit: "the user sees what was detected, what needs review, and what was truly saved",
+        tags: ["scanner", "ingredients", "portion"],
+        tone: "#a3e635",
+      },
+      {
+        title: "Reminders like a project worker",
+        body: "The assistant can handle water, medication, blood pressure, birthdays, family tasks, and Telegram.",
+        product: TASKS_TELEGRAM_LABEL,
+        contains: "events / medication / pressure / repeats",
+        benefit: "not a second bot, but the same assistant acting through backend contracts",
+        tags: ["Telegram", "tasks", "memory"],
+        tone: "#facc15",
+      },
+      {
+        title: "Family mode",
+        body: "Pregnancy, partner, postpartum, breastfeeding, and baby mode live inside one account.",
+        product: FAMILY_WELLNESS_LABEL,
+        contains: "week + day / trimester / partner",
+        benefit: "the partner sees permitted context and helps without overexposing private data",
+        tags: ["family", "pregnancy", "partner"],
+        tone: "#ec4899",
+      },
+      {
+        title: "Progress without dry stats",
+        body: "Calories, water, protein, weight, measurements, pressure, and habits form one readable picture.",
+        product: LIVING_PROGRESS_LABEL,
+        contains: "color scales / analysis / conclusion",
+        benefit: "the assistant explains what changed and what to do next without judgement or fear",
+        tags: ["analytics", "health", "explanation"],
+        tone: "#60a5fa",
+      },
+      {
+        title: "AI chat without a template ceiling",
+        body: "Questions about food, weather, exchange rates, or the week plan should use current tools instead of guesses.",
+        product: UNIVERSAL_ASSISTANT_LABEL,
+        contains: "chat / tools / fallback / safety",
+        benefit: "if an action is saved, the backend confirmed it; if data must be fresh, AI does not pretend to remember",
+        tags: ["AI", "tools", "honesty"],
+        tone: "#8b5cf6",
+      },
+    ],
     finalTitle: "The product goal is simple",
     finalBody:
       "Users should feel a living assistant, not a complicated app: something that helps them improve every day.",
@@ -1014,6 +1192,51 @@ const getFeatureRailIcon = (index: number) => {
     default:
       return Sparkles;
   }
+};
+
+const getAssistantToolIcon = (index: number) => {
+  switch (index) {
+    case 0:
+      return MessageSquareText;
+    case 1:
+      return ScanBarcode;
+    case 2:
+      return Bell;
+    case 3:
+      return HeartPulse;
+    case 4:
+      return ShieldCheck;
+    case 5:
+      return Bot;
+    default:
+      return Sparkles;
+  }
+};
+
+const getNutritionInsightIcon = (item: NutritionInsight, index: number) => {
+  const searchable = `${item.product} ${item.title} ${item.tags.join(" ")}`.toLowerCase();
+
+  if (searchable.includes("jod") || searchable.includes("iodine")) {
+    return Droplets;
+  }
+
+  if (searchable.includes("omega") || searchable.includes("heart")) {
+    return HeartPulse;
+  }
+
+  if (searchable.includes("цинк") || searchable.includes("cynk") || searchable.includes("zinc")) {
+    return ShieldCheck;
+  }
+
+  if (searchable.includes("фол") || searchable.includes("fol") || searchable.includes("women")) {
+    return Sparkles;
+  }
+
+  if (searchable.includes("біл") || searchable.includes("biał") || searchable.includes("protein")) {
+    return Utensils;
+  }
+
+  return getFeatureRailIcon(index);
 };
 
 const getQuickActionIcon = (index: number) => {
@@ -1941,13 +2164,14 @@ const AIDiscoveryAccordion = ({
     insightStart,
     6,
   ).map((item, index) => ({
-    title: item.product,
-    body: `${item.benefit}. ${item.note}`,
-    meta: item.title,
+    title: item.title,
+    product: item.product,
+    benefit: item.benefit,
+    note: item.note,
     detail: item.contains,
     tags: item.tags,
     tone: item.tone,
-    Icon: getFeatureRailIcon(index),
+    Icon: getNutritionInsightIcon(item, index),
   }));
 
   return (
@@ -2007,9 +2231,15 @@ const AIDiscoveryAccordion = ({
             <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
               {copy.nutritionInsightBody}
             </Typography>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
               {nutritionInsights.slice(0, 4).map((pill) => (
-                <Chip key={pill.product} label={pill.title} variant="outlined" />
+                <Chip
+                  key={pill.product}
+                  label={pill.product}
+                  variant="outlined"
+                  size="small"
+                  sx={{ fontWeight: 800 }}
+                />
               ))}
             </Stack>
           </Stack>
@@ -2033,8 +2263,9 @@ const AIDiscoveryAccordion = ({
               return (
                 <Box
                   key={`${item.title}-${index}`}
+                  data-landing-discovery-window="true"
                   sx={{
-                    minHeight: { xs: "auto", md: 176 },
+                    minHeight: { xs: "auto", md: isOpen ? 238 : 142 },
                     borderRight: {
                       md:
                         index % 2 === 0
@@ -2048,7 +2279,7 @@ const AIDiscoveryAccordion = ({
                         : GLASS_WHITE_70
                       : "transparent",
                     transition:
-                      "background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
+                      "background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, min-height 220ms ease",
                     "&:hover": {
                       backgroundColor: isDarkMode
                         ? "rgba(255,255,255,0.09)"
@@ -2071,8 +2302,8 @@ const AIDiscoveryAccordion = ({
                     }}
                     sx={{
                       width: "100%",
-                      minHeight: { xs: 96, md: isOpen ? 96 : 176 },
-                      p: { xs: 2, md: 2.4 },
+                      minHeight: { xs: 86, md: isOpen ? 92 : 142 },
+                      p: { xs: 1.6, md: 1.9 },
                       border: 0,
                       borderRadius: 0,
                       display: "grid",
@@ -2106,11 +2337,21 @@ const AIDiscoveryAccordion = ({
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
+                        sx={{
+                          color: item.tone,
+                          fontSize: 12,
+                          fontWeight: 900,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {item.product}
+                      </Typography>
+                      <Typography
                         component="h3"
                         sx={{
                           color: scene.heroText,
                           fontWeight: 900,
-                          fontSize: { xs: 18, md: 20 },
+                          fontSize: { xs: 17, md: 18 },
                           lineHeight: 1.2,
                         }}
                       >
@@ -2119,13 +2360,13 @@ const AIDiscoveryAccordion = ({
                       <Typography
                         sx={{
                           mt: 0.5,
-                          color: item.tone,
+                          color: scene.mutedText,
                           fontSize: 13,
-                          fontWeight: 800,
-                          textTransform: "uppercase",
+                          lineHeight: 1.45,
+                          fontWeight: 700,
                         }}
                       >
-                        {item.meta}
+                        {item.detail}
                       </Typography>
                     </Box>
                     <Box
@@ -2160,10 +2401,10 @@ const AIDiscoveryAccordion = ({
                   >
                     <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
                       <Box component="strong" sx={{ color: scene.heroText }}>
-                        {item.detail}
+                        {item.benefit}
                       </Box>
                       {" - "}
-                      {item.body}
+                      {item.note}
                     </Typography>
                     <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap" sx={{ mt: 1.2 }}>
                       {item.tags.map((tag) => (
@@ -2540,7 +2781,7 @@ const MobileCommunityPanel = ({
           <Stack direction="row" spacing={1} alignItems="center">
             <AssistantAvatar
               name={copy.mascot.name}
-              variant="cat"
+              variant="robot"
               mood="happy"
               size={54}
               active
@@ -2603,68 +2844,18 @@ const CompanionCapabilitySlider = ({
   isDarkMode: boolean;
 }) => {
   const [activeSlide, setActiveSlide] = useState(0);
-  const nutritionInsights: readonly NutritionInsight[] = copy.nutritionInsights;
-  const [slideStart] = useState(() =>
-    createLandingRotationStart(nutritionInsights.length),
-  );
   const scene = getLandingScene(isDarkMode);
-  const featureRail: readonly LandingFeatureRailItem[] = copy.featureRail;
-  const fallbackFeature = featureRail[0];
-  const hydrationFeature = getIndexedValue(featureRail, 1) ?? fallbackFeature;
-  const remindersFeature = getIndexedValue(featureRail, 5) ?? fallbackFeature;
-  const mobileFeature = getIndexedValue(featureRail, 3) ?? fallbackFeature;
-
-  if (!hydrationFeature || !remindersFeature || !mobileFeature) {
-    return null;
-  }
-
-  const capabilitySlides: CompanionCapabilitySlide[] = [
-    {
-      title: hydrationFeature.title,
-      body: hydrationFeature.body,
-      product: copy.sliderEyebrow,
-      contains: copy.sliderTags.hydration.join(" / "),
-      benefit: copy.nutritionInsightBody,
-      tags: copy.sliderTags.hydration,
-      Icon: Droplets,
-      tone: "#22d3ee",
-    },
-    {
-      title: remindersFeature.title,
-      body: remindersFeature.body,
-      product: copy.sliderEyebrow,
-      contains: copy.sliderTags.reminders.join(" / "),
-      benefit: copy.subtitle,
-      tags: copy.sliderTags.reminders,
-      Icon: Bell,
-      tone: "#a3e635",
-    },
-    {
-      title: mobileFeature.title,
-      body: mobileFeature.body,
-      product: copy.sliderEyebrow,
-      contains: copy.sliderTags.mobile.join(" / "),
-      benefit: copy.finalBody,
-      tags: copy.sliderTags.mobile,
-      Icon: Bot,
-      tone: "#8b5cf6",
-    },
-  ];
-  const nutritionSlides: CompanionCapabilitySlide[] = getRotatedItems(
-    nutritionInsights,
-    slideStart,
-    6,
-  ).map((item, index) => ({
-    title: item.product,
-    body: item.note,
-    product: item.title,
-    contains: item.contains,
-    benefit: item.benefit,
-    tags: item.tags,
-    Icon: getFeatureRailIcon(index),
-    tone: item.tone,
+  const assistantTools: readonly LandingAssistantTool[] = copy.assistantTools;
+  const slides: CompanionCapabilitySlide[] = assistantTools.map((tool, index) => ({
+    title: tool.title,
+    body: tool.body,
+    product: tool.product,
+    contains: tool.contains,
+    benefit: tool.benefit,
+    tags: tool.tags,
+    Icon: getAssistantToolIcon(index),
+    tone: tool.tone,
   }));
-  const slides = [...nutritionSlides, ...capabilitySlides];
   const active = getIndexedValue(slides, activeSlide) ?? slides.at(0);
 
   if (!active) {
@@ -2732,8 +2923,8 @@ const CompanionCapabilitySlider = ({
           >
             <Box
               component={motion.div}
-              key={active.title}
-              initial={{ opacity: 0, scale: 0.92, rotate: -2 }}
+                key={active.title}
+                initial={{ opacity: 0, scale: 0.92, rotate: -2 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               sx={{
@@ -2792,7 +2983,7 @@ const CompanionCapabilitySlider = ({
                 {copy.mascot.name}
               </Typography>
               <Typography sx={{ mt: 0.4, fontWeight: 900, lineHeight: 1.25 }}>
-                {active.tags.join(" / ")}
+                {active.product}
               </Typography>
             </Paper>
           </Box>

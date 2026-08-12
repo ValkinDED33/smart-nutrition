@@ -32,13 +32,38 @@ describe("Smart Nutrition visual system contract", () => {
   });
 
   it("keeps the assistant avatar living effects in the shared avatar component", async () => {
-    const avatarSource = await readSource("../components/AssistantAvatar.tsx");
+    const [avatarSource, avatarPartsSource] = await Promise.all([
+      readSource("../components/AssistantAvatar.tsx"),
+      readSource("../components/assistantAvatarParts.tsx"),
+    ]);
 
     expect(avatarSource).toContain("assistantAuraVariants");
     expect(avatarSource).toContain('data-assistant-avatar-living-aura="true"');
     expect(avatarSource).toContain('data-assistant-avatar-orbit="true"');
+    expect(avatarSource).toContain('data-assistant-avatar-robot-shell="true"');
+    expect(avatarSource).toContain('data-assistant-avatar-robot-arms="true"');
+    expect(avatarSource).toContain('data-assistant-avatar-heart-core="true"');
+    expect(avatarPartsSource).toContain('data-assistant-avatar-robot-visor="true"');
+    expect(avatarSource).toContain("isLetterCompanion(variant) && !isRobot");
     expect(avatarSource).toContain('mood === "concerned"');
     expect(avatarSource).toContain('mood === "celebrate"');
+  });
+
+  it("keeps public auth and first-run assistant surfaces on the free robot default", async () => {
+    const sources = await Promise.all([
+      readSource("../../pages/LandingPage.tsx"),
+      readSource("../../pages/RegisterPage.tsx"),
+      readSource("../../pages/ForgotPasswordPage.tsx"),
+      readSource("../../pages/ResetPasswordPage.tsx"),
+      readSource("../../pages/onboarding/OnboardingChoicePage.tsx"),
+      readSource("../../widgets/GlobalAssistantLayer.tsx"),
+    ]);
+    const combinedSource = sources.join("\n");
+
+    expect(combinedSource).toContain('variant="robot"');
+    expect(combinedSource).not.toContain('variant="dragon"');
+    expect(combinedSource).not.toContain('variant="panda"');
+    expect(combinedSource).not.toContain('variant="fox"');
   });
 
   it("keeps authenticated home using theme-aware companion colors", async () => {

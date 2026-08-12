@@ -1,6 +1,21 @@
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  CalendarDays,
+  Droplets,
+  HeartPulse,
+  MessageCircle,
+  Salad,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { AppDispatch, RootState } from "../../app/store";
 import {
   canPurchaseCompanionItem,
@@ -17,7 +32,6 @@ import {
 import {
   Companion3DLoadingFallback,
   CompanionAvatar as AssistantAvatar,
-  CompanionRenderModeControl,
 } from "@features/assistant-3d";
 import { useLanguage } from "../../shared/language";
 import { applyCompanionShopSelectionInCloud } from "../companion/companionCloudSync";
@@ -26,10 +40,22 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 
 const shopCopy = {
   uk: {
-    title: "Студія компаньйона",
+    title: "Студія AI-помічника",
     subtitle:
-      "Обери зовнішність. Мозок, пам'ять і всі інструменти залишаються тим самим Smart Nutrition AI.",
-    sameBrain: "Один помічник: харчування, вода, здоров'я, родина, задачі, нагадування й AI-чат.",
+      "Обери зовнішність, характер руху й настрій. Це той самий Smart Nutrition AI: змінюється образ, а пам'ять, навички й інструменти залишаються єдиними.",
+    sameBrain:
+      "Один помічник у застосунку й Telegram: харчування, вода, здоров'я, родина, задачі, нагадування, фото й AI-чат.",
+    studioEyebrow: "Жива колекція",
+    studioTitle: "Образи, які хочеться збирати",
+    studioSubtitle:
+      "Роботи безкоштовні, тварини й фентезі відкриваються як косметична колекція без pay-to-win.",
+    preview: "Живий попередній перегляд",
+    previewHint: "Наведи або вибери образ, щоб побачити, як він поводиться.",
+    currentSelection: "Зараз у фокусі",
+    toolBeltTitle: "Інструменти твого помічника",
+    toolBeltSubtitle:
+      "Скін не урізає можливості. Помічник усе одно працює з планами, водою, їжею, здоров'ям, сім'єю й нагадуваннями.",
+    tryInChat: "Спробувати в чаті",
     balance: "Монети",
     equippedCount: "Вибрано",
     ownedCount: "Куплено",
@@ -42,15 +68,8 @@ const shopCopy = {
     saving: "Зберігаю...",
     saveError: "Не вдалося зберегти образ у хмарі. Спробуйте ще раз.",
     coins: "монет",
-    preview: "Поточний образ",
     profileLook: "Образ із профілю",
-    renderModeTitle: "Превʼю",
-    renderMode2d: "Швидкий 2D",
-    renderMode3d: "Живий 3D",
-    renderModeHint:
-      "3D відкривається для перегляду образу. На телефонах і в режимі економії лишається 2D.",
-    renderModeLoading: "Завантажую 3D",
-    renderModeError: "3D не завантажився, показую 2D",
+    renderModeLoading: "Готую образ",
     filters: {
       all: "Усі",
     },
@@ -72,13 +91,36 @@ const shopCopy = {
       premium: "Преміум образ",
       seasonal: "Сезонний образ",
     } satisfies Record<CompanionCatalogCategory, string>,
+    tools: {
+      planning: ["Планування", "День, тиждень, цілі й сімейний ритм"],
+      nutrition: ["Харчування", "Продукти, рецепти, БЖВ і мікронутрієнти"],
+      water: ["Вода", "Трекер, стаканчики й м'які нагадування"],
+      health: ["Здоров'я", "Тиск, аналізи, симптоми без діагнозів"],
+      activity: ["Активність", "Кроки, тренування, прогулянки й витрати"],
+      family: ["Родина", "Партнер, вагітність, дитина й спільні цілі"],
+      reminders: ["Нагадування", "Події, ліки, дні народження й задачі"],
+      chat: ["AI-розмова", "Пояснення, пошук і допомога без шаблонів"],
+      analytics: ["Аналітика", "Графіки, закономірності й звіти"],
+      safety: ["Безпека", "Дані, межі wellness і обережні поради"],
+    },
   },
   pl: {
-    title: "Studio kompana",
+    title: "Studio asystenta AI",
     subtitle:
-      "Wybierz wygląd. Mózg, pamięć i narzędzia zostają tym samym Smart Nutrition AI.",
+      "Wybierz wygląd, ruch i nastrój. To ten sam Smart Nutrition AI: zmienia się tylko obraz, a pamięć, umiejętności i narzędzia zostają wspólne.",
     sameBrain:
-      "Jeden asystent: jedzenie, woda, zdrowie, rodzina, zadania, przypomnienia i AI chat.",
+      "Jeden asystent w aplikacji i Telegramie: jedzenie, woda, zdrowie, rodzina, zadania, przypomnienia, zdjęcia i AI chat.",
+    studioEyebrow: "Żywa kolekcja",
+    studioTitle: "Wyglądy, które chce się zbierać",
+    studioSubtitle:
+      "Roboty są darmowe, zwierzęta i fantazja otwierają się jako kosmetyczna kolekcja bez pay-to-win.",
+    preview: "Żywy podgląd",
+    previewHint: "Najedź albo wybierz wygląd, żeby zobaczyć, jak się zachowuje.",
+    currentSelection: "Teraz w fokusie",
+    toolBeltTitle: "Narzędzia twojego asystenta",
+    toolBeltSubtitle:
+      "Skin nie ogranicza możliwości. Asystent nadal pracuje z planami, wodą, jedzeniem, zdrowiem, rodziną i przypomnieniami.",
+    tryInChat: "Spróbuj w czacie",
     balance: "Monety",
     equippedCount: "Wybrane",
     ownedCount: "Kupione",
@@ -91,15 +133,8 @@ const shopCopy = {
     saving: "Zapisuję...",
     saveError: "Nie udało się zapisać wyglądu w chmurze. Spróbuj ponownie.",
     coins: "monet",
-    preview: "Obecny wygląd",
     profileLook: "Wygląd z profilu",
-    renderModeTitle: "Podgląd",
-    renderMode2d: "Szybki 2D",
-    renderMode3d: "Żywy 3D",
-    renderModeHint:
-      "3D otwiera się do podglądu wyglądu. Na telefonach i w trybie oszczędzania zostaje 2D.",
-    renderModeLoading: "Ładuję 3D",
-    renderModeError: "3D się nie załadowało, pokazuję 2D",
+    renderModeLoading: "Przygotowuję wygląd",
     filters: {
       all: "Wszystkie",
     },
@@ -121,13 +156,36 @@ const shopCopy = {
       premium: "Wygląd premium",
       seasonal: "Wygląd sezonowy",
     } satisfies Record<CompanionCatalogCategory, string>,
+    tools: {
+      planning: ["Planowanie", "Dzień, tydzień, cele i rytm rodziny"],
+      nutrition: ["Odżywianie", "Produkty, przepisy, makro i mikroelementy"],
+      water: ["Woda", "Tracker, szklanki i łagodne przypomnienia"],
+      health: ["Zdrowie", "Ciśnienie, analizy, objawy bez diagnoz"],
+      activity: ["Aktywność", "Kroki, treningi, spacery i spalanie"],
+      family: ["Rodzina", "Partner, ciąża, dziecko i wspólne cele"],
+      reminders: ["Przypomnienia", "Wydarzenia, leki, urodziny i zadania"],
+      chat: ["AI rozmowa", "Wyjaśnienia, wyszukiwanie i pomoc bez szablonów"],
+      analytics: ["Analityka", "Wykresy, wzorce i raporty"],
+      safety: ["Bezpieczeństwo", "Dane, granice wellness i ostrożne porady"],
+    },
   },
   en: {
-    title: "Companion Studio",
+    title: "AI Assistant Studio",
     subtitle:
-      "Choose the look. The brain, memory, and tools stay the same Smart Nutrition AI.",
+      "Choose the look, motion, and mood. It is the same Smart Nutrition AI: only the appearance changes while memory, skills, and tools stay unified.",
     sameBrain:
-      "One assistant: food, water, health, family, tasks, reminders, and AI chat.",
+      "One assistant in the app and Telegram: food, water, health, family, tasks, reminders, photos, and AI chat.",
+    studioEyebrow: "Living collection",
+    studioTitle: "Looks people actually want to collect",
+    studioSubtitle:
+      "Robots are free, while animals and fantasy looks unlock as cosmetic collection pieces without pay-to-win.",
+    preview: "Live preview",
+    previewHint: "Hover or select a look to see how it behaves.",
+    currentSelection: "Now in focus",
+    toolBeltTitle: "Your assistant tools",
+    toolBeltSubtitle:
+      "The skin never limits capability. The assistant still works with plans, water, food, health, family, and reminders.",
+    tryInChat: "Try in chat",
     balance: "Coins",
     equippedCount: "Equipped",
     ownedCount: "Owned",
@@ -140,15 +198,8 @@ const shopCopy = {
     saving: "Saving...",
     saveError: "Could not save the look to cloud. Try again.",
     coins: "coins",
-    preview: "Current look",
     profileLook: "Profile look",
-    renderModeTitle: "Preview",
-    renderMode2d: "Fast 2D",
-    renderMode3d: "Live 3D",
-    renderModeHint:
-      "3D opens for previewing the look. Phones and data-saver mode stay in 2D.",
-    renderModeLoading: "Loading 3D",
-    renderModeError: "3D failed, showing 2D",
+    renderModeLoading: "Preparing look",
     filters: {
       all: "All",
     },
@@ -170,6 +221,18 @@ const shopCopy = {
       premium: "Premium look",
       seasonal: "Seasonal look",
     } satisfies Record<CompanionCatalogCategory, string>,
+    tools: {
+      planning: ["Planning", "Day, week, goals, and family rhythm"],
+      nutrition: ["Nutrition", "Products, recipes, macros, and micronutrients"],
+      water: ["Water", "Tracker, glasses, and gentle reminders"],
+      health: ["Health", "Pressure, labs, symptoms without diagnosis"],
+      activity: ["Activity", "Steps, workouts, walks, and energy burn"],
+      family: ["Family", "Partner, pregnancy, baby, and shared goals"],
+      reminders: ["Reminders", "Events, medication, birthdays, and tasks"],
+      chat: ["AI conversation", "Explanations, search, and help without templates"],
+      analytics: ["Analytics", "Charts, patterns, and reports"],
+      safety: ["Safety", "Data, wellness boundaries, and careful advice"],
+    },
   },
 } as const;
 
@@ -184,6 +247,40 @@ const companionShopFilters: CompanionShopFilter[] = [
   "nature",
   "seasonal",
 ];
+
+const assistantToolIcons: Array<{
+  key: keyof ShopCopy["tools"];
+  icon: LucideIcon;
+  accent: string;
+}> = [
+  { key: "planning", icon: CalendarDays, accent: "#a855f7" },
+  { key: "nutrition", icon: Salad, accent: "#22c55e" },
+  { key: "water", icon: Droplets, accent: "#22d3ee" },
+  { key: "health", icon: HeartPulse, accent: "#f472b6" },
+  { key: "activity", icon: Activity, accent: "#f59e0b" },
+  { key: "family", icon: Users, accent: "#fb7185" },
+  { key: "reminders", icon: Bell, accent: "#facc15" },
+  { key: "chat", icon: MessageCircle, accent: "#38bdf8" },
+  { key: "analytics", icon: BarChart3, accent: "#34d399" },
+  { key: "safety", icon: ShieldCheck, accent: "#c4b5fd" },
+];
+
+const previewOrbitItems: Array<{
+  key: keyof ShopCopy["tools"];
+  x: number;
+  y: number;
+}> = [
+  { key: "nutrition", x: 0, y: 2 },
+  { key: "water", x: 68, y: 18 },
+  { key: "reminders", x: 9, y: 62 },
+  { key: "family", x: 72, y: 72 },
+  { key: "analytics", x: 30, y: 84 },
+] as const;
+
+const softChipSx = {
+  color: "#e5f9ff",
+  borderColor: "rgba(229,249,255,0.22)",
+};
 
 const getShopCopy = (locale: CompanionCatalogLocale): ShopCopy => {
   switch (locale) {
@@ -258,6 +355,35 @@ const getRarityLabel = (
   }
 };
 
+const getToolText = (
+  tools: ShopCopy["tools"],
+  key: keyof ShopCopy["tools"]
+) => {
+  switch (key) {
+    case "planning":
+      return tools.planning;
+    case "nutrition":
+      return tools.nutrition;
+    case "water":
+      return tools.water;
+    case "health":
+      return tools.health;
+    case "activity":
+      return tools.activity;
+    case "family":
+      return tools.family;
+    case "reminders":
+      return tools.reminders;
+    case "chat":
+      return tools.chat;
+    case "analytics":
+      return tools.analytics;
+    case "safety":
+    default:
+      return tools.safety;
+  }
+};
+
 const getStatusTone = ({
   isEquipped,
   isLocked,
@@ -278,6 +404,7 @@ const getStatusTone = ({
 
 const CompanionShopCard = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const profile = useSelector((state: RootState) => state.profile);
   const assistant = profile.assistant;
   const authMeta = useSelector((state: RootState) => state.auth.cloudMeta);
@@ -289,6 +416,7 @@ const CompanionShopCard = () => {
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<CompanionShopFilter>("all");
+  const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const companionRenderModePreference = useCompanionRenderModePreference();
   const { appLanguage } = useLanguage();
   const locale: CompanionCatalogLocale = appLanguage;
@@ -317,6 +445,27 @@ const CompanionShopCard = () => {
       ),
     [activeFilter, availableCatalogItems]
   );
+  const focusedPreview =
+    availableCatalogItems.find((item) => item.id === previewItemId) ?? activePreview;
+  const focusedPreviewOwned = focusedPreview
+    ? hasCompanionItem(companion, focusedPreview.id)
+    : false;
+  const focusedPreviewEquipped = focusedPreview
+    ? isCompanionItemEquipped(companion, focusedPreview.id)
+    : false;
+  const focusedPreviewCanBuy = focusedPreview
+    ? canPurchaseCompanionItem(companion, focusedPreview)
+    : false;
+  const focusedPreviewLocked =
+    Boolean(focusedPreview?.available) && !focusedPreviewOwned && !focusedPreviewCanBuy;
+  const focusedPreviewActionLabel = focusedPreviewOwned ? copy.choose : copy.buyAndChoose;
+  const focusedPreviewStatus = focusedPreviewEquipped
+    ? copy.equipped
+    : focusedPreviewOwned
+      ? copy.owned
+      : focusedPreviewLocked
+        ? copy.locked
+        : copy.available;
 
   const handleItemAction = async (item: CompanionCatalogItem) => {
     const isOwned = hasCompanionItem(companion, item.id);
@@ -360,26 +509,42 @@ const CompanionShopCard = () => {
   return (
     <Paper
       elevation={0}
+      className="sn-premium-panel"
+      data-companion-shop-studio="true"
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: "1px solid var(--sn-border-soft)",
-        backgroundColor: "var(--sn-surface-elevated)",
+        overflow: "hidden",
+        border: "1px solid rgba(34, 211, 238, 0.22)",
+        color: "#e5f9ff",
+        background:
+          "linear-gradient(115deg, rgba(34,211,238,0.08) 0 1px, transparent 1px 128px), linear-gradient(145deg, #020617 0%, #071322 46%, #061f1b 100%)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={2.5}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={1.5}
           justifyContent="space-between"
           alignItems={{ xs: "flex-start", md: "center" }}
         >
-          <Stack spacing={0.5}>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+          <Stack spacing={0.8} sx={{ maxWidth: 780 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Sparkles size={18} color="#67e8f9" />
+              <Typography
+                variant="overline"
+                sx={{ color: "#67e8f9", fontWeight: 900, letterSpacing: 0 }}
+              >
+                {copy.studioEyebrow}
+              </Typography>
+            </Stack>
+            <Typography component="h2" variant="h5" sx={{ fontWeight: 950 }}>
               {copy.title}
             </Typography>
-            <Typography color="text.secondary">{copy.subtitle}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 800 }}>
+            <Typography sx={{ color: "rgba(229,249,255,0.78)" }}>
+              {copy.subtitle}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#a7f3d0", fontWeight: 900 }}>
               {copy.sameBrain}
             </Typography>
           </Stack>
@@ -388,223 +553,504 @@ const CompanionShopCard = () => {
             <Chip
               label={`${copy.equippedCount}: ${companion.equippedItemIds.length}`}
               variant="outlined"
+              sx={softChipSx}
             />
             <Chip
               label={`${copy.ownedCount}: ${ownedItems.length}`}
               variant="outlined"
+              sx={softChipSx}
             />
           </Stack>
         </Stack>
+
         {saveError ? (
           <Typography color="error" variant="body2" sx={{ fontWeight: 800 }}>
             {saveError}
           </Typography>
         ) : null}
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          {companionShopFilters.map((filter) => (
-            <Chip
-              key={filter}
-              label={
-                filter === "all"
-                  ? copy.filters.all
-                  : getCategoryLabel(copy.categories, filter)
-              }
-              color={activeFilter === filter ? "primary" : "default"}
-              variant={activeFilter === filter ? "filled" : "outlined"}
-              onClick={() => setActiveFilter(filter)}
-              sx={{ fontWeight: 900 }}
-            />
-          ))}
-        </Stack>
-
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "0.78fr 1.22fr" },
+            gridTemplateColumns: { xs: "1fr", lg: "minmax(340px, 0.92fr) minmax(0, 1.08fr)" },
             gap: 2,
+            alignItems: "stretch",
           }}
         >
           <Paper
-            className="sn-premium-panel"
             variant="outlined"
             sx={{
-              p: 2,
+              p: { xs: 2, md: 2.5 },
               borderRadius: 1,
-              borderColor: "rgba(15, 23, 42, 0.08)",
+              borderColor: "rgba(34, 211, 238, 0.2)",
+              color: "inherit",
+              background:
+                "linear-gradient(155deg, rgba(15,23,42,0.82), rgba(8,47,73,0.42))",
             }}
           >
-            <Stack spacing={1.2} alignItems="center" textAlign="center">
-              <Typography sx={{ fontWeight: 800 }}>{copy.preview}</Typography>
-              <AssistantAvatar
-                name={assistantDisplayName}
-                variant={activePreview?.companionKind ?? assistant.companionKind}
-                mood="happy"
-                size={96}
-                renderMode={companionRenderModePreference.value}
-                loadingFallback={
-                  <Companion3DLoadingFallback
-                    label={copy.renderModeLoading}
-                    size={96}
-                  />
-                }
-                on3dLoadError={companionRenderModePreference.mark3dRuntimeError}
-                active
-              />
-              <Stack spacing={0.6}>
-                <Typography sx={{ fontWeight: 900 }}>
-                  {activePreview
-                    ? getCatalogText(activePreview.title, locale)
-                    : copy.profileLook}
+            <Stack spacing={2}>
+              <Stack spacing={0.5}>
+                <Typography sx={{ fontWeight: 950 }}>
+                  {copy.studioTitle}
                 </Typography>
-                <Typography color="text.secondary">
-                  {activePreview
-                    ? getCatalogText(activePreview.description, locale)
-                    : assistantDisplayName}
+                <Typography variant="body2" sx={{ color: "rgba(229,249,255,0.7)" }}>
+                  {copy.studioSubtitle}
                 </Typography>
               </Stack>
-              <CompanionRenderModeControl
-                value={companionRenderModePreference.value}
-                onChange={companionRenderModePreference.changeRenderMode}
-                loading={companionRenderModePreference.saving}
-                error={companionRenderModePreference.hasError}
-                disabled={companionRenderModePreference.saving}
-                labels={{
-                  title: copy.renderModeTitle,
-                  twoD: copy.renderMode2d,
-                  threeD: copy.renderMode3d,
-                  hint: copy.renderModeHint,
-                  loading: copy.renderModeLoading,
-                  error: copy.renderModeError,
+
+              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                {companionShopFilters.map((filter) => (
+                  <Chip
+                    key={filter}
+                    label={
+                      filter === "all"
+                        ? copy.filters.all
+                        : getCategoryLabel(copy.categories, filter)
+                    }
+                    color={activeFilter === filter ? "primary" : "default"}
+                    variant={activeFilter === filter ? "filled" : "outlined"}
+                    onClick={() => setActiveFilter(filter)}
+                    sx={{
+                      fontWeight: 900,
+                      color: activeFilter === filter ? undefined : "#dffbff",
+                      borderColor: "rgba(229,249,255,0.2)",
+                      "&:focus-visible": {
+                        outline: "2px solid #67e8f9",
+                        outlineOffset: 2,
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(2, minmax(0, 1fr))",
+                    sm: "repeat(3, minmax(0, 1fr))",
+                  },
+                  gap: 1.1,
                 }}
-              />
+              >
+                {visibleCatalogItems.map((item) => {
+                  const isOwned = hasCompanionItem(companion, item.id);
+                  const isEquipped = isCompanionItemEquipped(companion, item.id);
+                  const canBuy = canPurchaseCompanionItem(companion, item);
+                  const isLocked = item.available && !isOwned && !canBuy;
+                  const isFocused = focusedPreview?.id === item.id;
+                  const statusLabel = isEquipped
+                    ? copy.equipped
+                    : isOwned
+                      ? copy.owned
+                      : isLocked
+                        ? copy.locked
+                        : copy.available;
+                  const actionLabel = isOwned ? copy.choose : copy.buyAndChoose;
+                  const isSaving = savingItemId === item.id;
+                  const buttonDisabled = savingItemId !== null || isEquipped || isLocked;
+
+                  return (
+                    <Paper
+                      key={item.id}
+                      variant="outlined"
+                      tabIndex={0}
+                      onMouseEnter={() => setPreviewItemId(item.id)}
+                      onFocus={() => setPreviewItemId(item.id)}
+                      onClick={() => setPreviewItemId(item.id)}
+                      sx={{
+                        p: 1,
+                        borderRadius: 1,
+                        minHeight: { xs: 204, md: 230 },
+                        cursor: "pointer",
+                        borderColor: isFocused
+                          ? "rgba(34,211,238,0.72)"
+                          : isEquipped
+                            ? "rgba(74,222,128,0.6)"
+                            : "rgba(148,163,184,0.2)",
+                        color: "inherit",
+                        background: isFocused
+                          ? "linear-gradient(150deg, rgba(8,145,178,0.28), rgba(88,28,135,0.16))"
+                          : "linear-gradient(150deg, rgba(15,23,42,0.72), rgba(15,118,110,0.12))",
+                        boxShadow: isFocused
+                          ? "0 18px 42px rgba(34,211,238,0.16)"
+                          : "none",
+                        transition:
+                          "transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
+                        "&:hover, &:focus-visible": {
+                          transform: "translateY(-3px)",
+                          borderColor: "rgba(34,211,238,0.72)",
+                          outline: "none",
+                        },
+                      }}
+                    >
+                      <Stack spacing={0.9} sx={{ height: "100%" }}>
+                        {item.companionKind ? (
+                          <Box
+                            sx={{
+                              minHeight: { xs: 88, md: 102 },
+                              display: "grid",
+                              placeItems: "center",
+                              borderRadius: 1,
+                            background:
+                                "linear-gradient(145deg, rgba(34,211,238,0.14), rgba(15,23,42,0.18))",
+                            }}
+                          >
+                            <AssistantAvatar
+                              name={getCatalogText(item.title, locale)}
+                              variant={item.companionKind}
+                              mood={isEquipped ? "celebrate" : isFocused ? "coach" : "happy"}
+                              size={82}
+                              active={isEquipped || isFocused}
+                            />
+                          </Box>
+                        ) : null}
+                        <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap">
+                          <Chip
+                            label={getRarityLabel(copy.rarity, item.rarity)}
+                            size="small"
+                            color={item.rarity === "legendary" ? "secondary" : "default"}
+                          />
+                          <Chip
+                            label={statusLabel}
+                            size="small"
+                            color={getStatusTone({ isEquipped, isLocked })}
+                            variant={isEquipped ? "filled" : "outlined"}
+                            sx={{
+                              color: isEquipped ? undefined : "#dffbff",
+                              borderColor: "rgba(229,249,255,0.22)",
+                            }}
+                          />
+                        </Stack>
+                        <Typography sx={{ fontWeight: 950, lineHeight: 1.15 }}>
+                          {getCatalogText(item.title, locale)}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "rgba(229,249,255,0.68)",
+                            lineHeight: 1.35,
+                            flexGrow: 1,
+                          }}
+                        >
+                          {getCatalogText(item.tagLabel, locale)}
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography sx={{ fontWeight: 950, color: "#a7f3d0" }}>
+                            {`${item.price} ${copy.coins}`}
+                          </Typography>
+                          <Button
+                            size="small"
+                            variant={isEquipped ? "contained" : "outlined"}
+                            disabled={buttonDisabled}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleItemAction(item);
+                            }}
+                            sx={{
+                              ml: "auto",
+                              minWidth: 0,
+                              textTransform: "none",
+                              fontWeight: 900,
+                              color: isEquipped ? undefined : "#dffbff",
+                              borderColor: "rgba(229,249,255,0.24)",
+                            }}
+                          >
+                            {isSaving
+                              ? copy.saving
+                              : isEquipped
+                                ? copy.equipped
+                                : actionLabel}
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Paper>
+                  );
+                })}
+              </Box>
             </Stack>
           </Paper>
 
-          <Box
+          <Paper
+            variant="outlined"
+            data-companion-live-preview="true"
             sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
-              gap: 1.2,
+              position: "relative",
+              minHeight: { xs: 500, lg: 620 },
+              p: { xs: 2, md: 3 },
+              borderRadius: 1,
+              overflow: "hidden",
+              borderColor: "rgba(34, 211, 238, 0.24)",
+              color: "inherit",
+              background:
+                "linear-gradient(115deg, rgba(34,211,238,0.08) 0 1px, transparent 1px 118px), linear-gradient(145deg, rgba(2,6,23,0.88), rgba(8,47,73,0.5))",
             }}
           >
-            {visibleCatalogItems.map((item) => {
-              const isOwned = hasCompanionItem(companion, item.id);
-              const isEquipped = isCompanionItemEquipped(companion, item.id);
-              const canBuy = canPurchaseCompanionItem(companion, item);
-              const isLocked = item.available && !isOwned && !canBuy;
-              const statusLabel = isEquipped
-                ? copy.equipped
-                : isOwned
-                  ? copy.owned
-                  : isLocked
-                    ? copy.locked
-                      : copy.available;
-              const actionLabel = isOwned ? copy.choose : copy.buyAndChoose;
-              const isSaving = savingItemId === item.id;
-              const buttonDisabled = savingItemId !== null || isEquipped || isLocked;
+            <Box
+              sx={{
+                position: "absolute",
+                inset: "11% 8% auto",
+                height: "48%",
+                border: "1px solid rgba(34,211,238,0.28)",
+                borderRadius: "50%",
+                transform: "rotate(-10deg)",
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                right: { xs: 18, md: 34 },
+                bottom: 18,
+                width: { xs: 120, md: 190 },
+                height: 2,
+                background: "linear-gradient(90deg, transparent, rgba(34,211,238,0.56), transparent)",
+              }}
+            />
+            <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1, height: "100%" }}>
+              <Stack spacing={0.5}>
+                <Typography variant="overline" sx={{ color: "#67e8f9", fontWeight: 900 }}>
+                  {copy.preview}
+                </Typography>
+                <Typography sx={{ color: "rgba(229,249,255,0.68)" }}>
+                  {copy.previewHint}
+                </Typography>
+              </Stack>
 
-              return (
-                <Paper
-                  className="sn-premium-panel"
-                  key={item.id}
-                  variant="outlined"
+              <Box
+                sx={{
+                  position: "relative",
+                  minHeight: { xs: 255, md: 320 },
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                {previewOrbitItems.map(({ key, x, y }, index) => {
+                  const [label] = getToolText(copy.tools, key);
+
+                  return (
+                    <Paper
+                      key={key}
+                      variant="outlined"
+                      sx={{
+                        position: "absolute",
+                        left: `${x}%`,
+                        top: `${y}%`,
+                        transform: x > 55 ? "translateX(-50%)" : "none",
+                        p: 1,
+                        borderRadius: 1,
+                        minWidth: 118,
+                        color: "inherit",
+                        borderColor: "rgba(34,211,238,0.22)",
+                        background: "rgba(15,23,42,0.72)",
+                        backdropFilter: "blur(14px)",
+                        display: { xs: index > 2 ? "none" : "block", md: "block" },
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: "#67e8f9", fontWeight: 900 }}>
+                        {label}
+                      </Typography>
+                    </Paper>
+                  );
+                })}
+
+                <Box
                   sx={{
-                    p: 1.2,
-                    borderRadius: 1,
-                    minHeight: 218,
-                    borderColor: isEquipped
-                      ? "rgba(15, 118, 110, 0.55)"
-                      : "rgba(15, 23, 42, 0.08)",
+                    width: { xs: 220, md: 280 },
+                    aspectRatio: "1",
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
                     background:
-                      "linear-gradient(145deg, rgba(15,23,42,0.06), rgba(20,184,166,0.08))",
+                      "linear-gradient(145deg, rgba(103,232,249,0.18), rgba(15,23,42,0.04) 58%, transparent 64%)",
+                    boxShadow: "0 0 90px rgba(34,211,238,0.18)",
                   }}
                 >
-                  <Stack spacing={1} sx={{ height: "100%" }}>
-                    {item.companionKind ? (
-                      <Box
+                  <AssistantAvatar
+                    name={assistantDisplayName}
+                    variant={focusedPreview?.companionKind ?? assistant.companionKind}
+                    mood={focusedPreviewEquipped ? "celebrate" : "coach"}
+                    size={companionRenderModePreference.value === "3d" ? 190 : 148}
+                    renderMode={companionRenderModePreference.value}
+                    loadingFallback={
+                      <Companion3DLoadingFallback
+                        label={copy.renderModeLoading}
+                        size={148}
+                      />
+                    }
+                    on3dLoadError={companionRenderModePreference.mark3dRuntimeError}
+                    active
+                  />
+                </Box>
+              </Box>
+
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  mt: "auto",
+                  borderRadius: 1,
+                  color: "inherit",
+                  borderColor: "rgba(229,249,255,0.16)",
+                  background: "rgba(2,6,23,0.62)",
+                }}
+              >
+                <Stack spacing={1.4}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                  >
+                    <Stack spacing={0.4}>
+                      <Typography variant="overline" sx={{ color: "#a7f3d0", fontWeight: 900 }}>
+                        {copy.currentSelection}
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 950 }}>
+                        {focusedPreview
+                          ? getCatalogText(focusedPreview.title, locale)
+                          : copy.profileLook}
+                      </Typography>
+                    </Stack>
+                    {focusedPreview ? (
+                      <Chip
+                        label={focusedPreviewStatus}
+                        color={getStatusTone({
+                          isEquipped: focusedPreviewEquipped,
+                          isLocked: focusedPreviewLocked,
+                        })}
+                      />
+                    ) : null}
+                  </Stack>
+                  <Typography sx={{ color: "rgba(229,249,255,0.72)" }}>
+                    {focusedPreview
+                      ? getCatalogText(focusedPreview.description, locale)
+                      : assistantDisplayName}
+                  </Typography>
+                  {focusedPreview ? (
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1}
+                      alignItems={{ xs: "stretch", sm: "center" }}
+                    >
+                      <Button
+                        variant="contained"
+                        disabled={
+                          savingItemId !== null ||
+                          focusedPreviewEquipped ||
+                          focusedPreviewLocked
+                        }
+                        onClick={() => void handleItemAction(focusedPreview)}
+                        sx={{ textTransform: "none", fontWeight: 950 }}
+                      >
+                        {savingItemId === focusedPreview.id
+                          ? copy.saving
+                          : focusedPreviewEquipped
+                            ? copy.equipped
+                            : focusedPreviewActionLabel}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<MessageCircle size={16} />}
+                        onClick={() => navigate("/coach")}
                         sx={{
-                          minHeight: 92,
-                          display: "grid",
-                          placeItems: "center",
-                          borderRadius: 1,
-                          background:
-                            "radial-gradient(circle at 50% 58%, rgba(34,211,238,0.18), transparent 55%)",
+                          textTransform: "none",
+                          fontWeight: 900,
+                          color: "#dffbff",
+                          borderColor: "rgba(229,249,255,0.24)",
                         }}
                       >
-                        <AssistantAvatar
-                          name={getCatalogText(item.title, locale)}
-                          variant={item.companionKind}
-                          mood={isEquipped ? "celebrate" : "happy"}
-                          size={82}
-                          active={isEquipped}
-                        />
-                      </Box>
-                    ) : null}
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Chip
-                        label={getCategoryLabel(copy.categories, item.category)}
-                        size="small"
-                        color={
-                          item.rarity === "legendary"
-                            ? "secondary"
-                            : item.category === "robot"
-                              ? "primary"
-                              : "default"
-                        }
-                      />
-                      <Chip
-                        label={getRarityLabel(copy.rarity, item.rarity)}
-                        size="small"
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={getCatalogText(item.tagLabel, locale)}
-                        size="small"
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={statusLabel}
-                        size="small"
-                        color={getStatusTone({ isEquipped, isLocked })}
-                        variant={isEquipped ? "filled" : "outlined"}
-                      />
-                    </Stack>
-                    <Typography sx={{ fontWeight: 900 }}>
-                      {getCatalogText(item.title, locale)}
-                    </Typography>
-                    <Typography color="text.secondary" variant="body2">
-                      {getCatalogText(item.description, locale)}
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Typography sx={{ fontWeight: 900 }}>
-                        {`${item.price} ${copy.coins}`}
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant={isEquipped ? "contained" : "outlined"}
-                        disabled={buttonDisabled}
-                        onClick={() => void handleItemAction(item)}
-                        sx={{ textTransform: "none", fontWeight: 800 }}
-                      >
-                        {isSaving
-                          ? copy.saving
-                          : isEquipped
-                            ? copy.equipped
-                            : actionLabel}
+                        {copy.tryInChat}
                       </Button>
+                      <Typography sx={{ ml: { sm: "auto" }, fontWeight: 950, color: "#a7f3d0" }}>
+                        {`${focusedPreview.price} ${copy.coins}`}
+                      </Typography>
                     </Stack>
-                  </Stack>
-                </Paper>
-              );
-            })}
-          </Box>
+                  ) : null}
+                </Stack>
+              </Paper>
+            </Stack>
+          </Paper>
         </Box>
+
+        <Paper
+          variant="outlined"
+          data-companion-shop-capabilities="true"
+          sx={{
+            p: 2,
+            borderRadius: 1,
+            color: "inherit",
+            borderColor: "rgba(34, 211, 238, 0.18)",
+            background: "rgba(2,6,23,0.46)",
+          }}
+        >
+          <Stack spacing={1.5}>
+            <Stack spacing={0.4}>
+              <Typography sx={{ fontWeight: 950 }}>{copy.toolBeltTitle}</Typography>
+              <Typography variant="body2" sx={{ color: "rgba(229,249,255,0.7)" }}>
+                {copy.toolBeltSubtitle}
+              </Typography>
+            </Stack>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, minmax(0, 1fr))",
+                  sm: "repeat(3, minmax(0, 1fr))",
+                  lg: "repeat(5, minmax(0, 1fr))",
+                },
+                gap: 1,
+              }}
+            >
+              {assistantToolIcons.map(({ key, icon: ToolIcon, accent }) => {
+                const [title, description] = getToolText(copy.tools, key);
+
+                return (
+                  <Box
+                    key={key}
+                    sx={{
+                      p: 1.2,
+                      minHeight: 112,
+                      borderRadius: 1,
+                      border: "1px solid rgba(148,163,184,0.16)",
+                      background:
+                        "linear-gradient(150deg, rgba(15,23,42,0.72), rgba(15,118,110,0.1))",
+                      transition: "transform 180ms ease, border-color 180ms ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        borderColor: accent,
+                      },
+                    }}
+                  >
+                    <Stack spacing={0.8}>
+                      <Box
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          display: "grid",
+                          placeItems: "center",
+                          borderRadius: "50%",
+                          color: accent,
+                          background: `${accent}1f`,
+                        }}
+                      >
+                        <ToolIcon size={18} />
+                      </Box>
+                      <Typography sx={{ fontWeight: 950, lineHeight: 1.2 }}>
+                        {title}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "rgba(229,249,255,0.62)", lineHeight: 1.35 }}
+                      >
+                        {description}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Stack>
+        </Paper>
       </Stack>
     </Paper>
   );

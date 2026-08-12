@@ -141,7 +141,7 @@ export const OnboardingChoicePage = ({ state }: OnboardingStepProps) => {
                 },
               }}
             >
-              <AssistantAvatar name="Assistant" variant="dragon" mood="coach" size={92} active />
+              <AssistantAvatar name="Assistant" variant="robot" mood="coach" size={92} active />
             </Box>
             <Stack spacing={1}>
               <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>

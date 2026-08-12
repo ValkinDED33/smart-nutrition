@@ -3,6 +3,7 @@ import {
   createPasswordRecord,
   createSessionToken,
   hashOneTimeToken,
+  StateApiError,
 } from "../lib/domain.mjs";
 import { createAuthService } from "./authService.mjs";
 
@@ -1083,6 +1084,107 @@ describe("authService", () => {
     expect(saveProfileState).toHaveBeenCalledTimes(1);
   });
 
+  it("falls back to split profile-state and user saves after a technical atomic save failure", async () => {
+    const { authRepository, logger, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-atomic-fallback",
+      email: "profile-state-atomic-fallback@example.com",
+      name: "Profile State Atomic Fallback",
+      avatar: undefined,
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      languagePreference: "uk",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const nextUser = {
+      ...currentUser,
+      weight: 75,
+    };
+    const savedProfileState = { dailyCalories: 2100, normalized: true };
+    const meta = { updatedAt: "2026-08-11T20:45:00.000Z" };
+    const saveProfileAndUser = vi.fn(async () => {
+      throw new Error("Mongo session ended before commit");
+    });
+    const saveProfileState = vi.fn(async () => savedProfileState);
+    const getProfileMeta = vi.fn(async () => meta);
+    authRepository.updateUser.mockResolvedValue(nextUser);
+
+    const result = await service.updateUserProfileAndState({
+      body: {
+        user: nextUser,
+        profile: { dailyCalories: 2100 },
+      },
+      currentUser,
+      saveProfileAndUser,
+      saveProfileState,
+      getProfileMeta,
+    });
+
+    expect(saveProfileAndUser).toHaveBeenCalledTimes(1);
+    expect(saveProfileState).toHaveBeenCalledWith({ dailyCalories: 2100 });
+    expect(authRepository.updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({ id: currentUser.id, weight: 75 })
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: currentUser.id, weight: 75, languagePreference: "uk" },
+      profile: savedProfileState,
+      meta,
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      "[auth] profile-state persistence failed",
+      expect.objectContaining({
+        stage: "atomic-profile-and-user-save",
+        code: "Error",
+      })
+    );
+  });
+
+  it("does not fall back from profile-state domain errors during atomic saves", async () => {
+    const { authRepository, service } = createAuthServiceFixture();
+    const currentUser = {
+      id: "user-profile-state-domain-error",
+      email: "profile-state-domain-error@example.com",
+      name: "Profile State Domain Error",
+      age: 31,
+      weight: 76,
+      height: 176,
+      gender: "female",
+      activity: "moderate",
+      goal: "maintain",
+      role: "USER",
+      createdAt: new Date().toISOString(),
+    };
+    const saveProfileAndUser = vi.fn(async () => {
+      throw new StateApiError("STATE_CONFLICT", "Profile state changed on another device.");
+    });
+    const saveProfileState = vi.fn();
+
+    await expect(
+      service.updateUserProfileAndState({
+        body: {
+          user: { ...currentUser, weight: 75 },
+          profile: { dailyCalories: 2100 },
+        },
+        currentUser,
+        saveProfileAndUser,
+        saveProfileState,
+        getProfileMeta: vi.fn(),
+      })
+    ).rejects.toMatchObject({
+      code: "STATE_CONFLICT",
+    });
+
+    expect(saveProfileAndUser).toHaveBeenCalledTimes(1);
+    expect(saveProfileState).not.toHaveBeenCalled();
+    expect(authRepository.updateUser).not.toHaveBeenCalled();
+  });
+
   it("maps unexpected profile-state persistence failures to public sync unavailable", async () => {
     const { authRepository, logger, service } = createAuthServiceFixture();
     const currentUser = {
@@ -1101,7 +1203,6 @@ describe("authService", () => {
     const saveProfileAndUser = vi.fn(async () => {
       throw new Error("Mongo primary is unavailable");
     });
-    const saveProfileState = vi.fn();
 
     await expect(
       service.updateUserProfileAndState({
@@ -1111,7 +1212,6 @@ describe("authService", () => {
         },
         currentUser,
         saveProfileAndUser,
-        saveProfileState,
         getProfileMeta: vi.fn(),
       })
     ).rejects.toMatchObject({
@@ -1123,7 +1223,6 @@ describe("authService", () => {
     });
 
     expect(saveProfileAndUser).toHaveBeenCalledTimes(1);
-    expect(saveProfileState).not.toHaveBeenCalled();
     expect(authRepository.updateUser).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
       "[auth] profile-state persistence failed",

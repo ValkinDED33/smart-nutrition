@@ -19,7 +19,6 @@ import type { AppLanguage } from "../../shared/types/i18n";
 import {
   Companion3DLoadingFallback,
   CompanionAvatar as AssistantAvatar,
-  CompanionRenderModeControl,
 } from "@features/assistant-3d";
 import CompanionProgressCard from "../companion/CompanionProgressCard";
 import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
@@ -64,13 +63,11 @@ const assistantCopy = {
     saving: "Зберігаю...",
     saved: "Збережено в хмарі",
     saveError: "Не вдалося зберегти. Спробуйте ще раз.",
-    renderModeTitle: "Превʼю помічника",
-    renderMode2d: "Швидкий 2D",
-    renderMode3d: "Живий 3D",
-    renderModeHint:
-      "3D вмикається вручну для превʼю. На телефонах і в режимі економії лишається 2D.",
-    renderModeLoading: "Завантажую 3D",
-    renderModeError: "3D не завантажився, показую 2D",
+    appearanceTitle: "Живий образ помічника",
+    appearanceHint:
+      "Образ підлаштовується під ваш пристрій, щоб помічник залишався поруч без зависань.",
+    renderModeLoading: "Готую образ",
+    renderModeError: "Показую легкий образ, щоб сторінка не зависла",
     roleFriend: "Друг",
     roleAssistant: "Асистент",
     roleCoach: "Коуч",
@@ -144,13 +141,11 @@ const assistantCopy = {
     saving: "Zapisuję...",
     saved: "Zapisano w chmurze",
     saveError: "Nie udało się zapisać. Spróbuj ponownie.",
-    renderModeTitle: "Podgląd asystenta",
-    renderMode2d: "Szybki 2D",
-    renderMode3d: "Żywy 3D",
-    renderModeHint:
-      "3D włącza się ręcznie dla podglądu. Na telefonach i w trybie oszczędzania zostaje 2D.",
-    renderModeLoading: "Ładuję 3D",
-    renderModeError: "3D się nie załadowało, pokazuję 2D",
+    appearanceTitle: "Żywy wygląd asystenta",
+    appearanceHint:
+      "Wygląd dopasowuje się do urządzenia, żeby asystent był zawsze pod ręką bez zacięć.",
+    renderModeLoading: "Przygotowuję wygląd",
+    renderModeError: "Pokazuję lżejszy wygląd, żeby strona działała płynnie",
     roleFriend: "Znajomy",
     roleAssistant: "Asystent",
     roleCoach: "Coach",
@@ -212,7 +207,7 @@ const assistantCopy = {
     proactiveHints: "Context hints",
     memoryTitle: "Memory and support style",
     memorySubtitle:
-      "This context makes the assistant feel like a persistent companion, not a separate chat.",
+      "This context makes the assistant feel present and personal, not like a separate chat.",
     primaryGoalNote: "What should change",
     healthyGoalNote: "Eat healthier",
     supportNote: "What the assistant should remember",
@@ -224,13 +219,11 @@ const assistantCopy = {
     saving: "Saving...",
     saved: "Saved to cloud",
     saveError: "Could not save. Try again.",
-    renderModeTitle: "Companion preview",
-    renderMode2d: "Fast 2D",
-    renderMode3d: "Live 3D",
-    renderModeHint:
-      "3D is enabled manually for preview. Phones and data-saver mode stay in 2D.",
-    renderModeLoading: "Loading 3D",
-    renderModeError: "3D failed, showing 2D",
+    appearanceTitle: "Living assistant look",
+    appearanceHint:
+      "The look adapts to the device so the assistant stays present without slowing the page.",
+    renderModeLoading: "Preparing look",
+    renderModeError: "Showing a lighter look so the page stays smooth",
     roleFriend: "Friend",
     roleAssistant: "Assistant",
     roleCoach: "Coach",
@@ -605,24 +598,20 @@ const AssistantCustomizationCard = () => {
             />
           </Box>
           <Stack spacing={1.2} sx={{ minWidth: 0, flex: 1 }}>
+            <Typography sx={{ fontWeight: 900 }}>
+              {copy.appearanceTitle}
+            </Typography>
             <Typography color="text.secondary">
               {getCompanionLabel(copy, assistant.companionKind)} · {assistantDisplayName}
             </Typography>
-            <CompanionRenderModeControl
-              value={companionRenderModePreference.value}
-              onChange={companionRenderModePreference.changeRenderMode}
-              loading={companionRenderModePreference.saving}
-              error={companionRenderModePreference.hasError}
-              disabled={companionRenderModePreference.saving}
-              labels={{
-                title: copy.renderModeTitle,
-                twoD: copy.renderMode2d,
-                threeD: copy.renderMode3d,
-                hint: copy.renderModeHint,
-                loading: copy.renderModeLoading,
-                error: copy.renderModeError,
-              }}
-            />
+            <Typography variant="body2" color="text.secondary">
+              {copy.appearanceHint}
+            </Typography>
+            {companionRenderModePreference.hasError ? (
+              <Alert severity="info" sx={{ borderRadius: 3 }}>
+                {copy.renderModeError}
+              </Alert>
+            ) : null}
           </Stack>
         </Stack>
 

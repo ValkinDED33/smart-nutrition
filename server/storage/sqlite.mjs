@@ -16,6 +16,7 @@ import {
   createInitialMealState,
   createInitialProfileState,
   createInitialWaterState,
+  normalizeBloodPressureHistory,
   normalizeCompanionState,
   normalizeWomenHealthState,
   StateApiError,
@@ -599,6 +600,7 @@ const normalizeProfileState = (value, user) => {
     personalDetails: isRecord(record.personalDetails)
       ? { ...fallback.personalDetails, ...record.personalDetails }
       : fallback.personalDetails,
+    bloodPressureHistory: normalizeBloodPressureHistory(record.bloodPressureHistory),
     womenHealth: normalizeWomenHealthState(record.womenHealth),
     partnerSharing: isRecord(record.partnerSharing)
       ? { ...fallback.partnerSharing, ...record.partnerSharing }

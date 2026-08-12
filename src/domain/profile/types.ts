@@ -261,6 +261,17 @@ export interface MeasurementHistoryItem {
   chest?: number;
 }
 
+export interface BloodPressureHistoryItem {
+  id: string;
+  recordedAt: string;
+  systolic: number;
+  diastolic: number;
+  pulse: number | null;
+  unit: "mmHg";
+  note: string;
+  source: "manual" | "telegram_photo";
+}
+
 export interface ProgressPhotoHistoryItem {
   id: string;
   date: string;

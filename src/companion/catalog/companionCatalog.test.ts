@@ -36,6 +36,22 @@ describe("companionCatalog", () => {
     });
   });
 
+  it("keeps the default assistant look free and collection looks paid", () => {
+    const freeBaseLooks = companionShopCatalog.filter(
+      (item) => item.available && item.category === "robot"
+    );
+    const collectibleLooks = companionShopCatalog.filter(
+      (item) =>
+        item.available &&
+        ["animal", "fantasy", "nature", "seasonal"].includes(item.category)
+    );
+
+    expect(freeBaseLooks.length).toBeGreaterThanOrEqual(2);
+    expect(freeBaseLooks.every((item) => item.price === 0)).toBe(true);
+    expect(collectibleLooks.length).toBeGreaterThanOrEqual(12);
+    expect(collectibleLooks.every((item) => item.price > 0)).toBe(true);
+  });
+
   it("keeps localized display copy in the catalog", () => {
     const item = getCompanionCatalogItemById(CAPYBARA_ITEM_ID);
 

@@ -19,7 +19,7 @@ export const familyLifecycleModes: FamilyLifecycleMode[] = [
 export const isFamilyLifecycleMode = (value: unknown): value is FamilyLifecycleMode =>
   familyLifecycleModes.includes(value as FamilyLifecycleMode);
 
-const hasActivePregnancyPartnerLink = (partnerSharing: PartnerSharingState) =>
+export const hasActivePregnancyPartnerLink = (partnerSharing: PartnerSharingState) =>
   partnerSharing.links.some(
     (link) =>
       link.status === "active" &&

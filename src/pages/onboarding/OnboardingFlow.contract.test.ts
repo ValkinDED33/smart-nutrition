@@ -107,11 +107,19 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain("womenHealth:");
     expect(guideSource).toContain('"/onboarding/women-health"');
     expect(guideSource).toContain('key: "womenHealth"');
-    expect(guideSource).toContain('const GUIDE_FORM_SAFE_LEFT = "calc(50% + 390px)"');
+    expect(guideSource).toContain("const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 1880");
+    expect(guideSource).toContain('const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)"');
+    expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 220");
+    expect(guideSource).toContain("const GUIDE_AVATAR_SIZE = 76");
     expect(guideSource).toContain('display: { xs: "none", xl: "block" }');
-    expect(guideSource).toContain("@media (max-width: 1749px)");
+    expect(guideSource).toContain(
+      "maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24"
+    );
+    expect(guideSource).toContain(
+      "[`@media (max-width: ${GUIDE_WIDE_VIEWPORT_MIN_WIDTH - 1}px)`]"
+    );
     expect(guideSource).toContain('data-onboarding-guide-requires-wide-viewport="true"');
-    expect(guideSource).toContain("direction=\"row-reverse\"");
+    expect(guideSource).toContain('direction="row"');
   });
 
   it("keeps localized assistant copy native and free from mixed-language companion jargon", async () => {

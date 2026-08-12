@@ -79,10 +79,24 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("../features/profile/WomenHealthOverviewCard");
     expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
     expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
+    expect(source).toContain("hasActivePregnancyPartnerLink(profile.partnerSharing)");
     expect(source).toContain('id: "women-health"');
     expect(source).toContain("copy.tabs.womenHealth");
     expect(cardSource).toContain("hasWomenHealthContext(womenHealth)");
     expect(cardSource).toContain("isWomenHealthVisibleForGender(user?.gender) ||");
+  });
+
+  it("surfaces the family center to connected pregnancy partners", async () => {
+    const profileSource = await readSource("src/pages/ProfilePage.tsx");
+    const homeSource = await readSource("src/pages/HomePage.tsx");
+    const lifecycleSource = await readSource("src/domain/profile/familyLifecycle.ts");
+
+    expect(lifecycleSource).toContain("export const hasActivePregnancyPartnerLink");
+    expect(profileSource).toContain("hasActivePregnancyPartnerLink(profile.partnerSharing)");
+    expect(homeSource).toContain("hasActivePregnancyPartnerLink(partnerSharing)");
+    expect(homeSource).toContain("canSeeWomenHealthCenter");
+    expect(homeSource).toContain("const familyRoute = canSeeWomenHealthCenter ? WOMEN_HEALTH_ROUTE : COMMUNITY_ROUTE");
+    expect(homeSource).toContain("WOMEN_HEALTH_ROUTE");
   });
 
   it("uses backend-confirmed partner sharing instead of a local family mock", async () => {

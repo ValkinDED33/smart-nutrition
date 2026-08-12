@@ -388,6 +388,43 @@ describe("profileSlice assistant onboarding", () => {
   });
 });
 
+describe("profileSlice health measurements", () => {
+  it("normalizes blood pressure history from backend profile state", () => {
+    const normalized = normalizeProfileState({
+      bloodPressureHistory: [
+        {
+          id: "bp-telegram",
+          recordedAt: "2026-08-12T10:00:00.000Z",
+          systolic: "121",
+          diastolic: 79,
+          pulse: "73",
+          unit: "mmHg",
+          note: "  Telegram photo confirmation  ",
+          source: "telegram_photo",
+        },
+        {
+          recordedAt: "broken",
+          systolic: 300,
+          diastolic: 20,
+        },
+      ],
+    });
+
+    expect(normalized.bloodPressureHistory).toEqual([
+      {
+        id: "bp-telegram",
+        recordedAt: "2026-08-12T10:00:00.000Z",
+        systolic: 121,
+        diastolic: 79,
+        pulse: 73,
+        unit: "mmHg",
+        note: "Telegram photo confirmation",
+        source: "telegram_photo",
+      },
+    ]);
+  });
+});
+
 describe("profile selectors", () => {
   it("uses the latest weight check-in before the account weight", () => {
     const state = createSelectorState({

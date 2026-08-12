@@ -42,6 +42,7 @@ import { createPartnerService } from "./services/partnerService.mjs";
 import { createProductLookupService } from "./services/productLookupService.mjs";
 import { createReminderService } from "./services/reminderService.mjs";
 import { createStateService } from "./services/stateService.mjs";
+import { createTelegramPhotoIntakeService } from "./services/telegramPhotoIntakeService.mjs";
 import { createTelegramService } from "./services/telegramService.mjs";
 import { createStorage } from "./storage/index.mjs";
 import { createAuthSessionHelpers } from "./runtime/authCookies.mjs";
@@ -147,6 +148,11 @@ const aiService = createAiService({
   assistantAgent,
   config: serverConfig,
 });
+const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
+const telegramPhotoIntakeService = createTelegramPhotoIntakeService({
+  config: serverConfig,
+  photoAnalysisService,
+});
 const telegramService = createTelegramService({
   config: serverConfig,
   authRepository,
@@ -154,8 +160,9 @@ const telegramService = createTelegramService({
   reminderService,
   assistantAgent,
   aiService,
+  photoAnalysisService,
+  telegramPhotoIntakeService,
 });
-const photoAnalysisService = createPhotoAnalysisService({ config: serverConfig });
 const { clearAuthCookies, sendAuthSession } = createAuthSessionHelpers(serverConfig);
 const clientErrorStore = createClientErrorMemoryStore();
 const { staticAvailable, tryServeStatic } = await createStaticFileServer({

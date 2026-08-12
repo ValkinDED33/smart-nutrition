@@ -45,6 +45,7 @@ import {
   hasWomenHealthContext,
   isWomenHealthVisibleForGender,
 } from "@domain/profile/womenHealth";
+import { hasActivePregnancyPartnerLink } from "@domain/profile/familyLifecycle";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { buildDailyContext } from "@domain/meal/dailyContext";
 import {
@@ -295,6 +296,7 @@ const HomePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const womenHealth = useSelector((state: RootState) => state.profile.womenHealth);
+  const partnerSharing = useSelector((state: RootState) => state.profile.partnerSharing);
   const dailyCalories = useSelector((state: RootState) => state.profile.dailyCalories);
   const water = useSelector((state: RootState) => state.water);
   const items = useSelector(selectMealItems);
@@ -399,13 +401,18 @@ const HomePage = () => {
     navigate(`/meals?${params.toString()}`);
   };
 
+  const canSeeWomenHealthCenter =
+    isWomenHealthVisibleForGender(user.gender) ||
+    hasWomenHealthContext(womenHealth) ||
+    hasActivePregnancyPartnerLink(partnerSharing);
+  const familyRoute = canSeeWomenHealthCenter ? WOMEN_HEALTH_ROUTE : COMMUNITY_ROUTE;
+
   const routeCards = [
     { label: copy.searchFood, icon: Utensils, path: MEALS_ROUTE },
     { label: copy.recipes, icon: BookOpen, path: RECIPES_ROUTE },
     { label: copy.community, icon: UsersRound, path: COMMUNITY_ROUTE },
     { label: copy.progress, icon: BarChart3, path: PROGRESS_ROUTE },
-    ...(isWomenHealthVisibleForGender(user.gender) ||
-    hasWomenHealthContext(womenHealth)
+    ...(canSeeWomenHealthCenter
       ? [
           {
             label: copy.womenHealth,
@@ -467,10 +474,10 @@ const HomePage = () => {
     { label: copy.activity, icon: Activity, path: PROGRESS_ROUTE },
     { label: copy.health, icon: HeartPulse, path: PROGRESS_ROUTE },
     { label: copy.analyses, icon: Stethoscope, path: PROFILE_ROUTE },
-    ...(isWomenHealthVisibleForGender(user.gender) || hasWomenHealthContext(womenHealth)
+    ...(canSeeWomenHealthCenter
       ? [{ label: copy.womenHealth, icon: Baby, path: WOMEN_HEALTH_ROUTE }]
       : []),
-    { label: copy.family, icon: UsersRound, path: COMMUNITY_ROUTE },
+    { label: copy.family, icon: UsersRound, path: familyRoute },
     { label: copy.tasks, icon: ClipboardList, path: PROFILE_SECURITY_ROUTE },
     { label: copy.reminders, icon: CalendarCheck, path: PROFILE_SECURITY_ROUTE },
     { label: copy.sections.assistant, icon: Sparkles, path: "/coach" },

@@ -13,6 +13,13 @@ const TELEGRAM_CONNECT_GENERIC_PREFIX = "g1";
 const TELEGRAM_CONNECT_SIGNATURE_LENGTH = 16;
 const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
 const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
+const TELEGRAM_PHOTO_MAX_BYTES = 1_250_000;
+const TELEGRAM_PHOTO_MIME_BY_CONTENT_TYPE = new Map([
+  ["image/jpeg", "jpeg"],
+  ["image/jpg", "jpeg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
 const TELEGRAM_BOT_COMMANDS_BY_LANGUAGE = {
   uk: [
     { command: "menu", description: "Головне меню Smart Nutrition" },
@@ -118,6 +125,7 @@ const TELEGRAM_COPY = {
       "🧬 Нутрієнти — калорії, білки, жири, вуглеводи, клітковина та мікроелементи.",
       "📈 Прогрес — вага, тренди, звіти й пояснення змін.",
       "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
+      "📷 Фото — їжа, тиск, ліки, рецепти й медичні нотатки як чернетки для перевірки.",
       "🎮 Companion — рівень, XP, досягнення.",
       "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
       "🗓️ Задачі — події, дні народження, контроль тиску або будь-який побутовий план як підтверджене нагадування.",
@@ -185,6 +193,23 @@ const TELEGRAM_COPY = {
       `Ще приблизно ${remaining} мл, це близько ${glasses} склян(ок).`,
     waterClosed: "Ціль по воді вже закрита. Красиво тримаєш ритм.",
     nutritionTitle: "Нутрієнти сьогодні:",
+    photoMealMissing:
+      "Надішліть фото їжі як зображення, і я підготую чернетку для перевірки.",
+    photoMealUnavailable:
+      "Фото-аналіз тимчасово недоступний. Спробуйте трохи пізніше.",
+    photoMealFailed:
+      "Не вдалося безпечно розпізнати фото. Спробуйте чіткіше фото при хорошому світлі або відкрийте фото-аналіз у застосунку.",
+    photoMealDraftTitle: (dishName) =>
+      `Фото їжі отримав. Я підготував чернетку: ${dishName}.`,
+    photoMealDraftSubtitle: (status, confidence) =>
+      `Статус: ${status}. Впевненість: ${confidence}%. Перед збереженням перевірте склад.`,
+    photoMealItemsTitle: "Що бачу на фото:",
+    photoMealNoItems: "Поки не бачу достатньо продуктів для чесної чернетки.",
+    photoMealQuestionsTitle: "Перед збереженням уточніть:",
+    photoMealCautionsTitle: "Важливо:",
+    photoMealReviewRequired:
+      "Я нічого не зберіг без підтвердження. Відкрийте чернетку в застосунку, перевірте порції й натисніть додати.",
+    photoMealOpenAppButton: "Відкрити чернетку в Smart Nutrition",
   },
   pl: {
     notConnected:
@@ -231,6 +256,7 @@ const TELEGRAM_COPY = {
       "🧬 Składniki — kalorie, białko, tłuszcze, węglowodany, błonnik i mikroelementy.",
       "📈 Postęp — waga, trendy, raporty i wyjaśnienie zmian.",
       "🤖 Asystent — personalne podpowiedzi z uwzględnieniem onboardingu.",
+      "📷 Zdjęcia — jedzenie, ciśnienie, leki, recepty i notatki zdrowotne jako szkice do sprawdzenia.",
       "🎮 Companion — poziom, XP i osiągnięcia.",
       "💊 Leki — przypomnienia, przyciski „przyjęte/później/pomiń” i historia.",
       "🗓️ Zadania — wydarzenia, urodziny, pomiar ciśnienia albo zwykły plan jako potwierdzone przypomnienie.",
@@ -297,6 +323,23 @@ const TELEGRAM_COPY = {
       `Jeszcze około ${remaining} ml, czyli mniej więcej ${glasses} szklank(i).`,
     waterClosed: "Cel wody jest już zamknięty. Ładnie trzymasz rytm.",
     nutritionTitle: "Składniki dzisiaj:",
+    photoMealMissing:
+      "Wyślij zdjęcie jedzenia jako obraz, a przygotuję szkic do sprawdzenia.",
+    photoMealUnavailable:
+      "Analiza zdjęcia jest chwilowo niedostępna. Spróbuj trochę później.",
+    photoMealFailed:
+      "Nie udało się bezpiecznie rozpoznać zdjęcia. Zrób wyraźniejsze zdjęcie w dobrym świetle albo otwórz analizę zdjęcia w aplikacji.",
+    photoMealDraftTitle: (dishName) =>
+      `Zdjęcie jedzenia odebrane. Przygotowałem szkic: ${dishName}.`,
+    photoMealDraftSubtitle: (status, confidence) =>
+      `Status: ${status}. Pewność: ${confidence}%. Przed zapisem sprawdź skład.`,
+    photoMealItemsTitle: "Co widzę na zdjęciu:",
+    photoMealNoItems: "Nie widzę jeszcze dość produktów, żeby uczciwie przygotować szkic.",
+    photoMealQuestionsTitle: "Przed zapisem sprawdź:",
+    photoMealCautionsTitle: "Ważne:",
+    photoMealReviewRequired:
+      "Nic nie zapisałem bez potwierdzenia. Otwórz szkic w aplikacji, sprawdź porcje i naciśnij dodaj.",
+    photoMealOpenAppButton: "Otwórz szkic w Smart Nutrition",
   },
   en: {
     notConnected:
@@ -340,6 +383,7 @@ const TELEGRAM_COPY = {
       "🧬 Nutrients — calories, protein, fat, carbs, fiber, and micronutrients.",
       "📈 Progress — weight, trends, reports, and change explanations.",
       "🤖 Assistant — personal hints using onboarding context.",
+      "📷 Photos — food, blood pressure, medication, prescriptions, and health notes as review drafts.",
       "🎮 Companion — level, XP, and achievements.",
       "💊 Medication — reminders, taken/later/skip buttons, and history.",
       "🗓️ Tasks — events, birthdays, blood-pressure checks, or everyday plans as confirmed reminders.",
@@ -406,6 +450,23 @@ const TELEGRAM_COPY = {
       `About ${remaining} ml left, roughly ${glasses} glass(es).`,
     waterClosed: "Water goal is already closed. Nice rhythm.",
     nutritionTitle: "Nutrition today:",
+    photoMealMissing:
+      "Send the food photo as an image, and I will prepare a review draft.",
+    photoMealUnavailable:
+      "Photo analysis is temporarily unavailable. Try again a little later.",
+    photoMealFailed:
+      "I could not safely recognize this photo. Try a clearer, well-lit photo or open photo analysis in the app.",
+    photoMealDraftTitle: (dishName) =>
+      `Food photo received. I prepared a draft: ${dishName}.`,
+    photoMealDraftSubtitle: (status, confidence) =>
+      `Status: ${status}. Confidence: ${confidence}%. Review ingredients before saving.`,
+    photoMealItemsTitle: "What I can see:",
+    photoMealNoItems: "I do not see enough food to make an honest draft yet.",
+    photoMealQuestionsTitle: "Before saving, check:",
+    photoMealCautionsTitle: "Important:",
+    photoMealReviewRequired:
+      "I did not save anything without confirmation. Open the draft in the app, check portions, and press add.",
+    photoMealOpenAppButton: "Open draft in Smart Nutrition",
   },
 };
 
@@ -416,6 +477,85 @@ const normalizeTelegramLanguage = (value) => {
 
 const getTelegramCopy = (language) =>
   TELEGRAM_COPY[normalizeTelegramLanguage(language)] ?? TELEGRAM_COPY[TELEGRAM_LANGUAGE_FALLBACK];
+
+const TELEGRAM_PHOTO_INTAKE_COPY = {
+  uk: {
+    photoUnavailable:
+      "Фото-аналіз тимчасово недоступний. Спробуйте трохи пізніше.",
+    photoFailed:
+      "Не вдалося безпечно прочитати фото. Спробуйте чіткіше фото при хорошому світлі або додайте короткий підпис.",
+    received: "Фото отримав.",
+    status: (kind, confidence) => `Тип: ${kind}. Впевненість: ${confidence}%.`,
+    bloodPressureTitle: "Показники тиску",
+    systolic: "Систолічний",
+    diastolic: "Діастолічний",
+    pulse: "Пульс",
+    measuredAt: "Час на фото",
+    medicationsTitle: "Що бачу по ліках",
+    visibleTextTitle: "Видимий текст",
+    questionsTitle: "Потрібно підтвердити",
+    cautionsTitle: "Важливо",
+    saveBloodPressureButton: "Зберегти тиск",
+    bloodPressureSaved: "Тиск збережено в профілі.",
+    bloodPressureSaveFailed: "Не вдалося підтвердити збереження тиску.",
+    bloodPressureInvalid: "Не бачу повних показників тиску для збереження.",
+    notSaved:
+      "Я нічого не зберіг без підтвердження. Для тиску, ліків і рецептів я готую чернетку, а збереження має пройти через підтверджений контракт Smart Nutrition.",
+    foodReview: "Їжу передаю в звичайний фото-аналіз страв.",
+  },
+  pl: {
+    photoUnavailable:
+      "Analiza zdjęcia jest chwilowo niedostępna. Spróbuj trochę później.",
+    photoFailed:
+      "Nie udało się bezpiecznie odczytać zdjęcia. Spróbuj zrobić wyraźniejsze zdjęcie w dobrym świetle albo dodaj krótki opis.",
+    received: "Zdjęcie odebrane.",
+    status: (kind, confidence) => `Typ: ${kind}. Pewność: ${confidence}%.`,
+    bloodPressureTitle: "Pomiar ciśnienia",
+    systolic: "Skurczowe",
+    diastolic: "Rozkurczowe",
+    pulse: "Puls",
+    measuredAt: "Czas na zdjęciu",
+    medicationsTitle: "Co widzę przy lekach",
+    visibleTextTitle: "Widoczny tekst",
+    questionsTitle: "Do potwierdzenia",
+    cautionsTitle: "Ważne",
+    saveBloodPressureButton: "Zapisz ciśnienie",
+    bloodPressureSaved: "Ciśnienie zapisane w profilu.",
+    bloodPressureSaveFailed: "Nie udało się potwierdzić zapisu ciśnienia.",
+    bloodPressureInvalid: "Nie widzę pełnego pomiaru ciśnienia do zapisu.",
+    notSaved:
+      "Nic nie zapisałem bez potwierdzenia. Ciśnienie, leki i recepty są najpierw szkicem, a zapis musi przejść przez potwierdzony kontrakt Smart Nutrition.",
+    foodReview: "Jedzenie przekazuję do zwykłej analizy zdjęcia posiłku.",
+  },
+  en: {
+    photoUnavailable:
+      "Photo analysis is temporarily unavailable. Please try again a little later.",
+    photoFailed:
+      "I could not safely read this photo. Try a clearer photo in good light or add a short caption.",
+    received: "Photo received.",
+    status: (kind, confidence) => `Type: ${kind}. Confidence: ${confidence}%.`,
+    bloodPressureTitle: "Blood pressure reading",
+    systolic: "Systolic",
+    diastolic: "Diastolic",
+    pulse: "Pulse",
+    measuredAt: "Visible time",
+    medicationsTitle: "What I can read about medication",
+    visibleTextTitle: "Visible text",
+    questionsTitle: "Please confirm",
+    cautionsTitle: "Important",
+    saveBloodPressureButton: "Save blood pressure",
+    bloodPressureSaved: "Blood pressure saved to your profile.",
+    bloodPressureSaveFailed: "Could not confirm the blood pressure save.",
+    bloodPressureInvalid: "I do not see a complete blood pressure reading to save.",
+    notSaved:
+      "I did not save anything without confirmation. Blood pressure, medication, and prescription photos stay as drafts until Smart Nutrition confirms the save through its backend contract.",
+    foodReview: "Food photos are passed to the normal meal photo analyzer.",
+  },
+};
+
+const getTelegramPhotoIntakeCopy = (language) =>
+  TELEGRAM_PHOTO_INTAKE_COPY[normalizeTelegramLanguage(language)] ??
+  TELEGRAM_PHOTO_INTAKE_COPY[TELEGRAM_LANGUAGE_FALLBACK];
 
 const getTelegramLanguageFromSnapshot = (snapshot = {}) =>
   normalizeTelegramLanguage(snapshot?.profile?.languagePreference);
@@ -1024,6 +1164,334 @@ export const buildTelegramNutritionSummary = (
   ].join("\n");
 };
 
+const normalizeTelegramPhotoRecognitionStatus = (status, language) => {
+  const normalizedLanguage = normalizeTelegramLanguage(language);
+  const normalizedStatus = String(status ?? "").trim();
+
+  if (normalizedLanguage === "pl") {
+    return (
+      {
+        recognized: "rozpoznano",
+        needs_review: "wymaga sprawdzenia",
+        needs_better_photo: "potrzebne lepsze zdjęcie",
+      }[normalizedStatus] ?? "wymaga sprawdzenia"
+    );
+  }
+
+  if (normalizedLanguage === "en") {
+    return (
+      {
+        recognized: "recognized",
+        needs_review: "needs review",
+        needs_better_photo: "needs a better photo",
+      }[normalizedStatus] ?? "needs review"
+    );
+  }
+
+  return (
+    {
+      recognized: "розпізнано",
+      needs_review: "потрібна перевірка",
+      needs_better_photo: "потрібне краще фото",
+    }[normalizedStatus] ?? "потрібна перевірка"
+  );
+};
+
+const getPhotoSuggestionCalories = (suggestion) => {
+  const quantityGrams = Number(suggestion?.quantityGrams) || 0;
+  const caloriesPer100g = Number(suggestion?.estimatedNutritionPer100g?.calories) || 0;
+
+  return Math.round((quantityGrams / 100) * caloriesPer100g);
+};
+
+export const buildTelegramPhotoMealDraftMessage = (
+  analysis = {},
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramCopy(language);
+  const items = Array.isArray(analysis.items) ? analysis.items : [];
+  const cautions = Array.isArray(analysis.cautions) ? analysis.cautions.filter(Boolean) : [];
+  const questions = Array.isArray(analysis.hiddenIngredientQuestions)
+    ? analysis.hiddenIngredientQuestions.filter(Boolean)
+    : [];
+  const status = normalizeTelegramPhotoRecognitionStatus(
+    analysis.recognitionStatus,
+    language
+  );
+  const confidence = Math.max(
+    0,
+    Math.min(Math.round((Number(analysis.confidence) || 0) * 100), 100)
+  );
+  const dishName = toTrimmedString(analysis.dishName, "meal");
+  const itemLines = items.slice(0, 6).map((item) => {
+    const quantity = Math.round(Number(item?.quantityGrams) || 0);
+    const calories = getPhotoSuggestionCalories(item);
+
+    return `• ${toTrimmedString(item?.name, "Food")}: ${quantity} g, ~${calories} kcal`;
+  });
+
+  return [
+    copy.photoMealDraftTitle(dishName),
+    copy.photoMealDraftSubtitle(status, confidence),
+    "",
+    copy.photoMealItemsTitle,
+    ...(itemLines.length ? itemLines : [copy.photoMealNoItems]),
+    ...(questions.length
+      ? ["", copy.photoMealQuestionsTitle, ...questions.slice(0, 3).map((item) => `• ${item}`)]
+      : []),
+    ...(cautions.length
+      ? ["", copy.photoMealCautionsTitle, ...cautions.slice(0, 3).map((item) => `• ${item}`)]
+      : []),
+    "",
+    copy.photoMealReviewRequired,
+  ].join("\n");
+};
+
+const normalizeTelegramPhotoIntakeKindLabel = (kind, language = TELEGRAM_LANGUAGE_FALLBACK) => {
+  const labels = {
+    uk: {
+      food: "їжа",
+      blood_pressure: "тиск",
+      medication: "ліки",
+      prescription: "рецепт",
+      health_document: "медичний документ",
+      unknown: "невідомо",
+    },
+    pl: {
+      food: "jedzenie",
+      blood_pressure: "ciśnienie",
+      medication: "leki",
+      prescription: "recepta",
+      health_document: "dokument zdrowotny",
+      unknown: "nieznane",
+    },
+    en: {
+      food: "food",
+      blood_pressure: "blood pressure",
+      medication: "medication",
+      prescription: "prescription",
+      health_document: "health document",
+      unknown: "unknown",
+    },
+  };
+
+  return labels[normalizeTelegramLanguage(language)]?.[kind] ?? labels.en.unknown;
+};
+
+export const buildTelegramPhotoIntakeDraftMessage = (
+  analysis = {},
+  language = TELEGRAM_LANGUAGE_FALLBACK
+) => {
+  const copy = getTelegramPhotoIntakeCopy(language);
+  const kind = normalizeTelegramPhotoIntakeKindLabel(analysis.kind, language);
+  const confidence = Math.max(
+    0,
+    Math.min(Math.round((Number(analysis.confidence) || 0) * 100), 100)
+  );
+  const bloodPressure = analysis.bloodPressure ?? {};
+  const bloodPressureLines =
+    analysis.kind === "blood_pressure"
+      ? [
+          "",
+          copy.bloodPressureTitle,
+          `• ${copy.systolic}: ${bloodPressure.systolic ?? "?"} ${bloodPressure.unit ?? "mmHg"}`,
+          `• ${copy.diastolic}: ${bloodPressure.diastolic ?? "?"} ${bloodPressure.unit ?? "mmHg"}`,
+          `• ${copy.pulse}: ${bloodPressure.pulse ?? "?"}`,
+          ...(toTrimmedString(bloodPressure.measuredAtText)
+            ? [`• ${copy.measuredAt}: ${bloodPressure.measuredAtText}`]
+            : []),
+        ]
+      : [];
+  const medicationLines = Array.isArray(analysis.medications)
+    ? analysis.medications.slice(0, 6).map((item) => {
+        const details = [
+          toTrimmedString(item?.doseText),
+          toTrimmedString(item?.scheduleText),
+          toTrimmedString(item?.routeText),
+        ].filter(Boolean);
+
+        return `• ${toTrimmedString(item?.name, "Medication")}${details.length ? ` — ${details.join("; ")}` : ""}`;
+      })
+    : [];
+  const visibleText = Array.isArray(analysis.visibleText) ? analysis.visibleText : [];
+  const questions = Array.isArray(analysis.questions) ? analysis.questions : [];
+  const cautions = Array.isArray(analysis.cautions) ? analysis.cautions : [];
+
+  return [
+    `${copy.received} ${toTrimmedString(analysis.title, "")}`.trim(),
+    copy.status(kind, confidence),
+    "",
+    toTrimmedString(analysis.summary, copy.notSaved),
+    ...bloodPressureLines,
+    ...(medicationLines.length
+      ? ["", copy.medicationsTitle, ...medicationLines]
+      : []),
+    ...(visibleText.length
+      ? ["", copy.visibleTextTitle, ...visibleText.slice(0, 4).map((item) => `• ${item}`)]
+      : []),
+    ...(questions.length
+      ? ["", copy.questionsTitle, ...questions.slice(0, 4).map((item) => `• ${item}`)]
+      : []),
+    ...(cautions.length
+      ? ["", copy.cautionsTitle, ...cautions.slice(0, 4).map((item) => `• ${item}`)]
+      : []),
+    "",
+    copy.notSaved,
+  ].join("\n");
+};
+
+const buildTelegramPhotoMealKeyboard = ({ language, appBaseUrl }) => {
+  const baseUrl = toTrimmedString(appBaseUrl);
+
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  let url = "";
+
+  try {
+    url = new URL("/meals?mode=photo&source=telegram", baseUrl).toString();
+  } catch {
+    return undefined;
+  }
+
+  return {
+    reply_markup: {
+      inline_keyboard: [[{ text: getTelegramCopy(language).photoMealOpenAppButton, url }]],
+    },
+  };
+};
+
+const toBloodPressureCallbackNumber = (value, min, max) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  const rounded = Math.round(number);
+  return rounded >= min && rounded <= max ? rounded : null;
+};
+
+const createTelegramBloodPressureEntryId = () =>
+  `telegram-bp-${crypto.randomUUID()}`;
+
+const buildTelegramPhotoIntakeKeyboard = ({ analysis, language }) => {
+  if (analysis?.kind !== "blood_pressure") {
+    return undefined;
+  }
+
+  const systolic = toBloodPressureCallbackNumber(analysis.bloodPressure?.systolic, 40, 260);
+  const diastolic = toBloodPressureCallbackNumber(analysis.bloodPressure?.diastolic, 30, 180);
+  const pulse = toBloodPressureCallbackNumber(analysis.bloodPressure?.pulse, 25, 240) ?? 0;
+
+  if (systolic === null || diastolic === null) {
+    return undefined;
+  }
+
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: getTelegramPhotoIntakeCopy(language).saveBloodPressureButton,
+            callback_data: `bp:save:${systolic}:${diastolic}:${pulse}`,
+          },
+        ],
+      ],
+    },
+  };
+};
+
+const buildTelegramBloodPressureSavedMessage = (entry, language) => {
+  const systolic = Number(entry?.systolic);
+  const diastolic = Number(entry?.diastolic);
+  const pulse = Number(entry?.pulse);
+  const pulseText = Number.isFinite(pulse) ? `, ${getTelegramPhotoIntakeCopy(language).pulse}: ${pulse}` : "";
+  const valueText = `${systolic}/${diastolic} mmHg${pulseText}`;
+
+  switch (normalizeTelegramLanguage(language)) {
+    case "pl":
+      return [
+        `Zapisano pomiar: ${valueText}.`,
+        "To jest dziennik pomiarów, nie diagnoza. Przy nietypowych objawach albo bardzo wysokich wynikach skontaktuj się z lekarzem.",
+      ].join("\n");
+    case "en":
+      return [
+        `Saved reading: ${valueText}.`,
+        "This is a measurement log, not a diagnosis. If symptoms are unusual or the reading is very high, contact a clinician.",
+      ].join("\n");
+    case "uk":
+    default:
+      return [
+        `Збережено показник: ${valueText}.`,
+        "Це журнал вимірювань, не діагноз. Якщо є незвичні симптоми або дуже високі значення, зверніться до лікаря.",
+      ].join("\n");
+  }
+};
+
+const getLargestTelegramPhoto = (ctx) => {
+  const photos = Array.isArray(ctx?.message?.photo)
+    ? ctx.message.photo
+    : Array.isArray(ctx?.update?.message?.photo)
+      ? ctx.update.message.photo
+      : [];
+
+  return photos
+    .filter((photo) => toTrimmedString(photo?.file_id))
+    .sort((left, right) => {
+      const leftScore =
+        Number(left?.file_size) ||
+        Math.max(Number(left?.width) || 0, 1) * Math.max(Number(left?.height) || 0, 1);
+      const rightScore =
+        Number(right?.file_size) ||
+        Math.max(Number(right?.width) || 0, 1) * Math.max(Number(right?.height) || 0, 1);
+
+      return rightScore - leftScore;
+    })[0];
+};
+
+const downloadTelegramPhotoAsDataUrl = async ({ ctx, photo, fetchImplementation }) => {
+  if (!photo?.file_id || typeof ctx?.telegram?.getFileLink !== "function") {
+    throw new Error("TELEGRAM_PHOTO_FILE_UNAVAILABLE");
+  }
+
+  if (Number(photo.file_size) > TELEGRAM_PHOTO_MAX_BYTES) {
+    throw new Error("TELEGRAM_PHOTO_TOO_LARGE");
+  }
+
+  const fileLink = await ctx.telegram.getFileLink(photo.file_id);
+  const fileUrl = fileLink instanceof URL ? fileLink.toString() : String(fileLink ?? "");
+
+  if (!fileUrl) {
+    throw new Error("TELEGRAM_PHOTO_LINK_UNAVAILABLE");
+  }
+
+  if (typeof fetchImplementation !== "function") {
+    throw new Error("TELEGRAM_PHOTO_FETCH_UNAVAILABLE");
+  }
+
+  const response = await fetchImplementation(fileUrl);
+
+  if (!response?.ok) {
+    throw new Error("TELEGRAM_PHOTO_DOWNLOAD_FAILED");
+  }
+
+  const contentType = String(response.headers?.get?.("content-type") ?? "image/jpeg")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  const mimeFormat = TELEGRAM_PHOTO_MIME_BY_CONTENT_TYPE.get(contentType) ?? "jpeg";
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  if (!buffer.length || buffer.byteLength > TELEGRAM_PHOTO_MAX_BYTES) {
+    throw new Error("TELEGRAM_PHOTO_TOO_LARGE");
+  }
+
+  return `data:image/${mimeFormat};base64,${buffer.toString("base64")}`;
+};
+
 export const createTelegramConnectToken = ({
   userId,
   secret,
@@ -1160,6 +1628,9 @@ export const createTelegramService = ({
   medicationReminderService = null,
   assistantAgent = null,
   aiService = null,
+  photoAnalysisService = null,
+  telegramPhotoIntakeService = null,
+  fetchImplementation = globalThis.fetch,
   logger = console,
   TelegrafClass = Telegraf,
 } = {}) => {
@@ -1408,6 +1879,166 @@ export const createTelegramService = ({
     }
 
     await ctx.reply(buildReminderListMessage(reminders.getUserReminders(user), language));
+  };
+
+  const getPhotoMealProfileState = async (user) => {
+    if (stateService?.getProfileState) {
+      return stateService.getProfileState(user);
+    }
+
+    if (stateService?.getSnapshot) {
+      return (await stateService.getSnapshot(user))?.profile ?? {};
+    }
+
+    return {};
+  };
+
+  const getPhotoMealState = async (user) => {
+    if (stateService?.getMealState) {
+      return stateService.getMealState(user);
+    }
+
+    if (stateService?.getSnapshot) {
+      return (await stateService.getSnapshot(user))?.meal ?? {};
+    }
+
+    return {};
+  };
+
+  const saveTelegramBloodPressureReading = async ({
+    user,
+    systolic,
+    diastolic,
+    pulse,
+  }) => {
+    if (!stateService?.getProfileState || !stateService?.saveProfileState) {
+      return { ok: false, code: "PROFILE_STATE_UNAVAILABLE" };
+    }
+
+    const normalizedSystolic = toBloodPressureCallbackNumber(systolic, 40, 260);
+    const normalizedDiastolic = toBloodPressureCallbackNumber(diastolic, 30, 180);
+    const normalizedPulse = toBloodPressureCallbackNumber(pulse, 25, 240);
+
+    if (normalizedSystolic === null || normalizedDiastolic === null) {
+      return { ok: false, code: "INVALID_BLOOD_PRESSURE" };
+    }
+
+    const profileState = await stateService.getProfileState(user);
+    const recordedAt = new Date().toISOString();
+    const entry = {
+      id: createTelegramBloodPressureEntryId(),
+      recordedAt,
+      systolic: normalizedSystolic,
+      diastolic: normalizedDiastolic,
+      pulse: normalizedPulse,
+      unit: "mmHg",
+      note: "Telegram photo confirmation",
+      source: "telegram_photo",
+    };
+    const history = Array.isArray(profileState?.bloodPressureHistory)
+      ? profileState.bloodPressureHistory
+      : [];
+    const nextProfileState = {
+      ...profileState,
+      bloodPressureHistory: [...history, entry].slice(-180),
+    };
+
+    await stateService.saveProfileState(user, nextProfileState, {
+      source: "telegram-photo-blood-pressure",
+    });
+
+    const confirmedProfileState = await stateService.getProfileState(user);
+    const confirmedEntry = Array.isArray(confirmedProfileState?.bloodPressureHistory)
+      ? confirmedProfileState.bloodPressureHistory.find((item) => item?.id === entry.id)
+      : null;
+
+    return confirmedEntry
+      ? { ok: true, entry: confirmedEntry }
+      : { ok: false, code: "BLOOD_PRESSURE_NOT_CONFIRMED" };
+  };
+
+  const replyWithPhotoIntakeDraft = async (ctx) => {
+    const user = await getConnectedUser(ctx);
+
+    if (!user) {
+      return;
+    }
+
+    const language = await getTelegramUserLanguage(user);
+    const copy = getTelegramCopy(language);
+    const photo = getLargestTelegramPhoto(ctx);
+
+    if (!photo) {
+      await ctx.reply(copy.photoMealMissing);
+      return;
+    }
+
+    const analyzer = telegramPhotoIntakeService?.analyzePhoto
+      ? telegramPhotoIntakeService
+      : photoAnalysisService?.analyzePhoto
+        ? {
+            analyzePhoto: async (profileState, requestBody, context) => ({
+              kind: "food",
+              food: await photoAnalysisService.analyzePhoto(profileState, requestBody, context),
+            }),
+          }
+        : null;
+
+    if (!analyzer?.analyzePhoto) {
+      await sendAssistantReaction(ctx, "error");
+      await ctx.reply(getTelegramPhotoIntakeCopy(language).photoUnavailable);
+      return;
+    }
+
+    try {
+      await sendAssistantReaction(ctx, "thinking");
+      const imageDataUrl = await downloadTelegramPhotoAsDataUrl({
+        ctx,
+        photo,
+        fetchImplementation,
+      });
+      const [profileState, mealState] = await Promise.all([
+        getPhotoMealProfileState(user),
+        getPhotoMealState(user),
+      ]);
+      const caption = toTrimmedString(ctx?.message?.caption ?? ctx?.update?.message?.caption);
+      const analysis = await analyzer.analyzePhoto(
+        profileState,
+        {
+          imageDataUrl,
+          mealType: "meal",
+          language,
+          caption,
+        },
+        { mealState }
+      );
+
+      await sendAssistantReaction(ctx, "success");
+      const isFood = analysis?.kind === "food";
+      const replyOptions = isFood
+        ? buildTelegramPhotoMealKeyboard({
+            language,
+            appBaseUrl: config?.appBaseUrl,
+          })
+        : buildTelegramPhotoIntakeKeyboard({ analysis, language });
+      const replyText = isFood
+        ? buildTelegramPhotoMealDraftMessage(analysis.food ?? analysis, language)
+        : buildTelegramPhotoIntakeDraftMessage(analysis, language);
+
+      if (replyOptions) {
+        await ctx.reply(replyText, replyOptions);
+      } else {
+        await ctx.reply(replyText);
+      }
+    } catch (error) {
+      logger.warn?.("[telegram] photo meal analysis failed", {
+        provider: "telegram",
+        code: toSafeErrorCode(error),
+        message: toSafeErrorMessage(error),
+      });
+      await sendAssistantReaction(ctx, "error");
+      await ctx.reply(getTelegramPhotoIntakeCopy(language).photoFailed);
+    }
   };
 
   const getWaterRetryAmountFromAgentResult = (agentResult) => {
@@ -1844,8 +2475,51 @@ export const createTelegramService = ({
           ? action === "retry"
             ? copy.waterSavedAfterRetry
             : copy.waterSaved
-          : copy.waterSaveFailed
+        : copy.waterSaveFailed
       );
+    });
+
+    nextBot.action?.(/^bp:save:(\d{2,3}):(\d{2,3}):(\d{1,3})$/u, async (ctx) => {
+      const user = await getConnectedUser(ctx);
+
+      if (!user) {
+        await ctx.answerCbQuery?.(
+          getTelegramCopy(getTelegramLanguageFromContext(ctx)).connectTelegramInProfile
+        );
+        return;
+      }
+
+      const language = await getTelegramUserLanguage(user);
+      const copy = getTelegramPhotoIntakeCopy(language);
+      const systolic = toBloodPressureCallbackNumber(ctx.match?.[1], 40, 260);
+      const diastolic = toBloodPressureCallbackNumber(ctx.match?.[2], 30, 180);
+      const pulseValue = toBloodPressureCallbackNumber(ctx.match?.[3], 0, 240);
+      const pulse = pulseValue && pulseValue >= 25 ? pulseValue : null;
+
+      if (systolic === null || diastolic === null) {
+        await ctx.answerCbQuery?.(copy.bloodPressureInvalid);
+        await ctx.reply?.(copy.bloodPressureInvalid);
+        return;
+      }
+
+      await sendAssistantReaction(ctx, "thinking");
+      const result = await saveTelegramBloodPressureReading({
+        user,
+        systolic,
+        diastolic,
+        pulse,
+      });
+
+      if (!result.ok) {
+        await sendAssistantReaction(ctx, "error");
+        await ctx.answerCbQuery?.(copy.bloodPressureSaveFailed);
+        await ctx.reply?.(copy.bloodPressureSaveFailed);
+        return;
+      }
+
+      await sendAssistantReaction(ctx, "success");
+      await ctx.answerCbQuery?.(copy.bloodPressureSaved);
+      await ctx.reply?.(buildTelegramBloodPressureSavedMessage(result.entry, language));
     });
 
     nextBot.action?.("water:status", async (ctx) => {
@@ -1871,6 +2545,10 @@ export const createTelegramService = ({
           ? copy.waterStatusUpdated
           : copy.waterStatusUnavailable
       );
+    });
+
+    nextBot.on("photo", async (ctx) => {
+      await replyWithPhotoIntakeDraft(ctx);
     });
 
     nextBot.on("text", async (ctx) => {

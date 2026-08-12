@@ -873,7 +873,7 @@ const RegisterPage = () => {
                   },
                 }}
               >
-                <AssistantAvatar name="Assistant" variant="dragon" mood="celebrate" size={76} active />
+                <AssistantAvatar name="Assistant" variant="robot" mood="celebrate" size={76} active />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography variant="overline" sx={{ color: "var(--sn-accent)", fontWeight: 900 }}>

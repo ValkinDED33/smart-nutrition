@@ -49,7 +49,7 @@ const buildBlockedTokens = (profileState) => {
     .filter(Boolean);
 };
 
-const normalizePhotoPayload = async (imageDataUrl) => {
+export const normalizePhotoPayload = async (imageDataUrl) => {
   const match = imageDataUrl.match(photoDataUrlPattern);
   const declaredFormat = normalizeImageMimeFormat(match?.groups?.mime);
   const payload = match?.groups?.payload;

@@ -27,6 +27,7 @@ import type {
   AssistantRole,
   AssistantTone,
   AchievementProgress,
+  BloodPressureHistoryItem,
   BloodGroup,
   DietStyle,
   EyeColor,
@@ -71,6 +72,7 @@ export interface ProfileState {
   dailyCalories: number;
   goal: Goal;
   weightHistory: WeightHistoryItem[];
+  bloodPressureHistory: BloodPressureHistoryItem[];
   measurementHistory: MeasurementHistoryItem[];
   progressPhotos: ProgressPhotoHistoryItem[];
   weeklyCheckIn: WeeklyCheckInState;
@@ -288,6 +290,53 @@ const normalizeWeightHistory = (value: unknown): WeightHistoryItem[] =>
           };
         })
         .filter((item): item is WeightHistoryItem => item !== null)
+    : [];
+
+const normalizeBloodPressureValue = (
+  value: unknown,
+  min: number,
+  max: number
+): number | null => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  const rounded = Math.round(number);
+  return rounded >= min && rounded <= max ? rounded : null;
+};
+
+const normalizeBloodPressureHistory = (value: unknown): BloodPressureHistoryItem[] =>
+  Array.isArray(value)
+    ? value
+        .map((item, index) => {
+          if (!isRecord(item)) return null;
+
+          const recordedAt = toNullableIsoDate(item.recordedAt);
+          const systolic = normalizeBloodPressureValue(item.systolic, 40, 260);
+          const diastolic = normalizeBloodPressureValue(item.diastolic, 30, 180);
+
+          if (!recordedAt || systolic === null || diastolic === null) {
+            return null;
+          }
+
+          return {
+            id:
+              typeof item.id === "string" && item.id.trim().length > 0
+                ? item.id.trim().slice(0, 96)
+                : `blood-pressure-${recordedAt.replace(/[^a-zA-Z0-9_-]+/g, "-")}-${index}`,
+            recordedAt,
+            systolic,
+            diastolic,
+            pulse: normalizeBloodPressureValue(item.pulse, 25, 240),
+            unit: "mmHg" as const,
+            note: typeof item.note === "string" ? item.note.trim().slice(0, 160) : "",
+            source: item.source === "telegram_photo" ? "telegram_photo" : "manual",
+          };
+        })
+        .filter((item): item is BloodPressureHistoryItem => item !== null)
+        .slice(-180)
     : [];
 
 const createDefaultWeeklyCheckInState = (): WeeklyCheckInState => ({
@@ -685,6 +734,7 @@ const createInitialProfileState = (): ProfileState => ({
   dailyCalories: 0,
   goal: "maintain",
   weightHistory: [],
+  bloodPressureHistory: [],
   measurementHistory: [],
   progressPhotos: [],
   weeklyCheckIn: createDefaultWeeklyCheckInState(),
@@ -718,6 +768,7 @@ export const normalizeProfileState = (value: unknown): ProfileState => {
     dailyCalories: toNumber(value.dailyCalories),
     goal: isGoal(value.goal) ? value.goal : "maintain",
     weightHistory: normalizeWeightHistory(value.weightHistory),
+    bloodPressureHistory: normalizeBloodPressureHistory(value.bloodPressureHistory),
     measurementHistory: normalizeMeasurementHistory(value.measurementHistory),
     progressPhotos: normalizeProgressPhotos(value.progressPhotos),
     weeklyCheckIn: normalizeWeeklyCheckIn(value.weeklyCheckIn),

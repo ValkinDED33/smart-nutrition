@@ -105,7 +105,6 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("const [heroInsightStart] = useState(() =>");
     expect(source).toContain("const [heroLineIndex] = useState(() =>");
     expect(source).toContain("const [insightStart] = useState(() =>");
-    expect(source).toContain("const [slideStart] = useState(() =>");
     expect(source).toContain("getRotatedItems(");
   });
 
@@ -133,10 +132,11 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("aria-label={copy.sliderPreviousLabel}");
     expect(source).toContain("aria-label={copy.sliderNextLabel}");
     expect(source).toContain("aria-label={copy.sliderAriaLabel}");
-    expect(source).toContain("tags: copy.sliderTags.hydration");
-    expect(source).toContain("tags: copy.sliderTags.reminders");
-    expect(source).toContain("tags: copy.sliderTags.mobile");
-    expect(source).toContain("const slides = [...nutritionSlides, ...capabilitySlides];");
+    expect(source).toContain("assistantTools");
+    expect(source).toContain("getAssistantToolIcon(index)");
+    expect(source).toContain('data-landing-discovery-window="true"');
+    expect(source).toContain("getNutritionInsightIcon(item, index)");
+    expect(source).toContain("const slides: CompanionCapabilitySlide[] = assistantTools.map");
     expect(source).toContain('"&:focus-visible"');
     expect(source).toContain('"&:hover"');
     expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');

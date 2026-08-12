@@ -63,7 +63,7 @@ const companionProgressCopy = {
     noAchievements: "Osiągnięcia pojawią się po pierwszych realnych akcjach.",
   },
   en: {
-    title: "Companion evolution",
+    title: "Assistant evolution",
     description: "The character grows from real actions: food, water, goals, and conversation.",
     level: "Level",
     xp: "XP",
@@ -78,7 +78,7 @@ const companionProgressCopy = {
       deep: "Deep context",
     },
     rituals: {
-      complete_onboarding: "Finish the questionnaire so the companion gets its first real context.",
+      complete_onboarding: "Finish the questionnaire so the assistant gets its first real context.",
       log_meal: "Add a meal or scan a product so it can understand your day better.",
       log_water: "Log water a few times today to strengthen the bond and reminders.",
       keep_rhythm: "Keep the rhythm for a few days to unlock deeper reactions.",
