@@ -128,11 +128,42 @@ const readJson = async (response) => {
 const requestJson = async (pathname, options = {}) => {
   const response = await fetchWithTimeout(pathname, options);
   const data = await readJson(response);
-  return { response, data };
+  return { pathname, response, data };
 };
 
-const assertResponse = ({ label, response, data, predicate, detail }) => {
-  addCheck(label, response.ok && predicate(data), detail);
+const describeFailureResponse = ({ pathname, response, data }) => {
+  const details = [
+    `endpoint=${pathname}`,
+    `http=${response?.status ?? "unknown"}`,
+  ];
+
+  if (data?.code) {
+    details.push(`code=${String(data.code).slice(0, 80)}`);
+  }
+
+  if (data?.message) {
+    details.push(`message=${String(data.message).slice(0, 180)}`);
+  }
+
+  if (data?.diagnostics?.syncStage) {
+    details.push(`stage=${String(data.diagnostics.syncStage).slice(0, 80)}`);
+  }
+
+  if (data?.diagnostics?.reasonCode) {
+    details.push(`reason=${String(data.diagnostics.reasonCode).slice(0, 80)}`);
+  }
+
+  return details.join(" · ");
+};
+
+const assertResponse = ({ label, pathname, response, data, predicate, detail }) => {
+  const pass = response.ok && predicate(data);
+
+  addCheck(
+    label,
+    pass,
+    pass ? detail : `${detail} (${describeFailureResponse({ pathname, response, data })})`
+  );
 };
 
 const login = async () => {

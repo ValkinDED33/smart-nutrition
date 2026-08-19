@@ -136,8 +136,7 @@ export const createOpaqueToken = (bytes = 32) =>
 export const hashOneTimeToken = (token, secret) =>
   crypto.createHash("sha256").update(`${secret}:${String(token ?? "")}`).digest("hex");
 
-const strongPasswordPattern =
-  /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]).{10,}$/;
+const strongPasswordPattern = /^(?=.*[A-Z])(?=.*\d).{8,10}$/;
 
 const isStrongPassword = (password) =>
   strongPasswordPattern.test(String(password ?? ""));
@@ -146,7 +145,7 @@ export const assertPasswordPolicy = (password) => {
   if (!isStrongPassword(password)) {
     throw new AuthApiError(
       "WEAK_PASSWORD",
-      "Password must be at least 10 characters and include upper, lower, digit, and symbol."
+      "Password must be 8 to 10 characters and include an uppercase letter and a digit."
     );
   }
 };

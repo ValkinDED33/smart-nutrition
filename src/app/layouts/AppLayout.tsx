@@ -72,7 +72,7 @@ const getLandingNavigationItems = (
 ): Array<{ label: string; href: string }> => {
   if (language === "pl") {
     return [
-      { label: "AI companion", href: LANDING_AI_HREF },
+      { label: "AI assistant", href: LANDING_AI_HREF },
       { label: "Odżywianie", href: LANDING_NUTRITION_HREF },
       { label: "Przypomnienia", href: LANDING_REMINDERS_HREF },
       { label: "Community", href: LANDING_COMMUNITY_HREF },
@@ -93,7 +93,7 @@ const getLandingNavigationItems = (
   }
 
   return [
-    { label: "AI companion", href: LANDING_AI_HREF },
+    { label: "AI assistant", href: LANDING_AI_HREF },
     { label: "Харчування", href: LANDING_NUTRITION_HREF },
     { label: "Нагадування", href: LANDING_REMINDERS_HREF },
     { label: "Community", href: LANDING_COMMUNITY_HREF },

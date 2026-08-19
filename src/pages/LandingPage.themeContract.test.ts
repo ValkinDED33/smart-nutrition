@@ -63,6 +63,14 @@ describe("LandingPage theme contract", () => {
     expect(source).not.toContain("Zobacz companion");
     expect(source).not.toContain("companion-platforma");
     expect(source).not.toContain("zapytaj companion");
+    expect(source).not.toContain("AI companion");
+    expect(source).not.toContain("with their companion");
+    expect(source).not.toContain("companion platform");
+    expect(source).not.toContain("ask companion");
+    expect(source).toContain("AI assistant");
+    expect(source).toContain("with their assistant");
+    expect(source).toContain("assistant platform");
+    expect(source).toContain("ask the assistant");
   });
 
   it("keeps the first-viewport companion as a living branded scene", async () => {

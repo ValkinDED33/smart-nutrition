@@ -39,7 +39,7 @@ type LandingLanguage = "uk" | "pl" | "en";
 
 const BRAND_NAME = "Smart Nutrition";
 const AI_WELLNESS_ECOSYSTEM = "AI wellness ecosystem";
-const AI_COMPANION_LABEL = "AI companion";
+const AI_COMPANION_LABEL = "AI assistant";
 const UK_AI_ASSISTANT_LABEL = "AI-помічник";
 const PL_AI_ASSISTANT_LABEL = "AI asystent";
 const COMMUNITY_FOOD_HUB_TITLE = "Community food hub";
@@ -798,7 +798,7 @@ const landingCopy = {
     secondary: "See companion",
     telegramCta: "Connect Telegram",
     navOverview: "Product overview",
-    socialProof: "10,000+ users building habits with their companion",
+    socialProof: "10,000+ users building habits with their assistant",
     proof: [AI_COMPANION_LABEL, "on duty", "memory", "Telegram nearby"],
     presencePills: [BREATHING_PILL, EYE_TRACKING_PILL, MOOD_SHIFT_PILL, DAILY_MEMORY_PILL],
     sceneCards: [
@@ -959,7 +959,7 @@ const landingCopy = {
       },
     ],
     sectionEyebrow: "Clear next actions in 5 seconds",
-    ecosystemTitle: "Not a calculator, a companion platform",
+    ecosystemTitle: "Not a calculator, an assistant platform",
     ecosystemBody:
       "Smart Nutrition connects nutrition, gamification, analytics, hydration, progress, and community into one calm daily flow.",
     ecosystem: [
@@ -1008,7 +1008,7 @@ const landingCopy = {
     ],
     mobileTitle: "Works as a responsive web app and PWA",
     mobileBody:
-      "The first screen after login gives three actions: add food, drink water, ask companion. No instructions needed.",
+      "The first screen after login gives three actions: add food, drink water, ask the assistant. No instructions needed.",
     learningTitle: "Worth knowing",
     learningTopics: ["sleep", "stress", "magnesium", "sugar", "gut", "water"],
     sliderEyebrow: "Living assistant",

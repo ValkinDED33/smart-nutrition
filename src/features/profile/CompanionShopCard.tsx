@@ -270,11 +270,15 @@ const previewOrbitItems: Array<{
   x: number;
   y: number;
 }> = [
-  { key: "nutrition", x: 0, y: 2 },
-  { key: "water", x: 68, y: 18 },
-  { key: "reminders", x: 9, y: 62 },
-  { key: "family", x: 72, y: 72 },
-  { key: "analytics", x: 30, y: 84 },
+  { key: "planning", x: 4, y: 4 },
+  { key: "nutrition", x: 61, y: 8 },
+  { key: "water", x: 0, y: 38 },
+  { key: "health", x: 70, y: 39 },
+  { key: "family", x: 7, y: 70 },
+  { key: "reminders", x: 64, y: 73 },
+  { key: "chat", x: 32, y: 0 },
+  { key: "analytics", x: 35, y: 82 },
+  { key: "safety", x: 78, y: 4 },
 ] as const;
 
 const softChipSx = {
@@ -825,30 +829,66 @@ const CompanionShopCard = () => {
                 }}
               >
                 {previewOrbitItems.map(({ key, x, y }, index) => {
-                  const [label] = getToolText(copy.tools, key);
+                  const [label, description] = getToolText(copy.tools, key);
+                  const toolMeta = assistantToolIcons.find((item) => item.key === key);
+                  const OrbitIcon = toolMeta?.icon ?? Sparkles;
+                  const accent = toolMeta?.accent ?? "#67e8f9";
 
                   return (
                     <Paper
                       key={key}
                       variant="outlined"
+                      data-companion-live-preview-orbit="true"
                       sx={{
                         position: "absolute",
                         left: `${x}%`,
                         top: `${y}%`,
                         transform: x > 55 ? "translateX(-50%)" : "none",
-                        p: 1,
+                        p: 1.1,
                         borderRadius: 1,
-                        minWidth: 118,
+                        width: { xs: 128, md: 158 },
                         color: "inherit",
-                        borderColor: "rgba(34,211,238,0.22)",
+                        borderColor: `${accent}55`,
                         background: "rgba(15,23,42,0.72)",
                         backdropFilter: "blur(14px)",
-                        display: { xs: index > 2 ? "none" : "block", md: "block" },
+                        display: { xs: index > 2 ? "none" : "block", md: index > 5 ? "none" : "block", xl: "block" },
                       }}
                     >
-                      <Typography variant="caption" sx={{ color: "#67e8f9", fontWeight: 900 }}>
-                        {label}
-                      </Typography>
+                      <Stack direction="row" spacing={0.75} alignItems="flex-start">
+                        <Box
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            mt: 0.15,
+                            flex: "0 0 auto",
+                            display: "grid",
+                            placeItems: "center",
+                            borderRadius: "50%",
+                            color: accent,
+                            background: `${accent}1f`,
+                          }}
+                        >
+                          <OrbitIcon size={14} />
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#f8fafc", fontWeight: 950, lineHeight: 1.15 }}
+                          >
+                            {label}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "rgba(229,249,255,0.64)",
+                              display: { xs: "none", md: "block" },
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            {description}
+                          </Typography>
+                        </Box>
+                      </Stack>
                     </Paper>
                   );
                 })}

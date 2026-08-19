@@ -20,6 +20,7 @@ const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
 const REMOTE_CLOUD_MODE = "remote-cloud";
 const HTTP_ONLY_COOKIE_SESSION_AUTH = "httpOnly-cookie-session";
+const SESSION_EXPIRED_MESSAGE = "Session expired.";
 
 describe("remote API base URL guards", () => {
   afterEach(() => {
@@ -247,30 +248,125 @@ describe("remote API base URL guards", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("clears stale startup auth hints without attempting refresh on a missing session", async () => {
+  it("restores startup auth through refresh cookie when the access cookie is stale", async () => {
+    const remoteBaseUrl = "https://smart-nutrition.example/api";
+    const user = {
+      id: "user-refresh-restore",
+      name: "Refresh Restore",
+      email: "refresh@example.com",
+      emailVerified: true,
+      age: 25,
+      weight: 70,
+      height: 175,
+      gender: "female",
+      activity: "light",
+      goal: "maintain",
+      role: "USER",
+      languagePreference: "uk",
+    };
+
+    setClientStorageItem(REMOTE_BASE_URL_KEY, remoteBaseUrl);
+    setClientStorageItem(
+      AUTH_SESSION_HINT_KEY,
+      JSON.stringify({ savedAt: Date.now(), baseUrl: remoteBaseUrl })
+    );
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: "INVALID_CREDENTIALS",
+            message: SESSION_EXPIRED_MESSAGE,
+          }),
+          { status: 401 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ user, snapshot: null }), { status: 200 })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ user, snapshot: null }), { status: 200 })
+      );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(remoteAuthProvider.restoreSession()).resolves.toMatchObject({
+      user,
+      token: "cookie-session",
+      refreshToken: undefined,
+      snapshot: null,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${remoteBaseUrl}/auth/session`,
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${remoteBaseUrl}/auth/refresh`,
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${remoteBaseUrl}/auth/session`,
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(getClientStorageItem(REMOTE_BASE_URL_KEY)).toBe(remoteBaseUrl);
+    expect(getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBeTruthy();
+  });
+
+  it("clears stale startup auth hints only after refresh cookie restore fails", async () => {
     const remoteBaseUrl = "https://smart-nutrition.example/api";
     setClientStorageItem(REMOTE_BASE_URL_KEY, remoteBaseUrl);
     setClientStorageItem(
       AUTH_SESSION_HINT_KEY,
       JSON.stringify({ savedAt: Date.now(), baseUrl: remoteBaseUrl })
     );
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          code: "INVALID_CREDENTIALS",
-          message: "Session expired.",
-        }),
-        { status: 401 }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: "INVALID_CREDENTIALS",
+            message: SESSION_EXPIRED_MESSAGE,
+          }),
+          { status: 401 }
+        )
       )
-    );
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: "INVALID_REFRESH_TOKEN",
+            message: "Refresh session expired.",
+          }),
+          { status: 401 }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            code: "INVALID_CREDENTIALS",
+            message: SESSION_EXPIRED_MESSAGE,
+          }),
+          { status: 401 }
+        )
+      );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(remoteAuthProvider.restoreSession()).resolves.toBeNull();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       `${remoteBaseUrl}/auth/session`,
       expect.objectContaining({ method: "GET" })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${remoteBaseUrl}/auth/refresh`,
+      expect.objectContaining({ method: "POST" })
     );
     expect(getClientStorageItem(REMOTE_BASE_URL_KEY)).toBeNull();
     expect(getClientStorageItem(AUTH_SESSION_HINT_KEY)).toBeNull();

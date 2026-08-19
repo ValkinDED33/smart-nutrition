@@ -1,6 +1,17 @@
 import type { AppLanguage } from "@shared/types/i18n";
 
-const legacyAssistantNames = new Set(["hyemye", "hye-mye", "hue-mue", "huemue"]);
+const legacyAssistantNameKeys = new Set([
+  "hyemye",
+  "hyemue",
+  "huemye",
+  "huemue",
+]);
+
+const normalizeAssistantNameKey = (name: string) =>
+  name
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
 
 const getAssistantFallbackName = (language: AppLanguage) => {
   switch (language) {
@@ -20,9 +31,9 @@ export const getAssistantDisplayName = (
   customFallback?: string
 ) => {
   const trimmedName = name.trim();
-  const normalizedName = trimmedName.toLowerCase();
+  const normalizedName = normalizeAssistantNameKey(trimmedName);
 
-  if (trimmedName && !legacyAssistantNames.has(normalizedName)) {
+  if (trimmedName && !legacyAssistantNameKeys.has(normalizedName)) {
     return trimmedName;
   }
 

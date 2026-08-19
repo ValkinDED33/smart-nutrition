@@ -23,7 +23,7 @@ describe("assistantOrchestrationPrompt", () => {
     expect(prompt).toContain("reply language: Polish");
     expect(prompt).toContain("channel: Telegram");
     expect(prompt).toContain("CORE_SYSTEM_PROMPT");
-    expect(prompt).toContain("nutrition companion");
+    expect(prompt).toContain("nutrition assistant");
     expect(prompt).toContain("project worker inside Smart Nutrition");
     expect(prompt).toContain("Primary mission");
   });
@@ -42,14 +42,15 @@ describe("assistantOrchestrationPrompt", () => {
     expect(prompt).toContain("meals, products, scanner, photo meals, water, reminders, Telegram");
   });
 
-  it("uses a neutral runtime label when the user has not named the companion", () => {
+  it("uses a neutral runtime label when the user has not named the assistant", () => {
     const prompt = buildAssistantSystemPrompt({
       assistantName: "",
       assistantRole: "assistant",
       language: "en",
     });
 
-    expect(prompt).toContain("You are Smart Nutrition companion");
+    expect(prompt).toContain("You are Smart Nutrition assistant");
+    expect(prompt).not.toContain("You are Smart Nutrition companion");
     expect(prompt).not.toContain("You are Diana");
     expect(prompt).not.toContain("You are Алекс");
   });

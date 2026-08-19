@@ -668,7 +668,7 @@ const normalizeContext = (payload, currentUser) => {
     weeklyCheckInDue: Boolean(record.weeklyCheckInDue),
     assistantName: normalizeText(record.assistantName, {
       maxLength: 40,
-      fallback: "Smart Nutrition companion",
+      fallback: "Smart Nutrition assistant",
     }),
     assistantRole: normalizeText(record.assistantRole, {
       maxLength: 24,

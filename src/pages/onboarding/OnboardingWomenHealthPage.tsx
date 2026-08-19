@@ -29,6 +29,8 @@ import {
   estimatePregnancyDatesFromAge,
   estimatePregnancyFromDueDate,
   estimatePregnancyFromLastPeriod,
+  getPregnancyMonth,
+  getPregnancyTrimester,
 } from "@domain/profile/pregnancyDateMath";
 import {
   cardSx,
@@ -66,7 +68,14 @@ const copy = {
     pregnant: "Вагітна",
     postpartum: "Після пологів",
     week: "Орієнтовний тиждень",
-    day: "День",
+    day: "День тижня (0-6)",
+    pregnancyCalculatorHint:
+      "Вкажіть тиждень і день. Я порахую орієнтовну дату пологів, дату зачаття, місяць і триместр. Якщо лікар назвав іншу дату, змініть її нижче.",
+    pregnancyAge: "Термін",
+    pregnancyMonth: "Місяць",
+    trimester: "Триместр",
+    daysToDueDate: "До пологів",
+    days: "дн.",
     dueDate: "Орієнтовна дата пологів",
     conceptionDate: "Орієнтовна дата зачаття",
     calculatedDatesTitle: "Орієнтовний розрахунок",
@@ -106,7 +115,14 @@ const copy = {
     pregnant: "Jestem w ciąży",
     postpartum: "Po porodzie",
     week: "Orientacyjny tydzień",
-    day: "Dzień",
+    day: "Dzień tygodnia (0-6)",
+    pregnancyCalculatorHint:
+      "Podaj tydzień i dzień. Wyliczę orientacyjny termin porodu, datę poczęcia, miesiąc i trymestr. Jeśli lekarz podał inną datę, zmień ją niżej.",
+    pregnancyAge: "Wiek ciąży",
+    pregnancyMonth: "Miesiąc",
+    trimester: "Trymestr",
+    daysToDueDate: "Do porodu",
+    days: "dni",
     dueDate: "Przewidywany termin porodu",
     conceptionDate: "Orientacyjna data poczęcia",
     calculatedDatesTitle: "Orientacyjne wyliczenie",
@@ -146,7 +162,14 @@ const copy = {
     pregnant: "Pregnant",
     postpartum: "Postpartum",
     week: "Estimated week",
-    day: "Day",
+    day: "Day of week (0-6)",
+    pregnancyCalculatorHint:
+      "Enter week and day. I will estimate due date, conception date, month, and trimester. If your clinician gave another date, edit it below.",
+    pregnancyAge: "Pregnancy age",
+    pregnancyMonth: "Month",
+    trimester: "Trimester",
+    daysToDueDate: "To due date",
+    days: "days",
     dueDate: "Estimated due date",
     conceptionDate: "Estimated conception date",
     calculatedDatesTitle: "Estimated calculation",
@@ -204,6 +227,7 @@ const modeOptions: Array<{ id: WomenHealthMode; labelKey: keyof typeof copy.uk }
 const eyeColorOptions: EyeColor[] = eyeColors;
 const zodiacOptions: ZodiacSign[] = zodiacSigns;
 const chineseZodiacOptions: ChineseZodiacSign[] = chineseZodiacSigns;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const UK_NOT_SET = "Не вказано";
 const PL_NOT_SET = "Nie podano";
@@ -435,6 +459,20 @@ const getChineseZodiacLabel = (
   }
 };
 
+const getDaysToDueDate = (dueDate: string | null | undefined) => {
+  if (!dueDate) {
+    return null;
+  }
+
+  const dueTime = Date.parse(dueDate);
+
+  if (Number.isNaN(dueTime)) {
+    return null;
+  }
+
+  return Math.max(0, Math.ceil((dueTime - Date.now()) / DAY_MS));
+};
+
 export const OnboardingWomenHealthPage = ({
   state,
   updateState,
@@ -466,6 +504,11 @@ export const OnboardingWomenHealthPage = ({
           )
         : null,
     [isPregnant, state.pregnancyDay, state.pregnancyWeek]
+  );
+  const pregnancyTrimester = getPregnancyTrimester(pregnancyEstimate?.age.week);
+  const pregnancyMonth = getPregnancyMonth(pregnancyEstimate?.age.totalDays);
+  const daysToDueDate = getDaysToDueDate(
+    state.dueDate || pregnancyEstimate?.dueDate || null
   );
 
   const applyPregnancyEstimate = () => {
@@ -615,6 +658,9 @@ export const OnboardingWomenHealthPage = ({
 
           {isPregnant && (
             <Stack spacing={1.2}>
+              <Alert severity="info" sx={{ borderRadius: 1 }}>
+                {text.pregnancyCalculatorHint}
+              </Alert>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <TextField
                   fullWidth
@@ -690,6 +736,49 @@ export const OnboardingWomenHealthPage = ({
                         {text.calculatedDatesBody}
                       </Typography>
                     </Stack>
+                    <Box
+                      data-onboarding-pregnancy-age-summary="true"
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(4, minmax(0, 1fr))" },
+                        gap: 1,
+                      }}
+                    >
+                      {[
+                        [
+                          text.pregnancyAge,
+                          `${pregnancyEstimate.age.week}+${pregnancyEstimate.age.day}`,
+                        ],
+                        [
+                          text.trimester,
+                          pregnancyTrimester === null ? "-" : String(pregnancyTrimester),
+                        ],
+                        [
+                          text.pregnancyMonth,
+                          pregnancyMonth === null ? "-" : String(pregnancyMonth),
+                        ],
+                        [
+                          text.daysToDueDate,
+                          daysToDueDate === null ? "-" : `${daysToDueDate} ${text.days}`,
+                        ],
+                      ].map(([label, value]) => (
+                        <Box
+                          key={label}
+                          sx={{
+                            p: 1,
+                            borderRadius: 1,
+                            border: 1,
+                            borderColor: "divider",
+                            bgcolor: "rgba(255,255,255,0.72)",
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {label}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 900 }}>{value}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
                     <Box
                       sx={{
                         display: "grid",

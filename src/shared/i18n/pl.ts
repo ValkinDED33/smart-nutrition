@@ -60,7 +60,7 @@ export const pl = {
   "auth.resetSuccess": "Hasło zostało zaktualizowane. Możesz zalogować się nowym hasłem.",
   "auth.invalidResetToken": "Link resetu jest nieprawidłowy albo już wygasł.",
   "auth.weakResetPassword":
-    "Hasło musi mieć co najmniej 10 znaków, wielką, małą literę, cyfrę i symbol.",
+    "Hasło musi mieć 8-10 znaków, wielką literę i cyfrę. Znaki specjalne są dozwolone.",
   "auth.missingResetToken":
     "Brakuje tokenu resetu. Otwórz stronę z linku z maila.",
   navigation: navigation.pl,

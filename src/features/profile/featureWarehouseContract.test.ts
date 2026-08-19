@@ -97,6 +97,18 @@ describe("profile feature warehouse contract", () => {
     expect(source).toContain('data-companion-shop-studio="true"');
     expect(source).toContain('data-companion-live-preview="true"');
     expect(source).toContain('data-companion-shop-capabilities="true"');
+    expect(source).toContain('data-companion-live-preview-orbit="true"');
+    expect(source).toContain('const assistantToolIcons: Array<{');
+    expect(source).toContain('const previewOrbitItems: Array<{');
+    expect(source).toContain('{ key: "planning",');
+    expect(source).toContain('{ key: "nutrition",');
+    expect(source).toContain('{ key: "water",');
+    expect(source).toContain('{ key: "health",');
+    expect(source).toContain('{ key: "family",');
+    expect(source).toContain('{ key: "reminders",');
+    expect(source).toContain('{ key: "chat",');
+    expect(source).toContain('{ key: "analytics",');
+    expect(source).toContain('{ key: "safety",');
     expect(source).toContain("applyCompanionShopSelectionInCloud");
     expect(source).toContain('navigate("/coach")');
     expect(source).not.toContain("comingSoon");

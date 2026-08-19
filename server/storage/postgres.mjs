@@ -1352,6 +1352,196 @@ export const createPostgresStorage = async ({
       return getResolvedUser(user.id);
     },
 
+    upsertUserProfileAndState: async (userId, profileState, user, syncContext = undefined) => {
+      const client = await pool.connect();
+      const updatedAt = new Date().toISOString();
+      let savedUser = null;
+      let savedProfile = null;
+      let savedSnapshot = null;
+
+      try {
+        await client.query("BEGIN");
+
+        const existingUser = mapUserRow(
+          (
+            await client.query("SELECT * FROM users WHERE id = $1 LIMIT 1", [userId])
+          ).rows[0] ?? null
+        );
+
+        if (!existingUser) {
+          await client.query("ROLLBACK");
+          return null;
+        }
+
+        const normalizedSyncContext = normalizeSyncContext(syncContext);
+        const snapshotMetaRow =
+          (
+            await client.query(
+              `
+                SELECT updated_at, profile_updated_at, meal_updated_at, water_updated_at,
+                       backup_enabled, last_writer_device_id
+                FROM snapshots
+                WHERE user_id = $1
+                LIMIT 1
+              `,
+              [userId]
+            )
+          ).rows[0] ?? null;
+
+        if (
+          normalizedSyncContext.baseVersion &&
+          snapshotMetaRow?.updated_at &&
+          snapshotMetaRow.updated_at !== normalizedSyncContext.baseVersion
+        ) {
+          throw new StateApiError(
+            "STATE_CONFLICT",
+            "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+            {
+              meta: {
+                updatedAt: snapshotMetaRow.updated_at,
+                profileUpdatedAt: snapshotMetaRow.profile_updated_at ?? snapshotMetaRow.updated_at,
+                mealUpdatedAt: snapshotMetaRow.meal_updated_at ?? snapshotMetaRow.updated_at,
+                waterUpdatedAt: snapshotMetaRow.water_updated_at ?? snapshotMetaRow.updated_at,
+                backupEnabled: snapshotMetaRow.backup_enabled ?? true,
+                lastWriterDeviceId: snapshotMetaRow.last_writer_device_id ?? null,
+              },
+            }
+          );
+        }
+
+        const nextUser = {
+          ...existingUser,
+          ...user,
+          id: userId,
+        };
+        savedProfile = normalizeProfileState(profileState, nextUser);
+
+        const snapshotRow =
+          (
+            await client.query(
+              `
+                SELECT profile_json, meal_json, water_json, fridge_json, community_json, companion_json
+                FROM snapshots
+                WHERE user_id = $1
+                LIMIT 1
+              `,
+              [userId]
+            )
+          ).rows[0] ?? null;
+        const currentSnapshot = normalizeSnapshotForUser(
+          snapshotRow
+            ? {
+                profile: snapshotRow.profile_json,
+                meal: snapshotRow.meal_json,
+                water: snapshotRow.water_json,
+                fridge: snapshotRow.fridge_json,
+                community: snapshotRow.community_json,
+                companion: snapshotRow.companion_json,
+              }
+            : null,
+          nextUser
+        );
+        savedSnapshot = {
+          ...currentSnapshot,
+          profile: savedProfile,
+        };
+
+        const updateUserResult = await client.query(
+          `
+            UPDATE users
+            SET name = $1,
+                avatar = $2,
+                age = $3,
+                weight = $4,
+                height = $5,
+                gender = $6,
+                activity = $7,
+                goal = $8,
+                measurements_json = $9::jsonb
+            WHERE id = $10
+            RETURNING *
+          `,
+          [
+            nextUser.name,
+            nextUser.avatar ?? null,
+            nextUser.age,
+            nextUser.weight,
+            nextUser.height,
+            nextUser.gender,
+            nextUser.activity,
+            nextUser.goal,
+            nextUser.measurements ? toJsonParam(nextUser.measurements) : null,
+            userId,
+          ]
+        );
+
+        savedUser = mapUserRow(updateUserResult.rows[0] ?? null);
+
+        if (!savedUser) {
+          throw new StateApiError("PROFILE_NOT_FOUND", "Cloud user profile is unavailable.");
+        }
+
+        await client.query(
+          `
+            INSERT INTO snapshots (
+              user_id,
+              profile_json,
+              meal_json,
+              water_json,
+              fridge_json,
+              community_json,
+              companion_json,
+              updated_at,
+              profile_updated_at,
+              meal_updated_at,
+              water_updated_at,
+              backup_enabled,
+              last_writer_device_id
+            ) VALUES ($1, $2::jsonb, $3::jsonb, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8, $9, $10, $11, TRUE, $12)
+            ON CONFLICT(user_id) DO UPDATE SET
+              profile_json = EXCLUDED.profile_json,
+              meal_json = EXCLUDED.meal_json,
+              water_json = EXCLUDED.water_json,
+              fridge_json = EXCLUDED.fridge_json,
+              community_json = EXCLUDED.community_json,
+              companion_json = EXCLUDED.companion_json,
+              updated_at = EXCLUDED.updated_at,
+              profile_updated_at = EXCLUDED.profile_updated_at,
+              meal_updated_at = COALESCE(snapshots.meal_updated_at, EXCLUDED.meal_updated_at),
+              water_updated_at = COALESCE(snapshots.water_updated_at, EXCLUDED.water_updated_at),
+              last_writer_device_id = COALESCE(EXCLUDED.last_writer_device_id, snapshots.last_writer_device_id)
+          `,
+          [
+            userId,
+            toJsonParam(savedSnapshot.profile),
+            toJsonParam(savedSnapshot.meal),
+            toJsonParam(savedSnapshot.water),
+            toJsonParam(savedSnapshot.fridge),
+            toJsonParam(savedSnapshot.community),
+            toJsonParam(savedSnapshot.companion),
+            updatedAt,
+            updatedAt,
+            snapshotMetaRow?.meal_updated_at ?? updatedAt,
+            snapshotMetaRow?.water_updated_at ?? updatedAt,
+            normalizedSyncContext.deviceId ?? snapshotMetaRow?.last_writer_device_id ?? null,
+          ]
+        );
+
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      writeBackupSnapshot(userId, savedSnapshot, "profile-state", updatedAt);
+      return {
+        user: savedUser,
+        profile: savedProfile,
+      };
+    },
+
     updateUserPassword: async ({ userId, passwordHash, passwordSalt, passwordVersion }) => {
       await pool.query(
         `

@@ -270,7 +270,7 @@ const registrationCopy = {
     portalSubtitle:
       "This is not a calorie calculator. We build a living wellness profile: food, water, reminders, and AI guidance in one place.",
     progressLabel: "Step",
-    capabilities: ["AI companion", "Food scanner", "Smart reminders"],
+    capabilities: ["AI assistant", "Food scanner", "Smart reminders"],
     stepHint: "One small step and the assistant adapts to you.",
   },
 } as const;
@@ -376,14 +376,10 @@ const RegisterPage = () => {
           email: z.string().email(t("validation.invalidEmail")),
           password: z
             .string()
-            .min(10, t("validation.passwordMin"))
+            .min(8, t("validation.passwordMin"))
+            .max(10, t("validation.passwordMax"))
             .regex(/[A-Z]/, t("validation.passwordUpper"))
-            .regex(/[a-z]/, t("validation.passwordLower"))
-            .regex(/\d/, t("validation.passwordDigit"))
-            .regex(
-              /[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]/,
-              t("validation.passwordSymbol")
-            ),
+            .regex(/\d/, t("validation.passwordDigit")),
           confirmPassword: z.string(),
         })
         .refine((data) => data.password === data.confirmPassword, {
@@ -784,7 +780,7 @@ const RegisterPage = () => {
         error instanceof AuthApiError &&
         error.code === "WEAK_PASSWORD"
       ) {
-        setServerError(t("validation.passwordMin"));
+        setServerError(t("auth.weakResetPassword"));
       } else if (
         error instanceof AuthApiError &&
         error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"

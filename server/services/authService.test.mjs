@@ -126,7 +126,7 @@ describe("authService", () => {
     await service.register({
       name: "Owner User",
       email: "owner@example.com",
-      password: "StrongPass123!",
+      password: "Gogia2009",
       age: 31,
       weight: 72,
       height: 178,
@@ -391,7 +391,7 @@ describe("authService", () => {
       service.register({
         name: "Email User",
         email: "prod-email@example.com",
-        password: "StrongPass123!",
+        password: "Gogia2009",
         age: 31,
         weight: 72,
         height: 178,
@@ -424,7 +424,7 @@ describe("authService", () => {
     const result = await service.register({
       name: "Email User",
       email: "prod-email-ok@example.com",
-      password: "StrongPass123!",
+      password: "Gogia2009",
       age: 31,
       weight: 72,
       height: 178,
@@ -458,7 +458,7 @@ describe("authService", () => {
     await service.register({
       name: "Polish User",
       email: "polish-user@example.com",
-      password: "StrongPass123!",
+      password: "Gogia2009",
       age: 31,
       weight: 72,
       height: 178,
@@ -507,7 +507,7 @@ describe("authService", () => {
     };
     const validRegistrationBody = {
       name: "Email User",
-      password: "StrongPass123!",
+      password: "Gogia2009",
       age: 31,
       weight: 72,
       height: 178,
@@ -605,7 +605,7 @@ describe("authService", () => {
       service.register({
         name: "existing name",
         email: "new-name-owner@example.com",
-        password: "StrongPass123!",
+        password: "Gogia2009",
         age: 31,
         weight: 72,
         height: 178,
@@ -636,7 +636,7 @@ describe("authService", () => {
     };
     const validRegistrationBody = {
       name: "Email User",
-      password: "StrongPass123!",
+      password: "Gogia2009",
       age: 31,
       weight: 72,
       height: 178,
@@ -797,7 +797,7 @@ describe("authService", () => {
 
   it("blocks login for users who have not verified email", async () => {
     const { authRepository, config, service } = createAuthServiceFixture();
-    const password = "StrongPass123!";
+    const password = "Gogia2009";
     const passwordRecord = createPasswordRecord(password, config.passwordIterations);
 
     authRepository.getLoginAttempt.mockReturnValue(null);
@@ -834,7 +834,7 @@ describe("authService", () => {
       service.register({
         name: "A",
         email: "invalid-profile@example.com",
-        password: "StrongPass123!",
+        password: "Gogia2009",
         age: 8,
         weight: 20,
         height: 80,
@@ -1416,7 +1416,7 @@ describe("authService", () => {
 
     const result = await service.resetPassword({
       token: rawToken,
-      password: "StrongPass123!",
+      password: "Gogia2009",
     });
 
     expect(result.ok).toBe(true);
@@ -1458,7 +1458,7 @@ describe("authService", () => {
     await expect(
       service.resetPassword({
         token: "still-valid-token",
-        password: "StrongPass123!",
+        password: "Gogia2009",
       })
     ).rejects.toThrow("database unavailable");
 
@@ -1500,13 +1500,13 @@ describe("authService", () => {
 
     await service.resetPassword({
       token: rawToken,
-      password: "StrongPass123!",
+      password: "Gogia2009",
     });
 
     await expect(
       service.resetPassword({
         token: rawToken,
-        password: "AnotherStrongPass123!",
+        password: "Gogia2010",
       })
     ).rejects.toMatchObject({
       code: "INVALID_RESET_TOKEN",

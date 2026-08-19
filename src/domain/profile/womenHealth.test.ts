@@ -9,6 +9,8 @@ import {
   estimatePregnancyDatesFromAge,
   estimatePregnancyFromDueDate,
   estimatePregnancyFromLastPeriod,
+  getPregnancyMonth,
+  getPregnancyTrimester,
 } from "./pregnancyDateMath";
 
 const NOW = new Date("2026-07-12T12:00:00.000Z");
@@ -124,6 +126,14 @@ describe("women health domain", () => {
       age: AGE_14W2D,
       dueDate: ESTIMATED_DUE_DATE,
     });
+  });
+
+  it("derives pregnancy trimester and month from the canonical pregnancy age", () => {
+    expect(getPregnancyTrimester(13)).toBe(1);
+    expect(getPregnancyTrimester(14)).toBe(2);
+    expect(getPregnancyTrimester(28)).toBe(3);
+    expect(getPregnancyTrimester(null)).toBeNull();
+    expect(getPregnancyMonth(AGE_14W2D.totalDays)).toBe(4);
   });
 
   it("detects saved women-health context even when auth gender is stale", () => {

@@ -21,4 +21,22 @@ describe("RegisterPage contract", () => {
     expect(source).toContain("submitCount > 0");
     expect(source).toContain("error={shouldShowConfirmPasswordError}");
   });
+
+  it("keeps the UI password policy aligned with the backend contract", () => {
+    const registerSource = readSource("src/pages/RegisterPage.tsx");
+    const resetSource = readSource("src/pages/ResetPasswordPage.tsx");
+    const domainSource = readSource("server/lib/domain.mjs");
+
+    for (const source of [registerSource, resetSource]) {
+      expect(source).toContain('.min(8, t("validation.passwordMin"))');
+      expect(source).toContain('.max(10, t("validation.passwordMax"))');
+      expect(source).toContain('.regex(/[A-Z]/, t("validation.passwordUpper"))');
+      expect(source).toContain('.regex(/\\d/, t("validation.passwordDigit"))');
+      expect(source).not.toContain('t("validation.passwordSymbol")');
+      expect(source).not.toContain('t("validation.passwordLower")');
+    }
+
+    expect(domainSource).toContain("(?=.*[A-Z])(?=.*\\d).{8,10}");
+    expect(domainSource).toContain("Password must be 8 to 10 characters");
+  });
 });

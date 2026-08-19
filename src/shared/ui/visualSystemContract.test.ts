@@ -60,7 +60,8 @@ describe("Smart Nutrition visual system contract", () => {
     ]);
     const combinedSource = sources.join("\n");
 
-    expect(combinedSource).toContain('variant="robot"');
+    expect(combinedSource).toContain('LANDING_DEFAULT_COMPANION_KIND = "robot"');
+    expect(combinedSource).toContain("companionKind : \"robot\"");
     expect(combinedSource).not.toContain('variant="dragon"');
     expect(combinedSource).not.toContain('variant="panda"');
     expect(combinedSource).not.toContain('variant="fox"');
@@ -78,7 +79,8 @@ describe("Smart Nutrition visual system contract", () => {
     expect(source).toContain("heroRing");
     expect(source).toContain("getAssistantDisplayName(assistant.name, appLanguage)");
     expect(source).not.toContain('"Smart Nutrition AI"');
-    expect(assistantDisplayNameSource).toContain("legacyAssistantNames");
+    expect(assistantDisplayNameSource).toContain("legacyAssistantNameKeys");
+    expect(assistantDisplayNameSource).toContain("normalizeAssistantNameKey");
     expect(source).toContain("env(safe-area-inset-bottom");
     expect(source).toContain('className="sn-companion-panel"');
     expect(source).toContain('data-ai-worker-home-center="true"');

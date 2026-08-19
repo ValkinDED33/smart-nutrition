@@ -81,6 +81,34 @@ export const createPregnancyAge = (
   };
 };
 
+export const getPregnancyTrimester = (week: number | null | undefined) => {
+  const weekValue = Number(week);
+
+  if (!Number.isFinite(weekValue) || weekValue < 1) {
+    return null;
+  }
+
+  if (weekValue <= 13) {
+    return 1;
+  }
+
+  if (weekValue <= 27) {
+    return 2;
+  }
+
+  return 3;
+};
+
+export const getPregnancyMonth = (totalDays: number | null | undefined) => {
+  const daysValue = Number(totalDays);
+
+  if (!Number.isFinite(daysValue) || daysValue < 0) {
+    return null;
+  }
+
+  return Math.max(1, Math.min(10, Math.floor(daysValue / 28) + 1));
+};
+
 export const estimatePregnancyDatesFromAge = (
   week: number | null | undefined,
   day: number | null | undefined = 0,

@@ -53,7 +53,7 @@ const guideCopy = {
   },
   en: {
     welcome: "I will stay with you on every step. Let us begin calmly.",
-    assistant: "Choose what I should feel like. I will be your companion.",
+    assistant: "Choose how I should feel. I will stay as your assistant.",
     name: "What should I call you? I will remember it.",
     age: "Age helps me calculate calorie targets more accurately.",
     gender: "This helps estimate your baseline needs.",
@@ -144,7 +144,7 @@ const stepMeta: Record<string, StepMeta> = {
   },
 };
 
-const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 1880;
+const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 2560;
 const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)";
 const GUIDE_BUBBLE_WIDTH = 220;
 const GUIDE_AVATAR_SIZE = 76;

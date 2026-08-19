@@ -46,11 +46,10 @@ const ResetPasswordPage = () => {
         .object({
           password: z
             .string()
-            .min(10, t("validation.passwordMin"))
+            .min(8, t("validation.passwordMin"))
+            .max(10, t("validation.passwordMax"))
             .regex(/[A-Z]/, t("validation.passwordUpper"))
-            .regex(/[a-z]/, t("validation.passwordLower"))
-            .regex(/\d/, t("validation.passwordDigit"))
-            .regex(/[!@#$%^&*(),.?":{}|<>_\-\\/\][+=~`]/, t("validation.passwordSymbol")),
+            .regex(/\d/, t("validation.passwordDigit")),
           confirmPassword: z.string(),
         })
         .refine((data) => data.password === data.confirmPassword, {

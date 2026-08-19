@@ -71,6 +71,13 @@ describe("Onboarding flow contract", () => {
     );
     expect(womenHealthSource).toContain("data-onboarding-pregnancy-block");
     expect(womenHealthSource).toContain("data-onboarding-pregnancy-estimate");
+    expect(womenHealthSource).toContain("data-onboarding-pregnancy-age-summary");
+    expect(womenHealthSource).toContain("getPregnancyTrimester");
+    expect(womenHealthSource).toContain("getPregnancyMonth");
+    expect(womenHealthSource).toContain("День тижня (0-6)");
+    expect(womenHealthSource).toContain("Триместр");
+    expect(womenHealthSource).toContain("Місяць");
+    expect(womenHealthSource).toContain("До пологів");
     expect(womenHealthSource).toContain("data-onboarding-family-preview-block");
     expect(womenHealthSource).toContain("onClick={() => navigate(stepPaths.name)}");
     expect(nameSource).toContain(
@@ -107,7 +114,7 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain("womenHealth:");
     expect(guideSource).toContain('"/onboarding/women-health"');
     expect(guideSource).toContain('key: "womenHealth"');
-    expect(guideSource).toContain("const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 1880");
+    expect(guideSource).toContain("const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 2560");
     expect(guideSource).toContain('const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)"');
     expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 220");
     expect(guideSource).toContain("const GUIDE_AVATAR_SIZE = 76");

@@ -241,6 +241,7 @@ const assistantRuntimeRulesSource = readSource(
   "src/assistant/engine/assistantRuntimeRules.ts"
 );
 const mongoStorageSource = readSource("server/storage/mongo.mjs");
+const postgresStorageSource = readSource("server/storage/postgres.mjs");
 const mongoAiRepositorySource = readSource("server/repositories/mongoAiRepository.mjs");
 const appLayoutSource = readSource("src/app/layouts/AppLayout.tsx");
 const languageMenuButtonSource = readSource("src/shared/components/LanguageMenuButton.tsx");
@@ -1177,7 +1178,8 @@ addCheck(
     onboardingAssistantSource.includes("getAssistantPreviewName") &&
     !onboardingAssistantSource.includes("disabled={state.assistantName.trim()") &&
     onboardingFinishSource.includes("name: state.assistantName.trim()") &&
-    assistantDisplayNameSource.includes("legacyAssistantNames") &&
+    assistantDisplayNameSource.includes("legacyAssistantNameKeys") &&
+    assistantDisplayNameSource.includes("normalizeAssistantNameKey") &&
     assistantDisplayNameSource.includes("getAssistantFallbackName") &&
     assistantDisplayNameSource.includes("getAssistantDisplayName") &&
     ["Помічник Smart Nutrition", "Asystent Smart Nutrition", "Smart Nutrition Assistant"].every((fallback) =>
@@ -1319,6 +1321,11 @@ addCheck(
     mongoStorageSource.includes("isMongoTransactionUnsupportedError") &&
     mongoStorageSource.includes("writeProfileAndUserDocumentsWithoutTransaction") &&
     mongoStorageSource.includes("error instanceof StateApiError") &&
+    postgresStorageSource.includes("upsertUserProfileAndState") &&
+    postgresStorageSource.includes("const client = await pool.connect()") &&
+    postgresStorageSource.includes('await client.query("BEGIN")') &&
+    postgresStorageSource.includes("RETURNING *") &&
+    postgresStorageSource.includes("savedProfile = normalizeProfileState(profileState, nextUser)") &&
     authRemoteSource.includes("profile?: unknown") &&
     authRemoteSource.includes("profile: data.profile") &&
     authRemoteSource.includes("profileUpdatedAt:") &&
@@ -2423,14 +2430,14 @@ addCheck(
 );
 
 addCheck(
-  "AI companion section navigation uses active-language accessibility copy",
+  "AI assistant section navigation uses active-language accessibility copy",
   aiCompanionPageSource.includes("sectionsAriaLabel") &&
     aiCompanionPageSource.includes("Розділи помічника") &&
     aiCompanionPageSource.includes("Sekcje asystenta") &&
     aiCompanionPageSource.includes("Assistant sections") &&
     aiCompanionPageSource.includes("ariaLabel={copy.sectionsAriaLabel}") &&
     !aiCompanionPageSource.includes('ariaLabel="Assistant companion sections"'),
-  "AI companion section tabs must use active-language accessibility copy instead of hardcoded English labels."
+  "AI assistant section tabs must use active-language accessibility copy instead of hardcoded English labels."
 );
 
 const regularAssistantCopySources = [

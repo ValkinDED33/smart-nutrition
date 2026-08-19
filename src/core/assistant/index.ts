@@ -13,7 +13,7 @@ import type {
 } from "@domain/profile/types";
 import type { Goal } from "@domain/user/types";
 export const DEFAULT_ASSISTANT_NAME = "";
-const DEFAULT_ASSISTANT_RUNTIME_LABEL = "Smart Nutrition companion";
+const DEFAULT_ASSISTANT_RUNTIME_LABEL = "Smart Nutrition assistant";
 
 export type AssistantCoreEmotion =
   | "calm"

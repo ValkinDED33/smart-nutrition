@@ -72,7 +72,7 @@ const AUTH_API_ERROR_MESSAGES: Record<AuthApiError["code"], string> = {
     "Confirm your email with the button in the message before logging in.",
   ACCOUNT_BANNED: "This account has been blocked by an administrator.",
   WEAK_PASSWORD:
-    "Password must have at least 10 characters, an uppercase letter, a lowercase letter, a digit, and a symbol.",
+    "Password must be 8 to 10 characters and include an uppercase letter and a digit.",
   INVALID_PROFILE: "Could not save profile.",
   REMOTE_API_UNAVAILABLE: REMOTE_API_UNAVAILABLE_MESSAGE,
 };
@@ -1548,7 +1548,7 @@ export const remoteAuthProvider: AuthProvider = {
       const { data, baseUrl } = await requestRemote<AuthResponse>(
         "/auth/session",
         { method: "GET", signal },
-        { requireAuth: true, allowRefresh: false, timeoutMs }
+        { requireAuth: true, allowRefresh: true, timeoutMs }
       );
 
       return mapAuthResponse(data, baseUrl);

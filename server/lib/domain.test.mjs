@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertPasswordPolicy,
   createInitialCommunityState,
   createInitialProfileState,
   normalizeBloodPressureHistory,
@@ -72,6 +73,14 @@ describe("domain community defaults", () => {
 });
 
 describe("server domain profile contracts", () => {
+  it("uses the same 8-10 character password contract as registration UI", () => {
+    expect(() => assertPasswordPolicy("Gogia2009")).not.toThrow();
+    expect(() => assertPasswordPolicy("Gogia2009$")).not.toThrow();
+    expect(() => assertPasswordPolicy("gogia2009")).toThrow(/Password must be 8 to 10/);
+    expect(() => assertPasswordPolicy("Gogiaaaaa")).toThrow(/Password must be 8 to 10/);
+    expect(() => assertPasswordPolicy("Gogia2009$X")).toThrow(/Password must be 8 to 10/);
+  });
+
   it("creates the full canonical women health shape for every storage engine", () => {
     const profile = createInitialProfileState({
       age: 25,
