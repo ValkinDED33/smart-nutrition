@@ -176,6 +176,38 @@ export const AssistantAvatar = ({
     >
       {isRobot ? (
         <>
+          {(["left", "right"] as const).map((side) => (
+            <Box
+              key={side}
+              data-assistant-avatar-robot-headset="true"
+              sx={{
+                position: "absolute",
+                top: round(size * 0.27),
+                [side]: -round(size * 0.05),
+                width: Math.max(round(size * 0.2), 10),
+                height: Math.max(round(size * 0.34), 18),
+                borderRadius: "999px",
+                background:
+                  "linear-gradient(180deg, rgba(248,250,252,0.96), rgba(148,163,184,0.92))",
+                border: "1px solid rgba(255,255,255,0.62)",
+                boxShadow:
+                  "inset 0 8px 14px rgba(255,255,255,0.5), inset 0 -10px 18px rgba(15,23,42,0.16), 0 0 18px rgba(34,211,238,0.2)",
+                transform: side === "left" ? "rotate(-5deg)" : "rotate(5deg)",
+                zIndex: 2,
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  inset: Math.max(round(size * 0.035), 2),
+                  borderRadius: "inherit",
+                  background:
+                    mood === "celebrate"
+                      ? "linear-gradient(180deg, rgba(134,239,172,0.92), rgba(34,211,238,0.62))"
+                      : "linear-gradient(180deg, rgba(34,211,238,0.78), rgba(59,130,246,0.48))",
+                  opacity: 0.74,
+                },
+              }}
+            />
+          ))}
           <Box
             data-assistant-avatar-robot-shell="true"
             sx={{

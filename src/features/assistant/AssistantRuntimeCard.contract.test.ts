@@ -8,6 +8,17 @@ const source = readFileSync(
 );
 
 describe("AssistantRuntimeCard contracts", () => {
+  it("renders assistant replies as living assistant cards with the selected companion", () => {
+    expect(source).toContain("AssistantAvatar");
+    expect(source).toContain("data-assistant-runtime-message-card={message.role}");
+    expect(source).toContain('data-assistant-runtime-message-avatar="true"');
+    expect(source).toContain("variant={profile.assistant.companionKind}");
+    expect(source).toContain("const REMOTE_CLOUD_MODE = \"remote-cloud\"");
+    expect(source).toContain("mood={message.mode === REMOTE_CLOUD_MODE ? \"happy\" : \"coach\"}");
+    expect(source).toContain("active={loading && message.id === latestAssistantMessage?.id}");
+    expect(source).not.toContain('variant="robot"');
+  });
+
   it("executes backend-confirmed navigation handoffs through safe internal routes", () => {
     expect(source).toContain("useNavigate");
     expect(source).toContain("AssistantRuntimeAction");

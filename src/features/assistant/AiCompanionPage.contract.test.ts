@@ -44,6 +44,11 @@ describe("AiCompanionPage contract", () => {
     expect(source).toContain('data-ai-worker-live-sync="true"');
     expect(source).toContain('data-ai-worker-live-steps="true"');
     expect(source).toContain('data-ai-worker-live-toolbelt="true"');
+    expect(source).toContain('data-ai-worker-command-orbit="true"');
+    expect(source).toContain('data-ai-worker-hologram-panel="today"');
+    expect(source).toContain('data-ai-worker-hologram-panel="analysis"');
+    expect(source).toContain('data-ai-worker-orbit-actions="true"');
+    expect(source).toContain("data-ai-worker-orbit-action={id}");
     expect(source).toContain("Жива зміна помічника");
     expect(source).toContain("Робочий пояс");
     expect(source).toContain("Żywa zmiana asystenta");

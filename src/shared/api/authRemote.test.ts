@@ -147,7 +147,7 @@ describe("remote API base URL guards", () => {
     expect(canUseRemoteBaseUrlInCurrentBrowser("https://api.smart-nutrition.app/api")).toBe(true);
   });
 
-  it("probes the Render API for the public Vercel deployment when no build env is set", async () => {
+  it("probes the same-origin API proxy for public Vercel deployments", async () => {
     vi.stubGlobal("window", {
       location: {
         hostname: VERCEL_PREVIEW_HOSTNAME,
@@ -158,7 +158,9 @@ describe("remote API base URL guards", () => {
       new Response(
         JSON.stringify({
           ok: true,
-          provider: "smart-nutrition-sqlite-api",
+          mode: REMOTE_CLOUD_MODE,
+          auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
+          storage: { engine: "mongodb" },
         }),
         { status: 200 }
       )
@@ -167,9 +169,29 @@ describe("remote API base URL guards", () => {
 
     await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      `${VERCEL_PREVIEW_ORIGIN}/api/health`,
       expect.any(Object)
     );
+  });
+
+  it("keeps the Vercel API proxy ahead of the SPA catch-all rewrite", async () => {
+    const vercelConfig = JSON.parse(await readFile("vercel.json", "utf8")) as {
+      rewrites?: Array<{ source?: string; destination?: string }>;
+    };
+    const rewrites = vercelConfig.rewrites ?? [];
+    const apiProxyIndex = rewrites.findIndex(
+      (rewrite) =>
+        rewrite.source === "/api/(.*)" &&
+        rewrite.destination ===
+          "https://smart-nutrition-sk5r.onrender.com/api/$1"
+    );
+    const spaCatchAllIndex = rewrites.findIndex(
+      (rewrite) => rewrite.destination === "/index.html"
+    );
+
+    expect(apiProxyIndex).toBeGreaterThanOrEqual(0);
+    expect(spaCatchAllIndex).toBeGreaterThanOrEqual(0);
+    expect(apiProxyIndex).toBeLessThan(spaCatchAllIndex);
   });
 
   it("times out stalled health probes instead of blocking startup", async () => {
@@ -438,7 +460,7 @@ describe("remote API base URL guards", () => {
 
     await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
     expect(JSON.stringify(fetchMock.mock.calls)).toContain(
-      "https://smart-nutrition-sk5r.onrender.com/api/health"
+      "https://smart-nutrition.club/api/health"
     );
   });
 
@@ -490,7 +512,7 @@ describe("remote API base URL guards", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://smart-nutrition-sk5r.onrender.com/api/auth/availability",
+      "https://smart-nutrition.club/api/auth/availability",
       expect.any(Object)
     );
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain("stale-preview.example");

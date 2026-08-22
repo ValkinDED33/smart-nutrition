@@ -1,5 +1,9 @@
 import { lazy, Suspense, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Box, Stack } from "@mui/material";
+import { Activity, BarChart3, Droplets, Scale, ScanLine, Sparkles } from "lucide-react";
+import type { RootState } from "../app/store";
 import { ProgressActionBar } from "../features/profile/ProgressActionBar";
 import {
   ProgressOverviewCard,
@@ -8,6 +12,7 @@ import {
 import { QuickWeightCheckInCard } from "../features/profile/QuickWeightCheckInCard";
 import { useLanguage } from "../shared/language";
 import {
+  AIMasterBlueprintPanel,
   buildLazyModuleRecoveryCopy,
   LazyModuleBoundary,
   LoadingSkeleton,
@@ -15,6 +20,7 @@ import {
   SectionTabs,
 } from "@shared/ui";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import type { AppLanguage } from "../shared/types/i18n";
 
 const WaterTracker = lazy(() => import("../features/water/WaterTracker"));
@@ -61,6 +67,25 @@ const progressPageCopy = {
       trends: "Тренди",
     },
     sectionsAriaLabel: "Розділи прогресу",
+    blueprintTitle: "Живі шкали дня",
+    blueprintSubtitle:
+      "Кожна шкала відкриває реальний розділ: вага, вода, заміри, тренди, скан їжі або підказка помічника.",
+    blueprintPatterns: {
+      weight: "Вага",
+      water: "Вода",
+      body: "Тіло",
+      trends: "Тренди",
+      food: "Їжа",
+      assistant: "AI-підказка",
+    },
+    blueprintPatternDescriptions: {
+      weight: "Записати вагу і побачити історію без зайвого переходу.",
+      water: "Повернути стаканчики, темп і норму води.",
+      body: "Зібрати заміри, фото прогресу і зміни тіла.",
+      trends: "Побачити калорії, білок, прийоми їжі і місячну аналітику.",
+      food: "Перейти до сканера або фото їжі, щоб прогрес був з реальних даних.",
+      assistant: "Попросити помічника пояснити, що важливіше саме зараз.",
+    },
   },
   pl: {
     title: "Progres",
@@ -73,6 +98,25 @@ const progressPageCopy = {
       trends: "Trendy",
     },
     sectionsAriaLabel: "Sekcje postępu",
+    blueprintTitle: "Żywe skale dnia",
+    blueprintSubtitle:
+      "Każda skala otwiera realną sekcję: wagę, wodę, pomiary, trendy, skan jedzenia albo podpowiedź asystenta.",
+    blueprintPatterns: {
+      weight: "Waga",
+      water: "Woda",
+      body: "Ciało",
+      trends: "Trendy",
+      food: "Jedzenie",
+      assistant: "Rada AI",
+    },
+    blueprintPatternDescriptions: {
+      weight: "Zapisz wagę i zobacz historię bez zbędnych przejść.",
+      water: "Przywróć szklanki, tempo i normę wody.",
+      body: "Zbierz pomiary, zdjęcia progresu i zmiany ciała.",
+      trends: "Zobacz kalorie, białko, posiłki i analizę miesiąca.",
+      food: "Przejdź do skanera albo zdjęcia jedzenia dla realnych danych.",
+      assistant: "Poproś asystenta o wyjaśnienie, co jest teraz najważniejsze.",
+    },
   },
   en: {
     title: "Progress",
@@ -85,6 +129,25 @@ const progressPageCopy = {
       trends: "Trends",
     },
     sectionsAriaLabel: "Progress sections",
+    blueprintTitle: "Living daily scales",
+    blueprintSubtitle:
+      "Each scale opens a real surface: weight, water, body, trends, food scan, or assistant guidance.",
+    blueprintPatterns: {
+      weight: "Weight",
+      water: "Water",
+      body: "Body",
+      trends: "Trends",
+      food: "Food",
+      assistant: "AI insight",
+    },
+    blueprintPatternDescriptions: {
+      weight: "Log weight and review history without a dead-end card.",
+      water: "Bring back glasses, pace, and the daily water target.",
+      body: "Collect measurements, progress photos, and body changes.",
+      trends: "See calories, protein, meals, and monthly analytics.",
+      food: "Open scanner or meal photo so progress comes from real logs.",
+      assistant: "Ask the assistant to explain what matters most right now.",
+    },
   },
 } as const;
 
@@ -138,8 +201,11 @@ const getSectionForProgressDomain = (domain: ProgressDomain): ProgressSection =>
 
 const ProgressPage = () => {
   const { appLanguage } = useLanguage();
+  const navigate = useNavigate();
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const [activeSection, setActiveSection] = useState<ProgressSection>("weight");
   const copy = getProgressPageCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const recoveryCopy = buildLazyModuleRecoveryCopy(
     appLanguage,
     getProgressSectionLabel(copy, activeSection)
@@ -149,6 +215,56 @@ const ProgressPage = () => {
     { id: "water", label: getProgressSectionLabel(copy, "water") },
     { id: "body", label: getProgressSectionLabel(copy, "body") },
     { id: "trends", label: getProgressSectionLabel(copy, "trends") },
+  ];
+  const progressBlueprintPatterns = [
+    {
+      key: "weight",
+      label: copy.blueprintPatterns.weight,
+      description: copy.blueprintPatternDescriptions.weight,
+      icon: Scale,
+      accent: "#22c55e",
+      onClick: () => setActiveSection("weight"),
+    },
+    {
+      key: "water",
+      label: copy.blueprintPatterns.water,
+      description: copy.blueprintPatternDescriptions.water,
+      icon: Droplets,
+      accent: "#22d3ee",
+      onClick: () => setActiveSection("water"),
+    },
+    {
+      key: "body",
+      label: copy.blueprintPatterns.body,
+      description: copy.blueprintPatternDescriptions.body,
+      icon: Activity,
+      accent: "#a78bfa",
+      onClick: () => setActiveSection("body"),
+    },
+    {
+      key: "trends",
+      label: copy.blueprintPatterns.trends,
+      description: copy.blueprintPatternDescriptions.trends,
+      icon: BarChart3,
+      accent: "#f59e0b",
+      onClick: () => setActiveSection("trends"),
+    },
+    {
+      key: "food",
+      label: copy.blueprintPatterns.food,
+      description: copy.blueprintPatternDescriptions.food,
+      icon: ScanLine,
+      accent: "#14b8a6",
+      onClick: () => navigate("/meals?mode=barcode"),
+    },
+    {
+      key: "assistant",
+      label: copy.blueprintPatterns.assistant,
+      description: copy.blueprintPatternDescriptions.assistant,
+      icon: Sparkles,
+      accent: "#60a5fa",
+      onClick: () => navigate("/coach"),
+    },
   ];
 
   return (
@@ -160,6 +276,15 @@ const ProgressPage = () => {
       <ProgressActionBar />
       <ProgressOverviewCard
         onSelectDomain={(domain) => setActiveSection(getSectionForProgressDomain(domain))}
+      />
+
+      <AIMasterBlueprintPanel
+        eyebrow="Smart Nutrition AI"
+        title={copy.blueprintTitle}
+        description={copy.blueprintSubtitle}
+        patterns={progressBlueprintPatterns}
+        assistantName={assistantDisplayName}
+        assistantVariant={assistant.companionKind}
       />
 
       <SectionTabs

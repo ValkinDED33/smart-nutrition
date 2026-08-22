@@ -8,9 +8,9 @@ import {
 } from "./auth";
 
 const password = "StrongPass1!";
-const PUBLIC_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
 const PUBLIC_APP_HOSTNAME = "smart-nutrition.club";
 const PUBLIC_APP_ORIGIN = `https://${PUBLIC_APP_HOSTNAME}`;
+const SAME_ORIGIN_API_BASE_URL = `${PUBLIC_APP_ORIGIN}/api`;
 
 const createRegisterPayload = (email: string) => ({
   name: "Cloud User",
@@ -86,7 +86,7 @@ describe("auth provider selection", () => {
       message: "Invalid email or password.",
     } satisfies Partial<AuthApiError>);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${PUBLIC_API_BASE_URL}/auth/login`,
+      `${SAME_ORIGIN_API_BASE_URL}/auth/login`,
       expect.any(Object)
     );
   });

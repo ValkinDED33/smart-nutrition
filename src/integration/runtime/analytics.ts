@@ -17,6 +17,7 @@ export type RuntimeAnalyticsEvent =
   | "water_added"
   | "weight_updated"
   | "global_assistant_opened"
+  | "global_assistant_command_opened"
   | "assistant_followup_clicked"
   | "assistant_navigation_handoff"
   | "onboarding_completed";

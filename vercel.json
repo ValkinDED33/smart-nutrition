@@ -48,6 +48,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://smart-nutrition-sk5r.onrender.com/api/$1"
+    },
+    {
       "source": "/favicon.ico",
       "destination": "/favicon.svg"
     },

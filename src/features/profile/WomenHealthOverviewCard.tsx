@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import QRCode from "qrcode";
 import { useSelector } from "react-redux";
+import { Baby, CalendarDays, HeartPulse, Link2 } from "lucide-react";
 import type { RootState } from "../../app/store";
 import type {
   ChineseZodiacSign,
@@ -43,6 +44,8 @@ import {
 } from "@shared/api/authRemote";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { AIMasterBlueprintPanel, type AIMasterBlueprintPattern } from "../../shared/ui";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_CYCLE_DAYS = 28;
@@ -1121,6 +1124,10 @@ const WomenHealthOverviewCard = () => {
   const partnerSharing = useSelector((state: RootState) => state.profile.partnerSharing);
   const { appLanguage } = useLanguage();
   const copy = getWomenHealthCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    profile.assistant.name,
+    appLanguage
+  );
   const profileActionCopy = getProfileCloudActionCopy(appLanguage);
   const profileAction = useProfileCloudAction(profileActionCopy);
   const [invite, setInvite] = useState<PartnerInviteResult | null>(null);
@@ -1322,6 +1329,46 @@ const WomenHealthOverviewCard = () => {
   const recentSymptomHistory = [...womenHealth.symptomHistory]
     .sort((first, second) => Date.parse(second.recordedAt) - Date.parse(first.recordedAt))
     .slice(0, 4);
+  const scrollToWomenHealthSection = (selector: string) => {
+    document.querySelector(selector)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+  const womenHealthBlueprintPatterns: AIMasterBlueprintPattern[] = [
+    {
+      key: "pregnancy",
+      label: copy.pregnancyTitle,
+      description: copy.pregnancySubtitle,
+      icon: CalendarDays,
+      accent: "#f472b6",
+      onClick: () => scrollToWomenHealthSection("[data-women-health-pregnancy-block='true']"),
+    },
+    {
+      key: "baby-preview",
+      label: copy.babyPreviewTitle,
+      description: copy.babyPreviewSubtitle,
+      icon: Baby,
+      accent: "#22d3ee",
+      onClick: () => scrollToWomenHealthSection("[data-baby-preview-block='true']"),
+    },
+    {
+      key: "symptoms",
+      label: copy.symptomHistoryTitle,
+      description: copy.symptomHistorySubtitle,
+      icon: HeartPulse,
+      accent: "#ef4444",
+      onClick: () => scrollToWomenHealthSection("[data-women-health-symptom-history='true']"),
+    },
+    {
+      key: "partner",
+      label: copy.partnerTitle,
+      description: copy.partnerHelp,
+      icon: Link2,
+      accent: "#84cc16",
+      onClick: () => scrollToWomenHealthSection("[data-women-health-partner-access='true']"),
+    },
+  ];
 
   return (
     <Paper
@@ -1343,6 +1390,15 @@ const WomenHealthOverviewCard = () => {
             {pageSubtitle}
           </Typography>
         </Stack>
+
+        <AIMasterBlueprintPanel
+          eyebrow={copy.title}
+          title={isWomenHealthOwner ? copy.pregnancyTitle : copy.partnerTitle}
+          description={pageSubtitle}
+          patterns={womenHealthBlueprintPatterns}
+          assistantName={assistantDisplayName}
+          assistantVariant={profile.assistant.companionKind}
+        />
 
         {isWomenHealthOwner && !hasPersonalContext && <Alert severity="info">{copy.addContext}</Alert>}
 
@@ -1871,7 +1927,11 @@ const WomenHealthOverviewCard = () => {
           </Paper>
         )}
 
-        <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+        <Paper
+          variant="outlined"
+          data-women-health-partner-access="true"
+          sx={{ p: 1.6, borderRadius: 1 }}
+        >
           <Stack spacing={1.4}>
             <Stack spacing={0.5}>
               <Typography sx={{ fontWeight: 900 }}>{copy.partnerTitle}</Typography>

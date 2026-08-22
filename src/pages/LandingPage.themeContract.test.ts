@@ -78,6 +78,10 @@ describe("LandingPage theme contract", () => {
 
     expect(source).toContain("AIDiscoveryAccordion");
     expect(source).toContain("CompanionCapabilitySlider");
+    expect(source).toContain('data-landing-hero-blueprint="true"');
+    expect(source).toContain('data-landing-capability-slider="true"');
+    expect(source).toContain('data-landing-slider-function-preview="true"');
+    expect(source).toContain('data-landing-ai-accordion="true"');
     expect(source).toContain("landingCompanionOrbitRings");
     expect(source).toContain("landingCompanionSignalNodes");
     expect(source).toContain('data-landing-living-companion-field="true"');
@@ -149,9 +153,10 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain('gridColumn: { md: "2", lg: "2" }');
     expect(source).toContain("SHOW_EXTENDED_LANDING_SECTIONS = false");
     expect(source).toContain('display: "none"');
-    expect(source).toContain('md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)"');
-    expect(source).toContain('lg: "minmax(0, 0.82fr) minmax(500px, 1fr)"');
-    expect(source).toContain("fontSize: { xs: 40, sm: 58, md: 50, lg: 60, xl: 70 }");
+    expect(source).toContain('md: "minmax(0, 0.86fr) minmax(340px, 0.74fr)"');
+    expect(source).toContain('lg: "minmax(0, 0.78fr) minmax(520px, 1fr)"');
+    expect(source).toContain("fontSize: { xs: 34, sm: 48, md: 44, lg: 56, xl: 64 }");
+    expect(source).toContain('textWrap: "balance"');
     expect(source).toContain('width: "100%"');
   });
 
@@ -169,9 +174,22 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("getAssistantToolIcon(index)");
     expect(source).toContain('data-landing-discovery-window="true"');
     expect(source).toContain("getNutritionInsightIcon(item, index)");
+    expect(source).toContain('data-landing-nutrition-ingredient-window="true"');
+    expect(source).toContain('data-landing-nutrition-mini-table="true"');
+    expect(source).toContain("copy.nutritionContainsLabel");
+    expect(source).toContain("copy.nutritionBenefitLabel");
+    expect(source).toContain("copy.nutritionNoteLabel");
+    expect(source).toContain("Морська капуста");
+    expect(source).toContain("йод, магній, клітковина");
+    expect(source).toContain("Устриці і морепродукти");
+    expect(source).toContain("аргінін, магній, цинк");
+    expect(source).toContain("Wodorosty morskie");
+    expect(source).toContain("Seaweed");
+    expect(source).toContain("Oysters and seafood");
     expect(source).toContain("const slides: CompanionCapabilitySlide[] = assistantTools.map");
     expect(source).toContain('"&:focus-visible"');
     expect(source).toContain('"&:hover"');
     expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');
+    expect(source).toContain("transform: LANDING_HOVER_LIFT");
   });
 });

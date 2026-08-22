@@ -49,6 +49,8 @@ const shopCopy = {
     studioTitle: "Образи, які хочеться збирати",
     studioSubtitle:
       "Роботи безкоштовні, тварини й фентезі відкриваються як косметична колекція без pay-to-win.",
+    freeRobots: "Безкоштовна база",
+    collectibleLooks: "Колекційні образи",
     preview: "Живий попередній перегляд",
     previewHint: "Наведи або вибери образ, щоб побачити, як він поводиться.",
     currentSelection: "Зараз у фокусі",
@@ -114,6 +116,8 @@ const shopCopy = {
     studioTitle: "Wyglądy, które chce się zbierać",
     studioSubtitle:
       "Roboty są darmowe, zwierzęta i fantazja otwierają się jako kosmetyczna kolekcja bez pay-to-win.",
+    freeRobots: "Darmowa baza",
+    collectibleLooks: "Kolekcja wyglądów",
     preview: "Żywy podgląd",
     previewHint: "Najedź albo wybierz wygląd, żeby zobaczyć, jak się zachowuje.",
     currentSelection: "Teraz w fokusie",
@@ -179,6 +183,8 @@ const shopCopy = {
     studioTitle: "Looks people actually want to collect",
     studioSubtitle:
       "Robots are free, while animals and fantasy looks unlock as cosmetic collection pieces without pay-to-win.",
+    freeRobots: "Free base",
+    collectibleLooks: "Collectible looks",
     preview: "Live preview",
     previewHint: "Hover or select a look to see how it behaves.",
     currentSelection: "Now in focus",
@@ -449,6 +455,12 @@ const CompanionShopCard = () => {
       ),
     [activeFilter, availableCatalogItems]
   );
+  const freeBaseCount = availableCatalogItems.filter(
+    (item) => item.category === "robot" && item.price === 0
+  ).length;
+  const collectibleCount = availableCatalogItems.filter(
+    (item) => item.category !== "robot" && item.price > 0
+  ).length;
   const focusedPreview =
     availableCatalogItems.find((item) => item.id === previewItemId) ?? activePreview;
   const focusedPreviewOwned = focusedPreview
@@ -602,6 +614,35 @@ const CompanionShopCard = () => {
                 </Typography>
               </Stack>
 
+              <Stack
+                data-companion-shop-collection-summary="true"
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+              >
+                <Chip
+                  label={`${copy.freeRobots}: ${freeBaseCount}`}
+                  sx={{
+                    color: "#dffbff",
+                    borderColor: "rgba(34,211,238,0.42)",
+                    background: "rgba(34,211,238,0.1)",
+                    fontWeight: 900,
+                  }}
+                  variant="outlined"
+                />
+                <Chip
+                  label={`${copy.collectibleLooks}: ${collectibleCount}`}
+                  sx={{
+                    color: "#fef3c7",
+                    borderColor: "rgba(251,191,36,0.42)",
+                    background: "rgba(251,191,36,0.1)",
+                    fontWeight: 900,
+                  }}
+                  variant="outlined"
+                />
+              </Stack>
+
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 {companionShopFilters.map((filter) => (
                   <Chip
@@ -696,7 +737,7 @@ const CompanionShopCard = () => {
                               display: "grid",
                               placeItems: "center",
                               borderRadius: 1,
-                            background:
+                              background:
                                 "linear-gradient(145deg, rgba(34,211,238,0.14), rgba(15,23,42,0.18))",
                             }}
                           >
@@ -851,7 +892,11 @@ const CompanionShopCard = () => {
                         borderColor: `${accent}55`,
                         background: "rgba(15,23,42,0.72)",
                         backdropFilter: "blur(14px)",
-                        display: { xs: index > 2 ? "none" : "block", md: index > 5 ? "none" : "block", xl: "block" },
+                        display: {
+                          xs: index > 2 ? "none" : "block",
+                          md: index > 5 ? "none" : "block",
+                          xl: "block",
+                        },
                       }}
                     >
                       <Stack direction="row" spacing={0.75} alignItems="flex-start">

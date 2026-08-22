@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Camera, Mic, Plus, ScanBarcode, Search, Sparkles, Star } from "lucide-react";
+import { Camera, Mic, Plus, ScanBarcode, Search, Star } from "lucide-react";
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
 import {
@@ -42,6 +42,8 @@ import {
   addProductIntakeToCloud,
   rememberRecentMealProductInCloud,
 } from "./mealCloudSync";
+import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 type FoodCommandTarget =
   | "search"
@@ -239,8 +241,10 @@ export const FoodCommandCenter = ({
     excludedIngredients: state.profile.excludedIngredients,
     adaptiveMode: state.profile.adaptiveMode,
   }));
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = getCommandCopy(appLanguage);
+  const assistantName = getAssistantDisplayName(assistant.name, appLanguage);
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -487,18 +491,27 @@ export const FoodCommandCenter = ({
       <Stack spacing={2}>
         <Stack direction="row" spacing={1.2} alignItems="flex-start">
           <Box
+            data-food-command-assistant-worker="true"
             sx={{
-              width: 42,
-              height: 42,
+              width: 52,
+              height: 52,
               borderRadius: 1,
               display: "grid",
               placeItems: "center",
-              color: "#0f766e",
-              bgcolor: "rgba(20,184,166,0.1)",
+              bgcolor:
+                "radial-gradient(circle at 50% 30%, rgba(34,211,238,0.28), rgba(20,184,166,0.12) 52%, rgba(15,23,42,0.06))",
+              border: "1px solid rgba(94,234,212,0.18)",
+              boxShadow: "0 16px 42px rgba(20,184,166,0.18)",
               flexShrink: 0,
             }}
           >
-            <Sparkles size={22} />
+            <AssistantAvatar
+              name={assistantName}
+              variant={assistant.companionKind}
+              mood={selectedProduct ? "happy" : "coach"}
+              size={42}
+              active={isListening || isSearching || isSaving}
+            />
           </Box>
           <Stack spacing={0.4} sx={{ minWidth: 0 }}>
             <Typography component="h2" variant="h5" sx={{ fontWeight: 950 }}>

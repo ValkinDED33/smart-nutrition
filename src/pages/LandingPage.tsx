@@ -244,6 +244,9 @@ const landingCopy = {
     nutritionInsightTitle: "Їжа як зрозуміла карта користі",
     nutritionInsightBody:
       "Помічник показує не суху назву продукту, а що в ньому важливого: нутрієнти, користь, контекст і м'яке попередження без діагнозів.",
+    nutritionContainsLabel: "Містить",
+    nutritionBenefitLabel: "Користь",
+    nutritionNoteLabel: "Важливо",
     nutritionInsights: [
       {
         product: "Морська капуста",
@@ -546,6 +549,9 @@ const landingCopy = {
     nutritionInsightTitle: "Jedzenie jako czytelna mapa korzyści",
     nutritionInsightBody:
       "Asystent pokazuje nie tylko nazwę produktu, ale składniki odżywcze, korzyść, kontekst i spokojną uwagę bezpieczeństwa bez diagnoz.",
+    nutritionContainsLabel: "Zawiera",
+    nutritionBenefitLabel: "Korzyść",
+    nutritionNoteLabel: "Ważne",
     nutritionInsights: [
       {
         product: "Wodorosty morskie",
@@ -848,6 +854,9 @@ const landingCopy = {
     nutritionInsightTitle: "Food as a clear map of benefits",
     nutritionInsightBody:
       "The assistant shows more than a product name: nutrients, likely benefit, context, and a calm safety note without diagnosis.",
+    nutritionContainsLabel: "Contains",
+    nutritionBenefitLabel: "Benefit",
+    nutritionNoteLabel: "Important",
     nutritionInsights: [
       {
         product: "Seaweed",
@@ -1918,18 +1927,19 @@ const Hero = ({
   return (
     <Box
       component="section"
+      data-landing-hero-blueprint="true"
       sx={{
         position: "relative",
-        minHeight: { xs: "auto", md: "auto", lg: "min(760px, calc(100svh - 24px))" },
+        minHeight: { xs: "auto", md: "auto", lg: "min(720px, calc(100svh - 24px))" },
         overflow: "hidden",
         borderRadius: { xs: 0, md: 1 },
-        px: { xs: 2, sm: 3, md: 4, lg: 5 },
-        pt: { xs: 10, md: 11, lg: 12 },
+        px: { xs: 2, sm: 3, md: 4, lg: 4.5 },
+        pt: { xs: 8, sm: 9, md: 10, lg: 10.5 },
         pb: { xs: 3, md: 4, lg: 5 },
         display: { xs: "flex", md: "grid", lg: "grid" },
         gridTemplateColumns: {
-          md: "minmax(0, 0.9fr) minmax(360px, 0.78fr)",
-          lg: "minmax(0, 0.82fr) minmax(500px, 1fr)",
+          md: "minmax(0, 0.86fr) minmax(340px, 0.74fr)",
+          lg: "minmax(0, 0.78fr) minmax(520px, 1fr)",
         },
         gridTemplateRows: { md: "auto auto", lg: "1fr" },
         columnGap: { md: 2.5, lg: 4 },
@@ -1989,15 +1999,16 @@ const Hero = ({
       <Typography
         component="h1"
         sx={{
-          fontSize: { xs: 40, sm: 58, md: 50, lg: 60, xl: 70 },
-          lineHeight: 1,
+          fontSize: { xs: 34, sm: 48, md: 44, lg: 56, xl: 64 },
+          lineHeight: { xs: 1.04, md: 1 },
           fontWeight: 900,
           letterSpacing: 0,
-          maxWidth: { xs: 760, md: 560, lg: 620 },
+          maxWidth: { xs: "100%", sm: 760, md: 520, lg: 600 },
           overflowWrap: "anywhere",
+          textWrap: "balance",
           textShadow: scene.titleShadow,
           "@media (min-width: 900px) and (max-height: 760px)": {
-            fontSize: 54,
+            fontSize: 50,
           },
         }}
       >
@@ -2016,11 +2027,13 @@ const Hero = ({
       <Typography
         component="p"
         sx={{
-          minHeight: { xs: 62, sm: 36 },
-          fontSize: { xs: 23, md: 25, lg: 32 },
+          minHeight: { xs: 54, sm: 34 },
+          fontSize: { xs: 19, sm: 22, md: 23, lg: 28 },
           lineHeight: 1.15,
           fontWeight: 900,
           color: scene.typingColor,
+          maxWidth: { xs: "100%", md: 560 },
+          textWrap: "balance",
         }}
       >
         {heroLine}
@@ -2277,6 +2290,7 @@ const AIDiscoveryAccordion = ({
     <Box
       id="ai-discovery"
       component="section"
+      data-landing-ai-accordion="true"
       sx={{
         width: "100%",
         maxWidth: 1440,
@@ -2292,8 +2306,8 @@ const AIDiscoveryAccordion = ({
           overflow: "hidden",
           border: `1px solid ${scene.featureRailBorder}`,
           background: isDarkMode
-            ? "linear-gradient(135deg, rgba(2,6,23,0.9), rgba(6,78,59,0.34))"
-            : "linear-gradient(135deg, rgba(255,255,255,0.88), rgba(220,252,231,0.62))",
+            ? "linear-gradient(135deg, rgba(2,6,23,0.94), rgba(8,13,26,0.96))"
+            : "linear-gradient(135deg, rgba(255,255,255,0.94), rgba(248,250,252,0.88))",
           boxShadow: STRONG_SHADOW,
           backdropFilter: GLASS_BLUR_18,
         }}
@@ -2347,6 +2361,7 @@ const AIDiscoveryAccordion = ({
             sx={{
               display: "grid",
               gridTemplateColumns: { xs: "1fr", md: TWO_COLUMN_GRID },
+              alignContent: "start",
               borderTop: {
                 xs: `1px solid ${scene.featureRailBorder}`,
                 lg: "none",
@@ -2363,8 +2378,9 @@ const AIDiscoveryAccordion = ({
                 <Box
                   key={`${item.title}-${index}`}
                   data-landing-discovery-window="true"
+                  data-landing-nutrition-ingredient-window="true"
                   sx={{
-                    minHeight: { xs: "auto", md: isOpen ? 238 : 142 },
+                    minHeight: { xs: "auto", md: isOpen ? 214 : 118 },
                     borderRight: {
                       md:
                         index % 2 === 0
@@ -2386,6 +2402,7 @@ const AIDiscoveryAccordion = ({
                       boxShadow: isDarkMode
                         ? "inset 0 0 0 1px rgba(163,230,53,0.2)"
                         : "inset 0 0 0 1px rgba(20,184,166,0.2)",
+                      transform: LANDING_HOVER_LIFT,
                     },
                   }}
                 >
@@ -2401,8 +2418,8 @@ const AIDiscoveryAccordion = ({
                     }}
                     sx={{
                       width: "100%",
-                      minHeight: { xs: 86, md: isOpen ? 92 : 142 },
-                      p: { xs: 1.6, md: 1.9 },
+                      minHeight: { xs: 82, md: 118 },
+                      p: { xs: 1.45, md: 1.7 },
                       border: 0,
                       borderRadius: 0,
                       display: "grid",
@@ -2422,9 +2439,9 @@ const AIDiscoveryAccordion = ({
                   >
                     <Box
                       sx={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: "50%",
+                        width: 38,
+                        height: 38,
+                        borderRadius: 1,
                         display: "grid",
                         placeItems: "center",
                         color: scene.featureIconColor,
@@ -2438,7 +2455,7 @@ const AIDiscoveryAccordion = ({
                       <Typography
                         sx={{
                           color: item.tone,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: 900,
                           textTransform: "uppercase",
                         }}
@@ -2450,7 +2467,7 @@ const AIDiscoveryAccordion = ({
                         sx={{
                           color: scene.heroText,
                           fontWeight: 900,
-                          fontSize: { xs: 17, md: 18 },
+                          fontSize: { xs: 16, md: 17 },
                           lineHeight: 1.2,
                         }}
                       >
@@ -2460,9 +2477,13 @@ const AIDiscoveryAccordion = ({
                         sx={{
                           mt: 0.5,
                           color: scene.mutedText,
-                          fontSize: 13,
+                          fontSize: 12,
                           lineHeight: 1.45,
                           fontWeight: 700,
+                          display: isOpen ? "block" : "-webkit-box",
+                          WebkitLineClamp: isOpen ? "unset" : 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
                         }}
                       >
                         {item.detail}
@@ -2471,8 +2492,8 @@ const AIDiscoveryAccordion = ({
                     <Box
                       aria-hidden="true"
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: 34,
+                        height: 34,
                         borderRadius: "50%",
                         display: "grid",
                         placeItems: "center",
@@ -2494,17 +2515,69 @@ const AIDiscoveryAccordion = ({
                     aria-labelledby={buttonId}
                     hidden={!isOpen}
                     sx={{
-                      px: { xs: 2, md: 2.4 },
-                      pb: { xs: 2, md: 2.4 },
+                      px: { xs: 1.8, md: 2.2 },
+                      pb: { xs: 1.8, md: 2.2 },
                     }}
                   >
-                    <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                      <Box component="strong" sx={{ color: scene.heroText }}>
-                        {item.benefit}
-                      </Box>
-                      {" - "}
-                      {item.note}
-                    </Typography>
+                    <Stack
+                      data-landing-nutrition-mini-table="true"
+                      spacing={1}
+                      sx={{
+                        p: 1.2,
+                        borderRadius: 1,
+                        border: `1px solid ${scene.featureRailBorder}`,
+                        background: isDarkMode
+                          ? "linear-gradient(135deg, rgba(15,23,42,0.9), rgba(6,78,59,0.34))"
+                          : "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(236,253,245,0.76))",
+                      }}
+                    >
+                      {[
+                        {
+                          label: copy.nutritionContainsLabel,
+                          value: item.detail,
+                        },
+                        {
+                          label: copy.nutritionBenefitLabel,
+                          value: item.benefit,
+                        },
+                        {
+                          label: copy.nutritionNoteLabel,
+                          value: item.note,
+                        },
+                      ].map((row) => (
+                        <Box
+                          key={row.label}
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", sm: "104px 1fr" },
+                            gap: { xs: 0.35, sm: 1 },
+                            alignItems: "start",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: item.tone,
+                              fontSize: 11,
+                              fontWeight: 900,
+                              letterSpacing: 0,
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            {row.label}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: scene.heroText,
+                              fontSize: 13,
+                              fontWeight: 750,
+                              lineHeight: 1.45,
+                            }}
+                          >
+                            {row.value}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Stack>
                     <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap" sx={{ mt: 1.2 }}>
                       {item.tags.map((tag) => (
                         <Chip
@@ -2960,6 +3033,7 @@ const CompanionCapabilitySlider = ({
     <Box
       component="section"
       aria-label={copy.sliderAriaLabel}
+      data-landing-capability-slider="true"
       sx={{
         width: "100%",
         maxWidth: 1440,
@@ -2984,8 +3058,8 @@ const CompanionCapabilitySlider = ({
           borderRadius: 1,
           border: `1px solid ${scene.featureRailBorder}`,
           background: isDarkMode
-            ? "linear-gradient(90deg, rgba(8,13,26,0.98), rgba(3,7,18,0.96))"
-            : "linear-gradient(90deg, rgba(255,255,255,0.96), rgba(241,245,249,0.9))",
+            ? "linear-gradient(90deg, rgba(8,13,26,0.98) 0 50%, rgba(3,7,18,0.96) 50% 100%)"
+            : "linear-gradient(90deg, rgba(255,255,255,0.98) 0 50%, rgba(241,245,249,0.92) 50% 100%)",
           boxShadow: STRONG_SHADOW,
         }}
       >
@@ -2997,11 +3071,14 @@ const CompanionCapabilitySlider = ({
           }}
         >
           <Box
+            data-landing-slider-function-preview="true"
             sx={{
               position: "relative",
               minHeight: { xs: 360, md: 480 },
               display: "grid",
-              placeItems: "center",
+              gridTemplateRows: "auto 1fr",
+              alignItems: "center",
+              p: { xs: 2, md: 4 },
               overflow: "hidden",
               background: isDarkMode
                 ? `radial-gradient(circle at 50% 46%, ${active.tone}44, transparent 25%), radial-gradient(circle at 72% 28%, rgba(255,255,255,0.2), transparent 18%), linear-gradient(135deg, rgba(15,23,42,0.88), rgba(3,7,18,0.96))`
@@ -3009,6 +3086,23 @@ const CompanionCapabilitySlider = ({
               borderRight: { lg: `1px solid ${scene.featureRailBorder}` },
             }}
           >
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ zIndex: 2 }}>
+              {active.tags.slice(0, 4).map((tag) => (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    borderColor: `${active.tone}66`,
+                    color: scene.heroText,
+                    bgcolor: isDarkMode ? "rgba(2,6,23,0.48)" : GLASS_WHITE_72,
+                    fontWeight: 900,
+                    backdropFilter: GLASS_BLUR_14,
+                  }}
+                />
+              ))}
+            </Stack>
             <Box
               component={motion.div}
                 key={active.title}
@@ -3016,11 +3110,17 @@ const CompanionCapabilitySlider = ({
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               sx={{
-                width: { xs: 230, md: 320 },
-                height: { xs: 230, md: 320 },
-                borderRadius: "50%",
+                alignSelf: "center",
+                justifySelf: "center",
+                width: { xs: "100%", sm: 360, md: 420 },
+                maxWidth: "100%",
+                minHeight: { xs: 250, md: 320 },
+                p: { xs: 2, md: 2.5 },
+                borderRadius: 1,
                 display: "grid",
-                placeItems: "center",
+                gridTemplateColumns: "auto 1fr",
+                gap: 1.6,
+                alignItems: "center",
                 background: isDarkMode
                   ? "rgba(2,6,23,0.52)"
                   : GLASS_WHITE_72,
@@ -3029,19 +3129,37 @@ const CompanionCapabilitySlider = ({
                 backdropFilter: "blur(16px)",
               }}
             >
+              <LandingAssistantWorkerAvatar
+                name={copy.mascot.name}
+                mood="coach"
+                size={118}
+              />
               <Box
                 sx={{
-                  width: { xs: 150, md: 210 },
-                  height: { xs: 150, md: 210 },
-                  borderRadius: "42%",
-                  display: "grid",
-                  placeItems: "center",
-                  color: isDarkMode ? "#ecfeff" : "#042f2e",
-                  background: `linear-gradient(135deg, ${active.tone}, rgba(255,255,255,0.88))`,
-                  boxShadow: `inset 0 0 38px rgba(255,255,255,0.34), 0 28px 90px ${active.tone}55`,
+                  minWidth: 0,
                 }}
               >
-                <ActiveIcon size={82} aria-hidden="true" />
+                <Box
+                  sx={{
+                    width: 58,
+                    height: 58,
+                    borderRadius: 1,
+                    display: "grid",
+                    placeItems: "center",
+                    color: isDarkMode ? "#ecfeff" : "#042f2e",
+                    background: `linear-gradient(135deg, ${active.tone}, rgba(255,255,255,0.88))`,
+                    boxShadow: `inset 0 0 22px rgba(255,255,255,0.34), 0 18px 42px ${active.tone}55`,
+                    mb: 1.2,
+                  }}
+                >
+                  <ActiveIcon size={30} aria-hidden="true" />
+                </Box>
+                <Typography sx={{ color: scene.heroText, fontSize: 24, fontWeight: 950, lineHeight: 1.04 }}>
+                  {active.title}
+                </Typography>
+                <Typography sx={{ mt: 0.8, color: scene.mutedText, fontWeight: 750, lineHeight: 1.5 }}>
+                  {active.product}
+                </Typography>
               </Box>
             </Box>
 

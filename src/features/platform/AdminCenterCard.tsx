@@ -13,7 +13,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Ban, ShieldCheck, Trash2 } from "lucide-react";
+import { Activity, Ban, Bot, ClipboardList, Database, ShieldCheck, Trash2, Users } from "lucide-react";
 import type { RootState } from "../../app/store";
 import type {
   AccessOverview,
@@ -46,7 +46,9 @@ import {
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
+import { AIMasterBlueprintPanel, type AIMasterBlueprintPattern } from "../../shared/ui";
 import { getNutrientLabel } from "@domain/meal/nutrients";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 
 type AdminTab = "reports" | "queue" | "stats" | "users" | "audit" | "system";
 
@@ -504,8 +506,10 @@ const getAdminUserHealthCards = ({
 
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = getAdminCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const backendUnavailableMessage = copy.backendUnavailable;
   const [tab, setTab] = useState<AdminTab>("reports");
   const [access, setAccess] = useState<AccessOverview | null>(null);
@@ -598,6 +602,56 @@ export const AdminCenterCard = () => {
   const allowedRoles = getAssignableRolesForActor(access?.role ?? currentUser.role);
   const visibleTabs = getVisibleAdminTabs(access);
   const activeTab = visibleTabs.includes(tab) ? tab : (visibleTabs[0] ?? "reports");
+  const adminBlueprintPatterns: AIMasterBlueprintPattern[] = [
+    {
+      key: "stats",
+      label: copy.tabs.stats,
+      description: `${copy.usersOnline}, ${copy.aiRequestsTotal}, ${copy.productsPending}`,
+      icon: Activity,
+      accent: "#22d3ee",
+      onClick: () => setTab("stats"),
+    },
+    {
+      key: "users",
+      label: copy.tabs.users,
+      description: copy.usersPanelSubtitle,
+      icon: Users,
+      accent: "#10b981",
+      onClick: () => setTab("users"),
+    },
+    {
+      key: "queue",
+      label: copy.tabs.queue,
+      description: `${copy.publicProducts}, ${copy.contentLabel}, ${copy.photoAnalytics}`,
+      icon: ClipboardList,
+      accent: "#84cc16",
+      onClick: () => setTab("queue"),
+    },
+    {
+      key: "reports",
+      label: copy.tabs.reports,
+      description: `${copy.openReports}, ${copy.suspicious}, ${copy.security}`,
+      icon: ShieldCheck,
+      accent: "#f59e0b",
+      onClick: () => setTab("reports"),
+    },
+    {
+      key: "audit",
+      label: copy.tabs.audit,
+      description: copy.logsReady,
+      icon: Database,
+      accent: "#a78bfa",
+      onClick: () => setTab("audit"),
+    },
+    {
+      key: "system",
+      label: copy.tabs.system,
+      description: copy.aiPolicy,
+      icon: Bot,
+      accent: "#f472b6",
+      onClick: () => setTab("system"),
+    },
+  ].filter((pattern) => visibleTabs.includes(pattern.key as AdminTab));
   const latestAudit = audit[0];
   const handlePlatformMutationError = (nextError: unknown) => {
     setError(
@@ -636,6 +690,17 @@ export const AdminCenterCard = () => {
         )}
 
         {error && <Alert severity="warning">{error}</Alert>}
+
+        {adminBlueprintPatterns.length > 0 && (
+          <AIMasterBlueprintPanel
+            eyebrow={copy.systemTitle}
+            title={copy.usersPanelTitle}
+            description={copy.systemSubtitle}
+            patterns={adminBlueprintPatterns}
+            assistantName={assistantDisplayName}
+            assistantVariant={assistant.companionKind}
+          />
+        )}
 
         {visibleTabs.length > 0 && (
           <Tabs

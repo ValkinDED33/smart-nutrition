@@ -37,11 +37,23 @@ import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveGlobalAssistantLayerModel } from "./globalAssistantLayerModel";
 import type { AppLanguage } from "@shared/types/i18n";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import { useAppColorMode } from "@shared/theme/colorMode";
 
 const OPEN_ASSISTANT_PL = "Otwórz asystenta";
 const OPEN_ASSISTANT_EN = "Open assistant";
 const RESTING_ASSISTANT_LOOK_OFFSET = { x: 0, y: 0 };
 const ASSISTANT_STRONG_TEXT_COLOR = "var(--sn-text-strong)";
+const ASSISTANT_MUTED_TEXT_COLOR = "text.secondary";
+const ASSISTANT_ACCENT_COLOR = "var(--sn-accent)";
+const ASSISTANT_START_ALIGN = "flex-start";
+const ASSISTANT_TOOL_BORDER = "1px solid rgba(20, 184, 166, 0.24)";
+const ASSISTANT_GLASS_BLUR = "blur(14px)";
+const ROUTE_DASHBOARD = "/dashboard";
+const ROUTE_MEALS_SCANNER = "/meals?mode=barcode";
+const ROUTE_MEALS_PHOTO = "/meals?mode=photo";
+const ROUTE_COACH = "/coach";
+const ROUTE_WOMEN_HEALTH = "/profile#women-health";
+const ROUTE_PROGRESS = "/progress";
 
 const getGlobalAssistantToolIcon = (index: number) => {
   switch (index) {
@@ -146,6 +158,15 @@ const layerCopy = {
     workerLabel: "AI-працівник",
     toolbeltLabel: "Що я тримаю поруч",
     toolbelt: ["Їжа", "Вода", "Фото", "Telegram", "Здоров'я", "Сім'я", "Задачі"],
+    commandDockLabel: "Швидкі інструменти",
+    commandDock: [
+      { label: "План дня", detail: "їжа, вода, ліки", route: ROUTE_DASHBOARD },
+      { label: "Сканер", detail: "продукт або штрихкод", route: ROUTE_MEALS_SCANNER },
+      { label: "Фото", detail: "їжа, тиск, рецепт", route: ROUTE_MEALS_PHOTO },
+      { label: "Нагадати", detail: "подія або таблетка", route: ROUTE_COACH },
+      { label: "Сім'я", detail: "вагітність і партнер", route: ROUTE_WOMEN_HEALTH },
+      { label: "Прогрес", detail: "графіки й аналіз", route: ROUTE_PROGRESS },
+    ],
     orbitLabels: ["аналіз", "синхронізація", "план"],
     workerActivityLabel: "Зараз працюю",
     workerActivities: [
@@ -275,6 +296,15 @@ const layerCopy = {
     workerLabel: "Pracownik AI",
     toolbeltLabel: "Co mam pod ręką",
     toolbelt: ["Jedzenie", "Woda", "Zdjęcia", "Telegram", "Zdrowie", "Rodzina", "Zadania"],
+    commandDockLabel: "Szybkie narzędzia",
+    commandDock: [
+      { label: "Plan dnia", detail: "jedzenie, woda, leki", route: ROUTE_DASHBOARD },
+      { label: "Skaner", detail: "produkt lub kod", route: ROUTE_MEALS_SCANNER },
+      { label: "Zdjęcie", detail: "posiłek, ciśnienie, recepta", route: ROUTE_MEALS_PHOTO },
+      { label: "Przypomnij", detail: "wydarzenie albo tabletka", route: ROUTE_COACH },
+      { label: "Rodzina", detail: "ciąża i partner", route: ROUTE_WOMEN_HEALTH },
+      { label: "Postęp", detail: "wykresy i analiza", route: ROUTE_PROGRESS },
+    ],
     orbitLabels: ["analiza", "synchronizacja", "plan"],
     workerActivityLabel: "Teraz pracuję",
     workerActivities: [
@@ -404,6 +434,15 @@ const layerCopy = {
     workerLabel: "AI worker",
     toolbeltLabel: "What I keep nearby",
     toolbelt: ["Food", "Water", "Photos", "Telegram", "Health", "Family", "Tasks"],
+    commandDockLabel: "Quick tools",
+    commandDock: [
+      { label: "Day plan", detail: "food, water, meds", route: ROUTE_DASHBOARD },
+      { label: "Scanner", detail: "product or barcode", route: ROUTE_MEALS_SCANNER },
+      { label: "Photo", detail: "meal, pressure, recipe", route: ROUTE_MEALS_PHOTO },
+      { label: "Remind me", detail: "event or tablet", route: ROUTE_COACH },
+      { label: "Family", detail: "pregnancy and partner", route: ROUTE_WOMEN_HEALTH },
+      { label: "Progress", detail: "charts and analysis", route: ROUTE_PROGRESS },
+    ],
     orbitLabels: ["analysis", "sync", "plan"],
     workerActivityLabel: "Working now",
     workerActivities: [
@@ -620,6 +659,7 @@ export const GlobalAssistantLayer = () => {
     (state: RootState) => state.profile.weightHistory
   );
   const { appLanguage } = useLanguage();
+  const { isDarkMode } = useAppColorMode();
   const copy = getLayerCopy(appLanguage);
   const [workerActivityIndex, setWorkerActivityIndex] = useState(0);
   const inputFocused = useInputFocusState();
@@ -694,6 +734,15 @@ export const GlobalAssistantLayer = () => {
     : "Smart";
   const companionKind = user ? assistant.companionKind : "robot";
   const companionSize = isDenseMobileCompanion ? 58 : isMobile ? 64 : 76;
+  const assistantPanelBackground = isDarkMode
+    ? "radial-gradient(circle at 96% 0%, rgba(34, 211, 238, 0.16), transparent 34%), linear-gradient(180deg, rgba(8, 13, 26, 0.94), rgba(2, 6, 23, 0.86))"
+    : "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))";
+  const assistantChipBackground = isDarkMode
+    ? "rgba(15, 23, 42, 0.74)"
+    : "rgba(255, 255, 255, 0.82)";
+  const assistantOrbitBackground = isDarkMode
+    ? "linear-gradient(135deg, rgba(8,13,26,0.92), rgba(15,23,42,0.76))"
+    : "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(236,253,245,0.78))";
   const assistantLookOffset = useAssistantPointerLookOffset({
     enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion,
   });
@@ -745,6 +794,18 @@ export const GlobalAssistantLayer = () => {
     navigate(displayAction.route);
   };
 
+  const handleOpenCommand = (command: LayerCopy["commandDock"][number]) => {
+    trackRuntimeEvent("global_assistant_command_opened", {
+      area,
+      path: location.pathname,
+      commandLabel: command.label,
+      commandRoute: command.route,
+      screenName: layerModel.screenName,
+      presenceMode: presence.mode,
+    });
+    navigate(command.route);
+  };
+
   return (
     <AnimatePresence initial={presence.allowMotion}>
       <Box
@@ -786,8 +847,7 @@ export const GlobalAssistantLayer = () => {
             p: 2,
             borderRadius: 1,
             border: "1px solid var(--sn-border-soft)",
-            background:
-              "radial-gradient(circle at 96% 0%, var(--sn-accent-soft), transparent 34%), linear-gradient(180deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+            background: assistantPanelBackground,
             boxShadow: "var(--sn-shadow-strong)",
             backdropFilter: "blur(22px)",
             pointerEvents: "auto",
@@ -824,9 +884,9 @@ export const GlobalAssistantLayer = () => {
               label={copy.workerLabel}
               data-global-assistant-worker-chip="true"
               sx={{
-                alignSelf: "flex-start",
+                alignSelf: ASSISTANT_START_ALIGN,
                 borderRadius: 999,
-                border: "1px solid rgba(20, 184, 166, 0.24)",
+                border: ASSISTANT_TOOL_BORDER,
                 background:
                   "linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(132, 204, 22, 0.12))",
                 color: ASSISTANT_STRONG_TEXT_COLOR,
@@ -845,7 +905,7 @@ export const GlobalAssistantLayer = () => {
             <Typography
               component={motion.p}
               variants={fadeUpVariants}
-              color="text.secondary"
+              color={ASSISTANT_MUTED_TEXT_COLOR}
               sx={{ m: 0 }}
             >
               {livingMessage?.body || visibleCopy.body || copy.fallbackBody}
@@ -859,7 +919,7 @@ export const GlobalAssistantLayer = () => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: "text.secondary",
+                  color: ASSISTANT_MUTED_TEXT_COLOR,
                   fontWeight: 900,
                   letterSpacing: 0,
                 }}
@@ -880,17 +940,117 @@ export const GlobalAssistantLayer = () => {
                         height: 26,
                         borderRadius: 999,
                         border: "1px solid rgba(20, 184, 166, 0.2)",
-                        background: "rgba(255, 255, 255, 0.58)",
+                        background: assistantChipBackground,
                         color: ASSISTANT_STRONG_TEXT_COLOR,
                         fontWeight: 800,
                         "& .MuiChip-icon": {
-                          color: "var(--sn-accent)",
+                          color: ASSISTANT_ACCENT_COLOR,
                         },
                       }}
                     />
                   );
                 })}
               </Stack>
+            </Stack>
+            <Stack
+              component={motion.div}
+              variants={fadeUpVariants}
+              spacing={0.75}
+              data-global-assistant-command-dock="true"
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  color: ASSISTANT_MUTED_TEXT_COLOR,
+                  fontWeight: 900,
+                  letterSpacing: 0,
+                }}
+              >
+                {copy.commandDockLabel}
+              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 0.7,
+                }}
+              >
+                {copy.commandDock.map((command, index) => {
+                  const CommandIcon = getGlobalAssistantToolIcon(index);
+
+                  return (
+                    <Button
+                      key={`${command.route}-${command.label}`}
+                      type="button"
+                      size="small"
+                      onClick={() => handleOpenCommand(command)}
+                      startIcon={<CommandIcon size={14} />}
+                      data-global-assistant-command={command.route}
+                      sx={{
+                        minHeight: 46,
+                        justifyContent: ASSISTANT_START_ALIGN,
+                        alignItems: "center",
+                        gap: 0.4,
+                        px: 1,
+                        py: 0.75,
+                        borderRadius: 1,
+                        border: "1px solid rgba(20, 184, 166, 0.18)",
+                        background:
+                          "linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(14, 165, 233, 0.08))",
+                        color: ASSISTANT_STRONG_TEXT_COLOR,
+                        textAlign: "left",
+                        textTransform: "none",
+                        overflow: "hidden",
+                        transition:
+                          "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+                        "&:hover": {
+                          borderColor: "rgba(94, 234, 212, 0.48)",
+                          boxShadow: "0 14px 28px rgba(15, 118, 110, 0.14)",
+                          transform: "translateY(-1px)",
+                        },
+                        "&:focus-visible": {
+                          outline: "3px solid rgba(20, 184, 166, 0.28)",
+                          outlineOffset: 2,
+                        },
+                        "& .MuiButton-startIcon": {
+                          m: 0,
+                          color: ASSISTANT_ACCENT_COLOR,
+                        },
+                      }}
+                    >
+                      <Stack spacing={0.1} minWidth={0}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontSize: 12,
+                            fontWeight: 950,
+                            lineHeight: 1.15,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {command.label}
+                        </Typography>
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: ASSISTANT_MUTED_TEXT_COLOR,
+                            fontSize: 10.5,
+                            fontWeight: 750,
+                            lineHeight: 1.1,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {command.detail}
+                        </Typography>
+                      </Stack>
+                    </Button>
+                  );
+                })}
+              </Box>
             </Stack>
             <Paper
               component={motion.div}
@@ -915,7 +1075,7 @@ export const GlobalAssistantLayer = () => {
                 {workerActivity.action}
               </Typography>
               <Typography
-                color="text.secondary"
+                color={ASSISTANT_MUTED_TEXT_COLOR}
                 sx={{ mt: 0.2, fontSize: 13, lineHeight: 1.35 }}
               >
                 {workerActivity.detail}
@@ -930,7 +1090,7 @@ export const GlobalAssistantLayer = () => {
               startIcon={<Bot size={18} />}
               variant="contained"
               sx={{
-                alignSelf: "flex-start",
+                alignSelf: ASSISTANT_START_ALIGN,
                 textTransform: "none",
                 fontWeight: 800,
                 borderRadius: 999,
@@ -985,10 +1145,10 @@ export const GlobalAssistantLayer = () => {
               py: 0.45,
               borderRadius: 999,
               border: "1px solid rgba(20, 184, 166, 0.22)",
-              background: "rgba(255, 255, 255, 0.82)",
+              background: assistantChipBackground,
               color: ASSISTANT_STRONG_TEXT_COLOR,
               boxShadow: "var(--sn-shadow-soft)",
-              backdropFilter: "blur(14px)",
+              backdropFilter: ASSISTANT_GLASS_BLUR,
               fontSize: 11,
               fontWeight: 900,
               lineHeight: 1.15,
@@ -1046,12 +1206,11 @@ export const GlobalAssistantLayer = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 0.35,
-                    border: "1px solid rgba(20, 184, 166, 0.24)",
-                    background:
-                      "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(236,253,245,0.78))",
+                    border: ASSISTANT_TOOL_BORDER,
+                    background: assistantOrbitBackground,
                     color: ASSISTANT_STRONG_TEXT_COLOR,
                     boxShadow: "0 12px 26px rgba(15, 118, 110, 0.14)",
-                    backdropFilter: "blur(14px)",
+                    backdropFilter: ASSISTANT_GLASS_BLUR,
                     fontSize: 10,
                     fontWeight: 950,
                     lineHeight: 1,
@@ -1073,50 +1232,109 @@ export const GlobalAssistantLayer = () => {
             onClick={handleOpenAssistant}
             aria-label={copy.mobileLabel}
             data-global-ai-worker-button="true"
-          sx={{
-            width: companionSize,
-            height: companionSize,
-            border: "none",
-            borderRadius: "50%",
-            cursor: "pointer",
-            p: 0,
-            background: "transparent",
-            pointerEvents: "auto",
-            position: "relative",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: -7,
+            sx={{
+              width: companionSize,
+              height: companionSize,
+              border: "none",
               borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(20, 184, 166, 0.24), rgba(132, 204, 22, 0.1) 45%, transparent 72%)",
-              opacity: presence.allowMotion ? 1 : 0.56,
-              transform: "scale(0.92)",
-              animation: presence.allowMotion
-                ? "snGlobalAssistantBreath 3.2s ease-in-out infinite"
-                : "none",
-            },
-            "@keyframes snGlobalAssistantBreath": {
-              "0%, 100%": {
-                opacity: 0.68,
-                transform: "scale(0.9)",
+              cursor: "pointer",
+              p: 0,
+              background: "transparent",
+              pointerEvents: "auto",
+              position: "relative",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: -7,
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(20, 184, 166, 0.24), rgba(132, 204, 22, 0.1) 45%, transparent 72%)",
+                opacity: presence.allowMotion ? 1 : 0.56,
+                transform: "scale(0.92)",
+                animation: presence.allowMotion
+                  ? "snGlobalAssistantBreath 3.2s ease-in-out infinite"
+                  : "none",
               },
-              "50%": {
-                opacity: 1,
-                transform: "scale(1.08)",
+              "@keyframes snGlobalAssistantBreath": {
+                "0%, 100%": {
+                  opacity: 0.68,
+                  transform: "scale(0.9)",
+                },
+                "50%": {
+                  opacity: 1,
+                  transform: "scale(1.08)",
+                },
               },
-            },
-          }}
-        >
-          <AssistantAvatar
-            name={companionName}
-            variant={companionKind}
-            size={companionSize}
-            mood={layerModel.emotion.mood}
-            lookOffset={assistantLookOffset}
-            active
-          />
+            }}
+          >
+            <AssistantAvatar
+              name={companionName}
+              variant={companionKind}
+              size={companionSize}
+              mood={layerModel.emotion.mood}
+              lookOffset={assistantLookOffset}
+              active
+            />
           </Box>
+          <Stack
+            data-global-ai-worker-mini-console="true"
+            direction="row"
+            spacing={0.45}
+            sx={{
+              position: "absolute",
+              left: "50%",
+              bottom: -16,
+              transform: "translateX(-50%)",
+              px: 0.7,
+              py: 0.35,
+              borderRadius: 999,
+              border: ASSISTANT_TOOL_BORDER,
+              background: assistantChipBackground,
+              boxShadow: "0 12px 30px rgba(15, 118, 110, 0.16)",
+              backdropFilter: ASSISTANT_GLASS_BLUR,
+              display:
+                presence.allowMotion && !inputFocused
+                  ? { xs: "none", md: "flex" }
+                  : "none",
+              pointerEvents: "none",
+            }}
+          >
+            {copy.toolbelt.slice(0, 4).map((tool, index) => {
+              const ToolIcon = getGlobalAssistantToolIcon(index);
+
+              return (
+                <Box
+                  key={tool}
+                  component={motion.span}
+                  aria-hidden="true"
+                  animate={
+                    presence.allowMotion && !prefersReducedMotion
+                      ? { y: [0, -2, 0], opacity: [0.74, 1, 0.74] }
+                      : undefined
+                  }
+                  transition={{
+                    duration: 2.8 + index * 0.3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: index * 0.18,
+                  }}
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    color: ASSISTANT_ACCENT_COLOR,
+                    background: isDarkMode
+                      ? "rgba(34, 211, 238, 0.1)"
+                      : "rgba(20, 184, 166, 0.1)",
+                  }}
+                >
+                  <ToolIcon size={12} />
+                </Box>
+              );
+            })}
+          </Stack>
         </Box>
       </Box>
     </AnimatePresence>

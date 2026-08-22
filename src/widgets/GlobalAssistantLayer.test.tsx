@@ -94,6 +94,11 @@ describe("GlobalAssistantLayer", () => {
 
     expect(source).toContain('data-global-assistant-worker-chip="true"');
     expect(source).toContain('data-global-assistant-toolbelt="true"');
+    expect(source).toContain('data-global-assistant-command-dock="true"');
+    expect(source).toContain("commandDock");
+    expect(source).toContain("commandDockLabel");
+    expect(source).toContain("global_assistant_command_opened");
+    expect(source).toContain('data-global-assistant-command={command.route}');
     expect(source).toContain('data-global-assistant-working-state="true"');
     expect(source).toContain('data-global-ai-worker-button="true"');
     expect(source).toContain('data-global-ai-worker-roaming="true"');
@@ -112,6 +117,9 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("Telegram");
     expect(source).toContain("Сім'я");
     expect(source).toContain("Задачі");
+    expect(source).toContain("/meals?mode=barcode");
+    expect(source).toContain("/meals?mode=photo");
+    expect(source).toContain("/profile#women-health");
   });
 
   it("lets public auth surfaces guide themselves and hides on onboarding", () => {

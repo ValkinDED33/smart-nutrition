@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { ScanBarcode } from "lucide-react";
+import { Camera, ChefHat, History, ScanBarcode, Search, Star } from "lucide-react";
 import {
   Box,
   Button,
@@ -26,8 +26,15 @@ import { useLanguage } from "../shared/language";
 import { getProductDisplayName } from "@domain/products/productDisplay";
 import type { AppLanguage } from "@shared/types/i18n";
 import Loader from "../shared/components/Loader/PacmanLoader";
-import { LazyModuleBoundary, PageShell, SectionCard, SectionTabs } from "@shared/ui";
+import {
+  AIMasterBlueprintPanel,
+  LazyModuleBoundary,
+  PageShell,
+  SectionCard,
+  SectionTabs,
+} from "@shared/ui";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import {
   createFoodCommandFocusQuery,
   normalizeFoodCommandFocus,
@@ -318,10 +325,12 @@ const MealBuilderPage = () => {
   const dailyCalories = useSelector(
     (state: RootState) => state.profile.dailyCalories
   );
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const totals = useSelector(selectTodayMealTotalNutrients);
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const { appLanguage, t } = useLanguage();
   const copy = getMealInputCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
   const commandFocus = normalizeFoodCommandFocus(searchParams.get("focus"));
   const commandFocusQuery = createFoodCommandFocusQuery(commandFocus);
@@ -431,6 +440,56 @@ const MealBuilderPage = () => {
     { id: "favorites", label: copy.addTools.favorites },
     { id: "composer", label: copy.addTools.composer },
     { id: "scanner", label: copy.addTools.scanner },
+  ];
+  const mealBlueprintPatterns = [
+    {
+      key: "search",
+      label: copy.modes.search.title,
+      description: copy.modes.search.body,
+      icon: Search,
+      accent: "#22d3ee",
+      onClick: () => openFoodCommandTarget("search"),
+    },
+    {
+      key: "photo",
+      label: copy.modes.photo.title,
+      description: copy.modes.photo.body,
+      icon: Camera,
+      accent: "#a78bfa",
+      onClick: () => openFoodCommandTarget("photo"),
+    },
+    {
+      key: "barcode",
+      label: copy.modes.barcode.title,
+      description: copy.modes.barcode.body,
+      icon: ScanBarcode,
+      accent: "#84cc16",
+      onClick: () => openFoodCommandTarget("barcode"),
+    },
+    {
+      key: "composer",
+      label: copy.addTools.composer,
+      description: copy.advancedSubtitle,
+      icon: ChefHat,
+      accent: "#f59e0b",
+      onClick: () => openFoodCommandTarget("composer"),
+    },
+    {
+      key: "saved",
+      label: copy.sections.saved,
+      description: copy.sections.templates,
+      icon: Star,
+      accent: "#fb7185",
+      onClick: () => setActiveSection("saved"),
+    },
+    {
+      key: "history",
+      label: copy.sections.history,
+      description: copy.sections.day,
+      icon: History,
+      accent: "#14b8a6",
+      onClick: () => setActiveSection("history"),
+    },
   ];
   const renderLazyModule = (title: string, children: ReactNode) => (
     <LazyModuleBoundary
@@ -618,6 +677,15 @@ const MealBuilderPage = () => {
           />
         </Stack>
       </SectionCard>
+
+      <AIMasterBlueprintPanel
+        eyebrow="Smart Nutrition Food"
+        title={copy.advancedTitle}
+        description={copy.advancedSubtitle}
+        patterns={mealBlueprintPatterns}
+        assistantName={assistantDisplayName}
+        assistantVariant={assistant.companionKind}
+      />
 
       {directCaptureModule}
 

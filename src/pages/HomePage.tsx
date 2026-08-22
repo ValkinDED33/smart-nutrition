@@ -13,6 +13,7 @@ import {
   ChefHat,
   Droplets,
   HeartPulse,
+  ListPlus,
   Plus,
   Search,
   ScanBarcode,
@@ -58,7 +59,7 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
-import { SectionCard, SectionTabs } from "@shared/ui";
+import { AIMasterBlueprintPanel, SectionCard, SectionTabs } from "@shared/ui";
 import type { AppLanguage } from "@shared/types/i18n";
 
 const COMMON_KCAL_KEY = "common.kcal";
@@ -71,6 +72,7 @@ const GLASS_PANEL_BORDER = "1px solid rgba(255,255,255,0.16)";
 const GLASS_PANEL_DARK_BG = "rgba(15,23,42,0.54)";
 const SOFT_WHITE_LINE = "rgba(255,255,255,0.1)";
 const SOFT_GLASS_BLUR = "blur(18px)";
+const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 const MEALS_ROUTE = "/meals";
 const RECIPES_ROUTE = "/recipes";
 const PROGRESS_ROUTE = "/progress";
@@ -138,6 +140,27 @@ const homeCopy = {
     sectionsAriaLabel: "Розділи головної",
     water: "Додати воду",
     close: "Закрити",
+    blueprintTitle: "Патерни взаємодії",
+    blueprintSubtitle:
+      "Той самий помічник веде день через швидкі дії, живі картки й підтверджені записи.",
+    blueprintPatterns: {
+      slider: "Слайдер",
+      accordion: "AI-відкриття",
+      sheet: "Швидка дія",
+      expand: "Деталі",
+      swipe: "День",
+      drag: "Задачі",
+      context: "Контекст",
+    },
+    blueprintPatternDescriptions: {
+      slider: "Підібрати їжу, воду або рецепт з поясненням.",
+      accordion: "Відкрити користь продуктів і підказки без зайвого шуму.",
+      sheet: "Додати їжу, фото, скан або воду з нижнього листа.",
+      expand: "Розгорнути картку у повний контекст.",
+      swipe: "Перейти до прогресу дня і трендів.",
+      drag: "Зібрати нагадування, задачі й сімейний план.",
+      context: "Відкрити швидкі дії без переходу: додати, зберегти, змінити.",
+    },
     sections: {
       today: "Сьогодні",
       meals: "Харчування",
@@ -198,6 +221,27 @@ const homeCopy = {
     sectionsAriaLabel: "Sekcje strony głównej",
     water: "Dodaj wodę",
     close: "Zamknij",
+    blueprintTitle: "Wzorce interakcji",
+    blueprintSubtitle:
+      "Ten sam asystent prowadzi dzień przez szybkie akcje, żywe karty i potwierdzone zapisy.",
+    blueprintPatterns: {
+      slider: "Slider",
+      accordion: "AI odkrycia",
+      sheet: "Szybka akcja",
+      expand: "Szczegóły",
+      swipe: "Dzień",
+      drag: "Zadania",
+      context: "Kontekst",
+    },
+    blueprintPatternDescriptions: {
+      slider: "Dobierz jedzenie, wodę albo przepis z wyjaśnieniem.",
+      accordion: "Otwórz korzyści produktów i podpowiedzi bez nadmiaru.",
+      sheet: "Dodaj jedzenie, zdjęcie, skan albo wodę z dolnego panelu.",
+      expand: "Rozwiń kartę do pełnego kontekstu.",
+      swipe: "Przejdź do postępu dnia i trendów.",
+      drag: "Ułóż przypomnienia, zadania i plan rodzinny.",
+      context: "Otwórz szybkie akcje bez przejścia: dodaj, zapisz, zmień.",
+    },
     sections: {
       today: "Dzisiaj",
       meals: "Jedzenie",
@@ -258,6 +302,27 @@ const homeCopy = {
     sectionsAriaLabel: "Home sections",
     water: "Add water",
     close: "Close",
+    blueprintTitle: "Interaction patterns",
+    blueprintSubtitle:
+      "The same assistant guides the day through quick actions, living cards, and confirmed saves.",
+    blueprintPatterns: {
+      slider: "Slider",
+      accordion: "AI discovery",
+      sheet: "Quick action",
+      expand: "Details",
+      swipe: "Day",
+      drag: "Tasks",
+      context: "Context",
+    },
+    blueprintPatternDescriptions: {
+      slider: "Pick food, water, or a recipe with an explanation.",
+      accordion: "Open product benefits and guidance without extra noise.",
+      sheet: "Add food, photo, scan, or water from the bottom sheet.",
+      expand: "Expand a card into full context.",
+      swipe: "Move into day progress and trends.",
+      drag: "Organize reminders, tasks, and family plans.",
+      context: "Open quick actions in place: add, save, adjust.",
+    },
     sections: {
       today: "Today",
       meals: "Meals",
@@ -466,6 +531,64 @@ const HomePage = () => {
     { label: copy.scan, icon: ScanBarcode, onClick: () => openMealMode("barcode") },
     { label: copy.assistantAction, icon: Sparkles, onClick: () => navigate("/coach") },
     { label: copy.report, icon: BarChart3, onClick: () => navigate(PROGRESS_ROUTE) },
+  ];
+  const homeBlueprintPatterns = [
+    {
+      key: "slider",
+      label: copy.blueprintPatterns.slider,
+      description: copy.blueprintPatternDescriptions.slider,
+      icon: ChefHat,
+      accent: "#22c55e",
+      onClick: () => navigate(RECIPES_ROUTE),
+    },
+    {
+      key: "accordion",
+      label: copy.blueprintPatterns.accordion,
+      description: copy.blueprintPatternDescriptions.accordion,
+      icon: Sparkles,
+      accent: "#a855f7",
+      onClick: () => navigate("/coach"),
+    },
+    {
+      key: "sheet",
+      label: copy.blueprintPatterns.sheet,
+      description: copy.blueprintPatternDescriptions.sheet,
+      icon: Plus,
+      accent: "#14b8a6",
+      onClick: () => setQuickAddOpen(true),
+    },
+    {
+      key: "expand",
+      label: copy.blueprintPatterns.expand,
+      description: copy.blueprintPatternDescriptions.expand,
+      icon: ScanBarcode,
+      accent: "#38bdf8",
+      onClick: () => openMealMode("barcode"),
+    },
+    {
+      key: "swipe",
+      label: copy.blueprintPatterns.swipe,
+      description: copy.blueprintPatternDescriptions.swipe,
+      icon: BarChart3,
+      accent: "#f59e0b",
+      onClick: () => navigate(PROGRESS_ROUTE),
+    },
+    {
+      key: "drag",
+      label: copy.blueprintPatterns.drag,
+      description: copy.blueprintPatternDescriptions.drag,
+      icon: ClipboardList,
+      accent: "#ef4444",
+      onClick: () => navigate(PROFILE_SECURITY_ROUTE),
+    },
+    {
+      key: "context",
+      label: copy.blueprintPatterns.context,
+      description: copy.blueprintPatternDescriptions.context,
+      icon: ListPlus,
+      accent: "#f97316",
+      onClick: () => setQuickAddOpen(true),
+    },
   ];
   const commandNavItems: CommandNavItem[] = [
     { label: copy.sections.today, icon: Sparkles, active: true, path: "/dashboard" },
@@ -844,7 +967,7 @@ const HomePage = () => {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
+                sm: TWO_COLUMN_GRID,
                 md: "repeat(4, minmax(0, 1fr))",
               },
               gap: 0.75,
@@ -1206,6 +1329,15 @@ const HomePage = () => {
         onRunAction={runAssistantAction}
       />
 
+      <AIMasterBlueprintPanel
+        eyebrow={copy.commandCenterLabel}
+        title={copy.blueprintTitle}
+        description={copy.blueprintSubtitle}
+        patterns={homeBlueprintPatterns}
+        assistantName={assistantDisplayName}
+        assistantVariant={assistant.companionKind}
+      />
+
       <SectionTabs
         sections={sections}
         activeSection={activeSection}
@@ -1254,7 +1386,7 @@ const HomePage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: "1fr", sm: TWO_COLUMN_GRID },
               gap: 1,
             }}
           >

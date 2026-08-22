@@ -1,4 +1,4 @@
-import { Chip, Paper, Stack, Typography } from "@mui/material";
+import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { useLanguage } from "../../shared/language";
@@ -11,6 +11,7 @@ import {
 import { selectMealItems } from "./selectors";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 
 const coachCopy = {
   uk: {
@@ -416,13 +417,44 @@ const NutritionCoachCard = () => {
           justifyContent="space-between"
           alignItems={{ xs: "flex-start", md: "center" }}
         >
-          <Stack spacing={0.6}>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
-              {copy.title}
-            </Typography>
-            <Typography color="text.secondary">
-              {copy.subtitle(assistantDisplayName)}
-            </Typography>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Box
+              data-nutrition-coach-assistant-worker="true"
+              sx={{
+                width: 54,
+                height: 54,
+                borderRadius: 1,
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+                border: "1px solid rgba(94,234,212,0.18)",
+                background:
+                  "radial-gradient(circle at 50% 28%, rgba(34,211,238,0.28), rgba(20,184,166,0.12) 54%, rgba(15,23,42,0.06))",
+                boxShadow: "0 18px 44px rgba(20,184,166,0.18)",
+              }}
+            >
+              <AssistantAvatar
+                name={assistantDisplayName}
+                variant={profile.assistant.companionKind}
+                mood={
+                  analysis.status === "strong"
+                    ? "celebrate"
+                    : analysis.status === "attention"
+                      ? "concerned"
+                      : "coach"
+                }
+                size={43}
+                active
+              />
+            </Box>
+            <Stack spacing={0.6}>
+              <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+                {copy.title}
+              </Typography>
+              <Typography color="text.secondary">
+                {copy.subtitle(assistantDisplayName)}
+              </Typography>
+            </Stack>
           </Stack>
           <Chip
             label={`${copy.score}: ${analysis.score}/100`}

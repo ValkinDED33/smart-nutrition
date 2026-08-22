@@ -22,6 +22,8 @@ export const SectionTabs = ({
   ariaLabel = "Page sections",
 }: SectionTabsProps) => (
   <Box
+    data-ai-morphing-tabs="true"
+    data-ai-shared-element-transition="section-tabs"
     sx={{
       width: "100%",
       overflowX: "auto",
@@ -51,6 +53,7 @@ export const SectionTabs = ({
         return (
           <ButtonBase
             key={section.id}
+            data-ai-morphing-tab={section.id}
             role="tab"
             aria-selected={active}
             aria-current={active ? "page" : undefined}
@@ -65,10 +68,46 @@ export const SectionTabs = ({
               color: active ? "var(--sn-accent)" : "text.secondary",
               bgcolor: active ? "var(--sn-accent-soft)" : "transparent",
               boxShadow: active ? "var(--sn-glow)" : "none",
+              position: "relative",
+              overflow: "hidden",
               transition:
-                "background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease",
+                "background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                left: 14,
+                right: 14,
+                bottom: 5,
+                height: 3,
+                borderRadius: 99,
+                background:
+                  "linear-gradient(90deg, var(--sn-accent), rgba(132,204,22,0.86))",
+                opacity: active ? 1 : 0,
+                transform: active ? "scaleX(1)" : "scaleX(0.3)",
+                transformOrigin: "50% 50%",
+                transition: "opacity 160ms ease, transform 160ms ease",
+              },
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: 4,
+                borderRadius: 1,
+                border: "1px solid rgba(94,234,212,0.18)",
+                opacity: active ? 0.72 : 0,
+                transform: active ? "scale(1)" : "scale(0.92)",
+                transition: "opacity 160ms ease, transform 160ms ease",
+              },
               "&:hover": {
                 bgcolor: active ? "var(--sn-accent-soft)" : "rgba(20,184,166,0.08)",
+                transform: "translateY(-1px)",
+              },
+              "&:hover::before": {
+                opacity: active ? 0.72 : 0.42,
+                transform: "scale(1)",
+              },
+              "&:hover::after": {
+                opacity: active ? 1 : 0.42,
+                transform: "scaleX(1)",
               },
               "&:focus-visible": {
                 outline: "3px solid rgba(20,184,166,0.28)",

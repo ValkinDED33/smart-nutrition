@@ -53,6 +53,12 @@ import type { AppLanguage } from "@shared/types/i18n";
 import { trackRuntimeEvent } from "@integration/runtime/analyticsEvent";
 import { resolveAssistantPromptContext } from "./assistantPromptContext";
 import { getAssistantDisplayName } from "./assistantDisplayName";
+import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
+
+const REMOTE_CLOUD_MODE = "remote-cloud";
+const ASSISTANT_CENTER_ALIGN = "center";
+const ASSISTANT_START_ALIGN = "flex-start";
+const ASSISTANT_STRETCH_ALIGN = "stretch";
 
 const createId = (prefix: string) =>
   globalThis.crypto?.randomUUID?.() ??
@@ -565,7 +571,7 @@ export const AssistantRuntimeCard = () => {
           direction={{ xs: "column", md: "row" }}
           spacing={1.5}
           justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
+          alignItems={{ xs: ASSISTANT_START_ALIGN, md: ASSISTANT_CENTER_ALIGN }}
         >
           <Stack spacing={0.6}>
             <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
@@ -573,10 +579,10 @@ export const AssistantRuntimeCard = () => {
             </Typography>
             <Typography color="text.secondary">{copy.subtitle}</Typography>
           </Stack>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems={ASSISTANT_CENTER_ALIGN}>
             <Chip
               label={getAssistantModeLabel(context, latestAssistantMode)}
-              color={latestAssistantMode === "remote-cloud" ? "success" : "default"}
+              color={latestAssistantMode === REMOTE_CLOUD_MODE ? "success" : "default"}
               variant="outlined"
             />
             <Button
@@ -593,7 +599,7 @@ export const AssistantRuntimeCard = () => {
           </Stack>
         </Stack>
 
-        <Alert severity={latestAssistantMode === "remote-cloud" ? "success" : "info"}>
+        <Alert severity={latestAssistantMode === REMOTE_CLOUD_MODE ? "success" : "info"}>
           {honestyNote}
         </Alert>
 
@@ -656,30 +662,69 @@ export const AssistantRuntimeCard = () => {
                       message.role === "user"
                         ? "linear-gradient(135deg, var(--sn-accent-soft), var(--sn-surface-elevated))"
                         : "var(--sn-surface-glass)",
-                  }}
-                >
-                  <Stack spacing={0.6}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 800,
-                        color: message.role === "user" ? "var(--sn-accent)" : "text.secondary",
-                      }}
-                    >
-                      {message.role === "user" ? user.name : assistantDisplayName}
-                    </Typography>
-                    {message.role === "assistant" ? (
-                      <AssistantMessageMarkdown text={message.text} />
-                    ) : (
-                      <Typography
+                    }}
+                  >
+                  <Stack
+                    direction={message.role === "assistant" ? "row" : "column"}
+                    spacing={message.role === "assistant" ? 1.1 : 0.6}
+                    alignItems={
+                      message.role === "assistant"
+                        ? ASSISTANT_START_ALIGN
+                        : ASSISTANT_STRETCH_ALIGN
+                    }
+                    data-assistant-runtime-message-card={message.role}
+                  >
+                    {message.role === "assistant" && (
+                      <Box
+                        data-assistant-runtime-message-avatar="true"
                         sx={{
-                          color: "text.primary",
-                          whiteSpace: "pre-wrap",
+                          mt: 0.2,
+                          width: 38,
+                          height: 38,
+                          borderRadius: 1,
+                          display: "grid",
+                          placeItems: ASSISTANT_CENTER_ALIGN,
+                          flexShrink: 0,
+                          border: "1px solid rgba(94,234,212,0.2)",
+                          background:
+                            "radial-gradient(circle at 50% 28%, rgba(34,211,238,0.24), rgba(20,184,166,0.1) 56%, rgba(15,23,42,0.04))",
                         }}
                       >
-                        {message.text}
-                      </Typography>
+                        <AssistantAvatar
+                          name={assistantDisplayName}
+                          variant={profile.assistant.companionKind}
+                          mood={message.mode === REMOTE_CLOUD_MODE ? "happy" : "coach"}
+                          size={30}
+                          active={loading && message.id === latestAssistantMessage?.id}
+                        />
+                      </Box>
                     )}
+                    <Stack spacing={0.6} sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 800,
+                          color:
+                            message.role === "user"
+                              ? "var(--sn-accent)"
+                              : "text.secondary",
+                        }}
+                      >
+                        {message.role === "user" ? user.name : assistantDisplayName}
+                      </Typography>
+                      {message.role === "assistant" ? (
+                        <AssistantMessageMarkdown text={message.text} />
+                      ) : (
+                        <Typography
+                          sx={{
+                            color: "text.primary",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {message.text}
+                        </Typography>
+                      )}
+                    </Stack>
                   </Stack>
                 </Paper>
               ))}

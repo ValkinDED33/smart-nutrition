@@ -1,7 +1,15 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { ArrowRight, HeartPulse, MessageCircle } from "lucide-react";
+import {
+  ArrowRight,
+  HeartPulse,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  UserRound,
+} from "lucide-react";
 import type { RootState } from "../app/store";
 import {
   Avatar,
@@ -17,6 +25,7 @@ import ProfileForm from "../features/profile/ProfileForm";
 import { ProfileSectionTabs } from "../features/profile/ProfileSectionTabs";
 import { useLanguage } from "../shared/language";
 import {
+  AIMasterBlueprintPanel,
   buildLazyModuleRecoveryCopy,
   EmptyState,
   LazyModuleBoundary,
@@ -38,6 +47,7 @@ import {
 import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
+import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
 import {
   hasWomenHealthContext,
   isWomenHealthVisibleForGender,
@@ -625,6 +635,7 @@ const getLanguageLabel = (
 
 const ProfilePage = () => {
   const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
   const {
@@ -644,6 +655,10 @@ const ProfilePage = () => {
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, appLanguage, languageLabels } = useLanguage();
   const copy = getProfileCopy(appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    profile.assistant.name,
+    appLanguage
+  );
   const renderLazySection = (
     tabKey: string,
     tabLabel: string,
@@ -712,6 +727,56 @@ const ProfilePage = () => {
         ? copy.targetSame
         : copy.targetReached
       : copy.targetAway(remainingWeight.toFixed(1));
+  const profileBlueprintPatterns = [
+    {
+      key: "data",
+      label: copy.tabs.data,
+      description: copy.profileInfoSubtitle,
+      icon: UserRound,
+      accent: "#22d3ee",
+      onClick: () => navigate("/profile#data"),
+    },
+    {
+      key: "goal",
+      label: copy.tabs.goal,
+      description: weightSummary,
+      icon: Target,
+      accent: "#84cc16",
+      onClick: () => navigate("/profile#goal"),
+    },
+    {
+      key: "assistant",
+      label: copy.tabs.assistant,
+      description: copy.telegramEntrySubtitle,
+      icon: Sparkles,
+      accent: "#a78bfa",
+      onClick: () => navigate("/profile#assistant"),
+    },
+    {
+      key: "motivation",
+      label: copy.tabs.motivation,
+      description: copy.adaptiveAuto,
+      icon: HeartPulse,
+      accent: "#fb7185",
+      onClick: () => navigate("/profile#motivation"),
+    },
+    {
+      key: "security",
+      label: copy.tabs.security,
+      description: `${copy.roleLabel}, ${copy.emailLabel}, ${copy.statusLabel}`,
+      icon: ShieldCheck,
+      accent: "#f59e0b",
+      onClick: () => navigate("/profile#security"),
+    },
+    {
+      key: "telegram",
+      label: "Telegram",
+      description: copy.telegramEntrySubtitle,
+      icon: MessageCircle,
+      accent: "#14b8a6",
+      onClick: () => navigate("/profile#telegram"),
+    },
+  ];
 
   return (
     <PageShell
@@ -935,6 +1000,15 @@ const ProfilePage = () => {
         <LoadingSkeleton cards={1} bodyRows={2} />,
         <TelegramConnectionCard />
       )}
+
+      <AIMasterBlueprintPanel
+        eyebrow="Smart Nutrition Profile"
+        title={copy.preferencesTitle}
+        description={copy.profileInfoSubtitle}
+        patterns={profileBlueprintPatterns}
+        assistantName={assistantDisplayName}
+        assistantVariant={profile.assistant.companionKind}
+      />
 
       <ProfileSectionTabs
         ariaLabel={copy.sectionsAriaLabel}

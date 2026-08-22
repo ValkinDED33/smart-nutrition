@@ -38,6 +38,7 @@ import {
 } from "@features/assistant-3d";
 import { useLanguage } from "../shared/language";
 import {
+  AIMasterBlueprintPanel,
   buildLazyModuleRecoveryCopy,
   LazyModuleBoundary,
   LoadingSkeleton,
@@ -506,6 +507,7 @@ const PREMIUM_PANEL_BORDER = "1px solid var(--sn-border-soft)";
 const THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 const COMPANION_SOFT_ICON_BACKGROUND = "rgba(255,255,255,0.06)";
+const COMPANION_GLASS_BLUR = "blur(14px)";
 const RESPONSIVE_XS = "xs";
 const RESPONSIVE_SM = "sm";
 const COMPANION_ROW_DIRECTION = "row";
@@ -895,6 +897,16 @@ const AiCompanionPage = () => {
       color: "#2dd4bf",
     },
   ];
+  const assistantBlueprintPatterns = assistantTools.map(
+    ({ id, title, body, to, Icon, color }) => ({
+      key: id,
+      label: title,
+      description: body,
+      icon: Icon,
+      accent: color,
+      onClick: () => navigate(to),
+    })
+  );
 
   return (
     <PageShell
@@ -1065,17 +1077,85 @@ const AiCompanionPage = () => {
                   {copy.commandSubtitle}
                 </Typography>
                 <Box
+                  data-ai-worker-command-orbit="true"
                   sx={{
-                    width: { xs: companionStageSize + 72, md: companionStageSize + 150 },
-                    height: { xs: companionStageSize + 86, md: companionStageSize + 152 },
+                    width: { xs: companionStageSize + 72, md: "min(100%, 720px)" },
+                    minHeight: { xs: companionStageSize + 86, md: companionStageSize + 178 },
                     display: "grid",
-                    placeItems: COMPANION_CENTER_ALIGN,
-                    borderRadius: "50%",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr minmax(210px, auto) 1fr" },
+                    alignItems: COMPANION_CENTER_ALIGN,
+                    justifyItems: COMPANION_CENTER_ALIGN,
+                    gap: { xs: 1.2, md: 1.6 },
+                    borderRadius: 1,
                     background:
-                      "radial-gradient(circle at 50% 55%, rgba(34,211,238,0.2), transparent 58%)",
+                      "radial-gradient(circle at 50% 55%, rgba(34,211,238,0.2), transparent 58%), linear-gradient(135deg, rgba(15,23,42,0.28), rgba(20,184,166,0.08))",
+                    border: "1px solid rgba(34,211,238,0.16)",
                     filter: "drop-shadow(0 36px 60px rgba(34,211,238,0.22))",
+                    p: { xs: 1.2, md: 1.6 },
                   }}
                 >
+                  <Paper
+                    data-ai-worker-hologram-panel="today"
+                    elevation={0}
+                    sx={{
+                      display: { xs: "none", md: "block" },
+                      justifySelf: "stretch",
+                      p: 1.4,
+                      borderRadius: 1,
+                      border: "1px solid rgba(34,211,238,0.2)",
+                      background:
+                        "linear-gradient(145deg, rgba(15,23,42,0.72), rgba(8,47,73,0.4))",
+                      color: COMPANION_ON_COLOR,
+                      backdropFilter: COMPANION_GLASS_BLUR,
+                    }}
+                  >
+                    <Stack spacing={1}>
+                      <Typography variant="overline" sx={{ color: "#67e8f9", fontWeight: 950 }}>
+                        {copy.todayRoute}
+                      </Typography>
+                      {timelineItems.slice(0, 3).map(({ id, title, subtitle, Icon, color }) => (
+                        <Stack
+                          key={id}
+                          direction="row"
+                          spacing={0.9}
+                          alignItems={COMPANION_CENTER_ALIGN}
+                        >
+                          <Box
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              flex: "0 0 auto",
+                              borderRadius: "50%",
+                              display: "grid",
+                              placeItems: COMPANION_CENTER_ALIGN,
+                              color,
+                              backgroundColor: `${color}22`,
+                            }}
+                          >
+                            <Icon size={13} />
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              sx={{
+                                fontSize: 12,
+                                fontWeight: 900,
+                                lineHeight: 1.15,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {title}
+                            </Typography>
+                            <Typography sx={{ color: COMPANION_MUTED_COLOR, fontSize: 11 }}>
+                              {subtitle}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Paper>
+
                   <AssistantAvatar
                     name={assistantDisplayName}
                     variant={assistant.companionKind}
@@ -1091,6 +1171,113 @@ const AiCompanionPage = () => {
                     mood={assistantCore.emotion === "celebrating" ? "celebrate" : "happy"}
                     active
                   />
+
+                  <Paper
+                    data-ai-worker-hologram-panel="analysis"
+                    elevation={0}
+                    sx={{
+                      display: { xs: "none", md: "block" },
+                      justifySelf: "stretch",
+                      p: 1.4,
+                      borderRadius: 1,
+                      border: "1px solid rgba(132,204,22,0.2)",
+                      background:
+                        "linear-gradient(145deg, rgba(15,23,42,0.72), rgba(22,101,52,0.34))",
+                      color: COMPANION_ON_COLOR,
+                      backdropFilter: COMPANION_GLASS_BLUR,
+                    }}
+                  >
+                    <Stack spacing={1}>
+                      <Typography variant="overline" sx={{ color: "#bef264", fontWeight: 950 }}>
+                        {copy.dailyProgress}
+                      </Typography>
+                      {commandMetrics.slice(0, 3).map(({ id, label, value, progress, color }) => (
+                        <Stack key={id} spacing={0.45}>
+                          <Stack direction="row" justifyContent="space-between" spacing={1}>
+                            <Typography sx={{ fontSize: 12, fontWeight: 900 }}>
+                              {label}
+                            </Typography>
+                            <Typography sx={{ color: COMPANION_MUTED_COLOR, fontSize: 12 }}>
+                              {value}
+                            </Typography>
+                          </Stack>
+                          <LinearProgress
+                            variant="determinate"
+                            value={progress}
+                            sx={{
+                              height: 5,
+                              borderRadius: 999,
+                              backgroundColor: "rgba(148,163,184,0.2)",
+                              "& .MuiLinearProgress-bar": {
+                                borderRadius: 999,
+                                backgroundColor: color,
+                              },
+                            }}
+                          />
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Paper>
+                </Box>
+                <Box
+                  data-ai-worker-orbit-actions="true"
+                  sx={{
+                    width: "min(100%, 760px)",
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: TWO_COLUMN_GRID,
+                      sm: THREE_COLUMN_GRID,
+                      md: "repeat(6, minmax(0, 1fr))",
+                    },
+                    gap: 0.8,
+                  }}
+                >
+                  {assistantTools.map(({ id, title, to, Icon, color }) => (
+                    <Button
+                      key={id}
+                      data-ai-worker-orbit-action={id}
+                      onClick={() => navigate(to)}
+                      sx={{
+                        minHeight: 54,
+                        px: 0.8,
+                        py: 0.7,
+                        borderRadius: 1,
+                        border: `1px solid ${color}55`,
+                        background:
+                          "linear-gradient(145deg, rgba(15,23,42,0.76), rgba(8,47,73,0.34))",
+                        color: COMPANION_ON_COLOR,
+                        textTransform: "none",
+                        fontWeight: 900,
+                        lineHeight: 1.15,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.35,
+                        transition:
+                          "transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease",
+                        "&:hover, &:focus-visible": {
+                          transform: "translateY(-3px)",
+                          borderColor: color,
+                          boxShadow: `0 18px 34px ${color}33`,
+                          outline: "none",
+                        },
+                      }}
+                    >
+                      <Icon size={18} color={color} />
+                      <Typography
+                        component="span"
+                        sx={{
+                          maxWidth: "100%",
+                          fontSize: 11.5,
+                          fontWeight: 950,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {title}
+                      </Typography>
+                    </Button>
+                  ))}
                 </Box>
                 <Stack
                   direction="row"
@@ -1128,7 +1315,7 @@ const AiCompanionPage = () => {
                     background:
                       "linear-gradient(135deg, rgba(15,23,42,0.72), rgba(6,78,59,0.34))",
                     textAlign: "left",
-                    backdropFilter: "blur(14px)",
+                    backdropFilter: COMPANION_GLASS_BLUR,
                   }}
                 >
                   <Stack spacing={1.4}>
@@ -1172,7 +1359,7 @@ const AiCompanionPage = () => {
                         display: "grid",
                         gridTemplateColumns: {
                           xs: "1fr",
-                          sm: "repeat(3, minmax(0, 1fr))",
+                          sm: THREE_COLUMN_GRID,
                         },
                         gap: 1,
                       }}
@@ -1296,6 +1483,15 @@ const AiCompanionPage = () => {
               </Stack>
             </Box>
           </Paper>
+
+          <AIMasterBlueprintPanel
+            eyebrow={copy.commandEyebrow}
+            title={copy.assistantToolsTitle}
+            description={copy.assistantToolsSubtitle}
+            patterns={assistantBlueprintPatterns}
+            assistantName={assistantDisplayName}
+            assistantVariant={assistant.companionKind}
+          />
 
           <Paper
             className="sn-premium-panel"

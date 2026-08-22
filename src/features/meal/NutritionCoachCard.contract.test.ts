@@ -8,6 +8,16 @@ const source = readFileSync(
 );
 
 describe("NutritionCoachCard visible language contract", () => {
+  it("renders the canonical assistant worker instead of a detached nutrition card", () => {
+    expect(source).toContain("AssistantAvatar");
+    expect(source).toContain('data-nutrition-coach-assistant-worker="true"');
+    expect(source).toContain("name={assistantDisplayName}");
+    expect(source).toContain("variant={profile.assistant.companionKind}");
+    expect(source).toContain('analysis.status === "strong"');
+    expect(source).toContain('analysis.status === "attention"');
+    expect(source).not.toContain('variant="robot"');
+  });
+
   it("keeps Ukrainian and Polish nutrition helper copy native", () => {
     expect(source).toContain("Харчовий помічник");
     expect(source).toContain("Оцінка помічника");

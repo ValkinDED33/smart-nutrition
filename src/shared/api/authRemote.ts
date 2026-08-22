@@ -380,11 +380,11 @@ const getPublicDeploymentRemoteBaseUrl = () => {
     return null;
   }
 
-  const { hostname } = window.location;
+  const { hostname, origin } = window.location;
 
   return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ||
     isVercelPreviewHostname(hostname)
-    ? PUBLIC_REMOTE_API_BASE_URL
+    ? `${origin}/api`
     : null;
 };
 
@@ -400,8 +400,8 @@ const getSameOriginDevProxyBaseUrl = () => {
 
 const getConfiguredRemoteBaseUrl = () => {
   const configuredBaseUrl =
-    normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL) ??
-    normalizeRemoteBaseUrl(getPublicDeploymentRemoteBaseUrl());
+    normalizeRemoteBaseUrl(getPublicDeploymentRemoteBaseUrl()) ??
+    normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL);
 
   if (
     !configuredBaseUrl ||
@@ -676,7 +676,13 @@ const getCandidateBaseUrls = () => {
     getStoredRemoteBaseUrl(),
   ];
 
-  return dedupe(candidates.filter((value): value is string => Boolean(value)));
+  const primaryCandidates = dedupe(
+    candidates.filter((value): value is string => Boolean(value))
+  );
+
+  return primaryCandidates.length > 0
+    ? primaryCandidates
+    : [PUBLIC_REMOTE_API_BASE_URL];
 };
 
 const isRemoteHealthPayload = (value: unknown) =>

@@ -179,12 +179,12 @@ export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
   const savedProducts = useSelector(selectSavedProducts);
   const recentProducts = useSelector(selectRecentProducts);
   const personalBarcodeProducts = useSelector(selectPersonalBarcodeProducts);
-  const rawAssistantName = useSelector((state: RootState) => state.profile.assistant.name);
+  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage, t } = useLanguage();
   const [showContributionForm, setShowContributionForm] = useState(false);
   const normalizedQuery = normalizeProductLookupQuery(query);
   const copy = getSuggestionCopy(appLanguage);
-  const assistantName = getAssistantDisplayName(rawAssistantName, appLanguage);
+  const assistantName = getAssistantDisplayName(assistant.name, appLanguage);
 
   useEffect(() => {
     const normalizedInitialQuery = normalizeProductLookupQuery(initialQuery);
@@ -465,7 +465,15 @@ export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
         {duplicateAdvice.length > 0 && (
           <Alert
             severity="info"
-            icon={<AssistantAvatar name={assistantName} size={34} mood="coach" active />}
+            icon={
+              <AssistantAvatar
+                name={assistantName}
+                variant={assistant.companionKind}
+                size={34}
+                mood="coach"
+                active
+              />
+            }
             sx={{ alignItems: "center" }}
           >
             <Stack spacing={0.8}>
@@ -526,7 +534,15 @@ export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
         {shouldLookupProducts && productQuery.isError ? (
           <Alert
             severity="warning"
-            icon={<AssistantAvatar name={assistantName} size={34} mood="concerned" active />}
+            icon={
+              <AssistantAvatar
+                name={assistantName}
+                variant={assistant.companionKind}
+                size={34}
+                mood="concerned"
+                active
+              />
+            }
           >
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 800 }}>{copy.unavailableTitle}</Typography>
@@ -561,7 +577,15 @@ export const ProductSearch = ({ mealType, initialQuery = "" }: Props) => {
         {shouldShowMissingProductActions && (
           <Alert
             severity="info"
-            icon={<AssistantAvatar name={assistantName} size={34} mood="coach" active />}
+            icon={
+              <AssistantAvatar
+                name={assistantName}
+                variant={assistant.companionKind}
+                size={34}
+                mood="coach"
+                active
+              />
+            }
           >
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 800 }}>{copy.missingTitle}</Typography>

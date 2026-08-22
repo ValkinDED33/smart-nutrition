@@ -11,6 +11,13 @@ interface PageShellProps {
   compact?: boolean;
 }
 
+const PAGE_SHELL_GRID_BACKGROUND =
+  "linear-gradient(rgba(45,212,191,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(45,212,191,0.035) 1px, transparent 1px)";
+const PAGE_SHELL_SIGNAL_DOT =
+  "radial-gradient(circle, rgba(94,234,212,0.92), rgba(94,234,212,0.24) 48%, transparent 70%)";
+const PAGE_SHELL_ROUTE_LINE =
+  "linear-gradient(90deg, transparent, rgba(94,234,212,0.46), rgba(132,204,22,0.38), transparent)";
+
 export const PageShell = ({
   title,
   subtitle,
@@ -21,17 +28,49 @@ export const PageShell = ({
   compact = false,
 }: PageShellProps) => (
   <Box
+    data-ai-space-shell="true"
+    data-ai-master-page-grid="true"
+    data-ai-page-route-space="true"
     sx={{
       width: "100%",
       maxWidth,
       mx: "auto",
       px: { xs: compact ? 0 : 0.5, sm: compact ? 0 : 1, md: 0 },
       overflowX: "hidden",
+      position: "relative",
+      "&::before": {
+        content: '""',
+        position: "absolute",
+        inset: { xs: "-18px -10px auto -10px", md: "-28px -42px auto -42px" },
+        height: { xs: 260, md: 360 },
+        pointerEvents: "none",
+        backgroundImage: PAGE_SHELL_GRID_BACKGROUND,
+        backgroundSize: "32px 32px",
+        opacity: 0.46,
+        maskImage:
+          "radial-gradient(circle at 50% 0%, rgba(0,0,0,0.82), transparent 72%)",
+      },
+      "&::after": {
+        content: '""',
+        position: "absolute",
+        left: { xs: 18, md: 44 },
+        right: { xs: 18, md: 44 },
+        top: { xs: 90, md: 112 },
+        height: 1,
+        pointerEvents: "none",
+        background: PAGE_SHELL_ROUTE_LINE,
+        opacity: 0.58,
+      },
     }}
   >
-    <Stack spacing={compact ? 2 : { xs: 2, md: 2.75 }}>
+    <Stack
+      spacing={compact ? 2 : { xs: 2, md: 2.75 }}
+      sx={{ position: "relative", zIndex: 1 }}
+    >
       <Box
         className="sn-premium-panel sn-page-hero"
+        data-ai-space-page-hero="true"
+        data-ai-shared-element-transition="page-hero"
         sx={{
           position: "relative",
           overflow: "hidden",
@@ -61,8 +100,27 @@ export const PageShell = ({
             background: "var(--sn-scene-landscape)",
             opacity: 0.7,
           },
+          "[data-ai-page-signal-dot='true']": {
+            position: "absolute",
+            width: 9,
+            height: 9,
+            borderRadius: "50%",
+            background: PAGE_SHELL_SIGNAL_DOT,
+            boxShadow: "0 0 24px rgba(94,234,212,0.42)",
+            pointerEvents: "none",
+          },
         }}
       >
+        <Box
+          aria-hidden
+          data-ai-page-signal-dot="true"
+          sx={{ right: { xs: 42, md: 116 }, top: { xs: 30, md: 42 } }}
+        />
+        <Box
+          aria-hidden
+          data-ai-page-signal-dot="true"
+          sx={{ right: { xs: 88, md: 252 }, bottom: { xs: 24, md: 34 }, opacity: 0.62 }}
+        />
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={{ xs: 1.25, md: 2 }}

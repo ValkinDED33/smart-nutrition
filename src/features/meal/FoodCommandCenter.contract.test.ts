@@ -30,6 +30,16 @@ describe("FoodCommandCenter production contract", () => {
     expect(mealBuilderSource).toContain('setActiveSection("templates")');
   });
 
+  it("renders the canonical user assistant as the food command worker", () => {
+    expect(commandSource).toContain("const assistant = useSelector((state: RootState) => state.profile.assistant)");
+    expect(commandSource).toContain("getAssistantDisplayName(assistant.name, appLanguage)");
+    expect(commandSource).toContain('data-food-command-assistant-worker="true"');
+    expect(commandSource).toContain("variant={assistant.companionKind}");
+    expect(commandSource).toContain('mood={selectedProduct ? "happy" : "coach"}');
+    expect(commandSource).toContain("active={isListening || isSearching || isSaving}");
+    expect(commandSource).not.toContain('variant="robot"');
+  });
+
   it("supports typed and voice-style meal commands only through canonical product intake", () => {
     expect(commandModelSource).toContain("parseFoodCommandText");
     expect(commandModelSource).toContain("isFoodCommandUnitCompatible");

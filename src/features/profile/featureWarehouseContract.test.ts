@@ -98,6 +98,13 @@ describe("profile feature warehouse contract", () => {
     expect(source).toContain('data-companion-live-preview="true"');
     expect(source).toContain('data-companion-shop-capabilities="true"');
     expect(source).toContain('data-companion-live-preview-orbit="true"');
+    expect(source).toContain('data-companion-shop-collection-summary="true"');
+    expect(source).toContain("freeBaseCount");
+    expect(source).toContain("collectibleCount");
+    expect(source).toContain("Безкоштовна база");
+    expect(source).toContain("Колекційні образи");
+    expect(source).toContain("Free base");
+    expect(source).toContain("Collectible looks");
     expect(source).toContain('const assistantToolIcons: Array<{');
     expect(source).toContain('const previewOrbitItems: Array<{');
     expect(source).toContain('{ key: "planning",');
