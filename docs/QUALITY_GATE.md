@@ -1,15 +1,21 @@
 # Smart Nutrition Quality Gate
 
-This project uses automated quality checks to keep async, architecture, security, and dead-code issues from returning after manual audits.
+This project uses local automated quality checks to keep async, architecture, security, dependency, SEO, bundle, contract, and dead-code issues from returning after manual audits.
 
 ## Commands
 
-- `npm run quality` runs the full gate: lint, build, tests, dependency audit, cycle audit, dead-code audit, and architecture audit.
-- `npm run audit:deps` checks runtime dependencies with `npm audit --omit=dev --audit-level=moderate`.
+- `npm run quality` runs the full local gate: lint, build, bundle audit, SEO audit, tests, dependency audit, security audit, cycle audit, dead-code audit, architecture audit, and Smart Nutrition contract audit.
+- `npm run release:gate` runs `quality` plus production configuration validation through `server:check`.
+- `npm run audit:deps` checks the project production dependency contract.
 - `npm run audit:security` checks runtime dependencies with a high severity threshold.
+- `npm run audit:bundle` verifies startup bundle constraints and lazy-loaded heavy surfaces.
+- `npm run audit:seo` verifies public search discovery files and metadata.
 - `npm run audit:cycles` runs Madge against `src` and `server`.
 - `npm run audit:dead` runs Knip.
 - `npm run audit:architecture` runs dependency-cruiser with `.dependency-cruiser.cjs`.
+- `npm run audit:contracts` verifies Smart Nutrition product, architecture, source-of-truth, repository cleanliness, and UX contracts.
+
+GitHub workflow automation is intentionally not part of the tracked repository. Release readiness must stay available through the local npm scripts above; `.github/` remains ignored unless the owner explicitly re-accepts it as project source.
 
 ## ESLint Layer
 

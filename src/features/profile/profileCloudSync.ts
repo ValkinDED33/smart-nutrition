@@ -45,6 +45,7 @@ const getProfileSyncErrorMessage = (result: {
   diagnostics?: {
     syncStage?: string;
     reasonCode?: string;
+    requestId?: string;
   };
 }) => {
   const safeMessage = resolveCloudSyncFailureMessage({
@@ -61,6 +62,7 @@ const getProfileSyncErrorMessage = (result: {
     Number.isFinite(result.status) ? `HTTP ${result.status}` : null,
     result.diagnostics?.syncStage ? `stage:${result.diagnostics.syncStage}` : null,
     result.diagnostics?.reasonCode ? `reason:${result.diagnostics.reasonCode}` : null,
+    result.diagnostics?.requestId ? `request:${result.diagnostics.requestId}` : null,
   ].filter(Boolean);
 
   return diagnosticParts.length > 0

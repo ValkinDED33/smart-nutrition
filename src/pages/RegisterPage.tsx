@@ -360,6 +360,8 @@ const RegisterPage = () => {
     useState<RegistrationVerificationPending | null>(null);
   const [deliveryUnavailableEmail, setDeliveryUnavailableEmail] =
     useState<string | null>(null);
+  const [deliveryUnavailableRequestId, setDeliveryUnavailableRequestId] =
+    useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -719,6 +721,7 @@ const RegisterPage = () => {
     setServerError(null);
     setPendingVerification(null);
     setDeliveryUnavailableEmail(null);
+    setDeliveryUnavailableRequestId(null);
     trackRuntimeEvent("signup_started", {
       authMode: getAuthRuntimeInfo().mode,
       language: appLanguage,
@@ -786,6 +789,7 @@ const RegisterPage = () => {
         error.code === "VERIFICATION_DELIVERY_UNAVAILABLE"
       ) {
         setDeliveryUnavailableEmail(data.email);
+        setDeliveryUnavailableRequestId(error.requestId ?? error.diagnostics?.requestId ?? null);
       } else {
         setServerError(t("error.genericRegister"));
       }
@@ -808,6 +812,7 @@ const RegisterPage = () => {
 
       if (error.code === "VERIFICATION_DELIVERY_UNAVAILABLE") {
         setServerError(t("auth.deliveryUnavailable"));
+        setDeliveryUnavailableRequestId(error.requestId ?? error.diagnostics?.requestId ?? null);
         return;
       }
     }
@@ -837,7 +842,7 @@ const RegisterPage = () => {
 
   return (
     <AuthSurface maxWidth={520} minHeight="70vh">
-        <Stack spacing={2.5}>
+        <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
           <Box
             sx={{
               position: "relative",
@@ -857,13 +862,13 @@ const RegisterPage = () => {
           {showRegistrationForm && (
             <Box
               sx={{
-                p: 1.5,
+                p: { xs: 1.15, sm: 1.5 },
                 borderRadius: 1,
                 border: "1px solid var(--sn-border-soft)",
                 backgroundColor: "var(--sn-surface-glass)",
               }}
             >
-              <Stack spacing={1}>
+              <Stack spacing={{ xs: 0.75, sm: 1 }}>
                 <Stack direction="row" justifyContent="space-between" spacing={1}>
                   <Typography sx={{ fontWeight: 900 }}>{activeStepTitle}</Typography>
                   <Typography color="text.secondary" sx={{ fontWeight: 800 }}>
@@ -883,7 +888,10 @@ const RegisterPage = () => {
                     },
                   }}
                 />
-                <Typography color="text.secondary" sx={{ lineHeight: 1.5 }}>
+                <Typography
+                  color="text.secondary"
+                  sx={{ lineHeight: { xs: 1.35, sm: 1.5 }, fontSize: { xs: 14, sm: 16 } }}
+                >
                   {stepCopy.stepHint}
                 </Typography>
               </Stack>
@@ -946,6 +954,11 @@ const RegisterPage = () => {
                 <Typography color="text.secondary">
                   {deliveryUnavailableEmail}
                 </Typography>
+                {deliveryUnavailableRequestId && (
+                  <Typography color="text.secondary" sx={{ fontSize: 13 }}>
+                    request:{deliveryUnavailableRequestId}
+                  </Typography>
+                )}
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                   <Button
                     type="button"
@@ -964,6 +977,7 @@ const RegisterPage = () => {
                     disabled={submitting}
                     onClick={() => {
                       setDeliveryUnavailableEmail(null);
+                      setDeliveryUnavailableRequestId(null);
                       setRegistrationStep("email");
                     }}
                     sx={{ textTransform: "none", fontWeight: 800 }}
@@ -978,7 +992,7 @@ const RegisterPage = () => {
               <Stack
                 component="form"
                 data-register-account-form="true"
-                spacing={2}
+                spacing={{ xs: 1.4, sm: 2 }}
                 onSubmit={handleSubmit(onSubmit)}
                 autoComplete="on"
               >
@@ -1169,7 +1183,7 @@ const RegisterPage = () => {
                   }
                   sx={{
                     flex: 1,
-                    py: 1.5,
+                    py: { xs: 1.15, sm: 1.5 },
                     borderRadius: 999,
                     textTransform: "none",
                     fontWeight: 800,
@@ -1187,7 +1201,13 @@ const RegisterPage = () => {
                   onClick={() => {
                     void goNext();
                   }}
-                  sx={{ flex: 1, py: 1.5, borderRadius: 999, textTransform: "none", fontWeight: 900 }}
+                  sx={{
+                    flex: 1,
+                    py: { xs: 1.15, sm: 1.5 },
+                    borderRadius: 999,
+                    textTransform: "none",
+                    fontWeight: 900,
+                  }}
                 >
                   {stepCopy.next}
                 </Button>

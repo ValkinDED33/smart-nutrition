@@ -1,9 +1,55 @@
 import { applySecurityHeaders } from "../runtime/securityHeaders.mjs";
+import { randomUUID } from "node:crypto";
 
 export const isCorsOriginAllowed = (origin, allowedOrigins = []) =>
   Boolean(origin) && allowedOrigins.includes(origin);
 
 const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const REQUEST_ID_HEADER = "X-Request-Id";
+const allowedCorsRequestHeaders = [
+  "Authorization",
+  "Content-Type",
+  "X-Device-Id",
+  "X-Request-Id",
+  "X-State-Version",
+];
+const exposedCorsResponseHeaders = [
+  "Retry-After",
+  "X-AI-RateLimit-Remaining",
+  "X-Auth-RateLimit-Remaining",
+  "X-RateLimit-Remaining",
+  "X-Request-Id",
+];
+const allowedCorsRequestHeaderNames = new Map(
+  allowedCorsRequestHeaders.map((header) => [header.toLowerCase(), header])
+);
+
+const readHeaderToken = (value) =>
+  Array.isArray(value)
+    ? String(value[0] ?? "").trim()
+    : String(value ?? "").trim();
+
+const isSafePublicRequestId = (value) =>
+  /^[A-Za-z0-9._:-]{1,80}$/.test(value);
+
+export const ensureRequestId = (response, request = undefined) => {
+  const existingValue =
+    typeof response.getHeader === "function"
+      ? readHeaderToken(
+          response.getHeader(REQUEST_ID_HEADER) ?? response.getHeader("x-request-id")
+        )
+      : "";
+  const inboundValue = readHeaderToken(request?.headers?.["x-request-id"]);
+  const requestId = isSafePublicRequestId(existingValue)
+    ? existingValue
+    : isSafePublicRequestId(inboundValue)
+      ? inboundValue
+      : `sn-${randomUUID()}`;
+
+  response.setHeader(REQUEST_ID_HEADER, requestId);
+
+  return requestId;
+};
 
 const readRequestOrigin = (request) => {
   const origin = request.headers.origin;
@@ -39,13 +85,39 @@ const readRequestHeader = (request, name) => {
     : String(value ?? "").trim();
 };
 
+const readRequestedCorsHeaders = (request) =>
+  readRequestHeader(request, "access-control-request-headers")
+    .split(",")
+    .map((header) => header.trim().toLowerCase())
+    .filter(Boolean);
+
+const createAllowedCorsHeaders = (request) => {
+  const headers = new Map(
+    allowedCorsRequestHeaders.map((header) => [header.toLowerCase(), header])
+  );
+
+  for (const requestedHeader of readRequestedCorsHeaders(request)) {
+    const allowedHeader = allowedCorsRequestHeaderNames.get(requestedHeader);
+
+    if (allowedHeader) {
+      headers.set(requestedHeader, allowedHeader);
+    }
+  }
+
+  return [...headers.values()].sort((left, right) => left.localeCompare(right)).join(", ");
+};
+
 export const setCorsHeaders = (request, response, allowedOrigins = []) => {
   const origin = readRequestOrigin(request);
 
   response.setHeader("Vary", "Origin");
   response.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Device-Id, X-State-Version"
+    createAllowedCorsHeaders(request)
+  );
+  response.setHeader(
+    "Access-Control-Expose-Headers",
+    exposedCorsResponseHeaders.join(", ")
   );
   response.setHeader(
     "Access-Control-Allow-Methods",
@@ -182,11 +254,13 @@ export const sendError = (
   message,
   details = undefined
 ) => {
+  const publicRequestId = ensureRequestId(response);
   sendJson(response, statusCode, {
     success: false,
     code,
     error: message,
     message,
+    requestId: publicRequestId,
     ...(details && typeof details === "object" ? details : {}),
   });
 };

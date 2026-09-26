@@ -12,6 +12,7 @@ import {
   clearCachedRemoteState,
   readCachedRemoteMeta,
   readCachedRemoteSnapshot,
+  setCachedRemoteStateOwner,
   writeCachedRemoteMeta,
   writeCachedRemoteSnapshot,
 } from "../lib/remoteStateCache";
@@ -29,6 +30,7 @@ import type {
   AccountBackupPayload,
   AccountBackupSummary,
   AccountExportPayload,
+  AuthApiErrorDiagnostics,
   AuthProvider,
   AuthRuntimeInfo,
   PasswordResetRequestResult,
@@ -43,10 +45,7 @@ export interface RemoteSyncResult {
   message?: string;
   code?: string;
   status?: number;
-  diagnostics?: {
-    syncStage?: string;
-    reasonCode?: string;
-  };
+  diagnostics?: AuthApiErrorDiagnostics;
   meta?: AppSnapshotMeta | null;
   profile?: unknown;
   meal?: unknown;
@@ -232,7 +231,8 @@ class RemoteRequestError extends Error {
   code: string;
   status: number;
   meta: AppSnapshotMeta | null;
-  diagnostics?: RemoteSyncResult["diagnostics"];
+  diagnostics?: AuthApiErrorDiagnostics;
+  requestId?: string;
 
   constructor({
     code,
@@ -240,18 +240,21 @@ class RemoteRequestError extends Error {
     status,
     meta = null,
     diagnostics,
+    requestId,
   }: {
     code: string;
     message: string;
     status: number;
     meta?: AppSnapshotMeta | null;
-    diagnostics?: RemoteSyncResult["diagnostics"];
+    diagnostics?: AuthApiErrorDiagnostics;
+    requestId?: string;
   }) {
     super(message);
     this.code = code;
     this.status = status;
     this.meta = meta;
     this.diagnostics = diagnostics;
+    this.requestId = requestId;
   }
 }
 
@@ -263,6 +266,7 @@ const REMOTE_STARTUP_HEALTH_TIMEOUT_MS = 2_000;
 const REMOTE_AUTH_REFRESH_TIMEOUT_MS = 12_000;
 const REMOTE_REQUEST_TIMEOUT_MS = 18_000;
 const REMOTE_LONG_REQUEST_TIMEOUT_MS = 45_000;
+const REQUEST_ID_HEADER = "X-Request-Id";
 const PUBLIC_FRONTEND_HOSTNAMES = new Set([
   "www.smart-nutrition.club",
   "smart-nutrition.club",
@@ -451,6 +455,7 @@ const rememberRemoteBaseUrl = (baseUrl: string) => {
 
 const clearRemoteSession = () => {
   remoteSessionActive = false;
+  setCachedRemoteStateOwner(null);
   removeClientStorageItem(REMOTE_BASE_URL_KEY);
   clearAuthSessionHint();
   clearCachedRemoteState();
@@ -463,6 +468,20 @@ const isRegistrationVerificationPending = (
   typeof value === "object" &&
   value !== null &&
   (value as { requiresVerification?: unknown }).requiresVerification === true;
+
+const createDiagnosticRequestId = () => {
+  const randomPart =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+  return `sn-web-${randomPart}`;
+};
+
+const shouldAttachDiagnosticRequestId = (init: RequestInit) => {
+  const method = (init.method ?? "GET").toUpperCase();
+  return method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+};
 
 const readJsonResponse = async <T>(response: Response) => {
   if (response.status === 204) {
@@ -484,10 +503,8 @@ const readRemoteErrorPayload = async (response: Response) => {
       code?: string;
       message?: string;
       meta?: AppSnapshotMeta | null;
-      diagnostics?: {
-        syncStage?: string;
-        reasonCode?: string;
-      };
+      diagnostics?: AuthApiErrorDiagnostics;
+      requestId?: string;
     };
   } catch {
     return {
@@ -504,13 +521,22 @@ const toRemoteRequestError = async (
   fallbackMessage = "Remote request failed."
 ) => {
   const payload = await readRemoteErrorPayload(response);
+  const requestId =
+    payload.requestId ??
+    payload.diagnostics?.requestId ??
+    response.headers.get(REQUEST_ID_HEADER) ??
+    undefined;
 
   return new RemoteRequestError({
     code: payload.code ?? fallbackCode,
     message: payload.message ?? fallbackMessage,
     status: response.status,
     meta: payload.meta ?? null,
-    diagnostics: payload.diagnostics,
+    diagnostics: {
+      ...(payload.diagnostics ?? {}),
+      ...(requestId ? { requestId } : {}),
+    },
+    requestId,
   });
 };
 
@@ -521,7 +547,11 @@ const toAuthApiError = (error: unknown): AuthApiError | null => {
 
   if (error instanceof RemoteRequestError) {
     const createAuthError = (code: AuthApiError["code"]) =>
-      new AuthApiError(code, getAuthApiErrorMessage(code));
+      new AuthApiError(code, getAuthApiErrorMessage(code), {
+        status: error.status,
+        diagnostics: error.diagnostics,
+        requestId: error.requestId,
+      });
 
     if (error.code === "EMAIL_IN_USE") {
       return createAuthError("EMAIL_IN_USE");
@@ -632,6 +662,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
         method: "POST",
         headers: {
           Accept: "application/json",
+          [REQUEST_ID_HEADER]: createDiagnosticRequestId(),
         },
         credentials: "include",
         signal: timeout.signal,
@@ -658,6 +689,7 @@ const refreshRemoteAccessToken = async (baseUrl: string) => {
 
     const payload = await readJsonResponse<AuthResponse>(response);
     setRemoteSession(baseUrl);
+    setCachedRemoteStateOwner(payload.user.id);
 
     if (payload.snapshot) {
       writeCachedRemoteSnapshot(payload.snapshot);
@@ -816,6 +848,13 @@ export const requestRemote = async <T>(
 
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json");
+  }
+
+  if (
+    shouldAttachDiagnosticRequestId(init) &&
+    !headers.has(REQUEST_ID_HEADER)
+  ) {
+    headers.set(REQUEST_ID_HEADER, createDiagnosticRequestId());
   }
 
   const performRequest = async () => {
@@ -1512,6 +1551,7 @@ export const fetchRemotePartnerPregnancyShares =
 
 const mapAuthResponse = async (payload: AuthResponse, baseUrl: string) => {
   setRemoteSession(baseUrl);
+  setCachedRemoteStateOwner(payload.user.id);
   const nextSnapshot = preserveCachedCompanionState(
     payload.snapshot ?? null
   );

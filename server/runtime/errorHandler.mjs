@@ -76,7 +76,36 @@ const getPublicAssistantDetails = (details) => {
     : undefined;
 };
 
+const getPublicEmailDeliveryDetails = (details) => {
+  const provider =
+    typeof details?.provider === "string" && details.provider.trim()
+      ? details.provider.trim().slice(0, 40)
+      : undefined;
+  const providerCode =
+    typeof details?.providerCode === "string" && details.providerCode.trim()
+      ? details.providerCode.trim().slice(0, 80)
+      : undefined;
+  const attempts = Number(details?.attempts);
+
+  return provider || providerCode || Number.isFinite(attempts)
+    ? {
+        diagnostics: {
+          ...(provider ? { provider } : {}),
+          ...(providerCode ? { providerCode } : {}),
+          ...(Number.isFinite(attempts) ? { attempts: Math.max(attempts, 0) } : {}),
+        },
+      }
+    : undefined;
+};
+
 const getPublicAuthDetails = (code, details) => {
+  if (
+    code === "EMAIL_DELIVERY_UNAVAILABLE" ||
+    code === "VERIFICATION_DELIVERY_UNAVAILABLE"
+  ) {
+    return getPublicEmailDeliveryDetails(details);
+  }
+
   if (code !== "STATE_SYNC_UNAVAILABLE") {
     return undefined;
   }
@@ -98,6 +127,19 @@ const getPublicAuthDetails = (code, details) => {
         },
       }
     : undefined;
+};
+
+const getPublicStateDetails = (code, details) => {
+  if (code !== "STATE_CONFLICT") {
+    return undefined;
+  }
+
+  const meta =
+    details && typeof details === "object" && details.meta && typeof details.meta === "object"
+      ? details.meta
+      : undefined;
+
+  return meta ? { meta } : undefined;
 };
 
 export const handleRouteError = (error, response) => {
@@ -208,7 +250,8 @@ export const handleRouteError = (error, response) => {
       response,
       statusCode,
       error.code,
-      getPublicMessage(stateErrorMessages, error.code, "Cloud request failed.")
+      getPublicMessage(stateErrorMessages, error.code, "Cloud request failed."),
+      getPublicStateDetails(error.code, error.details)
     );
     return true;
   }

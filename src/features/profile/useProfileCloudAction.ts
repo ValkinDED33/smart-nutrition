@@ -16,7 +16,7 @@ type AuthUser = NonNullable<RootState["auth"]["user"]>;
 
 const PROFILE_SAVE_IN_PROGRESS_ERROR = "Cloud profile save is already in progress.";
 const SAFE_PROFILE_SYNC_ERROR_PATTERN =
-  /^Cloud (?:data changed|sync could not save)[A-Za-z0-9 .,';-]+(?: \((?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+)(?: · (?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+))*\))?$/;
+  /^Cloud (?:data changed|sync could not save)[A-Za-z0-9 .,';-]+(?: \((?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+|request:[A-Za-z0-9._:-]+)(?: · (?:[A-Z_]+|HTTP \d{3}|stage:[a-z0-9-]+|reason:[A-Za-z0-9_.$-]+|request:[A-Za-z0-9._:-]+))*\))?$/;
 
 const getSafeProfileSyncErrorMessage = (error: unknown) => {
   if (!(error instanceof Error)) {

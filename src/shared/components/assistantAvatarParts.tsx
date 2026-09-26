@@ -1,7 +1,10 @@
 import { Box } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 import type { AssistantCompanionKind } from "@domain/profile/types";
-import type { CompanionVisual } from "./assistantAvatarVisuals";
+import {
+  isRobotCompanionKind,
+  type CompanionVisual,
+} from "./assistantAvatarVisuals";
 
 interface CompanionPartsProps {
   variant: AssistantCompanionKind;
@@ -275,7 +278,7 @@ export const CompanionHeadParts = (props: CompanionPartsProps) => {
     return <DragonHead size={props.size} visual={props.visual} />;
   }
 
-  if (props.variant === "robot") {
+  if (isRobotCompanionKind(props.variant)) {
     return <RobotAntenna size={props.size} visual={props.visual} />;
   }
 
@@ -429,7 +432,7 @@ const MainMuzzle = ({ variant, size, visual }: CompanionPartsProps) => (
       borderRadius:
         variant === "fox"
           ? "42% 42% 68% 68%"
-          : variant === "robot"
+          : isRobotCompanionKind(variant)
             ? "24%"
             : variant === "capybara"
               ? "48% 48% 42% 42%"
@@ -705,7 +708,7 @@ const AnimalNose = ({ variant, size }: Pick<CompanionPartsProps, "variant" | "si
 
 export const CompanionFaceParts = (props: CompanionPartsProps) => (
   <>
-    {props.variant === "robot" ? (
+    {isRobotCompanionKind(props.variant) ? (
       <RobotVisorPanel size={props.size} />
     ) : (
       <>

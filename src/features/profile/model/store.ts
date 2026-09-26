@@ -159,6 +159,11 @@ const isAssistantMood = (value: unknown): value is AssistantMood =>
   value === "sleepy" ||
   value === "celebrate";
 const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKind =>
+  value === "robot" ||
+  value === "robot_minimal" ||
+  value === "robot_neon" ||
+  value === "robot_nature" ||
+  value === "robot_solar" ||
   value === "cat" ||
   value === "dog" ||
   value === "fox" ||
@@ -183,8 +188,7 @@ const isAssistantCompanionKind = (value: unknown): value is AssistantCompanionKi
   value === "axolotl" ||
   value === "phoenix" ||
   value === "forest_spirit" ||
-  value === "cosmic_beast" ||
-  value === "robot";
+  value === "cosmic_beast";
 const isAssistantCompanionRenderMode = (
   value: unknown
 ): value is AssistantCompanionRenderMode => value === "2d" || value === "3d";

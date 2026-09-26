@@ -104,6 +104,10 @@ describe("assistant api", () => {
   });
 
   it("parses successful assistant answers and actions", async () => {
+    const actionId = "open-water";
+    const resultType = "navigation_handoff";
+    const targetRoute = "/water";
+    const targetSurface = "food";
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -111,11 +115,23 @@ describe("assistant api", () => {
           mode: "agent-action",
           actions: [
             {
-              id: "open-water",
+              id: actionId,
               ok: true,
-              resultType: "navigation_handoff",
-              targetRoute: "/water",
-              targetSurface: "food",
+              resultType,
+              targetRoute,
+              targetSurface,
+              receipt: {
+                id: actionId,
+                status: "confirmed",
+                confirmed: true,
+                source: "backend",
+                resultType,
+                code: null,
+                message: null,
+                targetRoute,
+                targetSurface,
+                retryable: false,
+              },
             },
           ],
           followUpQuestionIds: ["water_help", "unknown"],
@@ -131,10 +147,20 @@ describe("assistant api", () => {
       followUpQuestionIds: ["water_help"],
       actions: [
         {
-          id: "open-water",
+          id: actionId,
           ok: true,
-          targetRoute: "/water",
-          targetSurface: "food",
+          targetRoute,
+          targetSurface,
+          receipt: {
+            id: actionId,
+            status: "confirmed",
+            confirmed: true,
+            source: "backend",
+            resultType,
+            targetRoute,
+            targetSurface,
+            retryable: false,
+          },
         },
       ],
     });

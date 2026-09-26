@@ -175,6 +175,20 @@ export interface AssistantRuntimeAction {
   code?: string | null;
   targetRoute?: string | null;
   targetSurface?: "scanner" | "photo_meal" | "food" | null;
+  receipt?: AssistantRuntimeActionReceipt | null;
+}
+
+export interface AssistantRuntimeActionReceipt {
+  id: string;
+  status: "confirmed" | "failed";
+  confirmed: boolean;
+  source: "backend";
+  resultType: string | null;
+  code: string | null;
+  message: string | null;
+  targetRoute: string | null;
+  targetSurface: "scanner" | "photo_meal" | "food" | null;
+  retryable: boolean;
 }
 
 export interface AssistantConversationMessage {

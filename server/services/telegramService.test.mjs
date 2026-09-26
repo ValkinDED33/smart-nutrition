@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { assistantWorkerTools } from "./assistantWorkerManifest.mjs";
 import {
   buildTelegramAssistantCapabilitiesMessage,
   buildTelegramDailySummary,
@@ -88,26 +89,33 @@ describe("telegramService", () => {
   it("describes real assistant capabilities for Telegram", () => {
     const message = buildTelegramAssistantCapabilitiesMessage();
 
-    expect(message).toContain("Харчування");
-    expect(message).toContain("Вода");
-    expect(message).toContain("Нутрієнти");
-    expect(message).toContain("дні народження");
-    expect(message).toContain("контроль тиску");
-    expect(message).toContain("Жіноче здоров'я");
+    expect(message).toContain("Харчування — Продукти, рецепти, БЖВ");
+    expect(message).toContain("Вода — Трекер, стаканчики");
+    expect(message).toContain("Telegram поруч — Той самий помічник");
+    expect(message).toContain("Здоров'я — Тиск, аналізи");
+    expect(message).toContain("Родина — Партнер, вагітність");
     expect(message).toContain("/today");
   });
 
   it("localizes assistant capabilities for Telegram", () => {
     const message = buildTelegramAssistantCapabilitiesMessage("en");
 
-    expect(message).toContain("Food");
-    expect(message).toContain("Water");
-    expect(message).toContain("Nutrients");
-    expect(message).toContain("birthdays");
-    expect(message).toContain("blood-pressure checks");
-    expect(message).toContain("Women health");
+    expect(message).toContain("Nutrition — Products, recipes");
+    expect(message).toContain("Water — Tracker, glasses");
+    expect(message).toContain("Telegram nearby — The same assistant");
+    expect(message).toContain("Health — Pressure, labs");
+    expect(message).toContain("Family — Partner, pregnancy");
     expect(message).toContain("/today");
     expect(message).not.toContain("Харчування");
+  });
+
+  it("builds Telegram capability help from the shared assistant worker manifest", () => {
+    const message = buildTelegramAssistantCapabilitiesMessage("en");
+
+    assistantWorkerTools.forEach((tool) => {
+      expect(message).toContain(tool.title.en);
+      expect(message).toContain(tool.description.en);
+    });
   });
 
   it("builds a Telegram workspace menu around real commands", () => {
@@ -1739,6 +1747,104 @@ describe("telegramService", () => {
       })
     );
     expect(answerCbQuery).toHaveBeenCalledWith("Воду збережено.");
+
+    service.stop("test shutdown");
+  });
+
+  it("does not confirm Telegram water callback when the assistant action receipt failed", async () => {
+    const instances = [];
+    class TestBot {
+      constructor() {
+        this.telegram = { sendMessage: vi.fn() };
+        this.actions = [];
+        instances.push(this);
+      }
+
+      start = vi.fn();
+      command = vi.fn();
+      action = vi.fn((matcher, handler) => {
+        this.actions.push({ matcher, handler });
+      });
+      on = vi.fn();
+      catch = vi.fn();
+      stop = vi.fn();
+      launch = vi.fn((_options, onLaunch) => {
+        onLaunch();
+        return new Promise(() => {});
+      });
+    }
+
+    const connectedUser = {
+      id: "user-1",
+      name: "Ihor",
+      role: "USER",
+      telegramChatId: "42",
+    };
+    const assistantAgent = {
+      run: vi.fn(async () => ({
+        handled: true,
+        text: "Я зрозумів дію з водою, але зараз не зміг підтвердити збереження.",
+        intent: { intent: "add_water", entities: { amountMl: 250 } },
+        actions: [
+          {
+            id: "add_water",
+            ok: false,
+            resultType: null,
+            code: "WATER_NOT_CONFIRMED",
+            receipt: {
+              id: "add_water",
+              status: "failed",
+              confirmed: false,
+              source: "backend",
+              resultType: null,
+              code: "WATER_NOT_CONFIRMED",
+              message: null,
+              targetRoute: null,
+              targetSurface: null,
+              retryable: true,
+            },
+          },
+        ],
+      })),
+    };
+    const service = createTelegramService({
+      config: createConfig(),
+      authRepository: createAuthRepository({
+        findUserByTelegramChatId: vi.fn(async () => connectedUser),
+      }),
+      assistantAgent,
+      logger: { info: vi.fn(), warn: vi.fn() },
+      TelegrafClass: TestBot,
+    });
+
+    await service.start();
+    const addAction = instances[0].actions.find((item) => String(item.matcher).includes("water"));
+    const reply = vi.fn();
+    const answerCbQuery = vi.fn();
+
+    await addAction.handler({
+      match: ["water:add:250", "add", "250"],
+      callbackQuery: {
+        data: "water:add:250",
+        message: { chat: { id: 42 } },
+      },
+      reply,
+      answerCbQuery,
+    });
+
+    expect(reply).toHaveBeenCalledWith(
+      "Я зрозумів дію з водою, але зараз не зміг підтвердити збереження.",
+      expect.objectContaining({
+        reply_markup: expect.objectContaining({
+          inline_keyboard: expect.arrayContaining([
+            expect.arrayContaining([
+              expect.objectContaining({ callback_data: "water:retry:250" }),
+            ]),
+          ]),
+        }),
+      })
+    );
+    expect(answerCbQuery).toHaveBeenCalledWith("Не збереглося. Спробуйте ще раз.");
 
     service.stop("test shutdown");
   });

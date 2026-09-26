@@ -23,6 +23,8 @@ describe("AssistantRuntimeCard contracts", () => {
     expect(source).toContain("useNavigate");
     expect(source).toContain("AssistantRuntimeAction");
     expect(source).toContain("getNavigationTarget");
+    expect(source).toContain("action.receipt?.confirmed");
+    expect(source).toContain("action.receipt?.resultType");
     expect(source).toContain('action.resultType === "navigation_handoff"');
     expect(source).toContain('targetRoute?.startsWith("/")');
     expect(source).toContain('!targetRoute.startsWith("//")');
@@ -44,9 +46,11 @@ describe("AssistantRuntimeCard contracts", () => {
   });
 
   it("keeps Ukrainian and Polish assistant prompts free from coach/focus jargon", () => {
-    expect(source).toContain("харчовому аналізу");
+    expect(source).toContain("AI-помічник на зміні");
+    expect(source).toContain("через backend-дані");
     expect(source).toContain("Який зараз головний напрям?");
-    expect(source).toContain("analizy żywienia");
+    expect(source).toContain("AI asystent na zmianie");
+    expect(source).toContain("przez dane z backendu");
     expect(source).toContain("Jaki jest teraz główny kierunek?");
     expect(source).not.toContain("coach-аналітиці");
     expect(source).not.toContain("focus коуча");

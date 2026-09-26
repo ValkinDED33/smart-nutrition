@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) => readFile(path, "utf8");
 const AI_COMPANION_PAGE_SOURCE = "src/pages/AiCompanionPage.tsx";
 const HOME_PAGE_SOURCE = "src/pages/HomePage.tsx";
+const LANDING_PAGE_SOURCE = "src/pages/LandingPage.tsx";
 const ECOSYSTEM_PULSE_SOURCE = "src/features/assistant/EcosystemPulse.tsx";
+const COMPANION_SHOP_SOURCE = "src/features/profile/CompanionShopCard.tsx";
+const ASSISTANT_CUSTOMIZATION_SOURCE =
+  "src/features/profile/AssistantCustomizationCard.tsx";
 
 describe("AiCompanionPage contract", () => {
   it("keeps assistant sections accessibility copy localized", async () => {
@@ -35,6 +39,10 @@ describe("AiCompanionPage contract", () => {
   it("keeps the coach page as a real AI worker command center", async () => {
     const source = await readSource(AI_COMPANION_PAGE_SOURCE);
 
+    expect(source).toContain("assistantWorkerTools");
+    expect(source).toContain("getAssistantWorkerToolText");
+    expect(source).toContain("AssistantWorkerToolId");
+    expect(source).toContain("getAssistantToolIcon");
     expect(source).toContain('data-ai-worker-command-center="true"');
     expect(source).toContain('data-ai-worker-metric="true"');
     expect(source).toContain('data-ai-worker-route-item="true"');
@@ -59,6 +67,8 @@ describe("AiCompanionPage contract", () => {
     expect(source).toContain("Pracuję z Twoim dniem");
     expect(source).toContain("I am working with your day");
     expect(source).toContain("This is one worker acting through real Smart Nutrition surfaces");
+    expect(source).not.toContain("id: \"plan\"");
+    expect(source).not.toContain("...copy.toolLabels");
     expect(source).not.toContain("ВАШ ПОМІЧНИК");
   });
 
@@ -72,19 +82,56 @@ describe("AiCompanionPage contract", () => {
     expect(homeSource).toContain('data-ai-worker-route-item="true"');
     expect(homeSource).toContain('data-ai-worker-tool-grid="true"');
     expect(homeSource).toContain('data-ai-worker-tool="true"');
+    expect(homeSource).toContain("assistantWorkerTools.map");
+    expect(homeSource).toContain("getAssistantWorkerToolText");
+    expect(homeSource).toContain("AssistantWorkerToolId");
+    expect(homeSource).toContain("getHomeWorkerToolIcon");
     expect(homeSource).toContain("variant={assistant.companionKind}");
     expect(homeSource).not.toContain('variant="robot"');
+    expect(homeSource).not.toContain("const quickDockActions = [");
     expect(pulseSource).toContain('data-ai-worker-pulse="true"');
     expect(pulseSource).toContain('data-ai-worker-pulse-tools="true"');
     expect(pulseSource).toContain('data-ai-worker-pulse-drawer="true"');
     expect(pulseSource).toContain('data-ai-worker-pulse-chevron="true"');
+    expect(pulseSource).toContain("assistantWorkerTools");
+    expect(pulseSource).toContain("getAssistantWorkerToolText");
     expect(pulseSource).toContain("AI-працівник поруч");
     expect(pulseSource).toContain("AI-працівник");
-    expect(pulseSource).toContain("Telegram");
-    expect(pulseSource).toContain("Здоров'я");
-    expect(pulseSource).toContain("Сім'я");
-    expect(pulseSource).toContain("Ліки");
-    expect(pulseSource).toContain("Події");
     expect(pulseSource).not.toContain('label: "Жива екосистема"');
+  });
+
+  it("keeps assistant shop capabilities on the same canonical worker toolbelt", async () => {
+    const shopSource = await readSource(COMPANION_SHOP_SOURCE);
+    const customizationSource = await readSource(ASSISTANT_CUSTOMIZATION_SOURCE);
+
+    expect(shopSource).toContain('data-companion-shop-capabilities="true"');
+    expect(shopSource).toContain("assistantWorkerTools");
+    expect(shopSource).toContain("getAssistantWorkerToolText");
+    expect(shopSource).toContain("AssistantWorkerToolId");
+    expect(shopSource).toContain('key: "photo"');
+    expect(shopSource).toContain('key: "telegram"');
+    expect(shopSource).not.toContain("tools: {");
+    expect(shopSource).not.toContain("copy.tools.map");
+    expect(customizationSource).toContain(
+      'data-assistant-customization-worker-toolbelt="true"'
+    );
+    expect(customizationSource).toContain("assistantWorkerTools.map");
+    expect(customizationSource).toContain("getAssistantWorkerToolText");
+    expect(customizationSource).toContain("AssistantWorkerToolId");
+    expect(customizationSource).not.toContain("copy.workerTools.map");
+  });
+
+  it("keeps the public landing assistant toolbelt on the canonical worker manifest", async () => {
+    const landingSource = await readSource(LANDING_PAGE_SOURCE);
+
+    expect(landingSource).toContain('data-landing-companion-toolbelt="true"');
+    expect(landingSource).toContain("LANDING_WORKER_TOOL_IDS");
+    expect(landingSource).toContain("assistantWorkerTools");
+    expect(landingSource).toContain("getAssistantWorkerToolText");
+    expect(landingSource).toContain("AssistantWorkerToolId");
+    expect(landingSource).toContain("getLandingWorkerToolIcon");
+    expect(landingSource).not.toContain(
+      "const companionToolBadges = copy.featureRail.map"
+    );
   });
 });

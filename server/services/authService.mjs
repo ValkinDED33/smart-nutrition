@@ -385,7 +385,12 @@ export const createAuthService = ({
     if (!emailResult?.ok) {
       throw new AuthApiError(
         "VERIFICATION_DELIVERY_UNAVAILABLE",
-        "Email verification could not be delivered."
+        "Email verification could not be delivered.",
+        {
+          provider: emailResult?.provider,
+          providerCode: emailResult?.code,
+          attempts: emailResult?.attempts,
+        }
       );
     }
 

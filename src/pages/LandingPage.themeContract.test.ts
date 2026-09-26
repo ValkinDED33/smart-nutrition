@@ -40,6 +40,27 @@ describe("LandingPage theme contract", () => {
     );
   });
 
+  it("keeps guest navigation localized instead of mixing product languages", async () => {
+    const source = await readAppLayoutSource();
+
+    expect(source).toContain('{ label: "AI-помічник", href: LANDING_AI_HREF }');
+    expect(source).toContain('{ label: "Спільнота", href: LANDING_COMMUNITY_HREF }');
+    expect(source).toContain('{ label: "AI asystent", href: LANDING_AI_HREF }');
+    expect(source).toContain('{ label: "Społeczność", href: LANDING_COMMUNITY_HREF }');
+    expect(source).not.toContain('{ label: "AI assistant", href: LANDING_AI_HREF }');
+  });
+
+  it("keeps guest landing nav labels on one line", async () => {
+    const source = await readAppLayoutSource();
+
+    expect(source).toContain("GUEST_LANDING_NAV_ITEM_SX");
+    expect(source).toContain('minWidth: "max-content"');
+    expect(source).toContain('whiteSpace: "nowrap"');
+    expect(source).toContain('lineHeight: 1');
+    expect(source).toContain('fontSize: { lg: 13, xl: 14 }');
+    expect(source).toContain('maxWidth: "calc(100vw - 520px)"');
+  });
+
   it("keeps Ukrainian and Polish landing copy in native product language", async () => {
     const source = await readLandingPageSource();
 
@@ -48,6 +69,7 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("запитати помічника");
     expect(source).toContain("AI-сканер їжі");
     expect(source).toContain("Живий помічник");
+    expect(source).toContain("Один AI-працівник, багато реальних інструментів");
     expect(source).toContain("Попередня можливість помічника");
     expect(source).toContain("розумні підказки");
     expect(source).toContain("Zobacz asystenta");
@@ -55,6 +77,7 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("zapytaj asystenta");
     expect(source).toContain("AI skaner jedzenia");
     expect(source).toContain("Żywy asystent");
+    expect(source).toContain("Jeden pracownik AI, wiele prawdziwych narzędzi");
     expect(source).toContain("Poprzednia możliwość asystenta");
     expect(source).toContain("mądre podpowiedzi");
     expect(source).not.toContain("Побачити companion");
@@ -88,7 +111,7 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain('data-landing-living-companion-stage="true"');
     expect(source).toContain('data-landing-companion-toolbelt="true"');
     expect(source).toContain('data-landing-ai-worker-signal="true"');
-    expect(source).toContain("const companionToolBadges = copy.featureRail.map");
+    expect(source).toContain("const companionToolBadges = LANDING_WORKER_TOOL_IDS.map");
     expect(source).toContain("const workerSignals = copy.sceneCards.map");
     expect(source).toContain("landingCompanionOrbit");
     expect(source).toContain("landingCompanionSignal");
@@ -187,6 +210,8 @@ describe("LandingPage theme contract", () => {
     expect(source).toContain("Seaweed");
     expect(source).toContain("Oysters and seafood");
     expect(source).toContain("const slides: CompanionCapabilitySlide[] = assistantTools.map");
+    expect(source).toContain("{copy.sliderTitle}");
+    expect(source).toContain("{copy.sliderBody}");
     expect(source).toContain('"&:focus-visible"');
     expect(source).toContain('"&:hover"');
     expect(source).toContain('gridTemplateColumns: { xs: "1fr", lg: "0.48fr 0.52fr" }');

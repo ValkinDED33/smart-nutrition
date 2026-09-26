@@ -18,7 +18,8 @@ const readTrackedFiles = () =>
   })
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(fileExists);
 
 const checks = [];
 
@@ -52,6 +53,8 @@ const stateServiceSource = readSource("server/services/stateService.mjs");
 const authServiceSource = readSource("server/services/authService.mjs");
 const authServiceTestSource = readSource("server/services/authService.test.mjs");
 const indexSource = readSource("server/index.mjs");
+const httpSource = readSource("server/lib/http.mjs");
+const httpTestSource = readSource("server/lib/http.test.mjs");
 const errorHandlerSource = readSource("server/runtime/errorHandler.mjs");
 const domainSource = readSource("server/lib/domain.mjs");
 const authRepositorySource = readSource("server/repositories/authRepository.mjs");
@@ -95,6 +98,7 @@ const landingPageSource = readSource("src/pages/LandingPage.tsx");
 const communitySliceSource = readSource("src/features/community/communitySlice.ts");
 const authCookiesSource = readSource("server/runtime/authCookies.mjs");
 const authRoutesSource = readSource("server/routes/auth.routes.mjs");
+const healthRoutesSource = readSource("server/routes/health.routes.mjs");
 const profileCloudActionSource = readSource("src/features/profile/useProfileCloudAction.ts");
 const profileStoreSource = readSource("src/features/profile/model/store.ts");
 const profileTypesSource = readSource("src/domain/profile/types.ts");
@@ -258,6 +262,10 @@ const companionAvatarModelSource = readSource("src/features/assistant-3d/compone
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
 const authenticatedLiveAuditSource = readSource("server/scripts/audit-live-authenticated.mjs");
+const liveAuditDiagnosticsSource = readSource("server/scripts/liveAuditDiagnostics.mjs");
+const liveAuditDiagnosticsTestSource = readSource(
+  "server/scripts/liveAuditDiagnostics.test.mjs"
+);
 const transactionalEmailCheckSource = readSource(
   "server/scripts/check-transactional-email.mjs"
 );
@@ -265,6 +273,7 @@ const seoAuditSource = readSource("server/scripts/audit-seo-discovery.mjs");
 const globalAssistantLayerSource = readSource("src/widgets/GlobalAssistantLayer.tsx");
 const globalAssistantLayerModelSource = readSource("src/widgets/globalAssistantLayerModel.ts");
 const packageJsonSource = readSource("package.json");
+const packageLockSource = readSource("package-lock.json");
 const indexHtmlSource = readSource("index.html");
 const robotsTxtSource = readSource("public/robots.txt");
 const sitemapXmlSource = readSource("public/sitemap.xml");
@@ -272,7 +281,6 @@ const imageSitemapXmlSource = readSource("public/sitemap-images.xml");
 const llmsTxtSource = readSource("public/llms.txt");
 const aiTxtSource = readSource("public/ai.txt");
 const productionCheckSource = readSource("server/production-check.mjs");
-const qualityGateWorkflowSource = readSource(".github/workflows/quality-gate.yml");
 const gitignoreSource = readSource(".gitignore");
 const projectMemorySource = readSource(".codex/PROJECT_MEMORY.md");
 const projectDecisionsSource = readSource(".codex/DECISIONS.md");
@@ -281,6 +289,7 @@ const chiefSkillSource = readSource(".codex/skills/smart-nutrition-chief/SKILL.m
 const aiReadyDocSource = readSource("docs/AI_READY_TO_USE.md");
 const aiIntegrationDocSource = readSource("docs/AI_INTEGRATION_SETUP.md");
 const envSetupDocSource = readSource("docs/ENV_SETUP_GUIDE.md");
+const qualityGateDocSource = readSource("docs/QUALITY_GATE.md");
 const familyWellnessDocSource = readSource("docs/FAMILY_WELLNESS_ECOSYSTEM.md");
 const specialistSkillPaths = [
   ".codex/skills/ai-architect/SKILL.md",
@@ -298,9 +307,33 @@ const specialistSkillSources = specialistSkillPaths.map((skillPath) => ({
   source: readSource(skillPath),
 }));
 const trackedFiles = readTrackedFiles();
+const packageJson = JSON.parse(packageJsonSource);
+const packageLock = JSON.parse(packageLockSource);
+const expectedAllowedInstallScripts = {
+  "@firebase/util@1.15.1": true,
+  "core-js@3.49.0": true,
+  "esbuild@0.28.1": true,
+  "protobufjs@7.6.5": true,
+};
+const expectedReviewedOptionalInstallScripts = ["fsevents@2.3.3"];
+const normalizeObjectEntries = (value) =>
+  Object.entries(value ?? {}).sort(([left], [right]) => left.localeCompare(right));
+const lockInstallScriptPackages = Object.entries(packageLock.packages ?? {})
+  .filter(([packagePath, packageMeta]) =>
+    packagePath.startsWith("node_modules/") && Boolean(packageMeta?.hasInstallScript)
+  )
+  .map(([packagePath, packageMeta]) => ({
+    id: `${packagePath.slice("node_modules/".length)}@${packageMeta.version}`,
+    optional: Boolean(packageMeta.optional),
+    os: packageMeta.os ?? [],
+  }))
+  .sort((left, right) => left.id.localeCompare(right.id));
 const retiredPhotoDocPhrases = [
   ["manual", "draft", "mode"],
+  ["low-confidence", "draft"],
   ["low-confidence", "manual", "draft"],
+  ["AI-распознавание", "фото", "еды"],
+  ["автоматическую", "nutrition", "vision", "analysis"],
   ["does", "not", "enable", "paid", "AI", "vision"],
 ].map((parts) => new RegExp(parts.join("\\s+"), "i"));
 
@@ -436,6 +469,7 @@ addCheck(
   "tracked repository excludes runtime and generated artifacts",
   trackedFiles.every(
     (filePath) =>
+      !/^\.github\//.test(filePath) &&
       !/^\.codex\/(?:chrome|cdp|preview|runtime-smoke|screenshots|vite-dev)/.test(
         filePath
       ) &&
@@ -448,7 +482,31 @@ addCheck(
         filePath
       )
   ),
-  "Git must contain only source, contracts, docs, and skill knowledge; browser profiles, local storage snapshots, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
+  "Git must contain only source, contracts, docs, and skill knowledge; GitHub automation, browser profiles, local storage snapshots, remote attachments, cache data, logs, screenshots, and build output must stay out of the index."
+);
+
+addCheck(
+  "package install scripts use a version-pinned audited allowlist",
+  JSON.stringify(normalizeObjectEntries(packageJson.allowScripts)) ===
+    JSON.stringify(normalizeObjectEntries(expectedAllowedInstallScripts)),
+  "package.json allowScripts must contain only the reviewed version-pinned install scripts: @firebase/util@1.15.1, core-js@3.49.0, esbuild@0.28.1, protobufjs@7.6.5."
+);
+
+addCheck(
+  "package lock install scripts match reviewed dependency reality",
+  JSON.stringify(
+    lockInstallScriptPackages
+      .filter(({ optional, os }) => !optional || !os.includes("darwin"))
+      .map(({ id }) => id)
+      .sort()
+  ) === JSON.stringify(Object.keys(expectedAllowedInstallScripts).sort()) &&
+    JSON.stringify(
+      lockInstallScriptPackages
+        .filter(({ optional, os }) => optional && os.includes("darwin"))
+        .map(({ id }) => id)
+        .sort()
+    ) === JSON.stringify(expectedReviewedOptionalInstallScripts),
+  "package-lock.json may contain only the allowlisted install scripts plus reviewed optional darwin-only fsevents@2.3.3; new scripts require explicit review instead of broad approval."
 );
 
 addCheck(
@@ -555,7 +613,9 @@ addCheck(
   ) &&
     aiReadyDocSource.includes("vision-capable providers") &&
     aiIntegrationDocSource.includes("Saving still requires user confirmation") &&
-    envSetupDocSource.includes("фото еды не должно быть шаблоном"),
+    envSetupDocSource.includes("backend `/api/photo-analysis`") &&
+    envSetupDocSource.includes("Фото еды не должно быть шаблоном") &&
+    envSetupDocSource.includes("backend-confirmed meal flow"),
   "AI docs must not preserve the old manual-draft-only story; docs must reflect backend vision recognition with honest fallback and user confirmation."
 );
 
@@ -768,7 +828,8 @@ addCheck(
     assistantAgentIntentsSource.includes("SCANNER_WORD_PATTERN") &&
     assistantAgentServiceSource.includes('intent.intent === "open_scanner"') &&
     assistantAgentServiceSource.includes("tools.openScanner(user, intent.entities)") &&
-    assistantAgentServiceSource.includes("targetRoute: toolResult?.targetRoute ?? null") &&
+    assistantAgentServiceSource.includes("buildAgentActionReceipt") &&
+    assistantAgentServiceSource.includes("targetRoute: receipt.targetRoute") &&
     assistantAgentToolsSource.includes("const openScanner = async") &&
     assistantAgentToolsSource.includes('type: "navigation_handoff"') &&
     assistantAgentToolsSource.includes('targetSurface: "scanner"') &&
@@ -1388,6 +1449,21 @@ addCheck(
       serverIndexSource
     ),
   "Expired session/reset/verification token cleanup must run as startup/scheduled housekeeping, not as a global storage delete scan on every API request."
+);
+
+addCheck(
+  "request diagnostics and CORS are applied before auth, options, routes, and errors",
+  serverIndexSource.indexOf("const requestId = ensureRequestId(response, request);") <
+    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") &&
+    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
+      serverIndexSource.indexOf('if (request.method === "OPTIONS")') &&
+    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
+      serverIndexSource.indexOf("await publicApiRouter({") &&
+    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
+      serverIndexSource.indexOf("await authService.authenticateRequest(request)") &&
+    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
+      serverIndexSource.indexOf("if (handleRouteError(error, response))"),
+  "Every API/static/error path must receive request-id and credentialed CORS headers before preflight, auth, routing, rate limits, and route errors so browser diagnostics stay consistent across Safari, Chrome, Android, and Telegram WebView."
 );
 
 addCheck(
@@ -2799,7 +2875,15 @@ addCheck(
   ) &&
     liveAuditSource.includes("https://smart-nutrition.club") &&
     liveAuditSource.includes("https://smart-nutrition-sk5r.onrender.com") &&
+    liveAuditSource.includes("SMART_NUTRITION_LIVE_APP_ORIGINS") &&
+    liveAuditSource.includes("https://www.smart-nutrition.club") &&
     liveAuditSource.includes("/api/health") &&
+    liveAuditSource.includes("isRenderCloudHealth(health)") &&
+    liveAuditSource.includes("describeBackendHealth") &&
+    liveAuditSource.includes("describeCorsResponse") &&
+    liveAuditSource.includes("hasExposedRequestId(trustedGet)") &&
+    liveAuditSource.includes("live CORS preflight allows") &&
+    liveAuditSource.includes("live CORS response exposes diagnostics") &&
     liveAuditSource.includes("/api/ready") &&
     liveAuditSource.includes("robots.txt") &&
     liveAuditSource.includes("sitemap.xml") &&
@@ -2807,8 +2891,23 @@ addCheck(
     liveAuditSource.includes("routeHeavyVendorPrefixes") &&
     liveAuditSource.includes("access-control-allow-origin") &&
     liveAuditSource.includes("access-control-allow-credentials") &&
+    liveAuditDiagnosticsSource.includes("health?.deployment?.provider === \"render\"") &&
+    liveAuditDiagnosticsSource.includes("access-control-expose-headers") &&
+    liveAuditDiagnosticsTestSource.includes("Likely stale Render deploy") &&
+    liveAuditDiagnosticsTestSource.includes("X-Request-Id-Deprecated") &&
     !/\/api\/auth\/login|@gmail\.com|sk-[A-Za-z0-9_-]{12,}|SMART_NUTRITION_.*KEY/.test(liveAuditSource),
   "Deploy verification must have a safe public live smoke command that checks Vercel, Render, SEO, CORS, assets, and sanitized health without protected auth flows or secrets."
+);
+
+addCheck(
+  "public health exposes safe deployment fingerprint",
+  healthRoutesSource.includes("createPublicDeploymentSummary") &&
+    healthRoutesSource.includes("SMART_NUTRITION_DEPLOY_COMMIT") &&
+    healthRoutesSource.includes("RENDER_GIT_COMMIT") &&
+    healthRoutesSource.includes("VERCEL_GIT_COMMIT_SHA") &&
+    healthRoutesSource.includes("deployment: createPublicDeploymentSummary(env)") &&
+    !/SMART_NUTRITION_.*KEY|MONGO_URI|DATABASE_URL|JWT_SECRET/.test(healthRoutesSource),
+  "Public health must expose only a safe provider/commit deployment fingerprint so live audits can distinguish stale backend deploys from code regressions without leaking secrets."
 );
 
 addCheck(
@@ -2818,6 +2917,27 @@ addCheck(
   ) &&
     authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_EMAIL") &&
     authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_SMOKE_PASSWORD") &&
+    authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_BASE_URL") &&
+    authenticatedLiveAuditSource.includes("SMART_NUTRITION_LIVE_APP_ORIGINS") &&
+    authenticatedLiveAuditSource.includes("https://www.smart-nutrition.club") &&
+    authenticatedLiveAuditSource.includes("trustedAppOrigins") &&
+    authenticatedLiveAuditSource.includes("verifyBackendDeploymentFingerprint") &&
+    authenticatedLiveAuditSource.includes(
+      "live auth backend deployment fingerprint is current for"
+    ) &&
+    authenticatedLiveAuditSource.includes("access-control-allow-origin") &&
+    authenticatedLiveAuditSource.includes("hasExposedRequestId(result.response)") &&
+    authenticatedLiveAuditSource.includes("exposes request-id diagnostics") &&
+    liveAuditDiagnosticsSource.includes("ACEH=${readHeader") &&
+    liveAuditDiagnosticsTestSource.includes("authenticated smoke is unsafe") &&
+    authenticatedLiveAuditSource.indexOf("await verifyBackendDeploymentFingerprint();") <
+      authenticatedLiveAuditSource.indexOf("await verifyBrowserAuthProtocol();") &&
+    authenticatedLiveAuditSource.includes("describeCorsResponse") &&
+    authenticatedLiveAuditSource.indexOf("await verifyBrowserAuthProtocol();") <
+      authenticatedLiveAuditSource.indexOf("failConfiguration();") &&
+    authenticatedLiveAuditSource.includes(
+      "live authenticated smoke configuration is complete"
+    ) &&
     authenticatedLiveAuditSource.includes("/api/auth/login") &&
     authenticatedLiveAuditSource.includes("smart-nutrition-access") &&
     authenticatedLiveAuditSource.includes("smart-nutrition-refresh") &&
@@ -2825,6 +2945,9 @@ addCheck(
     authenticatedLiveAuditSource.includes("/api/state") &&
     authenticatedLiveAuditSource.includes("/api/auth/profile-state") &&
     authenticatedLiveAuditSource.includes("live profile-state save is backend-confirmed") &&
+    authenticatedLiveAuditSource.includes(
+      "live profile-state save exposes credentialed request diagnostics"
+    ) &&
     authenticatedLiveAuditSource.includes("live profile-state mutation survives session restore") &&
     authenticatedLiveAuditSource.includes("X-State-Version") &&
     authenticatedLiveAuditSource.includes("/api/water-state") &&
@@ -2842,21 +2965,75 @@ addCheck(
 );
 
 addCheck(
-  "github quality gate blocks unsafe master changes",
-  qualityGateWorkflowSource.includes("name: Smart-Nutrition") &&
-    qualityGateWorkflowSource.includes("push:") &&
-    qualityGateWorkflowSource.includes("pull_request:") &&
-    qualityGateWorkflowSource.includes("- master") &&
-    qualityGateWorkflowSource.includes("node-version: 22") &&
-    qualityGateWorkflowSource.includes("npm ci") &&
-    qualityGateWorkflowSource.includes("npm run quality") &&
-    qualityGateWorkflowSource.includes("npm run audit:security") &&
-    qualityGateWorkflowSource.includes("npm run server:check") &&
-    qualityGateWorkflowSource.includes("SMART_NUTRITION_DATABASE_PROVIDER: mongodb") &&
-    qualityGateWorkflowSource.includes("SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: None") &&
-    qualityGateWorkflowSource.includes('SMART_NUTRITION_AUTH_COOKIE_SECURE: "true"') &&
-    qualityGateWorkflowSource.includes("SMART_NUTRITION_BREVO_API_KEY: ci_brevo_quality_key_not_a_secret"),
-  "GitHub must run the same production quality gate on master pushes and pull requests so deploys cannot bypass lint, build, tests, bundle, SEO, dead-code, dependency, security, cycle, architecture, contract, and production config checks."
+  "credentialed CORS uses a safe request-header allowlist",
+  httpSource.includes("allowedCorsRequestHeaders") &&
+    httpSource.includes("readRequestedCorsHeaders") &&
+    httpSource.includes("createAllowedCorsHeaders(request)") &&
+    httpSource.includes("Access-Control-Expose-Headers") &&
+    httpSource.includes('"X-Request-Id"') &&
+    httpSource.includes('"Retry-After"') &&
+    httpTestSource.includes("X-Auth-RateLimit-Remaining") &&
+    httpTestSource.includes("does not echo arbitrary browser-requested CORS headers") &&
+    httpTestSource.includes("x-debug-secret") &&
+    httpTestSource.includes("not.toContain(\"x-admin-token\")"),
+  "Credentialed browser CORS must allow and expose known app diagnostics such as X-Request-Id without echoing arbitrary requested headers that could hide unsafe protocol drift."
+);
+
+addCheck(
+  "production readiness requires exact public CORS origins",
+  serverConfigSource.includes("toEnvListItem") &&
+    serverConfigSource.includes(".replace(/\\\\r|\\\\n/g, \"\")") &&
+    serverConfigTestSource.includes("normalizes quoted CORS origins with escaped newlines") &&
+    serverConfigTestSource.includes(
+      'SMART_NUTRITION_CORS_ORIGINS:'
+    ) &&
+    productionCheckSource.includes("requiredPublicFrontendOrigins") &&
+    productionCheckSource.includes(
+      "Public frontend origins are exactly allowed by CORS"
+    ) &&
+    productionCheckSource.includes("https://smart-nutrition.club") &&
+    productionCheckSource.includes("https://www.smart-nutrition.club"),
+  "Production auth readiness must normalize dashboard-pasted CORS env values and fail before deploy unless both public frontend origins are explicitly allowed for credentialed browser sessions."
+);
+
+addCheck(
+  "quality gate stays local and repository stays clean",
+  gitignoreSource.includes(".github/") &&
+    !trackedFiles.some((filePath) => filePath.startsWith(".github/")) &&
+    packageJsonSource.includes('"quality":') &&
+    packageJsonSource.includes("npm run lint") &&
+    packageJsonSource.includes("npm run build") &&
+    packageJsonSource.includes("npm run audit:bundle") &&
+    packageJsonSource.includes("npm run audit:seo") &&
+    packageJsonSource.includes("npm test") &&
+    packageJsonSource.includes("npm run audit:deps") &&
+    packageJsonSource.includes("npm run audit:security") &&
+    packageJsonSource.includes("npm run audit:cycles") &&
+    packageJsonSource.includes("npm run audit:dead") &&
+    packageJsonSource.includes("npm run audit:architecture") &&
+    packageJsonSource.includes("npm run audit:contracts") &&
+    packageJsonSource.includes('"release:gate": "npm run quality && npm run server:check"'),
+  "Release quality must stay available through canonical npm scripts while .github workflows remain local/ignored so the GitHub repository stays clean."
+);
+
+addCheck(
+  "quality gate documentation matches local clean-repository contract",
+  qualityGateDocSource.includes("full local gate") &&
+    qualityGateDocSource.includes("bundle audit") &&
+    qualityGateDocSource.includes("SEO audit") &&
+    qualityGateDocSource.includes("security audit") &&
+    qualityGateDocSource.includes("Smart Nutrition contract audit") &&
+    qualityGateDocSource.includes("production configuration validation") &&
+    qualityGateDocSource.includes("`.github/` remains ignored") &&
+    projectRulesSource.includes("Local quality and release gates must stay canonical") &&
+    projectRulesSource.includes(".github") &&
+    projectRulesSource.includes("ignored") &&
+    projectDecisionsSource.includes("ADR-036: Local Quality Gate Is Canonical, GitHub Automation Is Not Source") &&
+    projectDecisionsSource.includes("`.github/` workflow automation is ignored") &&
+    !projectRulesSource.includes("GitHub quality gate must stay aligned") &&
+    !projectDecisionsSource.includes("GitHub Quality Gate Mirrors Local Stabilization") &&
+    !projectDecisionsSource.includes("GitHub workflow must run"),
+  "Quality docs, project rules, and ADRs must agree that local npm scripts are canonical while tracked GitHub workflow automation stays out of the clean repository."
 );
 
 addCheck(

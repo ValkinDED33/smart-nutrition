@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Box, Paper, Stack, Typography } from "@mui/material";
@@ -18,7 +18,7 @@ import {
 } from "../../shared/ui/motion/onboardingGuide";
 import type { OnboardingState } from "./types";
 
-type GuidePlacement = "peekLeft" | "peekRight" | "floatTop" | "floatBottom";
+type GuidePlacement = "inline";
 
 const guideCopy = {
   uk: {
@@ -79,100 +79,77 @@ type StepMeta = {
 const stepMeta: Record<string, StepMeta> = {
   "/onboarding": {
     key: "welcome",
-    placement: "floatTop",
+    placement: "inline",
     mood: "happy",
   },
   "/onboarding/welcome": {
     key: "welcome",
-    placement: "floatTop",
+    placement: "inline",
     mood: "happy",
   },
   "/onboarding/assistant": {
     key: "assistant",
-    placement: "peekRight",
+    placement: "inline",
     mood: "celebrate",
   },
   "/onboarding/name": {
     key: "name",
-    placement: "peekLeft",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/age": {
     key: "age",
-    placement: "peekRight",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/gender": {
     key: "gender",
-    placement: "floatBottom",
+    placement: "inline",
     mood: "happy",
   },
   "/onboarding/women-health": {
     key: "womenHealth",
-    placement: "peekRight",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/height": {
     key: "height",
-    placement: "peekLeft",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/goal": {
     key: "goal",
-    placement: "peekRight",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/friction": {
     key: "friction",
-    placement: "floatBottom",
+    placement: "inline",
     mood: "concerned",
   },
   "/onboarding/motivation": {
     key: "motivation",
-    placement: "peekRight",
+    placement: "inline",
     mood: "happy",
   },
   "/onboarding/weight": {
     key: "weight",
-    placement: "peekLeft",
+    placement: "inline",
     mood: "coach",
   },
   "/onboarding/finish": {
     key: "finish",
-    placement: "floatTop",
+    placement: "inline",
     mood: "celebrate",
   },
 };
 
-const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 2560;
-const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)";
-const GUIDE_BUBBLE_WIDTH = 220;
-const GUIDE_AVATAR_SIZE = 76;
-
-const placementSx: Record<GuidePlacement, object> = {
-  peekLeft: {
-    left: GUIDE_FORM_SAFE_LEFT,
-    top: { xs: "auto", md: 146 },
-    bottom: { xs: 92, md: "auto" },
-  },
-  peekRight: {
-    left: GUIDE_FORM_SAFE_LEFT,
-    top: { xs: "auto", md: 146 },
-    bottom: { xs: 92, md: "auto" },
-  },
-  floatTop: {
-    left: GUIDE_FORM_SAFE_LEFT,
-    top: { xs: 92, md: 118 },
-  },
-  floatBottom: {
-    left: GUIDE_FORM_SAFE_LEFT,
-    bottom: { xs: 92, md: 94 },
-  },
-};
+const GUIDE_BUBBLE_WIDTH = 480;
+const GUIDE_AVATAR_SIZE = 64;
 
 const fallbackStepMeta: StepMeta = {
   key: "assistant",
-  placement: "peekRight",
+  placement: "inline",
   mood: "celebrate",
 };
 
@@ -191,20 +168,6 @@ const getGuideCopy = (language: AppLanguage): GuideCopy => {
 const resolveStepMeta = (pathname: string): StepMeta =>
   Object.entries(stepMeta).find(([stepPath]) => stepPath === pathname)?.[1] ??
   fallbackStepMeta;
-
-const resolvePlacementSx = (placement: GuidePlacement): object => {
-  switch (placement) {
-    case "peekLeft":
-      return placementSx.peekLeft;
-    case "floatTop":
-      return placementSx.floatTop;
-    case "floatBottom":
-      return placementSx.floatBottom;
-    case "peekRight":
-    default:
-      return placementSx.peekRight;
-  }
-};
 
 const getGuideMessage = (copy: GuideCopy, key: StepMeta["key"]): string => {
   switch (key) {
@@ -343,22 +306,10 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
   const fieldFocused = useHideGuideWhileFieldFocused();
 
   const meta = resolveStepMeta(pathname);
-  const { key, placement, mood } = meta;
+  const { key, mood } = meta;
 
   const copy = getGuideMessage(getGuideCopy(appLanguage), key);
   const displayName = getGuideAssistantName(appLanguage, state.assistantName);
-
-  const transform = useMemo(() => {
-    if (placement === "peekLeft") {
-      return "none";
-    }
-
-    if (placement === "peekRight") {
-      return "none";
-    }
-
-    return "none";
-  }, [placement]);
 
   if (fieldFocused) {
     return null;
@@ -375,19 +326,18 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
         animate={fieldFocused ? "exit" : "animate"}
         exit="exit"
         data-onboarding-guide-hidden-while-field-focused={fieldFocused ? "true" : "false"}
-        data-onboarding-guide-requires-wide-viewport="true"
+        data-onboarding-guide-inline="true"
         sx={{
-          position: "fixed",
-          zIndex: 1250,
+          width: "min(560px, calc(100% - 32px))",
+          mx: "auto",
+          mt: { md: 2.5 },
+          mb: { md: 1.5 },
+          position: "relative",
+          zIndex: 1,
           pointerEvents: "none",
-          display: { xs: "none", xl: "block" },
-          [`@media (max-width: ${GUIDE_WIDE_VIEWPORT_MIN_WIDTH - 1}px)`]: {
-            display: "none",
-          },
+          display: { xs: "none", md: "block" },
           maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24,
-          ...resolvePlacementSx(placement),
-          transform,
-          transformOrigin: "right top",
+          transformOrigin: "center top",
         }}
       >
         <Box
@@ -403,6 +353,7 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
             direction="row"
             spacing={1.2}
             alignItems="center"
+            justifyContent="center"
           >
             <Box
               component={motion.div}
@@ -439,8 +390,8 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
               variants={onboardingGuideBubbleVariants}
               elevation={0}
               sx={{
-                width: GUIDE_BUBBLE_WIDTH,
-                p: 1.6,
+                width: { md: GUIDE_BUBBLE_WIDTH },
+                p: 1.5,
                 borderRadius: 1,
                 color: "#0f172a",
                 border: "1px solid rgba(15,23,42,0.1)",

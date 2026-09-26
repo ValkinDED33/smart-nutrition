@@ -10,6 +10,10 @@ import {
 } from "@mui/material";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
 import { LanguageMenuButton } from "@shared/components/LanguageMenuButton";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+} from "@features/assistant/assistantManifest";
 import { companionShopCatalog } from "../../companion";
 import { useLanguage } from "../../shared/language";
 import type { AssistantCompanionKind } from "@domain/profile/types";
@@ -31,6 +35,10 @@ const assistantAvatarLabels = {
     owl: "Сова",
     dragon: "Дракон",
     robot: "Робот",
+    robot_minimal: "Мінімал",
+    robot_neon: "Неон",
+    robot_nature: "Природа",
+    robot_solar: "Сонячний",
     human: "Тренер",
     capybara: "Капібара",
     raccoon: "Єнот",
@@ -59,6 +67,10 @@ const assistantAvatarLabels = {
     owl: "Sowa",
     dragon: "Smok",
     robot: "Robot",
+    robot_minimal: "Minimal",
+    robot_neon: "Neon",
+    robot_nature: "Natura",
+    robot_solar: "Słoneczny",
     human: "Trener",
     capybara: "Kapibara",
     raccoon: "Szop",
@@ -87,6 +99,10 @@ const assistantAvatarLabels = {
     owl: "Owl",
     dragon: "Dragon",
     robot: "Robot",
+    robot_minimal: "Minimal",
+    robot_neon: "Neon",
+    robot_nature: "Nature",
+    robot_solar: "Solar",
     human: "Trainer",
     capybara: "Capybara",
     raccoon: "Raccoon",
@@ -142,6 +158,14 @@ const getAssistantAvatarLabel = (
       return labels.dragon;
     case "robot":
       return labels.robot;
+    case "robot_minimal":
+      return labels.robot_minimal;
+    case "robot_neon":
+      return labels.robot_neon;
+    case "robot_nature":
+      return labels.robot_nature;
+    case "robot_solar":
+      return labels.robot_solar;
     case "human":
       return labels.human;
     case "capybara":
@@ -194,21 +218,18 @@ const assistantWorkerCopy = {
     body:
       "Образ можна змінювати, але мозок один: він працює з їжею, водою, ліками, тиском, родиною, фото, задачами й Telegram.",
     freeOnly: "На старті доступні тільки безкоштовні базові образи. Колекція відкриється в профілі.",
-    tools: ["Їжа", "Вода", "Ліки", "Тиск", "Фото", "Telegram", "Родина"],
   },
   pl: {
     title: "To twój pracownik AI, nie tylko obrazek",
     body:
       "Wygląd można zmieniać, ale mózg jest jeden: pracuje z jedzeniem, wodą, lekami, ciśnieniem, rodziną, zdjęciami, zadaniami i Telegramem.",
     freeOnly: "Na start dostępne są tylko darmowe bazowe wyglądy. Kolekcja otworzy się w profilu.",
-    tools: ["Jedzenie", "Woda", "Leki", "Ciśnienie", "Zdjęcia", "Telegram", "Rodzina"],
   },
   en: {
     title: "This is your AI worker, not just a picture",
     body:
       "You can change the look, but the brain stays one: it works with food, water, medication, pressure, family, photos, tasks, and Telegram.",
     freeOnly: "Only free base looks are available at setup. The full collection opens in profile.",
-    tools: ["Food", "Water", "Medication", "Pressure", "Photos", "Telegram", "Family"],
   },
 } as const;
 
@@ -305,15 +326,16 @@ export const OnboardingAssistantPage = ({ state, updateState }: OnboardingStepPr
                 {workerCopy.body}
               </Typography>
               <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-                {workerCopy.tools.map((tool) => (
+                {assistantWorkerTools.map((tool) => (
                   <Chip
-                    key={tool}
-                    label={tool}
+                    key={tool.id}
+                    label={getAssistantWorkerToolText(tool.id, appLanguage, "short")}
                     size="small"
                     sx={{
                       fontWeight: 850,
                       color: "var(--sn-on-surface)",
                       backgroundColor: "var(--sn-accent-soft)",
+                      border: `1px solid ${tool.accent}55`,
                     }}
                   />
                 ))}

@@ -14,13 +14,20 @@ import {
   Typography,
 } from "@mui/material";
 import {
+  BarChart3,
   Bell,
+  CalendarDays,
   Camera,
   Droplets,
+  Dumbbell,
   HeartPulse,
   MessageCircle,
+  MessageSquare,
   Salad,
+  ShieldCheck,
+  Sparkles,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import type { RootState } from "../../app/store";
 import { setAssistantCustomization, type ProfileState } from "./profileSlice";
@@ -45,6 +52,11 @@ import type {
   AssistantTone,
 } from "@domain/profile/types";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "@features/assistant/assistantManifest";
 
 const assistantCopy = {
   uk: {
@@ -54,7 +66,6 @@ const assistantCopy = {
     workerTitle: "Один AI-працівник для всього проєкту",
     workerSubtitle:
       "Він працює в застосунку й Telegram: читає контекст дня, допомагає з їжею, водою, ліками, тиском, фото, родиною й нагадуваннями. Образ змінюється, мозок і пам'ять залишаються єдиними.",
-    workerTools: ["Їжа", "Вода", "Фото", "Тиск", "Telegram", "Родина", "Нагадування"],
     name: "Ім'я асистента",
     companion: "Персонаж",
     role: "Роль",
@@ -110,6 +121,10 @@ const assistantCopy = {
       capybara: "Капібара",
       dragon: "Дракон",
       robot: "Робот",
+      robot_minimal: "Мінімал",
+      robot_neon: "Неон",
+      robot_nature: "Природа",
+      robot_solar: "Сонячний",
       raccoon: "Єнот",
       corgi: "Коргі",
       wolf: "Вовк",
@@ -136,7 +151,6 @@ const assistantCopy = {
     workerTitle: "Jeden pracownik AI dla całego projektu",
     workerSubtitle:
       "Działa w aplikacji i Telegramie: czyta kontekst dnia, pomaga z jedzeniem, wodą, lekami, ciśnieniem, zdjęciami, rodziną i przypomnieniami. Wygląd się zmienia, ale mózg i pamięć zostają wspólne.",
-    workerTools: ["Jedzenie", "Woda", "Zdjęcia", "Ciśnienie", "Telegram", "Rodzina", "Przypomnienia"],
     name: "Imię asystenta",
     companion: "Postać",
     role: "Rola",
@@ -192,6 +206,10 @@ const assistantCopy = {
       capybara: "Kapibara",
       dragon: "Smok",
       robot: "Robot",
+      robot_minimal: "Minimal",
+      robot_neon: "Neon",
+      robot_nature: "Natura",
+      robot_solar: "Słoneczny",
       raccoon: "Szop",
       corgi: "Corgi",
       wolf: "Wilk",
@@ -218,7 +236,6 @@ const assistantCopy = {
     workerTitle: "One AI worker for the whole project",
     workerSubtitle:
       "It works in the app and Telegram: reads day context, helps with food, water, medication, pressure, photos, family, and reminders. The look changes, but the brain and memory stay unified.",
-    workerTools: ["Food", "Water", "Photos", "Pressure", "Telegram", "Family", "Reminders"],
     name: "Assistant name",
     companion: "Character",
     role: "Role",
@@ -274,6 +291,10 @@ const assistantCopy = {
       capybara: "Capybara",
       dragon: "Dragon",
       robot: "Robot",
+      robot_minimal: "Minimal",
+      robot_neon: "Neon",
+      robot_nature: "Nature",
+      robot_solar: "Solar",
       raccoon: "Raccoon",
       corgi: "Corgi",
       wolf: "Wolf",
@@ -310,24 +331,34 @@ type AssistantTextDraftFieldsProps = {
   onSave: (payload: AssistantCustomizationPayload) => Promise<ProfileState>;
 };
 
-const getAssistantWorkerToolIcon = (index: number) => {
-  switch (index) {
-    case 0:
+const getAssistantWorkerToolIcon = (toolId: AssistantWorkerToolId): LucideIcon => {
+  switch (toolId) {
+    case "planning":
+      return CalendarDays;
+    case "nutrition":
       return Salad;
-    case 1:
+    case "water":
       return Droplets;
-    case 2:
+    case "photo":
       return Camera;
-    case 3:
+    case "telegram":
+      return MessageCircle;
+    case "health":
       return HeartPulse;
-    case 4:
-      return MessageCircle;
-    case 5:
+    case "activity":
+      return Dumbbell;
+    case "family":
       return Users;
-    case 6:
+    case "reminders":
       return Bell;
+    case "chat":
+      return MessageSquare;
+    case "analytics":
+      return BarChart3;
+    case "safety":
+      return ShieldCheck;
     default:
-      return MessageCircle;
+      return Sparkles;
   }
 };
 
@@ -396,6 +427,14 @@ const getCompanionLabel = (
       return copy.companions.forest_spirit;
     case "cosmic_beast":
       return copy.companions.cosmic_beast;
+    case "robot_minimal":
+      return copy.companions.robot_minimal;
+    case "robot_neon":
+      return copy.companions.robot_neon;
+    case "robot_nature":
+      return copy.companions.robot_nature;
+    case "robot_solar":
+      return copy.companions.robot_solar;
     case "robot":
       return copy.companions.robot;
     case "cat":
@@ -538,22 +577,23 @@ const AssistantCustomizationCard = () => {
               flexWrap="wrap"
               data-assistant-customization-worker-toolbelt="true"
             >
-              {copy.workerTools.map((tool, index) => {
-                const ToolIcon = getAssistantWorkerToolIcon(index);
+              {assistantWorkerTools.map((tool) => {
+                const ToolIcon = getAssistantWorkerToolIcon(tool.id);
+                const label = getAssistantWorkerToolText(tool.id, appLanguage, "short");
 
                 return (
                   <Chip
-                    key={tool}
+                    key={tool.id}
                     icon={<ToolIcon size={15} />}
-                    label={tool}
+                    label={label}
                     variant="outlined"
                     sx={{
                       minHeight: 34,
-                      borderColor: "rgba(20, 184, 166, 0.34)",
+                      borderColor: tool.accent,
                       color: "text.primary",
                       fontWeight: 900,
                       "& .MuiChip-icon": {
-                        color: "var(--sn-accent-strong)",
+                        color: tool.accent,
                       },
                     }}
                   />

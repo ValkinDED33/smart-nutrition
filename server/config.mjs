@@ -50,6 +50,13 @@ const SECRET_FILE_ENV_NAMES = [
 const toTrimmedString = (value, fallback = "") =>
   typeof value === "string" ? value.trim() : fallback;
 
+const toEnvListItem = (value) =>
+  String(value ?? "")
+    .replace(/\\r|\\n/g, "")
+    .trim()
+    .replace(/^['"]+|['"]+$/g, "")
+    .trim();
+
 const readSecretFileValue = (secretFileDir, name) => {
   const secretPath = path.join(secretFileDir, name);
 
@@ -240,7 +247,7 @@ const isValidEmailAddress = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value ?? "").trim());
 
 const normalizeOrigin = (value) => {
-  const nextValue = toTrimmedString(value);
+  const nextValue = toEnvListItem(value);
 
   if (!nextValue) {
     return null;
@@ -862,7 +869,7 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   if (String(envValue ?? "").trim()) {
     const rawOrigins = String(envValue)
       .split(",")
-      .map((value) => value.trim())
+      .map((value) => toEnvListItem(value))
       .filter(Boolean);
 
     if (configuredOrigins.length !== rawOrigins.length) {

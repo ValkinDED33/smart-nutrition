@@ -14,6 +14,7 @@ import {
   Droplets,
   HeartPulse,
   ListPlus,
+  MessageSquare,
   Plus,
   Search,
   ScanBarcode,
@@ -56,6 +57,11 @@ import {
 import { AIDiscoveryCards } from "@features/assistant/AIDiscoveryCards";
 import { buildAIDiscoveryTimeline } from "@features/assistant/aiDiscoveryCardsModel";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "@features/assistant/assistantManifest";
 import { useLanguage } from "../shared/language";
 import { useAppColorMode } from "../shared/theme/colorMode";
 import { bottomSheetVariants, fadeUpVariants } from "@shared/ui/motion";
@@ -355,6 +361,37 @@ const getHomeCopy = (language: AppLanguage): HomeCopy => {
   }
 };
 
+const getHomeWorkerToolIcon = (toolId: AssistantWorkerToolId): LucideIcon => {
+  switch (toolId) {
+    case "planning":
+      return CalendarCheck;
+    case "nutrition":
+      return Utensils;
+    case "water":
+      return Droplets;
+    case "photo":
+      return Camera;
+    case "telegram":
+      return MessageSquare;
+    case "health":
+      return HeartPulse;
+    case "activity":
+      return Activity;
+    case "family":
+      return UsersRound;
+    case "reminders":
+      return ClipboardList;
+    case "chat":
+      return Sparkles;
+    case "analytics":
+      return BarChart3;
+    case "safety":
+      return ShieldCheck;
+    default:
+      return Sparkles;
+  }
+};
+
 const HomePage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -525,13 +562,20 @@ const HomePage = () => {
   const overallProgress = Math.round(
     (calorieProgress + proteinProgress + waterProgress) / 3
   );
-  const quickDockActions = [
-    { label: copy.plan, icon: CalendarCheck, onClick: () => navigate(RECIPES_ROUTE) },
-    { label: copy.recipes, icon: BookOpen, onClick: () => navigate(RECIPES_ROUTE) },
-    { label: copy.scan, icon: ScanBarcode, onClick: () => openMealMode("barcode") },
-    { label: copy.assistantAction, icon: Sparkles, onClick: () => navigate("/coach") },
-    { label: copy.report, icon: BarChart3, onClick: () => navigate(PROGRESS_ROUTE) },
-  ];
+  const quickDockActions = assistantWorkerTools.map((tool) => ({
+    id: tool.id,
+    label: getAssistantWorkerToolText(tool.id, appLanguage, "short"),
+    icon: getHomeWorkerToolIcon(tool.id),
+    accent: tool.accent,
+    onClick: () => {
+      if (tool.id === "photo") {
+        openMealMode("photo");
+        return;
+      }
+
+      navigate(tool.route);
+    },
+  }));
   const homeBlueprintPatterns = [
     {
       key: "slider",
@@ -1263,7 +1307,7 @@ const HomePage = () => {
 
                   return (
                     <Button
-                      key={action.label}
+                      key={action.id}
                       data-ai-worker-tool="true"
                       onClick={action.onClick}
                       startIcon={<Icon size={16} />}
@@ -1281,10 +1325,13 @@ const HomePage = () => {
                           ? "rgba(255,255,255,0.06)"
                           : "rgba(255,255,255,0.74)",
                         "&:hover": {
-                          borderColor: "#5eead4",
+                          borderColor: action.accent,
                           bgcolor: isDarkMode
                             ? "rgba(94,234,212,0.12)"
                             : "rgba(240,253,250,0.92)",
+                        },
+                        "& .MuiButton-startIcon": {
+                          color: action.accent,
                         },
                       }}
                     >

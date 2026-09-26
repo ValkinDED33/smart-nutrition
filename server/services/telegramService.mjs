@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { Telegraf } from "telegraf";
 import { AuthApiError, calculateMealTotalNutrients } from "../lib/domain.mjs";
+import { buildAssistantWorkerToolLines } from "./assistantWorkerManifest.mjs";
 import {
   buildReminderListMessage,
   createTelegramMedicationReminderRuntime,
@@ -119,18 +120,6 @@ const TELEGRAM_COPY = {
     waterAmountClarification:
       "Не зміг визначити кількість води. Напишіть, наприклад: я випив 300 мл.",
     capabilitiesTitle: "Я можу допомагати зі Smart Nutrition:",
-    capabilities: [
-      "🥗 Харчування — денник їжі, продукти, рецепти, фото/штрихкод.",
-      "💧 Вода — ціль, прогрес і нагадування.",
-      "🧬 Нутрієнти — калорії, білки, жири, вуглеводи, клітковина та мікроелементи.",
-      "📈 Прогрес — вага, тренди, звіти й пояснення змін.",
-      "🤖 Асистент — персональні підказки з урахуванням онбордингу.",
-      "📷 Фото — їжа, тиск, ліки, рецепти й медичні нотатки як чернетки для перевірки.",
-      "🎮 Companion — рівень, XP, досягнення.",
-      "💊 Ліки — нагадування, кнопки “прийняла/пізніше/пропустити” і журнал.",
-      "🗓️ Задачі — події, дні народження, контроль тиску або будь-який побутовий план як підтверджене нагадування.",
-      "🤰 Жіноче здоров'я — термін, обережні підказки, добавки й сімейний контекст без діагнозів.",
-    ],
     commandsTitle: "Команди:",
     commandLines: [
       "/today — короткий статус дня",
@@ -250,18 +239,6 @@ const TELEGRAM_COPY = {
     waterAmountClarification:
       "Nie mogłem określić ilości wody. Napisz na przykład: wypiłem 300 ml.",
     capabilitiesTitle: "Mogę pomagać w Smart Nutrition:",
-    capabilities: [
-      "🥗 Jedzenie — dziennik posiłków, produkty, przepisy, zdjęcie/kod kreskowy.",
-      "💧 Woda — cel, postęp i przypomnienia.",
-      "🧬 Składniki — kalorie, białko, tłuszcze, węglowodany, błonnik i mikroelementy.",
-      "📈 Postęp — waga, trendy, raporty i wyjaśnienie zmian.",
-      "🤖 Asystent — personalne podpowiedzi z uwzględnieniem onboardingu.",
-      "📷 Zdjęcia — jedzenie, ciśnienie, leki, recepty i notatki zdrowotne jako szkice do sprawdzenia.",
-      "🎮 Companion — poziom, XP i osiągnięcia.",
-      "💊 Leki — przypomnienia, przyciski „przyjęte/później/pomiń” i historia.",
-      "🗓️ Zadania — wydarzenia, urodziny, pomiar ciśnienia albo zwykły plan jako potwierdzone przypomnienie.",
-      "🤰 Zdrowie kobiet — tydzień, ostrożne wskazówki, suplementy i kontekst rodzinny bez diagnoz.",
-    ],
     commandsTitle: "Komendy:",
     commandLines: [
       "/today — krótki status dnia",
@@ -377,18 +354,6 @@ const TELEGRAM_COPY = {
     waterAmountClarification:
       "I could not detect the water amount. Write, for example: I drank 300 ml.",
     capabilitiesTitle: "I can help with Smart Nutrition:",
-    capabilities: [
-      "🥗 Food — meal diary, products, recipes, photo/barcode.",
-      "💧 Water — goal, progress, and reminders.",
-      "🧬 Nutrients — calories, protein, fat, carbs, fiber, and micronutrients.",
-      "📈 Progress — weight, trends, reports, and change explanations.",
-      "🤖 Assistant — personal hints using onboarding context.",
-      "📷 Photos — food, blood pressure, medication, prescriptions, and health notes as review drafts.",
-      "🎮 Companion — level, XP, and achievements.",
-      "💊 Medication — reminders, taken/later/skip buttons, and history.",
-      "🗓️ Tasks — events, birthdays, blood-pressure checks, or everyday plans as confirmed reminders.",
-      "🤰 Women health — pregnancy age, careful guidance, supplements, and family context without diagnoses.",
-    ],
     commandsTitle: "Commands:",
     commandLines: [
       "/today — quick day status",
@@ -1044,11 +1009,12 @@ export const buildTelegramAssistantCapabilitiesMessage = (
   language = TELEGRAM_LANGUAGE_FALLBACK
 ) => {
   const copy = getTelegramCopy(language);
+  const capabilityLines = buildAssistantWorkerToolLines(language);
 
   return [
     copy.capabilitiesTitle,
     "",
-    ...copy.capabilities,
+    ...capabilityLines,
     "",
     copy.commandsTitle,
     ...copy.commandLines,
@@ -2047,6 +2013,15 @@ export const createTelegramService = ({
     return Number.isFinite(amountMl) && amountMl > 0 ? Math.round(amountMl) : null;
   };
 
+  const getConfirmedAgentAction = (agentResult, actionId) =>
+    Array.isArray(agentResult?.actions)
+      ? agentResult.actions.find(
+          (action) =>
+            action?.id === actionId &&
+            (action?.receipt?.confirmed === true || action?.ok === true)
+        ) ?? null
+      : null;
+
   const getTelegramAgentReplyOptions = (agentResult, language = TELEGRAM_LANGUAGE_FALLBACK) => {
     const intent = agentResult?.intent?.intent;
 
@@ -2058,11 +2033,9 @@ export const createTelegramService = ({
       return undefined;
     }
 
-    const waterAction = Array.isArray(agentResult?.actions)
-      ? agentResult.actions.find((action) => action?.id === "add_water")
-      : null;
+    const waterAction = getConfirmedAgentAction(agentResult, "add_water");
 
-    return waterAction?.ok
+    return waterAction
       ? buildTelegramWaterActionKeyboard({ language })
       : buildTelegramWaterActionKeyboard({
           language,
@@ -2094,7 +2067,13 @@ export const createTelegramService = ({
       return agentResult ?? null;
     }
 
-    await sendAssistantReaction(ctx, "success");
+    const hasConfirmedAction =
+      Array.isArray(agentResult.actions) &&
+      agentResult.actions.some(
+        (action) => action?.receipt?.confirmed === true || action?.ok === true
+      );
+
+    await sendAssistantReaction(ctx, hasConfirmedAction ? "success" : "error");
 
     const replyOptions = getTelegramAgentReplyOptions(agentResult, language);
 
@@ -2466,9 +2445,7 @@ export const createTelegramService = ({
         user,
         message: `додай ${amountMl} мл води`,
       });
-      const saved = agentResult?.actions?.some(
-        (item) => item?.id === "add_water" && item?.ok
-      );
+      const saved = Boolean(getConfirmedAgentAction(agentResult, "add_water"));
 
       await ctx.answerCbQuery?.(
         saved
@@ -2541,7 +2518,7 @@ export const createTelegramService = ({
       });
 
       await ctx.answerCbQuery?.(
-        agentResult?.actions?.some((item) => item?.id === "show_water_status" && item?.ok)
+        getConfirmedAgentAction(agentResult, "show_water_status")
           ? copy.waterStatusUpdated
           : copy.waterStatusUnavailable
       );

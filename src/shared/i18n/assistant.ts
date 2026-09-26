@@ -11,6 +11,10 @@ export const assistant = {
     },
     avatar: {
       robot: "Робот",
+      robot_minimal: "Мінімал",
+      robot_neon: "Неон",
+      robot_nature: "Природа",
+      robot_solar: "Сонячний",
       cat: "Кіт",
       dog: "Собака",
       fox: "Лис",
@@ -35,6 +39,10 @@ export const assistant = {
     },
     avatar: {
       robot: "Robot",
+      robot_minimal: "Minimal",
+      robot_neon: "Neon",
+      robot_nature: "Natura",
+      robot_solar: "Słoneczny",
       cat: "Kot",
       dog: "Pies",
       fox: "Lis",
@@ -59,6 +67,10 @@ export const assistant = {
     },
     avatar: {
       robot: "Robot",
+      robot_minimal: "Minimal",
+      robot_neon: "Neon",
+      robot_nature: "Nature",
+      robot_solar: "Solar",
       cat: "Cat",
       dog: "Dog",
       fox: "Fox",

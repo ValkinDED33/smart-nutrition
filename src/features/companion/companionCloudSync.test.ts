@@ -21,6 +21,7 @@ const CLOUD_CREATED_AT = "2026-07-01T08:00:00.000Z";
 const SHOP_SYNCED_AT = "2026-07-01T08:10:00.000Z";
 const REWARD_SYNCED_AT = "2026-07-01T08:12:00.000Z";
 const PREMIUM_DRAGON_ITEM_ID = "dragon-premium";
+const FREE_NEON_ROBOT_ITEM_ID = "robot-neon";
 const MEAL_ADDED_REWARD_EVENT = "meal_added";
 const MARK_SYNC_STARTED_ACTION = "auth/markSyncStarted";
 const MARK_SYNC_ERROR_ACTION = "auth/markSyncError";
@@ -65,6 +66,22 @@ describe("companionCloudSync", () => {
     expect(result.companion.equippedItemIds).toContain(PREMIUM_DRAGON_ITEM_ID);
     expect(result.profile.assistant.companionKind).toBe("dragon");
     expect(state.companion.ownedItemIds).not.toContain(PREMIUM_DRAGON_ITEM_ID);
+  });
+
+  it("equips a free robot skin through the same cloud-confirmed assistant path", () => {
+    const item = getCompanionCatalogItemById(FREE_NEON_ROBOT_ITEM_ID);
+
+    expect(item).not.toBeNull();
+
+    const state = createCompanionSnapshotState();
+    const result = buildCompanionShopSelectionState(state, item!);
+
+    expect(result.changed).toBe(true);
+    expect(result.companion.coins).toBe(state.companion.coins);
+    expect(result.companion.ownedItemIds).toContain(FREE_NEON_ROBOT_ITEM_ID);
+    expect(result.companion.equippedItemIds).toContain(FREE_NEON_ROBOT_ITEM_ID);
+    expect(result.profile.assistant.companionKind).toBe("robot_neon");
+    expect(result.profile.assistant.assistantAvatar).toBe("robot_neon");
   });
 
   it("updates local companion and profile only after the cloud snapshot save succeeds", async () => {

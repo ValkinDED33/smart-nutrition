@@ -22,7 +22,12 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import type { RootState } from "@app/store";
-import type { AssistantArea } from "@features/assistant/assistantManifest";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantArea,
+  type AssistantWorkerToolId,
+} from "@features/assistant/assistantManifest";
 import type { AssistantViewport } from "@features/assistant/assistantPresence";
 import { selectTodayMealItems } from "@features/meal/selectors";
 import { AssistantAvatar } from "@shared/components/AssistantAvatar";
@@ -55,24 +60,28 @@ const ROUTE_COACH = "/coach";
 const ROUTE_WOMEN_HEALTH = "/profile#women-health";
 const ROUTE_PROGRESS = "/progress";
 
-const getGlobalAssistantToolIcon = (index: number) => {
-  switch (index) {
-    case 0:
+const getGlobalAssistantToolIcon = (toolId: AssistantWorkerToolId) => {
+  switch (toolId) {
+    case "nutrition":
       return Utensils;
-    case 1:
+    case "water":
       return Droplets;
-    case 2:
+    case "photo":
       return ScanLine;
-    case 3:
+    case "telegram":
+    case "chat":
       return MessageCircle;
-    case 4:
+    case "health":
       return HeartPulse;
-    case 5:
+    case "family":
       return Users;
-    case 6:
-      return CalendarDays;
+    case "planning":
+    case "reminders":
+    case "analytics":
+    case "safety":
+    case "activity":
     default:
-      return Bot;
+      return CalendarDays;
   }
 };
 
@@ -157,7 +166,6 @@ const layerCopy = {
     mobileLabel: "Відкрити асистента",
     workerLabel: "AI-працівник",
     toolbeltLabel: "Що я тримаю поруч",
-    toolbelt: ["Їжа", "Вода", "Фото", "Telegram", "Здоров'я", "Сім'я", "Задачі"],
     commandDockLabel: "Швидкі інструменти",
     commandDock: [
       { label: "План дня", detail: "їжа, вода, ліки", route: ROUTE_DASHBOARD },
@@ -295,7 +303,6 @@ const layerCopy = {
     mobileLabel: OPEN_ASSISTANT_PL,
     workerLabel: "Pracownik AI",
     toolbeltLabel: "Co mam pod ręką",
-    toolbelt: ["Jedzenie", "Woda", "Zdjęcia", "Telegram", "Zdrowie", "Rodzina", "Zadania"],
     commandDockLabel: "Szybkie narzędzia",
     commandDock: [
       { label: "Plan dnia", detail: "jedzenie, woda, leki", route: ROUTE_DASHBOARD },
@@ -433,7 +440,6 @@ const layerCopy = {
     mobileLabel: OPEN_ASSISTANT_EN,
     workerLabel: "AI worker",
     toolbeltLabel: "What I keep nearby",
-    toolbelt: ["Food", "Water", "Photos", "Telegram", "Health", "Family", "Tasks"],
     commandDockLabel: "Quick tools",
     commandDock: [
       { label: "Day plan", detail: "food, water, meds", route: ROUTE_DASHBOARD },
@@ -720,11 +726,17 @@ export const GlobalAssistantLayer = () => {
   );
   const { area, defaultAction, displayAction, duties, primaryCapability } = layerModel;
   const { presence } = layerModel;
+  const isFormCriticalArea = area === "auth" || area === "onboarding";
+  const shouldPauseForTyping =
+    inputFocused && (isFormCriticalArea || viewport === "mobile" || viewport === "tablet");
+  const allowAssistantSpeechBubble =
+    presence.allowSpeechBubble && !isFormCriticalArea && !shouldPauseForTyping;
   const isDenseMobileCompanion =
     presence.reason === "compact-dense-surface" &&
     (viewport === "mobile" || viewport === "tablet");
   const visibleCopy = getAreaCopy(copy, area);
   const livingMessage = copy.livingMessages[layerModel.noticeKey];
+  const workerTools = assistantWorkerTools;
   const actionLabel = displayAction?.usesCoachFallback
     ? copy.coachFallbackAction
     : visibleCopy.action || copy.action;
@@ -767,6 +779,7 @@ export const GlobalAssistantLayer = () => {
     (!user && !isPublicCompanion) ||
     !assistant.widgetEnabled ||
     !presence.visible ||
+    shouldPauseForTyping ||
     !displayAction
   ) {
     return null;
@@ -840,7 +853,7 @@ export const GlobalAssistantLayer = () => {
           variants={assistantSpeechBubbleVariants}
           elevation={8}
           sx={{
-            display: presence.allowSpeechBubble
+            display: allowAssistantSpeechBubble
               ? { xs: "none", md: "block" }
               : "none",
             width: 330,
@@ -927,15 +940,20 @@ export const GlobalAssistantLayer = () => {
                 {copy.toolbeltLabel}
               </Typography>
               <Stack direction="row" spacing={0.7} useFlexGap flexWrap="wrap">
-                {copy.toolbelt.map((tool, index) => {
-                  const ToolIcon = getGlobalAssistantToolIcon(index);
+                {workerTools.map((tool) => {
+                  const ToolIcon = getGlobalAssistantToolIcon(tool.id);
+                  const label = getAssistantWorkerToolText(
+                    tool.id,
+                    appLanguage,
+                    "short"
+                  );
 
                   return (
                     <Chip
-                      key={tool}
+                      key={tool.id}
                       size="small"
                       icon={<ToolIcon size={13} />}
-                      label={tool}
+                      label={label}
                       sx={{
                         height: 26,
                         borderRadius: 999,
@@ -976,7 +994,8 @@ export const GlobalAssistantLayer = () => {
                 }}
               >
                 {copy.commandDock.map((command, index) => {
-                  const CommandIcon = getGlobalAssistantToolIcon(index);
+                  const commandTool = workerTools[index % workerTools.length]!;
+                  const CommandIcon = getGlobalAssistantToolIcon(commandTool.id);
 
                   return (
                     <Button
@@ -1155,7 +1174,7 @@ export const GlobalAssistantLayer = () => {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              display: presence.allowSpeechBubble ? "none" : "block",
+              display: allowAssistantSpeechBubble ? "none" : "block",
               pointerEvents: "none",
             }}
           >
@@ -1299,12 +1318,12 @@ export const GlobalAssistantLayer = () => {
               pointerEvents: "none",
             }}
           >
-            {copy.toolbelt.slice(0, 4).map((tool, index) => {
-              const ToolIcon = getGlobalAssistantToolIcon(index);
+            {workerTools.slice(0, 4).map((tool, index) => {
+              const ToolIcon = getGlobalAssistantToolIcon(tool.id);
 
               return (
                 <Box
-                  key={tool}
+                  key={tool.id}
                   component={motion.span}
                   aria-hidden="true"
                   animate={

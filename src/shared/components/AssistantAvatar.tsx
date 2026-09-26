@@ -15,6 +15,7 @@ import {
 import {
   companionVisuals,
   getCompanionFaceRadius,
+  isRobotCompanionKind,
   isLetterCompanion,
 } from "./assistantAvatarVisuals";
 
@@ -81,16 +82,32 @@ const getMotionState = ({
   return active ? "active" : "idle";
 };
 
-const isRobotCompanion = (variant: AssistantAvatarProps["variant"]) =>
-  (variant ?? "robot") === "robot";
-
-const getRobotShellGradient = (mood: AssistantAvatarMood) => {
+const getRobotShellGradient = (
+  mood: AssistantAvatarMood,
+  variant: AssistantAvatarProps["variant"]
+) => {
   if (mood === "concerned") {
     return "radial-gradient(circle at 32% 18%, rgba(255,255,255,0.98), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #cbd5e1 48%, #94a3b8 100%)";
   }
 
   if (mood === "celebrate") {
     return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #dbeafe 46%, #86efac 100%)";
+  }
+
+  if (variant === "robot_minimal") {
+    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,0.9), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #cbd5e1 42%, #64748b 100%)";
+  }
+
+  if (variant === "robot_neon") {
+    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #bae6fd 42%, #7c3aed 100%)";
+  }
+
+  if (variant === "robot_nature") {
+    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #bbf7d0 42%, #84cc16 100%)";
+  }
+
+  if (variant === "robot_solar") {
+    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #fde68a 42%, #f59e0b 100%)";
   }
 
   return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #e2e8f0 48%, #94a3b8 100%)";
@@ -105,7 +122,7 @@ export const AssistantAvatar = ({
   active = false,
 }: AssistantAvatarProps) => {
   const visual = getCompanionVisual(variant);
-  const isRobot = isRobotCompanion(variant);
+  const isRobot = isRobotCompanionKind(variant);
   const initial = name.trim()[0]?.toUpperCase() ?? "A";
   const eyeSize = Math.max(round(size * 0.1), 4);
   const eyeMovement = Math.max(round(size * 0.035), 2);
@@ -137,7 +154,7 @@ export const AssistantAvatar = ({
         fontWeight: 900,
         fontSize: Math.max(round(size * 0.22), 12),
         background: isRobot
-          ? getRobotShellGradient(mood)
+          ? getRobotShellGradient(mood, variant)
           : shouldUseMoodGradient
             ? getMoodGradient(mood)
             : visual.face,

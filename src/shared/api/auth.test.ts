@@ -11,6 +11,7 @@ const password = "StrongPass1!";
 const PUBLIC_APP_HOSTNAME = "smart-nutrition.club";
 const PUBLIC_APP_ORIGIN = `https://${PUBLIC_APP_HOSTNAME}`;
 const SAME_ORIGIN_API_BASE_URL = `${PUBLIC_APP_ORIGIN}/api`;
+const VERIFICATION_DELIVERY_REQUEST_ID = "sn-registration-email-123";
 
 const createRegisterPayload = (email: string) => ({
   name: "Cloud User",
@@ -114,6 +115,47 @@ describe("auth provider selection", () => {
     ).rejects.toMatchObject({
       code: "EMAIL_IN_USE",
       message: "A user with this email already exists.",
+    } satisfies Partial<AuthApiError>);
+  });
+
+  it("preserves public registration delivery diagnostics without exposing provider secrets", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: PUBLIC_APP_HOSTNAME,
+        origin: PUBLIC_APP_ORIGIN,
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+          message: "Brevo rejected the API key sk-live-secret",
+          requestId: VERIFICATION_DELIVERY_REQUEST_ID,
+          diagnostics: {
+            provider: "brevo",
+            providerCode: "BREVO_SEND_FAILED",
+            attempts: 3,
+          },
+        }),
+        { status: 503 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      register(createRegisterPayload("delivery-failed@example.com"))
+    ).rejects.toMatchObject({
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+      message:
+        "The confirmation email could not be sent. Try again shortly or contact support.",
+      status: 503,
+      requestId: VERIFICATION_DELIVERY_REQUEST_ID,
+      diagnostics: {
+        provider: "brevo",
+        providerCode: "BREVO_SEND_FAILED",
+        attempts: 3,
+        requestId: VERIFICATION_DELIVERY_REQUEST_ID,
+      },
     } satisfies Partial<AuthApiError>);
   });
 });

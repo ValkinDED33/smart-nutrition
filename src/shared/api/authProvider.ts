@@ -87,6 +87,15 @@ export interface RegistrationAvailabilityResult {
   };
 }
 
+export interface AuthApiErrorDiagnostics {
+  syncStage?: string;
+  reasonCode?: string;
+  requestId?: string;
+  provider?: string;
+  providerCode?: string;
+  attempts?: number;
+}
+
 export class AuthApiError extends Error {
   code:
     | "EMAIL_IN_USE"
@@ -103,10 +112,24 @@ export class AuthApiError extends Error {
     | "WEAK_PASSWORD"
     | "INVALID_PROFILE"
     | "REMOTE_API_UNAVAILABLE";
+  status?: number;
+  diagnostics?: AuthApiErrorDiagnostics;
+  requestId?: string;
 
-  constructor(code: AuthApiError["code"], message: string) {
+  constructor(
+    code: AuthApiError["code"],
+    message: string,
+    options: {
+      status?: number;
+      diagnostics?: AuthApiErrorDiagnostics;
+      requestId?: string;
+    } = {}
+  ) {
     super(message);
     this.code = code;
+    this.status = options.status;
+    this.diagnostics = options.diagnostics;
+    this.requestId = options.requestId ?? options.diagnostics?.requestId;
   }
 }
 

@@ -14,12 +14,14 @@ export interface StorageLike {
 
 interface CachedEnvelope<T> {
   savedAt: number;
+  ownerUserId?: string | null;
   value: T;
 }
 
 const SNAPSHOT_CACHE_KEY = "smart-nutrition.remote-snapshot-cache";
 const META_CACHE_KEY = "smart-nutrition.remote-meta-cache";
 const META_CACHE_TTL_MS = 15_000;
+let activeOwnerUserId: string | null = null;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -44,6 +46,8 @@ const parseEnvelope = <T,>(raw: string | null): CachedEnvelope<T> | null => {
 
     return {
       savedAt: parsed.savedAt,
+      ownerUserId:
+        typeof parsed.ownerUserId === "string" ? parsed.ownerUserId : null,
       value: parsed.value as T,
     };
   } catch {
@@ -52,12 +56,25 @@ const parseEnvelope = <T,>(raw: string | null): CachedEnvelope<T> | null => {
 };
 
 const createCacheApi = (storage: StorageLike | null) => {
+  const isEnvelopeForActiveOwner = <T,>(envelope: CachedEnvelope<T> | null) => {
+    if (!envelope) {
+      return false;
+    }
+
+    if (!activeOwnerUserId) {
+      return envelope.ownerUserId === undefined || envelope.ownerUserId === null;
+    }
+
+    return envelope.ownerUserId === activeOwnerUserId;
+  };
+
   const read = <T,>(key: string): CachedEnvelope<T> | null => {
     if (!storage) {
       return null;
     }
 
-    return parseEnvelope<T>(storage.getItem(key));
+    const envelope = parseEnvelope<T>(storage.getItem(key));
+    return isEnvelopeForActiveOwner(envelope) ? envelope : null;
   };
 
   const write = <T,>(key: string, value: T) => {
@@ -67,6 +84,7 @@ const createCacheApi = (storage: StorageLike | null) => {
 
     const nextValue: CachedEnvelope<T> = {
       savedAt: Date.now(),
+      ownerUserId: activeOwnerUserId,
       value,
     };
 
@@ -125,3 +143,7 @@ export const writeCachedRemoteMeta = (meta: AppSnapshotMeta) =>
   defaultRemoteStateCache.writeMeta(meta);
 
 export const clearCachedRemoteState = () => defaultRemoteStateCache.clear();
+
+export const setCachedRemoteStateOwner = (userId: string | null) => {
+  activeOwnerUserId = userId;
+};

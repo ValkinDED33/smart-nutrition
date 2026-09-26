@@ -153,10 +153,14 @@ describe("onboarding and profile flow contract", () => {
     expect(onboardingSource).not.toContain("DEFAULT_ASSISTANT_NAME");
     expect(assistantSource).toContain("getAssistantPreviewName");
     expect(assistantSource).toContain("assistantWorkerCopy");
+    expect(assistantSource).toContain("assistantWorkerTools.map");
+    expect(assistantSource).toContain("getAssistantWorkerToolText");
     expect(assistantSource).toContain('data-onboarding-assistant-worker-tools="true"');
     expect(assistantSource).toContain("Це твій AI-працівник, не просто картинка");
     expect(assistantSource).toContain("Telegram");
     expect(assistantSource).toContain("ASSISTANT_PREVIEW_FALLBACK_NAME");
+    expect(assistantSource).not.toContain('tools: ["Їжа"');
+    expect(assistantSource).not.toContain('tools: ["Food"');
     expect(assistantSource).not.toContain('uk: "Помічник"');
     expect(assistantSource).not.toContain('en: "Assistant"');
     expect(assistantSource).not.toContain("disabled={state.assistantName.trim()");

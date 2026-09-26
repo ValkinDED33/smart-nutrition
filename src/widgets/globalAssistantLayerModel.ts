@@ -12,6 +12,12 @@ import type { AssistantDefaultAction } from "@features/assistant/assistantManife
 
 const hiddenGlobalAssistantRoutePrefixes = [
   "/onboarding",
+  "/login",
+  "/register",
+  "/reset-password",
+  "/forgot-password",
+  "/verify-email",
+  "/language",
 ];
 
 export type GlobalAssistantNoticeKey =

@@ -1,3 +1,5 @@
+import assistantWorkerToolsData from "./assistantWorkerTools.json";
+
 export type AssistantArea =
   | "auth"
   | "onboarding"
@@ -25,6 +27,19 @@ export type AssistantDuty =
 export type AssistantTone = "supportive" | "focused" | "urgent" | "celebratory";
 
 export type AssistantVisibility = "global" | "onboarding" | "hidden";
+export type AssistantWorkerToolId =
+  | "planning"
+  | "nutrition"
+  | "water"
+  | "photo"
+  | "telegram"
+  | "health"
+  | "activity"
+  | "family"
+  | "reminders"
+  | "chat"
+  | "analytics"
+  | "safety";
 
 const ONBOARDING_ROUTE = "/onboarding";
 const DASHBOARD_ROUTE = "/dashboard";
@@ -33,6 +48,17 @@ const COMMUNITY_ROUTE = "/community";
 export type AssistantDefaultAction = {
   label: string;
   route: string;
+};
+
+export type AssistantWorkerTool = {
+  id: AssistantWorkerToolId;
+  areas: AssistantArea[];
+  duties: AssistantDuty[];
+  route: string;
+  accent: string;
+  shortLabel: Record<"uk" | "pl" | "en", string>;
+  title: Record<"uk" | "pl" | "en", string>;
+  description: Record<"uk" | "pl" | "en", string>;
 };
 
 export type AssistantCapability = {
@@ -152,6 +178,9 @@ const assistantAreas: AssistantAreaManifest[] = [
     visibility: "global",
   },
 ];
+
+export const assistantWorkerTools =
+  assistantWorkerToolsData as unknown as AssistantWorkerTool[];
 
 export const assistantCapabilities: AssistantCapability[] = [
   {
@@ -389,3 +418,44 @@ export const resolveAssistantCapabilities = (
   pathname: string
 ): AssistantCapability[] =>
   getAssistantCapabilitiesForArea(resolveAssistantArea(pathname));
+
+export const getAssistantWorkerTool = (
+  id: AssistantWorkerToolId
+): AssistantWorkerTool =>
+  assistantWorkerTools.find((tool) => tool.id === id) ?? assistantWorkerTools[0]!;
+
+export const getAssistantWorkerToolText = (
+  id: AssistantWorkerToolId,
+  locale: "uk" | "pl" | "en",
+  variant: "short" | "title" | "description" = "title"
+) => {
+  const tool = getAssistantWorkerTool(id);
+  const localeText =
+    locale === "pl"
+      ? {
+          short: tool.shortLabel.pl,
+          title: tool.title.pl,
+          description: tool.description.pl,
+        }
+      : locale === "en"
+        ? {
+            short: tool.shortLabel.en,
+            title: tool.title.en,
+            description: tool.description.en,
+          }
+        : {
+            short: tool.shortLabel.uk,
+            title: tool.title.uk,
+            description: tool.description.uk,
+          };
+
+  switch (variant) {
+    case "short":
+      return localeText.short;
+    case "description":
+      return localeText.description;
+    case "title":
+    default:
+      return localeText.title;
+  }
+};

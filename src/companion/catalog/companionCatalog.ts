@@ -20,6 +20,70 @@ export const companionShopCatalog: CompanionCatalogItem[] = [
     available: true,
   },
   {
+    id: "robot-minimal",
+    category: "robot",
+    title: text("Мінімал", "Minimal", "Minimal"),
+    description: text(
+      "Безкоштовний спокійний образ без зайвого світла: чистий, тихий і швидкий.",
+      "Darmowy spokojny wygląd bez nadmiaru światła: czysty, cichy i szybki.",
+      "A free calm look without extra glow: clean, quiet, and fast."
+    ),
+    tagLabel: text("легкий", "lekki", "light"),
+    price: 0,
+    rarity: "common",
+    slot: "companion",
+    companionKind: "robot_minimal",
+    available: true,
+  },
+  {
+    id: "robot-neon",
+    category: "robot",
+    title: text("Неон", "Neon", "Neon"),
+    description: text(
+      "Безкоштовний енергійний образ для активного трекінгу, чату й швидких дій.",
+      "Darmowy energiczny wygląd do aktywnego śledzenia, czatu i szybkich akcji.",
+      "A free energetic look for active tracking, chat, and quick actions."
+    ),
+    tagLabel: text("енергія", "energia", "energy"),
+    price: 0,
+    rarity: "common",
+    slot: "companion",
+    companionKind: "robot_neon",
+    available: true,
+  },
+  {
+    id: "robot-nature",
+    category: "robot",
+    title: text("Природа", "Natura", "Nature"),
+    description: text(
+      "Безкоштовний м'який образ для води, харчування, сім'ї й підтримки без тиску.",
+      "Darmowy miękki wygląd do wody, jedzenia, rodziny i wsparcia bez presji.",
+      "A free soft look for water, food, family, and low-pressure support."
+    ),
+    tagLabel: text("спокій", "spokój", "calm"),
+    price: 0,
+    rarity: "common",
+    slot: "companion",
+    companionKind: "robot_nature",
+    available: true,
+  },
+  {
+    id: "robot-solar",
+    category: "robot",
+    title: text("Сонячний", "Słoneczny", "Solar"),
+    description: text(
+      "Безкоштовний теплий образ для мотивації, досягнень і дружніх нагадувань.",
+      "Darmowy ciepły wygląd do motywacji, osiągnięć i przyjaznych przypomnień.",
+      "A free warm look for motivation, achievements, and friendly reminders."
+    ),
+    tagLabel: text("теплий", "ciepły", "warm"),
+    price: 0,
+    rarity: "common",
+    slot: "companion",
+    companionKind: "robot_solar",
+    available: true,
+  },
+  {
     id: "robot-coach",
     category: "robot",
     title: text("Тренер", "Trener", "Coach"),

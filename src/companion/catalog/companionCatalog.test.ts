@@ -52,6 +52,24 @@ describe("companionCatalog", () => {
     expect(collectibleLooks.every((item) => item.price > 0)).toBe(true);
   });
 
+  it("keeps free robot looks wired to real assistant variants", () => {
+    const freeRobotKinds = companionShopCatalog
+      .filter((item) => item.available && item.category === "robot" && item.price === 0)
+      .map((item) => item.companionKind);
+
+    expect(freeRobotKinds).toEqual(
+      expect.arrayContaining([
+        "robot",
+        "robot_minimal",
+        "robot_neon",
+        "robot_nature",
+        "robot_solar",
+        "human",
+      ])
+    );
+    expect(freeRobotKinds.every(Boolean)).toBe(true);
+  });
+
   it("keeps localized display copy in the catalog", () => {
     const item = getCompanionCatalogItemById(CAPYBARA_ITEM_ID);
 

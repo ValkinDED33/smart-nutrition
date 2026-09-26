@@ -15,11 +15,16 @@ import {
 import {
   Activity,
   Apple,
+  BarChart3,
   CalendarDays,
+  Camera,
   Droplets,
+  Dumbbell,
   HeartPulse,
   MessageCircle,
+  MessageSquare,
   ScanLine,
+  ShieldCheck,
   Sparkles,
   Users,
   type LucideIcon,
@@ -58,6 +63,11 @@ import { useCompanionRenderModePreference } from "../features/profile/useCompani
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "@features/assistant/assistantManifest";
 
 const AssistantRuntimeCard = lazy(() =>
   import("../features/assistant/AssistantRuntimeCard").then((module) => ({
@@ -533,7 +543,7 @@ type AssistantMetricCard = {
 };
 
 type AssistantToolCard = {
-  id: string;
+  id: AssistantWorkerToolId;
   title: string;
   body: string;
   to: string;
@@ -623,6 +633,37 @@ const getEmotionLabel = (copy: AiCopy, emotion: AssistantCoreEmotion): string =>
     case "calm":
     default:
       return copy.emotionLabels.calm;
+  }
+};
+
+const getAssistantToolIcon = (toolId: AssistantWorkerToolId): LucideIcon => {
+  switch (toolId) {
+    case "planning":
+      return CalendarDays;
+    case "nutrition":
+      return Apple;
+    case "water":
+      return Droplets;
+    case "photo":
+      return Camera;
+    case "telegram":
+      return MessageCircle;
+    case "health":
+      return HeartPulse;
+    case "activity":
+      return Dumbbell;
+    case "family":
+      return Users;
+    case "reminders":
+      return CalendarDays;
+    case "chat":
+      return MessageSquare;
+    case "analytics":
+      return BarChart3;
+    case "safety":
+      return ShieldCheck;
+    default:
+      return Sparkles;
   }
 };
 
@@ -853,50 +894,14 @@ const AiCompanionPage = () => {
       color: "#fb7185",
     },
   ];
-  const assistantTools: AssistantToolCard[] = [
-    {
-      id: "plan",
-      ...copy.toolLabels.plan,
-      to: "/coach",
-      Icon: CalendarDays,
-      color: "#a78bfa",
-    },
-    {
-      id: "food",
-      ...copy.toolLabels.food,
-      to: "/meals",
-      Icon: ScanLine,
-      color: "#84cc16",
-    },
-    {
-      id: "water",
-      ...copy.toolLabels.water,
-      to: "/progress",
-      Icon: Droplets,
-      color: "#22d3ee",
-    },
-    {
-      id: "health",
-      ...copy.toolLabels.health,
-      to: "/profile#women-health",
-      Icon: HeartPulse,
-      color: "#fb7185",
-    },
-    {
-      id: "family",
-      ...copy.toolLabels.family,
-      to: "/profile#women-health",
-      Icon: Users,
-      color: "#f59e0b",
-    },
-    {
-      id: "telegram",
-      ...copy.toolLabels.telegram,
-      to: "/profile#telegram",
-      Icon: MessageCircle,
-      color: "#2dd4bf",
-    },
-  ];
+  const assistantTools: AssistantToolCard[] = assistantWorkerTools.map((tool) => ({
+    id: tool.id,
+    title: getAssistantWorkerToolText(tool.id, appLanguage, "title"),
+    body: getAssistantWorkerToolText(tool.id, appLanguage, "description"),
+    to: tool.route,
+    Icon: getAssistantToolIcon(tool.id),
+    color: tool.accent,
+  }));
   const assistantBlueprintPatterns = assistantTools.map(
     ({ id, title, body, to, Icon, color }) => ({
       key: id,

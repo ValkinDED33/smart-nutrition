@@ -972,17 +972,6 @@ export const createMongoStorage = async (config) => {
       });
     };
     const writeSnapshotDocumentsWithoutTransaction = async () => {
-      await collections.profiles.updateOne(
-        { userId },
-        { $set: { userId, state: stripUndefined(snapshot.profile), updatedAt: now } },
-        { upsert: true }
-      );
-      await collections.meals.updateOne(
-        { userId },
-        { $set: { userId, state: stripUndefined(snapshot.meal), updatedAt: now } },
-        { upsert: true }
-      );
-
       const stateUpdate = await collections.states.updateOne(
         baseVersion ? { userId, updatedAt: baseVersion } : { userId },
         {
@@ -1010,6 +999,17 @@ export const createMongoStorage = async (config) => {
           { meta: await getSnapshotMeta(userId) }
         );
       }
+
+      await collections.profiles.updateOne(
+        { userId },
+        { $set: { userId, state: stripUndefined(snapshot.profile), updatedAt: now } },
+        { upsert: true }
+      );
+      await collections.meals.updateOne(
+        { userId },
+        { $set: { userId, state: stripUndefined(snapshot.meal), updatedAt: now } },
+        { upsert: true }
+      );
     };
     const session = client.startSession();
 
@@ -1333,18 +1333,6 @@ export const createMongoStorage = async (config) => {
         });
       };
       const writeProfileAndUserDocumentsWithoutTransaction = async () => {
-        await collections.profiles.updateOne(
-          { userId },
-          {
-            $set: {
-              userId,
-              state: stripUndefined(normalizedProfile),
-              updatedAt,
-            },
-          },
-          { upsert: true }
-        );
-
         const stateUpdate = await collections.states.updateOne(
           normalizedSyncContext.baseVersion
             ? { userId, updatedAt: normalizedSyncContext.baseVersion }
@@ -1368,6 +1356,18 @@ export const createMongoStorage = async (config) => {
             { meta: await getSnapshotMeta(userId) }
           );
         }
+
+        await collections.profiles.updateOne(
+          { userId },
+          {
+            $set: {
+              userId,
+              state: stripUndefined(normalizedProfile),
+              updatedAt,
+            },
+          },
+          { upsert: true }
+        );
 
         const userUpdate = await collections.users.updateOne(
           { id: userId },

@@ -12,6 +12,41 @@ const toSafeError = (error) => ({
     .slice(0, 180),
 });
 
+const isSafeInternalRoute = (value) =>
+  typeof value === "string" &&
+  value.startsWith("/") &&
+  !value.startsWith("//") &&
+  !/[\r\n]/u.test(value) &&
+  value.length <= 180;
+
+const buildAgentActionReceipt = ({ intent, toolResult }) => {
+  const ok = Boolean(toolResult?.ok);
+  const targetRoute = isSafeInternalRoute(toolResult?.targetRoute)
+    ? toolResult.targetRoute
+    : null;
+
+  return {
+    id: intent.intent,
+    status: ok ? "confirmed" : "failed",
+    confirmed: ok,
+    source: "backend",
+    resultType: typeof toolResult?.type === "string" ? toolResult.type : null,
+    code: typeof toolResult?.code === "string" ? toolResult.code : null,
+    message:
+      typeof toolResult?.message === "string" && toolResult.message.trim()
+        ? toolResult.message.trim().slice(0, 180)
+        : null,
+    targetRoute,
+    targetSurface:
+      toolResult?.targetSurface === "scanner" ||
+      toolResult?.targetSurface === "photo_meal" ||
+      toolResult?.targetSurface === "food"
+        ? toolResult.targetSurface
+        : null,
+    retryable: !ok,
+  };
+};
+
 const getFollowUpsForIntent = (intent) => {
   if (intent === "add_water" || intent === "show_water_status") {
     return ["day_status", "water_help"];
@@ -262,6 +297,8 @@ export const createAssistantAgentService = ({
     const memory = await updateMemory({ user, intent, toolResult });
     const reply = buildAgentReply({ intent, toolResult, language: context?.language });
 
+    const receipt = buildAgentActionReceipt({ intent, toolResult });
+
     return {
       handled: true,
       text: reply,
@@ -275,8 +312,9 @@ export const createAssistantAgentService = ({
           ok: Boolean(toolResult?.ok),
           resultType: toolResult?.type ?? null,
           code: toolResult?.code ?? null,
-          targetRoute: toolResult?.targetRoute ?? null,
-          targetSurface: toolResult?.targetSurface ?? null,
+          targetRoute: receipt.targetRoute,
+          targetSurface: receipt.targetSurface,
+          receipt,
         },
       ],
       memoryUpdated: Boolean(memory),

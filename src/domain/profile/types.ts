@@ -9,6 +9,10 @@ export type DietStyle =
 export type AdaptiveMode = "automatic" | "manual";
 export type AssistantCompanionKind =
   | "robot"
+  | "robot_minimal"
+  | "robot_neon"
+  | "robot_nature"
+  | "robot_solar"
   | "cat"
   | "dog"
   | "fox"

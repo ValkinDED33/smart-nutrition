@@ -34,6 +34,10 @@ const loopbackHostnames = new Set([
   ["127", "0", "0", "1"].join("."),
   "::1",
 ]);
+const requiredPublicFrontendOrigins = [
+  "https://smart-nutrition.club",
+  "https://www.smart-nutrition.club",
+];
 
 const isLoopbackDatabaseUrl = (databaseUrl) => {
   if (!databaseUrl) {
@@ -92,9 +96,16 @@ const run = () => {
     }),
     createCheck({
       id: "cors",
-      label: "Frontend origin is allowed by CORS",
-      ok: config.allowedCorsOrigins.length > 0,
-      detail: `Allowed origins: ${config.allowedCorsOrigins.join(", ") || "-"}`,
+      label: "Public frontend origins are exactly allowed by CORS",
+      ok:
+        config.allowedCorsOrigins.length > 0 &&
+        (!config.isProduction ||
+          requiredPublicFrontendOrigins.every((origin) =>
+            config.allowedCorsOrigins.includes(origin)
+          )),
+      detail: `Required public origins: ${requiredPublicFrontendOrigins.join(
+        ", "
+      )}; allowed origins: ${config.allowedCorsOrigins.join(", ") || "-"}`,
     }),
     createCheck({
       id: "cookies",

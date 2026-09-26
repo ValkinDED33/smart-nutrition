@@ -11,6 +11,13 @@ export interface CompanionVisual {
 const warmCreamMuzzle = "rgba(254,243,199,0.82)";
 const tigerCreamMuzzle = "rgba(255,237,213,0.86)";
 
+export const isRobotCompanionKind = (variant: AssistantCompanionKind) =>
+  variant === "robot" ||
+  variant === "robot_minimal" ||
+  variant === "robot_neon" ||
+  variant === "robot_nature" ||
+  variant === "robot_solar";
+
 export const companionVisuals: Record<AssistantCompanionKind, CompanionVisual> = {
   cat: {
     face:
@@ -220,12 +227,46 @@ export const companionVisuals: Record<AssistantCompanionKind, CompanionVisual> =
     muzzle: "rgba(219,234,254,0.18)",
     eye: "#e0f2fe",
   },
+  robot_minimal: {
+    face:
+      "radial-gradient(circle at 35% 24%, rgba(255,255,255,0.22), transparent 22%), linear-gradient(135deg, #111827 0%, #334155 58%, #64748b 100%)",
+    detail: "#e2e8f0",
+    shadow: "0 18px 36px rgba(15, 23, 42, 0.28)",
+    muzzle: "rgba(226,232,240,0.16)",
+    eye: "#e2e8f0",
+  },
+  robot_neon: {
+    face:
+      "radial-gradient(circle at 35% 24%, rgba(255,255,255,0.3), transparent 22%), linear-gradient(135deg, #020617 0%, #0e7490 48%, #7c3aed 100%)",
+    detail: "#22d3ee",
+    shadow: "0 18px 40px rgba(34, 211, 238, 0.3)",
+    muzzle: "rgba(34,211,238,0.18)",
+    eye: "#67e8f9",
+  },
+  robot_nature: {
+    face:
+      "radial-gradient(circle at 35% 24%, rgba(255,255,255,0.28), transparent 22%), linear-gradient(135deg, #064e3b 0%, #10b981 52%, #84cc16 100%)",
+    detail: "#bbf7d0",
+    shadow: "0 18px 38px rgba(16, 185, 129, 0.28)",
+    muzzle: "rgba(220,252,231,0.18)",
+    eye: "#dcfce7",
+  },
+  robot_solar: {
+    face:
+      "radial-gradient(circle at 35% 24%, rgba(255,255,255,0.32), transparent 22%), linear-gradient(135deg, #7c2d12 0%, #f59e0b 52%, #facc15 100%)",
+    detail: "#fde68a",
+    shadow: "0 18px 38px rgba(245, 158, 11, 0.28)",
+    muzzle: "rgba(254,243,199,0.18)",
+    eye: "#fef3c7",
+  },
 };
 
 export const getCompanionFaceRadius = (variant: AssistantCompanionKind) => {
+  if (isRobotCompanionKind(variant)) {
+    return "28%";
+  }
+
   switch (variant) {
-    case "robot":
-      return "28%";
     case "cat":
       return "50%";
     case "dog":
@@ -254,4 +295,4 @@ export const getCompanionFaceRadius = (variant: AssistantCompanionKind) => {
 };
 
 export const isLetterCompanion = (variant: AssistantCompanionKind) =>
-  variant === "robot" || variant === "human";
+  isRobotCompanionKind(variant) || variant === "human";

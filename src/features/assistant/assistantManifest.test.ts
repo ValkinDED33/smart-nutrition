@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   assistantCapabilities,
+  assistantWorkerTools,
   getAssistantCapabilitiesForArea,
   getAssistantDutiesForArea,
+  getAssistantWorkerToolText,
   resolveAssistantArea,
   resolveAssistantCapabilities,
 } from "./assistantManifest";
@@ -83,6 +85,38 @@ describe("assistantManifest", () => {
         "remind",
         "navigate",
       ]),
+    });
+  });
+
+  it("keeps one canonical assistant worker toolbelt for every visual surface", () => {
+    const ids = assistantWorkerTools.map((tool) => tool.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "planning",
+        "nutrition",
+        "water",
+        "photo",
+        "telegram",
+        "health",
+        "activity",
+        "family",
+        "reminders",
+        "chat",
+        "analytics",
+        "safety",
+      ])
+    );
+
+    assistantWorkerTools.forEach((tool) => {
+      expect(tool.route).toMatch(/^\//);
+      expect(tool.accent).toMatch(/^#/);
+      expect(tool.areas.length).toBeGreaterThan(0);
+      expect(tool.duties.length).toBeGreaterThan(0);
+      expect(getAssistantWorkerToolText(tool.id, "uk", "short")).toBeTruthy();
+      expect(getAssistantWorkerToolText(tool.id, "pl", "title")).toBeTruthy();
+      expect(getAssistantWorkerToolText(tool.id, "en", "description")).toBeTruthy();
     });
   });
 

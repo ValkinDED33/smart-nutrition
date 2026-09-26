@@ -3,6 +3,7 @@ import { createAssistantAgentService } from "./agent/agent.service.mjs";
 import { serverConfig } from "./config.mjs";
 import { createRedisCache } from "./cache/redisCache.mjs";
 import {
+  ensureRequestId,
   sendError,
   sendNoContent,
   isUnsafeCrossSiteMutation,
@@ -303,6 +304,7 @@ const apiRouter = createApiRouter({
 await platformService.bootstrapAccessControl();
 
 const routeRequest = async (request, response) => {
+  const requestId = ensureRequestId(response, request);
   applySecurityHeaders(response, { isProduction: serverConfig.isProduction });
   setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);
 
@@ -439,8 +441,8 @@ const routeRequest = async (request, response) => {
       return;
     }
 
-    sentryRuntime.captureException(error, { route: pathname, method: request.method });
-    console.error(error);
+    sentryRuntime.captureException(error, { route: pathname, method: request.method, requestId });
+    console.error({ requestId, error });
     sendError(response, 500, "SERVER_ERROR", "Unexpected server error.");
   }
 };
@@ -449,8 +451,9 @@ const server = http.createServer((request, response) => {
   trackRequest(request, response);
 
   routeRequest(request, response).catch((error) => {
-    sentryRuntime.captureException(error, { route: "unhandled_request" });
-    console.error(error);
+    const requestId = ensureRequestId(response, request);
+    sentryRuntime.captureException(error, { route: "unhandled_request", requestId });
+    console.error({ requestId, error });
     sendError(response, 500, "SERVER_ERROR", "Unexpected server error.");
   });
 });

@@ -104,7 +104,7 @@ describe("Onboarding flow contract", () => {
     expect(motivationSource).toContain("navigate(stepPaths.finish)");
   });
 
-  it("keeps the animated onboarding assistant out of active form fields", async () => {
+  it("keeps the animated onboarding assistant in the page flow instead of over form fields", async () => {
     const guideSource = await readSource("src/pages/onboarding/OnboardingGuide.tsx");
 
     expect(guideSource).toContain("useHideGuideWhileFieldFocused");
@@ -114,18 +114,19 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain("womenHealth:");
     expect(guideSource).toContain('"/onboarding/women-health"');
     expect(guideSource).toContain('key: "womenHealth"');
-    expect(guideSource).toContain("const GUIDE_WIDE_VIEWPORT_MIN_WIDTH = 2560");
-    expect(guideSource).toContain('const GUIDE_FORM_SAFE_LEFT = "calc(50% + 460px)"');
-    expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 220");
-    expect(guideSource).toContain("const GUIDE_AVATAR_SIZE = 76");
-    expect(guideSource).toContain('display: { xs: "none", xl: "block" }');
+    expect(guideSource).toContain('data-onboarding-guide-inline="true"');
+    expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 480");
+    expect(guideSource).toContain("const GUIDE_AVATAR_SIZE = 64");
+    expect(guideSource).toContain('display: { xs: "none", md: "block" }');
+    expect(guideSource).toContain('position: "relative"');
+    expect(guideSource).toContain('width: "min(560px, calc(100% - 32px))"');
     expect(guideSource).toContain(
       "maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24"
     );
-    expect(guideSource).toContain(
-      "[`@media (max-width: ${GUIDE_WIDE_VIEWPORT_MIN_WIDTH - 1}px)`]"
-    );
-    expect(guideSource).toContain('data-onboarding-guide-requires-wide-viewport="true"');
+    expect(guideSource).not.toContain('position: "fixed"');
+    expect(guideSource).not.toContain("GUIDE_WIDE_VIEWPORT_MIN_WIDTH");
+    expect(guideSource).not.toContain("GUIDE_FORM_SAFE_LEFT");
+    expect(guideSource).not.toContain("resolvePlacementSx");
     expect(guideSource).toContain('direction="row"');
   });
 

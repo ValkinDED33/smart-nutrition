@@ -38,6 +38,17 @@ describe("useProfileCloudAction", () => {
 
     expect(
       resolveProfileCloudActionErrorMessage(
+        new Error(
+          "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503 · stage:profile-state-finalize · reason:MongoServerError · request:sn-server-profile-state-123)"
+        ),
+        copy
+      )
+    ).toBe(
+      "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503 · stage:profile-state-finalize · reason:MongoServerError · request:sn-server-profile-state-123)"
+    );
+
+    expect(
+      resolveProfileCloudActionErrorMessage(
         new Error("Mongo connection refused while saving profile-state"),
         copy
       )

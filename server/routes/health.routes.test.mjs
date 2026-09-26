@@ -49,6 +49,10 @@ const createController = (debugStartupEnabled = false) =>
     }),
     getDebugStartup: vi.fn(() => ({ ok: true })),
     debugStartupEnabled,
+    env: {
+      RENDER: "true",
+      RENDER_GIT_COMMIT: "7d6c2dab235147a5b00f1234567890abcdef1234",
+    },
   });
 
 describe("health routes", () => {
@@ -81,6 +85,7 @@ describe("health routes", () => {
       storage: { engine: "mongodb" },
       static: { enabled: false, available: false },
       email: { configured: false },
+      deployment: { provider: "render", commit: "7d6c2dab2351" },
     });
     expect(response.body).not.toContain("telegram");
     expect(response.body).not.toContain("openrouter");

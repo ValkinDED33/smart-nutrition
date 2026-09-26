@@ -68,10 +68,10 @@ export const AuthAssistantIntro = ({
   return (
     <Stack
       data-auth-ai-worker-intro="true"
-      spacing={2}
+      spacing={{ xs: 1.25, sm: 2 }}
       sx={{
         position: "relative",
-        p: { xs: 2, sm: 2.5 },
+        p: { xs: 1.5, sm: 2.5 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-strong)",
         background:
@@ -84,9 +84,9 @@ export const AuthAssistantIntro = ({
       }}
     >
       <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        alignItems={{ xs: "flex-start", sm: "center" }}
+        direction="row"
+        spacing={{ xs: 1.25, sm: 2 }}
+        alignItems="center"
       >
         <Box
           sx={{
@@ -97,8 +97,8 @@ export const AuthAssistantIntro = ({
             "&::before": {
               content: '""',
               position: "absolute",
-              width: { xs: size + 24, sm: size + 32 },
-              height: { xs: size + 24, sm: size + 32 },
+              width: { xs: 70, sm: size + 32 },
+              height: { xs: 70, sm: size + 32 },
               borderRadius: "50%",
               background: "var(--sn-portal-ring)",
               opacity: 0.78,
@@ -109,16 +109,26 @@ export const AuthAssistantIntro = ({
             name="Smart Nutrition AI"
             variant="robot"
             mood={mood}
-            size={size}
+            size={Math.min(size, 76)}
             active
           />
         </Box>
 
         <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.6 }}>
+          <Stack
+            direction="row"
+            spacing={0.75}
+            alignItems="center"
+            sx={{ mb: { xs: 0.3, sm: 0.6 }, flexWrap: "wrap" }}
+          >
             <Typography
               variant="overline"
-              sx={{ color: "var(--sn-accent)", fontWeight: 900 }}
+              sx={{
+                color: "var(--sn-accent)",
+                fontWeight: 900,
+                lineHeight: 1,
+                fontSize: { xs: 10, sm: 12 },
+              }}
             >
               {eyebrow}
             </Typography>
@@ -132,13 +142,30 @@ export const AuthAssistantIntro = ({
                 backgroundColor: "var(--sn-surface-glass)",
                 color: "var(--sn-text-primary)",
                 fontWeight: 850,
+                height: { xs: 24, sm: 28 },
               }}
             />
           </Stack>
-          <Typography component="h1" variant="h4" sx={{ fontWeight: 950, mb: 0.8 }}>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{
+              fontWeight: 950,
+              mb: { xs: 0.45, sm: 0.8 },
+              fontSize: { xs: 25, sm: 34 },
+              lineHeight: { xs: 1.06, sm: 1.12 },
+              textWrap: "balance",
+            }}
+          >
             {title}
           </Typography>
-          <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+          <Typography
+            color="text.secondary"
+            sx={{
+              lineHeight: { xs: 1.35, sm: 1.6 },
+              fontSize: { xs: 14, sm: 16 },
+            }}
+          >
             {subtitle}
           </Typography>
         </Box>
@@ -165,6 +192,7 @@ export const AuthAssistantIntro = ({
                 backgroundColor: "var(--sn-surface-glass)",
                 color: "var(--sn-text-primary)",
                 fontWeight: 850,
+                height: { xs: 24, sm: 28 },
               }}
             />
           );

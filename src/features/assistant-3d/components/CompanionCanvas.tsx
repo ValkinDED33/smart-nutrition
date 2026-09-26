@@ -22,6 +22,13 @@ type Vector3Tuple = [number, number, number];
 
 const slateCompanionShadow = "rgba(71,85,105,0.28)";
 
+const isRobotModelVariant = (variant: AssistantCompanionKind) =>
+  variant === "robot" ||
+  variant === "robot_minimal" ||
+  variant === "robot_neon" ||
+  variant === "robot_nature" ||
+  variant === "robot_solar";
+
 const palettes: Record<AssistantCompanionKind, ModelPalette> = {
   robot: {
     body: "#0f766e",
@@ -31,6 +38,42 @@ const palettes: Record<AssistantCompanionKind, ModelPalette> = {
     eye: "#e0f2fe",
     detail: "#94a3b8",
     shadow: "rgba(37,99,235,0.28)",
+  },
+  robot_minimal: {
+    body: "#334155",
+    head: "#64748b",
+    accent: "#e2e8f0",
+    muzzle: "#f8fafc",
+    eye: "#e2e8f0",
+    detail: "#94a3b8",
+    shadow: "rgba(15,23,42,0.28)",
+  },
+  robot_neon: {
+    body: "#0e7490",
+    head: "#7c3aed",
+    accent: "#22d3ee",
+    muzzle: "#cffafe",
+    eye: "#67e8f9",
+    detail: "#020617",
+    shadow: "rgba(34,211,238,0.3)",
+  },
+  robot_nature: {
+    body: "#047857",
+    head: "#10b981",
+    accent: "#84cc16",
+    muzzle: "#dcfce7",
+    eye: "#dcfce7",
+    detail: "#064e3b",
+    shadow: "rgba(16,185,129,0.3)",
+  },
+  robot_solar: {
+    body: "#d97706",
+    head: "#f59e0b",
+    accent: "#facc15",
+    muzzle: "#fef3c7",
+    eye: "#fef3c7",
+    detail: "#7c2d12",
+    shadow: "rgba(245,158,11,0.3)",
   },
   cat: {
     body: "#fb923c",
@@ -259,66 +302,19 @@ const palettes: Record<AssistantCompanionKind, ModelPalette> = {
   },
 };
 
-const getPalette = (variant: AssistantCompanionKind) => {
-  switch (variant) {
-    case "cat":
-      return palettes.cat;
-    case "dog":
-      return palettes.dog;
-    case "fox":
-      return palettes.fox;
-    case "panda":
-      return palettes.panda;
-    case "owl":
-      return palettes.owl;
-    case "human":
-      return palettes.human;
-    case "capybara":
-      return palettes.capybara;
-    case "dragon":
-      return palettes.dragon;
-    case "raccoon":
-      return palettes.raccoon;
-    case "corgi":
-      return palettes.corgi;
-    case "wolf":
-      return palettes.wolf;
-    case "tiger":
-      return palettes.tiger;
-    case "bear":
-      return palettes.bear;
-    case "rabbit":
-      return palettes.rabbit;
-    case "chameleon":
-      return palettes.chameleon;
-    case "lion":
-      return palettes.lion;
-    case "otter":
-      return palettes.otter;
-    case "hedgehog":
-      return palettes.hedgehog;
-    case "koala":
-      return palettes.koala;
-    case "deer":
-      return palettes.deer;
-    case "turtle":
-      return palettes.turtle;
-    case "axolotl":
-      return palettes.axolotl;
-    case "phoenix":
-      return palettes.phoenix;
-    case "forest_spirit":
-      return palettes.forest_spirit;
-    case "cosmic_beast":
-      return palettes.cosmic_beast;
-    case "robot":
-    default:
-      return palettes.robot;
-  }
-};
+const paletteByVariant = new Map<AssistantCompanionKind, ModelPalette>(
+  Object.entries(palettes) as Array<[AssistantCompanionKind, ModelPalette]>
+);
+
+const getPalette = (variant: AssistantCompanionKind) =>
+  paletteByVariant.get(variant) ?? palettes.robot;
 
 const headScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   robot: [0.58, 0.5, 0.5],
+  robot_minimal: [0.58, 0.5, 0.5],
+  robot_neon: [0.58, 0.5, 0.5],
+  robot_nature: [0.58, 0.5, 0.5],
+  robot_solar: [0.58, 0.5, 0.5],
   cat: [0.58, 0.52, 0.5],
   dog: [0.6, 0.52, 0.52],
   fox: [0.56, 0.5, 0.5],
@@ -346,66 +342,19 @@ const headScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   cosmic_beast: [0.6, 0.52, 0.54],
 };
 
-const getHeadScale = (variant: AssistantCompanionKind) => {
-  switch (variant) {
-    case "cat":
-      return headScaleByVariant.cat;
-    case "dog":
-      return headScaleByVariant.dog;
-    case "fox":
-      return headScaleByVariant.fox;
-    case "panda":
-      return headScaleByVariant.panda;
-    case "owl":
-      return headScaleByVariant.owl;
-    case "human":
-      return headScaleByVariant.human;
-    case "capybara":
-      return headScaleByVariant.capybara;
-    case "dragon":
-      return headScaleByVariant.dragon;
-    case "raccoon":
-      return headScaleByVariant.raccoon;
-    case "corgi":
-      return headScaleByVariant.corgi;
-    case "wolf":
-      return headScaleByVariant.wolf;
-    case "tiger":
-      return headScaleByVariant.tiger;
-    case "bear":
-      return headScaleByVariant.bear;
-    case "rabbit":
-      return headScaleByVariant.rabbit;
-    case "chameleon":
-      return headScaleByVariant.chameleon;
-    case "lion":
-      return headScaleByVariant.lion;
-    case "otter":
-      return headScaleByVariant.otter;
-    case "hedgehog":
-      return headScaleByVariant.hedgehog;
-    case "koala":
-      return headScaleByVariant.koala;
-    case "deer":
-      return headScaleByVariant.deer;
-    case "turtle":
-      return headScaleByVariant.turtle;
-    case "axolotl":
-      return headScaleByVariant.axolotl;
-    case "phoenix":
-      return headScaleByVariant.phoenix;
-    case "forest_spirit":
-      return headScaleByVariant.forest_spirit;
-    case "cosmic_beast":
-      return headScaleByVariant.cosmic_beast;
-    case "robot":
-    default:
-      return headScaleByVariant.robot;
-  }
-};
+const headScaleMap = new Map<AssistantCompanionKind, Vector3Tuple>(
+  Object.entries(headScaleByVariant) as Array<[AssistantCompanionKind, Vector3Tuple]>
+);
+
+const getHeadScale = (variant: AssistantCompanionKind) =>
+  headScaleMap.get(variant) ?? headScaleByVariant.robot;
 
 const bodyScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   robot: [0.48, 0.44, 0.42],
+  robot_minimal: [0.48, 0.44, 0.42],
+  robot_neon: [0.48, 0.44, 0.42],
+  robot_nature: [0.48, 0.44, 0.42],
+  robot_solar: [0.48, 0.44, 0.42],
   cat: [0.44, 0.5, 0.4],
   dog: [0.5, 0.48, 0.42],
   fox: [0.46, 0.48, 0.38],
@@ -433,63 +382,12 @@ const bodyScaleByVariant: Record<AssistantCompanionKind, Vector3Tuple> = {
   cosmic_beast: [0.52, 0.5, 0.44],
 };
 
-const getBodyScale = (variant: AssistantCompanionKind) => {
-  switch (variant) {
-    case "cat":
-      return bodyScaleByVariant.cat;
-    case "dog":
-      return bodyScaleByVariant.dog;
-    case "fox":
-      return bodyScaleByVariant.fox;
-    case "panda":
-      return bodyScaleByVariant.panda;
-    case "owl":
-      return bodyScaleByVariant.owl;
-    case "human":
-      return bodyScaleByVariant.human;
-    case "capybara":
-      return bodyScaleByVariant.capybara;
-    case "dragon":
-      return bodyScaleByVariant.dragon;
-    case "raccoon":
-      return bodyScaleByVariant.raccoon;
-    case "corgi":
-      return bodyScaleByVariant.corgi;
-    case "wolf":
-      return bodyScaleByVariant.wolf;
-    case "tiger":
-      return bodyScaleByVariant.tiger;
-    case "bear":
-      return bodyScaleByVariant.bear;
-    case "rabbit":
-      return bodyScaleByVariant.rabbit;
-    case "chameleon":
-      return bodyScaleByVariant.chameleon;
-    case "lion":
-      return bodyScaleByVariant.lion;
-    case "otter":
-      return bodyScaleByVariant.otter;
-    case "hedgehog":
-      return bodyScaleByVariant.hedgehog;
-    case "koala":
-      return bodyScaleByVariant.koala;
-    case "deer":
-      return bodyScaleByVariant.deer;
-    case "turtle":
-      return bodyScaleByVariant.turtle;
-    case "axolotl":
-      return bodyScaleByVariant.axolotl;
-    case "phoenix":
-      return bodyScaleByVariant.phoenix;
-    case "forest_spirit":
-      return bodyScaleByVariant.forest_spirit;
-    case "cosmic_beast":
-      return bodyScaleByVariant.cosmic_beast;
-    case "robot":
-    default:
-      return bodyScaleByVariant.robot;
-  }
-};
+const bodyScaleMap = new Map<AssistantCompanionKind, Vector3Tuple>(
+  Object.entries(bodyScaleByVariant) as Array<[AssistantCompanionKind, Vector3Tuple]>
+);
+
+const getBodyScale = (variant: AssistantCompanionKind) =>
+  bodyScaleMap.get(variant) ?? bodyScaleByVariant.robot;
 
 const moodLift: Record<AssistantAvatarMood, number> = {
   idle: 0,
@@ -943,7 +841,7 @@ const BellyPatch = ({
   variant: AssistantCompanionKind;
   palette: ModelPalette;
 }) => {
-  if (variant === "robot" || variant === "human") {
+  if (isRobotModelVariant(variant) || variant === "human") {
     return null;
   }
 
@@ -970,7 +868,7 @@ const Cheeks = ({
   variant: AssistantCompanionKind;
   palette: ModelPalette;
 }) => {
-  if (variant === "robot" || variant === "human") {
+  if (isRobotModelVariant(variant) || variant === "human") {
     return null;
   }
 
@@ -997,7 +895,7 @@ const Snout = ({
   variant: AssistantCompanionKind;
   palette: ModelPalette;
 }) => {
-  if (variant === "robot" || variant === "human" || variant === "owl") {
+  if (isRobotModelVariant(variant) || variant === "human" || variant === "owl") {
     return null;
   }
 
@@ -1067,7 +965,7 @@ const Paws = ({
   variant: AssistantCompanionKind;
   palette: ModelPalette;
 }) => {
-  if (variant === "robot" || variant === "human") {
+  if (isRobotModelVariant(variant) || variant === "human") {
     return null;
   }
 
@@ -1243,7 +1141,7 @@ const SpeciesDetails = ({
     return <DragonDetails palette={palette} />;
   }
 
-  if (variant === "robot") {
+  if (isRobotModelVariant(variant)) {
     return <RobotDetails palette={palette} />;
   }
 
@@ -1288,7 +1186,7 @@ const CompanionModel = ({
     <group>
       <group ref={groupRef} scale={1.04}>
         <Tail variant={variant} palette={palette} />
-        {variant === "robot" ? <RobotLimbs palette={palette} /> : null}
+        {isRobotModelVariant(variant) ? <RobotLimbs palette={palette} /> : null}
         <CompanionArms variant={variant} palette={palette} mood={mood} />
         <Sphere
           color={palette.body}
@@ -1305,7 +1203,7 @@ const CompanionModel = ({
         <SpeciesDetails variant={variant} palette={palette} />
         <Snout variant={variant} palette={palette} />
         <Cheeks variant={variant} palette={palette} />
-        {variant === "robot" || variant === "human" ? (
+        {isRobotModelVariant(variant) || variant === "human" ? (
           <Visor palette={palette} mood={mood} lookOffset={lookOffset} />
         ) : (
           <>
@@ -1348,7 +1246,7 @@ export const CompanionCanvas = ({
   active = false,
 }: AssistantAvatarProps) => {
   const initial = name.trim()[0]?.toUpperCase() ?? "A";
-  const showInitial = variant === "robot" || variant === "human";
+  const showInitial = isRobotModelVariant(variant) || variant === "human";
   const palette = getPalette(variant);
 
   return (

@@ -26,6 +26,8 @@ const PROFILE_SYNC_FAILED_DIAGNOSTIC_MESSAGE =
   "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503)";
 const PROFILE_SYNC_FAILED_STAGE_MESSAGE =
   "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503 · stage:profile-state-finalize · reason:MongoServerError)";
+const PROFILE_SYNC_FAILED_REQUEST_MESSAGE =
+  "Cloud sync could not save the latest profile data. (STATE_SYNC_UNAVAILABLE · HTTP 503 · stage:profile-state-finalize · reason:MongoServerError · request:sn-request-123)";
 const RAW_PROFILE_SYNC_ERROR = "Provider stack trace: profile database failed";
 const PROFILE_RENDER_MODE_3D = "3d";
 const PROFILE_CALORIES = 2100;
@@ -328,6 +330,40 @@ describe("profileCloudSync", () => {
     expect(dispatch).toHaveBeenCalledWith({
       type: ACTION_SYNC_ERROR,
       payload: PROFILE_SYNC_FAILED_STAGE_MESSAGE,
+    });
+    expect(JSON.stringify(dispatch.mock.calls)).not.toContain(
+      RAW_PROFILE_SYNC_ERROR
+    );
+  });
+
+  it("includes public request ids in profile sync diagnostics for production log lookup", async () => {
+    const dispatch = vi.fn();
+    const profile = normalizeProfileState({ dailyCalories: PROFILE_CALORIES });
+    const user = USER_PROFILE_FIXTURE;
+    authApiMock.syncRemoteProfileWithUser.mockResolvedValueOnce({
+      ok: false,
+      code: "STATE_SYNC_UNAVAILABLE",
+      status: 503,
+      message: RAW_PROFILE_SYNC_ERROR,
+      diagnostics: {
+        syncStage: "profile-state-finalize",
+        reasonCode: "MongoServerError",
+        requestId: "sn-request-123",
+      },
+    });
+
+    await expect(
+      saveProfileAndUserToCloud(
+        dispatch,
+        user,
+        profile,
+        PROFILE_PREVIOUS_UPDATED_AT
+      )
+    ).rejects.toThrow(PROFILE_SYNC_FAILED_REQUEST_MESSAGE);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: ACTION_SYNC_ERROR,
+      payload: PROFILE_SYNC_FAILED_REQUEST_MESSAGE,
     });
     expect(JSON.stringify(dispatch.mock.calls)).not.toContain(
       RAW_PROFILE_SYNC_ERROR

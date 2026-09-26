@@ -84,6 +84,11 @@ export type CompanionCatalogRarity =
   | "legendary";
 
 type CompanionCatalogCompanionKind =
+  | "robot"
+  | "robot_minimal"
+  | "robot_neon"
+  | "robot_nature"
+  | "robot_solar"
   | "cat"
   | "dog"
   | "fox"
@@ -91,7 +96,6 @@ type CompanionCatalogCompanionKind =
   | "owl"
   | "dragon"
   | "capybara"
-  | "robot"
   | "human"
   | "raccoon"
   | "corgi"

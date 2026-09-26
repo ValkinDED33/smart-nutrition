@@ -1,6 +1,7 @@
 import type {
   AssistantQuestionInput,
   AssistantConversationMessage,
+  AssistantRuntimeActionReceipt,
   AssistantRuntimeAction,
   AssistantRuntimeResponse,
   AssistantRuntimeStatus,
@@ -59,6 +60,53 @@ const isSafeInternalRoute = (value: unknown): value is string =>
   !/[\r\n]/u.test(value) &&
   value.length <= 180;
 
+const parseAssistantActionReceipt = (
+  value: unknown
+): AssistantRuntimeActionReceipt | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const receipt = value as Partial<AssistantRuntimeActionReceipt>;
+
+  if (typeof receipt.id !== "string" || !receipt.id.trim()) {
+    return null;
+  }
+
+  const targetRoute = isSafeInternalRoute(receipt.targetRoute)
+    ? receipt.targetRoute
+    : null;
+  const targetSurface =
+    receipt.targetSurface === "scanner" ||
+    receipt.targetSurface === "photo_meal" ||
+    receipt.targetSurface === "food"
+      ? receipt.targetSurface
+      : null;
+  const confirmed = receipt.confirmed === true || receipt.status === "confirmed";
+
+  return {
+    id: receipt.id.trim(),
+    status: confirmed ? "confirmed" : "failed",
+    confirmed,
+    source: "backend",
+    resultType:
+      typeof receipt.resultType === "string" && receipt.resultType.trim()
+        ? receipt.resultType.trim()
+        : null,
+    code:
+      typeof receipt.code === "string" && receipt.code.trim()
+        ? receipt.code.trim()
+        : null,
+    message:
+      typeof receipt.message === "string" && receipt.message.trim()
+        ? receipt.message.trim().slice(0, 180)
+        : null,
+    targetRoute,
+    targetSurface,
+    retryable: receipt.retryable === true,
+  };
+};
+
 const parseAssistantActions = (value: unknown): AssistantRuntimeAction[] =>
   Array.isArray(value)
     ? value
@@ -82,6 +130,7 @@ const parseAssistantActions = (value: unknown): AssistantRuntimeAction[] =>
             action.targetSurface === "food"
               ? action.targetSurface
               : null;
+          const receipt = parseAssistantActionReceipt(action.receipt);
 
           return {
             id: action.id.trim(),
@@ -96,6 +145,7 @@ const parseAssistantActions = (value: unknown): AssistantRuntimeAction[] =>
                 : null,
             targetRoute,
             targetSurface,
+            receipt,
           };
         })
         .filter((item): item is AssistantRuntimeAction => item !== null)

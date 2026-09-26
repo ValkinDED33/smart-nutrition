@@ -64,7 +64,21 @@ describe("createAssistantAgentService", () => {
       mode: "agent-action",
       providerId: "assistant-agent",
       intent: { intent: "add_water" },
-      actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+      actions: [
+        {
+          id: "add_water",
+          ok: true,
+          resultType: "water_added",
+          receipt: {
+            id: "add_water",
+            status: "confirmed",
+            confirmed: true,
+            source: "backend",
+            resultType: "water_added",
+            retryable: false,
+          },
+        },
+      ],
       memoryUpdated: true,
     });
     expect(result.text).toContain("300");
@@ -112,7 +126,19 @@ describe("createAssistantAgentService", () => {
     expect(result).toMatchObject({
       handled: true,
       intent: { intent: "add_water" },
-      actions: [{ id: "add_water", ok: true, resultType: "water_added" }],
+      actions: [
+        {
+          id: "add_water",
+          ok: true,
+          resultType: "water_added",
+          receipt: {
+            status: "confirmed",
+            confirmed: true,
+            resultType: "water_added",
+            source: "backend",
+          },
+        },
+      ],
     });
     expect(result.text).toContain("Done");
     expect(result.text).toContain("Added 300 ml of water");
@@ -239,7 +265,21 @@ describe("createAssistantAgentService", () => {
     expect(result).toMatchObject({
       handled: true,
       intent: { intent: "add_water" },
-      actions: [{ id: "add_water", ok: false, code: "Error" }],
+      actions: [
+        {
+          id: "add_water",
+          ok: false,
+          code: "Error",
+          receipt: {
+            id: "add_water",
+            status: "failed",
+            confirmed: false,
+            source: "backend",
+            code: "Error",
+            retryable: true,
+          },
+        },
+      ],
     });
     expect(result.text).toContain("не зміг підтвердити збереження");
     expect(result.text).toContain("хмара Smart Nutrition");

@@ -707,6 +707,27 @@ describe("createServerConfig", () => {
     );
   });
 
+  it("normalizes quoted CORS origins with escaped newlines from dashboard env fields", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_SERVE_STATIC: "false",
+      SMART_NUTRITION_APP_BASE_URL: "https://smart-nutrition.club",
+      SMART_NUTRITION_CORS_ORIGINS:
+        '"https://smart-nutrition.club, https://www.smart-nutrition.club\\n"',
+      SMART_NUTRITION_AUTH_COOKIE_SAME_SITE: "None",
+      SMART_NUTRITION_AUTH_COOKIE_SECURE: "true",
+    });
+
+    expect(config.allowedCorsOrigins).toEqual([
+      "https://smart-nutrition.club",
+      "https://www.smart-nutrition.club",
+    ]);
+    expect(config.warnings.join(" ")).not.toContain(
+      "SMART_NUTRITION_CORS_ORIGINS contains one or more invalid origins"
+    );
+  });
+
   it("keeps the public frontend origins available for production Render defaults", () => {
     const config = createServerConfig({
       NODE_ENV: "production",

@@ -11,6 +11,7 @@ import {
   HeartPulse,
   MessageCircle,
   Salad,
+  ScanLine,
   ShieldCheck,
   Sparkles,
   Users,
@@ -37,6 +38,11 @@ import { useLanguage } from "../../shared/language";
 import { applyCompanionShopSelectionInCloud } from "../companion/companionCloudSync";
 import { useCompanionRenderModePreference } from "./useCompanionRenderModePreference";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "@features/assistant/assistantManifest";
 
 const shopCopy = {
   uk: {
@@ -93,18 +99,6 @@ const shopCopy = {
       premium: "Преміум образ",
       seasonal: "Сезонний образ",
     } satisfies Record<CompanionCatalogCategory, string>,
-    tools: {
-      planning: ["Планування", "День, тиждень, цілі й сімейний ритм"],
-      nutrition: ["Харчування", "Продукти, рецепти, БЖВ і мікронутрієнти"],
-      water: ["Вода", "Трекер, стаканчики й м'які нагадування"],
-      health: ["Здоров'я", "Тиск, аналізи, симптоми без діагнозів"],
-      activity: ["Активність", "Кроки, тренування, прогулянки й витрати"],
-      family: ["Родина", "Партнер, вагітність, дитина й спільні цілі"],
-      reminders: ["Нагадування", "Події, ліки, дні народження й задачі"],
-      chat: ["AI-розмова", "Пояснення, пошук і допомога без шаблонів"],
-      analytics: ["Аналітика", "Графіки, закономірності й звіти"],
-      safety: ["Безпека", "Дані, межі wellness і обережні поради"],
-    },
   },
   pl: {
     title: "Studio asystenta AI",
@@ -160,18 +154,6 @@ const shopCopy = {
       premium: "Wygląd premium",
       seasonal: "Wygląd sezonowy",
     } satisfies Record<CompanionCatalogCategory, string>,
-    tools: {
-      planning: ["Planowanie", "Dzień, tydzień, cele i rytm rodziny"],
-      nutrition: ["Odżywianie", "Produkty, przepisy, makro i mikroelementy"],
-      water: ["Woda", "Tracker, szklanki i łagodne przypomnienia"],
-      health: ["Zdrowie", "Ciśnienie, analizy, objawy bez diagnoz"],
-      activity: ["Aktywność", "Kroki, treningi, spacery i spalanie"],
-      family: ["Rodzina", "Partner, ciąża, dziecko i wspólne cele"],
-      reminders: ["Przypomnienia", "Wydarzenia, leki, urodziny i zadania"],
-      chat: ["AI rozmowa", "Wyjaśnienia, wyszukiwanie i pomoc bez szablonów"],
-      analytics: ["Analityka", "Wykresy, wzorce i raporty"],
-      safety: ["Bezpieczeństwo", "Dane, granice wellness i ostrożne porady"],
-    },
   },
   en: {
     title: "AI Assistant Studio",
@@ -227,18 +209,6 @@ const shopCopy = {
       premium: "Premium look",
       seasonal: "Seasonal look",
     } satisfies Record<CompanionCatalogCategory, string>,
-    tools: {
-      planning: ["Planning", "Day, week, goals, and family rhythm"],
-      nutrition: ["Nutrition", "Products, recipes, macros, and micronutrients"],
-      water: ["Water", "Tracker, glasses, and gentle reminders"],
-      health: ["Health", "Pressure, labs, symptoms without diagnosis"],
-      activity: ["Activity", "Steps, workouts, walks, and energy burn"],
-      family: ["Family", "Partner, pregnancy, baby, and shared goals"],
-      reminders: ["Reminders", "Events, medication, birthdays, and tasks"],
-      chat: ["AI conversation", "Explanations, search, and help without templates"],
-      analytics: ["Analytics", "Charts, patterns, and reports"],
-      safety: ["Safety", "Data, wellness boundaries, and careful advice"],
-    },
   },
 } as const;
 
@@ -255,13 +225,15 @@ const companionShopFilters: CompanionShopFilter[] = [
 ];
 
 const assistantToolIcons: Array<{
-  key: keyof ShopCopy["tools"];
+  key: AssistantWorkerToolId;
   icon: LucideIcon;
   accent: string;
 }> = [
   { key: "planning", icon: CalendarDays, accent: "#a855f7" },
   { key: "nutrition", icon: Salad, accent: "#22c55e" },
   { key: "water", icon: Droplets, accent: "#22d3ee" },
+  { key: "photo", icon: ScanLine, accent: "#38bdf8" },
+  { key: "telegram", icon: MessageCircle, accent: "#0ea5e9" },
   { key: "health", icon: HeartPulse, accent: "#f472b6" },
   { key: "activity", icon: Activity, accent: "#f59e0b" },
   { key: "family", icon: Users, accent: "#fb7185" },
@@ -272,7 +244,7 @@ const assistantToolIcons: Array<{
 ];
 
 const previewOrbitItems: Array<{
-  key: keyof ShopCopy["tools"];
+  key: AssistantWorkerToolId;
   x: number;
   y: number;
 }> = [
@@ -366,33 +338,13 @@ const getRarityLabel = (
 };
 
 const getToolText = (
-  tools: ShopCopy["tools"],
-  key: keyof ShopCopy["tools"]
-) => {
-  switch (key) {
-    case "planning":
-      return tools.planning;
-    case "nutrition":
-      return tools.nutrition;
-    case "water":
-      return tools.water;
-    case "health":
-      return tools.health;
-    case "activity":
-      return tools.activity;
-    case "family":
-      return tools.family;
-    case "reminders":
-      return tools.reminders;
-    case "chat":
-      return tools.chat;
-    case "analytics":
-      return tools.analytics;
-    case "safety":
-    default:
-      return tools.safety;
-  }
-};
+  locale: CompanionCatalogLocale,
+  key: AssistantWorkerToolId
+) =>
+  [
+    getAssistantWorkerToolText(key, locale, "title"),
+    getAssistantWorkerToolText(key, locale, "description"),
+  ] as const;
 
 const getStatusTone = ({
   isEquipped,
@@ -870,7 +822,7 @@ const CompanionShopCard = () => {
                 }}
               >
                 {previewOrbitItems.map(({ key, x, y }, index) => {
-                  const [label, description] = getToolText(copy.tools, key);
+                  const [label, description] = getToolText(locale, key);
                   const toolMeta = assistantToolIcons.find((item) => item.key === key);
                   const OrbitIcon = toolMeta?.icon ?? Sparkles;
                   const accent = toolMeta?.accent ?? "#67e8f9";
@@ -1086,12 +1038,17 @@ const CompanionShopCard = () => {
                 gap: 1,
               }}
             >
-              {assistantToolIcons.map(({ key, icon: ToolIcon, accent }) => {
-                const [title, description] = getToolText(copy.tools, key);
+              {assistantWorkerTools.map((tool) => {
+                const toolMeta =
+                  assistantToolIcons.find((item) => item.key === tool.id) ??
+                  assistantToolIcons[0]!;
+                const ToolIcon = toolMeta.icon;
+                const accent = tool.accent || toolMeta.accent;
+                const [title, description] = getToolText(locale, tool.id);
 
                 return (
                   <Box
-                    key={key}
+                    key={tool.id}
                     sx={{
                       p: 1.2,
                       minHeight: 112,

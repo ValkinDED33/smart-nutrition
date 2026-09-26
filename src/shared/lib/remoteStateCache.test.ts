@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { StorageLike } from "./remoteStateCache";
-import { createRemoteStateCache } from "./remoteStateCache";
+import { createRemoteStateCache, setCachedRemoteStateOwner } from "./remoteStateCache";
 
 const SNAPSHOT_UPDATED_AT = "2026-04-03T10:00:00.000Z";
 const PROFILE_UPDATED_AT = "2026-04-03T09:58:00.000Z";
@@ -24,6 +24,10 @@ const createMemoryStorage = (): StorageLike => {
 };
 
 describe("remoteStateCache", () => {
+  afterEach(() => {
+    setCachedRemoteStateOwner(null);
+  });
+
   it("stores snapshot and mirrors its meta", () => {
     const cache = createRemoteStateCache(createMemoryStorage());
 
@@ -114,5 +118,38 @@ describe("remoteStateCache", () => {
 
     expect(cache.readSnapshot()?.companion).toEqual({ xp: 150, level: 2 });
     expect(cache.readSnapshot()?.profile).toEqual({ calories: 2300 });
+  });
+
+  it("does not expose snapshot or meta written for another authenticated user", () => {
+    const cache = createRemoteStateCache(createMemoryStorage());
+
+    setCachedRemoteStateOwner("user-a");
+    cache.writeSnapshot({
+      profile: { calories: SAMPLE_PROFILE_CALORIES },
+      meal: createEmptyItemsState(),
+      water: { consumedMl: 1200 },
+      fridge: createEmptyItemsState(),
+      community: { posts: [] },
+      updatedAt: SNAPSHOT_UPDATED_AT,
+    });
+
+    setCachedRemoteStateOwner("user-b");
+
+    expect(cache.readSnapshot()).toBeNull();
+    expect(cache.readMeta({ allowStale: true })).toBeNull();
+  });
+
+  it("does not expose legacy unowned cache after a user-scoped cloud session starts", () => {
+    const cache = createRemoteStateCache(createMemoryStorage());
+
+    setCachedRemoteStateOwner(null);
+    cache.writeMeta({
+      updatedAt: SNAPSHOT_UPDATED_AT,
+      profileUpdatedAt: PROFILE_UPDATED_AT,
+    });
+
+    setCachedRemoteStateOwner("new-user");
+
+    expect(cache.readMeta({ allowStale: true })).toBeNull();
   });
 });

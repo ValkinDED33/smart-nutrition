@@ -21,6 +21,10 @@ class MemoryResponse {
     this.headers[name] = value;
   }
 
+  getHeader(name) {
+    return this.headers[name];
+  }
+
   end(body = "") {
     this.body = String(body);
   }
@@ -72,6 +76,34 @@ describe("route error handler", () => {
     expect(JSON.stringify(payload)).not.toContain("duplicate key");
   });
 
+  it("keeps verification delivery failures public but debuggable", () => {
+    const { handled, response, payload } = handleAndParse(
+      new AuthApiError(
+        "VERIFICATION_DELIVERY_UNAVAILABLE",
+        "Brevo 401 invalid API key while sending confirmation",
+        {
+          provider: "brevo",
+          providerCode: "BREVO_SEND_FAILED",
+          attempts: 3,
+        }
+      )
+    );
+
+    expect(handled).toBe(true);
+    expect(response.statusCode).toBe(503);
+    expect(payload).toMatchObject({
+      code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+      message: "Confirmation email delivery is temporarily unavailable.",
+      requestId: expect.stringMatching(/^sn-/),
+      diagnostics: {
+        provider: "brevo",
+        providerCode: "BREVO_SEND_FAILED",
+        attempts: 3,
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("invalid API key");
+  });
+
   it("maps auth profile-state sync failures to a public 503 instead of a 500", () => {
     const { handled, response, payload } = handleAndParse(
       new AuthApiError(
@@ -89,12 +121,73 @@ describe("route error handler", () => {
     expect(payload).toMatchObject({
       code: "STATE_SYNC_UNAVAILABLE",
       message: "Cloud profile sync is temporarily unavailable.",
+      requestId: expect.stringMatching(/^sn-/),
       diagnostics: {
         syncStage: "profile-state-save",
         reasonCode: "MongoServerSelectionError",
       },
     });
     expect(JSON.stringify(payload)).not.toContain("Cannot read properties");
+  });
+
+  it("preserves the request id already assigned by the server pipeline", () => {
+    const response = new MemoryResponse();
+    response.setHeader("X-Request-Id", "sn-route-pipeline-123");
+
+    const handled = handleRouteError(
+      new AuthApiError(
+        "STATE_SYNC_UNAVAILABLE",
+        "MongoServerSelectionError: connection timed out",
+        { syncStage: "profile-state-save" }
+      ),
+      response
+    );
+    const payload = JSON.parse(response.body);
+
+    expect(handled).toBe(true);
+    expect(response.statusCode).toBe(503);
+    expect(response.headers["X-Request-Id"]).toBe("sn-route-pipeline-123");
+    expect(payload).toMatchObject({
+      code: "STATE_SYNC_UNAVAILABLE",
+      requestId: "sn-route-pipeline-123",
+      diagnostics: {
+        syncStage: "profile-state-save",
+      },
+    });
+  });
+
+  it("returns state conflict meta so clients can recover the latest cloud version", () => {
+    const { handled, response, payload } = handleAndParse(
+      new StateApiError(
+        "STATE_CONFLICT",
+        "Cloud data changed on another device. Pull the latest cloud state before retrying.",
+        {
+          meta: {
+            updatedAt: "2026-08-22T16:15:00.000Z",
+            profileUpdatedAt: "2026-08-22T16:15:00.000Z",
+            mealUpdatedAt: "2026-08-22T16:10:00.000Z",
+            waterUpdatedAt: "2026-08-22T16:05:00.000Z",
+            backupEnabled: true,
+            lastWriterDeviceId: "sn-device-existing",
+          },
+        }
+      )
+    );
+
+    expect(handled).toBe(true);
+    expect(response.statusCode).toBe(409);
+    expect(payload).toMatchObject({
+      code: "STATE_CONFLICT",
+      message:
+        "Cloud data changed on another device. Use the latest cloud version before retrying.",
+      requestId: expect.stringMatching(/^sn-/),
+      meta: {
+        updatedAt: "2026-08-22T16:15:00.000Z",
+        profileUpdatedAt: "2026-08-22T16:15:00.000Z",
+        lastWriterDeviceId: "sn-device-existing",
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("Pull the latest cloud state");
   });
 
   it("does not expose assistant provider details in public API errors", () => {
@@ -119,6 +212,7 @@ describe("route error handler", () => {
       code: "ASSISTANT_RUNTIME_FAILED",
       error: "The assistant could not complete this request right now.",
       message: "The assistant could not complete this request right now.",
+      requestId: expect.stringMatching(/^sn-/),
       retryAfterMs: 12_000,
     });
   });

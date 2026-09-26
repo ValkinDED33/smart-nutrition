@@ -28,6 +28,46 @@ describe("Mongo state version contract", () => {
     expect(mongoStorageSource).toContain("throw error");
   });
 
+  it("checks profile-state conflicts before writing profile documents in the no-transaction fallback", () => {
+    const fallbackStart = mongoStorageSource.indexOf(
+      "const writeProfileAndUserDocumentsWithoutTransaction = async () => {"
+    );
+    const fallbackEnd = mongoStorageSource.indexOf(
+      "const session = client.startSession();",
+      fallbackStart
+    );
+    const fallbackSource = mongoStorageSource.slice(fallbackStart, fallbackEnd);
+
+    expect(fallbackStart).toBeGreaterThan(-1);
+    expect(fallbackEnd).toBeGreaterThan(fallbackStart);
+    expect(fallbackSource.indexOf("const stateUpdate = await collections.states.updateOne(")).toBeLessThan(
+      fallbackSource.indexOf("await collections.profiles.updateOne(")
+    );
+    expect(fallbackSource.indexOf("stateUpdate.matchedCount === 0")).toBeLessThan(
+      fallbackSource.indexOf("await collections.profiles.updateOne(")
+    );
+  });
+
+  it("checks snapshot conflicts before writing profile or meal documents in the no-transaction fallback", () => {
+    const fallbackStart = mongoStorageSource.indexOf(
+      "const writeSnapshotDocumentsWithoutTransaction = async () => {"
+    );
+    const fallbackEnd = mongoStorageSource.indexOf(
+      "const session = client.startSession();",
+      fallbackStart
+    );
+    const fallbackSource = mongoStorageSource.slice(fallbackStart, fallbackEnd);
+
+    expect(fallbackStart).toBeGreaterThan(-1);
+    expect(fallbackEnd).toBeGreaterThan(fallbackStart);
+    expect(fallbackSource.indexOf("const stateUpdate = await collections.states.updateOne(")).toBeLessThan(
+      fallbackSource.indexOf("await collections.profiles.updateOne(")
+    );
+    expect(fallbackSource.indexOf("stateUpdate.matchedCount === 0")).toBeLessThan(
+      fallbackSource.indexOf("await collections.meals.updateOne(")
+    );
+  });
+
   it("passes normalized base versions into every Mongo snapshot mutation", () => {
     const writeCalls = [...mongoStorageSource.matchAll(/writeSnapshot\(userId,/g)];
     const guardedCalls = [

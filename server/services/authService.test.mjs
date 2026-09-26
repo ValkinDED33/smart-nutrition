@@ -387,6 +387,13 @@ describe("authService", () => {
       configOverrides: { isProduction: true },
     });
 
+    emailService.sendRegistrationVerificationEmail.mockResolvedValue({
+      ok: false,
+      code: "BREVO_SEND_FAILED",
+      provider: "brevo",
+      attempts: 3,
+    });
+
     await expect(
       service.register({
         name: "Email User",
@@ -402,6 +409,11 @@ describe("authService", () => {
       })
     ).rejects.toMatchObject({
       code: "VERIFICATION_DELIVERY_UNAVAILABLE",
+      details: {
+        provider: "brevo",
+        providerCode: "BREVO_SEND_FAILED",
+        attempts: 3,
+      },
     });
 
     expect(emailService.sendRegistrationVerificationEmail).toHaveBeenCalledTimes(1);

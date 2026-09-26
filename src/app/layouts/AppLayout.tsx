@@ -38,6 +38,7 @@ import {
 } from "@features/assistant/assistantContext";
 import { clearSyncOutbox } from "@shared/lib/syncOutbox";
 import ProfileLanguageAgent from "@widgets/ProfileLanguageAgent";
+import { shouldHideAssistantLayer } from "@widgets/globalAssistantLayerModel";
 import { setProfileLanguage } from "@features/profile/model/store";
 import { getProfileCloudActionCopy } from "@features/profile/profileCloudActionCopy";
 import { useProfileCloudAction } from "@features/profile/useProfileCloudAction";
@@ -66,16 +67,26 @@ const NAV_BACKDROP_FILTER = "blur(18px)";
 const NAV_SURFACE_BACKGROUND = "var(--sn-nav-surface)";
 const NAV_SOFT_BORDER = "1px solid var(--sn-border-soft)";
 const BRAND_GRADIENT = "var(--sn-brand-gradient)";
+const GUEST_LANDING_NAV_ITEM_SX = {
+  px: { lg: 0.95, xl: 1.2 },
+  minWidth: "max-content",
+  minHeight: 34,
+  flexShrink: 0,
+  whiteSpace: "nowrap",
+  lineHeight: 1,
+  fontSize: { lg: 13, xl: 14 },
+  fontWeight: 850,
+};
 
 const getLandingNavigationItems = (
   language: AppLanguage,
 ): Array<{ label: string; href: string }> => {
   if (language === "pl") {
     return [
-      { label: "AI assistant", href: LANDING_AI_HREF },
+      { label: "AI asystent", href: LANDING_AI_HREF },
       { label: "Odżywianie", href: LANDING_NUTRITION_HREF },
       { label: "Przypomnienia", href: LANDING_REMINDERS_HREF },
-      { label: "Community", href: LANDING_COMMUNITY_HREF },
+      { label: "Społeczność", href: LANDING_COMMUNITY_HREF },
       { label: "Funkcje", href: LANDING_FEATURES_HREF },
       { label: "O produkcie", href: LANDING_ABOUT_HREF },
     ];
@@ -93,10 +104,10 @@ const getLandingNavigationItems = (
   }
 
   return [
-    { label: "AI assistant", href: LANDING_AI_HREF },
+    { label: "AI-помічник", href: LANDING_AI_HREF },
     { label: "Харчування", href: LANDING_NUTRITION_HREF },
     { label: "Нагадування", href: LANDING_REMINDERS_HREF },
-    { label: "Community", href: LANDING_COMMUNITY_HREF },
+    { label: "Спільнота", href: LANDING_COMMUNITY_HREF },
     { label: "Можливості", href: LANDING_FEATURES_HREF },
     { label: "Про продукт", href: LANDING_ABOUT_HREF },
   ];
@@ -206,6 +217,7 @@ const Layout = () => {
   };
 
   const isLandingRoute = location.pathname === "/";
+  const hideGlobalAssistantLayer = shouldHideAssistantLayer(location.pathname);
   const contentMaxWidth = isLandingRoute ? false : user ? "xl" : "sm";
   const landingTabs = getLandingNavigationItems(appLanguage);
   const canSeeWomenHealthNavigation =
@@ -307,15 +319,25 @@ const Layout = () => {
                 >
                   SN
                 </Box>
-                <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
+                <Box
+                  sx={{
+                    minWidth: 0,
+                    display: "block",
+                    maxWidth: { xs: 150, sm: 240 },
+                  }}
+                >
                   <Typography
                     component="span"
                     sx={{
                       display: "inline-block",
                       color: "inherit",
                       fontWeight: 900,
-                      fontSize: { xs: 18, sm: 20 },
+                      fontSize: { xs: 16, sm: 20 },
                       letterSpacing: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
                     }}
                   >
                     {t("brand.name")}
@@ -324,7 +346,7 @@ const Layout = () => {
                     component="span"
                     variant="caption"
                     sx={{
-                      display: "block",
+                      display: { xs: "none", sm: "block" },
                       color: isDarkMode
                         ? "rgba(226,232,240,0.68)"
                         : "rgba(20,33,61,0.65)",
@@ -391,6 +413,8 @@ const Layout = () => {
                   position: "absolute",
                   left: "50%",
                   transform: "translateX(-50%)",
+                  maxWidth: "calc(100vw - 520px)",
+                  overflow: "hidden",
                   px: 1,
                   py: 0.6,
                   borderRadius: 999,
@@ -408,10 +432,8 @@ const Layout = () => {
                     to={tab.href}
                     size="small"
                     sx={{
-                      px: 1.2,
-                      minHeight: 34,
+                      ...GUEST_LANDING_NAV_ITEM_SX,
                       color: isDarkMode ? "#e5eef7" : "#334155",
-                      fontWeight: 850,
                       "&:hover": {
                         color: isDarkMode ? "#d9f99d" : "#0f766e",
                         bgcolor: isDarkMode
@@ -666,9 +688,11 @@ const Layout = () => {
 
       <ProfileLanguageAgent />
       <HabitReminderAgent />
-      <Suspense fallback={null}>
-        <GlobalAssistantLayer />
-      </Suspense>
+      {!hideGlobalAssistantLayer ? (
+        <Suspense fallback={null}>
+          <GlobalAssistantLayer />
+        </Suspense>
+      ) : null}
     </Box>
   );
 };

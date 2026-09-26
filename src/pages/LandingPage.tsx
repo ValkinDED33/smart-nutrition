@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
+  Activity,
+  BarChart3,
   Bell,
   Bot,
+  CalendarDays,
   Camera,
   ChevronDown,
   ChevronLeft,
@@ -16,6 +19,7 @@ import {
   Sparkles,
   Star,
   Utensils,
+  Users,
 } from "lucide-react";
 import {
   Box,
@@ -34,6 +38,11 @@ import type { AssistantAvatarMood } from "../shared/components/AssistantAvatar";
 import { useLanguage } from "../shared/language";
 import { playAIDiscoverySound, playGentleClickSound } from "../shared/lib/sound";
 import { useAppColorMode } from "../shared/theme/colorMode";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "../features/assistant/assistantManifest";
 
 type LandingLanguage = "uk" | "pl" | "en";
 
@@ -81,6 +90,14 @@ const LANDING_THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
 const LANDING_TEAL_TINT_10 = "rgba(20,184,166,0.1)";
 const LANDING_DEFAULT_COMPANION_KIND = "robot";
 const LANDING_ASSISTANT_WORKER_TEST_ID = "landing-assistant-worker-avatar";
+const LANDING_WORKER_TOOL_IDS: readonly AssistantWorkerToolId[] = [
+  "nutrition",
+  "water",
+  "photo",
+  "telegram",
+  "health",
+  "reminders",
+];
 
 const LandingAssistantWorkerAvatar = ({
   name,
@@ -411,6 +428,9 @@ const landingCopy = {
     learningTitle: "Корисно знати",
     learningTopics: ["сон", "стрес", "магній", "цукор", "ЖКТ", "вода"],
     sliderEyebrow: "Живий помічник",
+    sliderTitle: "Один AI-працівник, багато реальних інструментів",
+    sliderBody:
+      "Це не вітрина з іконками. Кожен слайд показує, яку частину дня помічник бере в роботу: їжу, воду, ліки, тиск, сім'ю, Telegram, прогрес і безпечні пояснення.",
     sliderAriaLabel: "Можливості помічника Smart Nutrition",
     sliderPreviousLabel: "Попередня можливість помічника",
     sliderNextLabel: "Наступна можливість помічника",
@@ -716,6 +736,9 @@ const landingCopy = {
     learningTitle: "Warto wiedzieć",
     learningTopics: ["sen", "stres", "magnez", "cukier", "jelita", "woda"],
     sliderEyebrow: "Żywy asystent",
+    sliderTitle: "Jeden pracownik AI, wiele prawdziwych narzędzi",
+    sliderBody:
+      "To nie pokaz ikon. Każdy slajd pokazuje, którą część dnia asystent realnie bierze w pracę: jedzenie, wodę, leki, ciśnienie, rodzinę, Telegram, progres i bezpieczne wyjaśnienia.",
     sliderAriaLabel: "Możliwości asystenta Smart Nutrition",
     sliderPreviousLabel: "Poprzednia możliwość asystenta",
     sliderNextLabel: "Następna możliwość asystenta",
@@ -1021,6 +1044,9 @@ const landingCopy = {
     learningTitle: "Worth knowing",
     learningTopics: ["sleep", "stress", "magnesium", "sugar", "gut", "water"],
     sliderEyebrow: "Living assistant",
+    sliderTitle: "One AI worker, many real tools",
+    sliderBody:
+      "This is not an icon showcase. Every slide shows which part of the day the assistant can actually work on: food, water, medication, pressure, family, Telegram, progress, and safe explanations.",
     sliderAriaLabel: "Smart Nutrition assistant capabilities",
     sliderPreviousLabel: "Previous assistant capability",
     sliderNextLabel: "Next assistant capability",
@@ -1245,6 +1271,36 @@ const getAssistantToolIcon = (index: number) => {
   }
 };
 
+const getLandingWorkerToolIcon = (toolId: AssistantWorkerToolId) => {
+  switch (toolId) {
+    case "planning":
+      return CalendarDays;
+    case "nutrition":
+      return Utensils;
+    case "water":
+      return Droplets;
+    case "photo":
+      return Camera;
+    case "telegram":
+    case "chat":
+      return MessageSquareText;
+    case "health":
+      return HeartPulse;
+    case "activity":
+      return Activity;
+    case "family":
+      return Users;
+    case "reminders":
+      return Bell;
+    case "analytics":
+      return BarChart3;
+    case "safety":
+      return ShieldCheck;
+    default:
+      return Sparkles;
+  }
+};
+
 const getNutritionInsightIcon = (item: NutritionInsight, index: number) => {
   const searchable = `${item.product} ${item.title} ${item.tags.join(" ")}`.toLowerCase();
 
@@ -1315,9 +1371,11 @@ const landingCompanionSignalNodes = [
 
 const CompanionExperienceScene = ({
   copy,
+  language,
   isDarkMode,
 }: {
   copy: LandingCopy;
+  language: LandingLanguage;
   isDarkMode: boolean;
 }) => {
   const scene = getLandingScene(isDarkMode);
@@ -1344,10 +1402,20 @@ const CompanionExperienceScene = ({
     badge: index < 2 ? item.tags[0] : null,
     sx: cardPositions.at(index) ?? cardPositions[0],
   }));
-  const companionToolBadges = copy.featureRail.map((feature, index) => ({
-    ...feature,
-    Icon: getFeatureRailIcon(index),
-  }));
+  const companionToolBadges = LANDING_WORKER_TOOL_IDS.map((toolId) => {
+    const tool =
+      assistantWorkerTools.find((candidate) => candidate.id === toolId) ??
+      assistantWorkerTools[0]!;
+
+    return {
+      id: tool.id,
+      title: getAssistantWorkerToolText(tool.id, language, "title"),
+      body: getAssistantWorkerToolText(tool.id, language, "description"),
+      Icon: getLandingWorkerToolIcon(tool.id),
+      accent: tool.accent,
+      route: tool.route,
+    };
+  });
   const workerSignals = copy.sceneCards.map((signal, index) => ({
     ...signal,
     Icon: getAssistantToolIcon(index),
@@ -1839,7 +1907,7 @@ const CompanionExperienceScene = ({
 
           return (
             <Box
-              key={tool.title}
+              key={tool.id}
               component={motion.div}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1853,8 +1921,9 @@ const CompanionExperienceScene = ({
                 transition: "transform 180ms ease, border-color 180ms ease, background-color 180ms ease",
                 "&:hover": {
                   transform: LANDING_HOVER_LIFT,
-                  borderColor: scene.accentColor,
+                  borderColor: tool.accent,
                   backgroundColor: isDarkMode ? "rgba(15,23,42,0.78)" : GLASS_WHITE_70,
+                  boxShadow: `0 18px 44px ${tool.accent}24`,
                 },
               }}
             >
@@ -1867,9 +1936,9 @@ const CompanionExperienceScene = ({
                     borderRadius: "50%",
                     display: "grid",
                     placeItems: "center",
-                    color: scene.featureIconColor,
+                    color: tool.accent,
                     backgroundColor: scene.featureIconBg,
-                    boxShadow: scene.featureIconShadow,
+                    boxShadow: `0 0 24px ${tool.accent}33`,
                   }}
                 >
                   <Icon size={16} aria-hidden="true" />
@@ -1913,9 +1982,11 @@ const CompanionExperienceScene = ({
 
 const Hero = ({
   copy,
+  language,
   isDarkMode,
 }: {
   copy: LandingCopy;
+  language: LandingLanguage;
   isDarkMode: boolean;
 }) => {
   const scene = getLandingScene(isDarkMode);
@@ -2190,7 +2261,7 @@ const Hero = ({
       </Stack>
     </Stack>
 
-    <CompanionExperienceScene copy={copy} isDarkMode={isDarkMode} />
+    <CompanionExperienceScene copy={copy} language={language} isDarkMode={isDarkMode} />
 
     <Stack
       direction={{ xs: "column", md: "row" }}
@@ -3044,10 +3115,13 @@ const CompanionCapabilitySlider = ({
     >
       <Stack spacing={1.2} sx={{ mb: 2 }}>
         <Typography variant="overline" sx={{ color: scene.accentColor, fontWeight: 900 }}>
-          {copy.nutritionInsightEyebrow}
+          {copy.sliderEyebrow}
         </Typography>
         <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
-          {copy.nutritionInsightTitle}
+          {copy.sliderTitle}
+        </Typography>
+        <Typography color="text.secondary" sx={{ maxWidth: 820, lineHeight: 1.7 }}>
+          {copy.sliderBody}
         </Typography>
       </Stack>
 
@@ -3190,6 +3264,9 @@ const CompanionCapabilitySlider = ({
               </Typography>
               <Typography sx={{ mt: 0.4, fontWeight: 900, lineHeight: 1.25 }}>
                 {active.product}
+              </Typography>
+              <Typography sx={{ mt: 0.5, color: scene.mutedText, fontSize: 12, lineHeight: 1.45 }}>
+                {active.benefit}
               </Typography>
             </Paper>
           </Box>
@@ -3444,7 +3521,7 @@ const LandingPage = () => {
         },
       }}
     >
-      <Hero copy={copy} isDarkMode={isDarkMode} />
+      <Hero copy={copy} language={appLanguage} isDarkMode={isDarkMode} />
       <CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />
       <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
       {SHOW_EXTENDED_LANDING_SECTIONS ? (

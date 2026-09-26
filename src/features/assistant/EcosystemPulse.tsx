@@ -1,15 +1,18 @@
 import { Box, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import {
+  Activity,
+  BarChart3,
   CalendarDays,
   ChevronDown,
-  ClipboardCheck,
   Droplets,
   HeartPulse,
   MessageCircle,
   ScanLine,
+  ShieldCheck,
   Sparkles,
   Utensils,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
@@ -17,6 +20,11 @@ import { selectTodayMealItems } from "../meal/selectors";
 import { AssistantAvatar } from "../../shared/components/AssistantAvatar";
 import { useLanguage } from "../../shared/language";
 import { getAssistantDisplayName } from "./assistantDisplayName";
+import {
+  assistantWorkerTools,
+  getAssistantWorkerToolText,
+  type AssistantWorkerToolId,
+} from "./assistantManifest";
 import type { AppLanguage } from "../../shared/types/i18n";
 
 type EcosystemPulseFocus =
@@ -47,7 +55,6 @@ const pulseCopy = {
       "Тримаю поруч фото їжі, Telegram, сімейні задачі й нагадування.",
       "Показую тільки наступний корисний крок, без фейкових перемог.",
     ],
-    tools: ["Їжа", "Вода", "Фото", "Telegram", "Здоров'я", "Сім'я", "Ліки", "Події"],
     focus: {
       assistant: "Я читаю контекст дня, звіряю підтверджені дані і готую наступну дію.",
       food: "Їжа, сканер і фото працюють як один шлях до денника.",
@@ -72,7 +79,6 @@ const pulseCopy = {
       "Trzymam blisko zdjęcia jedzenia, Telegram, rodzinę i przypomnienia.",
       "Pokazuję następny przydatny krok bez fałszywych sukcesów.",
     ],
-    tools: ["Jedzenie", "Woda", "Zdjęcia", "Telegram", "Zdrowie", "Rodzina", "Leki", "Wydarzenia"],
     focus: {
       assistant: "Czytam kontekst dnia, sprawdzam potwierdzone dane i szykuję kolejny krok.",
       food: "Jedzenie, skaner i zdjęcia prowadzą do jednego dziennika.",
@@ -97,7 +103,6 @@ const pulseCopy = {
       "I keep food photos, Telegram, family tasks, and reminders nearby.",
       "I surface the next useful step without fake success.",
     ],
-    tools: ["Food", "Water", "Photos", "Telegram", "Health", "Family", "Meds", "Events"],
     focus: {
       assistant: "I read the day context, check confirmed data, and prepare the next action.",
       food: "Food, scanner, and photos flow into one diary path.",
@@ -111,16 +116,20 @@ const pulseCopy = {
 } as const;
 
 type PulseCopy = (typeof pulseCopy)[keyof typeof pulseCopy];
-const pulseToolIcons = [
-  Utensils,
-  Droplets,
-  ScanLine,
-  MessageCircle,
-  HeartPulse,
-  Users,
-  ClipboardCheck,
-  CalendarDays,
-];
+const pulseToolIcons: Record<AssistantWorkerToolId, LucideIcon> = {
+  planning: CalendarDays,
+  nutrition: Utensils,
+  water: Droplets,
+  photo: ScanLine,
+  telegram: MessageCircle,
+  health: HeartPulse,
+  activity: Activity,
+  family: Users,
+  reminders: CalendarDays,
+  chat: MessageCircle,
+  analytics: BarChart3,
+  safety: ShieldCheck,
+};
 
 const getPulseCopy = (language: AppLanguage): PulseCopy => {
   switch (language) {
@@ -306,15 +315,20 @@ export const EcosystemPulse = ({ focus }: EcosystemPulseProps) => {
             flexWrap="wrap"
             data-ai-worker-pulse-tools="true"
           >
-            {copy.tools.map((tool, index) => {
-              const Icon = pulseToolIcons.at(index) ?? Sparkles;
+            {assistantWorkerTools.map((tool) => {
+              const Icon = pulseToolIcons[tool.id] ?? Sparkles;
+              const label = getAssistantWorkerToolText(
+                tool.id,
+                appLanguage,
+                "short"
+              );
 
               return (
                 <Chip
-                  key={tool}
+                  key={tool.id}
                   size="small"
                   icon={<Icon size={13} />}
-                  label={tool}
+                  label={label}
                   variant="outlined"
                   sx={{
                     maxWidth: "100%",

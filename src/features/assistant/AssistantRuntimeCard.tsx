@@ -130,15 +130,15 @@ const AssistantMessageMarkdown = ({ text }: { text: string }) => (
 
 const cardCopy = {
   uk: {
-    title: "Помічник",
+    title: "AI-помічник на зміні",
     subtitle:
-      "Швидкий діалоговий блок відповідає по калоріях, білку, харчовому аналізу та мотивації на базі ваших поточних даних.",
+      "Один і той самий помічник читає контекст дня, пам'ятає домовленості, пояснює їжу, воду, ліки, тиск і наступну дію через backend-дані.",
     inputLabel: "Поставте швидке питання",
     inputPlaceholder: "Наприклад: що мені краще зробити далі сьогодні?",
     ask: "Запитати",
     thinking: "Думаю...",
     loadingHistory: "Підтягуємо попередній діалог...",
-    resetConversation: "Новий діалог",
+    resetConversation: "Оновити розмову",
     quickTitle: "Швидкі питання",
     followUpTitle: "Що ще можна уточнити",
     quickQuestions: {
@@ -150,21 +150,21 @@ const cardCopy = {
       coach_focus: "Який зараз головний напрям?",
       motivation_focus: "Що з мотивацією?",
     } satisfies Record<AssistantQuickQuestionId, string>,
-    empty: "Поставте питання або оберіть один зі швидких варіантів.",
+    empty: "Напишіть помічнику або оберіть швидку дію. Він працює з вашим денним контекстом, а не з випадковими шаблонами.",
     error: "Не вдалося отримати відповідь. Спробуйте ще раз за секунду.",
     localFallback:
       "Живий діалог тимчасово обмежений, тому я відповів за поточними даними дня.",
   },
   pl: {
-    title: "Asystent",
+    title: "AI asystent na zmianie",
     subtitle:
-      "Szybki blok dialogowy odpowiada na podstawie bieżących kalorii, białka, analizy żywienia i motywacji.",
+      "Ten sam asystent czyta kontekst dnia, pamięta ustalenia i prowadzi jedzenie, wodę, leki, ciśnienie oraz następny krok przez dane z backendu.",
     inputLabel: "Zadaj szybkie pytanie",
     inputPlaceholder: "Na przykład: co najlepiej zrobić dalej dzisiaj?",
     ask: "Zapytaj",
     thinking: "Myślę...",
     loadingHistory: "Wczytuję wcześniejszą rozmowę...",
-    resetConversation: "Nowa rozmowa",
+    resetConversation: "Odśwież rozmowę",
     quickTitle: "Szybkie pytania",
     followUpTitle: "Co warto dopytać dalej",
     quickQuestions: {
@@ -176,21 +176,21 @@ const cardCopy = {
       coach_focus: "Jaki jest teraz główny kierunek?",
       motivation_focus: "Co z motywacją?",
     } satisfies Record<AssistantQuickQuestionId, string>,
-    empty: "Zadaj pytanie albo wybierz jeden z szybkich wariantów.",
+    empty: "Napisz do asystenta albo wybierz szybką akcję. On pracuje z kontekstem dnia, nie z losowymi szablonami.",
     error: "Nie udało się pobrać odpowiedzi. Spróbuj jeszcze raz za chwilę.",
     localFallback:
       "Żywy dialog jest chwilowo ograniczony, więc odpowiedziałem na podstawie dzisiejszych danych.",
   },
   en: {
-    title: "Assistant",
+    title: "AI assistant on duty",
     subtitle:
-      "A quick chat block answers from your current calories, protein, coach analysis, and motivation state.",
+      "The same assistant reads today's context, remembers agreements, and works through backend data for food, water, medication, blood pressure, and next steps.",
     inputLabel: "Ask a quick question",
     inputPlaceholder: "For example: what is the best next move today?",
     ask: "Ask",
     thinking: "Thinking...",
     loadingHistory: "Loading previous conversation...",
-    resetConversation: "New conversation",
+    resetConversation: "Refresh conversation",
     quickTitle: "Quick questions",
     followUpTitle: "What else to ask",
     quickQuestions: {
@@ -202,7 +202,7 @@ const cardCopy = {
       coach_focus: "What is the coach focus?",
       motivation_focus: "What about motivation?",
     } satisfies Record<AssistantQuickQuestionId, string>,
-    empty: "Ask a question or choose one of the quick options.",
+    empty: "Message the assistant or choose a quick action. It works from your day context, not random templates.",
     error: "Could not get an answer. Try again in a moment.",
     localFallback:
       "Live conversation is temporarily limited, so I answered from today's available data.",
@@ -252,10 +252,17 @@ const getNavigationTarget = (
   const targetRoute =
     actions?.find(
       (action) =>
+        (action.receipt?.confirmed ?? action.ok) &&
+        (action.receipt?.resultType ?? action.resultType) === "navigation_handoff" &&
+        typeof (action.receipt?.targetRoute ?? action.targetRoute) === "string"
+    )?.receipt?.targetRoute ??
+    actions?.find(
+      (action) =>
         action.ok &&
         action.resultType === "navigation_handoff" &&
         typeof action.targetRoute === "string"
-    )?.targetRoute ?? null;
+    )?.targetRoute ??
+    null;
 
   return targetRoute?.startsWith("/") && !targetRoute.startsWith("//")
     ? targetRoute

@@ -1,3 +1,11 @@
+import {
+  describeBackendDriftHint,
+  describeBackendHealth,
+  describeCorsResponse,
+  hasExposedRequestId,
+  isRenderCloudHealth,
+} from "./liveAuditDiagnostics.mjs";
+
 const defaultAppUrl = "https://smart-nutrition.club";
 const defaultApiUrl = "https://smart-nutrition-sk5r.onrender.com";
 const requestTimeoutMs = 12_000;
@@ -34,8 +42,20 @@ const protectedSitemapFragments = [
 const checks = [];
 
 const normalizeOrigin = (value) => String(value || "").replace(/\/+$/, "");
+const readOriginList = (value, fallback) => {
+  const origins = String(value || "")
+    .split(",")
+    .map(normalizeOrigin)
+    .filter(Boolean);
+
+  return [...new Set(origins.length > 0 ? origins : fallback)];
+};
 const appOrigin = normalizeOrigin(
   process.env.SMART_NUTRITION_LIVE_APP_URL || defaultAppUrl
+);
+const trustedAppOrigins = readOriginList(
+  process.env.SMART_NUTRITION_LIVE_APP_ORIGINS,
+  [appOrigin, "https://www.smart-nutrition.club"]
 );
 const apiOrigin = normalizeOrigin(
   process.env.SMART_NUTRITION_LIVE_API_URL || defaultApiUrl
@@ -258,13 +278,10 @@ const inspectBackend = async () => {
 
   addCheck(
     "live backend health is sanitized and cloud-backed",
-    healthResponse.ok &&
-      health?.ok === true &&
-      health?.mode === "remote-cloud" &&
-      health?.auth === "httpOnly-cookie-session" &&
-      ["mongodb", "postgres"].includes(health?.storage?.engine) &&
-      health?.email?.configured === true,
-    "/api/health must expose only minimal public liveness state for a cloud-backed deployment."
+    healthResponse.ok && isRenderCloudHealth(health),
+    `/api/health must expose only minimal public liveness state plus a safe Render deployment fingerprint for a cloud-backed deployment. (${describeBackendHealth(
+      { response: healthResponse, health }
+    )})${describeBackendDriftHint({ response: healthResponse, health })}`
   );
 
   addCheck(
@@ -291,27 +308,55 @@ const inspectBackend = async () => {
 };
 
 const inspectCors = async () => {
-  const trustedResponse = await fetchWithTimeout(joinUrl(apiOrigin, "/api/health"), {
-    method: "OPTIONS",
-    headers: {
-      Origin: appOrigin,
-      "Access-Control-Request-Method": "GET",
-    },
-  });
-  const trustedAllowOrigin = trustedResponse.headers.get(
-    "access-control-allow-origin"
-  );
-  const trustedAllowCredentials = trustedResponse.headers.get(
-    "access-control-allow-credentials"
-  );
+  for (const trustedOrigin of trustedAppOrigins) {
+    const trustedPreflight = await fetchWithTimeout(joinUrl(apiOrigin, "/api/health"), {
+      method: "OPTIONS",
+      headers: {
+        Origin: trustedOrigin,
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+    const trustedAllowOrigin = trustedPreflight.headers.get(
+      "access-control-allow-origin"
+    );
+    const trustedAllowCredentials = trustedPreflight.headers.get(
+      "access-control-allow-credentials"
+    );
 
-  addCheck(
-    "live CORS allows canonical frontend credentials",
-    [200, 204].includes(trustedResponse.status) &&
-      trustedAllowOrigin === appOrigin &&
-      trustedAllowCredentials === "true",
-    "Render backend must allow credentialed requests from the canonical Vercel/domain frontend."
-  );
+    addCheck(
+      `live CORS preflight allows ${trustedOrigin} credentials`,
+      [200, 204].includes(trustedPreflight.status) &&
+        trustedAllowOrigin === trustedOrigin &&
+        trustedAllowCredentials === "true",
+      `Render backend must allow credentialed preflight requests from ${trustedOrigin}. (${describeCorsResponse(
+        trustedPreflight
+      )})`
+    );
+
+    const trustedGet = await fetchWithTimeout(joinUrl(apiOrigin, "/api/health"), {
+      method: "GET",
+      headers: {
+        Origin: trustedOrigin,
+      },
+    });
+    const trustedGetAllowOrigin = trustedGet.headers.get(
+      "access-control-allow-origin"
+    );
+    const trustedGetAllowCredentials = trustedGet.headers.get(
+      "access-control-allow-credentials"
+    );
+
+    addCheck(
+      `live CORS response exposes diagnostics for ${trustedOrigin}`,
+      trustedGet.ok &&
+        trustedGetAllowOrigin === trustedOrigin &&
+        trustedGetAllowCredentials === "true" &&
+        hasExposedRequestId(trustedGet),
+      `Render backend must expose browser-readable request-id diagnostics on actual credentialed responses from ${trustedOrigin}. (${describeCorsResponse(
+        trustedGet
+      )})`
+    );
+  }
 
   const untrustedOrigin = "https://example.invalid";
   const untrustedResponse = await fetchWithTimeout(joinUrl(apiOrigin, "/api/health"), {
@@ -328,7 +373,9 @@ const inspectCors = async () => {
   addCheck(
     "live CORS rejects untrusted credential origin",
     untrustedAllowOrigin !== untrustedOrigin,
-    "Render backend must not reflect arbitrary origins for credentialed browser requests."
+    `Render backend must not reflect arbitrary origins for credentialed browser requests. (${describeCorsResponse(
+      untrustedResponse
+    )})`
   );
 };
 

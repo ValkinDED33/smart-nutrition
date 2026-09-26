@@ -68,6 +68,11 @@ const isAssistantTone = (value) =>
   value === "calm" ||
   value === "scientific";
 const isAssistantCompanionKind = (value) =>
+  value === "robot" ||
+  value === "robot_minimal" ||
+  value === "robot_neon" ||
+  value === "robot_nature" ||
+  value === "robot_solar" ||
   value === "cat" ||
   value === "dog" ||
   value === "fox" ||
@@ -92,8 +97,7 @@ const isAssistantCompanionKind = (value) =>
   value === "axolotl" ||
   value === "phoenix" ||
   value === "forest_spirit" ||
-  value === "cosmic_beast" ||
-  value === "robot";
+  value === "cosmic_beast";
 const isAssistantCompanionRenderMode = (value) => value === "2d" || value === "3d";
 const isAssistantMood = (value) =>
   value === "idle" ||

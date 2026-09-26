@@ -12,6 +12,7 @@ const PROFILE_ROUTE = "/profile";
 const COACH_ROUTE = "/coach";
 const MEALS_ROUTE = "/meals";
 const GLOBAL_ASSISTANT_LAYER_SOURCE = "./GlobalAssistantLayer.tsx";
+const APP_LAYOUT_SOURCE = "../app/layouts/AppLayout.tsx";
 
 const resolveModel = (pathname: string) =>
   resolveGlobalAssistantLayerModel(pathname, {
@@ -28,6 +29,17 @@ const resolveMobileModel = (pathname: string) =>
   });
 
 describe("GlobalAssistantLayer", () => {
+  it("is guarded at the app shell so auth and onboarding forms never mount the floating worker", async () => {
+    const source = await readFile(
+      new URL(APP_LAYOUT_SOURCE, import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain("shouldHideAssistantLayer(location.pathname)");
+    expect(source).toContain("{!hideGlobalAssistantLayer ? (");
+    expect(source).toContain("<GlobalAssistantLayer />");
+  });
+
   it("does not import the 3D assistant runtime from the global shell", async () => {
     const source = await readFile(
       new URL(GLOBAL_ASSISTANT_LAYER_SOURCE, import.meta.url),
@@ -83,6 +95,9 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("window.addEventListener(\"pointermove\"");
     expect(source).toContain("window.requestAnimationFrame");
     expect(source).toContain("enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion");
+    expect(source).toContain("const shouldPauseForTyping =");
+    expect(source).toContain("shouldPauseForTyping ||");
+    expect(source).toContain("const allowAssistantSpeechBubble =");
     expect(source).toContain("lookOffset={assistantLookOffset}");
   });
 
@@ -108,24 +123,23 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("AI-працівник");
     expect(source).toContain("Pracownik AI");
     expect(source).toContain("AI worker");
+    expect(source).toContain("assistantWorkerTools");
+    expect(source).toContain("getAssistantWorkerToolText");
     expect(source).toContain("workerActivities");
     expect(source).toContain("orbitLabels");
     expect(source).toContain("getGlobalAssistantOrbitIcon");
     expect(source).toContain("getGlobalAssistantOrbitPosition");
     expect(source).toContain("ScanLine");
     expect(source).toContain("HeartPulse");
-    expect(source).toContain("Telegram");
-    expect(source).toContain("Сім'я");
-    expect(source).toContain("Задачі");
     expect(source).toContain("/meals?mode=barcode");
     expect(source).toContain("/meals?mode=photo");
     expect(source).toContain("/profile#women-health");
   });
 
-  it("lets public auth surfaces guide themselves and hides on onboarding", () => {
+  it("lets public auth surfaces guide themselves and keeps the global layer unmounted on forms", () => {
     ["/login", "/register", "/reset-password", "/verify-email"].forEach(
       (pathname) => {
-        expect(shouldHideAssistantLayer(pathname)).toBe(false);
+        expect(shouldHideAssistantLayer(pathname)).toBe(true);
         expect(resolveModel(pathname)).toMatchObject({
           area: "auth",
           presence: expect.objectContaining({
@@ -149,6 +163,8 @@ describe("GlobalAssistantLayer", () => {
     );
 
     expect(shouldHideAssistantLayer("/onboarding")).toBe(true);
+    expect(shouldHideAssistantLayer("/onboarding/name")).toBe(true);
+    expect(shouldHideAssistantLayer("/onboarding/women-health")).toBe(true);
     expect(resolveModel("/onboarding").isVisibleOnAuthenticatedRoute).toBe(false);
   });
 

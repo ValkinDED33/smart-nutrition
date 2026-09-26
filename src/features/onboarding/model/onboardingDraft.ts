@@ -96,6 +96,10 @@ const isLanguage = (value: unknown): value is AppLanguage =>
 
 const isAvatar = (value: unknown): value is AssistantCompanionKind =>
   value === "robot" ||
+  value === "robot_minimal" ||
+  value === "robot_neon" ||
+  value === "robot_nature" ||
+  value === "robot_solar" ||
   value === "cat" ||
   value === "dog" ||
   value === "fox" ||
