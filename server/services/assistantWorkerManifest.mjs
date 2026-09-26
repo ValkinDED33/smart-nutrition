@@ -1,4 +1,4 @@
-import assistantWorkerToolsData from "../../src/features/assistant/assistantWorkerTools.json" with {
+import assistantWorkerToolsData from "./assistantWorkerTools.json" with {
   type: "json",
 };
 

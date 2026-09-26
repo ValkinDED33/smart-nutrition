@@ -1,0 +1,170 @@
+[
+  {
+    "id": "planning",
+    "areas": ["home", "coach", "profile"],
+    "duties": ["suggest", "navigate", "remind"],
+    "route": "/dashboard",
+    "accent": "#a855f7",
+    "shortLabel": { "uk": "План", "pl": "Plan", "en": "Plan" },
+    "title": { "uk": "Планування", "pl": "Planowanie", "en": "Planning" },
+    "description": {
+      "uk": "День, тиждень, цілі й сімейний ритм",
+      "pl": "Dzień, tydzień, cele i rytm rodziny",
+      "en": "Day, week, goals, and family rhythm"
+    }
+  },
+  {
+    "id": "nutrition",
+    "areas": ["home", "meals", "recipes", "coach"],
+    "duties": ["suggest", "analyze", "explain", "warn"],
+    "route": "/meals",
+    "accent": "#22c55e",
+    "shortLabel": { "uk": "Їжа", "pl": "Jedzenie", "en": "Food" },
+    "title": { "uk": "Харчування", "pl": "Odżywianie", "en": "Nutrition" },
+    "description": {
+      "uk": "Продукти, рецепти, БЖВ і мікронутрієнти",
+      "pl": "Produkty, przepisy, makro i mikroelementy",
+      "en": "Products, recipes, macros, and micronutrients"
+    }
+  },
+  {
+    "id": "water",
+    "areas": ["home", "water", "progress", "coach"],
+    "duties": ["remind", "warn", "motivate"],
+    "route": "/progress",
+    "accent": "#22d3ee",
+    "shortLabel": { "uk": "Вода", "pl": "Woda", "en": "Water" },
+    "title": { "uk": "Вода", "pl": "Woda", "en": "Water" },
+    "description": {
+      "uk": "Трекер, стаканчики й м'які нагадування",
+      "pl": "Tracker, szklanki i łagodne przypomnienia",
+      "en": "Tracker, glasses, and gentle reminders"
+    }
+  },
+  {
+    "id": "photo",
+    "areas": ["meals", "coach", "home"],
+    "duties": ["analyze", "explain", "suggest"],
+    "route": "/meals?mode=photo",
+    "accent": "#38bdf8",
+    "shortLabel": { "uk": "Фото", "pl": "Zdjęcia", "en": "Photos" },
+    "title": { "uk": "Фотоаналіз", "pl": "Analiza zdjęć", "en": "Photo analysis" },
+    "description": {
+      "uk": "Їжа, тиск, рецепти й документи через один AI-шлях",
+      "pl": "Jedzenie, ciśnienie, przepisy i dokumenty jednym szlakiem AI",
+      "en": "Meals, pressure, recipes, and documents through one AI path"
+    }
+  },
+  {
+    "id": "telegram",
+    "areas": ["coach", "profile", "home"],
+    "duties": ["remind", "navigate", "suggest"],
+    "route": "/profile#integrations",
+    "accent": "#0ea5e9",
+    "shortLabel": { "uk": "Telegram", "pl": "Telegram", "en": "Telegram" },
+    "title": { "uk": "Telegram поруч", "pl": "Telegram blisko", "en": "Telegram nearby" },
+    "description": {
+      "uk": "Той самий помічник, нагадування, фото й задачі",
+      "pl": "Ten sam asystent, przypomnienia, zdjęcia i zadania",
+      "en": "The same assistant, reminders, photos, and tasks"
+    }
+  },
+  {
+    "id": "health",
+    "areas": ["coach", "progress", "profile"],
+    "duties": ["analyze", "warn", "explain"],
+    "route": "/profile#health",
+    "accent": "#f472b6",
+    "shortLabel": { "uk": "Здоров'я", "pl": "Zdrowie", "en": "Health" },
+    "title": { "uk": "Здоров'я", "pl": "Zdrowie", "en": "Health" },
+    "description": {
+      "uk": "Тиск, аналізи, симптоми без діагнозів",
+      "pl": "Ciśnienie, analizy, objawy bez diagnoz",
+      "en": "Pressure, labs, symptoms without diagnosis"
+    }
+  },
+  {
+    "id": "activity",
+    "areas": ["home", "progress", "coach"],
+    "duties": ["motivate", "analyze", "suggest"],
+    "route": "/progress",
+    "accent": "#f59e0b",
+    "shortLabel": { "uk": "Рух", "pl": "Ruch", "en": "Activity" },
+    "title": { "uk": "Активність", "pl": "Aktywność", "en": "Activity" },
+    "description": {
+      "uk": "Кроки, тренування, прогулянки й витрати",
+      "pl": "Kroki, treningi, spacery i spalanie",
+      "en": "Steps, workouts, walks, and energy burn"
+    }
+  },
+  {
+    "id": "family",
+    "areas": ["profile", "coach", "home"],
+    "duties": ["guide", "suggest", "remind"],
+    "route": "/profile#women-health",
+    "accent": "#fb7185",
+    "shortLabel": { "uk": "Сім'я", "pl": "Rodzina", "en": "Family" },
+    "title": { "uk": "Родина", "pl": "Rodzina", "en": "Family" },
+    "description": {
+      "uk": "Партнер, вагітність, дитина й спільні цілі",
+      "pl": "Partner, ciąża, dziecko i wspólne cele",
+      "en": "Partner, pregnancy, baby, and shared goals"
+    }
+  },
+  {
+    "id": "reminders",
+    "areas": ["coach", "profile", "home"],
+    "duties": ["remind", "navigate"],
+    "route": "/coach",
+    "accent": "#facc15",
+    "shortLabel": { "uk": "Задачі", "pl": "Zadania", "en": "Tasks" },
+    "title": { "uk": "Нагадування", "pl": "Przypomnienia", "en": "Reminders" },
+    "description": {
+      "uk": "Події, ліки, дні народження й задачі",
+      "pl": "Wydarzenia, leki, urodziny i zadania",
+      "en": "Events, medication, birthdays, and tasks"
+    }
+  },
+  {
+    "id": "chat",
+    "areas": ["coach", "home"],
+    "duties": ["explain", "suggest", "navigate"],
+    "route": "/coach",
+    "accent": "#38bdf8",
+    "shortLabel": { "uk": "Чат", "pl": "Chat", "en": "Chat" },
+    "title": { "uk": "AI-розмова", "pl": "AI rozmowa", "en": "AI conversation" },
+    "description": {
+      "uk": "Пояснення, пошук і допомога без шаблонів",
+      "pl": "Wyjaśnienia, wyszukiwanie i pomoc bez szablonów",
+      "en": "Explanations, search, and help without templates"
+    }
+  },
+  {
+    "id": "analytics",
+    "areas": ["progress", "coach", "admin"],
+    "duties": ["analyze", "explain"],
+    "route": "/progress",
+    "accent": "#34d399",
+    "shortLabel": { "uk": "Аналіз", "pl": "Analiza", "en": "Analysis" },
+    "title": { "uk": "Аналітика", "pl": "Analityka", "en": "Analytics" },
+    "description": {
+      "uk": "Графіки, закономірності й звіти",
+      "pl": "Wykresy, wzorce i raporty",
+      "en": "Charts, patterns, and reports"
+    }
+  },
+  {
+    "id": "safety",
+    "areas": ["auth", "profile", "coach", "admin"],
+    "duties": ["warn", "explain"],
+    "route": "/profile#security",
+    "accent": "#c4b5fd",
+    "shortLabel": { "uk": "Безпека", "pl": "Bezpieczeństwo", "en": "Safety" },
+    "title": { "uk": "Безпека", "pl": "Bezpieczeństwo", "en": "Safety" },
+    "description": {
+      "uk": "Дані, межі wellness і обережні поради",
+      "pl": "Dane, granice wellness i ostrożne porady",
+      "en": "Data, wellness boundaries, and careful advice"
+    }
+  }
+]
