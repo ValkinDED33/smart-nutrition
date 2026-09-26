@@ -97,7 +97,9 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("enabled: presence.allowMotion && !inputFocused && !prefersReducedMotion");
     expect(source).toContain("const shouldPauseForTyping =");
     expect(source).toContain("shouldPauseForTyping ||");
-    expect(source).toContain("const allowAssistantSpeechBubble =");
+    expect(source).toContain("const [dockExpanded, setDockExpanded] = useState(false);");
+    expect(source).toContain('data-global-assistant-collapse="true"');
+    expect(source).toContain("display: dockExpanded ? \"block\" : \"none\"");
     expect(source).toContain("lookOffset={assistantLookOffset}");
   });
 

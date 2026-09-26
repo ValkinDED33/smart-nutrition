@@ -15,6 +15,7 @@ const TELEGRAM_CONNECT_SIGNATURE_LENGTH = 16;
 const TELEGRAM_DEEP_LINK_MAX_PAYLOAD_LENGTH = 64;
 const TELEGRAM_DEEP_LINK_PAYLOAD_PATTERN = /^[\w-]{1,64}$/;
 const TELEGRAM_PHOTO_MAX_BYTES = 1_250_000;
+const TELEGRAM_PHOTO_FETCH_TIMEOUT_MS = 15_000;
 const TELEGRAM_PHOTO_MIME_BY_CONTENT_TYPE = new Map([
   ["image/jpeg", "jpeg"],
   ["image/jpg", "jpeg"],
@@ -1417,6 +1418,18 @@ const getLargestTelegramPhoto = (ctx) => {
     })[0];
 };
 
+const withPhotoFetchTimeout = (promise) => {
+  let timeoutId = null;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error("TELEGRAM_PHOTO_DOWNLOAD_TIMEOUT")),
+      TELEGRAM_PHOTO_FETCH_TIMEOUT_MS
+    );
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+};
+
 const downloadTelegramPhotoAsDataUrl = async ({ ctx, photo, fetchImplementation }) => {
   if (!photo?.file_id || typeof ctx?.telegram?.getFileLink !== "function") {
     throw new Error("TELEGRAM_PHOTO_FILE_UNAVAILABLE");
@@ -1437,7 +1450,7 @@ const downloadTelegramPhotoAsDataUrl = async ({ ctx, photo, fetchImplementation 
     throw new Error("TELEGRAM_PHOTO_FETCH_UNAVAILABLE");
   }
 
-  const response = await fetchImplementation(fileUrl);
+  const response = await withPhotoFetchTimeout(fetchImplementation(fileUrl));
 
   if (!response?.ok) {
     throw new Error("TELEGRAM_PHOTO_DOWNLOAD_FAILED");
@@ -1448,7 +1461,7 @@ const downloadTelegramPhotoAsDataUrl = async ({ ctx, photo, fetchImplementation 
     .trim()
     .toLowerCase();
   const mimeFormat = TELEGRAM_PHOTO_MIME_BY_CONTENT_TYPE.get(contentType) ?? "jpeg";
-  const arrayBuffer = await response.arrayBuffer();
+  const arrayBuffer = await withPhotoFetchTimeout(response.arrayBuffer());
   const buffer = Buffer.from(arrayBuffer);
 
   if (!buffer.length || buffer.byteLength > TELEGRAM_PHOTO_MAX_BYTES) {

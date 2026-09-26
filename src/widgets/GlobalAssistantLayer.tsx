@@ -11,11 +11,13 @@ import {
   ScanLine,
   Utensils,
   Users,
+  X,
 } from "lucide-react";
 import {
   Box,
   Button,
   Chip,
+  IconButton,
   Paper,
   Stack,
   Typography,
@@ -158,6 +160,7 @@ const useAssistantPointerLookOffset = ({
 const layerCopy = {
   uk: {
     eyebrow: "Асистент поруч",
+    collapseLabel: "Згорнути помічника",
     fallbackTitle: "Готовий допомогти",
     fallbackBody:
       "Я підлаштовую підказки під поточний екран, профіль і вашу ціль.",
@@ -295,6 +298,7 @@ const layerCopy = {
   },
   pl: {
     eyebrow: "Asystent jest obok",
+    collapseLabel: "Zwiń pomocnika",
     fallbackTitle: "Gotowy do pomocy",
     fallbackBody:
       "Dopasowuję podpowiedzi do bieżącego ekranu, profilu i celu.",
@@ -432,6 +436,7 @@ const layerCopy = {
   },
   en: {
     eyebrow: "Assistant nearby",
+    collapseLabel: "Collapse assistant",
     fallbackTitle: "Ready to help",
     fallbackBody:
       "I adapt guidance to the current screen, profile, and goal.",
@@ -668,6 +673,7 @@ export const GlobalAssistantLayer = () => {
   const { isDarkMode } = useAppColorMode();
   const copy = getLayerCopy(appLanguage);
   const [workerActivityIndex, setWorkerActivityIndex] = useState(0);
+  const [dockExpanded, setDockExpanded] = useState(false);
   const inputFocused = useInputFocusState();
   const isMobile = useMediaQuery("(max-width: 599.95px)");
   const isTablet = useMediaQuery(
@@ -729,8 +735,6 @@ export const GlobalAssistantLayer = () => {
   const isFormCriticalArea = area === "auth" || area === "onboarding";
   const shouldPauseForTyping =
     inputFocused && (isFormCriticalArea || viewport === "mobile" || viewport === "tablet");
-  const allowAssistantSpeechBubble =
-    presence.allowSpeechBubble && !isFormCriticalArea && !shouldPauseForTyping;
   const isDenseMobileCompanion =
     presence.reason === "compact-dense-surface" &&
     (viewport === "mobile" || viewport === "tablet");
@@ -853,10 +857,8 @@ export const GlobalAssistantLayer = () => {
           variants={assistantSpeechBubbleVariants}
           elevation={8}
           sx={{
-            display: allowAssistantSpeechBubble
-              ? { xs: "none", md: "block" }
-              : "none",
-            width: 330,
+            display: dockExpanded ? "block" : "none",
+            width: { xs: "calc(100vw - 32px)", md: 330 },
             p: 2,
             borderRadius: 1,
             border: "1px solid var(--sn-border-soft)",
@@ -888,6 +890,15 @@ export const GlobalAssistantLayer = () => {
                 variant="outlined"
                 color="success"
               />
+              <IconButton
+                size="small"
+                aria-label={copy.collapseLabel}
+                onClick={() => setDockExpanded(false)}
+                data-global-assistant-collapse="true"
+                sx={{ color: ASSISTANT_MUTED_TEXT_COLOR }}
+              >
+                <X size={16} />
+              </IconButton>
             </Stack>
             <Chip
               component={motion.div}
@@ -1174,7 +1185,7 @@ export const GlobalAssistantLayer = () => {
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              display: allowAssistantSpeechBubble ? "none" : "block",
+              display: dockExpanded ? "none" : "block",
               pointerEvents: "none",
             }}
           >
@@ -1248,8 +1259,9 @@ export const GlobalAssistantLayer = () => {
             component={motion.button}
             type="button"
             layout={presence.allowMotion}
-            onClick={handleOpenAssistant}
+            onClick={() => setDockExpanded((open) => !open)}
             aria-label={copy.mobileLabel}
+            aria-expanded={dockExpanded}
             data-global-ai-worker-button="true"
             sx={{
               width: companionSize,

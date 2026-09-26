@@ -188,8 +188,7 @@ describe("Smart Nutrition visual system contract", () => {
     expect(meals).toContain("AIMasterBlueprintPanel");
     expect(profile).toContain("AIMasterBlueprintPanel");
     expect(community).toContain("AIMasterBlueprintPanel");
-    expect(onboarding).toContain("AIMasterBlueprintPanel");
-    expect(onboarding).toContain('data-onboarding-ai-master-blueprint="true"');
+    expect(onboarding).not.toContain("AIMasterBlueprintPanel");
     expect(adminCenter).toContain("AIMasterBlueprintPanel");
     expect(adminCenter).toContain("adminBlueprintPatterns");
     expect(womenHealth).toContain("AIMasterBlueprintPanel");

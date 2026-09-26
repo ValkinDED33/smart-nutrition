@@ -58,6 +58,14 @@ export const applySecurityHeaders = (
     buildContentSecurityPolicy({ isProduction })
   );
 
+  if (isProduction) {
+    setHeaderIfMissing(
+      response,
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains"
+    );
+  }
+
   for (const [name, value] of Object.entries(securityHeaderValues)) {
     setHeaderIfMissing(response, name, value);
   }

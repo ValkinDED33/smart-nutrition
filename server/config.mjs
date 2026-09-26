@@ -893,6 +893,17 @@ export const createServerConfig = (rawEnv = process.env) => {
   const nodeEnv = toTrimmedString(env.NODE_ENV, "development") || "development";
   const isProduction = nodeEnv === "production";
 
+  const runningBehindKnownProxy = Boolean(
+    env.RENDER_SERVICE_ID ||
+      env.RAILWAY_ENVIRONMENT ||
+      env.FLY_APP_NAME ||
+      env.HEROKU_APP_NAME
+  );
+  const trustForwardedFor = readBooleanFlag(
+    env.SMART_NUTRITION_TRUST_FORWARDED_FOR,
+    runningBehindKnownProxy
+  );
+
   const port = readPositiveInteger(
     env.SMART_NUTRITION_API_PORT ?? env.PORT,
     8787,
@@ -1496,6 +1507,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     warnings,
     projectRoot: PROJECT_ROOT,
     port,
+    trustForwardedFor,
     accessTokenTtlMs,
     refreshTokenTtlMs,
     passwordResetTokenTtlMs,

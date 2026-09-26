@@ -1,7 +1,16 @@
-export const getClientAddress = (request) =>
-  String(request.headers["x-forwarded-for"] || request.socket.remoteAddress || "unknown")
+export const getClientAddress = (request, { trustForwardedFor = true } = {}) => {
+  const socketAddress = String(request.socket?.remoteAddress || "unknown").trim();
+
+  if (!trustForwardedFor) {
+    return socketAddress || "unknown";
+  }
+
+  const forwarded = String(request.headers["x-forwarded-for"] || "")
     .split(",")[0]
     .trim();
+
+  return forwarded || socketAddress || "unknown";
+};
 
 export const readSingleHeader = (value) =>
   Array.isArray(value) ? String(value[0] ?? "").trim() : String(value ?? "").trim();

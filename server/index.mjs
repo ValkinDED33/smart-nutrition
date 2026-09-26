@@ -197,7 +197,10 @@ const {
 } = createRateLimiters({
   redisCache,
   serverConfig,
-  getClientAddress,
+  getClientAddress: (request) =>
+    getClientAddress(request, {
+      trustForwardedFor: serverConfig.trustForwardedFor,
+    }),
 });
 const aiController = createAiController({
   aiService,
@@ -534,6 +537,17 @@ const shutdown = (signal) => {
 
 process.once("SIGINT", () => shutdown("SIGINT"));
 process.once("SIGTERM", () => shutdown("SIGTERM"));
+
+process.on("unhandledRejection", (reason) => {
+  sentryRuntime.captureException(reason, { route: "unhandled_rejection" });
+  console.error("Unhandled promise rejection.", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  sentryRuntime.captureException(error, { route: "uncaught_exception" });
+  console.error("Uncaught exception.", error);
+  shutdown("uncaughtException");
+});
 
 server.listen(serverConfig.port, () => {
   if (serverConfig.debugStartupEnabled) {

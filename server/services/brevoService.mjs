@@ -46,6 +46,7 @@ export const createBrevoService = ({
   config,
   logger = console,
   fetchImpl = globalThis.fetch,
+  timeoutMs = Number(config?.brevoTimeoutMs) > 0 ? Number(config.brevoTimeoutMs) : 10_000,
 } = {}) => {
   const apiKey = String(config?.brevoApiKey ?? "").trim();
   const listId = Number(config?.brevoListId);
@@ -97,6 +98,7 @@ export const createBrevoService = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       if (response.ok) {
