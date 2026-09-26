@@ -220,6 +220,36 @@ describe("remote API base URL guards", () => {
     );
   });
 
+  it("falls back to the canonical Render API for unlisted Vercel previews without a configured API URL", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+        origin: "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          mode: REMOTE_CLOUD_MODE,
+          auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
+          storage: { engine: "mongodb" },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      expect.any(Object)
+    );
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
+      "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app/api"
+    );
+  });
+
   it("keeps the Vercel API proxy ahead of the SPA catch-all rewrite", async () => {
     const vercelConfig = JSON.parse(await readFile("vercel.json", "utf8")) as {
       rewrites?: Array<{ source?: string; destination?: string }>;

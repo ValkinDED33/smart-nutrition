@@ -386,10 +386,7 @@ const getPublicDeploymentRemoteBaseUrl = () => {
 
   const { hostname, origin } = window.location;
 
-  return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ||
-    isVercelPreviewHostname(hostname)
-    ? `${origin}/api`
-    : null;
+  return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ? `${origin}/api` : null;
 };
 
 const getSameOriginDevProxyBaseUrl = () => {
