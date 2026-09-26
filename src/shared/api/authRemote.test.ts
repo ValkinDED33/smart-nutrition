@@ -35,6 +35,7 @@ describe("remote API base URL guards", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     setCachedRemoteStateOwner(null);
     clearCachedRemoteState();
     removeClientStorageItem(REMOTE_BASE_URL_KEY);
@@ -182,6 +183,40 @@ describe("remote API base URL guards", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       `${VERCEL_PREVIEW_ORIGIN}/api/health`,
       expect.any(Object)
+    );
+  });
+
+  it("uses the configured Render API from Vercel previews when the preview API is protected", async () => {
+    vi.stubEnv(
+      "VITE_SMART_NUTRITION_API_BASE_URL",
+      "https://smart-nutrition-sk5r.onrender.com/api"
+    );
+    vi.stubGlobal("window", {
+      location: {
+        hostname: "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+        origin: "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          mode: REMOTE_CLOUD_MODE,
+          auth: HTTP_ONLY_COOKIE_SESSION_AUTH,
+          storage: { engine: "mongodb" },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      expect.any(Object)
+    );
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
+      "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app/api"
     );
   });
 

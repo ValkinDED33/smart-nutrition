@@ -735,6 +735,22 @@ describe("createServerConfig", () => {
     });
 
     expect(config.allowedCorsOrigins).toEqual(publicFrontendOrigins);
+    expect(config.allowedCorsOriginSuffixes).toEqual([
+      "-valkindeds-projects.vercel.app",
+    ]);
+  });
+
+  it("accepts extra trusted CORS hostname suffixes without replacing production defaults", () => {
+    const config = createServerConfig({
+      NODE_ENV: "production",
+      SMART_NUTRITION_JWT_SECRET: "x".repeat(40),
+      SMART_NUTRITION_CORS_ORIGIN_SUFFIXES: ".preview.smart-nutrition.test",
+    });
+
+    expect(config.allowedCorsOriginSuffixes).toEqual([
+      ".preview.smart-nutrition.test",
+      "-valkindeds-projects.vercel.app",
+    ]);
   });
 
   it("keeps legacy frontend origins explicit instead of widening production CORS", () => {

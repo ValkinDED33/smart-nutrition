@@ -309,7 +309,12 @@ await platformService.bootstrapAccessControl();
 const routeRequest = async (request, response) => {
   const requestId = ensureRequestId(response, request);
   applySecurityHeaders(response, { isProduction: serverConfig.isProduction });
-  setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);
+  setCorsHeaders(
+    request,
+    response,
+    serverConfig.allowedCorsOrigins,
+    serverConfig.allowedCorsOriginSuffixes
+  );
 
   if (!request.url) {
     sendError(response, 400, "INVALID_REQUEST", "Request URL is missing.");
@@ -332,13 +337,21 @@ const routeRequest = async (request, response) => {
     request,
     pathname,
     allowedOrigins: serverConfig.allowedCorsOrigins,
+    allowedOriginSuffixes: serverConfig.allowedCorsOriginSuffixes,
   });
 
-  if (isUnsafeCrossSiteMutation(request, serverConfig.allowedCorsOrigins)) {
+  if (
+    isUnsafeCrossSiteMutation(
+      request,
+      serverConfig.allowedCorsOrigins,
+      serverConfig.allowedCorsOriginSuffixes
+    )
+  ) {
     requestDiagnostics.logCsrfBlocked({
       request,
       pathname,
       allowedOrigins: serverConfig.allowedCorsOrigins,
+      allowedOriginSuffixes: serverConfig.allowedCorsOriginSuffixes,
     });
     sendError(response, 403, "CSRF_BLOCKED", "Request origin is not allowed.");
     return;

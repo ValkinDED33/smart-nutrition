@@ -403,9 +403,19 @@ const getSameOriginDevProxyBaseUrl = () => {
 };
 
 const getConfiguredRemoteBaseUrl = () => {
+  const envBaseUrl = normalizeRemoteBaseUrl(
+    import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL
+  );
+  const deploymentBaseUrl = normalizeRemoteBaseUrl(
+    getPublicDeploymentRemoteBaseUrl()
+  );
+  const isPreviewDeployment =
+    typeof window !== "undefined" &&
+    isVercelPreviewHostname(window.location.hostname);
   const configuredBaseUrl =
-    normalizeRemoteBaseUrl(getPublicDeploymentRemoteBaseUrl()) ??
-    normalizeRemoteBaseUrl(import.meta.env.VITE_SMART_NUTRITION_API_BASE_URL);
+    isPreviewDeployment && envBaseUrl
+      ? envBaseUrl
+      : deploymentBaseUrl ?? envBaseUrl;
 
   if (
     !configuredBaseUrl ||

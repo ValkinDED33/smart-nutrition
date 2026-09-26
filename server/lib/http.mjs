@@ -1,8 +1,35 @@
 import { applySecurityHeaders } from "../runtime/securityHeaders.mjs";
 import { randomUUID } from "node:crypto";
 
-export const isCorsOriginAllowed = (origin, allowedOrigins = []) =>
-  Boolean(origin) && allowedOrigins.includes(origin);
+const readOriginHostname = (origin) => {
+  try {
+    return new URL(origin).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+};
+
+const isCorsOriginSuffixAllowed = (origin, allowedOriginSuffixes = []) => {
+  const hostname = readOriginHostname(origin);
+
+  if (!hostname) {
+    return false;
+  }
+
+  return allowedOriginSuffixes.some((suffix) => {
+    const normalizedSuffix = String(suffix ?? "").trim().toLowerCase();
+    return Boolean(normalizedSuffix) && hostname.endsWith(normalizedSuffix);
+  });
+};
+
+export const isCorsOriginAllowed = (
+  origin,
+  allowedOrigins = [],
+  allowedOriginSuffixes = []
+) =>
+  Boolean(origin) &&
+  (allowedOrigins.includes(origin) ||
+    isCorsOriginSuffixAllowed(origin, allowedOriginSuffixes));
 
 const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const REQUEST_ID_HEADER = "X-Request-Id";
@@ -107,7 +134,12 @@ const createAllowedCorsHeaders = (request) => {
   return [...headers.values()].sort((left, right) => left.localeCompare(right)).join(", ");
 };
 
-export const setCorsHeaders = (request, response, allowedOrigins = []) => {
+export const setCorsHeaders = (
+  request,
+  response,
+  allowedOrigins = [],
+  allowedOriginSuffixes = []
+) => {
   const origin = readRequestOrigin(request);
 
   response.setHeader("Vary", "Origin");
@@ -124,13 +156,17 @@ export const setCorsHeaders = (request, response, allowedOrigins = []) => {
     "GET, POST, PUT, PATCH, DELETE, OPTIONS"
   );
 
-  if (isCorsOriginAllowed(origin, allowedOrigins)) {
+  if (isCorsOriginAllowed(origin, allowedOrigins, allowedOriginSuffixes)) {
     response.setHeader("Access-Control-Allow-Origin", origin);
     response.setHeader("Access-Control-Allow-Credentials", "true");
   }
 };
 
-export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
+export const isUnsafeCrossSiteMutation = (
+  request,
+  allowedOrigins = [],
+  allowedOriginSuffixes = []
+) => {
   if (!mutationMethods.has(request.method ?? "")) {
     return false;
   }
@@ -138,13 +174,17 @@ export const isUnsafeCrossSiteMutation = (request, allowedOrigins = []) => {
   const origin = readRequestOrigin(request);
 
   if (origin) {
-    return !isCorsOriginAllowed(origin, allowedOrigins);
+    return !isCorsOriginAllowed(origin, allowedOrigins, allowedOriginSuffixes);
   }
 
   const refererOrigin = readRequestRefererOrigin(request);
 
   if (refererOrigin) {
-    return !isCorsOriginAllowed(refererOrigin, allowedOrigins);
+    return !isCorsOriginAllowed(
+      refererOrigin,
+      allowedOrigins,
+      allowedOriginSuffixes
+    );
   }
 
   return (

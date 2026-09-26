@@ -138,6 +138,33 @@ describe("http response helpers", () => {
     ).toBe(false);
   });
 
+  it("allows trusted Vercel preview suffixes without opening arbitrary origins", () => {
+    const trustedPreviewOrigin =
+      "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app";
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: trustedPreviewOrigin },
+        },
+        ["https://smart-nutrition.club"],
+        ["-valkindeds-projects.vercel.app"]
+      )
+    ).toBe(false);
+
+    expect(
+      isUnsafeCrossSiteMutation(
+        {
+          method: "POST",
+          headers: { origin: "https://smart-nutrition-evil.vercel.app" },
+        },
+        ["https://smart-nutrition.club"],
+        ["-valkindeds-projects.vercel.app"]
+      )
+    ).toBe(true);
+  });
+
   it("rejects browser-reported cross-site mutations when Origin is missing", () => {
     expect(
       isUnsafeCrossSiteMutation(
@@ -213,6 +240,32 @@ describe("http response helpers", () => {
     expect(headers["Access-Control-Expose-Headers"]).toContain(
       "X-Auth-RateLimit-Remaining"
     );
+  });
+
+  it("echoes credentialed CORS headers for trusted Vercel previews", () => {
+    const headers = {};
+    const response = {
+      setHeader: (name, value) => {
+        headers[name] = value;
+      },
+    };
+    const trustedPreviewOrigin =
+      "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app";
+
+    setCorsHeaders(
+      {
+        headers: {
+          origin: trustedPreviewOrigin,
+          "access-control-request-headers": "content-type, x-request-id",
+        },
+      },
+      response,
+      ["https://smart-nutrition.club"],
+      ["-valkindeds-projects.vercel.app"]
+    );
+
+    expect(headers["Access-Control-Allow-Origin"]).toBe(trustedPreviewOrigin);
+    expect(headers["Access-Control-Allow-Credentials"]).toBe("true");
   });
 
   it("does not echo arbitrary browser-requested CORS headers", () => {

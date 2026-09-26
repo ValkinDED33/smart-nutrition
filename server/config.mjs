@@ -12,6 +12,9 @@ const PUBLIC_FRONTEND_ORIGINS = [
 ];
 const PUBLIC_FRONTEND_ORIGIN = PUBLIC_FRONTEND_ORIGINS[0];
 const LEGACY_FRONTEND_ORIGINS = ["https://smart-nutrition-nine.vercel.app"];
+const TRUSTED_VERCEL_PREVIEW_ORIGIN_SUFFIXES = [
+  "-valkindeds-projects.vercel.app",
+];
 const DEFAULT_SECRET_FILE_DIR = "/etc/secrets";
 const LOOPBACK_HOSTNAMES = new Set([
   ["local", "host"].join(""),
@@ -264,6 +267,21 @@ const normalizeOrigin = (value) => {
   } catch {
     return null;
   }
+};
+
+const normalizeOriginSuffix = (value) => {
+  const nextValue = toEnvListItem(value)
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
+
+  if (!nextValue || nextValue.includes("/") || nextValue.includes("*")) {
+    return null;
+  }
+
+  return nextValue.startsWith(".") || nextValue.startsWith("-")
+    ? nextValue
+    : `.${nextValue}`;
 };
 
 const normalizeCookieSameSite = (value, fallback, warnings) => {
@@ -886,6 +904,28 @@ const resolveAllowedCorsOrigins = (envValue, appBaseUrl, warnings, { isProductio
   return includePublicFrontendOrigin(appOrigin ? [appOrigin] : []);
 };
 
+const resolveAllowedCorsOriginSuffixes = (envValue, warnings, { isProduction }) => {
+  const rawSuffixes = String(envValue ?? "")
+    .split(",")
+    .map((value) => toEnvListItem(value))
+    .filter(Boolean);
+  const configuredSuffixes = rawSuffixes
+    .map((value) => normalizeOriginSuffix(value))
+    .filter(Boolean);
+
+  if (configuredSuffixes.length !== rawSuffixes.length) {
+    warnings.push(
+      "SMART_NUTRITION_CORS_ORIGIN_SUFFIXES contains one or more invalid suffixes. Only hostname suffixes are used."
+    );
+  }
+
+  const productionDefaults = isProduction
+    ? TRUSTED_VERCEL_PREVIEW_ORIGIN_SUFFIXES
+    : [];
+
+  return [...new Set([...configuredSuffixes, ...productionDefaults])];
+};
+
 export const createServerConfig = (rawEnv = process.env) => {
   const env = hydrateSecretFileEnv(rawEnv);
   const errors = [];
@@ -1257,6 +1297,11 @@ export const createServerConfig = (rawEnv = process.env) => {
     warnings,
     { isProduction }
   );
+  const allowedCorsOriginSuffixes = resolveAllowedCorsOriginSuffixes(
+    env.SMART_NUTRITION_CORS_ORIGIN_SUFFIXES,
+    warnings,
+    { isProduction }
+  );
   const resendApiKey = toTrimmedString(env.SMART_NUTRITION_RESEND_API_KEY) || null;
   const emailFromAddress =
     normalizeOptionalEmail(env.SMART_NUTRITION_EMAIL_FROM_ADDRESS) ??
@@ -1562,6 +1607,7 @@ export const createServerConfig = (rawEnv = process.env) => {
     authCookieSecure,
     appBaseUrl,
     allowedCorsOrigins,
+    allowedCorsOriginSuffixes,
     emailFromAddress,
     emailFromName,
     resendApiKey,

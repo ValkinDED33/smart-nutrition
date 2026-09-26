@@ -40,13 +40,15 @@ export const createRequestDiagnostics = () => {
   };
 
   return {
-    logApiRequest: ({ request, pathname, allowedOrigins }) => {
+    logApiRequest: ({ request, pathname, allowedOrigins, allowedOriginSuffixes = [] }) => {
       if (!pathname.startsWith("/api/")) {
         return;
       }
 
       const origin = readOrigin(request);
-      const allowed = origin ? isCorsOriginAllowed(origin, allowedOrigins) : null;
+      const allowed = origin
+        ? isCorsOriginAllowed(origin, allowedOrigins, allowedOriginSuffixes)
+        : null;
       const entry = {
         at: new Date().toISOString(),
         method: request.method ?? "GET",
@@ -67,7 +69,12 @@ export const createRequestDiagnostics = () => {
       );
     },
 
-    logCsrfBlocked: ({ request, pathname, allowedOrigins }) => {
+    logCsrfBlocked: ({
+      request,
+      pathname,
+      allowedOrigins,
+      allowedOriginSuffixes = [],
+    }) => {
       const origin = readOrigin(request);
       const referer = readSingleHeader(request.headers.referer ?? request.headers.referrer);
       const entry = {
@@ -78,6 +85,7 @@ export const createRequestDiagnostics = () => {
         referer: referer || null,
         secFetchSite: readSingleHeader(request.headers["sec-fetch-site"]) || null,
         allowedOrigins,
+        allowedOriginSuffixes,
       };
 
       lastCsrfBlock = entry;
@@ -90,6 +98,10 @@ export const createRequestDiagnostics = () => {
       console.error("Referer:", entry.referer ?? "none");
       console.error("Sec-Fetch-Site:", entry.secFetchSite ?? "none");
       console.error("Allowed origins:", allowedOrigins.join(", ") || "none");
+      console.error(
+        "Allowed origin suffixes:",
+        allowedOriginSuffixes.join(", ") || "none"
+      );
     },
 
     getSnapshot: () => ({

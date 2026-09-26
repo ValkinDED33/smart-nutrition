@@ -1453,16 +1453,28 @@ addCheck(
 
 addCheck(
   "request diagnostics and CORS are applied before auth, options, routes, and errors",
-  serverIndexSource.indexOf("const requestId = ensureRequestId(response, request);") <
-    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") &&
-    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
-      serverIndexSource.indexOf('if (request.method === "OPTIONS")') &&
-    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
-      serverIndexSource.indexOf("await publicApiRouter({") &&
-    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
-      serverIndexSource.indexOf("await authService.authenticateRequest(request)") &&
-    serverIndexSource.indexOf("setCorsHeaders(request, response, serverConfig.allowedCorsOrigins);") <
-      serverIndexSource.indexOf("if (handleRouteError(error, response))"),
+  (() => {
+    const requestIdIndex = serverIndexSource.indexOf(
+      "const requestId = ensureRequestId(response, request);"
+    );
+    const corsIndex = serverIndexSource.indexOf("setCorsHeaders(");
+    const corsSuffixIndex = serverIndexSource.indexOf(
+      "serverConfig.allowedCorsOriginSuffixes",
+      corsIndex
+    );
+
+    return (
+      requestIdIndex >= 0 &&
+      corsIndex >= 0 &&
+      corsSuffixIndex > corsIndex &&
+      requestIdIndex < corsIndex &&
+      corsIndex < serverIndexSource.indexOf('if (request.method === "OPTIONS")') &&
+      corsIndex < serverIndexSource.indexOf("await publicApiRouter({") &&
+      corsIndex <
+        serverIndexSource.indexOf("await authService.authenticateRequest(request)") &&
+      corsIndex < serverIndexSource.indexOf("if (handleRouteError(error, response))")
+    );
+  })(),
   "Every API/static/error path must receive request-id and credentialed CORS headers before preflight, auth, routing, rate limits, and route errors so browser diagnostics stay consistent across Safari, Chrome, Android, and Telegram WebView."
 );
 
