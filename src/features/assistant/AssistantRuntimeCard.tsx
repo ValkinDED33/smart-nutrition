@@ -132,7 +132,7 @@ const cardCopy = {
   uk: {
     title: "AI-помічник на зміні",
     subtitle:
-      "Один і той самий помічник читає контекст дня, пам'ятає домовленості, пояснює їжу, воду, ліки, тиск і наступну дію через backend-дані.",
+      "Один і той самий помічник читає контекст дня, дає харчовому аналізу реальні дані, пам'ятає домовленості, пояснює їжу, воду, ліки, тиск і наступну дію через backend-дані.",
     inputLabel: "Поставте швидке питання",
     inputPlaceholder: "Наприклад: що мені краще зробити далі сьогодні?",
     ask: "Запитати",
@@ -158,7 +158,7 @@ const cardCopy = {
   pl: {
     title: "AI asystent na zmianie",
     subtitle:
-      "Ten sam asystent czyta kontekst dnia, pamięta ustalenia i prowadzi jedzenie, wodę, leki, ciśnienie oraz następny krok przez dane z backendu.",
+      "Ten sam asystent czyta kontekst dnia, daje kontekst dla analizy żywienia, pamięta ustalenia i prowadzi jedzenie, wodę, leki, ciśnienie oraz następny krok przez dane z backendu.",
     inputLabel: "Zadaj szybkie pytanie",
     inputPlaceholder: "Na przykład: co najlepiej zrobić dalej dzisiaj?",
     ask: "Zapytaj",

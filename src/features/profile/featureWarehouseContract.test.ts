@@ -261,6 +261,7 @@ describe("profile feature warehouse contract", () => {
       readSource("src/features/companion/CompanionProgressCard.tsx"),
       readSource("src/features/profile/AssistantCustomizationCard.tsx"),
       readSource("src/features/assistant/EcosystemPulse.tsx"),
+      readSource("src/features/assistant/assistantWorkerTools.json"),
     ].join("\n");
 
     expect(source).toContain("Розвиток помічника");

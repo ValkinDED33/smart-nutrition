@@ -15,6 +15,7 @@ describe("Smart Nutrition visual system coverage", () => {
       recipesPage,
       ecosystemPulse,
       companionPage,
+      assistantWorkerTools,
     ] = await Promise.all([
       readSource("../../pages/AiCompanionPage.tsx"),
       readSource("../../pages/CommunityPage.tsx"),
@@ -24,6 +25,7 @@ describe("Smart Nutrition visual system coverage", () => {
       readSource("../../pages/RecipesPage.tsx"),
       readSource("../../features/assistant/EcosystemPulse.tsx"),
       readSource("../../pages/AiCompanionPage.tsx"),
+      readSource("../../features/assistant/assistantWorkerTools.json"),
     ]);
 
     expect(assistantPage).toContain('assistantHint={<EcosystemPulse focus="assistant" />}');
@@ -37,9 +39,11 @@ describe("Smart Nutrition visual system coverage", () => {
     expect(ecosystemPulse).toContain("state.water");
     expect(ecosystemPulse).toContain('data-ai-worker-pulse="true"');
     expect(ecosystemPulse).toContain('data-ai-worker-pulse-tools="true"');
-    expect(ecosystemPulse).toContain("Telegram");
-    expect(ecosystemPulse).toContain("Health");
-    expect(ecosystemPulse).toContain("Family");
+    const ecosystemPulseContract = [ecosystemPulse, assistantWorkerTools].join("\n");
+
+    expect(ecosystemPulseContract).toContain("Telegram");
+    expect(ecosystemPulseContract).toContain("Health");
+    expect(ecosystemPulseContract).toContain("Family");
     expect(companionPage).toContain('className="sn-companion-panel"');
     expect(companionPage).toContain("var(--sn-on-companion-muted)");
   });
