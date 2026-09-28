@@ -164,6 +164,8 @@ const progressActionBarSource = readSource("src/features/profile/ProgressActionB
 const womenHealthOverviewCardSource = readSource(
   "src/features/profile/WomenHealthOverviewCard.tsx"
 );
+const womenHealthPageSource = readSource("src/pages/WomenHealthPage.tsx");
+const womenHealthEntrySource = readSource("src/features/profile/WomenHealthEntryCard.tsx");
 const syncFeedbackAlertSource = readSource("src/widgets/SyncFeedbackAlert.tsx");
 const syncStatusChipSource = readSource("src/widgets/SyncStatusChip.tsx");
 const habitReminderAgentSource = readSource("src/widgets/HabitReminderAgent.tsx");
@@ -257,7 +259,6 @@ const errorRecoverySource = readSource("src/shared/lib/errorRecovery.ts");
 const clientErrorReportingSource = readSource("src/app/runtime/clientErrorReporting.ts");
 const serviceWorkerSource = readSource("public/sw.js");
 const companionAvatarSource = readSource("src/features/assistant-3d/components/CompanionAvatar.tsx");
-const companionCanvasSource = readSource("src/features/assistant-3d/components/CompanionCanvas.tsx");
 const companionAvatarModelSource = readSource("src/features/assistant-3d/components/companionAvatarModel.ts");
 const bundleAuditSource = readSource("server/scripts/audit-vite-bundle.mjs");
 const liveAuditSource = readSource("server/scripts/audit-live-production.mjs");
@@ -2715,12 +2716,16 @@ addCheck(
     profilePageSource.includes("hasActivePregnancyPartnerLink(profile.partnerSharing)") &&
     homePageSource.includes("hasActivePregnancyPartnerLink(partnerSharing)") &&
     homePageSource.includes("canSeeWomenHealthCenter") &&
+    womenHealthPageSource.includes("WomenHealthOverviewCard") &&
+    womenHealthEntrySource.includes('const WOMEN_HEALTH_ROUTE = "/women-health"') &&
+    womenHealthEntrySource.includes('data-women-health-entry-card="true"') &&
     womenHealthOverviewCardSource.includes("hasWomenHealthContext(womenHealth)") &&
     womenHealthOverviewCardSource.includes("isWomenHealthVisibleForGender(user?.gender) ||") &&
     profilePageSource.includes('id: "women-health"') &&
     profilePageSource.includes("copy.tabs.womenHealth") &&
-    profilePageSource.includes("<WomenHealthOverviewCard />"),
-  "Female accounts, accounts with canonical women-health profile context, and connected pregnancy partners must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class profile section, not as hidden data-tab content or a stale auth-gender casualty."
+    profilePageSource.includes("<WomenHealthEntryCard />") &&
+    !profilePageSource.includes("<WomenHealthOverviewCard />"),
+  "Female accounts, accounts with canonical women-health profile context, and connected pregnancy partners must see pregnancy, children/family preview, postpartum, cycle, symptom, and partner-sharing context as a first-class dedicated center with a compact profile entry, not hidden data-tab content, a long profile drawer, or a stale auth-gender casualty."
 );
 
 addCheck(
@@ -2811,31 +2816,15 @@ addCheck(
 );
 
 addCheck(
-  "3d companion stays lazy and disabled on constrained mobile devices",
-  companionAvatarSource.includes("const CompanionCanvas = lazy(") &&
-    companionAvatarSource.includes("defer3dUntilVisible = true") &&
-    companionAvatarSource.includes("IntersectionObserver") &&
-    companionAvatarSource.includes("prefersReducedMotion") &&
-    companionAvatarSource.includes("saveData") &&
-    companionAvatarSource.includes("lowPowerDevice") &&
-    companionAvatarModelSource.includes("isMobileViewport") &&
-    companionAvatarModelSource.includes("prefersReducedMotion") &&
-    companionAvatarModelSource.includes("saveData") &&
-    companionAvatarModelSource.includes("lowPowerDevice") &&
-    companionAvatarModelSource.includes("return false"),
-  "3D companion must not load heavy WebGL on mobile, reduced-motion, save-data, low-power, or unsupported devices."
-);
-
-addCheck(
-  "3d companion visibly earns its lazy vendor weight",
-  companionCanvasSource.includes("CompanionAuraField") &&
-    companionCanvasSource.includes("companionSignalNodes") &&
-    companionCanvasSource.includes('name="companion-3d-living-aura"') &&
-    companionCanvasSource.includes("torusGeometry") &&
-    companionCanvasSource.includes("pointLight") &&
-    companionCanvasSource.includes("useFrame") &&
-    companionCanvasSource.includes("active ? 0.82 : 0.58"),
-  "Lazy 3D companion code must produce a visibly richer living scene, not a heavy WebGL chunk that looks like the 2D avatar."
+  "canonical companion uses the shared full-body assistant avatar",
+  companionAvatarSource.includes("@shared/components/AssistantAvatar") &&
+    companionAvatarSource.includes("CompanionFallback2D") &&
+    companionAvatarSource.includes("<CompanionFallback2D {...props} />") &&
+    !companionAvatarSource.includes("CompanionCanvas") &&
+    !companionAvatarSource.includes("lazy(") &&
+    !companionAvatarSource.includes("Suspense") &&
+    companionAvatarModelSource.includes("=> false"),
+  "Assistant surfaces must use the canonical shared full-body avatar and must not silently fall back to the old WebGL canvas path."
 );
 
 addCheck(

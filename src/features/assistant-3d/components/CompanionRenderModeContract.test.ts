@@ -16,14 +16,14 @@ describe("explicit 3D companion surface contract", () => {
     ).toBe(false);
   });
 
-  it("allows explicit 3D when the desktop-class device supports it", () => {
+  it("does not let explicit 3D replace the unified production assistant", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
         renderMode: "3d",
         size: 220,
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("does not let explicit 3D preference bypass mobile and low-power runtime guards", () => {
@@ -46,12 +46,11 @@ describe("explicit 3D companion surface contract", () => {
     ).toBe(false);
   });
 
-  it("keeps explicit 3D surfaces user-controlled with local fallback and error recovery", async () => {
+  it("keeps the assistant page on the unified avatar path instead of exposing renderer controls", async () => {
     const sources = await Promise.all([readSource("../../../pages/AiCompanionPage.tsx")]);
 
     sources.forEach((source) => {
       expect(source).toContain("useCompanionRenderModePreference");
-      expect(source).toContain("CompanionRenderModeControl");
       expect(source).toContain("Companion3DLoadingFallback");
       expect(source).toContain("on3dLoadError");
       expect(source).toContain("Як помічник з'являється");
@@ -60,6 +59,7 @@ describe("explicit 3D companion surface contract", () => {
       expect(source).toContain("Ефектно");
       expect(source).toContain("Efektownie");
       expect(source).toContain("Expressive");
+      expect(source).not.toContain("CompanionRenderModeControl");
       expect(source).not.toContain('renderMode="3d"');
       expect(source).not.toContain('useState<CompanionRenderModeValue>("2d")');
       expect(source).not.toMatch(
@@ -105,15 +105,13 @@ describe("explicit 3D companion surface contract", () => {
     expect(source).not.toContain("sessionStorage");
   });
 
-  it("makes the lazy 3D chunk visibly earn its weight with a living scene", async () => {
-    const source = await readSource("CompanionCanvas.tsx");
+  it("keeps the legacy 3D canvas out of the canonical companion avatar path", async () => {
+    const source = await readSource("CompanionAvatar.tsx");
 
-    expect(source).toContain("CompanionAuraField");
-    expect(source).toContain("companionSignalNodes");
-    expect(source).toContain('name="companion-3d-living-aura"');
-    expect(source).toContain("torusGeometry");
-    expect(source).toContain("pointLight");
-    expect(source).toContain("useFrame");
-    expect(source).toContain("active ? 0.82 : 0.58");
+    expect(source).toContain("CompanionFallback2D");
+    expect(source).toContain("@shared/components/AssistantAvatar");
+    expect(source).not.toContain("CompanionCanvas");
+    expect(source).not.toContain("lazy(");
+    expect(source).not.toContain("Suspense");
   });
 });

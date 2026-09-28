@@ -39,7 +39,6 @@ import { getAssistantRuntimeStatus } from "@shared/api/assistant";
 import {
   Companion3DLoadingFallback,
   CompanionAvatar as AssistantAvatar,
-  CompanionRenderModeControl,
 } from "@features/assistant-3d";
 import { useLanguage } from "../shared/language";
 import {
@@ -1791,21 +1790,6 @@ const AiCompanionPage = () => {
           ) : (
             <Alert severity="warning">{copy.cloudUnavailable}</Alert>
           )}
-          <CompanionRenderModeControl
-            value={companionRenderModePreference.value}
-            onChange={companionRenderModePreference.changeRenderMode}
-            loading={companionRenderModePreference.saving}
-            error={companionRenderModePreference.hasError}
-            disabled={companionRenderModePreference.saving}
-            labels={{
-              title: copy.renderModeTitle,
-              twoD: copy.renderMode2d,
-              threeD: copy.renderMode3d,
-              hint: copy.renderModeHint,
-              loading: copy.renderModeLoading,
-              error: copy.renderModeError,
-            }}
-          />
         </Stack>
       </Paper>
           <LazyModuleBoundary
