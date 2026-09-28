@@ -245,7 +245,7 @@ describe("Smart Nutrition visual system contract", () => {
     expect(globalAssistant).toContain('data-global-assistant-command={command.route}');
     expect(globalAssistant).toContain("/meals?mode=barcode");
     expect(globalAssistant).toContain("/meals?mode=photo");
-    expect(globalAssistant).toContain("/profile#women-health");
+    expect(globalAssistant).toContain("/women-health");
     expect(globalAssistant).toContain("useAssistantPointerLookOffset");
     expect(globalAssistant).toContain('data-global-ai-worker-roaming="true"');
     expect(globalAssistant).toContain('data-global-ai-worker-task-node="true"');

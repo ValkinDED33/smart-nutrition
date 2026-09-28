@@ -48,6 +48,9 @@ import type { CommunityMemberStatus, UserRole } from "@domain/user/types";
 import type { AppLanguage } from "@shared/types/i18n";
 import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import { CompanionShopEntryCard } from "@features/profile/CompanionShopEntryCard";
+import { ReminderCenterEntryCard } from "@features/profile/ReminderCenterEntryCard";
+import { WomenHealthEntryCard } from "@features/profile/WomenHealthEntryCard";
 import {
   hasWomenHealthContext,
   isWomenHealthVisibleForGender,
@@ -87,9 +90,6 @@ const AdaptiveGoalCard = lazy(() =>
     default: module.AdaptiveGoalCard,
   }))
 );
-const WomenHealthOverviewCard = lazy(() =>
-  import("../features/profile/WomenHealthOverviewCard")
-);
 const MealDayOverview = lazy(() =>
   import("../features/meal/MealDayOverview").then((module) => ({
     default: module.MealDayOverview,
@@ -103,7 +103,6 @@ const DailyHistoryExplorer = lazy(() =>
 const AssistantCustomizationCard = lazy(
   () => import("../features/profile/AssistantCustomizationCard")
 );
-const CompanionShopCard = lazy(() => import("../features/profile/CompanionShopCard"));
 const CommunityHubCard = lazy(() =>
   import("../features/community/CommunityHubCard").then((module) => ({
     default: module.CommunityHubCard,
@@ -122,9 +121,6 @@ const NotificationSettingsCard = lazy(() =>
   import("../features/profile/NotificationSettingsCard").then((module) => ({
     default: module.NotificationSettingsCard,
   }))
-);
-const ReminderManagementCard = lazy(
-  () => import("../features/profile/ReminderManagementCard")
 );
 const TelegramConnectionCard = lazy(
   () => import("../features/profile/TelegramConnectionCard")
@@ -900,7 +896,7 @@ const ProfilePage = () => {
                       bgcolor: "rgba(20,184,166,0.14)",
                     }}
                   >
-                    <HeartPulse size={20} aria-hidden="true" />
+                    <UserRound size={20} aria-hidden="true" />
                   </Box>
                   <Box minWidth={0}>
                     <Typography
@@ -919,7 +915,7 @@ const ProfilePage = () => {
                 </Stack>
                 <Button
                   component={RouterLink}
-                  to="/profile#women-health"
+                  to="/women-health"
                   variant="contained"
                   endIcon={<ArrowRight size={16} aria-hidden="true" />}
                   sx={{
@@ -1306,12 +1302,7 @@ const ProfilePage = () => {
                 {
                   id: "women-health",
                   label: copy.tabs.womenHealth,
-                  content: renderLazySection(
-                    "women-health",
-                    copy.tabs.womenHealth,
-                    <LoadingSkeleton cards={3} chart bodyRows={3} />,
-                    <WomenHealthOverviewCard />
-                  ),
+                  content: <WomenHealthEntryCard />,
                 },
               ]
             : []),
@@ -1324,7 +1315,7 @@ const ProfilePage = () => {
                 copy.tabs.assistant,
                 <LoadingSkeleton cards={3} bodyRows={3} />,
                 <Stack spacing={3}>
-                  <CompanionShopCard />
+                  <CompanionShopEntryCard />
                   <AssistantCustomizationCard />
                   <CommunityHubCard />
                 </Stack>
@@ -1358,7 +1349,7 @@ const ProfilePage = () => {
                 <Stack spacing={3}>
                   <NotificationSettingsCard />
                   <SupplementRecommendationCard />
-                  <ReminderManagementCard />
+                  <ReminderCenterEntryCard />
                   {canSeeOperationalDetails && <CloudSyncStatusCard />}
                   <AccountDataCard />
                   {canSeeOperationalDetails && <AdminCenterCard />}

@@ -115,7 +115,7 @@ const CommunityPage = () => {
       description: blueprintCopy.familyDescription,
       icon: HeartHandshake,
       accent: "#fb7185",
-      onClick: () => navigate("/profile#women-health"),
+      onClick: () => navigate("/women-health"),
     },
     {
       key: "community",
@@ -147,7 +147,7 @@ const CommunityPage = () => {
       description: blueprintCopy.pregnancyDescription,
       icon: Baby,
       accent: "#f59e0b",
-      onClick: () => navigate("/profile#women-health"),
+      onClick: () => navigate("/women-health"),
     },
     {
       key: "discovery",

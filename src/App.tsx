@@ -32,6 +32,9 @@ const loadMealsPage = () => import("./pages/MealsPage");
 const loadRecipesPage = () => import("./pages/RecipesPage");
 const loadCommunityPage = () => import("./pages/CommunityPage");
 const loadCoachPage = () => import("./pages/CoachPage");
+const loadCompanionShopPage = () => import("./pages/CompanionShopPage");
+const loadWomenHealthPage = () => import("./pages/WomenHealthPage");
+const loadRemindersPage = () => import("./pages/RemindersPage");
 const loadProfilePage = () => import("./pages/ProfilePage");
 const loadAdminPage = () => import("./pages/AdminPage");
 const loadProgressPage = () => import("./pages/ProgressPage");
@@ -51,6 +54,9 @@ const MealsPage = lazy(loadMealsPage);
 const RecipesPage = lazy(loadRecipesPage);
 const CommunityPage = lazy(loadCommunityPage);
 const CoachPage = lazy(loadCoachPage);
+const CompanionShopPage = lazy(loadCompanionShopPage);
+const WomenHealthPage = lazy(loadWomenHealthPage);
+const RemindersPage = lazy(loadRemindersPage);
 const ProfilePage = lazy(loadProfilePage);
 const AdminPage = lazy(loadAdminPage);
 const ProgressPage = lazy(loadProgressPage);
@@ -128,6 +134,9 @@ function App() {
       loadMealsPage,
       loadProgressPage,
       loadCoachPage,
+      loadCompanionShopPage,
+      loadWomenHealthPage,
+      loadRemindersPage,
       loadRecipesPage,
       loadCommunityPage,
       loadProfilePage,
@@ -339,6 +348,42 @@ function App() {
                       <Navigate to={ONBOARDING_ENTRY_PATH} replace />
                     ) : (
                       <CoachPage />
+                    )}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/assistant/shop"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? (
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
+                    ) : (
+                      <CompanionShopPage />
+                    )}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/women-health"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? (
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
+                    ) : (
+                      <WomenHealthPage />
+                    )}
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reminders"
+                element={
+                  <ProtectedRoute>
+                    {shouldShowOnboarding ? (
+                      <Navigate to={ONBOARDING_ENTRY_PATH} replace />
+                    ) : (
+                      <RemindersPage />
                     )}
                   </ProtectedRoute>
                 }

@@ -30,7 +30,7 @@ export const desktopNavigationItems: AppNavigationItem[] = [
   { value: "/recipes", labelKey: "navigation.recipes", access: "authenticated" },
   { value: "/coach", labelKey: "navigation.coach", access: "authenticated" },
   {
-    value: "/profile#women-health",
+    value: "/women-health",
     labelKey: "navigation.womenHealth",
     access: "womenHealth",
   },
@@ -60,7 +60,7 @@ export const mobileNavigationItems: AppNavigationItem[] = [
     icon: Bot,
   },
   {
-    value: "/profile#women-health",
+    value: "/women-health",
     labelKey: "navigation.womenHealth",
     access: "womenHealth",
     icon: Baby,

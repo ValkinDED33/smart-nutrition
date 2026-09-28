@@ -123,26 +123,59 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain("Available later");
   });
 
-  it("keeps the companion studio visible as the canonical assistant appearance surface", () => {
+  it("keeps the companion shop as a dedicated route instead of a long inline drawer", () => {
+    const appSource = readSource("src/App.tsx");
     const coachSource = readSource("src/pages/AiCompanionPage.tsx");
     const profileSource = readSource("src/pages/ProfilePage.tsx");
+    const shopPageSource = readSource("src/pages/CompanionShopPage.tsx");
+    const shopEntrySource = readSource("src/features/profile/CompanionShopEntryCard.tsx");
     const onboardingSource = readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
     const onboardingTypesSource = readSource("src/pages/onboarding/types.ts");
-    const profileShopIndex = profileSource.indexOf("<CompanionShopCard />");
-    const profileSettingsIndex = profileSource.indexOf("<AssistantCustomizationCard />");
 
-    expect(coachSource).toContain(
-      'const CompanionShopCard = lazy(() => import("../features/profile/CompanionShopCard"))'
-    );
+    expect(appSource).toContain('path="/assistant/shop"');
+    expect(appSource).toContain("<CompanionShopPage />");
+    expect(shopPageSource).toContain("CompanionShopCard");
+    expect(shopEntrySource).toContain('const SHOP_ROUTE = "/assistant/shop"');
+    expect(shopEntrySource).toContain('data-companion-shop-entry="true"');
     expect(coachSource).toContain('resetKey="ai-companion:shop"');
-    expect(coachSource).toContain("<CompanionShopCard />");
-    expect(profileShopIndex).toBeGreaterThanOrEqual(0);
-    expect(profileSettingsIndex).toBeGreaterThanOrEqual(0);
-    expect(profileShopIndex).toBeLessThan(profileSettingsIndex);
+    expect(coachSource).toContain("<CompanionShopEntryCard />");
+    expect(profileSource).toContain("<CompanionShopEntryCard />");
+    expect(coachSource).not.toContain("<CompanionShopCard />");
+    expect(profileSource).not.toContain("<CompanionShopCard />");
     expect(onboardingSource).toContain("companionShopCatalog");
     expect(onboardingSource).toContain("freeAssistantAvatarItems");
     expect(onboardingSource).toContain("item.price === 0");
     expect(onboardingTypesSource).not.toContain("assistantAvatarOptions");
+  });
+
+  it("keeps large profile feature centers on dedicated mobile-safe routes", () => {
+    const appSource = readSource("src/App.tsx");
+    const profileSource = readSource("src/pages/ProfilePage.tsx");
+    const womenHealthPageSource = readSource("src/pages/WomenHealthPage.tsx");
+    const remindersPageSource = readSource("src/pages/RemindersPage.tsx");
+    const womenHealthEntrySource = readSource("src/features/profile/WomenHealthEntryCard.tsx");
+    const reminderEntrySource = readSource("src/features/profile/ReminderCenterEntryCard.tsx");
+    const homeSource = readSource("src/pages/HomePage.tsx");
+    const navigationSource = readSource("src/app/navigation/appNavigation.ts");
+
+    expect(appSource).toContain('path="/women-health"');
+    expect(appSource).toContain("<WomenHealthPage />");
+    expect(appSource).toContain('path="/reminders"');
+    expect(appSource).toContain("<RemindersPage />");
+    expect(womenHealthPageSource).toContain("WomenHealthOverviewCard");
+    expect(remindersPageSource).toContain("ReminderManagementCard");
+    expect(womenHealthEntrySource).toContain('const WOMEN_HEALTH_ROUTE = "/women-health"');
+    expect(womenHealthEntrySource).toContain('data-women-health-entry-card="true"');
+    expect(reminderEntrySource).toContain('const REMINDERS_ROUTE = "/reminders"');
+    expect(reminderEntrySource).toContain('data-reminder-center-entry="true"');
+    expect(profileSource).toContain("<WomenHealthEntryCard />");
+    expect(profileSource).toContain("<ReminderCenterEntryCard />");
+    expect(profileSource).not.toContain("<WomenHealthOverviewCard />");
+    expect(profileSource).not.toContain("<ReminderManagementCard />");
+    expect(homeSource).toContain('const WOMEN_HEALTH_ROUTE = "/women-health"');
+    expect(homeSource).toContain('const REMINDERS_ROUTE = "/reminders"');
+    expect(navigationSource).toContain('value: "/women-health"');
+    expect(navigationSource).not.toContain('value: "/profile#women-health"');
   });
 
   it("does not let women-health competitor branding become product direction", () => {

@@ -84,7 +84,8 @@ const RECIPES_ROUTE = "/recipes";
 const PROGRESS_ROUTE = "/progress";
 const COMMUNITY_ROUTE = "/community";
 const PROFILE_ROUTE = "/profile";
-const WOMEN_HEALTH_ROUTE = "/profile#women-health";
+const WOMEN_HEALTH_ROUTE = "/women-health";
+const REMINDERS_ROUTE = "/reminders";
 const PROFILE_SECURITY_ROUTE = "/profile#security";
 const HERO_STORY_ACCENT = {
   food: "#0f766e",
@@ -623,7 +624,7 @@ const HomePage = () => {
       description: copy.blueprintPatternDescriptions.drag,
       icon: ClipboardList,
       accent: "#ef4444",
-      onClick: () => navigate(PROFILE_SECURITY_ROUTE),
+      onClick: () => navigate(REMINDERS_ROUTE),
     },
     {
       key: "context",
@@ -645,8 +646,8 @@ const HomePage = () => {
       ? [{ label: copy.womenHealth, icon: Baby, path: WOMEN_HEALTH_ROUTE }]
       : []),
     { label: copy.family, icon: UsersRound, path: familyRoute },
-    { label: copy.tasks, icon: ClipboardList, path: PROFILE_SECURITY_ROUTE },
-    { label: copy.reminders, icon: CalendarCheck, path: PROFILE_SECURITY_ROUTE },
+    { label: copy.tasks, icon: ClipboardList, path: REMINDERS_ROUTE },
+    { label: copy.reminders, icon: CalendarCheck, path: REMINDERS_ROUTE },
     { label: copy.sections.assistant, icon: Sparkles, path: "/coach" },
     { label: copy.settings, icon: ShieldCheck, path: PROFILE_SECURITY_ROUTE },
   ];

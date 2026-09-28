@@ -60,6 +60,18 @@ const shopCopy = {
     preview: "Живий попередній перегляд",
     previewHint: "Наведи або вибери образ, щоб побачити, як він поводиться.",
     currentSelection: "Зараз у фокусі",
+    studioNav: {
+      skins: "Скіни",
+      name: "Ім'я та стиль",
+      voice: "Голос",
+      personality: "Особистість",
+      greeting: "Привітання",
+      motion: "Анімації",
+      themes: "Теми",
+      premium: "Преміум-скіни",
+      helpTitle: "Як це працює?",
+      helpBody: "Образ змінює зовнішність, але мозок, пам'ять і всі інструменти залишаються тими самими.",
+    },
     toolBeltTitle: "Інструменти твого помічника",
     toolBeltSubtitle:
       "Скін не урізає можливості. Помічник усе одно працює з планами, водою, їжею, здоров'ям, сім'єю й нагадуваннями.",
@@ -77,6 +89,7 @@ const shopCopy = {
     saveError: "Не вдалося зберегти образ у хмарі. Спробуйте ще раз.",
     coins: "монет",
     profileLook: "Образ із профілю",
+    freePrice: "безкоштовно",
     renderModeLoading: "Готую образ",
     filters: {
       all: "Усі",
@@ -115,6 +128,18 @@ const shopCopy = {
     preview: "Żywy podgląd",
     previewHint: "Najedź albo wybierz wygląd, żeby zobaczyć, jak się zachowuje.",
     currentSelection: "Teraz w fokusie",
+    studioNav: {
+      skins: "Skiny",
+      name: "Imię i styl",
+      voice: "Głos",
+      personality: "Osobowość",
+      greeting: "Powitanie",
+      motion: "Animacje",
+      themes: "Motywy",
+      premium: "Skiny premium",
+      helpTitle: "Jak to działa?",
+      helpBody: "Wygląd zmienia postać, ale mózg, pamięć i wszystkie narzędzia zostają te same.",
+    },
     toolBeltTitle: "Narzędzia twojego asystenta",
     toolBeltSubtitle:
       "Skin nie ogranicza możliwości. Asystent nadal pracuje z planami, wodą, jedzeniem, zdrowiem, rodziną i przypomnieniami.",
@@ -132,6 +157,7 @@ const shopCopy = {
     saveError: "Nie udało się zapisać wyglądu w chmurze. Spróbuj ponownie.",
     coins: "monet",
     profileLook: "Wygląd z profilu",
+    freePrice: "za darmo",
     renderModeLoading: "Przygotowuję wygląd",
     filters: {
       all: "Wszystkie",
@@ -170,6 +196,18 @@ const shopCopy = {
     preview: "Live preview",
     previewHint: "Hover or select a look to see how it behaves.",
     currentSelection: "Now in focus",
+    studioNav: {
+      skins: "Skins",
+      name: "Name and style",
+      voice: "Voice",
+      personality: "Personality",
+      greeting: "Greeting",
+      motion: "Animations",
+      themes: "Themes",
+      premium: "Premium skins",
+      helpTitle: "How it works",
+      helpBody: "The look changes appearance, while brain, memory, and every tool stay the same.",
+    },
     toolBeltTitle: "Your assistant tools",
     toolBeltSubtitle:
       "The skin never limits capability. The assistant still works with plans, water, food, health, family, and reminders.",
@@ -187,6 +225,7 @@ const shopCopy = {
     saveError: "Could not save the look to cloud. Try again.",
     coins: "coins",
     profileLook: "Profile look",
+    freePrice: "free",
     renderModeLoading: "Preparing look",
     filters: {
       all: "All",
@@ -426,7 +465,9 @@ const CompanionShopCard = () => {
     : false;
   const focusedPreviewLocked =
     Boolean(focusedPreview?.available) && !focusedPreviewOwned && !focusedPreviewCanBuy;
-  const focusedPreviewActionLabel = focusedPreviewOwned ? copy.choose : copy.buyAndChoose;
+  const focusedPreviewIsFree = (focusedPreview?.price ?? 0) === 0;
+  const focusedPreviewActionLabel =
+    focusedPreviewOwned || focusedPreviewIsFree ? copy.choose : copy.buyAndChoose;
   const focusedPreviewStatus = focusedPreviewEquipped
     ? copy.equipped
     : focusedPreviewOwned
@@ -540,11 +581,106 @@ const CompanionShopCard = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "minmax(340px, 0.92fr) minmax(0, 1.08fr)" },
+            gridTemplateColumns: {
+              xs: "1fr",
+              lg: "190px minmax(420px, 0.98fr) minmax(430px, 1.02fr)",
+            },
             gap: 2,
             alignItems: "stretch",
           }}
         >
+          <Paper
+            variant="outlined"
+            data-companion-shop-studio-nav="true"
+            sx={{
+              p: 1.25,
+              borderRadius: 1,
+              borderColor: "rgba(139, 92, 246, 0.28)",
+              color: "inherit",
+              background:
+                "linear-gradient(160deg, rgba(17,24,39,0.84), rgba(15,23,42,0.52))",
+              display: { xs: "none", lg: "block" },
+            }}
+          >
+            <Stack spacing={1}>
+              {[
+                { key: "skins", Icon: Sparkles },
+                { key: "name", Icon: MessageCircle },
+                { key: "voice", Icon: Bell },
+                { key: "personality", Icon: HeartPulse },
+                { key: "greeting", Icon: MessageCircle },
+                { key: "motion", Icon: Activity },
+                { key: "themes", Icon: Droplets },
+              ].map(({ key, Icon }, index) => (
+                <Box
+                  key={key}
+                  sx={{
+                    px: 1.15,
+                    py: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    borderRadius: 1,
+                    border:
+                      index === 0
+                        ? "1px solid rgba(168,85,247,0.58)"
+                        : "1px solid transparent",
+                    color: index === 0 ? "#d8b4fe" : "rgba(229,249,255,0.74)",
+                    background:
+                      index === 0
+                        ? "linear-gradient(90deg, rgba(88,28,135,0.52), rgba(14,165,233,0.08))"
+                        : "transparent",
+                  }}
+                >
+                  <Icon size={17} />
+                  <Typography variant="body2" sx={{ fontWeight: 900 }}>
+                    {copy.studioNav[key as keyof typeof copy.studioNav]}
+                  </Typography>
+                </Box>
+              ))}
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 1.25,
+                  borderRadius: 1,
+                  border: "1px solid rgba(251,191,36,0.24)",
+                  background: "rgba(251,191,36,0.08)",
+                }}
+              >
+                <Stack spacing={0.8}>
+                  <Stack direction="row" spacing={0.8} alignItems="center">
+                    <Sparkles size={17} color="#facc15" />
+                    <Typography variant="body2" sx={{ fontWeight: 950 }}>
+                      {copy.studioNav.premium}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ color: "rgba(229,249,255,0.65)" }}>
+                    {copy.collectibleLooks}
+                  </Typography>
+                </Stack>
+              </Box>
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 1.25,
+                  borderRadius: 1,
+                  border: "1px solid rgba(34,211,238,0.2)",
+                  background: "rgba(34,211,238,0.06)",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 950 }}>
+                  {copy.studioNav.helpTitle}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "rgba(229,249,255,0.64)", lineHeight: 1.35 }}
+                >
+                  {copy.studioNav.helpBody}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
           <Paper
             variant="outlined"
             sx={{
@@ -635,6 +771,7 @@ const CompanionShopCard = () => {
                   const isEquipped = isCompanionItemEquipped(companion, item.id);
                   const canBuy = canPurchaseCompanionItem(companion, item);
                   const isLocked = item.available && !isOwned && !canBuy;
+                  const isFree = item.price === 0;
                   const isFocused = focusedPreview?.id === item.id;
                   const statusLabel = isEquipped
                     ? copy.equipped
@@ -643,7 +780,8 @@ const CompanionShopCard = () => {
                       : isLocked
                         ? copy.locked
                         : copy.available;
-                  const actionLabel = isOwned ? copy.choose : copy.buyAndChoose;
+                  const actionLabel = isOwned || isFree ? copy.choose : copy.buyAndChoose;
+                  const priceLabel = isFree ? copy.freePrice : `${item.price} ${copy.coins}`;
                   const isSaving = savingItemId === item.id;
                   const buttonDisabled = savingItemId !== null || isEquipped || isLocked;
 
@@ -734,7 +872,7 @@ const CompanionShopCard = () => {
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Typography sx={{ fontWeight: 950, color: "#a7f3d0" }}>
-                            {`${item.price} ${copy.coins}`}
+                            {priceLabel}
                           </Typography>
                           <Button
                             size="small"
@@ -999,7 +1137,9 @@ const CompanionShopCard = () => {
                         {copy.tryInChat}
                       </Button>
                       <Typography sx={{ ml: { sm: "auto" }, fontWeight: 950, color: "#a7f3d0" }}>
-                        {`${focusedPreview.price} ${copy.coins}`}
+                        {focusedPreview.price === 0
+                          ? copy.freePrice
+                          : `${focusedPreview.price} ${copy.coins}`}
                       </Typography>
                     </Stack>
                   ) : null}

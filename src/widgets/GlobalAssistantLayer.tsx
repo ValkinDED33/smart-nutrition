@@ -59,7 +59,7 @@ const ROUTE_DASHBOARD = "/dashboard";
 const ROUTE_MEALS_SCANNER = "/meals?mode=barcode";
 const ROUTE_MEALS_PHOTO = "/meals?mode=photo";
 const ROUTE_COACH = "/coach";
-const ROUTE_WOMEN_HEALTH = "/profile#women-health";
+const ROUTE_WOMEN_HEALTH = "/women-health";
 const ROUTE_PROGRESS = "/progress";
 
 const getGlobalAssistantToolIcon = (toolId: AssistantWorkerToolId) => {

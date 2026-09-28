@@ -2,10 +2,11 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 const readSource = (path: string) => readFile(path, "utf8");
+const PROFILE_PAGE_SOURCE_PATH = "src/pages/ProfilePage.tsx";
 
 describe("ProfilePage contract", () => {
   it("keeps visible role labels localized instead of exposing internal role enums", async () => {
-    const source = await readSource("src/pages/ProfilePage.tsx");
+    const source = await readSource(PROFILE_PAGE_SOURCE_PATH);
     const localizedRoleCopy = source.slice(
       source.indexOf("const roleLabels = {"),
       source.indexOf("  en: {")
@@ -23,17 +24,25 @@ describe("ProfilePage contract", () => {
     expect(localizedRoleCopy).not.toContain("OWNER_ROLE_LABEL");
   });
 
-  it("keeps women health as a visible profile section for female accounts", async () => {
-    const source = await readSource("src/pages/ProfilePage.tsx");
+  it("keeps women health as a visible profile entrypoint for female accounts", async () => {
+    const source = await readSource(PROFILE_PAGE_SOURCE_PATH);
 
     expect(source).toContain("const canSeeWomenHealthSection");
     expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
     expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
     expect(source).toContain('data-women-health-entrypoint="true"');
-    expect(source).toContain('to="/profile#women-health"');
+    expect(source).toContain('to="/women-health"');
     expect(source).toContain("copy.womenHealthEntryAction");
     expect(source).toContain('id: "women-health"');
     expect(source).toContain("label: copy.tabs.womenHealth");
-    expect(source).toContain("<WomenHealthOverviewCard />");
+    expect(source).toContain("<WomenHealthEntryCard />");
+    expect(source).not.toContain("<WomenHealthOverviewCard />");
+  });
+
+  it("keeps reminders as a compact profile entrypoint instead of a long settings drawer", async () => {
+    const source = await readSource(PROFILE_PAGE_SOURCE_PATH);
+
+    expect(source).toContain("<ReminderCenterEntryCard />");
+    expect(source).not.toContain("<ReminderManagementCard />");
   });
 });

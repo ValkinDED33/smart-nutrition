@@ -71,17 +71,22 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).not.toContain("localStorage");
   });
 
-  it("surfaces the women-health center through the existing profile shell", async () => {
-    const source = await readSource("src/pages/ProfilePage.tsx");
+  it("surfaces the women-health center through a dedicated route and compact profile entry", async () => {
+    const profileSource = await readSource("src/pages/ProfilePage.tsx");
+    const pageSource = await readSource("src/pages/WomenHealthPage.tsx");
+    const entrySource = await readSource("src/features/profile/WomenHealthEntryCard.tsx");
     const cardSource = await readSource(womenHealthCardPath);
 
-    expect(source).toContain("WomenHealthOverviewCard");
-    expect(source).toContain("../features/profile/WomenHealthOverviewCard");
-    expect(source).toContain("isWomenHealthVisibleForGender(user.gender)");
-    expect(source).toContain("hasWomenHealthContext(profile.womenHealth)");
-    expect(source).toContain("hasActivePregnancyPartnerLink(profile.partnerSharing)");
-    expect(source).toContain('id: "women-health"');
-    expect(source).toContain("copy.tabs.womenHealth");
+    expect(pageSource).toContain("WomenHealthOverviewCard");
+    expect(pageSource).toContain("../features/profile/WomenHealthOverviewCard");
+    expect(entrySource).toContain('const WOMEN_HEALTH_ROUTE = "/women-health"');
+    expect(profileSource).toContain("isWomenHealthVisibleForGender(user.gender)");
+    expect(profileSource).toContain("hasWomenHealthContext(profile.womenHealth)");
+    expect(profileSource).toContain("hasActivePregnancyPartnerLink(profile.partnerSharing)");
+    expect(profileSource).toContain('id: "women-health"');
+    expect(profileSource).toContain("copy.tabs.womenHealth");
+    expect(profileSource).toContain("<WomenHealthEntryCard />");
+    expect(profileSource).not.toContain("<WomenHealthOverviewCard />");
     expect(cardSource).toContain("hasWomenHealthContext(womenHealth)");
     expect(cardSource).toContain("isWomenHealthVisibleForGender(user?.gender) ||");
   });

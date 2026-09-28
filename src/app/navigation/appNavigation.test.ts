@@ -6,7 +6,7 @@ import {
   mobileNavigationItems,
 } from "./appNavigation";
 
-const WOMEN_HEALTH_ROUTE = "/profile#women-health";
+const WOMEN_HEALTH_ROUTE = "/women-health";
 
 describe("appNavigation", () => {
   it("keeps women-health navigation hidden until profile context allows it", () => {

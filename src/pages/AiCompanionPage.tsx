@@ -68,6 +68,7 @@ import {
   getAssistantWorkerToolText,
   type AssistantWorkerToolId,
 } from "@features/assistant/assistantManifest";
+import { CompanionShopEntryCard } from "@features/profile/CompanionShopEntryCard";
 
 const AssistantRuntimeCard = lazy(() =>
   import("../features/assistant/AssistantRuntimeCard").then((module) => ({
@@ -81,7 +82,6 @@ const SmartRecommendations = lazy(() =>
   }))
 );
 const CompanionProgressCard = lazy(() => import("../features/companion/CompanionProgressCard"));
-const CompanionShopCard = lazy(() => import("../features/profile/CompanionShopCard"));
 
 const AI_WORKER_EYEBROW = "Smart Nutrition AI worker";
 
@@ -1586,9 +1586,7 @@ const AiCompanionPage = () => {
             reloadLabel={recoveryCopy.reloadLabel}
             resetKey="ai-companion:shop"
           >
-            <Suspense fallback={<LoadingSkeleton cards={2} bodyRows={3} />}>
-              <CompanionShopCard />
-            </Suspense>
+            <CompanionShopEntryCard />
           </LazyModuleBoundary>
 
       {actionCards.length > 0 && (

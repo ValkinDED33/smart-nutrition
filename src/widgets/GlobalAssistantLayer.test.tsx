@@ -135,7 +135,7 @@ describe("GlobalAssistantLayer", () => {
     expect(source).toContain("HeartPulse");
     expect(source).toContain("/meals?mode=barcode");
     expect(source).toContain("/meals?mode=photo");
-    expect(source).toContain("/profile#women-health");
+    expect(source).toContain("/women-health");
   });
 
   it("lets public auth surfaces guide themselves and keeps the global layer unmounted on forms", () => {
