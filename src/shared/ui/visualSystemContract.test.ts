@@ -55,18 +55,21 @@ describe("Smart Nutrition visual system contract", () => {
   });
 
   it("keeps the assistant avatar living effects in the shared avatar component", async () => {
-    const [avatarSource, avatarPartsSource] = await Promise.all([
+    const [avatarSource, avatarPartsSource, avatarSkinBodySource] = await Promise.all([
       readSource("../components/AssistantAvatar.tsx"),
       readSource("../components/assistantAvatarParts.tsx"),
+      readSource("../components/assistantRobotSkinBody.tsx"),
     ]);
 
     expect(avatarSource).toContain("assistantAuraVariants");
     expect(avatarSource).toContain('data-assistant-avatar-living-aura="true"');
     expect(avatarSource).toContain('data-assistant-avatar-orbit="true"');
-    expect(avatarSource).toContain('data-assistant-avatar-robot-shell="true"');
-    expect(avatarSource).toContain('data-assistant-avatar-robot-headset="true"');
-    expect(avatarSource).toContain('data-assistant-avatar-robot-arms="true"');
-    expect(avatarSource).toContain('data-assistant-avatar-heart-core="true"');
+    expect(avatarSource).toContain('data-assistant-avatar-robot-fullbody="true"');
+    expect(avatarSource).toContain("RobotSkinBody");
+    expect(avatarSkinBodySource).toContain('data-assistant-avatar-robot-shell="true"');
+    expect(avatarSkinBodySource).toContain('data-assistant-avatar-robot-headset="true"');
+    expect(avatarSkinBodySource).toContain('data-assistant-avatar-robot-arms="true"');
+    expect(avatarSkinBodySource).toContain('data-assistant-avatar-heart-core="true"');
     expect(avatarPartsSource).toContain('data-assistant-avatar-robot-visor="true"');
     expect(avatarSource).toContain("isLetterCompanion(variant) && !isRobot");
     expect(avatarSource).toContain('mood === "concerned"');

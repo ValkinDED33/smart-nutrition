@@ -73,14 +73,25 @@ const isAssistantCompanionKind = (value) =>
   value === "robot_neon" ||
   value === "robot_nature" ||
   value === "robot_solar" ||
+  value === "robot_luna" ||
+  value === "robot_orion" ||
+  value === "robot_nova" ||
+  value === "robot_iris" ||
+  value === "robot_cosmos" ||
+  value === "robot_crystal" ||
+  value === "robot_cyber" ||
+  value === "robot_flame" ||
+  value === "robot_hologram" ||
   value === "cat" ||
   value === "dog" ||
+  value === "shiba" ||
   value === "fox" ||
   value === "panda" ||
   value === "owl" ||
   value === "human" ||
   value === "capybara" ||
   value === "dragon" ||
+  value === "baby_dragon" ||
   value === "raccoon" ||
   value === "corgi" ||
   value === "wolf" ||

@@ -93,6 +93,13 @@ const shopCopy = {
     renderModeLoading: "Готую образ",
     filters: {
       all: "Усі",
+      robot: "Роботи",
+      animal: "Тварини",
+      fantasy: "Фантазія",
+      nature: "Природа",
+      cosmos: "Космос",
+      minimal: "Мінімал",
+      premium: "Преміум",
     },
     rarity: {
       common: "Звичайний",
@@ -161,6 +168,13 @@ const shopCopy = {
     renderModeLoading: "Przygotowuję wygląd",
     filters: {
       all: "Wszystkie",
+      robot: "Roboty",
+      animal: "Zwierzęta",
+      fantasy: "Fantazja",
+      nature: "Natura",
+      cosmos: "Kosmos",
+      minimal: "Minimal",
+      premium: "Premium",
     },
     rarity: {
       common: "Zwykły",
@@ -229,6 +243,13 @@ const shopCopy = {
     renderModeLoading: "Preparing look",
     filters: {
       all: "All",
+      robot: "Robots",
+      animal: "Animals",
+      fantasy: "Fantasy",
+      nature: "Nature",
+      cosmos: "Cosmos",
+      minimal: "Minimal",
+      premium: "Premium",
     },
     rarity: {
       common: "Common",
@@ -252,7 +273,15 @@ const shopCopy = {
 } as const;
 
 type ShopCopy = (typeof shopCopy)[keyof typeof shopCopy];
-type CompanionShopFilter = CompanionCatalogCategory | "all";
+type CompanionShopFilter =
+  | "all"
+  | "robot"
+  | "animal"
+  | "fantasy"
+  | "nature"
+  | "cosmos"
+  | "minimal"
+  | "premium";
 
 const companionShopFilters: CompanionShopFilter[] = [
   "all",
@@ -260,8 +289,47 @@ const companionShopFilters: CompanionShopFilter[] = [
   "animal",
   "fantasy",
   "nature",
-  "seasonal",
+  "cosmos",
+  "minimal",
+  "premium",
 ];
+
+const cosmosCompanionKinds: string[] = [
+  "robot_cosmos",
+  "robot_orion",
+  "robot_hologram",
+  "robot_iris",
+  "cosmic_beast",
+];
+
+const minimalCompanionKinds: string[] = [
+  "robot_minimal",
+  "robot_crystal",
+  "robot",
+  "robot_nova",
+  "robot_cyber",
+];
+
+const matchesCompanionShopFilter = (
+  item: CompanionCatalogItem,
+  filter: CompanionShopFilter
+) => {
+  if (filter === "all") {
+    return true;
+  }
+
+  if (filter === "cosmos") {
+    return Boolean(item.companionKind && cosmosCompanionKinds.includes(item.companionKind));
+  }
+
+  if (filter === "minimal") {
+    return Boolean(
+      item.companionKind && minimalCompanionKinds.includes(item.companionKind)
+    );
+  }
+
+  return item.category === filter;
+};
 
 const assistantToolIcons: Array<{
   key: AssistantWorkerToolId;
@@ -330,32 +398,28 @@ const getCatalogText = (
   }
 };
 
-const getCategoryLabel = (
-  categories: Record<CompanionCatalogCategory, string>,
-  category: CompanionCatalogCategory
+const getFilterLabel = (
+  filters: Record<CompanionShopFilter, string>,
+  filter: CompanionShopFilter
 ) => {
-  switch (category) {
+  switch (filter) {
     case "robot":
-      return categories.robot;
+      return filters.robot;
     case "animal":
-      return categories.animal;
+      return filters.animal;
     case "fantasy":
-      return categories.fantasy;
+      return filters.fantasy;
     case "nature":
-      return categories.nature;
-    case "emotion":
-      return categories.emotion;
-    case "accessory":
-      return categories.accessory;
-    case "animation":
-      return categories.animation;
+      return filters.nature;
+    case "cosmos":
+      return filters.cosmos;
+    case "minimal":
+      return filters.minimal;
     case "premium":
-      return categories.premium;
-    case "seasonal":
-      return categories.seasonal;
-    case "outfit":
+      return filters.premium;
+    case "all":
     default:
-      return categories.outfit;
+      return filters.all;
   }
 };
 
@@ -441,8 +505,8 @@ const CompanionShopCard = () => {
   );
   const visibleCatalogItems = useMemo(
     () =>
-      availableCatalogItems.filter(
-        (item) => activeFilter === "all" || item.category === activeFilter
+      availableCatalogItems.filter((item) =>
+        matchesCompanionShopFilter(item, activeFilter)
       ),
     [activeFilter, availableCatalogItems]
   );
@@ -735,11 +799,7 @@ const CompanionShopCard = () => {
                 {companionShopFilters.map((filter) => (
                   <Chip
                     key={filter}
-                    label={
-                      filter === "all"
-                        ? copy.filters.all
-                        : getCategoryLabel(copy.categories, filter)
-                    }
+                    label={getFilterLabel(copy.filters, filter)}
                     color={activeFilter === filter ? "primary" : "default"}
                     variant={activeFilter === filter ? "filled" : "outlined"}
                     onClick={() => setActiveFilter(filter)}

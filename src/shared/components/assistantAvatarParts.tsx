@@ -26,6 +26,7 @@ const Part = ({ sx }: { sx: SxProps<Theme> }) => <Box sx={sx} />;
 const animalEarVariants = new Set<AssistantCompanionKind>([
   "cat",
   "dog",
+  "shiba",
   "fox",
   "panda",
   "capybara",
@@ -48,6 +49,7 @@ const animalEarVariants = new Set<AssistantCompanionKind>([
 const animalNoseVariants = new Set<AssistantCompanionKind>([
   "cat",
   "dog",
+  "shiba",
   "fox",
   "panda",
   "capybara",
@@ -76,6 +78,7 @@ const AnimalEars = ({ variant, size, visual }: CompanionPartsProps) => {
   const isPointed =
     variant === "cat" ||
     variant === "fox" ||
+    variant === "shiba" ||
     variant === "corgi" ||
     variant === "wolf" ||
     variant === "tiger" ||
@@ -474,6 +477,60 @@ const RobotVisorPanel = ({ size }: Pick<CompanionPartsProps, "size">) => (
 );
 
 const SpeciesFaceMarks = ({ variant, size, visual }: CompanionPartsProps) => {
+  if (variant === "shiba") {
+    return (
+      <>
+        <Part
+          sx={{
+            position: "absolute",
+            left: "50%",
+            top: scaled(size, 0.26),
+            width: scaled(size, 0.52),
+            height: scaled(size, 0.26),
+            transform: CENTER_X_TRANSFORM,
+            borderRadius: "46% 46% 56% 56%",
+            backgroundColor: visual.muzzle,
+            opacity: 0.7,
+            zIndex: 1,
+          }}
+        />
+        <Part
+          sx={{
+            position: "absolute",
+            left: "50%",
+            top: scaled(size, 0.43),
+            width: scaled(size, 0.3),
+            height: scaled(size, 0.18),
+            transform: CENTER_X_TRANSFORM,
+            borderRadius: "52% 52% 60% 60%",
+            backgroundColor: visual.muzzle,
+            border: "1px solid rgba(255,255,255,0.3)",
+            zIndex: 3,
+          }}
+        />
+      </>
+    );
+  }
+
+  if (variant === "baby_dragon") {
+    return (
+      <Part
+        sx={{
+          position: "absolute",
+          left: "50%",
+          top: scaled(size, 0.4),
+          width: scaled(size, 0.3),
+          height: scaled(size, 0.2),
+          transform: CENTER_X_TRANSFORM,
+          borderRadius: "55% 55% 62% 62%",
+          backgroundColor: visual.muzzle,
+          border: "1px solid rgba(255,255,255,0.3)",
+          zIndex: 3,
+        }}
+      />
+    );
+  }
+
   if (variant === "fox") {
     return (
       <>
@@ -683,7 +740,7 @@ const AnimalNose = ({ variant, size }: Pick<CompanionPartsProps, "variant" | "si
         }}
       />
 
-      {(variant === "cat" || variant === "fox") &&
+      {(variant === "cat" || variant === "fox" || variant === "shiba") &&
         ([-1, 1] as const).map((direction) => (
           <Part
             key={direction}

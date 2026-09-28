@@ -12,6 +12,7 @@ import {
   CompanionFaceParts,
   CompanionHeadParts,
 } from "./assistantAvatarParts";
+import { RobotSkinBody } from "./assistantRobotSkinBody";
 import {
   companionVisuals,
   getCompanionFaceRadius,
@@ -82,37 +83,6 @@ const getMotionState = ({
   return active ? "active" : "idle";
 };
 
-const getRobotShellGradient = (
-  mood: AssistantAvatarMood,
-  variant: AssistantAvatarProps["variant"]
-) => {
-  if (mood === "concerned") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,0.98), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #cbd5e1 48%, #94a3b8 100%)";
-  }
-
-  if (mood === "celebrate") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #dbeafe 46%, #86efac 100%)";
-  }
-
-  if (variant === "robot_minimal") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,0.9), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #cbd5e1 42%, #64748b 100%)";
-  }
-
-  if (variant === "robot_neon") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #f8fafc 0%, #bae6fd 42%, #7c3aed 100%)";
-  }
-
-  if (variant === "robot_nature") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #bbf7d0 42%, #84cc16 100%)";
-  }
-
-  if (variant === "robot_solar") {
-    return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #fde68a 42%, #f59e0b 100%)";
-  }
-
-  return "radial-gradient(circle at 32% 18%, rgba(255,255,255,1), transparent 24%), linear-gradient(145deg, #ffffff 0%, #e2e8f0 48%, #94a3b8 100%)";
-};
-
 export const AssistantAvatar = ({
   name,
   size = 64,
@@ -145,7 +115,7 @@ export const AssistantAvatar = ({
       whileHover={assistantAvatarHover}
       sx={{
         width: size,
-        height: size,
+        height: isRobot ? size * 1.48 : size,
         borderRadius: isRobot ? "34% 34% 40% 40%" : getCompanionFaceRadius(variant),
         position: "relative",
         display: "grid",
@@ -153,17 +123,8 @@ export const AssistantAvatar = ({
         color: "white",
         fontWeight: 900,
         fontSize: Math.max(round(size * 0.22), 12),
-        background: isRobot
-          ? getRobotShellGradient(mood, variant)
-          : shouldUseMoodGradient
-            ? getMoodGradient(mood)
-            : visual.face,
-        boxShadow:
-          isRobot
-            ? "0 18px 36px rgba(15, 23, 42, 0.22), inset 0 -12px 24px rgba(15, 23, 42, 0.14), inset 0 12px 18px rgba(255, 255, 255, 0.78)"
-            : mood === "concerned"
-            ? "0 18px 36px rgba(234, 88, 12, 0.22)"
-            : visual.shadow,
+        background: isRobot ? "transparent" : shouldUseMoodGradient ? getMoodGradient(mood) : visual.face,
+        boxShadow: isRobot ? "none" : mood === "concerned" ? "0 18px 36px rgba(234, 88, 12, 0.22)" : visual.shadow,
         overflow: "visible",
         transformOrigin: "50% 80%",
         "&::before": {
@@ -192,127 +153,27 @@ export const AssistantAvatar = ({
       }}
     >
       {isRobot ? (
-        <>
-          {(["left", "right"] as const).map((side) => (
-            <Box
-              key={side}
-              data-assistant-avatar-robot-headset="true"
-              sx={{
-                position: "absolute",
-                top: round(size * 0.27),
-                [side]: -round(size * 0.05),
-                width: Math.max(round(size * 0.2), 10),
-                height: Math.max(round(size * 0.34), 18),
-                borderRadius: "999px",
-                background:
-                  "linear-gradient(180deg, rgba(248,250,252,0.96), rgba(148,163,184,0.92))",
-                border: "1px solid rgba(255,255,255,0.62)",
-                boxShadow:
-                  "inset 0 8px 14px rgba(255,255,255,0.5), inset 0 -10px 18px rgba(15,23,42,0.16), 0 0 18px rgba(34,211,238,0.2)",
-                transform: side === "left" ? "rotate(-5deg)" : "rotate(5deg)",
-                zIndex: 2,
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  inset: Math.max(round(size * 0.035), 2),
-                  borderRadius: "inherit",
-                  background:
-                    mood === "celebrate"
-                      ? "linear-gradient(180deg, rgba(134,239,172,0.92), rgba(34,211,238,0.62))"
-                      : "linear-gradient(180deg, rgba(34,211,238,0.78), rgba(59,130,246,0.48))",
-                  opacity: 0.74,
-                },
-              }}
-            />
-          ))}
-          <Box
-            data-assistant-avatar-robot-shell="true"
-            sx={{
-              position: "absolute",
-              left: "50%",
-              bottom: -round(size * 0.48),
-              width: round(size * 0.76),
-              height: round(size * 0.58),
-              borderRadius: "42% 42% 30% 30%",
-              transform: CENTER_X_TRANSFORM,
-              background:
-                "radial-gradient(circle at 48% 22%, rgba(255,255,255,0.92), transparent 26%), linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 58%, #94a3b8 100%)",
-              border: "1px solid rgba(255,255,255,0.54)",
-              boxShadow:
-                "0 18px 28px rgba(15,23,42,0.16), inset 0 -10px 18px rgba(15,23,42,0.12)",
-              zIndex: 2,
-            }}
+        <Box
+          data-assistant-avatar-robot-fullbody="true"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            zIndex: 3,
+            pointerEvents: "none",
+          }}
+        >
+          <RobotSkinBody
+            size={size}
+            mood={mood}
+            variant={variant}
+            eyeX={eyeX}
+            eyeY={eyeY}
+            lineWidth={lineWidth}
+            active={active}
           />
-          <Box
-            data-assistant-avatar-robot-arms="true"
-            sx={{
-              position: "absolute",
-              left: "50%",
-              bottom: -round(size * 0.3),
-              width: round(size * 1.02),
-              height: round(size * 0.32),
-              transform: CENTER_X_TRANSFORM,
-              pointerEvents: "none",
-              zIndex: 1,
-              "&::before, &::after": {
-                content: '""',
-                position: "absolute",
-                top: round(size * 0.05),
-                width: round(size * 0.4),
-                height: round(size * 0.12),
-                borderRadius: 999,
-                background: "linear-gradient(180deg, #e2e8f0, #94a3b8)",
-                border: "1px solid rgba(255,255,255,0.5)",
-                boxShadow: "0 10px 16px rgba(15,23,42,0.16)",
-              },
-              "&::before": {
-                left: 0,
-                transform: "rotate(34deg)",
-              },
-              "&::after": {
-                right: 0,
-                transform: "rotate(-34deg)",
-              },
-            }}
-          />
-          <Box
-            data-assistant-avatar-heart-core="true"
-            sx={{
-              position: "absolute",
-              left: "50%",
-              bottom: -round(size * 0.27),
-              width: Math.max(round(size * 0.2), 10),
-              height: Math.max(round(size * 0.2), 10),
-              transform: "translateX(-50%) rotate(-45deg)",
-              borderRadius: "28% 28% 18% 28%",
-              background:
-                mood === "concerned"
-                  ? "linear-gradient(135deg, #fb923c, #facc15)"
-                  : "linear-gradient(135deg, #22d3ee, #86efac)",
-              boxShadow:
-                mood === "celebrate"
-                  ? "0 0 18px rgba(132,204,22,0.76)"
-                  : "0 0 14px rgba(34,211,238,0.56)",
-              zIndex: 7,
-              "&::before, &::after": {
-                content: '""',
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                background: "inherit",
-              },
-              "&::before": {
-                top: "-50%",
-                left: 0,
-              },
-              "&::after": {
-                top: 0,
-                right: "-50%",
-              },
-            }}
-          />
-        </>
+        </Box>
       ) : null}
 
       <Box
@@ -366,11 +227,16 @@ export const AssistantAvatar = ({
         }}
       />
 
-      <CompanionBodyParts variant={variant} size={size} visual={visual} />
-      <CompanionHeadParts variant={variant} size={size} visual={visual} />
-      <CompanionFaceParts variant={variant} size={size} visual={visual} />
+      {!isRobot ? (
+        <>
+          <CompanionBodyParts variant={variant} size={size} visual={visual} />
+          <CompanionHeadParts variant={variant} size={size} visual={visual} />
+          <CompanionFaceParts variant={variant} size={size} visual={visual} />
+        </>
+      ) : null}
 
-      {(["left", "right"] as const).map((side) => (
+      {!isRobot
+        ? (["left", "right"] as const).map((side) => (
         <Box
           key={side}
           sx={{
@@ -404,36 +270,25 @@ export const AssistantAvatar = ({
             }}
           />
         </Box>
-      ))}
+        ))
+        : null}
 
-      <Box
-        sx={{
-          position: "absolute",
-          top: isRobot
-            ? isConcerned
-              ? round(size * 0.62)
-              : round(size * 0.55)
-            : isConcerned
-              ? round(size * 0.62)
-              : round(size * 0.58),
-          left: "50%",
-          width: isCelebrating
-            ? round(size * 0.28)
-            : isConcerned
-              ? round(size * 0.2)
-              : round(size * 0.24),
-          height: isConcerned ? 0 : round(size * 0.12),
-          borderBottom: isConcerned
-            ? "none"
-            : `${lineWidth}px solid rgba(255,255,255,0.9)`,
-          borderTop: isConcerned
-            ? `${lineWidth}px solid rgba(255,255,255,0.86)`
-            : "none",
-          borderRadius: isConcerned ? 999 : "0 0 999px 999px",
-          transform: `translateX(-50%) rotate(${isConcerned ? "-6deg" : "0deg"})`,
-          zIndex: 5,
-        }}
-      />
+      {!isRobot ? (
+        <Box
+          sx={{
+            position: "absolute",
+            top: isConcerned ? round(size * 0.62) : round(size * 0.58),
+            left: "50%",
+            width: isCelebrating ? round(size * 0.28) : isConcerned ? round(size * 0.2) : round(size * 0.24),
+            height: isConcerned ? 0 : round(size * 0.12),
+            borderBottom: isConcerned ? "none" : `${lineWidth}px solid rgba(255,255,255,0.9)`,
+            borderTop: isConcerned ? `${lineWidth}px solid rgba(255,255,255,0.86)` : "none",
+            borderRadius: isConcerned ? 999 : "0 0 999px 999px",
+            transform: `translateX(-50%) rotate(${isConcerned ? "-6deg" : "0deg"})`,
+            zIndex: 5,
+          }}
+        />
+      ) : null}
 
       {showInitial ? (
         <Box
