@@ -353,6 +353,10 @@ function App() {
                 }
               />
               <Route
+                path="/companion-shop"
+                element={<Navigate to="/assistant/shop" replace />}
+              />
+              <Route
                 path="/assistant/shop"
                 element={
                   <ProtectedRoute>

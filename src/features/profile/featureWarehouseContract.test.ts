@@ -5,6 +5,9 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 const PREMIUM_ACCESS_CARD_SOURCE_PATH = "src/features/profile/PremiumAccessCard.tsx";
+const APP_SOURCE_PATH = "src/App.tsx";
+const COMPANION_SHOP_ROUTE = "/assistant/shop";
+const LEGACY_COMPANION_SHOP_ROUTE = "/companion-shop";
 
 const collectSourceFiles = (roots: string[]) => {
   const pending = roots.map((root) => resolve(process.cwd(), root));
@@ -124,7 +127,7 @@ describe("profile feature warehouse contract", () => {
   });
 
   it("keeps the companion shop as a dedicated route instead of a long inline drawer", () => {
-    const appSource = readSource("src/App.tsx");
+    const appSource = readSource(APP_SOURCE_PATH);
     const coachSource = readSource("src/pages/AiCompanionPage.tsx");
     const profileSource = readSource("src/pages/ProfilePage.tsx");
     const shopPageSource = readSource("src/pages/CompanionShopPage.tsx");
@@ -132,10 +135,10 @@ describe("profile feature warehouse contract", () => {
     const onboardingSource = readSource("src/pages/onboarding/OnboardingAssistantPage.tsx");
     const onboardingTypesSource = readSource("src/pages/onboarding/types.ts");
 
-    expect(appSource).toContain('path="/assistant/shop"');
+    expect(appSource).toContain(`path="${COMPANION_SHOP_ROUTE}"`);
     expect(appSource).toContain("<CompanionShopPage />");
     expect(shopPageSource).toContain("CompanionShopCard");
-    expect(shopEntrySource).toContain('const SHOP_ROUTE = "/assistant/shop"');
+    expect(shopEntrySource).toContain(`const SHOP_ROUTE = "${COMPANION_SHOP_ROUTE}"`);
     expect(shopEntrySource).toContain('data-companion-shop-entry="true"');
     expect(coachSource).toContain('resetKey="ai-companion:shop"');
     expect(coachSource).toContain("<CompanionShopEntryCard />");
@@ -148,8 +151,15 @@ describe("profile feature warehouse contract", () => {
     expect(onboardingTypesSource).not.toContain("assistantAvatarOptions");
   });
 
+  it("keeps the previous companion shop URL as a redirect instead of a dead 404", () => {
+    const appSource = readSource(APP_SOURCE_PATH);
+
+    expect(appSource).toContain(`path="${LEGACY_COMPANION_SHOP_ROUTE}"`);
+    expect(appSource).toContain(`to="${COMPANION_SHOP_ROUTE}"`);
+  });
+
   it("keeps large profile feature centers on dedicated mobile-safe routes", () => {
-    const appSource = readSource("src/App.tsx");
+    const appSource = readSource(APP_SOURCE_PATH);
     const profileSource = readSource("src/pages/ProfilePage.tsx");
     const womenHealthPageSource = readSource("src/pages/WomenHealthPage.tsx");
     const remindersPageSource = readSource("src/pages/RemindersPage.tsx");
