@@ -224,6 +224,16 @@ describe("Smart Nutrition visual system contract", () => {
     expect(blueprintPanel).toContain("Telegram worker");
     expect(blueprintPanel).toContain("whileHover");
     expect(blueprintPanel).toContain("&:focus-visible");
+    expect(blueprintPanel).toContain(
+      'data-ai-master-blueprint-collapsible="true"'
+    );
+    expect(blueprintPanel).toContain("data-ai-master-blueprint-collapsed=");
+    expect(blueprintPanel).toContain(
+      'data-ai-master-blueprint-mobile-toggle="true"'
+    );
+    expect(blueprintPanel).toContain("aria-expanded={isCompactBoardExpanded}");
+    expect(blueprintPanel).toContain("aria-controls={boardRegionId}");
+    expect(blueprintPanel).toContain("BLUEPRINT_COMPACT_VIEWPORT_QUERY");
 
     expect(home).toContain(ASSISTANT_VARIANT_PROP);
     expect(home).toContain(ASSISTANT_NAME_PROP);

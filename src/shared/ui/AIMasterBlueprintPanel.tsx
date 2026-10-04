@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Box, Paper, Stack, Typography } from "@mui/material";
-import type { LucideIcon } from "lucide-react";
+import { Box, ButtonBase, Paper, Stack, Typography } from "@mui/material";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import type { AssistantCompanionKind } from "@domain/profile/types";
 import { AssistantAvatar } from "../components/AssistantAvatar";
 import { useAppColorMode } from "../theme/colorMode";
+import { useLanguage } from "../language";
 
 const SOFT_GLASS_BLUR = "blur(18px)";
 const BLUEPRINT_BORDER = "1px solid rgba(45, 212, 191, 0.22)";
@@ -18,6 +19,25 @@ const BLUEPRINT_CYAN = "#22d3ee";
 const BLUEPRINT_LEFT_WIDE_COLUMN = { xs: "1", md: "1 / span 4" };
 const BLUEPRINT_RIGHT_NARROW_COLUMN = { xs: "1", md: "5 / span 3" };
 const BLUEPRINT_FULL_COLUMN = { xs: "1", md: "1 / span 7" };
+const BLUEPRINT_COMPACT_VIEWPORT_QUERY = "@media (max-width: 1199.95px)";
+
+const blueprintMobileToggleCopy = {
+  uk: { expand: "Показати всю карту", collapse: "Згорнути карту" },
+  pl: { expand: "Pokaż pełną mapę", collapse: "Zwiń mapę" },
+  en: { expand: "Show the full map", collapse: "Collapse the map" },
+} as const;
+
+const getBlueprintMobileToggleCopy = (language: string) => {
+  switch (language) {
+    case "pl":
+      return blueprintMobileToggleCopy.pl;
+    case "en":
+      return blueprintMobileToggleCopy.en;
+    case "uk":
+    default:
+      return blueprintMobileToggleCopy.uk;
+  }
+};
 
 export type AIMasterBlueprintPattern = {
   key: string;
@@ -117,6 +137,10 @@ export const AIMasterBlueprintPanel = ({
   assistantVariant = "robot",
 }: AIMasterBlueprintPanelProps) => {
   const { isDarkMode } = useAppColorMode();
+  const { appLanguage } = useLanguage();
+  const [isCompactBoardExpanded, setIsCompactBoardExpanded] = useState(false);
+  const boardRegionId = useId();
+  const mobileToggleCopy = getBlueprintMobileToggleCopy(appLanguage);
   const boardBackground = isDarkMode
     ? "radial-gradient(circle at 72% 4%, rgba(34,211,238,0.14), transparent 24%), radial-gradient(circle at 42% 58%, rgba(34,197,94,0.13), transparent 34%), linear-gradient(135deg, #020617 0%, #07111f 48%, #061a17 100%)"
     : "radial-gradient(circle at 74% 4%, rgba(34,211,238,0.18), transparent 24%), radial-gradient(circle at 42% 58%, rgba(34,197,94,0.13), transparent 34%), linear-gradient(135deg, #f8fafc 0%, #ecfeff 52%, #f0fdf4 100%)";
@@ -130,11 +154,26 @@ export const AIMasterBlueprintPanel = ({
       elevation={0}
       data-ai-master-blueprint-board="true"
       data-ai-master-blueprint-patterns="true"
+      data-ai-master-blueprint-collapsed={
+        isCompactBoardExpanded ? "false" : "true"
+      }
       className="sn-companion-panel"
       sx={{
         position: "relative",
         overflow: "hidden",
-        p: { xs: 1.1, sm: 1.4, lg: 1.8 },
+        // Phones/tablets: collapse the heavy decorative board by default so the
+        // real product content is not buried under a very long scroll.
+        [BLUEPRINT_COMPACT_VIEWPORT_QUERY]: {
+          "&[data-ai-master-blueprint-collapsed='true'] [data-ai-master-blueprint-collapsible='true']":
+            {
+              display: "none",
+            },
+          "&[data-ai-master-blueprint-collapsed='true'] [data-ai-master-blueprint-mobile-extra='true']":
+            {
+              display: "none",
+            },
+        },
+        p: { xs: 0.8, sm: 1.2, lg: 1.8 },
         borderRadius: 1,
         border: BLUEPRINT_BORDER,
         background: boardBackground,
@@ -171,14 +210,14 @@ export const AIMasterBlueprintPanel = ({
           zIndex: 1,
           display: "grid",
           gridTemplateColumns: { xs: "1fr", lg: "220px minmax(0, 1fr)" },
-          gap: 1.1,
+          gap: { xs: 0.75, lg: 1.1 },
         }}
       >
         <Stack
           spacing={1.2}
           sx={{
             minHeight: { lg: 420 },
-            p: 1.2,
+            p: { xs: 0.85, lg: 1.2 },
             borderRadius: 1,
             border: BLUEPRINT_BORDER,
             background: panelSurface,
@@ -190,9 +229,9 @@ export const AIMasterBlueprintPanel = ({
               component="p"
               sx={{
                 color: textColor,
-                fontSize: 22,
+                fontSize: { xs: 15, sm: 18, lg: 22 },
                 fontWeight: 950,
-                lineHeight: 0.95,
+                lineHeight: { xs: 1, lg: 0.95 },
                 letterSpacing: 0,
                 textTransform: "uppercase",
               }}
@@ -211,7 +250,10 @@ export const AIMasterBlueprintPanel = ({
             </Typography>
           </Box>
 
-          <Box sx={{ display: "grid", placeItems: "center", py: 0.8 }}>
+          <Box
+            data-ai-master-blueprint-mobile-extra="true"
+            sx={{ display: "grid", placeItems: "center", py: 0.8 }}
+          >
             <Box
               sx={{
                 position: "relative",
@@ -242,11 +284,15 @@ export const AIMasterBlueprintPanel = ({
             </Box>
           </Box>
 
-          <Typography sx={{ color: mutedColor, fontWeight: 650, lineHeight: 1.45 }}>
+          <Typography
+            data-ai-master-blueprint-mobile-extra="true"
+            sx={{ color: mutedColor, fontWeight: 650, lineHeight: 1.45 }}
+          >
             {description}
           </Typography>
 
           <Stack
+            data-ai-master-blueprint-mobile-extra="true"
             spacing={0.6}
             sx={{
               mt: "auto",
@@ -273,9 +319,114 @@ export const AIMasterBlueprintPanel = ({
               </Stack>
             ))}
           </Stack>
+
+          <Stack
+            data-ai-master-blueprint-mobile-actions="true"
+            direction="row"
+            spacing={0.65}
+            sx={{
+              display: { xs: "flex", lg: "none" },
+              overflowX: "auto",
+              pb: 0.15,
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            {patterns.slice(0, 5).map((pattern) => {
+              const Icon = pattern.icon;
+
+              return (
+                <ButtonBase
+                  key={pattern.key}
+                  type="button"
+                  onClick={pattern.onClick}
+                  sx={{
+                    minWidth: 96,
+                    minHeight: 36,
+                    px: 0.9,
+                    borderRadius: 1,
+                    border: `1px solid ${pattern.accent}52`,
+                    color: textColor,
+                    background: isDarkMode
+                      ? "rgba(15,23,42,0.74)"
+                      : "rgba(255,255,255,0.72)",
+                    justifyContent: "flex-start",
+                    gap: 0.55,
+                    "&:focus-visible": {
+                      outline: `2px solid ${pattern.accent}`,
+                      outlineOffset: 2,
+                    },
+                  }}
+                >
+                  <Icon size={14} aria-hidden="true" />
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontSize: 12,
+                      fontWeight: 900,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {pattern.label}
+                  </Typography>
+                </ButtonBase>
+              );
+            })}
+          </Stack>
+
+          <ButtonBase
+            type="button"
+            data-ai-master-blueprint-mobile-toggle="true"
+            aria-expanded={isCompactBoardExpanded}
+            aria-controls={boardRegionId}
+            onClick={() => setIsCompactBoardExpanded((previous) => !previous)}
+            sx={{
+              display: { xs: "flex", lg: "none" },
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 0.6,
+              px: 1.2,
+              py: 0.65,
+              borderRadius: 1,
+              border: BLUEPRINT_BORDER,
+              color: textColor,
+              fontWeight: 900,
+              fontSize: 13,
+              background: isDarkMode
+                ? "rgba(34,211,238,0.14)"
+                : "rgba(34,211,238,0.16)",
+              "&:hover": {
+                background: isDarkMode
+                  ? "rgba(34,211,238,0.22)"
+                  : "rgba(34,211,238,0.24)",
+              },
+              "&:focus-visible": {
+                outline: "3px solid rgba(34,211,238,0.36)",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            {isCompactBoardExpanded
+              ? mobileToggleCopy.collapse
+              : mobileToggleCopy.expand}
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              style={{
+                transform: isCompactBoardExpanded
+                  ? "rotate(180deg)"
+                  : "rotate(0deg)",
+                transition: "transform 160ms ease",
+              }}
+            />
+          </ButtonBase>
         </Stack>
 
         <Box
+          id={boardRegionId}
+          data-ai-master-blueprint-collapsible="true"
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "repeat(7, minmax(0, 1fr))" },

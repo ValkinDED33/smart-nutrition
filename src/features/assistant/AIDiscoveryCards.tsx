@@ -53,6 +53,7 @@ const timelineToneColor = {
 } as const;
 
 const SN_BORDER_SOFT = "var(--sn-border-soft)";
+const WEBKIT_LINE_CLAMP_DISPLAY = "-webkit-box";
 
 const discoveryShellVariants = {
   hidden: { opacity: 0, y: 18, scale: 0.98 },
@@ -198,7 +199,7 @@ export const AIDiscoveryCards = ({
       animate="visible"
       elevation={0}
       sx={{
-        p: { xs: 1.45, md: 1.8 },
+        p: { xs: 1, md: 1.8 },
         borderRadius: 1,
         border: `1px solid ${SN_BORDER_SOFT}`,
         background:
@@ -207,7 +208,7 @@ export const AIDiscoveryCards = ({
         overflow: "hidden",
       }}
     >
-      <Stack spacing={1.35}>
+      <Stack spacing={{ xs: 0.85, md: 1.35 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Box
             sx={{
@@ -226,7 +227,13 @@ export const AIDiscoveryCards = ({
             <Typography component="h2" variant="h6" sx={{ fontWeight: 950 }}>
               {text.title}
             </Typography>
-            <Typography color="text.secondary" sx={{ lineHeight: 1.45 }}>
+            <Typography
+              color="text.secondary"
+              sx={{
+                lineHeight: 1.45,
+                display: { xs: "none", sm: "block" },
+              }}
+            >
               {text.subtitle}
             </Typography>
           </Stack>
@@ -238,8 +245,8 @@ export const AIDiscoveryCards = ({
           data-ai-discovery-aura="true"
           sx={{
             position: "relative",
-            minHeight: { xs: 238, md: 214 },
-            p: { xs: 1.35, md: 1.6 },
+            minHeight: { xs: 146, md: 214 },
+            p: { xs: 1, md: 1.6 },
             borderRadius: 1,
             border: `1px solid ${SN_BORDER_SOFT}`,
             background: aura.glow,
@@ -287,11 +294,11 @@ export const AIDiscoveryCards = ({
               zIndex: 1,
               display: "grid",
               gridTemplateColumns: { xs: "1fr", md: "1fr 220px" },
-              gap: { xs: 1.4, md: 2 },
+              gap: { xs: 0.8, md: 2 },
               alignItems: "center",
             }}
           >
-            <Stack spacing={1.1} minWidth={0}>
+            <Stack spacing={{ xs: 0.72, md: 1.1 }} minWidth={0}>
               <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
                 <Chip
                   size="small"
@@ -305,17 +312,35 @@ export const AIDiscoveryCards = ({
                   sx={{ fontWeight: 950, bgcolor: "rgba(255,255,255,0.76)" }}
                 />
               </Stack>
-              <Typography component="h3" variant="h5" sx={{ fontWeight: 950, lineHeight: 1.12 }}>
+              <Typography
+                component="h3"
+                variant="h5"
+                sx={{
+                  fontWeight: 950,
+                  lineHeight: 1.12,
+                  fontSize: { xs: 18, md: 24 },
+                }}
+              >
                 {aura.title}
               </Typography>
-              <Typography color="text.secondary" sx={{ maxWidth: 680, lineHeight: 1.55 }}>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  maxWidth: 680,
+                  lineHeight: 1.45,
+                  display: WEBKIT_LINE_CLAMP_DISPLAY,
+                  WebkitLineClamp: { xs: 2, sm: "unset" },
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
                 {aura.body}
               </Typography>
               <Box
                 aria-hidden="true"
                 sx={{
                   width: "min(420px, 100%)",
-                  height: 34,
+                  height: { xs: 22, sm: 34 },
                   display: "flex",
                   alignItems: "center",
                   gap: 0.55,
@@ -326,7 +351,7 @@ export const AIDiscoveryCards = ({
                     key={`pulse-${height}-${index}`}
                     sx={{
                       width: 8,
-                      height,
+                      height: { xs: Math.max(8, Math.round(height * 0.54)), sm: height },
                       borderRadius: 999,
                       bgcolor:
                         index % 3 === 0
@@ -343,7 +368,7 @@ export const AIDiscoveryCards = ({
 
             <Box
               sx={{
-                display: "grid",
+                display: { xs: "none", sm: "grid" },
                 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                 gap: 0.8,
               }}
@@ -404,11 +429,15 @@ export const AIDiscoveryCards = ({
           sx={{
             display: "grid",
             gridTemplateColumns: {
-              xs: "1fr",
+              xs: `repeat(${timeline.length}, minmax(136px, 1fr))`,
               sm: "repeat(2, minmax(0, 1fr))",
               lg: "repeat(4, minmax(0, 1fr))",
             },
             gap: 1,
+            overflowX: { xs: "auto", sm: "visible" },
+            pb: { xs: 0.2, sm: 0 },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {timeline.map((item, index) => {
@@ -429,8 +458,8 @@ export const AIDiscoveryCards = ({
                 variant="outlined"
                 sx={{
                   position: "relative",
-                  minHeight: 158,
-                  p: 1.25,
+                  minHeight: { xs: 118, sm: 158 },
+                  p: { xs: 1, sm: 1.25 },
                   borderRadius: 1,
                   textAlign: "left",
                   color: "text.primary",
@@ -454,18 +483,18 @@ export const AIDiscoveryCards = ({
                   "&::after": {
                     content: '""',
                     position: "absolute",
-                    left: { xs: 23, sm: "auto" },
-                    right: { xs: "auto", sm: -12 },
-                    top: { xs: "auto", sm: 33 },
-                    bottom: { xs: -12, sm: "auto" },
-                    width: { xs: 2, sm: 24 },
-                    height: { xs: 24, sm: 2 },
+                    left: { xs: "auto", sm: "auto" },
+                    right: { xs: -12, sm: -12 },
+                    top: { xs: 26, sm: 33 },
+                    bottom: { xs: "auto", sm: "auto" },
+                    width: 24,
+                    height: 2,
                     backgroundColor:
                       index === timeline.length - 1 ? "transparent" : SN_BORDER_SOFT,
                   },
                 }}
               >
-                <Stack spacing={0.85} sx={{ height: "100%" }}>
+                <Stack spacing={{ xs: 0.55, sm: 0.85 }} sx={{ height: "100%" }}>
                   <Stack direction="row" spacing={0.85} alignItems="center">
                     <Box
                       sx={{
@@ -498,8 +527,8 @@ export const AIDiscoveryCards = ({
                     color="text.secondary"
                     sx={{
                       lineHeight: 1.45,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 3,
+                      display: WEBKIT_LINE_CLAMP_DISPLAY,
+                      WebkitLineClamp: { xs: 2, sm: 3 },
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
                     }}
@@ -515,8 +544,12 @@ export const AIDiscoveryCards = ({
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1.18fr 0.82fr" },
+            gridTemplateColumns: { xs: `repeat(${cards.length}, minmax(220px, 1fr))`, md: "1.18fr 0.82fr" },
             gap: 1,
+            overflowX: { xs: "auto", md: "visible" },
+            pb: { xs: 0.2, md: 0 },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {cards.map((card) => {
@@ -532,7 +565,7 @@ export const AIDiscoveryCards = ({
                 transition={{ type: "spring", stiffness: 240, damping: 22 }}
                 variant="outlined"
                 sx={{
-                  p: 1.35,
+                  p: { xs: 1, md: 1.35 },
                   borderRadius: 1,
                   borderColor: expanded ? accent : "var(--sn-border-soft)",
                   background: toneBackground[card.tone],
@@ -542,7 +575,7 @@ export const AIDiscoveryCards = ({
                   },
                 }}
               >
-                <Stack spacing={1.05}>
+                <Stack spacing={{ xs: 0.72, md: 1.05 }}>
                   <Stack direction="row" spacing={1} alignItems="flex-start">
                     <Stack spacing={0.55} minWidth={0} flex={1}>
                       <Stack direction="row" spacing={0.7} useFlexGap flexWrap="wrap">
@@ -581,7 +614,7 @@ export const AIDiscoveryCards = ({
                         />
                       }
                       sx={{
-                        minWidth: 112,
+                        minWidth: { xs: 86, sm: 112 },
                         borderRadius: 1,
                         textTransform: "none",
                         fontWeight: 900,
@@ -591,7 +624,16 @@ export const AIDiscoveryCards = ({
                     </Button>
                   </Stack>
 
-                  <Typography color="text.secondary" sx={{ lineHeight: 1.55 }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{
+                      lineHeight: 1.45,
+                      display: WEBKIT_LINE_CLAMP_DISPLAY,
+                      WebkitLineClamp: { xs: 2, sm: "unset" },
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
                     {card.body}
                   </Typography>
 

@@ -685,6 +685,7 @@ const AiCompanionPage = () => {
   );
   const companionRenderModePreference = useCompanionRenderModePreference();
   const isCompactCompanionStage = useMediaQuery("(max-width: 599.95px)");
+  const isMobileCompanionOverview = useMediaQuery("(max-width: 899.95px)");
   const companionStageSize = isCompactCompanionStage ? 144 : 220;
   const canSeeAssistantOperations = canAccessAdminCenter(user?.role);
 
@@ -923,17 +924,18 @@ const AiCompanionPage = () => {
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as AiCompanionSection)}
         ariaLabel={copy.sectionsAriaLabel}
+        stickyOnMobile
       />
 
       {activeSection === "companion" ? (
-        <Stack spacing={2.5}>
+        <Stack spacing={{ xs: 1.25, md: 2.5 }}>
           <Paper
             className="sn-companion-panel"
             data-ai-worker-command-center="true"
             elevation={0}
             sx={{
               position: "relative",
-              p: { xs: 2, md: 3 },
+              p: { xs: 1.25, sm: 2, md: 3 },
               borderRadius: 1,
               border: `1px solid ${COMPANION_BORDER_COLOR}`,
               color: COMPANION_ON_COLOR,
@@ -978,11 +980,17 @@ const AiCompanionPage = () => {
                 zIndex: 1,
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", lg: "280px minmax(0, 1fr) 300px" },
-                gap: { xs: 2, md: 2.5 },
+                gap: { xs: 1, md: 2.5 },
                 alignItems: "stretch",
               }}
             >
-              <Stack spacing={1.3} sx={{ order: { xs: 2, lg: 1 } }}>
+              <Stack
+                spacing={1.3}
+                sx={{
+                  order: { xs: 2, lg: 1 },
+                  display: { xs: "none", lg: "flex" },
+                }}
+              >
                 <Typography sx={{ color: COMPANION_MUTED_COLOR, fontWeight: 900 }}>
                   {copy.dailyProgress}
                 </Typography>
@@ -1043,7 +1051,7 @@ const AiCompanionPage = () => {
                 sx={{
                   order: { xs: 1, lg: 2 },
                   minWidth: 0,
-                  py: { xs: 1, md: 2 },
+                  py: { xs: 0, md: 2 },
                   justifyContent: COMPANION_CENTER_ALIGN,
                 }}
               >
@@ -1063,8 +1071,8 @@ const AiCompanionPage = () => {
                   sx={{
                     maxWidth: 720,
                     fontWeight: 950,
-                    fontSize: { xs: 34, sm: 46, md: 56 },
-                    lineHeight: 1.02,
+                    fontSize: { xs: 24, sm: 38, md: 56 },
+                    lineHeight: { xs: 1.08, md: 1.02 },
                     overflowWrap: "anywhere",
                   }}
                 >
@@ -1074,8 +1082,9 @@ const AiCompanionPage = () => {
                   sx={{
                     maxWidth: 640,
                     color: COMPANION_MUTED_COLOR,
-                    fontSize: { xs: 17, md: 19 },
-                    lineHeight: 1.55,
+                    display: { xs: "none", sm: "block" },
+                    fontSize: { sm: 16, md: 19 },
+                    lineHeight: 1.45,
                   }}
                 >
                   {copy.commandSubtitle}
@@ -1083,19 +1092,19 @@ const AiCompanionPage = () => {
                 <Box
                   data-ai-worker-command-orbit="true"
                   sx={{
-                    width: { xs: companionStageSize + 72, md: "min(100%, 720px)" },
-                    minHeight: { xs: companionStageSize + 86, md: companionStageSize + 178 },
+                    width: { xs: "min(100%, 260px)", md: "min(100%, 720px)" },
+                    minHeight: { xs: companionStageSize + 24, md: companionStageSize + 178 },
                     display: "grid",
                     gridTemplateColumns: { xs: "1fr", md: "1fr minmax(210px, auto) 1fr" },
                     alignItems: COMPANION_CENTER_ALIGN,
                     justifyItems: COMPANION_CENTER_ALIGN,
-                    gap: { xs: 1.2, md: 1.6 },
+                    gap: { xs: 0.8, md: 1.6 },
                     borderRadius: 1,
                     background:
                       "radial-gradient(circle at 50% 55%, rgba(34,211,238,0.2), transparent 58%), linear-gradient(135deg, rgba(15,23,42,0.28), rgba(20,184,166,0.08))",
                     border: "1px solid rgba(34,211,238,0.16)",
                     filter: "drop-shadow(0 36px 60px rgba(34,211,238,0.22))",
-                    p: { xs: 1.2, md: 1.6 },
+                    p: { xs: 0.65, md: 1.6 },
                   }}
                 >
                   <Paper
@@ -1233,7 +1242,7 @@ const AiCompanionPage = () => {
                       sm: THREE_COLUMN_GRID,
                       md: "repeat(6, minmax(0, 1fr))",
                     },
-                    gap: 0.8,
+                    gap: { xs: 0.55, sm: 0.8 },
                   }}
                 >
                   {assistantTools.map(({ id, title, to, Icon, color }) => (
@@ -1242,9 +1251,9 @@ const AiCompanionPage = () => {
                       data-ai-worker-orbit-action={id}
                       onClick={() => navigate(to)}
                       sx={{
-                        minHeight: 54,
-                        px: 0.8,
-                        py: 0.7,
+                        minHeight: { xs: 42, sm: 54 },
+                        px: { xs: 0.55, sm: 0.8 },
+                        py: { xs: 0.5, sm: 0.7 },
                         borderRadius: 1,
                         border: `1px solid ${color}55`,
                         background:
@@ -1271,7 +1280,7 @@ const AiCompanionPage = () => {
                         component="span"
                         sx={{
                           maxWidth: "100%",
-                          fontSize: 11.5,
+                          fontSize: { xs: 10.5, sm: 11.5 },
                           fontWeight: 950,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -1312,8 +1321,8 @@ const AiCompanionPage = () => {
                   elevation={0}
                   sx={{
                     width: "min(100%, 620px)",
-                    mt: 0.5,
-                    p: { xs: 1.5, sm: 2 },
+                    mt: { xs: 0, sm: 0.5 },
+                    p: { xs: 1, sm: 2 },
                     borderRadius: 1,
                     border: "1px solid rgba(34,211,238,0.2)",
                     background:
@@ -1322,7 +1331,7 @@ const AiCompanionPage = () => {
                     backdropFilter: COMPANION_GLASS_BLUR,
                   }}
                 >
-                  <Stack spacing={1.4}>
+                  <Stack spacing={{ xs: 0.75, sm: 1.4 }}>
                     <Stack
                       direction={COMPANION_MOBILE_STACK_DIRECTION}
                       spacing={1}
@@ -1333,7 +1342,13 @@ const AiCompanionPage = () => {
                         <Typography sx={{ fontWeight: 950 }}>
                           {copy.workerShiftTitle}
                         </Typography>
-                        <Typography sx={{ color: COMPANION_MUTED_COLOR, lineHeight: 1.45 }}>
+                        <Typography
+                          sx={{
+                            color: COMPANION_MUTED_COLOR,
+                            display: { xs: "none", sm: "block" },
+                            lineHeight: 1.45,
+                          }}
+                        >
                           {copy.workerShiftSubtitle}
                         </Typography>
                       </Stack>
@@ -1362,10 +1377,10 @@ const AiCompanionPage = () => {
                       sx={{
                         display: "grid",
                         gridTemplateColumns: {
-                          xs: "1fr",
+                          xs: THREE_COLUMN_GRID,
                           sm: THREE_COLUMN_GRID,
                         },
-                        gap: 1,
+                        gap: { xs: 0.6, sm: 1 },
                       }}
                     >
                       {[
@@ -1379,9 +1394,9 @@ const AiCompanionPage = () => {
                           spacing={1}
                           alignItems={COMPANION_CENTER_ALIGN}
                           sx={{
-                            minHeight: 44,
-                            px: 1.1,
-                            py: 0.9,
+                            minHeight: { xs: 36, sm: 44 },
+                            px: { xs: 0.55, sm: 1.1 },
+                            py: { xs: 0.6, sm: 0.9 },
                             borderRadius: 1,
                             border: "1px solid rgba(148,163,184,0.16)",
                             backgroundColor: "rgba(255,255,255,0.05)",
@@ -1389,8 +1404,8 @@ const AiCompanionPage = () => {
                         >
                           <Box
                             sx={{
-                              width: 10,
-                              height: 10,
+                              width: { xs: 8, sm: 10 },
+                              height: { xs: 8, sm: 10 },
                               borderRadius: "50%",
                               backgroundColor:
                                 index === 0
@@ -1401,14 +1416,20 @@ const AiCompanionPage = () => {
                               boxShadow: "0 0 18px currentColor",
                             }}
                           />
-                          <Typography sx={{ fontWeight: 850, fontSize: 13.5 }}>
+                          <Typography
+                            sx={{
+                              fontWeight: 850,
+                              fontSize: { xs: 11.5, sm: 13.5 },
+                              lineHeight: 1.15,
+                            }}
+                          >
                             {item}
                           </Typography>
                         </Stack>
                       ))}
                     </Box>
 
-                    <Stack spacing={0.9}>
+                    <Stack spacing={0.9} sx={{ display: { xs: "none", sm: "flex" } }}>
                       <Typography
                         variant="overline"
                         sx={{ color: COMPANION_MUTED_COLOR, fontWeight: 900 }}
@@ -1442,7 +1463,13 @@ const AiCompanionPage = () => {
                 </Paper>
               </Stack>
 
-              <Stack spacing={1.3} sx={{ order: { xs: 3, lg: 3 } }}>
+              <Stack
+                spacing={1.3}
+                sx={{
+                  order: { xs: 3, lg: 3 },
+                  display: { xs: "none", lg: "flex" },
+                }}
+              >
                 <Typography sx={{ color: COMPANION_MUTED_COLOR, fontWeight: 900 }}>
                   {copy.todayRoute}
                 </Typography>
@@ -1502,6 +1529,7 @@ const AiCompanionPage = () => {
             data-ai-worker-tool-grid="true"
             elevation={0}
             sx={{
+              display: { xs: "none", md: "block" },
               p: { xs: 2, md: 3 },
               borderRadius: 1,
               border: PREMIUM_PANEL_BORDER,
@@ -1579,26 +1607,28 @@ const AiCompanionPage = () => {
             </Stack>
           </Paper>
 
-          <LazyModuleBoundary
-            errorTitle={recoveryCopy.errorTitle}
-            errorBody={recoveryCopy.errorBody}
-            reloadLabel={recoveryCopy.reloadLabel}
-            resetKey="ai-companion:shop"
-          >
-            <CompanionShopEntryCard />
-          </LazyModuleBoundary>
+          {!isMobileCompanionOverview ? (
+            <LazyModuleBoundary
+              errorTitle={recoveryCopy.errorTitle}
+              errorBody={recoveryCopy.errorBody}
+              reloadLabel={recoveryCopy.reloadLabel}
+              resetKey="ai-companion:shop"
+            >
+              <CompanionShopEntryCard />
+            </LazyModuleBoundary>
+          ) : null}
 
       {actionCards.length > 0 && (
         <Paper
           className="sn-premium-panel"
           elevation={0}
           sx={{
-            p: { xs: 2, md: 3 },
+            p: { xs: 1.25, md: 3 },
             borderRadius: 1,
             border: PREMIUM_PANEL_BORDER,
           }}
         >
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.1, md: 2 }}>
             <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.focusTitle}
             </Typography>
@@ -1606,7 +1636,7 @@ const AiCompanionPage = () => {
               sx={{
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
-                gap: 1.5,
+                gap: { xs: 1, md: 1.5 },
               }}
             >
               {actionCards.map((card) => (
@@ -1615,11 +1645,11 @@ const AiCompanionPage = () => {
                   key={card.id}
                   variant="outlined"
                   sx={{
-                    p: 2,
+                    p: { xs: 1.25, md: 2 },
                     borderRadius: 1,
                   }}
                 >
-                  <Stack spacing={1.2} sx={{ height: "100%" }}>
+                  <Stack spacing={{ xs: 0.8, md: 1.2 }} sx={{ height: "100%" }}>
                     <Typography sx={{ fontWeight: 900 }}>{card.title}</Typography>
                     <Typography color="text.secondary">{card.body}</Typography>
                     {card.progress !== null && (

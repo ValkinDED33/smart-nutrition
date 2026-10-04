@@ -13,6 +13,7 @@ interface SectionTabsProps {
   activeSection: string;
   onChange: (sectionId: string) => void;
   ariaLabel?: string;
+  stickyOnMobile?: boolean;
 }
 
 export const SectionTabs = ({
@@ -20,16 +21,34 @@ export const SectionTabs = ({
   activeSection,
   onChange,
   ariaLabel = "Page sections",
+  stickyOnMobile = false,
 }: SectionTabsProps) => (
   <Box
     data-ai-morphing-tabs="true"
+    data-nano-section-tabs="true"
     data-ai-shared-element-transition="section-tabs"
+    data-ai-sticky-on-mobile={stickyOnMobile ? "true" : undefined}
     sx={{
       width: "100%",
       overflowX: "auto",
       WebkitOverflowScrolling: "touch",
       pb: 0.25,
       scrollbarWidth: "thin",
+      ...(stickyOnMobile && {
+        position: { xs: "sticky", md: "static" },
+        // Keep in sync with the AppLayout mobile Toolbar minHeight.
+        top: { xs: 64, md: "auto" },
+        zIndex: { xs: 6, md: "auto" },
+        mx: { xs: -1, md: 0 },
+        px: { xs: 1, md: 0 },
+        py: { xs: 0.45, md: 0 },
+        borderRadius: 1,
+        backgroundColor: { xs: "var(--sn-bg-app)", md: "transparent" },
+        boxShadow: {
+          xs: "0 12px 26px -20px rgba(2,6,23,0.5)",
+          md: "none",
+        },
+      }),
     }}
   >
     <Stack
@@ -39,12 +58,14 @@ export const SectionTabs = ({
       spacing={0.8}
       sx={{
         minWidth: "max-content",
-        p: 0.5,
+        p: { xs: 0.35, md: 0.5 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         bgcolor: "var(--sn-surface-glass)",
         boxShadow: "var(--sn-shadow-soft)",
         backdropFilter: "blur(18px)",
+        backgroundImage: "var(--sn-nano-grid)",
+        backgroundSize: "26px 26px",
       }}
     >
       {sections.map((section) => {
@@ -59,9 +80,9 @@ export const SectionTabs = ({
             aria-current={active ? "page" : undefined}
             onClick={() => onChange(section.id)}
             sx={{
-              minHeight: 42,
-              minWidth: { xs: 92, sm: 118 },
-              px: { xs: 1.25, sm: 1.6 },
+              minHeight: { xs: 34, sm: 42 },
+              minWidth: { xs: 76, sm: 118 },
+              px: { xs: 0.9, sm: 1.6 },
               borderRadius: 1,
               border: "1px solid",
               borderColor: active ? "var(--sn-border-strong)" : "transparent",
@@ -97,17 +118,19 @@ export const SectionTabs = ({
                 transform: active ? "scale(1)" : "scale(0.92)",
                 transition: "opacity 160ms ease, transform 160ms ease",
               },
-              "&:hover": {
-                bgcolor: active ? "var(--sn-accent-soft)" : "rgba(20,184,166,0.08)",
-                transform: "translateY(-1px)",
-              },
-              "&:hover::before": {
-                opacity: active ? 0.72 : 0.42,
-                transform: "scale(1)",
-              },
-              "&:hover::after": {
-                opacity: active ? 1 : 0.42,
-                transform: "scaleX(1)",
+              "@media (hover: hover) and (pointer: fine)": {
+                "&:hover": {
+                  bgcolor: active ? "var(--sn-accent-soft)" : "rgba(20,184,166,0.08)",
+                  transform: "translateY(-1px)",
+                },
+                "&:hover::before": {
+                  opacity: active ? 0.72 : 0.42,
+                  transform: "scale(1)",
+                },
+                "&:hover::after": {
+                  opacity: active ? 1 : 0.42,
+                  transform: "scaleX(1)",
+                },
               },
               "&:focus-visible": {
                 outline: "3px solid rgba(20,184,166,0.28)",
@@ -121,7 +144,7 @@ export const SectionTabs = ({
                 component="span"
                 sx={{
                   fontWeight: 900,
-                  fontSize: 14,
+                  fontSize: { xs: 12.5, sm: 14 },
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -133,7 +156,7 @@ export const SectionTabs = ({
                 <Chip
                   label={section.badge}
                   size="small"
-                  sx={{ height: 20, fontSize: 11, fontWeight: 800 }}
+                  sx={{ height: { xs: 18, sm: 20 }, fontSize: 11, fontWeight: 800 }}
                 />
               ) : null}
             </Stack>

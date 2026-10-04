@@ -79,6 +79,8 @@ const GLASS_PANEL_DARK_BG = "rgba(15,23,42,0.54)";
 const SOFT_WHITE_LINE = "rgba(255,255,255,0.1)";
 const SOFT_GLASS_BLUR = "blur(18px)";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
+const THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
+const WEBKIT_LINE_CLAMP_DISPLAY = "-webkit-box";
 const MEALS_ROUTE = "/meals";
 const RECIPES_ROUTE = "/recipes";
 const PROGRESS_ROUTE = "/progress";
@@ -577,6 +579,7 @@ const HomePage = () => {
       navigate(tool.route);
     },
   }));
+  const MOBILE_QUICK_DOCK_VISIBLE_COUNT = 4;
   const homeBlueprintPatterns = [
     {
       key: "slider",
@@ -688,7 +691,7 @@ const HomePage = () => {
         overflowX: "hidden",
       }}
     >
-      <Stack spacing={{ xs: 1.6, md: 2.4 }}>
+      <Stack spacing={{ xs: 0.8, md: 2.4 }}>
       <Paper
         className="sn-companion-panel"
         data-ai-worker-command-center="true"
@@ -697,10 +700,10 @@ const HomePage = () => {
         sx={{
           position: "relative",
           overflow: "hidden",
-          p: { xs: 2.1, sm: 2.6, md: 3.2 },
+          p: { xs: 1, sm: 2, md: 3.2 },
           borderRadius: 1,
           color: heroTextColor,
-          minHeight: { xs: 560, sm: 620, md: 680 },
+          minHeight: { xs: "auto", sm: 520, md: 680 },
           border: `1px solid ${heroBorder}`,
           background: heroBackground,
           boxShadow: isDarkMode
@@ -948,7 +951,7 @@ const HomePage = () => {
         </Box>
 
         <Stack
-          spacing={2.2}
+          spacing={{ xs: 1.1, sm: 1.6, md: 2.2 }}
           data-home-command-center="hero-core"
           sx={{
             position: "relative",
@@ -958,7 +961,7 @@ const HomePage = () => {
             mr: { xl: "292px" },
           }}
         >
-          <Stack spacing={0.9}>
+          <Stack spacing={{ xs: 0.55, md: 0.9 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Box
                 sx={{
@@ -985,8 +988,8 @@ const HomePage = () => {
               component="h1"
               sx={{
                 fontWeight: 950,
-                fontSize: { xs: 38, sm: 52, md: 64 },
-                lineHeight: 0.96,
+                fontSize: { xs: 30, sm: 46, md: 64 },
+                lineHeight: { xs: 1.02, md: 0.96 },
                 letterSpacing: 0,
                 textWrap: "balance",
               }}
@@ -997,9 +1000,13 @@ const HomePage = () => {
               sx={{
                 maxWidth: 620,
                 color: heroMutedColor,
-                fontSize: { xs: 17, md: 19 },
-                lineHeight: 1.55,
+                fontSize: { xs: 14.5, md: 19 },
+                lineHeight: { xs: 1.38, md: 1.55 },
                 fontWeight: 650,
+                display: { xs: WEBKIT_LINE_CLAMP_DISPLAY, sm: "block" },
+                WebkitLineClamp: { xs: 2, sm: "unset" },
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
               }}
             >
               {copy.subtitle}
@@ -1011,11 +1018,15 @@ const HomePage = () => {
             sx={{
               display: "grid",
               gridTemplateColumns: {
-                xs: "1fr",
+                xs: `repeat(${heroStory.length}, minmax(128px, 1fr))`,
                 sm: TWO_COLUMN_GRID,
                 md: "repeat(4, minmax(0, 1fr))",
               },
               gap: 0.75,
+              overflowX: { xs: "auto", sm: "visible" },
+              pb: { xs: 0.2, sm: 0 },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
             }}
           >
             {heroStory.map((item, index) => {
@@ -1030,8 +1041,8 @@ const HomePage = () => {
                   onClick={item.action ? () => runAssistantAction(item.action as AssistantHomeAction) : undefined}
                   sx={{
                     position: "relative",
-                    minHeight: 96,
-                    p: 1,
+                    minHeight: { xs: 66, md: 96 },
+                    p: { xs: 0.72, md: 1 },
                     borderRadius: 1,
                     border: `1px solid ${HERO_STORY_BORDER}`,
                     color: heroTextColor,
@@ -1067,7 +1078,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  <Stack spacing={0.55}>
+                  <Stack spacing={0.38}>
                     <Stack direction="row" spacing={0.7} alignItems="center" minWidth={0}>
                       <Box
                         sx={{
@@ -1090,7 +1101,7 @@ const HomePage = () => {
                       sx={{
                         fontWeight: 950,
                         lineHeight: 1.15,
-                        display: "-webkit-box",
+                        display: WEBKIT_LINE_CLAMP_DISPLAY,
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: "vertical",
                         overflow: "hidden",
@@ -1109,7 +1120,7 @@ const HomePage = () => {
 
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={1.6}
+            spacing={{ xs: 0.85, sm: 1.6 }}
             alignItems={{ xs: ALIGN_START, sm: "center" }}
             justifyContent="space-between"
             data-ai-worker-route-item="true"
@@ -1118,8 +1129,8 @@ const HomePage = () => {
               <Box
                 sx={{
                   position: "relative",
-                  width: 82,
-                  height: 82,
+                  width: { xs: 68, sm: 82 },
+                  height: { xs: 68, sm: 82 },
                   borderRadius: 1,
                   display: "grid",
                   placeItems: "center",
@@ -1130,13 +1141,13 @@ const HomePage = () => {
                   boxShadow: "0 20px 54px rgba(20,184,166,0.22)",
                 }}
               >
-                <AssistantAvatar
-                  name={assistantDisplayName}
-                  variant={assistant.companionKind}
-                  mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
+                  <AssistantAvatar
+                    name={assistantDisplayName}
+                    variant={assistant.companionKind}
+                    mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
                   size={62}
-                  active
-                />
+                    active
+                  />
               </Box>
               <Stack spacing={0.4} minWidth={0}>
                 <Typography variant="overline" sx={{ color: heroMutedColor }}>
@@ -1145,7 +1156,11 @@ const HomePage = () => {
                 <Typography
                   component="h1"
                   variant="h4"
-                  sx={{ fontWeight: 900, overflowWrap: "anywhere" }}
+                  sx={{
+                    fontWeight: 900,
+                    overflowWrap: "anywhere",
+                        fontSize: { xs: 21, sm: 34 },
+                  }}
                 >
                   {assistantDisplayName}
                 </Typography>
@@ -1171,10 +1186,27 @@ const HomePage = () => {
           </Stack>
 
           <Stack spacing={0.6}>
-            <Typography sx={{ color: heroMutedColor, maxWidth: 720 }}>
-              {intelligence.personalizationLine ?? copy.subtitle}
-            </Typography>
-            <Typography sx={{ color: heroTextColor, fontWeight: 900, fontSize: { xs: 19, md: 22 }, lineHeight: 1.35 }}>
+              <Typography
+                sx={{
+                  color: heroMutedColor,
+                  maxWidth: 720,
+                  display: { xs: "none", sm: "block" },
+                }}
+              >
+                {intelligence.personalizationLine ?? copy.subtitle}
+              </Typography>
+            <Typography
+              sx={{
+                color: heroTextColor,
+                fontWeight: 900,
+                fontSize: { xs: 16, md: 22 },
+                lineHeight: { xs: 1.25, md: 1.35 },
+                display: { xs: WEBKIT_LINE_CLAMP_DISPLAY, sm: "block" },
+                WebkitLineClamp: { xs: 2, sm: "unset" },
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
               {intelligence.message}
             </Typography>
           </Stack>
@@ -1182,7 +1214,7 @@ const HomePage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 1.6,
+              p: { xs: 1, md: 1.6 },
               borderRadius: 1,
               color: heroTextColor,
               bgcolor: glassMetricBg,
@@ -1190,7 +1222,7 @@ const HomePage = () => {
               backdropFilter: SOFT_GLASS_BLUR,
             }}
           >
-            <Stack spacing={1.2}>
+              <Stack spacing={{ xs: 0.75, md: 1.2 }}>
               <Stack direction="row" justifyContent="space-between" spacing={1}>
                 <Typography sx={{ fontWeight: 900 }}>{copy.caloriesLeft}</Typography>
                 <Typography sx={{ fontWeight: 900 }}>
@@ -1213,8 +1245,11 @@ const HomePage = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-                  gap: 1,
+                  gridTemplateColumns: {
+                    xs: THREE_COLUMN_GRID,
+                    sm: THREE_COLUMN_GRID,
+                  },
+                  gap: { xs: 0.6, sm: 1 },
                 }}
               >
                 {statusMetrics.map((metric) => (
@@ -1225,7 +1260,9 @@ const HomePage = () => {
                         {metric.label}
                       </Typography>
                     </Stack>
-                    <Typography sx={{ fontWeight: 900 }}>{metric.value}</Typography>
+                    <Typography sx={{ fontWeight: 900, fontSize: { xs: 13, sm: 16 } }}>
+                      {metric.value}
+                    </Typography>
                     <LinearProgress
                       variant="determinate"
                       value={metric.progress}
@@ -1255,7 +1292,7 @@ const HomePage = () => {
               onClick={() => runAssistantAction(intelligence.primaryAction)}
               elevation={0}
               sx={{
-                p: 1.4,
+                p: { xs: 0.82, sm: 1.4 },
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
@@ -1270,7 +1307,16 @@ const HomePage = () => {
                 <Typography sx={{ fontWeight: 900 }}>
                   {intelligence.primaryAction.label}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    display: { xs: WEBKIT_LINE_CLAMP_DISPLAY, sm: "block" },
+                    WebkitLineClamp: { xs: 1, sm: "unset" },
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
                   {intelligence.primaryAction.helper}
                 </Typography>
               </Stack>
@@ -1292,18 +1338,28 @@ const HomePage = () => {
           >
             <Stack
               direction={{ xs: "column", sm: "row" }}
-              spacing={0.8}
+              spacing={{ xs: 0.55, sm: 0.8 }}
               alignItems={{ xs: "stretch", sm: "center" }}
               justifyContent="space-between"
             >
-              <Box sx={{ minWidth: 0, pr: { sm: 1 } }}>
+              <Box sx={{ minWidth: 0, pr: { sm: 1 }, display: { xs: "none", sm: "block" } }}>
                 <Typography sx={{ fontWeight: 950 }}>{copy.actionPrompt}</Typography>
                 <Typography variant="caption" sx={{ color: heroMutedColor }}>
                   {copy.actionPromptHelper}
                 </Typography>
               </Box>
-              <Stack direction="row" spacing={0.7} sx={{ flexWrap: "wrap", rowGap: 0.7 }}>
-                {quickDockActions.map((action) => {
+              <Stack
+                direction="row"
+                spacing={0.6}
+                sx={{
+                  flexWrap: { xs: "nowrap", sm: "wrap" },
+                  rowGap: 0.7,
+                  overflowX: { xs: "auto", sm: "visible" },
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
+                }}
+              >
+                {quickDockActions.map((action, index) => {
                   const Icon = action.icon;
 
                   return (
@@ -1315,9 +1371,17 @@ const HomePage = () => {
                       variant="outlined"
                       size="small"
                       sx={{
+                        display: {
+                          xs:
+                            index < MOBILE_QUICK_DOCK_VISIBLE_COUNT
+                              ? "inline-flex"
+                              : "none",
+                          sm: "inline-flex",
+                        },
                         borderRadius: 999,
                         textTransform: "none",
                         fontWeight: 900,
+                        flex: { xs: "0 0 auto", sm: "0 1 auto" },
                         color: heroTextColor,
                         borderColor: isDarkMode
                           ? "rgba(94,234,212,0.28)"
@@ -1391,6 +1455,7 @@ const HomePage = () => {
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as HomeSection)}
         ariaLabel={copy.sectionsAriaLabel}
+        stickyOnMobile
       />
 
       {activeSection === "assistant" ? (
@@ -1398,7 +1463,7 @@ const HomePage = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+              gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
               gap: 1,
             }}
           >
@@ -1480,13 +1545,19 @@ const HomePage = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: `repeat(${
-                activeSection === "today" ? Math.min(routeCards.length, 6) : 3
-              }, minmax(0, 1fr))`,
-            },
-            gap: 1,
+              gridTemplateColumns: {
+                xs: `repeat(${
+                  activeSection === "today" ? Math.min(routeCards.length, 6) : 3
+                }, minmax(116px, 1fr))`,
+                sm: `repeat(${
+                  activeSection === "today" ? Math.min(routeCards.length, 6) : 3
+                }, minmax(0, 1fr))`,
+              },
+              gap: 1,
+              overflowX: { xs: "auto", sm: "visible" },
+              pb: { xs: 0.2, sm: 0 },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {(activeSection === "today" ? routeCards : progressCards).map((card) => {
@@ -1501,8 +1572,8 @@ const HomePage = () => {
               variant="outlined"
               data-home-women-health-entrypoint={card.testId}
               sx={{
-                p: 1.4,
-                minHeight: 96,
+                p: { xs: 1, sm: 1.4 },
+                minHeight: { xs: 78, sm: 96 },
                 borderRadius: 1,
                 cursor: "pointer",
                 textAlign: "left",
@@ -1514,8 +1585,8 @@ const HomePage = () => {
                 },
               }}
             >
-              <Stack spacing={1}>
-                <Icon size={22} />
+              <Stack spacing={0.7}>
+                <Icon size={20} />
                 <Typography sx={{ fontWeight: 900 }}>{card.label}</Typography>
               </Stack>
             </Paper>

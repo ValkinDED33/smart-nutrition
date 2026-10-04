@@ -21,10 +21,12 @@ import {
 } from "./colorMode";
 
 const STORAGE_KEY = "smart-nutrition.color-mode";
-const SURFACE_BACKGROUND_IMAGE =
-  "radial-gradient(circle at 92% 8%, var(--sn-accent-soft), transparent 34%), linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))";
+const NANO_PANEL_BACKGROUND =
+  "linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass)), var(--sn-nano-grid)";
 const BORDER_SOFT_VAR = "var(--sn-border-soft)";
+const SHADOW_SOFT_VAR = "var(--sn-shadow-soft)";
 const TEXT_PRIMARY_VAR = "var(--sn-text-primary)";
+const DARK_MODE_BODY_SELECTOR = "body[data-sn-color-mode='dark']";
 
 const visualTokens = {
   light: {
@@ -45,6 +47,15 @@ const visualTokens = {
     textSecondary: "#64748b",
     accent: "#0f766e",
     accentSoft: "rgba(20,184,166,0.14)",
+    primary: "#0f766e",
+    primaryStrong: "#115e59",
+    onPrimary: "#ffffff",
+    brandGradient:
+      "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #65a30d 100%)",
+    nanoGrid:
+      "linear-gradient(rgba(20,184,166,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.045) 1px, transparent 1px)",
+    nanoScanline:
+      "linear-gradient(90deg, transparent, rgba(20,184,166,0.36), rgba(132,204,22,0.32), transparent)",
     glow: "0 0 42px rgba(132,204,22,0.22)",
     heroGradient:
       "radial-gradient(circle at 70% 34%, rgba(132,204,22,0.28), transparent 24%), radial-gradient(circle at 86% 4%, rgba(45,212,191,0.22), transparent 24%), linear-gradient(135deg, #07111f 0%, #0f172a 46%, #0f766e 100%)",
@@ -75,6 +86,15 @@ const visualTokens = {
     textSecondary: "#a7b5c8",
     accent: "#5eead4",
     accentSoft: "rgba(94,234,212,0.12)",
+    primary: "#5eead4",
+    primaryStrong: "#14b8a6",
+    onPrimary: "#022c22",
+    brandGradient:
+      "linear-gradient(135deg, #14b8a6 0%, #22d3ee 50%, #84cc16 100%)",
+    nanoGrid:
+      "linear-gradient(rgba(94,234,212,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(94,234,212,0.055) 1px, transparent 1px)",
+    nanoScanline:
+      "linear-gradient(90deg, transparent, rgba(94,234,212,0.46), rgba(132,204,22,0.34), transparent)",
     glow: "0 0 48px rgba(132,204,22,0.18)",
     heroGradient:
       "radial-gradient(circle at 72% 32%, rgba(132,204,22,0.24), transparent 24%), radial-gradient(circle at 88% 4%, rgba(45,212,191,0.18), transparent 24%), linear-gradient(135deg, #020617 0%, #07111f 48%, #0f2f2c 100%)",
@@ -173,14 +193,23 @@ const buildTheme = (mode: AppColorMode) => {
           root: {
             borderRadius: 999,
             minHeight: 40,
+            position: "relative",
+            overflow: "hidden",
+            transition:
+              "background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+            "&:hover": {
+              transform: "translateY(-1px)",
+            },
+            "&:focus-visible": {
+              outline: "3px solid rgba(20,184,166,0.28)",
+              outlineOffset: 2,
+            },
           },
           containedPrimary: {
-            background:
-              "linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #65a30d 100%)",
+            background: "var(--sn-brand-gradient)",
             boxShadow: tokens.glow,
             "&:hover": {
-              background:
-                "linear-gradient(135deg, #115e59 0%, #0f766e 48%, #4d7c0f 100%)",
+              background: "var(--sn-brand-gradient)",
               boxShadow: tokens.shadowStrong,
             },
           },
@@ -216,6 +245,12 @@ const buildTheme = (mode: AppColorMode) => {
         styleOverrides: {
           root: {
             borderRadius: 8,
+            backgroundColor: tokens.surfaceGlass,
+            transition:
+              "border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
+            "&.Mui-focused": {
+              boxShadow: "0 0 0 3px rgba(20,184,166,0.14)",
+            },
           },
         },
       },
@@ -239,6 +274,24 @@ const buildTheme = (mode: AppColorMode) => {
             borderRadius: 8,
             textTransform: "none",
             fontWeight: 800,
+            borderColor: tokens.border,
+            "&.Mui-selected": {
+              color: tokens.primary,
+              borderColor: tokens.borderStrong,
+              backgroundColor: tokens.accentSoft,
+              boxShadow: tokens.glow,
+            },
+          },
+        },
+      },
+      MuiBottomNavigationAction: {
+        styleOverrides: {
+          root: {
+            borderRadius: 999,
+            minWidth: 0,
+            "& .MuiBottomNavigationAction-label": {
+              letterSpacing: 0,
+            },
           },
         },
       },
@@ -267,8 +320,14 @@ const buildGlobalStyles = (mode: AppColorMode) => {
           "--sn-shadow-strong": tokens.shadowStrong,
           "--sn-text-primary": tokens.textPrimary,
           "--sn-text-secondary": tokens.textSecondary,
+          "--sn-primary": tokens.primary,
+          "--sn-primary-strong": tokens.primaryStrong,
+          "--sn-on-primary": tokens.onPrimary,
+          "--sn-brand-gradient": tokens.brandGradient,
           "--sn-accent": tokens.accent,
           "--sn-accent-soft": tokens.accentSoft,
+          "--sn-nano-grid": tokens.nanoGrid,
+          "--sn-nano-scanline": tokens.nanoScanline,
           "--sn-glow": tokens.glow,
           "--sn-companion-hero": tokens.companionHero,
           "--sn-companion-overlay": tokens.companionOverlay,
@@ -282,6 +341,30 @@ const buildGlobalStyles = (mode: AppColorMode) => {
           background: "var(--sn-page-gradient)",
           color: TEXT_PRIMARY_VAR,
         },
+        "html, body, #root": {
+          overscrollBehaviorX: "none",
+        },
+        "*": {
+          scrollbarColor:
+            mode === "dark"
+              ? "rgba(94,234,212,0.36) rgba(15,23,42,0.28)"
+              : "rgba(15,118,110,0.3) rgba(226,232,240,0.54)",
+        },
+        "*::-webkit-scrollbar": {
+          width: 10,
+          height: 10,
+        },
+        "*::-webkit-scrollbar-thumb": {
+          borderRadius: 999,
+          border: "3px solid transparent",
+          backgroundClip: "content-box",
+          backgroundColor:
+            mode === "dark" ? "rgba(94,234,212,0.36)" : "rgba(15,118,110,0.3)",
+        },
+        "*::-webkit-scrollbar-track": {
+          backgroundColor:
+            mode === "dark" ? "rgba(15,23,42,0.28)" : "rgba(226,232,240,0.54)",
+        },
         "::selection": {
           backgroundColor:
             mode === "dark"
@@ -290,17 +373,43 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         },
         ".MuiPaper-root, .MuiCard-root": {
           borderColor: BORDER_SOFT_VAR,
-          boxShadow: "var(--sn-shadow-soft)",
-          backgroundImage: SURFACE_BACKGROUND_IMAGE,
+          boxShadow: SHADOW_SOFT_VAR,
+          backgroundImage: NANO_PANEL_BACKGROUND,
           backdropFilter: "blur(20px)",
+        },
+        ".MuiDivider-root": {
+          borderColor: BORDER_SOFT_VAR,
+        },
+        ".MuiAlert-root": {
+          borderRadius: 8,
+          border: `1px solid ${BORDER_SOFT_VAR}`,
+          boxShadow: SHADOW_SOFT_VAR,
+        },
+        ".MuiMenu-paper, .MuiPopover-paper, .MuiDialog-paper": {
+          border: `1px solid ${BORDER_SOFT_VAR}`,
+          backgroundImage: `${NANO_PANEL_BACKGROUND} !important`,
+          boxShadow: "var(--sn-shadow-strong)",
         },
         ".sn-premium-panel": {
           position: "relative",
           overflow: "hidden",
           border: `1px solid ${BORDER_SOFT_VAR}`,
-          background: SURFACE_BACKGROUND_IMAGE,
-          boxShadow: "var(--sn-shadow-soft)",
+          background: NANO_PANEL_BACKGROUND,
+          boxShadow: SHADOW_SOFT_VAR,
           backdropFilter: "blur(22px)",
+        },
+        ".sn-premium-panel::selection": {
+          backgroundColor:
+            mode === "dark"
+              ? "rgba(94,234,212,0.32)"
+              : "rgba(15,118,110,0.22)",
+        },
+        ".sn-page-transition .sn-premium-panel, .sn-page-transition [data-ai-living-card='true']":
+          {
+            transform: "translateZ(0)",
+          },
+        "[data-ai-space-shell='true']": {
+          isolation: "isolate",
         },
         ".sn-companion-panel": {
           color: "var(--sn-on-companion)",
@@ -334,36 +443,36 @@ const buildGlobalStyles = (mode: AppColorMode) => {
         "body[data-sn-color-mode='light'] .MuiPaper-root, body[data-sn-color-mode='light'] .MuiCard-root":
           {
             backgroundColor: "var(--sn-surface-glass)",
-            backgroundImage: SURFACE_BACKGROUND_IMAGE,
+            backgroundImage: NANO_PANEL_BACKGROUND,
           },
-        "body[data-sn-color-mode='dark']": {
+        [DARK_MODE_BODY_SELECTOR]: {
           background: "var(--sn-page-gradient)",
           color: TEXT_PRIMARY_VAR,
           colorScheme: "dark",
         },
-        "body[data-sn-color-mode='dark'] .MuiPaper-root, body[data-sn-color-mode='dark'] .MuiCard-root":
+        [`${DARK_MODE_BODY_SELECTOR} .MuiPaper-root, ${DARK_MODE_BODY_SELECTOR} .MuiCard-root`]:
           {
             backgroundColor: "var(--sn-surface-glass) !important",
-            backgroundImage: `${SURFACE_BACKGROUND_IMAGE} !important`,
+            backgroundImage: `${NANO_PANEL_BACKGROUND} !important`,
             borderColor: `${BORDER_SOFT_VAR} !important`,
             color: TEXT_PRIMARY_VAR,
           },
-        "body[data-sn-color-mode='dark'] .MuiTypography-colorTextSecondary": {
+        [`${DARK_MODE_BODY_SELECTOR} .MuiTypography-colorTextSecondary`]: {
           color: "var(--sn-text-secondary) !important",
         },
-        "body[data-sn-color-mode='dark'] .MuiOutlinedInput-root": {
+        [`${DARK_MODE_BODY_SELECTOR} .MuiOutlinedInput-root`]: {
           backgroundColor: "rgba(2, 6, 23, 0.46)",
         },
-        "body[data-sn-color-mode='dark'] .MuiOutlinedInput-notchedOutline": {
+        [`${DARK_MODE_BODY_SELECTOR} .MuiOutlinedInput-notchedOutline`]: {
           borderColor: "rgba(148, 163, 184, 0.28)",
         },
-        "body[data-sn-color-mode='dark'] .MuiBottomNavigation-root": {
+        [`${DARK_MODE_BODY_SELECTOR} .MuiBottomNavigation-root`]: {
           color: "#e5eef7",
         },
-        "body[data-sn-color-mode='dark'] .MuiBottomNavigationAction-root": {
+        [`${DARK_MODE_BODY_SELECTOR} .MuiBottomNavigationAction-root`]: {
           color: "#a7b5c8",
         },
-        "body[data-sn-color-mode='dark'] .MuiBottomNavigationAction-root.Mui-selected":
+        [`${DARK_MODE_BODY_SELECTOR} .MuiBottomNavigationAction-root.Mui-selected`]:
           {
             color: "#5eead4",
           },

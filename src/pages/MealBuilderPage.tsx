@@ -13,6 +13,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import type { RootState } from "../app/store";
 import { FoodCommandCenter } from "../features/meal/FoodCommandCenter";
@@ -334,8 +335,9 @@ const MealBuilderPage = () => {
   const inputMode = normalizeMealInputMode(searchParams.get("mode"));
   const commandFocus = normalizeFoodCommandFocus(searchParams.get("focus"));
   const commandFocusQuery = createFoodCommandFocusQuery(commandFocus);
+  const isMobileMealOverview = useMediaQuery("(max-width: 899.95px)");
   const [activeSection, setActiveSection] = useState<MealSection>(
-    inputMode === "barcode" ? "scan" : "add"
+    inputMode === "barcode" ? "scan" : isMobileMealOverview ? "day" : "add"
   );
   const [activeAddTool, setActiveAddTool] = useState<AddTool>("search");
   const isDirectCaptureMode = inputMode === "barcode" || inputMode === "photo";
@@ -702,6 +704,7 @@ const MealBuilderPage = () => {
             activeSection={displayedActiveSection}
             onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
             ariaLabel={copy.sectionsAriaLabel}
+            stickyOnMobile
           />
         </>
       ) : null}

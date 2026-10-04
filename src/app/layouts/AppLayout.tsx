@@ -251,7 +251,9 @@ const Layout = () => {
         minHeight: "100dvh",
         width: "100%",
         maxWidth: "100vw",
-        overflowX: "hidden",
+        // See PageShell: `clip` avoids a nested scrollport that would disable
+        // `position: sticky` on mobile in-page navigation.
+        overflowX: "clip",
         background: "var(--sn-page-gradient)",
       }}
     >
@@ -279,7 +281,7 @@ const Layout = () => {
         <Container maxWidth="xl">
           <Toolbar
             sx={{
-              minHeight: 72,
+              minHeight: { xs: 64, md: 72 },
               px: 0,
               gap: 1.5,
               justifyContent: "space-between",
@@ -306,8 +308,8 @@ const Layout = () => {
               >
                 <Box
                   sx={{
-                    width: 40,
-                    height: 40,
+                    width: { xs: 34, sm: 40 },
+                    height: { xs: 34, sm: 40 },
                     borderRadius: "14px",
                     background: BRAND_GRADIENT,
                     display: "grid",
@@ -591,8 +593,8 @@ const Layout = () => {
         maxWidth={contentMaxWidth}
         disableGutters={isLandingRoute}
         sx={{
-          px: isLandingRoute ? 0 : { xs: 2, sm: 3 },
-          py: isLandingRoute ? 0 : { xs: 2, md: 4 },
+          px: isLandingRoute ? 0 : { xs: 1.25, sm: 3 },
+          py: isLandingRoute ? 0 : { xs: 1.15, md: 4 },
           pb: user
             ? { xs: 16, md: 5 }
             : isLandingRoute
@@ -649,7 +651,7 @@ const Layout = () => {
               }
             }}
             sx={{
-              height: 74,
+              height: 68,
               bgcolor: "transparent",
               "& .MuiBottomNavigationAction-root": {
                 minWidth: 0,

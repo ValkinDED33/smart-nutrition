@@ -292,6 +292,7 @@ const ProgressPage = () => {
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as ProgressSection)}
         ariaLabel={copy.sectionsAriaLabel}
+        stickyOnMobile
       />
 
       {activeSection === "weight" ? (

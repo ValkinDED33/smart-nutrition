@@ -14,7 +14,7 @@ interface SectionCardProps {
 const SECTION_CARD_BORDER_SOFT = "var(--sn-border-soft)";
 const SECTION_CARD_BORDER_STRONG = "var(--sn-border-strong)";
 const SECTION_CARD_SIGNAL_LINE =
-  "linear-gradient(90deg, transparent, rgba(94,234,212,0.82), rgba(132,204,22,0.72), transparent)";
+  "var(--sn-nano-scanline)";
 const SECTION_CARD_WORKER_SIGNAL =
   "radial-gradient(circle, rgba(94,234,212,0.96), rgba(94,234,212,0.18) 50%, transparent 72%)";
 const SECTION_CARD_AI_ORBIT =
@@ -88,6 +88,7 @@ export const SectionCard = ({
     <Paper
       className="sn-premium-panel"
       data-ai-living-card="true"
+      data-nano-section-card="true"
       data-ai-worker-card="true"
       data-ai-shared-element-transition="living-card"
       elevation={0}
@@ -103,10 +104,28 @@ export const SectionCard = ({
         transform: "translateZ(0)",
         transition:
           "border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease",
-        "&:hover": {
-          transform: "translateY(-2px)",
-          borderColor: SECTION_CARD_BORDER_STRONG,
-          boxShadow: "var(--sn-shadow-strong)",
+        "@media (hover: hover) and (pointer: fine)": {
+          "&:hover": {
+            transform: "translateY(-2px)",
+            borderColor: SECTION_CARD_BORDER_STRONG,
+            boxShadow: "var(--sn-shadow-strong)",
+          },
+          "&:hover::before": {
+            opacity: 1,
+            transform: "scale(1.02)",
+          },
+          "&:hover::after": {
+            opacity: 1,
+            transform: "scaleX(1)",
+          },
+          "&:hover [data-ai-card-worker-orbit='true']": {
+            opacity: 0.46,
+            transform: "rotate(28deg) scale(1.06)",
+          },
+          "&:hover [data-ai-card-worker-signal='true']": {
+            opacity: 1,
+            transform: "scale(1.18)",
+          },
         },
         "&:focus-within": {
           borderColor: SECTION_CARD_BORDER_STRONG,
@@ -121,7 +140,7 @@ export const SectionCard = ({
           opacity: tone === "default" ? 0 : 1,
           transition: SECTION_CARD_MOTION_TRANSITION,
         },
-        "&:hover::before, &:focus-within::before": {
+        "&:focus-within::before": {
           opacity: 1,
           transform: "scale(1.02)",
         },
@@ -138,7 +157,7 @@ export const SectionCard = ({
           transform: "scaleX(0.36)",
           transition: SECTION_CARD_MOTION_TRANSITION,
         },
-        "&:hover::after, &:focus-within::after": {
+        "&:focus-within::after": {
           opacity: 1,
           transform: "scaleX(1)",
         },
@@ -167,16 +186,14 @@ export const SectionCard = ({
           transform: "rotate(-18deg)",
           transition: SECTION_CARD_MOTION_TRANSITION,
         },
-        "&:hover [data-ai-card-worker-orbit='true'], &:focus-within [data-ai-card-worker-orbit='true']":
-          {
-            opacity: 0.46,
-            transform: "rotate(28deg) scale(1.06)",
-          },
-        "&:hover [data-ai-card-worker-signal='true'], &:focus-within [data-ai-card-worker-signal='true']":
-          {
-            opacity: 1,
-            transform: "scale(1.18)",
-          },
+        "&:focus-within [data-ai-card-worker-orbit='true']": {
+          opacity: 0.46,
+          transform: "rotate(28deg) scale(1.06)",
+        },
+        "&:focus-within [data-ai-card-worker-signal='true']": {
+          opacity: 1,
+          transform: "scale(1.18)",
+        },
       }}
     >
       <Box aria-hidden data-ai-card-worker-orbit="true" />

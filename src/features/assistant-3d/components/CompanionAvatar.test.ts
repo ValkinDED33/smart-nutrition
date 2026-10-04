@@ -20,14 +20,14 @@ describe("shouldUseCompanionCanvas", () => {
     ).toBe(false);
   });
 
-  it("keeps explicit 3D preferences on the unified production avatar", () => {
+  it("allows explicit desktop 3D for large assistant previews", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
         renderMode: "3d",
-        size: 76,
+        size: 220,
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("falls back to 2D when WebGL is unavailable", () => {

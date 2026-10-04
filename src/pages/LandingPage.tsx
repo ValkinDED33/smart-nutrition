@@ -85,6 +85,7 @@ const STRONG_SHADOW = "var(--sn-shadow-strong)";
 const START_ALIGN = "flex-start";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 const LANDING_HOVER_LIFT = "translateY(-2px)";
+const WEBKIT_LINE_CLAMP_DISPLAY = "-webkit-box";
 const SHOW_EXTENDED_LANDING_SECTIONS = false;
 const LANDING_THREE_COLUMN_GRID = "repeat(3, minmax(0, 1fr))";
 const LANDING_TEAL_TINT_10 = "rgba(20,184,166,0.1)";
@@ -1888,7 +1889,7 @@ const CompanionExperienceScene = ({
                         color: scene.featureMuted,
                         fontSize: 10,
                         lineHeight: 1.25,
-                        display: "-webkit-box",
+                        display: WEBKIT_LINE_CLAMP_DISPLAY,
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: "vertical",
                         overflow: "hidden",
@@ -2005,8 +2006,8 @@ const Hero = ({
         overflow: "hidden",
         borderRadius: { xs: 0, md: 1 },
         px: { xs: 2, sm: 3, md: 4, lg: 4.5 },
-        pt: { xs: 8, sm: 9, md: 10, lg: 10.5 },
-        pb: { xs: 3, md: 4, lg: 5 },
+        pt: { xs: 6.5, sm: 9, md: 10, lg: 10.5 },
+        pb: { xs: 2, md: 4, lg: 5 },
         display: { xs: "flex", md: "grid", lg: "grid" },
         gridTemplateColumns: {
           md: "minmax(0, 0.86fr) minmax(340px, 0.74fr)",
@@ -2043,7 +2044,7 @@ const Hero = ({
       }}
     />
     <Stack
-      spacing={2}
+      spacing={{ xs: 1.2, md: 2 }}
       sx={{
         position: "relative",
         zIndex: 3,
@@ -2051,7 +2052,7 @@ const Hero = ({
         gridRow: { md: "1", lg: "1" },
         maxWidth: { xs: 980, md: 560, lg: 620 },
         minWidth: 0,
-        pt: { xs: 1, md: 2, lg: 4 },
+        pt: { xs: 0.3, md: 2, lg: 4 },
         pb: { md: 3 },
         alignSelf: { lg: "center" },
       }}
@@ -2098,8 +2099,8 @@ const Hero = ({
       <Typography
         component="p"
         sx={{
-          minHeight: { xs: 54, sm: 34 },
-          fontSize: { xs: 19, sm: 22, md: 23, lg: 28 },
+          minHeight: { xs: "auto", sm: 34 },
+          fontSize: { xs: 16.5, sm: 22, md: 23, lg: 28 },
           lineHeight: 1.15,
           fontWeight: 900,
           color: scene.typingColor,
@@ -2113,9 +2114,13 @@ const Hero = ({
         sx={{
           maxWidth: 760,
           color: scene.mutedText,
-          fontSize: { xs: 17, md: 20 },
-          lineHeight: 1.65,
+          fontSize: { xs: 14.5, md: 20 },
+          lineHeight: { xs: 1.45, md: 1.65 },
           fontWeight: 600,
+          display: WEBKIT_LINE_CLAMP_DISPLAY,
+          WebkitLineClamp: { xs: 3, sm: "unset" },
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
         }}
       >
         {copy.subtitle}
@@ -2152,7 +2157,7 @@ const Hero = ({
         alignItems="center"
         sx={{
           display: { xs: "flex", sm: "none" },
-          p: 1.1,
+          p: 0.9,
           borderRadius: 1,
           border: `1px solid ${scene.mobilePanelBorder}`,
           backgroundColor: scene.mobilePanelBg,
@@ -2165,15 +2170,19 @@ const Hero = ({
           <Typography
             sx={{
               color: scene.mutedText,
-              fontSize: 13,
-              lineHeight: 1.45,
+              fontSize: 12.5,
+              lineHeight: 1.35,
+              display: WEBKIT_LINE_CLAMP_DISPLAY,
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
             }}
           >
             {copy.mascot.body}
           </Typography>
         </Box>
       </Stack>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4}>
+      <Stack direction={{ xs: "row", sm: "row" }} spacing={{ xs: 0.8, sm: 1.4 }}>
         <Button
           component={Link}
           to="/register"
@@ -2181,8 +2190,8 @@ const Hero = ({
           size="large"
           onClick={playAIDiscoverySound}
           sx={{
-            px: 3.2,
-            py: 1.4,
+            px: { xs: 1.6, sm: 3.2 },
+            py: { xs: 1.05, sm: 1.4 },
             color: "#ffffff",
           }}
         >
@@ -2196,8 +2205,8 @@ const Hero = ({
           onClick={playGentleClickSound}
           startIcon={<MessageSquareText size={18} aria-hidden="true" />}
           sx={{
-            px: 3.2,
-            py: 1.4,
+            px: { xs: 1.6, sm: 3.2 },
+            py: { xs: 1.05, sm: 1.4 },
             color: scene.secondaryButtonColor,
             borderColor: scene.secondaryButtonBorder,
             bgcolor: scene.secondaryButtonBg,
@@ -3110,17 +3119,24 @@ const CompanionCapabilitySlider = ({
         maxWidth: 1440,
         mx: "auto",
         px: { xs: 2, sm: 3, md: 5 },
-        pb: { xs: 4, md: 5 },
+        pb: { xs: 2.2, md: 5 },
       }}
     >
-      <Stack spacing={1.2} sx={{ mb: 2 }}>
+      <Stack spacing={{ xs: 0.75, md: 1.2 }} sx={{ mb: { xs: 1, md: 2 } }}>
         <Typography variant="overline" sx={{ color: scene.accentColor, fontWeight: 900 }}>
           {copy.sliderEyebrow}
         </Typography>
         <Typography component="h2" variant="h3" sx={landingSectionTitleSx}>
           {copy.sliderTitle}
         </Typography>
-        <Typography color="text.secondary" sx={{ maxWidth: 820, lineHeight: 1.7 }}>
+        <Typography
+          color="text.secondary"
+          sx={{
+            maxWidth: 820,
+            lineHeight: 1.7,
+            display: { xs: "none", sm: "block" },
+          }}
+        >
           {copy.sliderBody}
         </Typography>
       </Stack>
@@ -3148,8 +3164,8 @@ const CompanionCapabilitySlider = ({
             data-landing-slider-function-preview="true"
             sx={{
               position: "relative",
-              minHeight: { xs: 360, md: 480 },
-              display: "grid",
+              minHeight: { xs: 0, md: 480 },
+              display: { xs: "none", sm: "grid" },
               gridTemplateRows: "auto 1fr",
               alignItems: "center",
               p: { xs: 2, md: 4 },
@@ -3272,16 +3288,22 @@ const CompanionCapabilitySlider = ({
           </Box>
 
           <Stack
-            spacing={3}
+            spacing={{ xs: 1.3, md: 3 }}
             sx={{
-              p: { xs: 2.4, md: 4.5, lg: 5 },
-              minHeight: { xs: 390, md: 480 },
+              p: { xs: 1.35, md: 4.5, lg: 5 },
+              minHeight: { xs: "auto", md: 480 },
               justifyContent: "space-between",
               bgcolor: isDarkMode ? "rgba(255,255,255,0.03)" : "#ffffff",
             }}
           >
-            <Stack spacing={2.4}>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Stack spacing={{ xs: 1.1, md: 2.4 }}>
+              <Stack
+                direction="row"
+                spacing={0.7}
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ display: { xs: "none", sm: "flex" } }}
+              >
                 {active.tags.map((tag) => (
                   <Chip
                     key={tag}
@@ -3305,7 +3327,7 @@ const CompanionCapabilitySlider = ({
                 sx={{
                   m: 0,
                   color: scene.heroText,
-                  fontSize: { xs: 34, md: 48, lg: 56 },
+                  fontSize: { xs: 23, md: 48, lg: 56 },
                   lineHeight: 1.02,
                   fontWeight: 900,
                   letterSpacing: 0,
@@ -3318,7 +3340,7 @@ const CompanionCapabilitySlider = ({
                   sx={{
                     m: 0,
                     color: active.tone,
-                    fontSize: { xs: 18, md: 24 },
+                    fontSize: { xs: 15, md: 24 },
                     lineHeight: 1.25,
                     fontWeight: 900,
                   }}
@@ -3330,7 +3352,7 @@ const CompanionCapabilitySlider = ({
                 <Paper
                   elevation={0}
                   sx={{
-                    p: 1.6,
+                    p: { xs: 1, md: 1.6 },
                     borderRadius: 1,
                     border: `1px solid ${scene.featureRailBorder}`,
                     bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(236,253,245,0.72)",
@@ -3340,7 +3362,17 @@ const CompanionCapabilitySlider = ({
                     {active.contains}
                   </Typography>
                   {active.benefit ? (
-                    <Typography sx={{ mt: 0.6, color: scene.mutedText, lineHeight: 1.6 }}>
+                    <Typography
+                      sx={{
+                        mt: 0.6,
+                        color: scene.mutedText,
+                        lineHeight: 1.45,
+                        display: WEBKIT_LINE_CLAMP_DISPLAY,
+                        WebkitLineClamp: { xs: 2, sm: "unset" },
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
                       {active.benefit}
                     </Typography>
                   ) : null}
@@ -3356,16 +3388,20 @@ const CompanionCapabilitySlider = ({
                   m: 0,
                   maxWidth: 680,
                   color: scene.mutedText,
-                  fontSize: { xs: 16, md: 19 },
-                  lineHeight: 1.65,
+                  fontSize: { xs: 14, md: 19 },
+                  lineHeight: { xs: 1.45, md: 1.65 },
                   fontWeight: 650,
+                  display: WEBKIT_LINE_CLAMP_DISPLAY,
+                  WebkitLineClamp: { xs: 2, sm: "unset" },
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
                 {active.body}
               </Typography>
             </Stack>
 
-            <Stack direction="row" spacing={1.2} alignItems="center">
+            <Stack direction="row" spacing={{ xs: 0.75, md: 1.2 }} alignItems="center">
               <Button
                 type="button"
                 variant="outlined"
@@ -3373,10 +3409,10 @@ const CompanionCapabilitySlider = ({
                 aria-label={copy.sliderPreviousLabel}
                 sx={{
                   ...iconButtonSx,
-                  width: 58,
-                  height: 58,
+                  width: { xs: 44, md: 58 },
+                  height: { xs: 44, md: 58 },
                   borderRadius: "50%",
-                  minWidth: 58,
+                  minWidth: { xs: 44, md: 58 },
                   "&:hover": {
                     transform: LANDING_HOVER_LIFT,
                     borderColor: active.tone,
@@ -3396,10 +3432,10 @@ const CompanionCapabilitySlider = ({
                 aria-label={copy.sliderNextLabel}
                 sx={{
                   ...iconButtonSx,
-                  width: 58,
-                  height: 58,
+                  width: { xs: 44, md: 58 },
+                  height: { xs: 44, md: 58 },
                   borderRadius: "50%",
-                  minWidth: 58,
+                  minWidth: { xs: 44, md: 58 },
                   "&:hover": {
                     transform: LANDING_HOVER_LIFT,
                     borderColor: active.tone,
@@ -3506,7 +3542,7 @@ const LandingPage = () => {
 
   return (
     <Stack
-      spacing={{ xs: 4, md: 5 }}
+      spacing={{ xs: 2.2, md: 5 }}
       sx={{
         background: scene.pageBackground,
         color: scene.heroText,
@@ -3523,7 +3559,9 @@ const LandingPage = () => {
     >
       <Hero copy={copy} language={appLanguage} isDarkMode={isDarkMode} />
       <CompanionCapabilitySlider copy={copy} isDarkMode={isDarkMode} />
-      <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
+      <Box sx={{ display: { xs: "none", md: "block" } }}>
+        <AIDiscoveryAccordion copy={copy} isDarkMode={isDarkMode} />
+      </Box>
       {SHOW_EXTENDED_LANDING_SECTIONS ? (
         <Stack
           spacing={{ xs: 4, md: 5 }}
@@ -3532,7 +3570,7 @@ const LandingPage = () => {
             maxWidth: 1440,
             mx: "auto",
             px: { xs: 2, sm: 3, md: 5 },
-            pb: { xs: 4, md: 6 },
+            pb: { xs: 2.5, md: 6 },
           }}
         >
           <EcosystemGrid copy={copy} />
@@ -3548,7 +3586,7 @@ const LandingPage = () => {
             maxWidth: 1440,
             mx: "auto",
             px: { xs: 2, sm: 3, md: 5 },
-            pb: { xs: 4, md: 5 },
+            pb: { xs: 2.5, md: 5 },
           }}
         >
           <FinalCta copy={copy} />

@@ -20,4 +20,17 @@ describe("SectionTabs", () => {
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain('aria-current="page"');
   });
+
+  it("marks sticky-on-mobile navigation without changing the default tabs", () => {
+    const html = renderToString(
+      <SectionTabs
+        sections={[{ id: "today", label: "Today" }]}
+        activeSection="today"
+        onChange={vi.fn()}
+        stickyOnMobile
+      />
+    );
+
+    expect(html).toContain('data-ai-sticky-on-mobile="true"');
+  });
 });

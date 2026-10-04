@@ -58,6 +58,7 @@ export const ProfileSectionTabs = ({ sections, ariaLabel }: ProfileSectionTabsPr
         activeSection={safeActiveSection}
         onChange={handleSectionChange}
         ariaLabel={ariaLabel}
+        stickyOnMobile
       />
 
       <Box id={safeActiveSection}>{selectedSection.content}</Box>

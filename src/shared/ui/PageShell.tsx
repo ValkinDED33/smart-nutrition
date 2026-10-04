@@ -16,7 +16,7 @@ const PAGE_SHELL_GRID_BACKGROUND =
 const PAGE_SHELL_SIGNAL_DOT =
   "radial-gradient(circle, rgba(94,234,212,0.92), rgba(94,234,212,0.24) 48%, transparent 70%)";
 const PAGE_SHELL_ROUTE_LINE =
-  "linear-gradient(90deg, transparent, rgba(94,234,212,0.46), rgba(132,204,22,0.38), transparent)";
+  "var(--sn-nano-scanline)";
 
 export const PageShell = ({
   title,
@@ -29,6 +29,7 @@ export const PageShell = ({
 }: PageShellProps) => (
   <Box
     data-ai-space-shell="true"
+    data-nano-page-shell="true"
     data-ai-master-page-grid="true"
     data-ai-page-route-space="true"
     sx={{
@@ -36,7 +37,9 @@ export const PageShell = ({
       maxWidth,
       mx: "auto",
       px: { xs: compact ? 0 : 0.5, sm: compact ? 0 : 1, md: 0 },
-      overflowX: "hidden",
+      // `clip` contains decorative overflow without creating a scrollport, so
+      // sticky in-page navigation (SectionTabs stickyOnMobile) keeps working.
+      overflowX: "clip",
       position: "relative",
       "&::before": {
         content: '""',
@@ -64,7 +67,7 @@ export const PageShell = ({
     }}
   >
     <Stack
-      spacing={compact ? 2 : { xs: 2, md: 2.75 }}
+      spacing={compact ? { xs: 1.25, md: 2 } : { xs: 1.25, md: 2.75 }}
       sx={{ position: "relative", zIndex: 1 }}
     >
       <Box
@@ -74,16 +77,17 @@ export const PageShell = ({
         sx={{
           position: "relative",
           overflow: "hidden",
-          p: compact ? { xs: 1.6, md: 2 } : { xs: 1.8, sm: 2.2, md: 2.6 },
+          p: compact ? { xs: 1.15, md: 2 } : { xs: 1.25, sm: 1.7, md: 2.6 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
+          boxShadow: "var(--sn-shadow-soft)",
           "&::after": {
             content: '""',
             position: "absolute",
-            width: { xs: 220, md: 360 },
-            height: { xs: 220, md: 360 },
-            right: { xs: -98, md: -84 },
-            top: { xs: -126, md: -164 },
+            width: { xs: 150, md: 360 },
+            height: { xs: 150, md: 360 },
+            right: { xs: -72, md: -84 },
+            top: { xs: -86, md: -164 },
             borderRadius: "50%",
             pointerEvents: "none",
             background: "var(--sn-portal-ring)",
@@ -95,10 +99,20 @@ export const PageShell = ({
             left: { xs: "18%", md: "48%" },
             right: { xs: "-18%", md: "-4%" },
             bottom: -1,
-            height: { xs: 74, md: 118 },
+            height: { xs: 44, md: 118 },
             pointerEvents: "none",
             background: "var(--sn-scene-landscape)",
             opacity: 0.7,
+          },
+          "& > [data-nano-hero-scanline='true']": {
+            position: "absolute",
+            left: { xs: 12, md: 18 },
+            right: { xs: 12, md: 18 },
+            top: 0,
+            height: 2,
+            borderRadius: 999,
+            background: PAGE_SHELL_ROUTE_LINE,
+            opacity: 0.82,
           },
           "[data-ai-page-signal-dot='true']": {
             position: "absolute",
@@ -111,6 +125,7 @@ export const PageShell = ({
           },
         }}
       >
+        <Box aria-hidden data-nano-hero-scanline="true" />
         <Box
           aria-hidden
           data-ai-page-signal-dot="true"
@@ -123,7 +138,7 @@ export const PageShell = ({
         />
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={{ xs: 1.25, md: 2 }}
+          spacing={{ xs: 0.85, md: 2 }}
           alignItems={{ xs: "stretch", md: "flex-start" }}
           justifyContent="space-between"
           sx={{ position: "relative", zIndex: 1 }}
@@ -134,8 +149,8 @@ export const PageShell = ({
               variant="h4"
               sx={{
                 fontWeight: 900,
-                fontSize: { xs: compact ? 28 : 32, md: compact ? 34 : 40 },
-                lineHeight: 1.05,
+                fontSize: { xs: compact ? 24 : 26, sm: 30, md: compact ? 34 : 40 },
+                lineHeight: { xs: 1.08, md: 1.05 },
                 overflowWrap: "anywhere",
               }}
             >
@@ -146,8 +161,12 @@ export const PageShell = ({
                 color="text.secondary"
                 sx={{
                   maxWidth: 760,
-                  lineHeight: 1.65,
+                  lineHeight: { xs: 1.42, md: 1.65 },
                   overflowWrap: "anywhere",
+                  display: { xs: "-webkit-box", sm: "block" },
+                  WebkitLineClamp: { xs: 2, sm: "unset" },
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
                 }}
               >
                 {subtitle}

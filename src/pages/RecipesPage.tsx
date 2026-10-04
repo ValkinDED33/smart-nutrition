@@ -300,6 +300,7 @@ const RecipesPage = () => {
         activeSection={activeSection}
         onChange={(sectionId) => setActiveSection(sectionId as RecipesSection)}
         ariaLabel={sections.sectionsAriaLabel}
+        stickyOnMobile
       />
 
       <LazyModuleBoundary

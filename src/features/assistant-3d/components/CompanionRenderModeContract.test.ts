@@ -16,14 +16,14 @@ describe("explicit 3D companion surface contract", () => {
     ).toBe(false);
   });
 
-  it("does not let explicit 3D replace the unified production assistant", () => {
+  it("allows explicit 3D only for large desktop assistant previews", () => {
     expect(
       shouldUseCompanionCanvas({
         canUseCanvas: true,
         renderMode: "3d",
         size: 220,
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("does not let explicit 3D preference bypass mobile and low-power runtime guards", () => {
@@ -105,13 +105,14 @@ describe("explicit 3D companion surface contract", () => {
     expect(source).not.toContain("sessionStorage");
   });
 
-  it("keeps the legacy 3D canvas out of the canonical companion avatar path", async () => {
+  it("keeps 3D lazy, guarded, and backed by the shared 2D avatar", async () => {
     const source = await readSource("CompanionAvatar.tsx");
 
     expect(source).toContain("CompanionFallback2D");
     expect(source).toContain("@shared/components/AssistantAvatar");
-    expect(source).not.toContain("CompanionCanvas");
-    expect(source).not.toContain("lazy(");
-    expect(source).not.toContain("Suspense");
+    expect(source).toContain("LazyCompanionCanvas");
+    expect(source).toContain("CompanionErrorBoundary");
+    expect(source).toContain("shouldUseCompanionCanvas");
+    expect(source).toContain("Suspense");
   });
 });

@@ -10,6 +10,21 @@ type CompanionCanvasGuards = {
   lowPowerDevice?: boolean;
 };
 
-// The full-body shared avatar is the canonical Smart Nutrition assistant.
-// Keep the legacy canvas path disabled until it can match the accepted product visual system.
-export const shouldUseCompanionCanvas: (guards: CompanionCanvasGuards) => boolean = () => false;
+const MINIMUM_CANVAS_SIZE = 96;
+
+export const shouldUseCompanionCanvas = ({
+  canUseCanvas,
+  renderMode = "2d",
+  size = 64,
+  isMobileViewport = false,
+  prefersReducedMotion = false,
+  saveData = false,
+  lowPowerDevice = false,
+}: CompanionCanvasGuards) =>
+  canUseCanvas &&
+  renderMode === "3d" &&
+  size >= MINIMUM_CANVAS_SIZE &&
+  !isMobileViewport &&
+  !prefersReducedMotion &&
+  !saveData &&
+  !lowPowerDevice;

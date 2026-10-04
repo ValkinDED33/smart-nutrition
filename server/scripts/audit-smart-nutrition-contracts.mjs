@@ -2816,15 +2816,19 @@ addCheck(
 );
 
 addCheck(
-  "canonical companion uses the shared full-body assistant avatar",
+  "canonical companion keeps 3D explicit lazy and mobile guarded",
   companionAvatarSource.includes("@shared/components/AssistantAvatar") &&
     companionAvatarSource.includes("CompanionFallback2D") &&
-    companionAvatarSource.includes("<CompanionFallback2D {...props} />") &&
-    !companionAvatarSource.includes("CompanionCanvas") &&
-    !companionAvatarSource.includes("lazy(") &&
-    !companionAvatarSource.includes("Suspense") &&
-    companionAvatarModelSource.includes("=> false"),
-  "Assistant surfaces must use the canonical shared full-body avatar and must not silently fall back to the old WebGL canvas path."
+    companionAvatarSource.includes("LazyCompanionCanvas") &&
+    companionAvatarSource.includes("CompanionErrorBoundary") &&
+    companionAvatarSource.includes("shouldUseCompanionCanvas") &&
+    companionAvatarSource.includes("Suspense") &&
+    companionAvatarModelSource.includes('renderMode === "3d"') &&
+    companionAvatarModelSource.includes("!isMobileViewport") &&
+    companionAvatarModelSource.includes("!prefersReducedMotion") &&
+    companionAvatarModelSource.includes("!saveData") &&
+    companionAvatarModelSource.includes("!lowPowerDevice"),
+  "Assistant surfaces must default to the shared avatar while loading 3D only after an explicit desktop-safe user preference."
 );
 
 addCheck(
