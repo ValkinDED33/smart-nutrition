@@ -18,8 +18,6 @@ import {
 } from "../../shared/ui/motion/onboardingGuide";
 import type { OnboardingState } from "./types";
 
-type GuidePlacement = "inline";
-
 const guideCopy = {
   uk: {
     welcome: "Я буду поруч на кожному кроці. Почнемо спокійно.",
@@ -72,84 +70,69 @@ type GuideCopy = (typeof guideCopy)[keyof typeof guideCopy];
 
 type StepMeta = {
   key: keyof typeof guideCopy.en;
-  placement: GuidePlacement;
   mood: AssistantAvatarMood;
 };
 
 const stepMeta: Record<string, StepMeta> = {
   "/onboarding": {
     key: "welcome",
-    placement: "inline",
     mood: "happy",
   },
   "/onboarding/welcome": {
     key: "welcome",
-    placement: "inline",
     mood: "happy",
   },
   "/onboarding/assistant": {
     key: "assistant",
-    placement: "inline",
     mood: "celebrate",
   },
   "/onboarding/name": {
     key: "name",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/age": {
     key: "age",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/gender": {
     key: "gender",
-    placement: "inline",
     mood: "happy",
   },
   "/onboarding/women-health": {
     key: "womenHealth",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/height": {
     key: "height",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/goal": {
     key: "goal",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/friction": {
     key: "friction",
-    placement: "inline",
     mood: "concerned",
   },
   "/onboarding/motivation": {
     key: "motivation",
-    placement: "inline",
     mood: "happy",
   },
   "/onboarding/weight": {
     key: "weight",
-    placement: "inline",
     mood: "coach",
   },
   "/onboarding/finish": {
     key: "finish",
-    placement: "inline",
     mood: "celebrate",
   },
 };
 
-const GUIDE_BUBBLE_WIDTH = 480;
+const GUIDE_BUBBLE_WIDTH = 280;
 const GUIDE_AVATAR_SIZE = 64;
 
 const fallbackStepMeta: StepMeta = {
   key: "assistant",
-  placement: "inline",
   mood: "celebrate",
 };
 
@@ -328,16 +311,21 @@ export const OnboardingGuide = ({ state }: { state: OnboardingState }) => {
         data-onboarding-guide-hidden-while-field-focused={fieldFocused ? "true" : "false"}
         data-onboarding-guide-inline="true"
         sx={{
-          width: "min(560px, calc(100% - 32px))",
-          mx: "auto",
-          mt: { md: 2.5 },
-          mb: { md: 1.5 },
-          position: "relative",
-          zIndex: 1,
+          width: "min(380px, calc(100% - 32px))",
+          position: "fixed",
+          top: 104,
+          right: 24,
+          zIndex: 8,
           pointerEvents: "none",
-          display: { xs: "none", md: "block" },
+          display: { xs: "none", lg: "block" },
           maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24,
           transformOrigin: "center top",
+          "@media (max-width: 1280px)": {
+            display: "none",
+          },
+          "@media (max-height: 740px)": {
+            display: "none",
+          },
         }}
       >
         <Box

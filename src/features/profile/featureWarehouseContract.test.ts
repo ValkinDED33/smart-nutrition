@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const readSource = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8");
 const PREMIUM_ACCESS_CARD_SOURCE_PATH = "src/features/profile/PremiumAccessCard.tsx";
+const COMPANION_SHOP_CARD_SOURCE_PATH = "src/features/profile/CompanionShopCard.tsx";
 const APP_SOURCE_PATH = "src/App.tsx";
 const COMPANION_SHOP_ROUTE = "/assistant/shop";
 const LEGACY_COMPANION_SHOP_ROUTE = "/companion-shop";
@@ -94,7 +95,7 @@ describe("profile feature warehouse contract", () => {
   });
 
   it("does not show unavailable companion shop items as coming soon inventory", () => {
-    const source = readSource("src/features/profile/CompanionShopCard.tsx");
+    const source = readSource(COMPANION_SHOP_CARD_SOURCE_PATH);
 
     expect(source).toContain("companionShopCatalog.filter((item) => item.available)");
     expect(source).toContain('data-companion-shop-studio="true"');
@@ -124,6 +125,17 @@ describe("profile feature warehouse contract", () => {
     expect(source).not.toContain("comingSoon");
     expect(source).not.toContain("futureItem");
     expect(source).not.toContain("Available later");
+  });
+
+  it("keeps the companion shop mobile-safe instead of a fifty-card vertical curtain", () => {
+    const source = readSource(COMPANION_SHOP_CARD_SOURCE_PATH);
+
+    expect(source).toContain('data-companion-shop-mobile-collection-rail="true"');
+    expect(source).toContain('data-companion-shop-tool-rail="true"');
+    expect(source).toContain('maxHeight: { xs: "min(54vh, 560px)", md: "none" }');
+    expect(source).toContain('overflowY: { xs: "auto", md: "visible" }');
+    expect(source).toContain('display: { xs: "flex", md: "grid" }');
+    expect(source).toContain('scrollSnapType: { xs: "x mandatory", md: "none" }');
   });
 
   it("keeps the companion shop as a dedicated route instead of a long inline drawer", () => {

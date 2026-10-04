@@ -817,13 +817,26 @@ const CompanionShopCard = () => {
               </Stack>
 
               <Box
+                data-companion-shop-mobile-collection-rail="true"
                 sx={{
                   display: "grid",
                   gridTemplateColumns: {
-                    xs: "repeat(2, minmax(0, 1fr))",
+                    xs: "repeat(2, minmax(136px, 1fr))",
                     sm: "repeat(3, minmax(0, 1fr))",
                   },
                   gap: 1.1,
+                  maxHeight: { xs: "min(54vh, 560px)", md: "none" },
+                  overflowY: { xs: "auto", md: "visible" },
+                  overscrollBehavior: "contain",
+                  pr: { xs: 0.5, md: 0 },
+                  scrollPaddingBottom: 12,
+                  "&::-webkit-scrollbar": {
+                    width: 8,
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "rgba(34,211,238,0.28)",
+                    borderRadius: 999,
+                  },
                 }}
               >
                 {visibleCatalogItems.map((item) => {
@@ -856,7 +869,7 @@ const CompanionShopCard = () => {
                       sx={{
                         p: 1,
                         borderRadius: 1,
-                        minHeight: { xs: 204, md: 230 },
+                        minHeight: { xs: 188, md: 230 },
                         cursor: "pointer",
                         borderColor: isFocused
                           ? "rgba(34,211,238,0.72)"
@@ -883,7 +896,7 @@ const CompanionShopCard = () => {
                         {item.companionKind ? (
                           <Box
                             sx={{
-                              minHeight: { xs: 88, md: 102 },
+                              minHeight: { xs: 78, md: 102 },
                               display: "grid",
                               placeItems: "center",
                               borderRadius: 1,
@@ -971,7 +984,7 @@ const CompanionShopCard = () => {
             data-companion-live-preview="true"
             sx={{
               position: "relative",
-              minHeight: { xs: 500, lg: 620 },
+              minHeight: { xs: 390, sm: 470, lg: 620 },
               p: { xs: 2, md: 3 },
               borderRadius: 1,
               overflow: "hidden",
@@ -1014,7 +1027,7 @@ const CompanionShopCard = () => {
               <Box
                 sx={{
                   position: "relative",
-                  minHeight: { xs: 255, md: 320 },
+                  minHeight: { xs: 210, md: 320 },
                   display: "grid",
                   placeItems: "center",
                 }}
@@ -1043,7 +1056,7 @@ const CompanionShopCard = () => {
                         background: "rgba(15,23,42,0.72)",
                         backdropFilter: "blur(14px)",
                         display: {
-                          xs: index > 2 ? "none" : "block",
+                          xs: index > 1 ? "none" : "block",
                           md: index > 5 ? "none" : "block",
                           xl: "block",
                         },
@@ -1228,14 +1241,29 @@ const CompanionShopCard = () => {
               </Typography>
             </Stack>
             <Box
+              data-companion-shop-tool-rail="true"
               sx={{
-                display: "grid",
+                display: { xs: "flex", md: "grid" },
                 gridTemplateColumns: {
-                  xs: "repeat(2, minmax(0, 1fr))",
-                  sm: "repeat(3, minmax(0, 1fr))",
+                  md: "repeat(3, minmax(0, 1fr))",
                   lg: "repeat(5, minmax(0, 1fr))",
                 },
                 gap: 1,
+                overflowX: { xs: "auto", md: "visible" },
+                overscrollBehaviorX: "contain",
+                pb: { xs: 0.5, md: 0 },
+                scrollSnapType: { xs: "x mandatory", md: "none" },
+                "& > *": {
+                  flex: { xs: "0 0 176px", md: "initial" },
+                  scrollSnapAlign: "start",
+                },
+                "&::-webkit-scrollbar": {
+                  height: 8,
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "rgba(34,211,238,0.28)",
+                  borderRadius: 999,
+                },
               }}
             >
               {assistantWorkerTools.map((tool) => {

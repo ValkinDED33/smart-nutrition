@@ -23,6 +23,12 @@ const loopbackIpv4 = ["127", "0", "0", "1"].join(".");
 const loopbackApiUrl = (hostname: string) => `http://${hostname}:8787/api`;
 const VERCEL_PREVIEW_HOSTNAME = "smart-nutrition-topaz.vercel.app";
 const VERCEL_PREVIEW_ORIGIN = "https://smart-nutrition-topaz.vercel.app";
+const USER_PROJECT_VERCEL_PREVIEW_HOSTNAME =
+  "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app";
+const USER_PROJECT_VERCEL_PREVIEW_ORIGIN =
+  "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app";
+const RENDER_API_BASE_URL = "https://smart-nutrition-sk5r.onrender.com/api";
+const RENDER_API_HOSTNAME = "smart-nutrition-sk5r.onrender.com";
 const REMOTE_BASE_URL_KEY = "smart-nutrition.remote-base-url";
 const AUTH_SESSION_HINT_KEY = "smart-nutrition.auth-session-hint";
 const REMOTE_CLOUD_MODE = "remote-cloud";
@@ -186,15 +192,15 @@ describe("remote API base URL guards", () => {
     );
   });
 
-  it("uses the configured Render API from Vercel previews when the preview API is protected", async () => {
+  it("uses the same-origin API proxy from Vercel previews even when an env API URL exists", async () => {
     vi.stubEnv(
       "VITE_SMART_NUTRITION_API_BASE_URL",
-      "https://smart-nutrition-sk5r.onrender.com/api"
+      RENDER_API_BASE_URL
     );
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
-        origin: "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+        hostname: USER_PROJECT_VERCEL_PREVIEW_HOSTNAME,
+        origin: USER_PROJECT_VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn().mockResolvedValue(
@@ -212,19 +218,56 @@ describe("remote API base URL guards", () => {
 
     await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      `${USER_PROJECT_VERCEL_PREVIEW_ORIGIN}/api/health`,
       expect.any(Object)
     );
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
-      "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app/api"
+      RENDER_API_HOSTNAME
     );
   });
 
-  it("falls back to the canonical Render API for unlisted Vercel previews without a configured API URL", async () => {
+  it("routes Vercel preview registration availability through the same-origin API proxy", async () => {
+    vi.stubEnv(
+      "VITE_SMART_NUTRITION_API_BASE_URL",
+      RENDER_API_BASE_URL
+    );
     vi.stubGlobal("window", {
       location: {
-        hostname: "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
-        origin: "https://smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app",
+        hostname: USER_PROJECT_VERCEL_PREVIEW_HOSTNAME,
+        origin: USER_PROJECT_VERCEL_PREVIEW_ORIGIN,
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          name: { checked: true, valid: true, available: true },
+          email: { checked: false, valid: false, available: false },
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      remoteAuthProvider.checkRegistrationAvailability({ name: "PreviewUser" })
+    ).resolves.toMatchObject({
+      name: { available: true },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${USER_PROJECT_VERCEL_PREVIEW_ORIGIN}/api/auth/availability`,
+      expect.any(Object)
+    );
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
+      RENDER_API_HOSTNAME
+    );
+  });
+
+  it("uses the same-origin API proxy for unlisted Vercel previews without a configured API URL", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        hostname: USER_PROJECT_VERCEL_PREVIEW_HOSTNAME,
+        origin: USER_PROJECT_VERCEL_PREVIEW_ORIGIN,
       },
     });
     const fetchMock = vi.fn().mockResolvedValue(
@@ -242,11 +285,11 @@ describe("remote API base URL guards", () => {
 
     await expect(checkRemoteBackendAvailability(true)).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://smart-nutrition-sk5r.onrender.com/api/health",
+      `${USER_PROJECT_VERCEL_PREVIEW_ORIGIN}/api/health`,
       expect.any(Object)
     );
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(
-      "smart-nutrition-aphqw8kjs-valkindeds-projects.vercel.app/api"
+      RENDER_API_HOSTNAME
     );
   });
 

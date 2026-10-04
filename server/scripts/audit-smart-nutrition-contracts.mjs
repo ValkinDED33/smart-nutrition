@@ -311,10 +311,10 @@ const trackedFiles = readTrackedFiles();
 const packageJson = JSON.parse(packageJsonSource);
 const packageLock = JSON.parse(packageLockSource);
 const expectedAllowedInstallScripts = {
-  "@firebase/util@1.15.1": true,
+  "@firebase/util@1.15.3": true,
   "core-js@3.49.0": true,
   "esbuild@0.28.1": true,
-  "protobufjs@7.6.5": true,
+  "protobufjs@7.6.6": true,
 };
 const expectedReviewedOptionalInstallScripts = ["fsevents@2.3.3"];
 const normalizeObjectEntries = (value) =>
@@ -490,7 +490,7 @@ addCheck(
   "package install scripts use a version-pinned audited allowlist",
   JSON.stringify(normalizeObjectEntries(packageJson.allowScripts)) ===
     JSON.stringify(normalizeObjectEntries(expectedAllowedInstallScripts)),
-  "package.json allowScripts must contain only the reviewed version-pinned install scripts: @firebase/util@1.15.1, core-js@3.49.0, esbuild@0.28.1, protobufjs@7.6.5."
+  "package.json allowScripts must contain only the reviewed version-pinned install scripts: @firebase/util@1.15.3, core-js@3.49.0, esbuild@0.28.1, protobufjs@7.6.6."
 );
 
 addCheck(

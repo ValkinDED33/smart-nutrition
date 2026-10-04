@@ -386,7 +386,10 @@ const getPublicDeploymentRemoteBaseUrl = () => {
 
   const { hostname, origin } = window.location;
 
-  return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ? `${origin}/api` : null;
+  return PUBLIC_FRONTEND_HOSTNAMES.has(hostname) ||
+    isVercelPreviewHostname(hostname)
+    ? `${origin}/api`
+    : null;
 };
 
 const getSameOriginDevProxyBaseUrl = () => {
@@ -406,13 +409,7 @@ const getConfiguredRemoteBaseUrl = () => {
   const deploymentBaseUrl = normalizeRemoteBaseUrl(
     getPublicDeploymentRemoteBaseUrl()
   );
-  const isPreviewDeployment =
-    typeof window !== "undefined" &&
-    isVercelPreviewHostname(window.location.hostname);
-  const configuredBaseUrl =
-    isPreviewDeployment && envBaseUrl
-      ? envBaseUrl
-      : deploymentBaseUrl ?? envBaseUrl;
+  const configuredBaseUrl = deploymentBaseUrl ?? envBaseUrl;
 
   if (
     !configuredBaseUrl ||

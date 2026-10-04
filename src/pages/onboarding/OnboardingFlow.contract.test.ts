@@ -104,7 +104,7 @@ describe("Onboarding flow contract", () => {
     expect(motivationSource).toContain("navigate(stepPaths.finish)");
   });
 
-  it("keeps the animated onboarding assistant in the page flow instead of over form fields", async () => {
+  it("keeps the animated onboarding assistant away from forms on cramped screens", async () => {
     const guideSource = await readSource("src/pages/onboarding/OnboardingGuide.tsx");
 
     expect(guideSource).toContain("useHideGuideWhileFieldFocused");
@@ -115,15 +115,18 @@ describe("Onboarding flow contract", () => {
     expect(guideSource).toContain('"/onboarding/women-health"');
     expect(guideSource).toContain('key: "womenHealth"');
     expect(guideSource).toContain('data-onboarding-guide-inline="true"');
-    expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 480");
+    expect(guideSource).toContain("const GUIDE_BUBBLE_WIDTH = 280");
     expect(guideSource).toContain("const GUIDE_AVATAR_SIZE = 64");
-    expect(guideSource).toContain('display: { xs: "none", md: "block" }');
-    expect(guideSource).toContain('position: "relative"');
-    expect(guideSource).toContain('width: "min(560px, calc(100% - 32px))"');
+    expect(guideSource).toContain('display: { xs: "none", lg: "block" }');
+    expect(guideSource).toContain('position: "fixed"');
+    expect(guideSource).toContain('width: "min(380px, calc(100% - 32px))"');
+    expect(guideSource).toContain('"@media (max-width: 1280px)"');
+    expect(guideSource).toContain('"@media (max-height: 740px)"');
     expect(guideSource).toContain(
       "maxWidth: GUIDE_BUBBLE_WIDTH + GUIDE_AVATAR_SIZE + 24"
     );
-    expect(guideSource).not.toContain('position: "fixed"');
+    expect(guideSource).not.toContain('display: { xs: "none", md: "block" }');
+    expect(guideSource).not.toContain('width: "min(560px, calc(100% - 32px))"');
     expect(guideSource).not.toContain("GUIDE_WIDE_VIEWPORT_MIN_WIDTH");
     expect(guideSource).not.toContain("GUIDE_FORM_SAFE_LEFT");
     expect(guideSource).not.toContain("resolvePlacementSx");
