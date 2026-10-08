@@ -6,7 +6,7 @@ import {
   isRenderCloudHealth,
 } from "./liveAuditDiagnostics.mjs";
 
-const defaultAppUrl = "https://smart-nutrition.club";
+const defaultAppUrl = "https://www.smart-nutrition.club";
 const defaultApiUrl = "https://smart-nutrition-sk5r.onrender.com";
 const requestTimeoutMs = 12_000;
 
@@ -27,12 +27,11 @@ const protectedSitemapFragments = [
   "/assistant",
   "/community",
   "/dashboard",
-  "/meal",
-  "/nutrition",
+  "/meal-builder",
+  "/meals",
   "/onboarding",
   "/profile",
   "/progress",
-  "/scanner",
   "/settings",
   "/verify-email",
   "/reset-password",
@@ -55,7 +54,7 @@ const appOrigin = normalizeOrigin(
 );
 const trustedAppOrigins = readOriginList(
   process.env.SMART_NUTRITION_LIVE_APP_ORIGINS,
-  [appOrigin, "https://www.smart-nutrition.club"]
+  [appOrigin, "https://www.smart-nutrition.club", "https://smart-nutrition.club"]
 );
 const apiOrigin = normalizeOrigin(
   process.env.SMART_NUTRITION_LIVE_API_URL || defaultApiUrl
@@ -130,8 +129,8 @@ const inspectFrontend = async () => {
 
   addCheck(
     "live frontend has canonical production URL",
-    html.includes('<link rel="canonical" href="https://smart-nutrition.club/"'),
-    "Landing HTML must keep the canonical https://smart-nutrition.club/ URL."
+    html.includes('<link rel="canonical" href="https://www.smart-nutrition.club/"'),
+    "Landing HTML must keep the canonical https://www.smart-nutrition.club/ URL."
   );
 
   addCheck(
@@ -181,8 +180,8 @@ const inspectSeoDiscovery = async () => {
 
   addCheck(
     "live robots points to canonical sitemap and blocks protected routes",
-    robotsText.includes("Sitemap: https://smart-nutrition.club/sitemap.xml") &&
-      robotsText.includes("Sitemap: https://smart-nutrition.club/sitemap-images.xml") &&
+    robotsText.includes("Sitemap: https://www.smart-nutrition.club/sitemap.xml") &&
+      robotsText.includes("Sitemap: https://www.smart-nutrition.club/sitemap-images.xml") &&
       robotsText.includes("Allow: /llms.txt") &&
       robotsText.includes("Allow: /ai.txt") &&
       robotsText.includes("Disallow: /admin") &&
@@ -203,9 +202,21 @@ const inspectSeoDiscovery = async () => {
 
   addCheck(
     "live sitemap lists only public canonical routes",
-    sitemapText.includes("<loc>https://smart-nutrition.club/</loc>") &&
-      sitemapText.includes("<loc>https://smart-nutrition.club/register</loc>") &&
-      sitemapText.includes("<loc>https://smart-nutrition.club/login</loc>") &&
+    sitemapText.includes("<loc>https://www.smart-nutrition.club/</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/uk.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/pl.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/en.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/ru.html</loc>") &&
+      sitemapText.includes('hreflang="uk" href="https://www.smart-nutrition.club/uk.html"') &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/ai-nutrition-companion.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/meal-planner.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/barcode-scanner.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/photo-meal-recognition.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/hydration-tracker.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/family-wellness.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/telegram-nutrition-assistant.html</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/register</loc>") &&
+      sitemapText.includes("<loc>https://www.smart-nutrition.club/login</loc>") &&
       protectedSitemapFragments.every((fragment) => !sitemapText.includes(fragment)),
     "sitemap.xml must include public entry routes and exclude protected or token routes."
   );
@@ -218,8 +229,8 @@ const inspectSeoDiscovery = async () => {
   addCheck(
     "live image sitemap exposes public brand imagery",
     imageSitemapResponse.ok &&
-      imageSitemapText.includes("<image:loc>https://smart-nutrition.club/og.png</image:loc>") &&
-      imageSitemapText.includes("<image:loc>https://smart-nutrition.club/icon-512.png</image:loc>") &&
+      imageSitemapText.includes("<image:loc>https://www.smart-nutrition.club/og.png</image:loc>") &&
+      imageSitemapText.includes("<image:loc>https://www.smart-nutrition.club/icon-512.png</image:loc>") &&
       protectedSitemapFragments.every((fragment) => !imageSitemapText.includes(fragment)),
     "sitemap-images.xml must be reachable and must not list protected app routes."
   );
@@ -233,9 +244,9 @@ const inspectSeoDiscovery = async () => {
     "live AI discovery files describe public product only",
     llmsResponse.ok &&
       aiResponse.ok &&
-      llmsText.includes("Canonical site: https://smart-nutrition.club/") &&
+      llmsText.includes("Canonical site: https://www.smart-nutrition.club/") &&
       llmsText.includes("Backend/cloud state is the source of truth") &&
-      aiText.includes("LLM summary: https://smart-nutrition.club/llms.txt") &&
+      aiText.includes("LLM summary: https://www.smart-nutrition.club/llms.txt") &&
       protectedSitemapFragments.every((fragment) => !llmsText.includes(fragment)) &&
       protectedSitemapFragments.every((fragment) => !aiText.includes(fragment)),
     "llms.txt and ai.txt must be reachable and must not advertise protected app routes."

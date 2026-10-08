@@ -2,13 +2,24 @@
 
 Smart Nutrition is an AI wellness companion for meal planning, food logging, barcode scanning, photo meal recognition, hydration tracking, reminders, progress analytics, Telegram assistant support, and family wellness context.
 
-Canonical site: https://smart-nutrition.club/
+Canonical site: https://www.smart-nutrition.club/
 
 Public entry points:
 
-- Home: https://smart-nutrition.club/
-- Create account: https://smart-nutrition.club/register
-- Log in: https://smart-nutrition.club/login
+- Home: https://www.smart-nutrition.club/
+- AI nutrition companion: https://www.smart-nutrition.club/ai-nutrition-companion.html
+- Meal planner and calorie tracker: https://www.smart-nutrition.club/meal-planner.html
+- Barcode scanner: https://www.smart-nutrition.club/barcode-scanner.html
+- Photo meal recognition: https://www.smart-nutrition.club/photo-meal-recognition.html
+- Hydration tracker: https://www.smart-nutrition.club/hydration-tracker.html
+- Family wellness context: https://www.smart-nutrition.club/family-wellness.html
+- Telegram nutrition assistant: https://www.smart-nutrition.club/telegram-nutrition-assistant.html
+- Ukrainian landing: https://www.smart-nutrition.club/uk.html
+- Polish landing: https://www.smart-nutrition.club/pl.html
+- English landing: https://www.smart-nutrition.club/en.html
+- Russian landing: https://www.smart-nutrition.club/ru.html
+- Create account: https://www.smart-nutrition.club/register
+- Log in: https://www.smart-nutrition.club/login
 
 Supported languages:
 

@@ -725,7 +725,8 @@ const MealBuilderPage = () => {
           alignItems: "start",
           minWidth: 0,
           width: "100%",
-          overflowX: "hidden",
+          // `clip` avoids creating a scrollport around the sticky tabs.
+          overflowX: "clip",
         }}
       >
         <Stack spacing={3} sx={{ minWidth: 0 }}>

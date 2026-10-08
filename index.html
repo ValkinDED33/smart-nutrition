@@ -30,18 +30,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="format-detection" content="telephone=no" />
 
-    <link rel="canonical" href="https://smart-nutrition.club/" />
+    <link rel="canonical" href="https://www.smart-nutrition.club/" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="alternate" hreflang="x-default" href="https://www.smart-nutrition.club/" />
+    <link rel="alternate" hreflang="uk" href="https://www.smart-nutrition.club/uk.html" />
+    <link rel="alternate" hreflang="pl" href="https://www.smart-nutrition.club/pl.html" />
+    <link rel="alternate" hreflang="en" href="https://www.smart-nutrition.club/en.html" />
+    <link rel="alternate" hreflang="ru" href="https://www.smart-nutrition.club/ru.html" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Smart Nutrition" />
     <meta property="og:locale" content="uk_UA" />
-    <meta property="og:url" content="https://smart-nutrition.club/" />
+    <meta property="og:url" content="https://www.smart-nutrition.club/" />
     <meta property="og:title" content="Smart Nutrition | AI nutrition companion" />
     <meta
       property="og:description"
       content="Plan meals, track calories and water, learn your patterns, and get personalized support from an AI nutrition companion."
     />
-    <meta property="og:image" content="https://smart-nutrition.club/og.png" />
+    <meta property="og:image" content="https://www.smart-nutrition.club/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -55,7 +61,7 @@
       name="twitter:description"
       content="AI-powered meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching."
     />
-    <meta name="twitter:image" content="https://smart-nutrition.club/og.png" />
+    <meta name="twitter:image" content="https://www.smart-nutrition.club/og.png" />
     <meta
       name="twitter:image:alt"
       content="Smart Nutrition AI nutrition companion dashboard preview"
@@ -72,12 +78,12 @@
         "@graph": [
           {
             "@type": "Organization",
-            "@id": "https://smart-nutrition.club/#organization",
+            "@id": "https://www.smart-nutrition.club/#organization",
             "name": "Smart Nutrition",
-            "url": "https://smart-nutrition.club/",
+            "url": "https://www.smart-nutrition.club/",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://smart-nutrition.club/icon-512.png",
+              "url": "https://www.smart-nutrition.club/icon-512.png",
               "width": 512,
               "height": 512
             },
@@ -85,33 +91,46 @@
           },
           {
             "@type": "WebSite",
-            "@id": "https://smart-nutrition.club/#website",
+            "@id": "https://www.smart-nutrition.club/#website",
             "name": "Smart Nutrition",
             "alternateName": "Smart Nutrition AI Companion",
-            "url": "https://smart-nutrition.club/",
-            "inLanguage": ["uk", "pl", "en"],
+            "url": "https://www.smart-nutrition.club/",
+            "inLanguage": ["uk", "pl", "en", "ru"],
             "publisher": {
-              "@id": "https://smart-nutrition.club/#organization"
+              "@id": "https://www.smart-nutrition.club/#organization"
             },
             "potentialAction": {
               "@type": "RegisterAction",
-              "target": "https://smart-nutrition.club/register",
+              "target": "https://www.smart-nutrition.club/register",
               "name": "Create a Smart Nutrition account"
-            }
+            },
+            "hasPart": [
+              { "@id": "https://www.smart-nutrition.club/ai-nutrition-companion.html" },
+              { "@id": "https://www.smart-nutrition.club/meal-planner.html" },
+              { "@id": "https://www.smart-nutrition.club/barcode-scanner.html" },
+              { "@id": "https://www.smart-nutrition.club/photo-meal-recognition.html" },
+              { "@id": "https://www.smart-nutrition.club/hydration-tracker.html" },
+              { "@id": "https://www.smart-nutrition.club/family-wellness.html" },
+              { "@id": "https://www.smart-nutrition.club/telegram-nutrition-assistant.html" },
+              { "@id": "https://www.smart-nutrition.club/uk.html" },
+              { "@id": "https://www.smart-nutrition.club/pl.html" },
+              { "@id": "https://www.smart-nutrition.club/en.html" },
+              { "@id": "https://www.smart-nutrition.club/ru.html" }
+            ]
           },
           {
             "@type": "WebApplication",
-            "@id": "https://smart-nutrition.club/#webapp",
+            "@id": "https://www.smart-nutrition.club/#webapp",
             "name": "Smart Nutrition",
             "alternateName": "Smart Nutrition AI Companion",
-            "url": "https://smart-nutrition.club/",
+            "url": "https://www.smart-nutrition.club/",
             "description": "AI nutrition companion for meal planning, calorie tracking, water habits, progress analytics, recipes, and personalized coaching.",
             "applicationCategory": ["HealthApplication", "LifestyleApplication"],
             "operatingSystem": "Web, Android, iOS",
             "browserRequirements": "Requires JavaScript. Works as a PWA in modern mobile and desktop browsers.",
-            "inLanguage": ["uk", "pl", "en"],
-            "image": "https://smart-nutrition.club/og.png",
-            "screenshot": "https://smart-nutrition.club/og.png",
+            "inLanguage": ["uk", "pl", "en", "ru"],
+            "image": "https://www.smart-nutrition.club/og.png",
+            "screenshot": "https://www.smart-nutrition.club/og.png",
             "featureList": [
               "AI nutrition assistant",
               "Meal planning",
@@ -128,7 +147,7 @@
               "priceCurrency": "USD"
             },
             "publisher": {
-              "@id": "https://smart-nutrition.club/#organization"
+              "@id": "https://www.smart-nutrition.club/#organization"
             }
           }
         ]
@@ -137,6 +156,32 @@
   </head>
 
   <body>
+    <noscript>
+      <main>
+        <h1>Smart Nutrition - AI nutrition companion</h1>
+        <p>
+          Smart Nutrition helps people plan meals, track calories and water,
+          scan barcodes, recognize meals from photos, review progress, and use
+          an AI assistant for everyday nutrition support.
+        </p>
+        <nav aria-label="Public Smart Nutrition pages">
+          <a href="/">Home</a>
+          <a href="/ai-nutrition-companion.html">AI nutrition companion</a>
+          <a href="/meal-planner.html">Meal planner</a>
+          <a href="/barcode-scanner.html">Barcode scanner</a>
+          <a href="/photo-meal-recognition.html">Photo meal recognition</a>
+          <a href="/hydration-tracker.html">Hydration tracker</a>
+          <a href="/family-wellness.html">Family wellness</a>
+          <a href="/telegram-nutrition-assistant.html">Telegram assistant</a>
+          <a href="/uk.html">Українська</a>
+          <a href="/pl.html">Polski</a>
+          <a href="/en.html">English</a>
+          <a href="/ru.html">Русский</a>
+          <a href="/register">Create account</a>
+          <a href="/login">Log in</a>
+        </nav>
+      </main>
+    </noscript>
     <div id="root"></div>
 
     <script type="module" src="/src/main.tsx"></script>

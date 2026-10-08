@@ -20,6 +20,7 @@ import {
   Paper,
   Stack,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import ProfileForm from "../features/profile/ProfileForm";
 import { ProfileSectionTabs } from "../features/profile/ProfileSectionTabs";
@@ -651,6 +652,7 @@ const ProfilePage = () => {
   const macroProgress = useSelector(selectDailyMacroProgress);
   const { t, appLanguage, languageLabels } = useLanguage();
   const copy = getProfileCopy(appLanguage);
+  const isCompactProfile = useMediaQuery("(max-width: 599.95px)");
   const assistantDisplayName = getAssistantDisplayName(
     profile.assistant.name,
     appLanguage
@@ -672,6 +674,44 @@ const ProfilePage = () => {
       >
         <Suspense fallback={fallback}>{children}</Suspense>
       </LazyModuleBoundary>
+    );
+  };
+  const renderCompactDisclosure = (label: string, children: ReactNode) => {
+    if (!isCompactProfile) {
+      return children;
+    }
+
+    return (
+      <Paper
+        component="details"
+        elevation={0}
+        sx={{
+          p: 0,
+          borderRadius: 1,
+          border: PROFILE_CARD_BORDER,
+          background:
+            "linear-gradient(135deg, var(--sn-surface-elevated), var(--sn-surface-glass))",
+          overflow: "hidden",
+          "&[open]": {
+            boxShadow: "var(--sn-shadow-soft)",
+          },
+          "& > summary": {
+            listStyle: "none",
+            cursor: "pointer",
+          },
+          "& > summary::-webkit-details-marker": {
+            display: "none",
+          },
+        }}
+      >
+        <Box component="summary" sx={{ p: 1.25 }}>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Typography sx={{ fontWeight: 950 }}>{label}</Typography>
+            <ArrowRight size={17} aria-hidden="true" />
+          </Stack>
+        </Box>
+        <Box sx={{ p: 1.1, pt: 0 }}>{children}</Box>
+      </Paper>
     );
   };
   const localizedDietLabels = getDietStyleLabels(appLanguage);
@@ -1073,15 +1113,18 @@ const ProfilePage = () => {
                 </Paper>
 
                 {profileEditorOpen && <ProfileForm />}
-                {renderLazySection(
-                  "data",
+                {renderCompactDisclosure(
                   copy.tabs.data,
-                  <LoadingSkeleton cards={3} chart bodyRows={3} />,
-                  <Stack spacing={3}>
-                    <WeightTrendCard />
-                    <MeasurementsCheckInCard />
-                    <BodyProgressPhotosCard />
-                  </Stack>
+                  renderLazySection(
+                    "data",
+                    copy.tabs.data,
+                    <LoadingSkeleton cards={3} chart bodyRows={3} />,
+                    <Stack spacing={{ xs: 1.4, md: 3 }}>
+                      <WeightTrendCard />
+                      <MeasurementsCheckInCard />
+                      <BodyProgressPhotosCard />
+                    </Stack>
+                  )
                 )}
               </Stack>
             ),
@@ -1283,16 +1326,19 @@ const ProfilePage = () => {
                   </Stack>
                 </Paper>
 
-                {renderLazySection(
-                  "goal",
+                {renderCompactDisclosure(
                   copy.tabs.goal,
-                  <LoadingSkeleton cards={3} chart bodyRows={3} />,
-                  <Stack spacing={3}>
-                    <AdaptiveGoalCard />
-                    <BodyWeeklyReportCard />
-                    <MealDayOverview />
-                    <DailyHistoryExplorer />
-                  </Stack>
+                  renderLazySection(
+                    "goal",
+                    copy.tabs.goal,
+                    <LoadingSkeleton cards={3} chart bodyRows={3} />,
+                    <Stack spacing={{ xs: 1.4, md: 3 }}>
+                      <AdaptiveGoalCard />
+                      <BodyWeeklyReportCard />
+                      <MealDayOverview />
+                      <DailyHistoryExplorer />
+                    </Stack>
+                  )
                 )}
               </Stack>
             ),
@@ -1310,15 +1356,18 @@ const ProfilePage = () => {
             id: "assistant",
             label: copy.tabs.assistant,
             content: (
-              renderLazySection(
-                "assistant",
+              renderCompactDisclosure(
                 copy.tabs.assistant,
-                <LoadingSkeleton cards={3} bodyRows={3} />,
-                <Stack spacing={3}>
-                  <CompanionShopEntryCard />
-                  <AssistantCustomizationCard />
-                  <CommunityHubCard />
-                </Stack>
+                renderLazySection(
+                  "assistant",
+                  copy.tabs.assistant,
+                  <LoadingSkeleton cards={3} bodyRows={3} />,
+                  <Stack spacing={{ xs: 1.4, md: 3 }}>
+                    <CompanionShopEntryCard />
+                    <AssistantCustomizationCard />
+                    <CommunityHubCard />
+                  </Stack>
+                )
               )
             ),
           },
@@ -1326,15 +1375,18 @@ const ProfilePage = () => {
             id: "motivation",
             label: copy.tabs.motivation,
             content: (
-              renderLazySection(
-                "motivation",
+              renderCompactDisclosure(
                 copy.tabs.motivation,
-                <LoadingSkeleton cards={3} bodyRows={3} />,
-                <Stack spacing={3}>
-                  <BehaviorPersonalizationCard />
-                  <MotivationHubCard />
-                  <PremiumAccessCard />
-                </Stack>
+                renderLazySection(
+                  "motivation",
+                  copy.tabs.motivation,
+                  <LoadingSkeleton cards={3} bodyRows={3} />,
+                  <Stack spacing={{ xs: 1.4, md: 3 }}>
+                    <BehaviorPersonalizationCard />
+                    <MotivationHubCard />
+                    <PremiumAccessCard />
+                  </Stack>
+                )
               )
             ),
           },
@@ -1342,18 +1394,21 @@ const ProfilePage = () => {
             id: "security",
             label: copy.tabs.security,
             content: (
-              renderLazySection(
-                "security",
+              renderCompactDisclosure(
                 copy.tabs.security,
-                <LoadingSkeleton cards={4} bodyRows={3} />,
-                <Stack spacing={3}>
-                  <NotificationSettingsCard />
-                  <SupplementRecommendationCard />
-                  <ReminderCenterEntryCard />
-                  {canSeeOperationalDetails && <CloudSyncStatusCard />}
-                  <AccountDataCard />
-                  {canSeeOperationalDetails && <AdminCenterCard />}
-                </Stack>
+                renderLazySection(
+                  "security",
+                  copy.tabs.security,
+                  <LoadingSkeleton cards={4} bodyRows={3} />,
+                  <Stack spacing={{ xs: 1.4, md: 3 }}>
+                    <NotificationSettingsCard />
+                    <SupplementRecommendationCard />
+                    <ReminderCenterEntryCard />
+                    {canSeeOperationalDetails && <CloudSyncStatusCard />}
+                    <AccountDataCard />
+                    {canSeeOperationalDetails && <AdminCenterCard />}
+                  </Stack>
+                )
               )
             ),
           },

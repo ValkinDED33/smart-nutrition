@@ -2856,15 +2856,23 @@ addCheck(
     indexHtmlSource.includes('"@type": "Organization"') &&
     indexHtmlSource.includes('"@type": "WebSite"') &&
     indexHtmlSource.includes('"@type": "WebApplication"') &&
-    robotsTxtSource.includes("Sitemap: https://smart-nutrition.club/sitemap.xml") &&
-    robotsTxtSource.includes("Sitemap: https://smart-nutrition.club/sitemap-images.xml") &&
+    indexHtmlSource.includes('hreflang="uk"') &&
+    indexHtmlSource.includes('hreflang="pl"') &&
+    indexHtmlSource.includes('hreflang="en"') &&
+    indexHtmlSource.includes('hreflang="ru"') &&
+    robotsTxtSource.includes("Sitemap: https://www.smart-nutrition.club/sitemap.xml") &&
+    robotsTxtSource.includes("Sitemap: https://www.smart-nutrition.club/sitemap-images.xml") &&
     robotsTxtSource.includes("Allow: /llms.txt") &&
     robotsTxtSource.includes("Allow: /ai.txt") &&
+    robotsTxtSource.includes("Allow: /ai-nutrition-companion.html") &&
+    robotsTxtSource.includes("Allow: /uk.html") &&
     robotsTxtSource.includes("Disallow: /*?token=") &&
-    sitemapXmlSource.includes("<lastmod>2026-07-29</lastmod>") &&
-    imageSitemapXmlSource.includes("<image:loc>https://smart-nutrition.club/og.png</image:loc>") &&
+    sitemapXmlSource.includes("<lastmod>2026-10-08</lastmod>") &&
+    sitemapXmlSource.includes("https://www.smart-nutrition.club/ai-nutrition-companion.html") &&
+    sitemapXmlSource.includes('hreflang="uk" href="https://www.smart-nutrition.club/uk.html"') &&
+    imageSitemapXmlSource.includes("<image:loc>https://www.smart-nutrition.club/og.png</image:loc>") &&
     llmsTxtSource.includes("Backend/cloud state is the source of truth") &&
-    aiTxtSource.includes("LLM summary: https://smart-nutrition.club/llms.txt") &&
+    aiTxtSource.includes("LLM summary: https://www.smart-nutrition.club/llms.txt") &&
     seoAuditSource.includes("image sitemap exposes public visual discovery assets only") &&
     seoAuditSource.includes("AI answer engines receive a public project summary") &&
     liveAuditSource.includes("/sitemap-images.xml") &&

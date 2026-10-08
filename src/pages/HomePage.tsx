@@ -688,7 +688,9 @@ const HomePage = () => {
         mx: "auto",
         px: { xs: 0.5, sm: 1, md: 0 },
         pb: "calc(96px + env(safe-area-inset-bottom, 0px))",
-        overflowX: "hidden",
+        // `clip` keeps decorative overflow contained without creating a
+        // scrollport, so the sticky section tabs can pin below the toolbar.
+        overflowX: "clip",
       }}
     >
       <Stack spacing={{ xs: 0.8, md: 2.4 }}>

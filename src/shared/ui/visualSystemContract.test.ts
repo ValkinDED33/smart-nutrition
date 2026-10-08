@@ -7,6 +7,9 @@ const ASSISTANT_VARIANT_PROP = "assistantVariant={assistant.companionKind}";
 const PROFILE_ASSISTANT_VARIANT_PROP =
   "assistantVariant={profile.assistant.companionKind}";
 const ASSISTANT_NAME_PROP = "assistantName={assistantDisplayName}";
+const HOME_PAGE_SOURCE = "../../pages/HomePage.tsx";
+const OVERFLOW_X_HIDDEN = 'overflowX: "hidden"';
+const OVERFLOW_X_CLIP = 'overflowX: "clip"';
 
 describe("Smart Nutrition visual system contract", () => {
   it("exposes one theme-driven companion visual language", async () => {
@@ -96,7 +99,7 @@ describe("Smart Nutrition visual system contract", () => {
 
   it("keeps authenticated home using theme-aware companion colors", async () => {
     const [source, assistantDisplayNameSource] = await Promise.all([
-      readSource("../../pages/HomePage.tsx"),
+      readSource(HOME_PAGE_SOURCE),
       readSource("../../features/assistant/assistantDisplayName.ts"),
     ]);
 
@@ -148,7 +151,7 @@ describe("Smart Nutrition visual system contract", () => {
       companionCatalog,
     ] = await Promise.all([
       readSource("../../pages/LandingPage.tsx"),
-      readSource("../../pages/HomePage.tsx"),
+      readSource(HOME_PAGE_SOURCE),
       readSource("../../pages/DashboardPage.tsx"),
       readSource("../../pages/AiCompanionPage.tsx"),
       readSource("../../pages/ProgressPage.tsx"),
@@ -192,7 +195,10 @@ describe("Smart Nutrition visual system contract", () => {
     expect(profile).toContain("AIMasterBlueprintPanel");
     expect(community).toContain("AIMasterBlueprintPanel");
     expect(onboarding).not.toContain("AIMasterBlueprintPanel");
-    expect(adminCenter).toContain("AIMasterBlueprintPanel");
+    expect(adminCenter).toContain("EcosystemPulse");
+    expect(adminCenter).toContain('focus="admin"');
+    expect(adminCenter).toContain('data-admin-ai-worker-panel="true"');
+    expect(adminCenter).not.toContain("<AIMasterBlueprintPanel");
     expect(adminCenter).toContain("adminBlueprintPatterns");
     expect(womenHealth).toContain("AIMasterBlueprintPanel");
     expect(womenHealth).toContain("womenHealthBlueprintPatterns");
@@ -247,8 +253,8 @@ describe("Smart Nutrition visual system contract", () => {
     expect(profile).toContain(PROFILE_ASSISTANT_VARIANT_PROP);
     expect(community).toContain(ASSISTANT_VARIANT_PROP);
     expect(community).toContain(ASSISTANT_NAME_PROP);
-    expect(adminCenter).toContain(ASSISTANT_VARIANT_PROP);
-    expect(adminCenter).toContain(ASSISTANT_NAME_PROP);
+    expect(adminCenter).toContain("EcosystemPulse");
+    expect(adminCenter).toContain('focus="admin"');
     expect(womenHealth).toContain(PROFILE_ASSISTANT_VARIANT_PROP);
 
     expect(globalAssistant).toContain("workerActivities");
@@ -271,5 +277,32 @@ describe("Smart Nutrition visual system contract", () => {
     expect(companionCatalog).toContain('category: "animal"');
     expect(companionCatalog).toContain('category: "fantasy"');
     expect(companionCatalog).toContain('rarity: "legendary"');
+  });
+
+  it("keeps sticky-capable containers on overflow clip instead of hidden", async () => {
+    const [indexCss, appLayout, pageShell, homePage, mealBuilderPage] =
+      await Promise.all([
+        readSource("../../index.css"),
+        readSource("../../app/layouts/AppLayout.tsx"),
+        readSource("./PageShell.tsx"),
+        readSource(HOME_PAGE_SOURCE),
+        readSource("../../pages/MealBuilderPage.tsx"),
+      ]);
+
+    // `overflow-x: hidden` turns a box into a scrollport, and a nested
+    // scrollport silently disables `position: sticky` for the mobile section
+    // tabs. `clip` contains the same overflow without creating one.
+    expect(indexCss).not.toContain("overflow-x: hidden");
+    expect(indexCss).toContain("overflow-x: clip");
+
+    expect(appLayout).not.toContain(OVERFLOW_X_HIDDEN);
+    expect(pageShell).not.toContain(OVERFLOW_X_HIDDEN);
+    expect(homePage).not.toContain(OVERFLOW_X_HIDDEN);
+    expect(mealBuilderPage).not.toContain(OVERFLOW_X_HIDDEN);
+
+    expect(appLayout).toContain(OVERFLOW_X_CLIP);
+    expect(pageShell).toContain(OVERFLOW_X_CLIP);
+    expect(homePage).toContain(OVERFLOW_X_CLIP);
+    expect(mealBuilderPage).toContain(OVERFLOW_X_CLIP);
   });
 });

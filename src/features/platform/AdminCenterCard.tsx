@@ -46,9 +46,9 @@ import {
 } from "../../shared/api/platform";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
-import { AIMasterBlueprintPanel, type AIMasterBlueprintPattern } from "../../shared/ui";
+import type { AIMasterBlueprintPattern } from "../../shared/ui";
 import { getNutrientLabel } from "@domain/meal/nutrients";
-import { getAssistantDisplayName } from "@features/assistant/assistantDisplayName";
+import { EcosystemPulse } from "@features/assistant/EcosystemPulse";
 
 type AdminTab = "reports" | "queue" | "stats" | "users" | "audit" | "system";
 
@@ -506,10 +506,8 @@ const getAdminUserHealthCards = ({
 
 export const AdminCenterCard = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
-  const assistant = useSelector((state: RootState) => state.profile.assistant);
   const { appLanguage } = useLanguage();
   const copy = getAdminCopy(appLanguage);
-  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
   const backendUnavailableMessage = copy.backendUnavailable;
   const [tab, setTab] = useState<AdminTab>("reports");
   const [access, setAccess] = useState<AccessOverview | null>(null);
@@ -692,14 +690,45 @@ export const AdminCenterCard = () => {
         {error && <Alert severity="warning">{error}</Alert>}
 
         {adminBlueprintPatterns.length > 0 && (
-          <AIMasterBlueprintPanel
-            eyebrow={copy.systemTitle}
-            title={copy.usersPanelTitle}
-            description={copy.systemSubtitle}
-            patterns={adminBlueprintPatterns}
-            assistantName={assistantDisplayName}
-            assistantVariant={assistant.companionKind}
-          />
+          <Paper
+            className="sn-premium-panel"
+            elevation={0}
+            data-admin-ai-worker-panel="true"
+            sx={{
+              p: { xs: 1.2, md: 1.5 },
+              borderRadius: 1,
+              border: ADMIN_SOFT_BORDER,
+              background:
+                "linear-gradient(135deg, var(--sn-surface-glass), var(--sn-surface-muted))",
+            }}
+          >
+            <Stack spacing={1.3}>
+              <EcosystemPulse focus="admin" />
+              <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                {adminBlueprintPatterns.map((pattern) => {
+                  const Icon = pattern.icon;
+
+                  return (
+                    <Button
+                      key={pattern.key}
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Icon size={15} />}
+                      onClick={pattern.onClick}
+                      sx={{
+                        borderRadius: 1,
+                        textTransform: "none",
+                        fontWeight: 850,
+                        borderColor: `${pattern.accent}66`,
+                      }}
+                    >
+                      {pattern.label}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Stack>
+          </Paper>
         )}
 
         {visibleTabs.length > 0 && (

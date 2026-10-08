@@ -29,6 +29,7 @@ import type { AppLanguage } from "../../shared/types/i18n";
 
 type EcosystemPulseFocus =
   | "assistant"
+  | "admin"
   | "food"
   | "water"
   | "progress"
@@ -63,6 +64,7 @@ const pulseCopy = {
       profile: "Профіль керує тим, як екосистема звертається, рахує і підтримує.",
       community: "Спільнота підсилює звички, але не замінює особистий контекст.",
       recipes: "Рецепти підлаштовуються під цілі, продукти і реальний день.",
+      admin: "Адмін-центр показує операційний стан, ролі, модерацію і AI без старих зашитих блоків.",
     },
   },
   pl: {
@@ -87,6 +89,7 @@ const pulseCopy = {
       profile: "Profil steruje tym, jak ekosystem mówi, liczy i wspiera.",
       community: "Społeczność wzmacnia nawyki, ale nie zastępuje osobistego kontekstu.",
       recipes: "Przepisy dopasowują się do celów, produktów i realnego dnia.",
+      admin: "Centrum admina pokazuje stan operacyjny, role, moderację i AI bez starych zaszytych bloków.",
     },
   },
   en: {
@@ -111,6 +114,7 @@ const pulseCopy = {
       profile: "Profile controls how the ecosystem speaks, calculates, and supports.",
       community: "Community strengthens habits without replacing personal context.",
       recipes: "Recipes adapt to goals, products, and the real day.",
+      admin: "Admin Center shows operations, roles, moderation, and AI without old hardcoded blocks.",
     },
   },
 } as const;
@@ -157,6 +161,8 @@ const getFocusText = (copy: PulseCopy, focus: EcosystemPulseFocus) => {
       return copy.focus.community;
     case "recipes":
       return copy.focus.recipes;
+    case "admin":
+      return copy.focus.admin;
     case "assistant":
     default:
       return copy.focus.assistant;

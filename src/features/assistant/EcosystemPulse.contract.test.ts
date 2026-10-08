@@ -45,6 +45,15 @@ describe("EcosystemPulse contract", () => {
     );
   });
 
+  it("keeps admin center on the live assistant worker instead of the old blueprint helper", async () => {
+    const source = await readSource("src/features/platform/AdminCenterCard.tsx");
+
+    expect(source).toContain("EcosystemPulse");
+    expect(source).toContain('focus="admin"');
+    expect(source).toContain('data-admin-ai-worker-panel="true"');
+    expect(source).not.toContain("<AIMasterBlueprintPanel");
+  });
+
   it("keeps the retired water route redirected to the canonical progress surface", async () => {
     const source = await readSource("src/App.tsx");
 

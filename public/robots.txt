@@ -5,6 +5,17 @@ Allow: /icon-512.png
 Allow: /manifest.webmanifest
 Allow: /llms.txt
 Allow: /ai.txt
+Allow: /ai-nutrition-companion.html
+Allow: /meal-planner.html
+Allow: /barcode-scanner.html
+Allow: /photo-meal-recognition.html
+Allow: /hydration-tracker.html
+Allow: /family-wellness.html
+Allow: /telegram-nutrition-assistant.html
+Allow: /uk.html
+Allow: /pl.html
+Allow: /en.html
+Allow: /ru.html
 Disallow: /admin
 Disallow: /coach
 Disallow: /community
@@ -25,6 +36,6 @@ Disallow: /*?*token=
 Disallow: /*?code=
 Disallow: /*?*code=
 
-Host: https://smart-nutrition.club
-Sitemap: https://smart-nutrition.club/sitemap.xml
-Sitemap: https://smart-nutrition.club/sitemap-images.xml
+Host: https://www.smart-nutrition.club
+Sitemap: https://www.smart-nutrition.club/sitemap.xml
+Sitemap: https://www.smart-nutrition.club/sitemap-images.xml
