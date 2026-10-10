@@ -27,6 +27,10 @@ describe("HomePage contract", () => {
     expect(source).toContain("copy.blueprintPatterns.drag");
     expect(source).toContain("copy.blueprintPatterns.context");
     expect(source).toContain("variant={assistant.companionKind}");
+    expect(source).toContain("useWaterCloudAction(waterActionCopy)");
+    expect(source).toContain("buildWaterStateAfterIncrement(water, water.glassSizeMl)");
+    expect(source).toContain("runWaterStateSave(nextWater)");
+    expect(source).not.toContain("incrementWater");
     expect(source).not.toContain('variant="robot"');
   });
 

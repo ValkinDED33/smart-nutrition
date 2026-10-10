@@ -43,7 +43,9 @@ describe("FoodCommandCenter production contract", () => {
   it("supports typed and voice-style meal commands only through canonical product intake", () => {
     expect(commandModelSource).toContain("parseFoodCommandText");
     expect(commandModelSource).toContain("isFoodCommandUnitCompatible");
+    expect(commandModelSource).toContain("normalizeTrustedMealProductUnit");
     expect(commandSource).toContain("parseFoodCommandText(normalizedQuery)");
+    expect(commandSource).toContain(".map(normalizeTrustedMealProductUnit)");
     expect(commandSource).toContain('data-food-command-voice-action="speech-recognition"');
     expect(commandSource).toContain('data-food-command-intake-action="typed-command"');
     expect(commandSource).toContain("addSelectedProduct(");

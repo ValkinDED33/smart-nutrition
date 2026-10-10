@@ -24,7 +24,7 @@ vi.mock("../components/AssistantAvatar", () => ({
 import { AIMasterBlueprintPanel } from "./AIMasterBlueprintPanel";
 
 describe("AIMasterBlueprintPanel compact mobile contract", () => {
-  it("collapses the decorative board by default and exposes an accessible toggle", () => {
+  it("renders the compact action hub and exposes accessible expansion controls", () => {
     const html = renderToString(
       <AIMasterBlueprintPanel
         eyebrow="Smart Nutrition AI"
@@ -34,11 +34,8 @@ describe("AIMasterBlueprintPanel compact mobile contract", () => {
       />
     );
 
-    expect(html).toContain('data-ai-master-blueprint-collapsed="true"');
-    expect(html).toContain('data-ai-master-blueprint-collapsible="true"');
-    expect(html).toContain('data-ai-master-blueprint-mobile-toggle="true"');
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('aria-controls="');
-    expect(html).toContain("Показати всю карту");
+    expect(html).toContain('data-ai-action-hub-panel="true"');
+    expect(html).toContain('data-ai-action-hub-actions="true"');
+    expect(html).not.toContain("Interaction & Motion System");
   });
 });

@@ -1,5 +1,6 @@
 import type { MealType } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
+import { getProductCategoryKey } from "@domain/products/productCategory";
 
 export const shouldShowQuickSearchDeadEnd = ({
   query,
@@ -136,6 +137,50 @@ export const isFoodCommandUnitCompatible = (
   commandUnit: FoodCommandUnit,
   productUnit: FoodCommandUnit
 ) => commandUnit === productUnit;
+
+const SOLID_FOOD_NAME_PATTERN =
+  /\b(chips?|crisps?|crackers?|cookies?|biscuits?|cakes?|bars?|cereal|muesli|granola|bread|rice|pasta|nuts?|seeds?|chocolate|cand(y|ies)|cheese|meat|chicken|fish|banana chips|чипс|сухар|печиво|рис|паста|горіх|насіння|сыр|сир|mi[eę]so|ryż|makaron|orzech)\b/i;
+
+const LIQUID_FOOD_NAME_PATTERN =
+  /\b(water|juice|drink|beverage|soda|cola|milk|kefir|smoothie|tea|coffee|soup|broth|вода|сік|напій|молоко|кефір|чай|кава|суп|nap[oó]j|woda|sok|mleko|kawa|herbata|zupa)\b/i;
+
+export const shouldTreatMlProductAsSolidFood = (product: Product) => {
+  if (product.unit !== "ml") {
+    return false;
+  }
+
+  const productName = `${product.name} ${product.brand ?? ""}`;
+
+  if (LIQUID_FOOD_NAME_PATTERN.test(productName)) {
+    return false;
+  }
+
+  if (SOLID_FOOD_NAME_PATTERN.test(productName)) {
+    return true;
+  }
+
+  const categoryKey = getProductCategoryKey(product);
+
+  return categoryKey !== "beverage" && categoryKey !== "sauce" && categoryKey !== "oil";
+};
+
+export const normalizeTrustedMealProductUnit = (product: Product): Product => {
+  if (!shouldTreatMlProductAsSolidFood(product)) {
+    return product;
+  }
+
+  return {
+    ...product,
+    unit: "g",
+    facts: product.facts
+      ? {
+          ...product.facts,
+          servingUnit:
+            product.facts.servingUnit === "ml" ? "g" : product.facts.servingUnit,
+        }
+      : product.facts,
+  };
+};
 
 export const normalizeFoodCommandFocus = (value: string | null): FoodCommandFocus => {
   if (value === "protein") {

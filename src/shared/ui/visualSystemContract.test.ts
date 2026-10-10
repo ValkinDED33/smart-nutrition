@@ -131,7 +131,7 @@ describe("Smart Nutrition visual system contract", () => {
     expect(source).toContain("&:focus-visible");
   });
 
-  it("keeps the 2026 AI master blueprint visible in tracked product code", async () => {
+  it("keeps the 2026 AI action hub visible in tracked product code", async () => {
     const [
       landing,
       home,
@@ -203,43 +203,24 @@ describe("Smart Nutrition visual system contract", () => {
     expect(womenHealth).toContain("AIMasterBlueprintPanel");
     expect(womenHealth).toContain("womenHealthBlueprintPatterns");
     expect(womenHealth).toContain('data-women-health-partner-access="true"');
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-patterns="true"');
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-pattern={pattern.key}');
+    expect(blueprintPanel).toContain('data-ai-action-hub-panel="true"');
+    expect(blueprintPanel).toContain('data-ai-action-hub-actions="true"');
+    expect(blueprintPanel).toContain('data-ai-action-hub-action={pattern.key}');
     expect(blueprintPanel).toContain("assistantVariant?: AssistantCompanionKind");
     expect(blueprintPanel).toContain("assistantName?: string");
     expect(blueprintPanel).toContain("variant={assistantVariant}");
     expect(blueprintPanel).toContain("name={assistantName}");
-    expect(blueprintPanel).toContain("Interaction & Motion System");
-    expect(blueprintPanel).toContain("Assistant states");
-    expect(blueprintPanel).toContain("Motion principles");
-    expect(blueprintPanel).toContain("blueprintModules");
-    expect(blueprintPanel).toContain("platformFrames");
-    expect(blueprintPanel).toContain("sideRailModules");
-    expect(blueprintPanel).toContain("productModules");
-    expect(blueprintPanel).toContain("modalPatterns");
-    expect(blueprintPanel).toContain("domainWindows");
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-product-map="true"');
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-side-rail="true"');
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-platforms="true"');
-    expect(blueprintPanel).toContain("data-ai-master-blueprint-platform={frame.label.toLowerCase()}");
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-modals="true"');
-    expect(blueprintPanel).toContain("data-ai-master-blueprint-modal={modal}");
-    expect(blueprintPanel).toContain('data-ai-master-blueprint-domain-windows="true"');
-    expect(blueprintPanel).toContain("data-ai-master-blueprint-domain={window.label}");
-    expect(blueprintPanel).toContain("Women's health");
-    expect(blueprintPanel).toContain("Telegram worker");
-    expect(blueprintPanel).toContain("whileHover");
+    expect(blueprintPanel).toContain("VISIBLE_ACTION_COUNT");
+    expect(blueprintPanel).toContain("Collapse");
+    expect(blueprintPanel).toContain('data-ai-action-hub-toggle="true"');
+    expect(blueprintPanel).toContain('data-ai-action-hub-extra-actions="true"');
+    expect(blueprintPanel).toContain('data-ai-action-hub-mobile-toggle="true"');
+    expect(blueprintPanel).not.toContain("Interaction & Motion System");
+    expect(blueprintPanel).not.toContain("Assistant states");
+    expect(blueprintPanel).not.toContain("Motion principles");
     expect(blueprintPanel).toContain("&:focus-visible");
-    expect(blueprintPanel).toContain(
-      'data-ai-master-blueprint-collapsible="true"'
-    );
-    expect(blueprintPanel).toContain("data-ai-master-blueprint-collapsed=");
-    expect(blueprintPanel).toContain(
-      'data-ai-master-blueprint-mobile-toggle="true"'
-    );
-    expect(blueprintPanel).toContain("aria-expanded={isCompactBoardExpanded}");
-    expect(blueprintPanel).toContain("aria-controls={boardRegionId}");
-    expect(blueprintPanel).toContain("BLUEPRINT_COMPACT_VIEWPORT_QUERY");
+    expect(blueprintPanel).toContain("aria-expanded={isExpanded}");
+    expect(blueprintPanel).toContain("aria-controls={actionRegionId}");
 
     expect(home).toContain(ASSISTANT_VARIANT_PROP);
     expect(home).toContain(ASSISTANT_NAME_PROP);

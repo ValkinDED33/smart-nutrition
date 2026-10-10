@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import {
   Box,
+  Alert,
   Button,
   Drawer,
   IconButton,
@@ -36,12 +37,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import type { AppDispatch, RootState } from "../app/store";
+import type { RootState } from "../app/store";
 import {
   selectMealItems,
   selectTodayMealTotalNutrients,
 } from "../features/meal/selectors";
-import { incrementWater } from "../features/water/waterSlice";
+import { buildWaterStateAfterIncrement } from "../features/water/waterSaveModel";
+import { useWaterCloudAction } from "../features/water/useWaterCloudAction";
 import { selectDailyMacroTargets } from "../features/profile/selectors";
 import {
   hasWomenHealthContext,
@@ -148,6 +150,9 @@ const homeCopy = {
     view: "Переглянути",
     sectionsAriaLabel: "Розділи головної",
     water: "Додати воду",
+    waterSaveFailed: "Не вдалося зберегти воду. Спробуйте ще раз.",
+    waterSaveInProgress: "Вода вже зберігається. Зачекайте кілька секунд.",
+    waterRetry: "Повторити",
     close: "Закрити",
     blueprintTitle: "Патерни взаємодії",
     blueprintSubtitle:
@@ -229,6 +234,9 @@ const homeCopy = {
     view: "Zobacz",
     sectionsAriaLabel: "Sekcje strony głównej",
     water: "Dodaj wodę",
+    waterSaveFailed: "Nie udało się zapisać wody. Spróbuj ponownie.",
+    waterSaveInProgress: "Woda już się zapisuje. Poczekaj kilka sekund.",
+    waterRetry: "Ponów",
     close: "Zamknij",
     blueprintTitle: "Wzorce interakcji",
     blueprintSubtitle:
@@ -310,6 +318,9 @@ const homeCopy = {
     view: "View",
     sectionsAriaLabel: "Home sections",
     water: "Add water",
+    waterSaveFailed: "Could not save water. Please try again.",
+    waterSaveInProgress: "Water is already being saved. Please wait a moment.",
+    waterRetry: "Retry",
     close: "Close",
     blueprintTitle: "Interaction patterns",
     blueprintSubtitle:
@@ -396,7 +407,6 @@ const getHomeWorkerToolIcon = (toolId: AssistantWorkerToolId): LucideIcon => {
 };
 
 const HomePage = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const assistant = useSelector((state: RootState) => state.profile.assistant);
@@ -412,6 +422,21 @@ const HomePage = () => {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<HomeSection>("today");
   const copy = getHomeCopy(appLanguage);
+  const waterActionCopy = useMemo(
+    () => ({
+      saveFailed: copy.waterSaveFailed,
+      saveInProgress: copy.waterSaveInProgress,
+    }),
+    [copy.waterSaveFailed, copy.waterSaveInProgress]
+  );
+  const {
+    clearError: clearWaterActionError,
+    error: waterActionError,
+    hasRetry: waterActionHasRetry,
+    retryLastWaterSave,
+    runWaterStateSave,
+    saving: savingWater,
+  } = useWaterCloudAction(waterActionCopy);
 
   const dailyContext = useMemo(
     () =>
@@ -442,6 +467,14 @@ const HomePage = () => {
       }),
     [appLanguage, dailyContext, intelligence.primaryAction]
   );
+
+  const addWaterFromHome = useCallback(() => {
+    const nextWater = buildWaterStateAfterIncrement(water, water.glassSizeMl);
+
+    void runWaterStateSave(nextWater).catch(() => {
+      // useWaterCloudAction owns the user-facing error and retry state.
+    });
+  }, [runWaterStateSave, water]);
 
   if (!user) {
     return <Typography>{t("dashboard.needLogin")}</Typography>;
@@ -475,7 +508,7 @@ const HomePage = () => {
 
   const runAssistantAction = (action: AssistantHomeAction) => {
     if (action.kind === "water") {
-      dispatch(incrementWater(water.glassSizeMl));
+      addWaterFromHome();
       return;
     }
 
@@ -548,7 +581,7 @@ const HomePage = () => {
       label: copy.water,
       icon: Plus,
       onClick: () => {
-        dispatch(incrementWater(water.glassSizeMl));
+        addWaterFromHome();
         setQuickAddOpen(false);
       },
     },
@@ -641,7 +674,7 @@ const HomePage = () => {
   const commandNavItems: CommandNavItem[] = [
     { label: copy.sections.today, icon: Sparkles, active: true, path: "/dashboard" },
     { label: copy.nutrition, icon: Utensils, path: MEALS_ROUTE },
-    { label: copy.water, icon: Droplets, onClick: () => dispatch(incrementWater(water.glassSizeMl)) },
+    { label: copy.water, icon: Droplets, onClick: addWaterFromHome },
     { label: copy.activity, icon: Activity, path: PROGRESS_ROUTE },
     { label: copy.health, icon: HeartPulse, path: PROGRESS_ROUTE },
     { label: copy.analyses, icon: Stethoscope, path: PROFILE_ROUTE },
@@ -694,6 +727,29 @@ const HomePage = () => {
       }}
     >
       <Stack spacing={{ xs: 0.8, md: 2.4 }}>
+      {waterActionError ? (
+        <Alert
+          severity="warning"
+          onClose={clearWaterActionError}
+          action={
+            waterActionHasRetry ? (
+              <Button
+                color="inherit"
+                size="small"
+                disabled={savingWater}
+                onClick={() => {
+                  void retryLastWaterSave();
+                }}
+                sx={{ fontWeight: 900, textTransform: "none" }}
+              >
+                {copy.waterRetry}
+              </Button>
+            ) : undefined
+          }
+        >
+          {waterActionError}
+        </Alert>
+      ) : null}
       <Paper
         className="sn-companion-panel"
         data-ai-worker-command-center="true"
@@ -1534,7 +1590,8 @@ const HomePage = () => {
         <SectionCard title={copy.water} tone="info">
           <Button
             variant="contained"
-            onClick={() => dispatch(incrementWater(water.glassSizeMl))}
+            onClick={addWaterFromHome}
+            disabled={savingWater}
             startIcon={<Plus size={18} />}
             sx={{ minHeight: 54, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
           >

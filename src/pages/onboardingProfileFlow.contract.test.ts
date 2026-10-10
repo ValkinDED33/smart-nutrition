@@ -112,7 +112,8 @@ describe("onboarding and profile flow contract", () => {
     expect(choiceSource).not.toContain('onClick={() => navigate("/dashboard", { replace: true })}');
     expect(loginSource).toContain('navigate("/dashboard")');
     expect(publicRouteSource).toContain('to="/dashboard"');
-    expect(protectedRouteSource).toContain('to="/dashboard"');
+    expect(protectedRouteSource).toContain('data-protected-route-access-denied="true"');
+    expect(protectedRouteSource).toContain('navigate("/dashboard", { replace: true })');
     expect(appSource).toContain('path="/home"');
     expect(appSource).toContain('to={shouldShowOnboarding ? ONBOARDING_ENTRY_PATH : "/dashboard"}');
     expect(choiceSource).toContain("AuthAssistantIntro");

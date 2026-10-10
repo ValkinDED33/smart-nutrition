@@ -29,6 +29,7 @@ import {
   createInitialFoodCommandQuantity,
   createNutritionGoogleSearchUrl,
   isFoodCommandUnitCompatible,
+  normalizeTrustedMealProductUnit,
   parseFoodCommandText,
   shouldShowQuickSearchDeadEnd,
 } from "./foodCommandCenterModel";
@@ -321,7 +322,9 @@ export const FoodCommandCenter = ({
         personalBarcodeProducts,
         includeStarterCatalog: !commandSuggestionQuery,
         limit: commandSuggestionQuery ? 8 : 6,
-      }).filter((product) => productMatchesPreferences(product, preferences)),
+      })
+        .map(normalizeTrustedMealProductUnit)
+        .filter((product) => productMatchesPreferences(product, preferences)),
     [
       commandSuggestionQuery,
       personalBarcodeProducts,
@@ -347,7 +350,10 @@ export const FoodCommandCenter = ({
       }
 
       seen.add(key);
-      items.push(item);
+      items.push({
+        ...item,
+        product: normalizeTrustedMealProductUnit(item.product),
+      });
     });
 
     return items.slice(0, 5);
