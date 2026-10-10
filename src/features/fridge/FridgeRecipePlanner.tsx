@@ -9,6 +9,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Paper,
@@ -32,6 +33,15 @@ import {
   updateFridgeItemQuantityInCloud,
   upsertFridgeItemInCloud,
 } from "./fridgeCloudSync";
+
+const MOBILE_FRIDGE_RAIL = {
+  display: { xs: "flex", md: "block" },
+  overflowX: { xs: "auto", md: "visible" },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+};
 
 const fridgeCopy = {
   uk: {
@@ -84,7 +94,8 @@ const fridgeCopy = {
     cookNow: "Dodaj jako posiłek",
     remove: "Usuń",
     saveFailed: "Nie udało się zapisać lodówki. Spróbuj ponownie.",
-    mealSaveFailed: "Nie udało się dodać przepisu do dziennika. Spróbuj ponownie.",
+    mealSaveFailed:
+      "Nie udało się dodać przepisu do dziennika. Spróbuj ponownie.",
     addedToFridge: "Produkt dodany do lodówki.",
     quantityUpdated: "Ilość zaktualizowana.",
     removedFromFridge: "Produkt usunięty z lodówki.",
@@ -145,16 +156,16 @@ type RecipeSuggestion = {
 
 const getCommunityRecipeSuggestions = (
   posts: CommunityPost[],
-  pantryTokens: string[]
+  pantryTokens: string[],
 ) =>
   posts
     .filter((post) => post.type === "recipe" && post.ingredients.length > 0)
     .map<RecipeSuggestion | null>((post) => {
       const matchedIngredients = post.ingredients.filter((ingredient) =>
-        pantryTokens.includes(normalizeToken(ingredient))
+        pantryTokens.includes(normalizeToken(ingredient)),
       );
       const missingIngredients = post.ingredients.filter(
-        (ingredient) => !pantryTokens.includes(normalizeToken(ingredient))
+        (ingredient) => !pantryTokens.includes(normalizeToken(ingredient)),
       );
 
       if (matchedIngredients.length === 0) {
@@ -167,7 +178,8 @@ const getCommunityRecipeSuggestions = (
         source: "community",
         description: post.body,
         missingIngredients,
-        coverage: matchedIngredients.length / Math.max(post.ingredients.length, 1),
+        coverage:
+          matchedIngredients.length / Math.max(post.ingredients.length, 1),
       };
     })
     .filter(Boolean) as RecipeSuggestion[];
@@ -182,7 +194,9 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const fridge = useSelector((state: RootState) => state.fridge);
   const fridgeItems = useSelector((state: RootState) => state.fridge.items);
   const savedProducts = useSelector(selectSavedProducts);
-  const communityPosts = useSelector((state: RootState) => state.community.posts);
+  const communityPosts = useSelector(
+    (state: RootState) => state.community.posts,
+  );
   const { appLanguage } = useLanguage();
   const copy =
     appLanguage === "uk"
@@ -196,8 +210,12 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const [mealSaveNotice, setMealSaveNotice] = useState<string | null>(null);
   const [fridgeSaveError, setFridgeSaveError] = useState<string | null>(null);
   const [fridgeSaveNotice, setFridgeSaveNotice] = useState<string | null>(null);
-  const [savingFridgeAction, setSavingFridgeAction] = useState<string | null>(null);
-  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
+  const [savingFridgeAction, setSavingFridgeAction] = useState<string | null>(
+    null,
+  );
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>(
+    {},
+  );
   const recipeEntrySequenceRef = useRef(0);
   const deferredQuery = useDeferredValue(query);
 
@@ -239,7 +257,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
 
   const pantryTokens = useMemo(
     () => fridgeItems.map((item) => normalizeToken(item.product.name)),
-    [fridgeItems]
+    [fridgeItems],
   );
   const displayedResults = deferredQuery.trim() ? results : [];
 
@@ -248,11 +266,13 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       .filter((recipe) => recipe.mealType === mealType)
       .map<RecipeSuggestion | null>((recipe) => {
         const matchedCount = recipe.ingredients.filter((ingredient) =>
-          pantryTokens.includes(normalizeToken(ingredient.product.name))
+          pantryTokens.includes(normalizeToken(ingredient.product.name)),
         ).length;
         const missingIngredients = recipe.ingredients
           .map((ingredient) => ingredient.product.name)
-          .filter((ingredient) => !pantryTokens.includes(normalizeToken(ingredient)));
+          .filter(
+            (ingredient) => !pantryTokens.includes(normalizeToken(ingredient)),
+          );
 
         if (matchedCount === 0) {
           return null;
@@ -270,7 +290,10 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       })
       .filter(Boolean) as RecipeSuggestion[];
 
-    return [...librarySuggestions, ...getCommunityRecipeSuggestions(communityPosts, pantryTokens)]
+    return [
+      ...librarySuggestions,
+      ...getCommunityRecipeSuggestions(communityPosts, pantryTokens),
+    ]
       .sort((left, right) => right.coverage - left.coverage)
       .slice(0, 5);
   }, [communityPosts, mealType, pantryTokens]);
@@ -326,7 +349,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
   const runFridgeAction = async (
     actionId: string,
     action: () => Promise<unknown>,
-    successMessage?: string
+    successMessage?: string,
   ) => {
     setFridgeSaveError(null);
     setFridgeSaveNotice(null);
@@ -355,7 +378,11 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
 
     const quantity = Number(getQuantityDraft(itemId, item.quantity));
 
-    if (!Number.isFinite(quantity) || quantity <= 0 || quantity === item.quantity) {
+    if (
+      !Number.isFinite(quantity) ||
+      quantity <= 0 ||
+      quantity === item.quantity
+    ) {
       setQuantityDrafts((current) => {
         const { [itemId]: _removed, ...rest } = current;
         void _removed;
@@ -364,35 +391,44 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
       return;
     }
 
-    void runFridgeAction(`quantity-${item.id}`, async () => {
-      await updateFridgeItemQuantityInCloud(dispatch, fridge, {
-        itemId: item.id,
-        quantity,
-      });
-      setQuantityDrafts((current) => {
-        const { [itemId]: _removed, ...rest } = current;
-        void _removed;
-        return rest;
-      });
-    }, copy.quantityUpdated);
+    void runFridgeAction(
+      `quantity-${item.id}`,
+      async () => {
+        await updateFridgeItemQuantityInCloud(dispatch, fridge, {
+          itemId: item.id,
+          quantity,
+        });
+        setQuantityDrafts((current) => {
+          const { [itemId]: _removed, ...rest } = current;
+          void _removed;
+          return rest;
+        });
+      },
+      copy.quantityUpdated,
+    );
   };
 
   return (
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.4, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {mealSaveError ? (
@@ -433,7 +469,18 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
         {savedProducts.length > 0 && (
           <Stack spacing={1}>
             <Typography sx={{ fontWeight: 700 }}>{copy.quickAdd}</Typography>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
+                pb: { xs: 0.5, sm: 0 },
+              }}
+            >
               {savedProducts.slice(0, 8).map((product) => (
                 <Chip
                   key={`saved-${product.id}`}
@@ -448,7 +495,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                           product,
                           quantity: 100,
                         }),
-                      copy.addedToFridge
+                      copy.addedToFridge,
                     );
                   }}
                 />
@@ -458,7 +505,18 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
         )}
 
         {displayedResults.length > 0 && (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              overflowX: { xs: "auto", sm: "visible" },
+              mx: { xs: -1, sm: 0 },
+              px: { xs: 1, sm: 0 },
+              pb: { xs: 0.5, sm: 0 },
+            }}
+          >
             {displayedResults.map((product) => (
               <Chip
                 key={`search-${product.id}`}
@@ -478,7 +536,7 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
                       setQuery("");
                       setResults([]);
                     },
-                    copy.addedToFridge
+                    copy.addedToFridge,
                   );
                 }}
               />
@@ -491,56 +549,89 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
           {fridgeItems.length === 0 ? (
             <Alert severity="info">{copy.selectedEmpty}</Alert>
           ) : (
-            fridgeItems.map((item) => (
-              <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
-                <Stack
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={1.2}
-                  alignItems={{ xs: "stretch", md: "center" }}
-                >
-                  <Typography sx={{ flex: 1, fontWeight: 700 }}>
-                    {item.product.name}
-                  </Typography>
-                  <TextField
-                    type="text"
-                    size="small"
-                    label={`${copy.quantity} (${item.product.unit})`}
-                    value={getQuantityDraft(item.id, item.quantity)}
-                    onFocus={(event) => selectInputValue(event.target)}
-                    onClick={(event) => selectInputValue(event.currentTarget)}
-                    slotProps={{
-                      htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+            <Box
+              data-fridge-selected-mobile-rail="true"
+              sx={MOBILE_FRIDGE_RAIL}
+            >
+              <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
+                {fridgeItems.map((item) => (
+                  <Paper
+                    key={item.id}
+                    variant="outlined"
+                    sx={{
+                      p: { xs: 1, md: 1.5 },
+                      minWidth: { xs: 230, md: 0 },
+                      borderRadius: 1,
+                      scrollSnapAlign: { xs: "start", md: "none" },
                     }}
-                    onChange={(event) => {
-                      setQuantityDrafts((current) => ({
-                        ...current,
-                        [item.id]: event.target.value,
-                      }));
-                    }}
-                    onBlur={() => commitQuantityDraft(item.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.currentTarget.blur();
-                      }
-                    }}
-                    sx={{ width: { xs: "100%", md: 180 } }}
-                  />
-                  <Button
-                    color="error"
-                    disabled={savingFridgeAction === `remove-${item.id}`}
-                    onClick={() =>
-                      void runFridgeAction(
-                        `remove-${item.id}`,
-                        () => removeFridgeItemFromCloud(dispatch, fridge, item.id),
-                        copy.removedFromFridge
-                      )
-                    }
                   >
-                    {copy.remove}
-                  </Button>
-                </Stack>
-              </Paper>
-            ))
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      spacing={1.2}
+                      alignItems={{ xs: "stretch", md: "center" }}
+                    >
+                      <Typography
+                        sx={{
+                          flex: 1,
+                          fontWeight: 700,
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {item.product.name}
+                      </Typography>
+                      <TextField
+                        type="text"
+                        size="small"
+                        label={`${copy.quantity} (${item.product.unit})`}
+                        value={getQuantityDraft(item.id, item.quantity)}
+                        onFocus={(event) => selectInputValue(event.target)}
+                        onClick={(event) =>
+                          selectInputValue(event.currentTarget)
+                        }
+                        slotProps={{
+                          htmlInput: {
+                            inputMode: "decimal",
+                            enterKeyHint: "done",
+                          },
+                        }}
+                        onChange={(event) => {
+                          setQuantityDrafts((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }));
+                        }}
+                        onBlur={() => commitQuantityDraft(item.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                          }
+                        }}
+                        sx={{ width: { xs: "100%", md: 180 } }}
+                      />
+                      <Button
+                        size="small"
+                        color="error"
+                        disabled={savingFridgeAction === `remove-${item.id}`}
+                        onClick={() =>
+                          void runFridgeAction(
+                            `remove-${item.id}`,
+                            () =>
+                              removeFridgeItemFromCloud(
+                                dispatch,
+                                fridge,
+                                item.id,
+                              ),
+                            copy.removedFromFridge,
+                          )
+                        }
+                      >
+                        {copy.remove}
+                      </Button>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
           )}
         </Stack>
 
@@ -549,47 +640,93 @@ export const FridgeRecipePlanner = ({ mealType }: Props) => {
           {suggestions.length === 0 ? (
             <Alert severity="info">{copy.noSuggestions}</Alert>
           ) : (
-            suggestions.map((item) => (
-              <Paper key={item.id} variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-                <Stack spacing={1.2}>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Chip
-                      label={item.source === "library" ? copy.fromLibrary : copy.fromCommunity}
-                      color={item.source === "library" ? "success" : "default"}
-                      size="small"
-                    />
-                    <Chip
-                      label={`${copy.coverage}: ${Math.round(item.coverage * 100)}%`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Stack>
-                  <Typography sx={{ fontWeight: 800 }}>{item.title}</Typography>
-                  <Typography color="text.secondary">{item.description}</Typography>
-                  <Typography variant="body2">
-                    {copy.missing}:{" "}
-                    {item.missingIngredients.length > 0
-                      ? item.missingIngredients.join(", ")
-                      : "-"}
-                  </Typography>
-                  {item.recipeId && (
-                    <Button
-                      variant="contained"
-                      disabled={savingFridgeAction === `cook-${item.recipeId}`}
-                      onClick={() => {
-                        void handleCookRecipe(item.recipeId!);
-                      }}
-                      sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
-                    >
-                      {copy.cookNow}
-                    </Button>
-                  )}
-                  {!item.recipeId && (
-                    <Alert severity="info">{copy.communityRecipeInfo}</Alert>
-                  )}
-                </Stack>
-              </Paper>
-            ))
+            <Box
+              data-fridge-suggestions-mobile-rail="true"
+              sx={MOBILE_FRIDGE_RAIL}
+            >
+              <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
+                {suggestions.map((item) => (
+                  <Paper
+                    key={item.id}
+                    variant="outlined"
+                    sx={{
+                      p: { xs: 1.2, md: 2 },
+                      minWidth: { xs: 260, md: 0 },
+                      borderRadius: 1,
+                      scrollSnapAlign: { xs: "start", md: "none" },
+                    }}
+                  >
+                    <Stack spacing={1.2}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                      >
+                        <Chip
+                          label={
+                            item.source === "library"
+                              ? copy.fromLibrary
+                              : copy.fromCommunity
+                          }
+                          color={
+                            item.source === "library" ? "success" : "default"
+                          }
+                          size="small"
+                        />
+                        <Chip
+                          label={`${copy.coverage}: ${Math.round(item.coverage * 100)}%`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </Stack>
+                      <Typography sx={{ fontWeight: 800 }}>
+                        {item.title}
+                      </Typography>
+                      <Typography
+                        color="text.secondary"
+                        sx={{ display: { xs: "none", sm: "block" } }}
+                      >
+                        {item.description}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ overflowWrap: "anywhere" }}
+                      >
+                        {copy.missing}:{" "}
+                        {item.missingIngredients.length > 0
+                          ? item.missingIngredients.join(", ")
+                          : "-"}
+                      </Typography>
+                      {item.recipeId && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          disabled={
+                            savingFridgeAction === `cook-${item.recipeId}`
+                          }
+                          onClick={() => {
+                            void handleCookRecipe(item.recipeId!);
+                          }}
+                          sx={{
+                            alignSelf: "flex-start",
+                            textTransform: "none",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {copy.cookNow}
+                        </Button>
+                      )}
+                      {!item.recipeId && (
+                        <Alert severity="info">
+                          {copy.communityRecipeInfo}
+                        </Alert>
+                      )}
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
           )}
         </Stack>
       </Stack>

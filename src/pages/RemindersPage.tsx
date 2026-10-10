@@ -46,6 +46,7 @@ const RemindersPage = () => {
       title={copy.title}
       subtitle={copy.subtitle}
       assistantHint={<EcosystemPulse focus="profile" />}
+      compact
     >
       <LazyModuleBoundary
         errorTitle={recoveryCopy.errorTitle}

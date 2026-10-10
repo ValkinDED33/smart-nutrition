@@ -50,6 +50,8 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_CYCLE_DAYS = 28;
 const DEFAULT_LUTEAL_DAYS = 14;
+const MOBILE_DETAIL_DISPLAY = { xs: "none", md: "block" } as const;
+const MOBILE_RAIL_SCROLL_SNAP = { xs: "x mandatory", md: "none" } as const;
 
 const womenHealthCopy = {
   uk: {
@@ -1374,19 +1376,26 @@ const WomenHealthOverviewCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 3 },
+        p: { xs: 1, md: 3 },
         borderRadius: 1,
         border: SOFT_BORDER,
         background:
           "linear-gradient(135deg, rgba(236, 72, 153, 0.09), rgba(20, 184, 166, 0.08))",
       }}
     >
-      <Stack spacing={2}>
-        <Stack spacing={0.6}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+      <Stack spacing={{ xs: 1.15, md: 2 }}>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
+          <Typography
+            component="h2"
+            variant="h6"
+            sx={{ fontWeight: 900, fontSize: { xs: 17, md: 20 } }}
+          >
             {pageTitle}
           </Typography>
-          <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
+          <Typography
+            color="text.secondary"
+            sx={{ lineHeight: 1.6, display: MOBILE_DETAIL_DISPLAY }}
+          >
             {pageSubtitle}
           </Typography>
         </Stack>
@@ -1405,7 +1414,7 @@ const WomenHealthOverviewCard = () => {
         {isWomenHealthOwner && (
           <Box
             sx={{
-              p: { xs: 1.6, md: 2 },
+              p: { xs: 1.1, md: 2 },
               borderRadius: 1,
               border: 1,
               borderColor: "rgba(20, 184, 166, 0.32)",
@@ -1414,12 +1423,16 @@ const WomenHealthOverviewCard = () => {
             }}
             data-women-health-pregnancy-block="true"
           >
-            <Stack spacing={1.4}>
-              <Stack spacing={0.4}>
+            <Stack spacing={{ xs: 1, md: 1.4 }}>
+              <Stack spacing={0.35}>
                 <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
                   {copy.pregnancyTitle}
                 </Typography>
-                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  sx={{ lineHeight: 1.55, display: MOBILE_DETAIL_DISPLAY }}
+                >
                   {copy.pregnancySubtitle}
                 </Typography>
               </Stack>
@@ -1427,10 +1440,20 @@ const WomenHealthOverviewCard = () => {
               {!hasPregnancyContext && <Alert severity="info">{copy.pregnancyNotEnabled}</Alert>}
 
               <Box
+                data-women-health-mobile-summary-rail="true"
                 sx={{
-                  display: "grid",
+                  display: { xs: "flex", md: "grid" },
                   gridTemplateColumns: { xs: "1fr", md: "repeat(4, minmax(0, 1fr))" },
                   gap: 1,
+                  overflowX: { xs: "auto", md: "visible" },
+                  pb: { xs: 0.3, md: 0 },
+                  scrollSnapType: MOBILE_RAIL_SCROLL_SNAP,
+                  scrollbarWidth: "none",
+                  "& > *": {
+                    flex: { xs: "0 0 150px", md: "initial" },
+                    scrollSnapAlign: "start",
+                  },
+                  "&::-webkit-scrollbar": { display: "none" },
                 }}
               >
                 <Box sx={{ p: 1.2, borderRadius: 1, border: 1, borderColor: "divider" }}>
@@ -1500,7 +1523,7 @@ const WomenHealthOverviewCard = () => {
           <Box
             data-baby-preview-block="true"
             sx={{
-              p: { xs: 1.6, md: 2 },
+              p: { xs: 1.1, md: 2 },
               borderRadius: 1,
               border: 1,
               borderColor: "rgba(168, 85, 247, 0.28)",
@@ -1508,12 +1531,16 @@ const WomenHealthOverviewCard = () => {
                 "linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(20, 184, 166, 0.08))",
             }}
           >
-            <Stack spacing={1.5}>
-              <Stack spacing={0.4}>
+            <Stack spacing={{ xs: 1, md: 1.5 }}>
+              <Stack spacing={0.35}>
                 <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
                   {copy.babyPreviewTitle}
                 </Typography>
-                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  sx={{ lineHeight: 1.55, display: MOBILE_DETAIL_DISPLAY }}
+                >
                   {copy.babyPreviewSubtitle}
                 </Typography>
               </Stack>
@@ -1522,10 +1549,20 @@ const WomenHealthOverviewCard = () => {
               {babyPreviewError && <Alert severity="error">{babyPreviewError}</Alert>}
 
               <Box
+                data-women-health-mobile-result-rail="true"
                 sx={{
-                  display: "grid",
+                  display: { xs: "flex", md: "grid" },
                   gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
                   gap: 1,
+                  overflowX: { xs: "auto", md: "visible" },
+                  pb: { xs: 0.3, md: 0 },
+                  scrollSnapType: MOBILE_RAIL_SCROLL_SNAP,
+                  scrollbarWidth: "none",
+                  "& > *": {
+                    flex: { xs: "0 0 238px", md: "initial" },
+                    scrollSnapAlign: "start",
+                  },
+                  "&::-webkit-scrollbar": { display: "none" },
                 }}
               >
                 <TextField
@@ -1723,36 +1760,56 @@ const WomenHealthOverviewCard = () => {
         )}
 
         {isWomenHealthOwner && (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip color="secondary" label={getModeLabel(copy, womenHealth.mode)} />
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              overflowX: { xs: "auto", sm: "visible" },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            <Chip color="secondary" label={getModeLabel(copy, womenHealth.mode)} size="small" />
             <Chip
               label={`${copy.doctorPlan}: ${
                 womenHealth.doctorConfirmed ? copy.doctorYes : copy.doctorNo
               }`}
               color={womenHealth.doctorConfirmed ? "success" : "default"}
               variant="outlined"
+              size="small"
             />
-            {cycleDay && <Chip label={`${copy.cycleDay}: ${cycleDay}`} variant="outlined" />}
+            {cycleDay && <Chip label={`${copy.cycleDay}: ${cycleDay}`} variant="outlined" size="small" />}
             {effectivePregnancyWeek && (
               <Chip
                 label={`${copy.pregnancyWeek}: ${effectivePregnancyWeek}`}
                 color="primary"
                 variant="outlined"
+                size="small"
               />
             )}
-            {trimester && <Chip label={`${copy.trimester}: ${trimester}`} variant="outlined" />}
-            {dueInDays !== null && <Chip label={`${copy.dueIn}: ${copy.days(dueInDays)}`} />}
+            {trimester && <Chip label={`${copy.trimester}: ${trimester}`} variant="outlined" size="small" />}
+            {dueInDays !== null && <Chip label={`${copy.dueIn}: ${copy.days(dueInDays)}`} size="small" />}
           </Stack>
         )}
 
         {isWomenHealthOwner && <Box
           sx={{
-            display: "grid",
+            display: { xs: "flex", md: "grid" },
             gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
             gap: 1.4,
+            overflowX: { xs: "auto", md: "visible" },
+            scrollSnapType: MOBILE_RAIL_SCROLL_SNAP,
+            scrollbarWidth: "none",
+            "& > *": {
+              flex: { xs: "0 0 210px", md: "initial" },
+              scrollSnapAlign: "start",
+            },
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}>
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 850 }}>{copy.cycleDay}</Typography>
               <Typography color="text.secondary">
@@ -1769,7 +1826,7 @@ const WomenHealthOverviewCard = () => {
               />
             </Stack>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}>
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 850 }}>{copy.fertileWindow}</Typography>
               <Typography color="text.secondary">{copy.dayRange(fertileFrom, fertileTo)}</Typography>
@@ -1778,7 +1835,7 @@ const WomenHealthOverviewCard = () => {
               </Typography>
             </Stack>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}>
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 850 }}>{copy.pregnancyWeek}</Typography>
               <Typography color="text.secondary">
@@ -1801,13 +1858,21 @@ const WomenHealthOverviewCard = () => {
 
         {isWomenHealthOwner && <Box
           sx={{
-            display: "grid",
+            display: { xs: "flex", md: "grid" },
             gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
             gap: 1.4,
+            overflowX: { xs: "auto", md: "visible" },
+            scrollSnapType: MOBILE_RAIL_SCROLL_SNAP,
+            scrollbarWidth: "none",
+            "& > *": {
+              flex: { xs: "0 0 236px", md: "initial" },
+              scrollSnapAlign: "start",
+            },
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {[copy.nutrition, copy.hydration, copy.reminders].map((label) => (
-            <Paper key={label} variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+            <Paper key={label} variant="outlined" sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}>
               <Stack spacing={0.8}>
                 <Typography sx={{ fontWeight: 850 }}>{label}</Typography>
                 <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
@@ -1818,7 +1883,7 @@ const WomenHealthOverviewCard = () => {
           ))}
         </Box>}
 
-        {isWomenHealthOwner && <Paper variant="outlined" sx={{ p: 1.6, borderRadius: 1 }}>
+        {isWomenHealthOwner && <Paper variant="outlined" sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}>
           <Stack spacing={0.8}>
             <Typography sx={{ fontWeight: 850 }}>{copy.notes}</Typography>
             <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
@@ -1836,7 +1901,11 @@ const WomenHealthOverviewCard = () => {
             <Stack spacing={1.2}>
               <Stack spacing={0.4}>
                 <Typography sx={{ fontWeight: 900 }}>{copy.symptomHistoryTitle}</Typography>
-                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  sx={{ lineHeight: 1.55, display: MOBILE_DETAIL_DISPLAY }}
+                >
                   {copy.symptomHistorySubtitle}
                 </Typography>
               </Stack>
@@ -1930,12 +1999,16 @@ const WomenHealthOverviewCard = () => {
         <Paper
           variant="outlined"
           data-women-health-partner-access="true"
-          sx={{ p: 1.6, borderRadius: 1 }}
+          sx={{ p: { xs: 1.15, md: 1.6 }, borderRadius: 1 }}
         >
-          <Stack spacing={1.4}>
+          <Stack spacing={{ xs: 1, md: 1.4 }}>
             <Stack spacing={0.5}>
               <Typography sx={{ fontWeight: 900 }}>{copy.partnerTitle}</Typography>
-              <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+              <Typography
+                color="text.secondary"
+                variant="body2"
+                sx={{ lineHeight: 1.55, display: MOBILE_DETAIL_DISPLAY }}
+              >
                 {copy.partnerHelp}
               </Typography>
             </Stack>

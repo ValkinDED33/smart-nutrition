@@ -43,4 +43,13 @@ describe("auth and community visible error copy contract", () => {
     expect(source).toContain('save: "Zapisz"');
     expect(source).toContain('unsave: "Usuń zapis"');
   });
+
+  it("keeps the community hub before the AI blueprint", async () => {
+    const source = await readSource("src/pages/CommunityPage.tsx");
+    const hubIndex = source.indexOf("<CommunityHubCard />");
+    const blueprintIndex = source.indexOf("<AIMasterBlueprintPanel");
+
+    expect(hubIndex).toBeGreaterThan(-1);
+    expect(blueprintIndex).toBeGreaterThan(hubIndex);
+  });
 });

@@ -918,6 +918,7 @@ const AiCompanionPage = () => {
       title={copy.title}
       subtitle={copy.subtitle}
       assistantHint={<EcosystemPulse focus="assistant" />}
+      compact
     >
       <SectionTabs
         sections={sections}
@@ -1633,10 +1634,20 @@ const AiCompanionPage = () => {
               {copy.focusTitle}
             </Typography>
             <Box
+              data-ai-worker-focus-rail="true"
               sx={{
-                display: "grid",
+                display: { xs: "flex", md: "grid" },
                 gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
                 gap: { xs: 1, md: 1.5 },
+                overflowX: { xs: "auto", md: "visible" },
+                pb: { xs: 0.5, md: 0 },
+                scrollSnapType: { xs: "x mandatory", md: "none" },
+                scrollbarWidth: "none",
+                "& > *": {
+                  flex: { xs: "0 0 236px", md: "initial" },
+                  scrollSnapAlign: "start",
+                },
+                "&::-webkit-scrollbar": { display: "none" },
               }}
             >
               {actionCards.map((card) => (
@@ -1647,6 +1658,7 @@ const AiCompanionPage = () => {
                   sx={{
                     p: { xs: 1.25, md: 2 },
                     borderRadius: 1,
+                    minHeight: { xs: 154, md: "auto" },
                   }}
                 >
                   <Stack spacing={{ xs: 0.8, md: 1.2 }} sx={{ height: "100%" }}>

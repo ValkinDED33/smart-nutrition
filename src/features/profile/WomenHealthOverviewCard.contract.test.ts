@@ -41,6 +41,20 @@ describe("WomenHealthOverviewCard contract", () => {
     expect(source).toContain("womenHealth.dueDate");
   });
 
+  it("keeps the women-health center compact and scannable on mobile", async () => {
+    const source = await readSource(womenHealthCardPath);
+
+    expect(source).toContain('p: { xs: 1, md: 3 }');
+    expect(source).toContain('spacing={{ xs: 1.15, md: 2 }}');
+    expect(source).toContain('data-women-health-mobile-summary-rail="true"');
+    expect(source).toContain('data-women-health-mobile-result-rail="true"');
+    expect(source).toContain('display: { xs: "flex", md: "grid" }');
+    expect(source).toContain('overflowX: { xs: "auto", md: "visible" }');
+    expect(source).toContain('flex: { xs: "0 0 210px", md: "initial" }');
+    expect(source).toContain('const MOBILE_DETAIL_DISPLAY = { xs: "none", md: "block" } as const');
+    expect(source).toContain("display: MOBILE_DETAIL_DISPLAY");
+  });
+
   it("surfaces baby preview as probability context, not a medical verdict", async () => {
     const source = await readSource(womenHealthCardPath);
 

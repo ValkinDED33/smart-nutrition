@@ -624,13 +624,23 @@ export const CommunityHubCard = () => {
 
   return (
     <SectionCard>
-      <Stack spacing={2}>
-        <Stack spacing={0.6}>
+      <Stack spacing={{ xs: 1.1, md: 2 }}>
+        <Stack spacing={{ xs: 0.3, md: 0.6 }}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
-          <Typography color="text.secondary">
+          <Typography
+            color="text.secondary"
+            sx={{
+              display: { xs: "-webkit-box", md: "block" },
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: { xs: 1, md: "unset" },
+              overflow: "hidden",
+            }}
+          >
+            {copy.subtitle}
+          </Typography>
+          <Typography color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
             {copy.personalFocus(
               personalization.frictionLabel,
               personalization.motivationLabel
@@ -638,10 +648,25 @@ export const CommunityHubCard = () => {
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-          <Chip label={`${copy.level}: ${level}`} color="success" />
-          <Chip label={`${copy.points}: ${community.score}`} />
-          <Chip label={`${copy.favorites}: ${community.favoritePostIds.length}`} variant="outlined" />
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            pb: { xs: 0.2, sm: 0 },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          <Chip label={`${copy.level}: ${level}`} color="success" size="small" />
+          <Chip label={`${copy.points}: ${community.score}`} size="small" />
+          <Chip
+            label={`${copy.favorites}: ${community.favoritePostIds.length}`}
+            variant="outlined"
+            size="small"
+          />
         </Stack>
 
         {communityFeedback && (
@@ -655,6 +680,14 @@ export const CommunityHubCard = () => {
           onChange={(_, value: TabValue) => setTab(value)}
           variant="scrollable"
           allowScrollButtonsMobile
+          sx={{
+            minHeight: { xs: 38, md: 48 },
+            "& .MuiTab-root": {
+              minHeight: { xs: 38, md: 48 },
+              px: { xs: 1.4, md: 2 },
+              py: { xs: 0.5, md: 1 },
+            },
+          }}
         >
           <Tab value="friends" label={copy.tabs.friends} />
           <Tab value="chat" label={copy.tabs.chat} />

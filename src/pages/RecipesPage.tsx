@@ -238,6 +238,7 @@ const RecipesPage = () => {
       title={t("page.recipes.title")}
       subtitle={t("page.recipes.subtitle")}
       assistantHint={<EcosystemPulse focus="recipes" />}
+      compact
     >
       <Paper
         elevation={0}
@@ -277,15 +278,6 @@ const RecipesPage = () => {
         </ToggleButtonGroup>
       </Paper>
 
-      <AIMasterBlueprintPanel
-        eyebrow="Smart Nutrition AI"
-        title={sections.blueprintTitle}
-        description={sections.blueprintSubtitle}
-        patterns={recipeBlueprintPatterns}
-        assistantName={assistantDisplayName}
-        assistantVariant={assistant.companionKind}
-      />
-
       <SectionTabs
         sections={[
           { id: "library", label: getRecipesSectionLabel(sections, "library") },
@@ -302,6 +294,17 @@ const RecipesPage = () => {
         ariaLabel={sections.sectionsAriaLabel}
         stickyOnMobile
       />
+
+      {activeSection === "recommendations" ? (
+        <AIMasterBlueprintPanel
+          eyebrow="Smart Nutrition AI"
+          title={sections.blueprintTitle}
+          description={sections.blueprintSubtitle}
+          patterns={recipeBlueprintPatterns}
+          assistantName={assistantDisplayName}
+          assistantVariant={assistant.companionKind}
+        />
+      ) : null}
 
       <LazyModuleBoundary
         errorTitle={recoveryCopy.errorTitle}

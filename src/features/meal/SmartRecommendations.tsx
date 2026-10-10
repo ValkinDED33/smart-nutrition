@@ -1,7 +1,15 @@
 import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useQueries } from "@tanstack/react-query";
-import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import type { RootState, AppDispatch } from "../../app/store";
 import { selectMealItems } from "./selectors";
 import { useLanguage } from "../../shared/language";
@@ -25,6 +33,14 @@ import { useMealActionFeedback } from "./useMealActionFeedback";
 const EGGS_QUERY = "eggs";
 const GREEK_YOGURT_QUERY = "greek yogurt";
 const createRecommendationTimestamp = () => new Date().toISOString();
+const MOBILE_RECOMMENDATION_RAIL = {
+  display: { xs: "flex", md: "block" },
+  overflowX: { xs: "auto", md: "visible" },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+};
 
 const recommendationCopy = {
   uk: {
@@ -34,7 +50,8 @@ const recommendationCopy = {
     todayFitTitle: "Сьогодні вам підійде",
     todayFitDetail: (meal: string) =>
       `Контекст дня підказує наступний слот: ${meal}. Рекомендації нижче враховують сьогодні, учора і тижневий ритм.`,
-    recipePromptTitle: (calories: number) => `Хочете рецепт на ~${calories.toFixed(0)} ккал?`,
+    recipePromptTitle: (calories: number) =>
+      `Хочете рецепт на ~${calories.toFixed(0)} ккал?`,
     recipePromptDetail: (title: string) =>
       `Під поточний зазор добре лягає рецепт: ${title}. Його можна додати одразу в щоденник.`,
     fallbackProteinFoods: "пісні білкові продукти",
@@ -45,13 +62,16 @@ const recommendationCopy = {
     fiberLowTitle: "Клітковини все ще мало",
     fiberLowDetail: (foods: string) =>
       `Овочів, фруктів і продуктів із вищим вмістом клітковини поки не вистачає. Корисні варіанти: ${foods}.`,
-    cutCorrectionTitle: (surplus: number) => `Корекція на сушці: +${surplus.toFixed(0)} ккал`,
+    cutCorrectionTitle: (surplus: number) =>
+      `Корекція на сушці: +${surplus.toFixed(0)} ккал`,
     cutCorrectionDetail:
       "Зробіть наступний прийом їжі легшим: нежирний білок, овочі та без зайвих калорійних додатків.",
-    bulkPushTitle: (remaining: number) => `Для набору залишилось: ${remaining.toFixed(0)} ккал`,
+    bulkPushTitle: (remaining: number) =>
+      `Для набору залишилось: ${remaining.toFixed(0)} ккал`,
     bulkPushDetail:
       "Сьогодні вам ще потрібно більше енергії. Додайте один щільний перекус із білком і вуглеводами до кінця дня.",
-    driftTitle: (delta: number) => `Відхилення за 7 днів: ${Math.abs(delta).toFixed(0)} ккал`,
+    driftTitle: (delta: number) =>
+      `Відхилення за 7 днів: ${Math.abs(delta).toFixed(0)} ккал`,
     driftAuto:
       "Автоматична адаптація вже ввімкнена, тож продовжуйте стабільно вести записи, а ціль підлаштується під тренд.",
     driftManual:
@@ -86,7 +106,8 @@ const recommendationCopy = {
     todayFitTitle: "Dziś najlepiej pasuje",
     todayFitDetail: (meal: string) =>
       `Kontekst dnia wskazuje kolejny slot: ${meal}. Poniższe rekomendacje biorą pod uwagę dziś, wczoraj i rytm tygodnia.`,
-    recipePromptTitle: (calories: number) => `Chcesz przepis na ~${calories.toFixed(0)} kcal?`,
+    recipePromptTitle: (calories: number) =>
+      `Chcesz przepis na ~${calories.toFixed(0)} kcal?`,
     recipePromptDetail: (title: string) =>
       `Do obecnego zapasu dobrze pasuje przepis: ${title}. Możesz dodać go od razu do dziennika.`,
     fallbackProteinFoods: "chude źródła białka",
@@ -97,13 +118,16 @@ const recommendationCopy = {
     fiberLowTitle: "Błonnika nadal jest za mało",
     fiberLowDetail: (foods: string) =>
       `Wciąż brakuje warzyw, owoców i produktów z większą ilością błonnika. Pomocne opcje: ${foods}.`,
-    cutCorrectionTitle: (surplus: number) => `Korekta na redukcji: +${surplus.toFixed(0)} kcal`,
+    cutCorrectionTitle: (surplus: number) =>
+      `Korekta na redukcji: +${surplus.toFixed(0)} kcal`,
     cutCorrectionDetail:
       "Kolejny posiłek utrzymaj lekki: chude białko, warzywa i bez dodatkowych kalorii.",
-    bulkPushTitle: (remaining: number) => `Na masę zostało: ${remaining.toFixed(0)} kcal`,
+    bulkPushTitle: (remaining: number) =>
+      `Na masę zostało: ${remaining.toFixed(0)} kcal`,
     bulkPushDetail:
       "Dziś nadal potrzebujesz więcej energii. Dodaj jedną bardziej kaloryczną przekąskę z białkiem i węglowodanami przed końcem dnia.",
-    driftTitle: (delta: number) => `Odchylenie z 7 dni: ${Math.abs(delta).toFixed(0)} kcal`,
+    driftTitle: (delta: number) =>
+      `Odchylenie z 7 dni: ${Math.abs(delta).toFixed(0)} kcal`,
     driftAuto:
       "Automatyczna adaptacja jest włączona, więc loguj regularnie i pozwól celowi reagować na trend.",
     driftManual:
@@ -138,7 +162,8 @@ const recommendationCopy = {
     todayFitTitle: "Today fits",
     todayFitDetail: (meal: string) =>
       `The day context points to the next slot: ${meal}. These recommendations use today, yesterday, and the weekly rhythm.`,
-    recipePromptTitle: (calories: number) => `Want a ~${calories.toFixed(0)} kcal recipe?`,
+    recipePromptTitle: (calories: number) =>
+      `Want a ~${calories.toFixed(0)} kcal recipe?`,
     recipePromptDetail: (title: string) =>
       `This recipe fits the current gap well: ${title}. You can add it straight to the diary.`,
     fallbackProteinFoods: "lean protein foods",
@@ -149,13 +174,16 @@ const recommendationCopy = {
     fiberLowTitle: "Fiber is still low",
     fiberLowDetail: (foods: string) =>
       `Vegetables, fruit, and higher-fiber foods are still missing. Helpful options: ${foods}.`,
-    cutCorrectionTitle: (surplus: number) => `Cutting adjustment: +${surplus.toFixed(0)} kcal`,
+    cutCorrectionTitle: (surplus: number) =>
+      `Cutting adjustment: +${surplus.toFixed(0)} kcal`,
     cutCorrectionDetail:
       "Make the next meal lighter: lean protein, vegetables, and no heavy extras.",
-    bulkPushTitle: (remaining: number) => `Bulking gap left: ${remaining.toFixed(0)} kcal`,
+    bulkPushTitle: (remaining: number) =>
+      `Bulking gap left: ${remaining.toFixed(0)} kcal`,
     bulkPushDetail:
       "You still need more energy today. Add one denser snack with protein and carbs before the day ends.",
-    driftTitle: (delta: number) => `7-day drift: ${Math.abs(delta).toFixed(0)} kcal`,
+    driftTitle: (delta: number) =>
+      `7-day drift: ${Math.abs(delta).toFixed(0)} kcal`,
     driftAuto:
       "Automatic adaptation is on, so keep logging consistently and let the target respond to the trend.",
     driftManual:
@@ -187,7 +215,8 @@ const recommendationCopy = {
 
 type RecommendationTone = "success" | "warning" | "info";
 type RecommendationProductKind = "protein" | "fiber" | "dense";
-type RecommendationCopy = (typeof recommendationCopy)[keyof typeof recommendationCopy];
+type RecommendationCopy =
+  (typeof recommendationCopy)[keyof typeof recommendationCopy];
 
 interface RecommendationProductRequest {
   kind: RecommendationProductKind;
@@ -206,13 +235,18 @@ const getRecommendationCopy = (language: AppLanguage): RecommendationCopy => {
   }
 };
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 const createEntryId = () =>
   globalThis.crypto?.randomUUID?.() ??
   `smart-rec-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-const getActionQuantity = (product: Product | undefined, targetAmount: number, fallback: number) => {
+const getActionQuantity = (
+  product: Product | undefined,
+  targetAmount: number,
+  fallback: number,
+) => {
   if (!product) {
     return undefined;
   }
@@ -229,7 +263,7 @@ const getActionQuantity = (product: Product | undefined, targetAmount: number, f
 
 const getRecommendationProductRequests = (
   preferences: NutritionPreferences,
-  goal: string
+  goal: string,
 ): RecommendationProductRequest[] => {
   const proteinTerms =
     preferences.dietStyle === "vegan"
@@ -238,7 +272,7 @@ const getRecommendationProductRequests = (
         ? [GREEK_YOGURT_QUERY, "cottage cheese", "tofu", EGGS_QUERY]
         : preferences.dietStyle === "pescatarian"
           ? ["tuna", "salmon", GREEK_YOGURT_QUERY, EGGS_QUERY]
-        : preferences.dietStyle === "low_carb"
+          : preferences.dietStyle === "low_carb"
             ? ["chicken breast", EGGS_QUERY, "tuna", "cottage cheese"]
             : ["chicken breast", GREEK_YOGURT_QUERY, EGGS_QUERY, "tuna"];
   const fiberTerms =
@@ -258,12 +292,14 @@ const getRecommendationProductRequests = (
 };
 
 const getProductIdentity = (product: Product) =>
-  product.barcode?.replace(/\D/g, "") || product.id || product.name.trim().toLowerCase();
+  product.barcode?.replace(/\D/g, "") ||
+  product.id ||
+  product.name.trim().toLowerCase();
 
 const groupRecommendationProducts = (
   requests: RecommendationProductRequest[],
   results: Product[][],
-  preferences: NutritionPreferences
+  preferences: NutritionPreferences,
 ) => {
   const groups: Record<RecommendationProductKind, Product[]> = {
     protein: [],
@@ -279,7 +315,10 @@ const groupRecommendationProducts = (
     requestProducts.forEach((product) => {
       const identity = `${request.kind}-${getProductIdentity(product)}`;
 
-      if (seen.has(identity) || !productMatchesPreferences(product, preferences)) {
+      if (
+        seen.has(identity) ||
+        !productMatchesPreferences(product, preferences)
+      ) {
         return;
       }
 
@@ -300,8 +339,9 @@ const groupRecommendationProducts = (
     dense: groups.dense
       .sort(
         (left, right) =>
-          right.nutrients.calories + right.nutrients.protein * 3 -
-          (left.nutrients.calories + left.nutrients.protein * 3)
+          right.nutrients.calories +
+          right.nutrients.protein * 3 -
+          (left.nutrients.calories + left.nutrients.protein * 3),
       )
       .slice(0, 4),
   };
@@ -360,7 +400,7 @@ export const SmartRecommendations = () => {
         goal: profile.goal,
         dietStyle: profile.dietStyle,
       }),
-    [profile.dailyCalories, profile.dietStyle, profile.goal, user?.weight]
+    [profile.dailyCalories, profile.dietStyle, profile.goal, user?.weight],
   );
   const dailyContext = useMemo(
     () =>
@@ -377,7 +417,7 @@ export const SmartRecommendations = () => {
       profile.dailyCalories,
       water.consumedMl,
       water.dailyWaterGoal,
-    ]
+    ],
   );
   const todayKey = getLocalDateKey(new Date());
   const todayTotals = dailyContext.today;
@@ -394,11 +434,11 @@ export const SmartRecommendations = () => {
       profile.allergies,
       profile.dietStyle,
       profile.excludedIngredients,
-    ]
+    ],
   );
   const recommendationProductRequests = useMemo(
     () => getRecommendationProductRequests(preferences, profile.goal),
-    [preferences, profile.goal]
+    [preferences, profile.goal],
   );
   const recommendationProductQueries = useQueries({
     queries: recommendationProductRequests.map((request) => ({
@@ -412,7 +452,7 @@ export const SmartRecommendations = () => {
   const recommendationProducts = groupRecommendationProducts(
     recommendationProductRequests,
     recommendationProductQueries.map((query) => query.data ?? []),
-    preferences
+    preferences,
   );
   const proteinProducts = recommendationProducts.protein;
   const fiberProducts = recommendationProducts.fiber;
@@ -425,23 +465,30 @@ export const SmartRecommendations = () => {
     const fiberTarget = 25;
     const dailyCalories = profile.dailyCalories;
     const weekKeys = Array.from({ length: 7 }, (_, index) =>
-      getLocalDateKey(addDays(new Date(), -index))
+      getLocalDateKey(addDays(new Date(), -index)),
     );
-    const weeklyEntries = items.filter((item) => weekKeys.includes(getLocalDateKey(item.eatenAt)));
+    const weeklyEntries = items.filter((item) =>
+      weekKeys.includes(getLocalDateKey(item.eatenAt)),
+    );
     const weekCalories =
       weeklyEntries.reduce(
-        (sum, item) => sum + (item.product.nutrients.calories * item.quantity) / 100,
-        0
+        (sum, item) =>
+          sum + (item.product.nutrients.calories * item.quantity) / 100,
+        0,
       ) / 7;
     const preferredProteinProducts = proteinProducts;
-    const proteinFoods = preferredProteinProducts.map((product) => product.name).join(", ");
+    const proteinFoods = preferredProteinProducts
+      .map((product) => product.name)
+      .join(", ");
     const fiberFoods = fiberProducts
       .slice(0, 3)
       .map((product) => product.name)
       .join(", ");
-    const todayEntries = items.filter((item) => getLocalDateKey(item.eatenAt) === todayKey);
+    const todayEntries = items.filter(
+      (item) => getLocalDateKey(item.eatenAt) === todayKey,
+    );
     const loggedDays = weekKeys.filter((dayKey) =>
-      items.some((item) => getLocalDateKey(item.eatenAt) === dayKey)
+      items.some((item) => getLocalDateKey(item.eatenAt) === dayKey),
     ).length;
     const next: Array<{
       priority: number;
@@ -455,7 +502,7 @@ export const SmartRecommendations = () => {
     }> = [];
     const personalization = buildAssistantPersonalizationPlan(
       profile.assistant.onboarding,
-      appLanguage
+      appLanguage,
     );
 
     next.push({
@@ -471,7 +518,7 @@ export const SmartRecommendations = () => {
       title: copy.personalFocusTitle(personalization.frictionLabel),
       detail: copy.personalFocusDetail(
         personalization.motivationLabel,
-        personalization.recommendationHint
+        personalization.recommendationHint,
       ),
     });
 
@@ -483,17 +530,23 @@ export const SmartRecommendations = () => {
         primaryProteinProduct
           ? (gap / Math.max(primaryProteinProduct.nutrients.protein, 1)) * 100
           : 0,
-        150
+        150,
       );
 
       next.push({
         priority: 100,
         tone: "warning",
         title: copy.proteinGapTitle(gap),
-        detail: copy.proteinGapDetail(proteinFoods || copy.fallbackProteinFoods),
+        detail: copy.proteinGapDetail(
+          proteinFoods || copy.fallbackProteinFoods,
+        ),
         actionLabel:
           primaryProteinProduct && actionQuantity
-            ? copy.addAction(actionQuantity, primaryProteinProduct.unit, primaryProteinProduct.name)
+            ? copy.addAction(
+                actionQuantity,
+                primaryProteinProduct.unit,
+                primaryProteinProduct.name,
+              )
             : undefined,
         actionProduct: primaryProteinProduct,
         actionQuantity,
@@ -504,8 +557,12 @@ export const SmartRecommendations = () => {
       const fiberProduct = fiberProducts[0];
       const actionQuantity = getActionQuantity(
         fiberProduct,
-        fiberProduct ? (Math.max(fiberTarget - todayTotals.fiber, 0) / Math.max(fiberProduct.nutrients.fiber, 1)) * 100 : 0,
-        150
+        fiberProduct
+          ? (Math.max(fiberTarget - todayTotals.fiber, 0) /
+              Math.max(fiberProduct.nutrients.fiber, 1)) *
+              100
+          : 0,
+        150,
       );
 
       next.push({
@@ -515,7 +572,11 @@ export const SmartRecommendations = () => {
         detail: copy.fiberLowDetail(fiberFoods || copy.fallbackFiberFoods),
         actionLabel:
           fiberProduct && actionQuantity
-            ? copy.addAction(actionQuantity, fiberProduct.unit, fiberProduct.name)
+            ? copy.addAction(
+                actionQuantity,
+                fiberProduct.unit,
+                fiberProduct.name,
+              )
             : undefined,
         actionProduct: fiberProduct,
         actionQuantity,
@@ -531,12 +592,12 @@ export const SmartRecommendations = () => {
       .filter(
         (recipe) =>
           dailyContext.primaryFocus !== "calories_high" &&
-          recipe.calories <= recipeTargetCalories + 140
+          recipe.calories <= recipeTargetCalories + 140,
       )
       .sort(
         (left, right) =>
           Math.abs(left.calories - recipeTargetCalories) -
-          Math.abs(right.calories - recipeTargetCalories)
+          Math.abs(right.calories - recipeTargetCalories),
       )[0];
 
     if (recipeCandidate && dailyContext.gaps.calories >= 250) {
@@ -558,7 +619,9 @@ export const SmartRecommendations = () => {
         tone: "warning",
         title: copy.cutCorrectionTitle(todayTotals.calories - dailyCalories),
         detail: copy.cutCorrectionDetail,
-        actionLabel: leanProduct ? copy.addAction(120, leanProduct.unit, leanProduct.name) : undefined,
+        actionLabel: leanProduct
+          ? copy.addAction(120, leanProduct.unit, leanProduct.name)
+          : undefined,
         actionProduct: leanProduct,
         actionQuantity: leanProduct ? 120 : undefined,
       });
@@ -569,10 +632,11 @@ export const SmartRecommendations = () => {
       const actionQuantity = getActionQuantity(
         denseSnack,
         denseSnack
-          ? (Math.max(dailyCalories - todayTotals.calories, 0) / Math.max(denseSnack.nutrients.calories, 1)) *
+          ? (Math.max(dailyCalories - todayTotals.calories, 0) /
+              Math.max(denseSnack.nutrients.calories, 1)) *
               100
           : 0,
-        120
+        120,
       );
 
       next.push({
@@ -595,7 +659,9 @@ export const SmartRecommendations = () => {
         tone: "info",
         title: copy.driftTitle(weekCalories - dailyCalories),
         detail:
-          profile.adaptiveMode === "automatic" ? copy.driftAuto : copy.driftManual,
+          profile.adaptiveMode === "automatic"
+            ? copy.driftAuto
+            : copy.driftManual,
       });
     }
 
@@ -640,7 +706,9 @@ export const SmartRecommendations = () => {
       });
     }
 
-    return next.sort((left, right) => right.priority - left.priority).slice(0, 4);
+    return next
+      .sort((left, right) => right.priority - left.priority)
+      .slice(0, 4);
   }, [
     appLanguage,
     copy,
@@ -667,13 +735,13 @@ export const SmartRecommendations = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.4, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={1.4}>
+      <Stack spacing={{ xs: 1.1, md: 1.4 }}>
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("recommendations.title")}
         </Typography>
@@ -683,7 +751,11 @@ export const SmartRecommendations = () => {
             onClose={clearFeedback}
             action={
               mealActionNotice.retryable ? (
-                <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => void retryMealAction()}
+                >
                   {copy.retry}
                 </Button>
               ) : undefined
@@ -693,100 +765,141 @@ export const SmartRecommendations = () => {
           </Alert>
         ) : null}
         {recommendations.length === 0 ? (
-          <Typography color="text.secondary">{t("recommendations.empty")}</Typography>
+          <Typography color="text.secondary">
+            {t("recommendations.empty")}
+          </Typography>
         ) : (
-          recommendations.map((recommendation) => (
-            <Paper
-              className="sn-premium-panel"
-              key={`${recommendation.title}-${recommendation.detail}`}
-              variant="outlined"
-              sx={{
-                p: 1.6,
-                borderRadius: 1,
-                borderColor:
-                  recommendation.tone === "warning"
-                    ? "rgba(245, 158, 11, 0.35)"
-                    : recommendation.tone === "success"
-                      ? "rgba(34, 197, 94, 0.3)"
-                      : "rgba(15, 23, 42, 0.08)",
-              }}
-            >
-              <Stack spacing={0.8}>
-                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                  <Typography sx={{ fontWeight: 800 }}>{recommendation.title}</Typography>
-                  <Chip
-                    size="small"
-                    label={
+          <Box
+            data-smart-recommendations-mobile-rail="true"
+            sx={MOBILE_RECOMMENDATION_RAIL}
+          >
+            <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
+              {recommendations.map((recommendation) => (
+                <Paper
+                  className="sn-premium-panel"
+                  key={`${recommendation.title}-${recommendation.detail}`}
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 1.25, md: 1.6 },
+                    minWidth: { xs: 270, md: 0 },
+                    borderRadius: 1,
+                    scrollSnapAlign: { xs: "start", md: "none" },
+                    borderColor:
                       recommendation.tone === "warning"
-                        ? copy.priority
+                        ? "rgba(245, 158, 11, 0.35)"
                         : recommendation.tone === "success"
-                          ? copy.onTrack
-                          : copy.insight
-                    }
-                    color={
-                      recommendation.tone === "warning"
-                        ? "warning"
-                        : recommendation.tone === "success"
-                          ? "success"
-                          : "default"
-                    }
-                  />
-                </Stack>
-                <Typography color="text.secondary">{recommendation.detail}</Typography>
-                {recommendation.actionLabel &&
-                  (recommendation.actionRecipe ||
-                    (recommendation.actionProduct && recommendation.actionQuantity)) && (
-                    <Button
-                      variant="outlined"
-                      sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700 }}
-                      disabled={isSavingAction(
-                        recommendation.actionRecipe
-                          ? `recommendation-recipe-${recommendation.actionRecipe.id}`
-                          : `recommendation-product-${recommendation.actionProduct?.id ?? recommendation.title}`
-                      )}
-                      onClick={() => {
-                        if (recommendation.actionRecipe) {
-                          const eatenAt = createRecommendationTimestamp();
-                          const entries: MealEntry[] =
-                            recommendation.actionRecipe.ingredients.map((ingredient) => ({
-                              id: createEntryId(),
-                              product: ingredient.product,
-                              quantity: ingredient.quantity,
-                              mealType: recommendation.actionRecipe!.mealType,
-                              eatenAt,
-                              origin: "recipe",
-                            }));
-
-                          void runMealAction({
-                            actionId: `recommendation-recipe-${recommendation.actionRecipe.id}`,
-                            kind: "add",
-                            action: () => addMealEntriesToCloud(dispatch, meal, entries),
-                          });
-                          return;
-                        }
-
-                        const entry: MealEntry = {
-                          id: createEntryId(),
-                          product: recommendation.actionProduct!,
-                          quantity: recommendation.actionQuantity!,
-                          mealType: dailyContext.suggestedMealType,
-                          eatenAt: createRecommendationTimestamp(),
-                          origin: "manual",
-                        };
-
-                        void runMealAction({
-                          actionId: `recommendation-product-${recommendation.actionProduct!.id}`,
-                          kind: "add",
-                          action: () => addMealEntriesToCloud(dispatch, meal, [entry]),
-                        });
-                      }}
+                          ? "rgba(34, 197, 94, 0.3)"
+                          : "rgba(15, 23, 42, 0.08)",
+                  }}
+                >
+                  <Stack spacing={0.8}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      useFlexGap
+                      flexWrap="wrap"
                     >
-                      {recommendation.actionLabel}
-                    </Button>
-                  )}
-              </Stack>
-            </Paper>
-          ))
+                      <Typography
+                        sx={{ fontWeight: 800, overflowWrap: "anywhere" }}
+                      >
+                        {recommendation.title}
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={
+                          recommendation.tone === "warning"
+                            ? copy.priority
+                            : recommendation.tone === "success"
+                              ? copy.onTrack
+                              : copy.insight
+                        }
+                        color={
+                          recommendation.tone === "warning"
+                            ? "warning"
+                            : recommendation.tone === "success"
+                              ? "success"
+                              : "default"
+                        }
+                      />
+                    </Stack>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ display: { xs: "none", sm: "block" } }}
+                    >
+                      {recommendation.detail}
+                    </Typography>
+                    {recommendation.actionLabel &&
+                      (recommendation.actionRecipe ||
+                        (recommendation.actionProduct &&
+                          recommendation.actionQuantity)) && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          sx={{
+                            alignSelf: "flex-start",
+                            textTransform: "none",
+                            fontWeight: 700,
+                          }}
+                          disabled={isSavingAction(
+                            recommendation.actionRecipe
+                              ? `recommendation-recipe-${recommendation.actionRecipe.id}`
+                              : `recommendation-product-${recommendation.actionProduct?.id ?? recommendation.title}`,
+                          )}
+                          onClick={() => {
+                            if (recommendation.actionRecipe) {
+                              const eatenAt = createRecommendationTimestamp();
+                              const entries: MealEntry[] =
+                                recommendation.actionRecipe.ingredients.map(
+                                  (ingredient) => ({
+                                    id: createEntryId(),
+                                    product: ingredient.product,
+                                    quantity: ingredient.quantity,
+                                    mealType:
+                                      recommendation.actionRecipe!.mealType,
+                                    eatenAt,
+                                    origin: "recipe",
+                                  }),
+                                );
+
+                              void runMealAction({
+                                actionId: `recommendation-recipe-${recommendation.actionRecipe.id}`,
+                                kind: "add",
+                                action: () =>
+                                  addMealEntriesToCloud(
+                                    dispatch,
+                                    meal,
+                                    entries,
+                                  ),
+                              });
+                              return;
+                            }
+
+                            const entry: MealEntry = {
+                              id: createEntryId(),
+                              product: recommendation.actionProduct!,
+                              quantity: recommendation.actionQuantity!,
+                              mealType: dailyContext.suggestedMealType,
+                              eatenAt: createRecommendationTimestamp(),
+                              origin: "manual",
+                            };
+
+                            void runMealAction({
+                              actionId: `recommendation-product-${recommendation.actionProduct!.id}`,
+                              kind: "add",
+                              action: () =>
+                                addMealEntriesToCloud(dispatch, meal, [entry]),
+                            });
+                          }}
+                        >
+                          {recommendation.actionLabel}
+                        </Button>
+                      )}
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
         )}
       </Stack>
     </Paper>

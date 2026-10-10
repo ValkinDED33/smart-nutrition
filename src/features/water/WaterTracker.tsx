@@ -684,12 +684,18 @@ const WaterTracker = () => {
 
   return (
     <SectionCard>
-      <Stack spacing={2.5}>
-        <Stack spacing={0.6}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
+      <Stack spacing={{ xs: 1.15, md: 2.5 }}>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
+          <Typography
+            component="h2"
+            variant="h6"
+            sx={{ fontWeight: 800, fontSize: { xs: 17, md: 20 } }}
+          >
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {reminderMessage ? (
@@ -730,15 +736,15 @@ const WaterTracker = () => {
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "180px minmax(0, 1fr)" },
-            gap: { xs: 2, md: 3 },
+            gap: { xs: 1, md: 3 },
             alignItems: "center",
           }}
         >
           <Box
             sx={{
               position: "relative",
-              width: { xs: 156, sm: 180 },
-              height: { xs: 156, sm: 180 },
+              width: { xs: 124, sm: 180 },
+              height: { xs: 124, sm: 180 },
               mx: "auto",
             }}
           >
@@ -771,7 +777,7 @@ const WaterTracker = () => {
             <Box
               sx={{
                 position: "absolute",
-                inset: 16,
+                inset: { xs: 12, sm: 16 },
                 borderRadius: "50%",
                 backgroundColor: "var(--sn-surface-elevated)",
                 display: "grid",
@@ -786,30 +792,40 @@ const WaterTracker = () => {
                     {animatedProgress.progress.to((value) => `${Math.round(value)}%`)}
                   </animated.span>
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: 12, md: 14 } }}>
                   {status}
                 </Typography>
               </Stack>
             </Box>
           </Box>
 
-          <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 700 }}>
+          <Stack spacing={{ xs: 0.8, md: 1.5 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: { xs: 13.5, md: 16 } }}>
               {copy.progress
                 .replace("{current}", formatWaterLiters(water.consumedMl))
                 .replace("{target}", formatWaterLiters(water.dailyWaterGoal))}
             </Typography>
-            <Typography color="text.secondary">
+            <Typography color="text.secondary" sx={{ fontSize: { xs: 12.5, md: 14 } }}>
               {copy.remainingLabel.replace("{value}", formatMl(remainingMl))}
             </Typography>
             <LinearProgress
               variant="determinate"
               value={progress}
-              sx={{ height: 12, borderRadius: 999 }}
+              sx={{ height: { xs: 8, md: 12 }, borderRadius: 999 }}
             />
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              <Chip label={`${copy.drank}: ${formatMl(water.consumedMl)}`} color="info" />
-              <Chip label={`${copy.remaining}: ${formatMl(remainingMl)}`} variant="outlined" />
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+              }}
+            >
+              <Chip label={`${copy.drank}: ${formatMl(water.consumedMl)}`} color="info" size="small" />
+              <Chip label={`${copy.remaining}: ${formatMl(remainingMl)}`} variant="outlined" size="small" />
               <Chip
                 label={
                   water.targetMode === "automatic"
@@ -819,17 +835,19 @@ const WaterTracker = () => {
                     : copy.manualTarget
                 }
                 variant="outlined"
+                size="small"
               />
               <Chip
                 label={status}
                 color={status === copy.statusAbove ? "warning" : status === copy.statusOnTrack ? "success" : "default"}
+                size="small"
               />
             </Stack>
 
             <Paper
               elevation={0}
               sx={{
-                p: 1.5,
+                p: { xs: 1, md: 1.5 },
                 borderRadius: 1,
                 border: "1px solid var(--sn-border-soft)",
                 bgcolor: "var(--sn-accent-soft)",
@@ -841,11 +859,14 @@ const WaterTracker = () => {
                   variant={assistant.companionKind}
                   mood={assistantMood}
                   active={progress >= 55}
-                  size={56}
+                  size={44}
                 />
                 <Stack spacing={0.3}>
                   <Typography sx={{ fontWeight: 900 }}>{copy.aiTitle}</Typography>
-                  <Typography color="text.secondary" sx={{ lineHeight: 1.55 }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.55, display: { xs: "none", md: "block" } }}
+                  >
                     {assistantReaction}
                   </Typography>
                 </Stack>
@@ -858,7 +879,7 @@ const WaterTracker = () => {
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-            gap: 2,
+            gap: { xs: 1, md: 2 },
           }}
         >
           <TextField
@@ -922,7 +943,7 @@ const WaterTracker = () => {
               xs: "repeat(4, minmax(0, 1fr))",
               sm: "repeat(auto-fit, minmax(72px, 1fr))",
             },
-            gap: 1.2,
+            gap: { xs: 0.7, sm: 1.2 },
           }}
         >
           {glasses.map((glass) => (
@@ -934,7 +955,7 @@ const WaterTracker = () => {
               disabled={savingWater}
               sx={{
                 p: 0,
-                minHeight: { xs: 104, sm: 118 },
+                minHeight: { xs: 82, sm: 118 },
                 border: "0",
                 backgroundColor: "transparent",
                 cursor: "pointer",
@@ -948,9 +969,9 @@ const WaterTracker = () => {
               <Box
                 sx={{
                   position: "absolute",
-                  insetInline: { xs: 10, sm: 14 },
-                  top: 8,
-                  bottom: 8,
+                  insetInline: { xs: 7, sm: 14 },
+                  top: { xs: 6, sm: 8 },
+                  bottom: { xs: 6, sm: 8 },
                   borderRadius: "10px 10px 18px 18px",
                   border: "2px solid rgba(125, 211, 252, 0.72)",
                   background:
@@ -991,13 +1012,14 @@ const WaterTracker = () => {
               >
                 <Typography
                   variant="caption"
-                  sx={{
-                    px: 0.8,
+                sx={{
+                    px: { xs: 0.55, sm: 0.8 },
                     py: 0.25,
                     borderRadius: 999,
                     bgcolor: "rgba(15, 23, 42, 0.72)",
                     color: "#e0f2fe",
                     fontWeight: 850,
+                    fontSize: { xs: 10.5, sm: 12 },
                   }}
                 >
                   {formatMl(glass.fill * water.glassSizeMl)}
@@ -1009,14 +1031,26 @@ const WaterTracker = () => {
 
         <Stack spacing={1}>
           <Typography sx={{ fontWeight: 700 }}>{copy.quickAmounts}</Typography>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              overflowX: { xs: "auto", sm: "visible" },
+              pb: { xs: 0.3, sm: 0 },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
             {quickAmounts.map((amount) => (
               <Button
                 key={amount}
                 variant={amount === water.glassSizeMl ? "contained" : "outlined"}
                 disabled={savingWater}
                 onClick={() => addWaterAmount(amount, "quick_amount")}
-                sx={{ minWidth: 82 }}
+                size="small"
+                sx={{ minWidth: { xs: 76, sm: 82 }, flexShrink: 0 }}
               >
                 +{formatMl(amount)}
               </Button>
@@ -1024,11 +1058,12 @@ const WaterTracker = () => {
           </Stack>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack direction="row" spacing={1} useFlexGap flexWrap={{ xs: "nowrap", sm: "wrap" }}>
           <Button
             variant="contained"
             disabled={savingWater}
             onClick={() => addWaterAmount(water.glassSizeMl, "add_glass")}
+            size="small"
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -1042,6 +1077,7 @@ const WaterTracker = () => {
             variant="outlined"
             disabled={savingWater}
             onClick={openPartialPanel}
+            size="small"
             sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
           >
             {copy.customAmount}
@@ -1050,6 +1086,7 @@ const WaterTracker = () => {
             variant="text"
             disabled={savingWater}
             onClick={() => addWaterAmount(-water.glassSizeMl, "remove_glass")}
+            size="small"
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
             {copy.removeGlass}

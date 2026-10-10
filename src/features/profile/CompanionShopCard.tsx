@@ -585,7 +585,7 @@ const CompanionShopCard = () => {
       className="sn-premium-panel"
       data-companion-shop-studio="true"
       sx={{
-        p: { xs: 2, md: 3 },
+        p: { xs: 1, md: 3 },
         borderRadius: 1,
         overflow: "hidden",
         border: "1px solid rgba(34, 211, 238, 0.22)",
@@ -594,14 +594,14 @@ const CompanionShopCard = () => {
           "linear-gradient(115deg, rgba(34,211,238,0.08) 0 1px, transparent 1px 128px), linear-gradient(145deg, #020617 0%, #071322 46%, #061f1b 100%)",
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={{ xs: 1.2, md: 2.5 }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={1.5}
+          spacing={{ xs: 1, md: 1.5 }}
           justifyContent="space-between"
           alignItems={{ xs: "flex-start", md: "center" }}
         >
-          <Stack spacing={0.8} sx={{ maxWidth: 780 }}>
+          <Stack spacing={{ xs: 0.3, md: 0.8 }} sx={{ maxWidth: 780 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Sparkles size={18} color="#67e8f9" />
               <Typography
@@ -611,26 +611,51 @@ const CompanionShopCard = () => {
                 {copy.studioEyebrow}
               </Typography>
             </Stack>
-            <Typography component="h2" variant="h5" sx={{ fontWeight: 950 }}>
+            <Typography
+              component="h2"
+              variant="h5"
+              sx={{ fontWeight: 950, fontSize: { xs: 18, md: 24 } }}
+            >
               {copy.title}
             </Typography>
-            <Typography sx={{ color: "rgba(229,249,255,0.78)" }}>
+            <Typography
+              sx={{
+                color: "rgba(229,249,255,0.78)",
+                display: { xs: "none", md: "block" },
+              }}
+            >
               {copy.subtitle}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#a7f3d0", fontWeight: 900 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: "#a7f3d0", fontWeight: 900, display: { xs: "none", md: "block" } }}
+            >
               {copy.sameBrain}
             </Typography>
           </Stack>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            <Chip label={`${copy.balance}: ${companion.coins}`} color="primary" />
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              maxWidth: "100%",
+              overflowX: { xs: "auto", sm: "visible" },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            <Chip label={`${copy.balance}: ${companion.coins}`} color="primary" size="small" />
             <Chip
               label={`${copy.equippedCount}: ${companion.equippedItemIds.length}`}
               variant="outlined"
+              size="small"
               sx={softChipSx}
             />
             <Chip
               label={`${copy.ownedCount}: ${ownedItems.length}`}
               variant="outlined"
+              size="small"
               sx={softChipSx}
             />
           </Stack>
@@ -748,7 +773,7 @@ const CompanionShopCard = () => {
           <Paper
             variant="outlined"
             sx={{
-              p: { xs: 2, md: 2.5 },
+              p: { xs: 1, md: 2.5 },
               borderRadius: 1,
               borderColor: "rgba(34, 211, 238, 0.2)",
               color: "inherit",
@@ -756,12 +781,15 @@ const CompanionShopCard = () => {
                 "linear-gradient(155deg, rgba(15,23,42,0.82), rgba(8,47,73,0.42))",
             }}
           >
-            <Stack spacing={2}>
-              <Stack spacing={0.5}>
+            <Stack spacing={{ xs: 1, md: 2 }}>
+              <Stack spacing={0.35}>
                 <Typography sx={{ fontWeight: 950 }}>
                   {copy.studioTitle}
                 </Typography>
-                <Typography variant="body2" sx={{ color: "rgba(229,249,255,0.7)" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "rgba(229,249,255,0.7)", display: { xs: "none", md: "block" } }}
+                >
                   {copy.studioSubtitle}
                 </Typography>
               </Stack>
@@ -771,10 +799,16 @@ const CompanionShopCard = () => {
                 direction="row"
                 spacing={1}
                 useFlexGap
-                flexWrap="wrap"
+                flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                sx={{
+                  overflowX: { xs: "auto", sm: "visible" },
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
+                }}
               >
                 <Chip
                   label={`${copy.freeRobots}: ${freeBaseCount}`}
+                  size="small"
                   sx={{
                     color: "#dffbff",
                     borderColor: "rgba(34,211,238,0.42)",
@@ -785,6 +819,7 @@ const CompanionShopCard = () => {
                 />
                 <Chip
                   label={`${copy.collectibleLooks}: ${collectibleCount}`}
+                  size="small"
                   sx={{
                     color: "#fef3c7",
                     borderColor: "rgba(251,191,36,0.42)",
@@ -795,13 +830,24 @@ const CompanionShopCard = () => {
                 />
               </Stack>
 
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Stack
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                sx={{
+                  overflowX: { xs: "auto", sm: "visible" },
+                  scrollbarWidth: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
+                }}
+              >
                 {companionShopFilters.map((filter) => (
                   <Chip
                     key={filter}
                     label={getFilterLabel(copy.filters, filter)}
                     color={activeFilter === filter ? "primary" : "default"}
                     variant={activeFilter === filter ? "filled" : "outlined"}
+                    size="small"
                     onClick={() => setActiveFilter(filter)}
                     sx={{
                       fontWeight: 900,
@@ -984,8 +1030,8 @@ const CompanionShopCard = () => {
             data-companion-live-preview="true"
             sx={{
               position: "relative",
-              minHeight: { xs: 390, sm: 470, lg: 620 },
-              p: { xs: 2, md: 3 },
+              minHeight: { xs: 320, sm: 430, lg: 620 },
+              p: { xs: 1.25, md: 3 },
               borderRadius: 1,
               overflow: "hidden",
               borderColor: "rgba(34, 211, 238, 0.24)",
@@ -1014,12 +1060,12 @@ const CompanionShopCard = () => {
                 background: "linear-gradient(90deg, transparent, rgba(34,211,238,0.56), transparent)",
               }}
             />
-            <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1, height: "100%" }}>
+            <Stack spacing={{ xs: 1.1, md: 2.2 }} sx={{ position: "relative", zIndex: 1, height: "100%" }}>
               <Stack spacing={0.5}>
                 <Typography variant="overline" sx={{ color: "#67e8f9", fontWeight: 900 }}>
                   {copy.preview}
                 </Typography>
-                <Typography sx={{ color: "rgba(229,249,255,0.68)" }}>
+                <Typography sx={{ color: "rgba(229,249,255,0.68)", display: { xs: "none", md: "block" } }}>
                   {copy.previewHint}
                 </Typography>
               </Stack>
@@ -1027,7 +1073,7 @@ const CompanionShopCard = () => {
               <Box
                 sx={{
                   position: "relative",
-                  minHeight: { xs: 210, md: 320 },
+                  minHeight: { xs: 180, md: 320 },
                   display: "grid",
                   placeItems: "center",
                 }}
@@ -1117,7 +1163,7 @@ const CompanionShopCard = () => {
                     name={assistantDisplayName}
                     variant={focusedPreview?.companionKind ?? assistant.companionKind}
                     mood={focusedPreviewEquipped ? "celebrate" : "coach"}
-                    size={companionRenderModePreference.value === "3d" ? 190 : 148}
+                    size={companionRenderModePreference.value === "3d" ? 190 : 136}
                     renderMode={companionRenderModePreference.value}
                     loadingFallback={
                       <Companion3DLoadingFallback
@@ -1134,7 +1180,7 @@ const CompanionShopCard = () => {
               <Paper
                 variant="outlined"
                 sx={{
-                  p: 2,
+                  p: { xs: 1.1, md: 2 },
                   mt: "auto",
                   borderRadius: 1,
                   color: "inherit",
@@ -1153,7 +1199,7 @@ const CompanionShopCard = () => {
                       <Typography variant="overline" sx={{ color: "#a7f3d0", fontWeight: 900 }}>
                         {copy.currentSelection}
                       </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 950 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 950, fontSize: { xs: 17, md: 20 } }}>
                         {focusedPreview
                           ? getCatalogText(focusedPreview.title, locale)
                           : copy.profileLook}
@@ -1169,7 +1215,12 @@ const CompanionShopCard = () => {
                       />
                     ) : null}
                   </Stack>
-                  <Typography sx={{ color: "rgba(229,249,255,0.72)" }}>
+                  <Typography
+                    sx={{
+                      color: "rgba(229,249,255,0.72)",
+                      display: { xs: "none", md: "block" },
+                    }}
+                  >
                     {focusedPreview
                       ? getCatalogText(focusedPreview.description, locale)
                       : assistantDisplayName}

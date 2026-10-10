@@ -132,9 +132,13 @@ describe("profile feature warehouse contract", () => {
 
     expect(source).toContain('data-companion-shop-mobile-collection-rail="true"');
     expect(source).toContain('data-companion-shop-tool-rail="true"');
+    expect(source).toContain('p: { xs: 1, md: 3 }');
+    expect(source).toContain('fontSize: { xs: 18, md: 24 }');
+    expect(source).toContain('flexWrap={{ xs: "nowrap", sm: "wrap" }}');
     expect(source).toContain('maxHeight: { xs: "min(54vh, 560px)", md: "none" }');
     expect(source).toContain('overflowY: { xs: "auto", md: "visible" }');
     expect(source).toContain('display: { xs: "flex", md: "grid" }');
+    expect(source).toContain('minHeight: { xs: 320, sm: 430, lg: 620 }');
     expect(source).toContain('scrollSnapType: { xs: "x mandatory", md: "none" }');
   });
 

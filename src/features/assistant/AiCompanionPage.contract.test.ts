@@ -53,6 +53,9 @@ describe("AiCompanionPage contract", () => {
     expect(source).toContain('data-ai-worker-live-steps="true"');
     expect(source).toContain('data-ai-worker-live-toolbelt="true"');
     expect(source).toContain('data-ai-worker-command-orbit="true"');
+    expect(source).toContain('data-ai-worker-focus-rail="true"');
+    expect(source).toContain('display: { xs: "flex", md: "grid" }');
+    expect(source).toContain('flex: { xs: "0 0 236px", md: "initial" }');
     expect(source).toContain('data-ai-worker-hologram-panel="today"');
     expect(source).toContain('data-ai-worker-hologram-panel="analysis"');
     expect(source).toContain('data-ai-worker-orbit-actions="true"');

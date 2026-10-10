@@ -272,19 +272,11 @@ const ProgressPage = () => {
       title={copy.title}
       subtitle={copy.subtitle}
       assistantHint={<EcosystemPulse focus="progress" />}
+      compact
     >
       <ProgressActionBar />
       <ProgressOverviewCard
         onSelectDomain={(domain) => setActiveSection(getSectionForProgressDomain(domain))}
-      />
-
-      <AIMasterBlueprintPanel
-        eyebrow="Smart Nutrition AI"
-        title={copy.blueprintTitle}
-        description={copy.blueprintSubtitle}
-        patterns={progressBlueprintPatterns}
-        assistantName={assistantDisplayName}
-        assistantVariant={assistant.companionKind}
       />
 
       <SectionTabs
@@ -294,6 +286,17 @@ const ProgressPage = () => {
         ariaLabel={copy.sectionsAriaLabel}
         stickyOnMobile
       />
+
+      {activeSection === "trends" ? (
+        <AIMasterBlueprintPanel
+          eyebrow="Smart Nutrition AI"
+          title={copy.blueprintTitle}
+          description={copy.blueprintSubtitle}
+          patterns={progressBlueprintPatterns}
+          assistantName={assistantDisplayName}
+          assistantVariant={assistant.companionKind}
+        />
+      ) : null}
 
       {activeSection === "weight" ? (
         <Stack spacing={2.5}>

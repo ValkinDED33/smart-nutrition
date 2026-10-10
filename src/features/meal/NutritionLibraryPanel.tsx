@@ -22,17 +22,17 @@ import {
 import { recipes } from "@domain/meal/recipes";
 import type { MealTemplate, MealType, Recipe } from "@domain/meal/types";
 import type { Product } from "@domain/products/types";
-import { productMatchesPreferences, recipeMatchesPreferences } from "@domain/user/preferences";
+import {
+  productMatchesPreferences,
+  recipeMatchesPreferences,
+} from "@domain/user/preferences";
 import type { RootState, AppDispatch } from "../../app/store";
 import { useLanguage } from "../../shared/language";
 import { SectionCard } from "../../shared/ui/SectionCard";
 import { SectionHeader } from "../../shared/ui/SectionHeader";
 import { SectionTabs } from "../../shared/ui/SectionTabs";
 import type { AppLanguage } from "../../shared/types/i18n";
-import {
-  selectMealTemplates,
-  selectSavedProducts,
-} from "./selectors";
+import { selectMealTemplates, selectSavedProducts } from "./selectors";
 import { searchProducts } from "../../shared/api/products";
 import {
   normalizeProductLookupQuery,
@@ -59,12 +59,33 @@ const PRODUCT_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 220px), 1fr))";
 const DISH_CARD_GRID = "repeat(auto-fit, minmax(min(100%, 260px), 1fr))";
 const LIBRARY_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const LIBRARY_CARD_BACKGROUND = "var(--sn-surface-elevated)";
+const MOBILE_LIBRARY_SNAP = "x proximity";
+const MOBILE_LIBRARY_RAIL = {
+  display: { xs: "flex", sm: "grid" },
+  gridTemplateColumns: { sm: PRODUCT_CARD_GRID },
+  gap: 1,
+  overflowX: { xs: "auto", sm: "visible" },
+  scrollSnapType: { xs: MOBILE_LIBRARY_SNAP, sm: "none" },
+  pb: { xs: 0.5, sm: 0 },
+  mx: { xs: -1, sm: 0 },
+  px: { xs: 1, sm: 0 },
+};
+const MOBILE_DISH_RAIL = {
+  display: { xs: "flex", sm: "grid" },
+  gridTemplateColumns: { sm: DISH_CARD_GRID },
+  gap: 1,
+  overflowX: { xs: "auto", sm: "visible" },
+  scrollSnapType: { xs: MOBILE_LIBRARY_SNAP, sm: "none" },
+  pb: { xs: 0.5, sm: 0 },
+  mx: { xs: -1, sm: 0 },
+  px: { xs: 1, sm: 0 },
+};
 
 const formatLibraryMacro = (
   key: "protein" | "fat" | "carbs",
   value: number,
   language: AppLanguage,
-  gramLabel: string
+  gramLabel: string,
 ) => `${getNutrientLabel(key, language)} ${value.toFixed(1)} ${gramLabel}`;
 
 const copy = {
@@ -93,7 +114,8 @@ const copy = {
     noSavedDishes: "Збережених страв ще немає.",
     noSavedArticles: "Збережених матеріалів ще немає.",
     noResults: "Нічого не знайдено. Спробуйте іншу назву продукту або страви.",
-    startSearch: "Почніть вводити назву, щоб підтягнути продукти з онлайн-каталогу.",
+    startSearch:
+      "Почніть вводити назву, щоб підтягнути продукти з онлайн-каталогу.",
     loading: "Шукаю в онлайн-каталозі...",
     unavailableTitle: "Онлайн-каталог тимчасово недоступний",
     unavailableBody:
@@ -141,7 +163,8 @@ const copy = {
     noSavedDishes: "Nie masz jeszcze zapisanych dań.",
     noSavedArticles: "Nie masz jeszcze zapisanych materiałów.",
     noResults: "Brak wyników. Spróbuj innej nazwy produktu lub dania.",
-    startSearch: "Zacznij wpisywać nazwę, aby pobrać produkty z katalogu online.",
+    startSearch:
+      "Zacznij wpisywać nazwę, aby pobrać produkty z katalogu online.",
     loading: "Szukam w katalogu online...",
     unavailableTitle: "Katalog online jest chwilowo niedostępny",
     unavailableBody:
@@ -189,7 +212,8 @@ const copy = {
     noSavedDishes: "No saved dishes yet.",
     noSavedArticles: "No saved materials yet.",
     noResults: "Nothing found. Try another product or dish name.",
-    startSearch: "Start typing a name to load products from the online catalog.",
+    startSearch:
+      "Start typing a name to load products from the online catalog.",
     loading: "Searching the online catalog...",
     unavailableTitle: "Online catalog is temporarily unavailable",
     unavailableBody:
@@ -216,7 +240,9 @@ const copy = {
 
 type NutritionLibraryCopy = (typeof copy)[keyof typeof copy];
 
-const getNutritionLibraryCopy = (language: AppLanguage): NutritionLibraryCopy => {
+const getNutritionLibraryCopy = (
+  language: AppLanguage,
+): NutritionLibraryCopy => {
   switch (language) {
     case "uk":
       return copy.uk;
@@ -241,8 +267,9 @@ const productKey = (product: Product) =>
 
 const templateCalories = (template: MealTemplate) =>
   template.items.reduce(
-    (sum, item) => sum + item.product.nutrients.calories * (item.quantity / 100),
-    0
+    (sum, item) =>
+      sum + item.product.nutrients.calories * (item.quantity / 100),
+    0,
   );
 
 const isReadyMeal = (product: Product) => {
@@ -264,8 +291,12 @@ const NutritionLibraryPanel = ({
   const savedProducts = useSelector(selectSavedProducts);
   const meal = useSelector((state: RootState) => state.meal);
   const templates = useSelector(selectMealTemplates);
-  const communityPosts = useSelector((state: RootState) => state.community.posts);
-  const favoritePostIds = useSelector((state: RootState) => state.community.favoritePostIds);
+  const communityPosts = useSelector(
+    (state: RootState) => state.community.posts,
+  );
+  const favoritePostIds = useSelector(
+    (state: RootState) => state.community.favoritePostIds,
+  );
   const preferences = useSelector((state: RootState) => ({
     dietStyle: state.profile.dietStyle,
     allergies: state.profile.allergies,
@@ -323,7 +354,9 @@ const NutritionLibraryPanel = ({
   });
   const onlineProducts = onlineProductsQuery.data ?? [];
   const onlineLookupState = {
-    isIdle: mode === "library" && !shouldRunOnlineProductLookup(normalizedLookupQuery),
+    isIdle:
+      mode === "library" &&
+      !shouldRunOnlineProductLookup(normalizedLookupQuery),
     isSearching:
       mode === "library" &&
       shouldRunOnlineProductLookup(normalizedLookupQuery) &&
@@ -341,7 +374,9 @@ const NutritionLibraryPanel = ({
     return () => window.clearTimeout(timeoutId);
   }, [query]);
 
-  const savedProductKeys = new Set(savedProducts.map((product) => productKey(product)));
+  const savedProductKeys = new Set(
+    savedProducts.map((product) => productKey(product)),
+  );
 
   const filterProduct = (product: Product) => {
     if (!productMatchesPreferences(product, preferences)) {
@@ -353,7 +388,7 @@ const NutritionLibraryPanel = ({
     }
 
     return normalizeSearchText(
-      `${product.name} ${product.brand ?? ""} ${getProductDisplayName(product, appLanguage)}`
+      `${product.name} ${product.brand ?? ""} ${getProductDisplayName(product, appLanguage)}`,
     ).includes(normalizedQuery);
   };
 
@@ -368,8 +403,10 @@ const NutritionLibraryPanel = ({
 
     return normalizeSearchText(
       `${recipe.title} ${recipe.description} ${recipe.ingredients
-        .map((ingredient) => getProductDisplayName(ingredient.product, appLanguage))
-        .join(" ")}`
+        .map((ingredient) =>
+          getProductDisplayName(ingredient.product, appLanguage),
+        )
+        .join(" ")}`,
     ).includes(normalizedQuery);
   };
 
@@ -377,9 +414,12 @@ const NutritionLibraryPanel = ({
   const visibleProducts = baseProducts
     .filter(filterProduct)
     .slice(0, mode === "saved" ? 12 : 18);
-  const visibleReadyMeals = mode === "saved" ? [] : visibleProducts.filter(isReadyMeal);
+  const visibleReadyMeals =
+    mode === "saved" ? [] : visibleProducts.filter(isReadyMeal);
   const visibleOnlineProducts =
-    mode === "saved" ? visibleProducts : visibleProducts.filter((product) => !isReadyMeal(product));
+    mode === "saved"
+      ? visibleProducts
+      : visibleProducts.filter((product) => !isReadyMeal(product));
 
   const visibleTemplates = templates
     .filter((template) => {
@@ -394,13 +434,15 @@ const NutritionLibraryPanel = ({
       return normalizeSearchText(
         `${template.name} ${template.items
           .map((item) => getProductDisplayName(item.product, appLanguage))
-          .join(" ")}`
+          .join(" ")}`,
       ).includes(normalizedQuery);
     })
     .slice(0, 10);
 
   const baseRecipes =
-    mode === "saved" ? [] : recipes.filter((recipe) => recipe.mealType === mealType);
+    mode === "saved"
+      ? []
+      : recipes.filter((recipe) => recipe.mealType === mealType);
   const visibleRecipes = baseRecipes.filter(filterRecipe).slice(0, 8);
 
   const favoriteIds = new Set(favoritePostIds);
@@ -408,27 +450,36 @@ const NutritionLibraryPanel = ({
     .filter((post) => favoriteIds.has(post.id) && post.status === "approved")
     .filter((post) =>
       normalizedQuery
-        ? normalizeSearchText(`${post.title} ${post.body} ${post.ingredients.join(" ")}`).includes(
-            normalizedQuery
-          )
-        : true
+        ? normalizeSearchText(
+            `${post.title} ${post.body} ${post.ingredients.join(" ")}`,
+          ).includes(normalizedQuery)
+        : true,
     )
     .slice(0, 8);
 
-
   const productSections =
     mode === "saved"
-      ? [{ title: labels.savedProducts, products: visibleProducts, empty: labels.noSavedProducts }]
+      ? [
+          {
+            title: labels.savedProducts,
+            products: visibleProducts,
+            empty: labels.noSavedProducts,
+          },
+        ]
       : [
           {
             title: labels.readyMeals,
             products: visibleReadyMeals,
-            empty: onlineLookupState.isIdle ? labels.startSearch : labels.noResults,
+            empty: onlineLookupState.isIdle
+              ? labels.startSearch
+              : labels.noResults,
           },
           {
             title: labels.onlineProducts,
             products: visibleOnlineProducts,
-            empty: onlineLookupState.isIdle ? labels.startSearch : labels.noResults,
+            empty: onlineLookupState.isIdle
+              ? labels.startSearch
+              : labels.noResults,
           },
           {
             title: labels.savedProducts,
@@ -448,7 +499,8 @@ const NutritionLibraryPanel = ({
       id: "dishes",
       label: labels.dishes,
       icon: <Utensils size={16} />,
-      badge: mode === "saved" ? templates.length : templates.length + recipes.length,
+      badge:
+        mode === "saved" ? templates.length : templates.length + recipes.length,
     },
     {
       id: "articles",
@@ -482,9 +534,11 @@ const NutritionLibraryPanel = ({
     <SectionCard
       tone={mode === "saved" ? "premium" : "default"}
       title={mode === "saved" ? labels.savedTitle : labels.libraryTitle}
-      description={mode === "saved" ? labels.savedDescription : labels.libraryDescription}
+      description={
+        mode === "saved" ? labels.savedDescription : labels.libraryDescription
+      }
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
         {mode === "saved" ? (
           <Box
             data-my-library-overview="true"
@@ -497,21 +551,32 @@ const NutritionLibraryPanel = ({
           >
             <Stack spacing={1.4}>
               <Stack spacing={0.35}>
-                <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 950 }}>
+                <Typography
+                  component="h3"
+                  variant="subtitle1"
+                  sx={{ fontWeight: 950 }}
+                >
                   {labels.myHubTitle}
                 </Typography>
-                <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  sx={{ lineHeight: 1.55 }}
+                >
                   {labels.myHubDescription}
                 </Typography>
               </Stack>
               <Box
                 sx={{
-                  display: "grid",
+                  display: { xs: "flex", sm: "grid" },
                   gridTemplateColumns: {
-                    xs: "1fr",
                     sm: "repeat(3, minmax(0, 1fr))",
                   },
                   gap: 1,
+                  overflowX: { xs: "auto", sm: "visible" },
+                  scrollSnapType: { xs: MOBILE_LIBRARY_SNAP, sm: "none" },
+                  mx: { xs: -1, sm: 0 },
+                  px: { xs: 1, sm: 0 },
                 }}
               >
                 {savedOverviewItems.map((item) => (
@@ -523,7 +588,9 @@ const NutritionLibraryPanel = ({
                     variant="outlined"
                     sx={{
                       p: 1.2,
+                      minWidth: { xs: 150, sm: 0 },
                       borderRadius: 1,
+                      scrollSnapAlign: { xs: "start", sm: "none" },
                       cursor: "pointer",
                       textAlign: "left",
                       bgcolor:
@@ -554,7 +621,9 @@ const NutritionLibraryPanel = ({
                         </Box>
                         <Chip label={item.count} size="small" color="primary" />
                       </Stack>
-                      <Typography sx={{ fontWeight: 900 }}>{item.title}</Typography>
+                      <Typography sx={{ fontWeight: 900 }}>
+                        {item.title}
+                      </Typography>
                       <Typography color="text.secondary" variant="caption">
                         {labels.openSection}
                       </Typography>
@@ -633,41 +702,50 @@ const NutritionLibraryPanel = ({
             }
           >
             <Stack spacing={0.5}>
-              <Typography sx={{ fontWeight: 800 }}>{labels.unavailableTitle}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>
+                {labels.unavailableTitle}
+              </Typography>
               <Typography>{labels.unavailableBody}</Typography>
             </Stack>
           </Alert>
         ) : null}
 
         {activeTab === "products" ? (
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.25, md: 2 }}>
             {productSections.map((section) =>
               section.products.length > 0 || section.empty ? (
                 <Stack key={section.title} spacing={1.2}>
                   <SectionHeader title={section.title} />
                   {section.products.length === 0 ? (
-                    <Typography color="text.secondary">{section.empty}</Typography>
+                    <Typography color="text.secondary">
+                      {section.empty}
+                    </Typography>
                   ) : (
                     <Box
+                      data-nutrition-library-mobile-product-rail="true"
                       sx={{
-                        display: "grid",
-                        gridTemplateColumns: PRODUCT_CARD_GRID,
-                        gap: 1,
+                        ...MOBILE_LIBRARY_RAIL,
                       }}
                     >
                       {section.products.map((product) => {
-                        const displayName = getProductDisplayName(product, appLanguage);
-                        const isSaved = savedProductKeys.has(productKey(product));
+                        const displayName = getProductDisplayName(
+                          product,
+                          appLanguage,
+                        );
+                        const isSaved = savedProductKeys.has(
+                          productKey(product),
+                        );
 
                         return (
                           <Box
                             key={`${section.title}-${productKey(product)}`}
                             sx={{
                               p: 1.25,
+                              minWidth: { xs: 230, sm: 0 },
                               borderRadius: 1,
                               border: LIBRARY_CARD_BORDER,
                               bgcolor: LIBRARY_CARD_BACKGROUND,
-                              minWidth: 0,
+                              scrollSnapAlign: { xs: "start", sm: "none" },
                             }}
                           >
                             <Stack spacing={0.9}>
@@ -677,12 +755,28 @@ const NutritionLibraryPanel = ({
                                 alignItems="flex-start"
                                 justifyContent="space-between"
                               >
-                                <Typography sx={{ fontWeight: 900, overflowWrap: "anywhere" }}>
+                                <Typography
+                                  sx={{
+                                    fontWeight: 900,
+                                    overflowWrap: "anywhere",
+                                  }}
+                                >
                                   {displayName}
                                 </Typography>
-                                {isSaved ? <Star size={16} fill="#65a30d" color="#65a30d" /> : null}
+                                {isSaved ? (
+                                  <Star
+                                    size={16}
+                                    fill="#65a30d"
+                                    color="#65a30d"
+                                  />
+                                ) : null}
                               </Stack>
-                              <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                              <Stack
+                                direction="row"
+                                spacing={0.75}
+                                useFlexGap
+                                flexWrap="wrap"
+                              >
                                 <Chip
                                   label={`${product.nutrients.calories.toFixed(0)} ${
                                     labels.kcal
@@ -694,16 +788,24 @@ const NutritionLibraryPanel = ({
                                     "protein",
                                     product.nutrients.protein,
                                     appLanguage,
-                                    t("common.g")
+                                    t("common.g"),
                                   )}
                                   size="small"
                                 />
                                 <Chip
-                                  label={getProductSourceLabel(product.source, appLanguage)}
+                                  label={getProductSourceLabel(
+                                    product.source,
+                                    appLanguage,
+                                  )}
                                   size="small"
                                 />
                               </Stack>
-                              <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                useFlexGap
+                                flexWrap="wrap"
+                              >
                                 <Button
                                   size="small"
                                   variant="contained"
@@ -723,7 +825,9 @@ const NutritionLibraryPanel = ({
                                         ]),
                                     })
                                   }
-                                  disabled={isSavingAction(`add-${productKey(product)}`)}
+                                  disabled={isSavingAction(
+                                    `add-${productKey(product)}`,
+                                  )}
                                 >
                                   {labels.add100} {product.unit}
                                 </Button>
@@ -735,12 +839,18 @@ const NutritionLibraryPanel = ({
                                       actionId: `save-${productKey(product)}`,
                                       kind: "saveProduct",
                                       action: () =>
-                                        saveMealProductToCloud(dispatch, meal, product),
+                                        saveMealProductToCloud(
+                                          dispatch,
+                                          meal,
+                                          product,
+                                        ),
                                     })
                                   }
                                   disabled={
                                     isSaved ||
-                                    isSavingAction(`save-${productKey(product)}`)
+                                    isSavingAction(
+                                      `save-${productKey(product)}`,
+                                    )
                                   }
                                 >
                                   {labels.save}
@@ -753,23 +863,24 @@ const NutritionLibraryPanel = ({
                     </Box>
                   )}
                 </Stack>
-              ) : null
+              ) : null,
             )}
           </Stack>
         ) : null}
 
         {activeTab === "dishes" ? (
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.25, md: 2 }}>
             <Stack spacing={1.2}>
               <SectionHeader title={labels.savedDishes} />
               {visibleTemplates.length === 0 ? (
-                <Typography color="text.secondary">{labels.noSavedDishes}</Typography>
+                <Typography color="text.secondary">
+                  {labels.noSavedDishes}
+                </Typography>
               ) : (
                 <Box
+                  data-nutrition-library-mobile-dish-rail="true"
                   sx={{
-                    display: "grid",
-                    gridTemplateColumns: DISH_CARD_GRID,
-                    gap: 1,
+                    ...MOBILE_DISH_RAIL,
                   }}
                 >
                   {visibleTemplates.map((template) => (
@@ -777,15 +888,27 @@ const NutritionLibraryPanel = ({
                       key={template.id}
                       sx={{
                         p: 1.35,
+                        minWidth: { xs: 260, sm: 0 },
                         borderRadius: 1,
                         border: LIBRARY_CARD_BORDER,
                         bgcolor: LIBRARY_CARD_BACKGROUND,
+                        scrollSnapAlign: { xs: "start", sm: "none" },
                       }}
                     >
                       <Stack spacing={1}>
-                        <Typography sx={{ fontWeight: 900 }}>{template.name}</Typography>
-                        <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-                          <Chip label={t(`mealType.${template.mealType}`)} size="small" />
+                        <Typography sx={{ fontWeight: 900 }}>
+                          {template.name}
+                        </Typography>
+                        <Stack
+                          direction="row"
+                          spacing={0.75}
+                          useFlexGap
+                          flexWrap="wrap"
+                        >
+                          <Chip
+                            label={t(`mealType.${template.mealType}`)}
+                            size="small"
+                          />
                           <Chip
                             label={`${templateCalories(template).toFixed(0)} ${labels.kcal}`}
                             size="small"
@@ -795,13 +918,17 @@ const NutritionLibraryPanel = ({
                             size="small"
                           />
                         </Stack>
-                        <Typography color="text.secondary" variant="body2">
+                        <Typography
+                          color="text.secondary"
+                          variant="body2"
+                          sx={{ display: { xs: "none", sm: "block" } }}
+                        >
                           {template.items
                             .map(
                               (item) =>
                                 `${getProductDisplayName(item.product, appLanguage)} ${
                                   item.quantity
-                                } ${item.product.unit}`
+                                } ${item.product.unit}`,
                             )
                             .join(", ")}
                         </Typography>
@@ -817,7 +944,7 @@ const NutritionLibraryPanel = ({
                                   dispatch,
                                   meal,
                                   template.id,
-                                  createTemplateEntries(template)
+                                  createTemplateEntries(template),
                                 ),
                             })
                           }
@@ -838,13 +965,14 @@ const NutritionLibraryPanel = ({
                 <Stack spacing={1.2}>
                   <SectionHeader title={labels.builtInRecipes} />
                   {visibleRecipes.length === 0 ? (
-                    <Typography color="text.secondary">{labels.noResults}</Typography>
+                    <Typography color="text.secondary">
+                      {labels.noResults}
+                    </Typography>
                   ) : (
                     <Box
+                      data-nutrition-library-mobile-recipe-rail="true"
                       sx={{
-                        display: "grid",
-                        gridTemplateColumns: DISH_CARD_GRID,
-                        gap: 1,
+                        ...MOBILE_DISH_RAIL,
                       }}
                     >
                       {visibleRecipes.map((recipe) => (
@@ -852,18 +980,34 @@ const NutritionLibraryPanel = ({
                           key={recipe.id}
                           sx={{
                             p: 1.35,
+                            minWidth: { xs: 250, sm: 0 },
                             borderRadius: 1,
                             border: LIBRARY_CARD_BORDER,
                             bgcolor: LIBRARY_CARD_BACKGROUND,
+                            scrollSnapAlign: { xs: "start", sm: "none" },
                           }}
                         >
                           <Stack spacing={1}>
-                            <Typography sx={{ fontWeight: 900 }}>{recipe.title}</Typography>
-                            <Typography color="text.secondary" variant="body2">
+                            <Typography sx={{ fontWeight: 900 }}>
+                              {recipe.title}
+                            </Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="body2"
+                              sx={{ display: { xs: "none", sm: "block" } }}
+                            >
                               {recipe.description}
                             </Typography>
-                            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
-                              <Chip label={`${recipe.calories} ${labels.kcal}`} size="small" />
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              useFlexGap
+                              flexWrap="wrap"
+                            >
+                              <Chip
+                                label={`${recipe.calories} ${labels.kcal}`}
+                                size="small"
+                              />
                               <Chip
                                 label={`${recipe.ingredients.length} ${labels.ingredients}`}
                                 size="small"
@@ -884,13 +1028,14 @@ const NutritionLibraryPanel = ({
           <Stack spacing={1.2}>
             <SectionHeader title={labels.savedArticles} />
             {visibleSavedPosts.length === 0 ? (
-              <Typography color="text.secondary">{labels.noSavedArticles}</Typography>
+              <Typography color="text.secondary">
+                {labels.noSavedArticles}
+              </Typography>
             ) : (
               <Box
+                data-nutrition-library-mobile-article-rail="true"
                 sx={{
-                  display: "grid",
-                  gridTemplateColumns: DISH_CARD_GRID,
-                  gap: 1,
+                  ...MOBILE_DISH_RAIL,
                 }}
               >
                 {visibleSavedPosts.map((post) => (
@@ -898,18 +1043,31 @@ const NutritionLibraryPanel = ({
                     key={post.id}
                     sx={{
                       p: 1.35,
+                      minWidth: { xs: 250, sm: 0 },
                       borderRadius: 1,
                       border: LIBRARY_CARD_BORDER,
                       bgcolor: LIBRARY_CARD_BACKGROUND,
+                      scrollSnapAlign: { xs: "start", sm: "none" },
                     }}
                   >
                     <Stack spacing={1}>
-                      <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        useFlexGap
+                        flexWrap="wrap"
+                      >
                         <Chip label={labels.community} size="small" />
                         <Chip label={post.type} size="small" />
                       </Stack>
-                      <Typography sx={{ fontWeight: 900 }}>{post.title}</Typography>
-                      <Typography color="text.secondary" variant="body2">
+                      <Typography sx={{ fontWeight: 900 }}>
+                        {post.title}
+                      </Typography>
+                      <Typography
+                        color="text.secondary"
+                        variant="body2"
+                        sx={{ display: { xs: "none", sm: "block" } }}
+                      >
                         {post.body}
                       </Typography>
                     </Stack>

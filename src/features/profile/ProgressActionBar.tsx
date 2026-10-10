@@ -2,6 +2,7 @@ import copy from "copy-to-clipboard";
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Copy, Maximize2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import screenfull from "screenfull";
 import { toast } from "sonner";
@@ -23,7 +24,11 @@ const ToolbarPanel = styled(Paper)`
   border-radius: 8px;
   background: var(--sn-surface-glass);
   box-shadow: var(--sn-shadow-card);
-  padding: 16px;
+  padding: 10px;
+
+  @media (min-width: 900px) {
+    padding: 16px;
+  }
 `;
 
 const StatusDot = styled.span`
@@ -41,7 +46,9 @@ const progressActionCopy = {
     title: "Швидкі дії прогресу",
     subtitle: "Скопіюйте короткий підсумок або відкрийте аналітику на весь екран.",
     copy: "Копіювати звіт",
+    copyShort: "Копія",
     fullscreen: "На весь екран",
+    fullscreenShort: "Екран",
     copied: "Звіт скопійовано.",
     fullscreenUnsupported: "Fullscreen недоступний у цьому браузері.",
     calories: "Калорії",
@@ -53,7 +60,9 @@ const progressActionCopy = {
     title: "Szybkie akcje progresu",
     subtitle: "Skopiuj krótkie podsumowanie albo otwórz analitykę pełnoekranowo.",
     copy: "Kopiuj raport",
+    copyShort: "Kopia",
     fullscreen: "Pełny ekran",
+    fullscreenShort: "Ekran",
     copied: "Raport skopiowany.",
     fullscreenUnsupported: "Fullscreen jest niedostępny w tej przeglądarce.",
     calories: "Kalorie",
@@ -65,7 +74,9 @@ const progressActionCopy = {
     title: "Quick progress actions",
     subtitle: "Copy a short summary or open analytics in full screen.",
     copy: "Copy report",
+    copyShort: "Copy",
     fullscreen: "Full screen",
+    fullscreenShort: "Screen",
     copied: "Report copied.",
     fullscreenUnsupported: "Fullscreen is not available in this browser.",
     calories: "Calories",
@@ -124,29 +135,53 @@ export const ProgressActionBar = () => {
   return (
     <ToolbarPanel elevation={0}>
       <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
+        direction={{ xs: "row", md: "row" }}
+        spacing={{ xs: 0.85, md: 1.5 }}
         justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
+        alignItems="center"
       >
-        <Stack spacing={0.6}>
+        <Stack spacing={{ xs: 0.15, md: 0.6 }} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <StatusDot aria-hidden />
-            <Typography sx={{ fontWeight: 900 }}>{copyText.title}</Typography>
+            <Typography sx={{ fontWeight: 900, fontSize: { xs: 13.5, md: 16 } }} noWrap>
+              {copyText.title}
+            </Typography>
           </Stack>
-          <Typography color="text.secondary">{copyText.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            {copyText.subtitle}
+          </Typography>
         </Stack>
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.5, md: 1 }}
+          useFlexGap
+          flexWrap="nowrap"
+          sx={{ flexShrink: 0 }}
+        >
           <Chip
             label={`${copyText.water}: ${waterProgress}%`}
             color={waterProgress >= 100 ? "success" : "default"}
             variant="outlined"
+            size="small"
           />
-          <Button variant="outlined" onClick={handleCopy}>
-            {copyText.copy}
+          <Button variant="outlined" onClick={handleCopy} size="small" startIcon={<Copy size={15} />}>
+            <Typography component="span" sx={{ display: { xs: "none", sm: "inline" }, fontWeight: 900 }}>
+              {copyText.copy}
+            </Typography>
+            <Typography component="span" sx={{ display: { xs: "inline", sm: "none" }, fontWeight: 900 }}>
+              {copyText.copyShort}
+            </Typography>
           </Button>
-          <Button variant="contained" onClick={handleFullscreen}>
-            {copyText.fullscreen}
+          <Button variant="contained" onClick={handleFullscreen} size="small" startIcon={<Maximize2 size={15} />}>
+            <Typography component="span" sx={{ display: { xs: "none", sm: "inline" }, fontWeight: 900 }}>
+              {copyText.fullscreen}
+            </Typography>
+            <Typography component="span" sx={{ display: { xs: "inline", sm: "none" }, fontWeight: 900 }}>
+              {copyText.fullscreenShort}
+            </Typography>
           </Button>
         </Stack>
       </Stack>

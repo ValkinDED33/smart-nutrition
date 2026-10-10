@@ -9,6 +9,7 @@ import {
 import { useDispatch } from "react-redux";
 import {
   Alert,
+  Box,
   Button,
   Card,
   CardContent,
@@ -64,12 +65,20 @@ type BuilderItem = Omit<MealTemplateItem, "quantity"> & {
 
 const CUSTOM_RECIPE_PREFIX = "Recipe: ";
 const COMMON_KCAL_KEY = "common.kcal";
+const MOBILE_RECIPE_RAIL = {
+  display: { xs: "flex", md: "block" },
+  overflowX: { xs: "auto", md: "visible" },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+};
 
 const formatMacroLabel = (
   key: "protein" | "fat" | "carbs",
   value: number,
   language: AppLanguage,
-  gramLabel: string
+  gramLabel: string,
 ) => `${getNutrientLabel(key, language)} ${value.toFixed(1)} ${gramLabel}`;
 
 const recipeActionCopy = {
@@ -86,7 +95,8 @@ const recipeActionCopy = {
     recipeNameLabel: "Назва рецепта",
     ingredientSearchLabel: "Пошук інгредієнта",
     ingredientSearching: "Шукаємо...",
-    ingredientSearchHint: "Введіть продукт, ресторанну позицію або домашню страву",
+    ingredientSearchHint:
+      "Введіть продукт, ресторанну позицію або домашню страву",
     quantityLabel: "Кількість",
     remove: "Видалити",
     reuse: "Використати знову",
@@ -116,7 +126,8 @@ const recipeActionCopy = {
     recipeNameLabel: "Nazwa przepisu",
     ingredientSearchLabel: "Szukaj składnika",
     ingredientSearching: "Szukamy...",
-    ingredientSearchHint: "Wpisz produkt, danie z restauracji albo domowy posiłek",
+    ingredientSearchHint:
+      "Wpisz produkt, danie z restauracji albo domowy posiłek",
     quantityLabel: "Ilość",
     remove: "Usuń",
     reuse: "Użyj ponownie",
@@ -165,7 +176,8 @@ const recipeActionCopy = {
   },
 } as const;
 
-type RecipeActionCopy = (typeof recipeActionCopy)[keyof typeof recipeActionCopy];
+type RecipeActionCopy =
+  (typeof recipeActionCopy)[keyof typeof recipeActionCopy];
 
 const RECIPE_TEXT_SECONDARY = "text.secondary";
 
@@ -256,7 +268,9 @@ export const RecipeSection = ({ mealType }: Props) => {
 
         startTransition(() => {
           setSearchResults(
-            results.filter((product) => productMatchesPreferences(product, preferences))
+            results.filter((product) =>
+              productMatchesPreferences(product, preferences),
+            ),
           );
         });
       })
@@ -276,9 +290,13 @@ export const RecipeSection = ({ mealType }: Props) => {
   }, [deferredIngredientQuery, preferences]);
 
   const filteredRecipes = recipes.filter(
-    (recipe) => recipe.mealType === mealType && recipeMatchesPreferences(recipe, preferences)
+    (recipe) =>
+      recipe.mealType === mealType &&
+      recipeMatchesPreferences(recipe, preferences),
   );
-  const displayedSearchResults = deferredIngredientQuery.trim() ? searchResults : [];
+  const displayedSearchResults = deferredIngredientQuery.trim()
+    ? searchResults
+    : [];
   const searchPending =
     ingredientQuery.trim().length > 0 &&
     ingredientQuery.trim() !== deferredIngredientQuery.trim();
@@ -289,7 +307,9 @@ export const RecipeSection = ({ mealType }: Props) => {
           (template) =>
             template.mealType === mealType &&
             template.name.startsWith(CUSTOM_RECIPE_PREFIX) &&
-            template.items.every((item) => productMatchesPreferences(item.product, preferences))
+            template.items.every((item) =>
+              productMatchesPreferences(item.product, preferences),
+            ),
         )
         .map((template) => {
           const nutrients = calculateMealTotalNutrients(
@@ -300,7 +320,7 @@ export const RecipeSection = ({ mealType }: Props) => {
               mealType: template.mealType,
               eatenAt: template.createdAt,
               origin: "recipe" as const,
-            }))
+            })),
           );
 
           return {
@@ -316,19 +336,20 @@ export const RecipeSection = ({ mealType }: Props) => {
             carbs: nutrients.carbs,
           };
         }),
-    [copy.customRecipeDescription, mealType, preferences, templates]
+    [copy.customRecipeDescription, mealType, preferences, templates],
   );
   const validBuilderItems = useMemo<MealTemplateItem[]>(
     () =>
       builderItems
-        .filter((item): item is MealTemplateItem =>
-          typeof item.quantity === "number" && item.quantity > 0
+        .filter(
+          (item): item is MealTemplateItem =>
+            typeof item.quantity === "number" && item.quantity > 0,
         )
         .map((item) => ({
           product: item.product,
           quantity: item.quantity,
         })),
-    [builderItems]
+    [builderItems],
   );
   const createRecipeEntryId = () => {
     recipeEntrySequenceRef.current += 1;
@@ -356,9 +377,9 @@ export const RecipeSection = ({ mealType }: Props) => {
           mealType,
           eatenAt: new Date().toISOString(),
           origin: "recipe" as const,
-        }))
+        })),
       ),
-    [mealType, validBuilderItems]
+    [mealType, validBuilderItems],
   );
 
   const handleAddRecipe = async (recipeId: string) => {
@@ -386,7 +407,9 @@ export const RecipeSection = ({ mealType }: Props) => {
 
   const handleAddBuilderIngredient = (product: Product) => {
     setBuilderItems((current) => {
-      const existingItem = current.find((item) => item.product.id === product.id);
+      const existingItem = current.find(
+        (item) => item.product.id === product.id,
+      );
 
       if (existingItem) {
         return current.map((item) =>
@@ -396,7 +419,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 quantity:
                   typeof item.quantity === "number" ? item.quantity + 100 : 100,
               }
-            : item
+            : item,
         );
       }
 
@@ -439,12 +462,13 @@ export const RecipeSection = ({ mealType }: Props) => {
     await runMealAction({
       actionId: `recipe-template-apply-${recipeId}`,
       kind: "applyTemplate",
-      action: () => applyMealTemplateInCloud(
-        dispatch,
-        meal,
-        recipeId,
-        createTemplateEntries(template)
-      ),
+      action: () =>
+        applyMealTemplateInCloud(
+          dispatch,
+          meal,
+          recipeId,
+          createTemplateEntries(template),
+        ),
     });
   };
 
@@ -490,12 +514,12 @@ export const RecipeSection = ({ mealType }: Props) => {
         copy.publishBody(
           recipe.ingredients.length,
           recipe.calories.toFixed(0),
-          t(COMMON_KCAL_KEY)
+          t(COMMON_KCAL_KEY),
         ),
       authorId: user.id,
       authorName: user.name,
       ingredients: recipe.ingredients.map((ingredient) =>
-        getProductDisplayName(ingredient.product, appLanguage)
+        getProductDisplayName(ingredient.product, appLanguage),
       ),
     });
 
@@ -509,7 +533,7 @@ export const RecipeSection = ({ mealType }: Props) => {
   const allRecipes = [...customRecipes, ...filteredRecipes];
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={{ xs: 1.25, md: 2 }}>
       <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
         {t("recipes.title")}
       </Typography>
@@ -519,7 +543,11 @@ export const RecipeSection = ({ mealType }: Props) => {
           onClose={clearFeedback}
           action={
             mealActionNotice.retryable ? (
-              <Button color="inherit" size="small" onClick={() => void retryMealAction()}>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => void retryMealAction()}
+              >
                 {copy.retry}
               </Button>
             ) : undefined
@@ -531,7 +559,7 @@ export const RecipeSection = ({ mealType }: Props) => {
       <Paper
         elevation={0}
         sx={{
-          p: 2.5,
+          p: { xs: 1.4, md: 2.5 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
           backgroundColor: "var(--sn-surface-glass)",
@@ -539,7 +567,10 @@ export const RecipeSection = ({ mealType }: Props) => {
       >
         <Stack spacing={1.5}>
           <Typography sx={{ fontWeight: 800 }}>{copy.builderTitle}</Typography>
-          <Typography color={RECIPE_TEXT_SECONDARY}>
+          <Typography
+            color={RECIPE_TEXT_SECONDARY}
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
             {copy.builderBody}
           </Typography>
 
@@ -563,7 +594,18 @@ export const RecipeSection = ({ mealType }: Props) => {
           />
 
           {displayedSearchResults.length > 0 && (
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
+                pb: { xs: 0.5, sm: 0 },
+              }}
+            >
               {displayedSearchResults.slice(0, 8).map((product) => (
                 <Chip
                   key={product.id}
@@ -576,9 +618,13 @@ export const RecipeSection = ({ mealType }: Props) => {
           )}
 
           {builderItems.length > 0 && (
-            <Stack spacing={1.2}>
+            <Stack spacing={{ xs: 0.9, md: 1.2 }}>
               {builderItems.map((item) => (
-                <Paper key={item.product.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={item.product.id}
+                  variant="outlined"
+                  sx={{ p: { xs: 1, md: 1.5 }, borderRadius: 1 }}
+                >
                   <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={1.2}
@@ -592,7 +638,10 @@ export const RecipeSection = ({ mealType }: Props) => {
                       label={copy.quantityLabel}
                       value={item.quantity}
                       slotProps={{
-                        htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+                        htmlInput: {
+                          inputMode: "decimal",
+                          enterKeyHint: "done",
+                        },
                       }}
                       onFocus={(event) => selectInputValue(event.target)}
                       onClick={(event) => selectInputValue(event.currentTarget)}
@@ -607,8 +656,8 @@ export const RecipeSection = ({ mealType }: Props) => {
                           current.map((currentItem) =>
                             currentItem.product.id === item.product.id
                               ? { ...currentItem, quantity: nextQuantity }
-                              : currentItem
-                          )
+                              : currentItem,
+                          ),
                         );
                       }}
                       sx={{ width: { xs: "100%", md: 150 } }}
@@ -617,7 +666,10 @@ export const RecipeSection = ({ mealType }: Props) => {
                       color="error"
                       onClick={() => {
                         setBuilderItems((current) =>
-                          current.filter((currentItem) => currentItem.product.id !== item.product.id)
+                          current.filter(
+                            (currentItem) =>
+                              currentItem.product.id !== item.product.id,
+                          ),
                         );
                       }}
                     >
@@ -628,26 +680,44 @@ export const RecipeSection = ({ mealType }: Props) => {
               ))}
 
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={`${builderNutrients.calories.toFixed(0)} ${t(COMMON_KCAL_KEY)}`} />
+                <Chip
+                  label={`${builderNutrients.calories.toFixed(0)} ${t(COMMON_KCAL_KEY)}`}
+                />
                 <Chip
                   label={formatMacroLabel(
                     "protein",
                     builderNutrients.protein,
                     appLanguage,
-                    t("common.g")
+                    t("common.g"),
                   )}
                 />
                 <Chip
-                  label={formatMacroLabel("fat", builderNutrients.fat, appLanguage, t("common.g"))}
+                  label={formatMacroLabel(
+                    "fat",
+                    builderNutrients.fat,
+                    appLanguage,
+                    t("common.g"),
+                  )}
                 />
                 <Chip
-                  label={formatMacroLabel("carbs", builderNutrients.carbs, appLanguage, t("common.g"))}
+                  label={formatMacroLabel(
+                    "carbs",
+                    builderNutrients.carbs,
+                    appLanguage,
+                    t("common.g"),
+                  )}
                 />
               </Stack>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+              <Stack
+                direction={{ xs: "row", sm: "row" }}
+                spacing={1.2}
+                useFlexGap
+                flexWrap="wrap"
+              >
                 <Button
                   variant="contained"
+                  size="small"
                   onClick={() => {
                     void handleAddBuilderNow();
                   }}
@@ -660,6 +730,7 @@ export const RecipeSection = ({ mealType }: Props) => {
                 </Button>
                 <Button
                   variant="outlined"
+                  size="small"
                   onClick={() => void handleSaveBuilderRecipe()}
                   disabled={
                     !recipeName.trim() ||
@@ -677,75 +748,149 @@ export const RecipeSection = ({ mealType }: Props) => {
 
       <Divider />
 
-      {allRecipes.map((recipe) => (
-        <Card
-          key={recipe.id}
-          sx={{
-            borderRadius: 1,
-            border: "1px solid var(--sn-border-soft)",
-            boxShadow: "none",
-          }}
+      <Box data-recipe-section-mobile-rail="true" sx={MOBILE_RECIPE_RAIL}>
+        <Stack
+          direction={{ xs: "row", md: "column" }}
+          spacing={{ xs: 1, md: 2 }}
+          sx={{ minWidth: 0 }}
         >
-          <CardContent>
-            <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip label={`${recipe.calories} ${t(COMMON_KCAL_KEY)}`} />
-                <Chip
-                  label={formatMacroLabel("protein", recipe.protein, appLanguage, t("common.g"))}
-                />
-                <Chip label={formatMacroLabel("fat", recipe.fat, appLanguage, t("common.g"))} />
-                <Chip label={formatMacroLabel("carbs", recipe.carbs, appLanguage, t("common.g"))} />
-              </Stack>
-              <Typography component="h3" variant="h6" sx={{ fontWeight: 800 }}>
-                {recipe.title}
-              </Typography>
-              <Typography color={RECIPE_TEXT_SECONDARY}>{recipe.description}</Typography>
-              <Typography variant="body2">
-                {t("recipes.ingredients")}:{" "}
-                {recipe.ingredients
-                  .map(
-                    (ingredient) =>
-                      `${getProductDisplayName(ingredient.product, appLanguage)} ${ingredient.quantity} ${ingredient.product.unit}`
-                  )
-                  .join(", ")}
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  void handleAddRecipe(recipe.id);
+          {allRecipes.map((recipe) => (
+            <Card
+              key={recipe.id}
+              sx={{
+                minWidth: { xs: 276, md: 0 },
+                borderRadius: 1,
+                border: "1px solid var(--sn-border-soft)",
+                boxShadow: "none",
+                scrollSnapAlign: { xs: "start", md: "none" },
+              }}
+            >
+              <CardContent
+                sx={{
+                  p: { xs: 1.4, md: 2 },
+                  "&:last-child": { pb: { xs: 1.4, md: 2 } },
                 }}
-                disabled={isSavingAction(`recipe-add-${recipe.id}`)}
-                sx={{ alignSelf: "flex-start" }}
               >
-                {t("recipes.add")}
-              </Button>
-              {customRecipes.some((item) => item.id === recipe.id) && (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    onClick={() => void handleReuseTemplateRecipe(recipe.id)}
-                    disabled={isSavingAction(`recipe-template-apply-${recipe.id}`)}
+                <Stack spacing={{ xs: 1, md: 1.5 }}>
+                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Chip
+                      size="small"
+                      label={`${recipe.calories} ${t(COMMON_KCAL_KEY)}`}
+                    />
+                    <Chip
+                      size="small"
+                      label={formatMacroLabel(
+                        "protein",
+                        recipe.protein,
+                        appLanguage,
+                        t("common.g"),
+                      )}
+                    />
+                    <Chip
+                      size="small"
+                      label={formatMacroLabel(
+                        "fat",
+                        recipe.fat,
+                        appLanguage,
+                        t("common.g"),
+                      )}
+                    />
+                    <Chip
+                      size="small"
+                      label={formatMacroLabel(
+                        "carbs",
+                        recipe.carbs,
+                        appLanguage,
+                        t("common.g"),
+                      )}
+                    />
+                  </Stack>
+                  <Typography
+                    component="h3"
+                    variant="subtitle1"
+                    sx={{ fontWeight: 800 }}
                   >
-                    {copy.reuse}
-                  </Button>
-                  <Button
-                    onClick={() => void handlePublishRecipe(recipe)}
-                    disabled={!user || isSavingAction(`recipe-publish-${recipe.id}`)}
+                    {recipe.title}
+                  </Typography>
+                  <Typography
+                    color={RECIPE_TEXT_SECONDARY}
+                    sx={{ display: { xs: "none", sm: "block" } }}
                   >
-                    {copy.publishRecipe}
-                  </Button>
-                  <Button
-                    color="error"
-                    onClick={() => void handleDeleteTemplateRecipe(recipe.id)}
-                    disabled={isSavingAction(`recipe-template-delete-${recipe.id}`)}
+                    {recipe.description}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      display: { xs: "none", sm: "block" },
+                      overflowWrap: "anywhere",
+                    }}
                   >
-                    {copy.remove}
+                    {t("recipes.ingredients")}:{" "}
+                    {recipe.ingredients
+                      .map(
+                        (ingredient) =>
+                          `${getProductDisplayName(ingredient.product, appLanguage)} ${ingredient.quantity} ${ingredient.product.unit}`,
+                      )
+                      .join(", ")}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      void handleAddRecipe(recipe.id);
+                    }}
+                    disabled={isSavingAction(`recipe-add-${recipe.id}`)}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    {t("recipes.add")}
                   </Button>
+                  {customRecipes.some((item) => item.id === recipe.id) && (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                    >
+                      <Button
+                        size="small"
+                        onClick={() =>
+                          void handleReuseTemplateRecipe(recipe.id)
+                        }
+                        disabled={isSavingAction(
+                          `recipe-template-apply-${recipe.id}`,
+                        )}
+                      >
+                        {copy.reuse}
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => void handlePublishRecipe(recipe)}
+                        disabled={
+                          !user || isSavingAction(`recipe-publish-${recipe.id}`)
+                        }
+                      >
+                        {copy.publishRecipe}
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() =>
+                          void handleDeleteTemplateRecipe(recipe.id)
+                        }
+                        disabled={isSavingAction(
+                          `recipe-template-delete-${recipe.id}`,
+                        )}
+                      >
+                        {copy.remove}
+                      </Button>
+                    </Stack>
+                  )}
                 </Stack>
-              )}
-            </Stack>
-          </CardContent>
-        </Card>
-      ))}
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
     </Stack>
   );
 };

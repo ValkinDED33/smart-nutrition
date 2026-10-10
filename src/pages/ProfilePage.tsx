@@ -819,11 +819,12 @@ const ProfilePage = () => {
       title={t("profile.title")}
       subtitle={t("profile.subtitle")}
       assistantHint={<EcosystemPulse focus="profile" />}
+      compact
     >
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 3, md: 4 },
+          p: { xs: 1.25, md: 4 },
           borderRadius: 1,
           border: PROFILE_CARD_BORDER,
           background:
@@ -832,19 +833,23 @@ const ProfilePage = () => {
       >
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={3}
+          spacing={{ xs: 1.25, md: 3 }}
           alignItems={{ xs: PROFILE_ALIGN_START, md: "center" }}
           justifyContent="space-between"
         >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar src={user.avatar} sx={{ width: 84, height: 84 }}>
+          <Stack direction="row" spacing={{ xs: 1.2, md: 2 }} alignItems="center">
+            <Avatar src={user.avatar} sx={{ width: { xs: 56, md: 84 }, height: { xs: 56, md: 84 } }}>
               {user.name[0]}
             </Avatar>
             <Box>
-              <Typography component="h2" variant="h5" sx={{ fontWeight: 900 }}>
+              <Typography
+                component="h2"
+                variant="h5"
+                sx={{ fontWeight: 900, fontSize: { xs: 20, md: 24 } }}
+              >
                 {user.name}
               </Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography color="text.secondary" sx={{ mt: 0.25, fontSize: { xs: 13, md: 16 } }}>
                 {user.email}
               </Typography>
             </Box>
@@ -859,13 +864,19 @@ const ProfilePage = () => {
               direction="row"
               spacing={1}
               useFlexGap
-              flexWrap="wrap"
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
               justifyContent={{ xs: PROFILE_ALIGN_START, md: "flex-end" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
+              }}
             >
               <Chip
                 label={`${copy.roleLabel}: ${getRoleLabel(appLanguage, user.role)}`}
                 color={user.role === "USER" ? "default" : "primary"}
                 variant={user.role === "USER" ? "outlined" : "filled"}
+                size="small"
               />
               <Chip
                 label={`${copy.emailLabel}: ${
@@ -873,36 +884,44 @@ const ProfilePage = () => {
                 }`}
                 color={user.emailVerified ? "success" : "warning"}
                 variant="outlined"
+                size="small"
               />
-              <Chip label={`${t("dashboard.age")}: ${user.age}`} />
-              <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} />
-              <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} />
+              <Chip label={`${t("dashboard.age")}: ${user.age}`} size="small" />
+              <Chip label={`${t("dashboard.weight")}: ${currentWeight.toFixed(1)} ${t("common.kg")}`} size="small" />
+              <Chip label={`${t("dashboard.height")}: ${user.height} ${t("common.cm")}`} size="small" />
               {canSeeOperationalDetails && (
                 <>
                   <Chip
                     label={`${copy.statusLabel}: ${getCommunityStatusLabel(communityStatus)}`}
                     variant="outlined"
+                    size="small"
                   />
                   <Chip
                     label={`${copy.bloodGroupLabel}: ${localizedPersonalDetails.bloodGroup[personalDetails.bloodGroup]}`}
+                    size="small"
                   />
                   <Chip
                     label={`${copy.eyeColorLabel}: ${localizedPersonalDetails.eyeColor[personalDetails.eyeColor]}`}
+                    size="small"
                   />
                   <Chip
                     label={`${copy.relationshipLabel}: ${localizedPersonalDetails.relationshipStatus[personalDetails.relationshipStatus]}`}
+                    size="small"
                   />
                   <Chip
                     label={`${copy.supportLabel}: ${localizedPersonalDetails.supportSystem[personalDetails.supportSystem]}`}
+                    size="small"
                   />
                   <Chip
                     label={`${copy.petLabel}: ${localizedPersonalDetails.petCompanion[personalDetails.petCompanion]}`}
+                    size="small"
                   />
                 </>
               )}
               {hasTargetWeight && (
                 <Chip
                   label={`${copy.target}: ${effectiveTargetWeight.toFixed(1)} ${t("common.kg")}`}
+                  size="small"
                 />
               )}
             </Stack>
@@ -910,13 +929,13 @@ const ProfilePage = () => {
             {canSeeWomenHealthSection && (
               <Stack
                 data-women-health-entrypoint="true"
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.5}
+                direction={{ xs: "row", sm: "row" }}
+                spacing={{ xs: 1, md: 1.5 }}
                 alignItems={{ xs: "stretch", sm: "center" }}
                 justifyContent="space-between"
                 sx={{
                   width: "100%",
-                  p: 1.5,
+                  p: { xs: 1, md: 1.5 },
                   borderRadius: 1,
                   border: PROFILE_CARD_BORDER,
                   background:
@@ -948,7 +967,10 @@ const ProfilePage = () => {
                     <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
                       {copy.womenHealthEntryTitle}
                     </Typography>
-                    <Typography color="text.secondary" sx={{ mt: 0.25, lineHeight: 1.45 }}>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ mt: 0.25, lineHeight: 1.45, display: { xs: "none", md: "block" } }}
+                    >
                       {copy.womenHealthEntrySubtitle}
                     </Typography>
                   </Box>
@@ -959,7 +981,7 @@ const ProfilePage = () => {
                   variant="contained"
                   endIcon={<ArrowRight size={16} aria-hidden="true" />}
                   sx={{
-                    alignSelf: { xs: "stretch", sm: "center" },
+                    alignSelf: { xs: "center", sm: "center" },
                     borderRadius: 999,
                     textTransform: "none",
                     fontWeight: 900,
@@ -973,13 +995,13 @@ const ProfilePage = () => {
 
             <Stack
               data-telegram-entrypoint="true"
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
+              direction={{ xs: "row", sm: "row" }}
+              spacing={{ xs: 1, md: 1.5 }}
               alignItems={{ xs: "stretch", sm: "center" }}
               justifyContent="space-between"
               sx={{
                 width: "100%",
-                p: 1.5,
+                p: { xs: 1, md: 1.5 },
                 borderRadius: 1,
                 border: PROFILE_CARD_BORDER,
                 background:
@@ -1005,7 +1027,10 @@ const ProfilePage = () => {
                   <Typography sx={{ fontWeight: 900, lineHeight: 1.2 }}>
                     {copy.telegramEntryTitle}
                   </Typography>
-                  <Typography color="text.secondary" sx={{ mt: 0.25, lineHeight: 1.45 }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ mt: 0.25, lineHeight: 1.45, display: { xs: "none", md: "block" } }}
+                  >
                     {copy.telegramEntrySubtitle}
                   </Typography>
                 </Box>
@@ -1016,7 +1041,7 @@ const ProfilePage = () => {
                 variant="outlined"
                 endIcon={<ArrowRight size={16} aria-hidden="true" />}
                 sx={{
-                  alignSelf: { xs: "stretch", sm: "center" },
+                  alignSelf: { xs: "center", sm: "center" },
                   borderRadius: 999,
                   textTransform: "none",
                   fontWeight: 900,
@@ -1037,15 +1062,6 @@ const ProfilePage = () => {
         <TelegramConnectionCard />
       )}
 
-      <AIMasterBlueprintPanel
-        eyebrow="Smart Nutrition Profile"
-        title={copy.preferencesTitle}
-        description={copy.profileInfoSubtitle}
-        patterns={profileBlueprintPatterns}
-        assistantName={assistantDisplayName}
-        assistantVariant={profile.assistant.companionKind}
-      />
-
       <ProfileSectionTabs
         ariaLabel={copy.sectionsAriaLabel}
         sections={[
@@ -1054,6 +1070,14 @@ const ProfilePage = () => {
             label: copy.tabs.data,
             content: (
               <Stack spacing={3}>
+                <AIMasterBlueprintPanel
+                  eyebrow="Smart Nutrition Profile"
+                  title={copy.preferencesTitle}
+                  description={copy.profileInfoSubtitle}
+                  patterns={profileBlueprintPatterns}
+                  assistantName={assistantDisplayName}
+                  assistantVariant={profile.assistant.companionKind}
+                />
                 <Paper
                   elevation={0}
                   sx={{

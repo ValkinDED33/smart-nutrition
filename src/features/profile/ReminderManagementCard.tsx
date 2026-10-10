@@ -642,7 +642,7 @@ const ReminderManagementCard = () => {
         </Button>
       }
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.15, md: 2 }}>
         {notice && <Alert severity={notice.type}>{notice.text}</Alert>}
 
         <Box
@@ -653,8 +653,11 @@ const ReminderManagementCard = () => {
           }}
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "180px minmax(0, 1fr) auto" },
-            gap: 1.2,
+            gridTemplateColumns: {
+              xs: "minmax(112px, 0.45fr) minmax(0, 1fr)",
+              md: "180px minmax(0, 1fr) auto",
+            },
+            gap: { xs: 0.8, md: 1.2 },
             alignItems: "stretch",
           }}
         >
@@ -687,6 +690,7 @@ const ReminderManagementCard = () => {
             disabled={!canCreate}
             startIcon={<Plus size={18} />}
             sx={{
+              gridColumn: { xs: "1 / -1", md: "auto" },
               borderRadius: 999,
               textTransform: "none",
               fontWeight: 900,
@@ -709,9 +713,18 @@ const ReminderManagementCard = () => {
             <Box
               data-reminder-adherence-report="true"
               sx={{
-                display: "grid",
+                display: { xs: "flex", md: "grid" },
                 gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
                 gap: 1,
+                overflowX: { xs: "auto", md: "visible" },
+                pb: { xs: 0.3, md: 0 },
+                scrollSnapType: { xs: "x mandatory", md: "none" },
+                scrollbarWidth: "none",
+                "& > *": {
+                  flex: { xs: "0 0 264px", md: "initial" },
+                  scrollSnapAlign: "start",
+                },
+                "&::-webkit-scrollbar": { display: "none" },
               }}
             >
               {adherenceReports.map(({ label, summary }) => {
@@ -724,7 +737,7 @@ const ReminderManagementCard = () => {
                   <Box
                     key={label}
                     sx={{
-                      p: 1.35,
+                      p: { xs: 1.1, md: 1.35 },
                       border: "1px solid var(--sn-border-soft)",
                       borderRadius: 1,
                       bgcolor: "var(--sn-surface-elevated)",
@@ -826,7 +839,7 @@ const ReminderManagementCard = () => {
                 <Box
                   key={reminder.id}
                   sx={{
-                    p: 1.5,
+                    p: { xs: 1.15, md: 1.5 },
                     border: "1px solid var(--sn-border-soft)",
                     borderRadius: 1,
                     bgcolor: "var(--sn-surface-elevated)",
@@ -840,7 +853,18 @@ const ReminderManagementCard = () => {
                       alignItems={{ xs: "flex-start", sm: "center" }}
                     >
                       <Stack spacing={0.5} minWidth={0}>
-                        <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          useFlexGap
+                          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                          sx={{
+                            overflowX: { xs: "auto", sm: "visible" },
+                            scrollbarWidth: "none",
+                            "&::-webkit-scrollbar": { display: "none" },
+                          }}
+                        >
                           <Chip
                             size="small"
                             icon={getReminderIcon(reminder.type)}
@@ -872,7 +896,17 @@ const ReminderManagementCard = () => {
                             {copy.next}: {formatReminderDateTime(reminder, locale)}
                           </Typography>
                         )}
-                        <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                        <Stack
+                          direction="row"
+                          spacing={0.8}
+                          useFlexGap
+                          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                          sx={{
+                            overflowX: { xs: "auto", sm: "visible" },
+                            scrollbarWidth: "none",
+                            "&::-webkit-scrollbar": { display: "none" },
+                          }}
+                        >
                           <Chip
                             size="small"
                             label={
@@ -961,7 +995,20 @@ const ReminderManagementCard = () => {
                       </Box>
                     )}
 
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Stack
+                      data-reminder-mobile-action-rail="true"
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                      sx={{
+                        overflowX: { xs: "auto", sm: "visible" },
+                        pb: { xs: 0.3, sm: 0 },
+                        scrollbarWidth: "none",
+                        "& > *": { flexShrink: 0 },
+                        "&::-webkit-scrollbar": { display: "none" },
+                      }}
+                    >
                       <Button
                         variant="contained"
                         size="small"

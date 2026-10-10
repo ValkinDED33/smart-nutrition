@@ -84,9 +84,11 @@ export const AIMasterBlueprintPanel = ({
         onClick={pattern.onClick}
         data-ai-action-hub-action={pattern.key}
         sx={{
+          flex: { xs: "0 0 128px", sm: "initial" },
+          scrollSnapAlign: { xs: "start", md: "unset" },
           minWidth: 0,
-          minHeight: { xs: 66, sm: 74 },
-          p: { xs: 1, sm: 1.2 },
+          minHeight: { xs: 46, sm: 74 },
+          p: { xs: 0.7, sm: 1.2 },
           borderRadius: 1,
           border: `1px solid ${pattern.accent}38`,
           color: textColor,
@@ -107,12 +109,12 @@ export const AIMasterBlueprintPanel = ({
           },
         }}
       >
-        <Stack spacing={0.65} sx={{ width: "100%", minWidth: 0 }}>
-          <Stack direction="row" spacing={0.75} alignItems="center">
+        <Stack spacing={{ xs: 0, sm: 0.65 }} sx={{ width: "100%", minWidth: 0 }}>
+          <Stack direction="row" spacing={{ xs: 0.55, sm: 0.75 }} alignItems="center">
             <Box
               sx={{
-                width: 30,
-                height: 30,
+                width: { xs: 24, sm: 30 },
+                height: { xs: 24, sm: 30 },
                 borderRadius: 1,
                 display: "grid",
                 placeItems: "center",
@@ -122,14 +124,14 @@ export const AIMasterBlueprintPanel = ({
                 boxShadow: `0 0 22px ${pattern.accent}35`,
               }}
             >
-              <Icon size={17} aria-hidden="true" />
+              <Icon size={16} aria-hidden="true" />
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography
                 component="span"
                 sx={{
                   display: "block",
-                  fontSize: { xs: 13, sm: 14 },
+                  fontSize: { xs: 12, sm: 14 },
                   fontWeight: 950,
                   lineHeight: 1.15,
                   overflow: "hidden",
@@ -142,7 +144,7 @@ export const AIMasterBlueprintPanel = ({
               <Typography
                 component="span"
                 sx={{
-                  display: "block",
+                  display: { xs: "none", sm: "block" },
                   color: mutedColor,
                   fontSize: 11,
                   fontWeight: 800,
@@ -159,7 +161,7 @@ export const AIMasterBlueprintPanel = ({
               color: mutedColor,
               fontSize: 12,
               lineHeight: 1.3,
-              display: "-webkit-box",
+              display: { xs: "none", sm: "-webkit-box" },
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
@@ -178,7 +180,7 @@ export const AIMasterBlueprintPanel = ({
       data-ai-action-hub-panel="true"
       className="sn-companion-panel"
       sx={{
-        p: { xs: 1.1, sm: 1.4, md: 1.8 },
+        p: { xs: 0.85, sm: 1.4, md: 1.8 },
         borderRadius: 1,
         border: "1px solid rgba(45,212,191,0.22)",
         color: textColor,
@@ -199,8 +201,8 @@ export const AIMasterBlueprintPanel = ({
           <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
             <Box
               sx={{
-                width: { xs: 48, sm: 58 },
-                height: { xs: 48, sm: 58 },
+                width: { xs: 38, sm: 58 },
+                height: { xs: 38, sm: 58 },
                 flexShrink: 0,
                 display: "grid",
                 placeItems: "center",
@@ -211,7 +213,7 @@ export const AIMasterBlueprintPanel = ({
             >
               <AssistantAvatar
                 name={assistantName}
-                size={42}
+                size={34}
                 variant={assistantVariant}
                 mood="coach"
                 active
@@ -232,7 +234,7 @@ export const AIMasterBlueprintPanel = ({
               <Typography
                 component="h2"
                 sx={{
-                  fontSize: { xs: 18, sm: 22 },
+                  fontSize: { xs: 16, sm: 22 },
                   fontWeight: 950,
                   lineHeight: 1.05,
                   overflowWrap: "anywhere",
@@ -250,6 +252,7 @@ export const AIMasterBlueprintPanel = ({
               onClick={() => setIsExpanded((previous) => !previous)}
               data-ai-action-hub-toggle="true"
               sx={{
+                display: { xs: "none", sm: "inline-flex" },
                 width: 38,
                 height: 38,
                 borderRadius: 1,
@@ -275,18 +278,33 @@ export const AIMasterBlueprintPanel = ({
           ) : null}
         </Stack>
 
-        <Typography sx={{ color: mutedColor, fontWeight: 650, lineHeight: 1.45 }}>
+        <Typography
+          sx={{
+            color: mutedColor,
+            fontWeight: 650,
+            lineHeight: { xs: 1.25, sm: 1.45 },
+            fontSize: { xs: 12.5, sm: 14 },
+            display: { xs: "-webkit-box", sm: "block" },
+            WebkitLineClamp: { xs: 1, sm: "unset" },
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {description}
         </Typography>
 
         <Box
           data-ai-action-hub-actions="true"
+          data-ai-action-hub-mobile-rail="true"
           sx={{
-            display: "grid",
+            display: { xs: "flex", md: "grid" },
             gridTemplateColumns: {
-              xs: "repeat(2, minmax(0, 1fr))",
               md: "repeat(4, minmax(0, 1fr))",
             },
+            overflowX: { xs: "auto", md: "visible" },
+            scrollSnapType: { xs: "x proximity", md: "none" },
+            WebkitOverflowScrolling: "touch",
+            pb: { xs: 0.15, md: 0 },
             gap: 0.85,
           }}
         >
@@ -299,11 +317,13 @@ export const AIMasterBlueprintPanel = ({
               id={actionRegionId}
               data-ai-action-hub-extra-actions="true"
               sx={{
-                display: "grid",
+                display: { xs: "flex", md: "grid" },
                 gridTemplateColumns: {
-                  xs: "repeat(2, minmax(0, 1fr))",
                   md: "repeat(3, minmax(0, 1fr))",
                 },
+                overflowX: { xs: "auto", md: "visible" },
+                scrollSnapType: { xs: "x proximity", md: "none" },
+                WebkitOverflowScrolling: "touch",
                 gap: 0.85,
                 pt: 0.85,
               }}

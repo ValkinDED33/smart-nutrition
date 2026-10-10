@@ -3,14 +3,17 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const recipeSectionSource = () =>
-  readFileSync(resolve(process.cwd(), "src/features/meal/RecipeSection.tsx"), "utf8");
+  readFileSync(
+    resolve(process.cwd(), "src/features/meal/RecipeSection.tsx"),
+    "utf8",
+  );
 
 describe("recipe community contract", () => {
   it("publishes recipes through confirmed community cloud sync", () => {
     const source = recipeSectionSource();
     const publishBlock = source.slice(
       source.indexOf("const handlePublishRecipe"),
-      source.indexOf("const allRecipes")
+      source.indexOf("const allRecipes"),
     );
 
     expect(publishBlock).toContain("publishCommunityPost");
@@ -40,5 +43,17 @@ describe("recipe community contract", () => {
     expect(source).not.toContain('label="Recipe name"');
     expect(source).not.toContain('label="Search ingredient"');
     expect(source).not.toContain(">Publish recipe<");
+  });
+
+  it("keeps recipe cards compact and swipeable on mobile", () => {
+    const source = recipeSectionSource();
+
+    expect(source).toContain('data-recipe-section-mobile-rail="true"');
+    expect(source).toContain("MOBILE_RECIPE_RAIL");
+    expect(source).toContain(
+      'scrollSnapType: { xs: "x proximity", md: "none" }',
+    );
+    expect(source).toContain("minWidth: { xs: 276, md: 0 }");
+    expect(source).toContain('display: { xs: "none", sm: "block" }');
   });
 });

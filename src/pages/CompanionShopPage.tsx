@@ -57,6 +57,7 @@ const CompanionShopPage = () => {
       title={copy.title}
       subtitle={copy.subtitle}
       maxWidth={1480}
+      compact
       action={
         <Button
           component={RouterLink}

@@ -52,7 +52,7 @@ export const ProfileSectionTabs = ({ sections, ariaLabel }: ProfileSectionTabsPr
   }
 
   return (
-    <Stack spacing={2.5}>
+    <Stack spacing={{ xs: 1.25, md: 2.5 }}>
       <SectionTabs
         sections={sections.map(({ id, label }) => ({ id, label }))}
         activeSection={safeActiveSection}

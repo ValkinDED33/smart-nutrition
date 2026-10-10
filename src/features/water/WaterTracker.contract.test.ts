@@ -50,4 +50,16 @@ describe("WaterTracker contract", () => {
     expect(source).not.toContain("Reakcja companion");
     expect(source).not.toContain("notifications w przeglądarce");
   });
+
+  it("keeps the water tracker compact on mobile", async () => {
+    const source = await readFile(WATER_TRACKER_SOURCE, "utf8");
+
+    expect(source).toContain('spacing={{ xs: 1.15, md: 2.5 }}');
+    expect(source).toContain('width: { xs: 124, sm: 180 }');
+    expect(source).toContain('height: { xs: 124, sm: 180 }');
+    expect(source).toContain('minHeight: { xs: 82, sm: 118 }');
+    expect(source).toContain('flexWrap={{ xs: "nowrap", sm: "wrap" }}');
+    expect(source).toContain('overflowX: { xs: "auto", sm: "visible" }');
+    expect(source).toContain('display: { xs: "none", md: "block" }');
+  });
 });

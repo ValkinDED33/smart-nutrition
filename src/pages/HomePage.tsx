@@ -1009,7 +1009,7 @@ const HomePage = () => {
         </Box>
 
         <Stack
-          spacing={{ xs: 1.1, sm: 1.6, md: 2.2 }}
+          spacing={{ xs: 0.8, sm: 1.6, md: 2.2 }}
           data-home-command-center="hero-core"
           sx={{
             position: "relative",
@@ -1046,7 +1046,7 @@ const HomePage = () => {
               component="h1"
               sx={{
                 fontWeight: 950,
-                fontSize: { xs: 30, sm: 46, md: 64 },
+                fontSize: { xs: 26, sm: 46, md: 64 },
                 lineHeight: { xs: 1.02, md: 0.96 },
                 letterSpacing: 0,
                 textWrap: "balance",
@@ -1099,8 +1099,8 @@ const HomePage = () => {
                   onClick={item.action ? () => runAssistantAction(item.action as AssistantHomeAction) : undefined}
                   sx={{
                     position: "relative",
-                    minHeight: { xs: 66, md: 96 },
-                    p: { xs: 0.72, md: 1 },
+                    minHeight: { xs: 54, md: 96 },
+                    p: { xs: 0.6, md: 1 },
                     borderRadius: 1,
                     border: `1px solid ${HERO_STORY_BORDER}`,
                     color: heroTextColor,
@@ -1140,8 +1140,8 @@ const HomePage = () => {
                     <Stack direction="row" spacing={0.7} alignItems="center" minWidth={0}>
                       <Box
                         sx={{
-                          width: 24,
-                          height: 24,
+                          width: { xs: 18, md: 24 },
+                          height: { xs: 18, md: 24 },
                           borderRadius: "50%",
                           flexShrink: 0,
                           background: accent,
@@ -1167,7 +1167,14 @@ const HomePage = () => {
                     >
                       {item.title}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: heroMutedColor, fontWeight: 850 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: heroMutedColor,
+                        fontWeight: 850,
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
                       {item.metric}
                     </Typography>
                   </Stack>
@@ -1187,8 +1194,8 @@ const HomePage = () => {
               <Box
                 sx={{
                   position: "relative",
-                  width: { xs: 68, sm: 82 },
-                  height: { xs: 68, sm: 82 },
+                  width: { xs: 54, sm: 82 },
+                  height: { xs: 54, sm: 82 },
                   borderRadius: 1,
                   display: "grid",
                   placeItems: "center",
@@ -1203,7 +1210,7 @@ const HomePage = () => {
                     name={assistantDisplayName}
                     variant={assistant.companionKind}
                     mood={dailyContext.primaryFocus === "steady" ? "happy" : "coach"}
-                  size={62}
+                  size={50}
                     active
                   />
               </Box>
@@ -1493,21 +1500,6 @@ const HomePage = () => {
         </Box>
       </Paper>
 
-      <AIDiscoveryCards
-        context={dailyContext}
-        intelligence={intelligence}
-        onRunAction={runAssistantAction}
-      />
-
-      <AIMasterBlueprintPanel
-        eyebrow={copy.commandCenterLabel}
-        title={copy.blueprintTitle}
-        description={copy.blueprintSubtitle}
-        patterns={homeBlueprintPatterns}
-        assistantName={assistantDisplayName}
-        assistantVariant={assistant.companionKind}
-      />
-
       <SectionTabs
         sections={sections}
         activeSection={activeSection}
@@ -1517,15 +1509,31 @@ const HomePage = () => {
       />
 
       {activeSection === "assistant" ? (
-        <SectionCard title={copy.otherActions} tone="info">
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
-              gap: 1,
-            }}
-          >
-            {intelligence.secondaryActions.map((action) => (
+        <Stack spacing={{ xs: 1, md: 2 }}>
+          <AIMasterBlueprintPanel
+            eyebrow={copy.commandCenterLabel}
+            title={copy.blueprintTitle}
+            description={copy.blueprintSubtitle}
+            patterns={homeBlueprintPatterns}
+            assistantName={assistantDisplayName}
+            assistantVariant={assistant.companionKind}
+          />
+
+          <AIDiscoveryCards
+            context={dailyContext}
+            intelligence={intelligence}
+            onRunAction={runAssistantAction}
+          />
+
+          <SectionCard title={copy.otherActions} tone="info">
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: THREE_COLUMN_GRID },
+                gap: 1,
+              }}
+            >
+              {intelligence.secondaryActions.map((action) => (
               <Button
                 key={`${action.kind}-${action.label}`}
                 variant="outlined"
@@ -1539,17 +1547,18 @@ const HomePage = () => {
               >
                 {action.label}
               </Button>
-            ))}
-            <Button
-              variant="outlined"
-              onClick={() => setQuickAddOpen(true)}
-              startIcon={<Plus size={18} />}
-              sx={{ minHeight: 54, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
-            >
-              {copy.quickAddTitle}
-            </Button>
-          </Box>
-        </SectionCard>
+              ))}
+              <Button
+                variant="outlined"
+                onClick={() => setQuickAddOpen(true)}
+                startIcon={<Plus size={18} />}
+                sx={{ minHeight: 54, borderRadius: 1, textTransform: "none", fontWeight: 900 }}
+              >
+                {copy.quickAddTitle}
+              </Button>
+            </Box>
+          </SectionCard>
+        </Stack>
       ) : null}
 
       {activeSection === "meals" ? (

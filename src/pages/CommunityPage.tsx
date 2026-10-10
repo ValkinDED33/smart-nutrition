@@ -164,7 +164,9 @@ const CommunityPage = () => {
       title={t("page.community.title")}
       subtitle={t("page.community.subtitle")}
       assistantHint={<EcosystemPulse focus="community" />}
+      compact
     >
+      <CommunityHubCard />
       <AIMasterBlueprintPanel
         eyebrow={blueprintCopy.eyebrow}
         title={blueprintCopy.title}
@@ -173,7 +175,6 @@ const CommunityPage = () => {
         assistantName={assistantDisplayName}
         assistantVariant={assistant.companionKind}
       />
-      <CommunityHubCard />
       <LazyModuleBoundary
         errorTitle={recoveryCopy.errorTitle}
         errorBody={recoveryCopy.errorBody}

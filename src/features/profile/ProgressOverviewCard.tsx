@@ -110,26 +110,38 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 2.5 },
+        p: { xs: 1, md: 2.5 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         background:
           "linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(14, 165, 233, 0.07))",
       }}
     >
-      <Stack spacing={1.8}>
-        <Stack spacing={0.4}>
-          <Typography component="h2" variant="h6" sx={{ fontWeight: 900 }}>
+      <Stack spacing={{ xs: 1, md: 1.8 }}>
+        <Stack spacing={0.25}>
+          <Typography
+            component="h2"
+            variant="h6"
+            sx={{ fontWeight: 900, fontSize: { xs: 16, md: 20 } }}
+          >
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         <Box
           sx={{
-            display: "grid",
+            display: { xs: "flex", sm: "grid" },
             gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(3, minmax(0, 1fr))" },
-            gap: 1.25,
+            gap: { xs: 0.75, md: 1.25 },
+            overflowX: { xs: "auto", sm: "visible" },
+            scrollSnapType: { xs: "x proximity", sm: "none" },
+            WebkitOverflowScrolling: "touch",
+            pb: { xs: 0.15, md: 0 },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
           {items.map((item) => {
@@ -144,7 +156,9 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
                 onClick={() => onSelectDomain?.(item.domain)}
                 data-progress-domain={item.domain}
                 sx={{
-                  p: 1.35,
+                  flex: { xs: "0 0 150px", sm: "initial" },
+                  scrollSnapAlign: { xs: "start", sm: "unset" },
+                  p: { xs: 0.85, md: 1.35 },
                   borderRadius: 1,
                   display: "block",
                   width: "100%",
@@ -157,9 +171,11 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
                   },
                 }}
               >
-                <Stack spacing={0.75}>
+                <Stack spacing={{ xs: 0.45, md: 0.75 }}>
                   <Stack direction="row" justifyContent="space-between" spacing={1}>
-                    <Typography sx={{ fontWeight: 850 }}>{item.label}</Typography>
+                    <Typography sx={{ fontWeight: 850, fontSize: { xs: 13, md: 16 } }} noWrap>
+                      {item.label}
+                    </Typography>
                     <Typography sx={{ fontWeight: 900, color: barColor }}>
                       {formatProgressPercent(item.value)}
                     </Typography>
@@ -168,7 +184,7 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
                     variant="determinate"
                     value={item.value ?? 100}
                     sx={{
-                      height: 8,
+                      height: { xs: 6, md: 8 },
                       borderRadius: 999,
                       backgroundColor: "rgba(148, 163, 184, 0.18)",
                       "& .MuiLinearProgress-bar": {
@@ -177,17 +193,17 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
                       },
                     }}
                   />
-                  <Typography color="text.secondary" variant="body2">
+                  <Typography color="text.secondary" variant="body2" sx={{ fontSize: { xs: 12, md: 14 } }} noWrap>
                     {item.detail}
                   </Typography>
                   {item.domain === "water" ? (
                     <Box
                       aria-label={copy.water}
                       sx={{
-                        display: "grid",
+                        display: { xs: "none", md: "grid" },
                         gridTemplateColumns: `repeat(${overviewWaterGlasses.length}, minmax(12px, 1fr))`,
                         gap: 0.55,
-                        minHeight: 32,
+                        minHeight: { xs: 22, md: 32 },
                       }}
                     >
                       {overviewWaterGlasses.map((glass) => (
@@ -224,7 +240,14 @@ export const ProgressOverviewCard = ({ onSelectDomain }: ProgressOverviewCardPro
           })}
         </Box>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap="wrap"
+          alignItems="center"
+          sx={{ display: { xs: "none", md: "flex" } }}
+        >
           <Typography variant="body2" sx={{ fontWeight: 850 }}>
             {copy.legend}
           </Typography>

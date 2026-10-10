@@ -665,6 +665,7 @@ const MealBuilderPage = () => {
         </Button>
       }
       maxWidth={1480}
+      compact
     >
       <SectionCard tone="premium">
         <Stack spacing={{ xs: 1, md: 1.5 }}>
@@ -680,38 +681,40 @@ const MealBuilderPage = () => {
         </Stack>
       </SectionCard>
 
-      <AIMasterBlueprintPanel
-        eyebrow="Smart Nutrition Food"
-        title={copy.advancedTitle}
-        description={copy.advancedSubtitle}
-        patterns={mealBlueprintPatterns}
-        assistantName={assistantDisplayName}
-        assistantVariant={assistant.companionKind}
-      />
-
       {directCaptureModule}
 
       {!isDirectCaptureMode ? (
-        <>
+        <SectionTabs
+          sections={sections}
+          activeSection={displayedActiveSection}
+          onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
+          ariaLabel={copy.sectionsAriaLabel}
+          stickyOnMobile
+        />
+      ) : null}
+
+      {displayedActiveSection === "add" && !isDirectCaptureMode ? (
+        <Stack spacing={{ xs: 1.25, md: 3 }} sx={{ minWidth: 0 }}>
+          <AIMasterBlueprintPanel
+            eyebrow="Smart Nutrition Food"
+            title={copy.advancedTitle}
+            description={copy.advancedSubtitle}
+            patterns={mealBlueprintPatterns}
+            assistantName={assistantDisplayName}
+            assistantVariant={assistant.companionKind}
+          />
           <FoodCommandCenter
             mealType={displayedMealType}
             initialQuery={commandFocusQuery}
             onOpenTarget={openFoodCommandTarget}
           />
-
           <SectionTabs
-            sections={sections}
-            activeSection={displayedActiveSection}
-            onChange={(sectionId) => setActiveSection(sectionId as MealSection)}
-            ariaLabel={copy.sectionsAriaLabel}
-            stickyOnMobile
+            sections={addToolSections}
+            activeSection={displayedActiveAddTool}
+            onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
+            ariaLabel={copy.addToolsAriaLabel}
           />
-        </>
-      ) : null}
-
-      {displayedActiveSection === "add" && !isDirectCaptureMode ? (
-        <Stack spacing={3} sx={{ minWidth: 0 }}>
-      {mealTypeSelector}
+          {mealTypeSelector}
 
       <Box
         sx={{
@@ -731,12 +734,6 @@ const MealBuilderPage = () => {
       >
         <Stack spacing={3} sx={{ minWidth: 0 }}>
           <Stack spacing={2} sx={{ minWidth: 0 }}>
-            <SectionTabs
-              sections={addToolSections}
-              activeSection={displayedActiveAddTool}
-              onChange={(sectionId) => setActiveAddTool(sectionId as AddTool)}
-              ariaLabel={copy.addToolsAriaLabel}
-            />
             {displayedActiveAddTool === "search"
               ? renderLazyModule(copy.addTools.search, (
                   <ProductSearch mealType={displayedMealType} initialQuery={commandFocusQuery} />

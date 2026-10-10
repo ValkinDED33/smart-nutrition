@@ -26,4 +26,25 @@ describe("NutritionLibraryPanel contract", () => {
     expect(source).not.toContain("myLibrarySlice");
     expect(source).not.toContain("saveMyLibrary");
   });
+
+  it("keeps dense library result groups compact on mobile", async () => {
+    const source = await readFile(sourcePath, "utf8");
+
+    expect(source).toContain(
+      'data-nutrition-library-mobile-product-rail="true"',
+    );
+    expect(source).toContain('data-nutrition-library-mobile-dish-rail="true"');
+    expect(source).toContain(
+      'data-nutrition-library-mobile-recipe-rail="true"',
+    );
+    expect(source).toContain(
+      'data-nutrition-library-mobile-article-rail="true"',
+    );
+    expect(source).toContain("MOBILE_LIBRARY_RAIL");
+    expect(source).toContain("MOBILE_DISH_RAIL");
+    expect(source).toContain('const MOBILE_LIBRARY_SNAP = "x proximity"');
+    expect(source).toContain(
+      'scrollSnapType: { xs: MOBILE_LIBRARY_SNAP, sm: "none" }',
+    );
+  });
 });

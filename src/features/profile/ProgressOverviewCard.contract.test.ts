@@ -25,6 +25,9 @@ describe("ProgressOverviewCard contract", () => {
     expect(source).toContain('data-testid="overview-water-glass"');
     expect(source).toContain("onSelectDomain");
     expect(source).toContain("data-progress-domain={item.domain}");
+    expect(source).toContain('display: { xs: "flex", sm: "grid" }');
+    expect(source).toContain('overflowX: { xs: "auto", sm: "visible" }');
+    expect(source).toContain('flex: { xs: "0 0 150px", sm: "initial" }');
     expect(pageSource).toContain("getSectionForProgressDomain");
     expect(pageSource).toContain("sectionsAriaLabel");
     expect(pageSource).toContain("ariaLabel={copy.sectionsAriaLabel}");
@@ -41,8 +44,22 @@ describe("ProgressOverviewCard contract", () => {
     const actionSource = await readSource("src/features/profile/ProgressActionBar.tsx");
 
     expect(actionSource).toContain("reportTitle");
+    expect(actionSource).toContain("copyShort");
+    expect(actionSource).toContain("fullscreenShort");
     expect(actionSource).toContain("copyText.reportTitle");
     expect(actionSource).not.toContain('const PROGRESS_REPORT_TITLE = "Smart Nutrition progress"');
+  });
+
+  it("keeps progress navigation before the AI blueprint", async () => {
+    const pageSource = await readSource("src/pages/ProgressPage.tsx");
+    const tabsIndex = pageSource.indexOf("<SectionTabs");
+    const trendsGuardIndex = pageSource.indexOf('activeSection === "trends"');
+    const blueprintIndex = pageSource.indexOf("<AIMasterBlueprintPanel");
+
+    expect(tabsIndex).toBeGreaterThan(-1);
+    expect(trendsGuardIndex).toBeGreaterThan(tabsIndex);
+    expect(blueprintIndex).toBeGreaterThan(trendsGuardIndex);
+    expect(pageSource).toContain("stickyOnMobile");
   });
 
   it("keeps localized progress overview labels free from English planning terms", async () => {
