@@ -10,7 +10,11 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { resetAppState, type AppDispatch, type RootState } from "../../app/store";
+import {
+  resetAppState,
+  type AppDispatch,
+  type RootState,
+} from "../../app/store";
 import { canAccessAdminCenter } from "@domain/user/roles";
 import {
   deleteAccount,
@@ -87,7 +91,9 @@ export const AccountDataCard = () => {
   } | null>(null);
   const [exporting, setExporting] = useState(false);
   const [backups, setBackups] = useState<AccountBackupSummary[] | null>(null);
-  const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(null);
+  const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(
+    null,
+  );
   const [revokingSessions, setRevokingSessions] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -149,7 +155,7 @@ export const AccountDataCard = () => {
 
       triggerJsonDownload(
         payload,
-        `smart-nutrition-export-${new Date().toISOString().slice(0, 10)}.json`
+        `smart-nutrition-export-${new Date().toISOString().slice(0, 10)}.json`,
       );
 
       setNotice({ type: "success", message: copy.exportSuccess });
@@ -213,19 +219,22 @@ export const AccountDataCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
         boxShadow: "var(--sn-shadow-card)",
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={{ xs: 1.35, md: 2.5 }}>
         <Box>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+          <Typography
+            color="text.secondary"
+            sx={{ mt: 0.8, display: { xs: "none", sm: "block" } }}
+          >
             {copy.subtitle}
           </Typography>
         </Box>
@@ -233,7 +242,19 @@ export const AccountDataCard = () => {
         {notice && <Alert severity={notice.type}>{notice.message}</Alert>}
 
         {canSeeOperationalDetails && (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack
+            data-account-mobile-runtime-rail="true"
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              overflowX: { xs: "auto", sm: "visible" },
+              mx: { xs: -1, sm: 0 },
+              px: { xs: 1, sm: 0 },
+              pb: { xs: 0.5, sm: 0 },
+            }}
+          >
             <Chip label={`${copy.provider}: ${runtimeLabels.provider}`} />
             <Chip label={`${copy.session}: ${runtimeLabels.session}`} />
             <Chip label={`${copy.sync}: ${copy.syncRemote}`} />
@@ -246,54 +267,108 @@ export const AccountDataCard = () => {
         </Alert>
 
         {canSeeOperationalDetails && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-            <Stack spacing={1.2}>
+          <Paper
+            variant="outlined"
+            sx={{ p: { xs: 1.2, md: 2 }, borderRadius: 1 }}
+          >
+            <Stack spacing={{ xs: 1, md: 1.2 }}>
               <Stack spacing={0.4}>
-                <Typography sx={{ fontWeight: 800 }}>{copy.backupsTitle}</Typography>
-                <Typography color="text.secondary">{copy.backupsSubtitle}</Typography>
+                <Typography sx={{ fontWeight: 800 }}>
+                  {copy.backupsTitle}
+                </Typography>
+                <Typography
+                  color="text.secondary"
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
+                  {copy.backupsSubtitle}
+                </Typography>
               </Stack>
               {backupsLoading ? (
-                <Typography color="text.secondary">{copy.backupsLoading}</Typography>
+                <Typography color="text.secondary">
+                  {copy.backupsLoading}
+                </Typography>
               ) : !backups || backups.length === 0 ? (
-                <Typography color="text.secondary">{copy.backupsEmpty}</Typography>
+                <Typography color="text.secondary">
+                  {copy.backupsEmpty}
+                </Typography>
               ) : (
-                backups.slice(0, 4).map((backup) => (
-                  <Stack
-                    key={backup.id}
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={1}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", md: "center" }}
-                  >
-                    <Box>
-                      <Typography sx={{ fontWeight: 700 }}>{backup.reason}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatBackupTimestamp(backup.updatedAt, appLanguage)} ·{" "}
-                        {formatBytes(backup.sizeBytes)}
-                      </Typography>
-                    </Box>
-                    <Button
+                <Stack
+                  data-account-mobile-backup-rail="true"
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    overflowX: { xs: "auto", md: "visible" },
+                    mx: { xs: -1, md: 0 },
+                    px: { xs: 1, md: 0 },
+                    pb: { xs: 0.5, md: 0 },
+                    scrollSnapType: { xs: "x proximity", md: "none" },
+                  }}
+                >
+                  {backups.slice(0, 4).map((backup) => (
+                    <Paper
+                      key={backup.id}
                       variant="outlined"
-                      onClick={() => {
-                        void handleBackupDownload(backup);
+                      sx={{
+                        p: { xs: 1.1, md: 0 },
+                        minWidth: { xs: 240, md: 0 },
+                        border: {
+                          xs: "1px solid var(--sn-border-soft)",
+                          md: 0,
+                        },
+                        borderRadius: 1,
+                        scrollSnapAlign: { xs: "start", md: "none" },
+                        flex: { md: 1 },
                       }}
-                      disabled={downloadingBackupId === backup.id}
-                      sx={{ textTransform: "none", fontWeight: 700 }}
                     >
-                      {downloadingBackupId === backup.id
-                        ? copy.backupBusy
-                        : copy.backupDownload}
-                    </Button>
-                  </Stack>
-                ))
+                      <Stack
+                        direction={{ xs: "column", md: "row" }}
+                        spacing={1}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "flex-start", md: "center" }}
+                      >
+                        <Box>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            {backup.reason}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatBackupTimestamp(
+                              backup.updatedAt,
+                              appLanguage,
+                            )}{" "}
+                            · {formatBytes(backup.sizeBytes)}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => {
+                            void handleBackupDownload(backup);
+                          }}
+                          disabled={downloadingBackupId === backup.id}
+                          sx={{ textTransform: "none", fontWeight: 700 }}
+                        >
+                          {downloadingBackupId === backup.id
+                            ? copy.backupBusy
+                            : copy.backupDownload}
+                        </Button>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
               )}
             </Stack>
           </Paper>
         )}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+        <Stack
+          direction={{ xs: "row", md: "row" }}
+          spacing={1}
+          useFlexGap
+          flexWrap="wrap"
+        >
           {runtime.supportsDataExport && (
             <Button
+              size="small"
               variant="contained"
               disabled={exporting}
               onClick={handleExport}
@@ -310,6 +385,7 @@ export const AccountDataCard = () => {
 
           {runtime.supportsSessionRevocation && (
             <Button
+              size="small"
               variant="outlined"
               onClick={handleLogoutEverywhere}
               disabled={revokingSessions || deleting}
@@ -325,6 +401,7 @@ export const AccountDataCard = () => {
 
           {runtime.supportsAccountDeletion && (
             <Button
+              size="small"
               variant="outlined"
               color="error"
               onClick={() => setConfirmOpen(true)}
@@ -345,16 +422,27 @@ export const AccountDataCard = () => {
             className="sn-premium-panel"
             variant="outlined"
             sx={{
-              p: 2,
+              p: { xs: 1.2, md: 2 },
               borderRadius: 2,
               borderColor: "error.light",
             }}
           >
             <Stack spacing={1.5}>
-              <Typography sx={{ fontWeight: 900 }}>{copy.confirmTitle}</Typography>
+              <Typography sx={{ fontWeight: 900 }}>
+                {copy.confirmTitle}
+              </Typography>
               <Typography color="text.secondary">{copy.confirmBody}</Typography>
-              <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
-                <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: "none" }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                justifyContent="flex-end"
+                useFlexGap
+                flexWrap="wrap"
+              >
+                <Button
+                  onClick={() => setConfirmOpen(false)}
+                  sx={{ textTransform: "none" }}
+                >
                   {copy.confirmCancel}
                 </Button>
                 <Button

@@ -31,11 +31,12 @@ type FormData = {
   chest?: number;
 };
 
+const MEASUREMENT_FIELD_FLEX = { xs: "1 1 calc(50% - 8px)", md: "1 1 0" };
+
 const checkInCopy = {
   uk: {
     title: "Вага і заміри",
-    subtitle:
-      "Оновлюйте вагу та об'єми щотижня, щоб бачити реальний прогрес.",
+    subtitle: "Оновлюйте вагу та об'єми щотижня, щоб бачити реальний прогрес.",
     dueNow: "Час оновити вагу і заміри.",
     nextInDays: "Наступний запис через {days} дн.",
     lastCheckIn: "Останній запис",
@@ -52,8 +53,7 @@ const checkInCopy = {
   },
   pl: {
     title: "Waga i pomiary",
-    subtitle:
-      "Aktualizuj wagę i obwody co tydzień, aby widzieć realny postęp.",
+    subtitle: "Aktualizuj wagę i obwody co tydzień, aby widzieć realny postęp.",
     dueNow: "To dobry moment, aby zaktualizować wagę i pomiary.",
     nextInDays: "Kolejny zapis za {days} dni.",
     lastCheckIn: "Ostatni zapis",
@@ -103,7 +103,7 @@ const getCheckInCopy = (language: AppLanguage): CheckInCopy => {
 };
 
 const createMeasurementFormValues = (
-  user: RootState["auth"]["user"]
+  user: RootState["auth"]["user"],
 ): FormData => ({
   weight: user?.weight ?? 70,
   waist: user?.measurements?.waist,
@@ -132,7 +132,7 @@ export const MeasurementsCheckInCard = () => {
         hip: z.number().min(30).max(250).optional(),
         chest: z.number().min(30).max(250).optional(),
       }),
-    [t]
+    [t],
   );
 
   const {
@@ -160,7 +160,7 @@ export const MeasurementsCheckInCard = () => {
   const daysSinceLastCheckIn = getDaysSince(weeklyCheckIn.lastRecordedAt);
   const daysUntilNextCheckIn = Math.max(
     weeklyCheckIn.remindIntervalDays - daysSinceLastCheckIn,
-    0
+    0,
   );
   const recentEntries = measurementHistory.slice(0, 4);
 
@@ -179,7 +179,7 @@ export const MeasurementsCheckInCard = () => {
       };
       const nextProfile = buildProfileStateAfterMeasurementSave(
         profile,
-        measurementPayload
+        measurementPayload,
       );
       await profileAction.runProfileAndUserSave(
         {
@@ -192,7 +192,7 @@ export const MeasurementsCheckInCard = () => {
             chest: data.chest,
           },
         },
-        nextProfile
+        nextProfile,
       );
       setSuccessMessage(copy.saved);
     } catch {
@@ -204,25 +204,36 @@ export const MeasurementsCheckInCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2.2}>
+      <Stack spacing={{ xs: 1.2, md: 2.2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {successMessage && <Alert severity="success">{successMessage}</Alert>}
         {(serverError || profileAction.error) && (
           <Alert severity="error">{serverError ?? profileAction.error}</Alert>
         )}
-        <Alert severity={daysSinceLastCheckIn >= weeklyCheckIn.remindIntervalDays ? "info" : "success"}>
+        <Alert
+          severity={
+            daysSinceLastCheckIn >= weeklyCheckIn.remindIntervalDays
+              ? "info"
+              : "success"
+          }
+        >
           {daysSinceLastCheckIn >= weeklyCheckIn.remindIntervalDays
             ? copy.dueNow
             : copy.nextInDays.replace("{days}", String(daysUntilNextCheckIn))}
@@ -235,7 +246,7 @@ export const MeasurementsCheckInCard = () => {
                 ? `${copy.lastCheckIn}: ${formatLocalDateKey(
                     getLocalDateKey(weeklyCheckIn.lastRecordedAt),
                     appLanguage,
-                    { month: "short", day: "numeric" }
+                    { month: "short", day: "numeric" },
                   )}`
                 : copy.dueNow
             }
@@ -244,74 +255,102 @@ export const MeasurementsCheckInCard = () => {
         </Stack>
 
         <Stack component="form" spacing={2} onSubmit={handleSubmit(onSubmit)}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "row", md: "row" }}
+            spacing={{ xs: 1, md: 2 }}
+            flexWrap="wrap"
+          >
             <TextField
               type="text"
               fullWidth
               label={t("form.weight")}
               {...register("weight", {
-                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+                setValueAs: (value) =>
+                  value === "" ? undefined : Number(value),
               })}
               error={Boolean(errors.weight)}
               helperText={errors.weight?.message}
               onFocus={(event) => selectInputValue(event.target)}
               onClick={(event) => selectInputValue(event.currentTarget)}
-              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+              slotProps={{
+                htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
+              }}
+              sx={{ flex: MEASUREMENT_FIELD_FLEX }}
             />
             <TextField
               type="text"
               fullWidth
               label={copy.waist}
               {...register("waist", {
-                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+                setValueAs: (value) =>
+                  value === "" ? undefined : Number(value),
               })}
               error={Boolean(errors.waist)}
               helperText={errors.waist?.message}
               onFocus={(event) => selectInputValue(event.target)}
               onClick={(event) => selectInputValue(event.currentTarget)}
-              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+              slotProps={{
+                htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
+              }}
+              sx={{ flex: MEASUREMENT_FIELD_FLEX }}
             />
             <TextField
               type="text"
               fullWidth
               label={copy.abdomen}
               {...register("abdomen", {
-                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+                setValueAs: (value) =>
+                  value === "" ? undefined : Number(value),
               })}
               error={Boolean(errors.abdomen)}
               helperText={errors.abdomen?.message}
               onFocus={(event) => selectInputValue(event.target)}
               onClick={(event) => selectInputValue(event.currentTarget)}
-              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+              slotProps={{
+                htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
+              }}
+              sx={{ flex: MEASUREMENT_FIELD_FLEX }}
             />
           </Stack>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "row", md: "row" }}
+            spacing={{ xs: 1, md: 2 }}
+            flexWrap="wrap"
+          >
             <TextField
               type="text"
               fullWidth
               label={copy.hip}
               {...register("hip", {
-                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+                setValueAs: (value) =>
+                  value === "" ? undefined : Number(value),
               })}
               error={Boolean(errors.hip)}
               helperText={errors.hip?.message}
               onFocus={(event) => selectInputValue(event.target)}
               onClick={(event) => selectInputValue(event.currentTarget)}
-              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "next" } }}
+              slotProps={{
+                htmlInput: { inputMode: "decimal", enterKeyHint: "next" },
+              }}
+              sx={{ flex: MEASUREMENT_FIELD_FLEX }}
             />
             <TextField
               type="text"
               fullWidth
               label={copy.chest}
               {...register("chest", {
-                setValueAs: (value) => (value === "" ? undefined : Number(value)),
+                setValueAs: (value) =>
+                  value === "" ? undefined : Number(value),
               })}
               error={Boolean(errors.chest)}
               helperText={errors.chest?.message}
               onFocus={(event) => selectInputValue(event.target)}
               onClick={(event) => selectInputValue(event.currentTarget)}
-              slotProps={{ htmlInput: { inputMode: "decimal", enterKeyHint: "done" } }}
+              slotProps={{
+                htmlInput: { inputMode: "decimal", enterKeyHint: "done" },
+              }}
+              sx={{ flex: MEASUREMENT_FIELD_FLEX }}
             />
           </Stack>
 
@@ -337,28 +376,54 @@ export const MeasurementsCheckInCard = () => {
             <Typography color="text.secondary">{copy.empty}</Typography>
           ) : (
             <Box
+              data-measurements-mobile-history-rail="true"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                display: { xs: "flex", md: "grid" },
+                gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" },
                 gap: 1.2,
+                overflowX: { xs: "auto", md: "visible" },
+                mx: { xs: -1, md: 0 },
+                px: { xs: 1, md: 0 },
+                pb: { xs: 0.5, md: 0 },
+                scrollSnapType: { xs: "x proximity", md: "none" },
               }}
             >
               {recentEntries.map((entry) => (
-                <Paper key={`${entry.date}-${entry.weight}`} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={`${entry.date}-${entry.weight}`}
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 1.15, md: 1.5 },
+                    minWidth: { xs: 220, md: 0 },
+                    borderRadius: 1,
+                    scrollSnapAlign: { xs: "start", md: "none" },
+                  }}
+                >
                   <Stack spacing={0.7}>
                     <Typography sx={{ fontWeight: 700 }}>
-                      {formatLocalDateKey(getLocalDateKey(entry.date), appLanguage, {
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {formatLocalDateKey(
+                        getLocalDateKey(entry.date),
+                        appLanguage,
+                        {
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
                     </Typography>
                     <Typography color="text.secondary">
-                      {t("form.weight")}: {entry.weight.toFixed(1)} {t("common.kg")}
+                      {t("form.weight")}: {entry.weight.toFixed(1)}{" "}
+                      {t("common.kg")}
                     </Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography
+                      color="text.secondary"
+                      variant="body2"
+                      sx={{ display: { xs: "none", sm: "block" } }}
+                    >
                       {[
                         entry.waist ? `${copy.waist}: ${entry.waist}` : null,
-                        entry.abdomen ? `${copy.abdomen}: ${entry.abdomen}` : null,
+                        entry.abdomen
+                          ? `${copy.abdomen}: ${entry.abdomen}`
+                          : null,
                         entry.hip ? `${copy.hip}: ${entry.hip}` : null,
                         entry.chest ? `${copy.chest}: ${entry.chest}` : null,
                       ]

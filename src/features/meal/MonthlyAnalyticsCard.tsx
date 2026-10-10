@@ -4,7 +4,11 @@ import CountUp from "react-countup";
 import { Box, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
 import { selectMealItems } from "./selectors";
-import { addDays, formatLocalDateKey, getLocalDateKey } from "../../shared/lib/date";
+import {
+  addDays,
+  formatLocalDateKey,
+  getLocalDateKey,
+} from "../../shared/lib/date";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 import { calculateMacroTargets } from "@domain/profile/macroTargets";
@@ -12,7 +16,8 @@ import { calculateMacroTargets } from "@domain/profile/macroTargets";
 const monthlyCopy = {
   uk: {
     title: "Аналітика за 30 днів",
-    subtitle: "Відстежуйте дотримання цілі, відхилення калорій і баланс макросів за останній місяць.",
+    subtitle:
+      "Відстежуйте дотримання цілі, відхилення калорій і баланс макросів за останній місяць.",
     averageCalories: "Середні калорії",
     averageProtein: "Середній білок",
     adherence: "Влучання в ціль",
@@ -22,13 +27,15 @@ const monthlyCopy = {
     calendarLegendOn: "Зелений: у межах цілі",
     calendarLegendOver: "Жовтий/червоний: вище цілі",
     deviationTitle: "Найбільші відхилення",
-    deviationSubtitle: "Найпомітніші профіцит і дефіцит допомагають пояснити тижневий тренд.",
+    deviationSubtitle:
+      "Найпомітніші профіцит і дефіцит допомагають пояснити тижневий тренд.",
     surplus: "Найбільший профіцит",
     deficit: "Найглибший дефіцит",
     noSurplus: "Поки немає дня вище цілі",
     noDeficit: "Поки немає дня нижче цілі",
     macroHeatmapTitle: "Теплова карта макросів",
-    macroHeatmapSubtitle: "Останні дні з логами порівняно з вашими денними цілями по макросах.",
+    macroHeatmapSubtitle:
+      "Останні дні з логами порівняно з вашими денними цілями по макросах.",
     protein: "Білок",
     fat: "Жири",
     carbs: "Вуглеводи",
@@ -40,7 +47,8 @@ const monthlyCopy = {
   },
   pl: {
     title: "Analityka 30 dni",
-    subtitle: "Sprawdź trzymanie celu, odchylenia kalorii i balans makroskładników z ostatniego miesiąca.",
+    subtitle:
+      "Sprawdź trzymanie celu, odchylenia kalorii i balans makroskładników z ostatniego miesiąca.",
     averageCalories: "Średnie kalorie",
     averageProtein: "Średnie białko",
     adherence: "Trzymanie celu",
@@ -50,13 +58,15 @@ const monthlyCopy = {
     calendarLegendOn: "Zielony: w celu",
     calendarLegendOver: "Żółty/czerwony: powyżej celu",
     deviationTitle: "Największe odchylenia",
-    deviationSubtitle: "Najmocniejsze nadwyżki i deficyty pomagają wyjaśnić tygodniowy trend.",
+    deviationSubtitle:
+      "Najmocniejsze nadwyżki i deficyty pomagają wyjaśnić tygodniowy trend.",
     surplus: "Największa nadwyżka",
     deficit: "Najgłębszy deficyt",
     noSurplus: "Brak dnia powyżej celu",
     noDeficit: "Brak dnia poniżej celu",
     macroHeatmapTitle: "Mapa cieplna makro",
-    macroHeatmapSubtitle: "Ostatnie zapisane dni porównane z Twoimi dziennymi celami makro.",
+    macroHeatmapSubtitle:
+      "Ostatnie zapisane dni porównane z Twoimi dziennymi celami makro.",
     protein: "Białko",
     fat: "Tłuszcz",
     carbs: "Węglowodany",
@@ -68,7 +78,8 @@ const monthlyCopy = {
   },
   en: {
     title: "30-day analytics",
-    subtitle: "Track goal adherence, calorie deviation, and macro balance over the last month.",
+    subtitle:
+      "Track goal adherence, calorie deviation, and macro balance over the last month.",
     averageCalories: "Average calories",
     averageProtein: "Average protein",
     adherence: "Goal adherence",
@@ -78,13 +89,15 @@ const monthlyCopy = {
     calendarLegendOn: "Green: on target",
     calendarLegendOver: "Yellow/red: above target",
     deviationTitle: "Largest deviations",
-    deviationSubtitle: "The strongest surpluses and deficits help explain the weekly trend.",
+    deviationSubtitle:
+      "The strongest surpluses and deficits help explain the weekly trend.",
     surplus: "Largest surplus",
     deficit: "Deepest deficit",
     noSurplus: "No day above target yet",
     noDeficit: "No day below target yet",
     macroHeatmapTitle: "Macro heatmap",
-    macroHeatmapSubtitle: "Recent logged days compared with your daily macro targets.",
+    macroHeatmapSubtitle:
+      "Recent logged days compared with your daily macro targets.",
     protein: "Protein",
     fat: "Fat",
     carbs: "Carbs",
@@ -102,6 +115,31 @@ const MONTHLY_CARD_BORDER = "1px solid var(--sn-border-soft)";
 const MONTHLY_TEXT_SECONDARY = "text.secondary";
 const MONTHLY_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
 const COMMON_KCAL_KEY = "common.kcal";
+const MONTHLY_MOBILE_SCROLL_SNAP_X = "x proximity";
+const MONTHLY_MOBILE_RAIL_SX = {
+  overflowX: { xs: "auto", sm: "visible" },
+  mx: { xs: -1, sm: 0 },
+  px: { xs: 1, sm: 0 },
+  pb: { xs: 0.4, sm: 0 },
+  scrollbarWidth: "none",
+  "&::-webkit-scrollbar": { display: "none" },
+};
+
+const MONTHLY_MOBILE_SUMMARY_TILE_SX = {
+  p: { xs: 1, md: 2 },
+  borderRadius: 1,
+  minWidth: { xs: 138, md: 0 },
+  flex: { xs: "0 0 auto", md: "initial" },
+  scrollSnapAlign: { xs: "start", md: "none" },
+};
+
+const MONTHLY_MOBILE_DEVIATION_TILE_SX = {
+  p: { xs: 1, md: 2 },
+  borderRadius: 1,
+  minWidth: { xs: 184, md: 0 },
+  flex: { xs: "0 0 auto", md: "initial" },
+  scrollSnapAlign: { xs: "start", md: "none" },
+};
 
 const getMonthlyCopy = (language: AppLanguage): MonthlyCopy => {
   switch (language) {
@@ -140,7 +178,8 @@ export const MonthlyAnalyticsCard = () => {
   const { appLanguage, t } = useLanguage();
   const copy = getMonthlyCopy(appLanguage);
 
-  const currentWeight = profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
+  const currentWeight =
+    profile.weightHistory.at(-1)?.weight ?? user?.weight ?? 0;
   const macroTargets = useMemo(() => {
     if (!user) {
       return { protein: 0, fat: 0, carbs: 0 };
@@ -152,7 +191,13 @@ export const MonthlyAnalyticsCard = () => {
       goal: profile.goal,
       dietStyle: profile.dietStyle,
     });
-  }, [currentWeight, profile.dailyCalories, profile.dietStyle, profile.goal, user]);
+  }, [
+    currentWeight,
+    profile.dailyCalories,
+    profile.dietStyle,
+    profile.goal,
+    user,
+  ]);
 
   const days = useMemo(() => {
     const today = new Date();
@@ -160,33 +205,43 @@ export const MonthlyAnalyticsCard = () => {
     return Array.from({ length: 30 }, (_, index) => {
       const date = addDays(today, -(29 - index));
       const key = getLocalDateKey(date);
-      const entries = items.filter((item) => getLocalDateKey(item.eatenAt) === key);
+      const entries = items.filter(
+        (item) => getLocalDateKey(item.eatenAt) === key,
+      );
       const calories = entries.reduce(
-        (sum, item) => sum + (item.product.nutrients.calories * item.quantity) / 100,
-        0
+        (sum, item) =>
+          sum + (item.product.nutrients.calories * item.quantity) / 100,
+        0,
       );
       const protein = entries.reduce(
-        (sum, item) => sum + (item.product.nutrients.protein * item.quantity) / 100,
-        0
+        (sum, item) =>
+          sum + (item.product.nutrients.protein * item.quantity) / 100,
+        0,
       );
       const fat = entries.reduce(
         (sum, item) => sum + (item.product.nutrients.fat * item.quantity) / 100,
-        0
+        0,
       );
       const carbs = entries.reduce(
-        (sum, item) => sum + (item.product.nutrients.carbs * item.quantity) / 100,
-        0
+        (sum, item) =>
+          sum + (item.product.nutrients.carbs * item.quantity) / 100,
+        0,
       );
 
       return {
         key,
-        label: formatLocalDateKey(key, appLanguage, { day: "numeric", month: "short" }),
+        label: formatLocalDateKey(key, appLanguage, {
+          day: "numeric",
+          month: "short",
+        }),
         calories,
         protein,
         fat,
         carbs,
-        calorieRatio: profile.dailyCalories > 0 ? calories / profile.dailyCalories : 0,
-        proteinRatio: macroTargets.protein > 0 ? protein / macroTargets.protein : 0,
+        calorieRatio:
+          profile.dailyCalories > 0 ? calories / profile.dailyCalories : 0,
+        proteinRatio:
+          macroTargets.protein > 0 ? protein / macroTargets.protein : 0,
         fatRatio: macroTargets.fat > 0 ? fat / macroTargets.fat : 0,
         carbsRatio: macroTargets.carbs > 0 ? carbs / macroTargets.carbs : 0,
       };
@@ -207,7 +262,7 @@ export const MonthlyAnalyticsCard = () => {
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, md: 3 },
+          p: { xs: 1.2, md: 3 },
           borderRadius: 1,
           border: MONTHLY_CARD_BORDER,
           backgroundColor: "var(--sn-surface-glass)",
@@ -226,9 +281,10 @@ export const MonthlyAnalyticsCard = () => {
   const averageProtein =
     activeDays.reduce((sum, day) => sum + day.protein, 0) / activeDays.length;
   const adherenceDays = activeDays.filter(
-    (day) => day.calorieRatio >= 0.9 && day.calorieRatio <= 1.1
+    (day) => day.calorieRatio >= 0.9 && day.calorieRatio <= 1.1,
   ).length;
-  const adherenceRate = activeDays.length > 0 ? (adherenceDays / activeDays.length) * 100 : 0;
+  const adherenceRate =
+    activeDays.length > 0 ? (adherenceDays / activeDays.length) * 100 : 0;
 
   let loggingStreak = 0;
   for (const day of [...days].reverse()) {
@@ -252,72 +308,107 @@ export const MonthlyAnalyticsCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 3 },
+        p: { xs: 1.2, md: 3 },
         borderRadius: 1,
         border: MONTHLY_CARD_BORDER,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2.5}>
-        <Stack spacing={0.6}>
+      <Stack spacing={{ xs: 1.1, md: 2.5 }}>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.subtitle}</Typography>
+          <Typography
+            color={MONTHLY_TEXT_SECONDARY}
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         <Box
+          data-monthly-mobile-summary-rail="true"
           sx={{
-            display: "grid",
+            display: { xs: "flex", md: "grid" },
             gridTemplateColumns: {
-              xs: "repeat(2, minmax(0, 1fr))",
               md: MONTHLY_FOUR_COLUMN_GRID,
             },
-            gap: 1.5,
+            gap: { xs: 1, md: 1.5 },
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.4, md: 0 },
+            scrollSnapType: { xs: MONTHLY_MOBILE_SCROLL_SNAP_X, md: "none" },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.averageCalories}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_SUMMARY_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.averageCalories}
+            </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={averageCalories} duration={0.7} decimals={0} />{" "}
               {t(COMMON_KCAL_KEY)}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.averageProtein}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_SUMMARY_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.averageProtein}
+            </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={averageProtein} duration={0.7} decimals={1} />{" "}
               {t("common.g")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.adherence}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_SUMMARY_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.adherence}
+            </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={adherenceRate} duration={0.7} decimals={0} />%
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.streak}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_SUMMARY_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.streak}
+            </Typography>
             <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
               <CountUp end={loggingStreak} duration={0.7} /> {copy.days}
             </Typography>
           </Paper>
         </Box>
 
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack spacing={{ xs: 0.75, md: 1 }}>
+          <Stack
+            data-monthly-mobile-calendar-legend-rail="true"
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              ...MONTHLY_MOBILE_RAIL_SX,
+              "& .MuiChip-root": {
+                flex: { xs: "0 0 auto", sm: "initial" },
+              },
+            }}
+          >
             <Chip label={copy.calendarLegendUnder} size="small" />
             <Chip label={copy.calendarLegendOn} size="small" />
             <Chip label={copy.calendarLegendOver} size="small" />
           </Stack>
           <Box
+            data-monthly-mobile-calendar-rail="true"
             sx={{
-              display: "grid",
+              display: { xs: "flex", sm: "grid" },
               gridTemplateColumns: {
-                xs: "repeat(5, minmax(0, 1fr))",
                 sm: "repeat(10, minmax(0, 1fr))",
               },
-              gap: 1,
+              gap: { xs: 0.75, sm: 1 },
+              ...MONTHLY_MOBILE_RAIL_SX,
+              pb: { xs: 0.5, sm: 0 },
+              scrollSnapType: { xs: MONTHLY_MOBILE_SCROLL_SNAP_X, sm: "none" },
             }}
           >
             {days.map((day) => (
@@ -325,6 +416,7 @@ export const MonthlyAnalyticsCard = () => {
                 key={day.key}
                 sx={{
                   minHeight: 46,
+                  minWidth: { xs: 42, sm: 0 },
                   borderRadius: 1,
                   border: MONTHLY_CARD_BORDER,
                   backgroundColor: getCalorieColor(day.calorieRatio),
@@ -332,6 +424,7 @@ export const MonthlyAnalyticsCard = () => {
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
+                  scrollSnapAlign: { xs: "start", sm: "none" },
                 }}
               >
                 <Typography variant="caption" sx={{ fontWeight: 700 }}>
@@ -347,89 +440,157 @@ export const MonthlyAnalyticsCard = () => {
 
         <Divider />
 
-        <Stack spacing={0.6}>
-          <Typography sx={{ fontWeight: 800 }}>{copy.deviationTitle}</Typography>
-          <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.deviationSubtitle}</Typography>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
+          <Typography sx={{ fontWeight: 800 }}>
+            {copy.deviationTitle}
+          </Typography>
+          <Typography
+            color={MONTHLY_TEXT_SECONDARY}
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            {copy.deviationSubtitle}
+          </Typography>
         </Stack>
 
         <Box
+          data-monthly-mobile-deviation-rail="true"
           sx={{
-            display: "grid",
+            display: { xs: "flex", md: "grid" },
             gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-            gap: 1.5,
+            gap: { xs: 1, md: 1.5 },
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.4, md: 0 },
+            scrollSnapType: { xs: MONTHLY_MOBILE_SCROLL_SNAP_X, md: "none" },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.surplus}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_DEVIATION_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.surplus}
+            </Typography>
             {strongestSurplus ? (
               <>
-                <Typography sx={{ fontWeight: 800 }}>{strongestSurplus.label}</Typography>
+                <Typography sx={{ fontWeight: 800 }}>
+                  {strongestSurplus.label}
+                </Typography>
                 <Typography color={MONTHLY_TEXT_SECONDARY}>
                   {formatDeviation(
                     strongestSurplus.calories - profile.dailyCalories,
-                    t(COMMON_KCAL_KEY)
+                    t(COMMON_KCAL_KEY),
                   )}
                 </Typography>
               </>
             ) : (
-              <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.noSurplus}</Typography>
+              <Typography color={MONTHLY_TEXT_SECONDARY}>
+                {copy.noSurplus}
+              </Typography>
             )}
           </Paper>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2 }, borderRadius: 1 }}>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.deficit}</Typography>
+          <Paper variant="outlined" sx={MONTHLY_MOBILE_DEVIATION_TILE_SX}>
+            <Typography color={MONTHLY_TEXT_SECONDARY}>
+              {copy.deficit}
+            </Typography>
             {deepestDeficit ? (
               <>
-                <Typography sx={{ fontWeight: 800 }}>{deepestDeficit.label}</Typography>
+                <Typography sx={{ fontWeight: 800 }}>
+                  {deepestDeficit.label}
+                </Typography>
                 <Typography color={MONTHLY_TEXT_SECONDARY}>
                   {formatDeviation(
                     deepestDeficit.calories - profile.dailyCalories,
-                    t(COMMON_KCAL_KEY)
+                    t(COMMON_KCAL_KEY),
                   )}
                 </Typography>
               </>
             ) : (
-              <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.noDeficit}</Typography>
+              <Typography color={MONTHLY_TEXT_SECONDARY}>
+                {copy.noDeficit}
+              </Typography>
             )}
           </Paper>
         </Box>
 
         <Divider />
 
-        <Stack spacing={1.2}>
-          <Stack spacing={0.6}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.macroHeatmapTitle}</Typography>
-            <Typography color={MONTHLY_TEXT_SECONDARY}>{copy.macroHeatmapSubtitle}</Typography>
+        <Stack spacing={{ xs: 0.8, md: 1.2 }}>
+          <Stack spacing={{ xs: 0.25, md: 0.6 }}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {copy.macroHeatmapTitle}
+            </Typography>
+            <Typography
+              color={MONTHLY_TEXT_SECONDARY}
+              sx={{ display: { xs: "none", md: "block" } }}
+            >
+              {copy.macroHeatmapSubtitle}
+            </Typography>
           </Stack>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack
+            data-monthly-mobile-macro-legend-rail="true"
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              ...MONTHLY_MOBILE_RAIL_SX,
+              "& .MuiChip-root": {
+                flex: { xs: "0 0 auto", sm: "initial" },
+              },
+            }}
+          >
             <Chip label={copy.legendLow} size="small" />
             <Chip label={copy.legendOn} size="small" />
             <Chip label={copy.legendHigh} size="small" />
           </Stack>
           <Box
+            data-monthly-mobile-macro-rail="true"
             sx={{
               overflowX: "auto",
               pb: 0.5,
+              mx: { xs: -1, sm: 0 },
+              px: { xs: 1, sm: 0 },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
             }}
           >
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: "minmax(76px, auto) repeat(3, minmax(82px, 1fr))",
+                gridTemplateColumns:
+                  "minmax(76px, auto) repeat(3, minmax(82px, 1fr))",
                 gap: 1,
                 alignItems: "stretch",
                 minWidth: { xs: 420, sm: "auto" },
               }}
             >
-              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                color={MONTHLY_TEXT_SECONDARY}
+                sx={{ fontWeight: 700 }}
+              >
                 {copy.dayLabel}
               </Typography>
-              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                color={MONTHLY_TEXT_SECONDARY}
+                sx={{ fontWeight: 700 }}
+              >
                 {copy.protein}
               </Typography>
-              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                color={MONTHLY_TEXT_SECONDARY}
+                sx={{ fontWeight: 700 }}
+              >
                 {copy.fat}
               </Typography>
-              <Typography variant="caption" color={MONTHLY_TEXT_SECONDARY} sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                color={MONTHLY_TEXT_SECONDARY}
+                sx={{ fontWeight: 700 }}
+              >
                 {copy.carbs}
               </Typography>
 

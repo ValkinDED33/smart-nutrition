@@ -2,7 +2,14 @@ import { lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Box, Stack } from "@mui/material";
-import { Activity, BarChart3, Droplets, Scale, ScanLine, Sparkles } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Droplets,
+  Scale,
+  ScanLine,
+  Sparkles,
+} from "lucide-react";
 import type { RootState } from "../app/store";
 import { ProgressActionBar } from "../features/profile/ProgressActionBar";
 import {
@@ -27,32 +34,32 @@ const WaterTracker = lazy(() => import("../features/water/WaterTracker"));
 const WeightTrendCard = lazy(() =>
   import("../features/profile/WeightTrendCard").then((module) => ({
     default: module.WeightTrendCard,
-  }))
+  })),
 );
 const BodyWeeklyReportCard = lazy(() =>
   import("../features/profile/BodyWeeklyReportCard").then((module) => ({
     default: module.BodyWeeklyReportCard,
-  }))
+  })),
 );
 const MeasurementsCheckInCard = lazy(() =>
   import("../features/profile/MeasurementsCheckInCard").then((module) => ({
     default: module.MeasurementsCheckInCard,
-  }))
+  })),
 );
 const BodyProgressPhotosCard = lazy(() =>
   import("../features/profile/BodyProgressPhotosCard").then((module) => ({
     default: module.BodyProgressPhotosCard,
-  }))
+  })),
 );
 const WeeklyInsights = lazy(() =>
   import("../features/meal/WeeklyInsights").then((module) => ({
     default: module.WeeklyInsights,
-  }))
+  })),
 );
 const MonthlyAnalyticsCard = lazy(() =>
   import("../features/meal/MonthlyAnalyticsCard").then((module) => ({
     default: module.MonthlyAnalyticsCard,
-  }))
+  })),
 );
 
 const progressPageCopy = {
@@ -152,7 +159,8 @@ const progressPageCopy = {
 } as const;
 
 type ProgressSection = "weight" | "water" | "body" | "trends";
-type ProgressPageCopy = (typeof progressPageCopy)[keyof typeof progressPageCopy];
+type ProgressPageCopy =
+  (typeof progressPageCopy)[keyof typeof progressPageCopy];
 
 const getProgressPageCopy = (language: AppLanguage): ProgressPageCopy => {
   switch (language) {
@@ -168,7 +176,7 @@ const getProgressPageCopy = (language: AppLanguage): ProgressPageCopy => {
 
 const getProgressSectionLabel = (
   copy: ProgressPageCopy,
-  section: ProgressSection
+  section: ProgressSection,
 ): string => {
   switch (section) {
     case "water":
@@ -183,7 +191,9 @@ const getProgressSectionLabel = (
   }
 };
 
-const getSectionForProgressDomain = (domain: ProgressDomain): ProgressSection => {
+const getSectionForProgressDomain = (
+  domain: ProgressDomain,
+): ProgressSection => {
   switch (domain) {
     case "water":
       return "water";
@@ -205,10 +215,13 @@ const ProgressPage = () => {
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const [activeSection, setActiveSection] = useState<ProgressSection>("weight");
   const copy = getProgressPageCopy(appLanguage);
-  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+  );
   const recoveryCopy = buildLazyModuleRecoveryCopy(
     appLanguage,
-    getProgressSectionLabel(copy, activeSection)
+    getProgressSectionLabel(copy, activeSection),
   );
   const sections = [
     { id: "weight", label: getProgressSectionLabel(copy, "weight") },
@@ -276,7 +289,9 @@ const ProgressPage = () => {
     >
       <ProgressActionBar />
       <ProgressOverviewCard
-        onSelectDomain={(domain) => setActiveSection(getSectionForProgressDomain(domain))}
+        onSelectDomain={(domain) =>
+          setActiveSection(getSectionForProgressDomain(domain))
+        }
       />
 
       <SectionTabs
@@ -299,7 +314,10 @@ const ProgressPage = () => {
       ) : null}
 
       {activeSection === "weight" ? (
-        <Stack spacing={2.5}>
+        <Stack
+          data-progress-mobile-section="weight"
+          spacing={{ xs: 1.2, md: 2.5 }}
+        >
           <QuickWeightCheckInCard />
           <LazyModuleBoundary
             errorTitle={recoveryCopy.errorTitle}
@@ -307,7 +325,9 @@ const ProgressPage = () => {
             reloadLabel={recoveryCopy.reloadLabel}
             resetKey="progress:weight"
           >
-            <Suspense fallback={<LoadingSkeleton cards={1} chart bodyRows={2} />}>
+            <Suspense
+              fallback={<LoadingSkeleton cards={1} chart bodyRows={2} />}
+            >
               <WeightTrendCard />
             </Suspense>
           </LazyModuleBoundary>
@@ -335,13 +355,19 @@ const ProgressPage = () => {
           resetKey="progress:body"
         >
           <Suspense fallback={<LoadingSkeleton cards={3} bodyRows={3} />}>
-            <Stack spacing={2.5}>
+            <Stack
+              data-progress-mobile-section="body"
+              spacing={{ xs: 1.2, md: 2.5 }}
+            >
               <BodyWeeklyReportCard />
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
-                  gap: 2.5,
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    lg: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: { xs: 1.2, md: 2.5 },
                   alignItems: "start",
                 }}
               >
@@ -361,7 +387,10 @@ const ProgressPage = () => {
           resetKey="progress:trends"
         >
           <Suspense fallback={<LoadingSkeleton cards={2} chart bodyRows={3} />}>
-            <Stack spacing={2.5}>
+            <Stack
+              data-progress-mobile-section="trends"
+              spacing={{ xs: 1.2, md: 2.5 }}
+            >
               <WeeklyInsights />
               <MonthlyAnalyticsCard />
             </Stack>

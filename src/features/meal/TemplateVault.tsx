@@ -57,13 +57,8 @@ const TemplateCard = ({
   template,
   t,
 }: TemplateCardProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useSortable({ id: template.id });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useSortable({ id: template.id });
 
   return (
     <motion.div
@@ -89,19 +84,29 @@ const TemplateCard = ({
         {...attributes}
         {...listeners}
       >
-        <CardContent>
-          <Stack spacing={1.2}>
+        <CardContent
+          sx={{
+            p: { xs: 1.35, md: 2 },
+            "&:last-child": { pb: { xs: 1.35, md: 2 } },
+          }}
+        >
+          <Stack spacing={{ xs: 0.9, md: 1.2 }}>
             <Typography sx={{ fontWeight: 800 }}>{template.name}</Typography>
-            <Typography color={TEMPLATE_TEXT_SECONDARY} variant="body2">
+            <Typography
+              color={TEMPLATE_TEXT_SECONDARY}
+              variant="body2"
+              sx={{ display: { xs: "none", sm: "block" } }}
+            >
               {template.items
                 .map(
                   (item) =>
-                    `${getProductDisplayName(item.product, appLanguage)} ${item.quantity} ${item.product.unit}`
+                    `${getProductDisplayName(item.product, appLanguage)} ${item.quantity} ${item.product.unit}`,
                 )
                 .join(", ")}
             </Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               <Button
+                size="small"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onApply(template.id)}
                 disabled={isApplying}
@@ -109,6 +114,7 @@ const TemplateCard = ({
                 {t("templates.apply")}
               </Button>
               <Button
+                size="small"
                 color="error"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={() => onRemove(template.id)}
@@ -137,16 +143,15 @@ const moveId = (ids: string[], activeId: string, overId: string) => {
 
 const normalizeOrderIds = (ids: string[], templates: MealTemplate[]) => [
   ...ids.filter((id) => templates.some((template) => template.id === id)),
-  ...templates
-    .map((template) => template.id)
-    .filter((id) => !ids.includes(id)),
+  ...templates.map((template) => template.id).filter((id) => !ids.includes(id)),
 ];
 
 const vaultCopy = {
   uk: {
     saving: "Зберігаю зміни шаблону в хмару...",
     savedTemplate: "Шаблон збережено і підтверджено хмарою.",
-    appliedTemplate: "Шаблон застосовано до поточного дня і підтверджено хмарою.",
+    appliedTemplate:
+      "Шаблон застосовано до поточного дня і підтверджено хмарою.",
     deletedTemplate: "Шаблон видалено і підтверджено хмарою.",
     failedSaveTemplate: "Не вдалося зберегти шаблон.",
     failedApplyTemplate: "Не вдалося застосувати шаблон.",
@@ -156,7 +161,8 @@ const vaultCopy = {
   pl: {
     saving: "Zapisuję zmiany szablonu w chmurze...",
     savedTemplate: "Szablon zapisany i potwierdzony w chmurze.",
-    appliedTemplate: "Szablon użyty w dzisiejszym dniu i potwierdzony w chmurze.",
+    appliedTemplate:
+      "Szablon użyty w dzisiejszym dniu i potwierdzony w chmurze.",
     deletedTemplate: "Szablon usunięty i potwierdzony w chmurze.",
     failedSaveTemplate: "Nie udało się zapisać szablonu.",
     failedApplyTemplate: "Nie udało się użyć szablonu.",
@@ -237,25 +243,27 @@ export const TemplateVault = ({ mealType }: Props) => {
     },
     retry: copy.retry,
   });
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
   const currentMealEntries = useMemo(
     () => items.filter((item) => item.mealType === mealType).slice(0, 8),
-    [items, mealType]
+    [items, mealType],
   );
   const currentMealTemplates = useMemo(
     () => templates.filter((template) => template.mealType === mealType),
-    [mealType, templates]
+    [mealType, templates],
   );
   const orderedCurrentMealTemplates = useMemo(() => {
     const templateById = new Map(
-      currentMealTemplates.map((template) => [template.id, template])
+      currentMealTemplates.map((template) => [template.id, template]),
     );
     const orderedTemplates = orderedTemplateIds
       .map((id) => templateById.get(id))
       .filter((template): template is MealTemplate => Boolean(template));
     const missingTemplates = currentMealTemplates.filter(
-      (template) => !orderedTemplateIds.includes(template.id)
+      (template) => !orderedTemplateIds.includes(template.id),
     );
 
     return [...orderedTemplates, ...missingTemplates];
@@ -272,9 +280,9 @@ export const TemplateVault = ({ mealType }: Props) => {
       name: normalizedName,
       mealType,
       items: currentMealEntries.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
-        })),
+        product: item.product,
+        quantity: item.quantity,
+      })),
       createdAt: new Date().toISOString(),
     };
 
@@ -301,7 +309,7 @@ export const TemplateVault = ({ mealType }: Props) => {
           dispatch,
           meal,
           templateId,
-          createTemplateEntries(template)
+          createTemplateEntries(template),
         ),
     });
   };
@@ -323,7 +331,11 @@ export const TemplateVault = ({ mealType }: Props) => {
     }
 
     setOrderedTemplateIds((currentIds) =>
-      moveId(normalizeOrderIds(currentIds, currentMealTemplates), activeId, overId)
+      moveId(
+        normalizeOrderIds(currentIds, currentMealTemplates),
+        activeId,
+        overId,
+      ),
     );
   };
 
@@ -331,17 +343,22 @@ export const TemplateVault = ({ mealType }: Props) => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.2, md: 2 }}>
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("templates.title")}
         </Typography>
-        <Typography color={TEMPLATE_TEXT_SECONDARY}>{t("templates.subtitle")}</Typography>
+        <Typography
+          color={TEMPLATE_TEXT_SECONDARY}
+          sx={{ display: { xs: "none", sm: "block" } }}
+        >
+          {t("templates.subtitle")}
+        </Typography>
 
         {notice ? (
           <Alert
@@ -364,15 +381,21 @@ export const TemplateVault = ({ mealType }: Props) => {
           </Alert>
         ) : null}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+        <Stack
+          direction={{ xs: "row", md: "row" }}
+          spacing={1}
+          alignItems="center"
+        >
           <TextField
             fullWidth
+            size="small"
             value={templateName}
             onChange={(event) => setTemplateName(event.target.value)}
             label={t("templates.placeholder")}
           />
           <Button
             variant="contained"
+            size="small"
             onClick={() => void handleSaveTemplate()}
             disabled={
               !templateName.trim() ||
@@ -380,15 +403,24 @@ export const TemplateVault = ({ mealType }: Props) => {
               isSavingAction(SAVE_TEMPLATE_ACTION_ID)
             }
           >
-            {isSavingAction(SAVE_TEMPLATE_ACTION_ID) ? copy.saving : t("templates.save")}
+            {isSavingAction(SAVE_TEMPLATE_ACTION_ID)
+              ? copy.saving
+              : t("templates.save")}
           </Button>
         </Stack>
 
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <SortableContext items={orderedCurrentMealTemplates.map((template) => template.id)}>
-            <Stack spacing={1.5}>
+          <SortableContext
+            items={orderedCurrentMealTemplates.map((template) => template.id)}
+          >
+            <Stack
+              spacing={{ xs: 1, md: 1.5 }}
+              data-template-vault-mobile-compact-list="true"
+            >
               {currentMealTemplates.length === 0 ? (
-                <Typography color={TEMPLATE_TEXT_SECONDARY}>{t("templates.empty")}</Typography>
+                <Typography color={TEMPLATE_TEXT_SECONDARY}>
+                  {t("templates.empty")}
+                </Typography>
               ) : (
                 orderedCurrentMealTemplates.map((template) => (
                   <TemplateCard

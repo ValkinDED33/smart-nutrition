@@ -54,12 +54,22 @@ describe("WaterTracker contract", () => {
   it("keeps the water tracker compact on mobile", async () => {
     const source = await readFile(WATER_TRACKER_SOURCE, "utf8");
 
-    expect(source).toContain('spacing={{ xs: 1.15, md: 2.5 }}');
-    expect(source).toContain('width: { xs: 124, sm: 180 }');
-    expect(source).toContain('height: { xs: 124, sm: 180 }');
-    expect(source).toContain('minHeight: { xs: 82, sm: 118 }');
+    expect(source).toContain("spacing={{ xs: 1.15, md: 2.5 }}");
+    expect(source).toContain("width: { xs: 124, sm: 180 }");
+    expect(source).toContain("height: { xs: 124, sm: 180 }");
+    expect(source).toContain("minHeight: { xs: 82, sm: 118 }");
     expect(source).toContain('flexWrap={{ xs: "nowrap", sm: "wrap" }}');
     expect(source).toContain('overflowX: { xs: "auto", sm: "visible" }');
     expect(source).toContain('display: { xs: "none", md: "block" }');
+    expect(source).toContain('data-water-mobile-settings-rail="true"');
+    expect(source).toContain('data-water-mobile-reminder-rail="true"');
+    expect(source).toContain('data-water-mobile-analytics-rail="true"');
+    expect(source).toContain('data-water-mobile-history-rail="true"');
+    expect(source).toContain("const WATER_MOBILE_FIELD_RAIL_SX = {");
+    expect(source).toContain(
+      'scrollSnapType: { xs: "x proximity", md: "none" }',
+    );
+    expect(source).toContain("minHeight: { xs: 96, md: 132 }");
+    expect(source).toContain("height: { xs: 62, md: 88 }");
   });
 });

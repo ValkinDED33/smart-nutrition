@@ -18,8 +18,10 @@ const micronutrientCopy = {
     title: "Щоденні мікронутрієнти",
     subtitle:
       "Швидкий огляд клітковини, вітамінів, мінералів і гідратації з сьогоднішнього журналу.",
-    empty: "Додайте їжу або напої, щоб почати формувати підсумок мікронутрієнтів.",
-    progressLabel: (progress: number) => `${progress.toFixed(0)}% від денної орієнтовної цілі`,
+    empty:
+      "Додайте їжу або напої, щоб почати формувати підсумок мікронутрієнтів.",
+    progressLabel: (progress: number) =>
+      `${progress.toFixed(0)}% від денної орієнтовної цілі`,
     nutrients: {
       fiber: "Клітковина",
       water: "Вода",
@@ -39,8 +41,10 @@ const micronutrientCopy = {
     title: "Dzienne mikroskladniki",
     subtitle:
       "Szybki podglad blonnika, witamin, mineralow i nawodnienia z dzisiejszego dziennika.",
-    empty: "Dodaj jedzenie lub napoje, aby zaczac budowac podsumowanie mikroskladnikow.",
-    progressLabel: (progress: number) => `${progress.toFixed(0)}% dziennego celu orientacyjnego`,
+    empty:
+      "Dodaj jedzenie lub napoje, aby zaczac budowac podsumowanie mikroskladnikow.",
+    progressLabel: (progress: number) =>
+      `${progress.toFixed(0)}% dziennego celu orientacyjnego`,
     nutrients: {
       fiber: "Blonnik",
       water: "Woda",
@@ -61,7 +65,8 @@ const micronutrientCopy = {
     subtitle:
       "A quick overview of fiber, vitamins, minerals, and hydration from today's diary.",
     empty: "Add food or drinks to start building a micronutrient summary.",
-    progressLabel: (progress: number) => `${progress.toFixed(0)}% of the estimated daily target`,
+    progressLabel: (progress: number) =>
+      `${progress.toFixed(0)}% of the estimated daily target`,
     nutrients: {
       fiber: "Fiber",
       water: "Water",
@@ -96,7 +101,7 @@ const getMicronutrientCopy = (language: AppLanguage): MicronutrientCopy => {
 
 const getTrackedNutrientTotal = (
   totals: ReturnType<typeof selectTodayMealTotalNutrients>,
-  key: TrackedNutrientKey
+  key: TrackedNutrientKey,
 ) => {
   switch (key) {
     case "water":
@@ -119,7 +124,7 @@ const getTrackedNutrientTotal = (
 
 const getTrackedNutrientLabel = (
   copy: MicronutrientCopy,
-  key: TrackedNutrientKey
+  key: TrackedNutrientKey,
 ) => {
   switch (key) {
     case "water":
@@ -173,35 +178,46 @@ export const DailyMicronutrientsCard = () => {
   const copy = getMicronutrientCopy(appLanguage);
 
   const hasAnyTrackedData = trackedNutrients.some(
-    (nutrient) => getTrackedNutrientTotal(totals, nutrient.key) > 0.001
+    (nutrient) => getTrackedNutrientTotal(totals, nutrient.key) > 0.001,
   );
 
   return (
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.2, md: 2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {!hasAnyTrackedData ? (
           <Typography color="text.secondary">{copy.empty}</Typography>
         ) : (
           <Stack
+            data-daily-micronutrients-mobile-rail="true"
             sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+              display: { xs: "flex", md: "grid" },
+              gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" },
               gap: 1.5,
+              overflowX: { xs: "auto", md: "visible" },
+              mx: { xs: -1, md: 0 },
+              px: { xs: 1, md: 0 },
+              pb: { xs: 0.5, md: 0 },
+              scrollSnapType: { xs: "x proximity", md: "none" },
             }}
           >
             {trackedNutrients.map((nutrient) => {
@@ -213,7 +229,12 @@ export const DailyMicronutrientsCard = () => {
                 <Paper
                   key={nutrient.key}
                   variant="outlined"
-                  sx={{ p: 1.6, borderRadius: 1 }}
+                  sx={{
+                    p: { xs: 1.2, md: 1.6 },
+                    minWidth: { xs: 230, md: 0 },
+                    borderRadius: 1,
+                    scrollSnapAlign: { xs: "start", md: "none" },
+                  }}
                 >
                   <Stack spacing={1}>
                     <Stack

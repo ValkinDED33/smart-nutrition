@@ -31,7 +31,8 @@ const notificationCopy = {
     unsupported: "Цей браузер не підтримує сповіщення.",
     permissionDefault: "Сповіщення ще не ввімкнені.",
     permissionGranted: "Сповіщення браузера ввімкнені.",
-    permissionDenied: "Сповіщення заблоковані в браузері. Спочатку дозвольте їх у налаштуваннях браузера.",
+    permissionDenied:
+      "Сповіщення заблоковані в браузері. Спочатку дозвольте їх у налаштуваннях браузера.",
     enableAction: "Увімкнути сповіщення браузера",
     notificationsEnabled: "Використовувати сповіщення браузера",
     mealRemindersEnabled: "Нагадування про їжу",
@@ -56,7 +57,8 @@ const notificationCopy = {
     unsupported: "Ta przeglądarka nie obsługuje powiadomień.",
     permissionDefault: "Powiadomienia nie są jeszcze włączone.",
     permissionGranted: "Powiadomienia przeglądarki są włączone.",
-    permissionDenied: "Powiadomienia są zablokowane w przeglądarce. Najpierw odblokuj je w ustawieniach.",
+    permissionDenied:
+      "Powiadomienia są zablokowane w przeglądarce. Najpierw odblokuj je w ustawieniach.",
     enableAction: "Włącz powiadomienia przeglądarki",
     notificationsEnabled: "Używaj powiadomień przeglądarki",
     mealRemindersEnabled: "Przypomnienia o posiłkach",
@@ -120,7 +122,7 @@ const getNotificationCopy = (language: AppLanguage): NotificationCopy => {
 
 const getReminderTimeValue = (
   reminderTimes: RootState["profile"]["reminderTimes"],
-  key: ReminderTimeKey
+  key: ReminderTimeKey,
 ) => {
   switch (key) {
     case "lunch":
@@ -146,7 +148,7 @@ export const NotificationSettingsCard = () => {
   const profileActionCopy = getProfileCloudActionCopy(appLanguage);
   const profileAction = useProfileCloudAction(profileActionCopy);
   const [permission, setPermission] = useState<PermissionState>(() =>
-    getSafeNotificationPermission()
+    getSafeNotificationPermission(),
   );
   const copy = getNotificationCopy(appLanguage);
 
@@ -179,14 +181,14 @@ export const NotificationSettingsCard = () => {
   const handleNotificationsToggle = async (nextEnabled: boolean) => {
     if (!nextEnabled) {
       await profileAction.runProfileAction(
-        updateNotificationPreferences({ notificationsEnabled: false })
+        updateNotificationPreferences({ notificationsEnabled: false }),
       );
       return;
     }
 
     if (permission === "granted") {
       await profileAction.runProfileAction(
-        updateNotificationPreferences({ notificationsEnabled: true })
+        updateNotificationPreferences({ notificationsEnabled: true }),
       );
       return;
     }
@@ -195,7 +197,7 @@ export const NotificationSettingsCard = () => {
 
     if (granted) {
       await profileAction.runProfileAction(
-        updateNotificationPreferences({ notificationsEnabled: true })
+        updateNotificationPreferences({ notificationsEnabled: true }),
       );
     }
   };
@@ -220,21 +222,38 @@ export const NotificationSettingsCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
         <Stack spacing={0.8}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-notifications-mobile-status-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.5, sm: 0 },
+          }}
+        >
           <Chip
             label={
               permission === "granted"
@@ -274,13 +293,18 @@ export const NotificationSettingsCard = () => {
         ) : null}
 
         {profileAction.hasError ? (
-          <Alert severity="error" sx={{ borderRadius: 3 }} onClose={profileAction.clearError}>
+          <Alert
+            severity="error"
+            sx={{ borderRadius: 3 }}
+            onClose={profileAction.clearError}
+          >
             {copy.saveError}
           </Alert>
         ) : null}
 
         {permission !== "granted" && permission !== "unsupported" && (
           <Button
+            size="small"
             variant="contained"
             onClick={() => {
               void requestPermission();
@@ -297,14 +321,28 @@ export const NotificationSettingsCard = () => {
           </Button>
         )}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-notifications-mobile-toggle-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", md: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+          }}
+        >
           <FormControlLabel
             control={
               <Switch
                 checked={notificationsEnabled}
                 disabled={permission === "unsupported" || profileAction.saving}
                 onChange={(_, checked) => {
-                  void handleNotificationsToggle(checked).catch(() => undefined);
+                  void handleNotificationsToggle(checked).catch(
+                    () => undefined,
+                  );
                 }}
               />
             }
@@ -316,9 +354,13 @@ export const NotificationSettingsCard = () => {
                 checked={mealRemindersEnabled}
                 disabled={!notificationsEnabled || profileAction.saving}
                 onChange={(_, checked) => {
-                  void profileAction.runProfileAction(
-                    updateNotificationPreferences({ mealRemindersEnabled: checked })
-                  ).catch(() => undefined);
+                  void profileAction
+                    .runProfileAction(
+                      updateNotificationPreferences({
+                        mealRemindersEnabled: checked,
+                      }),
+                    )
+                    .catch(() => undefined);
                 }}
               />
             }
@@ -330,9 +372,13 @@ export const NotificationSettingsCard = () => {
                 checked={calorieAlertsEnabled}
                 disabled={!notificationsEnabled || profileAction.saving}
                 onChange={(_, checked) => {
-                  void profileAction.runProfileAction(
-                    updateNotificationPreferences({ calorieAlertsEnabled: checked })
-                  ).catch(() => undefined);
+                  void profileAction
+                    .runProfileAction(
+                      updateNotificationPreferences({
+                        calorieAlertsEnabled: checked,
+                      }),
+                    )
+                    .catch(() => undefined);
                 }}
               />
             }
@@ -340,25 +386,47 @@ export const NotificationSettingsCard = () => {
           />
         </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-notifications-mobile-time-rail="true"
+          direction="row"
+          spacing={1}
+          sx={{
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+            scrollSnapType: { xs: "x proximity", md: "none" },
+          }}
+        >
           {timeLabels.map((item) => (
             <TextField
               key={item.key}
-              fullWidth
+              size="small"
               type="time"
               label={item.label}
               value={getReminderTimeValue(reminderTimes, item.key)}
-              disabled={!notificationsEnabled || !mealRemindersEnabled || profileAction.saving}
+              disabled={
+                !notificationsEnabled ||
+                !mealRemindersEnabled ||
+                profileAction.saving
+              }
               onChange={(event) => {
-                void profileAction.runProfileAction(
-                  updateNotificationPreferences({
-                    reminderTimes: {
-                      [item.key]: event.target.value,
-                    },
-                  })
-                ).catch(() => undefined);
+                void profileAction
+                  .runProfileAction(
+                    updateNotificationPreferences({
+                      reminderTimes: {
+                        [item.key]: event.target.value,
+                      },
+                    }),
+                  )
+                  .catch(() => undefined);
               }}
               InputLabelProps={{ shrink: true }}
+              sx={{
+                minWidth: { xs: 190, md: 0 },
+                flex: { xs: "0 0 auto", md: 1 },
+                scrollSnapAlign: { xs: "start", md: "none" },
+              }}
             />
           ))}
         </Stack>

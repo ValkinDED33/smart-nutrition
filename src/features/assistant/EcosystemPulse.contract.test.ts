@@ -5,7 +5,9 @@ const readSource = (path: string) => readFile(path, "utf8");
 
 describe("EcosystemPulse contract", () => {
   it("keeps the project-wide magic layer read-only and connected to canonical state", async () => {
-    const source = await readSource("src/features/assistant/EcosystemPulse.tsx");
+    const source = await readSource(
+      "src/features/assistant/EcosystemPulse.tsx",
+    );
 
     expect(source).toContain("selectTodayMealItems");
     expect(source).toContain("state.water");
@@ -17,7 +19,9 @@ describe("EcosystemPulse contract", () => {
   });
 
   it("keeps localized assistant pulse copy free from mixed companion jargon", async () => {
-    const source = await readSource("src/features/assistant/EcosystemPulse.tsx");
+    const source = await readSource(
+      "src/features/assistant/EcosystemPulse.tsx",
+    );
 
     expect(source).toContain("зв'язок з помічником");
     expect(source).toContain("więź z asystentem");
@@ -41,16 +45,24 @@ describe("EcosystemPulse contract", () => {
 
         expect(source).toContain("EcosystemPulse");
         expect(source).toContain("assistantHint=");
-      })
+      }),
     );
   });
 
   it("keeps admin center on the live assistant worker instead of the old blueprint helper", async () => {
-    const source = await readSource("src/features/platform/AdminCenterCard.tsx");
+    const source = await readSource(
+      "src/features/platform/AdminCenterCard.tsx",
+    );
 
     expect(source).toContain("EcosystemPulse");
     expect(source).toContain('focus="admin"');
     expect(source).toContain('data-admin-ai-worker-panel="true"');
+    expect(source).toContain('data-admin-ai-worker-action-rail="true"');
+    expect(source).toContain('data-admin-mobile-stats-rail="true"');
+    expect(source).toContain('data-admin-mobile-moderation-rail="true"');
+    expect(source).toContain('data-admin-mobile-user-health-rail="true"');
+    expect(source).toContain('data-admin-mobile-system-rail="true"');
+    expect(source).toContain("ADMIN_MOBILE_RAIL");
     expect(source).not.toContain("<AIMasterBlueprintPanel");
   });
 

@@ -129,7 +129,7 @@ const getSyncStatusLocale = (language: AppLanguage): string => {
 const formatSyncTime = (
   value: string | null,
   language: AppLanguage,
-  copy: SyncStatusCopy
+  copy: SyncStatusCopy,
 ) => {
   if (!value) {
     return copy.unknownTime;
@@ -166,7 +166,7 @@ export const CloudSyncStatusCard = () => {
   const currentDeviceId = getRemoteDeviceId();
   const writerOwnership = resolveRemoteWriterOwnership(
     currentDeviceId,
-    cloudMeta?.lastWriterDeviceId
+    cloudMeta?.lastWriterDeviceId,
   );
   const writerText =
     writerOwnership === "current-device"
@@ -178,7 +178,8 @@ export const CloudSyncStatusCard = () => {
               : ""
           }`
         : copy.writerUnknown;
-  const statusText = syncStatus === "syncing"
+  const statusText =
+    syncStatus === "syncing"
       ? copy.syncingStatus
       : syncStatus === "error"
         ? copy.errorStatus
@@ -192,7 +193,7 @@ export const CloudSyncStatusCard = () => {
     void dispatch(
       pullLatestCloudSnapshot({
         discardQueuedChanges: hasConflict,
-      })
+      }),
     );
   };
 
@@ -200,23 +201,38 @@ export const CloudSyncStatusCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
         <Box>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+          <Typography
+            color="text.secondary"
+            sx={{ mt: 0.8, display: { xs: "none", sm: "block" } }}
+          >
             {copy.subtitle}
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-cloud-sync-mobile-status-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.5, sm: 0 },
+          }}
+        >
           <Chip label={copy.remoteMode} />
           <Chip
             label={`${copy.statusLabel}: ${statusText}`}
@@ -227,10 +243,13 @@ export const CloudSyncStatusCard = () => {
             label={`${copy.lastSyncLabel}: ${formatSyncTime(
               lastSyncedAt,
               appLanguage,
-              copy
+              copy,
             )}`}
           />
-          <Chip label={`${copy.writerLabel}: ${writerText}`} variant="outlined" />
+          <Chip
+            label={`${copy.writerLabel}: ${writerText}`}
+            variant="outlined"
+          />
           {syncOutbox.pendingChanges > 0 && (
             <Chip
               label={`${copy.pendingChangesLabel}: ${syncOutbox.pendingChanges}`}
@@ -247,13 +266,14 @@ export const CloudSyncStatusCard = () => {
             ? `${translatedSyncError ?? formatQueuedSyncMessage(syncOutbox.pendingChanges, appLanguage) ?? copy.remoteInfo} ${copy.queuedSinceLabel}: ${formatSyncTime(
                 syncOutbox.firstQueuedAt,
                 appLanguage,
-                copy
+                copy,
               )}.`
-            : translatedSyncError ?? copy.remoteInfo}
+            : (translatedSyncError ?? copy.remoteInfo)}
         </Alert>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Button
+            size="small"
             variant="contained"
             onClick={handleRetry}
             disabled={isSyncing}
@@ -272,6 +292,7 @@ export const CloudSyncStatusCard = () => {
           </Button>
 
           <Button
+            size="small"
             variant={hasConflict ? "outlined" : "text"}
             onClick={handlePullLatest}
             disabled={isSyncing}
@@ -284,7 +305,6 @@ export const CloudSyncStatusCard = () => {
           >
             {hasConflict ? copy.pullLatestAction : copy.pullShadowAction}
           </Button>
-
         </Stack>
       </Stack>
     </Paper>

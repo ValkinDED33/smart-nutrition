@@ -13,7 +13,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Activity, Ban, Bot, ClipboardList, Database, ShieldCheck, Trash2, Users } from "lucide-react";
+import {
+  Activity,
+  Ban,
+  Bot,
+  ClipboardList,
+  Database,
+  ShieldCheck,
+  Trash2,
+  Users,
+} from "lucide-react";
 import type { RootState } from "../../app/store";
 import type {
   AccessOverview,
@@ -64,11 +73,19 @@ const PL_USERS_LABEL = "Użytkownicy";
 const ADMIN_FOUR_COLUMN_GRID = "repeat(4, minmax(0, 1fr))";
 const ADMIN_TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 const ADMIN_SOFT_BORDER = "1px solid var(--sn-border-soft)";
+const ADMIN_MOBILE_RAIL = {
+  display: { xs: "flex", md: "grid" },
+  overflowX: { xs: "auto", md: "visible" },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+};
 
 const formatAdminMacro = (
   key: "protein" | "fat" | "carbs",
   value: number,
-  language: AppLanguage
+  language: AppLanguage,
 ) => `${getNutrientLabel(key, language)} ${value}`;
 
 const adminCopy = {
@@ -114,7 +131,8 @@ const adminCopy = {
     activeUsers: UK_USERS_LABEL,
     publicProducts: "Продукти на перевірці",
     openReports: "Скарги",
-    aiPolicy: "AI відповідає як wellness companion, без медичних діагнозів і з м'якими попередженнями.",
+    aiPolicy:
+      "AI відповідає як wellness companion, без медичних діагнозів і з м'якими попередженнями.",
     logsReady: "Події ролей, модерації та блокувань вже пишуться в audit log.",
     pendingEmpty: "Черга модерації зараз порожня.",
     reportsEmpty: "Нових скарг зараз немає.",
@@ -192,8 +210,10 @@ const adminCopy = {
     activeUsers: PL_USERS_LABEL,
     publicProducts: "Produkty do sprawdzenia",
     openReports: PL_REPORTS_LABEL,
-    aiPolicy: "AI odpowiada jak wellness companion, bez diagnoz medycznych i z łagodnymi ostrzeżeniami.",
-    logsReady: "Zdarzenia ról, moderacji i blokad są już zapisywane w audit logu.",
+    aiPolicy:
+      "AI odpowiada jak wellness companion, bez diagnoz medycznych i z łagodnymi ostrzeżeniami.",
+    logsReady:
+      "Zdarzenia ról, moderacji i blokad są już zapisywane w audit logu.",
     pendingEmpty: "Kolejka moderacji jest teraz pusta.",
     reportsEmpty: "Nie ma teraz nowych zgłoszeń.",
     approve: "Zatwierdź",
@@ -272,7 +292,8 @@ const adminCopy = {
     openReports: REPORTS_LABEL,
     aiPolicy:
       "AI responds as a wellness companion, without medical diagnoses and with gentle warnings.",
-    logsReady: "Role, moderation, and ban events are already written to audit log.",
+    logsReady:
+      "Role, moderation, and ban events are already written to audit log.",
     pendingEmpty: "Moderation queue is empty right now.",
     reportsEmpty: "There are no new reports right now.",
     approve: "Approve",
@@ -339,7 +360,7 @@ const getAdminLocale = (language: AppLanguage) => {
 
 const getAdminTabLabel = (
   tabs: (typeof adminCopy)[AppLanguage]["tabs"],
-  tabId: AdminTab
+  tabId: AdminTab,
 ) => {
   switch (tabId) {
     case "reports":
@@ -387,7 +408,7 @@ const formatDateTime = (value: string, language: AppLanguage) =>
 const formatOptionalDateTime = (
   value: string | null | undefined,
   language: AppLanguage,
-  fallback: string
+  fallback: string,
 ) => (value ? formatDateTime(value, language) : fallback);
 
 const assignableRoleValues: AssignableUserRole[] = [
@@ -423,12 +444,12 @@ const createRoleDrafts = (users: AdminUserSummary[]) =>
   new Map(
     users
       .filter((item) => !isProtectedOwnerRole(item.role))
-      .map((item) => [item.id, toAssignableRole(item.role)])
+      .map((item) => [item.id, toAssignableRole(item.role)]),
   );
 
 const getRoleDraft = (
   roleDrafts: Map<string, AssignableUserRole>,
-  user: AdminUserSummary
+  user: AdminUserSummary,
 ) => roleDrafts.get(user.id) ?? toAssignableRole(user.role);
 
 const getPlatformStatsCards = ({
@@ -446,13 +467,18 @@ const getPlatformStatsCards = ({
   { label: copy.usersActive, value: stats?.usersActive ?? 0 },
   {
     label: copy.usersOnline,
-    value: stats?.usersOnline ?? users.filter((user) => user.hasActiveSession).length,
+    value:
+      stats?.usersOnline ??
+      users.filter((user) => user.hasActiveSession).length,
   },
   { label: copy.usersNewThisWeek, value: stats?.usersNewThisWeek ?? 0 },
   { label: copy.usersBanned, value: stats?.usersBanned ?? 0 },
   { label: copy.aiRequestsTotal, value: stats?.aiRequestsTotal ?? 0 },
   { label: copy.productsTotal, value: stats?.productsTotal ?? 0 },
-  { label: copy.productsPending, value: stats?.productsPending ?? queue.length },
+  {
+    label: copy.productsPending,
+    value: stats?.productsPending ?? queue.length,
+  },
   { label: copy.photoAnalysesTotal, value: stats?.photoAnalysesTotal ?? 0 },
 ];
 
@@ -480,15 +506,20 @@ const getAdminUserHealthCards = ({
   stats: AdminPlatformStats | null;
   users: AdminUserSummary[];
 }) => {
-  const bannedCount = stats?.usersBanned ?? users.filter((user) => user.isBanned).length;
+  const bannedCount =
+    stats?.usersBanned ?? users.filter((user) => user.isBanned).length;
   const pendingEmailCount = users.filter((user) => !user.emailVerified).length;
-  const protectedRoleCount = users.filter((user) => isProtectedOwnerRole(user.role)).length;
+  const protectedRoleCount = users.filter((user) =>
+    isProtectedOwnerRole(user.role),
+  ).length;
 
   return [
     { label: copy.usersTotal, value: stats?.usersTotal ?? users.length },
     {
       label: copy.usersOnline,
-      value: stats?.usersOnline ?? users.filter((user) => user.hasActiveSession).length,
+      value:
+        stats?.usersOnline ??
+        users.filter((user) => user.hasActiveSession).length,
     },
     {
       label: copy.verifiedUsers,
@@ -517,7 +548,7 @@ export const AdminCenterCard = () => {
   const [audit, setAudit] = useState<AuditLogEntry[]>([]);
   const [reports, setReports] = useState<ContentReportItem[]>([]);
   const [roleDrafts, setRoleDrafts] = useState<Map<string, AssignableUserRole>>(
-    () => new Map()
+    () => new Map(),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -559,7 +590,10 @@ export const AdminCenterCard = () => {
           }
         }
 
-        if (nextAccess.permissions.manageModerators || nextAccess.permissions.manageAdmins) {
+        if (
+          nextAccess.permissions.manageModerators ||
+          nextAccess.permissions.manageAdmins
+        ) {
           const userItems = await listAdminUsers();
 
           if (active) {
@@ -580,7 +614,7 @@ export const AdminCenterCard = () => {
           setError(
             nextError instanceof PlatformApiError
               ? nextError.message
-              : backendUnavailableMessage
+              : backendUnavailableMessage,
           );
         }
       }
@@ -597,9 +631,13 @@ export const AdminCenterCard = () => {
     return null;
   }
 
-  const allowedRoles = getAssignableRolesForActor(access?.role ?? currentUser.role);
+  const allowedRoles = getAssignableRolesForActor(
+    access?.role ?? currentUser.role,
+  );
   const visibleTabs = getVisibleAdminTabs(access);
-  const activeTab = visibleTabs.includes(tab) ? tab : (visibleTabs[0] ?? "reports");
+  const activeTab = visibleTabs.includes(tab)
+    ? tab
+    : (visibleTabs[0] ?? "reports");
   const adminBlueprintPatterns: AIMasterBlueprintPattern[] = [
     {
       key: "stats",
@@ -655,7 +693,7 @@ export const AdminCenterCard = () => {
     setError(
       nextError instanceof PlatformApiError
         ? nextError.message
-        : backendUnavailableMessage
+        : backendUnavailableMessage,
     );
   };
 
@@ -663,18 +701,23 @@ export const AdminCenterCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.25, md: 3 },
         borderRadius: 1,
         border: ADMIN_SOFT_BORDER,
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.25, md: 2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {access && (
@@ -702,9 +745,21 @@ export const AdminCenterCard = () => {
                 "linear-gradient(135deg, var(--sn-surface-glass), var(--sn-surface-muted))",
             }}
           >
-            <Stack spacing={1.3}>
+            <Stack spacing={{ xs: 1, md: 1.3 }}>
               <EcosystemPulse focus="admin" />
-              <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+              <Stack
+                data-admin-ai-worker-action-rail="true"
+                direction="row"
+                spacing={0.8}
+                useFlexGap
+                flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                sx={{
+                  overflowX: { xs: "auto", sm: "visible" },
+                  mx: { xs: -1, sm: 0 },
+                  px: { xs: 1, sm: 0 },
+                  pb: { xs: 0.5, sm: 0 },
+                }}
+              >
                 {adminBlueprintPatterns.map((pattern) => {
                   const Icon = pattern.icon;
 
@@ -717,6 +772,7 @@ export const AdminCenterCard = () => {
                       onClick={pattern.onClick}
                       sx={{
                         borderRadius: 1,
+                        whiteSpace: "nowrap",
                         textTransform: "none",
                         fontWeight: 850,
                         borderColor: `${pattern.accent}66`,
@@ -737,9 +793,23 @@ export const AdminCenterCard = () => {
             onChange={(_, value: AdminTab) => setTab(value)}
             variant="scrollable"
             allowScrollButtonsMobile
+            sx={{
+              minHeight: { xs: 38, md: 48 },
+              "& .MuiTabs-flexContainer": { gap: { xs: 0.25, md: 0.5 } },
+              "& .MuiTab-root": {
+                minHeight: { xs: 38, md: 48 },
+                px: { xs: 1.2, md: 2 },
+                textTransform: "none",
+                fontWeight: 800,
+              },
+            }}
           >
             {visibleTabs.map((tabId) => (
-              <Tab key={tabId} value={tabId} label={getAdminTabLabel(copy.tabs, tabId)} />
+              <Tab
+                key={tabId}
+                value={tabId}
+                label={getAdminTabLabel(copy.tabs, tabId)}
+              />
             ))}
           </Tabs>
         )}
@@ -747,49 +817,72 @@ export const AdminCenterCard = () => {
         {activeTab === "stats" && access?.permissions.manageSystem && (
           <Stack spacing={1.4}>
             <Stack spacing={0.3}>
-              <Typography sx={{ fontWeight: 900 }}>{copy.statsTitle}</Typography>
-              <Typography color="text.secondary">{copy.statsSubtitle}</Typography>
+              <Typography sx={{ fontWeight: 900 }}>
+                {copy.statsTitle}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
+                {copy.statsSubtitle}
+              </Typography>
             </Stack>
             <Box
+              data-admin-mobile-stats-rail="true"
               sx={{
-                display: "grid",
+                ...ADMIN_MOBILE_RAIL,
                 gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: ADMIN_TWO_COLUMN_GRID,
+                  md: ADMIN_TWO_COLUMN_GRID,
                   lg: ADMIN_FOUR_COLUMN_GRID,
                 },
                 gap: 1.2,
               }}
             >
-              {getPlatformStatsCards({ copy, stats, users, queue }).map(({ label, value }) => (
-                <Box
-                  key={label}
-                  className="sn-premium-panel"
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 1,
-                    border: ADMIN_SOFT_BORDER,
-                  }}
-                >
-                  <Typography color="text.secondary" variant="body2">
-                    {label}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 900, fontSize: 26 }}>{value}</Typography>
-                </Box>
-              ))}
+              {getPlatformStatsCards({ copy, stats, users, queue }).map(
+                ({ label, value }) => (
+                  <Box
+                    key={label}
+                    className="sn-premium-panel"
+                    sx={{
+                      p: 1.5,
+                      minWidth: { xs: 168, md: 0 },
+                      borderRadius: 1,
+                      border: ADMIN_SOFT_BORDER,
+                      scrollSnapAlign: { xs: "start", md: "none" },
+                    }}
+                  >
+                    <Typography color="text.secondary" variant="body2">
+                      {label}
+                    </Typography>
+                    <Typography sx={{ fontWeight: 900, fontSize: 26 }}>
+                      {value}
+                    </Typography>
+                  </Box>
+                ),
+              )}
             </Box>
             <Box
+              data-admin-mobile-moderation-rail="true"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: ADMIN_FOUR_COLUMN_GRID },
+                ...ADMIN_MOBILE_RAIL,
+                gridTemplateColumns: { md: ADMIN_FOUR_COLUMN_GRID },
                 gap: 1.2,
               }}
             >
-              {getModerationStatsCards({ copy, stats, queue }).map(({ label, value }) => (
-                <Alert key={label} severity={Number(value) > 0 ? "warning" : "info"}>
-                  <strong>{label}</strong>: {value}
-                </Alert>
-              ))}
+              {getModerationStatsCards({ copy, stats, queue }).map(
+                ({ label, value }) => (
+                  <Alert
+                    key={label}
+                    severity={Number(value) > 0 ? "warning" : "info"}
+                    sx={{
+                      minWidth: { xs: 220, md: 0 },
+                      scrollSnapAlign: { xs: "start", md: "none" },
+                    }}
+                  >
+                    <strong>{label}</strong>: {value}
+                  </Alert>
+                ),
+              )}
             </Box>
           </Stack>
         )}
@@ -800,12 +893,18 @@ export const AdminCenterCard = () => {
               <Alert severity="info">{copy.reportsEmpty}</Alert>
             ) : (
               reports.map((report) => (
-                <Paper key={report.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={report.id}
+                  variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 1 }}
+                >
                   <Stack spacing={0.5}>
                     <Typography sx={{ fontWeight: 900 }}>
                       {report.targetType} · {report.reporterName}
                     </Typography>
-                    <Typography color="text.secondary">{report.reason}</Typography>
+                    <Typography color="text.secondary">
+                      {report.reason}
+                    </Typography>
                     <Typography color="text.secondary" variant="body2">
                       {formatDateTime(report.createdAt, appLanguage)}
                     </Typography>
@@ -822,7 +921,11 @@ export const AdminCenterCard = () => {
               <Alert severity="info">{copy.pendingEmpty}</Alert>
             ) : (
               queue.map((item) => (
-                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={item.id}
+                  variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 1 }}
+                >
                   <Stack spacing={1}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -844,7 +947,9 @@ export const AdminCenterCard = () => {
                         />
                       ) : null}
                       <Stack spacing={0.4}>
-                        <Typography sx={{ fontWeight: 700 }}>{item.name}</Typography>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {item.name}
+                        </Typography>
                         <Typography color="text.secondary">
                           {item.category ?? item.brand ?? "Manual"}
                         </Typography>
@@ -855,30 +960,54 @@ export const AdminCenterCard = () => {
                         ) : null}
                       </Stack>
                     </Stack>
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Chip label={`${item.nutrients.calories} kcal`} size="small" />
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                    >
                       <Chip
-                        label={formatAdminMacro("protein", item.nutrients.protein, appLanguage)}
+                        label={`${item.nutrients.calories} kcal`}
                         size="small"
                       />
                       <Chip
-                        label={formatAdminMacro("fat", item.nutrients.fat, appLanguage)}
+                        label={formatAdminMacro(
+                          "protein",
+                          item.nutrients.protein,
+                          appLanguage,
+                        )}
                         size="small"
                       />
                       <Chip
-                        label={formatAdminMacro("carbs", item.nutrients.carbs, appLanguage)}
+                        label={formatAdminMacro(
+                          "fat",
+                          item.nutrients.fat,
+                          appLanguage,
+                        )}
+                        size="small"
+                      />
+                      <Chip
+                        label={formatAdminMacro(
+                          "carbs",
+                          item.nutrients.carbs,
+                          appLanguage,
+                        )}
                         size="small"
                       />
                     </Stack>
                     <Stack direction="row" spacing={1}>
                       <Button
                         onClick={() => {
-                          void reviewCatalogSubmission(item.id, { decision: "approve" })
+                          void reviewCatalogSubmission(item.id, {
+                            decision: "approve",
+                          })
                             .then((updatedItem) => {
                               setQueue((current) =>
                                 current.map((entry) =>
-                                  entry.id === updatedItem.id ? updatedItem : entry
-                                )
+                                  entry.id === updatedItem.id
+                                    ? updatedItem
+                                    : entry,
+                                ),
                               );
                               setError(null);
                             })
@@ -890,12 +1019,16 @@ export const AdminCenterCard = () => {
                       <Button
                         color="error"
                         onClick={() => {
-                          void reviewCatalogSubmission(item.id, { decision: "reject" })
+                          void reviewCatalogSubmission(item.id, {
+                            decision: "reject",
+                          })
                             .then((updatedItem) => {
                               setQueue((current) =>
                                 current.map((entry) =>
-                                  entry.id === updatedItem.id ? updatedItem : entry
-                                )
+                                  entry.id === updatedItem.id
+                                    ? updatedItem
+                                    : entry,
+                                ),
                               );
                               setError(null);
                             })
@@ -912,266 +1045,332 @@ export const AdminCenterCard = () => {
           </Stack>
         )}
 
-        {activeTab === "users" && (access?.permissions.manageModerators || access?.permissions.manageAdmins) && (
-          <Stack spacing={1.2}>
-            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
-              <Stack spacing={1.2}>
-                <Stack spacing={0.3}>
-                  <Typography sx={{ fontWeight: 900 }}>{copy.usersPanelTitle}</Typography>
-                  <Typography color="text.secondary" variant="body2">
-                    {copy.usersPanelSubtitle}
-                  </Typography>
-                </Stack>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gap: 1,
-                    gridTemplateColumns: {
-                      xs: ADMIN_TWO_COLUMN_GRID,
-                      md: ADMIN_FOUR_COLUMN_GRID,
-                    },
-                  }}
-                >
-                  {getAdminUserHealthCards({ copy, stats, users }).map(({ label, value }) => (
-                    <Box
-                      key={label}
-                      sx={{
-                        p: 1.2,
-                        borderRadius: 1,
-                        border: ADMIN_SOFT_BORDER,
-                        backgroundColor: "var(--sn-surface-glass)",
-                      }}
-                    >
-                      <Typography variant="caption" color="text.secondary">
-                        {label}
-                      </Typography>
-                      <Typography sx={{ fontWeight: 900, fontSize: 22 }}>
-                        {value}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Stack>
-            </Paper>
-
-            {users.map((user) => (
-              <Paper key={user.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
-                {(() => {
-                  const roleDraft = getRoleDraft(roleDrafts, user);
-                  const roleOptions = allowedRoles.includes(roleDraft)
-                    ? allowedRoles
-                    : [roleDraft, ...allowedRoles];
-                  const canChangeRole =
-                    user.id !== currentUser.id &&
-                    !isProtectedOwnerRole(user.role) &&
-                    allowedRoles.length > 0 &&
-                    (access?.permissions.manageAdmins || user.role !== "ADMIN");
-
-                  return (
-                    <Stack spacing={1.4}>
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1}
-                        justifyContent="space-between"
-                        alignItems={{ xs: "stretch", sm: "flex-start" }}
-                      >
-                        <Stack spacing={0.3}>
-                          <Typography sx={{ fontWeight: 850 }}>{user.name}</Typography>
-                          <Typography color="text.secondary" variant="body2">
-                            {user.email}
-                          </Typography>
-                        </Stack>
-                        <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
-                          <Chip
-                            color={user.isBanned ? "error" : "success"}
-                            label={user.isBanned ? copy.banned : copy.active}
-                          />
-                          <Chip
-                            color={user.hasActiveSession ? "success" : "default"}
-                            label={user.hasActiveSession ? copy.usersOnline : copy.offline}
-                            variant={user.hasActiveSession ? "filled" : "outlined"}
-                          />
-                        </Stack>
-                      </Stack>
-
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gap: 1,
-                          gridTemplateColumns: {
-                            xs: "1fr",
-                            sm: ADMIN_TWO_COLUMN_GRID,
-                            lg: "repeat(4, minmax(0, 1fr))",
-                          },
-                        }}
-                      >
-                        {[
-                          [copy.accountCreated, formatDateTime(user.createdAt, appLanguage)],
-                          [
-                            copy.lastSession,
-                            formatOptionalDateTime(
-                              user.lastSessionAt,
-                              appLanguage,
-                              copy.noSession
-                            ),
-                          ],
-                          [
-                            copy.emailStatus,
-                            user.emailVerified ? copy.emailConfirmed : copy.emailPending,
-                          ],
-                          [
-                            copy.security,
-                            user.twoFactorEnabled || user.twoFactorRequired
-                              ? `${copy.twoFactor}: ${
-                                  user.twoFactorRequired ? copy.required : copy.optional
-                                }`
-                              : `${copy.twoFactor}: ${copy.optional}`,
-                          ],
-                        ].map(([label, value]) => (
-                          <Box key={label}>
-                            <Typography variant="caption" color="text.secondary">
-                              {label}
-                            </Typography>
-                            <Typography sx={{ fontWeight: 800 }}>{value}</Typography>
-                          </Box>
-                        ))}
-                      </Box>
-
-                      {user.isBanned && (
-                        <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                          <Stack spacing={0.3}>
-                            {user.bannedAt && (
-                              <Typography variant="body2">
-                                {copy.bannedAt}:{" "}
-                                {formatDateTime(user.bannedAt, appLanguage)}
-                              </Typography>
-                            )}
-                            {user.bannedReason && (
-                              <Typography variant="body2">
-                                {copy.banReason}: {user.bannedReason}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </Alert>
-                      )}
-
-                      <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
-                        <TextField
-                          select
-                          size="small"
-                          label={copy.role}
-                          value={roleDraft}
-                          disabled={!canChangeRole}
-                          onChange={(event) =>
-                            setRoleDrafts((current) => {
-                              const next = new Map(current);
-                              next.set(user.id, event.target.value as AssignableUserRole);
-
-                              return next;
-                            })
-                          }
-                          sx={{ minWidth: 180 }}
-                        >
-                          {roleOptions.map((role) => (
-                            <MenuItem key={role} value={role}>
-                              {getUserRoleLabel(role)}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                        <Button
-                          disabled={!canChangeRole}
-                          startIcon={<ShieldCheck size={16} />}
-                          onClick={() => {
-                            void updateAdminUserRole(user.id, roleDraft)
-                              .then((updatedUser) => {
-                                setUsers((current) =>
-                                  current.map((entry) =>
-                                    entry.id === updatedUser.id ? updatedUser : entry
-                                  )
-                                );
-                                setError(null);
-                              })
-                              .catch(handlePlatformMutationError);
+        {activeTab === "users" &&
+          (access?.permissions.manageModerators ||
+            access?.permissions.manageAdmins) && (
+            <Stack spacing={1.2}>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Stack spacing={1.2}>
+                  <Stack spacing={0.3}>
+                    <Typography sx={{ fontWeight: 900 }}>
+                      {copy.usersPanelTitle}
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      {copy.usersPanelSubtitle}
+                    </Typography>
+                  </Stack>
+                  <Box
+                    data-admin-mobile-user-health-rail="true"
+                    sx={{
+                      ...ADMIN_MOBILE_RAIL,
+                      gap: 1,
+                      gridTemplateColumns: {
+                        md: ADMIN_FOUR_COLUMN_GRID,
+                      },
+                    }}
+                  >
+                    {getAdminUserHealthCards({ copy, stats, users }).map(
+                      ({ label, value }) => (
+                        <Box
+                          key={label}
+                          sx={{
+                            p: 1.2,
+                            minWidth: { xs: 140, md: 0 },
+                            borderRadius: 1,
+                            border: ADMIN_SOFT_BORDER,
+                            backgroundColor: "var(--sn-surface-glass)",
+                            scrollSnapAlign: { xs: "start", md: "none" },
                           }}
                         >
-                          {copy.applyRole}
-                        </Button>
-                        {access?.permissions.banUsers && (
-                          <Button
-                            color={user.isBanned ? "success" : "error"}
-                            disabled={
-                              user.id === currentUser.id || isProtectedOwnerRole(user.role)
-                            }
-                            startIcon={<Ban size={16} />}
-                            onClick={() => {
-                              void updateAdminUserBan(user.id, {
-                                banned: !user.isBanned,
-                                reason: "Admin moderation action",
+                          <Typography variant="caption" color="text.secondary">
+                            {label}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 900, fontSize: 22 }}>
+                            {value}
+                          </Typography>
+                        </Box>
+                      ),
+                    )}
+                  </Box>
+                </Stack>
+              </Paper>
+
+              {users.map((user) => (
+                <Paper
+                  key={user.id}
+                  variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 1 }}
+                >
+                  {(() => {
+                    const roleDraft = getRoleDraft(roleDrafts, user);
+                    const roleOptions = allowedRoles.includes(roleDraft)
+                      ? allowedRoles
+                      : [roleDraft, ...allowedRoles];
+                    const canChangeRole =
+                      user.id !== currentUser.id &&
+                      !isProtectedOwnerRole(user.role) &&
+                      allowedRoles.length > 0 &&
+                      (access?.permissions.manageAdmins ||
+                        user.role !== "ADMIN");
+
+                    return (
+                      <Stack spacing={1.4}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          justifyContent="space-between"
+                          alignItems={{ xs: "stretch", sm: "flex-start" }}
+                        >
+                          <Stack spacing={0.3}>
+                            <Typography sx={{ fontWeight: 850 }}>
+                              {user.name}
+                            </Typography>
+                            <Typography color="text.secondary" variant="body2">
+                              {user.email}
+                            </Typography>
+                          </Stack>
+                          <Stack
+                            direction="row"
+                            spacing={0.8}
+                            useFlexGap
+                            flexWrap="wrap"
+                          >
+                            <Chip
+                              color={user.isBanned ? "error" : "success"}
+                              label={user.isBanned ? copy.banned : copy.active}
+                            />
+                            <Chip
+                              color={
+                                user.hasActiveSession ? "success" : "default"
+                              }
+                              label={
+                                user.hasActiveSession
+                                  ? copy.usersOnline
+                                  : copy.offline
+                              }
+                              variant={
+                                user.hasActiveSession ? "filled" : "outlined"
+                              }
+                            />
+                          </Stack>
+                        </Stack>
+
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gap: 1,
+                            gridTemplateColumns: {
+                              xs: "1fr",
+                              sm: ADMIN_TWO_COLUMN_GRID,
+                              lg: "repeat(4, minmax(0, 1fr))",
+                            },
+                          }}
+                        >
+                          {[
+                            [
+                              copy.accountCreated,
+                              formatDateTime(user.createdAt, appLanguage),
+                            ],
+                            [
+                              copy.lastSession,
+                              formatOptionalDateTime(
+                                user.lastSessionAt,
+                                appLanguage,
+                                copy.noSession,
+                              ),
+                            ],
+                            [
+                              copy.emailStatus,
+                              user.emailVerified
+                                ? copy.emailConfirmed
+                                : copy.emailPending,
+                            ],
+                            [
+                              copy.security,
+                              user.twoFactorEnabled || user.twoFactorRequired
+                                ? `${copy.twoFactor}: ${
+                                    user.twoFactorRequired
+                                      ? copy.required
+                                      : copy.optional
+                                  }`
+                                : `${copy.twoFactor}: ${copy.optional}`,
+                            ],
+                          ].map(([label, value]) => (
+                            <Box key={label}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {label}
+                              </Typography>
+                              <Typography sx={{ fontWeight: 800 }}>
+                                {value}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+
+                        {user.isBanned && (
+                          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                            <Stack spacing={0.3}>
+                              {user.bannedAt && (
+                                <Typography variant="body2">
+                                  {copy.bannedAt}:{" "}
+                                  {formatDateTime(user.bannedAt, appLanguage)}
+                                </Typography>
+                              )}
+                              {user.bannedReason && (
+                                <Typography variant="body2">
+                                  {copy.banReason}: {user.bannedReason}
+                                </Typography>
+                              )}
+                            </Stack>
+                          </Alert>
+                        )}
+
+                        <Stack
+                          direction={{ xs: "column", md: "row" }}
+                          spacing={1.2}
+                        >
+                          <TextField
+                            select
+                            size="small"
+                            label={copy.role}
+                            value={roleDraft}
+                            disabled={!canChangeRole}
+                            onChange={(event) =>
+                              setRoleDrafts((current) => {
+                                const next = new Map(current);
+                                next.set(
+                                  user.id,
+                                  event.target.value as AssignableUserRole,
+                                );
+
+                                return next;
                               })
+                            }
+                            sx={{ minWidth: 180 }}
+                          >
+                            {roleOptions.map((role) => (
+                              <MenuItem key={role} value={role}>
+                                {getUserRoleLabel(role)}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <Button
+                            disabled={!canChangeRole}
+                            startIcon={<ShieldCheck size={16} />}
+                            onClick={() => {
+                              void updateAdminUserRole(user.id, roleDraft)
                                 .then((updatedUser) => {
                                   setUsers((current) =>
                                     current.map((entry) =>
-                                      entry.id === updatedUser.id ? updatedUser : entry
-                                    )
+                                      entry.id === updatedUser.id
+                                        ? updatedUser
+                                        : entry,
+                                    ),
                                   );
                                   setError(null);
                                 })
                                 .catch(handlePlatformMutationError);
                             }}
                           >
-                            {user.isBanned ? copy.unban : copy.ban}
+                            {copy.applyRole}
                           </Button>
-                        )}
-                        {access?.permissions.manageAdmins && (
-                          <Button
-                            color="error"
-                            disabled={
-                              user.id === currentUser.id || isProtectedOwnerRole(user.role)
-                            }
-                            startIcon={<Trash2 size={16} />}
-                            onClick={() => {
-                              if (!window.confirm(copy.confirmDelete)) {
-                                return;
+                          {access?.permissions.banUsers && (
+                            <Button
+                              color={user.isBanned ? "success" : "error"}
+                              disabled={
+                                user.id === currentUser.id ||
+                                isProtectedOwnerRole(user.role)
                               }
-
-                              void deleteAdminUser(user.id)
-                                .then(() => {
-                                  setUsers((current) =>
-                                    current.filter((entry) => entry.id !== user.id)
-                                  );
-                                  setStats((current) =>
-                                    current
-                                      ? {
-                                          ...current,
-                                          usersTotal: Math.max(current.usersTotal - 1, 0),
-                                          usersActive: user.isBanned
-                                            ? current.usersActive
-                                            : Math.max(current.usersActive - 1, 0),
-                                          usersBanned: user.isBanned
-                                            ? Math.max(current.usersBanned - 1, 0)
-                                            : current.usersBanned,
-                                          usersOnline: user.hasActiveSession
-                                            ? Math.max(current.usersOnline - 1, 0)
-                                            : current.usersOnline,
-                                        }
-                                      : current
-                                  );
-                                  setError(null);
+                              startIcon={<Ban size={16} />}
+                              onClick={() => {
+                                void updateAdminUserBan(user.id, {
+                                  banned: !user.isBanned,
+                                  reason: "Admin moderation action",
                                 })
-                                .catch(handlePlatformMutationError);
-                            }}
-                          >
-                            {copy.deleteUser}
-                          </Button>
-                        )}
+                                  .then((updatedUser) => {
+                                    setUsers((current) =>
+                                      current.map((entry) =>
+                                        entry.id === updatedUser.id
+                                          ? updatedUser
+                                          : entry,
+                                      ),
+                                    );
+                                    setError(null);
+                                  })
+                                  .catch(handlePlatformMutationError);
+                              }}
+                            >
+                              {user.isBanned ? copy.unban : copy.ban}
+                            </Button>
+                          )}
+                          {access?.permissions.manageAdmins && (
+                            <Button
+                              color="error"
+                              disabled={
+                                user.id === currentUser.id ||
+                                isProtectedOwnerRole(user.role)
+                              }
+                              startIcon={<Trash2 size={16} />}
+                              onClick={() => {
+                                if (!window.confirm(copy.confirmDelete)) {
+                                  return;
+                                }
+
+                                void deleteAdminUser(user.id)
+                                  .then(() => {
+                                    setUsers((current) =>
+                                      current.filter(
+                                        (entry) => entry.id !== user.id,
+                                      ),
+                                    );
+                                    setStats((current) =>
+                                      current
+                                        ? {
+                                            ...current,
+                                            usersTotal: Math.max(
+                                              current.usersTotal - 1,
+                                              0,
+                                            ),
+                                            usersActive: user.isBanned
+                                              ? current.usersActive
+                                              : Math.max(
+                                                  current.usersActive - 1,
+                                                  0,
+                                                ),
+                                            usersBanned: user.isBanned
+                                              ? Math.max(
+                                                  current.usersBanned - 1,
+                                                  0,
+                                                )
+                                              : current.usersBanned,
+                                            usersOnline: user.hasActiveSession
+                                              ? Math.max(
+                                                  current.usersOnline - 1,
+                                                  0,
+                                                )
+                                              : current.usersOnline,
+                                          }
+                                        : current,
+                                    );
+                                    setError(null);
+                                  })
+                                  .catch(handlePlatformMutationError);
+                              }}
+                            >
+                              {copy.deleteUser}
+                            </Button>
+                          )}
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  );
-                })()}
-              </Paper>
-            ))}
-          </Stack>
-        )}
+                    );
+                  })()}
+                </Paper>
+              ))}
+            </Stack>
+          )}
 
         {activeTab === "audit" && access?.permissions.viewAuditLogs && (
           <Stack spacing={1.2}>
@@ -1179,11 +1378,18 @@ export const AdminCenterCard = () => {
               <Alert severity="info">{copy.noAudit}</Alert>
             ) : (
               audit.map((item) => (
-                <Paper key={item.id} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={item.id}
+                  variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 1 }}
+                >
                   <Stack spacing={0.4}>
-                    <Typography sx={{ fontWeight: 700 }}>{item.action}</Typography>
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {item.action}
+                    </Typography>
                     <Typography color="text.secondary" variant="body2">
-                      {item.actorRole} - {formatDateTime(item.createdAt, appLanguage)}
+                      {item.actorRole} -{" "}
+                      {formatDateTime(item.createdAt, appLanguage)}
                     </Typography>
                   </Stack>
                 </Paper>
@@ -1195,13 +1401,18 @@ export const AdminCenterCard = () => {
         {activeTab === "system" && access?.permissions.manageSystem && (
           <Stack spacing={1.2}>
             <Stack spacing={0.4}>
-              <Typography sx={{ fontWeight: 900 }}>{copy.systemTitle}</Typography>
-              <Typography color="text.secondary">{copy.systemSubtitle}</Typography>
+              <Typography sx={{ fontWeight: 900 }}>
+                {copy.systemTitle}
+              </Typography>
+              <Typography color="text.secondary">
+                {copy.systemSubtitle}
+              </Typography>
             </Stack>
             <Box
+              data-admin-mobile-system-rail="true"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: ADMIN_FOUR_COLUMN_GRID },
+                ...ADMIN_MOBILE_RAIL,
+                gridTemplateColumns: { md: ADMIN_FOUR_COLUMN_GRID },
                 gap: 1.2,
               }}
             >
@@ -1227,11 +1438,26 @@ export const AdminCenterCard = () => {
                   hint: copy.aiPolicy,
                 },
               ].map((item) => (
-                <Paper key={item.title} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={item.title}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    minWidth: { xs: 220, md: 0 },
+                    borderRadius: 1,
+                    scrollSnapAlign: { xs: "start", md: "none" },
+                  }}
+                >
                   <Stack spacing={0.5}>
                     <Typography color="text.secondary">{item.title}</Typography>
-                    <Typography sx={{ fontWeight: 900, fontSize: 24 }}>{item.value}</Typography>
-                    <Typography color="text.secondary" variant="body2">
+                    <Typography sx={{ fontWeight: 900, fontSize: 24 }}>
+                      {item.value}
+                    </Typography>
+                    <Typography
+                      color="text.secondary"
+                      variant="body2"
+                      sx={{ display: { xs: "none", sm: "block" } }}
+                    >
                       {item.hint}
                     </Typography>
                   </Stack>
@@ -1241,7 +1467,9 @@ export const AdminCenterCard = () => {
             <Alert severity="info">{copy.logsReady}</Alert>
             <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
               <Stack spacing={0.4}>
-                <Typography sx={{ fontWeight: 900 }}>{copy.systemLogs}</Typography>
+                <Typography sx={{ fontWeight: 900 }}>
+                  {copy.systemLogs}
+                </Typography>
                 <Typography color="text.secondary" variant="body2">
                   {latestAudit
                     ? `${latestAudit.action} - ${formatDateTime(latestAudit.createdAt, appLanguage)}`

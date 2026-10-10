@@ -22,7 +22,9 @@ export const WeeklyInsights = () => {
     return Array.from({ length: WEEK_DAY_COUNT }, (_, index) => {
       const date = addDays(today, -(6 - index));
       const key = getLocalDateKey(date);
-      const entries = items.filter((item) => getLocalDateKey(item.eatenAt) === key);
+      const entries = items.filter(
+        (item) => getLocalDateKey(item.eatenAt) === key,
+      );
       const totals = entries.reduce(
         (accumulator, item) => {
           const factor = item.quantity / 100;
@@ -30,7 +32,7 @@ export const WeeklyInsights = () => {
           accumulator.protein += item.product.nutrients.protein * factor;
           return accumulator;
         },
-        { calories: 0, protein: 0 }
+        { calories: 0, protein: 0 },
       );
 
       return {
@@ -54,7 +56,7 @@ export const WeeklyInsights = () => {
       <Paper
         elevation={0}
         sx={{
-          p: 3,
+          p: { xs: 1.35, md: 3 },
           borderRadius: 1,
           border: "1px solid var(--sn-border-soft)",
           backgroundColor: "var(--sn-surface-glass)",
@@ -72,39 +74,75 @@ export const WeeklyInsights = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2.5}>
+      <Stack spacing={{ xs: 1.2, md: 2.5 }}>
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("weekly.title")}
         </Typography>
 
         <Box
+          data-weekly-insights-mobile-summary-rail="true"
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-            gap: 2,
+            display: { xs: "flex", md: "grid" },
+            gridTemplateColumns: { md: "repeat(3, minmax(0, 1fr))" },
+            gap: { xs: 1, md: 2 },
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+            scrollSnapType: { xs: "x proximity", md: "none" },
           }}
         >
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-            <Typography color="text.secondary">{t("weekly.average")}</Typography>
-            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 1.2, md: 2 },
+              minWidth: { xs: 178, md: 0 },
+              borderRadius: 1,
+              scrollSnapAlign: { xs: "start", md: "none" },
+            }}
+          >
+            <Typography color="text.secondary">
+              {t("weekly.average")}
+            </Typography>
+            <Typography component="p" variant="h6" sx={{ fontWeight: 900 }}>
               {(totalWeekCalories / WEEK_DAY_COUNT).toFixed(0)} {kcalLabel}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-            <Typography color="text.secondary">{t("weekly.protein")}</Typography>
-            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 1.2, md: 2 },
+              minWidth: { xs: 178, md: 0 },
+              borderRadius: 1,
+              scrollSnapAlign: { xs: "start", md: "none" },
+            }}
+          >
+            <Typography color="text.secondary">
+              {t("weekly.protein")}
+            </Typography>
+            <Typography component="p" variant="h6" sx={{ fontWeight: 900 }}>
               {(totalWeekProtein / WEEK_DAY_COUNT).toFixed(1)} {t("common.g")}
             </Typography>
           </Paper>
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-            <Typography color="text.secondary">{t("weekly.bestDay")}</Typography>
-            <Typography component="p" variant="h5" sx={{ fontWeight: 900 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 1.2, md: 2 },
+              minWidth: { xs: 178, md: 0 },
+              borderRadius: 1,
+              scrollSnapAlign: { xs: "start", md: "none" },
+            }}
+          >
+            <Typography color="text.secondary">
+              {t("weekly.bestDay")}
+            </Typography>
+            <Typography component="p" variant="h6" sx={{ fontWeight: 900 }}>
               {bestDay?.label} - {bestDay?.calories.toFixed(0)} {kcalLabel}
             </Typography>
           </Paper>
@@ -112,8 +150,15 @@ export const WeeklyInsights = () => {
 
         <Stack spacing={1}>
           {days.map((day) => (
-            <Stack key={day.key} direction="row" spacing={1.5} alignItems="center">
-              <Typography sx={{ width: 74, fontWeight: 700 }}>{day.label}</Typography>
+            <Stack
+              key={day.key}
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+            >
+              <Typography sx={{ width: 74, fontWeight: 700 }}>
+                {day.label}
+              </Typography>
               <Box
                 sx={{
                   flex: 1,

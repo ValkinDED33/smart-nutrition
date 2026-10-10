@@ -49,7 +49,10 @@ import {
   toReminderType,
   upsertReminderItem,
 } from "./reminderManagementModel";
-import { dispatchReminderUpserted, subscribeToReminderUpserts } from "./reminderEvents";
+import {
+  dispatchReminderUpserted,
+  subscribeToReminderUpserts,
+} from "./reminderEvents";
 
 const reminderCopy = {
   uk: {
@@ -67,7 +70,8 @@ const reminderCopy = {
     textPlaceholder: "Наприклад: Подзвонити лікарю о 10:00",
     medicationPlaceholder:
       "Наприклад: Вітамін D з обідом о 13:00, якщо є жири в їжі",
-    medicationCoursePlaceholder: "Наприклад: Амоксиклав 875 мг, 08:00 і 20:00, 7 днів",
+    medicationCoursePlaceholder:
+      "Наприклад: Амоксиклав 875 мг, 08:00 і 20:00, 7 днів",
     pregnancySupplementPlaceholder:
       "Наприклад: Фолієва кислота за планом лікаря щодня о 09:00",
     waterPlaceholder: "Наприклад: Склянка води щодня о 09:00, 13:00 і 18:00",
@@ -125,7 +129,8 @@ const reminderCopy = {
     adherenceReport: "Звіт за період",
     adherence7d: "7 днів",
     adherence30d: "30 днів",
-    activeReminders: (active: number, total: number) => `Активних: ${active}/${total}`,
+    activeReminders: (active: number, total: number) =>
+      `Активних: ${active}/${total}`,
     adherenceReportEmpty: "Ще немає підтверджених дій за цей період.",
     adherenceRiskGood: "ритм стабільний",
     adherenceRiskWatch: "є пропуски",
@@ -215,8 +220,10 @@ const reminderCopy = {
     adherenceReport: "Raport okresu",
     adherence7d: "7 dni",
     adherence30d: "30 dni",
-    activeReminders: (active: number, total: number) => `Aktywne: ${active}/${total}`,
-    adherenceReportEmpty: "Nie ma jeszcze potwierdzonych działań w tym okresie.",
+    activeReminders: (active: number, total: number) =>
+      `Aktywne: ${active}/${total}`,
+    adherenceReportEmpty:
+      "Nie ma jeszcze potwierdzonych działań w tym okresie.",
     adherenceRiskGood: "rytm stabilny",
     adherenceRiskWatch: "są pominięcia",
     adherenceRiskMissing: "potrzeba danych",
@@ -247,10 +254,12 @@ const reminderCopy = {
     textPlaceholder: "Example: Call the doctor at 10:00",
     medicationPlaceholder:
       "Example: Vitamin D with lunch at 13:00 if the meal has fats",
-    medicationCoursePlaceholder: "Example: Amoxiclav 875 mg, 08:00 and 20:00, 7 days",
+    medicationCoursePlaceholder:
+      "Example: Amoxiclav 875 mg, 08:00 and 20:00, 7 days",
     pregnancySupplementPlaceholder:
       "Example: Folic acid by clinician plan daily at 09:00",
-    waterPlaceholder: "Example: A glass of water daily at 09:00, 13:00 and 18:00",
+    waterPlaceholder:
+      "Example: A glass of water daily at 09:00, 13:00 and 18:00",
     habitPlaceholder: "Example: 10 min walk daily at 19:00",
     create: "Create",
     creating: "Creating...",
@@ -305,7 +314,8 @@ const reminderCopy = {
     adherenceReport: "Period report",
     adherence7d: "7 days",
     adherence30d: "30 days",
-    activeReminders: (active: number, total: number) => `Active: ${active}/${total}`,
+    activeReminders: (active: number, total: number) =>
+      `Active: ${active}/${total}`,
     adherenceReportEmpty: "No confirmed actions in this period yet.",
     adherenceRiskGood: "steady rhythm",
     adherenceRiskWatch: "misses found",
@@ -346,7 +356,7 @@ const getReminderLocale = (language: keyof typeof localeByLanguage) => {
 
 const getReminderTypeLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  reminderType: ReminderType
+  reminderType: ReminderType,
 ) => {
   if (reminderType === "medication") return copy.medication;
   if (reminderType === "medication_course") return copy.medicationCourse;
@@ -359,11 +369,13 @@ const getReminderTypeLabel = (
 
 const getReminderPlaceholder = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  reminderType: ReminderType
+  reminderType: ReminderType,
 ) => {
   if (reminderType === "medication") return copy.medicationPlaceholder;
-  if (reminderType === "medication_course") return copy.medicationCoursePlaceholder;
-  if (reminderType === "pregnancy_supplement") return copy.pregnancySupplementPlaceholder;
+  if (reminderType === "medication_course")
+    return copy.medicationCoursePlaceholder;
+  if (reminderType === "pregnancy_supplement")
+    return copy.pregnancySupplementPlaceholder;
   if (reminderType === "water") return copy.waterPlaceholder;
   if (reminderType === "habit") return copy.habitPlaceholder;
 
@@ -388,7 +400,7 @@ const getReminderIcon = (reminderType: ReminderType) => {
 
 const getReminderQuantityLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  reminderType: ReminderType
+  reminderType: ReminderType,
 ) => {
   if (isMedicationLikeReminderType(reminderType)) {
     return copy.dose;
@@ -403,7 +415,7 @@ const getReminderQuantityLabel = (
 
 const getReminderPrimaryActionLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  reminderType: ReminderType
+  reminderType: ReminderType,
 ) => {
   if (isMedicationLikeReminderType(reminderType)) {
     return copy.taken;
@@ -418,7 +430,7 @@ const getReminderPrimaryActionLabel = (
 
 const getReminderActionLabel = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  action: string
+  action: string,
 ) => {
   if (action === "taken") return copy.actionLabels.taken;
   if (action === "done") return copy.actionLabels.done;
@@ -430,7 +442,7 @@ const getReminderActionLabel = (
 
 const getAdherenceRiskCopy = (
   copy: (typeof reminderCopy)[keyof typeof reminderCopy],
-  riskLevel: "good" | "watch" | "missing"
+  riskLevel: "good" | "watch" | "missing",
 ) => {
   if (riskLevel === "good") return copy.adherenceRiskGood;
   if (riskLevel === "watch") return copy.adherenceRiskWatch;
@@ -455,12 +467,17 @@ const ReminderManagementCard = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [busyReminderId, setBusyReminderId] = useState<string | null>(null);
-  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState("");
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(
-    null
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(
+    null,
   );
+  const [editingText, setEditingText] = useState("");
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
+    null,
+  );
+  const [notice, setNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const sortedItems = useMemo(() => sortReminders(items), [items]);
   const adherenceReports = useMemo(
@@ -474,7 +491,7 @@ const ReminderManagementCard = () => {
         summary: getReminderAdherenceRangeSummary(sortedItems, 30),
       },
     ],
-    [copy.adherence7d, copy.adherence30d, sortedItems]
+    [copy.adherence7d, copy.adherence30d, sortedItems],
   );
   const trimmedText = text.trim();
   const canCreate = trimmedText.length >= 6 && !creating;
@@ -522,7 +539,7 @@ const ReminderManagementCard = () => {
       subscribeToReminderUpserts((item) => {
         setItems((current) => upsertReminderItem(current, item));
       }),
-    []
+    [],
   );
 
   const handleCreate = async () => {
@@ -549,13 +566,17 @@ const ReminderManagementCard = () => {
   const handleAction = async (
     reminder: ReminderItem,
     action: ReminderAction,
-    options: { minutes?: number } = {}
+    options: { minutes?: number } = {},
   ) => {
     setBusyReminderId(reminder.id);
     setNotice(null);
 
     try {
-      const item = await updateRemoteReminderAction(reminder.id, action, options);
+      const item = await updateRemoteReminderAction(
+        reminder.id,
+        action,
+        options,
+      );
       setItems((current) => upsertReminderItem(current, item));
       dispatchReminderUpserted(item);
       setNotice({ type: "success", text: copy.updated });
@@ -571,7 +592,7 @@ const ReminderManagementCard = () => {
     setEditingText(
       reminder.trigger?.kind === "after_meal"
         ? copy.afterMealEditText[reminder.trigger.mealType]
-        : reminder.times.join(", ")
+        : reminder.times.join(", "),
     );
     setConfirmingDeleteId(null);
     setNotice(null);
@@ -594,7 +615,10 @@ const ReminderManagementCard = () => {
     setNotice(null);
 
     try {
-      const item = await updateRemoteReminderSchedule(reminder.id, scheduleText);
+      const item = await updateRemoteReminderSchedule(
+        reminder.id,
+        scheduleText,
+      );
       setItems((current) => upsertReminderItem(current, item));
       dispatchReminderUpserted(item);
       cancelEditing();
@@ -612,7 +636,9 @@ const ReminderManagementCard = () => {
 
     try {
       await deleteRemoteReminder(reminder.id);
-      setItems((current) => current.filter((entry) => entry.id !== reminder.id));
+      setItems((current) =>
+        current.filter((entry) => entry.id !== reminder.id),
+      );
       setNotice({ type: "success", text: copy.deleted });
     } catch {
       setNotice({ type: "error", text: copy.actionError });
@@ -625,7 +651,15 @@ const ReminderManagementCard = () => {
   return (
     <SectionCard
       title={copy.title}
-      description={copy.subtitle}
+      description={
+        <Box
+          component="span"
+          data-reminder-mobile-description="true"
+          sx={{ display: { xs: "none", md: "inline" } }}
+        >
+          {copy.subtitle}
+        </Box>
+      }
       tone="info"
       action={
         <Button
@@ -646,6 +680,7 @@ const ReminderManagementCard = () => {
         {notice && <Alert severity={notice.type}>{notice.text}</Alert>}
 
         <Box
+          data-reminder-mobile-create-form="true"
           component="form"
           onSubmit={(event) => {
             event.preventDefault();
@@ -662,6 +697,7 @@ const ReminderManagementCard = () => {
           }}
         >
           <TextField
+            size="small"
             select
             label={copy.typeLabel}
             value={type}
@@ -676,12 +712,14 @@ const ReminderManagementCard = () => {
             ))}
           </TextField>
           <TextField
+            size="small"
             label={copy.textLabel}
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder={getReminderPlaceholder(copy, type)}
             inputProps={{
               autoComplete: "off",
+              enterKeyHint: "send",
             }}
           />
           <Button
@@ -714,7 +752,10 @@ const ReminderManagementCard = () => {
               data-reminder-adherence-report="true"
               sx={{
                 display: { xs: "flex", md: "grid" },
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "repeat(2, minmax(0, 1fr))",
+                },
                 gap: 1,
                 overflowX: { xs: "auto", md: "visible" },
                 pb: { xs: 0.3, md: 0 },
@@ -768,12 +809,17 @@ const ReminderManagementCard = () => {
                           }}
                         />
                       </Stack>
-                      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        useFlexGap
+                        flexWrap="wrap"
+                      >
                         <Chip
                           size="small"
                           label={copy.activeReminders(
                             summary.activeReminderCount,
-                            summary.reminderCount
+                            summary.reminderCount,
                           )}
                           variant="outlined"
                         />
@@ -784,7 +830,11 @@ const ReminderManagementCard = () => {
                               ? copy.adherenceReportEmpty
                               : copy.completionRate(summary.completionRate)
                           }
-                          variant={summary.completionRate === null ? "outlined" : "filled"}
+                          variant={
+                            summary.completionRate === null
+                              ? "outlined"
+                              : "filled"
+                          }
                         />
                       </Stack>
                       <LinearProgress
@@ -805,10 +855,12 @@ const ReminderManagementCard = () => {
                           ? copy.eventCounts(
                               summary.completed,
                               summary.skipped,
-                              summary.snoozed
+                              summary.snoozed,
                             )
                           : copy.adherenceReportEmpty}
-                        {lastActionLabel ? ` · ${copy.lastAction(lastActionLabel)}` : ""}
+                        {lastActionLabel
+                          ? ` · ${copy.lastAction(lastActionLabel)}`
+                          : ""}
                       </Typography>
                     </Stack>
                   </Box>
@@ -819,9 +871,17 @@ const ReminderManagementCard = () => {
               const isBusy = busyReminderId === reminder.id;
               const isEditing = editingReminderId === reminder.id;
               const isConfirmingDelete = confirmingDeleteId === reminder.id;
-              const primaryAction: ReminderAction = getReminderPrimaryAction(reminder.type);
-              const primaryActionLabel = getReminderPrimaryActionLabel(copy, reminder.type);
-              const quantityLabel = getReminderQuantityLabel(copy, reminder.type);
+              const primaryAction: ReminderAction = getReminderPrimaryAction(
+                reminder.type,
+              );
+              const primaryActionLabel = getReminderPrimaryActionLabel(
+                copy,
+                reminder.type,
+              );
+              const quantityLabel = getReminderQuantityLabel(
+                copy,
+                reminder.type,
+              );
               const adherence = getReminderAdherenceSummary(reminder);
               const lastActionLabel = adherence.lastEvent
                 ? getReminderActionLabel(copy, adherence.lastEvent.action)
@@ -872,17 +932,27 @@ const ReminderManagementCard = () => {
                           />
                           <Chip
                             size="small"
-                            label={reminder.repeat === "once" ? copy.oneTime : copy.daily}
+                            label={
+                              reminder.repeat === "once"
+                                ? copy.oneTime
+                                : copy.daily
+                            }
                             variant="outlined"
                           />
                           <Chip
                             size="small"
                             color={reminder.active ? "success" : "default"}
-                            label={reminder.active ? copy.statusActive : copy.statusPaused}
+                            label={
+                              reminder.active
+                                ? copy.statusActive
+                                : copy.statusPaused
+                            }
                             variant={reminder.active ? "filled" : "outlined"}
                           />
                         </Stack>
-                        <Typography sx={{ fontWeight: 900, wordBreak: "break-word" }}>
+                        <Typography
+                          sx={{ fontWeight: 900, wordBreak: "break-word" }}
+                        >
                           {reminder.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -893,7 +963,8 @@ const ReminderManagementCard = () => {
                         </Typography>
                         {reminder.nextRunAt && (
                           <Typography variant="body2" color="text.secondary">
-                            {copy.next}: {formatReminderDateTime(reminder, locale)}
+                            {copy.next}:{" "}
+                            {formatReminderDateTime(reminder, locale)}
                           </Typography>
                         )}
                         <Stack
@@ -922,7 +993,11 @@ const ReminderManagementCard = () => {
                                   ? "warning"
                                   : "default"
                             }
-                            variant={adherence.completionRate === null ? "outlined" : "filled"}
+                            variant={
+                              adherence.completionRate === null
+                                ? "outlined"
+                                : "filled"
+                            }
                           />
                           {lastActionLabel ? (
                             <Chip
@@ -938,7 +1013,7 @@ const ReminderManagementCard = () => {
                             {copy.eventCounts(
                               adherence.completed,
                               adherence.skipped,
-                              adherence.snoozed
+                              adherence.snoozed,
                             )}
                           </Typography>
                         ) : null}
@@ -954,7 +1029,10 @@ const ReminderManagementCard = () => {
                         }}
                         sx={{
                           display: "grid",
-                          gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto auto" },
+                          gridTemplateColumns: {
+                            xs: "1fr",
+                            sm: "minmax(0, 1fr) auto auto",
+                          },
                           gap: 1,
                           alignItems: "center",
                         }}
@@ -963,7 +1041,9 @@ const ReminderManagementCard = () => {
                           size="small"
                           label={copy.editTime}
                           value={editingText}
-                          onChange={(event) => setEditingText(event.target.value)}
+                          onChange={(event) =>
+                            setEditingText(event.target.value)
+                          }
                           placeholder={copy.timePlaceholder}
                           disabled={isBusy}
                           inputProps={{
@@ -977,7 +1057,11 @@ const ReminderManagementCard = () => {
                           size="small"
                           startIcon={<Save size={16} />}
                           disabled={isBusy || !editingText.trim()}
-                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                          sx={{
+                            borderRadius: 999,
+                            textTransform: "none",
+                            fontWeight: 800,
+                          }}
                         >
                           {copy.saveTime}
                         </Button>
@@ -988,7 +1072,11 @@ const ReminderManagementCard = () => {
                           startIcon={<X size={16} />}
                           disabled={isBusy}
                           onClick={cancelEditing}
-                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                          sx={{
+                            borderRadius: 999,
+                            textTransform: "none",
+                            fontWeight: 800,
+                          }}
                         >
                           {copy.cancel}
                         </Button>
@@ -1017,7 +1105,11 @@ const ReminderManagementCard = () => {
                         onClick={() => {
                           void handleAction(reminder, primaryAction);
                         }}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {primaryActionLabel}
                       </Button>
@@ -1027,9 +1119,15 @@ const ReminderManagementCard = () => {
                         startIcon={<Clock size={16} />}
                         disabled={isBusy || !reminder.active}
                         onClick={() => {
-                          void handleAction(reminder, "snoozed", { minutes: 15 });
+                          void handleAction(reminder, "snoozed", {
+                            minutes: 15,
+                          });
                         }}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {copy.snooze}
                       </Button>
@@ -1040,19 +1138,36 @@ const ReminderManagementCard = () => {
                         onClick={() => {
                           void handleAction(reminder, "skipped");
                         }}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {copy.skip}
                       </Button>
                       <Button
                         variant="outlined"
                         size="small"
-                        startIcon={reminder.active ? <Pause size={16} /> : <Play size={16} />}
+                        startIcon={
+                          reminder.active ? (
+                            <Pause size={16} />
+                          ) : (
+                            <Play size={16} />
+                          )
+                        }
                         disabled={isBusy}
                         onClick={() => {
-                          void handleAction(reminder, reminder.active ? "pause" : "resume");
+                          void handleAction(
+                            reminder,
+                            reminder.active ? "pause" : "resume",
+                          );
                         }}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {reminder.active ? copy.pause : copy.resume}
                       </Button>
@@ -1062,7 +1177,11 @@ const ReminderManagementCard = () => {
                         startIcon={<Pencil size={16} />}
                         disabled={isBusy}
                         onClick={() => startEditing(reminder)}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {copy.editTime}
                       </Button>
@@ -1080,9 +1199,16 @@ const ReminderManagementCard = () => {
 
                           setConfirmingDeleteId(reminder.id);
                           setEditingReminderId(null);
-                          setNotice({ type: "error", text: copy.deleteConfirm });
+                          setNotice({
+                            type: "error",
+                            text: copy.deleteConfirm,
+                          });
                         }}
-                        sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
                       >
                         {isConfirmingDelete ? copy.confirmDelete : copy.delete}
                       </Button>
@@ -1096,7 +1222,11 @@ const ReminderManagementCard = () => {
                             setConfirmingDeleteId(null);
                             setNotice(null);
                           }}
-                          sx={{ borderRadius: 999, textTransform: "none", fontWeight: 800 }}
+                          sx={{
+                            borderRadius: 999,
+                            textTransform: "none",
+                            fontWeight: 800,
+                          }}
                         >
                           {copy.cancel}
                         </Button>

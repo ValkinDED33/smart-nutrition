@@ -33,7 +33,11 @@ import {
   parsePreferenceList,
 } from "@domain/user/preferences";
 import type { AppLanguage } from "../../shared/types/i18n";
-import type { AdaptiveMode, DietStyle, WomenHealthMode } from "@domain/profile/types";
+import type {
+  AdaptiveMode,
+  DietStyle,
+  WomenHealthMode,
+} from "@domain/profile/types";
 import type {
   BloodGroup,
   EyeColor,
@@ -79,13 +83,15 @@ const profileCopy = {
     personalSubtitle: (assistantName: string) =>
       `Ці дані допомагають ${assistantName} краще підібрати тон, підтримку й спосіб контакту. Група крові та колір очей не використовуються для медичних або харчових висновків.`,
     targetWeightLabel: "Цільова вага (кг)",
-    targetWeightHint: "Необов'язково: додайте ціль, щоб увімкнути шкалу прогресу.",
+    targetWeightHint:
+      "Необов'язково: додайте ціль, щоб увімкнути шкалу прогресу.",
     targetWeightMax: "Вкажіть реалістичну цільову вагу до 300 кг.",
     avatarTitle: "Аватар",
     avatarSubtitle: "Завантажте власне фото або виберіть готовий аватар.",
     avatarUpload: "Завантажити фото",
     avatarUploading: "Оптимізуємо фото...",
-    avatarHint: "Великі фото автоматично стискаються, щоб профіль зберігав легшу версію.",
+    avatarHint:
+      "Великі фото автоматично стискаються, щоб профіль зберігав легшу версію.",
     avatarError: "Не вдалося обробити зображення. Спробуйте інше фото.",
     presets: "Виберіть зі списку",
     avatarImageAlt: "Аватар профілю",
@@ -141,7 +147,8 @@ const profileCopy = {
     avatarSubtitle: "Prześlij własne zdjęcie albo wybierz gotowy awatar.",
     avatarUpload: "Prześlij zdjęcie",
     avatarUploading: "Optymalizujemy zdjęcie...",
-    avatarHint: "Duże zdjęcia są automatycznie zmniejszane, aby profil zapisywał lżejszą wersję.",
+    avatarHint:
+      "Duże zdjęcia są automatycznie zmniejszane, aby profil zapisywał lżejszą wersję.",
     avatarError: "Nie udało się przetworzyć obrazu. Spróbuj innego zdjęcia.",
     presets: "Wybierz z listy",
     avatarImageAlt: "Awatar profilu",
@@ -194,10 +201,12 @@ const profileCopy = {
     targetWeightHint: "Optional: add a goal to unlock the progress scale.",
     targetWeightMax: "Enter a realistic target weight up to 300 kg.",
     avatarTitle: "Avatar",
-    avatarSubtitle: "Upload your own photo or choose one of the ready-made avatars.",
+    avatarSubtitle:
+      "Upload your own photo or choose one of the ready-made avatars.",
     avatarUpload: "Upload photo",
     avatarUploading: "Optimizing photo...",
-    avatarHint: "Large photos are resized automatically, so the profile saves a lighter version.",
+    avatarHint:
+      "Large photos are resized automatically, so the profile saves a lighter version.",
     avatarError: "The image could not be processed. Try another photo.",
     presets: "Choose from the list",
     avatarImageAlt: "Profile avatar",
@@ -339,7 +348,10 @@ const eyeColorLabels: Record<AppLanguage, Record<EyeColor, string>> = {
   },
 };
 
-const relationshipLabels: Record<AppLanguage, Record<RelationshipStatus, string>> = {
+const relationshipLabels: Record<
+  AppLanguage,
+  Record<RelationshipStatus, string>
+> = {
   uk: {
     single: "Без пари",
     dating: "У стосунках",
@@ -426,9 +438,22 @@ const getProfileCopy = (language: AppLanguage) => {
   }
 };
 
+const PROFILE_FORM_MOBILE_FIELD_RAIL_SX = {
+  overflowX: { xs: "auto", md: "visible" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  "& .MuiTextField-root": {
+    minWidth: { xs: 190, md: 0 },
+    flex: { xs: "0 0 auto", md: 1 },
+    scrollSnapAlign: { xs: "start", md: "none" },
+  },
+};
+
 const getAvatarPresetLabel = (
   copy: ReturnType<typeof getProfileCopy>,
-  presetId: string
+  presetId: string,
 ) => {
   switch (presetId) {
     case "sunrise":
@@ -449,7 +474,7 @@ const getAvatarPresetLabel = (
 
 const getLocalizedProfileValue = <TValue extends string>(
   values: Record<AppLanguage, Record<TValue, string>>,
-  language: AppLanguage
+  language: AppLanguage,
 ) => {
   switch (language) {
     case "pl":
@@ -467,7 +492,7 @@ const toDateInputValue = (value: string | null) =>
 
 const createProfileFormValues = (
   user: User | null | undefined,
-  profile: ProfileState
+  profile: ProfileState,
 ): FormData => ({
   gender: user?.gender ?? "male",
   weight: user?.weight ?? 70,
@@ -489,10 +514,12 @@ const createProfileFormValues = (
   pregnancyWeek: profile.womenHealth.pregnancyWeek ?? undefined,
   pregnancyDay:
     profile.womenHealth.pregnancyWeek !== null
-      ? profile.womenHealth.pregnancyDay ?? 0
+      ? (profile.womenHealth.pregnancyDay ?? 0)
       : undefined,
   dueDate: toDateInputValue(profile.womenHealth.dueDate),
-  lastPeriodStartDate: toDateInputValue(profile.womenHealth.lastPeriodStartDate),
+  lastPeriodStartDate: toDateInputValue(
+    profile.womenHealth.lastPeriodStartDate,
+  ),
   doctorConfirmed: profile.womenHealth.doctorConfirmed,
   womenHealthNotes: profile.womenHealth.notes,
 });
@@ -500,13 +527,8 @@ const createProfileFormValues = (
 const ProfileForm = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const profile = useSelector((state: RootState) => state.profile);
-  const {
-    dietStyle,
-    adaptiveMode,
-    personalDetails,
-    womenHealth,
-    assistant,
-  } = profile;
+  const { dietStyle, adaptiveMode, personalDetails, womenHealth, assistant } =
+    profile;
   const { t, appLanguage } = useLanguage();
   const profileActionCopy = getProfileCloudActionCopy(appLanguage);
   const profileAction = useProfileCloudAction(profileActionCopy);
@@ -514,13 +536,17 @@ const ProfileForm = () => {
   const dietLabels = getLocalizedProfileValue(dietStyleLabels, appLanguage);
   const bloodLabels = getLocalizedProfileValue(bloodGroupLabels, appLanguage);
   const eyeLabels = getLocalizedProfileValue(eyeColorLabels, appLanguage);
-  const relationshipOptions = getLocalizedProfileValue(relationshipLabels, appLanguage);
+  const relationshipOptions = getLocalizedProfileValue(
+    relationshipLabels,
+    appLanguage,
+  );
   const supportOptions = getLocalizedProfileValue(supportLabels, appLanguage);
   const petOptions = getLocalizedProfileValue(petLabels, appLanguage);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [avatarDraft, setAvatarDraft] = useState(
-    user?.avatar ?? getDefaultAvatar(user?.email ?? user?.name ?? "smart-nutrition")
+    user?.avatar ??
+      getDefaultAvatar(user?.email ?? user?.name ?? "smart-nutrition"),
   );
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -606,7 +632,7 @@ const ProfileForm = () => {
         doctorConfirmed: z.boolean(),
         womenHealthNotes: z.string().max(220),
       }),
-    [copy.targetWeightMax, t]
+    [copy.targetWeightMax, t],
   );
 
   const {
@@ -620,7 +646,10 @@ const ProfileForm = () => {
     defaultValues: createProfileFormValues(user, profile),
   });
   const selectedGender = useWatch({ control, name: "gender" });
-  const selectedWomenHealthMode = useWatch({ control, name: "womenHealthMode" });
+  const selectedWomenHealthMode = useWatch({
+    control,
+    name: "womenHealthMode",
+  });
   const shouldShowWomenHealth = selectedGender === "female";
   const shouldShowPregnancyFields =
     shouldShowWomenHealth && selectedWomenHealthMode === "pregnant";
@@ -628,7 +657,10 @@ const ProfileForm = () => {
     shouldShowWomenHealth &&
     (selectedWomenHealthMode === "pregnant" ||
       selectedWomenHealthMode === "trying_to_conceive");
-  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+  );
 
   useEffect(() => {
     if (!user) {
@@ -687,10 +719,10 @@ const ProfileForm = () => {
           ? {
               mode: womenHealthMode,
               pregnancyWeek:
-                womenHealthMode === "pregnant" ? pregnancyWeek ?? null : null,
+                womenHealthMode === "pregnant" ? (pregnancyWeek ?? null) : null,
               pregnancyDay:
                 womenHealthMode === "pregnant" && pregnancyWeek !== undefined
-                  ? pregnancyDay ?? 0
+                  ? (pregnancyDay ?? 0)
                   : null,
               dueDate:
                 womenHealthMode === "pregnant" && dueDate
@@ -710,7 +742,8 @@ const ProfileForm = () => {
               notes: womenHealthNotes,
             }
           : createDefaultWomenHealthState();
-      const { maintenanceCalories, targetCalories } = calculateProfileTargets(data);
+      const { maintenanceCalories, targetCalories } =
+        calculateProfileTargets(data);
       const profileTargets = {
         goal: data.goal,
         weight: data.weight,
@@ -741,7 +774,7 @@ const ProfileForm = () => {
           ...userProfileData,
           avatar: avatarDraft || getDefaultAvatar(user.email),
         },
-        nextProfile
+        nextProfile,
       );
       setSuccessMessage(t("profile.saved"));
     } catch {
@@ -753,14 +786,18 @@ const ProfileForm = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
         boxShadow: "var(--sn-shadow-card)",
       }}
     >
-      <Stack spacing={2.5} component="form" onSubmit={handleSubmit(onSubmit)}>
+      <Stack
+        spacing={{ xs: 1.35, md: 2.5 }}
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
           {t("profile.title")}
         </Typography>
@@ -773,33 +810,57 @@ const ProfileForm = () => {
         <Paper
           variant="outlined"
           sx={{
-            p: 2.25,
+            p: { xs: 1.2, md: 2.25 },
             borderRadius: 1,
             backgroundColor: "var(--sn-surface-elevated)",
           }}
         >
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.25, md: 2 }}>
             <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              alignItems={{ xs: "flex-start", md: "center" }}
+              direction="row"
+              spacing={{ xs: 1.2, md: 2 }}
+              alignItems="center"
             >
               <Avatar
                 src={avatarDraft || getDefaultAvatar(user.email)}
                 alt={copy.avatarImageAlt}
-                sx={{ width: 92, height: 92 }}
+                sx={{ width: { xs: 62, md: 92 }, height: { xs: 62, md: 92 } }}
               >
                 {user.name[0]}
               </Avatar>
               <Stack spacing={0.7} sx={{ flex: 1 }}>
-                <Typography sx={{ fontWeight: 800 }}>{copy.avatarTitle}</Typography>
-                <Typography color="text.secondary">{copy.avatarSubtitle}</Typography>
+                <Typography sx={{ fontWeight: 800 }}>
+                  {copy.avatarTitle}
+                </Typography>
+                <Typography
+                  color="text.secondary"
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
+                  {copy.avatarSubtitle}
+                </Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-                  <Button component="label" variant="outlined" disabled={avatarUploading}>
+                  <Button
+                    size="small"
+                    component="label"
+                    variant="outlined"
+                    disabled={avatarUploading}
+                  >
                     {avatarUploading ? copy.avatarUploading : copy.avatarUpload}
-                    <input hidden accept="image/*" type="file" onChange={handleAvatarUpload} />
+                    <input
+                      hidden
+                      accept="image/*"
+                      type="file"
+                      onChange={handleAvatarUpload}
+                    />
                   </Button>
-                  <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      alignSelf: "center",
+                      display: { xs: "none", md: "block" },
+                    }}
+                  >
                     {copy.avatarHint}
                   </Typography>
                 </Stack>
@@ -811,7 +872,19 @@ const ProfileForm = () => {
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
                 {copy.presets}
               </Typography>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              <Stack
+                data-profile-form-mobile-avatar-rail="true"
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap={{ xs: "nowrap", sm: "wrap" }}
+                sx={{
+                  overflowX: { xs: "auto", sm: "visible" },
+                  mx: { xs: -1, sm: 0 },
+                  px: { xs: 1, sm: 0 },
+                  pb: { xs: 0.5, sm: 0 },
+                }}
+              >
                 {avatarPresets.map((preset) => {
                   const isSelected = avatarDraft === preset.url;
                   const presetLabel = getAvatarPresetLabel(copy, preset.id);
@@ -858,7 +931,12 @@ const ProfileForm = () => {
           {copy.sectionBasics}
         </Typography>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-profile-form-mobile-basics-rail="true"
+          direction="row"
+          spacing={{ xs: 1, md: 2 }}
+          sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+        >
           <TextField
             select
             fullWidth
@@ -881,9 +959,13 @@ const ProfileForm = () => {
             error={Boolean(errors.activity)}
             helperText={errors.activity?.message}
           >
-            <MenuItem value="sedentary">{t("option.activity.sedentary")}</MenuItem>
+            <MenuItem value="sedentary">
+              {t("option.activity.sedentary")}
+            </MenuItem>
             <MenuItem value="light">{t("option.activity.light")}</MenuItem>
-            <MenuItem value="moderate">{t("option.activity.moderate")}</MenuItem>
+            <MenuItem value="moderate">
+              {t("option.activity.moderate")}
+            </MenuItem>
             <MenuItem value="active">{t("option.activity.active")}</MenuItem>
             <MenuItem value="very_active">
               {t("option.activity.very_active")}
@@ -909,21 +991,29 @@ const ProfileForm = () => {
           className="sn-premium-panel"
           variant="outlined"
           sx={{
-            p: 2.25,
+            p: { xs: 1.2, md: 2.25 },
             borderRadius: 1,
           }}
         >
-          <Stack spacing={2}>
+          <Stack spacing={{ xs: 1.25, md: 2 }}>
             <Stack spacing={0.5}>
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                 {copy.sectionPersonal}
               </Typography>
-              <Typography color="text.secondary">
+              <Typography
+                color="text.secondary"
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
                 {copy.personalSubtitle(assistantDisplayName)}
               </Typography>
             </Stack>
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            <Stack
+              data-profile-form-mobile-personal-rail="true"
+              direction="row"
+              spacing={{ xs: 1, md: 2 }}
+              sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+            >
               <TextField
                 select
                 fullWidth
@@ -957,7 +1047,12 @@ const ProfileForm = () => {
               </TextField>
             </Stack>
 
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            <Stack
+              data-profile-form-mobile-context-rail="true"
+              direction="row"
+              spacing={{ xs: 1, md: 2 }}
+              sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+            >
               <TextField
                 select
                 fullWidth
@@ -1014,22 +1109,30 @@ const ProfileForm = () => {
             className="sn-premium-panel"
             variant="outlined"
             sx={{
-              p: 2.25,
+              p: { xs: 1.2, md: 2.25 },
               borderRadius: 1,
               borderColor: "rgba(20, 184, 166, 0.28)",
             }}
           >
-            <Stack spacing={2}>
+            <Stack spacing={{ xs: 1.25, md: 2 }}>
               <Stack spacing={0.5}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                   {copy.womenHealthTitle}
                 </Typography>
-                <Typography color="text.secondary">
+                <Typography
+                  color="text.secondary"
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
                   {copy.womenHealthSubtitle}
                 </Typography>
               </Stack>
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+              <Stack
+                data-profile-form-mobile-women-health-rail="true"
+                direction="row"
+                spacing={{ xs: 1, md: 2 }}
+                sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+              >
                 <TextField
                   select
                   fullWidth
@@ -1043,8 +1146,12 @@ const ProfileForm = () => {
                   <MenuItem value="trying_to_conceive">
                     {copy.womenHealthTrying}
                   </MenuItem>
-                  <MenuItem value="pregnant">{copy.womenHealthPregnant}</MenuItem>
-                  <MenuItem value="postpartum">{copy.womenHealthPostpartum}</MenuItem>
+                  <MenuItem value="pregnant">
+                    {copy.womenHealthPregnant}
+                  </MenuItem>
+                  <MenuItem value="postpartum">
+                    {copy.womenHealthPostpartum}
+                  </MenuItem>
                 </TextField>
 
                 {shouldShowPregnancyFields && (
@@ -1098,7 +1205,12 @@ const ProfileForm = () => {
               </Stack>
 
               {shouldShowCycleFields && (
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <Stack
+                  data-profile-form-mobile-cycle-rail="true"
+                  direction="row"
+                  spacing={{ xs: 1, md: 2 }}
+                  sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+                >
                   {shouldShowPregnancyFields && (
                     <TextField
                       fullWidth
@@ -1131,7 +1243,8 @@ const ProfileForm = () => {
                   <TextField
                     fullWidth
                     multiline
-                    minRows={2}
+                    minRows={1}
+                    size="small"
                     label={copy.womenHealthNotesLabel}
                     {...register("womenHealthNotes")}
                     error={Boolean(errors.womenHealthNotes)}
@@ -1148,7 +1261,12 @@ const ProfileForm = () => {
           </Paper>
         )}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-profile-form-mobile-body-rail="true"
+          direction="row"
+          spacing={{ xs: 1, md: 2 }}
+          sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+        >
           <TextField
             fullWidth
             type="text"
@@ -1185,7 +1303,12 @@ const ProfileForm = () => {
           />
         </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-profile-form-mobile-target-rail="true"
+          direction="row"
+          spacing={{ xs: 1, md: 2 }}
+          sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+        >
           <TextField
             fullWidth
             type="text"
@@ -1223,7 +1346,12 @@ const ProfileForm = () => {
           />
         </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-profile-form-mobile-diet-rail="true"
+          direction="row"
+          spacing={{ xs: 1, md: 2 }}
+          sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+        >
           <TextField
             select
             fullWidth
@@ -1254,7 +1382,12 @@ const ProfileForm = () => {
           </TextField>
         </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          data-profile-form-mobile-restrictions-rail="true"
+          direction="row"
+          spacing={{ xs: 1, md: 2 }}
+          sx={PROFILE_FORM_MOBILE_FIELD_RAIL_SX}
+        >
           <TextField
             fullWidth
             label={copy.allergiesLabel}
@@ -1267,7 +1400,9 @@ const ProfileForm = () => {
             label={copy.exclusionsLabel}
             {...register("excludedIngredients")}
             error={Boolean(errors.excludedIngredients)}
-            helperText={errors.excludedIngredients?.message ?? copy.exclusionsHint}
+            helperText={
+              errors.excludedIngredients?.message ?? copy.exclusionsHint
+            }
           />
         </Stack>
 
@@ -1275,6 +1410,7 @@ const ProfileForm = () => {
           type="submit"
           variant="contained"
           disabled={profileAction.saving}
+          size="small"
           sx={{
             alignSelf: "flex-start",
             px: 3,

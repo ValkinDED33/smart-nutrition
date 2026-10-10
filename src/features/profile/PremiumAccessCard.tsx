@@ -1,7 +1,10 @@
 import { useSelector } from "react-redux";
 import { Chip, Paper, Stack, Typography } from "@mui/material";
 import type { RootState } from "../../app/store";
-import type { PremiumPlanId, PremiumSubscriptionState } from "@domain/profile/types";
+import type {
+  PremiumPlanId,
+  PremiumSubscriptionState,
+} from "@domain/profile/types";
 import { useLanguage } from "../../shared/language";
 import type { AppLanguage } from "../../shared/types/i18n";
 
@@ -33,7 +36,11 @@ const premiumCopy = {
       coach: {
         name: "AI-супровід",
         price: COACH_PLAN_PRICE,
-        features: ["Підсумок помічника", "Оцінка звичок", "Пріоритетні нагадування"],
+        features: [
+          "Підсумок помічника",
+          "Оцінка звичок",
+          "Пріоритетні нагадування",
+        ],
       },
     },
     statuses: {
@@ -66,7 +73,11 @@ const premiumCopy = {
       coach: {
         name: "Opieka AI",
         price: COACH_PLAN_PRICE,
-        features: ["Podsumowanie asystenta", "Ocena nawyków", "Priorytetowe przypomnienia"],
+        features: [
+          "Podsumowanie asystenta",
+          "Ocena nawyków",
+          "Priorytetowe przypomnienia",
+        ],
       },
     },
     statuses: {
@@ -143,7 +154,7 @@ const getPremiumLocale = (language: AppLanguage) => {
 
 const getPremiumPlanCopy = (
   copy: ReturnType<typeof getPremiumCopy>,
-  plan: PremiumPlanId
+  plan: PremiumPlanId,
 ) => {
   switch (plan) {
     case "free":
@@ -157,7 +168,7 @@ const getPremiumPlanCopy = (
 
 const getPremiumStatusLabel = (
   copy: ReturnType<typeof getPremiumCopy>,
-  status: PremiumSubscriptionState["status"]
+  status: PremiumSubscriptionState["status"],
 ) => {
   switch (status) {
     case "trial":
@@ -189,21 +200,38 @@ export const PremiumAccessCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 2,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.2, md: 2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-premium-mobile-status-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.5, sm: 0 },
+          }}
+        >
           <Chip
             color={isPaid ? "success" : "default"}
             label={`${copy.status}: ${getPremiumStatusLabel(copy, premium.status)}`}
@@ -226,7 +254,18 @@ export const PremiumAccessCard = () => {
           ) : null}
         </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+        <Stack
+          data-premium-mobile-plan-rail="true"
+          direction={{ xs: "row", md: "row" }}
+          spacing={1.2}
+          sx={{
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+            scrollSnapType: { xs: "x proximity", md: "none" },
+          }}
+        >
           {planOrder.map((plan) => {
             const planCopy = getPremiumPlanCopy(copy, plan);
             const selected = premium.plan === plan;
@@ -236,21 +275,41 @@ export const PremiumAccessCard = () => {
                 key={plan}
                 variant="outlined"
                 sx={{
-                  p: 1.5,
+                  p: { xs: 1.15, md: 1.5 },
+                  minWidth: { xs: 220, md: 0 },
                   borderRadius: 2,
                   flex: 1,
-                  borderColor: selected ? "success.main" : "rgba(15, 23, 42, 0.12)",
+                  scrollSnapAlign: { xs: "start", md: "none" },
+                  borderColor: selected
+                    ? "success.main"
+                    : "rgba(15, 23, 42, 0.12)",
                 }}
               >
                 <Stack spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography sx={{ fontWeight: 900 }}>{planCopy.name}</Typography>
-                    {selected ? <Chip size="small" color="success" label={copy.current} /> : null}
+                    <Typography sx={{ fontWeight: 900 }}>
+                      {planCopy.name}
+                    </Typography>
+                    {selected ? (
+                      <Chip size="small" color="success" label={copy.current} />
+                    ) : null}
                   </Stack>
-                  <Typography color="text.secondary">{planCopy.price}</Typography>
-                  <Stack direction="row" spacing={0.8} useFlexGap flexWrap="wrap">
+                  <Typography color="text.secondary" variant="body2">
+                    {planCopy.price}
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={0.8}
+                    useFlexGap
+                    flexWrap="wrap"
+                  >
                     {planCopy.features.map((feature) => (
-                      <Chip key={feature} label={feature} size="small" variant="outlined" />
+                      <Chip
+                        key={feature}
+                        label={feature}
+                        size="small"
+                        variant="outlined"
+                      />
                     ))}
                   </Stack>
                 </Stack>
@@ -259,10 +318,13 @@ export const PremiumAccessCard = () => {
           })}
         </Stack>
 
-        <Typography color="text.secondary" variant="body2">
+        <Typography
+          color="text.secondary"
+          variant="body2"
+          sx={{ display: { xs: "none", sm: "block" } }}
+        >
           {copy.unavailable}
         </Typography>
-
       </Stack>
     </Paper>
   );

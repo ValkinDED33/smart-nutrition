@@ -67,8 +67,7 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 const waterCopy = {
   uk: {
     title: "Вода за день",
-    subtitle:
-      "Контролюйте норму, залишок і об'єм кожного стакана.",
+    subtitle: "Контролюйте норму, залишок і об'єм кожного стакана.",
     drank: "Випито",
     remaining: "Залишилося",
     target: "Норма на день",
@@ -87,7 +86,8 @@ const waterCopy = {
     removeGlass: "Зняти стакан",
     historyTitle: "Історія води",
     historyEmpty: "Сьогодні ще немає записів води.",
-    historyEmptyHint: "Додайте перший стакан, і тут з'явиться жива історія дня.",
+    historyEmptyHint:
+      "Додайте перший стакан, і тут з'явиться жива історія дня.",
     analyticsTitle: "Аналітика за 7 днів",
     average: "Середньо",
     goalDays: "Днів у нормі",
@@ -96,10 +96,8 @@ const waterCopy = {
     aiTitle: "Реакція помічника",
     aiLow:
       "Вода поки відстає. Давайте закриємо один маленький стакан без драматизації.",
-    aiMid:
-      "Темп хороший. Ще трохи води, і день відчуватиметься легше.",
-    aiDone:
-      "Норма води закрита. Я святкую тихо, але дуже щиро.",
+    aiMid: "Темп хороший. Ще трохи води, і день відчуватиметься легше.",
+    aiDone: "Норма води закрита. Я святкую тихо, але дуже щиро.",
     remindersEnabled: "Увімкнути нагадування",
     reminderInterval: "Інтервал",
     reminderStart: "Початок",
@@ -122,8 +120,7 @@ const waterCopy = {
   },
   pl: {
     title: "Woda na dzień",
-    subtitle:
-      "Kontroluj dzienną normę, pozostało i objętość każdej szklanki.",
+    subtitle: "Kontroluj dzienną normę, pozostało i objętość każdej szklanki.",
     drank: "Wypito",
     remaining: "Pozostało",
     target: "Norma na dzień",
@@ -142,7 +139,8 @@ const waterCopy = {
     removeGlass: "Odejmij szklankę",
     historyTitle: "Historia wody",
     historyEmpty: "Dziś nie ma jeszcze zapisów wody.",
-    historyEmptyHint: "Dodaj pierwszą szklankę, a tutaj pojawi się historia dnia.",
+    historyEmptyHint:
+      "Dodaj pierwszą szklankę, a tutaj pojawi się historia dnia.",
     analyticsTitle: "Analityka 7 dni",
     average: "Średnio",
     goalDays: "Dni w normie",
@@ -151,10 +149,8 @@ const waterCopy = {
     aiTitle: "Reakcja asystenta",
     aiLow:
       "Woda jest jeszcze z tyłu. Domknijmy jedną małą szklankę bez presji.",
-    aiMid:
-      "Tempo jest dobre. Jeszcze trochę wody i dzień będzie lżejszy.",
-    aiDone:
-      "Norma wody zamknięta. Świętuję cicho, ale bardzo szczerze.",
+    aiMid: "Tempo jest dobre. Jeszcze trochę wody i dzień będzie lżejszy.",
+    aiDone: "Norma wody zamknięta. Świętuję cicho, ale bardzo szczerze.",
     remindersEnabled: "Włącz przypomnienia",
     reminderInterval: "Interwał",
     reminderStart: "Początek",
@@ -196,7 +192,8 @@ const waterCopy = {
     removeGlass: "Remove glass",
     historyTitle: "Water history",
     historyEmpty: "No water entries yet today.",
-    historyEmptyHint: "Add the first glass and today's live history will appear here.",
+    historyEmptyHint:
+      "Add the first glass and today's live history will appear here.",
     analyticsTitle: "7-day analytics",
     average: "Average",
     goalDays: "Days on target",
@@ -205,10 +202,8 @@ const waterCopy = {
     aiTitle: "Assistant reaction",
     aiLow:
       "Water is running behind. Let's close one small glass without drama.",
-    aiMid:
-      "Good pace. A little more water and the day will feel lighter.",
-    aiDone:
-      "Water target closed. I am celebrating quietly, but sincerely.",
+    aiMid: "Good pace. A little more water and the day will feel lighter.",
+    aiDone: "Water target closed. I am celebrating quietly, but sincerely.",
     remindersEnabled: "Enable reminders",
     reminderInterval: "Interval",
     reminderStart: "Start",
@@ -245,12 +240,25 @@ const getWaterCopy = (language: AppLanguage): WaterCopy => {
   }
 };
 
+const WATER_MOBILE_FIELD_RAIL_SX = {
+  overflowX: { xs: "auto", md: "visible" },
+  mx: { xs: -1, md: 0 },
+  px: { xs: 1, md: 0 },
+  pb: { xs: 0.5, md: 0 },
+  scrollSnapType: { xs: "x proximity", md: "none" },
+  "& .MuiTextField-root": {
+    minWidth: { xs: 188, md: 0 },
+    flex: { xs: "0 0 auto", md: 1 },
+    scrollSnapAlign: { xs: "start", md: "none" },
+  },
+};
+
 const WaterTracker = () => {
   const dispatch = useDispatch<AppDispatch>();
   const water = useSelector((state: RootState) => state.water);
   const companion = useSelector((state: RootState) => state.companion);
-  const latestWeightHistoryWeight = useSelector((state: RootState) =>
-    state.profile.weightHistory.at(-1)?.weight
+  const latestWeightHistoryWeight = useSelector(
+    (state: RootState) => state.profile.weightHistory.at(-1)?.weight,
   );
   const assistant = useSelector((state: RootState) => state.profile.assistant);
   const authWeight = useSelector((state: RootState) => state.auth.user?.weight);
@@ -262,7 +270,7 @@ const WaterTracker = () => {
       saveFailed: copy.saveError,
       saveInProgress: copy.saveInProgress,
     }),
-    [copy.saveError, copy.saveInProgress]
+    [copy.saveError, copy.saveInProgress],
   );
   const waterAction = useWaterCloudAction(waterActionCopy);
   const {
@@ -274,7 +282,9 @@ const WaterTracker = () => {
     saving: savingWater,
   } = waterAction;
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
-  const [partialAmountMl, setPartialAmountMl] = useState<number | "">(water.glassSizeMl);
+  const [partialAmountMl, setPartialAmountMl] = useState<number | "">(
+    water.glassSizeMl,
+  );
   const [targetDraft, setTargetDraft] = useState<string | null>(null);
   const [glassSizeDraft, setGlassSizeDraft] = useState<string | null>(null);
   const [reminderMessage, setReminderMessage] = useState<string | null>(null);
@@ -288,7 +298,9 @@ const WaterTracker = () => {
       ? partialAmountMl
       : null;
 
-  useAutoDismiss(Boolean(reminderMessage), 5000, () => setReminderMessage(null));
+  useAutoDismiss(Boolean(reminderMessage), 5000, () =>
+    setReminderMessage(null),
+  );
 
   const saveWaterState = useCallback(
     async (nextWater: WaterState) => {
@@ -303,7 +315,7 @@ const WaterTracker = () => {
         return false;
       }
     },
-    [clearWaterActionError, copy.saveError, runWaterStateSave]
+    [clearWaterActionError, copy.saveError, runWaterStateSave],
   );
 
   const persistAutomaticWaterState = useCallback(
@@ -315,7 +327,7 @@ const WaterTracker = () => {
         // should not interrupt the user's current screen with local draft state.
       }
     },
-    [runWaterStateSave]
+    [runWaterStateSave],
   );
 
   useEffect(() => {
@@ -367,13 +379,16 @@ const WaterTracker = () => {
         : copy.statusAbove;
   const quickAmounts = useMemo(
     () => getQuickWaterAmounts(water.glassSizeMl),
-    [water.glassSizeMl]
+    [water.glassSizeMl],
   );
   const assistantMood: AssistantAvatarMood =
     progress >= 100 ? "celebrate" : progress >= 55 ? "happy" : "coach";
   const assistantReaction =
     progress >= 100 ? copy.aiDone : progress >= 55 ? copy.aiMid : copy.aiLow;
-  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+  );
   const weeklyRecords = useMemo(
     () =>
       createWeeklyWaterRecords({
@@ -381,34 +396,38 @@ const WaterTracker = () => {
         consumedMl: water.consumedMl,
         dailyWaterGoal: water.dailyWaterGoal,
       }),
-    [water.consumedMl, water.dailyWaterGoal, water.history]
+    [water.consumedMl, water.dailyWaterGoal, water.history],
   );
   const weeklyTotalMl = weeklyRecords.reduce(
     (total, item) => total + item.consumedMl,
-    0
+    0,
   );
   const weeklyAverageMl = Math.round(weeklyTotalMl / weeklyRecords.length);
   const weeklyGoalDays = weeklyRecords.filter(
-    (item) => item.consumedMl >= item.targetMl
+    (item) => item.consumedMl >= item.targetMl,
   ).length;
   const weeklyBestDay = weeklyRecords.reduce((best, item) =>
-    item.consumedMl > best.consumedMl ? item : best
+    item.consumedMl > best.consumedMl ? item : best,
   );
   const dayFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(
-        appLanguage === "pl" ? "pl-PL" : appLanguage === "en" ? "en-US" : "uk-UA",
+        appLanguage === "pl"
+          ? "pl-PL"
+          : appLanguage === "en"
+            ? "en-US"
+            : "uk-UA",
         {
-        weekday: "short",
-        day: "2-digit",
-        month: "2-digit",
-        }
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+        },
       ),
-    [appLanguage]
+    [appLanguage],
   );
   const formatMl = useCallback(
     (value: number) => `${Math.round(value)} ${copy.unitMl}`,
-    [copy.unitMl]
+    [copy.unitMl],
   );
 
   useEffect(() => {
@@ -421,7 +440,7 @@ const WaterTracker = () => {
         remainingMl <= 0 ||
         !isWithinReminderWindow(
           water.reminders.startTime,
-          water.reminders.endTime
+          water.reminders.endTime,
         )
       ) {
         return;
@@ -430,7 +449,8 @@ const WaterTracker = () => {
       const lastReminderTime = Date.parse(water.reminders.lastReminderAt ?? "");
       const enoughTimePassed =
         Number.isNaN(lastReminderTime) ||
-        Date.now() - lastReminderTime >= water.reminders.intervalMinutes * 60_000;
+        Date.now() - lastReminderTime >=
+          water.reminders.intervalMinutes * 60_000;
 
       if (!enoughTimePassed) {
         return;
@@ -439,7 +459,7 @@ const WaterTracker = () => {
       const text = copy.reminderDue.replace("{value}", formatMl(remainingMl));
       const nextWater = buildWaterStateAfterReminderShown(
         water,
-        new Date().toISOString()
+        new Date().toISOString(),
       );
 
       void saveWaterState(nextWater).then((saved) => {
@@ -474,12 +494,15 @@ const WaterTracker = () => {
       createWaterGlassSlots(
         water.consumedMl,
         water.dailyWaterGoal,
-        water.glassSizeMl
+        water.glassSizeMl,
       ),
-    [water.consumedMl, water.dailyWaterGoal, water.glassSizeMl]
+    [water.consumedMl, water.dailyWaterGoal, water.glassSizeMl],
   );
 
-  const playWaterFeedback = (nextConsumedMl: number, previousConsumedMl = water.consumedMl) => {
+  const playWaterFeedback = (
+    nextConsumedMl: number,
+    previousConsumedMl = water.consumedMl,
+  ) => {
     playUiTickSound();
 
     if (nextConsumedMl > previousConsumedMl) {
@@ -507,7 +530,7 @@ const WaterTracker = () => {
   const trackWaterAdded = async (
     amountMl: number,
     source: string,
-    consumedMlAfter: number
+    consumedMlAfter: number,
   ) => {
     if (amountMl <= 0) {
       return;
@@ -519,7 +542,7 @@ const WaterTracker = () => {
       await applyCompanionRewardInCloud(
         dispatch,
         { companion },
-        "water_logged"
+        "water_logged",
       );
       companionRewardPayload =
         createCompanionRewardAnalyticsPayload("water_logged");
@@ -549,7 +572,7 @@ const WaterTracker = () => {
       void trackWaterAdded(
         nextWater.consumedMl - previousConsumedMl,
         source,
-        nextWater.consumedMl
+        nextWater.consumedMl,
       );
     });
   };
@@ -567,7 +590,7 @@ const WaterTracker = () => {
       void trackWaterAdded(
         nextWater.consumedMl - previousConsumedMl,
         source,
-        nextWater.consumedMl
+        nextWater.consumedMl,
       );
     });
   };
@@ -594,7 +617,7 @@ const WaterTracker = () => {
     const editableSlot = getEditableWaterSlot(
       water.consumedMl,
       water.glassSizeMl,
-      glasses.length
+      glasses.length,
     );
 
     setEditingSlot(editableSlot.index);
@@ -606,7 +629,9 @@ const WaterTracker = () => {
       await requestSafeNotificationPermission();
     }
 
-    await saveWaterState(buildWaterStateAfterReminderChange(water, { enabled }));
+    await saveWaterState(
+      buildWaterStateAfterReminderChange(water, { enabled }),
+    );
   };
 
   const saveWaterTargetDraft = () => {
@@ -617,15 +642,15 @@ const WaterTracker = () => {
       return;
     }
 
-    void saveWaterState(buildWaterStateAfterTargetChange(water, nextTarget)).then(
-      (saved) => {
-        if (!saved) {
-          return;
-        }
-
-        setTargetDraft(null);
+    void saveWaterState(
+      buildWaterStateAfterTargetChange(water, nextTarget),
+    ).then((saved) => {
+      if (!saved) {
+        return;
       }
-    );
+
+      setTargetDraft(null);
+    });
   };
 
   const saveGlassSizeDraft = () => {
@@ -637,7 +662,7 @@ const WaterTracker = () => {
     }
 
     void saveWaterState(
-      buildWaterStateAfterGlassSizeChange(water, nextGlassSize)
+      buildWaterStateAfterGlassSizeChange(water, nextGlassSize),
     ).then((saved) => {
       if (!saved) {
         return;
@@ -659,13 +684,13 @@ const WaterTracker = () => {
 
     const normalizedAmount = normalizeWaterSlotAmount(
       partialAmountValue,
-      water.glassSizeMl
+      water.glassSizeMl,
     );
 
     const previousConsumedMl = water.consumedMl;
     const nextWater = buildWaterStateAfterSetAmount(
       water,
-      slotStart + normalizedAmount
+      slotStart + normalizedAmount,
     );
     const saved = await saveWaterState(nextWater);
 
@@ -678,7 +703,7 @@ const WaterTracker = () => {
     void trackWaterAdded(
       nextWater.consumedMl - previousConsumedMl,
       "partial_glass",
-      nextWater.consumedMl
+      nextWater.consumedMl,
     );
   };
 
@@ -693,13 +718,20 @@ const WaterTracker = () => {
           >
             {copy.title}
           </Typography>
-          <Typography color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
             {copy.subtitle}
           </Typography>
         </Stack>
 
         {reminderMessage ? (
-          <Alert severity="info" variant="filled" onClose={() => setReminderMessage(null)}>
+          <Alert
+            severity="info"
+            variant="filled"
+            onClose={() => setReminderMessage(null)}
+          >
             {reminderMessage}
           </Alert>
         ) : null}
@@ -765,7 +797,7 @@ const WaterTracker = () => {
                   (value) =>
                     `conic-gradient(#0ea5e9 0deg, #22c55e ${
                       value * 3.6
-                    }deg, rgba(226,232,240,0.72) ${value * 3.6}deg)`
+                    }deg, rgba(226,232,240,0.72) ${value * 3.6}deg)`,
                 ),
               }}
               sx={{
@@ -789,10 +821,16 @@ const WaterTracker = () => {
               <Stack spacing={0.4}>
                 <Typography component="p" variant="h4" sx={{ fontWeight: 900 }}>
                   <animated.span>
-                    {animatedProgress.progress.to((value) => `${Math.round(value)}%`)}
+                    {animatedProgress.progress.to(
+                      (value) => `${Math.round(value)}%`,
+                    )}
                   </animated.span>
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: 12, md: 14 } }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: 12, md: 14 } }}
+                >
                   {status}
                 </Typography>
               </Stack>
@@ -800,12 +838,17 @@ const WaterTracker = () => {
           </Box>
 
           <Stack spacing={{ xs: 0.8, md: 1.5 }}>
-            <Typography sx={{ fontWeight: 700, fontSize: { xs: 13.5, md: 16 } }}>
+            <Typography
+              sx={{ fontWeight: 700, fontSize: { xs: 13.5, md: 16 } }}
+            >
               {copy.progress
                 .replace("{current}", formatWaterLiters(water.consumedMl))
                 .replace("{target}", formatWaterLiters(water.dailyWaterGoal))}
             </Typography>
-            <Typography color="text.secondary" sx={{ fontSize: { xs: 12.5, md: 14 } }}>
+            <Typography
+              color="text.secondary"
+              sx={{ fontSize: { xs: 12.5, md: 14 } }}
+            >
               {copy.remainingLabel.replace("{value}", formatMl(remainingMl))}
             </Typography>
             <LinearProgress
@@ -824,13 +867,21 @@ const WaterTracker = () => {
                 "&::-webkit-scrollbar": { display: "none" },
               }}
             >
-              <Chip label={`${copy.drank}: ${formatMl(water.consumedMl)}`} color="info" size="small" />
-              <Chip label={`${copy.remaining}: ${formatMl(remainingMl)}`} variant="outlined" size="small" />
+              <Chip
+                label={`${copy.drank}: ${formatMl(water.consumedMl)}`}
+                color="info"
+                size="small"
+              />
+              <Chip
+                label={`${copy.remaining}: ${formatMl(remainingMl)}`}
+                variant="outlined"
+                size="small"
+              />
               <Chip
                 label={
                   water.targetMode === "automatic"
                     ? `${copy.autoTarget} ${Math.round(latestWeight * 30)}-${formatMl(
-                        Math.round(latestWeight * 35)
+                        Math.round(latestWeight * 35),
                       )}`
                     : copy.manualTarget
                 }
@@ -839,7 +890,13 @@ const WaterTracker = () => {
               />
               <Chip
                 label={status}
-                color={status === copy.statusAbove ? "warning" : status === copy.statusOnTrack ? "success" : "default"}
+                color={
+                  status === copy.statusAbove
+                    ? "warning"
+                    : status === copy.statusOnTrack
+                      ? "success"
+                      : "default"
+                }
                 size="small"
               />
             </Stack>
@@ -862,10 +919,15 @@ const WaterTracker = () => {
                   size={44}
                 />
                 <Stack spacing={0.3}>
-                  <Typography sx={{ fontWeight: 900 }}>{copy.aiTitle}</Typography>
+                  <Typography sx={{ fontWeight: 900 }}>
+                    {copy.aiTitle}
+                  </Typography>
                   <Typography
                     color="text.secondary"
-                    sx={{ lineHeight: 1.55, display: { xs: "none", md: "block" } }}
+                    sx={{
+                      lineHeight: 1.55,
+                      display: { xs: "none", md: "block" },
+                    }}
                   >
                     {assistantReaction}
                   </Typography>
@@ -876,13 +938,16 @@ const WaterTracker = () => {
         </Box>
 
         <Box
+          data-water-mobile-settings-rail="true"
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            display: { xs: "flex", md: "grid" },
+            gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" },
             gap: { xs: 1, md: 2 },
+            ...WATER_MOBILE_FIELD_RAIL_SX,
           }}
         >
           <TextField
+            size="small"
             type="text"
             label={`${copy.target} (ml)`}
             value={targetInputValue}
@@ -909,6 +974,7 @@ const WaterTracker = () => {
             }}
           />
           <TextField
+            size="small"
             type="text"
             label={`${copy.glassSize} (ml)`}
             value={glassSizeInputValue}
@@ -1012,7 +1078,7 @@ const WaterTracker = () => {
               >
                 <Typography
                   variant="caption"
-                sx={{
+                  sx={{
                     px: { xs: 0.55, sm: 0.8 },
                     py: 0.25,
                     borderRadius: 999,
@@ -1046,7 +1112,9 @@ const WaterTracker = () => {
             {quickAmounts.map((amount) => (
               <Button
                 key={amount}
-                variant={amount === water.glassSizeMl ? "contained" : "outlined"}
+                variant={
+                  amount === water.glassSizeMl ? "contained" : "outlined"
+                }
                 disabled={savingWater}
                 onClick={() => addWaterAmount(amount, "quick_amount")}
                 size="small"
@@ -1058,7 +1126,12 @@ const WaterTracker = () => {
           </Stack>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap={{ xs: "nowrap", sm: "wrap" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+        >
           <Button
             variant="contained"
             disabled={savingWater}
@@ -1097,18 +1170,26 @@ const WaterTracker = () => {
           <Paper
             variant="outlined"
             sx={{
-              p: 2,
+              p: { xs: 1.2, md: 2 },
               borderRadius: 1,
               borderColor: "rgba(14, 165, 233, 0.32)",
               backgroundColor: "rgba(240,249,255,0.78)",
             }}
           >
-            <Stack spacing={2}>
+            <Stack spacing={{ xs: 1.2, md: 2 }}>
               <Stack spacing={0.4}>
-                <Typography sx={{ fontWeight: 900 }}>{copy.partialTitle}</Typography>
-                <Typography color="text.secondary">{copy.partialHint}</Typography>
+                <Typography sx={{ fontWeight: 900 }}>
+                  {copy.partialTitle}
+                </Typography>
+                <Typography
+                  color="text.secondary"
+                  sx={{ display: { xs: "none", sm: "block" } }}
+                >
+                  {copy.partialHint}
+                </Typography>
               </Stack>
               <TextField
+                size="small"
                 type="text"
                 label={copy.amount}
                 value={partialAmountMl}
@@ -1120,7 +1201,7 @@ const WaterTracker = () => {
                   setPartialAmountMl(
                     value === "" || !Number.isFinite(nextValue)
                       ? ""
-                      : Math.max(0, nextValue)
+                      : Math.max(0, nextValue),
                   );
                 }}
                 onFocus={(event) => selectInputValue(event.target)}
@@ -1138,7 +1219,9 @@ const WaterTracker = () => {
                   <Button
                     key={amount}
                     size="small"
-                    variant={partialAmountValue === amount ? "contained" : "outlined"}
+                    variant={
+                      partialAmountValue === amount ? "contained" : "outlined"
+                    }
                     disabled={savingWater}
                     onClick={() => setPartialAmountMl(amount)}
                   >
@@ -1148,11 +1231,24 @@ const WaterTracker = () => {
               </Stack>
               <LinearProgress
                 variant="determinate"
-                value={((Math.min(partialAmountValue ?? 0, water.glassSizeMl)) / water.glassSizeMl) * 100}
+                value={
+                  (Math.min(partialAmountValue ?? 0, water.glassSizeMl) /
+                    water.glassSizeMl) *
+                  100
+                }
                 sx={{ height: 10, borderRadius: 999 }}
               />
-              <Stack direction="row" spacing={1} justifyContent="flex-end" useFlexGap flexWrap="wrap">
-                <Button disabled={savingWater} onClick={() => setEditingSlot(null)}>
+              <Stack
+                direction="row"
+                spacing={1}
+                justifyContent="flex-end"
+                useFlexGap
+                flexWrap="wrap"
+              >
+                <Button
+                  disabled={savingWater}
+                  onClick={() => setEditingSlot(null)}
+                >
                   {copy.cancel}
                 </Button>
                 <Button
@@ -1173,9 +1269,14 @@ const WaterTracker = () => {
           </Paper>
         )}
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-          <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.remindersTitle}</Typography>
+        <Paper
+          variant="outlined"
+          sx={{ p: { xs: 1.2, md: 2 }, borderRadius: 1 }}
+        >
+          <Stack spacing={{ xs: 1.1, md: 1.5 }}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {copy.remindersTitle}
+            </Typography>
             <FormControlLabel
               control={
                 <Switch
@@ -1188,10 +1289,15 @@ const WaterTracker = () => {
               }
               label={copy.remindersEnabled}
             />
-            <Stack direction={{ xs: "column", md: "row" }} spacing={1.2}>
+            <Stack
+              data-water-mobile-reminder-rail="true"
+              direction="row"
+              spacing={1}
+              sx={WATER_MOBILE_FIELD_RAIL_SX}
+            >
               <TextField
+                size="small"
                 select
-                fullWidth
                 label={copy.reminderInterval}
                 value={water.reminders.intervalMinutes}
                 disabled={savingWater}
@@ -1199,7 +1305,7 @@ const WaterTracker = () => {
                   void saveWaterState(
                     buildWaterStateAfterReminderChange(water, {
                       intervalMinutes: Number(event.target.value),
-                    })
+                    }),
                   )
                 }
               >
@@ -1210,7 +1316,7 @@ const WaterTracker = () => {
                 ))}
               </TextField>
               <TextField
-                fullWidth
+                size="small"
                 type="time"
                 label={copy.reminderStart}
                 value={water.reminders.startTime}
@@ -1219,13 +1325,13 @@ const WaterTracker = () => {
                   void saveWaterState(
                     buildWaterStateAfterReminderChange(water, {
                       startTime: event.target.value,
-                    })
+                    }),
                   )
                 }
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
-                fullWidth
+                size="small"
                 type="time"
                 label={copy.reminderEnd}
                 value={water.reminders.endTime}
@@ -1234,7 +1340,7 @@ const WaterTracker = () => {
                   void saveWaterState(
                     buildWaterStateAfterReminderChange(water, {
                       endTime: event.target.value,
-                    })
+                    }),
                   )
                 }
                 InputLabelProps={{ shrink: true }}
@@ -1246,11 +1352,31 @@ const WaterTracker = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-          <Stack spacing={1.5}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.analyticsTitle}</Typography>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-              <Chip label={`${copy.average}: ${formatMl(weeklyAverageMl)}`} color="info" />
+        <Paper
+          variant="outlined"
+          sx={{ p: { xs: 1.2, md: 2 }, borderRadius: 1 }}
+        >
+          <Stack spacing={{ xs: 1.1, md: 1.5 }}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {copy.analyticsTitle}
+            </Typography>
+            <Stack
+              data-water-mobile-analytics-rail="true"
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
+                pb: { xs: 0.5, sm: 0 },
+              }}
+            >
+              <Chip
+                label={`${copy.average}: ${formatMl(weeklyAverageMl)}`}
+                color="info"
+              />
               <Chip
                 label={`${copy.goalDays}: ${weeklyGoalDays}/7`}
                 color={weeklyGoalDays >= 5 ? "success" : "default"}
@@ -1267,7 +1393,7 @@ const WaterTracker = () => {
                 gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
                 gap: 1,
                 alignItems: "end",
-                minHeight: 132,
+                minHeight: { xs: 96, md: 132 },
               }}
             >
               {weeklyRecords.map((item) => {
@@ -1280,7 +1406,7 @@ const WaterTracker = () => {
                     <Box
                       sx={{
                         width: "100%",
-                        height: 88,
+                        height: { xs: 62, md: 88 },
                         borderRadius: 2,
                         backgroundColor: "rgba(226,232,240,0.72)",
                         position: "relative",
@@ -1310,35 +1436,63 @@ const WaterTracker = () => {
           </Stack>
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2, borderRadius: 1 }}>
-          <Stack spacing={1.2}>
-            <Typography sx={{ fontWeight: 800 }}>{copy.historyTitle}</Typography>
-            {water.consumedMl === 0 && water.history.every((item) => item.consumedMl === 0) ? (
+        <Paper
+          variant="outlined"
+          sx={{ p: { xs: 1.2, md: 2 }, borderRadius: 1 }}
+        >
+          <Stack spacing={{ xs: 1, md: 1.2 }}>
+            <Typography sx={{ fontWeight: 800 }}>
+              {copy.historyTitle}
+            </Typography>
+            {water.consumedMl === 0 &&
+            water.history.every((item) => item.consumedMl === 0) ? (
               <EmptyState
                 title={copy.historyEmpty}
                 description={copy.historyEmptyHint}
                 compact
               />
             ) : (
-              weeklyRecords
-                .slice()
-                .reverse()
-                .map((item) => (
-                  <Stack
-                    key={item.date}
-                    direction="row"
-                    spacing={1}
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Typography sx={{ fontWeight: 700 }}>
-                      {dayFormatter.format(new Date(`${item.date}T12:00:00`))}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {formatMl(item.consumedMl)} / {formatMl(item.targetMl)}
-                    </Typography>
-                  </Stack>
-                ))
+              <Stack
+                data-water-mobile-history-rail="true"
+                direction="row"
+                spacing={1}
+                sx={{
+                  overflowX: { xs: "auto", sm: "visible" },
+                  mx: { xs: -1, sm: 0 },
+                  px: { xs: 1, sm: 0 },
+                  pb: { xs: 0.5, sm: 0 },
+                  scrollSnapType: { xs: "x proximity", sm: "none" },
+                }}
+              >
+                {weeklyRecords
+                  .slice()
+                  .reverse()
+                  .map((item) => (
+                    <Paper
+                      key={item.date}
+                      variant="outlined"
+                      sx={{
+                        p: 1,
+                        minWidth: { xs: 142, sm: 0 },
+                        borderRadius: 1,
+                        flex: { sm: 1 },
+                        scrollSnapAlign: { xs: "start", sm: "none" },
+                      }}
+                    >
+                      <Stack spacing={0.35}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {dayFormatter.format(
+                            new Date(`${item.date}T12:00:00`),
+                          )}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {formatMl(item.consumedMl)} /{" "}
+                          {formatMl(item.targetMl)}
+                        </Typography>
+                      </Stack>
+                    </Paper>
+                  ))}
+              </Stack>
             )}
           </Stack>
         </Paper>

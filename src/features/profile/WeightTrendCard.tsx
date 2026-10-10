@@ -17,7 +17,8 @@ const weightTrendCopy = {
     title: "Історія ваги",
     subtitle: "Останні записи ваги у простому графіку для швидкого контролю.",
     empty: "Запишіть вагу кілька разів, щоб побудувати графік.",
-    emptyHint: "Перші два записи відкриють тренд, BMI і підказки про стабілізацію ваги.",
+    emptyHint:
+      "Перші два записи відкриють тренд, BMI і підказки про стабілізацію ваги.",
     latest: "Остання",
     totalDelta: "Зміна всього",
     recentDelta: "Остання зміна",
@@ -34,7 +35,8 @@ const weightTrendCopy = {
     title: "Historia wagi",
     subtitle: "Ostatnie zapisy wagi pokazane jako prosty wykres.",
     empty: "Zapisz wagę kilka razy, aby zbudować wykres.",
-    emptyHint: "Pierwsze dwa zapisy odblokują trend, BMI i wskazówki o stabilizacji wagi.",
+    emptyHint:
+      "Pierwsze dwa zapisy odblokują trend, BMI i wskazówki o stabilizacji wagi.",
     latest: "Ostatnia",
     totalDelta: "Zmiana łącznie",
     recentDelta: "Ostatnia zmiana",
@@ -62,7 +64,8 @@ const weightTrendCopy = {
     normal: "Normal",
     overweight: "Overweight",
     obesity: "Obesity",
-    plateauHint: (weeks: number) => `Weight has barely changed for ${weeks} weeks.`,
+    plateauHint: (weeks: number) =>
+      `Weight has barely changed for ${weeks} weeks.`,
   },
 } as const;
 
@@ -82,7 +85,7 @@ const getWeightTrendCopy = (language: AppLanguage): WeightTrendCopy => {
 
 const getBmiStatusLabel = (
   copy: WeightTrendCopy,
-  bmiStatus: ReturnType<typeof getBmiStatus>
+  bmiStatus: ReturnType<typeof getBmiStatus>,
 ) => {
   switch (bmiStatus) {
     case "underweight":
@@ -123,10 +126,19 @@ export const WeightTrendCard = () => {
   const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
   const range = Math.max(maxWeight - minWeight, 1);
   const latestWeight = entries.at(-1)?.weight ?? 0;
-  const totalDelta = entries.length > 1 ? latestWeight - (entries[0]?.weight ?? latestWeight) : 0;
-  const recentAnchor = entries.length > 3 ? entries[entries.length - 4]?.weight ?? latestWeight : entries[0]?.weight ?? latestWeight;
+  const totalDelta =
+    entries.length > 1
+      ? latestWeight - (entries[0]?.weight ?? latestWeight)
+      : 0;
+  const recentAnchor =
+    entries.length > 3
+      ? (entries[entries.length - 4]?.weight ?? latestWeight)
+      : (entries[0]?.weight ?? latestWeight);
   const recentDelta = latestWeight - recentAnchor;
-  const bmi = calculateBmi(latestWeight || user?.weight || 0, user?.height || 0);
+  const bmi = calculateBmi(
+    latestWeight || user?.weight || 0,
+    user?.height || 0,
+  );
   const bmiStatus = getBmiStatus(bmi);
   const plateau = detectWeightPlateau(weightHistory);
   const bmiStatusLabel = getBmiStatusLabel(copy, bmiStatus);
@@ -151,7 +163,10 @@ export const WeightTrendCard = () => {
     const denominator = Math.max(entries.length - 1, 1);
     const points = entries.map((entry, index) => {
       const x = padding.left + (chartWidth * index) / denominator;
-      const y = padding.top + chartHeight - ((entry.weight - minY) / ySpan) * chartHeight;
+      const y =
+        padding.top +
+        chartHeight -
+        ((entry.weight - minY) / ySpan) * chartHeight;
 
       return {
         ...entry,
@@ -160,7 +175,10 @@ export const WeightTrendCard = () => {
       };
     });
     const linePath = points
-      .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+      .map(
+        (point, index) =>
+          `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`,
+      )
       .join(" ");
     const areaPath = [
       `M ${points[0]?.x.toFixed(1)} ${padding.top + chartHeight}`,
@@ -190,30 +208,52 @@ export const WeightTrendCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, md: 3 },
+        p: { xs: 1.2, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
-        <Stack spacing={0.6}>
+      <Stack spacing={{ xs: 1.1, md: 2 }}>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {entries.length > 0 && (
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Stack
+            data-weight-trend-mobile-summary-rail="true"
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap={{ xs: "nowrap", sm: "wrap" }}
+            sx={{
+              overflowX: { xs: "auto", sm: "visible" },
+              mx: { xs: -1, sm: 0 },
+              px: { xs: 1, sm: 0 },
+              pb: { xs: 0.4, sm: 0 },
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+              "& > *": { flex: { xs: "0 0 auto", sm: "initial" } },
+            }}
+          >
             <Typography component="span" sx={{ fontWeight: 700 }}>
               {copy.latest}: {latestWeight.toFixed(1)} kg
             </Typography>
             <Typography component="span" color="text.secondary">
-              {copy.totalDelta}: {totalDelta > 0 ? "+" : ""}{totalDelta.toFixed(1)} kg
+              {copy.totalDelta}: {totalDelta > 0 ? "+" : ""}
+              {totalDelta.toFixed(1)} kg
             </Typography>
             <Typography component="span" color="text.secondary">
-              {copy.recentDelta}: {recentDelta > 0 ? "+" : ""}{recentDelta.toFixed(1)} kg
+              {copy.recentDelta}: {recentDelta > 0 ? "+" : ""}
+              {recentDelta.toFixed(1)} kg
             </Typography>
             <Typography component="span" color="text.secondary">
               {copy.checkIns}: {entries.length}
@@ -221,7 +261,13 @@ export const WeightTrendCard = () => {
             <Chip
               label={`${copy.bmi}: ${bmi.toFixed(1)} • ${bmiStatusLabel}`}
               size="small"
-              color={bmiStatus === "normal" ? "success" : bmiStatus === "overweight" ? "warning" : "default"}
+              color={
+                bmiStatus === "normal"
+                  ? "success"
+                  : bmiStatus === "overweight"
+                    ? "warning"
+                    : "default"
+              }
             />
             {plateau.hasPlateau && (
               <Chip
@@ -241,8 +287,8 @@ export const WeightTrendCard = () => {
             sx={{
               width: "100%",
               minWidth: 0,
-              height: { xs: 220, sm: 240, md: 260 },
-              minHeight: 220,
+              height: { xs: 156, sm: 220, md: 260 },
+              minHeight: { xs: 156, sm: 220 },
               overflow: "hidden",
             }}
           >
@@ -256,9 +302,19 @@ export const WeightTrendCard = () => {
                 sx={{ width: "100%", height: "100%", display: "block" }}
               >
                 <defs>
-                  <linearGradient id="weightTrendFill" x1="0" x2="0" y1="0" y2="1">
+                  <linearGradient
+                    id="weightTrendFill"
+                    x1="0"
+                    x2="0"
+                    y1="0"
+                    y2="1"
+                  >
                     <stop offset="0%" stopColor="#0f766e" stopOpacity={0.32} />
-                    <stop offset="100%" stopColor="#65a30d" stopOpacity={0.04} />
+                    <stop
+                      offset="100%"
+                      stopColor="#65a30d"
+                      stopOpacity={0.04}
+                    />
                   </linearGradient>
                 </defs>
                 {chart.yTicks.map((tick) => (

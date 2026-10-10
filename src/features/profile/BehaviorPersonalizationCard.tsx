@@ -16,7 +16,6 @@ import { getAssistantDisplayName } from "@features/assistant/assistantDisplayNam
 
 const HABIT_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 const ALIGN_START = "flex-start";
-const SINGLE_COLUMN_GRID = "1fr";
 const TWO_COLUMN_GRID = "repeat(2, minmax(0, 1fr))";
 
 const copyByLanguage = {
@@ -111,7 +110,7 @@ const getCopy = (language: AppLanguage) => {
 
 const getStatusLabel = (
   statuses: Record<BehaviorProfileStatus, string>,
-  status: BehaviorProfileStatus
+  status: BehaviorProfileStatus,
 ) => {
   switch (status) {
     case "strong":
@@ -138,7 +137,7 @@ const getStatusColor = (status: BehaviorProfileStatus) => {
 
 const getMealValue = <TValue,>(
   values: Record<MealType, TValue>,
-  mealType: MealType
+  mealType: MealType,
 ) => {
   switch (mealType) {
     case "lunch":
@@ -156,10 +155,15 @@ const getMealValue = <TValue,>(
 const BehaviorPersonalizationCard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector(selectMealItems);
-  const { reminderTimes, assistant } = useSelector((state: RootState) => state.profile);
+  const { reminderTimes, assistant } = useSelector(
+    (state: RootState) => state.profile,
+  );
   const { t, appLanguage } = useLanguage();
   const copy = getCopy(appLanguage);
-  const assistantDisplayName = getAssistantDisplayName(assistant.name, appLanguage);
+  const assistantDisplayName = getAssistantDisplayName(
+    assistant.name,
+    appLanguage,
+  );
 
   const analysis = generateBehaviorProfileAnalysis({
     items,
@@ -174,24 +178,29 @@ const BehaviorPersonalizationCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.2, md: 2 }}>
         <Stack
-          direction={{ xs: "column", md: "row" }}
+          direction={{ xs: "row", md: "row" }}
           spacing={1.5}
           justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
+          alignItems="center"
         >
           <Stack spacing={0.6}>
             <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
               {copy.title}
             </Typography>
-            <Typography color="text.secondary">{copy.subtitle(assistantDisplayName)}</Typography>
+            <Typography
+              color="text.secondary"
+              sx={{ display: { xs: "none", sm: "block" } }}
+            >
+              {copy.subtitle(assistantDisplayName)}
+            </Typography>
           </Stack>
           <Chip
             label={`${copy.score}: ${analysis.consistencyScore}/100`}
@@ -200,7 +209,19 @@ const BehaviorPersonalizationCard = () => {
           />
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-behavior-mobile-score-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.5, sm: 0 },
+          }}
+        >
           <Chip label={`${copy.activeDays}: ${analysis.activeDays}/14`} />
           <Chip label={`${copy.currentStreak}: ${analysis.currentStreak}`} />
           <Chip label={`${copy.bestStreak}: ${analysis.bestStreak}`} />
@@ -213,7 +234,7 @@ const BehaviorPersonalizationCard = () => {
         <Paper
           variant="outlined"
           sx={{
-            p: 2,
+            p: { xs: 1.2, md: 2 },
             borderRadius: 1,
             borderColor: "rgba(15, 23, 42, 0.08)",
             background:
@@ -223,20 +244,30 @@ const BehaviorPersonalizationCard = () => {
           <Stack spacing={0.7}>
             <Typography sx={{ fontWeight: 800 }}>
               {copy.strongest}:{" "}
-              {analysis.strongestMealType ? mealLabel(analysis.strongestMealType) : "-"}
+              {analysis.strongestMealType
+                ? mealLabel(analysis.strongestMealType)
+                : "-"}
             </Typography>
             <Typography color="text.secondary">
               {copy.weakest}:{" "}
-              {analysis.weakestMealType ? mealLabel(analysis.weakestMealType) : "-"}
+              {analysis.weakestMealType
+                ? mealLabel(analysis.weakestMealType)
+                : "-"}
             </Typography>
           </Stack>
         </Paper>
 
         <Stack
+          data-behavior-mobile-habit-rail="true"
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: SINGLE_COLUMN_GRID, md: TWO_COLUMN_GRID },
+            display: { xs: "flex", md: "grid" },
+            gridTemplateColumns: { md: TWO_COLUMN_GRID },
             gap: 1.5,
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+            scrollSnapType: { xs: "x proximity", md: "none" },
           }}
         >
           {HABIT_MEAL_TYPES.map((mealType) => {
@@ -244,11 +275,11 @@ const BehaviorPersonalizationCard = () => {
             const reminderTime = getMealValue(reminderTimes, mealType);
             const suggestedReminderTime = getMealValue(
               analysis.suggestedReminderTimes,
-              mealType
+              mealType,
             );
             const shift = getReminderShiftMinutes(
               reminderTime,
-              suggestedReminderTime
+              suggestedReminderTime,
             );
             const shiftPrefix = shift > 0 ? "+" : "";
 
@@ -257,22 +288,29 @@ const BehaviorPersonalizationCard = () => {
                 key={mealType}
                 variant="outlined"
                 sx={{
-                  p: 2,
+                  p: { xs: 1.2, md: 2 },
+                  minWidth: { xs: 240, md: 0 },
                   borderRadius: 1,
                   borderColor: "rgba(15, 23, 42, 0.08)",
+                  scrollSnapAlign: { xs: "start", md: "none" },
                 }}
               >
                 <Stack spacing={0.8}>
-                  <Typography sx={{ fontWeight: 800 }}>{mealLabel(mealType)}</Typography>
+                  <Typography sx={{ fontWeight: 800 }}>
+                    {mealLabel(mealType)}
+                  </Typography>
                   <Typography color="text.secondary">
-                    {copy.averageTime}: {habit.averageLogTime ?? copy.noSuggestion}
+                    {copy.averageTime}:{" "}
+                    {habit.averageLogTime ?? copy.noSuggestion}
                   </Typography>
                   <Typography color="text.secondary">
                     {copy.reminder}: {reminderTime}
                   </Typography>
                   <Typography color="text.secondary">
                     {copy.suggested}: {suggestedReminderTime}
-                    {habit.hasSuggestion ? ` (${shiftPrefix}${shift} ${copy.minutes})` : ""}
+                    {habit.hasSuggestion
+                      ? ` (${shiftPrefix}${shift} ${copy.minutes})`
+                      : ""}
                   </Typography>
                   <Chip
                     size="small"
@@ -293,13 +331,14 @@ const BehaviorPersonalizationCard = () => {
         </Stack>
 
         <Button
+          size="small"
           variant="contained"
           disabled={!hasSuggestion}
           onClick={() =>
             dispatch(
               updateNotificationPreferences({
                 reminderTimes: analysis.suggestedReminderTimes,
-              })
+              }),
             )
           }
           sx={{

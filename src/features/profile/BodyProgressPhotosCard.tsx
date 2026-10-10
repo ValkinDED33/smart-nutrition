@@ -22,7 +22,11 @@ import { useProfileCloudAction } from "./useProfileCloudAction";
 
 const MAX_PHOTO_BYTES = 8_000_000;
 const MAX_COMPRESSED_PHOTO_MB = 1.2;
-const SUPPORTED_PROGRESS_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const SUPPORTED_PROGRESS_PHOTO_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 const PHOTO_ACTION_ALIGN = "flex-start";
 const PHOTO_ACTION_BUTTON_SX = {
   alignSelf: PHOTO_ACTION_ALIGN,
@@ -72,7 +76,7 @@ const cropImageToDataUrl = async (imageSrc: string, area: Area | null) => {
     0,
     0,
     canvas.width,
-    canvas.height
+    canvas.height,
   );
 
   return canvas.toDataURL("image/jpeg", 0.88);
@@ -81,7 +85,8 @@ const cropImageToDataUrl = async (imageSrc: string, area: Area | null) => {
 const progressPhotoCopy = {
   uk: {
     title: "Фото прогресу",
-    subtitle: "Зберігайте однаковий ракурс раз на тиждень, щоб бачити зміни без здогадок.",
+    subtitle:
+      "Зберігайте однаковий ракурс раз на тиждень, щоб бачити зміни без здогадок.",
     upload: "Додати фото",
     replace: "Замінити фото",
     note: "Нотатка",
@@ -102,7 +107,8 @@ const progressPhotoCopy = {
   },
   pl: {
     title: "Zdjęcia progresu",
-    subtitle: "Zapisuj ten sam kadr raz w tygodniu, aby widzieć zmiany bez zgadywania.",
+    subtitle:
+      "Zapisuj ten sam kadr raz w tygodniu, aby widzieć zmiany bez zgadywania.",
     upload: "Dodaj zdjęcie",
     replace: "Zmień zdjęcie",
     note: "Notatka",
@@ -123,7 +129,8 @@ const progressPhotoCopy = {
   },
   en: {
     title: "Progress photos",
-    subtitle: "Keep the same angle once a week to see changes without guessing.",
+    subtitle:
+      "Keep the same angle once a week to see changes without guessing.",
     upload: "Add photo",
     replace: "Replace photo",
     note: "Note",
@@ -177,9 +184,10 @@ export const BodyProgressPhotosCard = () => {
   const sortedPhotos = useMemo(
     () =>
       [...photos].sort(
-        (left, right) => new Date(right.date).getTime() - new Date(left.date).getTime()
+        (left, right) =>
+          new Date(right.date).getTime() - new Date(left.date).getTime(),
       ),
-    [photos]
+    [photos],
   );
   const latest = sortedPhotos[0];
   const previous = sortedPhotos[1];
@@ -193,7 +201,10 @@ export const BodyProgressPhotosCard = () => {
       return;
     }
 
-    if (!SUPPORTED_PROGRESS_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
+    if (
+      !SUPPORTED_PROGRESS_PHOTO_TYPES.has(file.type) ||
+      file.size > MAX_PHOTO_BYTES
+    ) {
       setRawPreview(null);
       setPreview(null);
       setError(file.size > MAX_PHOTO_BYTES ? copy.tooLarge : copy.invalid);
@@ -244,10 +255,11 @@ export const BodyProgressPhotosCard = () => {
 
     try {
       const imageDataUrl =
-        preview ?? (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
+        preview ??
+        (await cropImageToDataUrl(rawPreview ?? "", croppedAreaPixels));
 
       const nextProfile = await profileAction.runProfileAction(
-        addProgressPhoto({ imageDataUrl, note })
+        addProgressPhoto({ imageDataUrl, note }),
       );
 
       if (!nextProfile) {
@@ -273,7 +285,7 @@ export const BodyProgressPhotosCard = () => {
 
     try {
       const nextProfile = await profileAction.runProfileAction(
-        removeProgressPhoto(photoId)
+        removeProgressPhoto(photoId),
       );
 
       if (!nextProfile) {
@@ -290,18 +302,23 @@ export const BodyProgressPhotosCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2.2}>
+      <Stack spacing={{ xs: 1.25, md: 2.2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {profileAction.saving ? (
@@ -309,17 +326,24 @@ export const BodyProgressPhotosCard = () => {
         ) : null}
 
         {error || profileAction.hasError ? (
-          <Alert severity="error" onClose={() => {
-            setError(null);
-            profileAction.clearError();
-          }}>
+          <Alert
+            severity="error"
+            onClose={() => {
+              setError(null);
+              profileAction.clearError();
+            }}
+          >
             {error ?? copy.saveError}
           </Alert>
         ) : null}
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={{ xs: 1.25, md: 2 }}
+        >
           <Stack spacing={1.5} sx={{ flex: 1 }}>
             <Button
+              size="small"
               variant="outlined"
               component="label"
               sx={PHOTO_ACTION_BUTTON_SX}
@@ -339,7 +363,8 @@ export const BodyProgressPhotosCard = () => {
               disabled={profileAction.saving}
               onChange={(event) => setNote(event.target.value.slice(0, 160))}
               multiline
-              minRows={2}
+              minRows={1}
+              size="small"
               fullWidth
             />
             {rawPreview && !preview && (
@@ -352,9 +377,12 @@ export const BodyProgressPhotosCard = () => {
                   max={3}
                   step={0.05}
                   value={zoom}
-                  onChange={(_, value) => setZoom(Array.isArray(value) ? value[0] ?? 1 : value)}
+                  onChange={(_, value) =>
+                    setZoom(Array.isArray(value) ? (value[0] ?? 1) : value)
+                  }
                 />
                 <Button
+                  size="small"
                   variant="outlined"
                   onClick={() => {
                     void handleApplyCrop();
@@ -367,6 +395,7 @@ export const BodyProgressPhotosCard = () => {
             )}
             {rawPreview && preview && (
               <Button
+                size="small"
                 variant="text"
                 onClick={() => setPreview(null)}
                 sx={PHOTO_ACTION_BUTTON_SX}
@@ -375,6 +404,7 @@ export const BodyProgressPhotosCard = () => {
               </Button>
             )}
             <Button
+              size="small"
               variant="contained"
               disabled={profileAction.saving || (!preview && !rawPreview)}
               onClick={() => {
@@ -412,7 +442,13 @@ export const BodyProgressPhotosCard = () => {
                 sx={{ width: "100%", height: 260, objectFit: "cover" }}
               />
             ) : rawPreview ? (
-              <Box sx={{ position: "relative", width: "100%", height: 260 }}>
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: { xs: 210, md: 260 },
+                }}
+              >
                 <Cropper
                   image={rawPreview}
                   crop={crop}
@@ -434,81 +470,132 @@ export const BodyProgressPhotosCard = () => {
         ) : (
           <>
             <Box
+              data-progress-photos-mobile-featured-rail="true"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                display: { xs: "flex", md: "grid" },
+                gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" },
                 gap: 1.5,
+                overflowX: { xs: "auto", md: "visible" },
+                mx: { xs: -1, md: 0 },
+                px: { xs: 1, md: 0 },
+                pb: { xs: 0.5, md: 0 },
+                scrollSnapType: { xs: "x proximity", md: "none" },
               }}
             >
-              {[latest, previous].flatMap((photo) => (photo ? [photo] : [])).map((photo, index) => (
-                <Paper
-                  key={photo.id}
-                  variant="outlined"
-                  sx={{ borderRadius: 1, overflow: "hidden" }}
-                >
-                  <Box
-                    component="img"
-                    src={photo.imageDataUrl}
-                    alt={index === 0 ? copy.latest : copy.previous}
-                    sx={{ width: "100%", height: 260, objectFit: "cover", display: "block" }}
-                  />
-                  <Stack spacing={0.5} sx={{ p: 1.5 }}>
-                    <Typography sx={{ fontWeight: 800 }}>
-                      {index === 0 ? copy.latest : copy.previous}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatLocalDateKey(getLocalDateKey(photo.date), appLanguage, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                    {photo.note && (
-                      <Typography variant="body2" color="text.secondary">
-                        {photo.note}
+              {[latest, previous]
+                .flatMap((photo) => (photo ? [photo] : []))
+                .map((photo, index) => (
+                  <Paper
+                    key={photo.id}
+                    variant="outlined"
+                    sx={{
+                      minWidth: { xs: 240, md: 0 },
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      scrollSnapAlign: { xs: "start", md: "none" },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={photo.imageDataUrl}
+                      alt={index === 0 ? copy.latest : copy.previous}
+                      sx={{
+                        width: "100%",
+                        height: { xs: 170, md: 260 },
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    <Stack spacing={0.5} sx={{ p: 1.5 }}>
+                      <Typography sx={{ fontWeight: 800 }}>
+                        {index === 0 ? copy.latest : copy.previous}
                       </Typography>
-                    )}
-                  </Stack>
-                </Paper>
-              ))}
+                      <Typography variant="body2" color="text.secondary">
+                        {formatLocalDateKey(
+                          getLocalDateKey(photo.date),
+                          appLanguage,
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </Typography>
+                      {photo.note && (
+                        <Typography variant="body2" color="text.secondary">
+                          {photo.note}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Paper>
+                ))}
             </Box>
 
             <Stack spacing={1}>
               <Typography sx={{ fontWeight: 800 }}>{copy.history}</Typography>
               <Box
+                data-progress-photos-mobile-history-rail="true"
                 sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "repeat(2, minmax(0, 1fr))",
-                    sm: "repeat(4, minmax(0, 1fr))",
-                  },
+                  display: { xs: "flex", sm: "grid" },
+                  gridTemplateColumns: { sm: "repeat(4, minmax(0, 1fr))" },
                   gap: 1,
+                  overflowX: { xs: "auto", sm: "visible" },
+                  mx: { xs: -1, sm: 0 },
+                  px: { xs: 1, sm: 0 },
+                  pb: { xs: 0.5, sm: 0 },
+                  scrollSnapType: { xs: "x proximity", sm: "none" },
                 }}
               >
                 {sortedPhotos.map((photo) => (
-                  <Paper key={photo.id} variant="outlined" sx={{ borderRadius: 3, overflow: "hidden" }}>
+                  <Paper
+                    key={photo.id}
+                    variant="outlined"
+                    sx={{
+                      minWidth: { xs: 132, sm: 0 },
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      scrollSnapAlign: { xs: "start", sm: "none" },
+                    }}
+                  >
                     <Box
                       component="img"
                       src={photo.imageDataUrl}
                       alt={copy.history}
-                      sx={{ width: "100%", height: 104, objectFit: "cover", display: "block" }}
+                      sx={{
+                        width: "100%",
+                        height: 104,
+                        objectFit: "cover",
+                        display: "block",
+                      }}
                     />
                     <Stack spacing={0.6} sx={{ p: 1 }}>
                       <Typography variant="caption" color="text.secondary">
-                        {formatLocalDateKey(getLocalDateKey(photo.date), appLanguage, {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {formatLocalDateKey(
+                          getLocalDateKey(photo.date),
+                          appLanguage,
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </Typography>
                       <Button
                         size="small"
                         color="error"
-                        disabled={removingPhotoId !== null || profileAction.saving}
+                        disabled={
+                          removingPhotoId !== null || profileAction.saving
+                        }
                         onClick={() => {
                           void handleRemove(photo.id);
                         }}
-                        sx={{ alignSelf: PHOTO_ACTION_ALIGN, textTransform: "none", fontWeight: 700 }}
+                        sx={{
+                          alignSelf: PHOTO_ACTION_ALIGN,
+                          textTransform: "none",
+                          fontWeight: 700,
+                        }}
                       >
-                        {removingPhotoId === photo.id ? copy.saving : copy.remove}
+                        {removingPhotoId === photo.id
+                          ? copy.saving
+                          : copy.remove}
                       </Button>
                     </Stack>
                   </Paper>

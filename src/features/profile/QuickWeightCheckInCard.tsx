@@ -115,7 +115,7 @@ const getQuickWeightCopy = (language: AppLanguage): QuickWeightCopy => {
 
 const getQuickWeightBmiLabel = (
   copy: QuickWeightCopy,
-  bmiStatus: ReturnType<typeof getBmiStatus>
+  bmiStatus: ReturnType<typeof getBmiStatus>,
 ) => {
   switch (bmiStatus) {
     case "underweight":
@@ -170,7 +170,7 @@ export const QuickWeightCheckInCard = () => {
   const latestEntry = weightHistory.at(-1);
   const latestWeight = latestEntry?.weight ?? user?.weight ?? 0;
   const [weightDraft, setWeightDraft] = useState(
-    latestWeight > 0 ? latestWeight.toFixed(1) : ""
+    latestWeight > 0 ? latestWeight.toFixed(1) : "",
   );
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -208,7 +208,10 @@ export const QuickWeightCheckInCard = () => {
     }
 
     const roundedWeight = Math.round(nextWeight * 10) / 10;
-    const nextProfile = buildProfileStateAfterWeightSave(profile, roundedWeight);
+    const nextProfile = buildProfileStateAfterWeightSave(
+      profile,
+      roundedWeight,
+    );
 
     setSaved(false);
     setSaveError(null);
@@ -223,7 +226,7 @@ export const QuickWeightCheckInCard = () => {
         nextProfile,
         undefined,
         (freshProfile) =>
-          buildProfileStateAfterWeightSave(freshProfile, roundedWeight)
+          buildProfileStateAfterWeightSave(freshProfile, roundedWeight),
       );
       let companionRewardPayload = {};
 
@@ -231,7 +234,7 @@ export const QuickWeightCheckInCard = () => {
         await applyCompanionRewardInCloud(
           dispatch,
           { companion },
-          "weight_updated"
+          "weight_updated",
         );
         companionRewardPayload =
           createCompanionRewardAnalyticsPayload("weight_updated");
@@ -254,15 +257,37 @@ export const QuickWeightCheckInCard = () => {
 
   return (
     <SectionCard>
-      <Stack spacing={2}>
-        <Stack spacing={0.6}>
+      <Stack spacing={{ xs: 1.1, md: 2 }}>
+        <Stack spacing={{ xs: 0.25, md: 0.6 }}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", md: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-quick-weight-mobile-summary-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.4, sm: 0 },
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+            "& .MuiChip-root": {
+              flex: { xs: "0 0 auto", sm: "initial" },
+            },
+          }}
+        >
           <Chip
             label={`${copy.current}: ${latestWeight ? formatWeight(latestWeight) : "-"}`}
             color="primary"
@@ -276,16 +301,17 @@ export const QuickWeightCheckInCard = () => {
             variant="outlined"
           />
           <Chip
-            label={`${copy.bmi}: ${bmi > 0 ? bmi.toFixed(1) : "-"} • ${
-              getQuickWeightBmiLabel(copy, bmiStatus)
-            }`}
+            label={`${copy.bmi}: ${bmi > 0 ? bmi.toFixed(1) : "-"} • ${getQuickWeightBmiLabel(
+              copy,
+              bmiStatus,
+            )}`}
             color={bmiStatus === "normal" ? "success" : "default"}
             variant={bmiStatus === "normal" ? "filled" : "outlined"}
           />
         </Stack>
 
         {goalProgress && (
-          <Stack spacing={0.8}>
+          <Stack spacing={{ xs: 0.55, md: 0.8 }}>
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -301,20 +327,23 @@ export const QuickWeightCheckInCard = () => {
             <LinearProgress
               variant="determinate"
               value={goalProgress.percent}
-              sx={{ height: 10, borderRadius: 999 }}
+              sx={{ height: { xs: 7, md: 10 }, borderRadius: 999 }}
             />
           </Stack>
         )}
 
         <Box
+          data-quick-weight-mobile-editor="true"
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" },
-            gap: 1.2,
+            display: "flex",
+            flexDirection: { xs: "row", sm: "row" },
+            gap: { xs: 0.8, md: 1.2 },
             alignItems: "start",
+            minWidth: 0,
           }}
         >
           <TextField
+            size="small"
             fullWidth
             type="text"
             label={copy.input}
@@ -340,11 +369,19 @@ export const QuickWeightCheckInCard = () => {
               },
             }}
           />
-          <Stack direction="row" spacing={1}>
-            <Button variant="outlined" onClick={() => adjustDraft(-0.5)}>
+          <Stack direction="row" spacing={0.75} sx={{ flex: "0 0 auto" }}>
+            <Button
+              variant="outlined"
+              onClick={() => adjustDraft(-0.5)}
+              sx={{ minWidth: { xs: 48, md: 64 }, px: { xs: 1, md: 2 } }}
+            >
               -0.5
             </Button>
-            <Button variant="outlined" onClick={() => adjustDraft(0.5)}>
+            <Button
+              variant="outlined"
+              onClick={() => adjustDraft(0.5)}
+              sx={{ minWidth: { xs: 48, md: 64 }, px: { xs: 1, md: 2 } }}
+            >
               +0.5
             </Button>
           </Stack>

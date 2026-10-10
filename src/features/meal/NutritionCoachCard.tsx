@@ -52,31 +52,36 @@ const coachCopy = {
         title: "Води замало для стабільного дня",
         detail: (analysis: NutritionCoachAnalysis) =>
           `У середньому ${analysis.averageWater.toFixed(0)} мл при цілі ${analysis.waterTarget.toFixed(0)} мл.`,
-        action: "Поставте 2-3 контрольні порції води до вечора і закривайте їх у трекері.",
+        action:
+          "Поставте 2-3 контрольні порції води до вечора і закривайте їх у трекері.",
       },
       breakfast_skipped: {
         title: "Сніданок часто пропущений",
         detail: (analysis: NutritionCoachAnalysis) =>
           `За останні 7 днів сніданок пропущено ${analysis.breakfastSkippedDays} раз(и) у днях із логами.`,
-        action: "Підготуйте простий перший прийом із білком, щоб не наздоганяти день ввечері.",
+        action:
+          "Підготуйте простий перший прийом із білком, щоб не наздоганяти день ввечері.",
       },
       fiber_low: {
         title: "Клітковина просідає",
         detail: (analysis: NutritionCoachAnalysis) =>
           `У середньому ${analysis.averageFiber.toFixed(0)} г клітковини при базовій цілі ${analysis.fiberTarget} г.`,
-        action: "Підніміть овочі, бобові, фрукти або цільні зерна в одному з прийомів їжі.",
+        action:
+          "Підніміть овочі, бобові, фрукти або цільні зерна в одному з прийомів їжі.",
       },
       calories_high: {
         title: "Середні калорії вище цілі",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Тижневий середній рівень ${analysis.averageCalories.toFixed(0)} ккал при цілі ${analysis.calorieTarget.toFixed(0)} ккал.`,
-        action: "Почніть із корекції одного найкалорійнішого прийому їжі, а не всього дня одразу.",
+        action:
+          "Почніть із корекції одного найкалорійнішого прийому їжі, а не всього дня одразу.",
       },
       calories_low: {
         title: "Середні калорії нижче цілі",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Тижневий середній рівень ${analysis.averageCalories.toFixed(0)} ккал при цілі ${analysis.calorieTarget.toFixed(0)} ккал.`,
-        action: "Додайте стабільний прийом їжі або один щільніший перекус у найслабший час дня.",
+        action:
+          "Додайте стабільний прийом їжі або один щільніший перекус у найслабший час дня.",
       },
       meal_pattern: {
         title: "Ритм прийомів їжі нерівний",
@@ -88,7 +93,8 @@ const coachCopy = {
         title: "Тренд ваги не підтримує ціль",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Зміна ваги за доступною історією становить ${analysis.weightChange.toFixed(1)} кг.`,
-        action: "Перевірте відповідність цілі калорій і внесіть 1 корекцію на найближчі 7 днів.",
+        action:
+          "Перевірте відповідність цілі калорій і внесіть 1 корекцію на найближчі 7 днів.",
       },
       on_track: {
         title: "Раціон виглядає збалансовано",
@@ -130,49 +136,57 @@ const coachCopy = {
         title: "Białka jest za mało względem celu",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnio ${analysis.averageProtein.toFixed(0)} g białka przy celu ${analysis.proteinTarget.toFixed(0)} g.`,
-        action: "Dodaj jeden wyraźnie białkowy posiłek albo przekąskę każdego dnia.",
+        action:
+          "Dodaj jeden wyraźnie białkowy posiłek albo przekąskę każdego dnia.",
       },
       water_low: {
         title: "Wody jest za mało dla stabilnego dnia",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnio ${analysis.averageWater.toFixed(0)} ml przy celu ${analysis.waterTarget.toFixed(0)} ml.`,
-        action: "Ustaw 2-3 kontrolne porcje wody do wieczora i domykaj je w trackerze.",
+        action:
+          "Ustaw 2-3 kontrolne porcje wody do wieczora i domykaj je w trackerze.",
       },
       breakfast_skipped: {
         title: "Śniadanie często wypada",
         detail: (analysis: NutritionCoachAnalysis) =>
           `W ostatnich 7 dniach śniadanie pominięto ${analysis.breakfastSkippedDays} razy w dniach z logami.`,
-        action: "Przygotuj prosty pierwszy posiłek z białkiem, żeby nie nadrabiać dnia wieczorem.",
+        action:
+          "Przygotuj prosty pierwszy posiłek z białkiem, żeby nie nadrabiać dnia wieczorem.",
       },
       fiber_low: {
         title: "Błonnik wypada zbyt nisko",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnio ${analysis.averageFiber.toFixed(0)} g błonnika przy bazowym celu ${analysis.fiberTarget} g.`,
-        action: "Podnieś warzywa, strączki, owoce albo pełne ziarna w jednym z posiłków.",
+        action:
+          "Podnieś warzywa, strączki, owoce albo pełne ziarna w jednym z posiłków.",
       },
       calories_high: {
         title: "Średnie kalorie są powyżej celu",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnia tygodniowa to ${analysis.averageCalories.toFixed(0)} kcal przy celu ${analysis.calorieTarget.toFixed(0)} kcal.`,
-        action: "Skoryguj najcięższy posiłek dnia zamiast ciąć cały plan naraz.",
+        action:
+          "Skoryguj najcięższy posiłek dnia zamiast ciąć cały plan naraz.",
       },
       calories_low: {
         title: "Średnie kalorie są poniżej celu",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnia tygodniowa to ${analysis.averageCalories.toFixed(0)} kcal przy celu ${analysis.calorieTarget.toFixed(0)} kcal.`,
-        action: "Dodaj stały posiłek albo jeden bardziej sycący snack w najsłabszej porze dnia.",
+        action:
+          "Dodaj stały posiłek albo jeden bardziej sycący snack w najsłabszej porze dnia.",
       },
       meal_pattern: {
         title: "Rytm posiłków jest nierówny",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Średnio tylko ${analysis.averageMeals.toFixed(1)} pełnych slotów posiłków na zalogowany dzień.`,
-        action: "Ustabilizuj przynajmniej 3 punkty żywienia: śniadanie, obiad i kolację.",
+        action:
+          "Ustabilizuj przynajmniej 3 punkty żywienia: śniadanie, obiad i kolację.",
       },
       weight_trend: {
         title: "Trend masy nie wspiera celu",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Zmiana masy na dostępnej historii wynosi ${analysis.weightChange.toFixed(1)} kg.`,
-        action: "Sprawdź dopasowanie celu kalorii i wprowadź 1 korektę na najbliższe 7 dni.",
+        action:
+          "Sprawdź dopasowanie celu kalorii i wprowadź 1 korektę na najbliższe 7 dni.",
       },
       on_track: {
         title: "Plan wygląda stabilnie",
@@ -220,43 +234,50 @@ const coachCopy = {
         title: "Water is low for a stable day",
         detail: (analysis: NutritionCoachAnalysis) =>
           `${analysis.averageWater.toFixed(0)} ml on average against a ${analysis.waterTarget.toFixed(0)} ml target.`,
-        action: "Set 2-3 control water servings before evening and close them in the tracker.",
+        action:
+          "Set 2-3 control water servings before evening and close them in the tracker.",
       },
       breakfast_skipped: {
         title: "Breakfast is often skipped",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Breakfast was skipped ${analysis.breakfastSkippedDays} time(s) in logged days over the last 7 days.`,
-        action: "Prepare a simple first meal with protein so you do not chase the day in the evening.",
+        action:
+          "Prepare a simple first meal with protein so you do not chase the day in the evening.",
       },
       fiber_low: {
         title: "Fiber is dropping low",
         detail: (analysis: NutritionCoachAnalysis) =>
           `${analysis.averageFiber.toFixed(0)} g fiber on average against a baseline target of ${analysis.fiberTarget} g.`,
-        action: "Increase vegetables, legumes, fruit, or whole grains in one meal.",
+        action:
+          "Increase vegetables, legumes, fruit, or whole grains in one meal.",
       },
       calories_high: {
         title: "Average calories are above target",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Weekly average is ${analysis.averageCalories.toFixed(0)} kcal against a ${analysis.calorieTarget.toFixed(0)} kcal target.`,
-        action: "Start by adjusting the highest-calorie meal instead of cutting the whole day at once.",
+        action:
+          "Start by adjusting the highest-calorie meal instead of cutting the whole day at once.",
       },
       calories_low: {
         title: "Average calories are below target",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Weekly average is ${analysis.averageCalories.toFixed(0)} kcal against a ${analysis.calorieTarget.toFixed(0)} kcal target.`,
-        action: "Add a stable meal or one more filling snack at the weakest time of day.",
+        action:
+          "Add a stable meal or one more filling snack at the weakest time of day.",
       },
       meal_pattern: {
         title: "Meal rhythm is uneven",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Only ${analysis.averageMeals.toFixed(1)} full meal slots per logged day on average.`,
-        action: "Stabilize at least 3 core points: breakfast, lunch, and dinner.",
+        action:
+          "Stabilize at least 3 core points: breakfast, lunch, and dinner.",
       },
       weight_trend: {
         title: "Weight trend does not support the goal",
         detail: (analysis: NutritionCoachAnalysis) =>
           `Weight change in the available history is ${analysis.weightChange.toFixed(1)} kg.`,
-        action: "Check whether the calorie target fits and make 1 adjustment for the next 7 days.",
+        action:
+          "Check whether the calorie target fits and make 1 adjustment for the next 7 days.",
       },
       on_track: {
         title: "Nutrition looks balanced",
@@ -382,7 +403,7 @@ const NutritionCoachCard = () => {
   const copy = getCoachCopy(appLanguage);
   const assistantDisplayName = getAssistantDisplayName(
     profile.assistant.name,
-    appLanguage
+    appLanguage,
   );
   const analysis = generateNutritionCoachAnalysis({
     items,
@@ -404,18 +425,18 @@ const NutritionCoachCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.2, md: 2 }}>
         <Stack
-          direction={{ xs: "column", md: "row" }}
+          direction={{ xs: "row", md: "row" }}
           spacing={1.5}
           justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
+          alignItems="center"
         >
           <Stack direction="row" spacing={1.2} alignItems="center">
             <Box
@@ -451,7 +472,10 @@ const NutritionCoachCard = () => {
               <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
                 {copy.title}
               </Typography>
-              <Typography color="text.secondary">
+              <Typography
+                color="text.secondary"
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
                 {copy.subtitle(assistantDisplayName)}
               </Typography>
             </Stack>
@@ -463,23 +487,45 @@ const NutritionCoachCard = () => {
           />
         </Stack>
 
-        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+        <Stack
+          data-nutrition-coach-mobile-stat-rail="true"
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap={{ xs: "nowrap", sm: "wrap" }}
+          sx={{
+            overflowX: { xs: "auto", sm: "visible" },
+            mx: { xs: -1, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            pb: { xs: 0.5, sm: 0 },
+          }}
+        >
           <Chip label={`${copy.stats.daysLogged}: ${analysis.daysLogged}/7`} />
-          <Chip label={`${copy.stats.avgCalories}: ${analysis.averageCalories.toFixed(0)} kcal`} />
-          <Chip label={`${copy.stats.avgProtein}: ${analysis.averageProtein.toFixed(0)} g`} />
+          <Chip
+            label={`${copy.stats.avgCalories}: ${analysis.averageCalories.toFixed(0)} kcal`}
+          />
+          <Chip
+            label={`${copy.stats.avgProtein}: ${analysis.averageProtein.toFixed(0)} g`}
+          />
           {analysis.waterTarget > 0 && (
-            <Chip label={`${copy.stats.avgWater}: ${analysis.averageWater.toFixed(0)} ml`} />
+            <Chip
+              label={`${copy.stats.avgWater}: ${analysis.averageWater.toFixed(0)} ml`}
+            />
           )}
-          <Chip label={`${copy.stats.avgFiber}: ${analysis.averageFiber.toFixed(0)} g`} />
+          <Chip
+            label={`${copy.stats.avgFiber}: ${analysis.averageFiber.toFixed(0)} g`}
+          />
           {analysis.breakfastSkippedDays > 0 && (
-            <Chip label={`${copy.stats.skippedBreakfast}: ${analysis.breakfastSkippedDays}`} />
+            <Chip
+              label={`${copy.stats.skippedBreakfast}: ${analysis.breakfastSkippedDays}`}
+            />
           )}
         </Stack>
 
         <Paper
           variant="outlined"
           sx={{
-            p: 2,
+            p: { xs: 1.25, md: 2 },
             borderRadius: 1,
             borderColor: "rgba(15, 23, 42, 0.08)",
             background:
@@ -487,23 +533,36 @@ const NutritionCoachCard = () => {
           }}
         >
           <Stack spacing={0.6}>
-            <Typography variant="overline" sx={{ fontWeight: 800, color: "#0f766e" }}>
+            <Typography
+              variant="overline"
+              sx={{ fontWeight: 800, color: "#0f766e" }}
+            >
               {getCoachStatusLabel(copy, analysis.status)}
             </Typography>
             <Typography sx={{ fontWeight: 800 }}>
-              {copy.focus}: {getCoachInsightCopy(copy, primaryInsight.code).title}
+              {copy.focus}:{" "}
+              {getCoachInsightCopy(copy, primaryInsight.code).title}
             </Typography>
-            <Typography color="text.secondary">
+            <Typography
+              color="text.secondary"
+              sx={{ display: { xs: "none", sm: "block" } }}
+            >
               {getCoachInsightCopy(copy, primaryInsight.code).detail(analysis)}
             </Typography>
           </Stack>
         </Paper>
 
         <Stack
+          data-nutrition-coach-mobile-insight-rail="true"
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            display: { xs: "flex", md: "grid" },
+            gridTemplateColumns: { md: "repeat(2, minmax(0, 1fr))" },
             gap: 1.5,
+            overflowX: { xs: "auto", md: "visible" },
+            mx: { xs: -1, md: 0 },
+            px: { xs: 1, md: 0 },
+            pb: { xs: 0.5, md: 0 },
+            scrollSnapType: { xs: "x proximity", md: "none" },
           }}
         >
           {analysis.insights.map((insight: NutritionCoachInsight) => {
@@ -514,14 +573,21 @@ const NutritionCoachCard = () => {
                 key={insight.code}
                 variant="outlined"
                 sx={{
-                  p: 2,
+                  p: { xs: 1.25, md: 2 },
+                  minWidth: { xs: 260, md: 0 },
                   borderRadius: 1,
+                  scrollSnapAlign: { xs: "start", md: "none" },
                   ...getInsightAccent(insight.severity),
                 }}
               >
                 <Stack spacing={0.8}>
-                  <Typography sx={{ fontWeight: 800 }}>{localizedInsight.title}</Typography>
-                  <Typography color="text.secondary">
+                  <Typography sx={{ fontWeight: 800 }}>
+                    {localizedInsight.title}
+                  </Typography>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ display: { xs: "none", sm: "block" } }}
+                  >
                     {localizedInsight.detail(analysis)}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -534,12 +600,12 @@ const NutritionCoachCard = () => {
         </Stack>
 
         <Typography variant="caption" color="text.secondary">
-          {copy.stats.daysLogged}: {analysis.daysLogged}/7 | {copy.stats.avgCalories}:{" "}
-          {analysis.averageCalories.toFixed(0)} kcal | {copy.stats.avgProtein}:{" "}
-          {analysis.averageProtein.toFixed(0)} g | {copy.stats.avgFiber}:{" "}
-          {analysis.averageFiber.toFixed(0)} g | {copy.stats.avgWater}:{" "}
-          {analysis.averageWater.toFixed(0)} ml | {copy.stats.meals}:{" "}
-          {formatAverageMeals(analysis.averageMeals)}
+          {copy.stats.daysLogged}: {analysis.daysLogged}/7 |{" "}
+          {copy.stats.avgCalories}: {analysis.averageCalories.toFixed(0)} kcal |{" "}
+          {copy.stats.avgProtein}: {analysis.averageProtein.toFixed(0)} g |{" "}
+          {copy.stats.avgFiber}: {analysis.averageFiber.toFixed(0)} g |{" "}
+          {copy.stats.avgWater}: {analysis.averageWater.toFixed(0)} ml |{" "}
+          {copy.stats.meals}: {formatAverageMeals(analysis.averageMeals)}
         </Typography>
       </Stack>
     </Paper>

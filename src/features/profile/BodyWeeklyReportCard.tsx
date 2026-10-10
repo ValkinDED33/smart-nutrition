@@ -1,6 +1,14 @@
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Alert, Box, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Chip,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import type { RootState } from "../../app/store";
 import { createWeeklyBodyReport } from "@domain/profile/bodyMetrics";
 import { useLanguage } from "../../shared/language";
@@ -10,7 +18,8 @@ import { buildAssistantPersonalizationPlan } from "@core/assistant/personalizati
 const bodyReportCopy = {
   uk: {
     title: "Щотижневий звіт тіла",
-    subtitle: "Вага, BMI, заміри тіла і сигнал стабілізації в одному тижневому підсумку.",
+    subtitle:
+      "Вага, BMI, заміри тіла і сигнал стабілізації в одному тижневому підсумку.",
     weight: "Вага",
     bmi: "BMI",
     waist: "Талія",
@@ -43,7 +52,8 @@ const bodyReportCopy = {
   },
   pl: {
     title: "Tygodniowy raport ciała",
-    subtitle: "Waga, BMI, pomiary ciała i sygnał stabilizacji w jednym tygodniowym podsumowaniu.",
+    subtitle:
+      "Waga, BMI, pomiary ciała i sygnał stabilizacji w jednym tygodniowym podsumowaniu.",
     weight: "Waga",
     bmi: "BMI",
     waist: "Talia",
@@ -60,7 +70,8 @@ const bodyReportCopy = {
       `Waga utrzymuje się w zakresie ${delta} kg przez około ${weeks} tyg. Sprawdź kalorie, białko, wodę i regularność zapisów przed zmianą celu.`,
     progressBody: (delta: string) =>
       `Zmiana masy w tym tygodniu to ${delta} kg. Waż się w tych samych warunkach, aby trend był czytelniejszy.`,
-    empty: "Dodaj przynajmniej jeden tygodniowy zapis, aby odblokować raport ciała.",
+    empty:
+      "Dodaj przynajmniej jeden tygodniowy zapis, aby odblokować raport ciała.",
     previousDelta: "cm vs poprzedni",
     normal: "Norma",
     underweight: "Poniżej normy",
@@ -76,7 +87,8 @@ const bodyReportCopy = {
   },
   en: {
     title: "Weekly body report",
-    subtitle: "Weight, BMI, body measurements, and plateau signal in one weekly summary.",
+    subtitle:
+      "Weight, BMI, body measurements, and plateau signal in one weekly summary.",
     weight: "Weight",
     bmi: "BMI",
     waist: "Waist",
@@ -133,7 +145,7 @@ const getBodyReportCopy = (language: AppLanguage): BodyReportCopy => {
 
 const getBmiStatusCopy = (
   copy: BodyReportCopy,
-  status: ReturnType<typeof createWeeklyBodyReport>["bmiStatus"]
+  status: ReturnType<typeof createWeeklyBodyReport>["bmiStatus"],
 ) => {
   switch (status) {
     case "underweight":
@@ -182,7 +194,7 @@ const buildGoalProgress = ({
   return clamp(
     (Math.abs(startWeight - latestWeight) / totalDistance) * 100,
     0,
-    100
+    100,
   );
 };
 
@@ -222,10 +234,7 @@ const getBarColor = (tone: BodyProgressTone, color: string) => {
   }
 };
 
-const getToneLabel = (
-  copy: BodyReportCopy,
-  tone: BodyProgressTone
-) => {
+const getToneLabel = (copy: BodyReportCopy, tone: BodyProgressTone) => {
   switch (tone) {
     case "watch":
       return copy.watch;
@@ -261,14 +270,12 @@ export const BodyWeeklyReportCard = () => {
     targetWeightStart,
     weeklyCheckIn,
     weightHistory,
-  } = useSelector(
-    (state: RootState) => state.profile
-  );
+  } = useSelector((state: RootState) => state.profile);
   const { appLanguage } = useLanguage();
   const copy = getBodyReportCopy(appLanguage);
   const personalization = buildAssistantPersonalizationPlan(
     assistant.onboarding,
-    appLanguage
+    appLanguage,
   );
 
   const report = useMemo(
@@ -278,7 +285,7 @@ export const BodyWeeklyReportCard = () => {
         measurementHistory,
         heightCm: user?.height ?? 0,
       }),
-    [measurementHistory, user?.height, weightHistory]
+    [measurementHistory, user?.height, weightHistory],
   );
 
   if (!user) {
@@ -320,7 +327,7 @@ export const BodyWeeklyReportCard = () => {
       weeklyCheckIn.remindIntervalDays) *
       100,
     0,
-    100
+    100,
   );
   const progressMapItems: BodyProgressMapItem[] = [
     {
@@ -364,56 +371,86 @@ export const BodyWeeklyReportCard = () => {
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: { xs: 1.35, md: 3 },
         borderRadius: 1,
         border: "1px solid var(--sn-border-soft)",
         backgroundColor: "var(--sn-surface-glass)",
       }}
     >
-      <Stack spacing={2.2}>
+      <Stack spacing={{ xs: 1.25, md: 2.2 }}>
         <Stack spacing={0.6}>
           <Typography component="h2" variant="h6" sx={{ fontWeight: 800 }}>
             {copy.title}
           </Typography>
-          <Typography color="text.secondary">{copy.subtitle}</Typography>
+          <Typography
+            color="text.secondary"
+            sx={{ display: { xs: "none", sm: "block" } }}
+          >
+            {copy.subtitle}
+          </Typography>
         </Stack>
 
         {report.checkIns === 0 ? (
           <Alert severity="info">{copy.empty}</Alert>
         ) : (
           <>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Stack
+              data-body-weekly-mobile-summary-rail="true"
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap={{ xs: "nowrap", sm: "wrap" }}
+              sx={{
+                overflowX: { xs: "auto", sm: "visible" },
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
+                pb: { xs: 0.5, sm: 0 },
+              }}
+            >
               <Chip
                 label={`${copy.weight}: ${report.latestWeight.toFixed(1)} kg (${weeklyDelta})`}
                 color="primary"
               />
               <Chip
-                label={`${copy.bmi}: ${report.bmi.toFixed(1)} ${
-                  getBmiStatusCopy(copy, report.bmiStatus)
-                }`}
+                label={`${copy.bmi}: ${report.bmi.toFixed(1)} ${getBmiStatusCopy(
+                  copy,
+                  report.bmiStatus,
+                )}`}
                 variant="outlined"
               />
-              <Chip label={`${copy.checkIns}: ${report.checkIns}`} variant="outlined" />
+              <Chip
+                label={`${copy.checkIns}: ${report.checkIns}`}
+                variant="outlined"
+              />
             </Stack>
 
             <Alert severity={report.plateau.hasPlateau ? "warning" : "success"}>
-              <Typography sx={{ fontWeight: 800 }}>{copy.plateauTitle}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>
+                {copy.plateauTitle}
+              </Typography>
               <Typography variant="body2">
                 {report.plateau.hasPlateau
-                  ? copy.plateauBody(report.plateau.weeksStable || 2, plateauDelta)
+                  ? copy.plateauBody(
+                      report.plateau.weeksStable || 2,
+                      plateauDelta,
+                    )
                   : copy.progressBody(weeklyDelta)}
               </Typography>
             </Alert>
 
             <Alert severity="info">
-              <Typography sx={{ fontWeight: 800 }}>{copy.personalTitle}</Typography>
-              <Typography variant="body2">{personalization.reportHint}</Typography>
+              <Typography sx={{ fontWeight: 800 }}>
+                {copy.personalTitle}
+              </Typography>
+              <Typography variant="body2">
+                {personalization.reportHint}
+              </Typography>
             </Alert>
 
             <Paper
               variant="outlined"
               sx={{
-                p: 1.8,
+                p: { xs: 1.2, md: 1.8 },
                 borderRadius: 1,
                 background:
                   "linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(139, 92, 246, 0.08))",
@@ -421,8 +458,14 @@ export const BodyWeeklyReportCard = () => {
             >
               <Stack spacing={1.6}>
                 <Stack spacing={0.4}>
-                  <Typography sx={{ fontWeight: 900 }}>{copy.bodyMapTitle}</Typography>
-                  <Typography color="text.secondary" variant="body2">
+                  <Typography sx={{ fontWeight: 900 }}>
+                    {copy.bodyMapTitle}
+                  </Typography>
+                  <Typography
+                    color="text.secondary"
+                    variant="body2"
+                    sx={{ display: { xs: "none", sm: "block" } }}
+                  >
                     {copy.bodyMapSubtitle}
                   </Typography>
                 </Stack>
@@ -439,7 +482,11 @@ export const BodyWeeklyReportCard = () => {
                           useFlexGap
                           flexWrap="wrap"
                         >
-                          <Stack direction="row" spacing={0.8} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={0.8}
+                            alignItems="center"
+                          >
                             <Box
                               aria-hidden
                               sx={{
@@ -450,7 +497,9 @@ export const BodyWeeklyReportCard = () => {
                                 boxShadow: `0 0 0 4px ${barColor}22`,
                               }}
                             />
-                            <Typography sx={{ fontWeight: 800 }}>{item.label}</Typography>
+                            <Typography sx={{ fontWeight: 800 }}>
+                              {item.label}
+                            </Typography>
                           </Stack>
                           <Typography color="text.secondary" variant="body2">
                             {item.detail}
@@ -502,16 +551,33 @@ export const BodyWeeklyReportCard = () => {
             </Paper>
 
             <Box
+              data-body-weekly-mobile-measurement-rail="true"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                display: { xs: "flex", sm: "grid" },
+                gridTemplateColumns: { sm: "repeat(2, minmax(0, 1fr))" },
                 gap: 1.2,
+                overflowX: { xs: "auto", sm: "visible" },
+                mx: { xs: -1, sm: 0 },
+                px: { xs: 1, sm: 0 },
+                pb: { xs: 0.5, sm: 0 },
+                scrollSnapType: { xs: "x proximity", sm: "none" },
               }}
             >
               {measurementCards.map((item) => (
-                <Paper key={item.label} variant="outlined" sx={{ p: 1.5, borderRadius: 1 }}>
+                <Paper
+                  key={item.label}
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 1.15, md: 1.5 },
+                    minWidth: { xs: 160, sm: 0 },
+                    borderRadius: 1,
+                    scrollSnapAlign: { xs: "start", sm: "none" },
+                  }}
+                >
                   <Stack spacing={0.5}>
-                    <Typography sx={{ fontWeight: 800 }}>{item.label}</Typography>
+                    <Typography sx={{ fontWeight: 800 }}>
+                      {item.label}
+                    </Typography>
                     <Typography color="text.secondary">
                       {item.current ? `${item.current.toFixed(1)} cm` : "-"}
                     </Typography>

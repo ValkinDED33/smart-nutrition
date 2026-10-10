@@ -10,7 +10,9 @@ const WATER_TRACKER_SOURCE_PATH = "src/features/water/WaterTracker.tsx";
 
 describe("water persistence contract", () => {
   it("exposes one cloud-confirmed water action hook with retry support", async () => {
-    const source = await readSource("src/features/water/useWaterCloudAction.ts");
+    const source = await readSource(
+      "src/features/water/useWaterCloudAction.ts",
+    );
 
     expect(source).toContain("saveWaterStateToCloud");
     expect(source).toContain("replaceWaterState");
@@ -23,14 +25,16 @@ describe("water persistence contract", () => {
     expect(source).toContain("copy.saveInProgress");
     expect(source).toContain("throw caughtError");
     expect(source).not.toContain("Water could not be saved. Please try again.");
-    expect(source).not.toContain("Water is already being saved. Please wait a moment.");
+    expect(source).not.toContain(
+      "Water is already being saved. Please wait a moment.",
+    );
     expect(source).not.toContain("setError(message)");
     expect(source).not.toContain("setError(inProgressError.message)");
   });
 
   it("keeps WaterTracker on the shared cloud action contract", async () => {
     const source = normalizeNewlines(
-      await readSource(WATER_TRACKER_SOURCE_PATH)
+      await readSource(WATER_TRACKER_SOURCE_PATH),
     );
 
     expect(source).toContain("useWaterCloudAction");
@@ -45,18 +49,24 @@ describe("water persistence contract", () => {
 
   it("does not clear target or glass drafts after a failed cloud save", async () => {
     const source = normalizeNewlines(
-      await readSource(WATER_TRACKER_SOURCE_PATH)
+      await readSource(WATER_TRACKER_SOURCE_PATH),
     );
 
-    expect(source).toContain("if (!saved) {\n          return;\n        }\n\n        setTargetDraft(null);");
-    expect(source).toContain("if (!saved) {\n        return;\n      }\n\n      setGlassSizeDraft(null);");
+    expect(source).toMatch(
+      /saveWaterState\(\s*buildWaterStateAfterTargetChange\(water, nextTarget\),\s*\)\.then\(\(saved\) => \{\s*if \(!saved\) \{\s*return;\s*\}\s*setTargetDraft\(null\);/s,
+    );
+    expect(source).toMatch(
+      /saveWaterState\(\s*buildWaterStateAfterGlassSizeChange\(water, nextGlassSize\),\s*\)\.then\(\(saved\) => \{\s*if \(!saved\) \{\s*return;\s*\}\s*setGlassSizeDraft\(null\);/s,
+    );
   });
 
   it("keeps partial-glass editor open until save is confirmed", async () => {
     const source = await readSource(WATER_TRACKER_SOURCE_PATH);
 
     expect(source).toContain("const saved = await saveWaterState(nextWater)");
-    expect(source).toContain("if (!saved) {\n      return;\n    }\n\n    setEditingSlot(null);");
+    expect(source).toContain(
+      "if (!saved) {\n      return;\n    }\n\n    setEditingSlot(null);",
+    );
   });
 
   it("localizes companion reward sync warnings without weakening water save success", async () => {
@@ -71,7 +81,9 @@ describe("water persistence contract", () => {
     expect(source).toContain("assistant progress");
     expect(source).not.toContain("error instanceof Error ? error.message");
     expect(source).not.toContain("${copy.rewardSyncWarning} ${error.message}");
-    expect(source).not.toContain("Water saved, but companion progress could not sync");
+    expect(source).not.toContain(
+      "Water saved, but companion progress could not sync",
+    );
     expect(source).not.toContain("прогрес companion");
     expect(source).not.toContain("postęp companion");
   });
